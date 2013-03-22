@@ -55,7 +55,6 @@ class GenericEpetraProblem;
 class Epetra_Vector;
 
 #include <map>
-using namespace std;
 
 class XferOp {
 
@@ -77,8 +76,8 @@ class XferOp {
 
 private:
 
-  multimap<int,int> dependentNodes;
-  multimap<int,double> dependentWeights;
+  std::multimap<int,int> dependentNodes;
+  std::multimap<int,double> dependentWeights;
 
 };
 #endif

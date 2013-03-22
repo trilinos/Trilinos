@@ -265,7 +265,7 @@ LOCA::Abstract::Group::copy(const NOX::Abstract::Group& src)
 }
 
 void
-LOCA::Abstract::Group::setParamsMulti(const vector<int>& paramIDs, 
+LOCA::Abstract::Group::setParamsMulti(const std::vector<int>& paramIDs, 
 		const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   for (unsigned int i=0; i<paramIDs.size(); i++)

@@ -101,7 +101,7 @@ LOCA::SingularJacobianSolve::Nic::compute(
 				const NOX::Abstract::Vector& jacApproxNullVec,
 				NOX::Abstract::Vector& result) 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::SingularJacobianSolve::Nic::compute()";
   NOX::Abstract::Group::ReturnType finalStatus;
 
@@ -131,7 +131,7 @@ LOCA::SingularJacobianSolve::Nic::computeMulti(
 				NOX::Abstract::Vector** results,
 				int nVecs) 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::SingularJacobianSolve::Nic::computeMulti()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
   finalStatus = NOX::Abstract::Group::Ok;

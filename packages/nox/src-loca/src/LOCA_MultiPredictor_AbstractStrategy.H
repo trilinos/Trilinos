@@ -130,7 +130,7 @@ namespace LOCA {
        * compute the approximate tangent to the continuation curve.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      compute(bool baseOnSecant, const vector<double>& stepSize,
+      compute(bool baseOnSecant, const std::vector<double>& stepSize,
 	      LOCA::MultiContinuation::ExtendedGroup& grp,
 	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
 	      const LOCA::MultiContinuation::ExtendedVector& xVec) = 0;
@@ -142,7 +142,7 @@ namespace LOCA {
        * for each i, where \c v[i] is the ith predictor direction.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      evaluate(const vector<double>& stepSize,
+      evaluate(const std::vector<double>& stepSize,
 	       const LOCA::MultiContinuation::ExtendedVector& xVec,
 	       LOCA::MultiContinuation::ExtendedMultiVector& result) const = 0;
 
@@ -179,7 +179,7 @@ namespace LOCA {
       virtual void
       setPredictorOrientation(
 	             bool baseOnSecant, 
-		     const vector<double>& stepSize,
+		     const std::vector<double>& stepSize,
 		     const LOCA::MultiContinuation::ExtendedGroup& grp,
 	             const LOCA::MultiContinuation::ExtendedVector& prevXVec,
 		     const LOCA::MultiContinuation::ExtendedVector& xVec,

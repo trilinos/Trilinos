@@ -108,7 +108,7 @@ ExtendedGroup(
     globalData->locaErrorCheck->throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");
   }
-  string bifParamName = pitchforkParams->get("Bifurcation Parameter",
+  std::string bifParamName = pitchforkParams->get("Bifurcation Parameter",
 					     "None");
   const ParameterVector& p = grpPtr->getParams();
   bifParamID = p.getIndex(bifParamName);
@@ -294,7 +294,7 @@ computeF()
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::computeF()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -328,7 +328,7 @@ computeJacobian()
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::computeJacobian()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -408,7 +408,7 @@ computeGradient()
   if (isValidGradient)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::computeGradient()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -450,7 +450,7 @@ computeNewton(Teuchos::ParameterList& params)
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::computeNewton()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -559,7 +559,7 @@ LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 applyJacobianMultiVector(const NOX::Abstract::MultiVector& input,
 			 NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::applyJacobianMultiVector()";
   
   if (!isJacobian()) {
@@ -596,7 +596,7 @@ LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 applyJacobianTransposeMultiVector(const NOX::Abstract::MultiVector& input,
 				  NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::applyJacobianTransposeMultiVector()";
   
   if (!isJacobian()) {
@@ -635,7 +635,7 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& params,
 				const NOX::Abstract::MultiVector& input,
 				NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::applyJacobianInverseMultiVector()";
   
   if (!isJacobian()) {
@@ -763,7 +763,7 @@ double
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 getNormNewtonSolveResidual() const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::getNormNewtonSolveResidual()";
   NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::MultiContinuation::ExtendedVector residual = *fVec;
@@ -839,7 +839,7 @@ copy(const NOX::Abstract::Group& src)
 
 void
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
-setParamsMulti(const vector<int>& paramIDs, 
+setParamsMulti(const std::vector<int>& paramIDs, 
 	       const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
@@ -879,7 +879,7 @@ setParam(int paramID, double val)
 
 void
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
-setParam(string paramID, double val)
+setParam(std::string paramID, double val)
 {
   const LOCA::ParameterVector& p = grpPtr->getParams();
   int id = p.getIndex(paramID);
@@ -902,18 +902,18 @@ getParam(int paramID) const
 
 double
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
-getParam(string paramID) const
+getParam(std::string paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
-computeDfDpMulti(const vector<int>& paramIDs, 
+computeDfDpMulti(const std::vector<int>& paramIDs, 
 		 NOX::Abstract::MultiVector& dfdp, 
 		 bool isValid_F)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::computeDfDpMulti()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -1249,7 +1249,7 @@ void
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 fillA(NOX::Abstract::MultiVector& A) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::fillA";
 
   Teuchos::RCP<const NOX::Abstract::MultiVector> my_A = 
@@ -1287,7 +1287,7 @@ void
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 fillB(NOX::Abstract::MultiVector& B) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::fillB";
 
   Teuchos::RCP<const NOX::Abstract::MultiVector> my_B =
@@ -1325,7 +1325,7 @@ void
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::fillC";
 
   Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> my_C = 

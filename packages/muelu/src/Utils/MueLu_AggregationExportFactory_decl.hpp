@@ -53,8 +53,8 @@
 #ifndef MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
 #define MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
 
-#include <Xpetra_Operator_fwd.hpp>
-#include <Xpetra_CrsOperator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
@@ -68,8 +68,8 @@ namespace MueLu {
   class Level;
 
   /*!
-    @class ThresholdAFilterFactory class.
-    @brief Factory for building a thresholded operator.
+    @class AggregationExportFactory class.
+    @brief Factory for exporting aggregates data
 
   */
 
@@ -83,11 +83,13 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationExportFactory(const std::string outputFileName = "aggs_level%LEVELID_proc%PROCID.out", const FactoryBase* AggFact = NULL, const FactoryBase* CoalesceDropFact = NULL, const FactoryBase* AmalgFact = NULL);
+    AggregationExportFactory() { }
 
     //! Destructor.
-    virtual ~AggregationExportFactory();
+    virtual ~AggregationExportFactory() { }
     //@}
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //! Input
     //@{
@@ -103,17 +105,11 @@ namespace MueLu {
     void Build(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
-   
+
 
   private:
 
     std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
-
-  private:
-    std::string outputFileName_;            ///< filename template for output
-    const FactoryBase* AggFact_;            ///< factory which created aggregates
-    const FactoryBase* CoalesceDropFact_;   ///< CoalesceAndDropFactory (needed for DofsPerNode variable)
-    const FactoryBase* AmalgFact_;          ///< AmalgamationFactory (needed for UnAmalgamationInfo variable)
 
   }; // class AggregationExportFactory
 

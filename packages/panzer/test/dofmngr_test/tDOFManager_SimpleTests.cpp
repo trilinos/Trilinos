@@ -50,7 +50,7 @@
 #include <vector>
 #include <set>
 
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 
 // include some intrepid basis functions
 // 2D basis 
@@ -72,7 +72,7 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST(tDOFManager_SimpleTests,validFieldOrder)
 {
-   DOFManager<int,int> dofManager; 
+   DOFManagerFEI<int,int> dofManager; 
 
    std::set<std::string> validFields;
    validFields.insert("horse");

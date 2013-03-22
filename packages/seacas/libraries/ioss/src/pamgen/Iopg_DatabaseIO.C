@@ -138,7 +138,7 @@ namespace Iopg {
     elementCount(0), nodeBlockCount(0),
     elementBlockCount(0), nodesetCount(0), sidesetCount(0),
     commsetNodeCount(0), commsetElemCount(0),
-    sequentialNG2L(false), sequentialEG2L(false),
+    nodeMap("node"), elemMap("elem"),
     blockAdjacenciesCalculated(false)
   {
     if (is_input()) {
@@ -153,6 +153,12 @@ namespace Iopg {
   DatabaseIO::~DatabaseIO()
   {
     Delete_Pamgen_Mesh();
+  }
+
+  void DatabaseIO::release_memory()
+  {
+    nodeMap.release_memory();
+    elemMap.release_memory();
   }
 
   void DatabaseIO::read_meta_data()
@@ -935,7 +941,6 @@ namespace Iopg {
 	      get_region()->add_alias(side_block);
 
 	      if (split_type != Ioss::SPLIT_BY_DONT_SPLIT
-		  && (number_distribution_factors > 0 || isParallel)
 		  && side_set_name != "universal_sideset") {
 		std::string storage = "Real[";
 		storage += Ioss::Utils::to_string(side_topo->number_nodes());
@@ -1018,12 +1023,7 @@ namespace Iopg {
 	else if (field.get_name() == "ids") {
 	  // Map the local ids in this node block
 	  // (1...node_count) to global node ids.
-	  const Ioss::MapContainer &map = get_node_map();
-	  int *ids = static_cast<int*>(data);
-
-	  for (size_t i=0; i < num_to_get; i++) {
-	    ids[i] = map[1 + i];
-	  }
+	  get_node_map().map_implicit_data(data, field, num_to_get, 0);
 	}
 	else if (field.get_name() == "connectivity") {
 	  // Do nothing, just handles an idiosyncracy of the GroupingEntity
@@ -1069,24 +1069,13 @@ namespace Iopg {
 	      pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
 	    // Now, map the nodes in the connectivity from local to global ids
-	    const Ioss::MapContainer &map = get_node_map();
-	    if (!Ioss::Map::is_sequential(map)) {
-	      int *connect = static_cast<int*>(data);
-	      for (size_t i=0; i < num_to_get*element_nodes; i++)
-		connect[i] = map[connect[i]];
-	    }
+	    get_node_map().map_data(data, field, num_to_get*element_nodes);
 	  }
 	}
 	else if (field.get_name() == "ids") {
 	  // Map the local ids in this element block
 	  // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
-	  const Ioss::MapContainer &map = get_element_map();
-	  int eb_offset = eb->get_offset();
-	  int *ids = static_cast<int*>(data);
-
-	  for (size_t i=0; i < num_to_get; i++) {
-	    ids[i] = map[eb_offset + 1 + i];
-	  }
+	  get_element_map().map_implicit_data(data, field, num_to_get, eb->get_offset());
 	}
 	else {
 	  num_to_get = Ioss::Utils::field_warning(eb, field, "input");
@@ -1141,7 +1130,7 @@ namespace Iopg {
 
 	    // Convert local node id to global node id and store in 'data'
 	    int* entity_proc = static_cast<int*>(data);
-	    const Ioss::MapContainer &map = get_node_map();
+	    const Ioss::MapContainer &map = get_node_map().map;
 
 	    int j=0;
 	    for (i=0; i < entity_count; i++) {
@@ -1164,7 +1153,7 @@ namespace Iopg {
 	    assert(cm_offset == entity_count);
 
 	    int* entity_proc = static_cast<int*>(data);
-	    const Ioss::MapContainer &map = get_element_map();
+	    const Ioss::MapContainer &map = get_element_map().map;
 
 	    int j=0;
 	    for (i=0; i < entity_count; i++) {
@@ -1237,7 +1226,7 @@ namespace Iopg {
 	  // map from local_to_global prior to generating the side  id...
 
 	  // Get the element number map (1-based)...
-	  const Ioss::MapContainer &map = get_element_map();
+	  const Ioss::MapContainer &map = get_element_map().map;
 
 	  // Allocate space for local side number, use 'data' as temporary
 	  // storage for element numbers and overwrite with the side
@@ -1266,7 +1255,7 @@ namespace Iopg {
 	      ids[iel] = new_id;
 	    }
 	  } else {
-	    Ioss::IntVector is_valid_side(number_sides);
+	    Ioss::IntVector is_valid_side;
 	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element, TOPTR(sides),
 							number_sides, get_region());
 	    size_t ieb = 0;
@@ -1293,7 +1282,7 @@ namespace Iopg {
 	  // map from local_to_global prior to generating the side  id...
 
 	  // Get the element number map (1-based)...
-	  const Ioss::MapContainer &map = get_element_map();
+	  const Ioss::MapContainer &map = get_element_map().map;
 
 	  // Allocate space for local side number and element numbers
 	  // numbers.
@@ -1314,7 +1303,7 @@ namespace Iopg {
 	    }
 	    assert(index/2 == entity_count);
 	  } else {
-	    Ioss::IntVector is_valid_side(number_sides);
+	    Ioss::IntVector is_valid_side;
 	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, TOPTR(element), TOPTR(sides),
 							number_sides, get_region());
 
@@ -1371,13 +1360,7 @@ namespace Iopg {
 	    pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
 	  // Convert the local node ids to global ids
-	  const Ioss::MapContainer &map = get_node_map();
-	  if (!Ioss::Map::is_sequential(map)) {
-	    int *ids = static_cast<int*>(data);
-	    for (size_t i=0; i < num_to_get; i++) {
-	      ids[i] = map[ids[i]];
-	    }
-	  }
+	  get_node_map().map_data(data, field, num_to_get);
 	} else if (field.get_name() == "distribution_factors") {
 	  // Not supported by pamgen.  Fill data with '1'
 	  double *rdata = static_cast<double*>(data);
@@ -1443,40 +1426,33 @@ namespace Iopg {
     return -1;
   }
 
-  const Ioss::MapContainer& DatabaseIO::get_node_map() const
+  const Ioss::Map& DatabaseIO::get_node_map() const
   {
     // Allocate space for node number map and read it in...
     // Can be called multiple times, allocate 1 time only
-    if (nodeMap.empty()) {
-      nodeMap.resize(nodeCount+1);
+    if (nodeMap.map.empty()) {
+      nodeMap.map.resize(nodeCount+1);
 
       if (is_input()) {
-	std::vector<int>node_map(nodeMap.size());
+	std::vector<int>node_map(nodeMap.map.size());
 	int error = im_ex_get_node_num_map(get_file_pointer(), &node_map[1]);
 	if (error < 0) {
 	  // Clear out the vector...
-	  Ioss::MapContainer().swap(nodeMap);
+	  Ioss::MapContainer().swap(nodeMap.map);
 	  pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 	}
-	std::copy(node_map.begin(), node_map.end(), nodeMap.begin());
+	std::copy(node_map.begin(), node_map.end(), nodeMap.map.begin());
 	// Check for sequential node map.
 	// If not, build the reverse G2L node map...
-	sequentialNG2L = true;
+	nodeMap.map[0] = -1;
 	for (int i=1; i < nodeCount+1; i++) {
-	  if (i != nodeMap[i]) {
-	    sequentialNG2L = false;
-	    nodeMap[0] = 1;
+	  if (i != nodeMap.map[i]) {
+	    nodeMap.map[0] = 1;
 	    break;
 	  }
 	}
 
-	if (!sequentialNG2L) {
-	  Ioss::Map::build_reverse_map(&reverseNodeMap, &nodeMap[1], nodeCount, 0,
-				       "node", myProcessor);
-	} else {
-	  // Sequential map
-	  nodeMap[0] = -1;
-	}
+	nodeMap.build_reverse_map(myProcessor);
 
       } else {
 	unsupported("output nodal id map");
@@ -1485,49 +1461,40 @@ namespace Iopg {
     return nodeMap;
   }
 
-  const Ioss::MapContainer& DatabaseIO::get_element_map() const
+  const Ioss::Map& DatabaseIO::get_element_map() const
   {
     // Allocate space for elemente number map and read it in...
     // Can be called multiple times, allocate 1 time only
-    if (elementMap.empty()) {
-      elementMap.resize(elementCount+1);
+    if (elemMap.map.empty()) {
+      elemMap.map.resize(elementCount+1);
 
       if (is_input()) {
-	std::vector<int>elem_map(elementMap.size());
+	std::vector<int>elem_map(elemMap.map.size());
 	int error = im_ex_get_elem_num_map(get_file_pointer(), &elem_map[1]);
 	if (error < 0) {
 	  // Clear out the vector...
-	  Ioss::MapContainer().swap(elementMap);
+	  Ioss::MapContainer().swap(elemMap.map);
 	  pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 	}
-	std::copy(elem_map.begin(), elem_map.end(), elementMap.begin());
+	std::copy(elem_map.begin(), elem_map.end(), elemMap.map.begin());
 
 	// Check for sequential element map.
 	// If not, build the reverse G2L element map...
-	sequentialEG2L = true;
+	elemMap.map[0] = -1;
 	for (int i=1; i < elementCount+1; i++) {
-	  if (i != elementMap[i]) {
-	    sequentialEG2L = false;
-	    elementMap[0] = 1;
+	  if (i != elemMap.map[i]) {
+	    elemMap.map[0] = 1;
 	    break;
 	  }
 	}
 
-	if (!sequentialEG2L) {
-	  Ioss::Map::build_reverse_map(&reverseElementMap,
-				       &elementMap[1], elementCount, 0,
-				       "element", myProcessor);
-	} else {
-	  // Sequential map
-	  sequentialEG2L = true;
-	  elementMap[0] = -1;
-	}
+	elemMap.build_reverse_map(myProcessor);
 
       } else {
 	unsupported("output element map");
       }
     }
-    return elementMap;
+    return elemMap;
   }
 
   void DatabaseIO::get_block_adjacencies(const Ioss::ElementBlock *eb,
@@ -1922,7 +1889,7 @@ namespace Iopg {
       pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 //----
 
-    Ioss::IntVector is_valid_side(number_sides);
+    Ioss::IntVector is_valid_side;
     Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, TOPTR(element), TOPTR(side),
 						number_sides, get_region());
 

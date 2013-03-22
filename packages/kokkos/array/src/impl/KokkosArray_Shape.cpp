@@ -43,7 +43,7 @@
 
 
 #include <sstream>
-#include <stdexcept>
+#include <impl/KokkosArray_Error.hpp>
 #include <impl/KokkosArray_Shape.hpp>
 
 //----------------------------------------------------------------------------
@@ -52,18 +52,28 @@
 namespace KokkosArray {
 namespace Impl {
 
+void assert_counts_are_equal_throw(
+  const unsigned x_count ,
+  const unsigned y_count )
+{
+  std::ostringstream msg ;
+
+  msg << "KokkosArray::Impl::assert_counts_are_equal_throw( "
+      << x_count << " != " << y_count << " )" ;
+
+  throw_runtime_exception( msg.str() );
+}
+
 void assert_shapes_are_equal_throw(
-  const std::type_info & x_layout ,
-  const unsigned x_value_size ,
-  const unsigned x_rank , const unsigned x_stride ,
+  const unsigned x_scalar_size ,
+  const unsigned x_rank ,
   const unsigned x_N0 , const unsigned x_N1 ,
   const unsigned x_N2 , const unsigned x_N3 ,
   const unsigned x_N4 , const unsigned x_N5 ,
   const unsigned x_N6 , const unsigned x_N7 ,
 
-  const std::type_info & y_layout ,
-  const unsigned y_value_size ,
-  const unsigned y_rank , const unsigned y_stride ,
+  const unsigned y_scalar_size ,
+  const unsigned y_rank ,
   const unsigned y_N0 , const unsigned y_N1 ,
   const unsigned y_N2 , const unsigned y_N3 ,
   const unsigned y_N4 , const unsigned y_N5 ,
@@ -72,10 +82,8 @@ void assert_shapes_are_equal_throw(
   std::ostringstream msg ;
 
   msg << "KokkosArray::Impl::assert_shape_are_equal_throw( {"
-      << " layout(" << x_layout.name()
-      << ") value_size(" << x_value_size
+      << " scalar_size(" << x_scalar_size
       << ") rank(" << x_rank
-      << ") stride(" << x_stride
       << ") dimension(" ;
   if ( 0 < x_rank ) { msg << " " << x_N0 ; }
   if ( 1 < x_rank ) { msg << " " << x_N1 ; }
@@ -86,10 +94,8 @@ void assert_shapes_are_equal_throw(
   if ( 6 < x_rank ) { msg << " " << x_N6 ; }
   if ( 7 < x_rank ) { msg << " " << x_N7 ; }
   msg << " ) } != { "
-      << " layout(" << y_layout.name()
-      << ") value_size(" << y_value_size
+      << " scalar_size(" << y_scalar_size
       << ") rank(" << y_rank
-      << ") stride(" << y_stride
       << ") dimension(" ;
   if ( 0 < y_rank ) { msg << " " << y_N0 ; }
   if ( 1 < y_rank ) { msg << " " << y_N1 ; }
@@ -101,10 +107,10 @@ void assert_shapes_are_equal_throw(
   if ( 7 < y_rank ) { msg << " " << y_N7 ; }
   msg << " ) } )" ;
 
-  throw std::runtime_error( msg.str() );
+  throw_runtime_exception( msg.str() );
 }
 
-void assert_shape_bounds_throw(
+void AssertShapeBoundsAbort< KokkosArray::HostSpace >::apply(
   const size_t rank ,
   const size_t n0 , const size_t n1 , 
   const size_t n2 , const size_t n3 ,
@@ -117,7 +123,7 @@ void assert_shape_bounds_throw(
   const size_t i6 , const size_t i7 )
 {
   std::ostringstream msg ;
-  msg << "KokkosArray::Impl::assert_shape_bounds_throw( shape = {" ;
+  msg << "KokkosArray::Impl::AssertShapeBoundsAbort( shape = {" ;
   if ( 0 < rank ) { msg << " " << n0 ; }
   if ( 1 < rank ) { msg << " " << n1 ; }
   if ( 2 < rank ) { msg << " " << n2 ; }
@@ -137,7 +143,7 @@ void assert_shape_bounds_throw(
   if ( 7 < rank ) { msg << " " << i7 ; }
   msg << " } )" ;
 
-  throw std::runtime_error( msg.str() );
+  throw_runtime_exception( msg.str() );
 }
 
 void assert_shape_effective_rank1_at_leastN_throw(
@@ -161,7 +167,7 @@ void assert_shape_effective_rank1_at_leastN_throw(
   if ( 7 < x_rank ) { msg << " " << x_N7 ; }
   msg << " } N = " << N0 << " )" ;
 
-  throw std::runtime_error( msg.str() );
+  throw_runtime_exception( msg.str() );
 }
 
 

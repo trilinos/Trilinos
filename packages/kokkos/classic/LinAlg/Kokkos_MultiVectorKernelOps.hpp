@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -111,6 +111,18 @@ namespace Kokkos {
   };
 
   template <typename Scalar>
+  struct MVElemMultOverwriteOp {
+    Scalar scalarYZ;
+    const Scalar *y;
+    const Scalar *z;
+    Scalar *x;
+    inline KERNEL_PREFIX void execute(int i) const
+    {
+      x[i] = scalarYZ*y[i]*z[i];
+    }
+  };
+
+  template <typename Scalar>
   struct AbsOp {
     const Scalar *y;
     Scalar *x;
@@ -130,6 +142,43 @@ namespace Kokkos {
     }
   };
 
+  /// \class ReciprocalThresholdOp
+  /// \brief Compute x[i] = 1.0 / x[i] when the magnitude of x[i] is
+  ///   big enough, else replace x[i] with a given value.
+  template <typename Scalar>
+  struct ReciprocalThresholdOp {
+    typedef Scalar scalar_type;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+    scalar_type* const x_;
+    const scalar_type minDiagVal_;
+    const magnitude_type minDiagMag_;
+
+    /// \brief Constructor.
+    ///
+    /// \param x [in/out] The vector of entries to invert.
+    /// \param minDiagVal [in] The value to use to replace x[i], if
+    ///   x[i] is smaller in magnitude than the magnitude of
+    ///   minDiagVal.
+    ReciprocalThresholdOp (scalar_type* const x,
+                           const scalar_type& minDiagVal) :
+      x_ (x),
+      minDiagVal_ (minDiagVal),
+      minDiagMag_ (STS::magnitude (minDiagVal))
+    {}
+
+    inline KERNEL_PREFIX void execute (int i) const {
+      if (STS::magnitude (x_[i]) < minDiagMag_) {
+        x_[i] = minDiagVal_;
+      }
+      else {
+        x_[i] = STS::one() / x_[i];
+      }
+    }
+  };
+
   template <typename Scalar>
   struct GESUMOp {
     const Scalar *x;
@@ -143,6 +192,16 @@ namespace Kokkos {
   };
 
   template <typename Scalar>
+  struct GESUMZeroBetaOp {
+    const Scalar *x;
+    Scalar *y;
+    Scalar alpha;
+    inline KERNEL_PREFIX void execute (int i) const {
+      y[i] = alpha * x[i];
+    }
+  };
+
+  template <typename Scalar>
   struct GESUMOp3 {
     const Scalar *x, *y;
     Scalar *z;
@@ -151,6 +210,16 @@ namespace Kokkos {
     {
       Scalar tmp = z[i];
       z[i] = alpha * x[i] + beta * y[i] + gamma * tmp;
+    }
+  };
+
+  template <typename Scalar>
+  struct GESUMZeroGammaOp3 {
+    const Scalar *x, *y;
+    Scalar *z;
+    Scalar alpha, beta;
+    inline KERNEL_PREFIX void execute (int i) const {
+      z[i] = alpha * x[i] + beta * y[i];
     }
   };
 
@@ -212,7 +281,7 @@ namespace Kokkos {
     inline static Magnitude KERNEL_PREFIX identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
     inline static Magnitude KERNEL_PREFIX reduce(Magnitude x, Magnitude y) {return x+y;}
     inline        Magnitude KERNEL_PREFIX generate(int i) {
-      Scalar xi = x[i]; 
+      Scalar xi = x[i];
       return SCT::real( SCT::conjugate(xi)*xi );
     }
   };

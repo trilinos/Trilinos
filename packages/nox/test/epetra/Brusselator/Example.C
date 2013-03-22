@@ -155,9 +155,9 @@ int main(int argc, char *argv[])
   // The number of unknowns must be at least equal to the 
   // number of processors.
   if (NumGlobalNodes < NumProc) {
-    cout << "numGlobalNodes = " << NumGlobalNodes 
-	 << " cannot be < number of processors = " << NumProc << endl;
-    cout << "Test failed!" << endl;
+    std::cout << "numGlobalNodes = " << NumGlobalNodes 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
+    std::cout << "Test failed!" << std::endl;
     exit(1);
   }
 
@@ -226,8 +226,8 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new Problem_Interface(*Problem));
 
 #ifndef HAVE_NOX_EPETRAEXT 
-  utils.out() << "Cannot use Coloring without package epetraext !!!!" << endl;
-  utils.out() << "Test passed!" << endl;
+  utils.out() << "Cannot use Coloring without package epetraext !!!!" << std::endl;
+  utils.out() << "Test passed!" << std::endl;
   exit(0);
 #else 
   // Create a timer for performance
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
     time += dt;
   
     if (verbose)
-      utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << endl;
+      utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << std::endl;
   
     status = NOX::StatusTest::Unconverged;
     status = solver->solve();
@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
     if (verbose)
       if (status != NOX::StatusTest::Converged)
 	if (MyPID==0) 
-	  utils.out() << "Nonlinear solver failed to converge!" << endl;
+	  utils.out() << "Nonlinear solver failed to converge!" << std::endl;
 
     // Get the Epetra_Vector with the final solution from the solver
     const NOX::Epetra::Group& finalGroup = 
@@ -360,10 +360,10 @@ int main(int argc, char *argv[])
   // Output the parameter list
   if (verbose) {
     if (utils.isPrintType(NOX::Utils::Parameters)) {
-      utils.out() << endl << "Final Parameters" << endl
-	   << "****************" << endl;
+      utils.out() << std::endl << "Final Parameters" << std::endl
+	   << "****************" << std::endl;
       solver->getList().print(utils.out());
-      utils.out() << endl;
+      utils.out() << std::endl;
     }
   }
 
@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
       utils.out() << "\nTimings :\n\tWallTime --> " << 
 	myTimer.WallTime() - startWallTime << " sec."
 	   << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
-	   << " sec." << endl << endl;
+	   << " sec." << std::endl << std::endl;
     
   }
 
@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
 
   // 1. Convergence
   if (status != NOX::StatusTest::Converged) {
-    if (MyPID==0) utils.out() << "Nonlinear solver failed to converge!" << endl;
+    if (MyPID==0) utils.out() << "Nonlinear solver failed to converge!" << std::endl;
     testStatus = 1;
   }
   // 2. Nonlinear Iterations (3)
@@ -399,9 +399,9 @@ int main(int argc, char *argv[])
 
   // Summarize test results 
   if (testStatus == 0)
-    utils.out() << "Test passed!" << endl;
+    utils.out() << "Test passed!" << std::endl;
   else 
-    utils.out() << "Test failed!" << endl;
+    utils.out() << "Test failed!" << std::endl;
   
 #ifdef HAVE_MPI
   MPI_Finalize();

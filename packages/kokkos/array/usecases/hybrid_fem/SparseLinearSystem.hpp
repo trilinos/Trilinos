@@ -46,26 +46,13 @@
 
 #include <cmath>
 #include <impl/KokkosArray_Timer.hpp>
+
+#include <KokkosArray_View.hpp>
 #include <KokkosArray_CrsArray.hpp>
 
-namespace KokkosArray {
-namespace Impl {
-
-template< class Scalar , class DeviceType , class > struct Dot ;
-template< class Scalar , class DeviceType > struct WAXPBY ;
-template< class Scalar , class DeviceType > struct AXPBY ;
-template< class Scalar , class DeviceType > struct FILL ;
-template< class AType , class XType , class YType > struct Multiply ;
-
-} /* namespace Impl */
-} /* namespace KokkosArray */
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+#include <LinAlgBLAS.hpp>
 
 namespace KokkosArray {
-
-//----------------------------------------------------------------------------
 
 template< typename ScalarType , class Device >
 struct CrsMatrix {
@@ -73,7 +60,7 @@ struct CrsMatrix {
   typedef ScalarType  value_type ;
 
   typedef CrsArray< int , device_type , device_type , int >  graph_type ;
-  typedef View< value_type[] , device_type >   coefficients_type ;
+  typedef View< value_type* , device_type >   coefficients_type ;
 
   graph_type         graph ;
   coefficients_type  coefficients ;
@@ -81,71 +68,85 @@ struct CrsMatrix {
 
 //----------------------------------------------------------------------------
 
-template< typename Scalar , class Device >
-void waxpby( const ParallelDataMap & data_map ,
-             const double alpha ,
-             const View< Scalar[] , Device > & x ,
-             const double beta ,
-             const View< Scalar[] , Device > & y ,
-             const View< Scalar[] , Device > & w )
-{
-  if ( y == w ) {
-    Impl::AXPBY<Scalar,Device>::apply( data_map.count_owned , alpha , x , beta , y );
-  }
-  else {
-    Impl::WAXPBY<Scalar,Device>::apply( data_map.count_owned , alpha , x , beta , y , w );
-  }
+namespace Impl {
+
+template< class Matrix , class OutputVector , class InputVector >
+class Multiply ;
+
+}
 }
 
-template< typename Scalar , class Device >
-void fill( const double alpha ,
-           const View< Scalar[] , Device > & w )
+/* Device-specific specializations */
+#include <SparseLinearSystem_Cuda.hpp>
+#include <SparseLinearSystem_Host.hpp>
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+namespace Impl {
+
+template< typename AScalarType ,
+          typename VScalarType ,
+          class LayoutType ,
+          class DeviceType >
+struct Multiply< CrsMatrix<AScalarType,DeviceType> ,
+                 View<VScalarType*,LayoutType,DeviceType > ,
+                 View<VScalarType*,LayoutType,DeviceType > >
 {
-  Impl::FILL<Scalar,Device>::apply( w.dimension_0() , alpha , w );
-}
+  typedef DeviceType                       device_type ;
+  typedef typename device_type::size_type  size_type ;
+
+  typedef View<       VScalarType*, LayoutType, device_type, MemoryUnmanaged >  vector_type ;
+  typedef View< const VScalarType*, LayoutType, device_type, MemoryUnmanaged >  vector_const_type ;
+
+  typedef CrsMatrix< AScalarType , device_type >    matrix_type ;
+
+private:
+
+  matrix_type        m_A ;
+  vector_const_type  m_x ;
+  vector_type        m_y ;
+
+public:
+
+  //--------------------------------------------------------------------------
+
+  inline
+  void operator()( const size_type iRow ) const
+  {
+    const size_type iEntryBegin = m_A.graph.row_map[iRow];
+    const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+
+    double sum = 0 ;
+
+    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+      sum += m_A.coefficients(iEntry) * m_x( m_A.graph.entries(iEntry) );
+    }
+
+    m_y(iRow) = sum ;
+  }
+
+  Multiply( const matrix_type & A ,
+            const size_type nrow ,
+            const size_type , // ncol ,
+            const vector_type & x ,
+            const vector_type & y )
+    : m_A( A ), m_x( x ), m_y( y )
+  {
+    parallel_for( nrow , *this );
+  }
+};
 
 //----------------------------------------------------------------------------
 
-template< typename Scalar , class Device >
-double dot( const ParallelDataMap & data_map ,
-            const View< Scalar[] , Device > & x ,
-            const View< Scalar[] , Device > & y )
-{
-  double global_result =
-    Impl::Dot< Scalar , Device , Impl::unsigned_<2> >
-        ::apply( data_map.count_owned , x , y );
+} // namespace Impl
+} // namespace KokkosArray
 
-#if defined( HAVE_MPI )
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-  double local_result = global_result ;
-
-  MPI_Allreduce( & local_result , & global_result , 1 , MPI_DOUBLE , MPI_SUM ,
-                 data_map.machine.mpi_comm );
-
-#endif
-
-  return global_result ;
-}
-
-template< typename Scalar , class Device >
-double dot( const ParallelDataMap & data_map ,
-            const View< Scalar[] , Device > & x )
-{
-  double global_result = 
-    Impl::Dot< Scalar , Device , Impl::unsigned_<1> >
-        ::apply( data_map.count_owned , x );
-
-#if defined( HAVE_MPI )
-
-  double local_result = global_result ;
-
-  MPI_Allreduce( & local_result , & global_result , 1 , MPI_DOUBLE , MPI_SUM ,
-                 data_map.machine.mpi_comm );
-
-#endif
-
-  return global_result ;
-}
+namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 
@@ -154,7 +155,7 @@ template< typename AScalarType ,
           class Device >
 class Operator {
   typedef CrsMatrix<AScalarType,Device>  matrix_type ;
-  typedef View<VScalarType[],Device>     vector_type ;
+  typedef View<VScalarType*,Device>     vector_type ;
 
 private:
   const CrsMatrix<AScalarType,Device> A ;
@@ -171,8 +172,8 @@ public:
     , exchange( arg_data_map , 1 )
     {}
 
-  void apply( const View<VScalarType[],Device>  & x ,
-              const View<VScalarType[],Device>  & y )
+  void apply( const View<VScalarType*,Device>  & x ,
+              const View<VScalarType*,Device>  & y )
   {
     // Gather off-processor data for 'x'
 
@@ -193,8 +194,8 @@ public:
     const typename Device::size_type nrow = data_map.count_owned ;
     const typename Device::size_type ncol = data_map.count_owned +
                                             data_map.count_receive ;
-    Impl::Multiply<matrix_type,vector_type,vector_type>
-      ::apply( A , nrow , ncol , x , y );
+
+    Impl::Multiply<matrix_type,vector_type,vector_type>( A, nrow, ncol, x, y);
   }
 };
 
@@ -204,15 +205,15 @@ template< typename AScalarType , typename VScalarType , class Device >
 void cgsolve(
   const ParallelDataMap                 data_map ,
   const CrsMatrix<AScalarType,Device>   A ,
-  const View<VScalarType[],Device> b ,
-  const View<VScalarType[],Device> x ,
+  const View<VScalarType*,Device> b ,
+  const View<VScalarType*,Device> x ,
   size_t & iteration ,
   double & normr ,
   double & iter_time ,
   const size_t maximum_iteration = 200 ,
   const double tolerance = std::numeric_limits<VScalarType>::epsilon() )
 {
-  typedef View<VScalarType[],Device> vector_type ;
+  typedef View<VScalarType*,Device> vector_type ;
   typedef View<VScalarType,  Device> value_type ;
 
   const size_t count_owned = data_map.count_owned ;
@@ -223,7 +224,7 @@ void cgsolve(
   // Need input vector to matvec to be owned + received
   vector_type pAll ( "cg::p" , count_total );
 
-  vector_type p( pAll , std::pair<size_t,size_t>(0,count_owned) );
+  vector_type p = KokkosArray::subview< vector_type >( pAll , std::pair<size_t,size_t>(0,count_owned) );
   vector_type r ( "cg::r" , count_owned );
   vector_type Ap( "cg::Ap", count_owned );
 
@@ -231,10 +232,10 @@ void cgsolve(
 
   /* p  = x      */ deep_copy( p , x );
   /* Ap = A * p  */ matrix_operator.apply( pAll , Ap );
-  /* r  = b - Ap */ waxpby( data_map , 1.0 , b , -1.0 , Ap , r );
+  /* r  = b - Ap */ waxpby( count_owned , 1.0 , b , -1.0 , Ap , r );
   /* p  = r      */ deep_copy( p , r );
 
-  double old_rdot = dot( data_map , r );
+  double old_rdot = dot( count_owned , r , data_map.machine );
 
   normr     = sqrt( old_rdot );
   iteration = 0 ;
@@ -247,16 +248,16 @@ void cgsolve(
 
     /* Ap = A * p  */ matrix_operator.apply( pAll , Ap );
 
-    const double pAp_dot = dot( data_map , p , Ap );
+    const double pAp_dot = dot( count_owned , p , Ap , data_map.machine );
     const double alpha   = old_rdot / pAp_dot ;
 
-    /* x += alpha * p ;  */ waxpby( data_map,  alpha, p , 1.0 , x , x );
-    /* r -= alpha * Ap ; */ waxpby( data_map, -alpha, Ap, 1.0 , r , r );
+    /* x += alpha * p ;  */ axpy( count_owned,  alpha, p , x );
+    /* r -= alpha * Ap ; */ axpy( count_owned, -alpha, Ap, r );
 
-    const double r_dot = dot( data_map , r );
+    const double r_dot = dot( count_owned , r , data_map.machine );
     const double beta  = r_dot / old_rdot ;
 
-    /* p = r + beta * p ; */ waxpby( data_map , 1.0 , r , beta , p , p );
+    /* p = r + beta * p ; */ xpby( count_owned , r , beta , p );
 
     normr = sqrt( old_rdot = r_dot );
     ++iteration ;

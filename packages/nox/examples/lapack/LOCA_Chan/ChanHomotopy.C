@@ -68,9 +68,9 @@ int main()
   double homScale = -1.0;
 
   /* Uncomment for interactive mode 
-  std::cout << "Input first seed" << endl;     std::cin >> seed1;
-  std::cout << "Input second seed" << endl;    std::cin >> seed2;
-  std::cout << "Input identity-scale" << endl; std::cin >> homScale;
+  std::cout << "Input first seed" << std::endl;     std::cin >> seed1;
+  std::cout << "Input second seed" << std::endl;    std::cin >> seed2;
+  std::cout << "Input identity-scale" << std::endl; std::cin >> homScale;
   */
 
   try {
@@ -212,7 +212,7 @@ int main()
     std::cout << "Caught unknown exception!" << std::endl;
   }
 
-  cout << "All examples passed" << endl;
+  std::cout << "All examples passed" << std::endl;
 
   return 0;
 }

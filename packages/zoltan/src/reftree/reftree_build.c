@@ -1908,7 +1908,7 @@ static int order_quad_quad(ZZ *zz, int *vert1, int *order,
  * when refinement is done by quadrasecting quadrilaterals.
  */
 
-int i,j,k,found,ord[4];
+int i,j,k,found,ord[4]={0,0,0,0};
 ZOLTAN_ID_PTR shared;
 char *yo = "order_quad_quad";
 int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */

@@ -54,6 +54,8 @@
 #include "Teuchos_RCP.hpp"
 
 #include "NOX_Common.H"
+#include <string>
+#include <map>
 
 // Forward declarations
 namespace Teuchos {
@@ -77,8 +79,7 @@ namespace LOCA {
     class SublistParser {
 
       //! Map type to hold sublists
-      typedef map<string, 
-		  Teuchos::RCP<Teuchos::ParameterList> > SublistMap;
+      typedef std::map<std::string,Teuchos::RCP<Teuchos::ParameterList> > SublistMap;
 
       //! Iterator type to traverse SublistMap
       typedef SublistMap::iterator SublistMapIterator;
@@ -97,7 +98,7 @@ namespace LOCA {
 
       //! Return sublist of name \c name
       Teuchos::RCP<Teuchos::ParameterList> 
-      getSublist(const string& name);
+      getSublist(const std::string& name);
 
     private:
 

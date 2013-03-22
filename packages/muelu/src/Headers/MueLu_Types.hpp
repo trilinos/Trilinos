@@ -60,10 +60,6 @@ namespace MueLu {
     BOTH
   };
 
-  enum TransferType {
-    INTERPOLATION,
-    RESTRICTION
-  };
 }
 
 #endif //ifndef MUELU_TYPES_HPP

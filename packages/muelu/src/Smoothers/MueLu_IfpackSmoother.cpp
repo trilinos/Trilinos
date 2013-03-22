@@ -45,8 +45,9 @@
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_IFPACK
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
 #include <Ifpack.h>
+#include <Ifpack_Chebyshev.h>
 #include "Xpetra_MultiVectorFactory.hpp"
 
 #include "MueLu_IfpackSmoother.hpp"
@@ -57,8 +58,8 @@
 
 namespace MueLu {
 
-  IfpackSmoother::IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap, RCP<FactoryBase> AFact) //TODO: empty paramList valid for Ifpack??
-    : type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
+  IfpackSmoother::IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap)
+    : type_(type), paramList_(paramList), overlap_(overlap)
   { }
 
   IfpackSmoother::~IfpackSmoother() { }
@@ -79,22 +80,26 @@ namespace MueLu {
 
 
   void IfpackSmoother::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get());
+    this->Input(currentLevel, "A");
   }
 
   void IfpackSmoother::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
 
-    A_ = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+    A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
+    double lambdaMax = -1.0;
     if (type_ == "Chebyshev") {
-      Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue", (Scalar)-1.0);
-      if (maxEigenValue == -1.0) {
-        maxEigenValue = Utils::PowerMethod(*A_,true,10,1e-4);
-        paramList_.set("chebyshev: max eigenvalue",maxEigenValue);
-          
-        GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue" << " = " << maxEigenValue << std::endl;
+      if ( !paramList_.isParameter("chebyshev: max eigenvalue") ) {
+        lambdaMax = A_->GetMaxEigenvalueEstimate();
+        if (lambdaMax != -1.0) {
+          this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with matrix)" << " = " << lambdaMax << std::endl;
+          paramList_.set("chebyshev: max eigenvalue", lambdaMax);
+        }
+      } else {
+        lambdaMax = paramList_.get<double>("chebyshev: max eigenvalue");
+        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with smoother parameter list)" << " = " << lambdaMax << std::endl;
       }
     }
 
@@ -103,6 +108,17 @@ namespace MueLu {
     prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
     prec_->SetParameters(paramList_);
     prec_->Compute();
+
+    if (type_ == "Chebyshev" && lambdaMax == -1.0) {
+      Teuchos::RCP<Ifpack_Chebyshev> chebyPrec;
+      chebyPrec = rcp_dynamic_cast<Ifpack_Chebyshev>(prec_);
+      if (chebyPrec != Teuchos::null) {
+        lambdaMax = chebyPrec->GetLambdaMax();
+        A_->SetMaxEigenvalueEstimate(lambdaMax);
+        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (calculated by Ifpack)" << " = " << lambdaMax << std::endl;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == -1.0, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
+    }
 
     SmootherPrototype::IsSetup(true);
   }
@@ -160,19 +176,19 @@ namespace MueLu {
     out << "{type = " << type_ << "}";
     return out.str();
   }
-    
+
   void IfpackSmoother::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0) {
       out0 << "Prec. type: " << type_ << std::endl;
     }
-      
-    if (verbLevel & Parameters1) { 
+
+    if (verbLevel & Parameters1) {
       out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
       out0 << "Overlap: "        << overlap_ << std::endl;
     }
-      
+
     if (verbLevel & External) {
       if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
     }
@@ -182,7 +198,6 @@ namespace MueLu {
            << "-" << std::endl
            << "RCP<A_>: " << A_ << std::endl
            << "RCP<prec_>: " << prec_ << std::endl;
-      //TODO: add AFact_
     }
   }
 

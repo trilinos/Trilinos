@@ -104,11 +104,11 @@ namespace Xpetra {
   public:
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     StridedMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset)
-    { 
+    {
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() == 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingInfo.size() = 0?");
       //TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
 
@@ -116,11 +116,11 @@ namespace Xpetra {
 
     StridedMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset)
-    { 
+    {
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() == 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingInfo.size() = 0?");
       //TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
       //TEUCHOS_TEST_FOR_EXCEPTION(numLocalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numLocalElements.");
-    
+
     }
 
     StridedMap(std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId, GlobalOrdinal offset = 0)
@@ -143,7 +143,7 @@ namespace Xpetra {
         //TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % stridingInfo[stridedBlockId] != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingBlockInfo[stridedBlockId] is not an integer multiple of numGlobalElements.");
         TEUCHOS_TEST_FOR_EXCEPTION(elementList.size() % stridingInfo[stridedBlockId] != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingBlockInfo[stridedBlockId] is not an integer multiple of elementList.size().");
       }
-       
+
       // calculate offset_
 
       // find minimum GID over all procs
@@ -163,7 +163,7 @@ namespace Xpetra {
       // adapt offset_
       offset_ -= goStridedOffset;
     }
-     
+
     //! Destructor.
     virtual ~StridedMap() { }
 
@@ -171,7 +171,7 @@ namespace Xpetra {
 
     //! @name Access functions for striding data
     //@{
-    
+
     std::vector<size_t> getStridingData() const { return stridingInfo_; }
 
     void setStridingData(std::vector<size_t> stridingInfo) { stridingInfo_ = stridingInfo; }
@@ -196,11 +196,11 @@ namespace Xpetra {
     /// returns true, if this is a blocked map (i.e. more than 1 dof per node)
     /// either strided or just 1 block per node
     bool isBlocked() { return getFixedBlockSize() > 1 ? true : false; }
-    
-    GlobalOrdinal getOffset() const { return offset_; } 
-    
+
+    GlobalOrdinal getOffset() const { return offset_; }
+
     void setOffset( GlobalOrdinal offset ) { offset_ = offset; }
-    
+
     // returns number of strided block id which gid belongs to.
     size_t GID2StridingBlockId( GlobalOrdinal gid ) const {
       GlobalOrdinal tgid = gid - offset_;

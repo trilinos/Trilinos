@@ -196,11 +196,11 @@ sumInOperator(Epetra_CrsMatrix & A,const Stokhos::AdaptivityManager::Sparse3Tens
       int * d_Indices;
       double * d_Values;
      
-      J_k.ExtractMyRowView(m,d_numEntries,d_Values,d_Indices);
+      J_k.ExtractMyRowView(localM,d_numEntries,d_Values,d_Indices);
       
       // loop over stochastic degrees of freedom of this row
       for(int rb_i=0;rb_i<rowStochBasis->size();rb_i++) {
-         int i = sg_master_basis_->getIndex(rowStochBasis->getTerm(rb_i));
+         int i = sg_master_basis_->index(rowStochBasis->term(rb_i));
 
          double normValue = normValues[i]; // sg_master_basis->norm_squared(i);
          
@@ -216,8 +216,7 @@ sumInOperator(Epetra_CrsMatrix & A,const Stokhos::AdaptivityManager::Sparse3Tens
 
          // loop over each column
          for(int colInd=0;colInd<d_numEntries;colInd++) {
-            int n = d_Indices[colInd]; // grab global deterministic column id
-            int localN = J_k.LCID(n);  // grab local deterministic column id
+            int localN = d_Indices[colInd];  // grab local deterministic column id
 
             // grab row basis
             Teuchos::RCP<const Stokhos::ProductBasis<int,double> > colStochBasis 
@@ -225,7 +224,7 @@ sumInOperator(Epetra_CrsMatrix & A,const Stokhos::AdaptivityManager::Sparse3Tens
 
             // build values array
             for(int cb_j=0;cb_j<colStochBasis->size();cb_j++) {
-               int j = sg_master_basis_->getIndex(colStochBasis->getTerm(cb_j));
+               int j = sg_master_basis_->index(colStochBasis->term(cb_j));
                int sg_n = getGlobalColId(localN,cb_j);
                double cijk = Cijk.getValue(i,j,k); 
 
@@ -258,7 +257,7 @@ void Stokhos::AdaptivityManager::copyToAdaptiveVector(const Stokhos::EpetraVecto
       int localId = rowMap_->LID(getGlobalRowId(i,0));
 
       for(int j=0;j<P_i;j++,localId++) {
-         int blk = sg_master_basis_->getIndex(sg_basis_row_dof_[i]->getTerm(j));
+         int blk = sg_master_basis_->index(sg_basis_row_dof_[i]->term(j));
          x[localId] = x_sg_bv->GetBlock(blk)->operator[](i);
       }
    }
@@ -281,7 +280,7 @@ void Stokhos::AdaptivityManager::copyFromAdaptiveVector(const Epetra_Vector & x,
       int localId = rowMap_->LID(getGlobalRowId(i,0));
 
       for(int j=0;j<P_i;j++,localId++) {
-         int blk = sg_master_basis_->getIndex(sg_basis_row_dof_[i]->getTerm(j));
+         int blk = sg_master_basis_->index(sg_basis_row_dof_[i]->term(j));
          x_sg_bv->GetBlock(blk)->operator[](i) = x[localId];
       }
    }

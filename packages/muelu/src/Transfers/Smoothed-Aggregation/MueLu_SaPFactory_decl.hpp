@@ -49,6 +49,7 @@
 #include <string>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_ParameterListAcceptor.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 
@@ -74,35 +75,16 @@ namespace MueLu {
 
     //! @name Constructors/Destructors.
     //@{
-  
+
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    SaPFactory(RCP<const FactoryBase> InitialPFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
-  
+    SaPFactory() { }
+
     //! Destructor.
-    virtual ~SaPFactory();
-  
-    //@}
+    virtual ~SaPFactory() { }
 
-    //! @name Set methods.
-    //@{
-
-    //! Set prolongator smoother damping factor.
-    void SetDampingFactor(Scalar dampingFactor);
-
-    //! Change view of diagonal.
-    void SetDiagonalView(std::string const& diagView);
-    //@}
-
-    //! @name Get methods.
-    //@{
-
-    //! Returns prolongator smoother damping factor.
-    Scalar GetDampingFactor();
-
-    //! Returns current view of diagonal.
-    std::string GetDiagonalView();
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //@}
 
@@ -115,7 +97,7 @@ namespace MueLu {
 
     //! @name Build methods.
     //@{
-  
+
     /*!
       @brief Build method.
 
@@ -128,22 +110,26 @@ namespace MueLu {
 
     //@}
 
-    /*
-    //TODO
-    function [this] = SaPFactory(CoalesceFact,AggFact, diagonalView) //copy ctor
-    function SetDiagonalView(this, diagonalView)
-    */
+    //! @name Set methods.
+    //@{
 
+    //! Deprecated: Set prolongator smoother damping factor.
+    void SetDampingFactor(Scalar dampingFactor);
 
-  private:
+    //! Deprecated: Change view of diagonal.
+    void SetDiagonalView(std::string const& diagView);
+    //@}
 
-    //! Input factories
-    RCP<const FactoryBase> initialPFact_; //! Ptentative Factory
-    RCP<const FactoryBase> AFact_;        //! A Factory
-    
-    //! Factory parameters
-    Scalar dampingFactor_;
-    std::string diagonalView_;
+    //! @name Get methods.
+    //@{
+
+    //! Deprecated: Returns prolongator smoother damping factor.
+    Scalar GetDampingFactor();
+
+    //! Deprecated: Returns current view of diagonal.
+    std::string GetDiagonalView();
+
+    //@}
 
   }; //class SaPFactory
 

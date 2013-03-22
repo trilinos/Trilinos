@@ -148,10 +148,10 @@ namespace NOX {
        */
       virtual NOX::Abstract::MultiVector&
       setBlock(const NOX::Abstract::MultiVector& source, 
-	       const vector<int>& index);
+	       const std::vector<int>& index);
       virtual NOX::Abstract::MultiVector&
       setBlock(const NOX::Epetra::MultiVector& source, 
-	      const vector<int>& index);
+	       const std::vector<int>& index);
 
       //! Append the vectors in \c source to \c *this
       virtual NOX::Abstract::MultiVector&
@@ -253,14 +253,14 @@ namespace NOX {
        * columns are copies of the columns of \c *this given by \c index.
        */
       virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
-      subCopy(const vector<int>& index) const;
+      subCopy(const std::vector<int>& index) const;
 
       /*! 
        * \brief Creates a new multi-vector with \c ndex.size() columns that 
        * shares the columns of \c *this given by \c index.
        */
       virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
-      subView(const vector<int>& index) const;
+      subView(const std::vector<int>& index) const;
 
       //@}
 
@@ -268,7 +268,7 @@ namespace NOX {
 
       //! Norm.
       virtual void
-      norm(vector<double>& result, NOX::Abstract::Vector::NormType type = 
+      norm(std::vector<double>& result, NOX::Abstract::Vector::NormType type = 
 	   NOX::Abstract::Vector::TwoNorm) const;
 
       //@}
@@ -304,7 +304,7 @@ namespace NOX {
        * Each Epetra_Vector in the NOX::Epetra::Vector has a view into a 
        * column of the multivector and get filled in as needed by operator[].
        */
-      mutable vector<NOX::Epetra::Vector*> noxEpetraVectors;
+      mutable std::vector<NOX::Epetra::Vector*> noxEpetraVectors;
 
       //! Constructor (Protected)
       MultiVector(int numvecs);

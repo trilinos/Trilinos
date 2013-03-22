@@ -52,9 +52,13 @@ CXXETRA_DEFINES = -ptused -DNO_MPI -DNO_PAMGEN_SUPPORT -DNO_PARAVIEWIMESH_SUPPOR
 CXXEXTRA_DEFINES = -DNO_MPI -DNO_PAMGEN_SUPPORT -DNO_PARAVIEWIMESH_SUPPORT
 #endif
 
+#if defined(BuildParallelAwareExodus)
+IOPX=par_exo
+LIB_IOPX=libIopx.a
+#endif
 
 LIBRARY = libIoss.a
-SUBDIRS = exodusII generated init transform heartbeat main utest
+SUBDIRS = exodusII generated init transform heartbeat main utest ${IOPX}
 
 
 SRCS = \
@@ -130,7 +134,7 @@ tokenize.C
 
 OBJS = ${SRCS:.C=.o}
 
-all:: libIoex.a libIoss.a libIotr.a libIonit.a libIogn.a libIohb.a SEACASIoss_config.h
+all:: libIoex.a libIoss.a libIotr.a libIonit.a libIogn.a libIohb.a ${LIB_IOPX} SEACASIoss_config.h
 
 INCLIST = \
 	SEACASIoss_config.h \
@@ -181,7 +185,6 @@ install:: SEACASIoss_config.h
 
 NormalLibraryTarget(Ioss,$(OBJS))
 NamedTargetSubdirs(libIoex.a,  exodusII,  "making Ioss/exodusII",  PassDebugFlags ExtraOptions,libIoex.a)
-
 NamedTargetSubdirs(libIogn.a,  generated, "making Ioss/generated", PassDebugFlags ExtraOptions,libIogn.a)
 NamedTargetSubdirs(libIotr.a,  transform, "making Ioss/transform", PassDebugFlags ExtraOptions,libIotr.a)
 NamedTargetSubdirs(libIohb.a,  heartbeat, "making Ioss/heartbeat", PassDebugFlags ExtraOptions,libIohb.a)
@@ -190,7 +193,6 @@ NamedTargetSubdirs(all,        main,      "making Ioss/main",      PassDebugFlag
 
 AllTarget(libIoss.a)
 AllTarget(libIoex.a)
-
 AllTarget(libIogn.a)
 AllTarget(libIotr.a)
 AllTarget(libIohb.a)
@@ -198,11 +200,16 @@ AllTarget(libIonit.a)
 
 InstallLibrary(Ioss,$(LIBDIR))
 InstallLibrary(Ioex,$(LIBDIR))
-
 InstallLibrary(Iogn,$(LIBDIR))
 InstallLibrary(Iotr,$(LIBDIR))
 InstallLibrary(Iohb,$(LIBDIR))
 InstallLibrary(Ionit,$(LIBDIR))
+
+#if defined(BuildParallelAwareExodus)
+AllTarget(libIopx.a)
+NamedTargetSubdirs(libIopx.a,  par_exo,   "making Ioss/par_exo",   PassDebugFlags ExtraOptions,libIopx.a)
+InstallLibrary(Iopx,$(LIBDIR))
+#endif
 
 MakeDirectories(makeincludes, $(INCDIR)/ioss)
 MakeDirectories(makeincludes, $(INCDIR)/ioss/init)

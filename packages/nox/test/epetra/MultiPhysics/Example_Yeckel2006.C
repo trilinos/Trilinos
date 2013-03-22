@@ -132,8 +132,8 @@ int main(int argc, char *argv[])
   // Physical parameters
   double              radiation       = 5.67          ;
   double              initVal         = 0.995         ;
-  string              outputDir       = "."           ;
-  string              goldDir         = "."           ;
+  std::string              outputDir       = "."           ;
+  std::string              goldDir         = "."           ;
 
 
   clp.setOption<CouplingSolveMethod>( "solvemethod", &method, 4, SolveMethodValues, SolveMethodNames, "Selects the coupling method to use");
@@ -171,8 +171,8 @@ int main(int argc, char *argv[])
   // The number of unknowns must be at least equal to the number of processors.
   if (NumGlobalNodes < NumProc) 
   {
-    cout << "numGlobalNodes = " << NumGlobalNodes 
-	 << " cannot be < number of processors = " << NumProc << endl;
+    std::cout << "numGlobalNodes = " << NumGlobalNodes 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
     exit(1);
   }
 
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
   double T1_analytic = ConvDiff_PDE::computeAnalyticInterfaceTemp( radiation, Tleft, Tright, kappa_2, peclet_1 );
 
   // Create Region 1 PDE
-  string myName         = "Region_1"    ;
+  std::string myName         = "Region_1"    ;
   double radiation_reg1 = 0.0           ;
   double xmin  		= 0.0           ;
   double xmax  		= 1.0           ;
@@ -355,16 +355,16 @@ int main(int argc, char *argv[])
         int dependId                         =  dependProblem.getId();
         Epetra_IntVector & dependIndices     = *(problemManager.getProblemToCompositeIndices()[dependId]);
 
-        map<int, vector<int> > offBlockIndices;
+        map<int, std::vector<int> > offBlockIndices;
         problem.getOffBlockIndices( offBlockIndices );
 
-        map<int, vector<int> >::iterator indIter     = offBlockIndices.begin(),
+        map<int, std::vector<int> >::iterator indIter     = offBlockIndices.begin(),
                                          indIter_end = offBlockIndices.end()   ;
 
         for( ; indIter != indIter_end; ++indIter )
         {
           int compositeRow = problemIndices[(*indIter).first];
-          vector<int> & colIndices = (*indIter).second;
+          std::vector<int> & colIndices = (*indIter).second;
 
           // Convert column indices to composite values
           for( unsigned int cols = 0; cols < colIndices.size(); ++cols )
@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
     }
      maskGraph.FillComplete();
 
-     cout << maskGraph << endl;
+     std::cout << maskGraph << std::endl;
 
      NOX::Epetra::BroydenOperator * broydenOp = dynamic_cast<NOX::Epetra::BroydenOperator*>(
        problemManager.getJacobianOperator().get() );
@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
 
   problemManager.outputStatus(std::cout);
 
-  cout << "\n\tAnalytic solution, T_1 = " << T1_analytic << "\n" << endl;
+  std::cout << "\n\tAnalytic solution, T_1 = " << T1_analytic << "\n" << std::endl;
 
   // Print initial solution
   if( verbose )
@@ -397,32 +397,32 @@ int main(int argc, char *argv[])
 
   // Identify the test problem
   if( outputUtils.isPrintType(NOX::Utils::TestDetails) )
-    outputUtils.out() << "Starting epetra/MultiPhysics/example_yeckel.exe" << endl;
+    outputUtils.out() << "Starting epetra/MultiPhysics/example_yeckel.exe" << std::endl;
 
   // Identify processor information
 #ifdef HAVE_MPI
-  outputUtils.out() << "This test is broken in parallel." << endl;
-  outputUtils.out() << "Test failed!" << endl;
+  outputUtils.out() << "This test is broken in parallel." << std::endl;
+  outputUtils.out() << "Test failed!" << std::endl;
   MPI_Finalize();
   return -1;
 #else
   if (outputUtils.isPrintType(NOX::Utils::TestDetails))
-    outputUtils.out() << "Serial Run" << endl;
+    outputUtils.out() << "Serial Run" << std::endl;
 #endif
 
   // Identify the test problem
   if( outputUtils.isPrintType(NOX::Utils::TestDetails) )
-    outputUtils.out() << "Starting epetra/MultiPhysics/example_yeckel.exe" << endl;
+    outputUtils.out() << "Starting epetra/MultiPhysics/example_yeckel.exe" << std::endl;
 
   // Identify processor information
 #ifdef HAVE_MPI
-  outputUtils.out() << "This test is broken in parallel." << endl;
-  outputUtils.out() << "Test failed!" << endl;
+  outputUtils.out() << "This test is broken in parallel." << std::endl;
+  outputUtils.out() << "Test failed!" << std::endl;
   MPI_Finalize();
   return -1;
 #else
   if (outputUtils.isPrintType(NOX::Utils::TestDetails))
-    outputUtils.out() << "Serial Run" << endl;
+    outputUtils.out() << "Serial Run" << std::endl;
 #endif
 
   // Solve the coupled problem
@@ -445,13 +445,13 @@ int main(int argc, char *argv[])
     {
       // Create the loose coupling solver manager
       Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > > solversVec =
-        Teuchos::rcp( new vector<Teuchos::RCP<NOX::Solver::Generic> > );
+        Teuchos::rcp( new std::vector<Teuchos::RCP<NOX::Solver::Generic> > );
 
       map<int, Teuchos::RCP<NOX::Solver::Generic> >::iterator iter = problemManager.getSolvers().begin(),
                                                                   iter_end = problemManager.getSolvers().end()   ;
       for( ; iter_end != iter; ++iter )
       {
-        cout << " ........  registered Solver::Manager # " << (*iter).first << endl;
+        std::cout << " ........  registered Solver::Manager # " << (*iter).first << std::endl;
         solversVec->push_back( (*iter).second );
       }
 
@@ -479,8 +479,8 @@ int main(int argc, char *argv[])
   
   // Output timing info
   if( 0 == MyPID )
-    cout << "\nTimings :\n\tWallTime --> " << myTimer.WallTime() - startWallTime << " sec."
-         << "\n\tElapsedTime --> " << myTimer.ElapsedTime() << " sec." << endl << endl;
+    std::cout << "\nTimings :\n\tWallTime --> " << myTimer.WallTime() - startWallTime << " sec."
+         << "\n\tElapsedTime --> " << myTimer.ElapsedTime() << " sec." << std::endl << std::endl;
 
   if( verbose )
     problemManager.outputSolutions( outputDir, 1 );
@@ -496,7 +496,7 @@ int main(int argc, char *argv[])
   for( ; iter_end != iter; ++iter )
   {
     ConvDiff_PDE & problem = dynamic_cast<ConvDiff_PDE &>( *(*iter).second );
-    string msg = "Numerical-to-Exact Solution comparison for problem \"" + problem.getName() + "\"";
+    std::string msg = "Numerical-to-Exact Solution comparison for problem \"" + problem.getName() + "\"";
 
     // Need NOX::Epetra::Vectors for tests
     NOX::Epetra::Vector numerical ( problem.getSolution()     , NOX::Epetra::Vector::CreateView );
@@ -507,9 +507,9 @@ int main(int argc, char *argv[])
 
   // Summarize test results  
   if( status == 0 )
-    outputUtils.out() << "Test passed!" << endl;
+    outputUtils.out() << "Test passed!" << std::endl;
   else 
-    outputUtils.out() << "Test failed!" << endl;
+    outputUtils.out() << "Test failed!" << std::endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

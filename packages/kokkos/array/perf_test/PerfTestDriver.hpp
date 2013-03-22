@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -53,18 +53,14 @@ namespace Test {
 
 enum { NUMBER_OF_TRIALS = 5 };
 
-template< class DeviceType >
-void run_test_hexgrad( int exp_beg , int exp_end );
+
 
 template< class DeviceType >
-void run_test_gramschmidt( int exp_beg , int exp_end );
-
-template<>
-void run_test_hexgrad< KOKKOSARRAY_MACRO_DEVICE >( int exp_beg , int exp_end )
+void run_test_hexgrad( int exp_beg , int exp_end )
 {
   std::string label_hexgrad ;
   label_hexgrad.append( "\"HexGrad< double , " );
-  label_hexgrad.append( KOKKOSARRAY_MACRO_TO_STRING( KOKKOSARRAY_MACRO_DEVICE ) );
+  label_hexgrad.append( KOKKOSARRAY_MACRO_TO_STRING( DeviceType ) );
   label_hexgrad.append( " >\"" );
 
   for (int i = exp_beg ; i < exp_end ; ++i) {
@@ -75,7 +71,7 @@ void run_test_hexgrad< KOKKOSARRAY_MACRO_DEVICE >( int exp_beg , int exp_end )
     const int parallel_work_length = 1<<i;
 
     for ( int j = 0 ; j < NUMBER_OF_TRIALS ; ++j ) {
-      const double seconds = HexGrad< KOKKOSARRAY_MACRO_DEVICE >::test(parallel_work_length) ;
+      const double seconds = HexGrad< DeviceType >::test(parallel_work_length) ;
 
       if ( 0 == j ) {
         min_seconds = seconds ;
@@ -97,12 +93,12 @@ void run_test_hexgrad< KOKKOSARRAY_MACRO_DEVICE >( int exp_beg , int exp_end )
   }
 }
 
-template<>
-void run_test_gramschmidt< KOKKOSARRAY_MACRO_DEVICE >( int exp_beg , int exp_end )
+template< class DeviceType >
+void run_test_gramschmidt( int exp_beg , int exp_end )
 {
   std::string label_gramschmidt ;
   label_gramschmidt.append( "\"GramSchmidt< double , " );
-  label_gramschmidt.append( KOKKOSARRAY_MACRO_TO_STRING( KOKKOSARRAY_MACRO_DEVICE ) );
+  label_gramschmidt.append( KOKKOSARRAY_MACRO_TO_STRING( DeviceType ) );
   label_gramschmidt.append( " >\"" );
 
   for (int i = exp_beg ; i < exp_end ; ++i) {
@@ -113,7 +109,7 @@ void run_test_gramschmidt< KOKKOSARRAY_MACRO_DEVICE >( int exp_beg , int exp_end
     const int parallel_work_length = 1<<i;
 
     for ( int j = 0 ; j < NUMBER_OF_TRIALS ; ++j ) {
-      const double seconds = ModifiedGramSchmidt< double , KOKKOSARRAY_MACRO_DEVICE >::test(parallel_work_length, 32 ) ;
+      const double seconds = ModifiedGramSchmidt< double , DeviceType >::test(parallel_work_length, 32 ) ;
 
       if ( 0 == j ) {
         min_seconds = seconds ;

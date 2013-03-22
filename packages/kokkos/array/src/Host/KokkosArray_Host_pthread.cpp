@@ -113,7 +113,7 @@ bool HostInternal::spawn( const size_t thread_rank )
 
 //----------------------------------------------------------------------------
 
-void HostWorkerBlock::execute_on_thread( HostThread & this_thread ) const
+void HostWorkerBlock::execute_on_thread( HostThread & ) const
 {
   pthread_mutex_lock(   & host_internal_pthread_mutex );
   pthread_mutex_unlock( & host_internal_pthread_mutex );

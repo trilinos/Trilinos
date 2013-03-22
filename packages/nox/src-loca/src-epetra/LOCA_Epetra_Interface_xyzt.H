@@ -184,8 +184,8 @@ namespace LOCA {
 	virtual LOCA::Epetra::xyztPrec& getPreconditioner();
 	
 	//! LOCA Interface exception handler
-	virtual void throwError(const string& functionName, 
-				const string& errorMsg) const;
+	virtual void throwError(const std::string& functionName, 
+				const std::string& errorMsg) const;
 	
       private:
 	

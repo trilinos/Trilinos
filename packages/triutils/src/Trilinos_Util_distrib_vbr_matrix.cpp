@@ -40,8 +40,12 @@
 // @HEADER
 
 #include "Trilinos_Util.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
+
+// CJ TODO FIXME: Trilinos_Util_distrib_vbr_matrix available only if 32 bit GIDs available.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
 	      int *N_global, int *N_blk_global,
@@ -129,11 +133,7 @@ void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
   Epetra_Map map(*N_blk_global, 0, Comm);
   *N_update = map.NumMyElements();
   (*update) = (int *) calloc(*N_update,sizeof(int)) ;
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   map.MyGlobalElements(*update);
-#else
-#error code not converted yet in Trilinos_Util_distrib_vbr_matrix.cpp
-#endif
 
   printf("Processor %d of %d has %d rows of %d total block rows.\n",
 	 MyPID,NumProc,*N_update,*N_blk_global) ;
@@ -291,3 +291,5 @@ void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
   
   /* end distrib_matrix */
 }
+
+#endif

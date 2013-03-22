@@ -203,6 +203,18 @@ namespace stk {
     void input_mesh_fields(Ioss::Region *region, stk::mesh::BulkData &bulk_data, int step);
 
     /**
+     * For all transient input fields defined either manually or via
+     * the define_input_fields() function, read the data at the
+     * specified database time 'time' and populate the stk
+     * data structures with those values.  The database time closest
+     * to the specified time will be used with no interpolation (yet).  Note that 
+     * bulk_data.modification_begin() needs to be called prior to 
+     * calling this function. Further, bulk_data.modification_end()
+     * must be called upon return from this function.
+     */
+    void input_mesh_fields(Ioss::Region *region, stk::mesh::BulkData &bulk_data, double time);
+
+    /**
      * Create an exodus mesh database with the specified
      * filename. This function creates the exodus metadata which
      * is the number and type of element blocks, nodesets, and

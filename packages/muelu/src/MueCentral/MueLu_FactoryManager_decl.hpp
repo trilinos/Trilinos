@@ -58,12 +58,16 @@
 #include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_TrilinosSmoother_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
-#include "MueLu_UCAggregationFactory_fwd.hpp"
+#include "MueLu_CoupledAggregationFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
-#include "MueLu_CoalesceDropFactory2_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
 #include "MueLu_ZoltanInterface_fwd.hpp"
 #include "MueLu_AmalgamationFactory_fwd.hpp"
+#include "MueLu_CoarseMapFactory_fwd.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
+#include "MueLu_PatternFactory_fwd.hpp"
+#include "MueLu_ConstraintFactory_fwd.hpp"
+#endif
 
 namespace MueLu {
 
@@ -71,14 +75,14 @@ namespace MueLu {
     @class FactoryManager class.
     @brief This class specifies the default factory that should generate some data on a Level if the data does not exist and
     the generating factory has not been specified.
-    
+
     Consider the following example.
 
     @code
       RCP<SingleLevelFactory> Afact;
       Level currentLevel;
-      RCP<Operator> thisLevelA;
-      thisLevelA = currentLevel.Get<Operator>("A",Afact.get());
+      RCP<Matrix> thisLevelA;
+      thisLevelA = currentLevel.Get<Matrix>("A",Afact.get());
     @endcode
 
     @todo If Afact is null (actually, Teuchos::null), then the FactoryManager associated with currentLevel will determine whether a default factory has
@@ -90,7 +94,7 @@ namespace MueLu {
   class FactoryManager : public FactoryManagerBase {
 #undef MUELU_FACTORYMANAGER_SHORT
 #include "MueLu_UseShortNames.hpp"
-      
+
   public:
 
     //! @name Constructor/Destructors
@@ -103,7 +107,7 @@ namespace MueLu {
             @param[in] AcFact Factory to generate the coarse grid operator A.
     */
     FactoryManager(const RCP<const FactoryBase> PFact = Teuchos::null, const RCP<const FactoryBase> RFact = Teuchos::null, const RCP<const FactoryBase> AcFact = Teuchos::null);
-    
+
     //! Constructor used by HierarchyFactory (temporary, will be removed)
     FactoryManager(const std::map<std::string, RCP<const FactoryBase> >& factoryTable)
     {
@@ -117,7 +121,7 @@ namespace MueLu {
     //@}
 
     //! @name Get/Set functions.
-    //@{ 
+    //@{
 
     /*! @brief Set Factory
 
@@ -133,17 +137,17 @@ namespace MueLu {
        @param[in] varName name of variable.
 
     */
-    const RCP<const FactoryBase> & GetFactory(const std::string & varName) const;
+    const RCP<const FactoryBase> GetFactory(const std::string & varName) const;
 
     //!
-    const RCP<const FactoryBase> & GetDefaultFactory(const std::string & varName) const;
+    const RCP<const FactoryBase> GetDefaultFactory(const std::string & varName) const;
 
     //@}
 
     void Clean() const;
 
   private:
-    
+
     //! @name Helper functions
     //@{
 
@@ -152,7 +156,7 @@ namespace MueLu {
      @todo TODO factory->setObjectLabel("Default " + varName + "Factory");
     */
 
-    const RCP<const FactoryBase> & SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const;
+    const RCP<const FactoryBase> SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const;
 
     //! Test if factoryTable_[varName] exists
     static bool IsAvailable(const std::string & varName, const std::map<std::string, RCP<const FactoryBase> > & factoryTable);
@@ -170,7 +174,7 @@ namespace MueLu {
       -# <tt>defaultFactoryTable_</tt> is mutable because default factories are only added to the list when they are requested
       to avoid allocation of unused factories.
     */
-    mutable 
+    mutable
     std::map<std::string, RCP<const FactoryBase> > defaultFactoryTable_;
 
   }; // class

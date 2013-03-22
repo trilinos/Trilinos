@@ -53,8 +53,8 @@
 #ifndef MUELU_AGGREGATIONEXPORTFACTORY_DEF_HPP_
 #define MUELU_AGGREGATIONEXPORTFACTORY_DEF_HPP_
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 
 #include "MueLu_AggregationExportFactory_decl.hpp"
 
@@ -66,29 +66,35 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggregationExportFactory(const std::string outputFileName, const FactoryBase* AggFact, const FactoryBase* CoalesceDropFact, const FactoryBase* AmalgFact)
-    : outputFileName_(outputFileName), AggFact_(AggFact), CoalesceDropFact_(CoalesceDropFact), AmalgFact_(AmalgFact)
-  { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~AggregationExportFactory() {}
+  RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< RCP<const FactoryBase> >("Aggregates",          Teuchos::null,                        "Generating factory for aggregates");
+    validParamList->set< RCP<const FactoryBase> >("DofsPerNode",         Teuchos::null,                        "Generating factory for number of dofs per node");
+    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",  Teuchos::null,                        "Generating factory for amalgamation");
+
+    validParamList->set< std::string >           ("Output filename",     "aggs_level%LEVELID_proc%PROCID.out", "Output filename template (%LEVELID is replaced level id, %PROCID is replaced by processor id)");
+
+    return validParamList;
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    fineLevel.DeclareInput("Aggregates",AggFact_,this);
-    fineLevel.DeclareInput("DofsPerNode",CoalesceDropFact_,this);
-    fineLevel.DeclareInput("UnAmalgamationInfo", AmalgFact_, this);
+    Input(fineLevel, "Aggregates");         //< factory which created aggregates
+    Input(fineLevel, "DofsPerNode");        //< CoalesceAndDropFactory (needed for DofsPerNode variable)
+    Input(fineLevel, "UnAmalgamationInfo"); //< AmalgamationFactory (needed for UnAmalgamationInfo variable)
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "AggregationExportFactory", coarseLevel);
 
-    Teuchos::RCP<Aggregates> aggregates = fineLevel.Get< Teuchos::RCP<Aggregates> >("Aggregates",AggFact_);
-    LocalOrdinal DofsPerNode =                 fineLevel.Get< LocalOrdinal > ("DofsPerNode", CoalesceDropFact_);
-    Teuchos::RCP<AmalgamationInfo> amalgInfo = fineLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", AmalgFact_);
-    
+    Teuchos::RCP<Aggregates> aggregates      = Get< Teuchos::RCP<Aggregates> >(fineLevel,"Aggregates");
+    LocalOrdinal DofsPerNode                 = Get< LocalOrdinal >            (fineLevel,"DofsPerNode");
+    Teuchos::RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >   (fineLevel,"UnAmalgamationInfo");
+
     GetOStream(Runtime0, 0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
@@ -109,48 +115,49 @@ namespace MueLu {
       minGlobalAggId[i] = numAggsGlobal[i-1];
     }
 
-    GO numAggs = aggregates->GetNumAggregates();
-    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs,0);
-    AmalgamationFactory::ComputeUnamalgamatedAggregateSizes(*aggregates, *amalgInfo, aggSizes);
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > aggToRowMap(aggSizes.size());
-    AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggSizes, aggToRowMap);
-        
+    ArrayRCP<LO> aggStart;
+    ArrayRCP<GlobalOrdinal> aggToRowMap;
+    AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggStart, aggToRowMap);
+
     // write to file
-    std::string outFile = outputFileName_;
+    //std::string outFile = outputFileName_;
+    const ParameterList & pL = GetParameterList();
+    std::string outFile = pL.get<std::string> ("Output filename");
     std::stringstream streamLevel; streamLevel << fineLevel.GetLevelID();
     outFile = replaceAll(outFile,"%LEVELID", streamLevel.str());
     std::stringstream streamProc; streamProc << comm->getRank();
     outFile = replaceAll(outFile,"%PROCID", streamProc.str());
 
+    GetOStream(Runtime0, 0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
     std::ofstream fout(outFile.c_str());
 
-
-      std::vector<GlobalOrdinal> nodeIds;
-      for (int i=0; i< aggToRowMap.size(); ++i) {
-        fout << "Agg " << minGlobalAggId[comm->getRank()] + i << " Proc " << comm->getRank() << ":";
-        for (int k=0; k< aggToRowMap[i].size(); ++k) {
-          /*std::cout << "proc: " << comm->getRank() << "\t aggToRowMap[" << i << "][" << k << "]=" <<aggToRowMap[i][k] << "\t node GID: " << aggToRowMap[i][k]/DofsPerNode << "\t GID in colMap=" << aggToRowMap[i][k];
+    GO numAggs = aggregates->GetNumAggregates();
+    std::vector<GlobalOrdinal> nodeIds;
+    for (int i=0; i< numAggs; ++i) {
+      fout << "Agg " << minGlobalAggId[comm->getRank()] + i << " Proc " << comm->getRank() << ":";
+      for (int k=aggStart[i]; k< aggStart[i+1]; ++k) {
+        /*std::cout << "proc: " << comm->getRank() << "\t aggToRowMap[" << i << "][" << k << "]=" <<aggToRowMap[i][k] << "\t node GID: " << aggToRowMap[i][k]/DofsPerNode << "\t GID in colMap=" << aggToRowMap[i][k];
           if(colMap->isNodeGlobalElement(aggToRowMap[i][k])==false)
-            std::cout << " NOT ON CUR PROC!";
+          std::cout << " NOT ON CUR PROC!";
           std::cout << std::endl;*/
 
-          nodeIds.push_back(aggToRowMap[i][k]/DofsPerNode);
-        }
-
-        // remove duplicate entries from nodeids
-        std::sort(nodeIds.begin(),nodeIds.end());
-        typename std::vector<GlobalOrdinal>::iterator endLocation = std::unique(nodeIds.begin(),nodeIds.end());
-        nodeIds.erase(endLocation,nodeIds.end());
-
-        // print out nodeids
-        for(typename std::vector<GlobalOrdinal>::iterator printIt = nodeIds.begin(); printIt!=nodeIds.end(); printIt++) {
-          fout << " " << *printIt;
-        }
-        nodeIds.clear();
-        fout << std::endl;
+        nodeIds.push_back(aggToRowMap[k]/DofsPerNode);
       }
 
-      fout.close();
+      // remove duplicate entries from nodeids
+      std::sort(nodeIds.begin(),nodeIds.end());
+      typename std::vector<GlobalOrdinal>::iterator endLocation = std::unique(nodeIds.begin(),nodeIds.end());
+      nodeIds.erase(endLocation,nodeIds.end());
+
+      // print out nodeids
+      for(typename std::vector<GlobalOrdinal>::iterator printIt = nodeIds.begin(); printIt!=nodeIds.end(); printIt++) {
+        fout << " " << *printIt;
+      }
+      nodeIds.clear();
+      fout << std::endl;
+    }
+
+    fout.close();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

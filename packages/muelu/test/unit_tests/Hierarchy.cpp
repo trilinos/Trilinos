@@ -52,17 +52,17 @@
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_RFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_SmootherFactory.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
+#include "Xpetra_VectorFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -108,272 +108,28 @@ TEUCHOS_UNIT_TEST(Hierarchy, GetNumLevels)
 
 }//GetNumLevels
 
-TEUCHOS_UNIT_TEST(Hierarchy, FillHierarchy_NoFactoriesGiven)
+TEUCHOS_UNIT_TEST(Hierarchy, KeepAggregates)
 {
 
   out << "version: " << MueLu::Version() << std::endl;
 
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-
-  Hierarchy H;
-  RCP<Level> & levelOne = H.GetLevel();
-  levelOne->Set("A", A);
-
-  out << "Providing no factories to FillHierarchy." << std::endl;
-  //  H.FillHierarchy(); TODO
-
-} // FillHierarchy_NoFactoriesGiven
-
-
-TEUCHOS_UNIT_TEST(Hierarchy, FillHierarchy_BothFactories)
-{
-
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-
-  Hierarchy H;
-  RCP<Level> levelOne = H.GetLevel();
-  levelOne->Set("A", A);
-
-  RCP<SaPFactory>    Pfact = rcp(new SaPFactory());
-  RCP<TransPFactory> Rfact = rcp(new TransPFactory(Pfact));
-  RAPFactory         AcFact(Pfact, Rfact);
-
-  out << "Providing both factories to FillHierarchy." << std::endl;
-
-  H.FillHierarchy(*Pfact, *Rfact, AcFact);
-
-} //FillHierarchy_BothFactories
-
-TEUCHOS_UNIT_TEST(Hierarchy, SetSmoothers)
-{
-  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
-    {
-
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-
-  Hierarchy H(A);
-
-  RCP<Level> levelTwo = rcp(new Level());
-  H.AddLevel(levelTwo);
-
-  // TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
-  // TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(), "Ifpack: Gauss-Seidel");
-  
-#ifdef HAVE_MUELU_IFPACK
-
-  RCP<SmootherPrototype> smooProto = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Jacobi");
-  RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto));
-  H.SetSmoothers(*smooFactory, 0, 1);
-  // JGTODO TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PreSmoother", smooFactory)->GetType(), "Ifpack: Jacobi");
-  // JGTODO TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PostSmoother", smooFactory)->GetType(), "Ifpack: Jacobi");
-#endif
-
-    }
-} //SetSmoothers
-
-TEUCHOS_UNIT_TEST(Hierarchy, SetCoarsestSolver1)
-{
-  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
-    {
-
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-
-#ifdef HAVE_MUELU_IFPACK
-  RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
-
-  SmootherFactory SmooFactory(smoother);
-
-  Hierarchy H(A);
-  RCP<Level> levelOne = H.GetLevel();
-  
-  //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
-  RCP<MueLu::FactoryManagerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
-  levelOne->SetFactoryManager(manager);
- 
-  levelOne->Request("PreSmoother", &SmooFactory);
-  levelOne->Request("PostSmoother", &SmooFactory);
-
-  //JG FIXME
-  levelOne->SetFactoryManager(Teuchos::null);
-
-  H.SetCoarsestSolver(SmooFactory);
-
-  RCP<SmootherBase>  preSmoo, postSmoo;
-  preSmoo = levelOne->Get< RCP<SmootherBase> >("PreSmoother", &SmooFactory);
-  TEST_INEQUALITY(preSmoo, Teuchos::null);
-  //JGTODO  TEST_EQUALITY(preSmoo->GetType(), "Ifpack: Gauss-Seidel");
-  postSmoo = levelOne->Get< RCP<SmootherBase> >("PostSmoother", &SmooFactory);
-
-  TEST_INEQUALITY(postSmoo, Teuchos::null);
-  //JGTODO  TEST_EQUALITY(postSmoo->GetType(), "Ifpack: Gauss-Seidel");
-
-#endif
-    }
-} //SetCoarsestSolver
-
-TEUCHOS_UNIT_TEST(Hierarchy, SetCoarsestSolver2)
-{
-  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
-    {
-
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-
-#ifdef HAVE_MUELU_IFPACK
-  RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
-  SmootherFactory SmooFactory(smoother);
-
-  Hierarchy H(A);
-  RCP<Level> levelOne = H.GetLevel();
-
-  //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
-  RCP<MueLu::FactoryManagerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
-  levelOne->SetFactoryManager(manager);
- 
-  levelOne->Request("PreSmoother", &SmooFactory);
-  levelOne->Request("PostSmoother", &SmooFactory);
-
-  //JG FIXME
-  levelOne->SetFactoryManager(Teuchos::null);
-
-  H.SetCoarsestSolver(SmooFactory, MueLu::PRE);
-
-  RCP<SmootherBase> preSmoo;
-  preSmoo = levelOne->Get< RCP<SmootherBase> >("PreSmoother", &SmooFactory);
-
-  TEST_INEQUALITY(preSmoo, Teuchos::null);
-  //JGTODO  TEST_EQUALITY(preSmoo->GetType(), "Ifpack: Gauss-Seidel");
-
-  TEST_EQUALITY(levelOne->IsAvailable("PostSmoother"), false);
-
-#endif
-    }
-} //SetCoarsestSolver
-
-TEUCHOS_UNIT_TEST(Hierarchy, SetCoarsestSolver3)
-{
-  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
-    {
-
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-
-#ifdef HAVE_MUELU_IFPACK
-  RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
-  SmootherFactory SmooFactory(smoother);
-
-  Hierarchy H(A);
-  RCP<Level> levelOne = H.GetLevel();
-  
-  //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
-  RCP<MueLu::FactoryManagerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
-  levelOne->SetFactoryManager(manager);
- 
-  levelOne->Request("PreSmoother", &SmooFactory);
-  levelOne->Request("PostSmoother", &SmooFactory);
-
-  //JG FIXME
-  levelOne->SetFactoryManager(Teuchos::null);
-
-  H.SetCoarsestSolver(SmooFactory, MueLu::POST);
-
-  TEST_EQUALITY(levelOne->IsAvailable("PreSmoother"), false);
-
-  RCP<SmootherBase> postSmoo;
-  postSmoo = levelOne->Get< RCP<SmootherBase> >("PostSmoother", &SmooFactory);
-
-  TEST_INEQUALITY(postSmoo, Teuchos::null);
-  //JG TODO  TEST_EQUALITY(postSmoo->GetType(), "Ifpack: Gauss-Seidel");
-#endif
-    }
-} //SetCoarsestSolver
-
-TEUCHOS_UNIT_TEST(Hierarchy, FullPopulate_NoArgs)
-{
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-
-  Hierarchy H(A);
-
-  //TODO  H.FullPopulate();
-} //FullPopulate
-
-TEUCHOS_UNIT_TEST(Hierarchy, FullPopulate_AllArgs)
-{
-  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
-    {
-
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99*comm->getSize());
-
-  Hierarchy H(A);
-
-  RCP<SaPFactory>  Pfact = rcp(new SaPFactory());
-  RCP<RFactory> Rfact = rcp(new TransPFactory(Pfact));
-  RCP<RAPFactory>  AcFact = rcp(new RAPFactory(Pfact,Rfact));
-
-#ifdef HAVE_MUELU_IFPACK
-  RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
-  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
-  H.FullPopulate(*Pfact, *Rfact, *AcFact, *SmooFact, 0, 2);
-#endif
-    }
-} //FullPopulate
-
-TEUCHOS_UNIT_TEST(Hierarchy, FullPopulate_KeepAggregates)
-{
-  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
-    {
-
-  out << "version: " << MueLu::Version() << std::endl;
-
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(399*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(399*comm->getSize());
 
   Hierarchy H(A);
   H.SetMaxCoarseSize(1);
 
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-  UCAggFact->SetMinNodesPerAggregate(3);
-  UCAggFact->SetMaxNeighAlreadySelected(0);
-  UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-  UCAggFact->SetPhase3AggCreation(0.5);
+  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+  FactoryManager M;
+  M.SetFactory("Aggregates", CoupledAggFact);
 
-  RCP<TentativePFactory>  Pfact = rcp(new TentativePFactory(UCAggFact));
-  RCP<RFactory> Rfact = rcp(new TransPFactory(Pfact));
-  RCP<RAPFactory>  AcFact = rcp(new RAPFactory(Pfact,Rfact));
-
-#ifdef HAVE_MUELU_IFPACK
-  RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
-  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
-
-  H.GetLevel(0)->Keep("Aggregates", UCAggFact.get()); // not working since no FactoryManager available
-  H.FullPopulate(*Pfact, *Rfact, *AcFact, *SmooFact, 0, 2);
-#endif
+  H.GetLevel(0)->Keep("Aggregates", CoupledAggFact.get());
+  H.Setup(M, 0, 2);
 
   for (LocalOrdinal l=0; l<H.GetNumLevels()-1;l++) {
-    TEST_EQUALITY(H.GetLevel(l)->IsAvailable("Aggregates", UCAggFact.get()), true);
+    TEST_EQUALITY(H.GetLevel(l)->IsAvailable("Aggregates", CoupledAggFact.get()), true);
   }
 
-    }
 } //FullPopulate_KeepAggregates
 
 TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
@@ -385,7 +141,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
 
   //matrix
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
+  RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
   RCP<const Map > map = Op->getRowMap();
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
@@ -402,23 +158,21 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   Finest->Set("NullSpace", nullSpace);
   Finest->Set("A", Op);
 
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-  UCAggFact->SetMinNodesPerAggregate(3);
-  UCAggFact->SetMaxNeighAlreadySelected(0);
-  UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-  UCAggFact->SetPhase3AggCreation(0.5);
+  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+  CoupledAggFact->SetMinNodesPerAggregate(3);
+  CoupledAggFact->SetMaxNeighAlreadySelected(0);
+  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<CoalesceDropFactory> cdFact;
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
-  RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
-  RCP<RFactory>           Rfact = rcp( new TransPFactory());
-  RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
-  
+  RCP<SaPFactory>    Pfact  = rcp( new SaPFactory() );
+  RCP<TransPFactory> Rfact  = rcp( new TransPFactory());
+  RCP<RAPFactory>    Acfact = rcp( new RAPFactory() );
 
-#ifdef HAVE_MUELU_IFPACK
-#ifdef HAVE_MUELU_AMESOS
-  RCP<SmootherPrototype> smooProto = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
+  RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
 
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
@@ -435,10 +189,10 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);
   M.SetFactory("Ptent", TentPFact);
-  M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("Aggregates", CoupledAggFact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarseSolveFact);
-  
+
   H.Setup(M, 0, maxLevels);
 
   RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
@@ -466,8 +220,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
   TEST_EQUALITY(norms[0]<1e-10, true);
 
-#endif
-#endif
+#endif // HAVE_MUELU_EPETRA && HAVE_MUELU_IFPACK && HAVE_MUELU_AMESOS
     }
 } //Iterate
 
@@ -480,7 +233,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
 
   //matrix
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
+  RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
   RCP<const Map > map = Op->getRowMap();
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
@@ -497,22 +250,21 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   Finest->Set("A", Op);
   Finest->Set("Nullspace", nullSpace);
 
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-  UCAggFact->SetMinNodesPerAggregate(3);
-  UCAggFact->SetMaxNeighAlreadySelected(0);
-  UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-  UCAggFact->SetPhase3AggCreation(0.5);
+  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+  CoupledAggFact->SetMinNodesPerAggregate(3);
+  CoupledAggFact->SetMaxNeighAlreadySelected(0);
+  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetPhase3AggCreation(0.5);
   RCP<CoalesceDropFactory> cdFact;
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
-  RCP<RFactory>           Rfact = rcp( new TransPFactory());
+  RCP<TransPFactory>      Rfact = rcp( new TransPFactory());
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   Acfact->SetImplicitTranspose(true);
 
-#ifdef HAVE_MUELU_IFPACK
-#ifdef HAVE_MUELU_AMESOS
-  RCP<SmootherPrototype> smooProto = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
+  RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
 
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
@@ -529,10 +281,10 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);
   M.SetFactory("Ptent", TentPFact);
-  M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("Aggregates", CoupledAggFact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarseSolveFact);
-  
+
   H.Setup(M, 0, maxLevels);
 
   //  Teuchos::ParameterList status;
@@ -563,8 +315,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
   TEST_EQUALITY(norms[0]<1e-10, true);
 
-#endif
-#endif
+#endif // HAVE_MUELU_EPETRA && HAVE_MUELU_IFPACK && HAVE_MUELU_AMESOS
     }
 } //Iterate
 
@@ -572,9 +323,9 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
     {
-#ifdef HAVE_MUELU_AMESOS2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
   // Multigrid Hierarchy
   Hierarchy H(A);
@@ -583,7 +334,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
   // Multigrid setup phase (using default parameters)
   FactoryManager M0; // how to build aggregates and smoother of the first level
 
-  TEST_EQUALITY(H.Setup(0, Teuchos::null,  ptrInArg(M0), Teuchos::null), true);
+  bool r = H.Setup(0, Teuchos::null,  ptrInArg(M0), Teuchos::null); TEST_EQUALITY(r, true); // cf. Teuchos Bug 5214
 
   RCP<Level> l0 = H.GetLevel(0);
 
@@ -608,7 +359,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
 
   int iterations=10;
   H.Iterate(*RHS, iterations, *X);
-#endif
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
     }
 }
 
@@ -617,9 +368,9 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
     {
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
   // Multigrid Hierarchy
   Hierarchy H(A);
@@ -636,8 +387,9 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
   M2.SetFactory("A", rcp(new RAPFactory()));
   M2.SetFactory("P", rcp(new SaPFactory()));
 
-  TEST_EQUALITY(H.Setup(0, Teuchos::null,ptrInArg(M0), ptrInArg(M1)), false);
-  TEST_EQUALITY(H.Setup(1, ptrInArg(M0), ptrInArg(M1), Teuchos::null), true);
+  bool r; // cf. Teuchos Bug 5214
+  r = H.Setup(0, Teuchos::null,ptrInArg(M0), ptrInArg(M1));  TEST_EQUALITY(r, false);
+  r = H.Setup(1, ptrInArg(M0), ptrInArg(M1), Teuchos::null); TEST_EQUALITY(r, true);
 
   RCP<Level> l0 = H.GetLevel(0);
   RCP<Level> l1 = H.GetLevel(1);
@@ -683,7 +435,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
   MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
     {
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
   // Multigrid Hierarchy
   Hierarchy H(A);
@@ -702,11 +454,12 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
   M2.SetFactory("A", rcp(new RAPFactory()));
   M2.SetFactory("P", rcp(new SaPFactory()));
 
-#ifdef HAVE_MUELU_AMESOS2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 
-  TEST_EQUALITY(H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)), false);
-  TEST_EQUALITY(H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2)), false);
-  TEST_EQUALITY(H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null ), true);
+  bool r; // cf. bug Teuchos Bug 5214
+  r = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); TEST_EQUALITY(r, false);
+  r = H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2));   TEST_EQUALITY(r, false);
+  r = H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null ); TEST_EQUALITY(r, true);
 
   RCP<Level> l0 = H.GetLevel(0);
   RCP<Level> l1 = H.GetLevel(1);
@@ -765,7 +518,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
     {
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
   // Multigrid Hierarchy
   Hierarchy H(A);
@@ -803,10 +556,11 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
   M2.SetFactory("A", rcp(new RAPFactory()));
   M2.SetFactory("P", rcp(new SaPFactory()));
 
-#ifdef HAVE_MUELU_AMESOS
-  TEST_EQUALITY(H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)), false);
-  TEST_EQUALITY(H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2)), false);
-  TEST_EQUALITY(H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null ), true);
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
+  bool r; // cf. bug Teuchos Bug 5214
+  r = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); TEST_EQUALITY(r, false);
+  r = H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2));   TEST_EQUALITY(r, false);
+  r = H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null);  TEST_EQUALITY(r, true);
 
   RCP<Level> l0 = H.GetLevel(0);
   RCP<Level> l1 = H.GetLevel(1);
@@ -863,7 +617,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchyTestBreakCondition)
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
     {
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
   // Multigrid Hierarchy
   Hierarchy H(A);
@@ -877,13 +631,14 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchyTestBreakCondition)
   M1.SetFactory("A", rcp(new RAPFactory()));
   M1.SetFactory("P", rcp(new TentativePFactory()));
 
-#ifdef HAVE_MUELU_AMESOS
-  TEST_EQUALITY(H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)), true);
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
+  bool r; // cf. bug Teuchos Bug 5214
+  r = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); TEST_EQUALITY(r, true);
   TEST_EQUALITY(H.GetNumLevels(),1);
 
   RCP<Level> l0 = H.GetLevel(0);
   TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve 
+  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
   TEST_EQUALITY(l0->IsAvailable("P",            MueLu::NoFactory::get()), false);
   TEST_EQUALITY(l0->IsAvailable("R",            MueLu::NoFactory::get()), false);
   TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
@@ -905,12 +660,51 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchyTestBreakCondition)
     } // test only for Epetra
 }
 
+TEUCHOS_UNIT_TEST(Hierarchy, Write)
+{
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(30);
+
+  // Multigrid Hierarchy
+  Hierarchy H(A);
+  H.SetDefaultVerbLevel(MueLu::Low);
+  H.SetMaxCoarseSize(29);
+  H.Setup();
+
+  TEST_THROW( H.Write(1,0), MueLu::Exceptions::RuntimeError );    //start level is greater than end level
+  TEST_THROW( H.Write(0,1000), MueLu::Exceptions::RuntimeError ); //end level is too big
+
+  // Write matrices out, read fine A back in, and check that the read was ok
+  // by using a matvec with a random vector.
+  H.Write();
+
+  std::string infile = "A_0.m";
+  Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+  RCP<Matrix> Ain = Utils::Read(infile, lib, comm);
+  RCP<Vector> randomVec = VectorFactory::Build(A->getDomainMap(),false);
+  randomVec->randomize();
+  RCP<Vector> A_v = VectorFactory::Build(A->getRangeMap(),false);
+  A->apply(*randomVec,*A_v,Teuchos::NO_TRANS,1,0);
+
+  RCP<Vector> Ain_v = VectorFactory::Build(Ain->getRangeMap(),false);
+  Ain->apply(*randomVec,*Ain_v,Teuchos::NO_TRANS,1,0);
+
+  RCP<MultiVector> diff = VectorFactory::Build(A->getRangeMap());
+  //diff = A_v + (-1.0)*(Ain_v) + 0*diff
+  diff->update(1.0,*A_v,-1.0,*Ain_v,0.0);
+
+  Teuchos::Array<ST::magnitudeType> norms(1);
+  diff->norm2(norms);
+  out << "||diff|| = " << norms[0] << std::endl;
+  TEST_EQUALITY(norms[0]<1e-15, true);
+}
+
 }//namespace MueLuTests
 
 //Note from JG:
-// For UnitTest,  TEST_EQUALITY(H.GetLevel(1)->Get< RCP<Operator> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
+// For UnitTest,  TEST_EQUALITY(H.GetLevel(1)->Get< RCP<Matrix> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
 // should be replaced by
-// TEST_EQUALITY(H.GetLevel(1)->Get< RCP<Operator> >("PreSmoother"), preSmoother);
+// TEST_EQUALITY(H.GetLevel(1)->Get< RCP<Matrix> >("PreSmoother"), preSmoother);
 // testing if preSmoother->GetType() == "Ifpack: Gauss-Seidel" should be a unit test of the class IfpackSmoother
 
 

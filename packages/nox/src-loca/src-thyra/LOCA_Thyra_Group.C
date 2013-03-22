@@ -233,7 +233,7 @@ LOCA::Thyra::Group::setParam(int paramID, double val)
 }
 
 void
-LOCA::Thyra::Group::setParam(string paramID, double val)
+LOCA::Thyra::Group::setParam(std::string paramID, double val)
 {
   this->resetIsValidFlags();
   params.setValue(paramID, val);
@@ -252,13 +252,13 @@ LOCA::Thyra::Group::getParam(int paramID) const
 }
 
 double
-LOCA::Thyra::Group::getParam(string paramID) const
+LOCA::Thyra::Group::getParam(std::string paramID) const
 {
   return params.getValue(paramID);
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Thyra::Group::computeDfDpMulti(const vector<int>& paramIDs, 
+LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs, 
 				     NOX::Abstract::MultiVector& fdfdp, 
 				     bool isValidF)
 {

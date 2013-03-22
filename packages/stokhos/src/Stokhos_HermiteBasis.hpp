@@ -60,7 +60,8 @@ namespace Stokhos {
      * \param p order of the basis
      * \param normalize whether polynomials should be given unit norm
      */
-    HermiteBasis(ordinal_type p, bool normalize = false);
+    HermiteBasis(ordinal_type p, bool normalize = false, 
+		 GrowthPolicy growth = SLOW_GROWTH);
     
     //! Destructor
     ~HermiteBasis();

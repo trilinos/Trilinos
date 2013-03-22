@@ -60,9 +60,12 @@
 template<typename Traits,typename LO,typename GO>
 panzer::ScatterResidual_Epetra<panzer::Traits::SGResidual, Traits,LO,GO>::
 ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                       const Teuchos::ParameterList& p)
+                       const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
+                       const Teuchos::ParameterList& p,bool useDiscreteAdjoint)
   : globalIndexer_(indexer) 
 { 
+  TEUCHOS_ASSERT(cIndexer==Teuchos::null);
+
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
@@ -174,9 +177,12 @@ evaluateFields(typename Traits::EvalData workset)
 template<typename Traits,typename LO,typename GO>
 panzer::ScatterResidual_Epetra<panzer::Traits::SGJacobian, Traits,LO,GO>::
 ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
-                       const Teuchos::ParameterList& p)
+                       const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
+                       const Teuchos::ParameterList& p,bool useDiscreteAdjoint)
    : globalIndexer_(indexer)
 { 
+  TEUCHOS_ASSERT(cIndexer==Teuchos::null);
+
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));

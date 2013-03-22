@@ -134,7 +134,7 @@ namespace LOCA {
 	 * \f$w = w_1 + i w_2\f$, \f$e = y + i z\f$, \f$C = J + i \omega M\f$.
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDwtCeDp(const vector<int>& paramIDs, 
+	computeDwtCeDp(const std::vector<int>& paramIDs, 
 		       const NOX::Abstract::Vector& w1,
 		       const NOX::Abstract::Vector& w2,
 		       const NOX::Abstract::Vector& y,

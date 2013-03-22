@@ -53,7 +53,7 @@
 
 #include "NOX_Abstract_Group.H"	// base class
 #include "NOX_Petsc_Vector.H"	// class data element
-#include "NOX_Common.H" // class data element (string)
+#include "NOX_Common.H" // class data element (std::string)
 
 #include "petscsnes.h"	
 #include "petscksp.h"	
@@ -239,7 +239,7 @@ protected:
   SharedJacobian& sharedJacobian;
 
   //! Specification of Jacobian Type
-  string jacType;
+  std::string jacType;
 
   //! Reference to the user supplied interface functions
   Interface& userInterface;

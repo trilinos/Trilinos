@@ -43,8 +43,6 @@
 
 /*--------------------------------------------------------------------------*/
 
-#define DEBUG_PRINT 0
-
 #include <iostream>
 #include <limits>
 
@@ -69,13 +67,90 @@
 
 namespace KokkosArray {
 namespace Impl {
+namespace {
+
+void print_bitmap( const hwloc_bitmap_t bitmap )
+{
+  std::cout << "{" ;
+  for ( int i = hwloc_bitmap_first( bitmap ) ;
+        -1 != i ; i = hwloc_bitmap_next( bitmap , i ) ) {
+    std::cout << " " << i ;
+  }
+  std::cout << " }" ;
+}
+
+int all_cores_available( const hwloc_topology_t host_topology ,
+                         const hwloc_obj_t      node ,
+                         const hwloc_bitmap_t   proc_cpuset )
+{
+  if ( hwloc_bitmap_weight( proc_cpuset ) ) {
+
+    const int core_count =
+      hwloc_get_nbobjs_inside_cpuset_by_type( host_topology ,
+                                            node->allowed_cpuset ,
+                                            HWLOC_OBJ_CORE );
+
+    for ( int j = 0 ; j < core_count ; ++j ) {
+
+      const hwloc_obj_t core =
+        hwloc_get_obj_inside_cpuset_by_type( host_topology ,
+                                           node->allowed_cpuset ,
+                                           HWLOC_OBJ_CORE , j );
+
+#if 0
+      if ( 0 == hwloc_bitmap_isincluded( core->allowed_cpuset ,
+                                         proc_cpuset ) ) {
+        return 0 ;
+      }
+#else
+
+      // If process' cpuset intersects core's cpuset
+      // then process can access this core.
+      // Must use intersection instead of inclusion because
+      // MPI may bind the process to only one of the core's hyperthreads.
+      //
+      // Assumption: if the process can access any hyperthread of the core
+      // then it has ownership of the entire core.
+      // This assumes that it would be performance-detrimental
+      // to spawn more than one MPI process per core and use nested threading.
+      if ( 0 == hwloc_bitmap_intersects( proc_cpuset ,
+                                         core->allowed_cpuset ) ) {
+        return 0 ;
+      }
+#endif
+    }
+  }
+
+  return 1 ;
+}
+
+} // namespace
+} /* namespace Impl */
+} /* namespace KokkosArray */
+
+/*--------------------------------------------------------------------------*/
+
+namespace KokkosArray {
+namespace Impl {
 
 class HostInternalHWLOC : public HostInternal {
 private:
 
+  enum { MAX_NODE_COUNT = 1024 };
+
   hwloc_topology_t m_host_topology ;
+  hwloc_obj_type_t m_node_type ;          // hwloc type for a "node"
   unsigned         m_node_core_count ;    // Cores per node
   unsigned         m_node_core_pu_count ; // Processing units per core per node
+  unsigned         m_node_rank[ MAX_NODE_COUNT ];
+
+  void thread_mapping(
+    const unsigned thread_rank ,
+    unsigned & gang_rank ,
+    unsigned & worker_rank ,
+    unsigned & node_rank ,
+    unsigned & core_rank ,
+    unsigned & pu_rank ) const ;
 
 public:
 
@@ -83,6 +158,7 @@ public:
   HostInternalHWLOC();
 
   bool bind_thread( const unsigned thread_rank ) const ;
+  void print_configuration( std::ostream & ) const ;
 };
 
 //----------------------------------------------------------------------------
@@ -94,45 +170,197 @@ HostInternal & HostInternal::singleton()
 
 //----------------------------------------------------------------------------
 
+void HostInternalHWLOC::thread_mapping(
+  const unsigned thread_rank ,
+  unsigned & gang_rank ,
+  unsigned & worker_rank ,
+  unsigned & node_rank ,
+  unsigned & core_rank ,
+  unsigned & pu_rank ) const
+{
+  // Which node -> core -> processing unit
+
+  gang_rank   = thread_rank / HostInternal::m_worker_count ;
+  worker_rank = thread_rank % HostInternal::m_worker_count ;
+
+  // How many cores will be used:
+
+  const unsigned min_worker_per_core =
+    HostInternal::m_worker_count / m_node_core_count ;
+
+  const unsigned max_worker_per_core =
+    min_worker_per_core +
+    ( HostInternal::m_worker_count % m_node_core_count ? 1 : 0 );
+
+  const unsigned core_base =
+    m_node_core_count * max_worker_per_core - HostInternal::m_worker_count ;
+
+  const unsigned core_base_worker_count = core_base * min_worker_per_core ;
+
+  // Use the upper range of accessible nodes.
+  // Assumes that the lower range is preferred by the operating system.
+
+  const unsigned gang_unused =
+    ( HostInternal::m_gang_capacity - HostInternal::m_gang_count ); 
+
+  node_rank = m_node_rank[ gang_rank + gang_unused ];
+
+  // Which core:
+
+  core_rank = 
+    worker_rank < core_base_worker_count ?
+    worker_rank / min_worker_per_core :
+    core_base +
+    ( worker_rank - core_base_worker_count ) / max_worker_per_core ;
+
+  pu_rank = worker_rank % m_node_core_pu_count ;
+}
+
+void HostInternalHWLOC::print_configuration( std::ostream & s ) const
+{
+  static const char name_numa[] = "NUMA" ;
+  static const char name_socket[] = "SOCKET" ;
+  static const char name_core[] = "CORE" ;
+  static const char name_pu[] = "PU" ;
+  static const char name_unknown[] = "unknown" ;
+
+  enum { OBJ_TYPE_COUNT = 4 };
+
+  static const char * const obj_names[] = { name_numa , name_socket , name_core , name_pu };
+
+  static const char * const name_node = 
+    HWLOC_OBJ_NODE   == m_node_type ? name_numa : (
+    HWLOC_OBJ_SOCKET == m_node_type ? name_socket : (
+    HWLOC_OBJ_CORE   == m_node_type ? name_core : (
+    HWLOC_OBJ_PU     == m_node_type ? name_pu : name_unknown )));
+
+  static const hwloc_obj_type_t obj_types[] =
+    { HWLOC_OBJ_NODE   /* NUMA region     */
+    , HWLOC_OBJ_SOCKET /* hardware socket */
+    , HWLOC_OBJ_CORE   /* hardware core   */
+    , HWLOC_OBJ_PU     /* processing unit */
+    };
+
+  const int obj_counts[] =
+    { hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_NODE )
+    , hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_SOCKET )
+    , hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_CORE )
+    , hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_PU )
+    };
+
+  s << std::endl << "KokkosArray::Host HWLOC { " ;
+  for ( int k = 0 ; k < OBJ_TYPE_COUNT ; ++k ) {
+    s << " " << obj_names[k] << "(" << obj_counts[k] << ")" ;
+  }
+  s << std::endl ;
+
+  hwloc_bitmap_t proc_cpuset = hwloc_bitmap_alloc();
+  hwloc_bitmap_t test_cpuset = hwloc_bitmap_alloc();
+
+  hwloc_get_cpubind( m_host_topology , proc_cpuset , HWLOC_CPUBIND_PROCESS );
+
+  for ( int k = 0 ; k < OBJ_TYPE_COUNT ; ++k ) {
+
+    const hwloc_obj_type_t type  = obj_types[k] ;
+    const int              count = obj_counts[k];
+    const char * const     name  = obj_names[k] ;
+
+    s << "  " << name << " {" ;
+
+    for ( int i = 0 ; i < count ; ++i ) {
+
+      const hwloc_obj_t obj =
+        hwloc_get_obj_by_type( m_host_topology , type , i );
+
+      hwloc_bitmap_and( test_cpuset , proc_cpuset , obj->allowed_cpuset );
+
+      const int obj_weight       = hwloc_bitmap_weight( obj->allowed_cpuset );
+      const int intersect_weight = hwloc_bitmap_weight( test_cpuset );
+
+      if ( intersect_weight ) {
+        if ( intersect_weight == obj_weight ) {
+          s << " " << i ;
+        }
+        else {
+          s << " [ " << i << " : "
+            << intersect_weight << "/" << obj_weight
+            << " ]" ;
+        }
+      }
+    }
+
+    s << " }" << std::endl ;
+  }
+  s << "}" << std::endl ;
+
+  hwloc_bitmap_free( proc_cpuset );
+  hwloc_bitmap_free( test_cpuset );
+
+  //------------------------------------
+
+  if ( 1 < HostInternal::m_thread_count ) {
+    s << "  thread binding {"
+      << std::endl ;
+
+    for ( Host::size_type i = 0 ; i < HostInternal::m_thread_count ; ++i ) {
+      const HostThread & thread = * HostInternal::m_thread[i] ;
+
+      unsigned gang_rank = 0 ;
+      unsigned worker_rank = 0 ;
+      unsigned node_rank = 0 ;
+      unsigned core_rank = 0 ;
+      unsigned pu_rank = 0 ;
+
+      thread_mapping( thread.rank() ,
+                      gang_rank ,
+                      worker_rank ,
+                      node_rank ,
+                      core_rank ,
+                      pu_rank );
+
+      s << "    { thread(" << thread.rank()
+        << ") : gang(" << thread.gang_rank()
+        << ") worker(" << thread.worker_rank()
+        << ") } -> { " << name_node << "(" << node_rank
+        << ")" ;
+
+      if ( 1 < m_node_core_count ) {
+        s << " CORE(" << core_rank << ")" ;
+      }
+      if ( 1 < m_node_core_pu_count ) {
+        s << " PU(" << pu_rank << ")" ;
+      }
+      s << " }" << std::endl ;
+    }
+    s << "  }" << std::endl ;
+  }
+}
+
+//----------------------------------------------------------------------------
+
 bool HostInternalHWLOC::bind_thread( const unsigned thread_rank ) const
 {
   bool result = true ;
 
-  // Can only safely bind threads if
-  // (1) the number of cores is known and
-  // (2) the process is bound to a NUMA node.
+  // Can only safely bind threads if topology was detected
 
-  if ( 0 < m_node_core_count && 0 <= m_node_rank) {
+  if ( HostInternal::m_gang_capacity ) {
 
-    // How many cores will be used:
-    const unsigned max_worker_per_core =
-      ( HostInternal::m_worker_count + m_node_core_count - 1 ) / m_node_core_count ;
+    unsigned gang_rank = 0 ;
+    unsigned worker_rank = 0 ;
+    unsigned node_rank = 0 ;
+    unsigned core_rank = 0 ;
+    unsigned pu_rank = 0 ;
 
-    const unsigned min_worker_per_core =
-      1 == max_worker_per_core ? 1 : max_worker_per_core - 1 ;
-
-    const unsigned core_base =
-      m_node_core_count * max_worker_per_core - HostInternal::m_worker_count ;
-
-    const unsigned core_base_worker_count = core_base * min_worker_per_core ;
-
-    // Which node -> core -> processing unit
-
-    const unsigned gang_rank   = thread_rank / HostInternal::m_worker_count ;
-    const unsigned worker_rank = thread_rank % HostInternal::m_worker_count ;
-
-    const unsigned node_rank =
-      ( gang_rank + HostInternal::m_node_rank ) % HostInternal::m_node_count ;
-
-    const unsigned core_rank = 
-      worker_rank < core_base_worker_count ?
-      worker_rank / min_worker_per_core :
-      core_base + ( worker_rank - core_base_worker_count ) / max_worker_per_core ;
-
-    const unsigned pu_rank = worker_rank % m_node_core_pu_count ;
+    thread_mapping( thread_rank ,
+                    gang_rank ,
+                    worker_rank ,
+                    node_rank ,
+                    core_rank ,
+                    pu_rank );
 
     const hwloc_obj_t node =
-      hwloc_get_obj_by_type( m_host_topology, HWLOC_OBJ_NODE, node_rank );
+      hwloc_get_obj_by_type( m_host_topology, m_node_type, node_rank );
 
     const hwloc_obj_t core =
       hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
@@ -160,20 +388,6 @@ bool HostInternalHWLOC::bind_thread( const unsigned thread_rank ) const
 
       hwloc_bitmap_free( thread_cpuset );
     }
-
-#if DEBUG_PRINT
-    std::cout << ( result ? "SUCCESS " : "FAILED " )
-              << "HWLOC::bind_thread thread[ "
-              << thread_rank
-              << " @ " << gang_rank
-              << "." << worker_rank
-              << " ] to node[" << node_rank
-              << "].core[" << core_rank
-              << "].pu[" << pu_rank
-              << "]"
-              << std::endl ;
-#endif
-
   }
 
   return result ;
@@ -184,146 +398,138 @@ bool HostInternalHWLOC::bind_thread( const unsigned thread_rank ) const
 HostInternalHWLOC::HostInternalHWLOC()
   : HostInternal()
   , m_host_topology()
+  , m_node_type( HWLOC_OBJ_CORE )
   , m_node_core_count( 0 )
   , m_node_core_pu_count( 0 )
 {
   hwloc_topology_init( & m_host_topology );
   hwloc_topology_load( m_host_topology );
 
-  const size_t node_count =
-    hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_NODE );
+  int node_count = 0 ;
 
-#if DEBUG_PRINT
-  std::cout << "HWLOC node_count = " << node_count << std::endl ;
-#endif
+  //------------------------------------------------------------------------
+  // 'Node' level of hierarchical topology:
+  {
+    // Choose a hwloc type for a 'node' from, in search order, the following:
+    static const hwloc_obj_type_t candidate_node_type[] =
+      { HWLOC_OBJ_NODE   /* NUMA region     */
+      , HWLOC_OBJ_SOCKET /* hardware socket */
+      , HWLOC_OBJ_CORE   /* hardware core   */
+      };
 
-  if ( node_count ) {
-    // Get cpuset binding of this process.
-    // This may have been bound by 'mpirun'.
+    enum { CANDIDATE_NODE_TYPE_COUNT =
+             sizeof(candidate_node_type) / sizeof(hwloc_obj_type_t) };
 
-    bool node_symmetry = true ;
-    bool page_symmetry = true ;
+    hwloc_bitmap_t proc_cpuset = hwloc_bitmap_alloc();
 
-    size_t cache_line_size = 0 ;
-    size_t page_size = 0 ;
-    size_t node_core_count = 0 ;
-    size_t node_core_pu_count = 0 ;
-    size_t node_rank = std::numeric_limits<size_t>::max();
+    hwloc_get_cpubind( m_host_topology , proc_cpuset , HWLOC_CPUBIND_PROCESS );
 
-    hwloc_cpuset_t proc_cpuset = hwloc_bitmap_alloc();
+    for ( int k = 0 ;
+          k < CANDIDATE_NODE_TYPE_COUNT && 0 == node_count ; ++k ) {
 
-    hwloc_get_cpubind( m_host_topology , proc_cpuset , 0 );
+      const hwloc_obj_type_t type = candidate_node_type[k] ;
 
-    // Is this process bound to a particular NUMA node?
-    // This may have been done by 'mpirun'.
-    // If so then restrict this device to that NUMA node.
+      const int count = hwloc_get_nbobjs_by_type( m_host_topology , type );
 
-    for ( size_t i = 0 ; i < node_count && node_count < node_rank ; ++i ) {
+      if ( 1 < count ) {
 
-      const hwloc_obj_t node =
-        hwloc_get_obj_by_type( m_host_topology , HWLOC_OBJ_NODE , i );
+        for ( int i = 0 ; i < count ; ++i ) {
 
-      // If the process' cpu set is included in the node cpuset
-      // then assumed pinned to that node.
-      if ( hwloc_bitmap_isincluded( proc_cpuset , node->allowed_cpuset ) ) {
-        node_rank = i ;
+          const hwloc_obj_t node =
+            hwloc_get_obj_by_type( m_host_topology , type , i );
 
-#if DEBUG_PRINT
-        std::cout << "HWLOC: process is bound to node[" << i << "]"
-                  << std::endl ;
-#endif
-
-      }
-    }
-
-    const bool bound_proc = node_rank < node_count ;
-
-    HostInternal::m_node_rank  = bound_proc ? node_rank : -1 ;
-    HostInternal::m_node_count = node_count ;
-
-    for ( unsigned i = 0 ; i < node_count ; ++i ) {
-
-      const hwloc_obj_t node =
-        hwloc_get_obj_by_type( m_host_topology , HWLOC_OBJ_NODE , i );
-
-      const size_t core_count =
-        hwloc_get_nbobjs_inside_cpuset_by_type( m_host_topology ,
-                                                node->allowed_cpuset ,
-                                                HWLOC_OBJ_CORE );
-
-      if ( 0 == node_core_count ) { node_core_count = core_count ; }
-
-      if ( core_count != node_core_count ) { node_symmetry = false ; }
-
-      for ( size_t j = 0 ; j < core_count ; ++j ) {
-
-        const hwloc_obj_t core =
-          hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
-                                               node->allowed_cpuset ,
-                                               HWLOC_OBJ_CORE , j );
-
-#if DEBUG_PRINT
-        if ( hwloc_bitmap_isincluded( proc_cpuset , core->allowed_cpuset ) ) {
-          std::cout << "HWLOC: process is bound to node[" << i << "]"
-                    << ".core[" << j << "]"
-                    << std::endl ;
-        }
-#endif
-
-        const size_t pu_count =
-          hwloc_get_nbobjs_inside_cpuset_by_type( m_host_topology ,
-                                                  core->allowed_cpuset ,
-                                                  HWLOC_OBJ_PU );
-
-        if ( 0 == node_core_pu_count ) { node_core_pu_count = pu_count ; }
-
-        if ( pu_count != node_core_pu_count ) { node_symmetry = false ; }
-
-        // Use the largest cache line size
-        // assuming the largest will be a multiple of the smallest...
-
-        const hwloc_obj_t core_cache_info =
-          hwloc_get_shared_cache_covering_obj( m_host_topology , core );
-
-        if ( core_cache_info && core_cache_info->attr ) {
-          if ( cache_line_size < core_cache_info->attr->cache.linesize ) {
-            cache_line_size = core_cache_info->attr->cache.linesize ;
+          if ( all_cores_available( m_host_topology , node , proc_cpuset ) ) {
+            m_node_rank[ node_count++ ] = i ;
           }
         }
       }
 
-      for ( unsigned j = 0 ; j < node->memory.page_types_len ; ++j ) {
-        if ( node->memory.page_types[j].count ) {
-          if ( 0 == page_size ) {
-            page_size = node->memory.page_types[j].size ;
-          }
-          page_symmetry = node->memory.page_types[j].size == page_size ;
-        }
+      if ( node_count ) {
+        m_node_type = type ;
       }
     }
 
     hwloc_bitmap_free( proc_cpuset );
+  }
 
-    if ( node_symmetry && node_core_count ) {
+  if ( 0 == node_count ) return ; // Failed to detect 'node' type
 
-      m_node_core_count    = node_core_count ;
-      m_node_core_pu_count = node_core_pu_count ;
+  //------------------------------------------------------------------------
+  // Subsequent levels of hierarchy:
 
-      HostInternal::m_node_pu_count = node_core_count * node_core_pu_count ;
+  int node_symmetry = 1 ;
+  int cache_line_size = -1 ;
+
+  int core_per_node = -1 ;
+  int pu_per_core = -1 ;
+
+  for ( int i = 0 ; i < node_count ; ++i ) {
+
+    const hwloc_obj_t node =
+      hwloc_get_obj_by_type( m_host_topology , m_node_type , m_node_rank[i] );
+
+    const int core_count =
+      hwloc_get_nbobjs_inside_cpuset_by_type( m_host_topology ,
+                                              node->allowed_cpuset ,
+                                              HWLOC_OBJ_CORE );
+
+    if ( -1 == core_per_node ) { core_per_node = core_count ; }
+
+    if ( core_count != core_per_node ) { node_symmetry = false ; }
+
+    if ( core_count < core_per_node ) core_per_node = core_count ;
+
+    for ( int j = 0 ; j < core_count ; ++j ) {
+
+      const hwloc_obj_t core =
+        hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
+                                             node->allowed_cpuset ,
+                                             HWLOC_OBJ_CORE , j );
+
+      // Processing units (a.k.a., hyperthreads)
+
+      const int pu_count =
+        hwloc_get_nbobjs_inside_cpuset_by_type( m_host_topology ,
+                                                core->allowed_cpuset ,
+                                                HWLOC_OBJ_PU );
+
+      if ( -1 == pu_per_core ) { pu_per_core = pu_count ; }
+
+      if ( pu_count != pu_per_core ) { node_symmetry = 0 ; }
+
+      if ( pu_count < pu_per_core ) { pu_per_core = pu_count ; }
+
+      // Use the largest cache line size
+      // assuming the largest will be a multiple of the smallest...
+
+      const hwloc_obj_t core_cache_info =
+        hwloc_get_shared_cache_covering_obj( m_host_topology , core );
+
+      if ( core_cache_info && core_cache_info->attr ) {
+
+        if ( -1 == cache_line_size ) {
+          cache_line_size = core_cache_info->attr->cache.linesize ;
+        }
+
+        if ( cache_line_size != (int) core_cache_info->attr->cache.linesize ) {
+          node_symmetry = 0 ;
+        }
+
+        if ( cache_line_size < (int) core_cache_info->attr->cache.linesize ) {
+          cache_line_size = (int) core_cache_info->attr->cache.linesize ;
+        }
+      }
     }
-    else {
-      std::cerr << "KokkosArray::Host WARNING: multicore CPUs are not symmetric"
-                << std::endl ;
-    }
+  }
 
-    if ( page_symmetry && page_size ) {
-      HostInternal::m_page_size = page_size ;
-    }
+  m_node_core_count    = core_per_node ;
+  m_node_core_pu_count = pu_per_core ;
 
-    if ( cache_line_size ) {
-      HostInternal::m_cache_line_size = cache_line_size ;
-      HostInternal::m_work_chunk      = cache_line_size / sizeof(void*);
-    }
+  HostInternal::m_worker_capacity = core_per_node * pu_per_core ;
+  HostInternal::m_gang_capacity   = node_count ;
+
+  if ( 0 < cache_line_size ) {
+    HostInternal::m_cache_line_size = cache_line_size ;
   }
 }
 

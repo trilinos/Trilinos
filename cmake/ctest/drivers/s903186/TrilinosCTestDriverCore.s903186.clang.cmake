@@ -84,7 +84,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DBoost_INCLUDE_DIRS:FILEPATH=/Users/trilinos/tpl/gcc/boost-1.49.0"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
+    "-DSuperLU_INCLUDE_DIRS:PATH=/Users/trilinos/tpl/gcc/SuperLU_4.3/SRC"
+    "-DSuperLU_LIBRARY_DIRS:PATH=/Users/trilinos/tpl/gcc/SuperLU_4.3/lib"
+    "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
     "-DTPL_ENABLE_Matio=OFF"
+    "-DTPL_ENABLE_SuperLU=ON"
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 

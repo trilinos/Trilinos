@@ -79,7 +79,7 @@ LOCA::PhaseTransition::ExtendedGroup::ExtendedGroup(
                                  "\"Bifurcation Parameter\" name is not set!");
   }
 
-  string bifParamName = ptParams_->get("Bifurcation Parameter",
+  std::string bifParamName = ptParams_->get("Bifurcation Parameter",
                                                  "None");
   const ParameterVector& p = grp->getParams();
   bifParamID = p.getIndex(bifParamName);
@@ -119,7 +119,7 @@ LOCA::PhaseTransition::ExtendedGroup::ExtendedGroup(
     break;
 
   default:
-    cerr << "LOCA::PhaseTransition::ExtendedGroup - invalid CopyType for copy constructor." << endl;
+    std::cerr << "LOCA::PhaseTransition::ExtendedGroup - invalid CopyType for copy constructor." << std::endl;
     throw "LOCA::PhaseTransition:Error";
   }
 
@@ -242,12 +242,12 @@ NOX::Abstract::Group::ReturnType LOCA::PhaseTransition::ExtendedGroup::computeNe
     return NOX::Abstract::Group::Ok;
 
   if (!isF()) {
-    cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid F" << endl;
+    std::cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid F" << std::endl;
     throw "NOX Error";
   }
 
   if (!isJacobian()) {
-    cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid Jacobian" << endl;
+    std::cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid Jacobian" << std::endl;
     throw "NOX Error";
   }
 
@@ -276,7 +276,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::PhaseTransition::ExtendedGroup::applyJacobian(const LOCA::PhaseTransition::ExtendedVector& input,
                                           LOCA::PhaseTransition::ExtendedVector& result) const
 {
-  cout << "ERROR:  Apply Jacobian not implemented for ExtendedGroup !!!!" << endl;
+  std::cout << "ERROR:  Apply Jacobian not implemented for ExtendedGroup !!!!" << std::endl;
 
   return NOX::Abstract::Group::Ok;
 }
@@ -431,7 +431,7 @@ const NOX::Abstract::Vector& LOCA::PhaseTransition::ExtendedGroup::getNewton() c
 
 const NOX::Abstract::Vector& LOCA::PhaseTransition::ExtendedGroup::getGradient() const 
 {
-  cout << "ERROR: GRADIENT VECTOR NOT CALCULATEED IN TRAMONTO_GROUP!! " << endl;
+  std::cout << "ERROR: GRADIENT VECTOR NOT CALCULATEED IN TRAMONTO_GROUP!! " << std::endl;
   return *newtonVector;
 }
 
@@ -456,7 +456,7 @@ LOCA::PhaseTransition::ExtendedGroup::getNewtonPtr() const
 Teuchos::RCP< const NOX::Abstract::Vector >
 LOCA::PhaseTransition::ExtendedGroup::getGradientPtr() const 
 {
-  cout << "ERROR: GRADIENT VECTOR NOT CALCULATEED IN TRAMONTO_GROUP!! " << endl;
+  std::cout << "ERROR: GRADIENT VECTOR NOT CALCULATEED IN TRAMONTO_GROUP!! " << std::endl;
   return newtonVector;
 }
 
@@ -464,23 +464,23 @@ LOCA::PhaseTransition::ExtendedGroup::getGradientPtr() const
 void LOCA::PhaseTransition::ExtendedGroup::print() const
 {
 /*
-  cout << "x = " << *xVector << "\n";
+  std::cout << "x = " << *xVector << "\n";
 
   if (isValidF) {
-    cout << "F(x) = " << *fVector << "\n";
-    cout << "|| F(x) || = " << normF << "\n";
+    std::cout << "F(x) = " << *fVector << "\n";
+    std::cout << "|| F(x) || = " << normF << "\n";
   }
   else
-    cout << "F(x) has not been computed" << "\n";
+    std::cout << "F(x) has not been computed" << "\n";
 */
   
-  cout << endl;
+  std::cout << std::endl;
 }
 
 void  LOCA::PhaseTransition::ExtendedGroup::setParams(const LOCA::ParameterVector& p)
 { grp->setParams(p);}
 
-void  LOCA::PhaseTransition::ExtendedGroup::setParam(string paramID, double val)
+void  LOCA::PhaseTransition::ExtendedGroup::setParam(std::string paramID, double val)
 { 
   resetIsValid();
   grp->setParam(paramID, val);
@@ -491,14 +491,14 @@ void  LOCA::PhaseTransition::ExtendedGroup::setParam(int paramID, double val)
 
 const LOCA::ParameterVector&  LOCA::PhaseTransition::ExtendedGroup::getParams() const
 { return grp->getParams(); }
-double  LOCA::PhaseTransition::ExtendedGroup::getParam(string paramID) const
+double  LOCA::PhaseTransition::ExtendedGroup::getParam(std::string paramID) const
 {  return grp->getParam(paramID); }
 double  LOCA::PhaseTransition::ExtendedGroup::getParam(int paramID) const
 {  return grp->getParam(paramID); }
 
 void
 LOCA::PhaseTransition::ExtendedGroup::setParamsMulti(
-                          const vector<int>& paramIDs,
+                          const std::vector<int>& paramIDs,
                           const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
 
@@ -511,11 +511,11 @@ LOCA::PhaseTransition::ExtendedGroup::setParamsMulti(
 
 NOX::Abstract::Group::ReturnType
 LOCA::PhaseTransition::ExtendedGroup::computeDfDpMulti(
-                                            const vector<int>& paramIDs,
+                                            const std::vector<int>& paramIDs,
                                             NOX::Abstract::MultiVector& dfdp,
                                             bool isValid_F)
 {
-   string callingFunction =
+   std::string callingFunction =
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDpMulti()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   return  NOX::Abstract::Group::BadDependency;

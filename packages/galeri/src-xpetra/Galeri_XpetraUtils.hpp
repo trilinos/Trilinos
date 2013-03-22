@@ -52,7 +52,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Assert.hpp"
 
-#include "Galeri_XpetraVectorTraits.hpp"
+#include "Galeri_VectorTraits.hpp"
 
 #include <iostream>
 
@@ -72,9 +72,10 @@ namespace Galeri {
 
       Scalar delta_x, delta_y, delta_z;
 
-      Scalar lx = list.get<Scalar>("lx", 1.0);
-      Scalar ly = list.get<Scalar>("ly", 1.0);
-      Scalar lz = list.get<Scalar>("lz", 1.0);
+      double one = 1.0;
+      Scalar lx = list.get<Scalar>("lx", one) * list.get<Scalar>("stretchx", one);
+      Scalar ly = list.get<Scalar>("ly", one) * list.get<Scalar>("stretchy", one);
+      Scalar lz = list.get<Scalar>("lz", one) * list.get<Scalar>("stretchz", one);
 
       GlobalOrdinal nx = list.get<GlobalOrdinal>("nx", -1);
       GlobalOrdinal ny = list.get<GlobalOrdinal>("ny", -1);
@@ -134,7 +135,7 @@ namespace Galeri {
           iz = (MyGlobalElements[i] - ixy) / (nx * ny);
 
           ix = ixy % nx;
-          iy = (ixy - ix) / ny;
+          iy = (ixy - ix) / nx;
 
           Coord[0][i] = delta_x * ix;
           Coord[1][i] = delta_y * iy;
@@ -150,6 +151,22 @@ namespace Galeri {
       return coordinates;
 
     } // CreateCartesianCoordinates()
+
+    template <typename GlobalOrdinal>
+    static void getSubdomainData(GlobalOrdinal N, GlobalOrdinal M, GlobalOrdinal i, GlobalOrdinal& n, GlobalOrdinal& shift) {
+      GlobalOrdinal start, end;
+      GlobalOrdinal xpid = i % M;
+
+      GlobalOrdinal PerProcSmallXDir = (GlobalOrdinal) (((double) N)/((double) M));
+      GlobalOrdinal NBigXDir         = N - PerProcSmallXDir*M;
+
+      if (xpid < NBigXDir) start =                                        xpid*(PerProcSmallXDir+1);
+      else                 start = (xpid-NBigXDir)*PerProcSmallXDir + NBigXDir*(PerProcSmallXDir+1);
+      end = start + PerProcSmallXDir + ((xpid < NBigXDir) ? 1 : 0);
+
+      shift = start;
+      n = end - start;
+    }
 
   }; // class Utils
   } // namespace Xpetra

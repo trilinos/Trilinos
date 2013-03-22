@@ -44,6 +44,8 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Panzer_config.hpp>
 
+// #define ENABLE_UNIFORM
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 
@@ -114,11 +116,15 @@ void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::P
    buildElements(parallelMach,mesh);
 
    // finish up the edges
+#ifndef ENABLE_UNIFORM
    mesh.buildSubcells();
+#endif
    mesh.buildLocalElementIDs();
 
    // now that edges are built, sidsets can be added
+#ifndef ENABLE_UNIFORM
    addSideSets(mesh);
+#endif
 
    // add nodesets
    addNodeSets(mesh);
@@ -214,13 +220,16 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
    }
 
    // add sidesets 
+#ifndef ENABLE_UNIFORM
    mesh.addSideset("left",side_ctd);
    mesh.addSideset("right",side_ctd);
    mesh.addSideset("top",side_ctd);
    mesh.addSideset("bottom",side_ctd);
+#endif
 
    // add nodesets
    mesh.addNodeset("lower_left");
+   mesh.addNodeset("origin");
 }
 
 void SquareQuadMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
@@ -413,9 +422,10 @@ void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
 
    // get all part vectors
    stk::mesh::Part * lower_left = mesh.getNodeset("lower_left");
+   stk::mesh::Part * origin = mesh.getNodeset("origin");
 
-   std::vector<stk::mesh::Entity*> localElmts;
-   mesh.getMyElements(localElmts);
+   // std::vector<stk::mesh::Entity*> localElmts;
+   // mesh.getMyElements(localElmts);
 
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
    if(machRank_==0) 
@@ -423,6 +433,9 @@ void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
       // add zero node to lower_left node set
       stk::mesh::Entity * node = bulkData->get_entity(mesh.getNodeRank(),1);
       mesh.addEntityToNodeset(*node,lower_left);
+
+      // add zero node to origin node set
+      mesh.addEntityToNodeset(*node,origin);
    }
 
    mesh.endModification();

@@ -44,6 +44,7 @@
 #ifndef EPETRA_LONGLONGSERIALDENSEMATRIX_H
 #define EPETRA_LONGLONGSERIALDENSEMATRIX_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h" 
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES

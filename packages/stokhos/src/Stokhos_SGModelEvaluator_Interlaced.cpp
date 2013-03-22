@@ -88,7 +88,7 @@ Stokhos::SGModelEvaluator_Interlaced::SGModelEvaluator_Interlaced(
 
   overlapped_stoch_row_map = 
     Teuchos::rcp(new Epetra_LocalMap(
-		   num_sg_blocks, 0, *(sg_parallel_data->getStochasticComm())));
+		   static_cast<int>(num_sg_blocks), 0, *(sg_parallel_data->getStochasticComm())));
   stoch_row_map = overlapped_stoch_row_map;
   if (epetraCijk != Teuchos::null)
     stoch_row_map = epetraCijk->getStochasticRowMap();
@@ -141,7 +141,7 @@ Stokhos::SGModelEvaluator_Interlaced::SGModelEvaluator_Interlaced(
 
     Teuchos::RCP<Epetra_BlockMap> W_overlap_map =
       Teuchos::rcp(new Epetra_LocalMap(
-		     num_W_blocks, 0, 
+		     static_cast<int>(num_W_blocks), 0, 
 		     *(sg_parallel_data->getStochasticComm())));
     W_sg_blocks = 
       Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
@@ -182,7 +182,7 @@ Stokhos::SGModelEvaluator_Interlaced::SGModelEvaluator_Interlaced(
   // Create parameter maps, names, and initial values
   overlapped_stoch_p_map =
     Teuchos::rcp(new Epetra_LocalMap(
-		   num_p_blocks, 0, 
+		   static_cast<int>(num_p_blocks), 0, 
 		   *(sg_parallel_data->getStochasticComm())));
   for (int i=0; i<num_p_sg; i++) {
     Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(sg_p_index_map[i]);
@@ -663,9 +663,6 @@ Stokhos::SGModelEvaluator_Interlaced::evalModel(const InArgs& inArgs,
           = Teuchos::rcp(new Epetra_Vector(*interlace_overlapped_f_map));
     copyToInterlacedVector(*f_sg_blocks,*overlapped_f);
     f_out->Export(*overlapped_f,*interlace_overlapped_f_exporter,Insert);
-
-    // f_out->Export(*(f_sg_blocks->getBlockVector()), *interlace_overlapped_f_exporter, 
-    // 		  Insert);
   }
 
   // df/dp -- determinsistic p

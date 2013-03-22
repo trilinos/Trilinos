@@ -510,29 +510,6 @@ FAD_BINARYOP_MACRO(min,
                    expr1.val() <= c ? expr1.dx(i) : value_type(0),
                    c <= expr2.val() ? value_type(0) : expr2.fastAccessDx(i),
                    expr1.val() <= c ? expr1.fastAccessDx(i) : value_type(0))
-FAD_BINARYOP_MACRO(copysign,
-                   CopysignOp,
-                   copysign(expr1.val(), expr2.val()),
-                   expr2.val() == value_type(0.0) ? value_type(0.0) :
-                       (expr2.val() > value_type(0.0) ?
-                           std::fabs(expr1.dx(i)) :
-                           - std::fabs(expr1.dx(i))),
-                   expr2.val() == value_type(0.0) ? value_type(0.0) :
-                       (expr2.val() > value_type(0.0) ?
-                           std::fabs(expr1.fastAccessDx(i)) :
-                           - std::fabs(expr1.fastAccessDx(i))),
-                   copysign(c, expr2.val()),
-                   copysign(expr1.val(), c),
-                   value_type(0.0),
-                   c == value_type(0.0) ? value_type(0.0) :
-                       (c > value_type(0.0) ?
-                           std::fabs(expr1.dx(i)) :
-                           - std::fabs(expr1.dx(i))),
-                   value_type(0.0),
-                   c == value_type(0.0) ? value_type(0.0) :
-                       (c > value_type(0.0) ?
-                           std::fabs(expr1.fastAccessDx(i)) :
-                           - std::fabs(expr1.fastAccessDx(i))))
 
 
 #undef FAD_BINARYOP_MACRO

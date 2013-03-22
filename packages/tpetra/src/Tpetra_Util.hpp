@@ -42,6 +42,32 @@
 #ifndef TPETRA_UTIL_HPP
 #define TPETRA_UTIL_HPP
 
+/*! 
+  \file Tpetra_Util.hpp
+  \brief Stand-alone utility functions and macros.
+
+  Tpetra_Util contains utility functions macros that are used
+  throughout Tpetra, by many classes and functions. They are placed
+  here so that they can be updated and maintained in a single spot.
+
+  Here are some of the utility functions found in this file:
+  <ul>
+  <li>An efficientAddOrUpdate for inserting data into an std::map.
+    
+  <li>Functions for converting Ordinals to Scalars and for converting
+  Scalars to Ordinals.
+
+  <li>A templated toString function, which is mainly used to easily
+  output the contents of STL containers.
+
+  <li>A multiple-array sort function, similar to the one found in
+  Epetra_Util.  
+
+  <li>Macros for reporting efficiency warnings and synchronizing 
+  tests for exceptions over a given communicator.
+  </ul>
+*/
+
 #include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream 
 #include <iterator>
 #include <algorithm>
@@ -50,19 +76,88 @@
 #include <sstream>
 
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
-//! Handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
-#define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)                                 \
-{                                                                                                     \
-  std::ostringstream errStream;                                                                       \
-  errStream << Teuchos::typeName(*this) << msg;                                                       \
-  std::string err = errStream.str();                                                                  \
-  if (TPETRA_PRINTS_EFFICIENCY_WARNINGS && (throw_exception_test)) {                                  \
-    std::cerr << err << std::endl;                                                                    \
-  }                                                                                                   \
-  TEUCHOS_TEST_FOR_EXCEPTION(TPETRA_THROWS_EFFICIENCY_WARNINGS && (throw_exception_test), Exception, err);    \
+/// \brief Print or throw an efficency warning.
+///
+/// This macro is only for use by Tpetra developers.  It is only to be
+/// used in the implementation of a Tpetra class' instance method.
+///
+/// If HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS is defined, throw an
+/// exception of type Exception, whose exception message will include
+/// \c msg (along with other useful information).  
+///
+/// If HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS is defined, print the
+/// given message to std::cerr, along with other useful information.
+///
+/// This macro must be called in an instance method of a class.
+/// (Alas, C++ gives us no way to search the scope for a list of
+/// defined names.  Otherwise, the macro could search for "this" to
+/// determine whether it is in a class' instance method.)
+///
+/// Macro arguments:
+///
+/// throw_exception_test: Boolean expression to evaluate.  If true,
+/// this macro will trigger the efficiency warning.  The test will be
+/// evaluated at most once.  Nevertheless, the test should not have
+/// side effects, since it will not be evaluated at all if neither
+/// HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS nor
+/// HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS are defined.
+///
+/// Exception: The type of exception to throw, if throw_exception_test
+/// evaluates to true and TPETRA_THROWS_EFFICIENCY_WARNINGS is
+/// defined.  The Exception should be a subclass of std::exception.
+///
+/// msg: The message to include in the warning.  The warning also
+/// includes the name of the class, and other useful information.
+///
+#define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)  \
+{ \
+  const bool tpetraEfficiencyWarningTest = (throw_exception_test); \
+  if (tpetraEfficiencyWarningTest) { \
+    std::ostringstream errStream; \
+    errStream << Teuchos::typeName(*this) << ":" << std::endl; \
+    errStream << "Efficiency warning: " << #throw_exception_test << std::endl; \
+    errStream << msg; \
+    std::string err = errStream.str(); \
+    if (TPETRA_PRINTS_EFFICIENCY_WARNINGS && tpetraEfficiencyWarningTest) { \
+      std::cerr << err << std::endl; \
+    } \
+    TEUCHOS_TEST_FOR_EXCEPTION(TPETRA_THROWS_EFFICIENCY_WARNINGS && tpetraEfficiencyWarningTest, Exception, err); \
+  } \
 }
 #else
-//! Handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
+/// \brief Print or throw an efficency warning.
+///
+/// This macro is only for use by Tpetra developers.  It is only to be
+/// used in the implementation of a Tpetra class' instance method.
+///
+/// If HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS is defined, throw an
+/// exception of type Exception, whose exception message will include
+/// \c msg (along with other useful information).  
+///
+/// If HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS is defined, print the
+/// given message to std::cerr, along with other useful information.
+///
+/// This macro must be called in an instance method of a class.
+/// (Alas, C++ gives us no way to search the scope for a list of
+/// defined names.  Otherwise, the macro could search for "this" to
+/// determine whether it is in a class' instance method.)
+///
+/// Macro arguments:
+///
+/// throw_exception_test: Boolean expression to evaluate.  If true,
+/// this macro will trigger the efficiency warning.  The test will be
+/// evaluated at most once.  Nevertheless, the test should not have
+/// side effects, since it will not be evaluated at all if neither
+/// HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS nor
+/// HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS are defined.
+///
+/// Exception: The type of exception to throw, if throw_exception_test
+/// evaluates to true and TPETRA_THROWS_EFFICIENCY_WARNINGS is
+/// defined.  The Exception should be a subclass of std::exception.
+///
+/// msg: The message to include in the warning.  The warning also
+/// includes the name of the class, and other useful information.
+///
 #define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)
 #endif
 
@@ -84,10 +179,35 @@
 #define TPETRA_ABUSE_WARNING(throw_exception_test,Exception,msg)
 #endif
 
-
-/** Shared test for exception
-   Just like Teuchos TEUCHOS_TEST_FOR_EXCEPTION, but with the assurance that all nodes test and throw the exception together.
- */
+/// \brief Test for exception, with reduction over the given communicator.
+///
+/// This is like Teuchos' TEUCHOS_TEST_FOR_EXCEPTION macro, except
+/// that it performs an all-reduce over the given communicator to
+/// ensure that all processes throw the exception if the test is true
+/// on at least one process.
+///
+/// Macro arguments:
+///
+/// throw_exception_test: Boolean expression to evaluate.  If true on
+/// at least one calling process in the given communicator, this macro
+/// will throw an exception of the given type on all processes in the
+/// communicator.  The exception message may differ on different
+/// processes.  The expression will only be evaluated once on each
+/// process.
+///
+/// Exception: The type of exception to throw, if throw_exception_test
+/// evaluates to true on at least one process in the given
+/// communicator.  The Exception should be a subclass of
+/// std::exception.
+///
+/// msg: The message to include in the warning.  The warning also
+/// includes the name of the class, and the maximum process rank on
+/// which the test evaluated to true.  The message may be different on
+/// different processes.
+///
+/// comm: The communicator (instance of a subclass of
+/// Teuchos::Comm<int>) over which to test.  This must evaluate to a
+/// class instance or reference, not a Teuchos::RCP of an instance.
 #define SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
     using Teuchos::outArg; \
@@ -95,7 +215,7 @@
     int gbl_throw; \
     Teuchos::reduceAll(comm,Teuchos::REDUCE_MAX,lcl_throw_exception,outArg(gbl_throw)); \
     TEUCHOS_TEST_FOR_EXCEPTION(gbl_throw,Exception,  \
-                       msg << " Failure on node " << gbl_throw-1 << "." << std::endl); \
+      msg << " Failure on at least one process, including process " << gbl_throw-1 << "." << std::endl); \
 }
 
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -114,33 +234,17 @@
 
 namespace Tpetra {
 
-  /*! 
-    \file Tpetra_Util.hpp
-    \brief Stand-alone utility functions.
-
-    Tpetra_Util contains utility functions that are used throughout
-    Tpetra, by many classes and functions. They are placed here
-    so that they can be updated and maintained in a single spot.
-
-    Utility functions housed here:
-    <ul>
-    <li>An efficientAddOrUpdate for inserting data into a STL map.
-    
-    <li>Functions for converting Ordinals to Scalars and for converting
-    Scalars to Ordinals.
-
-    <li>A templated toString function, which is mainly used to easily
-    output the contents of STL containers.
-
-    <li>A multiple-array sort function, similar to the one found in
-    Epetra_Util.  
-    </ul>
-  */
-
-  /** efficientAddOrUpdate is taken from Scott Meyers' "Effective STL", Item 24.
-     if m already contains an entry with key k, use operator [].
-     if it doesn't, insert is used.
-   */
+  /// \brief Efficiently insert or replace an entry in an std::map.
+  ///
+  /// \tparam MapType Specialization of std::map
+  /// \tparam KeyArgType Type of keys of the std::map
+  /// \tparam ValueArgType Type of values of the std::map
+  ///
+  /// This function is taken from Scott Meyers' "Effective STL", Item
+  /// 24.  If the given std::map m already contains an entry with key
+  /// k, replace its value with the given value v.  Otherwise, insert
+  /// (k,v) into the std::map.  In both cases, return an iterator that
+  /// points to the inserted or updated entry.
   template<typename MapType, typename KeyArgType, typename ValueArgType>
   typename MapType::iterator efficientAddOrUpdate(MapType& m, 
                           const KeyArgType & k, 

@@ -65,7 +65,7 @@ LOCA::MultiPredictor::Restart::Restart(
   const char *func = "LOCA::MultiPredictor::Restart::Restart()";
 
   // Get predictor vector from parameter list
-  string name = "Restart Vector";
+  std::string name = "Restart Vector";
   if (!predParams->isParameter(name))
     globalData->locaErrorCheck->throwError(func, name + " is not set!");
 
@@ -123,7 +123,7 @@ LOCA::MultiPredictor::Restart::clone(NOX::CopyType type) const
 
 NOX::Abstract::Group::ReturnType 
 LOCA::MultiPredictor::Restart::compute(
-	      bool baseOnSecant, const vector<double>& stepSize,
+	      bool baseOnSecant, const std::vector<double>& stepSize,
 	      LOCA::MultiContinuation::ExtendedGroup& grp,
 	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
 	      const LOCA::MultiContinuation::ExtendedVector& xVec)
@@ -137,7 +137,7 @@ LOCA::MultiPredictor::Restart::compute(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::MultiPredictor::Restart::evaluate(
-	      const vector<double>& stepSize,
+	      const std::vector<double>& stepSize,
 	      const LOCA::MultiContinuation::ExtendedVector& xVec,
 	      LOCA::MultiContinuation::ExtendedMultiVector& result) const
 {

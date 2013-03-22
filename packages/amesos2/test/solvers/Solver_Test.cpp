@@ -1365,7 +1365,7 @@ bool test_tpetra(const string& mm_file,
 #endif	     
 #if (defined HAVE_TEUCHOS_QD) && !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION)
 	if( mag == "double double" ){
-	  typdef std::complex<dd_real> cmplx_dd;
+	  typedef std::complex<dd_real> cmplx_dd;
 	  if( lo == "int" ){
 	    if( go == "default" ){
 	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,int,DN);
@@ -1416,7 +1416,7 @@ bool test_tpetra(const string& mm_file,
 #endif
 	} // end scalar == "double double"
 	else if( mag == "quad" || mag == "quad double" ){
-	  typdef std::complex<qd_real> cmplx_qd;
+	  typedef std::complex<qd_real> cmplx_qd;
 	  if( lo == "int" ){
 	    if( go == "default" ){
 	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,int,DN);

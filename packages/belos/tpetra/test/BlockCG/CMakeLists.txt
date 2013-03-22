@@ -10,6 +10,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS tpetra
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_PseudoBlockStochasticCG_hb_test
+  SOURCES test_pseudo_stochastic_cg_hb.cpp 
+  ARGS 
+  COMM serial mpi
+  DEPLIBS tpetra
+  )
+
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  Tpetra_BlockCG_complex_hb_test
 #  SOURCES test_bl_cg_complex_hb.cpp 

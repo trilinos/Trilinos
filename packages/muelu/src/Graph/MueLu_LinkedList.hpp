@@ -59,10 +59,10 @@ namespace MueLu {
     int nodeId;
     struct MueLu_Node_Struct *next;
   } MueLu_Node;
-  
+
   class LinkedList {
 
-  public:    
+  public:
     LinkedList();
 
     ~LinkedList();

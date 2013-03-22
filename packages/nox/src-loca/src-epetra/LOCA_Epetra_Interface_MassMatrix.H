@@ -101,14 +101,14 @@ namespace LOCA {
         virtual void setOldSolution(const Epetra_Vector& x,const int timeStep) {
 	  cout << "WARNING: " 
 	       << "LOCA::Epetra::Interface::MassMatrix::setOldSolution"
-	       << "\n\tempty default implementation not overloaded!" << endl;
+	       << "\n\tempty default implementation not overloaded!" << std::endl;
 	};
 	
 	//! See setOldSolution description.
         virtual void setOldSolutionFirstStep() { 
 	  cout << "WARNING: " 
 	       << "LOCA::Epetra::Interface::MassMatrix::setOldSolutionFirstStep"
-	       << "\n\tempty default implementation not overloaded!" << endl;
+	       << "\n\tempty default implementation not overloaded!" << std::endl;
 	};
 
         /*! 

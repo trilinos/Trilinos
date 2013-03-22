@@ -1,9 +1,9 @@
-/* A Bison parser, made by GNU Bison 2.4.3.  */
+/* A Bison parser, made by GNU Bison 2.4.2.  */
 
 /* Skeleton interface for Bison's Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
-   2009, 2010 Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989-1990, 2000-2006, 2009-2010 Free Software
+   Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -43,25 +43,27 @@
      UNDVAR = 260,
      VAR = 261,
      SVAR = 262,
-     FNCT = 263,
-     SFNCT = 264,
-     EQ_MINUS = 265,
-     EQ_PLUS = 266,
-     EQ_DIV = 267,
-     EQ_TIME = 268,
-     EQ_POW = 269,
-     LOR = 270,
-     LAND = 271,
-     NE = 272,
-     EQ = 273,
-     GE = 274,
-     LE = 275,
-     NOT = 276,
-     UNARY = 277,
-     POW = 278,
-     DEC = 279,
-     INC = 280,
-     CONCAT = 281
+     IMMVAR = 263,
+     IMMSVAR = 264,
+     FNCT = 265,
+     SFNCT = 266,
+     EQ_MINUS = 267,
+     EQ_PLUS = 268,
+     EQ_DIV = 269,
+     EQ_TIME = 270,
+     EQ_POW = 271,
+     LOR = 272,
+     LAND = 273,
+     NE = 274,
+     EQ = 275,
+     GE = 276,
+     LE = 277,
+     NOT = 278,
+     UNARY = 279,
+     POW = 280,
+     DEC = 281,
+     INC = 282,
+     CONCAT = 283
    };
 #endif
 /* Tokens.  */
@@ -70,25 +72,27 @@
 #define UNDVAR 260
 #define VAR 261
 #define SVAR 262
-#define FNCT 263
-#define SFNCT 264
-#define EQ_MINUS 265
-#define EQ_PLUS 266
-#define EQ_DIV 267
-#define EQ_TIME 268
-#define EQ_POW 269
-#define LOR 270
-#define LAND 271
-#define NE 272
-#define EQ 273
-#define GE 274
-#define LE 275
-#define NOT 276
-#define UNARY 277
-#define POW 278
-#define DEC 279
-#define INC 280
-#define CONCAT 281
+#define IMMVAR 263
+#define IMMSVAR 264
+#define FNCT 265
+#define SFNCT 266
+#define EQ_MINUS 267
+#define EQ_PLUS 268
+#define EQ_DIV 269
+#define EQ_TIME 270
+#define EQ_POW 271
+#define LOR 272
+#define LAND 273
+#define NE 274
+#define EQ 275
+#define GE 276
+#define LE 277
+#define NOT 278
+#define UNARY 279
+#define POW 280
+#define DEC 281
+#define INC 282
+#define CONCAT 283
 
 
 
@@ -97,8 +101,8 @@
 typedef union YYSTYPE
 {
 
-/* Line 1685 of yacc.c  */
-#line 50 "aprepro.y"
+/* Line 1749 of yacc.c  */
+#line 52 "aprepro.y"
 
   double  val;		/* For returning numbers.		*/
   symrec *tptr;		/* For returning symbol-table pointers	*/
@@ -106,8 +110,8 @@ typedef union YYSTYPE
 
 
 
-/* Line 1685 of yacc.c  */
-#line 111 "y.tab.h"
+/* Line 1749 of yacc.c  */
+#line 115 "y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

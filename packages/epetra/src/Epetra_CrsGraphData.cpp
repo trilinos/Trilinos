@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_CrsGraphData.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
@@ -76,7 +77,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
     SortGhostsAssociatedWithEachProcessor_(false),
 
     // ints
-    IndexBase_(RowMap.IndexBase()),
+    IndexBase_(RowMap.IndexBase64()),
     NumGlobalEntries_(0),
     NumGlobalBlockRows_(RowMap.NumGlobalElements64()),
     NumGlobalBlockCols_(NumGlobalBlockRows_),
@@ -150,7 +151,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
     StaticProfile_(StaticProfile),
     SortGhostsAssociatedWithEachProcessor_(false),
     // ints
-    IndexBase_(RowMap.IndexBase()),
+    IndexBase_(RowMap.IndexBase64()),
     NumGlobalEntries_(0),
     NumGlobalBlockRows_(RowMap.NumGlobalElements64()),
     NumGlobalBlockCols_(ColMap.NumGlobalElements64()),
@@ -535,8 +536,10 @@ Epetra_CrsGraphData::EntriesInOneRow<int_type>::AddEntries (const int  numCols,
 }
 
 // explicit instantiation.
-template void Epetra_CrsGraphData::EntriesInOneRow<int      >::AddEntry(const int Col);
-template void Epetra_CrsGraphData::EntriesInOneRow<long long>::AddEntry(const long long Col);
+template void Epetra_CrsGraphData::EntriesInOneRow<int>::AddEntry(const int Col);
+template void Epetra_CrsGraphData::EntriesInOneRow<int>::AddEntries(const int numCols, const int *Indices);
 
-template void Epetra_CrsGraphData::EntriesInOneRow<int      >::AddEntries(const int numCols, const int *Indices);
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+template void Epetra_CrsGraphData::EntriesInOneRow<long long>::AddEntry(const long long Col);
 template void Epetra_CrsGraphData::EntriesInOneRow<long long>::AddEntries(const int numCols, const long long *Indices);
+#endif

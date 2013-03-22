@@ -126,11 +126,11 @@ namespace LOCA {
 		   int nVecs);
 
       //! Returns current method
-      const string& getMethod() const;
+      const std::string& getMethod() const;
 
     protected:
       //! Stores predictor method name
-      string method;
+      std::string method;
 
       //! Stores pointer to current singular solver object
       LOCA::SingularJacobianSolve::Generic *singularSolverPtr;

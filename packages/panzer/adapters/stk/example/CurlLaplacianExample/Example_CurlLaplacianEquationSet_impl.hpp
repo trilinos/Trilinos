@@ -63,14 +63,32 @@
 // ***********************************************************************
 template <typename EvalT>
 Example::CurlLaplacianEquationSet<EvalT>::
-CurlLaplacianEquationSet(const panzer::InputEquationSet& ies,
-		   const panzer::CellData& cell_data,
-		   const Teuchos::RCP<panzer::GlobalData>& global_data,
-		   const bool build_transient_support) :
-  panzer::EquationSet_DefaultImpl<EvalT>(ies, cell_data, global_data, build_transient_support )
+CurlLaplacianEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
+			 const int& default_integration_order,
+			 const panzer::CellData& cell_data,
+			 const Teuchos::RCP<panzer::GlobalData>& global_data,
+			 const bool build_transient_support) :
+  panzer::EquationSet_DefaultImpl<EvalT>(params, default_integration_order, cell_data, global_data, build_transient_support )
 {
-   TEUCHOS_ASSERT(ies.prefix==""); // have an assertion to gurantee no prefix
-   this->m_eqset_prefix = "";      // for simplicity assume no prefix
+  // ********************
+  // Validate and parse parameter list
+  // ********************
+  {    
+    Teuchos::ParameterList valid_parameters;
+    this->setDefaultValidParameters(valid_parameters);
+    
+    valid_parameters.set("Model ID","","Closure model id associated with this equaiton set");
+    valid_parameters.set("Basis Type","HGrad","Type of Basis to use");
+    valid_parameters.set("Basis Order",1,"Order of the basis");
+    valid_parameters.set("Integration Order",-1,"Order of the integration rule");
+    
+    params->validateParametersAndSetDefaults(valid_parameters);
+  }
+  
+  std::string basis_type = params->get<std::string>("Basis Type");
+  int basis_order = params->get<int>("Basis Order");
+  int integration_order = params->get<int>("Integration Order");
+  std::string model_id = params->get<std::string>("Model ID");
 
    // ********************
    // Panzer uses strings to match fields. In this section we define the
@@ -95,40 +113,35 @@ CurlLaplacianEquationSet(const panzer::InputEquationSet& ies,
    // ********************
    // Assemble DOF names and Residual names
    // ********************
-   this->m_dof_names->push_back("EFIELD");
- 
-   this->m_dof_curl_names->push_back("CURL_EFIELD");
- 
-   if(this->m_build_transient_support)
-      this->m_dof_time_derivative_names->push_back("DOT_EFIELD");
- 
-   this->m_residual_names->push_back("RESIDUAL_EFIELD");
- 
-   this->m_scatter_name = "Scatter_RESIDUAL_EFIELD";
- 
+
+  this->addDOF("EFIELD",basis_type,basis_order,integration_order);
+   this->addDOFCurl("EFIELD");
+   if (this->buildTransientSupport())
+     this->addDOFTimeDerivative("EFIELD");
+
    // ********************
    // Build Basis Functions and Integration Rules
    // ********************
    
-   this->setupDOFs(cell_data.baseCellDimension());
- 
-   // ********************
-   // Parse valid options
-   // ********************
-   // The "Options" parameter list is included in ies.params
+   this->addClosureModel(model_id);
+
+   this->setupDOFs();
 }
 
 // ***********************************************************************
 template <typename EvalT>
 void Example::CurlLaplacianEquationSet<EvalT>::
 buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				      const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+				      const panzer::FieldLibrary& fl,
 				      const Teuchos::ParameterList& user_data) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  
+   
+  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF("EFIELD");
+  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF("EFIELD"); 
+
   // ********************
   // Energy Equation
   // ********************
@@ -141,8 +154,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Residual Name", "RESIDUAL_EFIELD_DIFFUSION_OP");
     p.set("Value Name", "CURL_EFIELD"); // this field is constructed by the panzer library
     p.set("Test Field Name", "EFIELD"); 
-    p.set("Basis", this->m_basis);
-    p.set("IR", this->m_int_rule);
+    p.set("Basis", basis);
+    p.set("IR", ir);
     p.set("Multiplier", -thermal_conductivity);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -157,8 +170,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Residual Name", "RESIDUAL_EFIELD_MASS_OP");
     p.set("Value Name", "EFIELD"); 
     p.set("Test Field Name", "EFIELD"); 
-    p.set("Basis", this->m_basis);
-    p.set("IR", this->m_int_rule);
+    p.set("Basis", basis);
+    p.set("IR", ir);
     p.set("Multiplier", -1.0);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -174,8 +187,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Value Name", "SOURCE_EFIELD"); // this field must be provided by the closure model factory
                                                // and specified by the user
     p.set("Test Field Name", "EFIELD"); 
-    p.set("Basis", this->m_basis);
-    p.set("IR", this->m_int_rule);
+    p.set("Basis", basis);
+    p.set("IR", ir);
     p.set("Multiplier", 1.0);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -186,25 +199,14 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   // Use a sum operator to form the overall residual for the equation
   {
-    RCP<std::vector<std::string> > sum_names = 
-      rcp(new std::vector<std::string>);
-
+    std::vector<std::string> sum_names;
+    
     // these are the names of the residual values to sum together
-    sum_names->push_back("RESIDUAL_EFIELD_DIFFUSION_OP");
-    sum_names->push_back("RESIDUAL_EFIELD_MASS_OP");
-    sum_names->push_back("RESIDUAL_EFIELD_SOURCE_OP");
+    sum_names.push_back("RESIDUAL_EFIELD_DIFFUSION_OP");
+    sum_names.push_back("RESIDUAL_EFIELD_MASS_OP");
+    sum_names.push_back("RESIDUAL_EFIELD_SOURCE_OP");
 
-    ParameterList p;
-    p.set("Sum Name", "RESIDUAL_EFIELD"); 
-       // this name is special, the scatter evalutor depends on the field
-       // named "RESIDUAL_EFIELD" for evaluation
-    p.set("Values Names", sum_names);
-    p.set("Data Layout", this->m_basis->functional);
-
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
-
-    fm.template registerEvaluator<EvalT>(op);
+    this->buildAndRegisterResidualSummationEvalautor(fm,"EFIELD",sum_names);
   }
 
 }

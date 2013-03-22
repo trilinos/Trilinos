@@ -21,6 +21,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tSquareQuadMeshDOFManager_FEI
+  SOURCES tSquareQuadMeshDOFManager_FEI.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tDOFManager2_Orientation
   SOURCES tDOFManager2_Orientation.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 2
@@ -30,6 +37,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tSquareTriMeshDOFManager
   SOURCES tSquareTriMeshDOFManager.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tSquareTriMeshDOFManager_FEI
+  SOURCES tSquareTriMeshDOFManager_FEI.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 2
   COMM serial mpi
   )
@@ -49,8 +63,22 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tCubeHexMeshDOFManager_FEI
+  SOURCES tCubeHexMeshDOFManager_FEI.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tSquareQuadMeshDOFManager_edgetests
   SOURCES tSquareQuadMeshDOFManager_edgetests.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tSquareQuadMeshDOFManager_edgetests_FEI
+  SOURCES tSquareQuadMeshDOFManager_edgetests_FEI.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   COMM serial mpi
   )

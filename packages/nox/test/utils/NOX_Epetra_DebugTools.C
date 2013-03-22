@@ -119,7 +119,7 @@ NOX::Epetra::DebugTools::compute_matrix_using_operator( const Epetra_Operator * 
   {
     std::cout << "****************  CREATING MATRIX FROM OPERATOR ************************ "
 	      << std::endl;
-    cout << NOX::Utils::fill(72) << std::endl;
+    std::cout << NOX::Utils::fill(72) << std::endl;
   }
   int totalPerturbations = tempVec->GlobalLength();
   int outFreq = totalPerturbations / 71;
@@ -149,10 +149,10 @@ NOX::Epetra::DebugTools::compute_matrix_using_operator( const Epetra_Operator * 
       }
     }
     if( (0 == op->Comm().MyPID()) && (0 == (col % outFreq)) )
-      cout << "-" << flush;
+      std::cout << "-" << flush;
   }
   if( 0 == op->Comm().MyPID() )
-    cout << "*" << std::endl;
+    std::cout << "*" << std::endl;
 
   p_mat->FillComplete();
 

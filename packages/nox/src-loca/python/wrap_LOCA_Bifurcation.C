@@ -348,7 +348,7 @@ SWIG_TypeClientData(swig_type_info *ti, void *clientdata) {
   }
 }
 
-/* Pack binary data into a string */
+/* Pack binary data into a std::string */
 static char *
 SWIG_PackData(char *c, void *ptr, size_t sz) {
   static char hex[17] = "0123456789abcdef";
@@ -363,7 +363,7 @@ SWIG_PackData(char *c, void *ptr, size_t sz) {
   return c;
 }
 
-/* Unpack binary data from a string */
+/* Unpack binary data from a std::string */
 static char *
 SWIG_UnpackData(char *c, void *ptr, size_t sz) {
   register unsigned char uu = 0;
@@ -491,7 +491,7 @@ typedef struct swig_const_info {
  * Pointer declarations
  * ----------------------------------------------------------------------------- */
 /*
-  Use SWIG_NO_COBJECT_TYPES to force the use of strings to represent
+  Use SWIG_NO_COBJECT_TYPES to force the use of std::strings to represent
   C/C++ pointers in the python side. Very useful for debugging, but
   not always safe.
 */
@@ -917,7 +917,7 @@ type_error:
   return -1;
 }
 
-/* Create a new pointer string */
+/* Create a new pointer std::string */
 static char *
 SWIG_Python_PointerStr(char *buff, void *ptr, const char *name, size_t bsz) {
   char *r = buff;

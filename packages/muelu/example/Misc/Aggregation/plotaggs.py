@@ -11,7 +11,7 @@ import convhull as ch
 from matplotlib.path import Path
 import matplotlib.patches as patches
 import random
-    
+
 #############################################################################
 # check, if line is a NODE line or not
 def checkline(line):
@@ -27,16 +27,16 @@ def read_nodes(filename):
 	nodes = []
 	for l in file(filename):
 		line = l.strip()
-	
+
 		# filter out only NODE lines
 		ret,line = checkline(line)
 		if ret == 0:
 			continue
-	
+
 		# line now contains a list of all tokens in that line
 		line = line.split("\t")
-	
-		
+
+
 		x = float(line[2])
 		y = float(line[3])
 		nodes.append((x,y))
@@ -44,18 +44,18 @@ def read_nodes(filename):
 
 ################################################################################
 # helper function: uniquify list (non-order-preserving
-def uniquify_list(seq): 
-    # Not order preserving 
-    keys = {} 
-    for e in seq: 
-        keys[e] = 1 
+def uniquify_list(seq):
+    # Not order preserving
+    keys = {}
+    for e in seq:
+        keys[e] = 1
     return keys.keys()
 
 ################################################################################
 # add an aggregate patch to current axis ax
 def add_aggregate_patch(ax,aggvertices,owningprocs):
 	procs = uniquify_list(owningprocs)
-	
+
 	# translate tuple -> list
 	curagg = []
 	for node in range(0,len(aggvertices)):
@@ -66,7 +66,7 @@ def add_aggregate_patch(ax,aggvertices,owningprocs):
 	for node in range(0,len(curagg)):
 		codes.append(Path.LINETO)
 	curagg.append(curagg[0])	# close aggregate (repeat first node)
-	
+
 	# create path from curagg
 	path = Path(curagg, codes)
 
@@ -94,19 +94,19 @@ def get_rootnodes(aggid2gids,nodes):
 	for k in aggid2gids.keys():
 
 		nodecoords = get_agg_coords(nodes,aggid2gids,k)
-	
-		      
+
+
 		firstpoint = nodecoords[0]
 		x = 0.0
 		y = 0.0
 		for m in nodecoords:
-	
+
 			x = x + m[0]
 			y = y + m[1]
 		x = x/len(aggid2gids[k])
 		y = y/len(aggid2gids[k])
 		rootnodes.append((x,y))
-	
+
 	return rootnodes
 
 
@@ -130,7 +130,7 @@ def read_aggregation_info(filename,gid2aggid,gid2procid,procid):
 		ret = line.partition(" ")
 		gid = int(ret[0])
 		aggid = int(ret[2].strip())
-		gid2aggid[gid]=aggid	
+		gid2aggid[gid]=aggid
 		gid2procid[gid]=procid
 		lid2aggid[lid]=aggid
 		lid = lid + 1
@@ -139,13 +139,13 @@ def read_aggregation_info(filename,gid2aggid,gid2procid,procid):
 ################################################################################
 # read in aggregation info from file
 def readin_aggregates(procs,level):
-  
+
   gid2aggid = {}
   gid2procid = {}
-  
+
   for proc in range(0,procs):
     filename = "aggs_level" + str(level) + "_proc" + str(proc) + ".out"
-    print "process ", filename  
+    print "process ", filename
     [proclid2aggid,procgid2aggid] = read_aggregation_info(filename,gid2aggid,gid2procid,proc)
   return gid2aggid, gid2procid
 
@@ -158,7 +158,7 @@ def fill_aggs_with_gids(gid2aggid,gid2procid):
 
 	# number of gids
 	numgids = len(gid2aggid)
-	
+
 	################# setup aggs
 	# aggid2gids is a map: globalaggid -> list of gids
 	aggid2gids = {}
@@ -204,50 +204,50 @@ def get_agg_coords(nodes,aggid2gids,aggid):
 # input: numprocs = number of processors
 # output: return rootnodes for next level
 def plot_aggregates_level(ax,level,nodes,numprocs):
-	
+
 	print "plot aggregates level " + str(level)
 
 	# read in aggs for current level
 	[gid2aggid,gid2procid] = readin_aggregates(numprocs,level)
-	
+
 	# calculate new aggregates
 	[aggid2gids,aggid2procs] = fill_aggs_with_gids(gid2aggid,gid2procid)
-	
+
 	# determine root node vertices from old aggregates
 	#if level==0:
 	#  rootnodes = nodes
 	#else:
 	rootnodes = get_rootnodes(aggid2gids, nodes)
 	print "number of rootnodes " + str(len(rootnodes))
-	
+
 	# plot aggregates on current level
 	for k in aggid2gids.keys():
-	
+
 	  nodecoords = get_agg_coords(nodes,aggid2gids,k)
 	  owningprocs = aggid2procs[k]
 
 	  if len(nodecoords) > 5:
-	    arraydata = np.transpose(np.array(nodecoords))  
+	    arraydata = np.transpose(np.array(nodecoords))
 	    convhulldata = ch.convex_hull(arraydata)
 	    add_aggregate_patch(ax,convhulldata,owningprocs)
-	  elif len(nodecoords) > 2: 
+	  elif len(nodecoords) > 2:
 	    pt1 = nodecoords[0]
 	    pt2 = nodecoords[1]
 	    pt3 = nodecoords[2]
 	    nodecoords.append(((pt1[0]+pt2[0])/2,(pt1[1]+pt2[1])/2));
 	    nodecoords.append(((pt1[0]+pt3[0])/2,(pt1[1]+pt3[1])/2));
 	    nodecoords.append(((pt2[0]+pt3[0])/2,(pt2[1]+pt3[1])/2));
-	    arraydata = np.transpose(np.array(nodecoords))  
+	    arraydata = np.transpose(np.array(nodecoords))
 	    convhulldata = ch.convex_hull(arraydata)
 	    add_aggregate_patch(ax,convhulldata,owningprocs)
 	  elif len(nodecoords) == 2:
 	    print "2 point aggregate"
 	    plt.plot(nodecoords[0][0],nodecoords[0][1],'ro')
-	    plt.plot(nodecoords[1][0],nodecoords[1][1],'bo')   
+	    plt.plot(nodecoords[1][0],nodecoords[1][1],'bo')
 	  else:
 	    print "1 point aggregate"
 	    plt.plot(nodecoords[0][0],nodecoords[0][1],'ro')
-	    
+
 	return rootnodes
 
 ################################################################################
@@ -255,26 +255,26 @@ def plot_aggregates_level(ax,level,nodes,numprocs):
 # input: number of levels
 def plot_aggregates(nlevels,procs):
 	print "plot aggregates"
-	
+
 	gid2aggid = {}
 	curlevel = 0 # finest level
-	
+
 	# read in nodes
 	nodes, numnodes = read_nodes("nodes" + str(curlevel) + ".txt")
 
-	
+
 	############# create new figure
 	fig = plt.figure()
-	
+
 	width=nlevels
 	coarseLevelnodes = nodes
 	for i in range(0,width):
-	
+
 		ax = fig.add_subplot(1,width,i+1,aspect='equal')
-	
+
 		coarseLevelnodes = plot_aggregates_level(ax,i,coarseLevelnodes,procs)
 	plt.show()
-	
+
 
 ################################################################################
 # MAIN routine
@@ -286,7 +286,7 @@ def main(argv=None):
 	plot_aggregates(3,2)
 
 if __name__ == "__main__":
-	sys.exit(main())	
-	
-	
-	
+	sys.exit(main())
+
+
+

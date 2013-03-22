@@ -3,3 +3,9 @@
 #cmakedefine HAVE_STK_Trilinos
 
 #cmakedefine HAVE_MPI
+
+#cmakedefine FORTRAN_NO_UNDERSCORE
+
+#cmakedefine FORTRAN_ONE_UNDERSCORE
+
+#cmakedefine FORTRAN_TWO_UNDERSCORES

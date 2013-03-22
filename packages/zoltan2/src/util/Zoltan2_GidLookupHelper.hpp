@@ -183,7 +183,7 @@ template<typename T, typename lno_t>
 template<typename T, typename lno_t>
   lno_t GidLookupHelper<T, lno_t>::lookup(const T gid) const
 {
-  lno_t idx;
+  lno_t idx=0;
   bool badId=false;
   if (useHashTable_){
     try{
@@ -239,4 +239,4 @@ template<typename T, typename lno_t>
 
 } // namespace Z2
 
-#endif // _ZOLTAN2_IDENTIFIERTRAITS
+#endif // _ZOLTAN2_GIDLOOKUPHELPER

@@ -219,6 +219,8 @@ buildSrcToDestMap(const std::string & elementBlock,
     for(std::size_t i=0;i<srcOffsets.size();i++) {
       offsetMap[srcOffsets[i]] = dstOffsets[i];
 
+      // provides a size for allocating an array below: we will be able
+      // to index into dstFromSrcMap_ in a simple way
       maxDest = dstOffsets[i]>maxDest ? dstOffsets[i] : maxDest;
     }
   }

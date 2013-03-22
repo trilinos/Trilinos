@@ -88,6 +88,10 @@ namespace Iogn {
     // database supports that type (e.g. return_value & Ioss::FACESET)
     unsigned entity_field_support() const;
 
+    // Eliminate as much memory as possible, but still retain meta data information
+    // Typically, eliminate the maps...
+    void release_memory();
+
     void read_meta_data();
 
     bool begin(Ioss::State state);
@@ -105,14 +109,15 @@ namespace Iogn {
     const std::vector<std::string>& get_sideset_names() const
       { return m_sideset_names; }
   private:
+    void get_step_times();
     void get_nodeblocks();
     void get_elemblocks();
     void get_nodesets();
     void get_sidesets();
     void get_commsets();
 
-    const Ioss::MapContainer& get_node_map() const;
-    const Ioss::MapContainer& get_element_map() const;
+    const Ioss::Map& get_node_map() const;
+    const Ioss::Map& get_element_map() const;
 
     int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
@@ -164,6 +169,8 @@ namespace Iogn {
     int64_t put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
 
+    void add_transient_fields(Ioss::GroupingEntity *entity);
+
     // Private member functions
     DatabaseIO(const DatabaseIO& from); // do not implement
     DatabaseIO& operator=(const DatabaseIO& from); // do not implement
@@ -187,22 +194,10 @@ namespace Iogn {
     //               sierra side.   global = nodeMap[local]
     // nodeMap[0] contains: -1 if sequential, 0 if ordering unknown, 1
     // if nonsequential
-    mutable Ioss::MapContainer        nodeMap;
-    mutable Ioss::MapContainer        reorderNodeMap;
-    mutable Ioss::ReverseMapContainer reverseNodeMap;
-    // (local==global)
+    mutable Ioss::Map nodeMap;
+    mutable Ioss::Map elemMap;
 
-    //---Element Map -- Maps internal (1..NUMEL) ids to global ids used on the
-    //               sierra side.   global = elementMap[local]
-    // elementMap[0] contains: -1 if sequential, 0 if ordering unknown,
-    // 1 if nonsequential
-    mutable Ioss::MapContainer        elementMap;
-    mutable Ioss::MapContainer        reorderElementMap;
-    mutable Ioss::ReverseMapContainer reverseElementMap;
-
-    mutable bool sequentialNG2L; // true if reverse node map is sequential
-    mutable bool sequentialEG2L; // true if reverse element map is
-    // sequential (local==global)
+    bool m_useVariableDf;
   };
 }
 #endif // IOSS_Iogn_DatabaseIO_h

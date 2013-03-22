@@ -54,12 +54,34 @@
 # @HEADER
 
 INCLUDE(ConcatStrings)
+INCLUDE(PrintVar)
 
-FUNCTION(APPEND_STRING_VAR STRING_VAR)
-  #MESSAGE("APPEND_STRING_VAR: ${STRING_VAR} ${ARGN}")
-  CONCAT_STRINGS( TMP_STRING "${${STRING_VAR}}" ${ARGN} )
-  #PRINT_VAR( TMP_STRING )
-  SET(${STRING_VAR} "${TMP_STRING}" PARENT_SCOPE)
-  #SET(${STRING_VAR} "${${STRING_VAR}}${LINE}" PARENT_SCOPE)
-  #PRINT_VAR(STRING_VAR)
+#
+# Append strings to an existing string variable
+#
+# APPEND_STIRNG_VAR(STRING_VAR "string1" "string2" ...)
+#
+# Note that the usage of the characters '[', ']', '{', '}' are taken by CMake
+# to bypass the meaning of ';' to separate string characters.
+#
+# If you want to ignore the meaning of these special characters and are okay with
+# just adding one string at a time use APPEND_STRING_VAR_EXT(...)
+#
+FUNCTION(APPEND_STRING_VAR STRING_VAR_OUT)
+  #MESSAGE("APPEND_STRING_VAR: ${STRING_VAR_OUT} {${ARGN}}")
+  CONCAT_STRINGS( STRING_VAR "${${STRING_VAR_OUT}}" ${ARGN} )
+  #PRINT_VAR( STRING_VAR )
+  SET(${STRING_VAR_OUT} "${STRING_VAR}" PARENT_SCOPE)
+  #PRINT_VAR(STRING_VAR_OUT)
+ENDFUNCTION()
+
+
+#
+# Append a single string to an existing string variable, ignoring ';'
+#
+# APPEND_STIRNG_VAR_EXT(STRING_VAR_OUT "string")
+#
+FUNCTION(APPEND_STRING_VAR_EXT  STRING_VAR_OUT  STRING_TO_APPEND)
+  SET(STRING_VAR "${${STRING_VAR_OUT}}${STRING_TO_APPEND}")
+  SET(${STRING_VAR_OUT} "${STRING_VAR}" PARENT_SCOPE)
 ENDFUNCTION()

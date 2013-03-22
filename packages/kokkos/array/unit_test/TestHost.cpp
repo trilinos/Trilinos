@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,25 +35,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
 #include <gtest/gtest.h>
 
+#include <KokkosArray_Host.hpp>
+
 #include <KokkosArray_View.hpp>
 
 #include <KokkosArray_CrsArray.hpp>
-
-#include <KokkosArray_Host.hpp>
 
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
 
-#include <KokkosArray_Host_macros.hpp>
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
 
@@ -61,22 +60,24 @@
 #include <TestReduce.hpp>
 #include <TestMultiReduce.hpp>
 
-#include <KokkosArray_Clear_macros.hpp>
-
 namespace Test {
 
 class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    const size_t node_count = KokkosArray::Host::detect_node_count();
-/*
-    const size_t node_core_count = KokkosArray::Host::detect_node_core_count();
-    std::cout << "KokkosArray::Host node_count(" << node_count
-              << ") X node_core_count(" << node_core_count
-              << ")" << std::endl ;
-*/
-    KokkosArray::Host::initialize( node_count , 4 );
+    size_t gang_count        = KokkosArray::Host::detect_gang_capacity();
+    size_t gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity();
+
+    if ( gang_worker_count < gang_count ) {
+      gang_count = ( gang_count + 1 ) / 2 ;
+    }
+    else {
+      gang_worker_count = ( gang_worker_count + 1 ) / 2 ;
+    }
+
+    KokkosArray::Host::initialize( gang_count , gang_worker_count );
+    KokkosArray::Host::print_configuration( std::cout );
   }
 
   static void TearDownTestCase()
@@ -108,6 +109,18 @@ TEST_F( host, long_reduce) {
 
 TEST_F( host, double_reduce) {
   TestReduce< double ,   KokkosArray::Host >( 1000000 );
+}
+
+TEST_F( host, long_reduce_dynamic ) {
+  TestReduceDynamic< long ,   KokkosArray::Host >( 1000000 );
+}
+
+TEST_F( host, double_reduce_dynamic ) {
+  TestReduceDynamic< double ,   KokkosArray::Host >( 1000000 );
+}
+
+TEST_F( host, long_reduce_dynamic_view ) {
+  TestReduceDynamicView< long ,   KokkosArray::Host >( 1000000 );
 }
 
 TEST_F( host, long_multi_reduce) {
@@ -163,6 +176,9 @@ struct HostFunctor {
 
   volatile int & flag ;
 
+  static void init( int & update )
+    { update = 0 ; }
+
   static void join( volatile int & update , const volatile int & input )
     { update += input ; }
 
@@ -173,11 +189,15 @@ struct HostFunctor {
 
   void operator()( KokkosArray::Impl::HostThread & thread ) const
     {
-      int value = 0 ;
+      const KokkosArray::Impl::ReduceOperator< HostFunctor , HostFunctor >
+        reduce(*this);
+
+      reduce.init( thread.reduce_data() );
+
       thread.barrier();
       thread.barrier();
-      thread.reduce< HostFunctor >( value , *this );
-      thread.reduce< HostFunctor >( value , *this );
+      thread.reduce( reduce );
+      thread.reduce( reduce );
       thread.barrier();
     }
 };

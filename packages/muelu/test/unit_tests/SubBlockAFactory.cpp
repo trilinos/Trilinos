@@ -54,9 +54,9 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
@@ -74,10 +74,9 @@ namespace MueLuTests {
   /////////////////////////
   // helper function
 
-  Teuchos::RCP<CrsOperator> GenerateProblemMatrix(const Teuchos::RCP<const Map> map, Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
+  Teuchos::RCP<CrsMatrixWrap> GenerateProblemMatrix(const Teuchos::RCP<const Map> map, Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
 
-
-    Teuchos::RCP<CrsOperator> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsOperator>::Build(map, 3);
+    Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(map, 3);
 
     LocalOrdinal NumMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -129,13 +128,13 @@ namespace MueLuTests {
     } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
 
     mtx->fillComplete(map,map);
-    
+
     return mtx;
   }
 
   TEUCHOS_UNIT_TEST(SubBlockAFactory, Constructor)
   {
-    // test for accessing subblocks from a blocked CRS Operator using SubBlockAFactory
+    // test for accessing subblocks from a blocked CRS Matrix using SubBlockAFactory
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -151,7 +150,7 @@ namespace MueLuTests {
     GO numElements2 = 100;
 
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
-    
+
     std::vector<size_t> stridingInfo;
     stridingInfo.push_back(1);
 
@@ -171,11 +170,11 @@ namespace MueLuTests {
 
     Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LO, GO, Node> > mapExtractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(bigMap, maps);
 
-    RCP<CrsOperator> Op11 = GenerateProblemMatrix(map1,2,-1,-1);
-    RCP<CrsOperator> Op22 = GenerateProblemMatrix(map2,3,-2,-1);
-    
+    RCP<CrsMatrixWrap> Op11 = GenerateProblemMatrix(map1,2,-1,-1);
+    RCP<CrsMatrixWrap> Op22 = GenerateProblemMatrix(map2,3,-2,-1);
+
     // build blocked operator
-    Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO,Node,LocalMatOps> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO,Node,LocalMatOps>(mapExtractor,mapExtractor,10));
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps>(mapExtractor,mapExtractor,10));
 
     Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > crsMat11 = Op11->getCrsMatrix();
     Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > crsMat22 = Op22->getCrsMatrix();
@@ -186,7 +185,7 @@ namespace MueLuTests {
 
     // build hierarchy
     RCP<Level> levelOne = rcp(new Level());
-    levelOne->Set("A", Teuchos::rcp_dynamic_cast<Operator>(bOp)); // set blocked operator
+    levelOne->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
     // define sub block factories for blocked operator "A"
     RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
@@ -198,8 +197,8 @@ namespace MueLuTests {
     TEST_EQUALITY(levelOne->IsRequested("A", A11Fact.get()),true);
     TEST_EQUALITY(levelOne->IsRequested("A", A22Fact.get()),true);
 
-    RCP<Operator> A11 = levelOne->Get<RCP<Operator> >("A",A11Fact.get());
-    RCP<Operator> A22 = levelOne->Get<RCP<Operator> >("A",A22Fact.get());
+    RCP<Matrix> A11 = levelOne->Get<RCP<Matrix> >("A",A11Fact.get());
+    RCP<Matrix> A22 = levelOne->Get<RCP<Matrix> >("A",A22Fact.get());
     TEST_EQUALITY(levelOne->IsAvailable("A", A11Fact.get()),true);
     TEST_EQUALITY(levelOne->IsAvailable("A", A22Fact.get()),true);
 

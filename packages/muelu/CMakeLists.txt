@@ -1,12 +1,12 @@
 INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
- 
+
 #
 # A) Define the package
 #
 
-TRIBITS_PACKAGE(MueLu)
+TRIBITS_PACKAGE(MueLu ENABLE_SHADOWING_WARNINGS)
 
 #
 # B) Set up package-specific options
@@ -15,6 +15,22 @@ TRIBITS_PACKAGE(MueLu)
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
+# Disable Ifpack2 if Tpetra is off
+IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+  SET(${PACKAGE_NAME}_ENABLE_Ifpack2 OFF)
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_IFPACK2 OFF)
+ENDIF ()
+
+# Enable experimental code
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental
+  HAVE_${PACKAGE_NAME_UC}_EXPERIMENTAL
+  "Enable experimental code."
+  NO)
+IF (${PACKAGE_NAME}_ENABLE_Experimental AND NOT Xpetra_ENABLE_Experimental)
+  MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_Experimental=ON requires Xpetra_ENABLE_Experimental=ON.")
+ENDIF ()
 
 # Profiling
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
@@ -43,7 +59,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Enable the use of explicit template instantiation with <double, int, int>."
     ON
     )
-  IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS) 
+  IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS)
     IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
       MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the option MueLu_INST_DOUBLE_INT_INT or disable examples and tests.")
     ENDIF()
@@ -76,16 +92,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT}
     )
 
-  # sacado
-  IF(${PACKAGE_NAME}_ENABLE_PCE_SUPPORT)
-    TRIBITS_ADD_OPTION_AND_DEFINE(
-      ${PACKAGE_NAME}_INST_PCE_INT_INT
-      HAVE_${PACKAGE_NAME_UC}_INST_PCE_INT_INT
-      "Enable the use of explicit template instantiation with Scalar=Sacado orthogonal polynomials and LO=GO=int."
-      ON
-    )
-  ENDIF()
-
 ENDIF()
 
 # HAVE_MUELU_COMPLEX=ON iff:
@@ -94,8 +100,8 @@ ENDIF()
 # - HAVE_MUELU_INST_COMPLEX_INT_INT
 #
 # TODO: do we want also a MueLu_ENABLE_Complex option that turns ON automatically what we need?
-IF(((NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) AND Teuchos_ENABLE_COMPLEX) 
-    OR 
+IF(((NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) AND Teuchos_ENABLE_COMPLEX)
+    OR
     (HAVE_MUELU_INST_COMPLEX_INT_INT))
   SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX ON)
 ELSE()
@@ -124,3 +130,5 @@ TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
+#
+#

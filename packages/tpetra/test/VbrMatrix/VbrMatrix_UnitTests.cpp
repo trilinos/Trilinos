@@ -41,30 +41,12 @@
 // @HEADER
 */
 
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_as.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_VerboseObject.hpp>
-#include <Teuchos_oblackholestream.hpp>
-#include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_TypeTraits.hpp>
+#include <Tpetra_TestingUtilities.hpp>
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_BlockMultiVector.hpp"
-#include "Tpetra_Import.hpp"
-#include "Tpetra_VbrMatrix.hpp"
-
-#include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
+#include <Tpetra_BlockMultiVector.hpp>
+#include <Tpetra_Import.hpp>
+#include <Tpetra_BlockCrsGraph.hpp>
+#include <Tpetra_VbrMatrix.hpp>
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -90,9 +72,11 @@ namespace Teuchos {
 
 namespace {
 
+  using Tpetra::TestingUtilities::getNode;
+  using Tpetra::TestingUtilities::getDefaultComm;
+
   using std::endl;
   using std::swap;
-
   using std::string;
 
   using Teuchos::TypeTraits::is_same;
@@ -144,18 +128,6 @@ namespace {
   using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;
 
-  using Kokkos::SerialNode;
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using Kokkos::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using Kokkos::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-
-  bool testMpi = true;
   double errorTolSlack = 1e+1;
   string filedir;
 
@@ -167,29 +139,12 @@ namespace {
         "filedir",&filedir,"Directory of expected matrix files.");
     clp.addOutputSetupOptions(true);
     clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
+        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
         "Test MPI (if available) or force test of serial.  In a serial build,"
         " this option is ignored and a serial comm is always used." );
     clp.setOption(
         "error-tol-slack", &errorTolSlack,
         "Slack off of machine epsilon used to check test results" );
-  }
-
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    RCP<const Comm<int> > ret;
-    if (testMpi) {
-      ret = DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    else {
-      ret = rcp(new Teuchos::SerialComm<int>());
-    }
-    return ret;
-  }
-
-  template <class Node>
-  RCP<Node> getNode() {
-    assert(false);
   }
 
   template<class Scalar,class Ordinal>
@@ -203,38 +158,6 @@ namespace {
     }
   }
 
-  template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
-    }
-    return snode;
-  }
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    if (tbbnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tbbnode = rcp(new TBBNode(pl));
-    }
-    return tbbnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  template <>
-  RCP<TPINode> getNode<TPINode>() {
-    if (tpinode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tpinode = rcp(new TPINode(pl));
-    }
-    return tpinode;
-  }
-#endif
 
   //
   // UNIT TESTS
@@ -291,7 +214,7 @@ namespace {
         GO row = blk_rows[i];
         for(int j=0; j<blk_rows.size(); ++j) {
           GO col = blk_rows[j];
-          Teuchos::SerialDenseMatrix<GO,Scalar> blkEntry(blockSize, blockSize);
+          Teuchos::SerialDenseMatrix<int,Scalar> blkEntry(blockSize, blockSize);
           blkEntry.putScalar(row+col+1);
           vbr->setGlobalBlockEntry(row, col, blkEntry);
         }
@@ -304,7 +227,7 @@ namespace {
           Teuchos::ArrayRCP<const Scalar> blockEntry;
           vbr->getGlobalBlockEntryView(row, col, numPtRows, numPtCols, blockEntry);
 
-          Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
+          Teuchos::SerialDenseMatrix<int,Scalar> blk(blockSize,blockSize);
           blk.putScalar(row+col+1);
 
           Teuchos::ArrayRCP<const Scalar> blk_values(blk.values(), 0, blockSize*blockSize, false);
@@ -352,7 +275,7 @@ namespace {
           Teuchos::ArrayRCP<const Scalar> blockEntry;
           vbr->getGlobalBlockEntryView(row, col, numPtRows, numPtCols, blockEntry);
 
-          Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
+          Teuchos::SerialDenseMatrix<int,Scalar> blk(blockSize,blockSize);
           blk.putScalar(row+col+1);
 
           Teuchos::ArrayRCP<const Scalar> blk_values(blk.values(), 0, blockSize*blockSize, false);
@@ -408,7 +331,7 @@ namespace {
           Teuchos::ArrayRCP<Scalar> nonconstblockEntry;
           vbr->getGlobalBlockEntryViewNonConst(row, col, numPtRows, numPtCols, nonconstblockEntry);
 
-          Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
+          Teuchos::SerialDenseMatrix<int,Scalar> blk(blockSize,blockSize);
           blk.putScalar(row+col+1);
 
           Teuchos::ArrayRCP<const Scalar> blk_values(blk.values(), 0, blockSize*blockSize, false);
@@ -482,7 +405,7 @@ namespace {
           Teuchos::ArrayRCP<Scalar> nonconstblockEntry;
           vbr->getGlobalBlockEntryViewNonConst(row, col, numPtRows, numPtCols, nonconstblockEntry);
 
-          Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
+          Teuchos::SerialDenseMatrix<int,Scalar> blk(blockSize,blockSize);
           blk.putScalar(2*(row+col+1)+10.0);
 
           Teuchos::ArrayRCP<const Scalar> blk_values(blk.values(), 0, blockSize*blockSize, false);
@@ -593,7 +516,7 @@ namespace {
           Teuchos::ArrayRCP<Scalar> nonconstblockEntry;
           vbr->getGlobalBlockEntryViewNonConst(row, col, numPtRows, numPtCols, nonconstblockEntry);
 
-          Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
+          Teuchos::SerialDenseMatrix<int,Scalar> blk(blockSize,blockSize);
           blk.putScalar(2*(row+col+1)+10.0);
 
           Teuchos::ArrayRCP<const Scalar> blk_values(blk.values(), 0, blockSize*blockSize, false);
@@ -1398,14 +1321,7 @@ namespace {
 //
 
 
-// Uncomment this for really fast development cycles but make sure to comment
-// it back again before checking in so that we can test all the types.
-#define FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-typedef std::complex<float>  ComplexFloat;
-typedef std::complex<double> ComplexDouble;
-
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, NODE ) \
+#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, Basic, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, SetAndGetBlockEntry1, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, SetAndGetBlockEntry2, LO, GO, SCALAR, NODE ) \
@@ -1424,54 +1340,8 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, Overlap0, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, Overlap1, LO, GO, SCALAR, NODE )
 
-#define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, SerialNode )
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#define UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TBBNode )
-#else
-#define UNIT_TEST_TBBNODE(LO, GO, SCALAR)
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#define UNIT_TEST_TPINODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TPINode )
-#else
-#define UNIT_TEST_TPINODE(LO, GO, SCALAR)
-#endif
-
-#define UNIT_TEST_ALLCPUNODES(LO, GO, SCALAR) \
-    UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
-    UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
-    UNIT_TEST_TPINODE(LO, GO, SCALAR)
-
-#define UNIT_TEST_FLOAT(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, float)
-
-#define UNIT_TEST_DOUBLE(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, double)
-
-#define UNIT_TEST_COMPLEX_FLOAT(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, ComplexFloat)
-
-#define UNIT_TEST_COMPLEX_DOUBLE(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, ComplexDouble)
-
-#if defined(HAVE_TPETRA_INST_DOUBLE)
-  UNIT_TEST_DOUBLE(int, int)
-#endif
-
-#if !defined(FAST_DEVELOPMENT_UNIT_TEST_BUILD)
-# if defined(HAVE_TPETRA_INST_FLOAT)
-    UNIT_TEST_FLOAT(int, int)
-# endif
-# if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-    UNIT_TEST_COMPLEX_FLOAT(int, int)
-# endif
-# if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
-    UNIT_TEST_COMPLEX_DOUBLE(int, int)
-# endif
-#endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  TPETRA_INSTANTIATE_TESTMV_NOGPU( UNIT_TEST_GROUP )
 
 }

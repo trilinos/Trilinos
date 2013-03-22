@@ -108,8 +108,8 @@ int main(int argc, char *argv[])
 
   // Construct a Map that puts approximately the same Number of equations on each processor
 
-  Epetra_Map RowMap(NumGlobalEquations, 0, Comm);
-  Epetra_Map XMap(NumGlobalVariables, 0, Comm);
+  Epetra_Map RowMap(NumGlobalEquations, 0LL, Comm);
+  Epetra_Map XMap(NumGlobalVariables, 0LL, Comm);
   Epetra_Map& YMap = RowMap;
   
   // Get update list and number of local equations from newly created Map
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
   long long * ATAssemblyGlobalElements = new long long[ATAssemblyNumMyElements];
 
   for (i=0; i<ATAssemblyNumMyElements; i++) ATAssemblyGlobalElements[i] = 2*MyGlobalElements[0] + i;
-  Epetra_Map ATAssemblyMap((long long)-1, ATAssemblyNumMyElements, ATAssemblyGlobalElements, 0, Comm);
+  Epetra_Map ATAssemblyMap((long long)-1, ATAssemblyNumMyElements, ATAssemblyGlobalElements, 0LL, Comm);
 
   // Create a Epetra_Matrix with the values of A
   // A is a simple 1D weighted average operator that mimics a restriction operator
@@ -350,7 +350,7 @@ int main(int argc, char *argv[])
       }
     EPETRA_TEST_ERR(forierr,ierr);
 
-    Epetra_LocalMap YLMap(NumGlobalEquations, 0, Comm);
+    Epetra_LocalMap YLMap(NumGlobalEquations, 0LL, Comm);
     EPETRA_TEST_ERR(!(AL.FillComplete(XMap, YLMap)==0),ierr);
     AL.SetFlopCounter(A);
     Epetra_Vector YL(YLMap);
@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
       }
     EPETRA_TEST_ERR(forierr,ierr);
 
-    Epetra_LocalMap XLMap(NumGlobalVariables, 0, Comm);
+    Epetra_LocalMap XLMap(NumGlobalVariables, 0LL, Comm);
     EPETRA_TEST_ERR(!(AL.FillComplete(XLMap, YMap)==0),ierr);
     AL.SetFlopCounter(A);
     Epetra_Vector XL(XLMap);

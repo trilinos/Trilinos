@@ -95,7 +95,7 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::setDerivUtils(
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::FiniteDifferenceGroup::computeDfDpMulti(
-					  const vector<int>& paramIDs, 
+					  const std::vector<int>& paramIDs, 
 					  NOX::Abstract::MultiVector& dfdp, 
 					  bool isValidF)
 {

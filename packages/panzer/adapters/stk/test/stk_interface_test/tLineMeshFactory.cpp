@@ -103,7 +103,7 @@ TEUCHOS_UNIT_TEST(tLineMeshFactory, element_counts)
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube_oddelmt.exo");
+      mesh->writeToExodus("Line_oddelmt.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -137,7 +137,7 @@ TEUCHOS_UNIT_TEST(tLineMeshFactory, allblock)
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube_allblock.exo");
+      mesh->writeToExodus("Line_allblock.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -166,7 +166,7 @@ TEUCHOS_UNIT_TEST(tLineMeshFactory, two_block)
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube_2block.exo");
+      mesh->writeToExodus("Line_2block.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());

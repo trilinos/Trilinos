@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,41 +35,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_VerboseObject.hpp>
-#include <Teuchos_oblackholestream.hpp>
-#include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_as.hpp>
-#include <Teuchos_TypeTraits.hpp>
+#include <Tpetra_TestingUtilities.hpp>
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_BlockCrsGraph.hpp"
-
-#include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include "Kokkos_OpenMPNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
-#endif
+#include <Tpetra_BlockCrsGraph.hpp>
 
 namespace {
+
+  using Tpetra::TestingUtilities::getNode;
+  using Tpetra::TestingUtilities::getDefaultComm;
 
   using Teuchos::as;
   using Teuchos::null;
@@ -112,28 +91,6 @@ namespace {
   using Tpetra::DynamicProfile;
   using Tpetra::Array_size_type;
 
-  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
-
-  using Kokkos::SerialNode;
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using Kokkos::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using Kokkos::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using Kokkos::OpenMPNode;
-  RCP<OpenMPNode> ompnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using Kokkos::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
-
-  bool testMpi = true;
   double errorTolSlack = 1e+1;
   string filedir;
 
@@ -144,7 +101,7 @@ namespace {
         "filedir",&filedir,"Directory of expected input files.");
     clp.addOutputSetupOptions(true);
     clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
+        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
         "Test MPI (if available) or force test of serial.  In a serial build,"
         " this option is ignored and a serial comm is always used." );
     clp.setOption(
@@ -152,87 +109,12 @@ namespace {
         "Slack off of machine epsilon used to check test results" );
   }
 
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    RCP<const Comm<int> > ret;
-    if (testMpi) {
-      ret = DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    else {
-      ret = rcp(new Teuchos::SerialComm<int>());
-    }
-    return ret;
-  }
-
-  template <class Node>
-  RCP<Node> getNode() {
-    assert(false);
-  }
-
-  template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
-    }
-    return snode;
-  }
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    if (tbbnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tbbnode = rcp(new TBBNode(pl));
-    }
-    return tbbnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  template <>
-  RCP<TPINode> getNode<TPINode>() {
-    if (tpinode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tpinode = rcp(new TPINode(pl));
-    }
-    return tpinode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  template <>
-  RCP<OpenMPNode> getNode<OpenMPNode>() {
-    if (ompnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      ompnode = rcp(new OpenMPNode(pl));
-    }
-    return ompnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
-    }
-    return thrustnode;
-  }
-#endif
-
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BlockCrsGraph, ColMap1, LO, GO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockCrsGraph, ColMap1, LO, GO, Node )
   {
     //This test fills a (block-tri-diagonal) block-crs-graph such that in parallel
     //the column-map should have an overlapping set of entries (i.e.,
@@ -250,7 +132,7 @@ namespace {
     const LO blockSize = 2;
     const size_t maxEntriesPerRow = 3;
     RCP<BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
-    
+
     //now set up the list of block-column-ids that we expect the
     //column-map to contain after fillComplete:
     size_t numLocalColBlocks = numLocalBlocks;
@@ -297,7 +179,7 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BlockCrsGraph, Queries, LO, GO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockCrsGraph, Queries, LO, GO, Node )
   {
     //This test fills a (block-tri-diagonal) block-crs-graph such that
     //in parallel the column-map should have an overlapping set of
@@ -316,7 +198,7 @@ namespace {
     const LO blockSize = 2;
     const size_t maxEntriesPerRow = 3;
     RCP<BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
-    
+
     //now set up the list of block-column-ids that we expect the
     //column-map to contain after fillComplete:
     size_t numLocalColBlocks = numLocalBlocks;
@@ -380,27 +262,15 @@ namespace {
     }
   }
 
-  // 
+  //
   // INSTANTIATIONS
   //
 
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#define UNIT_TEST_GROUP( LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockCrsGraph, ColMap1  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockCrsGraph, Queries  , LO, GO, NODE )
 
-#define UNIT_TEST_GROUP_LO_GO( LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockCrsGraph, ColMap1  , LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockCrsGraph, Queries  , LO, GO )
+    TPETRA_ETI_MANGLING_TYPEDEFS()
 
-     UNIT_TEST_GROUP_LO_GO(int,int)
-// #ifndef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-// #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//         typedef long long int LongLongInt;
-//         UNIT_TEST_GROUP_LO_GO(short,LongLongInt)
-// #else
-//         typedef long int LongInt;
-//         UNIT_TEST_GROUP_LO_GO(short,LongInt)
-// #endif
-// # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
+    TPETRA_INSTANTIATE_LGN_NOGPU( UNIT_TEST_GROUP )
 }

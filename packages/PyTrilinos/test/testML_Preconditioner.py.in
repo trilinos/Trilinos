@@ -59,7 +59,7 @@ ML       = fromPyTrilinosImport('ML'      , options.testharness)
 nx = 100
 ny = 100
 Comm = Epetra.PyComm()
-Gallery = TriUtils.CrsMatrixGallery("laplace_2d", Comm)
+Gallery = TriUtils.CrsMatrixGallery("laplace_2d", Comm, False)
 Gallery.Set("nx", nx)
 Gallery.Set("ny", ny)
 Matrix = Gallery.GetMatrix()

@@ -32,46 +32,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* exgnnv - ex_get_n_nodal_var
-*
-* environment - UNIX
-*
-* entry conditions -
-*   input parameters:
-*	int	exoid			exodus file id
-*	int	time_step		whole time step number
-*	int	nodeal_var_index	index of desired nodal variable
-*       int     start_node_num		starting location for read
-*	int	num_nodes		number of nodal points
-*
-* exit conditions -
-*	float*	nodal_var_vals		array of nodal variable values
-*
-* revision history -
-*
-*  $Id: ne_gnnv.c,v 1.16 2008/01/25 15:47:35 gdsjaar Exp $
-*
-*****************************************************************************/
 
 #include <exodusII.h>
-#include <exodusII_int.h>
 
-/*
- * reads the values of a single nodal variable for a single time step from
- * the database; assume the first time step and nodal variable index is 1
+/*!
+ * \deprecated Use ex_get_partial_nodal_var() instead
  */
 
 int ex_get_n_nodal_var (int   exoid,
 		        int   time_step,
 		        int   nodal_var_index,
-                        int64_t   start_node_num,
+                        int64_t   start_node,
 		        int64_t   num_nodes,
-		        void *nodal_var_vals)
+		        void *var_vals)
 {
-  return ex_get_n_var(exoid, time_step, EX_NODAL,
-		      nodal_var_index, 1,
-		      start_node_num, num_nodes,
-		      nodal_var_vals);
+  return ex_get_partial_nodal_var(exoid, time_step, nodal_var_index, start_node, num_nodes, var_vals);
 }

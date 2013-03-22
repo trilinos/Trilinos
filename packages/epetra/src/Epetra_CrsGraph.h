@@ -766,7 +766,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     else return(CrsGraphData_->NumAllocatedIndicesPerRow_[Row]);}
   
   //! Returns the index base for row and column indices for this graph.
-  int IndexBase() const {return(CrsGraphData_->IndexBase_);}
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  //! Index base for this map.
+  int  IndexBase() const {
+    if(RowMap().GlobalIndicesInt())
+      return (int) IndexBase64();
+    throw "Epetra_CrsGraph::IndexBase: GlobalIndices not int.";
+  }
+#endif
+  long long  IndexBase64() const {return(CrsGraphData_->IndexBase_);};
   
   //! Returns the RowMap associated with this graph.
   const Epetra_BlockMap& RowMap() const {return(Epetra_DistObject::Map());}
@@ -788,6 +796,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
       \pre (IndicesAreLocal()==false && IndicesAreGlobal()==false) || ColMap().PointSameAs(newmap)==true
   */
   int ReplaceColMap(const Epetra_BlockMap& newmap);
+
+  //! Replaces the current DomainMap & Importer with the user-specified map object.
+  /** Replaces the current DomainMap and Importer with the user-specified map object, but only
+      if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap 
+      and Importer's SourceMap matches the DomainMap (assuming the importer isn't null).  If an Importer
+      is passed in, Epetra_CrsMatrix will copy it.
+      Returns 0 if map/importer is replaced, -1 if not.
+      
+      \pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
+  */
+  int ReplaceDomainMapAndImporter(const Epetra_BlockMap& NewDomainMap, const Epetra_Import * NewImporter);
+
 
   //! Returns the Column Map associated with this graph.
   /*!
@@ -826,6 +846,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 #endif
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int LRID(long long GRID_in) const {return(RowMap().LID(GRID_in));}
+#endif
+
+#if defined(EPETRA_NO_32BIT_GLOBAL_INDICES) && defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+  // default implementation so that no compiler/linker error in case neither 32 nor 64
+  // bit indices present.
   int LRID(long long GRID_in) const {return(RowMap().LID(GRID_in));}
 #endif
 
@@ -883,7 +909,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 #endif
   
   //! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
-  bool MyLRID(int LRID_in) const {return(GRID64(LRID_in) != IndexBase() - 1);}
+  bool MyLRID(int LRID_in) const {return(GRID64(LRID_in) != IndexBase64() - 1);}
   
   //! Returns true if the GCID passed in belongs to the calling processor in this map, otherwise returns false.
   /*!
@@ -901,7 +927,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   /*!
     \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
    */
-  bool MyLCID(int LCID_in) const {return(GCID64(LCID_in) != IndexBase() - 1);}
+  bool MyLCID(int LCID_in) const {return(GCID64(LCID_in) != IndexBase64() - 1);}
   //@}
   
   //! @name Inlined Operator Methods

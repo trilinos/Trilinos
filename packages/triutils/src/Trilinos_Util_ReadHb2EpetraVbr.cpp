@@ -41,10 +41,14 @@
 
 #include "Trilinos_Util.h"
 #include "iohb.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"
 #include "Epetra_VbrMatrix.h"
+
+// CJ TODO FIXME: Trilinos_Util_ReadHb2EpetraVbr available only if 32 bit GIDs available.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
 				 const Epetra_Comm  &comm, 
@@ -149,3 +153,5 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
     }
   return;
 }
+
+#endif

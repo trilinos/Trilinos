@@ -46,6 +46,9 @@
 #ifndef MUELU_AMESOSSMOOTHER_FWD_HPP
 #define MUELU_AMESOSSMOOTHER_FWD_HPP
 
+
+
+
 namespace MueLu {
   class AmesosSmoother;
 }
@@ -53,5 +56,7 @@ namespace MueLu {
 #ifndef MUELU_AMESOSSMOOTHER_SHORT
 #define MUELU_AMESOSSMOOTHER_SHORT
 #endif
+
+
 
 #endif // MUELU_AMESOSSMOOTHER_FWD_HPP

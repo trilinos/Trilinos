@@ -69,7 +69,7 @@ namespace ForUQTKExpansionUnitTest {
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<OrdinalType,ValueType>(bases));
 
       // Triple product tensor
-      Cijk = basis->computeTripleProductTensor(basis->size());
+      Cijk = basis->computeTripleProductTensor();
       
       // Tensor product quadrature
       quad = 

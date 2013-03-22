@@ -595,7 +595,7 @@ template< typename User>
 
   ArrayRCP<gid_t> gidInBuf;
   ArrayRCP<gno_t> gnoInBuf;
-  ArrayRCP<int> countInBuf;
+  Array<int> countInBuf(numProcs_, 0);
 
   Array<gno_t> offsetBuf(numProcs_ + 1, 0);
 
@@ -638,7 +638,7 @@ template< typename User>
   ArrayView<const gid_t> gidView = gidOutBuf();
   ArrayView<const int> countView = countOutBuf();
   try{
-    AlltoAllv<gid_t>(*comm_, *env_, gidView, countView, gidInBuf, countInBuf);
+    AlltoAllv<gid_t>(*comm_, *env_, gidView, countView, gidInBuf, countInBuf());
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -647,7 +647,8 @@ template< typename User>
   if (needGnos){
     ArrayView<const gno_t> gnoView = gnoOutBuf();
     try{
-      AlltoAllv<gno_t>(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
+      AlltoAllv<gno_t>(*comm_, *env_, gnoView, countView, gnoInBuf,
+                       countInBuf());
     }
     Z2_FORWARD_EXCEPTIONS;
   }
@@ -740,10 +741,8 @@ template< typename User>
   }
 
   try{
-    ArrayView<const gid_t> gidView = gidOutBuf();
-    ArrayView<const int> countView = countOutBuf();
-    AlltoAllv<gid_t>(*comm_, *env_, gidView, countView,
-      gidInBuf, countInBuf);
+    AlltoAllv<gid_t>(*comm_, *env_, gidOutBuf(), countOutBuf(),
+                     gidInBuf, countInBuf());
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -826,9 +825,8 @@ template< typename User>
 
   if (needProcs){
     try{
-      ArrayView<const int> procView = procOutBuf.view(0, total);
-      ArrayView<const int> countView = countOutBuf();
-      AlltoAllv<int>(*comm_, *env_, procView, countView, procInBuf, countInBuf);
+      AlltoAllv<int>(*comm_, *env_, procOutBuf.view(0, total), countOutBuf(),
+                     procInBuf, countInBuf());
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -837,9 +835,8 @@ template< typename User>
 
   if (needGnos){
     try{
-      ArrayView<const gno_t> gnoView = gnoOutBuf();
-      ArrayView<const int> countView = countOutBuf();
-      AlltoAllv<gno_t>(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
+      AlltoAllv<gno_t>(*comm_, *env_, gnoOutBuf(), countOutBuf(),
+                       gnoInBuf, countInBuf());
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -950,12 +947,11 @@ template< typename User>
   if (!remoteGno){
 
     // Make a local call to get the gids
-
-    const gno_t *gnos = in_gno.getRawPtr();
-    ArrayView<gno_t> gnoList(const_cast<gno_t *>(gnos), inLen);
-
     try{
-      gidTranslate(out_gid, gnoList, TRANSLATE_LIB_TO_APP);
+      gidTranslate(out_gid,
+             ArrayView<gno_t>(const_cast<gno_t *>(in_gno.getRawPtr()),inLen),
+             TRANSLATE_LIB_TO_APP);
+
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -1009,12 +1005,12 @@ template< typename User>
     tmpOff[i+1] = tmpOff[i] + tmpCount[i];
 
   ArrayRCP<gno_t> gnoInBuf;
-  ArrayRCP<int> countInBuf;
+  Array<int> countInBuf(numProcs_, 0);
 
   try{
     AlltoAllv<gno_t>(*comm_, *env_,
       gnoOutBuf.view(0, inLen), countOutBuf.view(0, numProcs_),
-      gnoInBuf, countInBuf);
+      gnoInBuf, countInBuf());
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -1041,12 +1037,12 @@ template< typename User>
   Z2_FORWARD_EXCEPTIONS;
 
   ArrayRCP<gid_t> gidInBuf;
-  ArrayRCP<lno_t> newCountInBuf;
+  Array<lno_t> newCountInBuf(numProcs_, 0);
 
   try{
     AlltoAllv<gid_t>(*comm_, *env_,
-      gidQueryBuf.view(0, numRequests), countInBuf.view(0, numProcs_),
-      gidInBuf, newCountInBuf);
+      gidQueryBuf.view(0, numRequests), countInBuf(),
+      gidInBuf, newCountInBuf());
   }
   Z2_FORWARD_EXCEPTIONS;
 

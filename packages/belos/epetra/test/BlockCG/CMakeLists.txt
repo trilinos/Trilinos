@@ -61,6 +61,18 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT 
       )
 
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      pseudo_stochastic_pcg_hb
+      SOURCES test_pseudo_stochastic_pcg_hb.cpp createEpetraProblem.cpp
+      COMM serial mpi
+      ARGS
+        "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
+        "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
+      STANDARD_PASS_OUTPUT 
+      )
+
+
+
   ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
 ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)

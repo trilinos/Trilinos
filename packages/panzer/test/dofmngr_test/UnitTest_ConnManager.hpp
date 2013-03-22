@@ -119,9 +119,9 @@ class ConnCallback { public: virtual void buildConnectivity(const FieldPattern &
        |      |      |      |      |
        +------+------+------+------+
   */
-class ConnManager : public virtual panzer::ConnManager<short,int> {
+class ConnManager : public virtual panzer::ConnManager<int,int> {
 public:
-   typedef short LocalOrdinal;
+   typedef int LocalOrdinal;
    typedef int GlobalOrdinal;
 
    ConnManager(int rank,int procCount);
@@ -182,7 +182,7 @@ private:
    int procRank_;
    
    Teuchos::RCP<ConnCallback> callback_;
-   std::map<std::string,std::vector<short> > elements_; // local element IDs
+   std::map<std::string,std::vector<int> > elements_; // local element IDs
    std::vector<std::vector<int> > connectivity_;
 };
 

@@ -114,6 +114,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -353,7 +354,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   TEUCHOS_TEST_FOR_EXCEPTION(maxLocked_ + blockSize_ < problem_->getNEV(), 
                      std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: Not enough storage space for requested number of eigenpairs.");
-  TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_*blockSize_ + maxLocked_ > MVT::GetVecLength(*problem_->getInitVec()),
+  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(numBlocks_)*blockSize_ + maxLocked_ > MVText::GetGlobalLength(*problem_->getInitVec()),
                      std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: Potentially impossible orthogonality requests. Reduce basis size or locking size.");
 

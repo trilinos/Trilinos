@@ -93,7 +93,7 @@ public:
     n = m;
     lambda = lambdaVal;
 
-    cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
+    std::cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
     
     for (int i=0; i<n; i++) {
       // initialGuess(i) = -100;   // Case for lambdaBar != 1.0
@@ -105,7 +105,7 @@ public:
   };
 
   //! Destructor
-  ~Broyden() { cout << "Function evaluations: " << fevals << "\n"; };
+  ~Broyden() { std::cout << "Function evaluations: " << fevals << "\n"; };
 
   const NOX::LAPACK::Vector& getInitialGuess()
   {
@@ -256,8 +256,8 @@ int main()
 
   // Print the starting point
   grp->computeF();
-  cout << "\n" << "-- Starting Point --" << "\n";
-  cout << "|| F(x0) || = " << utils.sciformat(grp->getNormF()) << endl;
+  std::cout << "\n" << "-- Starting Point --" << "\n";
+  std::cout << "|| F(x0) || = " << utils.sciformat(grp->getNormF()) << std::endl;
   // grp.print();
 
   // Solve the nonlinear system
@@ -269,22 +269,22 @@ int main()
 
   // Output the parameter list
   if (utils.isPrintType(NOX::Utils::Parameters)) {
-    cout << "\n" << "-- Parameter List Used in Solver --" << endl;
-    solver->getList().print(cout);
-    cout << endl;
+    std::cout << "\n" << "-- Parameter List Used in Solver --" << std::endl;
+    solver->getList().print(std::cout);
+    std::cout << std::endl;
   }
 
   // Print the answer
   if (utils.isPrintType(NOX::Utils::Parameters)) {
-    cout << "\n" << "-- Final Solution From Solver --" << "\n";
-    cout << "|| F(x*) || = " << utils.sciformat(solnGrp.getNormF()) << endl;
+    std::cout << "\n" << "-- Final Solution From Solver --" << "\n";
+    std::cout << "|| F(x*) || = " << utils.sciformat(solnGrp.getNormF()) << std::endl;
     // solnGrp.print();
   }
 
   // Warn user if solve failed
   if (status == NOX::StatusTest::Converged)
-    cout << "\nExample Passed!\n" << endl;
+    std::cout << "\nExample Passed!\n" << std::endl;
   else
-    cout << "Error: Solve failed to converge!" << endl;
+    std::cout << "Error: Solve failed to converge!" << std::endl;
 
 }

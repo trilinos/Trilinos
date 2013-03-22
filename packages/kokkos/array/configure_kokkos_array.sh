@@ -17,6 +17,7 @@ rm -rf CMakeCache.txt
 # Location of Trilinos source tree.
 
 CMAKE_TRILINOS_BASE_DIR="../Trilinos"
+CMAKE_TRILINOS_INSTALL_DIR="../TrilinosInstall"
 
 #-----------------------------------------------------------------------------
 # MPI configuation:
@@ -41,6 +42,12 @@ CMAKE_HWLOC="${CMAKE_HWLOC} -D HWLOC_LIBRARY_DIRS:FILEPATH=${HWLOC_BASE_DIR}/lib
 #-----------------------------------------------------------------------------
 # Cuda cmake configuration:
 #
+# Extract release major and minor version from compiler
+#
+CUDA_VERSION="`nvcc --version | sed -n -e '/release/{s/^.*release //;s/,.*$//;p}'`"
+CUDA_VERSION_MAJOR=`echo ${CUDA_VERSION} | sed 's/\..*//'`
+CUDA_VERSION_MINOR=`echo ${CUDA_VERSION} | sed 's/^.*\.//'`
+#
 # Note:  Must turn off CUDA_PROPAGATE_HOST_FLAGS because the
 #        Tribits wrapper on cmake forces -pedantic, which results in
 #        a flood of warnings from nvcc compiler produced code.
@@ -49,12 +56,23 @@ CMAKE_HWLOC="${CMAKE_HWLOC} -D HWLOC_LIBRARY_DIRS:FILEPATH=${HWLOC_BASE_DIR}/lib
 # Note:  Options to CUDA_NVCC_FLAGS must be semi-colon delimited,
 #        this is different than the standard CMAKE_CXX_FLAGS syntax.
 
+# Cuda compilation flags:
+
+CUDA_NVCC_FLAGS="-gencode;arch=compute_20,code=sm_20"
+if [ 5 -le ${CUDA_VERSION_MAJOR} ] ;
+then
+  CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30"
+fi
+
+CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi"
+CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-O3"
+
 CMAKE_CUDA=""
 CMAKE_CUDA="${CMAKE_CUDA} -D TPL_ENABLE_CUDA:BOOL=ON"
 CMAKE_CUDA="${CMAKE_CUDA} -D TPL_ENABLE_CUSPARSE:BOOL=ON"
 CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_VERBOSE_BUILD:BOOL=OFF"
 CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_PROPAGATE_HOST_FLAGS:BOOL=OFF"
-CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_NVCC_FLAGS:STRING=-arch=sm_20;-Xcompiler;-Wall,-ansi;-O3"
+CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}"
 
 #-----------------------------------------------------------------------------
 # KokkosArray cmake configuration to use Pthreads, HWLOC, and Cuda
@@ -69,6 +87,7 @@ CMAKE_KOKKOSARRAY="${CMAKE_KOKKOSARRAY} -D TPL_ENABLE_Pthread:BOOL=ON"
 #-----------------------------------------------------------------------------
 
 cmake \
+  -D CMAKE_INSTALL_PREFIX=${CMAKE_TRILINOS_INSTALL_DIR} \
   ${CMAKE_MPI} \
   -D CMAKE_BUILD_TYPE:STRING="RELEASE" \
   -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \

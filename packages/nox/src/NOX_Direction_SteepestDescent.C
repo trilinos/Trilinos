@@ -79,7 +79,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 
   Teuchos::ParameterList& p = params.sublist("Steepest Descent");
 
-  const string tmp = p.get("Scaling Type", "2-Norm");
+  const std::string tmp = p.get("Scaling Type", "2-Norm");
   if (tmp == "2-Norm")
     scaleType = NOX::Direction::SteepestDescent::TwoNorm;
   else if (tmp == "F 2-Norm")
@@ -90,7 +90,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     scaleType = NOX::Direction::SteepestDescent::None;
   else {
     utils->out() << "NOX::Direction::SteepestDescent::reset - Invalid choice "
-		 << "\"" << tmp << "\" for \"Scaling Type\"" << endl;
+		 << "\"" << tmp << "\" for \"Scaling Type\"" << std::endl;
     throw "NOX Error";
   }
 
@@ -156,11 +156,11 @@ bool NOX::Direction::SteepestDescent::compute(Abstract::Vector& dir,
   return NOX::Direction::Generic::compute( dir, soln, solver );
 }
 
-void NOX::Direction::SteepestDescent::throwError(const string& functionName, 
-						 const string& errorMsg)
+void NOX::Direction::SteepestDescent::throwError(const std::string& functionName, 
+						 const std::string& errorMsg)
 {
     if (utils->isPrintType(Utils::Error))
       utils->err() << "NOX::Direction::SteepestDescent::" << functionName 
-	   << " - " << errorMsg << endl;
+	   << " - " << errorMsg << std::endl;
     throw "NOX Error";
 }

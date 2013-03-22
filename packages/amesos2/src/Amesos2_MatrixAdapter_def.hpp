@@ -126,16 +126,30 @@ namespace Amesos2 {
   typename MatrixAdapter<Matrix>::global_size_t
   MatrixAdapter<Matrix>::getGlobalNumRows() const
   {
-    return row_map_->getMaxAllGlobalIndex() + 1;
+    return static_cast<const adapter_t*>(this)->getGlobalNumRows_impl();
   }
 
   template < class Matrix >
   typename MatrixAdapter<Matrix>::global_size_t
   MatrixAdapter<Matrix>::getGlobalNumCols() const
   {
-    return col_map_->getMaxAllGlobalIndex() + 1;
+    return static_cast<const adapter_t*>(this)->getGlobalNumCols_impl();
   }
   
+  template < class Matrix >
+  typename MatrixAdapter<Matrix>::global_size_t
+  MatrixAdapter<Matrix>::getRowIndexBase() const
+  {
+    return row_map_->getIndexBase();
+  }
+
+  template < class Matrix >
+  typename MatrixAdapter<Matrix>::global_size_t
+  MatrixAdapter<Matrix>::getColumnIndexBase() const
+  {
+    return col_map_->getIndexBase();
+  }
+
   template < class Matrix >
   typename MatrixAdapter<Matrix>::global_size_t
   MatrixAdapter<Matrix>::getGlobalNNZ() const
@@ -263,6 +277,10 @@ namespace Amesos2 {
       ArrayView<scalar_t> nzval_view = nzval.view(rowInd,rowNNZ);
       
       get_mat->getGlobalRowCopy(*row_it, colind_view, nzval_view, nnzRet);
+      for (size_t rr = 0; rr < nnzRet ; rr++)
+      {
+          colind_view[rr] = colind_view[rr] - rmap->getIndexBase();
+      }
 
       // It was suggested that instead of sorting each row's indices
       // individually, that we instead do a double-transpose at the

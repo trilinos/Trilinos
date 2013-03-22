@@ -4,12 +4,13 @@ STATICFLAGS = FortranStaticFlags
 
 CODE = txtexo
 
+SRCSF = txtexo.F
 SRCS = \
 rdeb1.f rdelb.f rdess.f rdinit.f rdmap.f rwname.f \
-rdnm1.f rdnps.f rwqa.f  rwstep.f rdxyz.f txtexo.f \
+rdnm1.f rdnps.f rwqa.f  rwstep.f rdxyz.f \
 dboelb.f rwpval.f rwpval1.f
 
-OBJS = ${SRCS:.f=.o}
+OBJS = ${SRCS:.f=.o} ${SRCSF:.F=.o}
 
 LIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPLIB) $(SUPES) 
 

@@ -161,10 +161,10 @@ namespace LOCA {
       virtual int getContinuationParameterID(int i = 0) const = 0;
 
       //! Get the continuation parameter ids
-      virtual const vector<int>& getContinuationParameterIDs() const = 0;
+      virtual const std::vector<int>& getContinuationParameterIDs() const = 0;
 
       //! Get the continuation parameter id for parameter \em i
-      virtual string getContinuationParameterName(int i = 0) const = 0;
+      virtual std::string getContinuationParameterName(int i = 0) const = 0;
 
       //! Returns step size scale factor for constraint equation \em i
       virtual double getStepSizeScaleFactor(int i = 0) const = 0;

@@ -98,6 +98,6 @@ Cartesian2D(const Epetra_Comm& Comm, const int nx, const int ny,
 
 } // Cartesian2D()
 
-} // namespace BlockMaps
+} // namespace Maps
 } // namespace Galeri
 #endif

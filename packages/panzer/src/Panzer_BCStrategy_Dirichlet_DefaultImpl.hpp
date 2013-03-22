@@ -81,6 +81,18 @@ namespace panzer {
 						    const panzer::LinearObjFactory<panzer::Traits> & lof,
 						    const Teuchos::ParameterList& user_data) const;
 
+    virtual void 
+    buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+				      const panzer::PhysicsBlock& side_pb,
+				      const LinearObjFactory<panzer::Traits> & lof,
+				      const Teuchos::ParameterList& user_data) const;
+
+    virtual void
+    buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+					           const panzer::PhysicsBlock& side_pb,
+						   const LinearObjFactory<panzer::Traits> & lof,
+						   const Teuchos::ParameterList& user_data) const;
+
   protected:
 
       std::vector<std::string> required_dof_names;

@@ -53,7 +53,7 @@ namespace panzer {
   
   template <typename ScalarT, typename LO, typename GO>
   Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > 
-  buildModelEvaluator(const RCP<panzer::FieldManagerBuilder<LO,GO>& fmb,
+  buildModelEvaluator(const RCP<panzer::FieldManagerBuilder & fmb,
 		      const RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof);
     
 }

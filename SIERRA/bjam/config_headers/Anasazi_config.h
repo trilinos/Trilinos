@@ -1,13 +1,2 @@
-
-#include "TrilinosPlatform_config.h"
-
-#define HAVE_ANASAZI_AMESOS 1
-#define HAVE_ANASAZI_AZTECOO 1
-#define HAVE_ANASAZI_EPETRAEXT 1
-#define HAVE_ANASAZI_IFPACK 1
-#define HAVE_ANASAZI_THYRA 1
-#define HAVE_ANASAZI_TRIUTILS 1
-#define HAVE_EPETRA_THYRA 1
-#define HAVE_TEUCHOS_COMPLEX 
-#define ANASAZI_LIB_DLL_EXPORT
-#define ANASAZIEPETRA_LIB_DLL_EXPORT
+#include "TrilinosSierraConfig.h"
+#include "Anasazi_config_fcs.h"

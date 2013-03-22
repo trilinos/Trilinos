@@ -60,7 +60,7 @@
 // This file is intended to house all the tests for MueLu_Utilities.hpp.
 
 namespace MueLuTests {
-  
+
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   TEUCHOS_UNIT_TEST(Utilities,MatMatMult_EpetraVsTpetra)
   {
@@ -69,13 +69,11 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-    Teuchos::Array<ST::magnitudeType> normResult1(1);
-
-    //Calculate result = (Op*Op)*X for Tpetra
+    //Calculate result = (Op*Op)*X for Epetra
     int nx = 37*comm->getSize();
     int ny=nx;
-    RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build2DPoisson(nx,ny,Xpetra::UseEpetra);
-    RCP<Operator> OpOp = Utils::TwoMatrixMultiply(Op,false,Op,false);
+    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build2DPoisson(nx,ny,Xpetra::UseEpetra);
+    RCP<Matrix> OpOp = Utils::Multiply(*Op,false,*Op,false);
     RCP<MultiVector> result = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
     RCP<MultiVector> X = MultiVectorFactory::Build(OpOp->getDomainMap(),1);
     Teuchos::Array<ST::magnitudeType> xnorm(1);
@@ -83,24 +81,85 @@ namespace MueLuTests {
     X->randomize(true);
     X->norm2(xnorm);
     OpOp->apply(*X,*result,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-    result->norm2(normResult1);
+    Teuchos::Array<ST::magnitudeType> normEpetra(1);
+    result->norm2(normEpetra);
 
-    //Calculate result = (Op*Op)*X for Epetra
-    Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build2DPoisson(nx,ny,Xpetra::UseTpetra);
-    OpOp = Utils::TwoMatrixMultiply(Op,false,Op,false);
+    // aid debugging by calculating Op*(Op*X)
+    RCP<MultiVector> workVec = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
+    RCP<MultiVector> check1 = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
+    Op->apply(*X,*workVec,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    Op->apply(*workVec,*check1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    Teuchos::Array<ST::magnitudeType> normCheck1(1);
+    check1->norm2(normCheck1);
+
+    //Calculate result = (Op*Op)*X for Tpetra
+    Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build2DPoisson(nx,ny,Xpetra::UseTpetra);
+    OpOp = Utils::Multiply(*Op,false,*Op,false);
     result = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
     X = MultiVectorFactory::Build(OpOp->getDomainMap(),1);
     X->setSeed(8675309);
     X->randomize(true);
     X->norm2(xnorm);
     OpOp->apply(*X,*result,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-    Teuchos::Array<ST::magnitudeType> normResult2(1);
-    result->norm2(normResult2);
+    Teuchos::Array<ST::magnitudeType> normTpetra(1);
+    result->norm2(normTpetra);
 
-    TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
+    // aid debugging by calculating Op*(Op*X)
+    workVec = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
+    RCP<MultiVector> check2 = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
+    Op->apply(*X,*workVec,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    Op->apply(*workVec,*check2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    Teuchos::Array<ST::magnitudeType> normCheck2(1);
+    check2->norm2(normCheck2);
+
+    TEST_FLOATING_EQUALITY(normEpetra[0], normTpetra[0], 1e-12);
+    out << "Epetra ||A*(A*x)|| = " << normCheck1[0] << std::endl;
+    out << "Tpetra ||A*(A*x)|| = " << normCheck2[0] << std::endl;
 
   } //EpetraVersusTpetra
 #endif
+
+  TEUCHOS_UNIT_TEST(Utilities,DetectDirichletRows)
+  {
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(100);
+    Teuchos::ArrayView<const LO> indices;
+    Teuchos::ArrayView<const SC>  values;
+
+    LO localRowToZero = 5;
+    A->resumeFill();
+    A->getLocalRowView(localRowToZero, indices, values);
+    Array<SC> newvalues(values.size(),Teuchos::ScalarTraits<SC>::zero());
+    for (int j = 0; j < indices.size(); j++)
+      //keep diagonal
+      if (indices[j] == localRowToZero) newvalues[j] = values[j];
+    A->replaceLocalValues(localRowToZero,indices,newvalues);
+
+    A->fillComplete();
+
+    ArrayRCP<const bool> drows = Utils::DetectDirichletRows(*A);
+    TEST_EQUALITY(drows[localRowToZero], true);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+
+    A->resumeFill();
+    A->getLocalRowView(localRowToZero, indices, values);
+    for (int j = 0; j < indices.size(); j++)
+      //keep diagonal
+      if (indices[j] == localRowToZero) newvalues[j] = values[j];
+      else newvalues[j] = Teuchos::as<SC>(0.25);
+    A->replaceLocalValues(localRowToZero,indices,newvalues);
+
+    //row 5 should not be Dirichlet
+    drows = Utils::DetectDirichletRows(*A,Teuchos::as<SC>(0.24));
+    TEST_EQUALITY(drows[localRowToZero], false);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+
+    //row 5 should be Dirichlet
+    drows = Utils::DetectDirichletRows(*A,Teuchos::as<SC>(0.26));
+    TEST_EQUALITY(drows[localRowToZero], true);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+
+  } //DetectDirichletRows
+  
 
 }//namespace MueLuTests
 

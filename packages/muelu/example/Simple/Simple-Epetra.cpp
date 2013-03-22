@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm comm;
 #endif
-  
+
   //
   // Parameters
   //
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     if (myGlobalElements[i] == 0) {
 
       //TODO: should be rewritten in an Epetra style
-      A->InsertGlobalValues(myGlobalElements[i], 2, 
+      A->InsertGlobalValues(myGlobalElements[i], 2,
                             Teuchos::tuple<Scalar> (2.0, -1.0).getRawPtr(),
                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1).getRawPtr());
 
@@ -139,9 +139,9 @@ int main(int argc, char *argv[]) {
   // Construct a multigrid preconditioner
   //
 
-  // Turns a Epetra_CrsMatrix into a MueLu::Operator
+  // Turns a Epetra_CrsMatrix into a MueLu::Matrix
   RCP<Xpetra::CrsMatrix<SC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(A)); //TODO: should not be needed
-  RCP<Xpetra::Operator <SC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsOperator<SC, LO, GO, NO, LMO>(mueluA_));
+  RCP<Xpetra::Matrix <SC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<SC, LO, GO, NO, LMO>(mueluA_));
 
   // Multigrid Hierarchy
   RCP<Hierarchy> H = rcp(new Hierarchy(mueluA));
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Epetra_Vector> X = rcp(new Epetra_Vector(map));
   RCP<Epetra_Vector> B = rcp(new Epetra_Vector(map));
-  
+
   X->PutScalar((Scalar) 0.0);
   B->SetSeed(846930886); B->Random();
 
@@ -185,24 +185,24 @@ int main(int argc, char *argv[]) {
   // Solve Ax = b using AMG as a preconditioner in Belos
   //
 
-  // Operator and Multivector type that will be used with Belos
+  // Matrix and Multivector type that will be used with Belos
   typedef Epetra_MultiVector   MV;
   typedef Belos::OperatorT<MV> OP;
 
   // Define Operator and Preconditioner
-  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(mueluA)); // Turns a Xpetra::Operator object into a Belos operator
+  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(mueluA)); // Turns a Xpetra::Matrix object into a Belos operator
   RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));       // Turns a MueLu::Hierarchy object into a Belos operator
 
   // Construct a Belos LinearProblem object
   RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
   belosProblem->setLeftPrec(belosPrec);
-    
+
   bool set = belosProblem->setProblem();
   if (set == false) {
     std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return EXIT_FAILURE;
   }
-    
+
   // Belos parameter list
   int maxIts = 20;
   double tol = 1e-4;
@@ -213,13 +213,13 @@ int main(int argc, char *argv[]) {
 
   // Create an iterative solver manager
   RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-    
+
   // Perform solve
   Belos::ReturnType ret = solver->solve();
-  
+
   // Get the number of iterations for this solve.
   std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-  
+
   // Compute actual residuals.
   int numrhs=1;
   bool badRes = false;
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
 
   typedef Belos::OperatorTraits<SC, MV, OP> OPT;
   typedef Belos::MultiVecTraits<SC, MV>     MVT;
-    
+
   OPT::Apply(*belosOp, *X, *resid);
   MVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
   MVT::MvNorm(*resid, actual_resids);

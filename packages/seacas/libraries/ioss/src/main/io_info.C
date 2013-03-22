@@ -83,7 +83,6 @@ namespace {
   // Data space shared by most field input/output routines...
   std::vector<char> data;
 
-  void show_usage(const std::string &prog);
   void show_step(int istep, double time);
 
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interface, bool summary);
@@ -202,7 +201,6 @@ namespace {
 
     dbi->set_surface_split_type(Ioss::int_to_surface_split(interface.surface_split_scheme()));
     dbi->set_field_separator(interface.field_suffix_separator());
-    dbi->set_node_global_id_backward_compatibility(false);
     if (interface.ints_64_bit())
       dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
     
@@ -331,8 +329,17 @@ namespace {
 	}
 	info_fields(*i, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
 	OUTPUT << "\n";
-      }
 
+	if (interface.compute_bbox()) {
+	  Ioss::AxisAlignedBoundingBox bbox = (*i)->get_bounding_box();
+	  OUTPUT << "\tBounding Box: Minimum X,Y,Z = "
+		 << std::setw(12) << std::setprecision(4) << std::scientific
+		 << bbox.xmin << "\t" << bbox.ymin << "\t" << bbox.zmin << "\n"
+		 << "\t              Maximum X,Y,Z = "
+		 << std::setw(12) << std::setprecision(4) << std::scientific
+		 << bbox.xmax << "\t" << bbox.ymax << "\t" << bbox.zmax << "\n";
+	}
+      }
       ++i;
     }
     if (summary) {
@@ -497,11 +504,13 @@ namespace {
     while (i != nss.end()) {
       int64_t    count     = (*i)->get_property("entity_count").get_int();
       int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
+      int64_t    num_dist  = (*i)->get_property("distribution_factor_count").get_int();
       if (!summary) {
 	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
 	       << " id: " << std::setw(6) << id(*i)   << ", "
 	       << std::setw(8) << count << " nodes" 
-	       << std::setw(3) << num_attrib << " attributes.\n";
+	       << std::setw(3) << num_attrib << " attributes"
+	       << std::setw(8) << num_dist << " distribution factors.\n";
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 	info_fields(*i, Ioss::Field::TRANSIENT, "\tTransient:  ");
       }

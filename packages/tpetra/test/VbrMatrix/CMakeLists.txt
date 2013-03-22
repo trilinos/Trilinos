@@ -14,7 +14,6 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES
     VbrMatrix_UnitTests
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetratestlib
   )
 
 TRIBITS_ADD_TEST(

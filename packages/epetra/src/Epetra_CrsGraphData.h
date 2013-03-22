@@ -44,11 +44,15 @@
 #ifndef EPETRA_CRSGRAPHDATA_H
 #define EPETRA_CRSGRAPHDATA_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Data.h"
 #include "Epetra_DataAccess.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_IntSerialDenseVector.h"
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 #include "Epetra_LongLongSerialDenseVector.h"
+#endif
 
 // include STL vector
 #include <vector>
@@ -64,7 +68,7 @@ class Epetra_Export;
 class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
   friend class Epetra_CrsGraph;
   friend class Epetra_FECrsGraph;
-
+  friend class Epetra_CrsMatrix;
  private:
 
   //! @name Constructor/Destructor Methods
@@ -166,7 +170,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
   bool StaticProfile_;
   bool SortGhostsAssociatedWithEachProcessor_;
 
-  int IndexBase_;
+  long long IndexBase_;
 
   long long NumGlobalEntries_;
   long long NumGlobalBlockRows_;

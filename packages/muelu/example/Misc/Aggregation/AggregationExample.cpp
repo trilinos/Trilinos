@@ -58,16 +58,16 @@
 #include <Xpetra_Parameters.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 
 // MueLu
 #include "MueLu_Graph.hpp"
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -86,17 +86,17 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
-  
+
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp); // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);       // manage parameters of xpetra
-  
+
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
-  
+
   matrixParameters.check();
   xpetraParameters.check();
 
@@ -108,37 +108,39 @@ int main(int argc, char *argv[]) {
   /* CREATE INITAL MATRIX                                                           */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+  RCP<Matrix> Op = Pr->BuildMatrix();
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
 
   int currentPrintLevel=10;
   int printFlag=6;
-  
+
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
-  
+
   if (comm->getRank() == 0 && printFlag < currentPrintLevel)
     printf("main() Aggregate_CoarsenUncoupled : \n");
- 
+
   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
-  
-  RCP<UCAggregationFactory> AggFact = rcp(new UCAggregationFactory());
-  AggFact->SetMinNodesPerAggregate(2);  
+
+  RCP<CoupledAggregationFactory> AggFact = rcp(new CoupledAggregationFactory());
+  AggFact->SetMinNodesPerAggregate(2);
   AggFact->SetMaxNeighAlreadySelected(5);
   AggFact->SetOrdering(MueLu::AggOptions::GRAPH);
   //AggFact->SetPhase3AggCreation(0.5); TODO: error with explicit instantiation. I don't know why
 
 #ifdef JG_TO_UPDATE
-//   RCP<Aggregates> aggregates = rcp(new Aggregates(*graph, "UC")); 
+//   RCP<Aggregates> aggregates = rcp(new Aggregates(*graph, "UC"));
 //   AggFact->Build(*graph, *aggregates);
-  
+
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
-  
+
   RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates->GetVertex2AggId()->getMap() );
 
   {
@@ -146,7 +148,7 @@ int main(int argc, char *argv[]) {
     Teuchos::ArrayRCP<const LO> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
     Teuchos::ArrayRCP<const LO> procWinner   = aggregates->GetProcWinner()->getData(0);
 
-    for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++) 
+    for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
       Final[i] = vertex2AggId[i] + procWinner[i]*1000;
   }
 
@@ -189,9 +191,9 @@ void dumpAggregates(Aggregates & aggregates) {
   else
     {
 
-      for (size_t i = 0; i < n; i++) 
+      for (size_t i = 0; i < n; i++)
         out << map->getGlobalElement(i) << " " << vertex2AggId[i] << " " << procWinner[i] << std::endl;;
-   
+
       out.close();
     }
 

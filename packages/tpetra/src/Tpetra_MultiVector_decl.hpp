@@ -42,35 +42,21 @@
 #ifndef TPETRA_MULTIVECTOR_DECL_HPP
 #define TPETRA_MULTIVECTOR_DECL_HPP
 
-#include <Teuchos_LabeledObject.hpp>
 #include <Teuchos_DataAccess.hpp>
-#include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_Range1D.hpp>
-
-#include <Kokkos_MultiVector.hpp>
 #include <Kokkos_DefaultArithmetic.hpp>
-
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_ViewAccepter.hpp"
 
-// TODO: add principal use case instructions for memory management interfaces (view/copy extraction)
-// TODO: expand user-visible documentation
 
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Vector, needed to prevent circular inclusions
   template<class S, class LO, class GO, class N> class Vector;
-
-  //template<class S, class LO, class GO, class N> class MultiVector;
-
-  //template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  //RCP< MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  //createMultiVectorFromView(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-  //                          const ArrayRCP<Scalar> &view, size_t LDA, size_t numVectors);
-#endif
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class MultiVector
   /// \brief One or more distributed dense vectors.
@@ -206,7 +192,7 @@ namespace Tpetra {
   /// Nodes.)  If the Kokkos Node is a GPU Node type, then views
   /// always reside in host (CPU) memory, rather than device (GPU)
   /// memory.  When you ask for a view, it copies data from the device
-  /// to the host.  
+  /// to the host.
   ///
   /// What happens next to your view depends on whether the view is
   /// const (read-only) or nonconst (read and write).  Const views
@@ -662,37 +648,58 @@ namespace Tpetra {
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
     void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
-    //! Scale the current values of a multi-vector, this = alpha*this.
+    /// \brief Scale the current values of a multi-vector, this = alpha*this.
+    ///
+    /// This method will always multiply, even if alpha is zero.  That
+    /// means, for example, that if \c *this contains NaN entries
+    /// before calling this method, the NaN entries will remain after
+    /// this method finishes.
     void scale(const Scalar &alpha);
 
-    //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+    /// \brief Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+    ///
+    /// This method will always multiply, even if all the entries of
+    /// alpha are zero.  That means, for example, that if \c *this
+    /// contains NaN entries before calling this method, the NaN
+    /// entries will remain after this method finishes.
     void scale(Teuchos::ArrayView<const Scalar> alpha);
 
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
     void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
-    //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
+    /// \brief Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
+    ///
+    /// If beta is zero, overwrite \c *this unconditionally, even if it contains NaN entries.
     void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta);
 
-    //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
+    /// \brief Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
+    ///
+    /// If gamma is zero, overwrite \c *this unconditionally, even if it contains NaN entries.
     void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma);
 
     //! Compute 1-norm of each vector in multi-vector.
     void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
     //! Compute 2-norm of each vector in multi-vector.
+    //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     void norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
     //! Compute Inf-norm of each vector in multi-vector.
     void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
+    //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
-    //! Compute mean (average) value of each vector in multi-vector.
+    //! \brief Compute mean (average) value of each vector in multi-vector.
+    //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     void meanValue(const Teuchos::ArrayView<Scalar> &means) const;
 
-    //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
+    /// \brief Matrix-matrix multiplication: <tt>this = beta*this + alpha*op(A)*op(B)</tt>.
+    ///
+    /// If beta is zero, overwrite \c *this unconditionally, even if
+    /// it contains NaN entries.  This imitates the semantics of
+    /// analogous BLAS routines like DGEMM.
     void
     multiply (Teuchos::ETransp transA,
               Teuchos::ETransp transB,
@@ -701,22 +708,24 @@ namespace Tpetra {
               const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
               const Scalar& beta);
 
-    //! Element-wise multiply of a Vector A with a MultiVector B.
-    /** Forms this = scalarThis * this + scalarAB * B @ A
-     *  where @ denotes element-wise multiplication.
-     *  B must be the same shape (size and num-vectors) as this, while
-     *  A is the same size but a single vector (column).
-     *
-     *  this = scalarThis * this(i,j) + scalarAB * B(i,j) * A(i,1) (A has only 1 column)
-     *
-     */
+    /// \brief Multiply a Vector A elementwise by a MultiVector B.
+    ///
+    /// Compute <tt>this = scalarThis * this + scalarAB * B @ A</tt>
+    /// where <tt>@</tt> denotes element-wise multiplication.  In
+    /// pseudocode, if C denotes <tt>*this</tt> MultiVector:
+    /// \code
+    /// C(i,j) = scalarThis * C(i,j) + scalarAB * B(i,j) * A(i,1);
+    /// \endcode
+    /// for all rows i and columns j of C.
+    ///
+    /// B must have the same dimensions as <tt>*this</tt>, while A
+    /// must have the same number of rows but a single column.
     void
     elementWiseMultiply (Scalar scalarAB,
                          const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
                          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
                          Scalar scalarThis);
     //@}
-
     //! @name Attribute access functions
     //@{
 
@@ -827,9 +836,7 @@ namespace Tpetra {
                  size_t NumVectors,
                  EPrivateHostViewConstructor /* dummy */);
 
-    inline bool vectorIndexOutOfRange(size_t VectorIndex) const {
-      return (VectorIndex < 1 && VectorIndex != 0) || VectorIndex >= getNumVectors();
-    }
+    bool vectorIndexOutOfRange (size_t VectorIndex) const;
 
     /// \fn getSubArrayRCP
     /// \brief Persisting view of j-th column in the given ArrayRCP.
@@ -851,6 +858,29 @@ namespace Tpetra {
                  Teuchos::ArrayRCP<Scalar> data,
                  size_t LDA,
                  size_t NumVectors,
+                 EPrivateComputeViewConstructor /* dummy */);
+
+    /// \brief Advanced constructor for contiguous views.
+    ///
+    /// This version of the contiguous view constructor takes a
+    /// previously constructed Kokkos::MultiVector, which is the
+    /// correct view of the local data.  The local multivector should
+    /// have been made using the appropriate offsetView* method of
+    /// Kokkos::MultiVector.
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+                 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
+                 EPrivateComputeViewConstructor /* dummy */);
+
+    /// \brief Advanced constructor for noncontiguous views.
+    ///
+    /// This version of the noncontiguous view constructor takes a
+    /// previously constructed Kokkos::MultiVector, which is the
+    /// correct view of the local data.  The local multivector should
+    /// have been made using the appropriate offsetView* method of
+    /// Kokkos::MultiVector.
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+                 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
+                 Teuchos::ArrayView<const size_t> whichVectors,
                  EPrivateComputeViewConstructor /* dummy */);
 
     //@}

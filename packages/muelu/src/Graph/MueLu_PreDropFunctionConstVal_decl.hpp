@@ -65,10 +65,10 @@ namespace MueLu {
 
   public:
 
-    // Constructor
+    //! Constructor
     explicit PreDropFunctionConstVal(const Scalar threshold = 0.0);
 
-    // Destructor
+    //! Destructor
     virtual ~PreDropFunctionConstVal() { }
 
     /*! Drop
@@ -82,6 +82,9 @@ namespace MueLu {
      * @return bool: false, if value in (lrow, lcid) shall be kept, true if it should be dropped
      */
     bool Drop(size_t lrow, GlobalOrdinal grow, size_t k, LocalOrdinal lcid, GlobalOrdinal gcid, const Teuchos::ArrayView<const LocalOrdinal> & indices, const Teuchos::ArrayView<const Scalar> & vals);
+
+    //! Return threshold value.
+    Scalar GetThreshold() const;
 
     //! @name Overridden from Teuchos::Describable
     //@{

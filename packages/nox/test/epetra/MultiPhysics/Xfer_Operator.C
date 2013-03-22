@@ -100,14 +100,14 @@ XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
       }
     }
     if( !dependentNodes.count(i) )
-      cout << "WARNING: Node " << i << " at position " << xlocA 
-           << " not interpolated to transfer mesh !!" << endl;
+      std::cout << "WARNING: Node " << i << " at position " << xlocA 
+           << " not interpolated to transfer mesh !!" << std::endl;
   }
 
 #ifdef DEBUG_TRANSFER_OPERATOR
   for( int i = 0; i < meshA.MyLength(); i++) 
   {
-    cout << "meshA node " << i << " at loc --> " << meshA[i]
+    std::cout << "meshA node " << i << " at loc --> " << meshA[i]
          << " needs node(s) from meshB: ";
     pair< multimap<int, int>::iterator, 
           multimap<int, int>::iterator > rangeN 
@@ -120,8 +120,8 @@ XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
     int j;
     for( j = 0, iterN = rangeN.first, iterW = rangeW.first;
 		   iterN != rangeN.second; j++, iterN++, iterW++)
-      cout << "(" << (*iterN).second << ", " << (*iterW).second << ")   ";
-    cout << endl;
+      std::cout << "(" << (*iterN).second << ", " << (*iterW).second << ")   ";
+    std::cout << std::endl;
   }
 #endif
     

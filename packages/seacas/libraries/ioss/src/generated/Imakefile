@@ -37,7 +37,7 @@ CXXETRA_DEFINES = -ptused -DNO_MPI
 CXXEXTRA_DEFINES = -DNO_MPI
 #endif
 
-SRCS =  Iogn_DatabaseIO.C  Iogn_GeneratedMesh.C
+SRCS =  Iogn_DatabaseIO.C  Iogn_GeneratedMesh.C Iogn_DashSurfaceMesh.C
 
 OBJS = ${SRCS:.C=.o}
 

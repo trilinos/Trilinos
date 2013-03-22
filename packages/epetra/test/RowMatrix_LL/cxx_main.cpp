@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 
   // Construct a Map that puts approximately the same Number of equations on each processor
 
-  Epetra_Map Map(NumGlobalEquations, NumMyEquations, 0, Comm);
+  Epetra_Map Map(NumGlobalEquations, NumMyEquations, 0LL, Comm);
   
   // Get update list and number of local equations from newly created Map
   vector<long long> MyGlobalElements(Map.NumMyElements());

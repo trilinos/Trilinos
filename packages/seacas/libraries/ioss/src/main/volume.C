@@ -169,11 +169,13 @@ void hex_volume_internal(Ioss::ElementBlock *block, const std::vector<double> &c
   }
   size_t t2 = timer();
   
-  OUTPUT << "\n" << std::setw(12) << block->name()
-	 << "\tMin volume = " << std::setw(12) << *std::min_element(volume.begin(), volume.end()) 
-	 << "  Max volume = " << std::setw(12) << *std::max_element(volume.begin(), volume.end()) 
-	 << "  Elements = "   << std::setw(12) << nelem
-	 << "  Time/Elem = " << double(t2-t1)/nelem << " micro-sec\n";
+  if (nelem > 0) {
+    OUTPUT << "\n" << std::setw(12) << block->name()
+	   << "\tMin volume = " << std::setw(12) << *std::min_element(volume.begin(), volume.end()) 
+	   << "  Max volume = " << std::setw(12) << *std::max_element(volume.begin(), volume.end()) 
+	   << "  Elements = "   << std::setw(12) << nelem
+	   << "  Time/Elem = " << double(t2-t1)/nelem << " micro-sec\n";
+  }
 }
   
 void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinates)

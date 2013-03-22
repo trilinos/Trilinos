@@ -1,0 +1,28 @@
+CMAKE_MINIMUM_REQUIRED( VERSION 2.4.6 )
+MARK_AS_ADVANCED( CMAKE_BACKWARDS_COMPATIBILITY )
+SET( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE )
+
+SET( APP_HDRS
+	   MeshingGenie_defs.h
+	   MeshingGenie_mps_nd.h
+	   MeshingGenie_plotter_2d.h
+   )
+
+SET( APP_SRCS
+	   MeshingGenie_mps_nd.cpp
+	   MeshingGenie_plotter_2d.cpp
+   )
+  
+
+IF(WIN32)
+    ADD_DEFINITIONS( -DMESH_EXPORT )
+ENDIF(WIN32)
+
+INCLUDE_DIRECTORIES( 
+   ${CMAKE_CURRENT_SOURCE_DIR}
+   ${CMAKE_CURRENT_BINARY_DIR} 
+  )
+
+SET (LIBRARY_OUTPUT_PATH ../bin)
+
+ADD_LIBRARY(MeshingGenie_mps ${APP_HDRS} ${APP_SRCS} )

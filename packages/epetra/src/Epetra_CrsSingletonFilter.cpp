@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Map.h"
 #include "Epetra_Util.h"
 #include "Epetra_Export.h"
@@ -48,7 +49,11 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 #include "Epetra_LongLongVector.h"
+#endif
+
 #include "Epetra_Comm.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MapColoring.h"
@@ -356,7 +361,7 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Pr
   int NumMyRows = FullMatrix()->NumMyRows();
   int ColSingletonCounter = 0;
   for (i=0; i<NumMyRows; i++) {
-    int curGRID = FullMatrixRowMap().GID64(i);
+    int curGRID = FullMatrixRowMap().GID64(i); // CJ FIXME TODO long long
     if (ReducedMatrixRowMap()->MyGID(curGRID)) { // Check if this row should go into reduced matrix
 
       EPETRA_CHK_ERR(GetRowGCIDs(i, NumEntries, Values, Indices)); // Get current row (Indices are global)
@@ -437,10 +442,10 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Pr
 
   ReducedProblem_ = new Epetra_LinearProblem(ReducedMatrix_, ReducedLHS_, ReducedRHS_);
 
-  double fn = FullMatrix()->NumGlobalRows64();
-  double fnnz = FullMatrix()->NumGlobalNonzeros64();
-  double rn = ReducedMatrix()->NumGlobalRows64();
-  double rnnz = ReducedMatrix()->NumGlobalNonzeros64();
+  double fn = (double) FullMatrix()->NumGlobalRows64();
+  double fnnz = (double) FullMatrix()->NumGlobalNonzeros64();
+  double rn = (double) ReducedMatrix()->NumGlobalRows64();
+  double rnnz = (double) ReducedMatrix()->NumGlobalNonzeros64();
 
   RatioOfDimensions_ = (fn-rn)/fn;
   RatioOfNonzeros_ = (fnnz-rnnz)/fnnz;
@@ -474,7 +479,7 @@ int Epetra_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem * Probl
   int NumMyRows = FullMatrix()->NumMyRows();
   int ColSingletonCounter = 0;
   for (i=0; i<NumMyRows; i++) {
-    int curGRID = FullMatrixRowMap().GID64(i);
+    int curGRID = FullMatrixRowMap().GID64(i); // CJ FIXME TODO long long
     if (ReducedMatrixRowMap()->MyGID(curGRID)) { // Check if this row should go into reduced matrix
       EPETRA_CHK_ERR(GetRowGCIDs(i, NumEntries, Values, Indices)); // Get current row (indices global)
       int ierr = ReducedMatrix()->ReplaceGlobalValues(curGRID, NumEntries, 
@@ -548,7 +553,7 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
                    Epetra_Export * & RedistributeExporter,
                    Epetra_Map * & RedistributeMap) {
 
-  int IndexBase = SourceMap->IndexBase();
+  int IndexBase = SourceMap->IndexBase(); // CJ TODO FIXME long long
   if (IndexBase!=TargetMap->IndexBase()) EPETRA_CHK_ERR(-1);
 
   const Epetra_Comm & Comm = TargetMap->Comm();

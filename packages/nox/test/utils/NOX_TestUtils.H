@@ -52,7 +52,7 @@
 
   This header defines the routine NOX::parseTextInputFile,
   used to read NOX parameter input file information. It also defines
-  a number of required string parsing routines.
+  a number of required std::string parsing routines.
 
   These routines are based on a similar code in APPSPACK. Functionality
   for vector-typed input parameters has been commented out in this
@@ -69,85 +69,85 @@
 namespace NOX
 {
 
-/*!  Get the next quoted string on the given line, starting at
+/*!  Get the next quoted std::string on the given line, starting at
   position pos. 
 
   \param line - Line of text from which to read
 
   \param pos - On input, the starting position in the line. On output,
-  the next position after the quoted string (which may be
+  the next position after the quoted std::string (which may be
   std::string::npos). If there is any sort of error, this is set to
   std::string::npos upon return.
 
-  \param value - On output, filled in with the quoted string (without
-  the quotes). This is an empty string if no quoted string is found.
+  \param value - On output, filled in with the quoted std::string (without
+  the quotes). This is an empty std::string if no quoted std::string is found.
 
-  \retval Returns true if the quoted string is successfully found,
+  \retval Returns true if the quoted std::string is successfully found,
   false otherwise.
   
 */
-bool getNextQuotedString(const string& line, string::size_type& pos, string& value);
+bool getNextQuotedString(const std::string& line, std::string::size_type& pos, std::string& value);
 
-/*!  Get the next string on the given line, starting at
+/*!  Get the next std::string on the given line, starting at
   position pos. 
 
   \param line - Line of text from which to read
 
   \param pos - On input, the starting position in the line. On output,
-  the next position after the string (which may be
+  the next position after the std::string (which may be
   std::string::npos). If there is any sort of error, this is set to
   std::string::npos upon return.
 
-  \param value - On output, filled in with the next string (i.e., the
+  \param value - On output, filled in with the next std::string (i.e., the
   next contguous block of non-space characters). This is an empty
-  string if no string is found.
+  std::string if no std::string is found.
 
-  \retval Returns true if the string is successfully found,
+  \retval Returns true if the std::string is successfully found,
   false otherwise.
   
 */
-bool getNextString(const string& line, string::size_type& pos, string& value);
+bool getNextString(const std::string& line, std::string::size_type& pos, std::string& value);
 
-/*!  Get the next string on the given line, starting at
+/*!  Get the next std::string on the given line, starting at
   position pos, and convert it to a double. 
 
   \param line - Line of text from which to read
 
   \param pos - On input, the starting position in the line. On output,
-  the next position after the string (which may be
+  the next position after the std::string (which may be
   std::string::npos). If there is any sort of error in reading the
-  next string, this is set to std::string::npos upon return.
+  next std::string, this is set to std::string::npos upon return.
 
   \param value - On output, filled in with the double value constained
-  in the next string (i.e., the next contguous block of non-space
+  in the next std::string (i.e., the next contguous block of non-space
   characters).
   
-  \retval Returns true if the next string contains a double,
+  \retval Returns true if the next std::string contains a double,
   false otherwise.
   
 */
-bool getNextDouble(const string& line, string::size_type& pos, double& value);
+bool getNextDouble(const std::string& line, std::string::size_type& pos, double& value);
 
 
-/*!  Get the next string on the given line, starting at
+/*!  Get the next std::string on the given line, starting at
   position pos, and convert it to a int. 
 
   \param line - Line of text from which to read
 
   \param pos - On input, the starting position in the line. On output,
-  the next position after the string (which may be
+  the next position after the std::string (which may be
   std::string::npos). If there is any sort of error in reading the
-  next string, this is set to std::string::npos upon return.
+  next std::string, this is set to std::string::npos upon return.
 
   \param value - On output, filled in with the int value constained
-  in the next string (i.e., the next contguous block of non-space
+  in the next std::string (i.e., the next contguous block of non-space
   characters).
   
-  \retval Returns true if the next string contains a int,
+  \retval Returns true if the next std::string contains a int,
   false otherwise.
   
 */
-bool getNextInt(const string& line, string::size_type& pos, int& value);
+bool getNextInt(const std::string& line, std::string::size_type& pos, int& value);
 
 
 /*!
@@ -166,10 +166,10 @@ bool getNextInt(const string& line, string::size_type& pos, int& value);
 */
 
 
-bool parseTextInputFile(const string filename, Teuchos::ParameterList& params);
+bool parseTextInputFile(const std::string filename, Teuchos::ParameterList& params);
 
 //! Process a single line of the text input file.
-bool processTextInputFileLine(const string& line, Teuchos::ParameterList& params, 
+bool processTextInputFileLine(const std::string& line, Teuchos::ParameterList& params, 
 			      Teuchos::ParameterList*& subPtr);
 
 } // namespace NOX

@@ -64,8 +64,20 @@ import sys
 import traceback
 from optparse import OptionParser
 
-_THIS_REAL_PATH = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-sys.path.append(os.path.join(_THIS_REAL_PATH, 'python'))
+if os.environ.get("TRIBITS_CHECKIN_TEST_DEBUG_DUMP", "") == "ON":
+  debugDump = True
+else:
+  debugDump = False
+
+thisFilePath = __file__
+if debugDump: print "thisFilePath =", thisFilePath
+
+thisFileRealAbsBasePath = os.path.dirname(os.path.abspath(os.path.realpath(thisFilePath)))
+if debugDump: print "thisFileRealAbsBasePath = '"+thisFileRealAbsBasePath+"'"
+
+sys.path.append(os.path.join(thisFileRealAbsBasePath, 'python'))
+if debugDump: print "sys.path =", sys.path
+
 from CheckinTest import *
 from GeneralScriptSupport import *
 
@@ -185,6 +197,9 @@ In order to do a solid checkin, perform the following recommended workflow
   NOTE: Once you start running the checkin-test.py script, you can go off and
   do something else and just check your email to see if all the builds and
   tests passed and if the push happened or not.
+
+  NOTE: The commands 'cmake', 'ctest', and 'make' must be in your default path
+  befor running this script.
 
 For more details on using this script, see the detailed documentation below.
 
@@ -672,11 +687,39 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     help="Comma separated list of builds that should always be run by default.")
 
   clp.add_option(
+    "--extra-repos-file", dest="extraReposFile", type="string", default="",
+    help="File path to an extra repositories list file.  If set to 'project', then " \
+    +"<project_dir>/cmake/ExtraRepositoriesList.cmake is read.  See the argument " \
+    +"--extra-repos for details on how this list is used (default empty '')")
+
+  g_extraRepoTypesList = [""]
+  g_extraRepoTypesList.extend(g_knownTribitsTestRepoTypes)
+
+  addOptionParserChoiceOption(
+    "--extra-repos-type", "extraReposType", g_extraRepoTypesList, 0,
+    "The test type of repos to read from <extra_repos_file>.",
+    clp )
+
+  clp.add_option(
     "--extra-repos", dest="extraRepos", type="string", default="",
     help="List of comma separated extra repositories " \
-    +"containing extra " \
-    +"packages that can be enabled.  The order these repos is "
-    +"listed in not important.")
+    +"containing extra  packages that can be enabled.  The order these repos is "
+    +"listed in not important.  This option overrides --extra-repos-file.")
+
+  clp.add_option(
+    "--ignore-missing-extra-repos", dest="ignoreMissingExtraRepos", action="store_true",
+    help="If set, then extra repos read in from <extra_repos_file> will be ignored " \
+    +"and removed from list.  This option is not applicable if <extra_repos_file>=='' " \
+    +"or <extra_repos_type>==''." )
+  clp.add_option(
+    "--require-extra-repos-exist", dest="ignoreMissingExtraRepos", action="store_false",
+    default=False,
+    help="If set, then all listed extra repos must exist or the script will exit. [default]" )
+
+  clp.add_option(
+    "--with-cmake", dest="withCmake", type="string", default="cmake",
+    help="CMake executable to use with cmake -P scripts internally (only set" \
+    +" by unit testing code).")
 
   clp.add_option(
     "--skip-deps-update", dest="skipDepsUpdate", action="store_true",
@@ -725,6 +768,15 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   clp.add_option(
     "--abort-gracefully-if-no-updates", dest="abortGracefullyIfNoUpdates", action="store_true",
     help="If set, then the script will abort gracefully if no updates are pulled from any repo.",
+    default=False )
+
+  clp.add_option(
+    "--continue-if-no-changes-to-push", dest="abortGracefullyIfNoChangesToPush", action="store_false",
+    help="If set, then the script will continue if no changes to push from any repo. [default]",
+    default=False )
+  clp.add_option(
+    "--abort-gracefully-if-no-changes-to-push", dest="abortGracefullyIfNoChangesToPush", action="store_true",
+    help="If set, then the script will abort gracefully if no changes to push from any repo.",
     default=False )
 
   clp.add_option(
@@ -972,7 +1024,13 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     print "  --no-eg-git-version-check \\"
   print "  --src-dir='" + options.srcDir+"' \\"
   print "  --default-builds='" + options.defaultBuilds + "' \\"
+  print "  --extra-repos-file='"+options.extraReposFile+"' \\"
+  print "  --extra-repos-type='"+options.extraReposType+"' \\"
   print "  --extra-repos='"+options.extraRepos+"' \\"
+  if options.ignoreMissingExtraRepos:
+    print "  --ignore-missing-extra-repos \\"
+  else:
+    print "  --require-extra-repos-exist \\"
   if options.skipDepsUpdate:
     print "  --skip-deps-update \\"
   print "  --enable-packages='"+options.enablePackages+"' \\"
@@ -986,6 +1044,10 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     print "  --abort-gracefully-if-no-updates \\"
   else:
     print "  --continue-if-no-updates \\"
+  if options.abortGracefullyIfNoChangesToPush:
+    print "  --abort-gracefully-if-no-changes-to-push \\"
+  else:
+    print "  --continue-if-no-changes-to-push \\"
   if options.abortGracefullyIfNoEnables:
     print "  --abort-gracefully-if-no-enables \\"
   else:
@@ -1099,6 +1161,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   else:
     return True
 
+
 def getConfigurationSearchPaths():
   """
   Gets a list of paths to search for the configuration. If this file
@@ -1111,11 +1174,12 @@ def getConfigurationSearchPaths():
     result.append(os.path.dirname(os.path.abspath(__file__)))
   # Always append the default tribits directory structure where this file lives in
   # <project-root>/cmake/tribits
-  result.append(os.path.join(_THIS_REAL_PATH, '..', '..'))
+  result.append(os.path.join(thisFileRealAbsBasePath, '..', '..'))
   return result
 
+
 def loadConfigurationFile(filepath):
-  print "Loading project configuration from %s..." % filepath
+  if debugDump: print "Loading project configuration from %s..." % filepath
   if os.path.exists(filepath):
     try:
       modulePath = os.path.dirname(filepath)
@@ -1131,6 +1195,7 @@ def loadConfigurationFile(filepath):
       sys.path.pop()
   else:
     raise Exception('The file %s does not exist.' % filepath)
+
 
 def locateAndLoadConfiguration(path_hints = []):
   """
@@ -1154,6 +1219,7 @@ def locateAndLoadConfiguration(path_hints = []):
 #
 
 def main(cmndLineArgs):
+
   # See if the help option is set or not
   helpOpt = len( set(cmndLineArgs) & set(("--help", "-h")) ) > 0
 

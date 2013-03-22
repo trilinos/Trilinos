@@ -4,7 +4,7 @@
 TAGFILES += \
   $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=$(TRILINOS_HOME)/packages/teuchos/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html 
+  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html
 #
 # Package options
 #
@@ -16,14 +16,14 @@ OUTPUT_DIRECTORY       = .
 INPUT                  = ../src ./Xpetra_DoxygenDocumentation.hpp ../sup
 #FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
-EXCLUDE                = 
+EXCLUDE                =
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATTERNS       =
 EXAMPLE_PATH           = ../examples .
 IMAGE_PATH             = ./images
-INPUT_FILTER           = 
+INPUT_FILTER           =
 ALPHABETICAL_INDEX     = YES
-IGNORE_PREFIX          = 
+IGNORE_PREFIX          =
 EXTRACT_ALL            = YES
 EXTRACT_PRIVATE        = YES
 #

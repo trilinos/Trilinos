@@ -64,11 +64,9 @@ using Teuchos::rcp;
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
-#include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ResponseLibrary.hpp"
-#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_PauseToAttach.hpp"
@@ -86,13 +84,13 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-  void testInitialzation(panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
   bool testEqualityOfEpetraVectorValues(Epetra_Vector& a, Epetra_Vector& b, double tolerance, bool write_to_cout = false);
 
   void buildAssemblyPieces(bool parameter_on,
-                           Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > & fmb,  
+                           Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
                            Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
                            Teuchos::RCP<panzer::GlobalData> & gd,
                            Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof);
@@ -102,7 +100,7 @@ namespace panzer {
     using Teuchos::RCP;
 
     bool parameter_on = true;
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb;  
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
     Teuchos::RCP<panzer::GlobalData> gd;
@@ -116,7 +114,7 @@ namespace panzer {
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
       typedef Thyra::VectorBase<double> VectorType;
       typedef Thyra::LinearOpBase<double> OperatorType;
-      typedef panzer::ModelEvaluator<double,int,int,Kokkos::DefaultNode::DefaultNodeType> PME;
+      typedef panzer::ModelEvaluator<double,Kokkos::DefaultNode::DefaultNodeType> PME;
 
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = true;
@@ -151,26 +149,29 @@ namespace panzer {
     }
   }
   
-  void testInitialzation(panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
-    panzer::InputEquationSet ies_1;
-    ies_1.name = "Energy";
-    ies_1.basis = "Q1";
-    ies_1.integration_order = 1;
-    ies_1.model_id = "solid";
-    ies_1.prefix = "";
-
-    panzer::InputEquationSet ies_2;
-    ies_2.name = "Energy";
-    ies_2.basis = "Q1";
-    ies_2.integration_order = 1;
-    ies_2.model_id = "ion solid";
-    ies_2.prefix = "ION_";
-
-    ipb.physics_block_id = "4";
-    ipb.eq_sets.push_back(ies_1);
-    ipb.eq_sets.push_back(ies_2);
+    // Physics block
+    Teuchos::ParameterList& physics_block = ipb->sublist("test physics");
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("a");
+      p.set("Type","Energy");
+      p.set("Prefix","");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+      p.set("Integration Order",1);
+    }
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("b");
+      p.set("Type","Energy");
+      p.set("Prefix","ION_");
+      p.set("Model ID","ion solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+      p.set("Integration Order",1);
+    }
 
 
     {
@@ -246,7 +247,7 @@ namespace panzer {
   }
 
   void buildAssemblyPieces(bool parameter_on,
-                           Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > & fmb,  
+                           Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
                            Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
                            Teuchos::RCP<panzer::GlobalData> & gd,
                            Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof
@@ -265,16 +266,16 @@ namespace panzer {
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     Teuchos::RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
 
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
-    fmb = Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
     const std::size_t workset_size = 20;
-    user_app::MyFactory eqset_factory;
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
     gd = panzer::createGlobalData();
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
@@ -287,15 +288,14 @@ namespace panzer {
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
       block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
       
-      std::map<std::string,panzer::InputPhysicsBlock> 
-        physics_id_to_input_physics_blocks;
-      physics_id_to_input_physics_blocks["test physics"] = ipb;
+      const int default_integration_order = 1;
 
       bool build_transient_support = true;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
-                                 physics_id_to_input_physics_blocks,
-                                 Teuchos::as<int>(mesh->getDimension()), workset_size,
+				 ipb,
+				 default_integration_order,
+				 workset_size,
                                  eqset_factory,
 				 gd,
 			         build_transient_support,
@@ -348,8 +348,9 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-    fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+    fmb->setWorksetContainer(wkstContainer);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
   }
 
 

@@ -270,13 +270,25 @@ void ShyLU_Probing_Operator::ResetTempVectors(int nvectors)
 {
     using Teuchos::RCP;
     nvectors_ = nvectors;
-    // If vectors were created already, they will be freed.
-    ltemp = Teuchos::RCP<Epetra_MultiVector>
+    if (nvectors <= ssym_->Drhs->NumVectors())
+    {
+        // If vectors were created already, they will be freed.
+        ltemp = Teuchos::RCP<Epetra_MultiVector>
             (new Epetra_MultiVector(View, *(ssym_->Drhs), 0,  nvectors));
-    localX = Teuchos::RCP<Epetra_MultiVector>
+        localX = Teuchos::RCP<Epetra_MultiVector>
             (new Epetra_MultiVector(View, *(ssym_->Dlhs), 0,  nvectors));
-    temp2 = Teuchos::RCP<Epetra_MultiVector>
+        temp2 = Teuchos::RCP<Epetra_MultiVector>
             (new Epetra_MultiVector(View, *(ssym_->Gvec), 0,  nvectors));
+    }
+    else
+    {
+        ltemp = Teuchos::RCP<Epetra_MultiVector>
+            (new Epetra_MultiVector((*(ssym_->Drhs)).Map(), nvectors));
+        localX = Teuchos::RCP<Epetra_MultiVector>
+            (new Epetra_MultiVector((*(ssym_->Dlhs)).Map(), nvectors));
+        temp2 = Teuchos::RCP<Epetra_MultiVector>
+            (new Epetra_MultiVector((*(ssym_->Gvec)).Map(), nvectors));
+    }
     temp = RCP<Epetra_MultiVector>(new Epetra_MultiVector(C_->RowMap(),
                                      nvectors));
     ssym_->OrigLP->SetLHS(localX.getRawPtr());

@@ -51,8 +51,7 @@
 #define _ZOLTAN2_ORDERINGPROBLEM_HPP_
 
 #include <Zoltan2_Problem.hpp>
-//#include <Zoltan2_OrderingAlgorithms.hpp> // TODO: Fix include path?
-#include "algorithms/order/Zoltan2_OrderingAlgorithms.hpp"
+#include <Zoltan2_OrderingAlgorithms.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 
 #include <Zoltan2_GraphModel.hpp>
@@ -90,8 +89,12 @@ class OrderingProblem : public Problem<Adapter>
 {
 public:
 
+  typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::user_t user_t;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
 
 #ifdef HAVE_ZOLTAN2_MPI
    typedef Teuchos::OpaqueWrapper<MPI_Comm> mpiWrapper_t;
@@ -166,7 +169,7 @@ void OrderingProblem<Adapter>::solve(bool newData)
 {
   HELLO;
 
-  size_t nVtx = this->graphModel_->getLocalNumVertices();
+  size_t nVtx = this->baseModel_->getLocalNumObjects();
 
   // TODO: Assuming one MPI process now. nVtx = ngids = nlids
   try
@@ -180,7 +183,6 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // Need some exception handling here, too.
 
   string method = this->params_->template get<string>("order_method", "rcm");
-  typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // TODO: Ignore case
   try
@@ -276,9 +278,13 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   //   MODEL = graph, hypergraph, geometric, ids
   //   ALGORITHM = rcm, random, amd
 
-  ModelType modelType = GraphModelType;
+  ModelType modelType = IdentifierModelType; //default, change later
+  string method = this->params_->template get<string>("order_method", "rcm");
 
-  typedef typename Adapter::base_adapter_t base_adapter_t;
+  if ((method == string("rcm")) || 
+      (method == string("minimum_degree"))) {
+    modelType = GraphModelType;
+  }
 
   // Select Model based on parameters and InputAdapter type
 
@@ -300,7 +306,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
 
   case IdentifierModelType:
-    idFlags.set(SELF_EDGES_MUST_BE_REMOVED);
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
       this->baseInputAdapter_, this->envConst_, problemCommConst_, idFlags));
 

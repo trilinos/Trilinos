@@ -52,6 +52,7 @@
 #include "Intrepid_Types.hpp"
 #include "Intrepid_Utils.hpp"
 #include "Shards_CellTopology.hpp"
+#include "Intrepid_Basis.hpp"
 
 using Teuchos::Array;
 using Teuchos::RCP;
@@ -63,7 +64,8 @@ namespace Intrepid {
             that are tensor products of simpler bases.
 */
 template<class Scalar, class ArrayScalar>
-class TensorBasis: public Basis<Scalar,ArrayScalar> {
+class TensorBasis: public Basis<Scalar,ArrayScalar> 
+{
 private:
 
   

@@ -73,7 +73,7 @@ namespace LOCA {
       //! Constructor
       CompositeConstraintMVDX(
        const Teuchos::RCP<LOCA::GlobalData>& global_data,
-       const vector< Teuchos::RCP<
+       const std::vector< Teuchos::RCP<
        LOCA::MultiContinuation::ConstraintInterfaceMVDX> >& constraintObjects);
       
       //! Copy constructor
@@ -151,7 +151,7 @@ namespace LOCA {
     protected:
 
       //! Array of constraintMVDX pointers
-      vector< Teuchos::RCP<
+      std::vector< Teuchos::RCP<
 	LOCA::MultiContinuation::ConstraintInterfaceMVDX> > constraintMVDXPtrs;
 
       //! Composite constraint derivative

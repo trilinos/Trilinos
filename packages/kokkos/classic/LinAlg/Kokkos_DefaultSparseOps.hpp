@@ -471,7 +471,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os <<  "Kokkos::DefaultHostSparseOps<"
+      os << "Kokkos::DefaultHostSparseOps<"
          << "Scalar=" << TypeNameTraits<Scalar>::name()
          << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
@@ -495,6 +495,7 @@ namespace Kokkos {
       using Teuchos::VERB_HIGH;
       using Teuchos::VERB_EXTREME;
       using std::endl;
+      typedef Teuchos::ArrayRCP<const size_t>::size_type size_type;
 
       // Interpret the default verbosity level as VERB_MEDIUM.
       const EVerbosityLevel vl =
@@ -507,10 +508,10 @@ namespace Kokkos {
         out << this->description();
 
         if (includesVerbLevel (vl, VERB_MEDIUM)) { // vl >= VERB_MEDIUM
-          out << ":" << endl;
+          out << " {" << endl;
           OSTab tab1 (rcpFromRef (out));
 
-          out << "isInitialized_ = " << isInitialized_ << endl;
+          out << "isInitialized_: " << isInitialized_ << endl;
           if (isInitialized_) {
             std::string triUplo ("INVALID");
             if (tri_uplo_ == Teuchos::UNDEF_TRI) {
@@ -530,39 +531,55 @@ namespace Kokkos {
               unitDiag = "UNIT_DIAG";
             }
 
-            out << "numRows_ = " << numRows_ << endl
-                << "numCols_ = " << numCols_ << endl
-                << "isEmpty_ = " << isEmpty_ << endl
-                << "tri_uplo_ = " << triUplo << endl
-                << "unit_diag_ = " << unitDiag << endl;
+            out << "numRows_: " << numRows_ << endl
+                << "numCols_: " << numCols_ << endl
+                << "isEmpty_: " << isEmpty_ << endl
+                << "tri_uplo_: " << triUplo << endl
+                << "unit_diag_: " << unitDiag << endl;
             if (big_ptrs_.size() > 0) {
-              out << "numEntries = " << big_ptrs_[big_ptrs_.size()-1] << endl;
+              out << "numEntries: " << big_ptrs_[big_ptrs_.size()-1] << endl;
             }
             else if (sml_ptrs_.size() > 0) {
-              out << "numEntries = " << sml_ptrs_[sml_ptrs_.size()-1] << endl;
+              out << "numEntries: " << sml_ptrs_[sml_ptrs_.size()-1] << endl;
             }
             else {
-              out << "numEntries = 0" << endl;
+              out << "numEntries: 0" << endl;
             }
 
             if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
               // Only print out all the sparse matrix's data in
               // extreme verbosity mode.
-              out << "ptrs = [";
+              out << "ptrs: [";
               if (big_ptrs_.size() > 0) {
-                std::copy (big_ptrs_.begin(), big_ptrs_.end(),
-                           std::ostream_iterator<Ordinal> (out, " "));
+		for (size_type i = 0; i < big_ptrs_.size (); ++i) {
+		  out << big_ptrs_[i];
+		  if (i + 1 < big_ptrs_.size ()) {
+		    out << ", ";
+		  }
+		}
               }
               else {
-                std::copy (sml_ptrs_.begin(), sml_ptrs_.end(),
-                           std::ostream_iterator<Ordinal> (out, " "));
+		for (size_type i = 0; i < sml_ptrs_.size (); ++i) {
+		  out << sml_ptrs_[i];
+		  if (i + 1 < sml_ptrs_.size ()) {
+		    out << ", ";
+		  }
+		}
               }
-              out << "]" << endl << "inds_ = [";
-              std::copy (inds_.begin(), inds_.end(),
-                         std::ostream_iterator<Ordinal> (out, " "));
-              out << "]" << endl << "vals_ = [";
-              std::copy (vals_.begin(), vals_.end(),
-                         std::ostream_iterator<Scalar> (out, " "));
+              out << "]" << endl << "inds_: [";
+	      for (size_type i = 0; i < inds_.size (); ++i) {
+		out << inds_[i];
+		if (i + 1 < inds_.size ()) {
+		  out << ", ";
+		}
+	      }
+              out << "]" << endl << "vals_: [";
+	      for (size_type i = 0; i < vals_.size (); ++i) {
+		out << vals_[i];
+		if (i + 1 < vals_.size ()) {
+		  out << ", ";
+		}
+	      }
               out << "]" << endl;
             } // vl >= VERB_EXTREME
           } // if is initialized
@@ -780,6 +797,46 @@ namespace Kokkos {
            const MultiVector<DomainScalar,Node> &Y,
            MultiVector<RangeScalar,Node> &X) const;
 
+    /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
+    ///
+    /// Apply a forward or backward sweep of Gauss-Seidel or
+    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
+    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
+    /// to 1.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in B.
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector B.  This may differ from the type of entries in
+    ///   A or in X.
+    ///
+    /// \param B [in] Right-hand side(s).
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param D [in] Inverse of diagonal entries of the matrix A.
+    /// \param omega [in] SOR damping factor.  omega = 1 results in
+    ///   Gauss-Seidel.
+    /// \param direction [in] Sweep direction: Forward or Backward.
+    ///   If you want a symmetric sweep, call this method twice, first
+    ///   with direction = Forward then with direction = Backward.
+    ///
+    /// \note We don't include a separate "Symmetric" direction mode
+    ///   in order to avoid confusion when using this method to
+    ///   implement "hybrid" Jacobi + symmetric (Gauss-Seidel or SOR)
+    ///   for a matrix distributed over multiple processes.  ("Hybrid"
+    ///   means "Gauss-Seidel or SOR within the process, Jacobi
+    ///   outside.")  In that case, interprocess communication (a
+    ///   boundary exchange) must occur before both the forward sweep
+    ///   and the backward sweep, so we would need to invoke the
+    ///   kernel once per sweep direction anyway.
+    template <class DomainScalar, class RangeScalar>
+    void
+    gaussSeidel (const MultiVector<DomainScalar,Node> &B,
+                 MultiVector< RangeScalar,Node> &X,
+                 const MultiVector<Scalar,Node> &D,
+                 const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+                 const enum ESweepDirection direction = Forward) const;
     //@}
 
   protected:
@@ -798,6 +855,13 @@ namespace Kokkos {
     void solvePrivate(Teuchos::ETransp trans,
                       const MultiVector<DomainScalar,Node> &Y,
                             MultiVector< RangeScalar,Node> &X) const;
+
+    template <class DomainScalar, class RangeScalar, class OffsetType>
+    void gaussSeidelPrivate (MultiVector< RangeScalar,Node> &X,
+                             const MultiVector<DomainScalar,Node> &B,
+                             const MultiVector<Scalar,Node> &D,
+                             const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+                             const ESweepDirection direction = Forward) const;
 
     template <class DomainScalar, class RangeScalar, class OffsetType>
     void multiplyPrivate(Teuchos::ETransp trans,
@@ -1011,6 +1075,122 @@ namespace Kokkos {
 
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar, class OffsetType>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  gaussSeidelPrivate (MultiVector<RangeScalar,Node> &X,
+                      const MultiVector<DomainScalar,Node> &B,
+                      const MultiVector<Scalar,Node> &D,
+                      const RangeScalar& omega,
+                      const ESweepDirection direction) const
+  {
+    typedef Teuchos::ScalarTraits<RangeScalar> STS;
+
+    if (numRows_ == 0) {
+      return; // Nothing to do.
+    }
+    const size_t numCols = B.getNumCols ();
+    if (numCols == 0) {
+      return; // Nothing to do.
+    }
+    if (isEmpty_) {
+      // All the off-diagonal entries of A are zero, and all the
+      // diagonal entries are (implicitly) 1.  Therefore compute:
+      //
+      // X := (1 - omega) X + omega B.
+      //
+      // FIXME (mfh 24 Dec 2012) This only works if RangeScalar ==
+      // DomainScalar.  This is because DefaultArithmetic only has one
+      // template parameter, namely one multivector type.
+      typedef DefaultArithmetic<MultiVector<RangeScalar,Node> > MVT;
+      MVT::GESUM (X, omega, B, (STS::one() - omega));
+      return;
+    }
+
+    // Get the raw pointers to all the arrays.
+    ArrayRCP<const OffsetType> ptr_wrapped;
+    getOffsets (ptr_wrapped);
+    const OffsetType* const ptr = ptr_wrapped.getRawPtr ();
+    const Ordinal* const ind = inds_.getRawPtr ();
+    const Scalar* const val = vals_.getRawPtr ();
+    const DomainScalar* const b = B.getValues ().getRawPtr ();
+    const size_t b_stride = B.getStride ();
+    RangeScalar* const x = X.getValuesNonConst ().getRawPtr ();
+    const size_t x_stride = X.getStride ();
+    const Scalar* const d = D.getValues ().getRawPtr ();
+    const Ordinal numRows = numRows_;
+
+    if (numCols == 1) {
+      RangeScalar x_temp;
+
+      if (direction == Forward) {
+        for (Ordinal i = 0; i < numRows; ++i) {
+          x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            x_temp += A_ij * x[j];
+          }
+          x[i] += omega * d[i] * (b[i] - x_temp);
+        }
+      } else if (direction == Backward) {
+        for (Ordinal i = numRows - 1; i >= 0; --i) {
+          x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            x_temp += A_ij * x[j];
+          }
+          x[i] += omega * d[i] * (b[i] - x_temp);
+        }
+      }
+    }
+    else { // numCols > 1
+      // mfh 20 Dec 2012: If Gauss-Seidel for multivectors with
+      // multiple columns becomes important, we can add unrolled
+      // implementations.  The implementation below is not unrolled.
+      // It may also be reasonable to parallelize over right-hand
+      // sides, if there are enough of them, especially if the matrix
+      // fits in cache.
+      Teuchos::Array<RangeScalar> temp (numCols);
+      RangeScalar* const x_temp = temp.getRawPtr ();
+
+      if (direction == Forward) {
+        for (Ordinal i = 0; i < numRows; ++i) {
+          for (size_t c = 0; c < numCols; ++c) {
+            x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          }
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            for (size_t c = 0; c < numCols; ++c) {
+              x_temp[c] += A_ij * x[j + x_stride*c];
+            }
+          }
+          for (size_t c = 0; c < numCols; ++c) {
+            x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
+          }
+        }
+      } else if (direction == Backward) { // backward mode
+        for (Ordinal i = numRows - 1; i >= 0; --i) {
+          for (size_t c = 0; c < numCols; ++c) {
+            x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          }
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            for (size_t c = 0; c < numCols; ++c) {
+              x_temp[c] += A_ij * x[j + x_stride*c];
+            }
+          }
+          for (size_t c = 0; c < numCols; ++c) {
+            x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
+          }
+        }
+      }
+    }
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::solve(Teuchos::ETransp trans,
                                                         const MultiVector<DomainScalar,Node> &Y,
@@ -1038,6 +1218,63 @@ namespace Kokkos {
       solvePrivate<DomainScalar,RangeScalar,Ordinal>(trans,Y,X);
     }
     return;
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar>
+  void
+  DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  gaussSeidel (const MultiVector<DomainScalar,Node> &B,
+               MultiVector< RangeScalar,Node> &X,
+               const MultiVector<Scalar,Node> &D,
+               const RangeScalar& dampingFactor,
+               const ESweepDirection direction) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isInitialized_ == false,
+      std::runtime_error,
+      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "The solve was not fully initialized.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isEmpty_ && unit_diag_ != Teuchos::UNIT_DIAG && numRows_ > 0,
+      std::runtime_error,
+      "Kokkos::DefaultHostSparseOps::gaussSeidel: Local Gauss-Seidel with a "
+      "sparse matrix with no entries, but a nonzero number of rows, is only "
+      "valid if the matrix has an implicit unit diagonal.  This matrix does "
+      "not.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) X.getNumCols() != (size_t) B.getNumCols(),
+      std::runtime_error,
+      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "The multivectors B and X have different numbers of vectors.  "
+      "X has " << X.getNumCols() << ", but B has " << B.getNumCols() << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) X.getNumRows() < (size_t) numRows_,
+      std::runtime_error,
+      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "The input/output multivector X does not have enough rows for the "
+      "matrix.  X has " << X.getNumRows() << " rows, but the (local) matrix "
+      "has " << numRows_ << " rows.  One possible cause is that the column map "
+      "was not provided to the Tpetra::CrsMatrix in the case of a matrix with "
+      "an implicitly stored unit diagonal.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) B.getNumRows() < (size_t) numRows_,
+      std::runtime_error,
+      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "The input multivector B does not have enough rows for the "
+      "matrix.  B has " << B.getNumRows() << " rows, but the (local) matrix "
+      "has " << numRows_ << " rows.");
+
+    if (big_ptrs_ != null) {
+      gaussSeidelPrivate<DomainScalar,RangeScalar,size_t> (X, B, D,
+                                                           dampingFactor,
+                                                           direction);
+    }
+    else {
+      gaussSeidelPrivate<DomainScalar,RangeScalar,Ordinal> (X, B, D,
+                                                            dampingFactor,
+                                                            direction);
+    }
   }
 
 

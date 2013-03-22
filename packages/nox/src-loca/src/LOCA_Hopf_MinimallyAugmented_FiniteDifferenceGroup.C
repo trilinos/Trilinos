@@ -72,7 +72,7 @@ LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup::
 
 NOX::Abstract::Group::ReturnType
 LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup::
-computeDwtCeDp(const vector<int>& paramIDs, 
+computeDwtCeDp(const std::vector<int>& paramIDs, 
 	       const NOX::Abstract::Vector& w1,
 	       const NOX::Abstract::Vector& w2,
 	       const NOX::Abstract::Vector& y,

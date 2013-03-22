@@ -78,6 +78,7 @@ Ioss::Tri6::Tri6()
   Ioss::ElementTopology::alias("tri6", "triangle6");
   Ioss::ElementTopology::alias("tri6", "Solid_Tri_6_2D");
   Ioss::ElementTopology::alias("tri6", "Face_Tri_6_3D");
+  Ioss::ElementTopology::alias("tri6", "TRIANGLE_6_2D");
   Ioss::ElementTopology::alias("tri6", "triface6");
 }
 
@@ -131,5 +132,5 @@ Ioss::ElementTopology* Ioss::Tri6::face_type(int /* face_number */) const
 Ioss::ElementTopology* Ioss::Tri6::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
-  return Ioss::ElementTopology::factory("edge2d3");
+  return Ioss::ElementTopology::factory("edge3");
 }

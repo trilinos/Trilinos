@@ -42,9 +42,11 @@ Stokhos::BasisInteractionGraph::BasisInteractionGraph(const Stokhos::OrthogPolyB
 { 
    using Teuchos::RCP;
 
+   RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
    if(porder<0)
-      porder = max_basis.size();
-   RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = max_basis.computeTripleProductTensor(porder);
+     Cijk = max_basis.computeTripleProductTensor();
+   else
+     Cijk = max_basis.computeLinearTripleProductTensor();
    initialize(max_basis,*Cijk,porder); 
 }
 
@@ -55,9 +57,11 @@ Stokhos::BasisInteractionGraph::BasisInteractionGraph(const Stokhos::ProductBasi
 {
    using Teuchos::RCP;
 
+   RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
    if(porder<0)
-      porder = masterBasis.size();
-   RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = masterBasis.computeTripleProductTensor(porder);
+     Cijk = masterBasis.computeTripleProductTensor();
+   else
+     Cijk = masterBasis.computeLinearTripleProductTensor();
    initialize(masterBasis,*Cijk,rowBasis,colBasis,porder);
 }
 
@@ -131,12 +135,12 @@ void Stokhos::BasisInteractionGraph::initialize(const Stokhos::ProductBasis<int,
    // build row basis terms
    std::vector<int> rowIndexToMasterIndex(rowBasis.size());
    for(int i=0;i<rowBasis.size();i++) 
-      rowIndexToMasterIndex[i] = masterBasis.getIndex(rowBasis.getTerm(i));
+      rowIndexToMasterIndex[i] = masterBasis.index(rowBasis.term(i));
 
    // build column basis terms
    std::vector<int> colIndexToMasterIndex(colBasis.size());
    for(int i=0;i<colBasis.size();i++) 
-      colIndexToMasterIndex[i] = masterBasis.getIndex(colBasis.getTerm(i));
+      colIndexToMasterIndex[i] = masterBasis.index(colBasis.term(i));
 
    // build graph by looking up sparsity in master basis
    for(int r=0;r<rowBasis.size();r++) {

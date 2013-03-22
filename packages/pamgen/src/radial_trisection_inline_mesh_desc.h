@@ -86,7 +86,7 @@ public:
 		       std::map <long long, long long> & global_node_map,
 		       long long num_nodes);
 
-  LoopLimits get_tri_block_limits(long long l, Topo_Loc tl, Topo_Loc & ntl, long long nodeset_plus_1);
+  LoopLimits get_tri_block_limits(bool is_block_bc, long long bid, long long l, Topo_Loc tl, Topo_Loc & ntl, long long nodeset_plus_1);
 
   long long GetBlockBasedGlobalID(long long the_el,long long bct);
 

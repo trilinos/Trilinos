@@ -44,6 +44,7 @@
 #ifndef KOKKOSARRAY_CUDA_SYMMETRICDIAGONALSPEC_HPP
 #define KOKKOSARRAY_CUDA_SYMMETRICDIAGONALSPEC_HPP
 
+#include <stdexcept>
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
 
 //----------------------------------------------------------------------------
@@ -52,12 +53,12 @@ namespace KokkosArray {
 namespace Impl {
 
 template<>
-class Multiply< SymmetricDiagonalSpec< Cuda > , void , void >
+class Multiply< SymmetricDiagonalSpec< KokkosArray::Cuda > , void , void >
 {
 public:
-  typedef Cuda                           device_type ;
-  typedef device_type::size_type         size_type ;
-  typedef SymmetricDiagonalSpec< Cuda >  block_type ;
+  typedef Cuda                    device_type ;
+  typedef device_type::size_type  size_type ;
+  typedef SymmetricDiagonalSpec< KokkosArray::Cuda >  block_type ;
 
   __host__
   static dim3 thread_block( const block_type & block )

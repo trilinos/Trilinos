@@ -47,7 +47,7 @@
 #define MUELU_AMESOS2SMOOTHER_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_AMESOS2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -78,7 +78,7 @@ namespace MueLu {
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class Amesos2Smoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
-#undef MUELU_AMESOS2SMOOTHER_SHORT    
+#undef MUELU_AMESOS2SMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -90,7 +90,7 @@ namespace MueLu {
       Creates a MueLu interface to the direct solvers in the Amesos2 package.
       If you are using type=="", then either SuperLU or KLU2 are used by default.
     */
-    Amesos2Smoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null);
+    Amesos2Smoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList());
 
     //! Destructor
     virtual ~Amesos2Smoother();
@@ -123,12 +123,12 @@ namespace MueLu {
 
     RCP<SmootherPrototype> Copy() const;
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
-    
+
     //! Return a simple one-line description of this object.
     std::string description() const;
-    
+
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
@@ -148,15 +148,12 @@ namespace MueLu {
     //! pointer to Amesos2 solver object
     RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector> > prec_;
 
-    //! A Factory
-    RCP<FactoryBase> AFact_;
-
   }; // class Amesos2Smoother
 
 } // namespace MueLu
 
 #define MUELU_AMESOS2SMOOTHER_SHORT
-#endif // HAVE_MUELU_AMESOS2
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
 #endif // MUELU_AMESOS2SMOOTHER_DECL_HPP
 
 // TODO: PARAMETER LIST NOT TAKE INTO ACCOUNT !!!

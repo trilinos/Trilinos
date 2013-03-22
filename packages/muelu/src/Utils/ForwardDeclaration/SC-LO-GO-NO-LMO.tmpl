@@ -46,7 +46,10 @@
 #ifndef MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
 #define MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
 
-namespace MueLu {       
+$TMPL_CONDITION_OPEN1
+$TMPL_CONDITION_OPEN2
+
+namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class $TMPL_CLASS;
 }
@@ -54,5 +57,7 @@ namespace MueLu {
 #ifndef MUELU_$TMPL_UPPERCASECLASS_SHORT
 #define MUELU_$TMPL_UPPERCASECLASS_SHORT
 #endif
+
+$TMPL_CONDITION_CLOSE
 
 #endif // MUELU_$TMPL_UPPERCASECLASS_FWD_HPP

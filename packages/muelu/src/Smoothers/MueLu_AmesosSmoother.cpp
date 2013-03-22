@@ -45,7 +45,7 @@
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
 
 #include <Epetra_LinearProblem.h>
 
@@ -61,8 +61,8 @@
 
 namespace MueLu {
 
-  AmesosSmoother::AmesosSmoother(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact)
-    : type_(type), paramList_(paramList), AFact_(AFact)
+  AmesosSmoother::AmesosSmoother(std::string const & type, Teuchos::ParameterList const & paramList)
+    : type_(type), paramList_(paramList)
   {
     // set default solver type
     if(type_ == "") {
@@ -73,12 +73,12 @@ namespace MueLu {
 #elif defined(HAVE_AMESOS_SUPERLUDIST)
       type_ = "Superludist"; // 3. default smoother (if Superludist is available)
 #elif defined(HAVE_AMESOS_UMFPACK)
-      type_ = "Umfpack"; // 4. default smoother (if Umfpack is available)
+      type_ = "Umfpack";     // 4. default smoother (if Umfpack is available)
 #endif
     } // if(type_ == "")
 
     // check for valid direct solver type
-    TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" && type_ != "Superludist" && type_ != "Klu" && type_ != "Amesos_Klu" && type_ != "Umfpack" && type_ != "Amesos_Umfpack", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): type of Amesos direct solver can be 'Klu'/'Amesos_Klu', 'Superlu', 'Superludist' or 'Umfpack'/'Amesos_Umfpack'");
+    TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" && type_ != "Superludist" && type_ != "Klu" && type_ != "Amesos_Klu" && type_ != "Umfpack" && type_ != "Amesos_Umfpack", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Solver '" + type_ + "' not supported");
     if (type_ == "Superlu") {
 #if not defined(HAVE_AMESOS_SUPERLU)
       TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU. Cannot define a solver by default for this AmesosSmoother object");
@@ -105,14 +105,14 @@ namespace MueLu {
   AmesosSmoother::~AmesosSmoother() {}
 
   void AmesosSmoother::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get());
+    Input(currentLevel, "A");
   }
 
   void AmesosSmoother::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-    if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::AmesosSmoother::Setup(): Setup() has already been called";
+    if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::AmesosSmoother::Setup(): Setup() has already been called" << std::endl;
 
-    A_ = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+    A_ = Get< RCP<Matrix> >(currentLevel, "A");
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
     linearProblem_ = rcp( new Epetra_LinearProblem() );
@@ -126,7 +126,7 @@ namespace MueLu {
     // unfortunately there is no reindex for Amesos2, yet. So, this only works for Epetra based problems
     if(A_->getRowMap()->isDistributed() == true && A_->getRowMap()->isContiguous() == false)
       paramList_.set("Reindex", true);
-    
+
     prec_->SetParameters(paramList_);
 
     int r = prec_->NumericFactorization();
@@ -157,14 +157,14 @@ namespace MueLu {
   RCP<MueLu::SmootherPrototype<double,int,int> > AmesosSmoother::Copy() const {
     return rcp( new AmesosSmoother(*this) );
   }
-    
+
   std::string AmesosSmoother::description() const {
     std::ostringstream out;
     out << SmootherPrototype::description();
     out << "{type = " << type_ << "}";
     return out.str();
   }
-    
+
   //using MueLu::Describable::describe; // overloading, not hiding
   void AmesosSmoother::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
@@ -172,11 +172,11 @@ namespace MueLu {
     if (verbLevel & Parameters0) {
       out0 << "Prec. type: " << type_ << std::endl;
     }
-      
-    if (verbLevel & Parameters1) { 
+
+    if (verbLevel & Parameters1) {
       out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
     }
-      
+
     if (verbLevel & External) {
       if (prec_ != Teuchos::null) { prec_->PrintStatus(); prec_->PrintTiming(); } //TODO: redirect output?
     }
@@ -192,4 +192,4 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif
+#endif // HAVE_MUELU_EPETRA && HAVE_MUELU_AMESOS

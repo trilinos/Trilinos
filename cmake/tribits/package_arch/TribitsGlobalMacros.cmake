@@ -375,11 +375,6 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     "" CACHE PATH
     "Output the full XML dependency files in the given directory." )
 
-  ADVANCED_SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
-    ""
-    CACHE STRING
-    "Type of testing to pull in extra respositories (Continuous, or Nightly)" )
-
   #
   # Extra repositories
   #
@@ -403,44 +398,27 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     "File contining the list of extra repositories contining add-on packages to process")
   #PRINT_VAR(${PROJECT_NAME}_EXTRAREPOS_FILE)
 
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
+    ""
+    CACHE STRING
+    "Type of testing to pull in extra respositories (Continuous, or Nightly)" )
+
   ADVANCED_SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES
     FALSE CACHE BOOL
    "Set if to ignore missing extra repositories (or fail hard)" )
-
-  IF (${PROJECT_NAME}_EXTRAREPOS_FILE)
-  
-    MESSAGE("")
-    MESSAGE("Reading the list of extra repositories from ${${PROJECT_NAME}_EXTRAREPOS_FILE}")
-    MESSAGE("")
-  
-    INCLUDE(${${PROJECT_NAME}_EXTRAREPOS_FILE})
-    TRIBITS_PROCESS_EXTRAREPOS_LISTS()
-    # Above sets ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT
-
-  ELSE()
-
-    SET({PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT)
-
-  ENDIF()
 
   # Even if a project does not support an extra repos file, it can always
   # support extra repositories defined by the user by the very nature of
   # Tribits.
   ADVANCED_SET(${PROJECT_NAME}_EXTRA_REPOSITORIES
-    "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}"
+    ""
     CACHE STRING
     "List of external repositories that contain extra ${PROJECT_NAME} packages."
     )
-  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  ","
-    ${PROJECT_NAME}_EXTRA_REPOSITORIES)
+  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
 
-  IF (NOT "${${PROJECT_NAME}_EXTRA_REPOSITORIES}" STREQUAL "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}")
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("Wiping the info for extra repositories because passed in list differs"
-        " from extra repos file.")
-    ENDIF()
-    TRIBITS_WIPE_EXTRAREPOS_LISTS()
-  ENDIF()
+  SET(${PROJECT_NAME}_CHECK_EXTRAREPOS_EXIST TRUE)
+  TRIBITS_GET_AND_PROCESS_EXTRA_REPOSITORIES_LISTS()
 
   ADVANCED_SET(${PROJECT_NAME}_INSTALLATION_DIR
     ""
@@ -758,6 +736,11 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     #PRINT_VAR(NATIVE_REPO_NAME)
     #PRINT_VAR(NATIVE_REPO_DIR)
 
+    # Need to make sure this gets set because logic in Dependencies.cmake files
+    # looks for the presents of this varible.
+    SET(${NATIVE_REPO_NAME}_SOURCE_DIR "${PROJECT_SOURCE_DIR}/${NATIVE_REPO_DIR}")
+    #PRINT_VAR(${NATIVE_REPO_NAME}_SOURCE_DIR)
+
     #
     # A.1) Define the lists of all ${NATIVE_REPO_NAME} native packages and TPLs
     #
@@ -765,7 +748,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     # A.1.a) Read the core ${NATIVE_REPO_NAME} packages
   
     SET(${NATIVE_REPO_NAME}_PACKAGES_FILE
-      "${PROJECT_SOURCE_DIR}/${NATIVE_REPO_DIR}/${${PROJECT_NAME}_PACKAGES_FILE_NAME}")
+      "${${NATIVE_REPO_NAME}_SOURCE_DIR}/${${PROJECT_NAME}_PACKAGES_FILE_NAME}")
   
     MESSAGE("")
     MESSAGE("Reading the list of packages from ${${NATIVE_REPO_NAME}_PACKAGES_FILE}")
@@ -778,7 +761,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     # A.1.b) Read the core TPLs dependencies
   
     SET(${NATIVE_REPO_NAME}_TPLS_FILE
-      "${PROJECT_SOURCE_DIR}/${NATIVE_REPO_DIR}/${${PROJECT_NAME}_TPLS_FILE_NAME}")
+      "${${NATIVE_REPO_NAME}_SOURCE_DIR}/${${PROJECT_NAME}_TPLS_FILE_NAME}")
     
     MESSAGE("")
     MESSAGE("Reading the list of TPLs from ${${NATIVE_REPO_NAME}_TPLS_FILE}")
@@ -836,6 +819,13 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     #PRINT_VAR(EXTRA_REPO)
     #PRINT_VAR(EXTRAREPO_IDX)
     #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS)
+
+    # Need to make sure this gets set because logic in Dependencies.cmake files
+    # looks for the presents of this varible.
+    SET(${EXTRA_REPO}_SOURCE_DIR "${PROJECT_SOURCE_DIR}/${EXTRA_REPO}")
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      PRINT_VAR(${EXTRA_REPO}_SOURCE_DIR)
+    ENDIF()
  
     SET(EXTRAREPO_PACKSTAT "")
     IF (${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS)
@@ -859,7 +849,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
           "${PROJECT_SOURCE_DIR}/${${EXTRA_REPO}_PACKAGES_LIST_FILE}")
       ELSE()
         SET(EXTRAREPO_PACKAGES_FILE
-          "${PROJECT_SOURCE_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
+          "${${EXTRA_REPO}_SOURCE_DIR}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
       ENDIF()
   
       MESSAGE("")
@@ -885,7 +875,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
       # Read in the add-on TPLs from the extra repo
   
       SET(EXTRAREPO_TPLS_FILE
-        "${PROJECT_SOURCE_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME}")
+        "${${EXTRA_REPO}_SOURCE_DIR}/${${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME}")
   
       MESSAGE("")
       MESSAGE("Reading a list of extra TPLs from ${EXTRAREPO_TPLS_FILE} ... ")
@@ -1188,17 +1178,11 @@ MACRO(TRIBITS_SETUP_ENV)
 
   # Set up Windows interface stuff
 
-  IF(MSVC)
+  IF (MSVC)
     ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE 
       -D_CRT_NONSTDC_NO_DEPRECATE  -D_SCL_SECURE_NO_WARNINGS)
-    INCLUDE_DIRECTORIES(${${PROJECT_NAME}_TRIBITS_DIR}/common_tools/win_interface/include)
-    # find the CLAPACK built by CMake on the machine for MSVC
-    # if found it will set the BLAS and LAPACK libraries
-    FIND_PACKAGE(CLAPACK 3.2.1 NO_MODULE)
-    IF(CLAPACK_FOUND)
-      SET(TPL_BLAS_LIBRARIES blas CACHE INTERNAL "")
-      SET(TPL_LAPACK_LIBRARIES lapack CACHE INTERNAL "")
-    ENDIF()
+    INCLUDE_DIRECTORIES(
+      ${${PROJECT_NAME}_TRIBITS_DIR}/common_tools/win_interface/include)
   ENDIF()
   
   IF (WIN32 AND NOT CYGWIN)
@@ -1383,9 +1367,9 @@ ENDFUNCTION()
 # Macro that reads in the project's version file into the current scope
 #
 
-MACRO(TRIBITS_PROJECT_READ_VERSION_FILE  PROJECT_BASE_DIR)
-  IF (EXISTS ${PROJECT_BASE_DIR}/Version.cmake)
-    INCLUDE(${PROJECT_BASE_DIR}/Version.cmake)
+MACRO(TRIBITS_PROJECT_READ_VERSION_FILE  PROJECT_SOURCE_DIR_IN)
+  IF (EXISTS ${PROJECT_SOURCE_DIR_IN}/Version.cmake)
+    INCLUDE(${PROJECT_SOURCE_DIR_IN}/Version.cmake)
   ENDIF()
 ENDMACRO()
 
@@ -1490,6 +1474,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   GLOBAL_NULL_SET(${PROJECT_NAME}_INCLUDE_DIRS)
   GLOBAL_NULL_SET(${PROJECT_NAME}_LIBRARY_DIRS)
   GLOBAL_NULL_SET(${PROJECT_NAME}_LIBRARIES)
+  GLOBAL_NULL_SET(${PROJECT_NAME}_ETI_PACKAGES)
 
   #
   # B) Define the source and binary directories for all of the pacakges that
@@ -1500,7 +1485,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   SET(PACKAGE_IDX 0)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
 
-   # Get all the package soruces independent if they are enabled or not.
+   # Get all the package sources independent of whether they are enabled or not.
    # There are some messed up packages that grab parts out of unrelated
    # downstream packages that might not even be enabled.  To support this,
    # allow this.
@@ -1508,7 +1493,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
    SET(${TRIBITS_PACKAGE}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${PACKAGE_DIR})
    #PRINT_VAR(${TRIBITS_PACKAGE}_SOURCE_DIR)
 
-    TRIBITS_DETERMINE_IF_PROCESS_PACKAGE(${TRIBITS_PACKAGE}
+   TRIBITS_DETERMINE_IF_PROCESS_PACKAGE(${TRIBITS_PACKAGE}
       PROCESS_PACKAGE  PACKAGE_ENABLE_STR)
 
     IF (PROCESS_PACKAGE)
@@ -1520,7 +1505,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
           SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${${TRIBITS_PACKAGE}_SPECIFIED_BINARY_DIR})
         ENDIF()
       ELSE()
-	SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_DIR})
+        SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_DIR})
       ENDIF()
       #PRINT_VAR(${TRIBITS_PACKAGE}_BINARY_DIR)
 
@@ -1581,6 +1566,29 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
     MATH(EXPR PACKAGE_IDX "${PACKAGE_IDX}+1")
 
   ENDFOREACH()
+
+  #
+  # C part 2) Loop backwards over ETI packages if ETI is enabled
+  #
+
+  # do this regardless of whether project level ETI is enabled
+  IF("${${PROJECT_NAME}_ETI_PACKAGES}" STREQUAL "")
+    MESSAGE("\nNo ETI support requested by packages.\n")
+  ELSE()
+    #IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("\nProcessing explicit instantiation support for enabled packages ...\n")
+    #ENDIF()
+    SET(REVERSE_ETI_LIST ${${PROJECT_NAME}_ETI_PACKAGES})
+    LIST(REVERSE REVERSE_ETI_LIST)
+    FOREACH(PACKAGE_NAME ${REVERSE_ETI_LIST})
+      MESSAGE("Processing ETI support: ${PACKAGE_NAME}")
+      SET(ETIFILE ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/ExplicitInstantiationSupport.cmake)
+      IF(NOT EXISTS "${ETIFILE}")
+        MESSAGE(FATAL_ERROR "Could not find ${PACKAGE_NAME} ETI support file ${ETIFILE}")
+      ENDIF()
+      INCLUDE("${ETIFILE}")
+    ENDFOREACH()
+  ENDIF()
 
   #
   # D) Check if no packages are enabled and if that is allowed
@@ -1726,6 +1734,12 @@ MACRO(TRIBITS_ADD_DASHBOARD_TARGET)
     ENDIF()
 
     #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)
+    APPEND_SET(EXPR_CMND_ARGS
+      ${PROJECT_NAME}_EXTRAREPOS_FILE=${${PROJECT_NAME}_EXTRAREPOS_FILE})
+    APPEND_SET(EXPR_CMND_ARGS
+      ${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=${${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE})
+    APPEND_SET(EXPR_CMND_ARGS
+      ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES=${${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES})
     JOIN(${PROJECT_NAME}_EXTRA_REPOSITORIES_JOINED "," FALSE
       ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
     APPEND_SET(EXPR_CMND_ARGS

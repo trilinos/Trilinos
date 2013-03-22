@@ -41,8 +41,9 @@
 // @HEADER
 
 #include "Piro_Epetra_StokhosSolver.hpp"
-#include "Piro_Epetra_Factory.hpp"
-#include "Piro_ValidPiroParameters.hpp"
+
+#include "Piro_Epetra_SolverFactory.hpp"
+#include "Piro_Provider.hpp"
 
 #include "Stokhos.hpp"
 #include "Stokhos_Epetra.hpp"
@@ -65,15 +66,13 @@ StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
 
-  //piroParams->validateParameters(*Piro::getValidPiroParameters(),0);
-
   // Validate parameters
   Teuchos::ParameterList& sgParams =
     piroParams->sublist("Stochastic Galerkin");
   sgParams.validateParameters(*getValidSGParameters(),0);
 
   sgSolverParams = 
-    // Teuchos::rcp(&(sgParams.sublist("SG Solver Parameters")),false);
+    //Teuchos::rcp(&(sgParams.sublist("SG Solver Parameters")),false);
     Teuchos::rcp(new Teuchos::ParameterList(sgParams.sublist("SG Solver Parameters")));
 
   // Get SG expansion type
@@ -131,22 +130,20 @@ StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
 
 }
 
-Piro::Epetra::StokhosSolverFactory::~StokhosSolverFactory()
+void 
+Piro::Epetra::StokhosSolverFactory::
+resetSolverParameters(const Teuchos::ParameterList& new_solver_params)
 {
-  // Get rid of circular dependencies
-  piroParams->set("Interface", Teuchos::null);
-  piroParams->set("Linear System", Teuchos::null);
+  *sgSolverParams = new_solver_params;
 }
 
 Teuchos::RCP<Stokhos::SGModelEvaluator>
 Piro::Epetra::StokhosSolverFactory::
-createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
-	      const Teuchos::RCP<NOX::Epetra::Observer>& noxObserver)
+createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_)
 {
   Teuchos::ParameterList& sgParams =
     piroParams->sublist("Stochastic Galerkin");
-  Teuchos::ParameterList& sg_basisParams = sgParams.sublist("Basis");
-  int dim = sg_basisParams.get<int>("Dimension");
+  sgParams.sublist("Basis");
 
   model = model_;
 
@@ -216,14 +213,15 @@ createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
 						       inner_linsys,
 						       iReq, iJac, A,
 						       model->get_x_map()));
-
-      piroParams->set("Interface", nox_interface);
-      piroParams->set("Linear System", linsys);
     }
 
+    Piro::Epetra::SolverFactory solverFactory;
+    solverFactory.setDefaultProvider<NOX::Epetra::ModelEvaluatorInterface>(nox_interface);
+    solverFactory.setDefaultProvider<NOX::Epetra::LinearSystem>(linsys);
+
     // Create solver to map p -> g
-    Teuchos::RCP<EpetraExt::ModelEvaluator> mp_solver =
-      Piro::Epetra::Factory::createSolver(piroParams, mp_nonlinear_model);
+    const Teuchos::RCP<EpetraExt::ModelEvaluator>  mp_solver
+      = solverFactory.createSolver(piroParams, mp_nonlinear_model);
 
     // Create MP inverse model evaluator to map p_mp -> g_mp
     Teuchos::Array<int> mp_p_index_map = 
@@ -248,11 +246,12 @@ createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
   }
   else {
     Teuchos::RCP<EpetraExt::ModelEvaluator> underlying_model;
-    if (sg_method == SG_GLOBAL)
+    if (sg_method == SG_GLOBAL) {
       underlying_model = model;
-    else 
-      underlying_model =
-	Piro::Epetra::Factory::createSolver(piroParams, model);
+    } else {
+      Piro::Epetra::SolverFactory solverFactory;
+      underlying_model = solverFactory.createSolver(piroParams, model);
+    }
     sg_model =
       Teuchos::rcp(new Stokhos::SGQuadModelEvaluator(underlying_model));
   }
@@ -322,8 +321,17 @@ createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
     sg_nonlin_model->set_x_sg_init(*sg_x);
   }
 
+  return sg_nonlin_model;
+}
+
+Teuchos::RCP<NOX::Epetra::Observer>
+Piro::Epetra::StokhosSolverFactory::
+createSGObserver(const Teuchos::RCP<NOX::Epetra::Observer>& noxObserver)
+{
   // Set up Observer to call noxObserver for each vector block
   Teuchos::RCP<NOX::Epetra::Observer> sgnoxObserver;
+
+  Teuchos::ParameterList& sgParams = piroParams->sublist("Stochastic Galerkin");
   if (noxObserver != Teuchos::null && sg_method != SG_NI && sg_method != SG_MPNI) {
     int save_moments = sgParams.get("Save Moments",-1);
     sgnoxObserver = 
@@ -333,15 +341,15 @@ createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
 	model->get_x_map(), 
         sg_nonlin_model->get_x_sg_overlap_map(),
         sg_comm, sg_nonlin_model->get_x_sg_importer(), save_moments));
-    piroParams->set("Observer", sgnoxObserver);
   }
 
-  return sg_nonlin_model;
+  return sgnoxObserver;
 }
 
 Teuchos::RCP<EpetraExt::ModelEvaluator>
 Piro::Epetra::StokhosSolverFactory::
-createSGSolver(const Teuchos::RCP<EpetraExt::ModelEvaluator>& sg_model)
+createSGSolver(const Teuchos::RCP<EpetraExt::ModelEvaluator>& sg_model,
+               const Teuchos::RCP<NOX::Epetra::Observer>& sg_observer)
 {
   // Get SG solver type
   std::string solve_type = sgSolverParams->get("SG Solver Algorithm", "Krylov");
@@ -359,9 +367,10 @@ createSGSolver(const Teuchos::RCP<EpetraExt::ModelEvaluator>& sg_model)
 
   Teuchos::RCP<EpetraExt::ModelEvaluator> sg_block_solver;
   if (sg_method != SG_NI && sg_method != SG_MPNI) {
+    Piro::Epetra::SolverFactory solverFactory;
+
     Teuchos::RCP<NOX::Epetra::LinearSystem> sg_linsys = Teuchos::null;
     if (solve_method==SG_GS || solve_method==SG_JACOBI) {
-      
       // Create NOX interface
       Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> det_nox_interface = 
          Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(model));
@@ -418,12 +427,13 @@ createSGSolver(const Teuchos::RCP<EpetraExt::ModelEvaluator>& sg_model)
 		       basis, sg_parallel_data, A, base_map, sg_map));
       }
 
-      piroParams->set("Linear System", sg_linsys);
+      solverFactory.setDefaultProvider<NOX::Epetra::LinearSystem>(sg_linsys);
     }
 
+    solverFactory.setDefaultProvider<NOX::Epetra::Observer>(sg_observer);
+
     // Will find preconditioner for Matrix-Free method
-    sg_block_solver = 
-      Piro::Epetra::Factory::createSolver(piroParams, sg_model);
+    sg_block_solver = solverFactory.createSolver(piroParams, sg_model);
   }
   else 
     sg_block_solver = sg_model;
@@ -506,6 +516,7 @@ Piro::Epetra::StokhosSolverFactory::getValidSGParameters() const
   validPL->sublist("SG Solver Parameters", false, "");
   validPL->sublist("MP Solver Parameters", false, "");
   validPL->sublist("Basis", false, "");
+  validPL->sublist("Pseudospectral Operator", false, "");
   validPL->sublist("Expansion", false, "");
   validPL->sublist("Quadrature", false, "");
   validPL->set<std::string>("SG Method", "","");

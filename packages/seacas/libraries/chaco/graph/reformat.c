@@ -12,10 +12,10 @@
 
 int 
 reformat (
-    size_t *start,		/* start of edge list for each vertex */
+    int *start,		/* start of edge list for each vertex */
     int *adjacency,		/* edge list data */
     int nvtxs,		/* number of vertices in graph */
-    size_t *pnedges,		/* ptr to number of edges in graph */
+    int *pnedges,		/* ptr to number of edges in graph */
     int *vwgts,		/* weights for all vertices */
     float *ewgts,		/* weights for all edges */
     struct vtx_data ***pgraph	/* ptr to array of vtx data for graph */
@@ -30,13 +30,12 @@ reformat (
     int      *eptr_save = NULL;	/* saved index into adjacency list */
     float    *wptr = NULL;	/* steps through edge weights list */
     int       self_edge;	/* number of self loops detected */
-    size_t    size;		/* length of all edge lists */
+    int       size;		/* length of all edge lists */
     double    sum;		/* sum of edge weights for a vtx */
     int       using_ewgts;	/* are edge weights being used? */
     int       using_vwgts;	/* are vertex weights being used? */
-    size_t    i, j;		/* loop counters */
-    size_t    sm_size;
-    
+    int       i, j;		/* loop counters */
+
     using_ewgts = (ewgts != NULL);
     using_vwgts = (vwgts != NULL);
 
@@ -63,8 +62,8 @@ reformat (
 	*pnedges = start[nvtxs] / 2;
     else
 	*pnedges = 0;
-    sm_size = 2 * (*pnedges) + nvtxs;
-    edges = smalloc_ret(sm_size * sizeof(int));
+    size = 2 * (*pnedges) + nvtxs;
+    edges = smalloc_ret(size * sizeof(int));
     if (edges == NULL) return(1);
 
     if (using_ewgts) {
@@ -92,9 +91,8 @@ reformat (
 	*edges++ = i;
 	eptr_save = eptr;
 	for (j = size; j; j--) {
-  	    if (*eptr != i) {
-	      *edges++ = *eptr++;
-	    }
+	    if (*eptr != i)
+		*edges++ = *eptr++;
 	    else {		/* Self edge, skip it. */
 		if (!self_edge) {
 		    printf("WARNING: Self edge (%d,%d) being ignored\n", i, i);

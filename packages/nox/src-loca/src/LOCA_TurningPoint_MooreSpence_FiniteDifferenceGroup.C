@@ -68,7 +68,7 @@ LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::~FiniteDifferenceGroup()
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::computeDJnDpMulti(
-				      const vector<int>& paramIDs, 
+				      const std::vector<int>& paramIDs, 
 				      const NOX::Abstract::Vector& nullVector,
 				      NOX::Abstract::MultiVector& result,
 				      bool isValid)

@@ -47,12 +47,12 @@
 #define MUELU_IFPACK2SMOOTHER_DECL_HPP
 
 #include <Teuchos_ParameterList.hpp>
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Ifpack2Smoother_fwd.hpp"
 
-#ifdef HAVE_MUELU_IFPACK2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 // Ifpack2 forward declaration
 namespace Ifpack2 {
@@ -67,7 +67,7 @@ namespace Ifpack2 {
 namespace MueLu {
 
   /*!
-    @class IfpackSmoother2
+    @class Ifpack2Smoother
     @brief Class that encapsulates Ifpack2 smoothers.
 
     //   This class creates an Ifpack2 preconditioner factory. The factory creates a smoother based on the
@@ -95,31 +95,31 @@ namespace MueLu {
     Here is how to select some of the most common smoothers.
 
     - Gauss-Seidel
-    - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
-    - parameter list options
-    - <tt>relaxation: type</tt> = <tt>Gauss-Seidel</tt>
-    - <tt>relaxation: damping factor</tt>
+      - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
+      - parameter list options
+        - <tt>relaxation: type</tt> = <tt>Gauss-Seidel</tt>
+        - <tt>relaxation: damping factor</tt>
     - symmetric Gauss-Seidel
-    - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
-    - parameter list options
-    - <tt>relaxation: type</tt> = <tt>symmetric Gauss-Seidel</tt>
-    - <tt>relaxation: damping factor</tt>
+      - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
+      - parameter list options
+        - <tt>relaxation: type</tt> = <tt>symmetric Gauss-Seidel</tt>
+        - <tt>relaxation: damping factor</tt>
     - Chebyshev
-    - <tt>type</tt> = <tt>Chebyshev</tt>
-    - parameter list options
-    - <tt>chebyshev: ratio eigenvalue</tt>
-    - <tt>chebyshev: min eigenvalue</tt>
-    - <tt>chebyshev: max eigenvalue</tt>
-    - <tt>chebyshev: degree</tt>
-    - <tt>chebyshev: zero starting solution</tt> (defaults to <tt>true</tt>)
+      - <tt>type</tt> = <tt>Chebyshev</tt>
+      - parameter list options
+        - <tt>chebyshev: ratio eigenvalue</tt>
+        - <tt>chebyshev: min eigenvalue</tt>
+        - <tt>chebyshev: max eigenvalue</tt>
+        - <tt>chebyshev: degree</tt>
+        - <tt>chebyshev: zero starting solution</tt> (defaults to <tt>true</tt>)
     - ILU
-    - <tt>type</tt> = <tt>ILU</tt>
-    - parameter list options
-    - <tt>fact: level-of-fill</tt>
+      - <tt>type</tt> = <tt>ILU</tt>
+      - parameter list options
+        - <tt>fact: level-of-fill</tt>
 
-    See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT.
+    See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT, Ifpac2_Krylov.
     */
-    Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null); //TODO: empty paramList valid for Ifpack??
+    Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0); //TODO: empty paramList valid for Ifpack??
 
     //! Destructor
     virtual ~Ifpack2Smoother();
@@ -175,15 +175,15 @@ namespace MueLu {
 
     //@}
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
-    
+
     //! Return a simple one-line description of this object.
     std::string description() const;
-    
+
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const 
+    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     //@}
@@ -202,13 +202,10 @@ namespace MueLu {
     //! pointer to Ifpack2 preconditioner object
     RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_;
 
-    //! A Factory
-    RCP<FactoryBase> AFact_;
-
   }; // class Ifpack2Smoother
 
 } // namespace MueLu
 
 #define MUELU_IFPACK2SMOOTHER_SHORT
-#endif //ifdef HAVE_MUELU_IFPACK2
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_IFPACK2
 #endif // MUELU_IFPACK2SMOOTHER_DECL_HPP

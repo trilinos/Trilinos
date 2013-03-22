@@ -89,6 +89,7 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
                        int *& ExportGIDs,
                        int *& ExportPIDs);
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int CreateFromRecvs( const int & NumRemoteIDs,
                        const long long * RemoteGIDs,
                        const int * RemotePIDs,
@@ -96,6 +97,7 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
                        int & NumExportIDs,
                        long long *& ExportGIDs,
                        int *& ExportPIDs);
+#endif
 
   int Do       (char * export_objs,
                 int obj_size,

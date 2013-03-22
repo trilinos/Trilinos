@@ -7,7 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/diag/PrintTimer.hpp>
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 
 #include <iomanip>
 #include <ostream>

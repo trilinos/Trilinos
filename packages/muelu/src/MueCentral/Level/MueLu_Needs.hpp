@@ -47,20 +47,22 @@
 #define MUELU_NEEDS_HPP
 
 #include <string>
-#include <Teuchos_ParameterEntry.hpp>
-#include "MueLu_VariableContainer.hpp"
 
-#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BoostGraphviz.hpp"
+
+#include <Teuchos_ParameterEntry.hpp>
+
 #include "MueLu_BaseClass.hpp"
 
 #include "MueLu_Exceptions.hpp"
 
 #include "MueLu_TwoKeyMap.hpp"
+#include "MueLu_VariableContainer.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_NoFactory.hpp"
 
 namespace MueLu {
-  
+
   /*!
     @class Needs
     @brief Class that allows cross-factory communication of data needs.
@@ -107,7 +109,7 @@ namespace MueLu {
     //! @brief functions for setting data in data storage
     //@{
 
-    //      void Set(const Key1 & key1, const Key2 & key2, const Value & entry) 
+    //      void Set(const Key1 & key1, const Key2 & key2, const Value & entry)
 
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
@@ -141,16 +143,16 @@ namespace MueLu {
     //@{
 
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
-    // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
+    // Usage: Level->Get< RCP<Matrix> >("A", factoryPtr)
     template <class T>
     const T & Get(const std::string & ename, const FactoryBase* factory) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory, ename), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
       const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
       return Teuchos::getValue<T>(var->GetData());
     }
-    
+
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
-    // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
+    // Usage: Level->Get< RCP<Matrix> >("A", factoryPtr)
     template <class T>
     T & Get(const std::string & ename, const FactoryBase* factory) {
       return const_cast<T &>(const_cast<const Needs &>(*this).Get<T>(ename, factory)); // Valid cast. See Effective C++, Item 3.
@@ -172,7 +174,7 @@ namespace MueLu {
 
     //! See documentation of Level::GetKeepFlag
     KeepType GetKeepFlag(const std::string& ename, const FactoryBase* factory) const;
-    
+
     //@}
 
     //! @name Utilities.
@@ -227,6 +229,13 @@ namespace MueLu {
 
     //! Printing method
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+
+#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
+    void UpdateGraph(std::map<const FactoryBase*, BoostVertex>&                   vindices,
+                     std::map<std::pair<BoostVertex, BoostVertex>, std::string>&  edges,
+                     BoostProperties&                                             dp,
+                     BoostGraph&                                                  graph) const;
+#endif
 
     //@}
 

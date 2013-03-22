@@ -50,6 +50,7 @@
 #include "Thyra_SimpleDenseLinearOp.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
+#include "Thyra_DefaultPreconditioner.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
@@ -146,6 +147,18 @@ Simple2DModelEvaluator<Scalar>::create_W_op() const
 
 
 template<class Scalar>
+Teuchos::RCP<Thyra::PreconditionerBase<Scalar> >
+Simple2DModelEvaluator<Scalar>::create_W_prec() const
+{
+  return nonconstUnspecifiedPrec<Scalar>(
+    createNonconstSimpleDenseLinearOp<Scalar>(
+      createMembers<Scalar>(f_space_, x_space_->dim())
+      )
+    );
+}
+
+
+template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 Simple2DModelEvaluator<Scalar>::get_W_factory() const
 {
@@ -179,11 +192,13 @@ void Simple2DModelEvaluator<Scalar>::evalModelImpl(
   ) const
 {
   using Teuchos::rcp_dynamic_cast;
+  const Scalar one = 1.0, two = 2.0, zero = 0.0;
 
   const ConstDetachedVectorView<Scalar> x(inArgs.get_x());
 
-  const RCP< Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
-  const RCP< Thyra::LinearOpBase< Scalar > > W_out = outArgs.get_W_op();
+  const RCP<Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
+  const RCP<Thyra::LinearOpBase< Scalar > > W_op_out = outArgs.get_W_op();
+  const RCP<Thyra::PreconditionerBase< Scalar > > W_prec_out = outArgs.get_W_prec();
 
   if (nonnull(f_out)) {
     const DetachedVectorView<Scalar> f(f_out);
@@ -191,22 +206,28 @@ void Simple2DModelEvaluator<Scalar>::evalModelImpl(
     f[1] = d_ * (x[0] * x[0] - x[1] - p_[1]);
   }
 
-  if (nonnull(W_out)) {
-    
+  if (nonnull(W_op_out)) {
     const RCP<SimpleDenseLinearOp<Scalar> > W =
-      rcp_dynamic_cast<SimpleDenseLinearOp<Scalar> >(W_out, true);
-    
-    RCP<MultiVectorBase<Scalar> > W_mv = W->getNonconstMultiVector();
-
+      rcp_dynamic_cast<SimpleDenseLinearOp<Scalar> >(W_op_out, true);
+    const RCP<MultiVectorBase<Scalar> > W_mv = W->getNonconstMultiVector();
     Thyra::DetachedMultiVectorView<Scalar> W_dmvv(W_mv);
-
-    const Scalar one = 1.0, two = 2.0;
-    
     W_dmvv(0, 0) = one;
     W_dmvv(0, 1) = two * x[1];
     W_dmvv(1, 0) = d_ * two * x[0];
     W_dmvv(1, 1) = -d_;
+  }
 
+  if (nonnull(W_prec_out)) {
+    const RCP<SimpleDenseLinearOp<Scalar> > W_prec_op =
+      rcp_dynamic_cast<SimpleDenseLinearOp<Scalar> >(
+        W_prec_out->getNonconstUnspecifiedPrecOp(), true);
+    const RCP<MultiVectorBase<Scalar> > W_prec_mv = W_prec_op->getNonconstMultiVector();
+    Thyra::DetachedMultiVectorView<Scalar> W_prec_dmvv(W_prec_mv);
+    // Diagonal inverse of W (see W above)
+    W_prec_dmvv(0, 0) = one;
+    W_prec_dmvv(0, 1) = zero;
+    W_prec_dmvv(1, 0) = zero;
+    W_prec_dmvv(1, 1) = -one/d_;
   }
   
 }
@@ -240,6 +261,7 @@ Simple2DModelEvaluator<Scalar>::Simple2DModelEvaluator()
   outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
+  outArgs.setSupports(MEB::OUT_ARG_W_prec);
   prototypeOutArgs_ = outArgs;
 
   nominalValues_ = inArgs;

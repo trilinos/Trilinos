@@ -46,6 +46,32 @@
 
 //=======================================================================
 //=======================================================================
+void 
+panzer::buildBCs(std::vector<panzer::BC>& bcs,const Teuchos::ParameterList& p)
+{
+  using Teuchos::ParameterList;
+  
+  bcs.clear();
+  
+  // Check for non-backward compatible change
+  TEUCHOS_TEST_FOR_EXCEPTION(p.isParameter("Number of Boundary Conditions"),
+			     std::logic_error,
+			     "Error - the parameter \"Number of Boundary Conditions\" is no longer valid for the boundary condition sublist.  Please remove this from your input file!");
+  
+  std::size_t bc_index = 0;
+  for (ParameterList::ConstIterator bc_pl=p.begin(); bc_pl != p.end(); ++bc_pl,++bc_index) {
+    TEUCHOS_TEST_FOR_EXCEPTION( !(bc_pl->second.isList()), std::logic_error,
+				"Error - All objects in the boundary condition sublist must be BC sublists!" );
+    ParameterList& sublist = bc_pl->second.getValue(&sublist);
+    
+    panzer::BC bc(bc_index,sublist);
+    bcs.push_back(bc);
+  }
+  
+}
+
+//=======================================================================
+//=======================================================================
 panzer::BC::BC(std::size_t bc_id,
 	       BCType bc_type,
 	       std::string sideset_id,
@@ -83,24 +109,25 @@ panzer::BC::BC(std::size_t bc_id,
 
 //=======================================================================
 //=======================================================================
-panzer::BC::BC(std::size_t bc_id,
-	       const Teuchos::ParameterList& p)
+panzer::BC::BC(std::size_t bc_id,const Teuchos::ParameterList& p)
 {
-  this->validateParameters(p);
+  Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::parameterList();
+  *params = p;
+
+  this->validateParameters(*params);
 
   m_bc_id = bc_id;
-  std::string type = p.get<std::string>("Type");
+  std::string type = params->get<std::string>("Type");
   if (type == "Dirichlet")
     m_bc_type = BCT_Dirichlet;
   else if (type == "Neumann")
     m_bc_type = BCT_Neumann;
 
-  m_sideset_id = p.get<std::string>("Sideset ID");
-  m_element_block_id = p.get<std::string>("Element Block ID");
-  m_equation_set_name = p.get<std::string>("Equation Set Name");
-  m_strategy = p.get<std::string>("Strategy");
-  m_params = Teuchos::rcp(new Teuchos::ParameterList);
-  *m_params = p.sublist("Data");
+  m_sideset_id = params->get<std::string>("Sideset ID");
+  m_element_block_id = params->get<std::string>("Element Block ID");
+  m_equation_set_name = params->get<std::string>("Equation Set Name");
+  m_strategy = params->get<std::string>("Strategy");
+  m_params = Teuchos::sublist(params,"Data");
 }
 
 //=======================================================================
@@ -159,6 +186,14 @@ Teuchos::RCP<const Teuchos::ParameterList> panzer::BC::params() const
 
 //=======================================================================
 //=======================================================================
+Teuchos::RCP<Teuchos::ParameterList> 
+panzer::BC::nonconstParams() const
+{
+  return m_params;
+}
+
+//=======================================================================
+//=======================================================================
 std::string panzer::BC::identifier() const
 {
   std::ostringstream os;
@@ -196,7 +231,7 @@ void panzer::BC::print(std::ostream& os) const
 
 //=======================================================================
 //=======================================================================
-void panzer::BC::validateParameters(const Teuchos::ParameterList& p) const
+void panzer::BC::validateParameters(Teuchos::ParameterList& p) const
 {
   Teuchos::ParameterList valid_params;
   
@@ -205,9 +240,9 @@ void panzer::BC::validateParameters(const Teuchos::ParameterList& p) const
   valid_params.set<std::string>("Element Block ID", "???");
   valid_params.set<std::string>("Equation Set Name", "???");
   valid_params.set<std::string>("Strategy", "???");
-  valid_params.sublist("Data");
+  valid_params.sublist("Data").disableRecursiveValidation();
 
-  p.validateParameters(valid_params, 0);
+  p.validateParametersAndSetDefaults(valid_params);
 }
 
 //=======================================================================

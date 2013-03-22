@@ -51,4 +51,4 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/include/stk_util/unit_test_support/)
+    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_util/unit_test_support/)

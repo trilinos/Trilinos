@@ -83,7 +83,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
   /*! \brief Template specialization of Belos::MultiVecTraits class using the Xpetra::MultiVector class.
     This interface will ensure that any Xpetra::MultiVector will be accepted by the Belos
-    templated solvers.  
+    templated solvers.
   */
   template<class Scalar, class LO, class GO, class Node>
   class MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar,LO,GO,Node> >
@@ -96,16 +96,16 @@ namespace Belos { // should be moved to Belos or Xpetra?
 #endif
 
   public:
- 
+
 #ifdef HAVE_BELOS_XPETRA_TIMERS
     static RCP<Teuchos::Time> mvTimesMatAddMvTimer_, mvTransMvTimer_;
 #endif
 
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::Clone(toTpetra(mv), numvecs)));
 #endif
 
@@ -115,9 +115,9 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv))));
 #endif
 
@@ -126,10 +126,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv), index)));
 #endif
 
@@ -137,13 +137,13 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_END;
     }
 
-    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
-    CloneCopy (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
+    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneCopy (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv,
                const Teuchos::Range1D& index)
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv), index)));
 #endif
 
@@ -153,9 +153,9 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneViewNonConst( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneViewNonConst(toTpetra(mv), index)));
 #endif
 
@@ -163,13 +163,13 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_END;
     }
 
-    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
-    CloneViewNonConst(Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
+    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneViewNonConst(Xpetra::MultiVector<Scalar,LO,GO,Node>& mv,
                       const Teuchos::Range1D& index)
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneViewNonConst(toTpetra(mv), index)));
 #endif
 
@@ -179,7 +179,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
     static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneView(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
-      
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         //TODO: double check if the const_cast is safe here.
@@ -192,11 +192,11 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_END;
     }
 
-    static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > 
-    CloneView (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
+    static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneView (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv,
                const Teuchos::Range1D& index)
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         //TODO: double check if the const_cast is safe here.
@@ -211,9 +211,9 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
     static int GetVecLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return MultiVecTraitsTpetra::GetVecLength(toTpetra(mv));
 #endif
 
@@ -222,10 +222,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static int GetNumberVecs( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return MultiVecTraitsTpetra::GetNumberVecs(toTpetra(mv));
 #endif
 
@@ -234,10 +234,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static bool HasConstantStride( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return  MultiVecTraitsTpetra::HasConstantStride(toTpetra(mv));
 #endif
 
@@ -245,11 +245,11 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_END;
     }
 
-    static void MvTimesMatAddMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, 
-                                 const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
+    static void MvTimesMatAddMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A,
+                                 const Teuchos::SerialDenseMatrix<int,Scalar>& B,
                                  Scalar beta, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_BELOS_XPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
 #endif
@@ -257,7 +257,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
       XPETRA_FACTORY_END;
 
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvTimesMatAddMv(alpha, toTpetra(A), B, beta, toTpetra(mv));
@@ -271,7 +271,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
     static void MvAddMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, Scalar beta, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvAddMv(alpha, toTpetra(A), beta, toTpetra(B), toTpetra(mv));
@@ -285,8 +285,8 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvScale(toTpetra(mv), alpha);
@@ -299,8 +299,8 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alphas )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvScale(toTpetra(mv), alphas);
@@ -313,8 +313,8 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static void MvTransMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
-    { 
- 
+    {
+
 #ifdef HAVE_BELOS_XPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
@@ -332,7 +332,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
     static void MvDot( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (A.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvDot(toTpetra(A), toTpetra(B), dots);
@@ -345,8 +345,8 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static void MvNorm(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm)
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvNorm(toTpetra(mv), normvec, type);
@@ -360,7 +360,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
     static void SetBlock( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const std::vector<int>& index, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::SetBlock(toTpetra(A), index, toTpetra(mv));
@@ -373,11 +373,11 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static void
-    SetBlock (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, 
-              const Teuchos::Range1D& index, 
+    SetBlock (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A,
+              const Teuchos::Range1D& index,
               Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::SetBlock(toTpetra(A), index, toTpetra(mv));
@@ -390,10 +390,10 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static void
-    Assign (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, 
+    Assign (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A,
             Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::Assign(toTpetra(A), toTpetra(mv));
@@ -407,7 +407,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
     static void MvRandom( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvRandom(toTpetra(mv));
@@ -420,8 +420,8 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static void MvInit( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvInit(toTpetra(mv), alpha);
@@ -434,8 +434,8 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static void MvPrint( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvPrint(toTpetra(mv), os);
@@ -447,7 +447,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_END;
     }
 
-  };        
+  };
 
   template<>
   class MultiVecTraits<double, Xpetra::MultiVector<double,int,int,Kokkos::DefaultNode::DefaultNodeType> >
@@ -471,114 +471,114 @@ namespace Belos { // should be moved to Belos or Xpetra?
 #endif
 
   public:
- 
+
 #ifdef HAVE_BELOS_XPETRA_TIMERS
     static RCP<Teuchos::Time> mvTimesMatAddMvTimer_, mvTransMvTimer_;
 #endif
 
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::Clone(toTpetra(mv), numvecs)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra)
         return rcp(new EpetraMultiVector(MultiVecTraitsEpetra::Clone(toEpetra(mv), numvecs)));
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv))));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra)
         return rcp(new EpetraMultiVector(MultiVecTraitsEpetra::CloneCopy(toEpetra(mv))));
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv), index)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra)
         return rcp(new EpetraMultiVector(MultiVecTraitsEpetra::CloneCopy(toEpetra(mv), index)));
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
-    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
-    CloneCopy (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
+    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneCopy (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv,
                const Teuchos::Range1D& index)
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneCopy(toTpetra(mv), index)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra)
         return rcp(new EpetraMultiVector(MultiVecTraitsEpetra::CloneCopy(toEpetra(mv), index)));
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneViewNonConst( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneViewNonConst(toTpetra(mv), index)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra)
         return rcp(new EpetraMultiVector(MultiVecTraitsEpetra::CloneViewNonConst(toEpetra(mv), index)));
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
-    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
-    CloneViewNonConst(Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
+    static RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneViewNonConst(Xpetra::MultiVector<Scalar,LO,GO,Node>& mv,
                       const Teuchos::Range1D& index)
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return rcp(new TpetraMultiVector(MultiVecTraitsTpetra::CloneViewNonConst(toTpetra(mv), index)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra)
         return rcp(new EpetraMultiVector(MultiVecTraitsEpetra::CloneViewNonConst(toEpetra(mv), index)));
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneView(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
-      
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         //TODO: double check if the const_cast is safe here.
@@ -594,15 +594,15 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return rcp(new EpetraMultiVector(Teuchos::rcp_const_cast<Epetra_MultiVector>(r)));
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
-    static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > 
-    CloneView (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
+    static RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneView (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv,
                const Teuchos::Range1D& index)
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         //TODO: double check if the const_cast is safe here.
@@ -618,67 +618,67 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return rcp(new EpetraMultiVector(Teuchos::rcp_const_cast<Epetra_MultiVector>(r)));
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static int GetVecLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return MultiVecTraitsTpetra::GetVecLength(toTpetra(mv));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra)
         return MultiVecTraitsEpetra::GetVecLength(toEpetra(mv));
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static int GetNumberVecs( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return MultiVecTraitsTpetra::GetNumberVecs(toTpetra(mv));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra)
         return MultiVecTraitsEpetra::GetNumberVecs(toEpetra(mv));
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static bool HasConstantStride( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
         return  MultiVecTraitsTpetra::HasConstantStride(toTpetra(mv));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra) 
+      if (mv.getMap()->lib() == Xpetra::UseEpetra)
         return  MultiVecTraitsEpetra::HasConstantStride(toEpetra(mv));
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
-    static void MvTimesMatAddMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, 
-                                 const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
+    static void MvTimesMatAddMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A,
+                                 const Teuchos::SerialDenseMatrix<int,Scalar>& B,
                                  Scalar beta, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_BELOS_XPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
 #endif
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvTimesMatAddMv(alpha, toTpetra(A), B, beta, toTpetra(mv));
@@ -692,13 +692,13 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return;
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static void MvAddMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, Scalar beta, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvAddMv(alpha, toTpetra(A), beta, toTpetra(B), toTpetra(mv));
@@ -712,13 +712,13 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return;
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvScale(toTpetra(mv), alpha);
@@ -732,13 +732,13 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return;
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alphas )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvScale(toTpetra(mv), alphas);
@@ -748,21 +748,21 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra) {
-        MultiVecTraitsEpetra::MvScale(toEpetra(mv), alphas);        
+        MultiVecTraitsEpetra::MvScale(toEpetra(mv), alphas);
         return;
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static void MvTransMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
-    { 
- 
+    {
+
 #ifdef HAVE_BELOS_XPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (A.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvTransMv(alpha, toTpetra(A), toTpetra(B), C);
@@ -782,7 +782,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
     static void MvDot( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (A.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvDot(toTpetra(A), toTpetra(B), dots);
@@ -801,8 +801,8 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static void MvNorm(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::vector<Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm)
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvNorm(toTpetra(mv), normvec, type);
@@ -816,13 +816,13 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return;
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static void SetBlock( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const std::vector<int>& index, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::SetBlock(toTpetra(A), index, toTpetra(mv));
@@ -836,16 +836,16 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return;
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static void
-    SetBlock (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, 
-              const Teuchos::Range1D& index, 
+    SetBlock (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A,
+              const Teuchos::Range1D& index,
               Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::SetBlock(toTpetra(A), index, toTpetra(mv));
@@ -859,15 +859,15 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return;
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static void
-    Assign (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, 
+    Assign (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A,
             Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::Assign(toTpetra(A), toTpetra(mv));
@@ -881,13 +881,13 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return;
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static void MvRandom( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
- 
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvRandom(toTpetra(mv));
@@ -901,13 +901,13 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return;
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static void MvInit( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvInit(toTpetra(mv), alpha);
@@ -921,13 +921,13 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return;
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
     static void MvPrint( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os )
-    { 
- 
+    {
+
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra) {
         MultiVecTraitsTpetra::MvPrint(toTpetra(mv), os);
@@ -941,12 +941,12 @@ namespace Belos { // should be moved to Belos or Xpetra?
         return;
       }
 #endif
- 
+
       XPETRA_FACTORY_END;
     }
 
   };
 
-} // end of Belos namespace 
+} // end of Belos namespace
 
 #endif

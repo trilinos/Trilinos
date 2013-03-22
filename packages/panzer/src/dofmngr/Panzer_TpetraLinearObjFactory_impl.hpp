@@ -68,7 +68,7 @@ TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 { 
    // build and register the gather/scatter evaluators with 
    // the base class.
-   buildGatherScatterEvaluators(*this);
+   this->buildGatherScatterEvaluators(*this);
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>

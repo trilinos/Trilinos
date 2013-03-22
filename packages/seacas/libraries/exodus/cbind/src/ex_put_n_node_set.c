@@ -52,14 +52,11 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "exodusII.h"
-#include "exodusII_int.h"
 
 /*
- * writes the node list for a single node set
+ * \deprecated Use ex_put_partial_set() instead
  */
 
 int ex_put_n_node_set (int   exoid,
@@ -68,106 +65,6 @@ int ex_put_n_node_set (int   exoid,
                        int64_t   num_nodes,
                        const void_int  *node_set_node_list)
 {
-  int    dimid, node_list_id, node_set_id_ndx, status;
-  size_t num_nodes_in_set, start[1], count[1]; 
-  char   errmsg[MAX_ERR_LENGTH];
-
-  exerrval = 0; /* clear error code */
-
-  /* first check if any node sets are specified */
-
-  if ((status = nc_inq_dimid (exoid, DIM_NUM_NS, &dimid)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-            "Error: no node sets specified in file id %d",
-            exoid);
-    ex_err("ex_put_n_node_set",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  /* Lookup index of node set id in VAR_NS_IDS array */
-  if ((node_set_id_ndx = ex_id_lkup(exoid, EX_NODE_SET, node_set_id)) < 0)
-  {
-    if (exerrval == EX_NULLENTITY) {
-      sprintf(errmsg,
-              "Warning: no data allowed for NULL node set %"PRId64" in file id %d",
-              node_set_id, exoid);
-      ex_err("ex_put_n_node_set",errmsg,EX_MSG);
-      return (EX_WARN);
-    } else {
-      sprintf(errmsg,
-     "Error: failed to locate node set id %"PRId64" in VAR_NS_IDS array in file id %d",
-              node_set_id, exoid);
-      ex_err("ex_put_n_node_set",errmsg,exerrval);
-      return (EX_FATAL);
-    }
-  }
-
-  /* inquire id's of previously defined dimensions  */
-
-  if ((status = nc_inq_dimid (exoid, DIM_NUM_NOD_NS(node_set_id_ndx), &dimid)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-            "Error: failed to locate number of nodes in set %"PRId64" in file id %d",
-            node_set_id, exoid);
-    ex_err("ex_put_n_node_set",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  if ((status = nc_inq_dimlen(exoid, dimid, &num_nodes_in_set)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-            "Error: failed to get number of nodes in set %"PRId64" in file id %d",
-            node_set_id, exoid);
-    ex_err("ex_put_n_node_set",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  /* Check input parameters for a valid range of numbers */
-  if (start_node_num < 0 || start_node_num > num_nodes_in_set) {
-    fprintf(stderr, "ERROR: Invalid input to function ex_get_n_node_set!\n");
-    return -1;
-  }
-
-  if (num_nodes < 0) {
-    fprintf(stderr, "ERROR: Invalid number of nodes in nodes set!\n");
-    return -1;
-  }
-
-  /* start_node_num now starts at 1, not 0 */
-  if ((start_node_num + num_nodes - 1) > num_nodes_in_set) {
-    fprintf(stderr, "ERROR: request larger than number of nodes in set!\n");
-    return -1;
-  }
-
-  /* inquire if variable for node set node list has been defined */
-  if ((status = nc_inq_varid (exoid, VAR_NODE_NS(node_set_id_ndx), &node_list_id)) != NC_NOERR) {
-  /* variable doesn't exist */
-    exerrval = status;
-    sprintf(errmsg,
-           "Error: failed to locate node set %"PRId64" node list in file id %d",
-            node_set_id, exoid);
-    ex_err("ex_put_n_node_set",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  /* write out the node list array */
-  start[0] = --start_node_num;
-  count[0] = num_nodes;
-
-  if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    status = nc_put_vara_longlong(exoid, node_list_id, start, count, node_set_node_list);
-  } else {
-    status = nc_put_vara_int(exoid, node_list_id, start, count, node_set_node_list);
-  }
-
-  if (status != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-           "Error: failed to store node set %"PRId64" node list in file id %d",
-            node_set_id, exoid);
-    ex_err("ex_put_n_node_set",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-  return (EX_NOERR);
+  return ex_put_partial_set(exoid, EX_NODE_SET, node_set_id, start_node_num, num_nodes,
+			    node_set_node_list, NULL);
 }

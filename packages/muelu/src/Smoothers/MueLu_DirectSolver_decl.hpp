@@ -48,6 +48,8 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include <Xpetra_Matrix_fwd.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
 
@@ -74,17 +76,17 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-    
+
     //! @name Constructors / destructors
     //@{
 
     //! @brief Constructor
     //! Note: only parameters shared by Amesos and Amesos2 should be used for type and paramList (example: type= "Klu", "Superlu", paramList = <empty>) .
-    DirectSolver(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null);
-    
+    DirectSolver(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList());
+
     //! Destructor
     virtual ~DirectSolver() { }
-    
+
     //@}
 
     //! Input
@@ -108,12 +110,12 @@ namespace MueLu {
     //! When this prototype is cloned using Copy(), the clone is an Amesos or an Amesos2 smoother.
     RCP<SmootherPrototype> Copy() const;
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
-    
+
     //! Return a simple one-line description of this object.
     std::string description() const;
-    
+
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     //@}
@@ -126,12 +128,9 @@ namespace MueLu {
 
     //! amesos1/2-specific key phrase that denote smoother type
     std::string type_;
-    
+
     //! parameter list that is used by Amesos internally
     Teuchos::ParameterList paramList_;
-
-    //! A Factory
-    RCP<FactoryBase> AFact_;
 
     //
     // Underlying Smoother

@@ -65,7 +65,7 @@
 #include "Thyra_DetachedVectorView.hpp"
 #endif
 #endif
-#include "Piro_Epetra_Factory.hpp"
+#include "Piro_Epetra_SolverFactory.hpp"
 
 
 namespace {
@@ -112,7 +112,7 @@ void testSensitivities(const std::string& inputFile,
 
   // Set output arguments to evalModel call
   EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
-  int num_g = outArgs.Ng(); // Number of *vectors* of responses
+  TEUCHOS_ASSERT(outArgs.Ng() >= 2); // Number of *vectors* of responses
   RCP<Epetra_Vector> g1 = rcp(new Epetra_Vector(*(piro->get_g_map(0))));
   RCP<Epetra_Vector> gx = rcp(new Epetra_Vector(*(piro->get_g_map(1))));
   RCP<Epetra_MultiVector> dgdp_mv;
@@ -423,8 +423,9 @@ TEUCHOS_UNIT_TEST( Piro, Coupled )
   coupledModel->setOStream(rcp(&out,false));
 
   // Setup solver
+  Piro::Epetra::SolverFactory solverFactory;
   RCP<EpetraExt::ModelEvaluator> coupledSolver =
-    Piro::Epetra::Factory::createSolver(coupledParams, coupledModel);
+    solverFactory.createSolver(coupledParams, coupledModel);
     
   // Solve coupled system
   EpetraExt::ModelEvaluator::InArgs inArgs = coupledSolver->createInArgs();

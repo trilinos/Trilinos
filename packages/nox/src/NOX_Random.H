@@ -51,7 +51,8 @@
 #ifndef NOX_RANDOM_H
 #define NOX_RANDOM_H
 
-#include "NOX_Common.H"  // for string
+#include "NOX_Common.H"
+#include <string>
 
 namespace NOX {
 
@@ -97,7 +98,7 @@ namespace NOX {
     /*! The %string argument supplies the calling function name for an error
         message in the case that the supplied seed is invalid.
     */
-    static int checkSeed(const string& func, int s);
+    static int checkSeed(const std::string& func, int s);
 
   protected:
       

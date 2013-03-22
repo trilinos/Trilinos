@@ -43,6 +43,8 @@
 
 #ifndef EPETRA_MAPCOLORING_H
 #define EPETRA_MAPCOLORING_H
+
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Distributor.h"
@@ -165,7 +167,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MapColoring: public Epetra_DistObject {
       method.  MyGID(GID) returns true if the GID is owned by the calling processor.
       \return MapColor(GID).
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int& operator () (int GID) {ListsAreValid_ = false; return ElementColors_[Map().LID(GID)];};
+#endif
   //@}
   
   //! @name Local/Global color accessor methods
@@ -182,7 +186,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MapColoring: public Epetra_DistObject {
       method on the map object.
     \return MapColor(GID).
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   const int& operator () (int GID) const {return ElementColors_[Map().LID(GID)];};
+#endif
   //@}
   
   //! @name Color Information Access Methods

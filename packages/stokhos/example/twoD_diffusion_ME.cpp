@@ -128,7 +128,7 @@ namespace {
     double operator() (double x, double y, int k) const {
       int d = prodbasis->dimension();
       const Teuchos::Array<double>& norms = prodbasis->norm_squared();
-      Teuchos::Array<int> multiIndex = prodbasis->getTerm(k);
+      const Stokhos::MultiIndex<int> multiIndex = prodbasis->term(k);
       double sum_g = 0.0, efval;
       for (int l=0; l<d; l++) {
 	sum_g += std::pow(func(x,y,l+1),2);

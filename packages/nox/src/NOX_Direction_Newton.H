@@ -224,7 +224,7 @@ protected:
 private:
 
   //! Print an error message
-  void throwError(const string& functionName, const string& errorMsg);
+  void throwError(const std::string& functionName, const std::string& errorMsg);
 
 
 private:
@@ -267,7 +267,7 @@ private:
   double eta_initial;
 
   //! Name of the method used for calculating the inexact forcing term.
-  string method;
+  std::string method;
   
   //! Parameter used for Type 2 forcing term calculation.
   double alpha;

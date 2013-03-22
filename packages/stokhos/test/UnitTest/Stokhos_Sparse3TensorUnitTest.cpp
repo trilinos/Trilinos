@@ -67,7 +67,7 @@ namespace Sparse3TensorUnitTest {
       
       
       // Triple product tensor
-      Cijk = basis->computeTripleProductTensor(sz);
+      Cijk = basis->computeTripleProductTensor();
     }
     
   };
@@ -125,11 +125,11 @@ namespace Sparse3TensorUnitTest {
       Cijk_1d[i] = setup.bases[i]->computeTripleProductTensor();
 
     for (int j=0; j<setup.sz; j++) {
-      Teuchos::Array<int> terms_j = setup.basis->getTerm(j);
+      Stokhos::MultiIndex<int> terms_j = setup.basis->term(j);
       for (int i=0; i<setup.sz; i++) {
-	Teuchos::Array<int> terms_i = setup.basis->getTerm(i);
+	Stokhos::MultiIndex<int> terms_i = setup.basis->term(i);
 	for (int k=0; k<setup.sz; k++) {
-	  Teuchos::Array<int> terms_k = setup.basis->getTerm(k);
+	  Stokhos::MultiIndex<int> terms_k = setup.basis->term(k);
 	  double c = 1.0;
 	  for (int l=0; l<setup.d; l++)
 	    c *= (*Cijk_1d[l])(terms_i[l],terms_j[l],terms_k[l]);

@@ -49,7 +49,7 @@
 
 // MueLu
 #include "MueLu.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
@@ -57,7 +57,7 @@
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 
 // Define template parameters
 #include "MueLu_UseDefaultTypes.hpp"
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   Teuchos::CommandLineProcessor  clp(false);
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 81); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);     // manage parameters of xpetra
-  
+
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
   case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   default:;
   }
-  
+
   if (comm->getRank() == 0) std::cout << xpetraParameters << matrixParameters;
 
   //
@@ -103,7 +103,9 @@ int main(int argc, char *argv[]) {
   RCP<const Map> map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
 
   // Matrix
-  RCP<Operator> A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Matrix> A = Pr->BuildMatrix();
 
   // User defined nullspace
   RCP<MultiVector> nullSpace = VectorFactory::Build(map,1); nullSpace->putScalar((SC) 1.0);
@@ -126,7 +128,7 @@ int main(int argc, char *argv[]) {
   RCP<TentativePFactory> pFact = rcp( new TentativePFactory() );
 
   // Aggregation
-  RCP<UCAggregationFactory> aggregationFact = rcp( new UCAggregationFactory() );
+  RCP<CoupledAggregationFactory> aggregationFact = rcp( new CoupledAggregationFactory() );
   aggregationFact->SetMinNodesPerAggregate(3);
 
   // Smoothers
@@ -141,7 +143,7 @@ int main(int argc, char *argv[]) {
   RCP<SmootherPrototype> coarseSolverPrototype = rcp( new DirectSolver() );
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
 
-  // 
+  //
   FactoryManager M;
   M.SetFactory("P",            pFact);
   M.SetFactory("Aggregates",   aggregationFact);
@@ -150,7 +152,7 @@ int main(int argc, char *argv[]) {
 
   //
   // Multigrid setup phase
-  //  
+  //
 
   Hierarchy H;
 

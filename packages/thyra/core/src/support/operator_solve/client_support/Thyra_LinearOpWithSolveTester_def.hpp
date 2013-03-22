@@ -54,6 +54,7 @@
 #include "Teuchos_Time.hpp"
 #include "Teuchos_TestingHelpers.hpp"
 
+#include <functional>
 
 namespace Thyra {
 

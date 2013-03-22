@@ -55,10 +55,11 @@ void cuda_internal_safe_call( cudaError e , const char * name )
   if ( cudaSuccess != e ) { cuda_internal_error_throw( e , name ); }
 }
 
-#define CUDA_SAFE_CALL( call )  cuda_internal_safe_call( call , # call )
+}
+}
 
-}
-}
+#define CUDA_SAFE_CALL( call )  \
+	KokkosArray::Impl::cuda_internal_safe_call( call , # call )
 
 #endif /* #ifndef KOKKOSARRAY_CUDA_INTERNAL_HPP */
 

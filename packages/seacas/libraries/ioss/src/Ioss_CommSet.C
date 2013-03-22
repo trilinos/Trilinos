@@ -54,6 +54,8 @@ Ioss::CommSet::CommSet(Ioss::DatabaseIO *io_database,
   // Field contains a pair of type [entity_id, shared_cpu]
   fields.add(Ioss::Field("entity_processor", field_int_type(), "pair",
 			 Ioss::Field::COMMUNICATION, entity_count));
+  fields.add(Ioss::Field("entity_processor_raw", field_int_type(), "pair",
+			 Ioss::Field::COMMUNICATION, entity_count));
 }
 
 int64_t Ioss::CommSet::internal_get_field_data(const Ioss::Field& field,

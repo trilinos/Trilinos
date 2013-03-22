@@ -101,6 +101,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, Test0, Scalar, LocalOrdinal, G
   TEST_EQUALITY(prec_cheby != Teuchos::null, true);
 
   check_precond_basics(prec_cheby, out, success);
+
+  Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_krylov = factory.create("KRYLOV", crsmatrix);
+  TEST_EQUALITY(prec_krylov != Teuchos::null, true);
+
+  check_precond_basics(prec_krylov, out, success);
+
 }
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \

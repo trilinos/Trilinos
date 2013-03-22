@@ -62,7 +62,7 @@ namespace MueLuTests {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using namespace MueLu::Exceptions;
-    
+
     ////////////////////////////////////////////////////////////////////////////////
     // Helper functions: class invariant
     ////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +88,7 @@ namespace MueLuTests {
       TEST_INEQUALITY(preSmooProto,  getPreSmooProto);
       TEST_INEQUALITY(postSmooProto, getPostSmooProto);
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////////
     // Helper functions: apply a test to a collection of test cases
     ////////////////////////////////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ namespace MueLuTests {
     // Apply a test to a list of cases (one argument)
     void testCollection(void (*func)(RCP<SmootherPrototype>, Teuchos::FancyOStream &, bool &), Teuchos::FancyOStream & out, bool & success) {
       RCP<SmootherPrototype> smooProto = rcp( new FakeSmootherPrototype() );
-      
+
       // tests
       func(smooProto, out, success);
       func(Teuchos::null, out, success);
@@ -150,8 +150,8 @@ namespace MueLuTests {
     void testInvalidConstructor1(RCP<SmootherPrototype> smooProto, Teuchos::FancyOStream & out, bool & success) {
       TEST_THROW(rcp( new SmootherFactory(smooProto) ), RuntimeError);
     }
-  
-    TEUCHOS_UNIT_TEST(SmootherFactory, Constructor_OneArg) 
+
+    TEUCHOS_UNIT_TEST(SmootherFactory, Constructor_OneArg)
     {
       testCollection(&testConstructor1, out, success);               // TEST: Valid input parameter
       testInvalidCollection(&testInvalidConstructor1, out, success); // TEST: Invalid input parameter
@@ -163,20 +163,20 @@ namespace MueLuTests {
 
     // Build an object and test internal state (two arguments)
     void testConstructor2(RCP<SmootherPrototype> smooProtoA, RCP<SmootherPrototype> smooProtoB, Teuchos::FancyOStream & out, bool & success) {
-      check(rcp( new SmootherFactory(smooProtoA, smooProtoB) ), smooProtoA, smooProtoB, out, success);  
+      check(rcp( new SmootherFactory(smooProtoA, smooProtoB) ), smooProtoA, smooProtoB, out, success);
     }
-  
+
     // Test with invalid input arguments
     void testInvalidConstructor2(RCP<SmootherPrototype> smooProtoA, RCP<SmootherPrototype> smooProtoB, Teuchos::FancyOStream & out, bool & success) {
       TEST_THROW(rcp( new SmootherFactory(smooProtoA, smooProtoB) ), RuntimeError);
     }
 
-    TEUCHOS_UNIT_TEST(SmootherFactory, Constructor_TwoArg) 
+    TEUCHOS_UNIT_TEST(SmootherFactory, Constructor_TwoArg)
     {
       testCollection(&testConstructor2, out, success);               // TEST: Valid input parameter
       testInvalidCollection(&testInvalidConstructor2, out, success); // TEST: Valid input parameter
     }
-  
+
     ////////////////////////////////////////////////////////////////////////////////
     // Test: SetSmootherPrototypes_OneArg
     ////////////////////////////////////////////////////////////////////////////////
@@ -184,7 +184,7 @@ namespace MueLuTests {
     void testSetSmootherPrototypes1(RCP<SmootherPrototype> smooProto, Teuchos::FancyOStream & out, bool & success) {
       RCP<SmootherPrototype> smooProto0 = rcp( new FakeSmootherPrototype() );
       RCP<SmootherFactory>   smooFact   = rcp( new SmootherFactory(smooProto0) );
-    
+
       ineqcheck(smooFact, smooProto, smooProto, out, success);
       smooFact->SetSmootherPrototypes(smooProto);
       check(smooFact, smooProto, smooProto, out, success); // One argument == same pre and post smoother prototype
@@ -196,11 +196,11 @@ namespace MueLuTests {
     }
 
     TEUCHOS_UNIT_TEST(SmootherFactory, SetSmootherPrototypes_OneArg)
-    {    
+    {
       testCollection(&testSetSmootherPrototypes1, out, success);               // TEST: Valid input parameter
       testInvalidCollection(&testInvalidSetSmootherPrototypes1, out, success); // TEST: Invalid input parameter
     }
-  
+
     ////////////////////////////////////////////////////////////////////////////////
     // Test: SetSmootherPrototypes_TwoArg
     ////////////////////////////////////////////////////////////////////////////////
@@ -208,10 +208,10 @@ namespace MueLuTests {
     void testSetSmootherPrototypes2(RCP<SmootherPrototype> smooProtoA, RCP<SmootherPrototype> smooProtoB, Teuchos::FancyOStream & out, bool & success) {
       RCP<SmootherPrototype> smooProto0 = rcp( new FakeSmootherPrototype() );
       RCP<SmootherFactory>   smooFact   = rcp( new SmootherFactory(smooProto0) );
-    
+
       ineqcheck(smooFact, smooProtoA, smooProtoB, out, success);
       smooFact->SetSmootherPrototypes(smooProtoA, smooProtoB);
-      check(smooFact, smooProtoA, smooProtoB, out, success);  
+      check(smooFact, smooProtoA, smooProtoB, out, success);
     }
 
     void testInvalidSetSmootherPrototypes2(RCP<SmootherPrototype> smooProtoA, RCP<SmootherPrototype> smooProtoB, Teuchos::FancyOStream & out, bool & success) {
@@ -265,15 +265,15 @@ namespace MueLuTests {
 
           // ouput test: smoothers same derived class as prototypes
           TEST_NOTHROW(smootherF = rcp_dynamic_cast<FakeSmootherPrototype>(smoother,true));
-          
+
           if (smootherF != Teuchos::null) {
             // output test: smoother parameters == prototype parameters
             RCP<FakeSmootherPrototype> smooProtoF = rcp_dynamic_cast<FakeSmootherPrototype>(smooProto,true);
             TEST_EQUALITY(smootherF->GetParam(), smooProtoF->GetParam());
-            
+
             // output test: smoothers are ready to be apply
             TEST_EQUALITY(smootherF->IsSetup(), true);
-            
+
             // setup done only once.
             TEST_EQUALITY(smootherF->GetNumOfSetupCall(), 1);
             TEST_EQUALITY(smootherF->GetNumOfSetup(), 1);
@@ -286,13 +286,13 @@ namespace MueLuTests {
     void testBuildCheck(RCP<SmootherFactory> smooFact, Level& level, RCP<SmootherPrototype> smooProtoA, RCP<SmootherPrototype> smooProtoB, MueLu::PreOrPost preOrPost, Teuchos::FancyOStream & out, bool & success) {
       // invariant: smoother prototypes kept unchanged
       check(smooFact, smooProtoA, smooProtoB, out, success);
-      
+
       // output test
       if (preOrPost == MueLu::BOTH) {
 
         testBuildCheckOutput(smooFact, level, smooProtoA, "PreSmoother", out, success);
         testBuildCheckOutput(smooFact, level, smooProtoB, "PostSmoother", out, success);
-        
+
         // ReUse: if pre and post prototype are the same, then pre smoother == post smoother
         // otherwise, they are different (have not been tested by previous tests)
         RCP<SmootherBase> smooA, smooB;
@@ -314,12 +314,12 @@ namespace MueLuTests {
 
     }
 
-    // 
+    //
     void testBuild(RCP<SmootherPrototype> smooProtoA, RCP<SmootherPrototype> smooProtoB, Teuchos::FancyOStream & out, bool & success) {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
 
       Level level; //level.SetupPhase(true);
-      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
 
       level.Request("PreSmoother",smooFact.get());
       level.Request("PostSmoother", smooFact.get());
@@ -333,16 +333,16 @@ namespace MueLuTests {
     {
       testCollection(&testBuild, out, success);
     }
-  
+
     ////////////////////////////////////////////////////////////////////////////////
     // Test: BuildSmoother
     ////////////////////////////////////////////////////////////////////////////////
 
     void testBuildSmootherPreOrPost(RCP<SmootherPrototype> smooProtoA, RCP<SmootherPrototype> smooProtoB, MueLu::PreOrPost preOrPost, Teuchos::FancyOStream & out, bool & success) {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
-      
+
       Level level; //level.SetupPhase(true);
-      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
 
       level.Request("PreSmoother",smooFact.get());
       level.Request("PostSmoother", smooFact.get());
@@ -357,12 +357,12 @@ namespace MueLuTests {
       testBuildSmootherPreOrPost(smooProtoA, smooProtoB, MueLu::POST, out, success);
       testBuildSmootherPreOrPost(smooProtoA, smooProtoB, MueLu::BOTH, out, success);
     }
-    
+
     void testBuildSmootherDefaultArg(RCP<SmootherPrototype> smooProtoA, RCP<SmootherPrototype> smooProtoB, Teuchos::FancyOStream & out, bool & success) {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
-      
+
       Level level; //level.SetupPhase(true);
-      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
 
       level.Request("PreSmoother",smooFact.get());
       level.Request("PostSmoother", smooFact.get());

@@ -1181,6 +1181,16 @@ C           dimensioned as (NUMEL, NVAREL)
      &      TIME,
      *      A(KVARGL), A(KVARNP), A(KVAREL), A(KVARNS), A(KVARSS), *120)
            
+           if (istep .eq. idefst) then
+C ... The model was deformed at this step, zero out the displacements
+C     at this step (Technically, should also subtract off this steps
+C     displacements from every other step, but that isn't supported yet...
+C     Assumes that displacements are the first 'ndim' nodal variables.             
+             do i=1, ndim*numnp
+               a(kvarnp+i-1) = 0.0
+             end do
+           end if
+
            if (inod2el .gt. 0) then
              ioff = 0
              inoff = 0

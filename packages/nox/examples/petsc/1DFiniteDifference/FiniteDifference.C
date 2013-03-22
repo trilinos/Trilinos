@@ -93,8 +93,8 @@ bool FiniteDifference::evaluate(FillType f,
     A = tmp_matrix;
   } 
   else {
-    cout << "ERROR: FiniteDifference::fillMatrix() - No such flag as " 
-	 << flag << endl;
+    std::cout << "ERROR: FiniteDifference::fillMatrix() - No such flag as " 
+	 << flag << std::endl;
     throw;
   }
 

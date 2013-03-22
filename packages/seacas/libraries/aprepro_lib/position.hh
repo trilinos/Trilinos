@@ -1,9 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.4.3.  */
+/* A Bison parser, made by GNU Bison 2.4.2.  */
 
 /* Positions for Bison parsers in C++
    
-      Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2009, 2010 Free Software
-   Foundation, Inc.
+      Copyright (C) 2002-2007, 2009-2010 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -46,8 +45,8 @@
 
 namespace SEAMS {
 
-/* Line 38 of location.cc  */
-#line 51 "position.hh"
+/* Line 37 of location.cc  */
+#line 50 "position.hh"
   /// Abstract a position.
   class position
   {
@@ -157,6 +156,6 @@ namespace SEAMS {
 
 } // SEAMS
 
-/* Line 145 of location.cc  */
-#line 162 "position.hh"
+/* Line 144 of location.cc  */
+#line 161 "position.hh"
 #endif // not BISON_POSITION_HH

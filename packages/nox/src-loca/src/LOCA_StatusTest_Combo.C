@@ -120,7 +120,7 @@ bool LOCA::StatusTest::Combo::isSafe(Abstract& a)
   
   // Recursively test that we're not adding something that's already
   // in the list because that can also lead to infinite recursions.
-  for (vector<Teuchos::RCP<Abstract> >::iterator i = tests.begin(); i != tests.end(); ++i)
+  for (std::vector<Teuchos::RCP<Abstract> >::iterator i = tests.begin(); i != tests.end(); ++i)
   {
     Combo* ptr = dynamic_cast<Combo*>(i->get());
     if (ptr != NULL)
@@ -137,7 +137,8 @@ LOCA::StatusTest::Combo::~Combo()
 }
 
 LOCA::StatusTest::StatusType LOCA::StatusTest::Combo::
-checkStatus(const LOCA::Stepper& stepper,
+//checkStatus(const LOCA::Stepper& stepper,
+checkStatus(const LOCA::Abstract::Iterator& stepper,
 	    LOCA::StatusTest::CheckType checkType)
 {
   if (type == OR)
@@ -154,7 +155,8 @@ getStatus() const
   return status;
 }
 
-void LOCA::StatusTest::Combo::orOp(const LOCA::Stepper& stepper,
+//void LOCA::StatusTest::Combo::orOp(const LOCA::Stepper& stepper,
+void LOCA::StatusTest::Combo::orOp(const LOCA::Abstract::Iterator& stepper,
 				   LOCA::StatusTest::CheckType checkType)
 {
   if (checkType == LOCA::StatusTest::None)
@@ -164,7 +166,7 @@ void LOCA::StatusTest::Combo::orOp(const LOCA::Stepper& stepper,
 
   // Checks the status of each test. The first test it encounters, if
   // any, that is NotFinished is the status that it sets itself too.
-  for (vector<Teuchos::RCP<Abstract> >::const_iterator i = tests.begin(); i != tests.end(); ++i)
+  for (std::vector<Teuchos::RCP<Abstract> >::const_iterator i = tests.begin(); i != tests.end(); ++i)
   {
     LOCA::StatusTest::StatusType s = (*i)->checkStatus(stepper, checkType);
 
@@ -182,7 +184,8 @@ void LOCA::StatusTest::Combo::orOp(const LOCA::Stepper& stepper,
   return;
 }
 
-void LOCA::StatusTest::Combo::andOp(const LOCA::Stepper& stepper,
+//void LOCA::StatusTest::Combo::andOp(const LOCA::Stepper& stepper,
+void LOCA::StatusTest::Combo::andOp(const LOCA::Abstract::Iterator& stepper,
 				   LOCA::StatusTest::CheckType checkType)
 {
   if (checkType == LOCA::StatusTest::None)
@@ -192,7 +195,7 @@ void LOCA::StatusTest::Combo::andOp(const LOCA::Stepper& stepper,
 
   bool isUnconverged = false;
 
-  for (vector<Teuchos::RCP<Abstract> >::const_iterator i = tests.begin(); i != tests.end(); ++i) {
+  for (std::vector<Teuchos::RCP<Abstract> >::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
     LOCA::StatusTest::StatusType s = (*i)->checkStatus(stepper, checkType);
 
@@ -221,17 +224,16 @@ void LOCA::StatusTest::Combo::andOp(const LOCA::Stepper& stepper,
 }
 
 
-ostream& LOCA::StatusTest::Combo::
-print(ostream& stream, int indent) const
+std::ostream& LOCA::StatusTest::Combo::print(std::ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
   stream << ((type == OR) ? "OR" : "AND");
   stream << " Combination";
-  stream << " -> " << endl;
+  stream << " -> " << std::endl;
 
-  for (vector<Teuchos::RCP<Abstract> >::const_iterator i = tests.begin(); i != tests.end(); ++i)
+  for (std::vector<Teuchos::RCP<Abstract> >::const_iterator i = tests.begin(); i != tests.end(); ++i)
     (*i)->print(stream, indent+2);
     
   return stream;

@@ -43,6 +43,9 @@
 // ***********************************************************************
 //
 // @HEADER
+
+#include "MueLu_BoostGraphviz.hpp"
+
 #include <Teuchos_TabularOutputter.hpp>
 
 #include "MueLu_Needs.hpp"
@@ -50,7 +53,7 @@
 #include "MueLu_NoFactory.hpp"
 
 namespace MueLu {
-  
+
   Needs::Needs() { }
 
   Needs::~Needs() { }
@@ -83,7 +86,7 @@ namespace MueLu {
       Teuchos::RCP<MueLu::VariableContainer> newVar = Teuchos::rcp(new MueLu::VariableContainer);
       dataTable_.Set(factory, ename, newVar);
     }
-    
+
     // Set the flag
     Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
     var->AddKeepFlag(keep);
@@ -92,11 +95,11 @@ namespace MueLu {
   void Needs::RemoveKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
     // No entry = nothing to do
     if (!dataTable_.IsKey(factory,ename)) return;
-    
+
     // Remove the flag
     Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
     var->RemoveKeepFlag(keep);
-    
+
     // Remove data if no keep flag left and counter == 0
     if ((var->IsRequested() == false) && (var->GetKeepFlag() == 0)) {
       var = Teuchos::null; // free data
@@ -213,15 +216,15 @@ namespace MueLu {
       std::vector<std::string> enames = RequestedKeys(*kt);
       for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
         outputter.outputField(*it);                    // variable name
-        outputter.outputField(*kt);                    // factory ptr          
+        outputter.outputField(*kt);                    // factory ptr
         int reqcount = NumRequests(*it, *kt);          // request counter
         outputter.outputField(reqcount);
         if (GetKeepFlag(*it, *kt) != 0) outputter.outputField("true");
         else outputter.outputField("false");
         // variable type
         std::string strType = GetType(*it, *kt);
-        if (strType.find("Xpetra::Operator") != std::string::npos) {
-          outputter.outputField("Operator" );
+        if (strType.find("Xpetra::Matrix") != std::string::npos) {
+          outputter.outputField("Matrix" );
           outputter.outputField("");
         } else if (strType.find("Xpetra::MultiVector") != std::string::npos) {
           outputter.outputField("Vector");
@@ -247,5 +250,36 @@ namespace MueLu {
       }
     }
   }
+
+#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
+  void Needs::UpdateGraph(std::map<const FactoryBase*, BoostVertex>&            vindices,
+                   std::map<std::pair<BoostVertex, BoostVertex>, std::string>&  edges,
+                   BoostProperties&                                             dp,
+                   BoostGraph&                                                  graph) const {
+    size_t vind = vindices.size();
+
+    for (UTILS::TwoKeyMap<const FactoryBase*, std::string, RCP<MueLu::VariableContainer> >::const_iterator it1 = dataTable_.begin(); it1 != dataTable_.end(); it1++) {
+      if (vindices.find(it1->first) == vindices.end()) {
+        BoostVertex boost_vertex = boost::add_vertex(graph);
+        boost::put("label", dp, boost_vertex, it1->first->description());
+        vindices[it1->first] = vind++;
+      }
+
+      for (Teuchos::map<std::string, RCP<MueLu::VariableContainer> >::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++) {
+        const std::map<const FactoryBase*,int>& requests = it2->second->Requests();
+        for (std::map<const FactoryBase*,int>::const_iterator rit = requests.begin(); rit != requests.end(); rit++) {
+          if (vindices.find(rit->first) == vindices.end()) {
+            // requested by factory which is unknown
+            BoostVertex boost_vertex = boost::add_vertex(graph);
+            boost::put("label", dp, boost_vertex, rit->first->description());
+            vindices[rit->first] = vind++;
+          }
+
+          edges[std::pair<BoostVertex,BoostVertex>(vindices[rit->first], vindices[it1->first])] =  it2->first;
+        }
+      }
+    }
+  }
+#endif
 
 } //namespace MueLu

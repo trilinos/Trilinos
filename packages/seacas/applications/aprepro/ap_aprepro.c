@@ -47,8 +47,8 @@
 static char *qainfo[] =
 {
   "Aprepro",
-  "Date: 2012/03/27",
-  "Revision: 2.26"
+  "Date: 2013/02/07",
+  "Revision: 2.30"
 };
 
 #include <stdlib.h>
@@ -62,6 +62,9 @@ static char *qainfo[] =
 #include "add_to_log.h"
 
 aprepro_options ap_options;
+int state_immutable = False;
+int nfile = 0;
+int echo = True;
 
 void initialize_options(aprepro_options *ap_options)
 {
@@ -77,9 +80,10 @@ void initialize_options(aprepro_options *ap_options)
   ap_options->debugging = False;
   ap_options->statistics = False;
   ap_options->interactive = False;
+  ap_options->immutable = False;
 }
 
-extern symrec *getsym(char *sym_name);
+extern void add_input_file(char *filename);
 extern void yyparse(void);
 static void usage(void);
 extern void dumpsym(int type, int doInternal);
@@ -87,6 +91,7 @@ extern void pstats(void);
 extern void init_table(char comment);
 static void copyright_output(void);
 extern FILE *open_file(char *file, char *mode);
+extern int is_directory(char *filepath);
 
 /* The name the program was invoked under, for error messages */
 char *myname;
@@ -97,8 +102,9 @@ int main (int argc, char *argv[])
   int c;
   time_t time_val;
   struct tm *time_structure;
-  char *asc_time;
-
+  char *asc_time = NULL;
+  char *include_file = NULL;
+  
 #define NO_ARG 0
 #define IS_ARG 1
 #define OP_ARG 2
@@ -117,6 +123,7 @@ int main (int argc, char *argv[])
       {"nowarning",   NO_ARG, 0, 'W'},
       {"messages",    NO_ARG, 0, 'M'},
       {"quiet",       NO_ARG, 0, 'q'},
+      {"immutable",   NO_ARG, 0, 'X'},
       {NULL,          NO_ARG, NULL, 0}
     };
 
@@ -134,7 +141,7 @@ int main (int argc, char *argv[])
   initialize_options(&ap_options);
   
   ap_options.end_on_exit = False;
-  while ((c = getopt_long (argc, argv, "c:dDsSvViI:eEwWmMhHCq",
+  while ((c = getopt_long (argc, argv, "c:dDsSvViI:eEwWmMhHCqX",
 			   long_options, &option_index)) != EOF)
     {
       switch (c)
@@ -169,7 +176,16 @@ int main (int argc, char *argv[])
 	  break;
 
 	case 'I':
-	  NEWSTR(optarg, ap_options.include_path);
+	  /*
+	   * Check whether optarg specifies a file or a directory
+	   * If a file, it is an include file,
+	   * If a directory, it is an include_path
+	   */
+	  if (is_directory(optarg)) {
+	    NEWSTR(optarg, ap_options.include_path);
+	  } else {
+	    NEWSTR(optarg, include_file);
+	  }
 	  break;
 	  
 	case 'e':
@@ -187,6 +203,10 @@ int main (int argc, char *argv[])
 
 	case 'M':
 	  ap_options.info_msg = True;
+	  break;
+
+	case 'X':
+	  ap_options.immutable = True;
 	  break;
 
 	case 'h':
@@ -220,12 +240,18 @@ int main (int argc, char *argv[])
       char *pt = strrchr(val, '"');
       val++;
       *pt = '\0';
-      s = putsym(var, SVAR, 0);
+      if (var[0] == '_')
+	s = putsym(var, SVAR, 0);
+      else
+	s = putsym(var, IMMSVAR, 0);
       NEWSTR(val, s->value.svar);
     }
     else {
       sscanf (val, "%lf", &value);
-      s = putsym (var, VAR, 0);
+      if (var[0] == '_')
+	s = putsym (var, VAR, 0);
+      else
+	s = putsym (var, IMMVAR, 0);
       s->value.var = value;
     }
   }
@@ -237,13 +263,11 @@ int main (int argc, char *argv[])
   yyout = stdout;
 
   if (argc > optind) {
-    yyin = open_file(argv[optind], "r");
-    NEWSTR (argv[optind], ap_file_list[0].name);
-    SET_FILE_LIST (0, 0, False, 1);
+    add_input_file(argv[optind]);
   }
   else {
-    NEWSTR ("stdin", ap_file_list[0].name);
-    SET_FILE_LIST (0, 0, False, 1);
+    NEWSTR ("stdin", ap_file_list[nfile].name);
+    SET_FILE_LIST (nfile, 0, False, 1);
   }
   if (argc > ++optind) {
     yyout = open_file(argv[optind], "w");
@@ -253,13 +277,31 @@ int main (int argc, char *argv[])
       setbuf (yyout, (char *) NULL);
   }
 
+  state_immutable = ap_options.immutable;
+
+  
   time_val = time ((time_t*)NULL);
   time_structure = localtime (&time_val);
   asc_time = asctime (time_structure);
 
   /* NOTE: asc_time includes \n at end of string */
-  if (!ap_options.quiet)
-    fprintf (yyout, "%c Aprepro (%s) %s", ap_options.comment, qainfo[2], asc_time);
+  if (!ap_options.quiet) {
+    if (state_immutable) {
+      fprintf (yyout, "%c Aprepro (%s) [immutable mode] %s", ap_options.comment, qainfo[2], asc_time);
+    } else {
+      fprintf (yyout, "%c Aprepro (%s) %s", ap_options.comment, qainfo[2], asc_time);
+    }
+  }
+
+  if (include_file) {
+      nfile++;
+      add_input_file(include_file);
+      /* Include file specified on command line is processed in immutable
+       * state. Reverts back to global immutable state at end of file.
+       */
+      state_immutable = True;
+      echo = False;
+    }
 
   srand((unsigned)time_val);
   
@@ -286,8 +328,9 @@ usage (void)
    ECHO("   --statistics or -s: Print hash statistics at end of run     \n");
    ECHO("      --version or -v: Print version number to stderr          \n");
    ECHO("--comment or -c  char: Change comment character to 'char'      \n");
+   ECHO("    --immutable or -X: All variables are immutable--cannot be modified\n");
    ECHO("  --interactive or -i: Interactive use, no buffering           \n");
-   ECHO("      --include or -I: Include path                            \n");
+   ECHO("      --include or -I: Include file or include path            \n");
    ECHO("      --exit_on or -e: End when 'Exit|EXIT|exit' entered       \n");
    ECHO("         --help or -h: Print this list                         \n");
    ECHO("      --message or -M: Print INFO messages                     \n");
@@ -359,28 +402,3 @@ void version(char *vstring)
 	vstring[j] = '\0';
 }
  
-/*-dummy to get version updated
- *-debug for ifs and loops
- *-added nint
- *-added include(string_variable)
- *-fixed last fix
- *-change date() and time() functions to get_date() and get_time()
- *-add exodus capability
- *-add exodus timestep capability
- *-can now compile without exodusII capability
- *-update lex.yy.c and y.tab.c to remove alloca problems
- *-update statistic calculations
- *-use stdc function definitions
- *-add parsing of escaped braces
- *-change to use mkstemp instead of tmpnam
- *-units changes
- *-minor change to extern char comment
- *-fix ifdef loop control to correctly handle strings
- *-cygwin/no_cygwin_option mkstemp/mkstemps fix
- *-add ternary operator for string expressions
- *-fix so getenv with null string doesn't seg fault
- *-add rand_normal, rand_lognormal, rand_weibull
- *-fix parsing of \{ and \} in skipped if block
- *-add : as valid character in a variable name. (Dakota request)
- *-modify || and && to work with expressions and not just booleans
- */

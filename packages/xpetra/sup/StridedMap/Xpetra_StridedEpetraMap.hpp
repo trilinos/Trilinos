@@ -145,7 +145,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name 
+    //! @name
     //@{
 
     //! Get the Comm object for this Map.
@@ -168,7 +168,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name 
+    //! @name
     //@{
 
     //! Return a simple one-line description of this object.
@@ -186,8 +186,8 @@ namespace Xpetra {
     //@{
 
     //! EpetraMap constructor to wrap a Epetra_Map object
-    StridedEpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0) 
-      : EpetraMap(map), StridedMap<int, int>(stridingInfo, stridedBlockId, offset) { 
+    StridedEpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0)
+      : EpetraMap(map), StridedMap<int, int>(stridingInfo, stridedBlockId, offset) {
       int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize());
       TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");
@@ -195,7 +195,7 @@ namespace Xpetra {
 
     //! Get the library used by this object (Epetra or Epetra?)
     UnderlyingLib lib() const { return Xpetra::UseEpetra; }
-    
+
     /*//! Get the underlying Epetra map
     //const RCP< const Epetra_Map > & getEpetra_Map() const { return map_; }
     const Epetra_BlockMap& getEpetra_BlockMap() const { return *map_; }
@@ -245,7 +245,7 @@ namespace Xpetra {
         }
 
       }
-      
+
       return true;
     }
 

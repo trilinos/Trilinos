@@ -47,7 +47,7 @@
 #define MUELU_SINGLELEVELFACTORY_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_FactoryBase.hpp"
+#include "MueLu_Factory.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 
@@ -59,17 +59,22 @@ namespace MueLu {
 
     @ingroup MueLuBaseClasses
   */
-  class SingleLevelFactoryBase : public FactoryBase {
+  class SingleLevelFactoryBase : public Factory {
 
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor.
-    SingleLevelFactoryBase() {}
+    SingleLevelFactoryBase()
+#ifdef HAVE_MUELU_DEBUG
+      : multipleCallCheck_(FIRSTCALL), lastLevel_(NULL)
+#endif
+    { }
 
     //! Destructor.
-    virtual ~SingleLevelFactoryBase() {}
+    virtual ~SingleLevelFactoryBase() { }
+
     //@}
 
     //! @name Input
@@ -92,6 +97,11 @@ namespace MueLu {
 
     //!
     virtual void CallBuild(Level & requestedLevel) const {
+#ifdef HAVE_MUELU_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION((multipleCallCheck_ == ENABLED) && (lastLevel_ == &requestedLevel), Exceptions::RuntimeError, this->ShortClassName() << "::Build() called twice for the same level (levelID=" << requestedLevel.GetLevelID() << "). This is likely due to a configuration error.");
+      if (multipleCallCheck_ == FIRSTCALL) multipleCallCheck_ = ENABLED;
+      lastLevel_ = &requestedLevel;
+#endif
       Build(requestedLevel);
     }
 
@@ -102,9 +112,31 @@ namespace MueLu {
 
     //@}
 
+    void EnableMultipleCallCheck() const {
+#ifdef HAVE_MUELU_DEBUG
+      multipleCallCheck_ = ENABLED;
+#endif
+    }
+
+    void DisableMultipleCallCheck() const {
+#ifdef HAVE_MUELU_DEBUG
+      multipleCallCheck_ = DISABLED;
+#endif
+    }
+
+#ifdef HAVE_MUELU_DEBUG
+  private:
+
+    enum multipleCallCheckEnum { ENABLED, DISABLED, FIRSTCALL };
+    mutable multipleCallCheckEnum multipleCallCheck_;
+    mutable Level* lastLevel_; // can be a dangling pointers. do not dereference.
+#endif
+
   }; //class SingleLevelFactoryBase
 
 } //namespace MueLu
 
 #define MUELU_SINGLELEVELFACTORY_SHORT
 #endif //ifndef MUELU_SINGLELEVELFACTORY_HPP
+
+//TODO: code factorization between SingleLevelFactoryBase and TwoLevelFactoryBase

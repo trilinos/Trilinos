@@ -136,12 +136,12 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMap, ContigConstBlkSize, BM, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -188,7 +188,7 @@ namespace {
     TEST_IS_SAME_AS(tmapref, tmap2ref, true);
 #endif
 
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -197,7 +197,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMap, ContigNonConstBlkSize, BM, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -244,7 +244,7 @@ namespace {
     TEST_IS_SAME_AS(tmapref, tmap2ref, true);
 #endif
 
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -253,7 +253,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMap, ConstructorBadLengths1, BM, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -272,7 +272,7 @@ namespace {
     Array<LO> blkSzs( tuple<LO>(2,2, 2) );
     TEST_THROW(BM blkmap(map, blkIDs(), blkSzs()), std::runtime_error);
 
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -281,7 +281,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMap, ConstructorBadLengths2, BM, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -300,14 +300,14 @@ namespace {
     Array<LO> blkSzs( tuple<LO>(3,3) );
     TEST_THROW(BM blkmap(map, blkIDs(), blkSzs()), std::runtime_error);
 
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
-  // 
+  //
   // INSTANTIATIONS
   //
 

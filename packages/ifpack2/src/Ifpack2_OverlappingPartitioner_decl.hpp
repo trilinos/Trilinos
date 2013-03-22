@@ -76,7 +76,7 @@ public:
   virtual ~OverlappingPartitioner();
 
   //! Returns the number of computed local partitions.
-  size_t numLocalParts() const;
+  LocalOrdinal numLocalParts() const;
 
   //! Returns the overlapping level.
   size_t overlappingLevel() const;
@@ -147,8 +147,8 @@ public:
  
 protected:
 
-  //! Number of local subgraphs.  This is an int because negatives mean something.
-  int NumLocalParts_;
+  //! Number of local subgraphs.  This is a localordinal because negatives mean something.
+  LocalOrdinal NumLocalParts_;
   //! Partition_[i] contains the ID of non-overlapping part it belongs to
   Teuchos::Array<LocalOrdinal> Partition_; 
   //! Parts_[i][j] is the ID of the j-th row contained in the (overlapping) 

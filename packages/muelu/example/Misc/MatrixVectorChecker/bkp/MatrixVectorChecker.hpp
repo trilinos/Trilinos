@@ -84,8 +84,8 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
 
   const Epetra_Map & ColMap = Mat.RowMatrixColMap();
   const Epetra_Map & RowMap = Mat.RowMatrixRowMap();
-  const Epetra_Map & DomMap = Mat.OperatorDomainMap();
-  const Epetra_Map & RanMap = Mat.OperatorRangeMap();
+  const Epetra_Map & DomMap = Mat.MatrixDomainMap();
+  const Epetra_Map & RanMap = Mat.MatrixRangeMap();
   const int           MyPID = RowMap.Comm().MyPID();
   Epetra_Vector v(DomMap),y(RanMap), w(RowMap,true), z(RowMap,true), t(RowMap);
   v.Random();
@@ -100,7 +100,7 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
   // Copy v and add ghost stuff imported from other processors
 
   double *vdata;
-  Epetra_Vector vhat(ColMap); 
+  Epetra_Vector vhat(ColMap);
 
   if (Mat.RowMatrixImporter()) {
      vhat.Import(v, *(Mat.RowMatrixImporter()), Insert);
@@ -121,7 +121,7 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
   }
 
   // We need import/export stuff on a what/zhat somewhat similar to vhat above?
-  if (!RanMap.PointSameAs(RowMap)) 
+  if (!RanMap.PointSameAs(RowMap))
     std::cout << "Range and Rowmaps do not match some import/export code needs to be added" << std::endl;
 
   // print if abs(y[i] - w[i])/z[i] > 1.e-8
@@ -129,10 +129,10 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
   int Count = 0;
   for (int i = 0; i < RowMap.NumMyElements(); i++) {
     if (( fabs(y[i] - w[i])/z[i] > 1.e-8) && (Count++ < 20) ) {
-       std::cout << std::setw(5) << MyPID << ":matvec/getrow mismatch,row (GID=" << 
-       std::setw(6) << RowMap.GID(i) << ",LID=" << std::setw(6) << i << 
-       "), y w & z =" << std::setw(9) << std::scientific << 
-       std::setprecision(2) << y[i] << " " << std::setw(9) << w[i] 
+       std::cout << std::setw(5) << MyPID << ":matvec/getrow mismatch,row (GID=" <<
+       std::setw(6) << RowMap.GID(i) << ",LID=" << std::setw(6) << i <<
+       "), y w & z =" << std::setw(9) << std::scientific <<
+       std::setprecision(2) << y[i] << " " << std::setw(9) << w[i]
        << " " << std::setw(9) << z[i] << std::endl;
     }
   }
@@ -148,10 +148,10 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
      // create vector vCRS which is matrix version of v.
      int *mygids = new int [DomMap.NumMyElements()+1];
      DomMap.MyGlobalElements(mygids);
-     double *ptr;   
+     double *ptr;
      v.ExtractView(&ptr);
      int zero = 0;
-     for (int i = 0; i < DomMap.NumMyElements(); i++) 
+     for (int i = 0; i < DomMap.NumMyElements(); i++)
         vCRS.InsertGlobalValues(mygids[i], 1, &(ptr[DomMap.LID(mygids[i])]), &zero);
 
      // create map with only element assigned to one processor.
@@ -160,36 +160,36 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
      vCRS.OptimizeStorage(); //JJH this is done by default now
      EpetraExt::MatrixMatrix::Multiply(*MatCRS,false,vCRS,false,tCRS);
 
-     // now getrow tCRS and compare with y 
-     Count = 0; 
+     // now getrow tCRS and compare with y
+     Count = 0;
      for (int i = 0; i < RowMap.NumMyElements(); i++) {
         tCRS.ExtractMyRowCopy(i, ColMap.NumMyElements(), RowLength, Values, Indices);
         if (RowLength == 0) {
            RowLength = 1; Values[0] = 0.; Indices[0] = 0;
          }
         if (RowLength != 1) {
-          std::cout << std::setw(5) << MyPID << ":matvec/matmult row (GID=" << 
-          std::setw(6) << RowMap.GID(i) << ",LID=" << std::setw(6) << i << 
+          std::cout << std::setw(5) << MyPID << ":matvec/matmult row (GID=" <<
+          std::setw(6) << RowMap.GID(i) << ",LID=" << std::setw(6) << i <<
           ") rowlength problem" << std::endl;
         }
         if (Indices[0] != 0) {
-          std::cout << std::setw(5) << MyPID << ":matvec/matmult row (GID=" << 
-          std::setw(6) << RowMap.GID(i) << ",LID=" << std::setw(6) << i << 
+          std::cout << std::setw(5) << MyPID << ":matvec/matmult row (GID=" <<
+          std::setw(6) << RowMap.GID(i) << ",LID=" << std::setw(6) << i <<
           ") has Col Id = " << Indices[0] << std::endl;
         }
         t[i] = Values[0];
      }
-     // might need to do some import/export stuff if RangeMap and RowMap 
+     // might need to do some import/export stuff if RangeMap and RowMap
      // do not match. This all depends on what matmat mult does?
 
      // print if abs(y[i] - t[i])/z[i] > 1.e-8
 
      for (int i = 0; i < RowMap.NumMyElements(); i++) {
         if (( fabs(y[i] - t[i])/z[i] > 1.e-8) && (Count++ < 20) ) {
-          std::cout << std::setw(5) << MyPID << ":matvec/matmult mismatch,row (GID=" << 
-          std::setw(6) << RowMap.GID(i) << ",LID=" << std::setw(6) << i << 
-          "), y t & z =" << std::setw(9) << std::scientific << 
-          std::setprecision(2) << y[i] << " " << std::setw(9) << Values[0] 
+          std::cout << std::setw(5) << MyPID << ":matvec/matmult mismatch,row (GID=" <<
+          std::setw(6) << RowMap.GID(i) << ",LID=" << std::setw(6) << i <<
+          "), y t & z =" << std::setw(9) << std::scientific <<
+          std::setprecision(2) << y[i] << " " << std::setw(9) << Values[0]
           << " " << std::setw(9) << z[i] << std::endl;
         }
      } // for (int i = 0; ...

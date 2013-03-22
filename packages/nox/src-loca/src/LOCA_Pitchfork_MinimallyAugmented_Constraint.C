@@ -172,7 +172,7 @@ computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Pitchfork::MinimallyAugmented::Constraint::
-computeDP(const vector<int>& paramIDs, 
+computeDP(const std::vector<int>& paramIDs, 
 	  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 	  bool isValidG)
 {

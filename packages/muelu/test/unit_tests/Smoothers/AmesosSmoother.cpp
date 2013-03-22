@@ -81,7 +81,7 @@ namespace MueLuTests {
 #endif
       }
   }
-  
+
 } // namespace MueLuTests
 
 //TODO

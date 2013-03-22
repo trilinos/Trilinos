@@ -100,7 +100,7 @@ LOCA::Hopf::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
 
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
 	   const LOCA::Hopf::MooreSpence::ExtendedMultiVector& source, 
-	   const vector<int>& index, bool view) :
+	   const std::vector<int>& index, bool view) :
   LOCA::Extended::MultiVector(source, index, view)
 {
 }
@@ -149,7 +149,7 @@ LOCA::Hopf::MooreSpence::ExtendedMultiVector::clone(int numvecs) const
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::subCopy(
-					       const vector<int>& index) const
+					       const std::vector<int>& index) const
 {
   return 
     Teuchos::rcp(new LOCA::Hopf::MooreSpence::ExtendedMultiVector(*this, index, false));
@@ -157,7 +157,7 @@ LOCA::Hopf::MooreSpence::ExtendedMultiVector::subCopy(
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::subView(
-					      const vector<int>& index) const
+					      const std::vector<int>& index) const
 {
   return 
     Teuchos::rcp(new LOCA::Hopf::MooreSpence::ExtendedMultiVector(*this, index, true));

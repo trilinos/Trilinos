@@ -46,12 +46,12 @@
 // Have to do this first to pull in all of Dakota's #define's
 #include "TriKota_ConfigDefs.hpp"
 
-#include "DirectApplicInterface.H"
-#include "CommandLineHandler.H"
-#include "DakotaStrategy.H"
-#include "DakotaModel.H"
-#include "ParallelLibrary.H"
-#include "ProblemDescDB.H"
+#include "DirectApplicInterface.hpp"
+#include "CommandLineHandler.hpp"
+#include "DakotaStrategy.hpp"
+#include "DakotaModel.hpp"
+#include "ParallelLibrary.hpp"
+#include "ProblemDescDB.hpp"
 
 #include "Piro_Epetra_StokhosMPSolver.hpp"
 #include "Stokhos_ProductEpetraVector.hpp"

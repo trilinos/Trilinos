@@ -114,7 +114,7 @@ NOX::StatusTest::StatusType NOX::StatusTest::Divergence::getStatus() const
   return status;
 }
 
-ostream& NOX::StatusTest::Divergence::print(ostream& stream, int indent) const
+std::ostream& NOX::StatusTest::Divergence::print(std::ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
@@ -124,7 +124,7 @@ ostream& NOX::StatusTest::Divergence::print(ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << "             (max F-norm threshold = " << threshold << ")";
-  stream << endl;
+  stream << std::endl;
  return stream;
 }
 

@@ -47,19 +47,40 @@
     \brief rcbPerformance with Zoltan1
 
     Geometry is a uniform mesh.
-    \todo  get the imbalance when done
 */
 
-#include <Zoltan2_TestHelpers.hpp>
+#include "Zoltan2_config.h"
 
 #ifdef HAVE_ZOLTAN2_ZOLTAN
 #include <zoltan.h>
-#include <Teuchos_CommandLineProcessor.hpp>
+
+#include <Zoltan2_Util.hpp>
+#define MEMORY_CHECK(iPrint, msg) \
+  if (iPrint){ \
+    long kb = Zoltan2::getProcessKilobytes(); \
+    std::cout.width(10); \
+    std::cout.fill('*'); \
+    std::cout << kb << " KB, " << msg << std::endl; \
+    std::cout.width(0); \
+    std::cout.fill(' '); \
+  }
+
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_ArrayView.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_CommHelpers.hpp>
+
+#include <Tpetra_MultiVector.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
 #include <vector>
+#include <string>
 #include <ostream>
 #include <sstream>
 
+using std::string;
 using std::vector;
 using std::cout;
 using std::cerr;
@@ -69,65 +90,80 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Comm;
 using Teuchos::ArrayView;
-using Teuchos::ArrayRCP;
 using Teuchos::CommandLineProcessor;
+
+typedef int lno_t;
+typedef long gno_t;
+typedef double scalar_t;
+typedef Kokkos::DefaultNode::DefaultNodeType node_t;
 
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Tpetra::Map<lno_t, gno_t, node_t> tMap_t;
 
-static ArrayRCP<ArrayRCP<scalar_t> > weights;
-static RCP<tMVector_t> coordinates;
+//////////////////////////////////////////////////////////////////////////////
+// Data structure for data
+typedef struct dots {
+  vector<vector<float> > weights;
+  tMVector_t *coordinates;
+} DOTS;
 
+//////////////////////////////////////////////////////////////////////////////
 // Zoltan1 query functions
 
 int getNumObj(void *data, int *ierr)
 {
   *ierr = 0;
-  return coordinates->getLocalLength();
+  DOTS *dots = (DOTS *) data;
+  return dots->coordinates->getLocalLength();
 }
 
+//////////////////////////
 int getDim(void *data, int *ierr)
 {
   *ierr = 0;
-  return 3;
+  DOTS *dots = (DOTS *) data;
+  return dots->coordinates->getNumVectors();
 }
 
+//////////////////////////
 void getObjList(void *data, int numGid, int numLid,
-  gid_t * gids, gid_t * lids, 
+  ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
   int wgt_dim, float *obj_wgts, int *ierr)
 {
   *ierr = 0;
-  size_t localLen = coordinates->getLocalLength();
-  const gno_t *ids = coordinates->getMap()->getNodeElementList().getRawPtr();
-  gno_t *idsNonConst = const_cast<gno_t *>(ids);
+  DOTS *dots = (DOTS *) data;
 
-  if (sizeof(gid_t) == sizeof(gno_t)){
-    memcpy(gids, idsNonConst, sizeof(gid_t) * localLen);
-  }
-  else{
+  size_t localLen = dots->coordinates->getLocalLength();
+  const gno_t *ids =
+               dots->coordinates->getMap()->getNodeElementList().getRawPtr();
+
+  if (sizeof(ZOLTAN_ID_TYPE) == sizeof(gno_t))
+    memcpy(gids, ids, sizeof(ZOLTAN_ID_TYPE) * localLen);
+  else
     for (size_t i=0; i < localLen; i++)
-      gids[i] = static_cast<gid_t>(idsNonConst[i]);
-  }
+      gids[i] = static_cast<ZOLTAN_ID_TYPE>(ids[i]);
 
   if (wgt_dim > 0){
     float *wgts = obj_wgts;
     for (size_t i=0; i < localLen; i++)
       for (int w=0; w < wgt_dim; w++)
-        *wgts++ = static_cast<float>(weights[w][i]);
+        *wgts++ = dots->weights[w][i];
   }
 }
 
+//////////////////////////
 void getCoordinates(void *data, int numGid, int numLid,
-  int numObj, gid_t * gids, gid_t * lids,
+  int numObj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
   int dim, double *coords, int *ierr)
 {
   // I know that Zoltan asks for coordinates in gid order.
   *ierr = 0;
+  DOTS *dots = (DOTS *) data;
   double *val = coords;
-  const scalar_t *x = coordinates->getData(0).getRawPtr();
-  const scalar_t *y = coordinates->getData(1).getRawPtr();
-  const scalar_t *z = coordinates->getData(2).getRawPtr();
-  for (lno_t i=0; i < numObj; i++){
+  const scalar_t *x = dots->coordinates->getData(0).getRawPtr();
+  const scalar_t *y = dots->coordinates->getData(1).getRawPtr();
+  const scalar_t *z = dots->coordinates->getData(2).getRawPtr();
+  for (int i=0; i < numObj; i++){
     *val++ = static_cast<double>(x[i]);
     *val++ = static_cast<double>(y[i]);
     *val++ = static_cast<double>(z[i]);
@@ -135,6 +171,7 @@ void getCoordinates(void *data, int numGid, int numLid,
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
 
 enum weightTypes{
   upDown,
@@ -143,42 +180,36 @@ enum weightTypes{
   numWeightTypes
 };
 
-ArrayRCP<scalar_t> makeWeights(
+void makeWeights(
   const RCP<const Teuchos::Comm<int> > & comm,
-  lno_t len, weightTypes how, scalar_t scale, int rank)
+  vector<float> &wgts, weightTypes how, float scale, int rank)
 {
-  scalar_t *wgts = new scalar_t [len];
-  if (!wgts)
-    throw bad_alloc();
-
-  ArrayRCP<scalar_t> wgtArray(wgts, 0, len, true);
-
+  lno_t len = wgts.size();
   if (how == upDown){
-    scalar_t val = scale + rank%2;
+    float val = scale + rank%2;
     for (lno_t i=0; i < len; i++)
       wgts[i] = val;
   }
   else if (how == roundRobin){
     for (int i=0; i < 10; i++){
-      scalar_t val = (i + 10)*scale;
+      float val = (i + 10)*scale;
       for (int j=i; j < len; j += 10)
          wgts[j] = val;
     }
   }
   else if (how == increasing){
-    scalar_t val = scale + rank;
+    float val = scale + rank;
     for (lno_t i=0; i < len; i++)
       wgts[i] = val;
   }
-
-  return wgtArray;
 }
 
-/*! \brief Create a mesh of approximately the desired size.
+//////////////////////////////////////////////////////////////////////////////
+/* Create a mesh of approximately the desired size.
  *
  *  We want 3 dimensions close to equal in length.
  */
-const RCP<tMVector_t> getMeshCoordinates(
+tMVector_t* makeMeshCoordinates(
     const RCP<const Teuchos::Comm<int> > & comm,
     gno_t numGlobalCoords)
 {
@@ -187,7 +218,7 @@ const RCP<tMVector_t> getMeshCoordinates(
 
   double k = log(numGlobalCoords) / 3;
   double xdimf = exp(k) + 0.5;
-  gno_t xdim = static_cast<int>(floor(xdimf));
+  gno_t xdim = static_cast<gno_t>(floor(xdimf));
   gno_t ydim = xdim;
   gno_t zdim = numGlobalCoords / (xdim*ydim);
   gno_t num=xdim*ydim*zdim;
@@ -243,7 +274,7 @@ const RCP<tMVector_t> getMeshCoordinates(
   if (rank <= leftOver)
     gid0 = gno_t(rank) * (numLocalCoords+1);
   else
-    gid0 = (leftOver * (numLocalCoords+1)) + 
+    gid0 = (leftOver * (numLocalCoords+1)) +
            ((gno_t(rank) - leftOver) * numLocalCoords);
 
   if (rank < leftOver)
@@ -251,23 +282,22 @@ const RCP<tMVector_t> getMeshCoordinates(
 
   gno_t gid1 = gid0 + numLocalCoords;
 
-  gno_t *ids = new gno_t [numLocalCoords];
+  gno_t *ids = new gno_t[numLocalCoords];
   if (!ids)
     throw bad_alloc();
-  ArrayRCP<gno_t> idArray(ids, 0, numLocalCoords, true);
+  ArrayView<gno_t> idArray(ids, numLocalCoords);
 
-  for (gno_t i=gid0; i < gid1; i++)
-    *ids++ = i;   
+  for (gno_t i=gid0, *idptr=ids; i < gid1; i++)
+    *idptr++ = i;
 
-  RCP<const tMap_t> idMap = rcp(
-    new tMap_t(num, idArray.view(0, numLocalCoords), 0, comm));
+  RCP<const tMap_t> idMap = rcp(new tMap_t(num, idArray, 0, comm));
+
+  delete [] ids;
 
   // Create a Tpetra::MultiVector of coordinates.
 
-  scalar_t *x = new scalar_t [numLocalCoords*3]; 
-  if (!x)
-    throw bad_alloc();
-  ArrayRCP<scalar_t> coordArray(x, 0, numLocalCoords*3, true);
+  scalar_t *x = new scalar_t [numLocalCoords*3];
+  if (!x) throw bad_alloc();
 
   scalar_t *y = x + numLocalCoords;
   scalar_t *z = y + numLocalCoords;
@@ -283,9 +313,9 @@ const RCP<tMVector_t> getMeshCoordinates(
   }
 
   lno_t next = 0;
-  for (scalar_t zval=zStart; next < numLocalCoords && zval < zdim; zval++){
-    for (scalar_t yval=yStart; next < numLocalCoords && yval < ydim; yval++){
-      for (scalar_t xval=xStart; next < numLocalCoords && xval < xdim; xval++){
+  for (scalar_t zval=zStart; next < numLocalCoords && zval < zdim; zval+=1.){
+    for (scalar_t yval=yStart; next < numLocalCoords && yval < ydim; yval+=1.){
+      for (scalar_t xval=xStart; next < numLocalCoords && xval < xdim;xval+=1.){
         x[next] = xval;
         y[next] = yval;
         z[next] = zval;
@@ -296,22 +326,10 @@ const RCP<tMVector_t> getMeshCoordinates(
     yStart = 0;
   }
 
-  ArrayView<const scalar_t> xArray(x, numLocalCoords);
-  ArrayView<const scalar_t> yArray(y, numLocalCoords);
-  ArrayView<const scalar_t> zArray(z, numLocalCoords);
-  ArrayRCP<ArrayView<const scalar_t> > coordinates =
-    arcp(new ArrayView<const scalar_t> [3], 0, 3);
-  coordinates[0] = xArray;
-  coordinates[1] = yArray;
-  coordinates[2] = zArray;
+  ArrayView<const scalar_t> xArray(x, numLocalCoords*3);
+  tMVector_t *dots = new tMVector_t(idMap, xArray, numLocalCoords, 3);
 
-  ArrayRCP<const ArrayView<const scalar_t> > constCoords =
-   coordinates.getConst();
-
-  RCP<tMVector_t> meshCoords = rcp(new tMVector_t(
-    idMap, constCoords.view(0,3), 3));
-
-  return meshCoords;
+  return dots;
 }
 
 
@@ -323,6 +341,7 @@ int main(int argc, char *argv[])
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
+  DOTS dots;
 
   MEMORY_CHECK(rank==0 || rank==nprocs-1, "After initializing MPI");
 
@@ -330,9 +349,9 @@ int main(int argc, char *argv[])
     cout << "Number of processes: " << nprocs << endl;
 
   // Default values
-  double numGlobalCoords = 1000;
+  gno_t numGlobalCoords = 1000;
   int weightDim = 0;
-  int debugLevel=2;          // for timing
+  int debugLevel=2;
   string memoryOn("memoryOn");
   string memoryOff("memoryOff");
   bool doMemory=false;
@@ -340,12 +359,22 @@ int main(int argc, char *argv[])
   int dummyTimer=0;
   bool remap=0;
 
+  string balanceCount("balance_object_count");
+  string balanceWeight("balance_object_weight");
+  string mcnorm1("multicriteria_minimize_total_weight");
+  string mcnorm2("multicriteria_balance_total_maximum");
+  string mcnorm3("multicriteria_minimize_maximum_weight");
+  string objective(balanceWeight);   // default
+
+  // Process command line input
   CommandLineProcessor commandLine(false, true);
-  commandLine.setOption("size", &numGlobalCoords, 
+  //commandLine.setOption("size", &numGlobalCoords,
+  //  "Approximate number of global coordinates.");
+  commandLine.setOption("size", &numGlobalCoords,
     "Approximate number of global coordinates.");
-  commandLine.setOption("numParts", &numGlobalParts, 
+  commandLine.setOption("numParts", &numGlobalParts,
     "Number of parts (default is one per proc).");
-  commandLine.setOption("weightDim", &weightDim, 
+  commandLine.setOption("weightDim", &weightDim,
     "Number of weights per coordinate, zero implies uniform weights.");
   commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
   commandLine.setOption("remap", "no-remap", &remap,
@@ -354,53 +383,37 @@ int main(int argc, char *argv[])
   commandLine.setOption(memoryOn.c_str(), memoryOff.c_str(), &doMemory,
     "do memory profiling");
 
-  string balanceCount("balance_object_count");
-  string balanceWeight("balance_object_weight");
-  string mcnorm1("multicriteria_minimize_total_weight");
-  string mcnorm2("multicriteria_balance_total_maximum");
-  string mcnorm3("multicriteria_minimize_maximum_weight");
-
-  string objective(balanceWeight);   // default
-
   string doc(balanceCount);
   doc.append(": ignore weights\n");
-
   doc.append(balanceWeight);
   doc.append(": balance on first weight\n");
-
   doc.append(mcnorm1);
   doc.append(": given multiple weights, balance their total.\n");
-
   doc.append(mcnorm3);
-  doc.append(": given multiple weights, balance the maximum for each coordinate.\n");
-
+  doc.append(": given multiple weights, "
+             "balance the maximum for each coordinate.\n");
   doc.append(mcnorm2);
   doc.append(": given multiple weights, balance the L2 norm of the weights.\n");
-
   commandLine.setOption("objective", &objective,  doc.c_str());
 
-  CommandLineProcessor::EParseCommandLineReturn rc = 
+  CommandLineProcessor::EParseCommandLineReturn rc =
     commandLine.parse(argc, argv);
-
-  if (rc != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL){
-    if (rc == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED){
-      if (rank==0)
-        cout << "PASS" << endl;
+  if (rc != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+    if (rc == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
+      if (rank==0) cout << "PASS" << endl;
       return 1;
     }
-    else{
-      if (rank==0)
-        cout << "FAIL" << endl;
+    else {
+      if (rank==0) cout << "FAIL" << endl;
       return 0;
     }
   }
 
   //MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
 
-  gno_t globalSize = static_cast<gno_t>(numGlobalCoords);
-
-  coordinates = getMeshCoordinates(comm, globalSize);
-  size_t numLocalCoords = coordinates->getLocalLength();
+  // Create the data structure
+  dots.coordinates = makeMeshCoordinates(comm, numGlobalCoords);
+  size_t numLocalCoords = dots.coordinates->getLocalLength();
 
 #if 0
   comm->barrier();
@@ -420,14 +433,13 @@ int main(int argc, char *argv[])
 
   if (weightDim > 0){
 
-    weights = arcp(new ArrayRCP<scalar_t> [weightDim],
-      0, weightDim, true);
+    dots.weights.resize(weightDim);
 
     int wt = 0;
-    scalar_t scale = 1.0;
+    float scale = 1.0;
     for (int i=0; i < weightDim; i++){
-      weights[i] = 
-        makeWeights(comm, numLocalCoords, weightTypes(wt++), scale, rank);
+      dots.weights[i].resize(numLocalCoords);
+      makeWeights(comm, dots.weights[i], weightTypes(wt++), scale, rank);
 
       if (wt == numWeightTypes){
         wt = 0;
@@ -444,20 +456,19 @@ int main(int argc, char *argv[])
   int aok = Zoltan_Initialize(argc, argv, &ver);
 
   if (aok != 0){
-    printf("sorry...\n");
+    printf("Zoltan_Initialize failed\n");
     exit(0);
   }
 
   struct Zoltan_Struct *zz;
   zz = Zoltan_Create(MPI_COMM_WORLD);
-  
+
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
   Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
   Zoltan_Set_Param(zz, "CHECK_GEOM", "0");
-  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); // compiled with ULONG option
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "PART");
-  Zoltan_Set_Param(zz, "IMBALANCE_TOL", "1.1");
   std::ostringstream oss;
   oss << numGlobalParts;
   Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", oss.str().c_str());
@@ -486,53 +497,44 @@ int main(int argc, char *argv[])
     Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
   }
 
-  Zoltan_Set_Num_Obj_Fn(zz, getNumObj, NULL);
-  Zoltan_Set_Obj_List_Fn(zz, getObjList,NULL);
-  Zoltan_Set_Num_Geom_Fn(zz, getDim, NULL);
-  Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates,NULL);
+  Zoltan_Set_Num_Obj_Fn(zz, getNumObj, &dots);
+  Zoltan_Set_Obj_List_Fn(zz, getObjList, &dots);
+  Zoltan_Set_Num_Geom_Fn(zz, getDim, &dots);
+  Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates, &dots);
 
   int changes, numGidEntries, numLidEntries, numImport, numExport;
-  gid_t * importGlobalGids, * importLocalGids;
-  gid_t * exportGlobalGids, * exportLocalGids;
+  ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
+  ZOLTAN_ID_PTR exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
 
   MEMORY_CHECK(doMemory && rank==0, "Before Zoltan_LB_Partition");
 
   if (rank == 0) std::cout << "Calling Zoltan_LB_Partition" << std::endl;
-  aok = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
-        &changes,        /* 1 if partitioning was changed, 0 otherwise */
-        &numGidEntries,  /* Number of integers used for a global ID */
-        &numLidEntries,  /* Number of integers used for a local ID */
-        &numImport,      /* Number of vertices to be sent to me */
-        &importGlobalGids,  /* Global IDs of vertices to be sent to me */
-        &importLocalGids,   /* Local IDs of vertices to be sent to me */
-        &importProcs,    /* Process rank for source of each incoming vertex */
-        &importToPart,   /* New partition for each incoming vertex */
-        &numExport,      /* Number of vertices I must send to other processes*/
-        &exportGlobalGids,  /* Global IDs of the vertices I must send */
-        &exportLocalGids,   /* Local IDs of the vertices I must send */
-        &exportProcs,    /* Process to which I send each of the vertices */
-        &exportToPart);  /* Partition to which each vertex will belong */
-
+  aok = Zoltan_LB_Partition(zz, &changes, &numGidEntries, &numLidEntries,
+                            &numImport, &importGlobalGids, &importLocalGids,
+                            &importProcs, &importToPart,
+                            &numExport, &exportGlobalGids, &exportLocalGids,
+                            &exportProcs, &exportToPart);
   if (rank == 0) std::cout << "Returned from Zoltan_LB_Partition" << std::endl;
+
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_LB_Partition");
 
   /* Print the load-balance stats here */
 
-  scalar_t *sumWgtPerPart = new scalar_t[numGlobalParts];
-  scalar_t *gsumWgtPerPart = new scalar_t[numGlobalParts];
+  float *sumWgtPerPart = new float[numGlobalParts];
+  float *gsumWgtPerPart = new float[numGlobalParts];
   for (int i = 0; i < numGlobalParts; i++) sumWgtPerPart[i] = 0.;
 
   for (size_t i = 0; i < numLocalCoords; i++)
-    sumWgtPerPart[exportToPart[i]] += (weightDim ? weights[0][i]: 1.);
+    sumWgtPerPart[exportToPart[i]] += (weightDim ? dots.weights[0][i]: 1.);
 
-  reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM, numGlobalParts,
-                           sumWgtPerPart, gsumWgtPerPart);
+  Teuchos::reduceAll<int, float>(*comm, Teuchos::REDUCE_SUM, numGlobalParts,
+                                  sumWgtPerPart, gsumWgtPerPart);
 
-  scalar_t maxSumWgtPerPart = 0.;
-  scalar_t minSumWgtPerPart = std::numeric_limits<scalar_t>::max();
-  scalar_t totWgt = 0.;
-  int maxSumWgtPart, minSumWgtPart;
+  float maxSumWgtPerPart = 0.;
+  float minSumWgtPerPart = std::numeric_limits<float>::max();
+  float totWgt = 0.;
+  int maxSumWgtPart=0, minSumWgtPart=0;
   for (int i = 0; i < numGlobalParts; i++) {
     if (gsumWgtPerPart[i] > maxSumWgtPerPart) {
       maxSumWgtPerPart = gsumWgtPerPart[i];
@@ -554,7 +556,7 @@ int main(int argc, char *argv[])
               << "   max = " << maxSumWgtPerPart
                              << " in part " << maxSumWgtPart << std::endl
               << "   tot = " << totWgt << std::endl
-              << "   avg = " << totWgt / numGlobalParts 
+              << "   avg = " << totWgt / numGlobalParts
               << std::endl << std::endl << std::endl;
 
   delete [] sumWgtPerPart;
@@ -562,6 +564,13 @@ int main(int argc, char *argv[])
 
   Zoltan_Destroy(&zz);
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_Destroy");
+
+  delete dots.coordinates;
+  for (int i = 0; i < weightDim; i++)
+    dots.weights[i].clear();
+  dots.weights.clear();
+
+  MEMORY_CHECK(doMemory && rank==0, "After destroying input");
 
   if (rank==0){
     if (aok != 0)

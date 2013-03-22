@@ -72,7 +72,7 @@ namespace Xpetra {
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoLocalValue; // overloading, not hiding
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     //! Destructor.
     virtual ~Vector() { }

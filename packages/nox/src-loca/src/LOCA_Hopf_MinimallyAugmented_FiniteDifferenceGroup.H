@@ -99,7 +99,7 @@ namespace LOCA {
 	 * LOCA::DerivUtils object.
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDwtCeDp(const vector<int>& paramIDs, 
+	computeDwtCeDp(const std::vector<int>& paramIDs, 
 		       const NOX::Abstract::Vector& w1,
 		       const NOX::Abstract::Vector& w2,
 		       const NOX::Abstract::Vector& y,

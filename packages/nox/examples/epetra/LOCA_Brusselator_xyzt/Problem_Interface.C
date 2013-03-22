@@ -83,8 +83,8 @@ void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
 void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
 {
    if (timeStep==1)
-      cout << "Writing solution at continuation step " << conStep
-           << "  for parameter = " << conParam << endl;
+      std::cout << "Writing solution at continuation step " << conStep
+           << "  for parameter = " << conParam << std::endl;
    char file_name[25];
    FILE *ifp;
    Epetra_Vector& xMesh = problem.getMesh();
@@ -108,7 +108,7 @@ void Problem_Interface::dataForPrintSolution(const int conStep_,
 
 bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M)
 {
-  cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << endl;
+  std::cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << std::endl;
   throw 1;
 }
 
@@ -116,7 +116,7 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x,
 					      Epetra_Operator& Prec,
 					      Teuchos::ParameterList* p)
 {
-  cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << endl;
+  std::cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << std::endl;
   throw 1;
 }
 

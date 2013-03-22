@@ -116,7 +116,7 @@ LOCA::MultiPredictor::Random::clone(NOX::CopyType type) const
 
 NOX::Abstract::Group::ReturnType 
 LOCA::MultiPredictor::Random::compute(
-	      bool baseOnSecant, const vector<double>& stepSize,
+	      bool baseOnSecant, const std::vector<double>& stepSize,
 	      LOCA::MultiContinuation::ExtendedGroup& grp,
 	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
 	      const LOCA::MultiContinuation::ExtendedVector& xVec)
@@ -173,7 +173,7 @@ LOCA::MultiPredictor::Random::compute(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::MultiPredictor::Random::evaluate(
-	      const vector<double>& stepSize,
+	      const std::vector<double>& stepSize,
 	      const LOCA::MultiContinuation::ExtendedVector& xVec,
 	      LOCA::MultiContinuation::ExtendedMultiVector& result) const
 {

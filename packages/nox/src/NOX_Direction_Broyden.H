@@ -309,7 +309,7 @@ public:
       <li><tt>index.back() = index[index.size()-1]</tt> is the index to the newest update
       </ul>
      */
-    vector<int> index;
+    std::vector<int> index;
     
     //! Memory
     /*! 
@@ -319,7 +319,7 @@ public:
       been allocated. 
     */
     
-    vector<BroydenMemoryUnit> memory;
+    std::vector<BroydenMemoryUnit> memory;
   };
   
 //----------------------------------------------------------------------
@@ -353,15 +353,15 @@ private:
   /*!  
     If error printing is enabled for this process (see NOX::Utils),
     prints the following where \<functionName\> and \<errorMsg\> are
-    replaced by the strings that are passed in.
+    replaced by the std::strings that are passed in.
 
 \verbatim
 NOX::Direction::Broyden::<functionName> - <errorMsg>
 \endverbatim
 
-    Then throws the string "NOX Error".
+    Then throws the std::string "NOX Error".
   */
-  void throwError(const string& functionName, const string& errorMsg);
+  void throwError(const std::string& functionName, const std::string& errorMsg);
 
   //! Determine if it's time to restart
   /*!

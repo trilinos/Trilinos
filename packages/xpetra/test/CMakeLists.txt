@@ -1,6 +1,6 @@
 INCLUDE(AddSubdirectories)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
 ADD_SUBDIRECTORIES(
 # Platform
@@ -9,7 +9,7 @@ ADD_SUBDIRECTORIES(
 # Directory
 # ImportExport
 # ImportExport2
-#  MultiVector   ##### temporarily disabling this test
+  MultiVector
 # BasicPerfTest
 # Utils
 # CrsGraph
@@ -20,7 +20,8 @@ ADD_SUBDIRECTORIES(
 # VbrMatrix
 
 # Tests specifically written for Xpetra:
-  Operator
+  Matrix
+  MatrixMatrix
   )
 
 # uncomment this to ensure Xpetra header files include all necessary dependencies
@@ -28,6 +29,6 @@ ADD_SUBDIRECTORIES(
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
   ADD_SUBDIRECTORIES(
-    BlockedCrsOperator
+    BlockedCrsMatrix
   )
 ENDIF()

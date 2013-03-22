@@ -1,3 +1,41 @@
+Release Notes for PyTrilinos 4.8 (Trilinos 11.2)
+================================================
+
+General
+  * Added STK as an optional dependency of PyTrilinos
+  * Added Pliris as a supported package
+  * Provide better compatibility with external MPI implementations.
+    Specifically, if the user were to "import mpi4py" (for example)
+    prior to importing Teuchos or Epetra, then the Teuchos or Epetra
+    modules will not take responsibility for calling MPI_Finalize().
+  * Fixed some build errors
+
+Epetra module
+  * Priliminary support for Epetra64.  Ultimately, I would like the
+    default behavior to be using 64-bit methods without refering to
+    64-bit method names.
+  * Added PyTrilnos.Epetra.FECrsMatrix InsertGlobalValues method that
+    had been hidden by a %extend SWIG directive.
+
+EpetraExt module
+  * Gave names to EpetraExt template classes.  Using the nameless
+    versions had caused problems with newer versions of SWIG.  This
+    should get rid of the need for a patch distributed with
+    Archlinux.
+  * Added the EpetraExt::CrsMatrix_SubCopy class to
+    PyTrilinos.EpetraExt.
+
+NOX module
+  * Improved NOX support, especially NOX.Epetra.  This should be
+    largely invisible to the user, but I used to have to always import
+    NOX whether the user wanted it or not, due to nested namespace
+    issues.  These issues have been resolved now, and you only import
+    NOX if you specifically request it.
+
+Anasazi module
+  * Added EpetraMultiVecAccessor base class.  Anasazi added this base
+    class, and now the PyTrilinos version supports it as well.
+
 Release Notes for PyTrilinos 4.6 (Trilinos 10.10)
 =================================================
 

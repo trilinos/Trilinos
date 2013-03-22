@@ -52,10 +52,10 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_TransPFactory.hpp"
-#include "MueLu_SaPFactory.hpp"  
+#include "MueLu_SaPFactory.hpp"
 
-#include "MueLu_UseDefaultTypes.hpp"  
-#include "MueLu_UseShortNames.hpp"  
+#include "MueLu_UseDefaultTypes.hpp"
+#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
 
@@ -78,7 +78,7 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     Level fineLevel, coarseLevel;
-    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     // Test of createTwoLevelHierarchy: to be moved...
     TEST_EQUALITY(fineLevel.GetLevelID(), 0);
@@ -87,12 +87,12 @@ namespace MueLuTests {
     //TEST_EQUALITY(coarseLevel.GetPreviousLevel().get(), &fineLevel);
     // --
 
-    RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
+    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
     fineLevel.Set("A",Op);
 
     SaPFactory sapFactory;
-    TransPFactory transPFact(rcpFromRef(sapFactory)); //todo:rcpFromRef
-    
+    TransPFactory transPFact;
+    transPFact.SetFactory("P", rcpFromRef(sapFactory));
     coarseLevel.Request(sapFactory);
     coarseLevel.Request(transPFact);
 
@@ -100,10 +100,10 @@ namespace MueLuTests {
     coarseLevel.Request("R", &transPFact);
 
     sapFactory.BuildP(fineLevel,coarseLevel);
-    transPFact.BuildR(fineLevel,coarseLevel);
+    transPFact.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
-    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &transPFact);
+    RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", &sapFactory);
+    RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", &transPFact);
 
     RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
     RCP<MultiVector> result2  = MultiVectorFactory::Build(R->getRangeMap(),1);
@@ -118,7 +118,7 @@ namespace MueLuTests {
     Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the R created by TransPFactory." << std::endl;
-    out << "||X||_2 = " << normX << std::endl; 
+    out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);

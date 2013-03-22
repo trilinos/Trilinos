@@ -127,7 +127,7 @@ public:
   //! @name Attribute access functions
   //@{ 
 
-    //! Returns a character string describing the operator
+    //! Returns a character std::string describing the operator
     virtual const char * Label() const;
 
     //! Returns the current UseTranspose setting.
@@ -169,7 +169,7 @@ protected:
   int depId;
 
   //! Label for operator
-  string label;
+  std::string label;
 
 };
 } // Epetra

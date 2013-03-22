@@ -138,7 +138,7 @@ void NOX::StatusTest::NormF::relativeSetup(NOX::Abstract::Group& initialGuess)
   if (rtype != NOX::Abstract::Group::Ok) 
   {
     utils.err() << "NOX::StatusTest::NormF::NormF - Unable to compute F" 
-		<< endl;
+		<< std::endl;
     throw "NOX Error";
   }
     
@@ -215,7 +215,7 @@ NOX::StatusTest::StatusType NOX::StatusTest::NormF::getStatus() const
   return status;
 }
 
-ostream& NOX::StatusTest::NormF::print(ostream& stream, int indent) const
+std::ostream& NOX::StatusTest::NormF::print(std::ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
@@ -226,7 +226,7 @@ ostream& NOX::StatusTest::NormF::print(ostream& stream, int indent) const
 
   for (int j = 0; j < indent; j ++)
     stream << ' ';
-  stream << setw(13) << " ";
+  stream << std::setw(13) << " ";
   stream << "(";
 
   if (scaleType == Scaled)
@@ -252,7 +252,7 @@ ostream& NOX::StatusTest::NormF::print(ostream& stream, int indent) const
 
   stream << ")";
 
-  stream << endl;
+  stream << std::endl;
 
   return stream;
 }

@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   // linear algebra library
   // this example require Tpetra+Ifpack2+Amesos2 or Epetra+Ifpack+Amesos
 #if   defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
-  Xpetra::UnderlyingLib lib = Xpetra::UseTpetra; 
+  Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
 #elif defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)  && defined(HAVE_MUELU_AMESOS)
   Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
 #endif
@@ -93,23 +93,23 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
   // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-  RCP<Operator> A = rcp(new CrsOperator(map, 3));
+  RCP<Matrix> A = rcp(new CrsMatrixWrap(map, 3));
 
   // Add rows one-at-a-time
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1), 
+      A->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1),
                             Teuchos::tuple<Scalar> (2.0, -1.0));
     }
     else if (myGlobalElements[i] == numGlobalElements - 1) {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]), 
+      A->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]),
                             Teuchos::tuple<Scalar> (-1.0, 2.0));
     }
     else {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
+      A->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1),
                             Teuchos::tuple<Scalar> (-1.0, 2.0, -1.0));
     }
   }
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   H.setVerbLevel(Teuchos::VERB_HIGH);
 
   // Multigrid setup phase (using default parameters)
-  FactoryManager M0; // how to build aggregates and smoother of the first level                      
+  FactoryManager M0; // how to build aggregates and smoother of the first level
 
   FactoryManager M1; // first coarse level (Plain aggregation)
   M1.SetFactory("A", rcp(new RAPFactory()));
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Vector> X = VectorFactory::Build(map);
   RCP<Vector> B = VectorFactory::Build(map);
-  
+
   X->putScalar((Scalar) 0.0);
   B->setSeed(846930886); B->randomize();
 

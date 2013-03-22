@@ -48,116 +48,99 @@
 
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Map.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_StridedMap.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 
 #include "MueLu_TentativePFactory_decl.hpp"
-#include "MueLu_QR_Interface.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_NullspaceFactory.hpp" //FIXME
+#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> amalgFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact)
-    : aggregatesFact_(aggregatesFact), amalgFact_(amalgFact), nullspaceFact_(nullspaceFact), AFact_(AFact),
-      QR_(false),
-      domainGidOffset_(0) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
+    // validParamList->set< bool >("QR",                                         true, "Use QR factorization"); Not implemented for QR=false
 
+    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("Aggregates",         Teuchos::null, "Generating factory of the aggregates");
+    validParamList->set< RCP<const FactoryBase> >("Nullspace",          Teuchos::null, "Generating factory of the nullspace");
+    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
+    validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
+    return validParamList;
   }
- 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~TentativePFactory() {}
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-    fineLevel.DeclareInput("A", AFact_.get(), this);
-    fineLevel.DeclareInput("Aggregates", aggregatesFact_.get(), this);
-    fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
-    fineLevel.DeclareInput("UnAmalgamationInfo", amalgFact_.get(), this);
+    Input(fineLevel, "A");
+    Input(fineLevel, "Aggregates");
+    Input(fineLevel, "Nullspace");
+    Input(fineLevel, "UnAmalgamationInfo");
+    Input(fineLevel, "CoarseMap");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativeWithQR(bool value) { QR_ = value; }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativeWithQR() { return QR_; }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const { //TODO
+  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level & fineLevel, Level & coarseLevel) const {
 
-    FactoryMonitor m(*this, "Tentative prolongator", coarseLevel);
+    FactoryMonitor m(*this, "Build", coarseLevel);
 
-    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
-
-    RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
-    RCP<AmalgamationInfo> amalgInfo = fineLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", amalgFact_.get());
-    RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+    RCP<Matrix>           A          = Get< RCP<Matrix> >          (fineLevel, "A");
+    RCP<Aggregates>       aggregates = Get< RCP<Aggregates> >      (fineLevel, "Aggregates");
+    RCP<AmalgamationInfo> amalgInfo  = Get< RCP<AmalgamationInfo> >(fineLevel, "UnAmalgamationInfo");
+    RCP<MultiVector>      nullspace  = Get< RCP<MultiVector> >     (fineLevel, "Nullspace");
+    RCP<const Map>        coarseMap  = Get< RCP<const Map> >       (fineLevel, "CoarseMap");
 
     // Build
-    RCP<MultiVector> coarseNullspace; RCP<Operator> Ptentative; // output of MakeTentative()
+    RCP<MultiVector> coarseNullspace; RCP<Matrix> Ptentative; // output of MakeTentative()
 
-    MakeTentative(*A, *aggregates, *amalgInfo, *nullspace, coarseNullspace, Ptentative);
+    MakeTentative(*A, *aggregates, *amalgInfo, *nullspace, coarseMap, coarseNullspace, Ptentative);
 
     // Level Set
-    coarseLevel.Set("Nullspace", coarseNullspace, this);
-    coarseLevel.Set("P", Ptentative, this);
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::setDomainMapOffset(GlobalOrdinal offset) {
-    TEUCHOS_TEST_FOR_EXCEPTION(offset < 0, Exceptions::RuntimeError, "MueLu::TentativePFactory::SetDomainMapOffset: domain map offset for coarse gids of tentative prolongator must not be smaller than zero. Error.");
-    domainGidOffset_ = offset;
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GlobalOrdinal TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::getDomainMapOffset() const {
-    return domainGidOffset_;
+    Set(coarseLevel, "Nullspace", coarseNullspace);
+    Set(coarseLevel, "P",         Ptentative);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MakeTentative(
-                     const Operator& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace,
-                     RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const
+                     const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo,
+                     const MultiVector & fineNullspace, RCP<const Map> coarseMap,
+                     RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const
   {
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
 
     // number of aggregates
     GO numAggs = aggregates.GetNumAggregates();
 
-    // Compute array of aggregate sizes (in dofs).
-    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs,0);
-    AmalgamationFactory::ComputeUnamalgamatedAggregateSizes(aggregates, amalgInfo, aggSizes);
-
-    // find size of the largest aggregate.
-    LO maxAggSize=0;
-    for (typename Teuchos::ArrayRCP<LO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i) {
-      if (*i > maxAggSize) maxAggSize = *i;
-    }
-
     // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
-    // aggToRowMap[i][j] is the jth DOF in aggregate i
-    // TODO: aggToRowMap lives in the column map of A (with overlapping). Note: ComputeAggregateToRowMap
-    // returns the local DOFs, that are transformed to global Dofs using the col map later. Wouldn't it be
-    // smarter to compute the global dofs in ComputeAggregateToRowMap?
-    ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
-    AmalgamationFactory::UnamalgamateAggregates(aggregates, amalgInfo, aggSizes, aggToRowMap);
+    // aggStart is a pointer into aggToRowMap
+    // aggStart[i]..aggStart[i+1] are indices into aggToRowMap
+    // aggToRowMap[aggStart[i]]..aggToRowMap[aggStart[i+1]-1] are the DOFs in aggregate i
+    ArrayRCP<LO> aggStart;
+    ArrayRCP< GO > aggToRowMap;
+    AmalgamationFactory::UnamalgamateAggregates(aggregates, amalgInfo, aggStart, aggToRowMap);
+
+    // find size of the largest aggregate
+    LO maxAggSize=0;
+    for (GO i=0; i<numAggs; ++i) {
+      LO sizeOfThisAgg = aggStart[i+1] - aggStart[i];
+      if (sizeOfThisAgg > maxAggSize) maxAggSize = sizeOfThisAgg;
+    }
 
     // dimension of fine level nullspace
     const size_t NSDim = fineNullspace.getNumVectors();
@@ -165,41 +148,7 @@ namespace MueLu {
     // index base for coarse Dof map (usually 0)
     GO indexBase=fineA.getRowMap()->getIndexBase();
 
-    // build coarse level maps (= domain map of transfer operator)
-    RCP<const Map > coarseMap = Teuchos::null;
-    //if (domainGidOffset_ == 0)
-
-    // in general we cannot use the striding information from range map of A since the number of null spaces might have changed from fine level to intermediate levels (e.g. for structural problems from 3 to 6)
-
-    // check for consistency of striding information with NSDim and nCoarseDofs
-    if( stridedBlockId_== -1 ) {
-      // this means we have no real strided map but only a block map with constant blockSize "NSDim"
-      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() > 1, Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative(): stridingInfo_.size() but must be one");
-      stridingInfo_.clear();
-      stridingInfo_.push_back(NSDim);
-      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() != 1, Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative(): stridingInfo_.size() but must be one");
-    } else {
-      // stridedBlockId_ > -1, set by user
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId_ > Teuchos::as<LO>(stridingInfo_.size() - 1) , Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative(): it is stridingInfo_.size() <= stridedBlockId_. error.");
-      size_t stridedBlockSize = stridingInfo_[stridedBlockId_];
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != NSDim , Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative(): dimension of strided block != NSDim. error.");      
-    }
-
-    // number of coarse level dofs (fixed by number of aggregats and nullspace dimension)
-    GO nCoarseDofs = numAggs * getFixedBlockSize(); // TODO FIXME this is a hack, maybe it's better to have nCoarseDofs based on the local number of dofs for current strided block?
-
-    // default: no offset for domain gids.
-    coarseMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(fineA.getRowMap()->lib(),
-						  Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-						  nCoarseDofs,
-						  indexBase,
-						  stridingInfo_,
-						  fineA.getRowMap()->getComm(),
-						  stridedBlockId_,
-						  domainGidOffset_
-						  );
-
-    const RCP<const Map> nonUniqueMap = AmalgamationFactory::ComputeUnamalgamatedImportDofMap(aggregates, amalgInfo, aggSizes);
+    const RCP<const Map> nonUniqueMap = AmalgamationFactory::ComputeUnamalgamatedImportDofMap(aggregates, amalgInfo);
     const RCP<const Map> uniqueMap    = fineA.getDomainMap();
     RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
     RCP<MultiVector> fineNullspaceWithOverlap = MultiVectorFactory::Build(nonUniqueMap,NSDim);
@@ -222,8 +171,9 @@ namespace MueLu {
     //This requires moving some parts of some local Q's to other processors
     //because aggregates can span processors.
     RCP<const Map > rowMapForPtent = fineA.getRowMap();
+    const Map& rowMapForPtentRef = *rowMapForPtent;
 
-    Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::StaticProfile));
+    Ptentative = rcp(new CrsMatrixWrap(rowMapForPtent, NSDim, Xpetra::StaticProfile));
 
     // prerequisites: rowMapForPtent, NSDim
 
@@ -232,9 +182,9 @@ namespace MueLu {
     RCP<const Map> colMap = fineA.getColMap();
     Array<GO> ghostGIDs;
     for (LO j=0; j<numAggs; ++j) {
-      for (LO k=0; k<aggSizes[j]; ++k) {
-        if (rowMapForPtent->isNodeGlobalElement(aggToRowMap[j][k]) == false) {
-          ghostGIDs.push_back(aggToRowMap[j][k]);
+      for (LO k=aggStart[j]; k<aggStart[j+1]; ++k) {
+        if (rowMapForPtentRef.isNodeGlobalElement(aggToRowMap[k]) == false) {
+          ghostGIDs.push_back(aggToRowMap[k]);
         }
       }
     }
@@ -267,12 +217,8 @@ namespace MueLu {
     //importer to handle moving Q
     importer = ImportFactory::Build(ghostQMap, fineA.getRowMap());
 
-    QR_Interface<SC,LO> qrWidget(NSDim);
-
-    // reserve enough memory for QR decomposition
-    size_t localQRsize = maxAggSize*NSDim;
-    if(Teuchos::as<size_t>(maxAggSize) < NSDim) localQRsize = NSDim * NSDim; // make sure, that we always can store the coarse nsp matrix (R in QR decomp.) even if we have only too small aggregates for GEQRF routine.
-    ArrayRCP<SC> localQR(localQRsize); // The submatrix of the nullspace to be orthogonalized.
+    // Dense QR solver
+    Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
 
     //Allocate temporary storage for the tentative prolongator.
     GO nFineDofs = nonUniqueMap->getNodeNumElements();
@@ -286,20 +232,23 @@ namespace MueLu {
     //Loop over all aggregates and calculate local QR decompositions.
     //*****************************************************************
     GO qctr=0; //for indexing into Ptent data vectors
-    for (LO agg=0; agg<numAggs; ++agg)
+    const Map& nonUniqueMapRef = *nonUniqueMap;
+    const Map& coarseMapRef = *coarseMap;
+    for (GO agg=0; agg<numAggs; ++agg)
     {
-      LO myAggSize = aggSizes[agg];
+      LO myAggSize = aggStart[agg+1]-aggStart[agg];
       // For each aggregate, extract the corresponding piece of the nullspace and put it in the flat array,
       // "localQR" (in column major format) for the QR routine.
+      Teuchos::SerialDenseMatrix<LO,SC> localQR(myAggSize, NSDim);
       for (size_t j=0; j<NSDim; ++j) {
         bool bIsZeroNSColumn = true;
-        for (LO k=0; k<myAggSize; ++k) {
-          // aggToRowMap[i][k] is the kth DOF in the ith aggregate
+        for (LO k=0; k<myAggSize; ++k)
+        {
+          // aggToRowMap[aggPtr[i]+k] is the kth DOF in the ith aggregate
           // fineNS[j][n] is the nth entry in the jth NS vector
           try{
-            //SC nsVal = fineNS[j][ colMap->getLocalElement(aggToRowMap[agg][k]) ]; // extract information from fine level NS
-            SC nsVal = fineNS[j][ nonUniqueMap->getLocalElement(aggToRowMap[agg][k]) ]; // extract information from fine level NS // TODO check me -> fineNS is built with nonUniqueMap
-            localQR[j* myAggSize + k] = nsVal;
+            SC nsVal = fineNS[j][ nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) ]; // extract information from fine level NS
+            localQR(k,j) = nsVal;
             if (nsVal != 0.0) bIsZeroNSColumn = false;
           }
           catch(...) {
@@ -310,10 +259,11 @@ namespace MueLu {
             std::cout << "agg DOF=" << k << std::endl;
             std::cout << "NS vector j=" << j << std::endl;
             std::cout << "j*myAggSize + k = " << j*myAggSize + k << std::endl;
-            std::cout << "aggToRowMap["<<agg<<"][" << k << "] = " << aggToRowMap[agg][k] << std::endl;
-            std::cout << "id aggToRowMap[agg][k]=" << aggToRowMap[agg][k] << " is global element in nonUniqueMap = " << nonUniqueMap->isNodeGlobalElement(aggToRowMap[agg][k]) << std::endl;
-            std::cout << "colMap local id aggToRowMap[agg][k]=" << nonUniqueMap->getLocalElement(aggToRowMap[agg][k]) << std::endl;
-            std::cout << "fineNS...=" << fineNS[j][ nonUniqueMap->getLocalElement(aggToRowMap[agg][k]) ] << std::endl;
+            std::cout << "aggToRowMap["<<agg<<"][" << k << "] = " << aggToRowMap[aggStart[agg]+k] << std::endl;
+            std::cout << "id aggToRowMap[agg][k]=" << aggToRowMap[aggStart[agg]+k] << " is global element in nonUniqueMap = " <<
+nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
+            std::cout << "colMap local id aggToRowMap[agg][k]=" << nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
+            std::cout << "fineNS...=" << fineNS[j][ nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) ] << std::endl;
             std::cerr << "caught an error!" << std::endl;
           }
         } //for (LO k=0 ...
@@ -327,7 +277,7 @@ namespace MueLu {
       for (size_t i=0; i<myAggSize; i++) {
         // loop over cols
         for (size_t j=0; j<NSDim; j++) {
-          std::cout << localQR[ myAggSize*j + i]; std::cout << "\t";
+          std::cout << localQR(i,j); std::cout << "\t";
         }
         std::cout << std::endl;
       }
@@ -337,8 +287,25 @@ namespace MueLu {
 
       if(myAggSize >= Teuchos::as<LocalOrdinal>(NSDim)) {
         // calculate QR decomposition (standard)
-         // R is stored in localQR (size: myAggSize x NSDim)
-         qrWidget.Compute(myAggSize, localQR);
+        // R is stored in localQR (size: myAggSize x NSDim)
+
+        // Householder multiplier
+        SC tau = localQR(0,0);
+
+        if (NSDim == 1) {
+          // Only one nullspace vector, so normalize by hand
+          Magnitude dtemp=0;
+          for (size_t k=0; k<static_cast<size_t>(myAggSize); ++k) {
+	    Magnitude tmag = Teuchos::ScalarTraits<SC>::magnitude(localQR(k,0));
+            dtemp += tmag*tmag;
+          }
+          dtemp = Teuchos::ScalarTraits<Magnitude>::squareroot(dtemp);
+          tau = localQR(0,0);
+          localQR(0,0) = dtemp;
+        } else {
+          qrSolver.setMatrix( Teuchos::rcp(&localQR, false) );
+          qrSolver.factor();
+        }
 
          // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
          // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
@@ -346,8 +313,8 @@ namespace MueLu {
          for (size_t j=0; j<NSDim; ++j) {
            for (size_t k=0; k<=j; ++k) {
              try {
-               if (coarseMap->isNodeLocalElement(offset+k)) {
-                   coarseNS[j][offset+k] = localQR[ myAggSize*j + k ]; //TODO is offset+k the correct local ID?!
+               if (coarseMapRef.isNodeLocalElement(offset+k)) {
+                 coarseNS[j][offset+k] = localQR(k, j); //TODO is offset+k the correct local ID?!
                }
              }
              catch(...) {
@@ -358,32 +325,33 @@ namespace MueLu {
 
          // Calculate Q, the tentative prolongator.
          // The Lapack GEQRF call only works for myAggsize >= NSDim
-         qrWidget.ExtractQ(myAggSize, localQR);
+
+         if (NSDim == 1) {
+           // Only one nullspace vector, so calculate Q by hand
+           Magnitude dtemp = Teuchos::ScalarTraits<SC>::magnitude(localQR(0,0));
+           localQR(0,0) = tau;
+           dtemp = 1 / dtemp;
+           for (LocalOrdinal i=0; i<myAggSize; ++i) {
+             localQR(i,0) *= dtemp ;
+           }
+         } else {
+           qrSolver.formQ();
+           Teuchos::RCP<Teuchos::SerialDenseMatrix<LO,SC> > qFactor = qrSolver.getQ();
+           for (size_t j=0; j<NSDim; j++) {
+             for (size_t i=0; i<static_cast<size_t>(myAggSize); i++) {
+               localQR(i,j) = (*qFactor)(i,j);
+             }
+           }
+         }
 
          // end default case (myAggSize >= NSDim)
-      } else {  // sepcial handling for myAggSize < NSDim (i.e. 1pt nodes)
+      } else {  // special handling for myAggSize < NSDim (i.e. 1pt nodes)
         // construct R by hand, i.e. keep first myAggSize rows untouched
         //GetOStream(Warnings0,0) << "TentativePFactory (WARNING): aggregate with " << myAggSize << " DOFs and nullspace dim " << NSDim << ". special handling of QR decomposition." << std::endl;
 
-        // copy initial localQR values in temporary variable
-        ArrayRCP<SC> tmplocalQR(localQRsize);
-        for (size_t i=0; i<myAggSize; i++) {
-          // loop over cols
-          for (size_t j=0; j<NSDim; j++) {
-            tmplocalQR[ myAggSize*j + i] = localQR[myAggSize*j + i];
-          }
-        }
-
-        // copy temporary variables back to correct positions (column size is now NSDim instead of myAggSize
-        for (size_t j=0; j<NSDim; j++) {  // loop over cols
-          for (size_t i=0; i<myAggSize; i++) {  // loop over rows
-            localQR[ NSDim*j + i] = tmplocalQR[myAggSize*j + i];
-          }
-          // fill NSDim-myAggSize rows with default null space
-          for(size_t i=myAggSize; i<NSDim; i++) { // loop over rows
-             if(i==j) localQR[NSDim*j+i] = 1.0;
-             else localQR[NSDim*j+i] = 0.0;
-          }
+        localQR.reshape(NSDim,NSDim);
+        for (size_t i=myAggSize; i<NSDim; i++) {
+          localQR(i,i) = Teuchos::ScalarTraits<SC>::one();
         }
 
         // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
@@ -393,8 +361,8 @@ namespace MueLu {
         for (size_t j=0; j<NSDim; ++j) {
           for (size_t k=0; k<=j; ++k) {
             try {
-              if (coarseMap->isNodeLocalElement(offset+k)) {
-                  coarseNS[j][offset+k] = localQR[ NSDim*j + k ]; // agg has only one node
+              if (coarseMapRef.isNodeLocalElement(offset+k)) {
+                coarseNS[j][offset+k] = localQR(k,j); // agg has only one node
               }
             }
             catch(...) {
@@ -402,21 +370,6 @@ namespace MueLu {
             }
           }
         }
-
-#if 0
-      std::cout << "R" << std::endl;
-      // loop over rows
-      for (size_t i=0; i<NSDim; i++) {
-        // loop over cols
-        for (size_t j=0; j<NSDim; j++) {
-          if(j>=i) { std::cout << localQR[ NSDim*j + i]; std::cout << "\t"; }
-          else
-            std::cout << "00\t";
-          //std::cout << localQR[ NSDim*j + i]; std::cout << "\t";
-        }
-        std::cout << std::endl;
-      }
-#endif
 
         // Calculate Q, the tentative prolongator.
         // The Lapack GEQRF call only works for myAggsize >= NSDim
@@ -426,23 +379,11 @@ namespace MueLu {
         for (size_t i=0; i<Teuchos::as<size_t>(myAggSize); i++) {
           // loop over cols
           for (size_t j=0; j<NSDim; j++) {
-            if (j==i) localQR[ myAggSize*j + i] = 1.0;
-            else localQR[ myAggSize*j + i] = 0.0;
+            if (j==i) localQR(i,j) = Teuchos::ScalarTraits<SC>::one();
+            else localQR(i,j) = Teuchos::ScalarTraits<SC>::zero();
           }
         }
       } // end else (special handling for 1pt aggregates)
-
-#if 0
-      std::cout << "Q" << std::endl;
-      // loop over rows
-      for (size_t i=0; i<myAggSize; i++) {
-        // loop over cols
-        for (size_t j=0; j<NSDim; j++) {
-          std::cout << localQR[ myAggSize*j + i]; std::cout << "\t";
-        }
-        std::cout << std::endl << std::endl;
-      }
-#endif
 
       //Process each row in the local Q factor.  If the row is local to the current processor
       //according to the rowmap, insert it into Ptentative.  Otherwise, save it in ghostQ
@@ -452,23 +393,23 @@ namespace MueLu {
         //This loop checks whether row associated with current DOF is local, according to rowMapForPtent.
         //If it is, the row is inserted.  If not, the row number, columns, and values are saved in
         //MultiVectors that will be sent to other processors.
-        GO globalRow = aggToRowMap[agg][j];
+        GO globalRow = aggToRowMap[aggStart[agg]+j];
         //TODO is the use of Xpetra::global_size_t below correct?
-        if( rowMapForPtent->isNodeGlobalElement(globalRow) == false )
+        if( rowMapForPtentRef.isNodeGlobalElement(globalRow) == false )
         {
           ghostQrows[qctr] = globalRow;
           for (size_t k=0; k<NSDim; ++k) {
-            ghostQcols[k][qctr] = coarseMap->getGlobalElement(agg*NSDim+k);
-            ghostQvals[k][qctr] = localQR[k*myAggSize+j];
+            ghostQcols[k][qctr] = coarseMapRef.getGlobalElement(agg*NSDim+k);
+            ghostQvals[k][qctr] = localQR(j,k);
           }
           ++qctr;
         } else {
           LO nnz=0;
           for (size_t k=0; k<NSDim; ++k) {
             try{
-              if (localQR[k*myAggSize+j] != 0.) {
-                colPtr[nnz] = coarseMap->getGlobalElement(agg * NSDim + k);
-                valPtr[nnz] = localQR[k*myAggSize+j];
+              if (localQR(j,k) != Teuchos::ScalarTraits<SC>::zero()) {
+                colPtr[nnz] = coarseMapRef.getGlobalElement(agg * NSDim + k);
+                valPtr[nnz] = localQR(j,k);
                 ++nnz;
               }
             }
@@ -549,9 +490,9 @@ namespace MueLu {
     }
 
     Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
-    
+
     // if available, use striding information of fine level matrix A for range map and coarseMap as domain map
-    // otherwise use plain range map of Ptent = plain range map of A for range map and coarseMap as domain map. 
+    // otherwise use plain range map of Ptent = plain range map of A for range map and coarseMap as domain map.
     // Note: the latter is not really safe, since there is no striding information for the range map. This is not
     // really a problem, since striding information is always available on the intermedium levels and the coarsest levels.
     if(fineA.IsView("stridedMaps") == true) {

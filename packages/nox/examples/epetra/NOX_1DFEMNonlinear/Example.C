@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
   // The number of unknowns must be at least equal to the 
   // number of processors.
   if (NumGlobalElements < NumProc) {
-    cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << endl;
+    std::cout << "numGlobalBlocks = " << NumGlobalElements 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
     exit(1);
   }
 
@@ -259,11 +259,11 @@ int main(int argc, char *argv[])
   input_file_name << "input_" << MyPID << ".xml";
 
   // Write the parameter list to a file
-  cout << "Writing parameter list to "<< input_file_name.str() << endl;
+  std::cout << "Writing parameter list to "<< input_file_name.str() << std::endl;
   Teuchos::writeParameterListToXmlFile(*nlParamsPtr, input_file_name.str());
 
   // Read in the parameter list from a file
-  cout << "Reading parameter list from " << input_file_name.str() << endl;
+  std::cout << "Reading parameter list from " << input_file_name.str() << std::endl;
   Teuchos::RCP<Teuchos::ParameterList> finalParamsPtr = 
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::updateParametersFromXmlFile(input_file_name.str(), 
@@ -278,10 +278,10 @@ int main(int argc, char *argv[])
   NOX::StatusTest::StatusType status = solver->solve();
 
   if (status == NOX::StatusTest::Converged)
-    utils.out() << "Test Passed!" << endl;
+    utils.out() << "Test Passed!" << std::endl;
   else {
     if (MyPID==0) 
-      utils.out() << "Nonlinear solver failed to converge!" << endl;
+      utils.out() << "Nonlinear solver failed to converge!" << std::endl;
   }
 
   // Get the Epetra_Vector with the final solution from the solver
@@ -292,10 +292,10 @@ int main(int argc, char *argv[])
 
   // Output the parameter list
   if (utils.isPrintType(NOX::Utils::Parameters)) {
-    utils.out() << endl << "Final Parameters" << endl
-	 << "****************" << endl;
+    utils.out() << std::endl << "Final Parameters" << std::endl
+	 << "****************" << std::endl;
     solver->getList().print(utils.out());
-    utils.out() << endl;
+    utils.out() << std::endl;
   }
 
   // Print solution

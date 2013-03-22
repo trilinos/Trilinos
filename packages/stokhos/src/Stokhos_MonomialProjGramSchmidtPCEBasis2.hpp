@@ -100,13 +100,17 @@ namespace Stokhos {
     /*!
      * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
      * \f$C_{ijk} = \langle\Psi_i\Psi_j\Psi_k\rangle\f$ where \f$\Psi_l\f$
-     * represents basis polynomial \f$l\f$ and \f$i,j=0,\dots,P\f$ where
-     * \f$P\f$ is size()-1 and \f$k=0,\dots,p\f$ where \f$p\f$
-     * is the supplied \c order.
+     * represents basis polynomial \f$l\f$ and \f$i,j,k=0,\dots,P\f$ where
+     * \f$P\f$ is size()-1.
      */
     virtual 
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
-    computeTripleProductTensor(ordinal_type order) const;
+    computeTripleProductTensor() const;
+
+    //! Compute linear triple product tensor where k = 0,1,..,d
+    virtual 
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    computeLinearTripleProductTensor() const;
 
     //! Evaluate basis polynomial \c i at zero
     virtual value_type evaluateZero(ordinal_type i) const;
@@ -116,8 +120,9 @@ namespace Stokhos {
      * Size of returned array is given by size(), and coefficients are
      * ordered from order 0 up to size size()-1.
      */
-    virtual void evaluateBases(const Teuchos::Array<value_type>& point,
-			       Teuchos::Array<value_type>& basis_vals) const;
+    virtual void evaluateBases(
+      const Teuchos::ArrayView<const value_type>& point,
+      Teuchos::Array<value_type>& basis_vals) const;
 
     //! Return string name of basis
     virtual const std::string& getName() const;
@@ -162,7 +167,7 @@ namespace Stokhos {
       value_type threshold,
       const Teuchos::Array< Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
       const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad,
-      Teuchos::Array< Teuchos::Array<ordinal_type> >& terms_,
+      Teuchos::Array< Stokhos::MultiIndex<ordinal_type> >& terms_,
       Teuchos::Array<ordinal_type>& num_terms_,
       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& Qp_, 
       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& A_,
@@ -204,7 +209,7 @@ namespace Stokhos {
     ordinal_type sz;
 
     //! 2-D array of basis terms
-    Teuchos::Array< Teuchos::Array<ordinal_type> > terms;
+    Teuchos::Array< Stokhos::MultiIndex<ordinal_type> > terms;
 
     //! Number of terms up to each order
     Teuchos::Array<ordinal_type> num_terms;

@@ -1,5 +1,5 @@
 % disables interpreting underscore as LaTeX
-set(0,'defaulttextinterpreter','none') 
+set(0,'defaulttextinterpreter','none')
 % load data, N-by-2 cell array, with data in 1st col, labels in 2nd col
 timings
 [T,P] = sort(cell2mat(data(:,2)),'descend');

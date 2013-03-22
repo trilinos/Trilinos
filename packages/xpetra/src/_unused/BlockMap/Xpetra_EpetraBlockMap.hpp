@@ -86,7 +86,7 @@ class EpetraBlockMap : public Xpetra::BlockMap<int,int> {
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                  const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Epetra_BlockMap(numGlobalBlocks, blockSize, indexBase, *Teuchos2Epetra_Comm(comm)))) {  }
 
-  //TODO 
+  //TODO
   //CATCH_EPETRA_EXCEPTION_AND_THROW_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos2Epetra_Comm(comm))))););
 
   /*! \brief EpetraBlockMap constructor specifying num global and local blocks, and constant blockSize.
@@ -107,7 +107,7 @@ class EpetraBlockMap : public Xpetra::BlockMap<int,int> {
 //                  int indexBase,
 //                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
 //                  const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
-//      
+//
 //     map_ = rcp(new Epetra_BlockMap(numGlobalBlocks, myGlobalBlockIDs, myFirstGlobalPointInBlocks, myBlockSizes, indexBase, *Teuchos2Epetra_Comm(comm)));
 //   }
 
@@ -121,7 +121,7 @@ class EpetraBlockMap : public Xpetra::BlockMap<int,int> {
 //                  const Teuchos::ArrayView<const int>& myGlobalBlockIDs,
 //                  const Teuchos::ArrayView<const int>& myBlockSizes,
 //                  const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
-//     
+//
 //     map_ = rcp(new Epetra_BlockMap(pointMap, myGlobalBlockIDs, myBlockSizes));
 //   }
 
@@ -201,7 +201,7 @@ private:
 // //-----------------------------------------------------------------
 // template<class int,class int,class Node>
 // Teuchos::RCP<const Xpetra::Map<int,int> >
-// convertEpetraBlockMapToEpetraPointMap(const Teuchos::RCP<const Xpetra::EpetraBlockMap<int,int> >& blockMap) { 
+// convertEpetraBlockMapToEpetraPointMap(const Teuchos::RCP<const Xpetra::EpetraBlockMap<int,int> >& blockMap) {
 //   return rcp(new EpetraMap(convertEpetraBlockMapToEpetraPointMap(blockMap.getEpetra_BlockMap())));
 // }
 

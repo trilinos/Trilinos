@@ -39,6 +39,7 @@
 // ************************************************************************
 //@HEADER
 
+#include <limits.h>
 
 // Epetra_Comm Test routine
 #include "../epetra_test_err.h"
@@ -246,6 +247,15 @@ int checkCommMethods(Epetra_Comm& petracomm, bool verbose, bool verbose1, int& N
   for (i=0; i<count; i++)
     dBVals[i] = i; // if these values are changed, the values in dVals must also be changed
 
+  long long* llVals = new long long[count];
+  if (rank == 0) {
+     for (i=0; i<count; i++)
+       llVals[i] = (long long)i+INT_MAX; // if these values are changed, the values in llBVals must also be changed
+  }    
+  long long* llBVals = new long long[count]; // Values to be checked against the values broadcast to the non root processors
+  for (i=0; i<count; i++)
+    llBVals[i] = (long long)i+INT_MAX; // if these values are changed, the values in dVals must also be changed
+
   const char *cConst = "Heidi, do you want a cookie?";
   int cCount = strlen(cConst)+1;
   char* cVals = new char[cCount];
@@ -369,6 +379,27 @@ int checkCommMethods(Epetra_Comm& petracomm, bool verbose, bool verbose1, int& N
   delete [] dBVals;
   petracomm.Barrier();
   if (verbose) cout << endl << "Broadcast (type double) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                                    //only output on one node
+  petracomm.Barrier();
+
+  EPETRA_TEST_ERR(petracomm.Broadcast(llVals,count,0),ierr);
+  if (verbose1) {
+    if (rank == 0)
+      cout << "The values on the root processor are: ";
+    else
+      cout << "The values on processor " << rank << " are: ";
+    for (i=0; i<count; i++) 
+      cout << llVals[i] << " ";
+    cout << endl;
+  }
+  forierr = 0;
+  for (i=0; i<count; i++)
+    forierr += !(llVals[i] == llBVals[i]); // otherwise Broadcast didn't occur properly
+  EPETRA_TEST_ERR(forierr,ierr);
+  delete [] llVals;
+  delete [] llBVals;
+  petracomm.Barrier();
+  if (verbose) cout << endl << "Broadcast (type long long) test passed!" << endl << endl;// If test gets to here the test passed, 
 	                                                                                    //only output on one node
   petracomm.Barrier();
 

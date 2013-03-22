@@ -44,6 +44,7 @@
 #ifndef EPETRA_FEVECTOR_H
 #define EPETRA_FEVECTOR_H
 
+#include <Epetra_ConfigDefs.h>
 #include <Epetra_CombineMode.h>
 #include <Epetra_Map.h>
 #include <Epetra_MultiVector.h>
@@ -51,7 +52,11 @@
 #include <vector>
 
 class Epetra_IntSerialDenseVector;
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 class Epetra_LongLongSerialDenseVector;
+#endif
+
 class Epetra_SerialDenseVector;
 
 
@@ -167,9 +172,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
    int SumIntoGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
          const Epetra_SerialDenseVector& values,
                            int vectorIndex=0);
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
    int SumIntoGlobalValues(const Epetra_LongLongSerialDenseVector& GIDs,
          const Epetra_SerialDenseVector& values,
                            int vectorIndex=0);
+#endif
 
    /** Copy values into the vector overwriting any values that already exist
         for the specified indices.
@@ -195,9 +202,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
    int ReplaceGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
          const Epetra_SerialDenseVector& values,
                            int vectorIndex=0);
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
    int ReplaceGlobalValues(const Epetra_LongLongSerialDenseVector& GIDs,
          const Epetra_SerialDenseVector& values,
                            int vectorIndex=0);
+#endif
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
    int SumIntoGlobalValues(int numIDs,
                            const int* GIDs,
@@ -296,8 +305,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   long long myFirstID_;
   int myNumIDs_;
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   std::vector<int> nonlocalIDs_int_;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   std::vector<long long> nonlocalIDs_LL_;
+#endif
 
   template<typename int_type> std::vector<int_type>& nonlocalIDs();
 
@@ -332,15 +345,19 @@ private:
   int GlobalAssemble(Epetra_CombineMode mode, bool reuse_map_and_exporter);
 };
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 template<> inline std::vector<int>& Epetra_FEVector::nonlocalIDs<int>()
 {
    return nonlocalIDs_int_;
 }
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 template<> inline std::vector<long long>& Epetra_FEVector::nonlocalIDs<long long>()
 {
   return nonlocalIDs_LL_;
 }
+#endif
 
 #endif
 

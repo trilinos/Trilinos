@@ -69,8 +69,7 @@
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Thyra_EpetraModelEvaluator.hpp"
-#include "EpetraModelEval2DSim.H"
+#include "ModelEvaluator2DSim.hpp"
 
 using namespace std;
 
@@ -96,9 +95,9 @@ int main(int argc, char *argv[])
     return parse_return;
 
   if (verbose) 
-    cout << "Verbosity Activated" << endl;
+    std::cout << "Verbosity Activated" << std::endl;
   else
-    cout << "Verbosity Disabled" << endl;
+    std::cout << "Verbosity Disabled" << std::endl;
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -115,15 +114,15 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  // Create the EpetraExt model evaluator object
+  // Create the model evaluator object
   double d = 10.0;
   double p0 = 2.0;
   double p1 = 0.0;
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<EpetraExt::ModelEvaluator> epetraModel = 
-    Teuchos::rcp(new EpetraModelEval2DSim(Teuchos::rcp(&Comm,false),
-				 d,p0,p1,x00,x01));
+  Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel = 
+    Teuchos::rcp(new ModelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),
+						 d,p0,p1,x00,x01));
 
   // Create the linear solver type with Stratimikos
   //Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
@@ -141,13 +140,7 @@ int main(int argc, char *argv[])
   Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
     lowsFactory = builder.createLinearSolveStrategy("");
 
-  // Create the Thyra model evalutor (form the epetraext model and
-  // linear solver)
-  Teuchos::RCP< ::Thyra::EpetraModelEvaluator>
-    epetraThyraModel = rcp(new ::Thyra::EpetraModelEvaluator());
-  epetraThyraModel->initialize(epetraModel,lowsFactory);
-  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel = 
-    epetraThyraModel;
+  thyraModel->set_W_factory(lowsFactory);
 
   // Create the initial guess
   Teuchos::RCP< ::Thyra::VectorBase<double> >
@@ -158,7 +151,7 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel));
 
 //   nox_group->computeF();
-//   cout << "ComputedF!" << endl;
+//   std::cout << "ComputedF!" << std::endl;
 //   const NOX::Thyra::Vector& t_vec = 
 //     dynamic_cast<const NOX::Thyra::Vector&>(nox_group->getF());
   

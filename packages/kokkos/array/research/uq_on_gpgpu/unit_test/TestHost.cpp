@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,32 +35,25 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
 #include <iostream>
 
+#include <KokkosArray_Host.hpp>
+
 #include <KokkosArray_ProductTensor.hpp>
+#include <KokkosArray_LegendrePolynomial.hpp>
 #include <KokkosArray_SymmetricDiagonalSpec.hpp>
+#include <KokkosArray_StochasticProductTensor.hpp>
 #include <KokkosArray_BlockCrsMatrix.hpp>
 #include <KokkosArray_CrsMatrix.hpp>
-#include <KokkosArray_LegendrePolynomial.hpp>
-#include <KokkosArray_StochasticProductTensor.hpp>
 
 
 //
-
-#include <KokkosArray_Host.hpp>
-
-#include <KokkosArray_Host_macros.hpp>
-#include <impl/KokkosArray_ProductTensor_macros.hpp>
-#include <impl/KokkosArray_SymmetricDiagonalSpec_macros.hpp>
-#include <impl/KokkosArray_LegendrePolynomial_macros.hpp>
-#include <impl/KokkosArray_StochasticProductTensor_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
 
 #include <Host/KokkosArray_Host_ProductTensor.hpp>
 #include <Host/KokkosArray_Host_StochasticProductTensor.hpp>
@@ -74,33 +67,83 @@
 #include <TestTensorCrsMatrix.hpp>
 #include <TestStochastic.hpp>
 
-int mainHost()
-{
-  const size_t node_count = KokkosArray::Host::detect_node_count();
-  const size_t node_thread_count = KokkosArray::Host::detect_node_core_count() / 2 ;
+namespace unit_test {
 
-  KokkosArray::Host::initialize( node_count , node_thread_count );
+template<typename Scalar>
+struct performance_test_driver<Scalar,KokkosArray::Host> {
+
+  static void run(bool test_flat, bool test_orig, bool test_block, bool check) {
+    typedef KokkosArray::Host Device;
+
+    int nGrid;
+    int nIter; 
+    bool print;
+    
+    // All methods compared against flat-original
+    if (test_flat) {
+      nGrid = 5 ;
+      nIter = 1 ; 
+      print = false ;
+      performance_test_driver_all<Scalar,Device>( 
+	3 , 1 ,  9 , nGrid , nIter , print , test_block , check );
+      performance_test_driver_all<Scalar,Device>( 
+	5 , 1 ,  5 , nGrid , nIter , print , test_block , check );
+    }
+    
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
+    // Just polynomial methods compared against original
+    if (test_orig) {
+      nGrid = 64 ;
+      nIter = 1 ; 
+      print = false ;
+      performance_test_driver_poly<Scalar,Device>( 
+	3 , 1 , 12 , nGrid , nIter , print , test_block , check );
+      performance_test_driver_poly<Scalar,Device>( 
+	5 , 1 ,  6 , nGrid , nIter , print , test_block , check );
+    }
+#endif
+    
+    //------------------------------
+    
+    /*
+      std::cout << std::endl
+      << "\"CRS flat-matrix ~27 nonzeros/row (CUDA uses cusparse)\""
+      << std::endl
+      << "\"nGrid\" , "
+      << "\"VectorSize\" , "
+      << "\"MXV-Time\""
+      << std::endl ;
+      
+      for ( int n_grid = 10 ; n_grid <= 100 ; n_grid += 5 ) {
+      
+      const std::pair<size_t,double> perf_flat =
+      test_flat_matrix<double,Device>( n_grid , nIter , print );
+      
+      std::cout << n_grid << " , "
+      << perf_flat.first << " , "
+      << perf_flat.second
+      << std::endl ;
+      }
+    */
+
+    //------------------------------
+  }
+
+};
+
+}
+
+template <typename Scalar>
+int mainHost(bool test_flat, bool test_orig, bool test_block, bool check)
+{
+  const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
+  const size_t gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity() / 2 ;
+
+  KokkosArray::Host::initialize( gang_count , gang_worker_count );
 
 //  unit_test::test_dense<KokkosArray::Host>();
 //  unit_test::test_diagonal<KokkosArray::Host>();
 //  unit_test::test_other<KokkosArray::Host>();
-
-  unit_test::test_integration<1>();
-  unit_test::test_integration<2>();
-  unit_test::test_integration<3>();
-  unit_test::test_integration<4>();
-  unit_test::test_integration<5>();
-  unit_test::test_integration<6>();
-  unit_test::test_integration<7>();
-  unit_test::test_integration<8>();
-  unit_test::test_integration<9>();
-  unit_test::test_integration<10>();
-  unit_test::test_inner_product_legengre_polynomial<10,KokkosArray::Host>();
-  unit_test::test_triple_product_legendre_polynomial<4,KokkosArray::Host>();
-
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 2 , 1 ) );
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 3 , 2 ) );
-  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 5 , 1 ) );
 
   unit_test::test_block_crs_matrix<KokkosArray::Host>( 1 , 2 );
   unit_test::test_block_crs_matrix<KokkosArray::Host>( 1 , 5 );
@@ -122,13 +165,14 @@ int mainHost()
   unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 100 , 10 );
 
   std::cout << std::endl << "\"Host Performance with "
-            << node_count * node_thread_count << " threads\"" << std::endl ;
-  unit_test::performance_test_driver<KokkosArray::Host>();
+            << gang_count * gang_worker_count << " threads\"" << std::endl ;
+  unit_test::performance_test_driver<Scalar,KokkosArray::Host>::run(
+    test_flat, test_orig, test_block, check);
 
   KokkosArray::Host::finalize();
 
   return 0 ;
 }
 
-
-
+template int mainHost<float>(bool, bool, bool, bool);
+template int mainHost<double>(bool, bool, bool, bool);

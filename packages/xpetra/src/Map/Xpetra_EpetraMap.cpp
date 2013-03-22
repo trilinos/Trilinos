@@ -63,10 +63,10 @@ namespace Xpetra {
     // In addition, for the test TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument), only one node throw an exception and there is a dead lock.
     std::string errPrefix;
     errPrefix = Teuchos::typeName(*this) + "::constructor(numGlobal,indexBase,comm,lOrG): ";
-     
+
     if (lg == GloballyDistributed) {
       const int myImageID = comm->getRank();
-       
+
       // check that numGlobalElements,indexBase is equivalent across images
       global_size_t rootNGE = numGlobalElements;
       int rootIB  = indexBase;
@@ -102,7 +102,7 @@ namespace Xpetra {
         }
       }
     }
-     
+
     // Note: validity of numGlobalElements checked by Epetra.
 
     IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(static_cast<int>(numGlobalElements), 1, indexBase, *toEpetra(comm))))));
@@ -122,10 +122,10 @@ namespace Xpetra {
 
     std::string errPrefix;
     errPrefix = Teuchos::typeName(*this) + "::constructor(numGlobal,numLocal,indexBase,platform): ";
-     
+
     // get a internodal communicator from the Platform
     const int myImageID = comm->getRank();
-     
+
     global_size_t global_sum;
     { // begin scoping block
       // for communicating failures
@@ -198,7 +198,7 @@ namespace Xpetra {
                              errPrefix << "logic error. Please contact the Tpetra team.");
         }
       }
-       
+
     }
 
     // set numGlobalElements
@@ -207,7 +207,7 @@ namespace Xpetra {
 
     IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(static_cast<int>(numGlobalElements), numLocalElements, 1, indexBase, *toEpetra(comm))))));
   }
-       
+
   // TODO: UnitTest FAILED
   EpetraMap::EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase,
                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node)
@@ -218,7 +218,7 @@ namespace Xpetra {
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, elementList.size(), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
     }
   }
-   
+
 
 
 
@@ -226,9 +226,9 @@ namespace Xpetra {
 
 
   LookupStatus EpetraMap::getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< int > &LIDList) const { XPETRA_MONITOR("EpetraMap::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); }
-    
+
   LookupStatus EpetraMap::getRemoteIndexList(const Teuchos::ArrayView< const int > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { XPETRA_MONITOR("EpetraMap::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); }
-    
+
   Teuchos::ArrayView< const int > EpetraMap::getNodeElementList() const { XPETRA_MONITOR("EpetraMap::getNodeElementList"); return ArrayView< const int >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
 
   //typedef Kokkos::DefaultNode::DefaultNodeType Node;
@@ -240,7 +240,7 @@ namespace Xpetra {
 
 
   std::string EpetraMap::description() const {
-    XPETRA_MONITOR("EpetraMap::description"); 
+    XPETRA_MONITOR("EpetraMap::description");
 
     // This implementation come from Tpetra_Map_def.hpp (without modification)
     std::ostringstream oss;
@@ -254,8 +254,8 @@ namespace Xpetra {
   }
 
   void EpetraMap::describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
-    XPETRA_MONITOR("EpetraMap::describe"); 
-          
+    XPETRA_MONITOR("EpetraMap::describe");
+
     const Teuchos::RCP<const Teuchos::Comm<int> > comm_ = getComm();
 
     // This implementation come from Tpetra_Map_def.hpp (without modification)
@@ -267,23 +267,23 @@ namespace Xpetra {
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
-     
+
     const size_t nME = getNodeNumElements();
     Teuchos::ArrayView<const int> myEntries = getNodeElementList();
     int myImageID = comm_->getRank();
     int numImages = comm_->getSize();
-     
+
     Teuchos::EVerbosityLevel vl = verbLevel;
     if (vl == VERB_DEFAULT) vl = VERB_LOW;
-     
+
     size_t width = 1;
     for (size_t dec=10; dec<getGlobalNumElements(); dec *= 10) {
       ++width;
     }
     width = std::max<size_t>(width,12) + 2;
-     
+
     Teuchos::OSTab tab(out);
-     
+
     if (vl == VERB_NONE) {
       // do nothing
     }

@@ -72,7 +72,7 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   // Test if the reference returned by toTpetra is valid.
   // cf. bug #5603
@@ -85,7 +85,7 @@ namespace {
 
     Tpetra::Vector<double, int> *tVec = &Xpetra::toTpetra<double, int>(*vec);
     tVec->putScalar(Teuchos::ScalarTraits<double>::one());
-  
+
     std::cout << tVec->isDistributed() << std::endl;
     TEST_EQUALITY_CONST(tVec->meanValue(), 1);
   }

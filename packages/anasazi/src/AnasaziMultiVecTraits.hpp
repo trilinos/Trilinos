@@ -193,7 +193,13 @@ namespace Anasazi {
     //! @name Attribute methods
     //@{
 
-    //! Obtain the vector length of \c mv.
+    /// Return the number of rows in the given multivector \c mv.
+    ///
+    /// If you are writing a specialization of MultiVecTraits for your
+    /// own multivector type MV, please see the documentation of
+    /// MultiVecTraitsExt in this file.  Most Anasazi users will not
+    /// need to do this, since MultiVecTraits already has
+    /// specializations for Epetra, Tpetra, and Thyra objects.
     static int GetVecLength( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return 0; }     
 
@@ -320,6 +326,45 @@ namespace Anasazi {
 #endif // HAVE_ANASAZI_TSQR
   };
   
+
+  /// \brief An extension of the MultiVecTraits class that adds a new vector length method.
+  /// \ingroup anasazi_opvec_interfaces
+  ///
+  /// This traits class provides a 64-bit compatible method,
+  /// GetGlobalLength(), that returns the number of rows in a
+  /// multivector.  GetGlobalLength() will replace the GetVecLength()
+  /// method in MultiVecTraits, which is not 64-bit compatible.
+  /// GetVecLength() will be deprecated, and will be removed in the
+  /// next major Trilinos release.
+  ///
+  /// For now, GetGlobalLength() will call the GetVecLength() method
+  /// by default for any traits implementation that does not
+  /// specialize this class.  If you have written a specialization of
+  /// MultiVecTraits for your own multivector type MV, and if MV does
+  /// <i>not</i> support returning the number of rows as a 64-bit
+  /// integer, then you don't need to do anything.  If your MV class
+  /// <i>does</i> support this, then you should write a specialization
+  /// of MultiVecTraitsExt that reimplements GetGlobalLength().
+  /// Otherwise, you risk overflowing the \c int return value of
+  /// GetVecLength().
+  ///
+  /// \note You do <i>not</i> need to write a specialization of
+  ///   MultiVecTraitsExt if you are using Epetra, Tpetra, or Thyra
+  ///   multivectors.  Anasazi already provides specializations for
+  ///   these types.  Just relax and enjoy using the solvers!
+  template<class ScalarType, class MV>
+  class MultiVecTraitsExt {
+  public:
+    //! @name New attribute methods
+    //@{
+    
+    //! Obtain the vector length of \c mv.
+    //! \note This method supersedes GetVecLength, which will be deprecated.
+    static ptrdiff_t GetGlobalLength( const MV& mv )
+    { return static_cast<ptrdiff_t>( MultiVecTraits<ScalarType, MV>::GetVecLength( mv ) ); } 
+  
+    //@}
+  };
 } // namespace Anasazi
 
 #endif // ANASAZI_MULTI_VEC_TRAITS_HPP

@@ -92,51 +92,58 @@ namespace Kokkos {
       \ingroup kokkos_node_api
    */
   class TBBNode : public StandardNodeMemoryModel {
-    public:
+  public:
+    //! Constructor that sets default parameters.
+    TBBNode ();
   
-      /*! \brief Constructor acceptings a list of parameters
+    /*! \brief Constructor that takes a list of parameters.
           
-          This constructor accepts the parameters:
-          \param "Num Threads" [int] Specifies the number of threads, calls TBBNode::init() if non-negative. Otherwise, late initialization. Default: -1.
-       */
-      TBBNode(Teuchos::ParameterList &pl);
+      This constructor accepts the following parameters:
+      - "Num Threads" [int] Specifies the number of threads; calls
+        TBBNode::init() if non-negative. Otherwise, late
+        initialization. Default: -1.
+    */
+    TBBNode(ParameterList &pl);
   
-      /*! \brief Default destructor, calls tbb::task_scheduler_init::terminate(). 
-       */
-      ~TBBNode();
+    //! Default destructor, calls tbb::task_scheduler_init::terminate(). 
+    ~TBBNode();
 
-      /*! \brief Init the node with a given number of threads.
-          Call tbb::task_scheduler_initi::initialize(), with \c numThreads as the argument if it is greater than 0, and tbb::task_scheduler_init::automatic otherwise.
-          If init has already been called, this calls tbb:task_scheduler_init::terminate() first.
-       */
-      void init(int numThreads);
+    /*! \brief Get default parameters for this node */
+    static ParameterList getDefaultParameters();
 
-      //! \begin parallel for skeleton, a wrapper around tbb::parallel_for. See \ref kokkos_node_api "Kokkos Node API"
-      template <class WDP>
-      static void parallel_for(int begin, int end, WDP wd) {
-        BlockedRangeWDP<WDP> tbb_wd(wd);
-        tbb::parallel_for(tbb::blocked_range<int>(begin,end), tbb_wd, tbb::auto_partitioner()); 
-      }
+    /*! \brief Init the node with a given number of threads.
+      Call tbb::task_scheduler_initi::initialize(), with \c numThreads as the argument if it is greater than 0, and tbb::task_scheduler_init::automatic otherwise.
+      If init has already been called, this calls tbb:task_scheduler_init::terminate() first.
+    */
+    void init(int numThreads);
 
-      //! \begin parallel reduction skeleton, a wrapper around tbb::parallel_reduce. See \ref kokkos_node_api "Kokkos Node API"
-      template <class WDP>
-      static typename WDP::ReductionType
-      parallel_reduce(int begin, int end, WDP wd) {
-        BlockedRangeWDPReducer<WDP> tbb_wd(wd);
-        tbb::parallel_reduce(tbb::blocked_range<int>(begin,end), tbb_wd, tbb::auto_partitioner());
-        return tbb_wd.result;
-      }
+    //! \begin parallel for skeleton, a wrapper around tbb::parallel_for. See \ref kokkos_node_api "Kokkos Node API"
+    template <class WDP>
+    static void parallel_for(int begin, int end, WDP wd) {
+      BlockedRangeWDP<WDP> tbb_wd(wd);
+      tbb::parallel_for(tbb::blocked_range<int>(begin,end), tbb_wd, tbb::auto_partitioner()); 
+    }
 
-      //! \begin No-op for TBBNode.
-      inline void sync() const {};
+    //! \begin parallel reduction skeleton, a wrapper around tbb::parallel_reduce. See \ref kokkos_node_api "Kokkos Node API"
+    template <class WDP>
+    static typename WDP::ReductionType
+    parallel_reduce(int begin, int end, WDP wd) {
+      BlockedRangeWDPReducer<WDP> tbb_wd(wd);
+      tbb::parallel_reduce(tbb::blocked_range<int>(begin,end), tbb_wd, tbb::auto_partitioner());
+      return tbb_wd.result;
+    }
+
+    //! \begin No-op for TBBNode.
+    inline void sync() const {};
   
-    private:
-      bool alreadyInit_;
-      tbb::task_scheduler_init tsi_;
-  
+  private:
+    bool alreadyInit_;
+    tbb::task_scheduler_init tsi_;
   };
   
-  template <> class ArrayOfViewsHelper<TBBNode> : public ArrayOfViewsHelperTrivialImpl<TBBNode> {};
+  template <> 
+  class ArrayOfViewsHelper<TBBNode> : 
+    public ArrayOfViewsHelperTrivialImpl<TBBNode> {};
 
 } // end of Kokkos namespace
 

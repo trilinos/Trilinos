@@ -125,7 +125,7 @@ NormConstraint::setParam(int paramID, double val)
 
 void
 NormConstraint::setParams(
-			 const vector<int>& paramIDs, 
+			 const std::vector<int>& paramIDs, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   for (unsigned int i=0; i<paramIDs.size(); i++)
@@ -150,7 +150,7 @@ NormConstraint::computeDX()
 }
 
 NOX::Abstract::Group::ReturnType
-NormConstraint::computeDP(const vector<int>& paramIDs, 
+NormConstraint::computeDP(const std::vector<int>& paramIDs, 
 			  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 			  bool isValidG)
 {

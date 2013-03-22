@@ -91,7 +91,7 @@ public:
                                 GENERIC         
                          };
 
-    static map< NOX::Abstract::Group::ReturnType, string > returnMsg;
+    static map< NOX::Abstract::Group::ReturnType, std::string > returnMsg;
 
     static map< CommandCategory, std::string > categoryDescription;
 
@@ -112,7 +112,7 @@ public:
 
     virtual void describe()
     { 
-      cout << "\t\t#" << command << "\t" << description << endl;
+      cout << "\t\t#" << command << "\t" << description << std::endl;
       return;
     }
 

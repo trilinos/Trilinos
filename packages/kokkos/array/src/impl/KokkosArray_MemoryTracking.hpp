@@ -49,95 +49,96 @@
 #include <vector>
 #include <string>
 #include <typeinfo>
-#include <ostream>
+#include <iosfwd>
 
 namespace KokkosArray {
 namespace Impl {
 
+class MemoryTracking ;
+
+class MemoryTrackingEntry {
+public:
+  const std::string      label ;
+  const std::type_info & type ;
+  const ptrdiff_t        begin ;
+  const ptrdiff_t        end ;
+private:
+  unsigned m_count ;
+protected:
+
+  MemoryTrackingEntry( const std::string    & arg_label ,
+                       const std::type_info & arg_type ,
+                       const void * const     arg_begin ,
+                       const unsigned         arg_bytes )
+    : label( arg_label )
+    , type(  arg_type )
+    , begin( reinterpret_cast<ptrdiff_t>( arg_begin ) )
+    , end(   reinterpret_cast<ptrdiff_t>(
+               reinterpret_cast<const unsigned char *>( arg_begin ) + arg_bytes ) )
+    , m_count( 0 )
+    {}
+
+public:
+
+  unsigned count() const { return m_count ; }
+
+  virtual void print( std::ostream & ) const ;
+
+  virtual ~MemoryTrackingEntry();
+
+private:
+
+  MemoryTrackingEntry();
+  MemoryTrackingEntry( const MemoryTrackingEntry & rhs );
+  MemoryTrackingEntry & operator = ( const MemoryTrackingEntry & rhs );
+
+  friend class MemoryTracking ;
+};
+
+
 class MemoryTracking {
 public:
 
-  struct Info {
-    std::string            label ;
-    const void           * begin ;
-    const void           * end ;
-    const std::type_info * type ;
-    size_t                 size ;
-    size_t                 length ;
-    size_t                 count ;
+  /** \brief  Track a memory range defined by the entry.
+   *          This entry must be allocated via 'new'.
+   */
+  void insert( MemoryTrackingEntry * entry );
 
-    Info()
-    : label(), begin(0), end(0), type(0)
-    , size(0), length(0), count(0)
-    {}
-
-    Info( const Info & rhs )
-    : label(rhs.label), begin(rhs.begin), end(rhs.end), type(rhs.type)
-    , size(rhs.size), length(rhs.length), count(rhs.count)
-    {}
-
-    Info & operator = ( const Info & rhs )
-    { label = rhs.label ; begin = rhs.begin ; end = rhs.end ; type = rhs.type ;
-      size  = rhs.size ;  length = rhs.length ; count = rhs.count ;
-      return *this ;
-    }
-
-    ~Info()
-    {
-      begin = 0 ; end = 0 ; type = 0 ;
-      size  = 0 ; length = 0 ; count = 0 ;
-    }
-
-    void print( std::ostream & ) const ;
-  };
-
-  /** \brief  Track a pointer. */
-  void track( const void           * ptr ,
-              const std::type_info * type ,
-              const size_t           size ,
-              const size_t           length ,
-              const std::string      label );
-
-  /** \brief  Track a pointer. */
-  template< typename Type >
-  void track( const Type      * ptr ,
-              const size_t      length ,
-              const std::string label )
-  { track( ptr , & typeid(Type) , sizeof(Type) , length , label ); }
+  /** \brief  Decrement the tracked memory range.
+   *          If the count is zero then the entry is deleted
+   *          via the 'delete' operator.
+   */
+  void decrement( const void * ptr );
 
   /** \brief  Increment the tracking count.  */
   void increment( const void * ptr );
 
-  /** \brief  Decrement the tracking count.
-   *          If zero then the entry is deleted and the
-   *          allocated pointer is returned.
-   */
-  void * decrement( const void * ptr );
+  /** \brief  Query a tracked memory range. */
+  MemoryTrackingEntry * query( const void * ptr ) const ;
 
-  /** \brief  Query a tracked pointer */
-  Info query( const void * ptr ) const ;
-
-  /** \brief  Print tracked pointer information */
+  /** \brief  Call the 'print' method on all entries. */
   void print( std::ostream & , const std::string & lead ) const ;
 
-  /** \brief  Query if empty of tracked pointers.
-   *
-   *  Intent: A memory manager destructor queries if non-empty
-   *  which would indicate memory leaks.
-   */
-  bool empty() const 
-  { return m_tracking.empty(); }
+  size_t size() const { return m_tracking.size(); }
 
-  MemoryTracking() {}
-  ~MemoryTracking() {}
+  template< typename iType >
+  MemoryTracking & operator[]( const iType & i ) const
+    { return *m_tracking[i]; }
+
+  explicit MemoryTracking( const std::string & space );
+
+  /** \brief  Print memory leak warning for all entries. */
+  ~MemoryTracking();
 
 private:
+  MemoryTracking();
   MemoryTracking( const MemoryTracking & );
   MemoryTracking & operator = ( const MemoryTracking & );
 
-  std::vector<Info> m_tracking ;
+  std::string                        m_space ;
+  std::vector<MemoryTrackingEntry*>  m_tracking ;
+  std::vector<ptrdiff_t>             m_tracking_end ;
 };
-
 
 } /* namespace Impl */
 } /* namespace KokkosArray */

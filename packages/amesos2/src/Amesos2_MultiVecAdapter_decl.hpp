@@ -249,7 +249,7 @@ namespace Amesos2 {
       static void do_get(const Teuchos::Ptr<const MV>& mv,
 			 const Teuchos::ArrayView<S>& vals,
 			 const size_t ldx,
-			 EDistribution distribution);
+			 EDistribution distribution, typename MV::global_ordinal_t indexBase = 0);
 
       static void do_get(const Teuchos::Ptr<const MV>& mv,
 			 const Teuchos::ArrayView<S>& vals,
@@ -298,7 +298,7 @@ namespace Amesos2 {
       static void do_put(const Teuchos::Ptr<MV>& mv,
 			 const Teuchos::ArrayView<S>& data,
 			 const size_t ldx,
-			 EDistribution distribution);
+			 EDistribution distribution, typename MV::global_ordinal_t indexBase = 0);
 
       static void do_put(const Teuchos::Ptr<MV>& mv,
 			 const Teuchos::ArrayView<S>& data,

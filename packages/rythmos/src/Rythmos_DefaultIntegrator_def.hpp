@@ -294,7 +294,7 @@ void DefaultIntegrator<Scalar>::setStepper(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   TEUCHOS_TEST_FOR_EXCEPT(is_null(stepper));
-  TEUCHOS_TEST_FOR_EXCEPT( finalTime <= stepper->getTimeRange().lower() );
+  TEUCHOS_TEST_FOR_EXCEPT( finalTime < stepper->getTimeRange().lower() );
   TEUCHOS_ASSERT( stepper->getTimeRange().length() == ST::zero() );
   // 2007/07/25: rabartl: ToDo: Validate state of the stepper!
   stepper_ = stepper;

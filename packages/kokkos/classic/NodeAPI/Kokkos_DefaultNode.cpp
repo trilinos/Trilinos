@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,33 +34,40 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 #include "Kokkos_DefaultNode.hpp"
 #include <Teuchos_ParameterList.hpp>
 #include <iostream>
+#include <Teuchos_CompileTimeAssert.hpp>
 
 Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> Kokkos::DefaultNode::node_ = Teuchos::null;
 
 namespace Kokkos {
 
-  RCP<DefaultNode::DefaultNodeType> DefaultNode::getDefaultNode() 
+  RCP<DefaultNode::DefaultNodeType> DefaultNode::getDefaultNode()
   {
     if (node_ == null) {
       Teuchos::ParameterList pl;
-#if   defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+#if   defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
       pl.set<int>("Num Threads",1);
       node_ = rcp<TPINode>(new TPINode(pl));
-#elif defined(HAVE_KOKKOSCLASSIC_TBB)
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
       pl.set<int>("Num Threads",0);
       node_ = rcp<TBBNode>(new TBBNode(pl));
-#elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
       node_ = rcp<OpenMPNode>(new OpenMPNode(pl));
-#else
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
+      pl.set<int>("Device Number",0);
+      node_ = rcp<ThrustGPUNode>(new ThrustGPUNode(pl));
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE)
       node_ = rcp<SerialNode>(new SerialNode(pl));
+#else
+      const int KokkosDefaultNodeIsMissing = 1;
+      Teuchos::CompileTimeAssert<KokkosDefaultNodeIsMissing> cta; (void)cta;
 #endif
     }
     return node_;

@@ -14,7 +14,8 @@ ASSERT_DEFINED(
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND
     ${PACKAGE_NAME}_ENABLE_EpetraExt AND
-    ${PACKAGE_NAME}_ENABLE_Amesos) 
+    ${PACKAGE_NAME}_ENABLE_Ifpack AND
+    ${PACKAGE_NAME}_ENABLE_Amesos)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Structure2D_Test #FIXME: not the same name as the cpp file. Confusing
@@ -23,32 +24,32 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS muelu xpetra
 )
 
-IF(Trilinos_ENABLE_AztecOO) 
+IF(Trilinos_ENABLE_AztecOO)
 	# build only if AztecOO available, too
 	TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	  Structure2D_MLmode_Test
-	  SOURCES Structure2D_MLmode_epetra.cpp
+	  Structure2D_MLmode_Epetra
+	  SOURCES Structure2D_MLmode_Epetra.cpp
 	  COMM serial mpi
 	  DEPLIBS muelu xpetra
 	)
 
 	TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	  Structure2D_visualization
-	  SOURCES Structure2D_visualization.cpp
+	  Structure2D_Visualization
+	  SOURCES Structure2D_Visualization.cpp
 	  COMM serial mpi
 	  DEPLIBS muelu xpetra
 	)
-	
+
 	TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	  Structure2D_strided
-	  SOURCES Structure2D_strided.cpp
+	  Structure2D_Strided
+	  SOURCES Structure2D_Strided.cpp
 	  COMM serial mpi
 	  DEPLIBS muelu xpetra
 	)
 ENDIF()
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_test_copyfiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_cp
 SOURCE_FILES stru2d_A.txt stru2d_b.txt stru2d_ns.txt nodes0.txt MueLu_Agg2VTK.py
 )
-  
+
 ENDIF()

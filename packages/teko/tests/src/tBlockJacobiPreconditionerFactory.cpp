@@ -91,24 +91,24 @@ void tBlockJacobiPreconditionerFactory::initializeTest()
    int ny = 53;
 
    // create some big blocks to play with
-   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm);
+   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm,false); // CJ TODO FIXME: change for Epetra64
    FGallery.Set("nx",nx);
    FGallery.Set("ny",ny);
    Epetra_CrsMatrix & epetraF = FGallery.GetMatrixRef();
    F_ = Thyra::epetraLinearOp(rcpFromRef(epetraF));
 
-   Trilinos_Util::CrsMatrixGallery CGallery("laplace_2d",comm);
+   Trilinos_Util::CrsMatrixGallery CGallery("laplace_2d",comm,false); // CJ TODO FIXME: change for Epetra64
    CGallery.Set("nx",nx);
    CGallery.Set("ny",ny);
    Epetra_CrsMatrix & epetraC = CGallery.GetMatrixRef();
    C_ = Thyra::epetraLinearOp(rcpFromRef(epetraC));
 
-   Trilinos_Util::CrsMatrixGallery BGallery("diag",comm);
+   Trilinos_Util::CrsMatrixGallery BGallery("diag",comm,false); // CJ TODO FIXME: change for Epetra64
    BGallery.Set("nx",nx*ny);
    BGallery.Set("a",5.0);
    B_ = Thyra::epetraLinearOp(rcpFromRef(BGallery.GetMatrixRef()));
 
-   Trilinos_Util::CrsMatrixGallery BtGallery("diag",comm);
+   Trilinos_Util::CrsMatrixGallery BtGallery("diag",comm,false); // CJ TODO FIXME: change for Epetra64
    BtGallery.Set("nx",nx*ny);
    BtGallery.Set("a",3.0);
    Bt_ = Thyra::epetraLinearOp(rcpFromRef(BtGallery.GetMatrixRef()));

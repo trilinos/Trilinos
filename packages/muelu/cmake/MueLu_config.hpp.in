@@ -13,11 +13,15 @@
 
 #cmakedefine HAVE_MUELU_GOOGLE_PERFTOOLS
 
+#cmakedefine HAVE_MUELU_EXPERIMENTAL
+
 /* Optional Dependencies */
 
 #cmakedefine HAVE_MUELU_AMESOS
 
 #cmakedefine HAVE_MUELU_AMESOS2
+
+#cmakedefine HAVE_MUELU_AZTECOO
 
 #cmakedefine HAVE_MUELU_BELOS
 
@@ -31,8 +35,18 @@
 
 #cmakedefine HAVE_MUELU_IFPACK2
 
+#cmakedefine HAVE_MUELU_KOKKOSCLASSIC
+
 #cmakedefine HAVE_MUELU_ML
 
 #cmakedefine HAVE_MUELU_TPETRA
 
+#cmakedefine HAVE_MUELU_STRATIMIKOS
+
 #cmakedefine HAVE_MUELU_ZOLTAN
+
+#cmakedefine HAVE_MUELU_ZOLTAN2
+
+/* Optional TPL */
+
+#cmakedefine HAVE_MUELU_BOOST

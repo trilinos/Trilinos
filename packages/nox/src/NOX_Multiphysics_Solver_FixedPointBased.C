@@ -57,7 +57,7 @@
 #include "NOX_Direction_Factory.H"
 
 NOX::Multiphysics::Solver::FixedPointBased::
-FixedPointBased(const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
+FixedPointBased(const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
 		const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
 		const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
 		const Teuchos::RCP<Teuchos::ParameterList>& p) :
@@ -107,7 +107,7 @@ NOX::Multiphysics::Solver::FixedPointBased::init()
   else
   {
     utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - "
-                    << "Invalid Solver Method " << solveTypeName << endl;
+                    << "Invalid Solver Method " << solveTypeName << std::endl;
     throw "NOX Error";
   }
 
@@ -123,7 +123,7 @@ NOX::Multiphysics::Solver::FixedPointBased::init()
 
 bool 
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
+      const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
       const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
       const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
       const Teuchos::RCP<Teuchos::ParameterList>& p) 
@@ -184,7 +184,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
     if (rtype != NOX::Abstract::Group::Ok) 
     {
       utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - "
-		      << "Unable to compute F" << endl;
+		      << "Unable to compute F" << std::endl;
       throw "NOX Error";
     }
 
@@ -196,7 +196,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
                         << "through constructor or reset method) "
                         << "is already converged!  The solver wil not "
                         << "attempt to solve this system since status is "
-                        << "flagged as converged." << endl;
+                        << "flagged as converged." << std::endl;
 
     printUpdate();
   }
@@ -214,8 +214,8 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
 
   NOX::StatusTest::StatusType status = NOX::StatusTest::Unconverged;
 
-  vector<Teuchos::RCP<NOX::Solver::Generic> >::iterator iter = (*solversVecPtr).begin(),
-                                                            iter_end = (*solversVecPtr).end()   ;
+  std::vector<Teuchos::RCP<NOX::Solver::Generic> >::iterator iter = (*solversVecPtr).begin();
+  std::vector<Teuchos::RCP<NOX::Solver::Generic> >::iterator iter_end = (*solversVecPtr).end();
   
   for( int i = 0; iter_end != iter; ++iter, ++i )
   {
@@ -242,7 +242,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
   NOX::Abstract::Group::ReturnType rtype = soln.computeF();
   if (rtype != NOX::Abstract::Group::Ok) 
   {
-    utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - unable to compute F" << endl;
+    utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     return status;
@@ -260,7 +260,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
   if (rtype != NOX::Abstract::Group::Ok) 
   {
     utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - "
-                    << "Unable to compute F" << endl;
+                    << "Unable to compute F" << std::endl;
     throw "NOX Error";
   }
 
@@ -304,7 +304,7 @@ const NOX::Abstract::Group&
 NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroup() const
 {
   utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroup - "
-                  << "Old group not available.  This method is not currently supported." << endl;
+                  << "Old group not available.  This method is not currently supported." << std::endl;
   throw "NOX Error";
 }
 
@@ -312,7 +312,7 @@ Teuchos::RCP< const NOX::Abstract::Group>
 NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroupPtr() const
 {
   utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroupPtr - "
-                  << "Old group not available.  This method is not currently supported." << endl;
+                  << "Old group not available.  This method is not currently supported." << std::endl;
   throw "NOX Error";
 }
 
@@ -357,7 +357,7 @@ void NOX::Multiphysics::Solver::FixedPointBased::printUpdate()
       utilsPtr->out() << " (Converged!)";
     if (status == NOX::StatusTest::Failed)
       utilsPtr->out() << " (Failed!)";
-    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
+    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n" << std::endl;
   }
 
   // Print the final parameter values of the status test

@@ -87,14 +87,15 @@ template<typename EvalT>
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
 panzer_stk::IOClosureModelFactory<EvalT>::
 buildClosureModels(const std::string& model_id,
-		   const panzer::InputEquationSet& set,
 		   const Teuchos::ParameterList& models, 
+		   const panzer::FieldLayoutLibrary& fl,
+		   const Teuchos::RCP<panzer::IntegrationRule>& ir,
 		   const Teuchos::ParameterList& default_params, 
 		   const Teuchos::ParameterList& user_data,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   PHX::FieldManager<panzer::Traits>& fm) const
 {
-  return userCMF_->buildClosureModels(model_id,set,models,default_params,user_data,global_data,fm);
+  return userCMF_->buildClosureModels(model_id,models,fl,ir,default_params,user_data,global_data,fm);
 }
 
 // ********************************************************************

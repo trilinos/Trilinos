@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -45,6 +45,7 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Map_decl.hpp"
 #include "Tpetra_DirectoryImpl_decl.hpp"
 
 namespace Tpetra {
@@ -94,9 +95,7 @@ namespace Tpetra {
   ///    ID, local ID).  I can't afford to store the whole mapping
   ///    redundantly on all processes, so I distribute it using
   ///    another Map (the "directory Map").  This is a uniform
-  ///    contiguous Map whose keys are the global IDs.  (Contiguity of
-  ///    the directory Map prevents infinite corecursion between Map's
-  ///    constructor and Directory's constructor.)
+  ///    contiguous Map whose keys are the global IDs.
   ///
   /// This class is templated on the same \c LocalOrdinal and \c
   /// GlobalOrdinal types on which \c Map is templated.  Just as with
@@ -125,8 +124,8 @@ namespace Tpetra {
   ///   Directory into an interface and an implementation
   ///   (Details::Directory and its subclasses) in preparation for
   ///   making this change.
-  template<class LocalOrdinal, 
-           class GlobalOrdinal = LocalOrdinal, 
+  template<class LocalOrdinal,
+           class GlobalOrdinal = LocalOrdinal,
            class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Directory : public Teuchos::Describable {
   public:
@@ -134,7 +133,7 @@ namespace Tpetra {
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
     //! @name Constructors/Destructor.
-    //@{ 
+    //@{
 
     /// \brief Constructor.
     ///
@@ -147,16 +146,43 @@ namespace Tpetra {
     //! Destructor.
     ~Directory ();
 
+    /* Provide a shallow copy of this Directory for a different Node type, using a cloned Map.
+       This is an advanced method that will not be called by end users. */
+    template <class Node2>
+    RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
+    clone(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> > &clone_map) const
+    {
+      RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> > dir = rcp(new Directory<LocalOrdinal,GlobalOrdinal,Node2>());
+      if (clone_map->isDistributed ()) {
+        if (clone_map->isContiguous ()) {
+          dir->impl_ = Teuchos::rcp_dynamic_cast<
+                          const Details::DistributedContiguousDirectory<LocalOrdinal, GlobalOrdinal, Node> >
+                              (impl_)->template clone<Node2>(clone_map);
+        }
+        else {
+          dir->impl_ = Teuchos::rcp_dynamic_cast<
+                          const Details::DistributedNoncontiguousDirectory<LocalOrdinal, GlobalOrdinal, Node> >
+                              (impl_)->template clone<Node2>(clone_map);
+        }
+      }
+      else {
+        dir->impl_ = Teuchos::rcp_dynamic_cast<
+                        const Details::ReplicatedDirectory<LocalOrdinal, GlobalOrdinal, Node> >
+                            (impl_)->template clone<Node2>(clone_map);
+      }
+      return dir;
+    }
+
     //@}
     //! @name Implementation of Teuchos::Describable.
-    //@{ 
+    //@{
 
     //! A one-line human-readable description of this object.
     std::string description () const;
 
     //@}
     //! @name Query methods.
-    //@{ 
+    //@{
 
     /// \brief Given a global ID list, return the list of their owning process IDs.
     ///
@@ -180,8 +206,8 @@ namespace Tpetra {
     ///
     /// \note If <tt>nodeIDs.size() != globalIDs.size()</tt>, then
     ///   this method throws a \c std::runtime_error exception.
-    LookupStatus 
-    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs, 
+    LookupStatus
+    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
 			 const Teuchos::ArrayView<int>& nodeIDs) const;
 
     /// \brief Given a global ID list, return a list of their owning
@@ -213,15 +239,15 @@ namespace Tpetra {
     ///   directory, return IDNotPresent.  Otherwise, return
     ///   AllIDsPresent.
     ///
-    /// \note If <tt>nodeIDs.size() != globalIDs.size()</tt> or 
+    /// \note If <tt>nodeIDs.size() != globalIDs.size()</tt> or
     ///   <tt>localIDs.size() != globalIDs.size()</tt>, then
     ///   this method throws a \c std::runtime_error exception.
-    LookupStatus 
-    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs, 
-			 const Teuchos::ArrayView<int>& nodeIDs, 
+    LookupStatus
+    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
+			 const Teuchos::ArrayView<int>& nodeIDs,
 			 const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
     //@}
-    
+
   private:
     /// \brief Type of the (base class) implementation of this object.
     ///
@@ -237,8 +263,13 @@ namespace Tpetra {
     //! Copy constructor: declared private but not defined on purpose.
     Directory (const Directory<LocalOrdinal, GlobalOrdinal, Node>& directory);
 
+    template <class LO, class GO, class N> friend class Directory;
+
+    //! Empty constructor, for delayed initialization by clone()
+    Directory();
+
     //! Assignment operator: declared private but not defined on purpose.
-    Directory<LocalOrdinal, GlobalOrdinal, Node>& 
+    Directory<LocalOrdinal, GlobalOrdinal, Node>&
     operator= (const Directory<LocalOrdinal, GlobalOrdinal, Node>& source);
 
   }; // class Directory

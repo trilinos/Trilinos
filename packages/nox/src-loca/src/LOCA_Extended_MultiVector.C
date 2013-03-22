@@ -105,7 +105,7 @@ LOCA::Extended::MultiVector::MultiVector(
 
 LOCA::Extended::MultiVector::MultiVector(
 				   const LOCA::Extended::MultiVector& source,
-				   const vector<int>& index, bool view) :
+				   const std::vector<int>& index, bool view) :
   globalData(source.globalData),
   numColumns(index.size()),
   numMultiVecRows(source.numMultiVecRows),
@@ -241,7 +241,7 @@ LOCA::Extended::MultiVector::operator=(
 
 NOX::Abstract::MultiVector&
 LOCA::Extended::MultiVector::setBlock(const NOX::Abstract::MultiVector& source,
-				      const vector<int>& index)
+				      const std::vector<int>& index)
 {
   return setBlock(dynamic_cast<const LOCA::Extended::MultiVector&>(source), 
 		  index);
@@ -250,7 +250,7 @@ LOCA::Extended::MultiVector::setBlock(const NOX::Abstract::MultiVector& source,
 NOX::Abstract::MultiVector&
 LOCA::Extended::MultiVector::setBlock(
 				   const LOCA::Extended::MultiVector& source, 
-				   const vector<int>& index)
+				   const std::vector<int>& index)
 {
   // Verify dimensions are consistent
   if (source.numMultiVecRows != numMultiVecRows || 
@@ -482,19 +482,19 @@ LOCA::Extended::MultiVector::clone(int numvecs) const
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
-LOCA::Extended::MultiVector::subCopy(const vector<int>& index) const
+LOCA::Extended::MultiVector::subCopy(const std::vector<int>& index) const
 {
   return Teuchos::rcp(new LOCA::Extended::MultiVector(*this, index, false));
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
-LOCA::Extended::MultiVector::subView(const vector<int>& index) const
+LOCA::Extended::MultiVector::subView(const std::vector<int>& index) const
 {
   return Teuchos::rcp(new LOCA::Extended::MultiVector(*this, index, true));
 }
 
 void
-LOCA::Extended::MultiVector::norm(vector<double>& result,
+LOCA::Extended::MultiVector::norm(std::vector<double>& result,
 		       NOX::Abstract::Vector::NormType type) const
 {
 
@@ -507,7 +507,7 @@ LOCA::Extended::MultiVector::norm(vector<double>& result,
     result[i] = 0.0;
 
   // Intermediate vector to hold norms of a multivector
-  vector<double> vecNorm(result);
+  std::vector<double> vecNorm(result);
 
   switch (type) {
 
@@ -804,7 +804,7 @@ LOCA::Extended::MultiVector::setMultiVectorPtr(
 
 void
 LOCA::Extended::MultiVector::checkDimensions(
-				  const string& callingFunction,
+				  const std::string& callingFunction,
 				  const LOCA::Extended::MultiVector& a) const
 {
   if (a.numMultiVecRows != numMultiVecRows || a.numColumns != numColumns ||
@@ -814,7 +814,7 @@ LOCA::Extended::MultiVector::checkDimensions(
 }
 
 void 
-LOCA::Extended::MultiVector::checkIndex(const string& callingFunction,
+LOCA::Extended::MultiVector::checkIndex(const std::string& callingFunction,
 					int i) const 
 {
   if ( i < 0 || i >= numColumns ) 
@@ -823,7 +823,7 @@ LOCA::Extended::MultiVector::checkIndex(const string& callingFunction,
 }
 
 void 
-LOCA::Extended::MultiVector::checkVectorRowIndex(const string& callingFunction,
+LOCA::Extended::MultiVector::checkVectorRowIndex(const std::string& callingFunction,
 						 int i) const 
 {
   if ( i < 0 || i >= numMultiVecRows)
@@ -831,7 +831,7 @@ LOCA::Extended::MultiVector::checkVectorRowIndex(const string& callingFunction,
 					    "Invalid vector row index");
 }
 void 
-LOCA::Extended::MultiVector::checkIndex(const string& callingFunction,
+LOCA::Extended::MultiVector::checkIndex(const std::string& callingFunction,
 					int i, int j) const 
 {
   if ( i < 0 || i >= numScalarRows ) 
@@ -843,7 +843,7 @@ LOCA::Extended::MultiVector::checkIndex(const string& callingFunction,
 }
 
 bool
-LOCA::Extended::MultiVector::isContiguous(const vector<int>& index) const 
+LOCA::Extended::MultiVector::isContiguous(const std::vector<int>& index) const 
 {
   for (unsigned int i=0; i<index.size(); i++) {
     if (static_cast<unsigned int>(index[i]) != index[0] + i)

@@ -23,7 +23,9 @@ IF (PYTHON_EXECUTABLE)
   TRIBITS_ADD_ADVANCED_TEST( CheckinTest_UnitTests
     OVERALL_WORKING_DIRECTORY TEST_NAME
     TEST_0 CMND ${PYTHON_EXECUTABLE} 
-      ARGS ${CMAKE_CURRENT_SOURCE_DIR}/CheckinTest_UnitTests.py -v
+      ARGS ${CMAKE_CURRENT_SOURCE_DIR}/CheckinTest_UnitTests.py
+        --with-cmake="${CMAKE_COMMAND}"
+        -v
       PASS_REGULAR_EXPRESSION "OK"
     )
 

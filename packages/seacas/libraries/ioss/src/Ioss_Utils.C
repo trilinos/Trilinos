@@ -269,6 +269,8 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
 {
   assert(ef_blk != NULL);
   
+  face_is_member.reserve(number_sides);
+  
   // Topology of faces in this face block...
   const ElementTopology *ftopo = ef_blk->topology();
 
@@ -336,9 +338,9 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
 	(parent_block == NULL || parent_block == block )
 	&& !block_is_omitted(block)) {
       // This face/edge  belongs in the face/edge block
-      face_is_member[iel] = 1;
+      face_is_member.push_back(1);
     } else {
-      face_is_member[iel] = 0;
+      face_is_member.push_back(0);
     }
   }
 }

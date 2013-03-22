@@ -70,6 +70,7 @@ operator()( OriginalTypeRef orig )
   const Epetra_Map & oColMap = orig.ColMap();
 
   int oNumRows = oRowMap.NumMyElements();
+  (void) oNumRows; // Silence "unused variable" compiler warning.
   int oNumCols = oColMap.NumMyElements();
   int nNumRows = newRowMap_.NumMyElements();
   int nNumDomain = newDomainMap_.NumMyElements();
@@ -102,7 +103,7 @@ operator()( OriginalTypeRef orig )
   Epetra_IntSerialDenseVector newColMapGidList(oNumCols);
   int * origColGidList = oColMap.MyGlobalElements();
   for( int i = 0; i < oNumCols; ++i )
-    if (pidList[i] >=0) 
+    if (pidList[i] >=0)
       newColMapGidList[numNewCols++]= origColGidList[i];
   newColMap_ = Epetra_Map(-1, numNewCols, newColMapGidList.Values(), 0, oColMap.Comm());
 
@@ -124,7 +125,7 @@ bool CrsMatrix_SubCopy::fwd()
 {
 
   if (newObj_->Filled()) newObj_->PutScalar(0.0); // zero contents
-  
+
   newObj_->Import(*origObj_, *importer_, Add);
 
   newObj_->FillComplete();
@@ -137,7 +138,7 @@ bool CrsMatrix_SubCopy::fwd()
 bool CrsMatrix_SubCopy::rvs()
 {
   if (!newObj_->Filled()) return(false); // Must have fillCompleted
-  
+
   origObj_->Export(*newObj_, *importer_, Add);
 
   origObj_->FillComplete();

@@ -61,16 +61,16 @@
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
-  
+
   template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class VectorFactory {
-    
+
   private:
-    //! Private constructor. This is a static class. 
+    //! Private constructor. This is a static class.
     VectorFactory() {}
-    
+
   public:
-    
+
     //! Constructor specifying the number of non-zeros for all rows.
     static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
       XPETRA_MONITOR("VectorFactory::Build");
@@ -83,7 +83,7 @@ namespace Xpetra {
       XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
       XPETRA_FACTORY_END;
     }
-    
+
   };
 
   template <>
@@ -95,11 +95,11 @@ namespace Xpetra {
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
   private:
-    //! Private constructor. This is a static class. 
+    //! Private constructor. This is a static class.
     VectorFactory() {}
-    
+
   public:
-    
+
     static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
       XPETRA_MONITOR("VectorFactory::Build");
 
@@ -115,23 +115,23 @@ namespace Xpetra {
 
       XPETRA_FACTORY_END;
     }
-    
+
   };
 
   template <>
   class VectorFactory<int, int, int> {
-    
+
     typedef int Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
   private:
-    //! Private constructor. This is a static class. 
+    //! Private constructor. This is a static class.
     VectorFactory() {}
-    
+
   public:
-    
+
     static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
       XPETRA_MONITOR("VectorFactory::Build");
 

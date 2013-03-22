@@ -32,20 +32,6 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C=======================================================================
       INTEGER FUNCTION LOCINT (INT, LENLST, INTLST)
 C=======================================================================
-C$Id: locint.f,v 1.2 2009/03/25 12:46:02 gdsjaar Exp $
-C$Log: locint.f,v $
-CRevision 1.2  2009/03/25 12:46:02  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.1.1.1  1990/08/14 16:15:19  gdsjaar
-CTesting
-C
-c Revision 1.1  90/08/14  16:15:18  gdsjaar
-c Initial revision
-c 
-c Revision 1.1  90/08/09  13:39:33  gdsjaar
-c Initial revision
-c 
 
 C   --*** LOCINT *** (ETCLIB) Find integer in list
 C   --   Written by Amy Gilkey - revised 11/10/87
@@ -60,13 +46,14 @@ C   --   INTLST - IN - the list of integers to be searched
 
       INTEGER INT
       INTEGER LENLST
-      INTEGER INTLST(*)
+      INTEGER INTLST(LENLST)
 
-      DO 10 LOCINT = 1, LENLST
-         IF (INT .EQ. INTLST(LOCINT)) GOTO 20
-   10 CONTINUE
-      LOCINT = 0
-
-   20 CONTINUE
+      DO I = 1, LENLST
+        IF (INT .EQ. INTLST(I)) GOTO 20
+      END DO
+      I = 0
+      
+ 20   CONTINUE
+      LOCINT = I
       RETURN
       END

@@ -51,10 +51,9 @@ namespace panzer_stk {
   */ 
 Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
 getVolumeWorksets(const std::string & eBlock,
-                  const panzer::PhysicsBlock & pb,
-                  std::size_t worksetSize) const
+                  const panzer::PhysicsBlock & pb) const
 {
-   return panzer_stk::buildWorksets(*mesh_, pb, worksetSize);
+   return panzer_stk::buildWorksets(*mesh_, pb);
 }
 
 /** Build sets of boundary condition worksets
@@ -64,6 +63,21 @@ getSideWorksets(const panzer::BC & bc,
               const panzer::PhysicsBlock & pb) const
 {
    return panzer_stk::buildBCWorksets(*mesh_,pb,bc);
+}
+
+Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
+getWorksets(const panzer::WorksetDescriptor & worksetDesc,
+            const panzer::PhysicsBlock & pb) const
+{
+  if(!worksetDesc.useSideset()) {
+    return getVolumeWorksets(worksetDesc.getElementBlock(),pb);
+  }
+  else if(worksetDesc.useSideset() && worksetDesc.sideAssembly()) {
+    return panzer_stk::buildWorksets(*mesh_,pb,worksetDesc.getSideset());
+  }
+  else {
+    TEUCHOS_ASSERT(false);
+  }
 }
 
 }

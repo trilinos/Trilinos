@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,17 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
 #include <gtest/gtest.h>
-
-#ifndef KOKKOSARRAY_MACRO_DEVICE
-#error "KOKKOSARRAY_MACRO_DEVICE undefined"
-#endif
 
 #include <stdexcept>
 #include <sstream>
@@ -55,13 +51,11 @@
 
 namespace {
 
-template< class > class TestCrsArray ;
-
-template<>
-class TestCrsArray< KOKKOSARRAY_MACRO_DEVICE >
+template< class DeviceType >
+class TestCrsArray
 {
 public:
-  typedef KOKKOSARRAY_MACRO_DEVICE device ;
+  typedef DeviceType device ;
 
 
   TestCrsArray()
@@ -73,9 +67,9 @@ public:
   void run_test_graph()
   {
     typedef KokkosArray::CrsArray< unsigned , device > dView ;
-    typedef dView::HostMirror hView ;
+    typedef typename dView::HostMirror hView ;
 
-    enum { LENGTH = 1000 };
+    const unsigned LENGTH = 1000 ;
     dView dx ;
     hView hx ;
 
@@ -90,8 +84,8 @@ public:
 
     dx = KokkosArray::create_crsarray<dView>( "dx" , graph );
     hx = KokkosArray::create_mirror( dx );
-   
-    ASSERT_EQ( hx.row_map.dimension(0) - 1 , LENGTH );
+
+    ASSERT_EQ( hx.row_map.dimension_0() - 1 , LENGTH );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
       const size_t begin = hx.row_map[i];
@@ -106,9 +100,9 @@ public:
   void run_test_graph2()
   {
     typedef KokkosArray::CrsArray< unsigned[3] , device > dView ;
-    typedef dView::HostMirror hView ;
+    typedef typename dView::HostMirror hView ;
 
-    enum { LENGTH = 10 };
+    const unsigned LENGTH = 10 ;
 
     std::vector< size_t > sizes( LENGTH );
 
@@ -122,17 +116,17 @@ public:
     hView hx = KokkosArray::create_mirror( dx );
     hView mx = KokkosArray::create_mirror( dx );
 
-    ASSERT_EQ( (size_t) dx.row_map.dimension(0) , (size_t) LENGTH + 1 );
-    ASSERT_EQ( (size_t) hx.row_map.dimension(0) , (size_t) LENGTH + 1 );
-    ASSERT_EQ( (size_t) mx.row_map.dimension(0) , (size_t) LENGTH + 1 );
+    ASSERT_EQ( (size_t) dx.row_map.dimension_0() , (size_t) LENGTH + 1 );
+    ASSERT_EQ( (size_t) hx.row_map.dimension_0() , (size_t) LENGTH + 1 );
+    ASSERT_EQ( (size_t) mx.row_map.dimension_0() , (size_t) LENGTH + 1 );
 
-    ASSERT_EQ( (size_t) dx.entries.dimension(0) , (size_t) total_length );
-    ASSERT_EQ( (size_t) hx.entries.dimension(0) , (size_t) total_length );
-    ASSERT_EQ( (size_t) mx.entries.dimension(0) , (size_t) total_length );
+    ASSERT_EQ( (size_t) dx.entries.dimension_0() , (size_t) total_length );
+    ASSERT_EQ( (size_t) hx.entries.dimension_0() , (size_t) total_length );
+    ASSERT_EQ( (size_t) mx.entries.dimension_0() , (size_t) total_length );
 
-    ASSERT_EQ( (size_t) dx.entries.dimension(1) , (size_t) 3 );
-    ASSERT_EQ( (size_t) hx.entries.dimension(1) , (size_t) 3 );
-    ASSERT_EQ( (size_t) mx.entries.dimension(1) , (size_t) 3 );
+    ASSERT_EQ( (size_t) dx.entries.dimension_1() , (size_t) 3 );
+    ASSERT_EQ( (size_t) hx.entries.dimension_1() , (size_t) 3 );
+    ASSERT_EQ( (size_t) mx.entries.dimension_1() , (size_t) 3 );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
       const size_t entry_begin = hx.row_map[i];
@@ -146,8 +140,8 @@ public:
 
     KokkosArray::deep_copy( dx.entries , hx.entries );
     KokkosArray::deep_copy( mx.entries , dx.entries );
-   
-    ASSERT_EQ( mx.row_map.dimension(0) , (size_t) LENGTH + 1 );
+
+    ASSERT_EQ( mx.row_map.dimension_0() , (size_t) LENGTH + 1 );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
       const size_t entry_begin = mx.row_map[i];

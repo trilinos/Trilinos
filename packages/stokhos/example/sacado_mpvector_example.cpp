@@ -28,12 +28,15 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "sacado_mpvector_example.hpp"
 
 int main(int argc, char **argv)
 {
   try {
+
+    Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
     // Setup command line options
     Teuchos::CommandLineProcessor CLP;

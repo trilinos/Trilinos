@@ -1,3 +1,4 @@
+/**
 //@HEADER
 // ************************************************************************
 //
@@ -34,14 +35,18 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
+//Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 //
-// ************************************************************************
+// *************************************************************************
 //@HEADER
+ */
 
 #include "Trios_config.h"
 #include "Trios_logger.h"
 #include "Trios_nssi_client.h"
+
+#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -81,7 +86,9 @@ static void read_contact_info(const char *fname, char *url, int maxlen)
         url[0]='\0';
         return;
     }
-    fgets(url, maxlen, cf);
+    if (fgets(url, maxlen, cf) == NULL) {
+        log_error(admin_debug_level, "failed to read URL from %s", fname);
+    }
     fclose(cf);
 }
 

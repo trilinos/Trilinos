@@ -52,9 +52,9 @@
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-panzer::AssemblyEngine<EvalT,LO,GO>::
-AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
+template <typename EvalT>
+panzer::AssemblyEngine<EvalT>::
+AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof)
   : m_field_manager_builder(fmb), m_lin_obj_factory(lof)
 { 
@@ -63,8 +63,8 @@ AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-void panzer::AssemblyEngine<EvalT,LO,GO>::
+template <typename EvalT>
+void panzer::AssemblyEngine<EvalT>::
 evaluate(const panzer::AssemblyEngineInArgs& in)
 {
   typedef LinearObjContainer LOC;
@@ -103,31 +103,32 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-void panzer::AssemblyEngine<EvalT,LO,GO>::
+template <typename EvalT>
+void panzer::AssemblyEngine<EvalT>::
 evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 {
-  const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& 
-    worksets = m_field_manager_builder->getWorksets();
+  const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > &
+    volume_field_managers = m_field_manager_builder->getVolumeFieldManagers();
+  const std::vector<WorksetDescriptor> & wkstDesc = m_field_manager_builder->getVolumeWorksetDescriptors();
+
+  Teuchos::RCP<panzer::WorksetContainer> wkstContainer = m_field_manager_builder->getWorksetContainer();
 
   GlobalEvaluationDataContainer gedc;
   gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
   gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
   in.fillGlobalEvaluationDataContainer(gedc);
 
-  // Loop over element blocks
-  for (std::size_t block = 0; block < worksets.size(); ++block) {
-
-    std::vector<panzer::Workset>& w = *worksets[block]; 
-
-    Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = 
-	m_field_manager_builder->getVolumeFieldManagers()[block];
+  // Loop over volume field managers
+  for (std::size_t block = 0; block < volume_field_managers.size(); ++block) {
+    const WorksetDescriptor & wd = wkstDesc[block];
+    Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volume_field_managers[block];
+    std::vector<panzer::Workset>& w = *wkstContainer->getWorksets(wd);
 
     fm->template preEvaluate<EvalT>(gedc);
 
     // Loop over worksets in this element block
     for (std::size_t i = 0; i < w.size(); ++i) {
-	panzer::Workset& workset = w[i];
+      panzer::Workset& workset = w[i];
 
       workset.ghostedLinContainer = in.ghostedContainer_;
       workset.linContainer = in.container_;
@@ -145,8 +146,8 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-void panzer::AssemblyEngine<EvalT,LO,GO>::
+template <typename EvalT>
+void panzer::AssemblyEngine<EvalT>::
 evaluateNeumannBCs(const panzer::AssemblyEngineInArgs& in)
 {
   this->evaluateBCs(panzer::BCT_Neumann, in);
@@ -154,8 +155,8 @@ evaluateNeumannBCs(const panzer::AssemblyEngineInArgs& in)
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-void panzer::AssemblyEngine<EvalT,LO,GO>::
+template <typename EvalT>
+void panzer::AssemblyEngine<EvalT>::
 evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 {
   typedef LinearObjContainer LOC;
@@ -195,12 +196,14 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-void panzer::AssemblyEngine<EvalT,LO,GO>::
+template <typename EvalT>
+void panzer::AssemblyEngine<EvalT>::
 evaluateBCs(const panzer::BCType bc_type,
 	    const panzer::AssemblyEngineInArgs& in,
             const Teuchos::RCP<LinearObjContainer> preEval_loc)
 {
+  Teuchos::RCP<panzer::WorksetContainer> wkstContainer = m_field_manager_builder->getWorksetContainer();
+
   panzer::GlobalEvaluationDataContainer gedc;
 
   gedc.addDataObject("Dirichlet Counter",preEval_loc);
@@ -214,20 +217,11 @@ evaluateBCs(const panzer::BCType bc_type,
       panzer::LessBC>& bc_field_managers = 
       m_field_manager_builder->getBCFieldManagers();
   
-    const std::map<panzer::BC,
-      Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
-      panzer::LessBC>& bc_worksets = 
-      m_field_manager_builder->getBCWorksets();
-
     // Must do all neumann before all dirichlet so we need a double loop
     // here over all bcs
     typedef typename std::map<panzer::BC, 
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
       panzer::LessBC>::const_iterator bcfm_it_type;
-
-    typedef typename std::map<panzer::BC,
-      Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
-      panzer::LessBC>::const_iterator bcwkst_it_type;
 
     // loop over bcs
     for (bcfm_it_type bcfm_it = bc_field_managers.begin(); 
@@ -236,14 +230,11 @@ evaluateBCs(const panzer::BCType bc_type,
       const panzer::BC& bc = bcfm_it->first;
       const std::map<unsigned,PHX::FieldManager<panzer::Traits> > bc_fm = 
 	bcfm_it->second;
-
-      bcwkst_it_type bc_wkst_it = bc_worksets.find(bc);
-
-      TEUCHOS_TEST_FOR_EXCEPTION(bc_wkst_it == bc_worksets.end(), std::logic_error,
+   
+      Teuchos::RCP<const std::map<unsigned,panzer::Workset> > bc_wkst_ptr = wkstContainer->getSideWorksets(bc);
+      TEUCHOS_TEST_FOR_EXCEPTION(bc_wkst_ptr == Teuchos::null, std::logic_error,
 			 "Failed to find corresponding bc workset!");
-
-      const std::map<unsigned,panzer::Workset>& bc_wkst = 
-	*(bc_wkst_it->second);  
+      const std::map<unsigned,panzer::Workset>& bc_wkst = *bc_wkst_ptr;
 
       // Only process bcs of the appropriate type (neumann or dirichlet)
       if (bc.bcType() == bc_type) {

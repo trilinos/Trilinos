@@ -45,79 +45,64 @@
 #define KOKKOSARRAY_PARALLELREDUCE_HPP
 
 #include <cstddef>
+#include <sstream>
+#include <KokkosArray_ParallelFor.hpp>
+#include <impl/KokkosArray_Error.hpp>
+#include <impl/KokkosArray_ReduceOperator.hpp>
+
+//----------------------------------------------------------------------------
 
 namespace KokkosArray {
 
-//----------------------------------------------------------------------------
+/** \brief  Run 'functor' in parallel and reduce FunctorType::value_type.
+ *
+ *  If 'value_type' is a plain-old-data then call:
+ *    FunctorType::operator()( int_type , value_type & ) 
+ *    FunctorType::init( value_type & );
+ *    FunctorType::join( volatile value_type & update ,
+ *                       const volatile value_type & input );
+ *
+ *  If 'value_type' is 'type[]' and 'type' is plain-old-data then call:
+ *    FunctorType::operator()( int_type , value_type [] ) 
+ *    FunctorType::init( value_type [] , int_type count );
+ *    FunctorType::join( volatile value_type update [] ,
+ *                       const volatile value_type input [] ,
+ *                       int_type count );
+ */
+template< class FunctorType >
+typename FunctorType::value_type
+parallel_reduce( const size_t        work_count ,
+                 const FunctorType & functor );
 
-namespace Impl {
-
-template< class FunctorType ,
-          class ReduceTraits ,
-          class FinalizeType ,
-          class DeviceType >
-class ParallelReduce {
-public:
-  // non-void FinalizeType post-processes the reduction result
-  static void execute( const size_t work_count ,
-                       const FunctorType  & functor ,
-                       const FinalizeType & finalize );
-
-  // Void FinalizeType returns the reduction result
-  static void execute( const size_t work_count ,
-                       const FunctorType  & functor ,
-                       typename FunctorType::value_type & result );
-};
-
-template< typename ValueType , class DeviceType >
-class FunctorAssignment ;
-
-} // namespace Impl
-
-//----------------------------------------------------------------------------
+template< class FunctorType , class FinalizeType >
+void parallel_reduce( const size_t         work_count ,
+                      const FunctorType  & functor ,
+                      const FinalizeType & finalize );
 
 template< class FunctorType >
 typename FunctorType::value_type
-parallel_reduce( const size_t work_count ,
-                 const FunctorType & functor )
-{
-  typedef typename FunctorType::device_type device_type ;
-  typedef typename FunctorType::value_type  value_type ;
-
-  value_type result ;
-
-  { // Destruction of 'tmp' guarantees data is assigned to 'result'
-    typedef Impl::FunctorAssignment< value_type , device_type > Finalize ;
-
-    Finalize tmp( result );
-
-    Impl::ParallelReduce< FunctorType, FunctorType, Finalize, device_type >
-      ( work_count , functor , tmp );
-  }
-
-  return result ;
-}
+vector_parallel_reduce( const size_t        work_count ,
+                        const FunctorType & functor );
 
 template< class FunctorType , class FinalizeType >
-void parallel_reduce( const size_t work_count ,
-                      const FunctorType & functor ,
-                      const FinalizeType & finalize )
-{
-  typedef typename FunctorType::device_type device_type ;
+void vector_parallel_reduce( const size_t         work_count ,
+                             const FunctorType  & functor ,
+                             const FinalizeType & finalize );
 
-  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
-    ( work_count , functor , finalize );
-}
+} // namespace KokkosArray
 
 //----------------------------------------------------------------------------
+
+namespace KokkosArray {
+
 /** \brief  Multiple functor parallel reduction.
  *
  *  Create and execute a collection of reduction functors
  *  that contribute to a common final result.
  */
-template< class ReduceTraits ,
-          class FinalizeType = typename ReduceTraits::value_type ,
-          class DeviceType   = typename ReduceTraits::device_type >
+template< class ReduceOper ,
+          class FinalizeType = typename ReduceOper::value_type ,
+          class DeviceType   = typename ReduceOper::device_type >
 class MultiFunctorParallelReduce {
 public:
   typedef typename DeviceType::size_type size_type ;
@@ -132,13 +117,130 @@ public:
   void execute();
 };
 
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// Inlined implementation:
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
 namespace Impl {
 
-template< class FunctorType , class ReduceTraits , class FinalizeType , class DeviceType >
+template< class FunctorType  /* parallel work operator */ ,
+          class ValueOper    /* value_type, init, join */ ,
+          class FinalizeType /* serial finalization of reduction value */ ,
+          class DeviceType ,
+          class WorkSpec = void >
+class ParallelReduce ;
+
+template< class FunctorType ,
+          class ValueOper ,
+          class FinalizeType ,
+          class DeviceType >
 class MultiFunctorParallelReduceMember ;
+
+template< typename ValueType , class DeviceType >
+class ParallelReduceFunctorValue ;
 
 } // namespace Impl
 } // namespace KokkosArray
 
-#endif /* KOKKOSARRAY_DEVICEHOST_PARALLELREDUCE_HPP */
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+
+template< class FunctorType >
+typename FunctorType::value_type
+parallel_reduce( const size_t work_count ,
+                 const FunctorType & functor )
+{
+  typedef typename FunctorType::device_type device_type ;
+  typedef typename FunctorType::value_type  value_type ;
+
+  typedef Impl::ParallelReduceFunctorValue< value_type , device_type >
+    FinalizeType ; 
+
+  const FinalizeType finalize ; 
+
+  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
+    ( work_count , functor , finalize );
+
+  return finalize.result();
+}
+
+template< class FunctorType >
+typename FunctorType::value_type
+vector_parallel_reduce( const size_t work_count ,
+                        const FunctorType & functor )
+{
+  typedef typename FunctorType::device_type device_type ;
+  typedef typename FunctorType::value_type  value_type ;
+
+  typedef Impl::ParallelReduceFunctorValue< value_type , device_type >
+    FinalizeType ; 
+
+  const FinalizeType finalize ; 
+
+  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type , Impl::VectorParallel >
+    ( work_count , functor , finalize );
+
+  return finalize.result();
+}
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType , class FinalizeType >
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      const FinalizeType & finalize )
+{
+  typedef typename FunctorType::device_type device_type ;
+
+  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
+    ( work_count , functor , finalize );
+}
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType , typename MemberType >
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      MemberType value[] ,
+                      const unsigned count )
+{
+  typedef typename FunctorType::device_type device_type ;
+  typedef typename FunctorType::value_type  value_type ;
+
+  typedef
+    typename Impl::StaticAssertSame< value_type , MemberType[] >::type
+      ok_match_type ;
+
+  if ( functor.value_count != count ) {
+    std::ostringstream msg ;
+    msg << "KokkosArray::parallel_reduce( <array_type> ) ERROR "
+        << "given incompatible array lengths: functor.value_count("
+        << functor.value_count << ") != count(" << count << ")" ;
+    KokkosArray::Impl::throw_runtime_exception( msg.str() );
+  }
+
+  typedef Impl::ParallelReduceFunctorValue< value_type , device_type >
+    FinalizeType ; 
+
+  const FinalizeType finalize( functor.value_count );
+
+  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
+    ( work_count , functor , finalize );
+
+  finalize.result( value );
+}
+
+//----------------------------------------------------------------------------
+
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+
+#endif /* KOKKOSARRAY_PARALLELREDUCE_HPP */
 

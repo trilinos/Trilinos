@@ -37,6 +37,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_Time.h"
 #include "Teuchos_RefCountPtr.hpp"
 
 class Epetra_Comm;
@@ -354,6 +355,8 @@ class Ifpack_IC: public Ifpack_Preconditioner {
   double ComputeTime_;
   //! Contains the time for all successful calls to ApplyInverse().
   mutable double ApplyInverseTime_;
+  //! Used for timing purposes.
+  mutable Epetra_Time Time_;
 
   //! Contains the number of flops for Compute().
   double ComputeFlops_;

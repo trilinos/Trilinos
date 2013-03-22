@@ -76,154 +76,42 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new Zoltan2::Environment);
 
   int errcode = 0;
-  if (!errcode){
-
-    // test of Zoltan2::AlltoAll using a Scalar type (ints)
-  
-    int *sendBuf = new int [2*nprocs];
-    
-    Teuchos::ArrayView<const int> sendBufView(sendBuf, 2*nprocs);
-  
-    for (int i=0, j=1; i < 2*nprocs ; i+=2,j++){
-      sendBuf[i] = j*10;
-      sendBuf[i+1] = j*10 + 1;
-    } 
-  
-    Teuchos::ArrayRCP<int> recvBuf;
-    
-    Zoltan2::AlltoAll<int>(*comm, *envPtr,
-        sendBufView,    // ints to send from this process to all the others
-        2,              // two ints per process
-        recvBuf);       // will be allocated and filled in AlltoAll
-
-    delete [] sendBuf;
-  
-    int *inBuf = recvBuf.get();
-  
-    int myvals[2] = {(rank+1) * 10, (rank+1) * 10 + 1};
-  
-    for (int i=0; i < 2*nprocs; i+=2){
-      if (inBuf[i] != myvals[0] && inBuf[i+1] != myvals[1]){
-        errcode = 1;
-        break;
-      }
-    }
-  }
-
-  TEST_FAIL_AND_EXIT(*comm, errcode==0, "ints", errcode);
-
-  if (!errcode){
-
-    // test of Zoltan2::AlltoAll using a non-Scalar type for which
-    //  SerializationTraits are defined in Teuchos (std::pair).
-  
-    std::pair<int, int> *outBufPair = new std::pair<int, int> [nprocs];
-
-    Teuchos::ArrayView< const std::pair<int, int> > sendBufPair(
-      outBufPair, nprocs);
-  
-    for (int i=0,j=1; i < nprocs ; i++,j++){
-      outBufPair[i].first = j*10;
-      outBufPair[i].second = j*10 + 1;
-    } 
-  
-    Teuchos::ArrayRCP< std::pair<int, int> > recvBufPair;
-    
-    Zoltan2::AlltoAll<std::pair<int, int> >(*comm, *envPtr,
-        sendBufPair,    // ints to send from this process to all the others
-        1,              // one pair per process
-        recvBufPair);   // will be allocated and filled in AlltoAll
-
-    delete [] outBufPair;
-  
-    std::pair<int, int > *inBufPair = recvBufPair.get();
-
-    int myvals[2] = {(rank+1) * 10, (rank+1) * 10 + 1};
-  
-    for (int i=0; i < nprocs; i++){
-      if (inBufPair[i].first != myvals[0] && inBufPair[i].second != myvals[1]){
-        errcode = 2;
-        break;
-      }
-    }
-  }
-
-  TEST_FAIL_AND_EXIT(*comm, errcode==0, "pairs", errcode);
-
-  if (!errcode){
-
-    // test of Zoltan2::AlltoAll using a non-Scalar type for which
-    //  SerializationTraits are NOT defined in Teuchos (unsigned short).
-  
-    unsigned short *data = new unsigned short [nprocs];
-
-    Teuchos::ArrayView< const unsigned short > sendBuf(data, nprocs);
-  
-    for (int i=0,j=1; i < nprocs ; i++,j++)
-      data[i] = j*10;
-  
-    Teuchos::ArrayRCP< unsigned short > recvBuf;
-    
-    Zoltan2::AlltoAll<unsigned short>(*comm, *envPtr,
-        sendBuf, 1, recvBuf); 
-
-    delete [] data;
-  
-    unsigned short *inBuf = recvBuf.get();
-
-    int myvals = (rank+1) * 10;
-  
-    for (int i=0; i < nprocs; i++){
-      if (inBuf[i] != myvals){
-        errcode = 3;
-        break;
-      }
-    }
-  }
-
-  TEST_FAIL_AND_EXIT(*comm, errcode==0, "ushort", errcode);
 
   if (!errcode){
 
     // test of Zoltan2::AlltoAllv (different sized messages) using a Scalar type
 
     int myMsgSizeBase=rank*nprocs + 1;
-    int *outMsgSizes = new int [nprocs];
+    Array<int> sendCount(nprocs, 0);
+    Array<int> recvCount(nprocs, 0);
     long totalOut = 0;
 
     for (int p=0; p < nprocs; p++){
-      outMsgSizes[p] = myMsgSizeBase + p;
-      totalOut += outMsgSizes[p];
+      sendCount[p] = myMsgSizeBase + p;
+      totalOut += sendCount[p];
     }
-    Teuchos::ArrayView<const int> sendCount(outMsgSizes, nprocs);
   
-    int *outBuf = new int [totalOut];
+    Array<int> sendBuf(totalOut, 0);
   
-    int *out = outBuf;
+    int *out = &(sendBuf[0]);
     for (int p=0; p < nprocs; p++){
-      for (int i=0; i < outMsgSizes[p]; i++){
+      for (int i=0; i < sendCount[p]; i++){
         *out++ = p+rank;
       }
     }
-    Teuchos::ArrayView<const int> sendBuf(outBuf, totalOut);
   
-    Teuchos::ArrayRCP<int> recvCount;
     Teuchos::ArrayRCP<int> recvBuf;
     
     Zoltan2::AlltoAllv<int>(*comm, *envPtr,
-                  sendBuf,    
-                  sendCount,   
+                  sendBuf(),
+                  sendCount(),
                   recvBuf,
-                  recvCount);
+                  recvCount());
 
-    delete [] outBuf;
-    delete [] outMsgSizes;
-  
-    int *inMsgSizes = recvCount.get();
     int *inBuf = recvBuf.get();
 
     for (int p=0; p < nprocs; p++){
-      for (int i=0; i < inMsgSizes[p]; i++){
+      for (int i=0; i < recvCount[p]; i++){
         if (*inBuf++ != rank+p){
           errcode = 4;
           break;
@@ -258,15 +146,15 @@ int main(int argc, char *argv[])
 
     Teuchos::ArrayView<const string> sendBuf(sendStrings, nstrings);
     Teuchos::ArrayView<const int> sendCount(counts, nprocs);
+    Teuchos::Array<int> recvCounts(nprocs, 0);
 
     Teuchos::ArrayRCP<string> recvBuf;
-    Teuchos::ArrayRCP<int> recvCounts;
 
     Zoltan2::AlltoAllv<string>(*comm, *envPtr,
         sendBuf,    
         sendCount,   
         recvBuf,
-        recvCounts);
+        recvCounts());
 
     delete [] sendStrings;
     delete [] counts;

@@ -137,13 +137,15 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    fieldOrder.push_back("ux");
    fieldOrder.push_back("uy");
    fieldOrder.push_back("p");
-   // dofManager->setFieldOrder(fieldOrder); // temporary until implemented properly
-   dofManager->printFieldInformation(out);
+   dofManager->setFieldOrder(fieldOrder);
    dofManager->buildGlobalUnknowns();
+   dofManager->printFieldInformation(out);
 
    if(numProcs==1) {
       std::vector<int> gids_v;
       int * gids = 0;
+
+      TEST_ASSERT(false);
 
       // element 0
       dofManager->getElementGIDs(0,gids_v);

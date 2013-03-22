@@ -106,7 +106,7 @@ namespace LOCA {
 	const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams);
 
       //! Return strategy name given by \c stepsizeParams
-      const string& strategyName(Teuchos::ParameterList& stepsizeParams) const;
+      const std::string& strategyName(Teuchos::ParameterList& stepsizeParams) const;
 
     private:
 

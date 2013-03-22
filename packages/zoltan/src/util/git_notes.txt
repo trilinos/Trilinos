@@ -85,6 +85,16 @@ Commands:
      --author           author entry matches the specified string.
      --committer        committer entry matches the specified string.
 
+-  git checkout <SHA>
+   git reset --hard <SHA>
+   Get back (revert) to a previously committed repo
+   I needed this sequence of commands when "git pull --rebase" hit conflicts
+   and my repo was messed up.  The checkout reverts to the commits before
+   the pull; I got the SHA from .git/logs/HEAD, but Siva says it is in gitk, 
+   too.  The checkout restored my files, but I wasn't on any branch.
+   I thought the reset would put me back on a branch, but it didn't.  Hmmm.
+   Maybe I should have just done the reset instead of the checkout??
+
 -  git checkout -- <file>
    revert to previously committed version of file
 

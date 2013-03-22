@@ -60,7 +60,8 @@
 
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
 
-#include "MueLu_Graph.hpp"
+//#include "MueLu_Graph.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
@@ -73,8 +74,8 @@ EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::E
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const {
-  Monitor m(*this, "Coarsen Uncoupled (EmergencyAggregationAlgorithm)");
+LocalOrdinal EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
+  Monitor m(*this, "BuildAggregates");
 
   // form new aggregates from non-aggregated nodes
 
@@ -89,6 +90,9 @@ LocalOrdinal EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, Lo
   // loop over all local rows
   for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
     if(aggStat[iNode] != NodeStats::AGGREGATED) { // find unaggregated nodes
+
+      aggregates.SetIsRoot(iNode);    // mark iNode1 as root node for new aggregate 'ag'
+
       Aggregate ag;
       ag.list.push_back(iNode);
       ag.index = nLocalAggregates++;

@@ -134,7 +134,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   Teuchos::ParameterList& dirParams = paramsPtr->sublist("Direction");
 
   // Determine the specific type of direction to compute
-  string choice = dirParams.get("Method", "Tensor");
+  std::string choice = dirParams.get("Method", "Tensor");
   if (choice == "Tensor")
     requestedBaseStep = TensorStep;
   else if (choice == "Newton")
@@ -144,7 +144,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
     if (utilsPtr->isPrintType(NOX::Utils::Error))
       utilsPtr->err() << "NOX::Direction::Tensor::reset() - The choice of "
 	   << "\"Method\" parameter \"" << choice
-	   << "\" is invalid." << endl;
+	   << "\" is invalid." << std::endl;
     throw "NOX error";
   }
 
@@ -167,7 +167,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
       dirParams.get("Use Modified Bouaricha", true);
     if (useModifiedMethod  &&
 	utilsPtr->isPrintType(NOX::Utils::Parameters))
-      utilsPtr->out() << "Using Modifed Bouaricha method" << endl;
+      utilsPtr->out() << "Using Modifed Bouaricha method" << std::endl;
   }
 
   
@@ -192,7 +192,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
     if (utilsPtr->isPrintType(NOX::Utils::Error))
       utilsPtr->err() << "NOX::Direction::Tensor::reset() - The choice of "
 	   << "\"Line Search\" parameter " << choice
-	   << " is invalid." << endl;
+	   << " is invalid." << std::endl;
     throw "NOX Error";
   }
   //  Copy Method into "Submethod" (temporary hack for data scripts)
@@ -210,7 +210,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   else
   {
     utilsPtr->err() << "NOX::Solver::TensorBased::reset() - "
-	 << "Invalid \"Recovery Step Type\"" << endl;
+	 << "Invalid \"Recovery Step Type\"" << std::endl;
     throw "NOX Error";
   }
 
@@ -231,7 +231,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
     if (utilsPtr->isPrintType(NOX::Utils::Error))
       utilsPtr->err() << "NOX::Solver::TensorBased::reset() - The choice of "
 	   << "\"Lambda Selection\" parameter " << choice
-	   << " is invalid." << endl;
+	   << " is invalid." << std::endl;
     throw "NOX Error";
   }
 
@@ -248,7 +248,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
     if (utilsPtr->isPrintType(NOX::Utils::Error))
       utilsPtr->err() << "NOX::Solver::TensorBased::reset() - The choice of "
 	   << "\"Sufficient Decrease Condition\" parameter " << choice
-	   << " is invalid." << endl;
+	   << " is invalid." << std::endl;
     throw "NOX Error";
   }
 
@@ -277,8 +277,8 @@ NOX::Solver::TensorBased::~TensorBased()
 #ifdef DEVELOPER_CODE
   if (utilsPtr->isPrintType(NOX::Utils::Details))
   {
-    utilsPtr->out() << "multsJv = " << numJvMults << "   (linesearch)" << endl;
-    utilsPtr->out() << "mults2Jv = " << numJ2vMults << endl;
+    utilsPtr->out() << "multsJv = " << numJvMults << "   (linesearch)" << std::endl;
+    utilsPtr->out() << "mults2Jv = " << numJ2vMults << std::endl;
   }
 #endif
 }
@@ -299,7 +299,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
     NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
     if (rtype != NOX::Abstract::Group::Ok) {
       utilsPtr->err() << "NOX::Solver::TensorBased::init - "
-		      << "Unable to compute F" << endl;
+		      << "Unable to compute F" << std::endl;
       throw "NOX Error";
     }
     
@@ -312,7 +312,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
 		      << "through constructor or reset method) "
 		      << "is already converged!  The solver will not "
 		      << "attempt to solve this system since status "
-		      << "is flagged as converged." << endl;
+		      << "is flagged as converged." << std::endl;
     }
     
     printUpdate();
@@ -336,7 +336,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
   {
     if (utilsPtr->isPrintType(NOX::Utils::Error))
       utilsPtr->out() << "NOX::Solver::TensorBased::iterate - "
-	   << "unable to calculate direction" << endl;
+	   << "unable to calculate direction" << std::endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     printUpdate();
@@ -357,7 +357,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
     {
       if (utilsPtr->isPrintType(NOX::Utils::Error))
 	utilsPtr->out() << "NOX::Solver::TensorBased::iterate - line search failed"
-	     << endl;
+	     << std::endl;
       status = NOX::StatusTest::Failed;
       prePostOperator.runPostIterate(*this);
       printUpdate();
@@ -365,7 +365,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
     }
     else if (utilsPtr->isPrintType(NOX::Utils::Warning))
       utilsPtr->out() << "NOX::Solver::TensorBased::iterate - "
-	   << "using recovery step for line search" << endl;
+	   << "using recovery step for line search" << std::endl;
   }
 
   // Compute F for new current solution.
@@ -374,7 +374,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
   {
     if (utilsPtr->isPrintType(NOX::Utils::Error))
       utilsPtr->out() << "NOX::Solver::TensorBased::iterate - "
-	   << "unable to compute F" << endl;
+	   << "unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     printUpdate();
@@ -468,7 +468,7 @@ void NOX::Solver::TensorBased::printUpdate()
       utilsPtr->out() << " (Converged!)";
     if (status == NOX::StatusTest::Failed)
       utilsPtr->out() << " (Failed!)";
-    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n" << endl;
+    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n" << std::endl;
   }
 
   // Print the final parameter values of the status test
@@ -540,10 +540,10 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     if (utilsPtr->isPrintType(NOX::Utils::Details))
     {
       utilsPtr->out() << "  Norm of initial guess: " << utilsPtr->sciformat(tmpVecNorm, 6)
-	   << endl;
+	   << std::endl;
       utilsPtr->out() << "  initg norm of model residual =   "
 	   << utilsPtr->sciformat(residualNorm, 6) << " (abs)     "
-	   << utilsPtr->sciformat(residualNormRel, 6) << " (rel)" << endl;
+	   << utilsPtr->sciformat(residualNormRel, 6) << " (rel)" << std::endl;
     }
 #endif
 
@@ -558,7 +558,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     if (relativeResidual < 1.0)
     {
       if (utilsPtr->isPrintType(NOX::Utils::Details))
-	utilsPtr->out() << "  Initial guess is good..." << endl;
+	utilsPtr->out() << "  Initial guess is good..." << std::endl;
       isInitialGuessGood = true;
       // RPP - Brett please make sure the line below is correct.
       *tensorVecPtr = *tmpVecPtr;
@@ -567,7 +567,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 	newTol = 0.99;  // force at least one iteration
       linearParams.set("Tolerance",  newTol);
       if (utilsPtr->isPrintType(NOX::Utils::Details))
-	utilsPtr->out() << "  Setting tolerance to " << utilsPtr->sciformat(newTol,6) << endl;
+	utilsPtr->out() << "  Setting tolerance to " << utilsPtr->sciformat(newTol,6) << std::endl;
     }
     else
 #endif // USE_INITIAL_GUESS_LOGIC    
@@ -592,7 +592,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 	utilsPtr->out() << "WARNING: NOX::Solver::TensorBased::computeTensorDirection() - "
 	     << "Linear solve failed to achieve convergence - "
 	     << "using the step anyway " 
-	     << "since \"Rescue Bad Newton Solve\" is true." << endl;
+	     << "since \"Rescue Bad Newton Solve\" is true." << std::endl;
     }
 
     // Continue processing
@@ -621,7 +621,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     if (utilsPtr->isPrintType(NOX::Utils::Details))
       utilsPtr->out() << " jifp norm of model residual =   "
 	   << utilsPtr->sciformat(residualNorm2, 6) << " (abs)     "
-	   << utilsPtr->sciformat(residualNorm2Rel, 6) << " (rel)" << endl;
+	   << utilsPtr->sciformat(residualNorm2Rel, 6) << " (rel)" << std::endl;
 #endif
   }
 
@@ -638,7 +638,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
       utilsPtr->out() << "WARNING: NOX::Solver::TensorBased::computeTensorDirection() - "
 	   << "Linear solve failed to achieve convergence - "
 	   << "using the step anyway " 
-	   << "since \"Rescue Bad Newton Solve\" is true." << endl;
+	   << "since \"Rescue Bad Newton Solve\" is true." << std::endl;
   }
 
   // Set Newton direction
@@ -679,9 +679,9 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     if (utilsPtr->isPrintType(NOX::Utils::Details))
     {
       utilsPtr->out() << " sTinvJF = " << utilsPtr->sciformat(sTinvJF, 6)
-	   << "  sTinvJa = " << utilsPtr->sciformat(sTinvJa, 6) << endl;
+	   << "  sTinvJa = " << utilsPtr->sciformat(sTinvJa, 6) << std::endl;
       utilsPtr->out() << " norm(s) = " << utilsPtr->sciformat(sVecNorm, 6)
-	   << "  norm(a) = " << utilsPtr->sciformat(aVecNorm, 6) << endl;
+	   << "  norm(a) = " << utilsPtr->sciformat(aVecNorm, 6) << std::endl;
     }
     
     if (useModifiedMethod)
@@ -689,11 +689,11 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
       double alpha2 = lambdaBar;
       if (utilsPtr->isPrintType(NOX::Utils::Details))
 	utilsPtr->out() << " Beta = " << utilsPtr->sciformat(beta, 6)
-	     << "  Alpha2 = " << utilsPtr->sciformat(alpha2, 6) << endl;
+	     << "  Alpha2 = " << utilsPtr->sciformat(alpha2, 6) << std::endl;
       if (alpha2 != 1.0)
       {
 	if (utilsPtr->isPrintType(NOX::Utils::Details))
-	  utilsPtr->out() << "   *** Scaling tensor term a ***" << endl;
+	  utilsPtr->out() << "   *** Scaling tensor term a ***" << std::endl;
 	aVecPtr->scale(alpha2);
 	tmpVecPtr->scale(alpha2);
 	sTinvJa *= alpha2;
@@ -715,7 +715,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
       utilsPtr->out() << "  Beta = " << utilsPtr->sciformat(beta, 6)
 	   << "  std = " << utilsPtr->sciformat(sDotT, 6)
 	   << "  qval = " << utilsPtr->sciformat(qval, 2)
-	   << "  lambdaBar = " << lambdaBar << endl;
+	   << "  lambdaBar = " << lambdaBar << std::endl;
 #endif
   }
   else
@@ -769,7 +769,7 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
 	     << "  tmp2 = " << utilsPtr->sciformat(tmp2, 6)
 	     << "  dir0xsc = " << utilsPtr->sciformat(dir0xsc, 6)
 	     << "  normS = " << utilsPtr->sciformat(normS, 6)
-	     << endl;
+	     << std::endl;
 #endif
     }
   }
@@ -779,7 +779,7 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
 	 << utilsPtr->sciformat(qb, 6)
 	 << utilsPtr->sciformat(qc, 6)
 	 << "   beta = " << utilsPtr->sciformat(beta_value, 6)
-	 << endl;
+	 << std::endl;
 #endif
 
   return beta_value;
@@ -807,10 +807,10 @@ NOX::Solver::TensorBased::computeCurvilinearStep(NOX::Abstract::Vector& dir,
 	 << "  std = " << utilsPtr->sciformat(sDotD, 6)
 	 << "  qval = " << qval
 	 << "  lambdaBar = " << lambdaBar
-	 << endl;
+	 << std::endl;
     utilsPtr->out() << "  betaFactor = " << utilsPtr->sciformat(betaFactor,6)
 	 << "  beta1 = " << utilsPtr->sciformat(beta1, 6)
-	 << endl;
+	 << std::endl;
   }
 #endif
   
@@ -890,14 +890,14 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
       utilsPtr->out() << "Full Step";
     else if (lsType == Dual)
       utilsPtr->out() << "Dual";
-    utilsPtr->out() << ") -- " << endl;
+    utilsPtr->out() << ") -- " << std::endl;
   }
 
   // Local variables
   bool isFailed = false;
   bool isAcceptable = false;
   bool isFirstPass = true;
-  string message = "(STEP ACCEPTED!)";
+  std::string message = "(STEP ACCEPTED!)";
 
   // Set counters
   int lsIterations = 1;
@@ -963,7 +963,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
 
       if (utilsPtr->isPrintType(NOX::Utils::Details))
 	utilsPtr->out() << "  Switching to Newton step.  New fprime = "
-	     << utilsPtr->sciformat(fprime, 6) << endl;
+	     << utilsPtr->sciformat(fprime, 6) << std::endl;
     }
     else
     {
@@ -1066,7 +1066,7 @@ NOX::Solver::TensorBased::getNormModelResidual(
   {
     double tmp = sVecPtr->innerProduct(dir);
     if (utilsPtr->isPrintType(NOX::Utils::Details))
-      utilsPtr->out() << " sc'*dt   = " << utilsPtr->sciformat(tmp, 6) << endl;
+      utilsPtr->out() << " sc'*dt   = " << utilsPtr->sciformat(tmp, 6) << std::endl;
     residualPtr->update(tmp*tmp, *aVecPtr, 1.0);
   }
 
@@ -1093,12 +1093,12 @@ NOX::Solver::TensorBased::printDirectionInfo(std::string dirName,
   {
     utilsPtr->out() << " " << dirName << " norm of model residual =   "
 	 << utilsPtr->sciformat(residual, 6) << " (abs)     "
-	 << utilsPtr->sciformat(residualRel, 6) << " (rel)" << endl;
+	 << utilsPtr->sciformat(residualRel, 6) << " (rel)" << std::endl;
     utilsPtr->out() << " " << dirName << " directional derivative =  "
 	 << utilsPtr->sciformat(fprime, 6) << " (abs)    "
-	 << utilsPtr->sciformat(fprimeRel, 6) << " (rel)" << endl;
+	 << utilsPtr->sciformat(fprimeRel, 6) << " (rel)" << std::endl;
     utilsPtr->out() << " " << dirName << " norm = "
-       << utilsPtr->sciformat(dirNorm, 6) << endl;
+       << utilsPtr->sciformat(dirNorm, 6) << std::endl;
   }
 }
 
@@ -1138,12 +1138,12 @@ double NOX::Solver::TensorBased::selectLambda(double fNew, double fOld,
 }
 
 
-void NOX::Solver::TensorBased::throwError(const string& functionName,
-					  const string& errorMsg) const
+void NOX::Solver::TensorBased::throwError(const std::string& functionName,
+					  const std::string& errorMsg) const
 {
   if (utilsPtr->isPrintType(NOX::Utils::Error))
     utilsPtr->err() << "NOX::Solver::TensorBased::" << functionName
-	 << " - " << errorMsg << endl;
+	 << " - " << errorMsg << std::endl;
   throw "NOX Error";
 }
 

@@ -41,37 +41,26 @@
 //@HEADER
 */
 
-#include <KokkosArray_ProductTensor.hpp>
-#include <KokkosArray_SymmetricDiagonalSpec.hpp>
-#include <KokkosArray_BlockCrsMatrix.hpp>
-#include <KokkosArray_CrsMatrix.hpp>
-#include <KokkosArray_LegendrePolynomial.hpp>
-#include <KokkosArray_StochasticProductTensor.hpp>
-
-//
-
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
 
-#include <KokkosArray_Host_macros.hpp>
-#include <impl/KokkosArray_ProductTensor_macros.hpp>
-#include <impl/KokkosArray_LegendrePolynomial_macros.hpp>
-#include <impl/KokkosArray_StochasticProductTensor_macros.hpp>
-#include <impl/KokkosArray_SymmetricDiagonalSpec_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
+#include <KokkosArray_ProductTensor.hpp>
+#include <KokkosArray_LegendrePolynomial.hpp>
+#include <KokkosArray_SymmetricDiagonalSpec.hpp>
+#include <KokkosArray_StochasticProductTensor.hpp>
+#include <KokkosArray_BlockCrsMatrix.hpp>
+#include <KokkosArray_CrsMatrix.hpp>
+
+//
+
+
+
 
 #include <Host/KokkosArray_Host_ProductTensor.hpp>
 
-#include <KokkosArray_Cuda_macros.hpp>
-#include <impl/KokkosArray_ProductTensor_macros.hpp>
-#include <impl/KokkosArray_LegendrePolynomial_macros.hpp>
-#include <impl/KokkosArray_StochasticProductTensor_macros.hpp>
-#include <impl/KokkosArray_SymmetricDiagonalSpec_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
-
-
 #include <Cuda/KokkosArray_Cuda_SymmetricDiagonalSpec.hpp>
 #include <Cuda/KokkosArray_Cuda_ProductTensor.hpp>
+#include <Cuda/KokkosArray_Cuda_CrsProductTensorLegendre.hpp>
 #include <Cuda/KokkosArray_Cuda_StochasticProductTensor.hpp>
 #include <Cuda/KokkosArray_Cuda_BlockCrsMatrix.hpp>
 #include <Cuda/KokkosArray_Cuda_CrsMatrix.hpp>
@@ -82,12 +71,85 @@
 #include <TestTensorCrsMatrix.hpp>
 #include <TestStochastic.hpp>
 
+namespace unit_test {
 
-int mainCuda()
+template<typename Scalar>
+struct performance_test_driver<Scalar,KokkosArray::Cuda> {
+  static void run(bool test_flat, bool test_orig, bool test_block, bool check){
+    typedef KokkosArray::Cuda Device;
+    
+    int nGrid;
+    int nIter; 
+    bool print;
+
+    // All methods compared against flat-original
+    if (test_flat) {
+      nGrid = 5 ;
+      nIter = 1 ; 
+      print = false ;
+      performance_test_driver_all<Scalar,Device>( 
+	3 , 1 ,  9 , nGrid , nIter , print , test_block , check );
+      performance_test_driver_all<Scalar,Device>( 
+	5 , 1 ,  5 , nGrid , nIter , print , test_block , check );
+    }
+    
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
+    // Just polynomial methods compared against original
+    if (test_orig) {
+      nGrid = 32 ;
+      nIter = 1 ; 
+      print = false ;
+      performance_test_driver_poly<Scalar,Device>( 
+	3 , 1 , 12 , nGrid , nIter , print , test_block , check );
+      performance_test_driver_poly<Scalar,Device>( 
+	5 , 1 ,  6 , nGrid , nIter , print , test_block , check );
+    }
+#endif
+    
+    //------------------------------
+    
+    /*
+      std::cout << std::endl
+      << "\"CRS flat-matrix ~27 nonzeros/row (CUDA uses cusparse)\""
+      << std::endl
+      << "\"nGrid\" , "
+      << "\"VectorSize\" , "
+      << "\"MXV-Time\""
+      << std::endl ;
+      
+      for ( int n_grid = 10 ; n_grid <= 100 ; n_grid += 5 ) {
+      
+      const std::pair<size_t,double> perf_flat =
+      test_flat_matrix<double,Device>( n_grid , nIter , print );
+      
+      std::cout << n_grid << " , "
+      << perf_flat.first << " , "
+      << perf_flat.second
+      << std::endl ;
+      }
+    */
+    
+    //------------------------------
+  }
+
+};
+
+}
+
+template <typename Scalar>
+int mainCuda(bool test_flat, bool test_orig, bool test_block, bool check, 
+	     int device_id)
 {
   typedef unsigned long long int IntType ;
 
-  KokkosArray::Cuda::initialize();
+  KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
+
+  cudaSetDevice(device_id);
+  cudaDeviceProp deviceProp;
+  cudaGetDeviceProperties(&deviceProp, device_id);
+  std::cout << std::endl 
+	    << "Device " << device_id << ": " << deviceProp.name 
+	    << std::endl;
 
 //  unit_test::test_dense<KokkosArray::Cuda>();
 //  unit_test::test_diagonal<KokkosArray::Cuda>();
@@ -95,10 +157,6 @@ int mainCuda()
 
 //  unit_test::test_inner_product_legengre_polynomial<10,KokkosArray::Cuda>();
 //  unit_test::test_triple_product_legendre_polynomial<4,KokkosArray::Cuda>();
-
-  unit_test::test_product_tensor<KokkosArray::Cuda,KokkosArray::SparseProductTensor>( std::vector<int>( 2 , 1 ) );
-  unit_test::test_product_tensor<KokkosArray::Cuda,KokkosArray::SparseProductTensor>( std::vector<int>( 3 , 2 ) );
-  unit_test::test_product_tensor<KokkosArray::Cuda,KokkosArray::SparseProductTensor>( std::vector<int>( 5 , 1 ) );
 
   unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 1 , 2 );
   unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 1 , 5 );
@@ -123,10 +181,13 @@ int mainCuda()
   unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Cuda,IntType>( 100 , 10 );
 
   std::cout << std::endl << "\"Cuda Performance\"" << std::endl ;
-  unit_test::performance_test_driver<KokkosArray::Cuda>();
+  unit_test::performance_test_driver<Scalar,KokkosArray::Cuda>::run(
+    test_flat, test_orig, test_block, check);
 
   KokkosArray::Cuda::finalize();
 
   return 0 ;
 }
 
+template int mainCuda<float>(bool, bool, bool, bool, int);
+template int mainCuda<double>(bool, bool, bool, bool, int);

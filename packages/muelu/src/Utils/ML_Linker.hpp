@@ -48,7 +48,7 @@
 #include "ml_aggregate.h"
 #include "ml_epetra_utils.h"
 
-extern MueLu_Graph  *MueLu_BuildGraph(ML_Operator *Amatrix, char *name);
+extern MueLu_Graph  *MueLu_BuildGraph(ML_Matrix *Amatrix, char *name);
 extern int MueLu_DestroyGraph(MueLu_Graph *graph);
 
 /**********************************************************************************/
@@ -56,8 +56,8 @@ extern int MueLu_DestroyGraph(MueLu_Graph *graph);
 /* This function should go away soon as we should start executing new MueLu      */
 /* aggregation inside MueLu.
 /**********************************************************************************/
-int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *mlAggregates, 
-           ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm)
+int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *mlAggregates,
+           ML_Matrix *Amatrix, ML_Matrix **Pmatrix, ML_Comm *comm)
 {
    MueLu_Graph     *graph;
    graph = MueLu_BuildGraph(Amatrix,"ML_Uncoupled");
@@ -83,23 +83,23 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *mlAggregates,
 
 //#ifdef out
 Epetra_IntVector Final( aggregates->vertex2AggId->Map() );
-for (int i = 0; i < aggregates->vertex2AggId->Map().NumMyElements(); i++) 
+for (int i = 0; i < aggregates->vertex2AggId->Map().NumMyElements(); i++)
    Final[i] = (*(aggregates->vertex2AggId))[i] + (*(aggregates->procWinner))[i]*1000;
 printf("finals\n");
 cout << Final << endl; sleep(2);
 //#endif
 
-   MueLu_AggregateDestroy(aggregates); 
+   MueLu_AggregateDestroy(aggregates);
    MueLu_DestroyGraph(graph);
    return 0;
 }
 
 /**********************************************************************************/
-/* Function to take an ML_Operator (which actually wraps an Epetra_CrsMatrix) and */
+/* Function to take an ML_Matrix (which actually wraps an Epetra_CrsMatrix) and */
 /* extract out the Epetra_CrsGraph. My guess is that this should be changed soon  */
-/* so that the first argument is some MueLu API Operator.                        */
+/* so that the first argument is some MueLu API Matrix.                        */
 /**********************************************************************************/
-MueLu_Graph *MueLu_BuildGraph(ML_Operator *Amatrix, char *name)
+MueLu_Graph *MueLu_BuildGraph(ML_Matrix *Amatrix, char *name)
 {
   MueLu_Graph *graph;
   double *dtmp = NULL;
@@ -128,7 +128,7 @@ MueLu_Graph *MueLu_BuildGraph(ML_Operator *Amatrix, char *name)
   }
   if (graph->eGraph == NULL) graph->nGhost = 0;
   else {
-     graph->nGhost = A->RowMatrixColMap().NumMyElements() - A->OperatorDomainMap().NumMyElements();
+     graph->nGhost = A->RowMatrixColMap().NumMyElements() - A->MatrixDomainMap().NumMyElements();
      if (graph->nGhost < 0) graph->nGhost = 0;
   }
   return graph;

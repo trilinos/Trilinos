@@ -1,9 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.4.3.  */
+/* A Bison parser, made by GNU Bison 2.4.2.  */
 
 /* Skeleton interface for Bison LALR(1) parsers in C++
    
-      Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010 Free
-   Software Foundation, Inc.
+      Copyright (C) 2002-2010 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -45,15 +44,15 @@
 
 namespace SEAMS {
 
-/* Line 35 of lalr1.cc  */
-#line 50 "aprepro_parser.h"
+/* Line 299 of lalr1.cc  */
+#line 49 "aprepro_parser.h"
   class position;
   class location;
 
 } // SEAMS
 
-/* Line 35 of lalr1.cc  */
-#line 57 "aprepro_parser.h"
+/* Line 299 of lalr1.cc  */
+#line 56 "aprepro_parser.h"
 
 #include "location.hh"
 
@@ -97,8 +96,8 @@ do {							\
 
 namespace SEAMS {
 
-/* Line 35 of lalr1.cc  */
-#line 102 "aprepro_parser.h"
+/* Line 299 of lalr1.cc  */
+#line 101 "aprepro_parser.h"
 
   /// A Bison parser.
   class Parser
@@ -109,8 +108,8 @@ namespace SEAMS {
     union semantic_type
     {
 
-/* Line 35 of lalr1.cc  */
-#line 43 "aprepro.yy"
+/* Line 299 of lalr1.cc  */
+#line 42 "aprepro.yy"
 
   double  val;		/* For returning numbers.		*/
   struct symrec *tptr;	/* For returning symbol-table pointers	*/
@@ -118,8 +117,8 @@ namespace SEAMS {
 
 
 
-/* Line 35 of lalr1.cc  */
-#line 123 "aprepro_parser.h"
+/* Line 299 of lalr1.cc  */
+#line 122 "aprepro_parser.h"
     };
 #else
     typedef YYSTYPE semantic_type;
@@ -137,44 +136,46 @@ namespace SEAMS {
      UNDVAR = 260,
      VAR = 261,
      SVAR = 262,
-     FNCT = 263,
-     SFNCT = 264,
-     COMMA = 265,
-     RT = 266,
-     LPAR = 267,
-     RPAR = 268,
-     LBRACK = 269,
-     RBRACK = 270,
-     LBRACE = 271,
-     RBRACE = 272,
-     SEMI = 273,
-     EQUAL = 274,
-     EQ_MINUS = 275,
-     EQ_PLUS = 276,
-     EQ_DIV = 277,
-     EQ_TIME = 278,
-     EQ_POW = 279,
-     COLON = 280,
-     QUEST = 281,
-     LOR = 282,
-     LAND = 283,
-     NE = 284,
-     EQ = 285,
-     GE = 286,
-     LE = 287,
-     GT = 288,
-     LT = 289,
-     SUB = 290,
-     PLU = 291,
-     MOD = 292,
-     TIM = 293,
-     DIV = 294,
-     NOT = 295,
-     UNARY = 296,
-     POW = 297,
-     DEC = 298,
-     INC = 299,
-     CONCAT = 300
+     IMMVAR = 263,
+     IMMSVAR = 264,
+     FNCT = 265,
+     SFNCT = 266,
+     COMMA = 267,
+     RT = 268,
+     LPAR = 269,
+     RPAR = 270,
+     LBRACK = 271,
+     RBRACK = 272,
+     LBRACE = 273,
+     RBRACE = 274,
+     SEMI = 275,
+     EQUAL = 276,
+     EQ_MINUS = 277,
+     EQ_PLUS = 278,
+     EQ_DIV = 279,
+     EQ_TIME = 280,
+     EQ_POW = 281,
+     COLON = 282,
+     QUEST = 283,
+     LOR = 284,
+     LAND = 285,
+     NE = 286,
+     EQ = 287,
+     GE = 288,
+     LE = 289,
+     GT = 290,
+     LT = 291,
+     SUB = 292,
+     PLU = 293,
+     MOD = 294,
+     TIM = 295,
+     DIV = 296,
+     NOT = 297,
+     UNARY = 298,
+     POW = 299,
+     DEC = 300,
+     INC = 301,
+     CONCAT = 302
    };
 
     };
@@ -261,7 +262,7 @@ namespace SEAMS {
     static const unsigned char yydefact_[];
 
     static const signed char yypgoto_[];
-    static const signed char yydefgoto_[];
+    static const short int yydefgoto_[];
 
     /// What to do in a state.
     /// \a yytable_[yypact_[s]]: what to do in state \a s.
@@ -347,8 +348,8 @@ namespace SEAMS {
 
 } // SEAMS
 
-/* Line 35 of lalr1.cc  */
-#line 352 "aprepro_parser.h"
+/* Line 299 of lalr1.cc  */
+#line 353 "aprepro_parser.h"
 
 
 

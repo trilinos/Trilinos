@@ -53,9 +53,13 @@
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <string>                       // for string, basic_string
 #include <vector>                       // for vector
-#include "exodusII.h"                   // for ex_err, ex_opts, etc
-#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
-#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
+
+extern "C" {
+#define NO_NETCDF_2
+#include <netcdf.h>
+#include <exodusII.h>
+#include <exodusII_int.h>
+}
 
 // Explicit Initialization of the functions used...
 namespace Excn {
@@ -319,42 +323,42 @@ bool Excn::Internals<INT>::check_meta_data(const Mesh &mesh,
 
   bool matches = true;
   if (mesh.dimensionality != init_data.num_dim) {
-    std::cerr << "ERROR: original mesh dimensionality ("
+    std::cerr << "ERROR: (EPU) original mesh dimensionality ("
 	      << mesh.dimensionality << ") does not match current dimensionality ("
 	      << init_data.num_dim << ")\n";
     matches = false;
   }
 
   if (mesh.nodeCount != init_data.num_nodes) {
-    std::cerr << "ERROR: original mesh node count ("
+    std::cerr << "ERROR: (EPU) original mesh node count ("
 	      << mesh.nodeCount << ") does not match current node count ("
 	      << init_data.num_nodes << ")\n";
     matches = false;
   }
 
   if (mesh.elementCount != init_data.num_elem) {
-    std::cerr << "ERROR: original mesh element count ("
+    std::cerr << "ERROR: (EPU) original mesh element count ("
 	      << mesh.elementCount << ") does not match current element count ("
 	      << init_data.num_elem << ")\n";
     matches = false;
   }
 
   if (mesh.blockCount != init_data.num_elem_blk) {
-    std::cerr << "ERROR: original mesh element block count ("
+    std::cerr << "ERROR: (EPU) original mesh element block count ("
 	      << mesh.blockCount << ") does not match current element block count ("
 	      << init_data.num_elem_blk << ")\n";
     matches = false;
   }
 
   if (mesh.nodesetCount != init_data.num_node_sets) {
-    std::cerr << "ERROR: original mesh nodeset count ("
+    std::cerr << "ERROR: (EPU) original mesh nodeset count ("
 	      << mesh.nodesetCount << ") does not match current nodeset count ("
 	      << init_data.num_node_sets << ")\n";
     matches = false;
   }
 
   if (mesh.sidesetCount != init_data.num_side_sets) {
-    std::cerr << "ERROR: original mesh sideset count ("
+    std::cerr << "ERROR: (EPU) original mesh sideset count ("
 	      << mesh.sidesetCount << ") does not match current sideset count ("
 	      << init_data.num_side_sets << ")\n";
     matches = false;

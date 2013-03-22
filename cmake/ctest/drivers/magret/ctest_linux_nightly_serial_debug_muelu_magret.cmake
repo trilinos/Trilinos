@@ -67,12 +67,13 @@ SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 
-SET(Trilinos_PACKAGES MueLu Amesos2)
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
-  "-DTPL_SuperLU_INCLUDE_DIRS=/home/jngaida/opt/stow/superlu/4.1/include"
-  "-DTPL_SuperLU_LIBRARIES=/home/jngaida/opt/stow/superlu/4.1/lib64/libsuperlu_4.1.a"
+  "-DSuperLU_INCLUDE_DIRS=/usr/local/superlu/4.3/include"
+  "-DSuperLU_LIBRARY_DIRS=/usr/local/superlu/4.3/lib64"
+  "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
 )
 
 SET(CTEST_DO_MEMORY_TESTING TRUE)

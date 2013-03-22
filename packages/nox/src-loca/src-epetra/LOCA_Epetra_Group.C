@@ -331,7 +331,7 @@ LOCA::Epetra::Group::applyJacobianTransposeInverse(
 				    const NOX::Abstract::Vector& input, 
 				    NOX::Abstract::Vector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::Group::applyJacobianTransposeInverse()";
   NOX::Abstract::Group::ReturnType status;
   
@@ -379,7 +379,7 @@ LOCA::Epetra::Group::applyJacobianTransposeInverseMultiVector(
 				    const NOX::Abstract::MultiVector& input, 
 				    NOX::Abstract::MultiVector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::Group::applyJacobianTransposeInverseMultiVector()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -450,7 +450,7 @@ LOCA::Epetra::Group::setParam(int paramID, double val)
 }
 
 void
-LOCA::Epetra::Group::setParam(string paramID, double val)
+LOCA::Epetra::Group::setParam(std::string paramID, double val)
 {
   resetIsValid();
   params.setValue(paramID, val);
@@ -469,7 +469,7 @@ LOCA::Epetra::Group::getParam(int paramID) const
 }
 
 double
-LOCA::Epetra::Group::getParam(string paramID) const
+LOCA::Epetra::Group::getParam(std::string paramID) const
 {
   return params.getValue(paramID);
 }
@@ -670,7 +670,7 @@ LOCA::Epetra::Group::applyShiftedMatrixMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::Group::applyShiftedMatrixMultiVector()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -810,7 +810,7 @@ LOCA::Epetra::Group::applySecondShiftedMatrixMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::Group::applySecondShiftedMatrixMultiVector()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -835,7 +835,7 @@ LOCA::Epetra::Group::isComplex() const
 NOX::Abstract::Group::ReturnType
 LOCA::Epetra::Group::computeComplex(double frequency)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::Group::computeComplex()";
 
   // We must have the time-dependent interface
@@ -950,7 +950,7 @@ LOCA::Epetra::Group::applyComplex(const NOX::Abstract::Vector& input_real,
 				  NOX::Abstract::Vector& result_real,
 				  NOX::Abstract::Vector& result_imag) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::Group::applyComplex()";
 
   // We must have the time-dependent interface
@@ -996,7 +996,7 @@ LOCA::Epetra::Group::applyComplex(const NOX::Abstract::Vector& input_real,
 // 				NOX::Abstract::MultiVector& result_real,
 // 				NOX::Abstract::MultiVector& result_imag) const
 // {
-//   string callingFunction = 
+//   std::string callingFunction = 
 //     "LOCA::Epetra::Group::applyComplexMultiVector()";
 //   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 //   NOX::Abstract::Group::ReturnType status;
@@ -1020,7 +1020,7 @@ LOCA::Epetra::Group::applyComplexMultiVector(
 				NOX::Abstract::MultiVector& result_real,
 				NOX::Abstract::MultiVector& result_imag) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::Group::applyComplexMultiVector()";
   // We must have the time-dependent interface
   if (userInterfaceTime == Teuchos::null)
@@ -1075,7 +1075,7 @@ LOCA::Epetra::Group::applyComplexInverseMultiVector(
 			    NOX::Abstract::MultiVector& result_real,
 			    NOX::Abstract::MultiVector& result_imag) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::Group::applyComplexInverseMultiVector()";
 
   // We must have the time-dependent interface
@@ -1162,7 +1162,7 @@ LOCA::Epetra::Group::applyComplexTranspose(
 				  NOX::Abstract::Vector& result_real,
 				  NOX::Abstract::Vector& result_imag) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::Group::applyComplexTranspose()";
 
   // We must have the time-dependent interface
@@ -1213,7 +1213,7 @@ LOCA::Epetra::Group::applyComplexTransposeMultiVector(
 				NOX::Abstract::MultiVector& result_real,
 				NOX::Abstract::MultiVector& result_imag) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::Group::applyComplexTransposeMultiVector()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -1238,7 +1238,7 @@ LOCA::Epetra::Group::applyComplexTransposeInverseMultiVector(
 			    NOX::Abstract::MultiVector& result_real,
 			    NOX::Abstract::MultiVector& result_imag) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::Group::applyComplexTransposeInverseMultiVector()";
 
   // We must have the time-dependent interface

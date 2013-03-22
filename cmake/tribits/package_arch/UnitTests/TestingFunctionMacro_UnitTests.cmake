@@ -68,8 +68,11 @@ INCLUDE(TribitsTestCategories)
 INCLUDE(TribitsAddTest)
 INCLUDE(TribitsAddAdvancedTest)
 INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsETISupport)
 INCLUDE(UnitTestHelpers)
 INCLUDE(GlobalSet)
+INCLUDE(GlobalNullSet)
+INCLUDE(AppendStringVar)
 
 #####################################################################
 #
@@ -95,6 +98,48 @@ INCLUDE(GlobalSet)
 #
 
 
+FUNCTION(UNIT_TEST_APPEND_STRING_VAR)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing APPEND_STRING_VAR()")
+  MESSAGE("***\n")
+
+  MESSAGE("APPEND_STRING_VAR(): Testing simple concatenation")
+  SET(SOME_STRING_VAR "")
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "begin\n" )
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "middle1" " middile2" " middle3\n" )
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "end\n" )
+  UNITTEST_COMPARE_CONST(SOME_STRING_VAR
+    "begin\nmiddle1 middile2 middle3\nend\n")
+
+  MESSAGE("APPEND_STRING_VAR(): Testing with [] and {} which messes up ;")
+  SET(SOME_STRING_VAR "")
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "[\n" )
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "{middle1" " middile2" " middle3}\n" )
+  APPEND_STRING_VAR(SOME_STRING_VAR
+     "]\n" )
+  UNITTEST_COMPARE_CONST(SOME_STRING_VAR
+    "[\n;{middle1; middile2; middle3}\n;]\n")
+
+  MESSAGE("APPEND_STRING_VAR_EXT(): Testing with [] and {} which ignores ;")
+  SET(SOME_STRING_VAR "")
+  APPEND_STRING_VAR_EXT(SOME_STRING_VAR
+     "[\n" )
+  APPEND_STRING_VAR_EXT(SOME_STRING_VAR
+     "{middle1 middile2 middle3}\n" )
+  APPEND_STRING_VAR_EXT(SOME_STRING_VAR
+     "]\n" )
+  UNITTEST_COMPARE_CONST(SOME_STRING_VAR
+    "[\n{middle1 middile2 middle3}\n]\n")
+
+ENDFUNCTION()
+
+
 FUNCTION(UNITEST_PACKAGE_ARCH_MISC)
 
   MESSAGE("\n***")
@@ -105,13 +150,13 @@ FUNCTION(UNITEST_PACKAGE_ARCH_MISC)
   SET(MESSAGE_WRAPPER_UNIT_TEST_MODE FALSE)
   GLOBAL_SET(MESSAGE_WRAPPER_INPUT "Dummy")
   MESSAGE_WRAPPER("Some message that should get printed and not intercepted")
-  UNITTEST_COMPARE_CONST(MESSAGE_WRAPPER_INPUT "")
+  UNITTEST_COMPARE_CONST(MESSAGE_WRAPPER_INPUT "Dummy")
 
   MESSAGE("Testing MESSAGE_WRAPPER(...) with capture")
   SET(MESSAGE_WRAPPER_UNIT_TEST_MODE TRUE)
   GLOBAL_SET(MESSAGE_WRAPPER_INPUT "Dummy")
   MESSAGE_WRAPPER("Some message that should get intercepted")
-  UNITTEST_COMPARE_CONST(MESSAGE_WRAPPER_INPUT "Some message that should get intercepted")
+  UNITTEST_COMPARE_CONST(MESSAGE_WRAPPER_INPUT "Dummy;Some message that should get intercepted")
 
   MESSAGE("Testing FIND_LIST_ELEMENT(${PROJECT_NAME}_VALID_CATEGORIES BASIC ELEMENT_FOUND)")
   FIND_LIST_ELEMENT(${PROJECT_NAME}_VALID_CATEGORIES BASIC ELEMENT_FOUND)
@@ -143,7 +188,7 @@ FUNCTION(UNITEST_PACKAGE_ARCH_MISC)
 
   MESSAGE("Testing TRIBITS_ASSERT_VALID_CATEGORIES( ... BADCAT1 BASIC BADCAT2)")
   SET(MESSAGE_WRAPPER_UNIT_TEST_MODE TRUE)
-  GLOBAL_SET(MESSAGE_WRAPPER_INPUT "Dummy")
+  GLOBAL_SET(MESSAGE_WRAPPER_INPUT)
   TRIBITS_ASSERT_VALID_CATEGORIES(BADCAT1 BASIC BADCAT2)  
   SET(MESSAGE_WRAPPER_UNIT_TEST_MODE FALSE)
   UNITTEST_COMPARE_CONST(MESSAGE_WRAPPER_INPUT
@@ -476,10 +521,10 @@ FUNCTION(UNITEST_PACKAGE_ADD_TEST_CATEGORIES)
     "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe"
     )
 
-  MESSAGE("Test invlaid BADCAT category not matching anything and resulting in error")
+  MESSAGE("Test invalid BADCAT category not matching anything and resulting in error")
   SET(${PROJECT_NAME}_TEST_CATEGORIES NIGHTLY)
   SET(MESSAGE_WRAPPER_UNIT_TEST_MODE TRUE)
-  GLOBAL_SET(MESSAGE_WRAPPER_INPUT "Dummy")
+  GLOBAL_SET(MESSAGE_WRAPPER_INPUT "")
   TRIBITS_ADD_TEST( ${EXEN} CATEGORIES BADCAT )
   SET(MESSAGE_WRAPPER_UNIT_TEST_MODE FALSE)
   UNITTEST_COMPARE_CONST(MESSAGE_WRAPPER_INPUT
@@ -1202,7 +1247,7 @@ FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_DIRECTROY)
 ENDFUNCTION()
 
 
-FUNCTION(UNITEST_PACAKGE_ADD_EXECUTABLE_AND_TEST)
+FUNCTION(UNITEST_PACKAGE_ADD_EXECUTABLE_AND_TEST)
 
   SET(PACKAGE_ADD_EXECUTABLE_AND_TEST_TEST_MODE ON)
 
@@ -1266,6 +1311,355 @@ FUNCTION(UNITEST_PACAKGE_ADD_EXECUTABLE_AND_TEST)
 ENDFUNCTION()
 
 
+FUNCTION(UNITTEST_TRIBITS_ETI_TYPE_EXPANSION)
+
+  MESSAGE("*** Test passing invalid arguments to TRIBITS_ETI_TYPE_EXPANSION( ... )\n")
+
+  UNSET(expansion)
+  TRIBITS_ETI_TYPE_EXPANSION(expansion "badformat")
+  UNITTEST_COMPARE_CONST(
+    expansion
+    "TRIBITS_ETI_BAD_ARGUMENTS"
+    )
+
+  MESSAGE("*** Test passing valid arguments to TRIBITS_ETI_TYPE_EXPANSION( ... )\n")
+
+  # test rank-one
+  UNSET(expansion)
+  TRIBITS_ETI_TYPE_EXPANSION(expansion "f1=ta|tb")
+  UNITTEST_COMPARE_CONST(
+    expansion
+    "f1={ta};f1={tb}"
+    )
+
+  # test accumulation into ${expansion}
+  TRIBITS_ETI_TYPE_EXPANSION(expansion "f2=tc|td|te")
+  UNITTEST_COMPARE_CONST(
+    expansion
+    "f1={ta};f1={tb};f2={tc};f2={td};f2={te}"
+    )
+
+  # test rank-two
+  UNSET(expansion)
+  TRIBITS_ETI_TYPE_EXPANSION(expansion "f1=ta|tb" "f2=tc")
+  UNITTEST_COMPARE_CONST(
+    expansion
+    "f1={ta} f2={tc};f1={tb} f2={tc}"
+    )
+
+  # test rank-three
+  UNSET(expansion)
+  TRIBITS_ETI_TYPE_EXPANSION(expansion "f1=ta|tb" "f2=tc" "f3=td|te")
+  UNITTEST_COMPARE_CONST(
+    expansion
+    "f1={ta} f2={tc} f3={td};f1={ta} f2={tc} f3={te};f1={tb} f2={tc} f3={td};f1={tb} f2={tc} f3={te}"
+    )
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITTEST_TRIBITS_ETI_CHECK_EXCLUSION)
+
+  MESSAGE("*** Test passing valid arguments to TRIBITS_ETI_CHECK_EXCLUSION( ... )\n")
+
+  message("empty exclusion list...")
+  TRIBITS_ETI_CHECK_EXCLUSION("" "ta|tb|tc" result)
+  UNITTEST_COMPARE_CONST(
+    result
+    OFF
+  )
+
+  message("inst not excluded (no match)...")
+  TRIBITS_ETI_CHECK_EXCLUSION("td|te|tf" "ta|tb|tc" result)
+  UNITTEST_COMPARE_CONST(
+    result
+    OFF
+  )
+
+  message("matches only on present types...")
+  TRIBITS_ETI_CHECK_EXCLUSION("ta|ta|tb" "ta|TYPE-MISSING|tb" result)
+  UNITTEST_COMPARE_CONST(
+    result
+    ON
+  )
+
+  message("no match: exclusion has the wrong rank (not an error)...")
+  TRIBITS_ETI_CHECK_EXCLUSION("ta|ta" "ta|tb|tc" result)
+  UNITTEST_COMPARE_CONST(
+    result
+    OFF
+  )
+
+  message("inst not excluded (partial match)...")
+  TRIBITS_ETI_CHECK_EXCLUSION("ta|tb|ta;tb|tb|tc;ta|ta|tc" "ta|tb|tc" result)
+  UNITTEST_COMPARE_CONST(
+    result
+    OFF
+  )
+
+  message("inst exluded (full explicit)...")
+  TRIBITS_ETI_CHECK_EXCLUSION("abcdf;ta|tb|tc" "ta|tb|tc" result)
+  UNITTEST_COMPARE_CONST(
+    result
+    ON
+  )
+
+  message("inst exluded (full regex)...")
+  TRIBITS_ETI_CHECK_EXCLUSION("abcdf;.*|.*|.*" "ta|tb|tc" result)
+  UNITTEST_COMPARE_CONST(
+    result
+    ON
+  )
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITTEST_TRIBITS_ETI_INDEX_MACRO_FIELDS)
+
+  MESSAGE("*** Test passing valid arguments to TRIBITS_ETI_INDEX_MACRO_FIELDS( ... )\n")
+
+  # check simple
+  TRIBITS_ETI_INDEX_MACRO_FIELDS("F1;F2;F3" "F3" var)
+  UNITTEST_COMPARE_CONST(
+    var
+    "2"
+    )
+
+  # check complex
+  TRIBITS_ETI_INDEX_MACRO_FIELDS("F1;F2;F3" "F3;F2;F1" var)
+  UNITTEST_COMPARE_CONST(
+    var
+    "2;1;0"
+    )
+
+  # check complex with spaces
+  TRIBITS_ETI_INDEX_MACRO_FIELDS("F1;F2;F3" " F2 ;   F2 ; F2 " var)
+  UNITTEST_COMPARE_CONST(
+    var
+    "1;1;1"
+    )
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITTEST_TRIBITS_ADD_ETI_INSTANTIATIONS_INITIAL)
+
+  MESSAGE("*** Testing TRIBITS_ADD_ETI_INSTANTIATIONS... )\n")
+
+  SET(package ${PROJECT_NAME}Framework)
+  GLOBAL_NULL_SET(${package}_ETI_LIBRARYSET)
+  TRIBITS_ADD_ETI_INSTANTIATIONS(${package} "someinst")
+  UNITTEST_COMPARE_CONST(
+    ${package}_ETI_LIBRARYSET
+    "someinst"
+    )
+
+ENDFUNCTION()
+
+FUNCTION(UNITTEST_TRIBITS_ADD_ETI_INSTANTIATIONS_CUMULATIVE)
+
+  SET(package ${PROJECT_NAME}Framework)
+  TRIBITS_ADD_ETI_INSTANTIATIONS(${package} "anotherinst")
+  UNITTEST_COMPARE_CONST(
+    ${package}_ETI_LIBRARYSET
+    "someinst;anotherinst"
+    )
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITTEST_TRIBITS_ETI_EXPLODE)
+
+  MESSAGE("*** Test passing valid arguments to TRIBITS_ETI_EXPLODE( ... )\n")
+
+  # no fields -> no results
+  SET(FIELDS "")
+  TRIBITS_ETI_EXPLODE("${FIELDS}" "F1=type1 F2=type2 F3=type3" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    ""
+    )
+
+  # order doesn't matter; also, results should be bracketed
+  SET(FIELDS F FF G)
+  TRIBITS_ETI_EXPLODE("${FIELDS}" "F=type1 FF=type2 G={type3}" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "type1|type2|type3"
+    )
+  TRIBITS_ETI_EXPLODE("${FIELDS}" "FF=type2 F={type1} G=type3" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "type1|type2|type3"
+    )
+  TRIBITS_ETI_EXPLODE("${FIELDS}" "G=type3 FF=type2 F={type1}" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "type1|type2|type3"
+    )
+  
+  # empty for missing fields
+
+  # missing field handled properly, extra fields ignored
+  SET(FIELDS F FF G)
+  TRIBITS_ETI_EXPLODE("${FIELDS}" "F=type1 G=type3 H=type4" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "type1|TYPE-MISSING|type3"
+    )
+
+  # bad bracketing doesn't work
+  TRIBITS_ETI_EXPLODE("F" "F=typea}" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "TRIBITS_ETI_BAD_PARSE"
+    )
+  TRIBITS_ETI_EXPLODE("F" "F={typea" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "TRIBITS_ETI_BAD_PARSE"
+    )
+  TRIBITS_ETI_EXPLODE("F" "F={typea}}" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "TRIBITS_ETI_BAD_PARSE"
+    )
+  TRIBITS_ETI_EXPLODE("F" "F={{typea}" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "TRIBITS_ETI_BAD_PARSE"
+    )
+  TRIBITS_ETI_EXPLODE("F" "F=typeaG=typeb" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "TRIBITS_ETI_BAD_PARSE"
+    )
+
+ENDFUNCTION()
+
+FUNCTION(UNITTEST_TRIBITS_ETI_MANGLE_SYMBOL)
+
+  MESSAGE("*** Testing ETI Mangling ***")
+
+  # this one is ugly...
+  TRIBITS_ETI_MANGLE_SYMBOL(mangled "std::pair< std::complex< double > , std::complex< float > >")
+  UNITTEST_COMPARE_CONST(
+    mangled
+    "std_pair2std_complex1double1_std_complex0float02")
+
+  # test that POD isn't mangled, and that the method accumulates into the typedef list
+  SET(defs_orig "do not delete")
+  SET(defs "${defs_orig}")
+  SET(symbol "double")
+  SET(mangling_list "")
+  TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO(defs symbol mangling_list)
+  UNITTEST_COMPARE_CONST(
+    symbol
+    "double")
+  UNITTEST_COMPARE_CONST(
+    defs
+    "${defs_orig}")
+  UNITTEST_COMPARE_CONST(
+    mangling_list
+    "")
+
+  # this is more like what we expect
+  SET(defs "")
+  SET(mangling_list "")
+  #
+  SET(symbol "std::complex<float>")
+  TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO(defs symbol mangling_list)
+  UNITTEST_COMPARE_CONST(
+    symbol
+    "std_complex0float0")
+  #
+  SET(symbol "std::pair<float,float>")
+  TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO(defs symbol mangling_list)
+  UNITTEST_COMPARE_CONST(
+    symbol
+    "std_pair0float_float0")
+  #
+  UNITTEST_COMPARE_CONST(
+    mangling_list
+    "std_complex0float0;std_pair0float_float0")
+  UNITTEST_COMPARE_CONST(
+    defs
+    "typedef std::complex<float> std_complex0float0;typedef std::pair<float,float> std_pair0float_float0")
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITTEST_TRIBITS_ETI_GENERATE_MACROS)
+
+  MESSAGE("*** Test TRIBITS_ETI_GENERATE_MACROS( ... )\n")
+
+  TRIBITS_ETI_TYPE_EXPANSION(
+    etiset 
+    "F1=Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > | double" 
+    "F2=int | long"
+    "F3=float"
+  )
+  TRIBITS_ETI_TYPE_EXPANSION(
+    exclset
+    "F1=.*"
+    "F2=long"
+    "F3=.*"
+  )
+  TRIBITS_ETI_GENERATE_MACROS(
+    "F1|F2|F3" 
+    "${etiset}" 
+    "${exclset}"
+    mangling_list     typedef_list
+    "F1(F1)"          macro_f1_var
+    "F312(F3,F1,F2)"  macro_f312_var
+  )
+  UNITTEST_COMPARE_CONST(
+    macro_f1_var
+"#define F1(INSTMACRO)\\
+\tINSTMACRO( Teuchos_ArrayRCP1Teuchos_ArrayRCP0double01 )\\
+\tINSTMACRO( double )
+"
+    )
+  UNITTEST_COMPARE_CONST(
+    macro_f312_var
+"#define F312(INSTMACRO)\\
+\tINSTMACRO( float , Teuchos_ArrayRCP1Teuchos_ArrayRCP0double01 , int )\\
+\tINSTMACRO( float , double , int )
+"
+    )
+  UNITTEST_COMPARE_CONST(
+    typedef_list 
+    "typedef Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > Teuchos_ArrayRCP1Teuchos_ArrayRCP0double01")
+  UNITTEST_COMPARE_CONST(
+    mangling_list 
+    "Teuchos_ArrayRCP1Teuchos_ArrayRCP0double01")
+
+  SET(mangling_list "")
+  SET(typedef_list  "")
+  TRIBITS_ETI_GENERATE_MACROS(
+    "F1|F2"
+    "F1=a F2=b;F2=c;G1=d G2=e;G3=f"
+    ""
+    mangling_list     typedef_list
+    "F2(F2)"          macro_f2_var
+    "F12(F1,F2)"      macro_f12_var
+  )
+  UNITTEST_COMPARE_CONST( typedef_list "")
+  UNITTEST_COMPARE_CONST( mangling_list "")
+  UNITTEST_COMPARE_CONST(
+    macro_f2_var
+"#define F2(INSTMACRO)\\
+\tINSTMACRO( b )\\
+\tINSTMACRO( c )
+")
+  UNITTEST_COMPARE_CONST(
+    macro_f12_var
+"#define F12(INSTMACRO)\\
+\tINSTMACRO( a , b )
+")
+
+ENDFUNCTION()
+
 #
 # Execute the unit tests
 #
@@ -1284,16 +1678,17 @@ GLOBAL_SET(UNITTEST_OVERALL_NUMRUN 0)
 SET( PACKAGE_ADD_TEST_ADD_TEST_CAPTURE TRUE )
 SET( PACKAGE_ADD_TEST_ADD_TEST_SKIP TRUE )
 
-# Don't let PACAKGE_ADD_ADVANCED_TEST(...) actually call ADD_TEST(...).
+# Don't let PACKAGE_ADD_ADVANCED_TEST(...) actually call ADD_TEST(...).
 SET( PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT_ADD_TEST TRUE )
 
+UNIT_TEST_APPEND_STRING_VAR()
 UNITEST_PACKAGE_ARCH_MISC()
 
 # Set the default test categories
 SET(${PROJECT_NAME}_TEST_CATEGORIES NIGHTLY)
 
 MESSAGE("\n***")
-MESSAGE("*** Testing PACAKGE_ADD_TEST(...)")
+MESSAGE("*** Testing PACKAGE_ADD_TEST(...)")
 MESSAGE("***\n")
 
 UNITEST_PACKAGE_ADD_TEST_BASIC()
@@ -1302,7 +1697,7 @@ UNITEST_PACKAGE_ADD_TEST_COMM()
 
 
 MESSAGE("\n***")
-MESSAGE("*** Testing PACAKGE_ADD_ADVANCED_TEST(...)")
+MESSAGE("*** Testing PACKAGE_ADD_ADVANCED_TEST(...)")
 MESSAGE("***\n")
 
 UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC()
@@ -1313,14 +1708,27 @@ UNITEST_PACKAGE_ADD_ADVANCED_TEST_DIRECTROY()
 UNITEST_PACKAGE_ADD_TEST_DISABLE()
 
 MESSAGE("\n***")
-MESSAGE("*** Testing PACAKGE_ADD_EXECUTABLE_AND_TEST(...)")
+MESSAGE("*** Testing PACKAGE_ADD_EXECUTABLE_AND_TEST(...)")
 MESSAGE("***\n")
 
-UNITEST_PACAKGE_ADD_EXECUTABLE_AND_TEST()
+UNITEST_PACKAGE_ADD_EXECUTABLE_AND_TEST()
+
+MESSAGE("\n***")
+MESSAGE("*** Testing Explicit Template Instantiation functionality")
+MESSAGE("***\n")
+
+UNITTEST_TRIBITS_ETI_EXPLODE()
+UNITTEST_TRIBITS_ETI_TYPE_EXPANSION()
+UNITTEST_TRIBITS_ETI_CHECK_EXCLUSION()
+UNITTEST_TRIBITS_ETI_INDEX_MACRO_FIELDS()
+UNITTEST_TRIBITS_ADD_ETI_INSTANTIATIONS_INITIAL()
+UNITTEST_TRIBITS_ADD_ETI_INSTANTIATIONS_CUMULATIVE()
+UNITTEST_TRIBITS_ETI_MANGLE_SYMBOL()
+UNITTEST_TRIBITS_ETI_GENERATE_MACROS()
 
 MESSAGE("\n***")
 MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(149)
+UNITTEST_FINAL_RESULT(195)

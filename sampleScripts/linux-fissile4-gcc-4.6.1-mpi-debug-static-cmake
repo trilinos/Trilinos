@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# Scrpt used by Ross Bartlett for MPI_DEBUG build with GCC 4.5.1 on CASL
+# fissile 4 machines.
+#
+# This is my primary development script that I used to drive functionality.
+# Look at this script whenever you want to see what I am doing to drive my
+# development.
+#
+# Pass in extra arguments on the command-line to this script with:
+#
+#   -DTrilinos_ENABLE_LIME=ON \
+#   -DTrilinos_EXTRA_REPOSITORIES=LIMEExt \
+#
+# NOTE: To set extra repos pass in:
+#    -DTrilinos_EXTRA_REPOSITORIES=LIMEExt,PSSDriversExt,...
+#
+# NOTE: Copy this file for your own use if you want to be able to
+# hard-code Trilinos_EXTRA_REPOSITORIES or change anything else.
+#
+# NOTE: The default source location is for the peer directory is:
+#
+#   BUILDS/GCC_4.5.1/<SOME_BUILD_NAME>
+#
+# which you can change in your copy.
+#
+# NOTE: Other options you might want to pass in:
+#  -D Trilinos_ENABLE_COVERAGE_TESTING:BOOL=ON \
+#
+
+EXTRA_ARGS=$@
+
+TRILINOS_DIR=../../../Trilinos  # Change for the location of your Trilinos source
+
+TRILINOS_DIR_ABS=$(readlink -f $TRILINOS_DIR)
+echo "TRILINOS_DIR_ABS = $TRILINOS_DIR_ABS"
+
+DRIVERS_BASE_DIR=$TRILINOS_DIR_ABS/cmake/ctest/drivers/pu241
+
+cmake \
+-D Trilinos_CONFIGURE_OPTIONS_FILE:FILEPATH="$DRIVERS_BASE_DIR/gcc-4.6.1-mpi-debug-ss-options.cmake,$DRIVERS_BASE_DIR/trilinos-tpls-gcc.4.6.1.cmake,$DRIVERS_BASE_DIR/SubmitToTrilinos.cmake" \
+-D CTEST_PARALLEL_LEVEL:STRING="8" \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D BUILD_SHARED_LIBS:BOOL=OFF \
+-D TPL_ENABLE_BinUtils:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Teuchos_ENABLE_DEFAULT_STACKTRACE:BOOL=ON \
+-D DART_TESTING_TIMEOUT:STRING=180.0 \
+-D CTEST_BUILD_FLAGS:STRING="-j8" \
+-D Trilinos_EXCLUDE_PACKAGES="CTrilinos;ForTrilinos;PyTrilinos;Didasko;Mesquite;Phdmesh;Pliris;Claps" \
+$EXTRA_ARGS \
+${TRILINOS_DIR_ABS}
+
+# Above, I am using the core build options for CASL development but I am doing
+# a true debug, with explicit instantiation, stack tracing, etc.

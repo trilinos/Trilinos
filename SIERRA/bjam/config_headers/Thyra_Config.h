@@ -1,17 +1,2 @@
-
-#include "TrilinosPlatform_config.h"
-#define HAVE_THYRA_EPETRA 1
-#define HAVE_THYRA_EPETRAEXT 1
-#define THYRA_DEPRECATED
-
-
-#ifndef THYRA_FUNC_TIME_MONITOR
-#  define THYRA_TEUCHOS_TIME_MONITOR
-#  define THYRA_FUNC_TIME_MONITOR(FUNCNAME) \
-     TEUCHOS_FUNC_TIME_MONITOR_DIFF(FUNCNAME, THYRA)
-#  define THYRA_FUNC_TIME_MONITOR_DIFF(FUNCNAME, DIFF) \
-     TEUCHOS_FUNC_TIME_MONITOR_DIFF(FUNCNAME, DIFF)
-#endif
-
-
-
+#include "TrilinosSierraConfig.h"
+#include "Thyra_Config_fcs.h"

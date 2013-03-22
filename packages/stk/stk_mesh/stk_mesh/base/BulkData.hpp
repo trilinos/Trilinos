@@ -131,6 +131,7 @@ public:
 
   bool final_modification_end()
   {
+    optimize_buckets_at_modification_end(true);
     const bool mod_flag =  modification_end();
 
     //call modification_begin and end one last time to free deleted entities

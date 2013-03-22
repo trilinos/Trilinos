@@ -49,7 +49,7 @@ using namespace Teuchos;
 using namespace Anasazi;
 
 typedef double                    MT;
-typedef ScalarTraits<MT>         MTT;
+typedef ScalarTraits<MT>         MTTraits;
 
 class get_out : public std::logic_error {
   public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
@@ -59,7 +59,7 @@ template <class MT>
 bool checkValsLM(int howmany, const std::vector<MT> &vals) {
   // largest magnitude to smallest magnitude: |vals[i]| >= |vals[i+1]|
   for (int i=0; i<howmany-1; ++i) {
-    if ( MTT::magnitude(vals[i]) < MTT::magnitude(vals[i+1]) ) return false;
+    if ( MTTraits::magnitude(vals[i]) < MTTraits::magnitude(vals[i+1]) ) return false;
   }
   return true;
 }
@@ -68,7 +68,7 @@ template <class MT>
 bool checkValsSM(int howmany, const std::vector<MT> &vals) {
   // smallest magnitude to largest magnitude: |vals[i]| <= |vals[i+1]|
   for (int i=0; i<howmany-1; ++i) {
-    if ( MTT::magnitude(vals[i]) > MTT::magnitude(vals[i+1]) ) return false;
+    if ( MTTraits::magnitude(vals[i]) > MTTraits::magnitude(vals[i+1]) ) return false;
   }
   return true;
 }
@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
   // seed random number generator
   int walltime = (int)Time::wallTime();
   printer->stream(Warnings) << "Seeding PRNG with " << walltime << endl << endl;
-  MTT::seedrandom(walltime);
+  MTTraits::seedrandom(walltime);
 
   // 
   // create the array of values to be sorted
@@ -204,8 +204,8 @@ int main(int argc, char *argv[])
   vector<int> pureperm(numVals);
   for (int i=0; i<numVals; ++i)
   {
-    unsorted_r[i] = MTT::random();
-    unsorted_i[i] = MTT::random();
+    unsorted_r[i] = MTTraits::random();
+    unsorted_i[i] = MTTraits::random();
     pureperm[i] = i;
   }
 

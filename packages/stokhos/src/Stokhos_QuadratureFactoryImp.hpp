@@ -71,16 +71,13 @@ create(Teuchos::ParameterList& sgParams)
   }
   else if (quad_type == "Sparse Grid") {
 #ifdef HAVE_STOKHOS_DAKOTA
-    if (quadParams.isType<ordinal_type>("Sparse Grid Level")) {
-      ordinal_type level = quadParams.get<ordinal_type>("Sparse Grid Level");
-      quad = 
-	Teuchos::rcp(new Stokhos::SparseGridQuadrature<ordinal_type,value_type>(
-		       product_basis, level));
-    }
-    else
-      quad = 
-	Teuchos::rcp(new Stokhos::SparseGridQuadrature<ordinal_type,value_type>(
-		       product_basis));
+    ordinal_type level = quadParams.get("Sparse Grid Level", 0);
+    value_type dup_tol = quadParams.get("Duplicate Tolerance", 1e-12);
+    ordinal_type growth = quadParams.get<ordinal_type>(
+      "Growth Rule", Pecos::SLOW_RESTRICTED_GROWTH);
+    quad = 
+      Teuchos::rcp(new Stokhos::SparseGridQuadrature<ordinal_type,value_type>(
+		     product_basis, level, dup_tol, growth));
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 		       std::endl << 

@@ -46,20 +46,21 @@
 //@HEADER
 
 #include "NOX_Multiphysics_Group.H"
+#include <iostream>
 
 NOX::Multiphysics::Group::Group(
-          const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
+          const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
           const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
           const Teuchos::RCP<Teuchos::ParameterList>& p) :
   solversVecPtr(solvers),
   normRHS(0.0)
 {
   // Create our version of the composite solution vector
-  vector<const NOX::Abstract::Vector*> vecPtrs;
+  std::vector<const NOX::Abstract::Vector*> vecPtrs;
 
   for( unsigned int i = 0; i < solvers->size(); ++i )
   {
-    cout << " .. .. .. received solver # " << i << endl;
+    std::cout << " .. .. .. received solver # " << i << std::endl;
     vecPtrs.push_back( &((*solvers)[i]->getSolutionGroup().getX()) );
   }
 
@@ -82,7 +83,7 @@ NOX::Multiphysics::Group::Group( const Group & source, NOX::CopyType type )
       break;
 
     default:
-      cerr << "ERROR: Invalid ConstructorType for group copy constructor." << endl;
+      std::cerr << "ERROR: Invalid ConstructorType for group copy constructor." << std::endl;
       throw "NOX Error";
   }
 }
@@ -206,7 +207,7 @@ double
 NOX::Multiphysics::Group::getNormF() const
 {
   if (!isF()) {
-    cerr << "ERROR: NOX::Epetra::Group::getNormF() - invalid RHS" << endl;
+    std::cerr << "ERROR: NOX::Epetra::Group::getNormF() - invalid RHS" << std::endl;
     throw "NOX Error";
   }
     

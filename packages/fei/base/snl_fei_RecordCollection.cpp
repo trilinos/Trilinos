@@ -1,45 +1,10 @@
-/*
-// @HEADER
-// ************************************************************************
-//             FEI: Finite Element Interface to Linear Solvers
-//                  Copyright (2005) Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, the
-// U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alan Williams (william@sandia.gov) 
-//
-// ************************************************************************
-// @HEADER
-*/
-
+/*--------------------------------------------------------------------*/
+/*    Copyright 2005 Sandia Corporation.                              */
+/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
 
 #include "fei_sstream.hpp"
 
@@ -56,7 +21,7 @@
 snl_fei::RecordCollection::RecordCollection(int localProc)
   : m_records(),
     m_global_to_local(),
-    m_minID(std::numeric_limits<int>::max()),
+    m_minID(99999999),
     m_maxID(0),
     localProc_(localProc),
     debugOutput_(false),
@@ -69,8 +34,8 @@ snl_fei::RecordCollection::RecordCollection(int localProc)
 snl_fei::RecordCollection::RecordCollection(const RecordCollection& src)
   : m_records(src.m_records),
     m_global_to_local(src.m_global_to_local),
-    m_minID(src.m_minID),
-    m_maxID(src.m_maxID),
+    m_minID(99999999),
+    m_maxID(0),
     localProc_(src.localProc_),
     debugOutput_(src.debugOutput_),
     dbgOut_(src.dbgOut_)
@@ -124,18 +89,19 @@ void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
   }
 
   for(int i=0; i<numIDs; ++i) {
-    int local_id;
-    fei::MapIntInt::iterator iter = m_global_to_local.find(IDs[i]);
-    if (iter == m_global_to_local.end() ) {
+    if (m_minID > IDs[i]) m_minID = IDs[i];
+    if (m_maxID < IDs[i]) m_maxID = IDs[i];
+
+    int local_id = -1;
+    std::map<int,int>::iterator iter = m_global_to_local.lower_bound(IDs[i]);
+    if (iter == m_global_to_local.end() || iter->first != IDs[i]) {
       //record doesn't exist, so we'll add a new one.
       local_id = m_records.size();
       m_global_to_local.insert(iter, std::make_pair(IDs[i], local_id));
-      if (m_minID > IDs[i]) m_minID = IDs[i];
-      if (m_maxID < IDs[i]) m_maxID = IDs[i];
       fei::Record<int> record;
       record.setID(IDs[i]);
       record.setFieldMask(mask);
-      record.setOwnerProc(localProc_);
+      record.setOwnerProc(-1);
       m_records.push_back(record);
     }
     else {
@@ -170,18 +136,18 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
   fei::FieldMask* lastMask = mask;
 
   for(int i=0; i<numIDs; ++i) {
+    if (m_minID > IDs[i]) m_minID = IDs[i];
+    if (m_maxID < IDs[i]) m_maxID = IDs[i];
     int local_id;
-    fei::MapIntInt::iterator iter = m_global_to_local.find(IDs[i]);
-    if (iter == m_global_to_local.end() ) {
+    std::map<int,int>::iterator iter = m_global_to_local.lower_bound(IDs[i]);
+    if (iter == m_global_to_local.end() || iter->first != IDs[i]) {
       //record doesn't exist, so we'll add a new one.
       local_id = m_records.size();
-      m_global_to_local.insert(std::make_pair(IDs[i], local_id));
-      if (m_minID > IDs[i]) m_minID = IDs[i];
-      if (m_maxID < IDs[i]) m_maxID = IDs[i];
+      m_global_to_local.insert(iter, std::make_pair(IDs[i], local_id));
       fei::Record<int> record;
       record.setID(IDs[i]);
       record.setFieldMask(mask);
-      record.setOwnerProc(localProc_);
+      record.setOwnerProc(-1);
       m_records.push_back(record);
 
       if (recordLocalIDs != NULL) {
@@ -242,8 +208,16 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
 }
 
 //----------------------------------------------------------------------------
-void snl_fei::RecordCollection::
-setOwners_lowestSharing(fei::SharedIDs<int>& sharedIDs)
+void snl_fei::RecordCollection::setOwners_local()
+{
+  for(size_t i=0; i<m_records.size(); ++i) {
+    fei::Record<int>& rec = m_records[i];
+    if (rec.getOwnerProc() == -1) rec.setOwnerProc(localProc_);
+  }
+}
+
+//----------------------------------------------------------------------------
+void snl_fei::RecordCollection::setOwners_lowestSharing(fei::SharedIDs<int>& sharedIDs)
 {
   fei::SharedIDs<int>::map_type::iterator
     s_beg = sharedIDs.getSharedIDs().begin(),
@@ -257,21 +231,29 @@ setOwners_lowestSharing(fei::SharedIDs<int>& sharedIDs)
     int sh_id = s_it->first;
     fei::Record<int>* record = getRecordWithID(sh_id);
     if (record == NULL) continue;
+ 
+    int rec_owner = record->getOwnerProc();
 
-    int proc = owningProcs[i];
+//    if (rec_owner != -1 && rec_owner != owningProcs[i]) {
+//      std::cout<<record->getID()<<": owner="<<rec_owner<<" but lowest sharer="<<owningProcs[i]<<std::endl;
+//    }
+
+    if (rec_owner != -1) owningProcs[i] = rec_owner;
+    else {
+      rec_owner = owningProcs[i];
+      record->setOwnerProc(rec_owner);
+    }
 
     if (debugOutput_) {
       *dbgOut_ << "#   setting ID " << (int)(record->getID())
-               << "'s owner to proc " << proc << FEI_ENDL;
+               << "'s owner to proc " << rec_owner << FEI_ENDL;
     }
-
-    record->setOwnerProc(proc);
   }
 }
 
 fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID)
 {
-  fei::MapIntInt::iterator iter = m_global_to_local.find(ID);
+  std::map<int,int>::iterator iter = m_global_to_local.find(ID);
 
   if (iter == m_global_to_local.end()) {
     return( NULL );
@@ -282,7 +264,7 @@ fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID)
 
 const fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID) const
 {
-  fei::MapIntInt::const_iterator iter = m_global_to_local.find(ID);
+  std::map<int,int>::const_iterator iter = m_global_to_local.find(ID);
 
   if (iter == m_global_to_local.end()) {
     return( NULL );
@@ -313,22 +295,14 @@ int snl_fei::RecordCollection::getGlobalIndex(int ID,
 {
   fei::Record<int>* record = getRecordWithID(ID);
   if (record == NULL) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "snl_fei::RecordCollection::getGlobalIndex ERROR, no record with "
-       << "ID=" << ID;
-    throw std::runtime_error(osstr.str());
+    return -1;
   }
 
   fei::FieldMask* mask = record->getFieldMask();
   int offset = 0;
-  try {
-    mask->getFieldEqnOffset(fieldID, offset);
-  }
-  catch (...) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "failed to get eqn-offset for fieldID " << fieldID
-          << " on record with ID " << ID << ".";
-    throw std::runtime_error(osstr.str());
+  int err = mask->getFieldEqnOffset(fieldID, offset);
+  if (err != 0) {
+    return -1;
   }
 
   const int* eqnNums = eqnNumbers + record->getOffsetIntoEqnNumbers();
@@ -368,14 +342,9 @@ int snl_fei::RecordCollection::getGlobalIndexLocalID(int localID,
 
   fei::FieldMask* mask = record->getFieldMask();
   int offset = 0;
-  try {
-    mask->getFieldEqnOffset(fieldID, offset);
-  }
-  catch (...) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "failed to get eqn-offset for fieldID " << fieldID
-          << " on record with localID " << localID << ".";
-    throw std::runtime_error(osstr.str());
+  int err = mask->getFieldEqnOffset(fieldID, offset);
+  if (err != 0) {
+    return -1;
   }
 
   const int* eqnNums = eqnNumbers + record->getOffsetIntoEqnNumbers();

@@ -348,7 +348,7 @@ BroydenOperator::computeJacobian( const Epetra_Vector & x, Epetra_Operator& Jac 
 
   ok = computeSparseBroydenUpdate();
 
-  vector<ReplacementInterface *>::iterator iter = replacementInterfaces.begin() ,
+  std::vector<ReplacementInterface *>::iterator iter = replacementInterfaces.begin() ,
                                       iter_end  = replacementInterfaces.end()     ;
 
   for( ; iter_end != iter; ++iter )
@@ -372,7 +372,7 @@ BroydenOperator::computePreconditioner( const Epetra_Vector & x,
 
   ok = computeSparseBroydenUpdate();
 
-  vector<ReplacementInterface *>::iterator iter = replacementInterfaces.begin() ,
+  std::vector<ReplacementInterface *>::iterator iter = replacementInterfaces.begin() ,
                                       iter_end  = replacementInterfaces.end()     ;
 
   for( ; iter_end != iter; ++iter )
@@ -519,8 +519,8 @@ BroydenOperator::computeSparseBroydenUpdate()
     int ierr = crsMatrix->Multiply( false, stepVec->getEpetraVector(), workVec->getEpetraVector() );
     if( ierr )
     {
-      cout << "ERROR: NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate(...) "
-           << "- crsMatrix->Multiply() failed!!!" << endl;
+      std::cout << "ERROR: NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate(...) "
+           << "- crsMatrix->Multiply() failed!!!" << std::endl;
       throw "NOX Error: Broyden Update Failed";
     }
 
@@ -533,8 +533,8 @@ BroydenOperator::computeSparseBroydenUpdate()
       ierr = crsMatrix->ExtractMyRowView( row, numEntries, values, indices );
       if( ierr )
       {
-        cout << "ERROR (" << ierr << ") : NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate() "
-             << "- crsMatrix->ExtractGlobalRowView(...) failed for row --> " << row << endl;
+        std::cout << "ERROR (" << ierr << ") : NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate() "
+             << "- crsMatrix->ExtractGlobalRowView(...) failed for row --> " << row << std::endl;
         throw "NOX Error: Broyden Update Failed";
       }
 
@@ -544,8 +544,8 @@ BroydenOperator::computeSparseBroydenUpdate()
 
       if( entriesRemoved[row] )
       {
-        list<int>::iterator     iter = retainedEntries[row].begin() ,
-                            iter_end = retainedEntries[row].end()    ;
+	std::list<int>::iterator iter = retainedEntries[row].begin() ,
+                                 iter_end = retainedEntries[row].end();
 
         for( ; iter_end != iter; ++iter )
           rowStepInnerProduct += 
@@ -569,14 +569,14 @@ BroydenOperator::computeSparseBroydenUpdate()
     // preconditioning matrix or as the Jacobian.
 
     if( verbose )
-      cout << "\t... BroydenOperator::computeSparseBroydenUpdate()..." << endl;
+      std::cout << "\t... BroydenOperator::computeSparseBroydenUpdate()..." << std::endl;
 
   }
   else
   {
-    cout << "Warning: NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate(...) "
-         << "- either the step vector or the yield vector or both is not valid." << endl;
-    cout <<  "Leaving existing matrix unchanged." << endl;
+    std::cout << "Warning: NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate(...) "
+         << "- either the step vector or the yield vector or both is not valid." << std::endl;
+    std::cout <<  "Leaving existing matrix unchanged." << std::endl;
   }
 
   // Use EpetraExt to dump linear system if debuggging
@@ -607,9 +607,9 @@ BroydenOperator::computeSparseBroydenUpdate()
 
     if( NULL == printMatrix ) 
     {
-      cout << "Error: NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate() - "
+      std::cout << "Error: NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate() - "
 	   << "Could not get a valid crsMatrix!\n"
-	   << "Please set the \"Write Linear System\" parameter to false." << endl;
+	   << "Please set the \"Write Linear System\" parameter to false." << std::endl;
       throw "NOX Error";
     }
 
@@ -673,23 +673,23 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
   int * removeIndPtr   ;
   int ierr             ;
 
-  cout << graph << endl;
+  std::cout << graph << std::endl;
 
   for( int row = 0; row < graph.NumMyRows(); ++row) 
   {
     ierr = graph.ExtractMyRowView( row, numRemoveIndices, removeIndPtr );
     if( ierr )
     {
-      cout << "ERROR (" << ierr << ") : "
+      std::cout << "ERROR (" << ierr << ") : "
            << "NOX::Epetra::BroydenOperator::removeEntriesFromBroydenUpdate(...)"
-           << " - Extract indices error for row --> " << row << endl;
+           << " - Extract indices error for row --> " << row << std::endl;
       throw "NOX Broyden Operator Error";
     }
 
     if( 0 != numRemoveIndices )
     {
       // Create a map for quick queries
-      map<int, bool> removeIndTable;
+      std::map<int, bool> removeIndTable;
       for( int k = 0; k < numRemoveIndices; ++k )
         removeIndTable[ graph.ColMap().GID(removeIndPtr[k]) ] = true;
 
@@ -700,16 +700,16 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
       ierr = crsMatrix->Graph().ExtractMyRowView( row, numOrigIndices, indPtr );
       if( ierr )
       {
-        cout << "ERROR (" << ierr << ") : "
+        std::cout << "ERROR (" << ierr << ") : "
              << "NOX::Epetra::BroydenOperator::removeEntriesFromBroydenUpdate(...)"
-             << " - Extract indices error for row --> " << row << endl;
+             << " - Extract indices error for row --> " << row << std::endl;
         throw "NOX Broyden Operator Error";
       }
 
       // Remove appropriate active entities
       if( retainedEntries.end() == retainedEntries.find(row) )
       {
-        list<int> inds;
+	std::list<int> inds;
 
         for( int k = 0; k < numOrigIndices; ++k )
         {
@@ -721,10 +721,10 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
       }
       else
       {
-        list<int> & inds = retainedEntries[row];
+        std::list<int> & inds = retainedEntries[row];
 
-        list<int>::iterator iter     = inds.begin() ,
-                            iter_end = inds.end()    ;
+        std::list<int>::iterator iter     = inds.begin() ,
+                                 iter_end = inds.end()    ;
 
         for( ; iter_end != iter; ++iter )
         {
@@ -756,10 +756,10 @@ BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
     ierr += crsMatrix->ReplaceGlobalValues(row, numEntries, values, indices);
     if( ierr )
     {
-      cout << "ERROR (" << ierr << ") : "
+      std::cout << "ERROR (" << ierr << ") : "
            << "NOX::Epetra::BroydenOperator::replaceBroydenMatrixValues(...)"
            << " - Extract or Replace values error for row --> "
-           << row << endl;
+           << row << std::endl;
       throw "NOX Broyden Operator Error";
     }
   }
@@ -777,8 +777,8 @@ BroydenOperator::outputActiveEntries()
   int numProcs = comm.NumProc();
   int myPID = nlParams.sublist("Printing").get("MyPID", 0);
 
-  map<int, list<int> >::iterator iter     = retainedEntries.begin(),
-                                 iter_end = retainedEntries.end()    ;
+  std::map<int, std::list<int> >::iterator iter     = retainedEntries.begin(),
+    iter_end = retainedEntries.end()    ;
 
   for( int pid = 0; pid < numProcs; ++pid )
   {
@@ -794,14 +794,13 @@ BroydenOperator::outputActiveEntries()
 
         crsMatrix->Graph().ExtractMyRowView( row, numIndices, indPtr );
 
-        list<int> & entries = (*iter).second;
+	std::list<int> & entries = (*iter).second;
 
-        list<int>::iterator colIter     = entries.begin() ,
-                            colIter_end = entries.end()    ;
+	std::list<int>::iterator colIter = entries.begin(), colIter_end = entries.end()    ;
 
         for( ; colIter_end != colIter; ++colIter )
-          cout << "[" << pid << "] \t " << row << " \t " << *colIter << " ("
-               << indPtr[*colIter] << ")" << endl;
+          std::cout << "[" << pid << "] \t " << row << " \t " << *colIter << " ("
+               << indPtr[*colIter] << ")" << std::endl;
       }
     }
     comm.Barrier();

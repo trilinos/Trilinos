@@ -46,6 +46,8 @@
 #include <vector>
 #include <string>
 
+#include <boost/unordered_map.hpp> // a hash table for buildLocalIds()
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Comm.hpp"
 
@@ -59,6 +61,10 @@ public:
    /** Get communicator associated with this global indexer.
      */
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const = 0;
+
+   /** Get the number of fields (total) stored by this DOF manager
+     */
+   virtual int getNumFields() const = 0;
 
    /** \brief Get the number used for access to this
      *        field
@@ -75,6 +81,10 @@ public:
      *          a -1 is returned.
      */
    virtual int getFieldNum(const std::string & str) const = 0;
+
+   /** Get the field order used by this global indexer.
+     */
+   virtual void getFieldOrder(std::vector<std::string> & fieldOrder) const = 0;
 
    /** \brief Reverse lookup of the field string from
      *        a field number.
@@ -131,6 +141,10 @@ public:
      */
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const = 0;
 
+   /** Get the number of fields (total) stored by this DOF manager
+     */
+   virtual int getNumFields() const = 0;
+
    /** \brief Get the number used for access to this
      *        field
      *
@@ -146,6 +160,10 @@ public:
      *          a -1 is returned.
      */
    virtual int getFieldNum(const std::string & str) const = 0;
+
+   /** Get the field order used by this global indexer.
+     */
+   virtual void getFieldOrder(std::vector<std::string> & fieldOrder) const = 0;
 
    /** What are the blockIds included in this connection manager?
      */
@@ -213,6 +231,22 @@ public:
    /** Get a yes/no on ownership for each index in a vector
      */
    virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const = 0;
+
+   /** Access the local IDs for an element. The local ordering is according to
+     * the <code>getOwnedAndSharedIndices</code> method.
+     */
+   const std::vector<LocalOrdinalT> & getElementLIDs(LocalOrdinalT localElmtId) const
+   { return localIDs_[localElmtId]; }
+
+protected:
+
+   /** This method is used by derived classes to the construct the local IDs from 
+     * the <code>getOwnedAndSharedIndices</code> method.
+     */
+   void buildLocalIds();
+
+private:
+   std::vector<std::vector<LocalOrdinalT> > localIDs_; 
 };
 
 // prevents a warning because a destructor does not exist
@@ -221,6 +255,42 @@ inline UniqueGlobalIndexerBase::~UniqueGlobalIndexerBase() {}
 // prevents a warning because a destructor does not exist
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 inline UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::~UniqueGlobalIndexer() {}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+inline void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::buildLocalIds() 
+{
+  std::vector<GlobalOrdinalT> ownedAndShared;
+  this->getOwnedAndSharedIndices(ownedAndShared);
+   
+  // build global to local hash map (temporary and used only once)
+  boost::unordered_map<GlobalOrdinalT,LocalOrdinalT> hashMap;
+  for(std::size_t i=0;i<ownedAndShared.size();i++)
+    hashMap[ownedAndShared[i]] = i;
+
+  std::vector<std::string> elementBlocks;
+  this->getElementBlockIds(elementBlocks);
+ 
+  // compute total number of elements
+  std::size_t numElmts = 0;
+  for(std::size_t eb=0;eb<elementBlocks.size();eb++)
+    numElmts += this->getElementBlock(elementBlocks[eb]).size();
+  localIDs_.resize(numElmts); // allocate local ids
+
+  // perform computation of local ids
+  for(std::size_t eb=0;eb<elementBlocks.size();eb++) {
+    std::vector<GlobalOrdinalT> gids;
+    const std::vector<LocalOrdinalT> & elmts = this->getElementBlock(elementBlocks[eb]);
+
+    for(std::size_t e=0;e<elmts.size();e++) {
+      this->getElementGIDs(elmts[e],gids,elementBlocks[eb]);
+      std::vector<LocalOrdinalT> & lids = localIDs_[elmts[e]];
+      lids.resize(gids.size());
+ 
+      for(std::size_t g=0;g<gids.size();g++)
+        lids[g] = hashMap[gids[g]];
+    }
+  } 
+}
 
 }
 

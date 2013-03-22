@@ -64,9 +64,9 @@ LOCA::ErrorCheck::~ErrorCheck()
 }
 
 
-void LOCA::ErrorCheck::throwError(const string& callingFunction, 
-				  const string& message, 
-				  const string& throwLabel)
+void LOCA::ErrorCheck::throwError(const std::string& callingFunction, 
+				  const std::string& message, 
+				  const std::string& throwLabel)
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::Error)) {
     globalData->locaUtils->err() << "************************" << "\n";
@@ -82,8 +82,8 @@ void LOCA::ErrorCheck::throwError(const string& callingFunction,
   return;    
 }
 
-void LOCA::ErrorCheck::printWarning(const string& callingFunction, 
-				    const string& message)
+void LOCA::ErrorCheck::printWarning(const std::string& callingFunction, 
+				    const std::string& message)
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::Warning)) {
     globalData->locaUtils->out() << "WARNING: " << callingFunction << " - ";
@@ -96,7 +96,7 @@ void LOCA::ErrorCheck::printWarning(const string& callingFunction,
 void
 LOCA::ErrorCheck::checkReturnType(
 			     const NOX::Abstract::Group::ReturnType& status,
-			     const string& callingFunction)
+			     const std::string& callingFunction)
 {
   if (status == NOX::Abstract::Group::Ok)
     return;
@@ -114,19 +114,19 @@ LOCA::ErrorCheck::checkReturnType(
 void LOCA::ErrorCheck::checkReturnType(
 			       const NOX::Abstract::Group::ReturnType& status,
 			       const ActionType& action,
-			       const string& callingFunction,
-			       const string& message)
+			       const std::string& callingFunction,
+			       const std::string& message)
 {
   if (status != NOX::Abstract::Group::Ok) {
     
     if (action == ThrowError) {
-      const string messageWithReturnType = message + "\n" + "Return Type = " + 
+      const std::string messageWithReturnType = message + "\n" + "Return Type = " + 
 	                                   getReturnTypeString(status);
 
       throwError(callingFunction, messageWithReturnType);
     }
     else if (action == PrintWarning) {
-      const string messageWithReturnType = message + "\n" + "Return Type = " + 
+      const std::string messageWithReturnType = message + "\n" + "Return Type = " + 
 	                                   getReturnTypeString(status);
 
       printWarning(callingFunction, messageWithReturnType);
@@ -166,7 +166,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::ErrorCheck::combineAndCheckReturnTypes(
 			      const NOX::Abstract::Group::ReturnType& status1,
 			      const NOX::Abstract::Group::ReturnType& status2,
-			      const string& callingFunction)
+			      const std::string& callingFunction)
 {
   NOX::Abstract::Group::ReturnType status3 = 
     combineReturnTypes(status1, status2);
@@ -174,8 +174,7 @@ LOCA::ErrorCheck::combineAndCheckReturnTypes(
   return status3;
 }
 
-string LOCA::ErrorCheck::getReturnTypeString(
-			       NOX::Abstract::Group::ReturnType status)
+std::string LOCA::ErrorCheck::getReturnTypeString(NOX::Abstract::Group::ReturnType status)
 {
   if (status == NOX::Abstract::Group::Ok)
     return "Ok";

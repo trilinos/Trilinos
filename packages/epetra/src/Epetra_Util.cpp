@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Util.h"
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
@@ -51,6 +52,10 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_Import.h"
+
+#ifdef HAVE_MPI
+#include "Epetra_MpiDistributor.h"
+#endif
 
 const double Epetra_Util::chopVal_ = 1.0e-15;
 
@@ -247,7 +252,7 @@ Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
   }
 
   Epetra_Map one_to_one_map(-1, numMyOwnedElems, myOwnedElems,
-       usermap.IndexBase(), usermap.Comm());
+       usermap.IndexBase(), usermap.Comm()); // CJ TODO FIXME long long
 
   delete [] myOwnedElems;
   delete [] owner_procs;
@@ -293,7 +298,7 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
   if (usermap.LinearMap() && root!=-1) {
     int numMyElements = 0;
     if (isRoot) numMyElements = usermap.MaxAllGID64()+1; // FIXME long long
-    Epetra_Map newmap(-1, numMyElements, usermap.IndexBase(), comm);
+    Epetra_Map newmap(-1, numMyElements, usermap.IndexBase(), comm); // CJ TODO FIXME long long
     return(newmap);
   }
 
@@ -306,9 +311,9 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
   int numMyElements = usermap.NumMyElements();
   Epetra_Map allGidsMap(-1, numMyElements, 0, comm);
   Epetra_IntVector allGids(allGidsMap);
-  for (int i=0; i<numMyElements; i++) allGids[i] = usermap.GID64(i);
+  for (int i=0; i<numMyElements; i++) allGids[i] = usermap.GID64(i); // CJ TODO FIXME long long
   
-  int numGlobalElements = usermap.NumGlobalElements64();
+  int numGlobalElements = usermap.NumGlobalElements64(); // CJ TODO FIXME long long
   if (root!=-1) {
     int n1 = 0; if (isRoot) n1 = numGlobalElements;
     Epetra_Map allGidsOnRootMap(-1, n1, 0, comm);
@@ -316,7 +321,7 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
     Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
     allGidsOnRoot.Import(allGids, importer, Insert);
     
-    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm);
+    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm); // CJ TODO FIXME long long
     return(rootMap);
   }
   else {
@@ -326,7 +331,7 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
     Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
     allGidsOnRoot.Import(allGids, importer, Insert);
     
-    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm);
+    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm); // CJ TODO FIXME long long
 
     return(rootMap);
   }
@@ -376,7 +381,7 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
   }
 
   Epetra_BlockMap one_to_one_map(-1, numMyOwnedElems, myOwnedElems,
-         sizes, usermap.IndexBase(), usermap.Comm());
+         sizes, usermap.IndexBase(), usermap.Comm()); // CJ TODO FIXME long long
 
   delete [] myOwnedElems;
   delete [] owner_procs;
@@ -385,6 +390,180 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
   return(one_to_one_map);
 }
 #endif // EPETRA_NO_32BIT_GLOBAL_INDICES
+
+
+//----------------------------------------------------------------------------
+int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals){
+  // For each row, sort column entries from smallest to largest.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  // Code copied from  Epetra_CrsMatrix::SortEntries() 
+  for(int i = 0; i < NumRows; i++){
+    int start=CRS_rowptr[i];
+
+    double* locValues = &CRS_vals[start];
+    int NumEntries    = CRS_rowptr[i+1] - start;
+    int* locIndices   = &CRS_colind[start];
+		
+    int n = NumEntries;
+    int m = n/2;
+    
+    while(m > 0) {
+      int max = n - m;
+      for(int j = 0; j < max; j++) {
+	for(int k = j; k >= 0; k-=m) {
+	  if(locIndices[k+m] >= locIndices[k])
+	    break;
+	  double dtemp = locValues[k+m];
+	  locValues[k+m] = locValues[k];
+	  locValues[k] = dtemp;
+	  int itemp = locIndices[k+m];
+	  locIndices[k+m] = locIndices[k];
+	  locIndices[k] = itemp;
+	}
+      }
+      m = m/2;
+    }
+  }
+  return(0);
+}
+
+
+//----------------------------------------------------------------------------
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+int Epetra_Util::GetPidGidPairs(const Epetra_Import & Importer,std::vector< std::pair<int,int> > & gpids, bool use_minus_one_for_local){
+  // Put the (PID,GID) pair in member of Importer.TargetMap() in gpids.  If use_minus_one_for_local==true, put in -1 instead of MyPID.
+  // This only works if we have an MpiDistributor in our Importer.  Otheriwise return an error.
+#ifdef HAVE_MPI
+  Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
+  if(!D) EPETRA_CHK_ERR(-2);
+
+  int i,j,k;
+  int mypid=Importer.TargetMap().Comm().MyPID();
+  int N=Importer.TargetMap().NumMyElements();
+
+  // Get the importer's data
+  const int *RemoteLIDs  = Importer.RemoteLIDs();
+
+  // Get the distributor's data
+  int NumReceives        = D->NumReceives();
+  const int *ProcsFrom   = D->ProcsFrom();
+  const int *LengthsFrom = D->LengthsFrom();
+
+  // Resize the outgoing data structure
+  gpids.resize(N);
+
+  // Start by claiming that I own all the data
+  if(use_minus_one_for_local)
+    for(i=0;i <N; i++) gpids[i]=std::make_pair(-1,Importer.TargetMap().GID(i));
+  else
+    for(i=0;i <N; i++) gpids[i]=std::make_pair(mypid,Importer.TargetMap().GID(i));
+
+  // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
+  // MpiDistributor so it ought to duplicate that effect.
+  for(i=0,j=0;i<NumReceives;i++){
+    int pid=ProcsFrom[i];
+    for(k=0;k<LengthsFrom[i];k++){
+      if(pid!=mypid) gpids[RemoteLIDs[j]].first=pid;
+      j++;
+    }    
+  }
+  return 0;
+#else
+  EPETRA_CHK_ERR(-10);
+#endif
+}
+#endif
+
+//----------------------------------------------------------------------------
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int Epetra_Util::GetPidGidPairs(const Epetra_Import & Importer,std::vector< std::pair<int,long long> > & gpids, bool use_minus_one_for_local){
+  // Put the (PID,GID) pair in member of Importer.TargetMap() in gpids.  If use_minus_one_for_local==true, put in -1 instead of MyPID.
+  // This only works if we have an MpiDistributor in our Importer.  Otheriwise return an error.
+#ifdef HAVE_MPI
+  Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
+  if(!D) EPETRA_CHK_ERR(-2);
+
+  int i,j,k;
+  int mypid=Importer.TargetMap().Comm().MyPID();
+  int N=Importer.TargetMap().NumMyElements();
+
+  // Get the importer's data
+  const int *RemoteLIDs  = Importer.RemoteLIDs();
+
+  // Get the distributor's data
+  int NumReceives        = D->NumReceives();
+  const int *ProcsFrom   = D->ProcsFrom();
+  const int *LengthsFrom = D->LengthsFrom();
+
+  // Resize the outgoing data structure
+  gpids.resize(N);
+
+  // Start by claiming that I own all the data
+  if(use_minus_one_for_local)
+    for(i=0;i <N; i++) gpids[i]=std::make_pair(-1,Importer.TargetMap().GID(i));
+  else
+    for(i=0;i <N; i++) gpids[i]=std::make_pair(mypid,Importer.TargetMap().GID(i));
+
+  // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
+  // MpiDistributor so it ought to duplicate that effect.
+  for(i=0,j=0;i<NumReceives;i++){
+    int pid=ProcsFrom[i];
+    for(k=0;k<LengthsFrom[i];k++){
+      if(pid!=mypid) gpids[RemoteLIDs[j]].first=pid;
+      j++;
+    }    
+  }
+  return 0;
+#else
+  EPETRA_CHK_ERR(-10);
+#endif
+}
+#endif
+
+
+//----------------------------------------------------------------------------
+int Epetra_Util::GetPids(const Epetra_Import & Importer, std::vector<int> &pids, bool use_minus_one_for_local){
+#ifdef HAVE_MPI
+  Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
+  if(!D) EPETRA_CHK_ERR(-2);
+
+  int i,j,k;
+  int mypid=Importer.TargetMap().Comm().MyPID();
+  int N=Importer.TargetMap().NumMyElements();
+
+  // Get the importer's data
+  const int *RemoteLIDs  = Importer.RemoteLIDs();
+
+  // Get the distributor's data
+  int NumReceives        = D->NumReceives();
+  const int *ProcsFrom   = D->ProcsFrom();
+  const int *LengthsFrom = D->LengthsFrom();
+  
+  // Resize the outgoing data structure
+  pids.resize(N);
+
+  // Start by claiming that I own all the data
+  if(use_minus_one_for_local)
+    for(i=0; i<N; i++) pids[i]=-1;
+  else
+    for(i=0; i<N; i++) pids[i]=mypid;
+
+  // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
+  // MpiDistributor so it ought to duplicate that effect.
+  for(i=0,j=0;i<NumReceives;i++){
+    int pid=ProcsFrom[i];
+    for(k=0;k<LengthsFrom[i];k++){
+      if(pid!=mypid) pids[RemoteLIDs[j]]=pid;
+      j++;
+    }    
+  }
+  return 0;
+#else
+  EPETRA_CHK_ERR(-10);
+#endif
+}
+
+
 
 //----------------------------------------------------------------------------
 template<typename T>
@@ -436,6 +615,63 @@ int Epetra_Util_binary_search(long long item,
 {
   return Epetra_Util_binary_search<long long>(item, list, len, insertPoint);
 }
+
+//----------------------------------------------------------------------------
+template<typename T>
+int Epetra_Util_binary_search_aux(T item,
+                              const int* list,
+                              const T* aux_list,
+                              int len,
+                              int& insertPoint)
+{
+  if (len < 1) {
+    insertPoint = 0;
+    return(-1);
+  }
+
+  unsigned start = 0, end = len - 1;
+
+  while(end - start > 1) {
+    unsigned mid = (start + end) >> 1;
+    if (aux_list[list[mid]] < item) start = mid;
+    else end = mid;
+  }
+
+  if (aux_list[list[start]] == item) return(start);
+  if (aux_list[list[end]] == item) return(end);
+
+  if (aux_list[list[end]] < item) {
+    insertPoint = end+1;
+    return(-1);
+  }
+
+  if (aux_list[list[start]] < item) insertPoint = end;
+  else insertPoint = start;
+
+  return(-1);
+}
+
+//----------------------------------------------------------------------------
+int Epetra_Util_binary_search_aux(int item,
+                              const int* list,
+                              const int* aux_list,
+                              int len,
+                              int& insertPoint)
+{
+  return Epetra_Util_binary_search_aux<int>(item, list, aux_list, len, insertPoint);
+}
+
+//----------------------------------------------------------------------------
+int Epetra_Util_binary_search_aux(long long item,
+                              const int* list,
+                              const long long* aux_list,
+                              int len,
+                              int& insertPoint)
+{
+  return Epetra_Util_binary_search_aux<long long>(item, list, aux_list, len, insertPoint);
+}
+
+
 
 //=========================================================================
 int Epetra_Util_ExtractHbData(Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,

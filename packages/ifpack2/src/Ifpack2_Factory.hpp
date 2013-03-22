@@ -37,6 +37,8 @@
 #include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_ILUT.hpp"
+#include "Ifpack2_Krylov.hpp"
+#include "Ifpack2_AdditiveSchwarz.hpp"
 
 /** Classes and functions for templated preconditioning.  */
 namespace Ifpack2 {
@@ -64,6 +66,7 @@ The first argument can assume the following values:
 - \c "CHEBYSHEV"   : returns an instance of Ifpack2::Chebyshev (overlap is ignored).
 - \c "ILUT"        : returns an instance of Ifpack2::ILUT.
 - \c "RILUK"       : returns an instance of Ifpack2::RILUK.
+- \c "Krylov"       : returns an instance of Ifpack2::Krylov.
 - otherwise, create() returns Teuchos::null.
 
 
@@ -142,8 +145,12 @@ Factory::create(const std::string& prec_type,
   (void)overlap;
   Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec;
 
+  bool one_mpi_rank=(matrix->getComm()->getSize()==1);
+
   if (prec_type == "ILUT") {
-    prec = Teuchos::rcp(new Ifpack2::ILUT<MatrixType>(matrix));
+    /* Note: ILUT doesn't work for multiple MPI ranks... you have to use AdditiveSchwarz */
+    if(one_mpi_rank) prec = Teuchos::rcp(new Ifpack2::ILUT<MatrixType>(matrix));
+    else prec = Teuchos::rcp(new Ifpack2::AdditiveSchwarz<MatrixType,Ifpack2::ILUT<MatrixType> >(matrix,overlap));
   }
   else if (prec_type == "RILUK") {
     prec = Teuchos::rcp(new Ifpack2::RILUK<MatrixType>(matrix));
@@ -156,6 +163,12 @@ Factory::create(const std::string& prec_type,
   }
   else if (prec_type == "DIAGONAL") {
     prec = Teuchos::rcp(new Ifpack2::Diagonal<MatrixType>(matrix));
+  }
+  else if (prec_type == "SCHWARZ") {
+    prec = Teuchos::rcp(new Ifpack2::AdditiveSchwarz<MatrixType,Ifpack2::ILUT<MatrixType> >(matrix,overlap));
+  }
+  else if (prec_type == "KRYLOV") {
+    prec = Teuchos::rcp(new Ifpack2::Krylov< MatrixType,Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(matrix));
   }
   else {
     std::ostringstream os;

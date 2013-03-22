@@ -117,7 +117,7 @@ namespace Amesos2{
     void get_1d_copy_helper<MV,S>::do_get(const Teuchos::Ptr<const MV>& mv,
 					  const Teuchos::ArrayView<S>& vals,
 					  const size_t ldx,
-					  EDistribution distribution)
+					  EDistribution distribution, typename MV::global_ordinal_t indexBase)
     {
       typedef typename MV::local_ordinal_t lo_t;
       typedef typename MV::global_ordinal_t go_t;
@@ -127,7 +127,7 @@ namespace Amesos2{
       const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
 	= Amesos2::Util::getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
 								   mv->getGlobalLength(),
-								   mv->getComm());
+								   mv->getComm(), indexBase);
       do_get(mv, vals, ldx, Teuchos::ptrInArg(*map));
     }
 
@@ -204,7 +204,7 @@ namespace Amesos2{
     void put_1d_data_helper<MV,S>::do_put(const Teuchos::Ptr<MV>& mv,
 					  const Teuchos::ArrayView<S>& data,
 					  const size_t ldx,
-					  EDistribution distribution)
+					  EDistribution distribution,  typename MV::global_ordinal_t indexBase)
     {
       typedef typename MV::local_ordinal_t lo_t;
       typedef typename MV::global_ordinal_t go_t;
@@ -214,7 +214,7 @@ namespace Amesos2{
       const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
 	= Amesos2::Util::getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
 								   mv->getGlobalLength(),
-								   mv->getComm());
+								   mv->getComm(), indexBase);
       do_put(mv, data, ldx, Teuchos::ptrInArg(*map));
     }
     

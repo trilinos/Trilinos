@@ -55,7 +55,7 @@
 #include "LOCA_Parameter_Vector.H"
 #include "LOCA_GlobalData.H"
 
-#include "NOX_Common.H"             // class data element (string)
+#include "NOX_Common.H"             // class data element (std::string)
 #include "LOCA_PhaseTransition_ExtendedVector.H"
 #include "LOCA_MultiContinuation_AbstractGroup.H"         // base class
 #include "LOCA_Extended_MultiAbstractGroup.H"             // base class
@@ -201,8 +201,8 @@ namespace LOCA {
        //! Set parameter indexed by (integer) paramID
       void setParam(int paramID, double val);
 
-      //! Set parameter indexed by (string) paramID
-      void setParam(string paramID, double val);
+      //! Set parameter indexed by (std::string) paramID
+      void setParam(std::string paramID, double val);
 
       //! Return a const reference to the ParameterVector owned by the group.
       const LOCA::ParameterVector& getParams() const;
@@ -210,10 +210,10 @@ namespace LOCA {
       //! Return copy of parameter indexed by (integer) paramID
       double getParam(int paramID) const;
 
-      //! Return copy of parameter indexed by (string) paramID
-      double getParam(string paramID) const;
+      //! Return copy of parameter indexed by (std::string) paramID
+      double getParam(std::string paramID) const;
 
-      //! Set parameter indexed by (string) paramID
+      //! Set parameter indexed by (std::string) paramID
       void printSolution(const NOX::Abstract::Vector& solution, const double param) const;
       void printSolution(const double param) const;
 
@@ -230,11 +230,11 @@ namespace LOCA {
       getUnderlyingGroup() { return grp;};
 
      virtual void
-     setParamsMulti( const vector<int>& paramIDs,
+     setParamsMulti( const std::vector<int>& paramIDs,
                      const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
       virtual NOX::Abstract::Group::ReturnType
-      computeDfDpMulti( const vector<int>& paramIDs,
+      computeDfDpMulti( const std::vector<int>& paramIDs,
                         NOX::Abstract::MultiVector& dfdp,
                                           bool isValid_F);
 

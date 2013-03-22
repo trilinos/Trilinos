@@ -251,7 +251,7 @@ void Environment::commitParameters()
   }
 
   if (doMemory){
-    bool iPrint = (myRank_ == 0);   // default
+    iPrint = (myRank_ == 0);   // default
     if (reporters2)
       iPrint = IsInRangeList(myRank_, *reporters2);
 

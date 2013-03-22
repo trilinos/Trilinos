@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,11 +36,14 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
 #include "Piro_PerformAnalysis.hpp"
+
+#include "Piro_PerformSolve.hpp"
+
 #include "Teuchos_FancyOStream.hpp"
 #include <iostream>
 #include <string>
@@ -68,7 +71,7 @@ int
 Piro::PerformAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
     Teuchos::ParameterList& analysisParams,
-    RCP< Thyra::VectorBase<double> >& p)
+    RCP< Thyra::VectorBase<double> >& result)
 {
 
   analysisParams.validateParameters(*Piro::getValidPiroAnalysisParameters(),0);
@@ -79,50 +82,55 @@ Piro::PerformAnalysis(
   string analysis = analysisParams.get<string>("Analysis Package");
   *out << "\n\nPiro::PerformAnalysis() requests: " << analysis << endl;
 
+  if (analysis=="Solve") {
+    *out << "Piro PerformAnalysis: Model Solve Being Performed " << endl;
+    Piro::PerformSolveBase(piroModel, analysisParams.sublist("Solve"), result);
+    status = 0; // Succeeds or throws
+  }
 #ifdef Piro_ENABLE_TriKota
-  if (analysis=="Dakota") {
+  else if (analysis=="Dakota") {
     *out << "Piro PerformAnalysis: Dakota Analysis Being Performed " << endl;
 
     status = Piro::PerformDakotaAnalysis(piroModel,
-                         analysisParams.sublist("Dakota"), p);
+                         analysisParams.sublist("Dakota"), result);
 
-  } else
+  }
 #endif
 #ifdef Piro_ENABLE_MOOCHO
-  if (analysis == "MOOCHO") {
+  else if (analysis == "MOOCHO") {
     *out << "Piro PerformAnalysis: MOOCHO Optimization Being Performed " << endl;
     status = Piro::PerformMoochoAnalysis(piroModel,
-                          analysisParams.sublist("MOOCHO"), p);
+                          analysisParams.sublist("MOOCHO"), result);
 
-  } else
+  }
 #endif
 #ifdef Piro_ENABLE_OptiPack
-  if (analysis == "OptiPack") {
+  else if (analysis == "OptiPack") {
     *out << "Piro PerformAnalysis: Optipack Optimization Being Performed " << endl;
     status = Piro::PerformOptiPackAnalysis(piroModel,
                     analysisParams.sublist("OptiPack"),
-                    analysisParams.sublist("GlobiPack"), p);
+                    analysisParams.sublist("GlobiPack"), result);
 
-  } else
+  }
 #endif
-  {
+  else {
     if (analysis == "Dakota" || analysis == "OptiPack" || analysis == "MOOCHO")
-      *out << "ERROR: Trilinos/Piro was not configured to include \n " 
+      *out << "ERROR: Trilinos/Piro was not configured to include \n "
            << "       analysis type: " << analysis << endl;
     else
       *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
-           << "       Valid analysis types are: Dakota, MOOCHO, OptiPack\n" << endl;
+           << "       Valid analysis types are: Solve, Dakota, MOOCHO, OptiPack\n" << endl;
     status = 0; // Should not fail tests
   }
 
   // Output status and paramters
   if (status==0)  *out << "\nPiro Analysis Finished successfully." << endl;
-  else  *out << "\nPiro Analysis failed with status: " << status << endl; 
+  else  *out << "\nPiro Analysis failed with status: " << status << endl;
 
   if ( analysisParams.get("Output Final Parameters", true) )
-    if (p != Teuchos::null) {
+    if (result != Teuchos::null) {
        *out << "\tFinal parameters are: " << "\n\tp = ";
-       *out << Teuchos::describe(*p, Teuchos::VERB_EXTREME ) << endl;
+       *out << Teuchos::describe(*result, Teuchos::VERB_EXTREME ) << endl;
     }
 
   return status;
@@ -166,32 +174,44 @@ Piro::PerformDakotaAnalysis(
     RCP< Thyra::VectorBase<double> >& p)
 {
 #ifdef Piro_ENABLE_TriKota
+  dakotaParams.validateParameters(*Piro::getValidPiroAnalysisDakotaParameters(),0);
+  using std::string;
+
   string dakotaIn = dakotaParams.get("Input File","dakota.in");
   string dakotaOut= dakotaParams.get("Output File","dakota.out");
   string dakotaErr= dakotaParams.get("Error File","dakota.err");
   string dakotaRes= dakotaParams.get("Restart File","dakota_restart.out");
+  string dakotaRestartIn;
+  const char * dakRestartIn = NULL;
+  if (dakotaParams.isParameter("Restart File To Read")) {
+    dakotaRestartIn = dakotaParams.get<string>("Restart File To Read");
+    dakRestartIn = dakotaRestartIn.c_str();
+  }
+  int dakotaRestartEvals= dakotaParams.get("Restart Evals To Read", 0);
+
   int p_index = dakotaParams.get("Parameter Vector Index", 0);
   int g_index = dakotaParams.get("Response Vector Index", 0);
 
   TriKota::Driver dakota(dakotaIn.c_str(), dakotaOut.c_str(),
-                         dakotaErr.c_str(), dakotaRes.c_str());
+                         dakotaErr.c_str(), dakotaRes.c_str(),
+                         dakRestartIn, dakotaRestartEvals );
 
   RCP<TriKota::ThyraDirectApplicInterface> trikota_interface =
     rcp(new TriKota::ThyraDirectApplicInterface
-         (dakota.getProblemDescDB(), rcp(&piroModel,false), p_index, g_index), 
+         (dakota.getProblemDescDB(), rcp(&piroModel,false), p_index, g_index),
 	false);
 
   dakota.run(trikota_interface.get());
 
   Dakota::RealVector finalValues;
-  if (dakota.rankZero()) 
+  if (dakota.rankZero())
     finalValues = dakota.getFinalSolution().all_continuous_variables();
 
   // Copy Dakota parameters into Thyra
   p = Thyra::createMember(piroModel.get_p_space(p_index));
   {
       Thyra::DetachedVectorView<double> global_p(p);
-      for (int i = 0; i < finalValues.length(); ++i) 
+      for (int i = 0; i < finalValues.length(); ++i)
         global_p[i] = finalValues[i];
   }
 
@@ -236,7 +256,7 @@ Piro::PerformOptiPackAnalysis(
 
   const RCP<ParameterList> pl = rcp(&optipackParams,false);
   cgSolver->setParameterList(pl);
-  
+
   // Temporary Debug Info
   *out << "\nCurrent nonlinearCG parameter list" << endl;
   pl->print(*out);
@@ -263,14 +283,33 @@ Piro::getValidPiroAnalysisParameters()
   Teuchos::RCP<Teuchos::ParameterList> validPL =
      rcp(new Teuchos::ParameterList("Valid Piro Analysis Params"));;
 
-  validPL->set<std::string>("Analysis Package", "","Must be: MOOCHO, Dakota, or OptiPack.");
+  validPL->set<std::string>("Analysis Package", "","Must be: Solve, MOOCHO, Dakota, or OptiPack.");
   validPL->set<bool>("Output Final Parameters", false, "");
-  validPL->sublist("MOOCHO",   false, "");
-  validPL->sublist("OptiPack", false, "");
+  validPL->sublist("Solve",     false, "");
+  validPL->sublist("MOOCHO",    false, "");
+  validPL->sublist("OptiPack",  false, "");
   validPL->sublist("GlobiPack", false, "");
-  validPL->sublist("Dakota",   false, "");
+  validPL->sublist("Dakota",    false, "");
 
   return validPL;
 }
 
 
+RCP<const Teuchos::ParameterList>
+Piro::getValidPiroAnalysisDakotaParameters()
+{
+  Teuchos::RCP<Teuchos::ParameterList> validPL =
+     rcp(new Teuchos::ParameterList("Valid Piro Analysis Dakota Params"));;
+
+  validPL->set<std::string>("Input File", "","Defaults to dakota.in");
+  validPL->set<std::string>("Output File", "","Defaults to dakota.out");
+  validPL->set<std::string>("Error File", "","Defaults to dakota.err");
+  validPL->set<std::string>("Restart File", "","Defaults to dakota_restart.out");
+  validPL->set<std::string>("Restart File To Read", "","Defaults to NULL (no restart file read)");
+  validPL->set<int>("Restart Evals To Read", 0,
+                    "Number of evaluations to read from restart. Defaults to 0 (all)");
+  validPL->set<int>("Parameter Vector Index", 0,"");
+  validPL->set<int>("Response Vector Index", 0,"");
+
+  return validPL;
+}

@@ -173,8 +173,8 @@ int main(int argc, char *argv[])
   // The number of unknowns must be at least equal to the 
   // number of processors.
   if (NumGlobalNodes < NumProc) {
-    cout << "numGlobalNodes = " << NumGlobalNodes 
-	 << " cannot be < number of processors = " << NumProc << endl;
+    std::cout << "numGlobalNodes = " << NumGlobalNodes 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
     exit(1);
   }
 
@@ -502,15 +502,15 @@ int main(int argc, char *argv[])
     time += dt;
   
     globalData->locaUtils->out() 
-      << "Time Step: " << timeStep << ",\tTime: " << time << endl;
+      << "Time Step: " << timeStep << ",\tTime: " << time << std::endl;
   
 //    NOX::StatusTest::StatusType status = solver.solve();
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
     if (status == LOCA::Abstract::Iterator::Finished)
-      globalData->locaUtils->out() << "All tests passed" << endl;
+      globalData->locaUtils->out() << "All tests passed" << std::endl;
     else
-       globalData->locaUtils->out() << "Stepper failed to converge!" << endl;
+       globalData->locaUtils->out() << "Stepper failed to converge!" << std::endl;
 
 
     // Get the Epetra_Vector with the final solution from the solver
@@ -544,7 +544,7 @@ int main(int argc, char *argv[])
   globalData->locaUtils->out() << "\nTimings :\n\tWallTime --> " << 
     myTimer.WallTime() - startWallTime << " sec."
 	      << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
-	      << " sec." << endl << endl;
+	      << " sec." << std::endl << std::endl;
 
   LOCA::destroyGlobalData(globalData);
 

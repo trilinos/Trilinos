@@ -46,6 +46,9 @@
 #ifndef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_FWD_HPP
 #define MUELU_UNCOUPLEDAGGREGATIONALGORITHM_FWD_HPP
 
+
+
+
 namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class UncoupledAggregationAlgorithm;
@@ -54,5 +57,7 @@ namespace MueLu {
 #ifndef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
 #define MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
 #endif
+
+
 
 #endif // MUELU_UNCOUPLEDAGGREGATIONALGORITHM_FWD_HPP

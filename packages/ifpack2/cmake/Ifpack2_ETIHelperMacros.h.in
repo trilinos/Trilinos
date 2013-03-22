@@ -1,0 +1,17 @@
+#ifndef IFPACK2_ETIHELPERMACROS_H_
+#define IFPACK2_ETIHELPERMACROS_H_
+
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_CrsGraph.hpp>
+
+@IFPACK2_ETIMACRO_SLG@
+
+@IFPACK2_ETIMACRO_SLG_REAL@
+
+@IFPACK2_ETIMACRO_LG@
+
+@IFPACK2_ETI_TYPEDEFS@
+
+#endif // IFPACK2_ETIHELPERMACROS_H_

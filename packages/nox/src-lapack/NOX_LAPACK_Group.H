@@ -53,7 +53,7 @@
 
 #include "NOX_Abstract_Group.H"	// base class
 
-#include "NOX_Common.H"             // class data element (string)
+#include "NOX_Common.H"             // class data element (std::string)
 #include "NOX_LAPACK_Vector.H"	    // class data element
 #include "NOX_LAPACK_LinearSolver.H"	    // class data element
 #include "NOX_LAPACK_Interface.H"   // class data element

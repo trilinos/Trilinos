@@ -61,7 +61,7 @@
 #include <Xpetra_Parameters.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
@@ -69,7 +69,7 @@
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 
 //
 #include "MatrixVectorChecker.hpp"
@@ -87,17 +87,17 @@ int main(int argc, char *argv[])
   /**********************************************************************************/
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
-  
+
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp);   // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);         // manage parameters of xpetra
-  
+
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
-  
+
   matrixParameters.check();
   xpetraParameters.check();
 
@@ -108,7 +108,9 @@ int main(int argc, char *argv[])
   /* CREATE INITAL MATRIX                                                           */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<const Operator>   Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+  RCP<const Matrix>   Op = Pr->BuildMatrix();
 
   // Using Galeri:
   //

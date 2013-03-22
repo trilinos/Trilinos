@@ -1,0 +1,47 @@
+<ParameterList name="Factories">
+
+  <Parameter name="Aggregates00" type="string" value="CoupledAggregationFactory"/>
+
+  <ParameterList name="Aggregates0">
+    <Parameter name="factory"    type="string" value="CoupledAggregationFactory"/>
+  </ParameterList>
+
+  <ParameterList name="Aggregates1">
+    <Parameter name="factory"  type="string" value="CoupledAggregationFactory"/>
+    <Parameter name="Ordering" type="string" value="Natural"/>
+  </ParameterList>
+
+  <ParameterList name="Aggregates2">
+    <Parameter name="factory"  type="string" value="CoupledAggregationFactory"/>
+    <Parameter name="Ordering" type="string" value="Random"/>
+  </ParameterList>
+
+  <ParameterList name="Aggregates3">
+    <Parameter name="factory"  type="string" value="CoupledAggregationFactory"/>
+    <Parameter name="Ordering" type="string" value="Graph"/>
+  </ParameterList>
+
+  <ParameterList name="Aggregates4">
+    <Parameter name="factory" type="string" value="CoupledAggregationFactory"/>
+    <Parameter name="MaxNeighAlreadySelected" type="int" value="0"/>
+  </ParameterList>
+
+  <ParameterList name="Aggregates5">
+    <Parameter name="factory" type="string" value="CoupledAggregationFactory"/>
+    <Parameter name="MinNodesPerAggregate" type="int" value="1"/>
+  </ParameterList>
+
+  <ParameterList name="Aggregates6">
+    <Parameter name="factory" type="string" value="CoupledAggregationFactory"/>
+    <Parameter name="Phase3AggCreation" type="double" value=".5"/>
+  </ParameterList>
+
+  <ParameterList name="Aggregates7">
+    <Parameter name="factory"  type="string" value="CoupledAggregationFactory"/>
+    <Parameter name="Ordering" type="string" value="Natural"/>
+    <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
+    <Parameter name="MinNodesPerAggregate"    type="int"    value="1"/>
+    <Parameter name="Phase3AggCreation"       type="double" value=".5"/>
+  </ParameterList>
+
+</ParameterList>

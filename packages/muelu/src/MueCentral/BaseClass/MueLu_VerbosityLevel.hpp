@@ -50,7 +50,7 @@
 
 namespace MueLu {
 
-  enum MsgType 
+  enum MsgType
     {
       Errors          = 0x0000001, //!< Errors
 
@@ -58,7 +58,7 @@ namespace MueLu {
       Warnings00      = 0x0000020, //!< Important warning messages (more verbose)
       Warnings1       = 0x0000040, //!< Additional warnings
       PerfWarnings    = 0x0000080, //!< Performance warnings
-   
+
       Runtime0        = 0x0000100, //!< One-liner description of what is happening
       Runtime1        = 0x0000200, //!< Description of what is happening (more verbose)
       RuntimeTimings  = 0x0000400, //!< Timers that are enabled (using Timings0/Timings1) will be printed during the execution
@@ -101,7 +101,7 @@ namespace MueLu {
     };
 
   //!
-  typedef int VerbLevel;    
+  typedef int VerbLevel;
 
   //!
   VerbLevel toMueLuVerbLevel(const Teuchos::EVerbosityLevel verbLevel);

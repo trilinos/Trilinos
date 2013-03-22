@@ -84,11 +84,11 @@ LOCA::Bifurcation::Factory::create(
       const Teuchos::RCP<Teuchos::ParameterList>& bifurcationParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp)
 {
-  string methodName = "LOCA::Bifurcation::Factory::create()";
+  std::string methodName = "LOCA::Bifurcation::Factory::create()";
   Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> strategy;
 
   // Get name of strategy
-  const string& name = strategyName(*bifurcationParams);
+  const std::string& name = strategyName(*bifurcationParams);
 
   if (name == "None")
     strategy = grp;
@@ -101,9 +101,9 @@ LOCA::Bifurcation::Factory::create(
     if (msg.get() == NULL)
       globalData->locaErrorCheck->throwError(
 		    methodName,
-		    string("Underlying group must be derived from ") + 
-		    string("LOCA::TurningPoint::MooreSpence::AbstractGroup ") +
-		    string("for Moore-Spence turning point continuation!"));
+		    std::string("Underlying group must be derived from ") + 
+		    std::string("LOCA::TurningPoint::MooreSpence::AbstractGroup ") +
+		    std::string("for Moore-Spence turning point continuation!"));
 
     strategy = 
       Teuchos::rcp(new LOCA::TurningPoint::MooreSpence::ExtendedGroup(
@@ -120,9 +120,9 @@ LOCA::Bifurcation::Factory::create(
     if (mag.get() == NULL)
       globalData->locaErrorCheck->throwError(
 	    methodName,
-	    string("Underlying group must be derived from ") + 
-	    string("LOCA::TurningPoint::MinimallyAugmented::AbstractGroup ") +
-	    string("for minimally augmented turning point continuation!"));
+	    std::string("Underlying group must be derived from ") + 
+	    std::string("LOCA::TurningPoint::MinimallyAugmented::AbstractGroup ") +
+	    std::string("for minimally augmented turning point continuation!"));
 
     strategy = 
       Teuchos::rcp(new LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup(
@@ -139,9 +139,9 @@ LOCA::Bifurcation::Factory::create(
     if (msg.get() == NULL)
       globalData->locaErrorCheck->throwError(
 		    methodName,
-		    string("Underlying group must be derived from ") + 
-		    string("LOCA::Pitchfork::MooreSpence::AbstractGroup ") +
-		    string("for Moore-Spence pitchfork continuation!"));
+		    std::string("Underlying group must be derived from ") + 
+		    std::string("LOCA::Pitchfork::MooreSpence::AbstractGroup ") +
+		    std::string("for Moore-Spence pitchfork continuation!"));
 
     strategy = 
       Teuchos::rcp(new LOCA::Pitchfork::MooreSpence::ExtendedGroup(
@@ -158,9 +158,9 @@ LOCA::Bifurcation::Factory::create(
     if (mag.get() == NULL)
       globalData->locaErrorCheck->throwError(
 	    methodName,
-	    string("Underlying group must be derived from ") + 
-	    string("LOCA::Pitchfork::MinimallyAugmented::AbstractGroup ") +
-	    string("for minimally augmented pitchfork continuation!"));
+	    std::string("Underlying group must be derived from ") + 
+	    std::string("LOCA::Pitchfork::MinimallyAugmented::AbstractGroup ") +
+	    std::string("for minimally augmented pitchfork continuation!"));
 
     strategy = 
       Teuchos::rcp(new LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup(
@@ -177,9 +177,9 @@ LOCA::Bifurcation::Factory::create(
     if (msg.get() == NULL)
       globalData->locaErrorCheck->throwError(
 		    methodName,
-		    string("Underlying group must be derived from ") + 
-		    string("LOCA::Hopf::MooreSpence::AbstractGroup ") +
-		    string("for Moore-Spence Hopf continuation!"));
+		    std::string("Underlying group must be derived from ") + 
+		    std::string("LOCA::Hopf::MooreSpence::AbstractGroup ") +
+		    std::string("for Moore-Spence Hopf continuation!"));
 
     strategy = 
       Teuchos::rcp(new LOCA::Hopf::MooreSpence::ExtendedGroup(
@@ -196,9 +196,9 @@ LOCA::Bifurcation::Factory::create(
     if (mag.get() == NULL)
       globalData->locaErrorCheck->throwError(
 	    methodName,
-	    string("Underlying group must be derived from ") + 
-	    string("LOCA::Hopf::MinimallyAugmented::AbstractGroup ") +
-	    string("for minimally augmented Hopf continuation!"));
+	    std::string("Underlying group must be derived from ") + 
+	    std::string("LOCA::Hopf::MinimallyAugmented::AbstractGroup ") +
+	    std::string("for minimally augmented Hopf continuation!"));
 
     strategy = 
       Teuchos::rcp(new LOCA::Hopf::MinimallyAugmented::ExtendedGroup(
@@ -215,9 +215,9 @@ LOCA::Bifurcation::Factory::create(
     if (mag.get() == NULL)
       globalData->locaErrorCheck->throwError(
 	    methodName,
-	    string("Underlying group must be derived from ") + 
-	    string("LOCA::PhaseTransition::AbstractGroup ") +
-	    string("for Phase Transition tracking!"));
+	    std::string("Underlying group must be derived from ") + 
+	    std::string("LOCA::PhaseTransition::AbstractGroup ") +
+	    std::string("for Phase Transition tracking!"));
 
     strategy = 
       Teuchos::rcp(new LOCA::PhaseTransition::ExtendedGroup(
@@ -228,7 +228,7 @@ LOCA::Bifurcation::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = bifurcationParams->get(
+    std::string userDefinedName = bifurcationParams->get(
 							 "User-Defined Name",
 							 "???");
     if ((*bifurcationParams).INVALID_TEMPLATE_QUALIFIER
@@ -250,17 +250,17 @@ LOCA::Bifurcation::Factory::create(
   return strategy;
 }
 
-string
+std::string
 LOCA::Bifurcation::Factory::strategyName(
 				Teuchos::ParameterList& bifurcationParams) const
 {
   // Get bifurcation type
-  string bif_type =  bifurcationParams.get("Type", "None");
+  std::string bif_type =  bifurcationParams.get("Type", "None");
 
   // Get the formulation
   if (bif_type == "Turning Point" || bif_type == "Pitchfork" || 
       bif_type == "Hopf") {
-    string formulation = 
+    std::string formulation = 
       bifurcationParams.get("Formulation", "Moore-Spence");
     bif_type += ":  " + formulation;
   }

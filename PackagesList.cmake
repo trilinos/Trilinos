@@ -99,7 +99,7 @@ INCLUDE(TribitsListHelpers)
 #     of EX pacakges are encouraged to set up their own nightly testing for
 #     thier EX packages.
 #
-# NOTE: These packages must be listed in strictly assending order in terms of
+# NOTE: These packages must be listed in strictly ascending order in terms of
 # package dependencies.  If you get the order wrong, then an error message
 # will be printed during configuration with CMake.
 #
@@ -118,7 +118,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Triutils              packages/triutils                 PS
   Tpetra                packages/tpetra                   PS
   EpetraExt             packages/epetraext                PS
-  Xpetra                packages/xpetra                   SS
+  Xpetra                packages/xpetra                   PS
   Thyra                 packages/thyra                    PS
   OptiPack              packages/optipack                 PS
   Isorropia             packages/isorropia                PS
@@ -126,7 +126,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Claps                 packages/claps                    EX
   AztecOO               packages/aztecoo                  PS
   Galeri                packages/galeri                   PS
-  Amesos2               packages/amesos2                  EX
+  Amesos2               packages/amesos2                  SS
   Amesos                packages/amesos                   PS
   Pamgen                packages/pamgen                   PS
   SEACAS                packages/seacas                   SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
@@ -150,11 +150,11 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Phdmesh               packages/phdmesh                  EX # to be replaced by STK
   NOX                   packages/nox                      PS
   Moertel               packages/moertel                  PS
+  MueLu                 packages/muelu                    SS
   TrilinosCouplings     packages/trilinoscouplings        SS
   Rythmos               packages/rythmos                  PS
   MOOCHO                packages/moocho                   PS
   Aristos               packages/aristos                  EX
-  MueLu                 packages/muelu                    SS
   Stokhos               packages/stokhos                  SS
   Piro                  packages/piro                     SS
   Panzer                packages/panzer                   SS

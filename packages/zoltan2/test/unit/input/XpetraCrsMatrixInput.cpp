@@ -218,6 +218,7 @@ int main(int argc, char *argv[])
       }
       catch (std::exception &e){
         fail = 11;
+        cout << "Error caught:  " << e.what() << endl;
       }
 
       gfail = globalFail(comm, fail);
@@ -277,6 +278,7 @@ int main(int argc, char *argv[])
         xMInput->applyPartitioningSolution(*xM, mMigrate, solution);
       }
       catch (std::exception &e){
+        cout << "Error caught:  " << e.what() << endl;
         fail = 11;
       }
   
@@ -339,6 +341,7 @@ int main(int argc, char *argv[])
         eMInput->applyPartitioningSolution(*eM, mMigrate, solution);
       }
       catch (std::exception &e){
+        cout << "Error caught:  " << e.what() << endl;
         fail = 11;
       }
   

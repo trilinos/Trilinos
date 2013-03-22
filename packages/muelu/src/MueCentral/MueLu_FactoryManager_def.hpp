@@ -61,25 +61,32 @@
 //#include "MueLu_GaussSeidelSmoother.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
- 
+#include "MueLu_CoarseMapFactory.hpp"
+
+#ifdef HAVE_MUELU_EXPERIMENTAL
+#include "MueLu_PatternFactory.hpp"
+#include "MueLu_ConstraintFactory.hpp"
+#endif
+
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FactoryManager(const RCP<const FactoryBase> PFact, const RCP<const FactoryBase> RFact, const RCP<const FactoryBase> AcFact) 
-  { 
+  FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FactoryManager(const RCP<const FactoryBase> PFact, const RCP<const FactoryBase> RFact, const RCP<const FactoryBase> AcFact)
+  {
     if (PFact  != Teuchos::null) SetFactory("P", PFact);
     if (RFact  != Teuchos::null) SetFactory("R", RFact);
     if (AcFact != Teuchos::null) SetFactory("A", AcFact);
 
-    SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour)     
+    SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour)
   }
-    
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~FactoryManager() { }
 
@@ -92,31 +99,46 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const FactoryBase> & FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetFactory(const std::string & varName) const {
+  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetFactory(const std::string & varName) const {
     if (FactoryManager::IsAvailable(varName, factoryTable_))
       return factoryTable_.find(varName)->second; // == factoryTable_[varName] (operator std::map[] is not const)
-    else 
+    else
       return GetDefaultFactory(varName);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const FactoryBase> & FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDefaultFactory(const std::string & varName) const {
+  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDefaultFactory(const std::string & varName) const {
     if (IsAvailable(varName, defaultFactoryTable_)) {
-        
+
       return defaultFactoryTable_[varName];
-        
+
     } else {
-          
+
       if (varName == "A")             return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
-      if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new SaPFactory(GetFactory("Ptent")))); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+      if (varName == "RAP Pattern")   return GetFactory("A");
+      if (varName == "AP Pattern")    return GetFactory("A");
+      if (varName == "P") {
+        RCP<Factory> factory = rcp(new SaPFactory());
+        factory->SetFactory("P", GetFactory("Ptent")); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+        return SetAndReturnDefaultFactory(varName, factory);
+      }
+
       if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-//       if (varName == "Partition")     {
-//         return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
-//       }
+      if (varName == "Partition")     {
+        return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
+      }
 #endif //ifdef HAVE_MPI
+
       if (varName == "Importer") {
-        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP()); // allows calls to IsAvailable() from RAPFActory
+#ifdef HAVE_MPI
+        return SetAndReturnDefaultFactory(varName, rcp(new RepartitionFactory()));
+#else
+        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+#endif
+      }
+      if (varName == "number of partitions") {
+        return GetFactory("Importer");
       }
       //JJH FIXME is this going to bite me in the backside?
 //       if (varName == "Coordinates") {
@@ -124,23 +146,36 @@ namespace MueLu {
 //       }
 
       if (varName == "Nullspace") {
-        return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory(Teuchos::null, GetFactory("Ptent")))); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+        RCP<Factory> factory = rcp(new NullspaceFactory());
+        factory->SetFactory("Nullspace", GetFactory("Ptent")); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+        return SetAndReturnDefaultFactory(varName, factory);
       }
 
       if (varName == "Graph")               return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
       if (varName == "UnAmalgamationInfo")  return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
-      if (varName == "Aggregates")          return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
+      if (varName == "Aggregates")          return SetAndReturnDefaultFactory(varName, rcp(new CoupledAggregationFactory()));
+      if (varName == "CoarseMap")           return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));
+      if (varName == "DofsPerNode")         return GetFactory("Graph");
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")         return GetFactory("Smoother");
       if (varName == "PostSmoother")        return GetFactory("Smoother");
-      
+
+#ifdef HAVE_MUELU_EXPERIMENTAL
+      if (varName == "Ppattern") {
+        RCP<PatternFactory> PpFact = rcp(new PatternFactory);
+        PpFact->SetFactory("P", GetFactory("Ptent"));
+        return SetAndReturnDefaultFactory(varName, PpFact);
+      }
+      if (varName == "Constraint")          return SetAndReturnDefaultFactory(varName, rcp(new ConstraintFactory()));
+#endif
+
       //if (varName == "Smoother")    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new GaussSeidelSmoother()))));
       if (varName == "Smoother") {
         Teuchos::ParameterList smootherParamList;
         smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
         smootherParamList.set("relaxation: sweeps", (LO) 1);
-        smootherParamList.set("relaxation: damping factor", (double) 1.0); //FIXME once Ifpack2's parameter list validator is fixed, change this back to Scalar
+        smootherParamList.set("relaxation: damping factor", (Scalar) 1.0); //FIXME once Ifpack2's parameter list validator is fixed, change this back to Scalar
         return SetAndReturnDefaultFactory(varName, rcp( new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", smootherParamList)))));
       }
 
@@ -150,18 +185,18 @@ namespace MueLu {
 
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
     }
-      
+
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Clean() const { defaultFactoryTable_.clear(); }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const FactoryBase> & FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const {
+  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const {
     TEUCHOS_TEST_FOR_EXCEPTION(factory == Teuchos::null, Exceptions::RuntimeError, "");
 
-    GetOStream(Warnings0,  0) << "Warning: No factory has been specified for building '" << varName << "'." << std::endl;
-    GetOStream(Warnings00, 0) << "         Using default factory ";
+    GetOStream(Warnings0,  0) << "Attention: No factory has been specified for building '" << varName << "'." << std::endl;
+    GetOStream(Warnings00, 0) << "           Using default factory ";
     { Teuchos::OSTab tab(getOStream(), 7); factory->describe(GetOStream(Warnings00), GetVerbLevel());}
 
     defaultFactoryTable_[varName] = factory;

@@ -170,7 +170,6 @@ evaluateFields(typename Traits::EvalData workset)
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
    Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer = epetraContainer_;
-   //      = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
    Teuchos::RCP<Epetra_Vector> r = epetraContainer->get_f(); 
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -188,9 +187,6 @@ evaluateFields(typename Traits::EvalData workset)
       LIDs.resize(GIDs.size());
       for(std::size_t i=0;i<GIDs.size();i++)
          LIDs[i] = r->Map().LID(GIDs[i]);
-
-      std::vector<bool> is_owned(GIDs.size(), false);
-      globalIndexer_->ownedIndices(GIDs,is_owned);
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -326,7 +322,6 @@ evaluateFields(typename Traits::EvalData workset)
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
    Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer = epetraContainer_;
-   //       = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
    TEUCHOS_ASSERT(epetraContainer!=Teuchos::null);
    Teuchos::RCP<Epetra_Vector> r = epetraContainer->get_f(); 
    Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer->get_A();
@@ -354,9 +349,6 @@ evaluateFields(typename Traits::EvalData workset)
          for(std::size_t i=0;i<GIDs.size();i++)
             LIDs[i] = Jac->RowMap().LID(GIDs[i]);
       }
-
-      std::vector<bool> is_owned(GIDs.size(), false);
-      globalIndexer_->ownedIndices(GIDs,is_owned);
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {

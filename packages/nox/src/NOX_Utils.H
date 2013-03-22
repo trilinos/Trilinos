@@ -190,10 +190,10 @@ public:
 
   //! Constructor.  
   /*!The final two arguments are a reference counted pointers to
-    ostreams.  This defaults to std::cout and std::cerr if not
+    std::ostreams.  This defaults to std::cout and std::cerr if not
     supplied.  Users should only supply this argument if they want
     output directed to a std::ostream other than the defaults.  If so,
-    they must wrap the ostream in a reference counted pointer for safe
+    they must wrap the std::ostream in a reference counted pointer for safe
     memory management. */
   Utils(int outputInformation=0xf, int MyPID=0, int outputProcess=0, 
 	int outputPrecision=3, 
@@ -220,16 +220,16 @@ public:
   //! Returns true if this is a valid print type
   bool isPrintType(NOX::Utils::MsgType type) const;
 
-  //! Returns the ostream for printing if this proces is the print process. Returns a Teuchos::oblackholestream otherwise.
+  //! Returns the std::ostream for printing if this proces is the print process. Returns a Teuchos::oblackholestream otherwise.
   std::ostream& out() const;
 
-  //! Returns the ostream for printing if this process is the print process and the print type is valid. Returns a Teuchos::oblackholestream otherwise.
+  //! Returns the std::ostream for printing if this process is the print process and the print type is valid. Returns a Teuchos::oblackholestream otherwise.
   std::ostream& out(NOX::Utils::MsgType type) const;
 
-  //! Returns the ostream for printing regardless of the print processor.  Only use this call if you want all processes to print to the ostream.
+  //! Returns the std::ostream for printing regardless of the print processor.  Only use this call if you want all processes to print to the std::ostream.
   std::ostream& pout() const; 
 
-  //! Returns the ostream for printing if the print type matches.  Only use this call if you want all processes to print to the ostream for the print type.
+  //! Returns the std::ostream for printing if the print type matches.  Only use this call if you want all processes to print to the std::ostream for the print type.
   std::ostream& pout(NOX::Utils::MsgType type) const; 
 
   //! Returns the error stream for printing if this is the print process.
@@ -239,7 +239,7 @@ public:
   std::ostream& perr() const;
   
   //! Print this object
-  void print(ostream& os) const;
+  void print(std::ostream& os) const;
 
   /*! 
     \brief Creates a Sci object which can be used in an output stream
@@ -290,9 +290,9 @@ private:
 
 }; // class Utils
 
-ostream& operator<<(ostream&, const NOX::Utils::Fill&);
-ostream& operator<<(ostream&, const NOX::Utils::Sci&);
-ostream& operator<<(ostream&, const NOX::Utils& utils);
+std::ostream& operator<<(std::ostream&, const NOX::Utils::Fill&);
+std::ostream& operator<<(std::ostream&, const NOX::Utils::Sci&);
+std::ostream& operator<<(std::ostream&, const NOX::Utils& utils);
 
 } // namespace NOX
 

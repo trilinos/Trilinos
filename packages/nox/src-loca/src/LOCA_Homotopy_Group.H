@@ -320,7 +320,7 @@ namespace LOCA {
 
       //! Set parameters indexed by (integer) paramIDs
       virtual void setParamsMulti(
-			  const vector<int>& paramIDs, 
+			  const std::vector<int>& paramIDs, 
 			  const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
       //! Set the parameter vector in the group to p.
@@ -330,7 +330,7 @@ namespace LOCA {
       virtual void setParam(int paramID, double val);
 
       //! Set parameter indexed by paramID
-      virtual void setParam(string paramID, double val);
+      virtual void setParam(std::string paramID, double val);
 
       //! Return a const reference to the paramter vector owned by the group.
       virtual const ParameterVector& getParams() const;
@@ -339,7 +339,7 @@ namespace LOCA {
       virtual double getParam(int paramID) const;
 
       //! Return copy of parameter indexed by paramID
-      virtual double getParam(string paramID) const;
+      virtual double getParam(std::string paramID) const;
 
       /*! 
        * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
@@ -348,7 +348,7 @@ namespace LOCA {
        * computed.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDfDpMulti(const vector<int>& paramIDs, 
+      computeDfDpMulti(const std::vector<int>& paramIDs, 
 		       NOX::Abstract::MultiVector& dfdp, 
 		       bool isValidF);
 
@@ -460,10 +460,10 @@ namespace LOCA {
       int conParamID;
       
       /*! 
-       * \brief Contains the string used to identify the homotopy parameter in 
+       * \brief Contains the std::string used to identify the homotopy parameter in 
        * the ParameterVector object.
        */
-      const string conParamLabel;
+      const std::string conParamLabel;
 
       /*!
        * \brief Tracks whether the LOCA::Homotopy::Group method 

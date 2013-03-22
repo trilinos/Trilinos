@@ -69,7 +69,7 @@
 // Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
@@ -78,7 +78,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -167,10 +167,10 @@ int main(int argc, char *argv[]) {
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
 
-  // Epetra_CrsMatrix -> Xpetra::Operator
+  // Epetra_CrsMatrix -> Xpetra::Matrix
   RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-  RCP<CrsOperator> crsOp = Teuchos::rcp(new CrsOperator(exA));
-  RCP<Operator> Op = Teuchos::rcp_dynamic_cast<Operator>(crsOp);
+  RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
+  RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
   Op->SetFixedBlockSize(nDofsPerNode);
 
   // Epetra_Vector -> Xpetra::Vector
@@ -195,34 +195,35 @@ int main(int argc, char *argv[]) {
   dropFact->SetVerbLevel(MueLu::Extreme);
   //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
   //dropFact->SetPreDropFunction(predrop);
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
+  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+  CoupledAggFact->SetFactory("Graph", dropFact);
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-  UCAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-  UCAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+  CoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+  CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
   std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
   if (aggOrdering == "natural") {
     *out << "aggregate ordering :                    NATURAL" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   } else if (aggOrdering == "random") {
     *out << "aggregate ordering :                    RANDOM" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
   } else if (aggOrdering == "graph") {
     *out << "aggregate ordering :                    GRAPH" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
   } else {
     std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
     throw(MueLu::Exceptions::RuntimeError(msg));
   }
-  UCAggFact->SetPhase3AggCreation(0.5);
+  CoupledAggFact->SetPhase3AggCreation(0.5);
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
   //RCP<PgPFactory> Pfact = rcp( new PgPFactory() );
-  //RCP<RFactory> Rfact  = rcp( new GenericRFactory());
-  RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
-  RCP<RFactory>   Rfact  = rcp( new TransPFactory() );
+  //RCP<Factory> Rfact  = rcp( new GenericRFactory());
+  RCP<SaPFactory>   Pfact  = rcp( new SaPFactory() );
+  RCP<Factory> Rfact  = rcp( new TransPFactory() );
   RCP<RAPFactory> Acfact = rcp( new RAPFactory() );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
@@ -253,7 +254,7 @@ int main(int argc, char *argv[]) {
 
   FactoryManager M;
   M.SetFactory("Graph", dropFact);
-  M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("Aggregates", CoupledAggFact);
   M.SetFactory("P", Pfact);
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);

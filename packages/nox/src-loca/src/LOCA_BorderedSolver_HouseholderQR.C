@@ -97,8 +97,8 @@ LOCA::BorderedSolver::HouseholderQR::computeQR(
   Teuchos::RCP<NOX::Abstract::MultiVector> y2;
   Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> y1;
   Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> z;
-  vector<int> h_idx;
-  vector<int> y_idx;
+  std::vector<int> h_idx;
+  std::vector<int> y_idx;
   y_idx.reserve(m);
 
   for (int i=0; i<m; i++) {

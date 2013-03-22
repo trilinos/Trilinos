@@ -1,0 +1,5 @@
+    <ParameterList name="UncoupledAggregationFactory">
+      <Parameter name="Ordering"                type="string" value="Natural"/>
+      <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
+      <Parameter name="MinNodesPerAggregate"    type="int"    value="3"/>
+    </ParameterList>

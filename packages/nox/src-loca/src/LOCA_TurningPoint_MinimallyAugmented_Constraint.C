@@ -122,7 +122,7 @@ Constraint(
   else
     globalData->locaErrorCheck->throwError(
        "LOCA::TurningPoint::MinimallyAugmented::Constraint::Constraint()",
-       string("Unknown null vector scaling method:  ") + nullVecScalingMethod);
+       std::string("Unknown null vector scaling method:  ") + nullVecScalingMethod);
   multiplyMass = 
     turningPointParams->get("Multiply Null Vectors by Mass Matrix", false);
   if (multiplyMass && tdGrp == Teuchos::null) {
@@ -302,7 +302,7 @@ setParam(int paramID, double val)
 
 void
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
-setParams(const vector<int>& paramIDs, 
+setParams(const std::vector<int>& paramIDs, 
 	  const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
@@ -317,7 +317,7 @@ computeConstraints()
   if (isValidConstraints)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MinimallyAugmented::Constraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -462,7 +462,7 @@ computeDX()
   if (isValidDX)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MinimallyAugmented::Constraint::computeDX()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -492,11 +492,11 @@ computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
-computeDP(const vector<int>& paramIDs, 
+computeDP(const std::vector<int>& paramIDs, 
 	  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 	  bool isValidG)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MinimallyAugmented::Constraint::computeDP()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -581,7 +581,7 @@ void
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 scaleNullVectors(NOX::Abstract::Vector& a, NOX::Abstract::Vector& b)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MinimallyAugmented::Constraint::scaleNullVectors()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -625,11 +625,11 @@ LOCA::TurningPoint::MinimallyAugmented::Constraint::
 getInitialVectors(NOX::Abstract::Vector& aVec,
 		  NOX::Abstract::Vector& bVec)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MinimallyAugmented::Constraint::getIntitialVectors()";
 
   // Get method
-  string method = 
+  std::string method = 
     turningPointParams->get("Initial Null Vector Computation",
 			    "User Provided");
   if (method == "Solve df/dp") {
@@ -673,8 +673,8 @@ getInitialVectors(NOX::Abstract::Vector& aVec,
       if (ts_grp == Teuchos::null)
 	globalData->locaErrorCheck->throwError(
 	   callingFunction,
-	   string("Group must implement LOCA::Abstract::TransposeSolveGroup") +
-	   string(" to compute initial left null vector"));
+	   std::string("Group must implement LOCA::Abstract::TransposeSolveGroup") +
+	   std::string(" to compute initial left null vector"));
       
       Teuchos::RCP<Teuchos::ParameterList> lsParams =
 	parsedParams->getSublist("Linear Solver");

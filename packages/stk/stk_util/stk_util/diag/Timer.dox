@@ -40,7 +40,7 @@
 /// To time operations within an object:<BR>
 ///
 /// \code
-///     #include <Slib_DiagTimer.h>
+///     #include <stk_util/diag/Timer.hpp>
 ///
 ///     class AClass
 ///     {

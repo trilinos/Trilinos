@@ -46,6 +46,7 @@
 
 #include <KokkosArray_Host.hpp>
 #include <Host/KokkosArray_Host_Internal.hpp>
+#include <impl/KokkosArray_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
 /* Standard 'C' libraries */
@@ -54,13 +55,20 @@
 /* Standard 'C++' libraries */
 #include <limits>
 #include <iostream>
-#include <stdexcept>
 #include <sstream>
 
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
 namespace Impl {
+
+void * host_allocate_not_thread_safe(
+  const std::string    & label ,
+  const std::type_info & scalar_type ,
+  const size_t           scalar_size ,
+  const size_t           scalar_count );
+
+void host_decrement_not_thread_safe( const void * ptr );
 
 //----------------------------------------------------------------------------
 
@@ -73,7 +81,6 @@ HostThread::~HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
-  m_work_chunk   = 0 ;
   m_reduce       = 0 ;
 
   for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
@@ -88,7 +95,6 @@ HostThread::HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
-  m_work_chunk   = 0 ;
   m_reduce       = 0 ;
   m_state        = ThreadActive ;
 
@@ -98,11 +104,17 @@ HostThread::HostThread()
 std::pair< Host::size_type , Host::size_type >
 HostThread::work_range( const size_type work_count ) const
 {
+  // A 'chunk' is HostSpace::WORK_ALIGNMENT atomic units of work
+
   const size_type chunk_count =
-    ( work_count + m_work_chunk - 1 ) / m_work_chunk ;
+    ( work_count + HostSpace::WORK_ALIGNMENT - 1 ) / HostSpace::WORK_ALIGNMENT ;
+
+  // Each thread performs some number of 'chunks' of work:
 
   const size_type work_per_thread =
-    m_work_chunk * (( chunk_count + m_thread_count - 1 ) / m_thread_count );
+    HostSpace::WORK_ALIGNMENT * (( chunk_count + m_thread_count - 1 ) / m_thread_count );
+
+  // Range of work:
 
   const size_type work_begin =
     std::min( m_thread_rank * work_per_thread , work_count );
@@ -180,28 +192,48 @@ void HostInternal::execute( const HostThreadWorker & worker )
 void HostThreadWorker::execute() const
 { HostInternal::singleton().execute( *this ); }
 
+void HostInternal::execute_serial( const HostThreadWorker & worker )
+{
+  verify_inactive("execute_serial(...)");
+
+  // Worker threads are verified to be in the ThreadInactive state.
+
+  m_worker = & worker ;
+
+  for ( unsigned i = m_thread_count ; 1 < i ; ) {
+    --i ;
+    m_thread[i]->set(  HostThread::ThreadActive );
+    m_thread[i]->wait( HostThread::ThreadActive );
+  }
+
+  // Execute on the master thread,
+  worker.execute_on_thread( m_master_thread );
+
+  // Worker threads are returned to the ThreadInactive state.
+  m_worker = NULL ;
+}
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-HostInternal::~HostInternal()
-{}
+HostInternal::~HostInternal() {}
 
 HostInternal::HostInternal()
   : m_worker_block()
-  , m_node_rank( -1 )
-  , m_node_count( 1 )
-  , m_node_pu_count( 0 )
-  , m_page_size( 0 )
+
+  , m_gang_capacity( 1 )
+  , m_worker_capacity( 0 )
+
   , m_cache_line_size( 64 /* default guess */ )
   , m_thread_count( 1 )
   , m_gang_count( 1 )
   , m_worker_count( 1 )
-  , m_work_chunk( m_cache_line_size / sizeof(void*) )
+  , m_reduce_scratch_size( 0 )
 {
   m_worker = NULL ;
 
   if ( ! is_master_thread() ) {
-    throw std::runtime_error( std::string("KokkosArray::Impl::HostInternal FAILED : not initialized on the master thread"));
+    KokkosArray::Impl::throw_runtime_exception( std::string("KokkosArray::Impl::HostInternal FAILED : not initialized on the master thread") );
   }
 
   // Master thread:
@@ -214,12 +246,85 @@ HostInternal::HostInternal()
   m_master_thread.m_gang_count   = m_gang_count ;
   m_master_thread.m_worker_rank  = 0 ;
   m_master_thread.m_worker_count = m_worker_count ;
-  m_master_thread.m_work_chunk   = m_work_chunk ;
 
   for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
     m_master_thread.m_fan[i] = 0 ;
   }
 }
+
+void HostInternal::print_configuration( std::ostream & s ) const
+{
+  s << "KokkosArray::Host thread capacity( "
+    << m_gang_capacity << " x " << m_worker_capacity
+    << " ) used( "
+    << m_gang_count << " x " << m_worker_count
+    << " )"
+    << std::endl ;
+}
+
+//----------------------------------------------------------------------------
+
+inline
+void HostInternal::resize_reduce_thread( HostThread & thread ) const
+{
+  if ( thread.m_reduce ) {
+    host_decrement_not_thread_safe( thread.m_reduce );
+    thread.m_reduce = 0 ;
+  }
+
+  if ( m_reduce_scratch_size ) {
+
+    thread.m_reduce = host_allocate_not_thread_safe( "reduce_scratch_space" , typeid(unsigned char) , 1 , m_reduce_scratch_size );
+
+    // Guaranteed multiple of 'unsigned'
+
+    unsigned * ptr = (unsigned *)( thread.m_reduce );
+    unsigned * const end = ptr + m_reduce_scratch_size / sizeof(unsigned );
+  
+    // touch on this thread
+    while ( ptr < end ) *ptr++ = 0 ;
+  }
+}
+
+struct HostWorkerResizeReduce : public HostThreadWorker
+{
+  void execute_on_thread( HostThread & ) const ;
+
+  ~HostWorkerResizeReduce() {}
+  HostWorkerResizeReduce() {}
+};
+
+void HostWorkerResizeReduce::execute_on_thread( HostThread & thread ) const
+{ HostInternal::singleton().resize_reduce_thread( thread ); }
+
+
+inline
+void HostInternal::resize_reduce_scratch( unsigned size )
+{
+  if ( 0 == size || m_reduce_scratch_size < size ) {
+    // Round up to cache line size:
+    const unsigned rem = size % m_cache_line_size ;
+
+    if ( rem ) size += m_cache_line_size - rem ;
+  
+    m_reduce_scratch_size = size ;
+
+    const HostWorkerResizeReduce work ;
+
+    execute_serial( work );
+  }
+}
+
+void * HostInternal::reduce_scratch() const
+{
+  return m_master_thread.reduce_data();
+}
+
+void host_resize_scratch_reduce( unsigned size )
+{ HostInternal::singleton().resize_reduce_scratch( size ); }
+
+void * host_scratch_reduce()
+{ return HostInternal::singleton().reduce_scratch(); }
 
 //----------------------------------------------------------------------------
 
@@ -236,7 +341,6 @@ bool HostInternal::initialize_thread(
   thread.m_gang_count   = m_gang_count ;
   thread.m_worker_rank  = worker_rank ;
   thread.m_worker_count = m_worker_count ;
-  thread.m_work_chunk   = m_work_chunk ;
 
   {
     unsigned fan_count = 0 ;
@@ -285,6 +389,8 @@ bool HostInternal::bind_thread( const unsigned thread_rank ) const
 void HostInternal::finalize()
 {
   verify_inactive("finalize()");
+
+  resize_reduce_scratch( 0 );
 
   // Release and clear worker threads:
   while ( 1 < m_thread_count ) {
@@ -396,7 +502,7 @@ void HostInternal::verify_inactive( const char * const method ) const
     else {
       msg << "Functor is executing." ;
     }
-    throw std::runtime_error( msg.str() );
+    KokkosArray::Impl::throw_runtime_exception( msg.str() );
   }
 }
 
@@ -460,9 +566,9 @@ void HostInternal::initialize( const unsigned gang_count ,
                                const unsigned worker_count )
 {
   const bool ok_inactive     = 1 == m_thread_count ;
-  const bool ok_gang_count   = gang_count <= m_node_count ;
-  const bool ok_worker_count = ( 0 == m_node_pu_count ||
-                                 worker_count <= m_node_pu_count );
+  const bool ok_gang_count   = gang_count <= m_gang_capacity ;
+  const bool ok_worker_count = ( 0 == m_worker_capacity ||
+                                 worker_count <= m_worker_capacity );
 
   // Only try to spawn threads if input is valid.
 
@@ -485,22 +591,21 @@ void HostInternal::initialize( const unsigned gang_count ,
     if ( ! ok_inactive ) {
       msg << " : Device is already active" ;
     }
-    if ( ! ok_gang_count ) {
-      msg << " : gang_count(" << gang_count
-          << ") exceeds detect_node_count(" << m_node_count
-          << ")" ;
-    }
-    if ( ! ok_worker_count ) {
-      msg << " : worker_count(" << worker_count
-          << ") exceeds detect_node_pu_count(" << m_node_pu_count
-          << ")" ;
+    if ( ! ok_gang_count || ! ok_worker_count ) {
+      msg << " : request for threads ( "
+          << gang_count << " x " << worker_count
+          << " ) exceeds detected capacity ( "
+          << m_gang_capacity << " x " << m_worker_capacity
+          << " )" ;
     }
     if ( ! ok_spawn_threads ) {
       msg << " : Spawning or cpu-binding the threads" ;
     }
 
-    throw std::runtime_error( msg.str() );
+    KokkosArray::Impl::throw_runtime_exception( msg.str() );
   }
+
+  resize_reduce_scratch( 1024 );
 }
 
 //----------------------------------------------------------------------------
@@ -517,22 +622,22 @@ void Host::finalize()
 { Impl::HostInternal::singleton().finalize(); }
 
 void Host::initialize( const Host::size_type gang_count ,
-                       const Host::size_type worker_count )
+                       const Host::size_type gang_worker_count )
 {
-  Impl::HostInternal::singleton().initialize( gang_count , worker_count );
+  Impl::HostInternal::singleton().initialize( gang_count , gang_worker_count );
 }
 
-Host::size_type Host::detect_node_count()
-{ return Impl::HostInternal::singleton().m_node_count ; }
+void Host::print_configuration( std::ostream & s )
+{ Impl::HostInternal::singleton().print_configuration(s); }
 
-Host::size_type Host::detect_node_core_count()
-{ return Impl::HostInternal::singleton().m_node_pu_count ; }
+Host::size_type Host::detect_gang_capacity()
+{ return Impl::HostInternal::singleton().m_gang_capacity ; }
+
+Host::size_type Host::detect_gang_worker_capacity()
+{ return Impl::HostInternal::singleton().m_worker_capacity ; }
 
 Host::size_type Host::detect_cache_line_size()
 { return Impl::HostInternal::singleton().m_cache_line_size ; }
-
-Host::size_type Host::detect_memory_page_size()
-{ return Impl::HostInternal::singleton().m_page_size ; }
 
 /*--------------------------------------------------------------------------*/
 

@@ -53,6 +53,36 @@
 
 namespace panzer {
 
+  TEUCHOS_UNIT_TEST(bc, nonmember_ctor)
+  {
+    Teuchos::ParameterList bc_params;
+
+    std::vector<panzer::BC> bcs;
+    Teuchos::ParameterList& bc_0 = bc_params.sublist("BC 0");
+    bc_0.set("Type", "Dirichlet");
+    bc_0.set("Sideset ID", "4");
+    bc_0.set("Element Block ID", "fluid");
+    bc_0.set("Equation Set Name", "UX");
+    bc_0.set("Strategy", "Constant");
+    bc_0.sublist("Data").set("Value",1.0);
+    Teuchos::ParameterList& bc_1 = bc_params.sublist("BC 1");
+    bc_1.set("Type", "Neumann");
+    bc_1.set("Sideset ID", "4");
+    bc_1.set("Element Block ID", "fluid");
+    bc_1.set("Equation Set Name", "UX");
+    bc_1.set("Strategy", "Constant");
+    bc_1.sublist("Data").set("Value",1.0);
+
+    panzer::buildBCs(bcs, bc_params);
+
+    TEST_EQUALITY(bcs.size(), 2);
+    TEST_EQUALITY(bcs[0].bcID(), 0);
+    TEST_EQUALITY(bcs[1].bcID(), 1);
+    TEST_EQUALITY(bcs[0].bcType(), panzer::BCT_Dirichlet);
+    TEST_EQUALITY(bcs[1].bcType(), panzer::BCT_Neumann);
+  }
+
+
   TEUCHOS_UNIT_TEST(bc, neumann_no_param_list)
   {
 

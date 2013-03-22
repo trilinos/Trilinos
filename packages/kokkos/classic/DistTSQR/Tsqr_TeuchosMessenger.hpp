@@ -188,7 +188,7 @@ namespace TSQR {
 	      ArrayRCP<const Datum> sendBuf (sendData, 0, sendRecvCount, false);
 	      ArrayRCP<Datum> recvBuf (recvData, 0, sendRecvCount, false);
 
-	      RCP<CommRequest> sendReq, recvReq;
+	      RCP<CommRequest<int> > sendReq, recvReq;
 	      if (srcProc < destProc)
 		{
 		  sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);

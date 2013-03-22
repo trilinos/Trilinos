@@ -54,7 +54,7 @@
  */
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_RFactory.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_GenericRFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
@@ -68,7 +68,7 @@ namespace MueLu {
   */
 
   template < class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
-  class GenericRFactory : public RFactory {
+  class GenericRFactory : public TwoLevelFactoryBase {
 #undef MUELU_GENERICRFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -77,10 +77,10 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    GenericRFactory(RCP<PFactory> PFact = Teuchos::null);
+    GenericRFactory() { }
 
     //! Destructor.
-    virtual ~GenericRFactory();
+    virtual ~GenericRFactory() { }
     //@}
 
     //! Input
@@ -95,14 +95,7 @@ namespace MueLu {
 
     void Build(Level & fineLevel, Level & coarseLevel) const;
 
-    void BuildR(Level & fineLevel, Level & coarseLevel) const; //BuildR
-
     //@}
-
-  private:
-
-    //! P Factory
-    RCP<PFactory> PFact_;
 
   }; //class TransPFactory
 

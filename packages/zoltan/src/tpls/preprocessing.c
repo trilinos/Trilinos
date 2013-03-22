@@ -1132,8 +1132,8 @@ int64_t maxindextype = (int64_t)(((uint64_t) 1<<((sizeof(indextype)<<3)-1))-1);
     char msg[500];
     sprintf(msg, "Graph TPL is built with integer type that is too small for "
             "the partitioning problem.  Max number of objects supported is "
-            "%lld; global number of objects is " ZOLTAN_GNO_SPEC "\n", 
-            maxindextype, global_num_obj);
+            "2^%lu-1; global number of objects is " ZOLTAN_GNO_SPEC "\n", 
+            ((sizeof(indextype)<<3)-1), global_num_obj);
     ZOLTAN_PRINT_ERROR(zz->Proc, "check_data_sizes", msg);
     ierr = ZOLTAN_FATAL;
   }

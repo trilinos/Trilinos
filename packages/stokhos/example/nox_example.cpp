@@ -33,16 +33,16 @@
 #include <iostream>
 #include <sstream>
 
+// NOX
+#include "NOX.H"
+#include "NOX_Epetra.H"
+
 // Epetra communicator
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-
-// NOX
-#include "NOX.H"
-#include "NOX_Epetra.H"
 
 // Stokhos Stochastic Galerkin
 #include "Stokhos_Epetra.hpp"
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     int sz = basis->size();
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    Cijk = basis->computeTripleProductTensor(sz);
+    Cijk = basis->computeTripleProductTensor();
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(basis,
 									 Cijk));

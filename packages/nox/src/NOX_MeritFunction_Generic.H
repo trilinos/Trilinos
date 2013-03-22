@@ -51,7 +51,8 @@
 #ifndef NOX_MERITFUNCTION_GENERIC_H
 #define NOX_MERITFUNCTION_GENERIC_H
 
-#include "NOX_Common.H"  // for ostream
+#include "NOX_Common.H"  // for std::ostream
+#include <string>
 
 // Forward declaration
 namespace NOX {
@@ -160,7 +161,7 @@ class Generic {
 				     NOX::Abstract::Vector& result) const = 0;
 
   //! Returns the name of the merit function.
-  virtual const string& name() const = 0;
+  virtual const std::string& name() const = 0;
 
 };
 } // namespace MeritFunction

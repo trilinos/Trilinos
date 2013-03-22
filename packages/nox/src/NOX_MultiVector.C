@@ -54,8 +54,8 @@ NOX::MultiVector::MultiVector(int numVecs) :
   vecs(numVecs)
 {
   if (numVecs <= 0) {
-    cerr << "NOX::MultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << endl;
+    std::cerr << "NOX::MultiVector:  Error!  Multivector" 
+	 << " must have postive number of columns!" << std::endl;
     throw "NOX Error";
   }
 }
@@ -65,8 +65,8 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector& v, int numVecs,
   vecs(numVecs)
 {
   if (numVecs <= 0) {
-    cerr << "NOX::MultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << endl;
+    std::cerr << "NOX::MultiVector:  Error!  Multivector" 
+	 << " must have postive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
@@ -81,8 +81,8 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector* const* vs,
   vecs(numVecs)
 {
   if (numVecs <= 0) {
-    cerr << "NOX::MultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << endl;
+    std::cerr << "NOX::MultiVector:  Error!  Multivector" 
+	 << " must have postive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
@@ -143,14 +143,14 @@ NOX::MultiVector::operator=(const NOX::MultiVector& source)
 
 NOX::Abstract::MultiVector&
 NOX::MultiVector::setBlock(const NOX::Abstract::MultiVector& source, 
-			   const vector<int>& index)
+			   const std::vector<int>& index)
 {
   return setBlock(dynamic_cast<const NOX::MultiVector&>(source), index);
 }
 
 NOX::Abstract::MultiVector&
 NOX::MultiVector::setBlock(const NOX::MultiVector& source, 
-			   const vector<int>& index)
+			   const std::vector<int>& index)
 {
   int ind;
 
@@ -337,7 +337,7 @@ NOX::MultiVector::clone(int numvecs) const
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::MultiVector::subCopy(const vector<int>& index) const
+NOX::MultiVector::subCopy(const std::vector<int>& index) const
 {
   Teuchos::RCP<NOX::MultiVector> tmp = 
     Teuchos::rcp(new NOX::MultiVector(index.size()));
@@ -351,7 +351,7 @@ NOX::MultiVector::subCopy(const vector<int>& index) const
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector> 
-NOX::MultiVector::subView(const vector<int>& index) const
+NOX::MultiVector::subView(const std::vector<int>& index) const
 {
   Teuchos::RCP<NOX::MultiVector> tmp = 
     Teuchos::rcp(new NOX::MultiVector(index.size()));
@@ -365,7 +365,7 @@ NOX::MultiVector::subView(const vector<int>& index) const
 }
 
 void
-NOX::MultiVector::norm(vector<double>& result,
+NOX::MultiVector::norm(std::vector<double>& result,
 		       NOX::Abstract::Vector::NormType type) const
 {
   if (result.size() != vecs.size())
@@ -416,7 +416,7 @@ void
 NOX::MultiVector::checkIndex(int idx) const 
 {
   if ( idx < 0 || idx >= static_cast<int>(vecs.size()) ) {
-    cerr << "NOX::MultiVector:  Error!  Invalid index " << idx << endl;
+    std::cerr << "NOX::MultiVector:  Error!  Invalid index " << idx << std::endl;
     throw "NOX Error";
   }
 }
@@ -425,8 +425,8 @@ void
 NOX::MultiVector::checkSize(int sz) const
 {
   if (static_cast<int>(vecs.size()) != sz) {
-    cerr << "NOX::MultiVector:  Error!  Size of supplied multivector is"
-	 << " incompatible with this multivector" << endl;
+    std::cerr << "NOX::MultiVector:  Error!  Size of supplied multivector is"
+	 << " incompatible with this multivector" << std::endl;
     throw "NOX Error";
   }
 }

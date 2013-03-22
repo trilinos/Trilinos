@@ -59,8 +59,9 @@ extern "C" {
 /*****************************************************************************/
 void setup_fixed_obj(MESH_INFO_PTR mesh, int Num_Global_Parts)
 {
-int i;
+int i, part;
 int proc, nprocs;
+FILE *fp;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
@@ -129,6 +130,29 @@ int proc, nprocs;
       break;
   case 10:
       /* Fix 0% of objects */
+      break;
+
+  case 99:
+      /* Read from file. Assume serial execution for now. */
+      if (proc == 0){
+        /* TODO: Make filename a parameter. Hardcoded for now. */
+        fp = fopen("fixed.dat", "r");
+        if (fp == NULL)
+           fprintf(stderr, "ERROR in opening file fixed.dat. No fixed vertices set.\n");
+        else {
+          while (1){
+            if (feof(fp)) break; 
+            /* read (i, part) for each fixed vertex */
+            fscanf(fp, "%i%i\n", &i, &part);
+            if ((part >= 0) && (part < Num_Global_Parts)){
+              /* printf("Debug: setting fixed[%i] = %i\n", i, part); */
+              mesh->elements[i].fixed_part = part;
+            }
+            else
+              printf("Warning: Invalid part number %i ignored\n", part);
+          }
+        }
+      }
       break;
   }
 }

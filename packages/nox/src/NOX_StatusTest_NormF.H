@@ -53,7 +53,7 @@
 
 #include "NOX_StatusTest_Generic.H"	// base class
 #include "NOX_Abstract_Vector.H"        // for NormType
-#include "NOX_Utils.H"                  // for cerr
+#include "NOX_Utils.H"                  // for std::cerr
 
 // Forward declaration
 namespace NOX {
@@ -168,7 +168,7 @@ public:
   // derived
   virtual NOX::StatusTest::StatusType getStatus() const;
 
-  virtual ostream& print(ostream& stream, int indent = 0) const;
+  virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
 
   /* @name Reset Functions
      Used to change the tolerances in the status test after construction.

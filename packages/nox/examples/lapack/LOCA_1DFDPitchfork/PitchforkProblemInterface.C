@@ -122,16 +122,16 @@ PitchforkProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
 					 const double conParam)
 {
 
-   cout << "At parameter value: " << conParam << "   the solution vector is\n";
+   std::cout << "At parameter value: " << conParam << "   the solution vector is\n";
 
    if (n < 8) {
-     for (int i=0; i<n; i++)  cout << " " << x(i);
+     for (int i=0; i<n; i++)  std::cout << " " << x(i);
    }
    else {
-     for (int i=0; i<6; i++)  cout << " " << x(i);
-     cout << " ...";
-     for (int i=n-2; i<n; i++)  cout << " " << x(i);
+     for (int i=0; i<6; i++)  std::cout << " " << x(i);
+     std::cout << " ...";
+     for (int i=n-2; i<n; i++)  std::cout << " " << x(i);
    }
-   cout << endl;
+   std::cout << std::endl;
 
 }

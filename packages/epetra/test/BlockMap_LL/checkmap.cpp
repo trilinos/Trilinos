@@ -44,7 +44,7 @@
 int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElements, 
 	     long long *MyGlobalElements, int ElementSize, int * ElementSizeList,
 	     long long NumGlobalPoints, int NumMyPoints,
-	     int IndexBase, Epetra_Comm& Comm,
+	     long long IndexBase, Epetra_Comm& Comm,
 	     bool DistributedGlobal,
 	     bool IsOneToOne)
 {
@@ -111,7 +111,7 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
 
   EPETRA_TEST_ERR(Comm1.MyPID()!=Comm.MyPID(),ierr);
 
-  EPETRA_TEST_ERR(Map.IndexBase()!=IndexBase,ierr);
+  EPETRA_TEST_ERR(Map.IndexBase64()!=IndexBase,ierr);
 
   EPETRA_TEST_ERR(!Map.LinearMap() && MyGlobalElements==0,ierr);
 
@@ -140,7 +140,7 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
   int MinLID = Map.MinLID();
   EPETRA_TEST_ERR(MinLID!=0,ierr);
 
-  int MinMyGID = Comm.MyPID()*NumMyElements+IndexBase;
+  long long MinMyGID = Comm.MyPID()*NumMyElements+IndexBase;
   if (Comm.MyPID()>2) MinMyGID+=3;
   if (!DistributedGlobal) MinMyGID = IndexBase; // Not really needed
   EPETRA_TEST_ERR(Map.MinMyGID64()!=MinMyGID,ierr);

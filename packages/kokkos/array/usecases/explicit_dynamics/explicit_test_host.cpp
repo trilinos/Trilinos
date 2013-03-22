@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -51,15 +51,15 @@
 
 #include <KokkosArray_Host.hpp>
 
-#include <KokkosArray_Host_macros.hpp>
+#include <impl/KokkosArray_Host_macros.hpp>
 #include <explicit_dynamics_app.hpp>
-#include <KokkosArray_Clear_macros.hpp>
+#include <impl/KokkosArray_Clear_macros.hpp>
 
 namespace Test{
 
 void test_Host( int beg, int end, int runs, int threads){
 
-  const size_t node_count = KokkosArray::Host::detect_node_count();
+  const size_t node_count = KokkosArray::Host::detect_gang_capacity();
 
   if ( 0 < threads ) {
     const size_t node_thread_count = ( threads + node_count - 1 ) / node_count ;
@@ -70,7 +70,7 @@ void test_Host( int beg, int end, int runs, int threads){
               << node_count * node_thread_count << std::endl ;
   }
   else {
-    const size_t node_thread_count = KokkosArray::Host::detect_node_core_count();
+    const size_t node_thread_count = KokkosArray::Host::detect_gang_worker_capacity();
 
     KokkosArray::Host::initialize( node_count , node_thread_count );
 

@@ -70,7 +70,7 @@ namespace Xpetra {
   template <class S, class LO, class GO, class N, class SpMatOps>
   class CrsMatrix;
 #endif
-  
+
   class EpetraCrsGraph
     : public CrsGraph<int, int>
   {
@@ -262,11 +262,11 @@ namespace Xpetra {
 
     //! Get the underlying Epetra graph
     RCP< const Epetra_CrsGraph> getEpetra_CrsGraph() const { return graph_; }
-    
+
     //@}
-    
+
   private:
-    
+
     RCP<Epetra_CrsGraph> graph_;
 
   }; // EpetraCrsGraph class

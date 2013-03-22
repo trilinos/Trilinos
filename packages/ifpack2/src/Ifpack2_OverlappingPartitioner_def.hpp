@@ -56,9 +56,9 @@ OverlappingPartitioner<GraphType>::~OverlappingPartitioner()
 
 //==============================================================================
 template<class GraphType>
-size_t OverlappingPartitioner<GraphType>::numLocalParts() const 
+typename GraphType::local_ordinal_type OverlappingPartitioner<GraphType>::numLocalParts() const 
 {
-  return(NumLocalParts_);
+  return( NumLocalParts_);
 }
 
 //==============================================================================
@@ -176,6 +176,8 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
 {
   using std::vector;
 
+  LocalOrdinal invalid = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+
   // Old FIXME from Ifpack: the first part of this function should be elsewhere
  
   // start defining the subgraphs for no overlap
@@ -191,11 +193,9 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     TEUCHOS_TEST_FOR_EXCEPTION( (Partition_[i] >= NumLocalParts_),
 				std::runtime_error, "Ifpack2::OverlappingPartitioner::computeOverlappingPartitions() Partition_[i] > NumLocalParts_");
 
-    // no singletons should be here, as the matrix is
-    // supposed to be filtered through Ifpack2_SingletonFilter
-    TEUCHOS_TEST_FOR_EXCEPTION((Partition_[i] == -1),
-			       std::runtime_error, "Ifpack2::OverlappingPartitioner::computeOverlappingPartitions() singletons are forbidden");
-    sizes[Partition_[i]]++;
+    //invalid indicates that this unknown is not in a nonoverlapping partition
+    if (Partition_[i] != invalid)
+      sizes[Partition_[i]]++;
   }
 
   // 2.- allocate space for each subgraph
@@ -208,9 +208,11 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
 
   for (size_t i = 0 ; i < Graph_->getNodeNumRows() ; ++i) {
     LocalOrdinal part = Partition_[i];
-    size_t count = sizes[part];
-    Parts_[part][count] = i;
-    sizes[part]++;
+    if (part != invalid){
+      size_t count = sizes[part];
+      Parts_[part][count] = i;
+      sizes[part]++;
+    }
   }
 
   // If there is no overlap, we're done, so return
@@ -243,7 +245,7 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
 
 	  // has this column already been inserted?
 	  vector<size_t>::iterator
-	    where = find(tmp[part].begin(), tmp[part].end(), (size_t) col);
+	    where = std::find(tmp[part].begin(), tmp[part].end(), (size_t) col);
 
 	  if (where == tmp[part].end()) {
 	    tmp[part].push_back(col);

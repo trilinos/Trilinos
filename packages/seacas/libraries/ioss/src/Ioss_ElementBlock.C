@@ -40,37 +40,42 @@
 #include "Ioss_EntityBlock.h"
 
 namespace Ioss {
-class Field;
-}  // namespace Ioss
+  class Field;
 
-Ioss::ElementBlock::ElementBlock(Ioss::DatabaseIO *io_database,
-				 const std::string& my_name,
-				 const std::string& element_type,
-				 int64_t number_elements)
-  : Ioss::EntityBlock(io_database, my_name, element_type, number_elements)
-{
-}
+  ElementBlock::ElementBlock(DatabaseIO *io_database,
+			     const std::string& my_name,
+			     const std::string& element_type,
+			     int64_t number_elements)
+    : EntityBlock(io_database, my_name, element_type, number_elements)
+  {
+  }
 
-Ioss::ElementBlock::~ElementBlock() {}
+  ElementBlock::~ElementBlock() {}
 
-Ioss::Property Ioss::ElementBlock::get_implicit_property(const std::string& my_name) const
-{
-  return Ioss::EntityBlock::get_implicit_property(my_name);
-}
+  Property ElementBlock::get_implicit_property(const std::string& my_name) const
+  {
+    return EntityBlock::get_implicit_property(my_name);
+  }
 
-int64_t Ioss::ElementBlock::internal_get_field_data(const Ioss::Field& field,
-				      void *data, size_t data_size) const
-{
-  return get_database()->get_field(this, field, data, data_size);
-}
+  int64_t ElementBlock::internal_get_field_data(const Field& field,
+						void *data, size_t data_size) const
+  {
+    return get_database()->get_field(this, field, data, data_size);
+  }
 
-int64_t Ioss::ElementBlock::internal_put_field_data(const Ioss::Field& field,
-				      void *data, size_t data_size) const
-{
-  return get_database()->put_field(this, field, data, data_size);
-}
+  int64_t ElementBlock::internal_put_field_data(const Field& field,
+						void *data, size_t data_size) const
+  {
+    return get_database()->put_field(this, field, data, data_size);
+  }
 
-void Ioss::ElementBlock::get_block_adjacencies(std::vector<std::string> &block_adjacency) const
-{
-  get_database()->get_block_adjacencies(this, block_adjacency);
+  void ElementBlock::get_block_adjacencies(std::vector<std::string> &block_adjacency) const
+  {
+    get_database()->get_block_adjacencies(this, block_adjacency);
+  }
+
+  AxisAlignedBoundingBox ElementBlock::get_bounding_box() const
+  {
+    return get_database()->get_bounding_box(this);
+  }
 }

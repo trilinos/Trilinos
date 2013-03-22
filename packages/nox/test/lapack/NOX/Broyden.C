@@ -94,7 +94,7 @@ public:
     n = m;
     lambda = lambdaVal;
 
-    cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
+    std::cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
     
     for (int i=0; i<n; i++) {
       // initialGuess(i) = -100;   // Case for lambdaBar != 1.0
@@ -106,7 +106,7 @@ public:
   };
 
   //! Destructor
-  ~Broyden() { cout << "Function evaluations: " << fevals << "\n"; };
+  ~Broyden() { std::cout << "Function evaluations: " << fevals << "\n"; };
 
   const NOX::LAPACK::Vector& getInitialGuess()
   {
@@ -178,7 +178,7 @@ private:
 //! Main subroutine of Broyden.C
 int main(int argc, char *argv[])
 {
-  cout << "Started" << endl;
+  std::cout << "Started" << std::endl;
 
   // Set up the problem interface
   Broyden broyden(100,0.99);
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
   // Update parameters from an input file if the input file was provided in command
   // line. Usage -p paramFilename 
   //
-  string paramFilename;     
+  std::string paramFilename;     
   bool   usingParamInputFile = false;
   if (argc > 1)
     {
@@ -255,14 +255,14 @@ int main(int argc, char *argv[])
 
           if (argc < 3)
             {
-              cout << "Error: A parameter input file was expected but not found. \n" << endl;
+              std::cout << "Error: A parameter input file was expected but not found. \n" << std::endl;
               printParams.set("Output Information", NOX::Utils::Error);
 	      NOX::Utils printing(printParams);
               return 0;
             }
 
           paramFilename = argv[2];
-          cout << "Reading parameter information from file \"" << paramFilename << "\""<< endl;
+          std::cout << "Reading parameter information from file \"" << paramFilename << "\""<< std::endl;
           usingParamInputFile = true;
 
         }
@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
 
   // Read parameters from file paramFilename - command line arg#1
   if (usingParamInputFile && !NOX::parseTextInputFile(paramFilename, solverParameters))
-     cout << "Using unchanged parameters " << endl;
+     std::cout << "Using unchanged parameters " << std::endl;
 
   // Create the convergence tests
   Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
@@ -288,8 +288,8 @@ int main(int argc, char *argv[])
 
   // Print the starting point
   grp->computeF();
-  cout << "\n" << "-- Starting Point --" << "\n";
-  cout << "|| F(x0) || = " << utils.sciformat(grp->getNormF()) << endl;
+  std::cout << "\n" << "-- Starting Point --" << "\n";
+  std::cout << "|| F(x0) || = " << utils.sciformat(grp->getNormF()) << std::endl;
   // grp.print();
 
   // Solve the nonlinear system
@@ -301,15 +301,15 @@ int main(int argc, char *argv[])
 
   // Output the parameter list
   if (utils.isPrintType(NOX::Utils::Parameters)) {
-    cout << "\n" << "-- Parameter List Used in Solver --" << endl;
-    solver->getList().print(cout);
-    cout << endl;
+    std::cout << "\n" << "-- Parameter List Used in Solver --" << std::endl;
+    solver->getList().print(std::cout);
+    std::cout << std::endl;
   }
 
   // Print the answer
   if (utils.isPrintType(NOX::Utils::Parameters)) {
-    cout << "\n" << "-- Final Solution From Solver --" << "\n";
-    cout << "|| F(x*) || = " << utils.sciformat(solnGrp.getNormF()) << endl;
+    std::cout << "\n" << "-- Final Solution From Solver --" << "\n";
+    std::cout << "|| F(x*) || = " << utils.sciformat(solnGrp.getNormF()) << std::endl;
     // solnGrp.print();
   }
   
@@ -317,10 +317,10 @@ int main(int argc, char *argv[])
   int returnValue = 1;
   if (status == NOX::StatusTest::Converged) {
     returnValue = 0;
-    cout << "Test passed!" << endl;    
+    std::cout << "Test passed!" << std::endl;    
   }
   else 
-    cout << "Test failed!" << endl;
+    std::cout << "Test failed!" << std::endl;
 
   return returnValue;
 }

@@ -46,6 +46,9 @@
 #ifndef MUELU_ONEPTAGGREGATIONALGORITHM_FWD_HPP
 #define MUELU_ONEPTAGGREGATIONALGORITHM_FWD_HPP
 
+
+
+
 namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class OnePtAggregationAlgorithm;
@@ -54,5 +57,7 @@ namespace MueLu {
 #ifndef MUELU_ONEPTAGGREGATIONALGORITHM_SHORT
 #define MUELU_ONEPTAGGREGATIONALGORITHM_SHORT
 #endif
+
+
 
 #endif // MUELU_ONEPTAGGREGATIONALGORITHM_FWD_HPP

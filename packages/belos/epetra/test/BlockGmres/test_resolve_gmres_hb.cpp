@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  bool badRes = false;
   bool verbose = false, proc_verbose = false;
   bool pseudo = false;   // use pseudo block GMRES to solve this linear system.
   int frequency = -1;
@@ -84,6 +85,7 @@ int main(int argc, char *argv[]) {
   int maxrestarts = 15; // number of restarts allowed 
   int maxiters = -1;    // maximum number of iterations allowed per linear system
   std::string filename("orsirr1.hb");
+  std::string ortho("DGKS");
   MT tol = 1.0e-5;  // relative residual tolerance
 
   Teuchos::CommandLineProcessor cmdp(false,true);
@@ -91,6 +93,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear systems.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("ortho",&ortho,"Orthogonalization routine used by GMRES solver.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
   cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
@@ -124,6 +127,7 @@ int main(int argc, char *argv[]) {
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  belosList.set( "Orthogonalization", ortho );           // Orthogonalization routine
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
 		   Belos::TimingDetails + Belos::StatusTestDetails );
@@ -209,14 +213,60 @@ int main(int argc, char *argv[]) {
   //
   // Compute actual residuals.
   //
+  std::vector<double> actual_resids2( numrhs );
   OPT::Apply( *A, *X, resid );
   MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
-  MVT::MvNorm( resid, actual_resids );
+  MVT::MvNorm( resid, actual_resids2 );
   MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
-    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+    std::cout<< "---------- Actual Residuals (manager reset) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {
-      std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
+      std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
+      if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) { 
+        badRes = true;
+      }
+    }
+  }
+  //
+  // ----------------------------------------------------------------------------------
+  // Resolve the first problem by resetting the solver manager and changing the labels.
+  // ----------------------------------------------------------------------------------
+  ParameterList belosList2;
+  belosList2.set( "Timer Label", "Belos Resolve w/ New Label" );   // Change timer labels. 
+  solver->setParameters( Teuchos::rcp( &belosList2, false ) );
+  
+  problem.setLabel( "Belos Resolve w/ New Label" );
+  X->PutScalar( 0.0 );
+  solver->reset( Belos::Problem );
+  //
+  // Perform solve (again)
+  //
+  ret = solver->solve();
+  //
+  // Get the number of iterations for this solve.
+  //
+  numIters = solver->getNumIters();
+  std::cout << "Number of iterations performed for this solve (label reset): " << numIters << std::endl;
+
+  if (ret!=Belos::Converged) {
+    if (proc_verbose)
+      std::cout << "End Result: TEST FAILED" << std::endl;
+    return -1;
+  }
+  //
+  // Compute actual residuals.
+  //
+  OPT::Apply( *A, *X, resid );
+  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
+  MVT::MvNorm( resid, actual_resids2 );
+  MVT::MvNorm( *B, rhs_norm );
+  if (proc_verbose) {
+    std::cout<< "---------- Actual Residuals (label reset) ----------"<<std::endl<<std::endl;
+    for ( int i=0; i<numrhs; i++) {
+      std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
+      if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) { 
+        badRes = true;
+      }
     }
   }
   //
@@ -274,15 +324,13 @@ int main(int argc, char *argv[]) {
   //
   // Compute actual residuals.
   //
-  bool badRes = false;
-  std::vector<double> actual_resids2( numrhs );
   Epetra_MultiVector resid2(Map, numrhs);
   OPT::Apply( *A, *X2, resid2 );
   MVT::MvAddMv( -1.0, resid2, 1.0, *B, resid2 ); 
   MVT::MvNorm( resid2, actual_resids2 );
   MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
-    std::cout<< "---------- Actual Residuals 2 (normalized) ----------"<<std::endl<<std::endl;
+    std::cout<< "---------- Actual Residuals (new solver) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {
       std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
       if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) { 

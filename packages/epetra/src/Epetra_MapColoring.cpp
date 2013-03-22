@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_HashTable.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -238,7 +239,7 @@ Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
     for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID64(ColorElementLIDs[i]); // FIXME long long
   }
   Epetra_Map * map = new Epetra_Map(-1, NumElements, ColorElementGIDs, // FIXME long long
-            Map().IndexBase(), Map().Comm());
+            Map().IndexBase(), Map().Comm()); // CJ TODO FIXME long long
   if (ColorElementGIDs!=0) delete [] ColorElementGIDs;
   return(map);
 }

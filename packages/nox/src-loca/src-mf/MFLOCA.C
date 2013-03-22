@@ -82,7 +82,7 @@ LOCAData::LOCAData(
      const Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>& g, 
      const Teuchos::RCP<Teuchos::ParameterList>& par,
      const Teuchos::RCP<NOX::StatusTest::Generic>& st,
-     const Teuchos::RCP< list<ParamData> >& conParamData) :
+     const Teuchos::RCP< std::list<ParamData> >& conParamData) :
   globalData(global_data),
   topParams(top_params),
   solver(s), 
@@ -181,7 +181,7 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
       << "\n" << data->globalData->locaUtils->fill(72, '~') << "\n";
     data->globalData->locaUtils->out() 
       << "Start of Continuation Step " << stepNumber <<" : " << std::endl;
-    list<ParamData>::iterator it = data->paramData->begin();
+    std::list<ParamData>::iterator it = data->paramData->begin();
     for (i=0; i<k; i++) {
       data->globalData->locaUtils->out() 
 	<< "\tParameter: " << it->name << " = " 
@@ -211,7 +211,7 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
 	<<" Iterations\n";
       data->globalData->locaUtils->out() 
 	<< "Value of continuation parameters at failed step:" << std::endl;
-      list<ParamData>::iterator it = data->paramData->begin();
+      std::list<ParamData>::iterator it = data->paramData->begin();
       for (i=0; i<k; i++) {
 	data->globalData->locaUtils->out() 
 	  << "\tParameter: " << it->name << " = " 
@@ -238,7 +238,7 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
 	<< "\n" << data->globalData->locaUtils->fill(72, '~') << "\n";
       data->globalData->locaUtils->out() 
 	<< "End of Continuation Step " << stepNumber << " : " << std::endl;
-      list<ParamData>::iterator it = data->paramData->begin();
+      std::list<ParamData>::iterator it = data->paramData->begin();
       for (i=0; i<k; i++) {
 	data->globalData->locaUtils->out() 
 	  << "\tParameter: " << it->name << " = " 
@@ -292,7 +292,7 @@ double MFScaleLOCA(int n,int k,MFNVector u,MFNKMatrix Phi,void *d,
     data->radius = 0.0;
     data->minRadius = 0.0;
     data->maxRadius = 0.0;
-    list<ParamData>::iterator it = data->paramData->begin();
+    std::list<ParamData>::iterator it = data->paramData->begin();
     for (int i=0; i<k; i++) {
       double dpidsj = 0.0;
       for (int j=0; j<k; j++) {

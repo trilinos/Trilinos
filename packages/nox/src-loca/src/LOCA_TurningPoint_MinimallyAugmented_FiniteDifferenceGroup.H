@@ -99,7 +99,7 @@ namespace LOCA {
 	 * LOCA::DerivUtils object.
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDwtJnDp(const vector<int>& paramIDs, 
+	computeDwtJnDp(const std::vector<int>& paramIDs, 
 		       const NOX::Abstract::Vector& w,
 		       const NOX::Abstract::Vector& nullVector,
 		       NOX::Abstract::MultiVector::DenseMatrix& result,
@@ -114,7 +114,7 @@ namespace LOCA {
 	 * LOCA::DerivUtils object.
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDwtJDp(const vector<int>& paramIDs, 
+	computeDwtJDp(const std::vector<int>& paramIDs, 
 		      const NOX::Abstract::Vector& w,
 		      NOX::Abstract::MultiVector& result,
 		      bool isValid);

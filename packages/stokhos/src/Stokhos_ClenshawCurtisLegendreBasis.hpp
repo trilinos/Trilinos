@@ -31,18 +31,18 @@
 #ifndef STOKHOS_CLENSHAWCURTISLEGENDREBASIS_HPP
 #define STOKHOS_CLENSHAWCURTISLEGENDREBASIS_HPP
 
-#include "Stokhos_RecurrenceBasis.hpp"
+#include "Stokhos_LegendreBasis.hpp"
 
 namespace Stokhos {
 
   //! Legendre polynomial basis using Clenshaw-Curtis quadrature points
   /*!
    * This is the same as Stokhos::LegendreBasis, but uses Clenshaw-Curtis
-   * quadrature points (instead of Gauss-Legendre) for sparse grids only.
+   * quadrature points (instead of Gauss-Legendre).
    */
   template <typename ordinal_type, typename value_type>
   class ClenshawCurtisLegendreBasis : 
-    public RecurrenceBasis<ordinal_type, value_type> {
+    public LegendreBasis<ordinal_type, value_type> {
   public:
 
     //! Constructor
@@ -60,6 +60,27 @@ namespace Stokhos {
     //@{ 
 
     /*! 
+     * \brief Compute quadrature points, weights, and values of 
+     * basis polynomials at given set of points \c points.
+     */
+    /*!
+     * \c quad_order specifies the order to which the quadrature should be
+     * accurate, not the number of quadrature points which for Clenshaw-Curtis
+     * points is equal to the number of points
+     */
+    virtual void 
+    getQuadPoints(ordinal_type quad_order,
+		  Teuchos::Array<value_type>& points,
+		  Teuchos::Array<value_type>& weights,
+		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
+
+    /*!
+     * Return polynomial degree of exactness for a given number of quadrature
+     * points.
+     */
+    virtual ordinal_type quadDegreeOfExactness(ordinal_type n) const;
+
+    /*! 
      * \brief Clone this object with the option of building a higher order
      * basis.
      */
@@ -71,22 +92,15 @@ namespace Stokhos {
      */
     virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const;
 
+    //! Evaluate coefficient growth rule for Smolyak-type bases
+    virtual ordinal_type coefficientGrowth(ordinal_type n) const;
+
+    //! Evaluate point growth rule for Smolyak-type bases
+    virtual ordinal_type pointGrowth(ordinal_type n) const;
+
     //@}
 
   protected:
-
-    //! \name Implementation of Stokhos::RecurrenceBasis methods
-    //@{ 
-
-    //! Compute recurrence coefficients
-    virtual bool
-    computeRecurrenceCoefficients(ordinal_type n,
-				  Teuchos::Array<value_type>& alpha,
-				  Teuchos::Array<value_type>& beta,
-				  Teuchos::Array<value_type>& delta,
-				  Teuchos::Array<value_type>& gamma) const;
-
-    //@}
 
     //! Copy constructor with specified order
     ClenshawCurtisLegendreBasis(ordinal_type p, 

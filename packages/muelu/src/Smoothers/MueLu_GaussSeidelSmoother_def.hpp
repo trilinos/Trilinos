@@ -47,7 +47,7 @@
 #define MUELU_GAUSSSEIDELSMOOTHER_DEF_HPP
 
 #include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_GaussSeidelSmoother_decl.hpp"
 #include "MueLu_Level.hpp"
@@ -65,12 +65,12 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", NULL); //FIXME AFact_.get());
+    this->Input(currentLevel, "A");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level & level) {
-    A_ = level.Get< RCP<Operator> >("A", NULL); //FIXME AFact_.get());
+  void GaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level & currentLevel) {
+    A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
     SmootherPrototype::IsSetup(true);
   }
 
@@ -80,7 +80,7 @@ namespace MueLu {
 
     if (InitialGuessIsZero) // TODO: There is no optimization for InitialGuessIsZero = true
       x.putScalar(0.0);
-      
+
     // get matrix diagonal
     RCP<Vector> diag = VectorFactory::Build(A_->getRangeMap());
     A_->getLocalDiagCopy(*diag);

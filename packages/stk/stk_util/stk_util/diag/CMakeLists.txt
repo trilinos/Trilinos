@@ -28,6 +28,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+FArray.hpp
 PrintTimer.hpp
 Timer.hpp
 Trace.hpp
@@ -38,6 +39,15 @@ Writer.hpp
 WriterManip.hpp
 WriterOStream.hpp
 WriterParser.hpp
+Platform.hpp
+Env.hpp
+Option.hpp
+Mapv.hpp
+PrintTable.hpp
+SlibDiagWriter.hpp
+String.hpp
+StringUtil.hpp
+WriterRegistry.hpp
   )
 
 APPEND_SET(SOURCES
@@ -49,6 +59,12 @@ Writer.cpp
 WriterExt.cpp
 WriterManip.cpp
 WriterParser.cpp
+Platform.cpp
+Option.cpp
+PrintTable.cpp
+SlibDiagWriter.cpp
+String.cpp
+WriterRegistry.cpp
   )
 
 IF (TPL_ENABLE_MPI)
@@ -67,5 +83,5 @@ TRIBITS_ADD_LIBRARY(
 
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/include/stk_util/diag/)
+    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_util/diag/)
 

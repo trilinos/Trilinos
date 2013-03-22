@@ -47,8 +47,8 @@
 #define MUELU_AMESOS2SMOOTHER_DEF_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_AMESOS2
-#include <Xpetra_Operator.hpp>
+#if defined (HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#include <Xpetra_Matrix.hpp>
 
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
@@ -61,16 +61,15 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amesos2Smoother(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact)
-    : type_(type), paramList_(paramList), AFact_(AFact)
+  Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amesos2Smoother(std::string const & type, Teuchos::ParameterList const & paramList)
+    : type_(type), paramList_(paramList)
   {
-
     // Set default solver type
     // TODO: It would be great is Amesos2 provides directly this kind of logic for us
     if(type_ == "") {
 #if defined(HAVE_AMESOS2_SUPERLUDIST)
       type_ = "Superludist";
-#elif defined(HAVE_AMESOS2_KLU)
+#elif defined(HAVE_AMESOS2_KLU2)
       type_ = "Klu";
 #elif defined(HAVE_AMESOS2_SUPERLU)
       type_ = "Superlu";
@@ -79,6 +78,18 @@ namespace MueLu {
                                  "By default, MueLu tries to use one of these libraries. Amesos2 must be compiled with one of these solvers or a valid Amesos2 solver have to be specified explicitly.");
 #endif
     } // if(type_ == "")
+
+    //TMP: Amesos2 KLU never available but most MueLu tests are using KLU by default
+    // (ex: examples driven by ML parameter lists)
+    // -> temporarily fallback to SUPERLU
+    // Remove this when KLU becomes available.
+#if defined(HAVE_AMESOS2_SUPERLU)
+    if (type_ == "Klu" && Amesos2::query(type_) == false) {
+      type_ = "Superlu";
+      this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother: KLU2 not available. Using SuperLu instead" << std::endl;
+    }
+#endif // HAVE_AMESOS2_SUPERLU
+    // END OF TMP
 
     // Check the validity of the solver type parameter
     TEUCHOS_TEST_FOR_EXCEPTION(Amesos2::query(type_) == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Amesos2Smoother(): The Amesos2 library reported that the solver '" << type_ << "' is not available. "
@@ -90,18 +101,18 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get());
+    this->Input(currentLevel, "A");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called";
+    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
 
-    RCP<Operator> A_ = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+    RCP<Matrix> A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A_);
-  
+
     prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, tA);
     TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
 
@@ -143,11 +154,15 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
     std::ostringstream out;
-    out << SmootherPrototype::description();
-    out << "{type = " << type_ << "}";
+    if (SmootherPrototype::IsSetup() == true) {
+      out << prec_->description();
+    } else {
+      out << SmootherPrototype::description();
+      out << "{type = " << type_ << "}";
+    }
     return out.str();
   }
-    
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
@@ -155,11 +170,11 @@ namespace MueLu {
     if (verbLevel & Parameters0) {
       out0 << "Prec. type: " << type_ << std::endl;
     }
-      
-    if (verbLevel & Parameters1) { 
+
+    if (verbLevel & Parameters1) {
       out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
     }
-      
+
     if (verbLevel & External) {
       if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
     }
@@ -173,5 +188,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif // HAVE_MUELU_AMESOS2
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
 #endif // MUELU_AMESOS2SMOOTHER_DEF_HPP

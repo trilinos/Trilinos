@@ -66,6 +66,7 @@
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -123,6 +124,7 @@ class GmresPolySolMgr : public SolverManager<ScalarType,MV,OP> {
     
 private:
   typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraitsExt<ScalarType,MV> MVText;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -584,12 +586,15 @@ void GmresPolySolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teucho
       params_->set("Timer Label", label_);
       std::string solveLabel = label_ + ": GmresPolySolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+      timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
       std::string polyLabel = label_ + ": GmresPolySolMgr polynomial creation time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerPoly_ = Teuchos::TimeMonitor::getNewTimer(polyLabel);
+      timerPoly_ = Teuchos::TimeMonitor::getNewCounter(polyLabel);
 #endif
+      if (ortho_ != Teuchos::null) {
+        ortho_->setLabel( label_ );
+      }
     }
   }
 
@@ -805,14 +810,14 @@ void GmresPolySolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teucho
   if (timerSolve_ == Teuchos::null) {
     std::string solveLabel = label_ + ": GmresPolySolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+    timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
   }
   
   if (timerPoly_ == Teuchos::null) {
     std::string polyLabel = label_ + ": GmresPolySolMgr polynomial creation time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    timerPoly_ = Teuchos::TimeMonitor::getNewTimer(polyLabel);
+    timerPoly_ = Teuchos::TimeMonitor::getNewCounter(polyLabel);
 #endif
   }
 
@@ -1089,9 +1094,9 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
       Teuchos::ParameterList plist;
       plist.set("Block Size",blockSize_);
       
-      int dim = MVT::GetVecLength( *(problem_->getRHS()) );  
-      if (blockSize_*numBlocks_ > dim) {
-	int tmpNumBlocks = 0;
+      ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );  
+      if (blockSize_*static_cast<ptrdiff_t>(numBlocks_) > dim) {
+	ptrdiff_t tmpNumBlocks = 0;
 	if (blockSize_ == 1)
 	  tmpNumBlocks = dim / blockSize_;  // Allow for a good breakdown.
 	else
@@ -1099,7 +1104,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
 	printer_->stream(Warnings) << 
 	  "Warning! Requested Krylov subspace dimension is larger than operator dimension!" << std::endl <<
 	  " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
-	plist.set("Num Blocks",tmpNumBlocks);
+	plist.set("Num Blocks",Teuchos::asSafe<int>(tmpNumBlocks));
       } 
       else 
 	plist.set("Num Blocks",numBlocks_);

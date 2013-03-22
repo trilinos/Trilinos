@@ -62,16 +62,16 @@
 namespace Xpetra {
 
   using Teuchos::RCP;
-  
+
   //! Convert a Teuchos_Comm to an Epetra_Comm.
   const RCP<const Epetra_Comm> toEpetra(const RCP<const Teuchos::Comm<int> > & comm);
-  
+
   //! Convert an Epetra_Comm.to a Teuchos_Comm.
   const RCP<const Teuchos::Comm<int> > toXpetra(const Epetra_Comm & comm);
 
   //! Convert a Teuchos::ETransp to an Epetra boolean.
   bool toEpetra(Teuchos::ETransp);
-  
+
 }
 #endif // HAVE_XPETRA_EPETRA
 

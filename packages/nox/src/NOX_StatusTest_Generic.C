@@ -50,11 +50,12 @@
 
 #include "NOX_StatusTest_Generic.H"
 #include "NOX_Common.H"
+#include <iomanip>
 
-ostream& 
-NOX::StatusTest::operator<<(ostream& os, NOX::StatusTest::StatusType type)
+std::ostream& 
+NOX::StatusTest::operator<<(std::ostream& os, NOX::StatusTest::StatusType type)
 {
-  os << setiosflags(ios::left) << setw(13) << setfill('.');
+  os << std::setiosflags(std::ios::left) << std::setw(13) << std::setfill('.');
   switch (type) {
   case  NOX::StatusTest::Failed:
     os << "Failed";
@@ -70,6 +71,6 @@ NOX::StatusTest::operator<<(ostream& os, NOX::StatusTest::StatusType type)
     os << "**";
     break;
   }
-  os << resetiosflags(ios::adjustfield) << setfill(' ');
+  os << std::resetiosflags(std::ios::adjustfield) << std::setfill(' ');
   return os;
 }

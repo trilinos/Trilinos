@@ -33,7 +33,7 @@ C
 
 C     -*- Mode: fortran -*-
       QAINFO(1) = 'Grepos                          '
-      QAINFO(2) = '2012/09/20                      '
-      QAINFO(3) = ' 1.65                           '
+      QAINFO(2) = '2013/02/26                      '
+      QAINFO(3) = ' 1.67                           '
 
 

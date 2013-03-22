@@ -109,7 +109,7 @@
 ///     #ifndef SIERRA_App_DiagWriter_fwd_h
 ///     #define SIERRA_App_DiagWriter_fwd_h
 ///    
-///     #include <Slib_DiagWriter_fwd.h>
+///     #include <stk_util/diag/Writer_fwd.hpp>
 ///    
 ///     namespace sierra {
 ///     namespace app {
@@ -162,9 +162,9 @@
 ///     #ifndef SIERRA_App_DiagWriter_h
 ///     #define SIERRA_App_DiagWriter_h
 ///     
-///     #include <Slib_DiagWriter.h>
+///     #include <stk_util/diag/Writer.hpp>
 ///     #include <Slib_DiagWriterOStream.h>
-///     #include <Slib_DiagWriterParser.h>
+///     #include <stk_util/diag/WriterParser.hpp>
 ///     
 ///     #include <App_DiagWriter_fwd.h>
 ///     
@@ -197,8 +197,8 @@
 /// \code
 ///     #include <stk_util/util/Bootstrap.hpp>
 ///     
-///     #include <Slib_OutputLog.h>
-///     #include <Slib_DiagWriterRegistry.h>
+///     #include <stk_util/environment/OutputLog.hpp>
+///     #include <stk_util/diag/WriterRegistry.hpp>
 ///     
 ///     #include <App_DiagWriter.h>
 ///     
@@ -279,7 +279,7 @@
 ///     #ifndef SIERRA_App_DiagWriter_fwd_h
 ///     #define SIERRA_App_DiagWriter_fwd_h
 ///    
-///     #include <Slib_DiagWriter_fwd.h>
+///     #include <stk_util/diag/Writer_fwd.hpp>
 ///    
 ///     namespace sierra {
 ///     namespace app {

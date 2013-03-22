@@ -75,10 +75,10 @@ bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator&
   if (fdcJac == 0) {
     fdcJac2 = dynamic_cast<NOX::Epetra::FiniteDifferenceColoringWithUpdate*>(&Jac);
     if(fdcJac2==0){
-      cout << "Error: Problem_Interface::computeJacobian() - "
+      std::cout << "Error: Problem_Interface::computeJacobian() - "
 	   << "Jacobian operator is not a NOX::Epetra::FiniteDifferenceColoring "
 	   << "or NOX::Epetra::FiniteDifferenceColoringWithUpdate "
-	   << "object!" << endl;
+	   << "object!" << std::endl;
       throw "Problem_Interface Error";
     }
     else{
@@ -94,7 +94,7 @@ bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator&
 
 bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* precParams)
 {
-  cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jaciban only for this test problem!" << endl;
+  std::cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jaciban only for this test problem!" << std::endl;
   throw 1;
 }
 //-----------------------------------------------------------------------------

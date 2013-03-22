@@ -478,6 +478,12 @@ namespace Amesos2 {
     /// Number of global non-zero values in \c matrixA_
     global_size_type globalNumNonZeros_;
 
+    /// Index base of rowmap of \c matrixA_
+    global_size_type rowIndexBase_;
+
+    /// Index base of column map of \c matrixA_
+    global_size_type columnIndexBase_;
+
 
     /// Holds status information about a solver
     mutable Status status_;

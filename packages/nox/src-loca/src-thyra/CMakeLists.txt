@@ -22,6 +22,6 @@ IF (NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND NOX_ENABLE_LOCA)
     locathyra
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
-    DEPLIBS loca noxthyra nox
+    DEPLIBS loca nox
     )
 ENDIF()

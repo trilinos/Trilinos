@@ -1,5 +1,4 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
 
@@ -36,6 +35,28 @@ void sleep(int sec)
 
 /* For hashing macro defined in ml_utils.h. */
 uint32_t ml_unew_val;
+
+
+#ifdef ML_WITH_EPETRA
+extern int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows, 
+                               int requested_rows[], int allocated_space, 
+                               int columns[], double values[],
+                               int row_lengths[]);
+  
+extern int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
+			       int requested_rows[], int allocated_space, 
+			       int columns[], double values[],
+                               int row_lengths[]);
+
+extern int ML_Epetra_VbrMatrix_getrow(ML_Operator *data, int N_requested_rows,
+			       int requested_rows[], int allocated_space, 
+			       int columns[], double values[],
+                               int row_lengths[]);
+
+extern int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **cols, int **rowptr);
+#endif
+
+
 
 /* ******************************************************************** */
 /* Timer subroutine                                                     */
@@ -2537,4 +2558,118 @@ void ML_print_align(int int2match, char *space, int pad)
   while (dtemp>=1) {space[jj++]=' '; dtemp /= 10;}
   if (int2match == 0) space[jj++]=' ';
   space[jj] = '\0';
+}
+
+
+/* ************************************************************************* */
+/* Estimates the average NNZ per row in a matrix, using the rowptr if we can */
+/* and probing a few rows if that isn't an option.  Does not consider        */
+/* submatrices, which is why this is a static function.  This should only be */
+/* called by ML_estimate_avg_nz_per_row.                                     */
+/* ************************************************************************* */
+static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, double * total_nz, int * total_rows) {
+  int N,*rowptr, *bindx;
+  double * values;
+  struct ML_CSR_MSRdata * ptr;
+  int rv=-1;
+  int first_row=0, last_row=matrix->getrow->Nrows;
+  if(matrix->sub_matrix) first_row=matrix->sub_matrix->getrow->Nrows;
+  N=last_row-first_row;
+  (*total_rows)=N;
+  (*total_nz)=0;
+  if(N==0) return 0;
+
+  if (matrix->getrow->func_ptr == CSR_getrow){
+    /* Case #1: CSR Matrix */
+    ptr   = (struct ML_CSR_MSRdata *) matrix->data;
+    (*total_nz) = ptr->rowptr[N]-ptr->rowptr[0];
+    rv=0;
+  }
+  else if (matrix->getrow->func_ptr == MSR_getrows) {
+    /* Case #2: MSR Matrix */
+    ptr   = (struct ML_CSR_MSRdata *) matrix->data;
+    (*total_nz) = N + ptr->columns[N]-ptr->columns[0];
+    rv=0;
+  }
+#ifdef ML_WITH_EPETRA
+  else if (matrix->getrow->func_ptr == ML_Epetra_CrsMatrix_getrow) {
+    /* Case #3: EpetraCrsMatrix */
+    rv=Epetra_ML_GetCrsDataptrs(matrix,&values,&bindx,&rowptr);
+    if(rv == 0) 
+      (*total_nz) = N + rowptr[N]-rowptr[0];
+  }
+#endif
+
+  return rv;
+}
+
+/* ************************************************************************* */
+/* Estimates the average NNZ per row in a matrix, using the rowptr if we can */
+/* and probing a few rows if that isn't an option                            */
+/* ************************************************************************* */
+int ML_estimate_avg_nz_per_row(ML_Operator * matrix, double * avg_nz) {
+  ML_Operator *next;
+  int rv=0,sub_rows=0, total_rows=0;
+  double sub_nz=0.0,total_nz=0.0;
+  int row, allocated, i,j,k;
+  int *cols;
+  double *vals;
+  (*avg_nz)=0.0;
+
+
+  /* Sanity Check & Get Num Rows*/
+  if(!matrix->getrow) {
+    printf("[%4d] CMS: matrix has no getrow.\n",matrix->comm->ML_mypid);
+    return -1;
+  }
+
+  /* Count the parent matrix */
+  rv=ML_estimate_avg_nz_per_row_nosubmatrix(matrix,&sub_nz,&sub_rows);
+  total_rows += sub_rows;
+  total_nz   += sub_nz;    
+  
+  /* Loop through all the submatrices, if any */
+  next = matrix->sub_matrix;
+  while ( rv==0 && (next != NULL) ) {
+    rv=ML_estimate_avg_nz_per_row_nosubmatrix(next,&sub_nz,&sub_rows);
+
+    /* Short circuit if some submatrix failed */
+    if(rv!=0) break;
+
+    /* Running statistics */
+    total_rows+= sub_rows;
+    total_nz  += sub_nz;    
+    next       = next->sub_matrix;
+  }
+
+  if(rv) {
+    /* If any of the getrows failed, we just default to ML_get_matrix_row on the whole thing */
+    allocated = matrix->max_nz_per_row + 1;
+    cols  = (int    *) ML_allocate(allocated * sizeof(int) );
+    vals  = (double *) ML_allocate(allocated * sizeof(double));
+
+    row = 0; 
+    ML_get_matrix_row(matrix,1,&row,&allocated, &cols, &vals, &i, 0);
+    row = (matrix->getrow->Nrows-1)/2;
+    ML_get_matrix_row(matrix,1,&row,&allocated, &cols, &vals, &j, 0);
+    row = matrix->getrow->Nrows-1;
+    ML_get_matrix_row(matrix,1,&row,&allocated, &cols, &vals, &k, 0);
+    (*avg_nz) = ((double)i+j+k)/3.0;
+
+    /* Sanity checking in case one row is really, really different from the other two.
+       This is an attempt to avoid allocated an absurd amount of memory for the MMM if 
+       the problem has one really long row.  Rows of length 1 don't count for this purpose. */
+    if(i > 1 && j > 1 && (*avg_nz) > 10*(i+j))  (*avg_nz) = ((double)i+j)/2.0;
+    if(j > 1 && k > 1 && (*avg_nz) > 10*(j+k))  (*avg_nz) = ((double)j+k)/2.0;
+    if(i > 1 && k > 1 && (*avg_nz) > 10*(i+k))  (*avg_nz) = ((double)i+k)/2.0;
+
+    ML_free(cols);
+    ML_free(vals);
+  }
+  else{
+    /* All of the parent/submatrix getrows worked, so calculate the nz that way.*/
+    if (total_rows>0) 
+      (*avg_nz)= total_nz / total_rows;
+  }
+  return 0;
 }

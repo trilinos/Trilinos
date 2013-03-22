@@ -1,45 +1,10 @@
-/*
-// @HEADER
-// ************************************************************************
-//             FEI: Finite Element Interface to Linear Solvers
-//                  Copyright (2005) Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, the
-// U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alan Williams (william@sandia.gov) 
-//
-// ************************************************************************
-// @HEADER
-*/
-
+/*--------------------------------------------------------------------*/
+/*    Copyright 2005 Sandia Corporation.                              */
+/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
 
 #include <fei_sstream.hpp>
 
@@ -562,10 +527,10 @@ int fei::MatrixGraph_Impl2::initConnectivity(int blockID,
 
   if (rowSpace_.get() == NULL) ERReturn(-1);
 
-  MapIntInt& connectivityIDs = connblk->getConnectivityIDs();
+  std::map<int,int>& connectivityIDs = connblk->getConnectivityIDs();
 
   int idOffset = -1;
-  MapIntInt::iterator
+  std::map<int,int>::iterator
    iter = connectivityIDs.find(connectivityID);
   if (iter == connectivityIDs.end()) {
     idOffset = connectivityIDs.size();
@@ -814,10 +779,10 @@ int fei::MatrixGraph_Impl2::initConnectivity(int blockID,
     ERReturn(-1);
   }
 
-  MapIntInt& connectivityIDs = connblk->getConnectivityIDs();
+  std::map<int,int>& connectivityIDs = connblk->getConnectivityIDs();
 
   int i, idOffset = -1;
-  MapIntInt::iterator
+  std::map<int,int>::iterator
     iter = connectivityIDs.find(connectivityID);
   if (iter == connectivityIDs.end()) {
     idOffset = connectivityIDs.size();
@@ -1474,7 +1439,10 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
       fei::FieldMask* mask = masterRecord->getFieldMask();
       int eqnOffset = 0;
       if (!simpleProblem_) {
-        mask->getFieldEqnOffset(masterFieldIDs[j], eqnOffset);
+        int err = mask->getFieldEqnOffset(masterFieldIDs[j], eqnOffset);
+        if (err != 0) {
+          throw std::runtime_error("FEI ERROR, failed to get eqn-offset for constraint master-field.");
+        }
       }
 
       unsigned fieldSize = rowSpace_->getFieldSize(masterFieldIDs[j]);
@@ -2120,10 +2088,16 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_multiField_symmetric(fei::Graph* gra
                                           colSpace_.get());
   }
 
+  std::map<int,int>& connIDs = cblock->getConnectivityIDs();
   std::vector<int>& values = cblock->getRowConnectivities();
 
-  for(size_t offset = 0; offset < values.size(); offset += numIDs) {
-    int* records = &values[offset];
+  std::map<int,int>::iterator
+    c_iter = connIDs.begin(),
+    c_end  = connIDs.end();
+
+  for(; c_iter != c_end; ++c_iter) {
+    int offset = c_iter->second;
+    int* records = &values[offset*numIDs];
 
     CHK_ERR( getConnectivityIndices_multiField(pattern->getRecordCollections(),
                                                 records, numIDs,
@@ -2224,11 +2198,16 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_multiField_nonsymmetric(fei::Graph* 
                                            colSpace_.get());
   }
 
-  size_t numRows = cblock->getConnectivityIDs().size();
+  std::map<int,int>& connIDs = cblock->getConnectivityIDs();
   std::vector<int>& rowrecords = cblock->getRowConnectivities();
   std::vector<int>& colrecords = cblock->getColConnectivities();
 
-  for(size_t offset=0; offset<numRows; ++offset) {
+  std::map<int,int>::iterator
+   c_iter = connIDs.begin(),
+   c_end  = connIDs.end();
+
+  for(; c_iter != c_end; ++c_iter) {
+    int offset = c_iter->second;
     int* records = &rowrecords[offset*numIDs];
 
     int* colRecords = &colrecords[offset*numColIDs];
@@ -2299,7 +2278,13 @@ int fei::MatrixGraph_Impl2::getConnectivityIndices_multiField(const snl_fei::Rec
     for(int nf=0; nf<numFieldsPerID[i]; ++nf) {
       int eqnOffset = 0;
       if (!simpleProblem_) {
-        fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset);
+        int err = fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset);
+        if (err != 0) {
+          for(int fs=0; fs<fieldSizes[fld_offset]; ++fs) {
+            indices[numIndices++] = -1;
+          }
+          continue;
+        }
       }
 
       for(int fs=0; fs<fieldSizes[fld_offset]; ++fs) {
@@ -2330,10 +2315,16 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_singleField_symmetric(fei::Graph* gr
   unsigned fieldSize = snl_fei::getFieldSize(fieldID, rowSpace_.get(),
                                              colSpace_.get());
 
+  std::map<int,int>& connIDs = cblock->getConnectivityIDs();
   std::vector<int>& rowrecords = cblock->getRowConnectivities();
 
-  for(size_t offset = 0; offset<rowrecords.size(); offset += numIDs) {
-    int* records = &rowrecords[offset];
+  std::map<int,int>::iterator
+    c_iter = connIDs.begin(),
+    c_end  = connIDs.end();
+
+  for(; c_iter != c_end; ++c_iter) {
+    int offset = c_iter->second;
+    int* records = &rowrecords[offset*numIDs];
 
     CHK_ERR( getConnectivityIndices_singleField(pattern->getRecordCollections(),
                                                 records, numIDs,
@@ -2403,7 +2394,7 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_singleField_nonsymmetric(fei::Graph*
   int rowFieldSize = snl_fei::getFieldSize(rowFieldID, rowSpace_.get(),
                                            colSpace_.get());
 
-  size_t numRows = cblock->getConnectivityIDs().size();
+  std::map<int,int>& connIDs = cblock->getConnectivityIDs();
   std::vector<int>& rowrecords = cblock->getRowConnectivities();
   std::vector<int>& colrecords = cblock->getColConnectivities();
 
@@ -2411,7 +2402,12 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_singleField_nonsymmetric(fei::Graph*
   int colFieldSize = snl_fei::getFieldSize(colFieldID, rowSpace_.get(),
                                            colSpace_.get());
 
-  for(size_t offset=0; offset<numRows; ++offset) {
+  std::map<int,int>::iterator
+    c_iter = connIDs.begin(),
+    c_end  = connIDs.end();
+
+  for(; c_iter != c_end; ++c_iter) {
+    int offset = c_iter->second;
     int* records = &rowrecords[offset*numIDs];
 
     int* colRecords = &colrecords[offset*numColIDs];
@@ -2476,13 +2472,22 @@ int fei::MatrixGraph_Impl2::getConnectivityIndices_singleField(const snl_fei::Re
     int eqnOffset = 0;
     if (!simpleProblem_) {
       const fei::FieldMask* fieldMask = record->getFieldMask();
-      fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+      int err = fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+      if (err != 0) {
+        indices[numIndices++] = -1;
+        if (fieldSize > 1) {
+          for(int fs=1; fs<fieldSize; ++fs) {
+            indices[numIndices++] = -1;
+          }
+        }
+        continue;
+      }
     }
 
     indices[numIndices++] = eqnNumbers[eqnOffset];
     if (fieldSize > 1) {
       for(int fs=1; fs<fieldSize; ++fs) {
-        indices[numIndices++] = eqnNumbers[eqnOffset+fs];
+        indices[numIndices++] = eqnOffset >= 0 ? eqnNumbers[eqnOffset+fs] : -1;
       }
     }
   }
@@ -2526,9 +2531,15 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_noField_symmetric(fei::Graph* graph,
   std::vector<int> indices(numIndices);
   int* indicesPtr = &indices[0];
 
+  std::map<int,int>& connIDs = cblock->getConnectivityIDs();
   std::vector<int>& rowrecords = cblock->getRowConnectivities();
 
-  for(size_t offset=0; offset<rowrecords.size(); offset+=numIDs) {
+  std::map<int,int>::iterator
+    c_iter = connIDs.begin(),
+    c_end  = connIDs.end();
+
+  for(; c_iter != c_end; ++c_iter) {
+    int offset = c_iter->second;
     int* records = &rowrecords[offset*numIDs];
 
     int checkNumIndices;
@@ -2571,7 +2582,7 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_sparse(fei::Graph* graph,
   fei::Pattern* pattern = cblock->getRowPattern();
   const snl_fei::RecordCollection*const* recordCollections = pattern->getRecordCollections();
 
-  size_t numRows = cblock->getConnectivityIDs().size();
+  std::map<int,int>& connIDs = cblock->getConnectivityIDs();
   std::vector<int>& connOffsets = cblock->getConnectivityOffsets();
   int* rowrecords = &(cblock->getRowConnectivities()[0]);
   int* colrecords = &(cblock->getColConnectivities()[0]);
@@ -2584,7 +2595,12 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_sparse(fei::Graph* graph,
                                       colSpace_.get());
   }
 
-  for(size_t offset=0; offset<numRows; ++offset) {
+  std::map<int,int>::iterator
+    c_iter = connIDs.begin(),
+    c_end  = connIDs.end();
+
+  for(; c_iter != c_end; ++c_iter) {
+    int offset = c_iter->second;
     int rowlen = connOffsets[offset+1] - offset;
 
     int* records = &(rowrecords[offset]);

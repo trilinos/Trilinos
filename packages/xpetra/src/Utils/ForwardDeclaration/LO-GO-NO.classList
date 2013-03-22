@@ -5,7 +5,7 @@ Import
 ImportFactory
 Map
 MapFactory
-OperatorView
+MatrixView
 #TpetraBlockMap
 TpetraExport
 TpetraImport

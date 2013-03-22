@@ -118,7 +118,7 @@ void AlgRCB(
   //    objective
   //    imbalance_tolerance
 
-  multiCriteriaNorm mcnorm;
+  multiCriteriaNorm mcnorm = normBalanceTotalMaximum;
   string obj;
 
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");

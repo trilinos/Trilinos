@@ -1,41 +1,45 @@
-/* ************************************************************************
-
-                   Trios: Trilinos I/O Support
-                 Copyright 2011 Sandia Corporation
-
- Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- the U.S. Government retains certain rights in this software.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are
- met:
-
- 1. Redistributions of source code must retain the above copyright
- notice, this list of conditions and the following disclaimer.
-
- 2. Redistributions in binary form must reproduce the above copyright
- notice, this list of conditions and the following disclaimer in the
- documentation and/or other materials provided with the distribution.
-
- 3. Neither the name of the Corporation nor the names of the
- contributors may be used to endorse or promote products derived from
- this software without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
- EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
- CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
-
-*************************************************************************/
+/**
+//@HEADER
+// ************************************************************************
+//
+//                   Trios: Trilinos I/O Support
+//                 Copyright 2011 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
+//
+// *************************************************************************
+//@HEADER
+ */
 /**  @file xfer-server.cpp
  *
  *   @brief Example data transfer server.
@@ -71,8 +75,6 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 #include "xfer_util.h"
 #include "xfer_threads.h"
-
-//#include <TPI.hpp>   // Thread Pool Interface (Trilinos Package)
 
 
 
@@ -178,6 +180,7 @@ int xfer_write_rdma_srvr(
     data_array_t array;
     array.data_array_t_len = len;
     array.data_array_t_val = (data_t *)malloc(nbytes);
+    memset(array.data_array_t_val, 0, nbytes);
 
     log_debug(debug_level, "getting data from client (%s)", caller->url);
 
@@ -359,16 +362,13 @@ int xfer_server_main(nssi_rpc_transport transport, int num_threads, MPI_Comm ser
     int rc = NSSI_OK;
 
     nssi_service xfer_svc;
-    log_level debug_level;
     int server_rank;
 
     MPI_Comm_rank(server_comm, &server_rank);
 
     /* options that can be overriden by the command-line */
-    int verbose = 3;  /* default debug_level */
     std::string server_url(NSSI_URL_LEN, '\0');          /* NNTI-style url of the server */
     std::string logfile("");
-    const char *log_str=NULL;
 
 
     memset(&xfer_svc, 0, sizeof(nssi_service));
@@ -418,9 +418,9 @@ int xfer_server_main(nssi_rpc_transport transport, int num_threads, MPI_Comm ser
     // enqueue_reqs function and start the process_queue_reqs thread.
 
     if (num_threads > 0) {
-        log_debug(LOG_ALL, "Starting server threads");
+        log_debug(xfer_debug_level, "Starting server threads");
 
-        rc = xfer_start_server_threads(num_threads, 1000);
+        xfer_start_server_threads(num_threads, 1000);
 
         // The main thread will execute unit it receives a "kill" request
         rc = nssi_service_start_wfn(&xfer_svc, &xfer_enqueue_rpc_request);

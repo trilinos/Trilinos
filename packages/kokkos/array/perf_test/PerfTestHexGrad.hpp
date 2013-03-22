@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,97 +35,38 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
 namespace Test {
 
-template< class DeviceType > struct HexSimpleFill ;
-
-//each element is a unit cube
-template<>
-struct HexSimpleFill< KOKKOSARRAY_MACRO_DEVICE >
+template< class DeviceType ,
+          typename CoordScalarType = double ,
+          typename GradScalarType  = float >
+struct HexGrad
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
-  typedef device_type::size_type  size_type ;
+  typedef DeviceType device_type ;
+  typedef typename device_type::size_type  size_type ;
 
   // 3D array : ( ParallelWork , Space , Node )
 
   enum { NSpace = 3 , NNode = 8 };
 
-  typedef KokkosArray::View< double[][NSpace][NNode] , device_type > 
+  typedef KokkosArray::View< CoordScalarType*[NSpace][NNode] , device_type >
     elem_coord_type ;
 
-  elem_coord_type coords ;
-
-  HexSimpleFill( const elem_coord_type & arg_coords )
-    : coords( arg_coords ) {}
-
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
-  void operator()( size_type ielem ) const
-  {
-    coords(ielem,0,0) = 0.;
-    coords(ielem,1,0) = 0.;
-    coords(ielem,2,0) = 0.;
-
-    coords(ielem,0,1) = 1.;
-    coords(ielem,1,1) = 0.;
-    coords(ielem,2,1) = 0.;
-
-    coords(ielem,0,2) = 1.;
-    coords(ielem,1,2) = 1.;
-    coords(ielem,2,2) = 0.;
-
-    coords(ielem,0,3) = 0.;
-    coords(ielem,1,3) = 1.;
-    coords(ielem,2,3) = 0.;
-
-
-    coords(ielem,0,4) = 0.;
-    coords(ielem,1,4) = 0.;
-    coords(ielem,2,4) = 1.;
-
-    coords(ielem,0,5) = 1.;
-    coords(ielem,1,5) = 0.;
-    coords(ielem,2,5) = 1.;
-
-    coords(ielem,0,6) = 1.;
-    coords(ielem,1,6) = 1.;
-    coords(ielem,2,6) = 1.;
-
-    coords(ielem,0,7) = 0.;
-    coords(ielem,1,7) = 1.;
-    coords(ielem,2,7) = 1.;
-  }
-};
-
-//----------------------------------------------------------------------------
-
-template< class DeviceType > struct HexGrad ;
-
-#define TEST_HEXGRAD_NORMAL 0
-
-template<>
-struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
-{
-  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
-  typedef device_type::size_type  size_type ;
-
-  // 3D array : ( ParallelWork , Space , Node )
-
-  enum { NSpace = 3 , NNode = 8 };
-
-  typedef KokkosArray::View< double[][NSpace][NNode] , device_type > 
-    elem_coord_type ;
-
-  typedef KokkosArray::View< double[][NSpace][NNode] , device_type > 
+  typedef KokkosArray::View< GradScalarType*[NSpace][NNode] , device_type >
     elem_grad_type ;
 
   elem_coord_type  coords ;
   elem_grad_type   grad_op ;
+
+  enum { FLOPS  = 318 }; // = 3 * ( 18 + 8 * 11 ) };
+  enum { READS  = 18 };
+  enum { WRITES = 18 };
 
   HexGrad( const elem_coord_type  & arg_coords ,
            const elem_grad_type   & arg_grad_op )
@@ -133,181 +74,191 @@ struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
     , grad_op( arg_grad_op )
     {}
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION static
+  void grad( const CoordScalarType x[] ,
+             const CoordScalarType z[] ,
+                   GradScalarType grad_y[] )
+  {
+    const GradScalarType R42=(x[3] - x[1]);
+    const GradScalarType R52=(x[4] - x[1]);
+    const GradScalarType R54=(x[4] - x[3]);
+
+    const GradScalarType R63=(x[5] - x[2]);
+    const GradScalarType R83=(x[7] - x[2]);
+    const GradScalarType R86=(x[7] - x[5]);
+
+    const GradScalarType R31=(x[2] - x[0]);
+    const GradScalarType R61=(x[5] - x[0]);
+    const GradScalarType R74=(x[6] - x[3]);
+
+    const GradScalarType R72=(x[6] - x[1]);
+    const GradScalarType R75=(x[6] - x[4]);
+    const GradScalarType R81=(x[7] - x[0]);
+
+    const GradScalarType t1=(R63 + R54);
+    const GradScalarType t2=(R61 + R74);
+    const GradScalarType t3=(R72 + R81);
+
+    const GradScalarType t4 =(R86 + R42);
+    const GradScalarType t5 =(R83 + R52);
+    const GradScalarType t6 =(R75 + R31);
+
+    //  Calculate Y gradient from X and Z data
+
+    grad_y[0] = (z[1] *  t1) - (z[2] * R42) - (z[3] *  t5)  + (z[4] *  t4) + (z[5] * R52) - (z[7] * R54);
+    grad_y[1] = (z[2] *  t2) + (z[3] * R31) - (z[0] *  t1)  - (z[5] *  t6) + (z[6] * R63) - (z[4] * R61);
+    grad_y[2] = (z[3] *  t3) + (z[0] * R42) - (z[1] *  t2)  - (z[6] *  t4) + (z[7] * R74) - (z[5] * R72);
+    grad_y[3] = (z[0] *  t5) - (z[1] * R31) - (z[2] *  t3)  + (z[7] *  t6) + (z[4] * R81) - (z[6] * R83);
+    grad_y[4] = (z[5] *  t3) + (z[6] * R86) - (z[7] *  t2)  - (z[0] *  t4) - (z[3] * R81) + (z[1] * R61);
+    grad_y[5] = (z[6] *  t5) - (z[4] *  t3)  - (z[7] * R75) + (z[1] *  t6) - (z[0] * R52) + (z[2] * R72);
+    grad_y[6] = (z[7] *  t1) - (z[5] *  t5)  - (z[4] * R86) + (z[2] *  t4) - (z[1] * R63) + (z[3] * R83);
+    grad_y[7] = (z[4] *  t2) - (z[6] *  t1)  + (z[5] * R75) - (z[3] *  t6) - (z[2] * R74) + (z[0] * R54);
+  }
+
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( size_type ielem ) const
   {
-    // Repeated re-use of nodal coordinates,
-    // copy them into local storage.
-        
-    double a[NNode];
-    
-    //Z
-    a[0] = coords(ielem,2,0);
-    a[1] = coords(ielem,2,1);
-    a[2] = coords(ielem,2,2);
-    a[3] = coords(ielem,2,3);
-    a[4] = coords(ielem,2,4);
-    a[5] = coords(ielem,2,5);
-    a[6] = coords(ielem,2,6);
-    a[7] = coords(ielem,2,7);
-    
-    // z difference vectors
-    float R42=(a[3] - a[1]);
-    float R52=(a[4] - a[1]);
-    float R54=(a[4] - a[3]);
+    GradScalarType g[NNode] ;
 
-    float R63=(a[5] - a[2]);
-    float R83=(a[7] - a[2]);
-    float R86=(a[7] - a[5]);
-    
-    float R31=(a[2] - a[0]);
-    float R61=(a[5] - a[0]);
-    float R74=(a[6] - a[3]);
+    const CoordScalarType x[NNode] = {
+      coords(ielem,0,0),
+      coords(ielem,0,1),
+      coords(ielem,0,2),
+      coords(ielem,0,3),
+      coords(ielem,0,4),
+      coords(ielem,0,5),
+      coords(ielem,0,6),
+      coords(ielem,0,7)
+    };
 
-    float R72=(a[6] - a[1]);
-    float R75=(a[6] - a[4]);
-    float R81=(a[7] - a[0]);
+    const CoordScalarType y[NNode] = {
+      coords(ielem,1,0),
+      coords(ielem,1,1),
+      coords(ielem,1,2),
+      coords(ielem,1,3),
+      coords(ielem,1,4),
+      coords(ielem,1,5),
+      coords(ielem,1,6),
+      coords(ielem,1,7) 
+    };
 
-    float t1=(R63 + R54);
-    float t2=(R61 + R74);
-    float t3=(R72 + R81);
+    const CoordScalarType z[NNode] = {
+      coords(ielem,2,0),
+      coords(ielem,2,1),
+      coords(ielem,2,2),
+      coords(ielem,2,3),
+      coords(ielem,2,4),
+      coords(ielem,2,5),
+      coords(ielem,2,6),
+      coords(ielem,2,7)
+    };
 
-    float t4 =(R86 + R42);
-    float t5 =(R83 + R52);
-    float t6 =(R75 + R31);
-    
-    //Y
-    a[0] = coords(ielem,1,0);
-    a[1] = coords(ielem,1,1);
-    a[2] = coords(ielem,1,2);
-    a[3] = coords(ielem,1,3);
-    a[4] = coords(ielem,1,4);
-    a[5] = coords(ielem,1,5);
-    a[6] = coords(ielem,1,6);
-    a[7] = coords(ielem,1,7);
+    grad( z , y , g );
 
+    grad_op(ielem,0,0) = g[0];
+    grad_op(ielem,0,1) = g[1];
+    grad_op(ielem,0,2) = g[2];
+    grad_op(ielem,0,3) = g[3];
+    grad_op(ielem,0,4) = g[4];
+    grad_op(ielem,0,5) = g[5];
+    grad_op(ielem,0,6) = g[6];
+    grad_op(ielem,0,7) = g[7];
 
-    grad_op(ielem,0,0) = (a[1] *  t1) - (a[2] * R42) - (a[3] *  t5)  + (a[4] *  t4) + (a[5] * R52) - (a[7] * R54);  
-    grad_op(ielem,0,1) = (a[2] *  t2) + (a[3] * R31) - (a[0] *  t1)  - (a[5] *  t6) + (a[6] * R63) - (a[4] * R61);  
-    grad_op(ielem,0,2) = (a[3] *  t3) + (a[0] * R42) - (a[1] *  t2)  - (a[6] *  t4) + (a[7] * R74) - (a[5] * R72);  
-    grad_op(ielem,0,3) = (a[0] *  t5) - (a[1] * R31) - (a[2] *  t3)  + (a[7] *  t6) + (a[4] * R81) - (a[6] * R83);  
-    grad_op(ielem,0,4) = (a[5] *  t3) + (a[6] * R86) - (a[7] *  t2)  - (a[0] *  t4) - (a[3] * R81) + (a[1] * R61);  
-    grad_op(ielem,0,5) = (a[6] *  t5) - (a[4] *  t3)  - (a[7] * R75) + (a[1] *  t6) - (a[0] * R52) + (a[2] * R72);  
-    grad_op(ielem,0,6) = (a[7] *  t1) - (a[5] *  t5)  - (a[4] * R86) + (a[2] *  t4) - (a[1] * R63) + (a[3] * R83);  
-    grad_op(ielem,0,7) = (a[4] *  t2) - (a[6] *  t1)  + (a[5] * R75) - (a[3] *  t6) - (a[2] * R74) + (a[0] * R54);  
+    grad( x , z , g );
 
-    
-    R42=(a[3] - a[1]);
-    R52=(a[4] - a[1]);
-    R54=(a[4] - a[3]);
+    grad_op(ielem,1,0) = g[0];
+    grad_op(ielem,1,1) = g[1];
+    grad_op(ielem,1,2) = g[2];
+    grad_op(ielem,1,3) = g[3];
+    grad_op(ielem,1,4) = g[4];
+    grad_op(ielem,1,5) = g[5];
+    grad_op(ielem,1,6) = g[6];
+    grad_op(ielem,1,7) = g[7];
 
-    R63=(a[5] - a[2]);
-    R83=(a[7] - a[2]);
-    R86=(a[7] - a[5]);
+    grad( y , x , g );
 
-    R31=(a[2] - a[0]);
-    R61=(a[5] - a[0]);
-    R74=(a[6] - a[3]);
-
-    R72=(a[6] - a[1]);
-    R75=(a[6] - a[4]);
-    R81=(a[7] - a[0]);
-
-    t1=(R63 + R54);
-    t2=(R61 + R74);
-    t3=(R72 + R81);
-
-    t4 =(R86 + R42);
-    t5 =(R83 + R52);
-    t6 =(R75 + R31);
-
-    //X
-    a[0] = coords(ielem,0,0);
-    a[1] = coords(ielem,0,1);
-    a[2] = coords(ielem,0,2);
-    a[3] = coords(ielem,0,3);
-    a[4] = coords(ielem,0,4);
-    a[5] = coords(ielem,0,5);
-    a[6] = coords(ielem,0,6);
-    a[7] = coords(ielem,0,7);
-    
-	// Z grad
-    grad_op(ielem,1,7) = (a[4] *  t2) - (a[6] *  t1)  + (a[5] * R75) - (a[3] *  t6) - (a[2] * R74) + (a[0] * R54);  
-    grad_op(ielem,1,6) = (a[7] *  t1) - (a[5] *  t5)  - (a[4] * R86) + (a[2] *  t4) - (a[1] * R63) + (a[3] * R83);  
-    grad_op(ielem,1,5) = (a[6] *  t5) - (a[4] *  t3)  - (a[7] * R75) + (a[1] *  t6) - (a[0] * R52) + (a[2] * R72);  
-    grad_op(ielem,1,4) = (a[5] *  t3) + (a[6] * R86) - (a[7] *  t2)  - (a[0] *  t4) - (a[3] * R81) + (a[1] * R61);  
-    grad_op(ielem,1,3) = (a[0] *  t5) - (a[1] * R31) - (a[2] *  t3)  + (a[7] *  t6) + (a[4] * R81) - (a[6] * R83);  
-    grad_op(ielem,1,2) = (a[3] *  t3) + (a[0] * R42) - (a[1] *  t2)  - (a[6] *  t4) + (a[7] * R74) - (a[5] * R72);  
-    grad_op(ielem,1,1) = (a[2] *  t2) + (a[3] * R31) - (a[0] *  t1)  - (a[5] *  t6) + (a[6] * R63) - (a[4] * R61);  
-    grad_op(ielem,1,0) = (a[1] *  t1) - (a[2] * R42) - (a[3] *  t5)  + (a[4] *  t4) + (a[5] * R52) - (a[7] * R54);  
-    
-
-    R42=(a[3] - a[1]);
-    R52=(a[4] - a[1]);
-    R54=(a[4] - a[3]);
-
-    R63=(a[5] - a[2]);
-    R83=(a[7] - a[2]);
-    R86=(a[7] - a[5]);
-
-    R31=(a[2] - a[0]);
-    R61=(a[5] - a[0]);
-    R74=(a[6] - a[3]);
-
-    R72=(a[6] - a[1]);
-    R75=(a[6] - a[4]);
-    R81=(a[7] - a[0]);
-    
-    t1=(R63 + R54);
-    t2=(R61 + R74);
-    t3=(R72 + R81);
-
-    t4 =(R86 + R42);
-    t5 =(R83 + R52);
-    t6 =(R75 + R31);
-    
-    //Z
-    a[0] = coords(ielem,2,0);
-    a[1] = coords(ielem,2,1);
-    a[2] = coords(ielem,2,2);
-    a[3] = coords(ielem,2,3);
-    a[4] = coords(ielem,2,4);
-    a[5] = coords(ielem,2,5);
-    a[6] = coords(ielem,2,6);
-    a[7] = coords(ielem,2,7);
-
-
-    grad_op(ielem,2,0)  = (a[1] *  t1) - (a[2] * R42) - (a[3] *  t5)  + (a[4] *  t4) + (a[5] * R52) - (a[7] * R54); 
-    grad_op(ielem,2,1)  = (a[2] *  t2) + (a[3] * R31) - (a[0] *  t1)  - (a[5] *  t6) + (a[6] * R63) - (a[4] * R61); 
-    grad_op(ielem,2,2)  = (a[3] *  t3) + (a[0] * R42) - (a[1] *  t2)  - (a[6] *  t4) + (a[7] * R74) - (a[5] * R72); 
-    grad_op(ielem,2,3)  = (a[0] *  t5) - (a[1] * R31) - (a[2] *  t3)  + (a[7] *  t6) + (a[4] * R81) - (a[6] * R83); 
-    grad_op(ielem,2,4)  = (a[5] *  t3) + (a[6] * R86) - (a[7] *  t2)  - (a[0] *  t4) - (a[3] * R81) + (a[1] * R61); 
-    grad_op(ielem,2,5)  = (a[6] *  t5) - (a[4] *  t3)  - (a[7] * R75) + (a[1] *  t6) - (a[0] * R52) + (a[2] * R72); 
-    grad_op(ielem,2,6)  = (a[7] *  t1) - (a[5] *  t5)  - (a[4] * R86) + (a[2] *  t4) - (a[1] * R63) + (a[3] * R83); 
-    grad_op(ielem,2,7)  = (a[4] *  t2) - (a[6] *  t1)  + (a[5] * R75) - (a[3] *  t6) - (a[2] * R74) + (a[0] * R54); 
-    
+    grad_op(ielem,2,0) = g[0];
+    grad_op(ielem,2,1) = g[1];
+    grad_op(ielem,2,2) = g[2];
+    grad_op(ielem,2,3) = g[3];
+    grad_op(ielem,2,4) = g[4];
+    grad_op(ielem,2,5) = g[5];
+    grad_op(ielem,2,6) = g[6];
+    grad_op(ielem,2,7) = g[7];
   }
 
   //--------------------------------------------------------------------------
 
-  static double test( int count )
+  struct Init {
+    typedef HexGrad::device_type device_type ;
+
+    elem_coord_type coords ;
+
+    Init( const elem_coord_type & arg_coords )
+      : coords( arg_coords ) {}
+
+    KOKKOSARRAY_INLINE_FUNCTION
+    void operator()( size_type ielem ) const
+    {
+      coords(ielem,0,0) = 0.;
+      coords(ielem,1,0) = 0.;
+      coords(ielem,2,0) = 0.;
+
+      coords(ielem,0,1) = 1.;
+      coords(ielem,1,1) = 0.;
+      coords(ielem,2,1) = 0.;
+
+      coords(ielem,0,2) = 1.;
+      coords(ielem,1,2) = 1.;
+      coords(ielem,2,2) = 0.;
+
+      coords(ielem,0,3) = 0.;
+      coords(ielem,1,3) = 1.;
+      coords(ielem,2,3) = 0.;
+
+
+      coords(ielem,0,4) = 0.;
+      coords(ielem,1,4) = 0.;
+      coords(ielem,2,4) = 1.;
+
+      coords(ielem,0,5) = 1.;
+      coords(ielem,1,5) = 0.;
+      coords(ielem,2,5) = 1.;
+
+      coords(ielem,0,6) = 1.;
+      coords(ielem,1,6) = 1.;
+      coords(ielem,2,6) = 1.;
+
+      coords(ielem,0,7) = 0.;
+      coords(ielem,1,7) = 1.;
+      coords(ielem,2,7) = 1.;
+    }
+  };
+
+  //--------------------------------------------------------------------------
+
+  static double test( const int count , const int iter = 1 )
   {
     elem_coord_type coord( "coord" , count );
     elem_grad_type  grad ( "grad" , count );
 
     // Execute the parallel kernels on the arrays:
 
-    KokkosArray::parallel_for( count , HexSimpleFill<device_type>( coord ) );
+    double dt_min = 0 ;
 
+    KokkosArray::parallel_for( count , Init( coord ) );
     device_type::fence();
 
-    KokkosArray::Impl::Timer timer ;
+    for ( int i = 0 ; i < iter ; ++i ) {
+      KokkosArray::Impl::Timer timer ;
+      KokkosArray::parallel_for( count , HexGrad<device_type>( coord , grad ) );
+      device_type::fence();
+      const double dt = timer.seconds();
+      if ( 0 == i ) dt_min = dt ;
+      else dt_min = dt < dt_min ? dt : dt_min ;
+    }
 
-    KokkosArray::parallel_for( count , HexGrad<device_type>( coord , grad ) );
-
-    device_type::fence();
-
-    return timer.seconds() ;
+    return dt_min ;
   }
 };
 

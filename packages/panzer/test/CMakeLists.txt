@@ -1,4 +1,3 @@
-ADD_SUBDIRECTORY(simple_test)
 ADD_SUBDIRECTORY(dofmngr_test)
 ADD_SUBDIRECTORY(core_tests)
 ADD_SUBDIRECTORY(equation_set)

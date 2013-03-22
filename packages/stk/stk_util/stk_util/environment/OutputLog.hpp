@@ -207,4 +207,16 @@ std::ostream *get_ostream_tee_ostream(const std::string &name);
 
 } // namespace stk
 
+namespace sierra {
+
+std::ostream &out();                ///< Normal output stream
+std::ostream &dout();               ///< Diagnostic output stream
+std::ostream &pout();               ///< Per-processor output stream (See RuntimeDeferredx)
+std::ostream &tout();               ///< Regression test textual output stream
+
+std::ostream &dwout();              ///< Diagnostic writer stream
+
+} // namespace sierra
+
+
 #endif // STK_UTIL_ENVIRONMENT_OUTPUTLOG_HPP

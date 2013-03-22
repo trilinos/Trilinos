@@ -113,10 +113,10 @@ namespace LOCA {
       const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
-      const vector<int>& paramIDs);
+      const std::vector<int>& paramIDs);
 
       //! Return strategy name given by \c stepperParams
-      const string& strategyName(Teuchos::ParameterList& stepperParams) const;
+      const std::string& strategyName(Teuchos::ParameterList& stepperParams) const;
 
     private:
 

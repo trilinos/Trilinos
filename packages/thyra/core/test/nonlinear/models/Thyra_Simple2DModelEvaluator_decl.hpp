@@ -78,11 +78,16 @@ simple2DModelEvaluator();
  * The Matrix <tt>W = d(f)/d(x)</tt> is implemented as a
  * <tt>Thyra::MultiVectorBase</tt> object and the class
  * <tt>Thyra::DefaultSerialDenseLinearOpWithSolveFactory</tt> is used to
- * create the linear solver.
+ * create the linear solver.  
+ *
+ * This class also supports an app-defined preconditioner <tt>W_prec</tt> but
+ * it is not used by the linear solver object.  The preconditioner operator is
+ * implemented as the inverse diagonal of the forward Jacobian <tt>W</tt>.
  *
  * This is really more of a mock test driver model for Thyra than an example
  * of implementing a real simulation-constrained ModelEvaluator subclass.
- * That is really what the EpetraExt::ModelEvaluator is for.
+ * However, it is a very simple Thyra-only example and therefore is not a bad
+ * starting point.
  */
 template<class Scalar>
 class Simple2DModelEvaluator
@@ -118,6 +123,8 @@ public:
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+  /** \brief . */
+  Teuchos::RCP<Thyra::PreconditionerBase<Scalar> > create_W_prec() const;
   /** \brief . */
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
   /** \brief . */

@@ -26,6 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
+#ifdef HAVE_AMESOS_CSPARSE
 #include "Amesos_CSparse.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
@@ -523,3 +524,5 @@ int Amesos_CSparse::CheckError(const int error) const
 
   AMESOS_RETURN(error);
 }
+
+#endif

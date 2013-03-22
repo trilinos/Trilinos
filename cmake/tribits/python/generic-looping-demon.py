@@ -148,6 +148,7 @@ if options.runTill:
   print "  --run-till='"+options.runTill+"' \\"
 if options.todayRunTill:
   print "  --run-till='"+options.todayRunTill+"' \\"
+print "  --pause-file='"+options.pauseFile+"' \\"
 
 
 #

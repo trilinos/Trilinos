@@ -41,6 +41,7 @@
 
 
 // Epetra_Map (and Epetra_LocalMap) Test routine
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
@@ -90,9 +91,9 @@ int main(int argc, char *argv[]) {
 
   int NumMyElements = 10000;
   int NumMyElements1 = NumMyElements; // Used for local map
-  long long NumGlobalElements = NumMyElements*NumProc+EPETRA_MIN(NumProc,3);
+  long long NumGlobalElements = ((long long)NumMyElements)*NumProc+EPETRA_MIN(NumProc,3);
   if (MyPID < 3) NumMyElements++;
-  int IndexBase = 0;
+  long long IndexBase = 0;
   bool DistributedGlobal = (NumGlobalElements>NumMyElements);
   
   Epetra_Map* Map;
@@ -177,7 +178,7 @@ int main(int argc, char *argv[]) {
   // Generate Global Element List.  Do in reverse for fun!
 
   long long * MyGlobalElements = new long long[NumMyElements];
-  int MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
+  long long MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
   if (Comm.MyPID()>2) MaxMyGID+=3;
   for (int i = 0; i<NumMyElements; i++) MyGlobalElements[i] = MaxMyGID-i;
 
@@ -219,7 +220,7 @@ int main(int argc, char *argv[]) {
   if (verbose1) {
     // Build a small map for test cout.  Use 10 elements from current map
     long long* MyEls = Map->MyGlobalElements64();
-    int IndBase = Map->IndexBase();
+    long long IndBase = Map->IndexBase64();
     int MyLen = EPETRA_MIN(10+Comm.MyPID(),Map->NumMyElements());
     SmallMap = new Epetra_Map((long long)-1, MyLen, MyEls, IndBase, Comm);
   }
@@ -274,7 +275,7 @@ int main(int argc, char *argv[]) {
 int checkMapDataClass(Epetra_Comm& Comm, int verbose) {
 	int returnierr = 0;
 	long long NumGlobalElements = 1000;
-	int IndexBase = 0;
+	long long IndexBase = 0;
 
 	Epetra_Map m1(NumGlobalElements, IndexBase, Comm);
 	int m1count = m1.ReferenceCount();
@@ -329,8 +330,8 @@ int checkMapDataClass(Epetra_Comm& Comm, int verbose) {
 
 int checkLocalMapDataClass(Epetra_Comm& Comm, int verbose) {
 	int returnierr = 0;
-	int NumMyElements = 100;
-	int IndexBase = 0;
+	long long NumMyElements = 100;
+	long long IndexBase = 0;
 
 	Epetra_LocalMap m1(NumMyElements, IndexBase, Comm);
 	int m1count = m1.ReferenceCount();

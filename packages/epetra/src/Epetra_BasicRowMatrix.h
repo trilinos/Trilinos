@@ -44,6 +44,7 @@
 #ifndef EPETRA_BASICROWMATRIX_H
 #define EPETRA_BASICROWMATRIX_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Object.h"
 #include "Epetra_CompObject.h"

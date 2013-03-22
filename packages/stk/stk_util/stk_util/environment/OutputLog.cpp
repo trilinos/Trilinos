@@ -6,8 +6,10 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <iostream>
 #include <stk_util/environment/OutputLog.hpp>
 #include <stk_util/util/TeeStreambuf.hpp>
+#include <stk_util/util/IndentStreambuf.hpp>
 
 
 #include <map>
@@ -649,3 +651,50 @@ bind_output_streams(
 }
 
 } // namespace stk
+
+namespace sierra {
+
+std::ostream &
+out() {
+  static std::ostream s_out(std::cout.rdbuf());
+
+  return s_out;
+}
+
+
+std::ostream &
+pout() {
+  static std::ostream s_pout(std::cout.rdbuf());
+
+  return s_pout;
+}
+
+
+std::ostream &
+dout() {
+  static std::ostream s_dout(std::cout.rdbuf());
+
+  return s_dout;
+}
+
+
+std::ostream &
+tout() {
+  static std::ostream s_tout(std::cout.rdbuf());
+
+  return s_tout;
+}
+
+
+std::ostream &
+dwout() {
+  static stk::indent_streambuf s_dwoutStreambuf(std::cout.rdbuf());
+  static std::ostream s_dwout(&s_dwoutStreambuf);
+  
+  return s_dwout;
+}
+
+} // namespace sierra
+
+
+

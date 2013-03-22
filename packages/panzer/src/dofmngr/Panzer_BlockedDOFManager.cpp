@@ -49,7 +49,5 @@
 
 template class panzer::BlockedDOFManager<int,long int>;
 template class panzer::BlockedDOFManager<int,int>;
-template class panzer::BlockedDOFManager<short,int>;
-template class panzer::BlockedDOFManager<char,long int>;
 
 #endif

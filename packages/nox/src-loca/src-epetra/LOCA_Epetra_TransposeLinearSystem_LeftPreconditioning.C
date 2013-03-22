@@ -73,10 +73,10 @@ LeftPreconditioning(
   // preconditioner
   if (!linsys->hasPreconditioner())
     globalData->locaErrorCheck->throwError(
-	  string("LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning") + 
-	  string("::LeftPreconditioning()"),
-	  string("Left preconditioning for transpose solve is valid only") + 
-	  string(" when the linear system defines a preconditioner"));
+	  std::string("LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning") + 
+	  std::string("::LeftPreconditioning()"),
+	  std::string("Left preconditioning for transpose solve is valid only") + 
+	  std::string(" when the linear system defines a preconditioner"));
 }
 
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::

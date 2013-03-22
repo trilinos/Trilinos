@@ -58,7 +58,7 @@ namespace MueLu {
   inline std::string const Version() {
     return("MueLu development");
   }
-  
+
 } // namespace MueLu
 
 #endif //ifndef MUELU_VERSION_HPP

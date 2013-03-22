@@ -67,7 +67,7 @@ HMX_PDE::HMX_PDE(Epetra_Comm& comm,
 	  map<string, double> SrcTermExponent_,
 	  map<string, double> SrcTermWeight_,
           int numGlobalNodes,
-          string name_) :
+          std::string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xmin(0.0),
   xmax(1.0),
@@ -140,8 +140,8 @@ HMX_PDE::reset(const Epetra_Vector& x)
 void 
 HMX_PDE::reset()
 {
-  cout << "WARNING: reset called without passing any update vector !!" 
-       << endl;
+  std::cout << "WARNING: reset called without passing any update vector !!" 
+       << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -199,7 +199,7 @@ HMX_PDE::evaluate(
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
-  vector<Epetra_Vector*> dep(numDep);
+  std::vector<Epetra_Vector*> dep(numDep);
   for( int i = 0; i<numDep; i++)
     dep[i] = new Epetra_Vector(*OverlapMap);
   Epetra_Vector xvec(*OverlapMap);
@@ -250,10 +250,10 @@ HMX_PDE::evaluate(
                      HMX_PDE &srcTermProb = 
                      dynamic_cast<HMX_PDE&>(
                      myManager->getProblem(srcTermIter->first) );
-    cout << "Inside problem: \"" << getName() << "\" calling to get source term "
-         << "from problem: \"" << srcTermIter->first << "\" :" << endl;
+    std::cout << "Inside problem: \"" << getName() << "\" calling to get source term "
+         << "from problem: \"" << srcTermIter->first << "\" :" << std::endl;
     srcTermProb.computeSourceTerm(debugDepVars, debugSrcTerm);
-    cout << "Resulting source term :" << debugSrcTerm << endl;
+    std::cout << "Resulting source term :" << debugSrcTerm << std::endl;
   }
   */
 
@@ -262,7 +262,7 @@ HMX_PDE::evaluate(
   double xx[2];
   double uu[2]; 
   double uuold[2];
-  vector<double*> ddep(numDep);
+  std::vector<double*> ddep(numDep);
   for( int i = 0; i<numDep; i++)
     ddep[i] = new double[2];
   double *srcTerm = new double[2];
@@ -278,12 +278,12 @@ HMX_PDE::evaluate(
   // Do a check on this fill
 //  map<string, double*>::iterator iter;
 //  for( iter = depVars.begin(); iter != depVars.end(); iter++)
-//    cout << "Inserted ... " << iter->first << "\t" << iter->second << endl;
-//  cout << "--------------------------------------------------" << endl;
+//    std::cout << "Inserted ... " << iter->first << "\t" << iter->second << std::endl;
+//  std::cout << "--------------------------------------------------" << std::endl;
 //  for( iter = depVars.begin(); iter != depVars.end(); iter++)
-//	  cout << iter->first << "\t" << (iter->second)[0] << ", " 
-//               << (iter->second)[1] << endl;
-//  cout << "--------------------------------------------------" << endl;
+//	  std::cout << iter->first << "\t" << (iter->second)[0] << ", " 
+//               << (iter->second)[1] << std::endl;
+//  std::cout << "--------------------------------------------------" << std::endl;
 
   // Zero out the objects that will be filled
   if ( fillMatrix ) A->PutScalar(0.0);
@@ -405,11 +405,11 @@ HMX_PDE::evaluate(
   A->Print(cout);
 
   if( fillF )
-    cout << "For residual fill :" << endl << *rhs << endl;
+    std::cout << "For residual fill :" << std::endl << *rhs << std::endl;
 
   if( fillMatrix ) 
   {
-    cout << "For jacobian fill :" << endl;
+    std::cout << "For jacobian fill :" << std::endl;
     A->Print(cout);
   }
 #endif
@@ -498,9 +498,9 @@ HMX_PDE::computeSourceTerm(map<string, Epetra_Vector*> fields,
   map<string, Epetra_Vector*>::iterator iter = fields.find(tempFieldName);
   if( iter == fields.end() ) 
   {
-    cout << "ERROR: Cannot find Temperature field \"" << tempFieldName 
+    std::cout << "ERROR: Cannot find Temperature field \"" << tempFieldName 
          << "\" for use in computeSourceTerm for problem \""
-         << getName() << endl;
+         << getName() << std::endl;
     throw "HMX_PDE ERROR";
   }
   else
@@ -536,10 +536,10 @@ HMX_PDE::computeSourceTerm(map<string, Epetra_Vector*> fields,
         iter = fields.find( (*requiredFieldIter).first );
         if( iter == fields.end() ) 
         {
-          cout << "ERROR: Cannot find required field \"" 
+          std::cout << "ERROR: Cannot find required field \"" 
                << (*requiredFieldIter).first 
                << "\" for use in computeSourceTerm for problem \""
-               << getName() << endl;
+               << getName() << std::endl;
           throw "HMX_PDE ERROR";
         }
 	Epetra_Vector &reqFieldVec = *((*iter).second);
@@ -566,9 +566,9 @@ HMX_PDE::computeSourceTerm(int arraySize,
   double *T = 0;
   map<string, double*>::iterator iter = fields.find(tempFieldName);
   if( iter == fields.end() ) {
-    cout << "ERROR: Cannot find Temperature field \"" << tempFieldName 
+    std::cout << "ERROR: Cannot find Temperature field \"" << tempFieldName 
          << "\" for use in computeSourceTerm for problem \""
-         << getName() << endl;
+         << getName() << std::endl;
     throw "HMX_PDE ERROR";
   }
   else
@@ -602,10 +602,10 @@ HMX_PDE::computeSourceTerm(int arraySize,
 
         iter = fields.find( (*requiredFieldIter).first );
         if( iter == fields.end() ) {
-          cout << "ERROR: Cannot find required field \"" 
+          std::cout << "ERROR: Cannot find required field \"" 
                << (*requiredFieldIter).first 
                << "\" for use in computeSourceTerm for problem \""
-               << getName() << "\"" << endl;
+               << getName() << "\"" << std::endl;
           throw "HMX_PDE ERROR";
         }
 	double *reqFieldVec = (*iter).second;

@@ -1526,10 +1526,22 @@ void Radial_Trisection_Inline_Mesh_Desc::Build_Global_Lists(std::list <long long
 }
 
 /****************************************************************************/
-LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(long long l, Topo_Loc the_location, Topo_Loc & new_location,long long nodeset_plus_1)
+LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(bool is_block_bc, 
+								    long long input_id, 
+								    long long l_value, 
+								    Topo_Loc the_location, 
+								    Topo_Loc & new_location,
+								    long long nodeset_plus_1)
   /****************************************************************************/
 {
   LoopLimits ll;
+
+
+  long long bid = input_id-1;
+  long long kind = bid/(inline_bx*inline_by);
+  long long jind = (bid-kind*(inline_bx * inline_by))/inline_bx;
+  long long iind = bid - jind *(inline_bx) - kind*(inline_bx * inline_by);
+     
 
   new_location = the_location;
   switch(the_location) {
@@ -1547,25 +1559,78 @@ LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(long long l,
     break;
   }
   case MINUS_J:{
-    if(l==0){
-      ll = getLimits(the_location,0,div+nodeset_plus_1,0,div+nodeset_plus_1,0,nelz_tot+nodeset_plus_1,div+nodeset_plus_1,div+nodeset_plus_1);
+    if(l_value==0){
+      if(is_block_bc){
+      ll = getLimits(the_location,
+		     0,div+nodeset_plus_1,
+		     0,div+nodeset_plus_1,
+		     c_inline_nz[kind],c_inline_nz[kind+1]+nodeset_plus_1,
+		     div+nodeset_plus_1,div+nodeset_plus_1);
+      }
+      else{
+	ll = getLimits(the_location,
+		       0,div+nodeset_plus_1,
+		       0,div+nodeset_plus_1,
+		       0,nelz_tot+nodeset_plus_1,
+		       div+nodeset_plus_1,div+nodeset_plus_1);
+      }
     }
     
     break;
   }
   case PLUS_J:{
-    if(l==(trisection_blocks-1)){// need to change the Topo_Loc for this one
-      ll = getLimits(MINUS_I,0,div+nodeset_plus_1,0,div+nodeset_plus_1,0,nelz_tot+nodeset_plus_1,div+nodeset_plus_1,div+nodeset_plus_1);
+    if(l_value==(trisection_blocks-1)){// need to change the Topo_Loc for this one
+      if(is_block_bc){
+      ll = getLimits(MINUS_I,
+		     0,div+nodeset_plus_1,
+		     0,div+nodeset_plus_1,
+		     c_inline_nz[kind],c_inline_nz[kind+1]+nodeset_plus_1,
+		     div+nodeset_plus_1,div+nodeset_plus_1);
       new_location = MINUS_I;
+      }
+      else{
+	ll = getLimits(MINUS_I,
+		       0,div+nodeset_plus_1,
+		       0,div+nodeset_plus_1,
+		       0,nelz_tot+nodeset_plus_1,
+		       div+nodeset_plus_1,div+nodeset_plus_1);
+	new_location = MINUS_I;
+      }
     }
     break;
   }
   case MINUS_K:{
-    ll = getLimits(the_location,0,div+nodeset_plus_1,0,div+nodeset_plus_1,0,nelz_tot+nodeset_plus_1,div+nodeset_plus_1,div+nodeset_plus_1);
+    if(is_block_bc){
+    ll = getLimits(the_location,
+		   0,div+nodeset_plus_1,
+		   0,div+nodeset_plus_1,
+		   c_inline_nz[kind],c_inline_nz[kind+1]+nodeset_plus_1,
+		   div+nodeset_plus_1,div+nodeset_plus_1);
+    }
+    else{
+      ll = getLimits(the_location,
+		     0,div+nodeset_plus_1,
+		     0,div+nodeset_plus_1,
+		     0,nelz_tot+nodeset_plus_1,
+		     div+nodeset_plus_1,div+nodeset_plus_1);
+    }
     break;
   }
   case PLUS_K:{
-        ll = getLimits(the_location,0,div+nodeset_plus_1,0,div+nodeset_plus_1,0,nelz_tot+nodeset_plus_1,div+nodeset_plus_1,div+nodeset_plus_1);
+    if(is_block_bc){
+      ll = getLimits(the_location,
+		     0,div+nodeset_plus_1,
+		     0,div+nodeset_plus_1,
+		     c_inline_nz[kind],c_inline_nz[kind+1]+nodeset_plus_1,
+		     div+nodeset_plus_1,div+nodeset_plus_1);
+    }
+    else{
+      ll = getLimits(the_location,
+		     0,div+nodeset_plus_1,
+		     0,div+nodeset_plus_1,
+		     0,nelz_tot+nodeset_plus_1,
+		     div+nodeset_plus_1,div+nodeset_plus_1);
+    }
     break;		     
   }
   default:
@@ -1628,12 +1693,13 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 	}
       }
     }
-    if((!(*setit)->block_boundary_set) || ((*setit)->block_boundary_set && (((*setit)->block_id-1) == 0))){
+    if((!(*setit)->block_boundary_set) || 
+       ((*setit)->block_boundary_set && (((*setit)->block_id-1)%inline_bx == 0))){
       // need to do trisect blocks now
       for(long long i = 0; i < trisection_blocks; i ++){
 	Topo_Loc new_location;
 	long long is_nodes = 1;
-	LoopLimits tll = get_tri_block_limits(i,the_location,new_location,is_nodes);
+	LoopLimits tll = get_tri_block_limits((*setit)->block_boundary_set,(*setit)->block_id,i,the_location,new_location,is_nodes);
 
 	if(dimension == 3){
 	  for ( long long _nk_ = tll.ks; _nk_ < tll.ke; _nk_ ++){ 
@@ -1737,12 +1803,13 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 	  }
 	}
 	
-	if((!(*setit)->block_boundary_set) || ((*setit)->block_boundary_set && (((*setit)->block_id-1) == 0))){
+	if((!(*setit)->block_boundary_set) || 
+	   ((*setit)->block_boundary_set && (((*setit)->block_id-1)%inline_bx == 0))){
 	// need to do trisect blocks now
 	for(long long i = 0; i < trisection_blocks; i ++){
 	  Topo_Loc new_location;
 	  long long is_nodes = 0;
-	  LoopLimits tll = get_tri_block_limits(i,the_location,new_location,is_nodes);
+	  LoopLimits tll = get_tri_block_limits((*setit)->block_boundary_set,(*setit)->block_id,i,the_location,new_location,is_nodes);
 	  
 	  if(dimension == 3){
 	    for ( long long _nk_ = tll.ks; _nk_ < tll.ke; _nk_ ++){ 
@@ -1788,13 +1855,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets()
       long long kind = bid/(blockKstride());
       long long jord = (bid-kind*blockKstride());
       //interior
-      if(jord ==0){
- 	error_stream << "Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets(...): "
-		     << "Block BC's disallowed for innermost block of trisection meshes.";
-	return 1;
-	
-      }
-      else{
+      {
 	long long jind = 0;
 	if(jord && (inline_bx-1)){
 	  jind = (jord-1)/(inline_bx-1);
@@ -1813,12 +1874,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets()
       long long kind = bid/(blockKstride());
       long long jord = (bid-kind*blockKstride());
       //interior
-      if(jord ==0){
- 	error_stream << "Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets(...): "
-		     << "Block BC's disallowed for innermost block of trisection meshes.";
-	return 1;
-      }
-      else{
+      {
 	long long jind = 0;
 	if(jord && (inline_bx-1)){
 	  jind = (jord-1)/(inline_bx-1);

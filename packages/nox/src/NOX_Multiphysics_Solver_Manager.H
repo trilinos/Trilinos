@@ -50,7 +50,7 @@
 
 #include "NOX_Solver_Generic.H"	// base class
 #include "NOX_Multiphysics_Solver_Generic.H"	// base class
-#include "NOX_Common.H"		// class data element (string)
+#include "NOX_Common.H"		// class data element (std::string)
 #include "NOX_Utils.H"          // class data element
 
 namespace NOX {
@@ -94,7 +94,7 @@ public:
 
     See reset() for a full description.
   */
-  Manager(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
+  Manager(const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
           const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
 	  const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
 	  const Teuchos::RCP<Teuchos::ParameterList>& p);
@@ -111,7 +111,7 @@ public:
   //! Destructor.
   virtual ~Manager();
 
-  virtual bool reset(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
+  virtual bool reset(const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
                      const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
 	             const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
 	             const Teuchos::RCP<Teuchos::ParameterList>& params);
@@ -134,13 +134,13 @@ public:
 private:
 
   //! Print a warning message that oldName is deprecated and newName should be used instead
-  virtual void deprecated(const string& oldName, const string& newName) const;
+  virtual void deprecated(const std::string& oldName, const std::string& newName) const;
 
   /*! 
     \brief Check that ptr is non-null. If it is null, print a
     message that prints fname and throw an error. 
   */
-  virtual void checkNullPtr(const string& fname) const;
+  virtual void checkNullPtr(const std::string& fname) const;
 
 private:
 
@@ -148,7 +148,7 @@ private:
   NOX::Utils utils;
 
   //! Name of method being used
-  string method;
+  std::string method;
 
 
 protected:

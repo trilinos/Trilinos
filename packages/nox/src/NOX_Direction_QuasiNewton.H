@@ -280,10 +280,10 @@ public:
   private:
     
     //! Index Into memory vector
-    vector<int> index;
+    std::vector<int> index;
     
     //! Memory
-    vector<MemoryUnit> memory;
+    std::vector<MemoryUnit> memory;
   };
   
 //----------------------------------------------------------------------
@@ -314,7 +314,7 @@ public:
 private:
 
   //! Print an error message and throw an error
-  void throwError(const string& functionName, const string& errorMsg);
+  void throwError(const std::string& functionName, const std::string& errorMsg);
 
 private:
 

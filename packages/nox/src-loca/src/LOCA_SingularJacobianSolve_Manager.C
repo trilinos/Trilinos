@@ -116,7 +116,7 @@ LOCA::SingularJacobianSolve::Manager::operator=(
 NOX::Abstract::Group::ReturnType 
 LOCA::SingularJacobianSolve::Manager::reset(Teuchos::ParameterList& params) 
 {
-  string newmethod = params.get("Method", "Default");
+  std::string newmethod = params.get("Method", "Default");
 
   if (method != newmethod) {
     delete singularSolverPtr;
@@ -159,7 +159,7 @@ LOCA::SingularJacobianSolve::Manager::compute(
   }
 
   if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails))
-    cout << "\n\tCalling singular solver with method: " << method << endl;
+    std::cout << "\n\tCalling singular solver with method: " << method << std::endl;
 
   return singularSolverPtr->compute(params, grp, input, approxNullVec,
 				    jacApproxNullVec, result);
@@ -183,13 +183,13 @@ LOCA::SingularJacobianSolve::Manager::computeMulti(
   }
 
   if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails))
-    cout << "\n\tCalling singular solver with method: " << method << endl;
+    std::cout << "\n\tCalling singular solver with method: " << method << std::endl;
   
   return singularSolverPtr->computeMulti(params, grp, inputs, approxNullVec,
 					 jacApproxNullVec, results, nVecs);
 }
 
-const string&
+const std::string&
 LOCA::SingularJacobianSolve::Manager::getMethod() const 
 {
   return method;

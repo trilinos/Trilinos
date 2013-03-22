@@ -55,7 +55,7 @@ namespace {
   struct Constants {
     static const int nnode     = 2;
     static const int nedge     = 0;
-    static const int nedgenode = 2;
+    static const int nedgenode = 0;
     static const int nface     = 0;
     static const int nfacenode = 0;
     static const int nfaceedge = 0;
@@ -73,6 +73,7 @@ Ioss::Edge2::Edge2()
 {
   Ioss::ElementTopology::alias("edge2", "edge");
   Ioss::ElementTopology::alias("edge2", "edge3d2");
+  Ioss::ElementTopology::alias("edge2", "LINE_2_1D");
 }
 
 Ioss::Edge2::~Edge2() {}
@@ -105,8 +106,6 @@ int Ioss::Edge2::number_edges_face(int face) const
 Ioss::IntVector Ioss::Edge2::edge_connectivity(int /* edge_number */) const
 {
   Ioss::IntVector connectivity(Constants::nedgenode);
-  connectivity[0] = 0;
-  connectivity[1] = 1;
   return connectivity;
 }
 
@@ -128,4 +127,4 @@ Ioss::ElementTopology* Ioss::Edge2::face_type(int /* face_number */) const
 { return (Ioss::ElementTopology*)NULL; }
 
 Ioss::ElementTopology* Ioss::Edge2::edge_type(int /* edge_number */) const
-{ return Ioss::ElementTopology::factory("edge2"); }
+{ return Ioss::ElementTopology::factory("node1"); }

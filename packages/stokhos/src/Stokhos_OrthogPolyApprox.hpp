@@ -36,6 +36,7 @@
 #include <ostream>	               // for std::ostream
 
 #include "Stokhos_StandardStorage.hpp"
+#include "Stokhos_ProductBasisUtils.hpp"
 
 namespace Stokhos {
 
@@ -134,7 +135,7 @@ namespace Stokhos {
     const_reference term(ordinal_type dimension, ordinal_type order) const;
 
     //! Get orders for a given term
-    Teuchos::Array<ordinal_type> order(ordinal_type term) const;
+    const MultiIndex<ordinal_type>& order(ordinal_type term) const;
 
     //! Evaluate polynomial approximation at a point
     value_type evaluate(const Teuchos::Array<value_type>& point) const;

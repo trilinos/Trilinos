@@ -8,7 +8,7 @@
 
   <ParameterList name="P2">
     <Parameter name="factory"       type="string" value="SaPFactory"/>
-    <Parameter name="DampingFactor" type="double" value="4./3"/>
+    <Parameter name="Damping factor" type="double" value="4./3"/>
   </ParameterList>
 
 </ParameterList>

@@ -182,15 +182,15 @@ bool  NOX::Direction::ModifiedNewton::rescueBadNewtonSolve(const NOX::Abstract::
 
   // Otherwise, we just print a warning and keep going
   if (utils->isPrintType(NOX::Utils::Warning))
-    utils->out() << "WARNING: NOX::Direction::ModifiedNewton::compute - Unable to achieve desired linear solve accuracy." << endl;
+    utils->out() << "WARNING: NOX::Direction::ModifiedNewton::compute - Unable to achieve desired linear solve accuracy." << std::endl;
   return true;
 
 }
 
-void NOX::Direction::ModifiedNewton::throwError(const string& functionName, const string& errorMsg)
+void NOX::Direction::ModifiedNewton::throwError(const std::string& functionName, const std::string& errorMsg)
 {
   if (utils->isPrintType(NOX::Utils::Error))
-    utils->err() << "NOX::Direction::ModifiedNewton::" << functionName << " - " << errorMsg << endl;
+    utils->err() << "NOX::Direction::ModifiedNewton::" << functionName << " - " << errorMsg << std::endl;
   throw "NOX Error";
 }
 

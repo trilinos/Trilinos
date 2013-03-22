@@ -114,7 +114,7 @@ public:
 
   virtual NOX::StatusTest::StatusType getStatus() const;
 
-  virtual ostream& print(ostream& stream, int indent = 0) const;
+  virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
 
   /*! 
     \brief Returns the used specified number of steps that can

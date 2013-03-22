@@ -187,7 +187,7 @@ public:
        global number of parts.
        The value of the last element is the global number of processes.
 
-     Parts are only divided across processes if there are fewer parts
+     Parts are divided across processes only if there are fewer parts
      than processes and the caller did not define "num_local_parts" for
      each process.  In this case, parts are divided somewhat evenly
      across the processes.  This situation is more likely to arise in
@@ -197,7 +197,10 @@ public:
    non-NULL, then this method returns a NULL pointer.  The three are mutually 
    exclusive and collective exhaustive.
  */
-  const int *getPartDistribution() const { return &partDist_[0]; }
+  const int *getPartDistribution() const {
+    if (partDist_.size() > 0) return &partDist_[0];
+    else return NULL;
+  }
   
 /*! \brief Return a distribution by process.
 
@@ -215,7 +218,10 @@ public:
     then this method returns NULL pointer, and either 
     oneToOnePartDistribution() or getPartDistribution() describes the mapping.
  */
-  const partId_t *getProcDistribution() const { return &procDist_[0]; }
+  const partId_t *getProcDistribution() const {
+    if (procDist_.size() > 0) return &procDist_[0];
+    else return NULL;
+  }
 
 /*! \brief Get the number of criteria (the weight dimension).
     \return the number of criteria for which the solution has part sizes.
@@ -431,8 +437,8 @@ private:
   RCP<const Comm<int> > comm_;             // the problem communicator
   RCP<const IdentifierMap<user_t> > idMap_;
 
-  gno_t nGlobalParts_;// target global number of parts
-  lno_t nLocalParts_; // number of parts to be on this process
+  partId_t nGlobalParts_;// target global number of parts
+  partId_t nLocalParts_; // number of parts to be on this process
 
   scalar_t localFraction_; // approx fraction of a part on this process
   int weightDim_;      // if user has no weights, this is 1
@@ -517,7 +523,7 @@ private:
 
   bool haveSolution_;
 
-  gno_t nGlobalPartsSolution_; // global number of parts in solution
+  partId_t nGlobalPartsSolution_; // global number of parts in solution
 
   ////////////////////////////////////////////////////////////////
   // The solution calculates this from the part assignments,
@@ -599,10 +605,10 @@ template <typename Adapter>
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("num_global_parts");
 
   if (pe){
-    val = pe->getValue<double>(&val);
-    haveGlobalNumParts = 1;
-    numGlobal = static_cast<int>(val);
-    nGlobalParts_ = gno_t(numGlobal);
+    val = pe->getValue<double>(&val);  // TODO: KDD Skip this double get
+    haveGlobalNumParts = 1;            // TODO: KDD Should be unnecessary once
+    numGlobal = static_cast<int>(val); // TODO: KDD paramlist handles long long.
+    nGlobalParts_ = partId_t(numGlobal); // TODO: KDD  also do below.
   }
 
   pe = pl.getEntryPtr("num_local_parts");
@@ -611,7 +617,7 @@ template <typename Adapter>
     val = pe->getValue<double>(&val);
     haveLocalNumParts = 1;
     numLocal = static_cast<int>(val);
-    nLocalParts_ = lno_t(numLocal);
+    nLocalParts_ = partId_t(numLocal);
   }
 
   try{
@@ -632,7 +638,7 @@ template <typename Adapter>
   else if (partDist_.size() > 0){   // more procs than parts
     nGlobalParts_ = partDist_.size() - 1;
     int pstart = partDist_[0];
-    for (int i=1; i <= nGlobalParts_; i++){
+    for (partId_t i=1; i <= nGlobalParts_; i++){
       int pend = partDist_[i];
       if (rank >= pstart && rank < pend){
         int numOwners = pend - pstart;
@@ -1139,7 +1145,7 @@ template <typename Adapter>
   // respect to a desired solution.  This solution may have more or
   // fewer parts that the desired solution.)
 
-  partId_t lMax, lMin, gMax, gMin;
+  partId_t lMax=0, lMin=0, gMax, gMin;
   
   if (len > 0)
     IdentifierTraits<partId_t>::minMax(partList.getRawPtr(), len, lMin, lMax);
@@ -1212,23 +1218,15 @@ template <typename Adapter>
 
       // Send the owners of these gnos their part assignments.
     
-      lno_t *tmpCount = new lno_t [nprocs];
-      memset(tmpCount, 0, sizeof(lno_t) * nprocs);
-      env_->localMemoryAssertion(__FILE__, __LINE__, nprocs, tmpCount);
-      ArrayView<int> countOutBuf(tmpCount, nprocs);
+      Array<int> countOutBuf(nprocs, 0);
+      Array<int> countInBuf(nprocs, 0);
   
-      ArrayView<gno_t> outBuf;
+      Array<gno_t> outBuf(len*2, 0);
   
       if (len > 0){
-        gno_t *tmpGno = new gno_t [len*2];
-        env_->localMemoryAssertion(__FILE__, __LINE__, len*2, tmpGno);
-        outBuf = ArrayView<gno_t>(tmpGno, len*2);
+        Array<lno_t> offsetBuf(nprocs+1, 0);
       
-        lno_t *tmpOff = new lno_t [nprocs+1];
-        env_->localMemoryAssertion(__FILE__, __LINE__, nprocs+1, tmpOff);
-        ArrayView<lno_t> offsetBuf(tmpOff, nprocs+1);
-      
-          for (size_t i=0; i < len; i++){
+        for (size_t i=0; i < len; i++){
           countOutBuf[procList[i]]+=2;
         }
       
@@ -1243,28 +1241,25 @@ template <typename Adapter>
           outBuf[off+1] = static_cast<gno_t>(partList[i]);
           offsetBuf[p]+=2;
         }
-    
-        delete [] tmpOff;
       }
     
       ArrayRCP<gno_t> inBuf;
-      ArrayRCP<int> countInBuf;
     
       try{
         AlltoAllv<gno_t>(*comm_, *env_,
-          outBuf, countOutBuf, inBuf, countInBuf);
+          outBuf(), countOutBuf(), inBuf, countInBuf());
       }
       Z2_FORWARD_EXCEPTIONS;
   
-      if (len)
-        delete [] outBuf.getRawPtr();
-  
-      delete [] countOutBuf.getRawPtr();
+      outBuf.clear();
+      countOutBuf.clear();
   
       gno_t newLen = 0;
       for (int i=0; i < nprocs; i++)
         newLen += countInBuf[i];
   
+      countInBuf.clear();
+
       newLen /= 2;
 
       ArrayRCP<partId_t> parts;
@@ -1342,16 +1337,17 @@ template <typename Adapter>
 
       int numProcs = comm_->getSize();
 
-      for (lno_t i=0; i < partList.size(); i++)
+      for (ArrayRCP<partId_t>::size_type i=0; i < partList.size(); i++)
         partCounter[parts[i]]++;
 
       lno_t *procCounter = new lno_t [numProcs];
       env_->localMemoryAssertion(__FILE__, __LINE__, numProcs, procCounter);
       
+      int proc1;
       int proc2 = partDist_[0];
 
-      for (lno_t part=1; part < nGlobalParts_; part++){
-        int proc1 = proc2;
+      for (partId_t part=1; part < nGlobalParts_; part++){
+        proc1 = proc2;
         proc2 = partDist_[part+1];
         int numprocs = proc2 - proc1;
 
@@ -1371,7 +1367,7 @@ template <typename Adapter>
 
       delete [] partCounter;
 
-      for (lno_t i=0; i < partList.size(); i++){
+      for (ArrayRCP<partId_t>::size_type i=0; i < partList.size(); i++){
         if (partList[i] >= nGlobalParts_){
           // Solution has more parts that targeted.  These
           // objects just remain on this process.
@@ -1379,10 +1375,10 @@ template <typename Adapter>
           continue;
         }
         partId_t partNum = parts[i];
-        int proc1 = partDist_[partNum];
-        int proc2 = partDist_[partNum + 1];
-        int proc=0;
-        
+        proc1 = partDist_[partNum];
+        proc2 = partDist_[partNum + 1];
+
+        int proc;
         for (proc=proc1; proc < proc2; proc++){
           if (procCounter[proc] > 0){
             procs[i] = proc;
@@ -1457,12 +1453,11 @@ template <typename Adapter>
     }
   }
 
-  ArrayRCP<int> recvCounts;
-  RCP<const Environment> env = rcp(new Environment);
+  Array<int> recvCounts(numProcs, 0);
 
   try{
-    AlltoAllv<gid_t>(*comm_, *env_, gidList.view(0,localNumIds),
-      counts.view(0, numProcs), imports, recvCounts);
+    AlltoAllv<gid_t>(*comm_, *env_, gidList(),
+      counts(), imports, recvCounts());
   }
   catch (std::exception &e){
     throw std::runtime_error("alltoallv 1");
@@ -1470,13 +1465,14 @@ template <typename Adapter>
 
   if (numExtra > 0){
     try{
-      AlltoAllv<Extra>(*comm_, *env_, xtraInfo.view(0, localNumIds),
-        counts.view(0, numProcs), newXtraInfo, recvCounts);
+      AlltoAllv<Extra>(*comm_, *env_, xtraInfo(),
+        counts(), newXtraInfo, recvCounts());
     }
     catch (std::exception &e){
       throw std::runtime_error("alltoallv 2");
     }
   }
+
   env_->debug(DETAILED_STATUS, "Exiting convertSolutionToImportList");
   return imports.size();
 }

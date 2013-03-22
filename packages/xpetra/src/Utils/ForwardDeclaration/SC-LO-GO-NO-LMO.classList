@@ -1,9 +1,9 @@
 CrsMatrix
 CrsMatrixFactory
-CrsOperator
-Operator
-OperatorFactory
+CrsMatrix
+Matrix
+MatrixFactory
 TpetraCrsMatrix
 #TpetraVbrMatrix
 #VbrMatrix
-BlockedCrsOperator
+BlockedCrsMatrix

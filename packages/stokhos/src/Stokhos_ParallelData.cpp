@@ -116,7 +116,8 @@ Stokhos::buildMultiComm(const Epetra_Comm& globalComm,
   globalMultiComm = 
     Teuchos::rcp(new EpetraExt::MultiMpiComm(globalMpiComm.Comm(), 
 					     num_spatial_procs, 
-					     num_global_stochastic_blocks));
+					     num_global_stochastic_blocks,
+					     Teuchos::VERB_NONE));
 #else
   globalMultiComm = 
     Teuchos::rcp(new EpetraExt::MultiSerialComm(num_global_stochastic_blocks));

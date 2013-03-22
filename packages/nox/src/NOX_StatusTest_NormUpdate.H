@@ -154,7 +154,7 @@ public:
 
   virtual NOX::StatusTest::StatusType getStatus() const;
 
-  virtual ostream& print(ostream& stream, int indent = 0) const;
+  virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
 
   /* @name Accessor Functions
      Used to query current values of variables in the status test.

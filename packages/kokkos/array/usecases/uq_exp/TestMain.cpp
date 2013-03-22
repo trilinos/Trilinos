@@ -7,8 +7,8 @@
 //----------------------------------------------------------------------------
 
 void test_host_explicit( comm::Machine machine , 
-                         size_t numa_node_count ,
-                         size_t numa_node_thread_count ,
+                         size_t gang_count ,
+                         size_t gang_worker_count ,
                          size_t elem_count_begin ,
                          size_t elem_count_end ,
                          size_t uq_count_begin ,

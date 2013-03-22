@@ -150,6 +150,15 @@ namespace stk {
     int PMMParallelShapeImprover::parallel_count_invalid_elements(PerceptMesh *eMesh)
     {
       PMMSmootherMetricUntangle utm(eMesh);
+      stk::mesh::FieldBase *coord_field_current   = eMesh->get_coordinates_field();
+      stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
+      JacobianUtil jacA, jacW;
+
+      double detA_min = std::numeric_limits<double>::max();
+      double detW_min = std::numeric_limits<double>::max();
+      double shapeA_max = 0.0;
+      double shapeW_max = 0.0;
+      const bool get_mesh_diagnostics = false;
 
       int num_invalid=0;
       // element loop
@@ -163,12 +172,42 @@ namespace stk {
               {
                 stk::mesh::Bucket & bucket = **k ;
                 const unsigned num_elements_in_bucket = bucket.size();
+                const CellTopologyData* topology_data = eMesh->get_cell_topology(bucket);
 
                 for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                   {
                     stk::mesh::Entity& element = bucket[i_element];
                     bool valid=true;
-                    utm.metric(element, valid);
+                    if (get_mesh_diagnostics)
+                      {
+                        double A_ = 0.0, W_ = 0.0; // current and reference detJ
+                        jacA(A_, *eMesh, element, coord_field_current, topology_data);
+                        jacW(W_, *eMesh, element, coord_field_original, topology_data);
+
+                        for (int i=0; i < jacA.m_num_nodes; i++)
+                          {
+                            double detAi = jacA.m_detJ[i];
+                            double detWi = jacW.m_detJ[i];
+                            MsqMatrix<3,3>& W = jacW.m_J[i];
+                            MsqMatrix<3,3>& A = jacA.m_J[i];
+                            if (detAi <= 0.)
+                              {
+                                valid = false;
+                              }
+                            detA_min = std::min(detA_min, detAi);
+                            detW_min = std::min(detW_min, detWi);
+                            double frobAi = std::sqrt(my_sqr_Frobenius(A));
+                            double frobWi = std::sqrt(my_sqr_Frobenius(W));
+                            double shapeAi = std::abs(frobAi*frobAi*frobAi/(3*std::sqrt(3.)*detAi) - 1.0);
+                            double shapeWi = std::abs(frobWi*frobWi*frobWi/(3*std::sqrt(3.)*detWi) - 1.0);
+                            shapeA_max = std::max(shapeA_max, shapeAi);
+                            shapeW_max = std::max(shapeW_max, shapeWi);
+                          }
+                      }
+                    else
+                      {
+                        utm.metric(element, valid);
+                      }
                     if (!valid)
                       ++num_invalid;
                   }
@@ -176,6 +215,18 @@ namespace stk {
           }
       }
       stk::all_reduce( MPI_COMM_WORLD, stk::ReduceSum<1>( &num_invalid ) );
+      if (get_mesh_diagnostics)
+        {
+          stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMin<1>( &detA_min ) );
+          stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMin<1>( &detW_min ) );
+          stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMax<1>( &shapeA_max ) );
+          stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMax<1>( &shapeW_max ) );
+          if (eMesh->get_rank() == 0)
+            {
+              std::cout << "P[0] detA_min= " << detA_min << " detW_min= " << detW_min 
+                        << " shapeA_max= " << shapeA_max << " shapeW_max= " << shapeW_max << std::endl;
+            }
+        }
       return num_invalid;
     }
 

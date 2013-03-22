@@ -29,6 +29,7 @@
 // Stokhos Stochastic Galerkin
 #include "Stokhos_Epetra.hpp"
 #include "Stokhos_Sacado.hpp"
+#include "Stokhos_Ifpack2.hpp"
 
 // Class implementing our problem
 #include "twoD_diffusion_problem_tpetra.hpp"
@@ -44,7 +45,6 @@
 #include "Ifpack2_Factory.hpp"
 #include "BelosLinearProblem.hpp"
 #include "kokkos_pce_specializations.hpp"
-#include "BelosPCETpetraAdapter.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "MatrixMarket_Tpetra.hpp"
@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
       rcp(new Stokhos::CompletePolynomialBasis<LocalOrdinal,BasisScalar>(bases, 1e-12));
     LocalOrdinal sz = basis->size();
     RCP<Stokhos::Sparse3Tensor<LocalOrdinal,BasisScalar> > Cijk = 
-      basis->computeTripleProductTensor(sz);
+      basis->computeTripleProductTensor();
     RCP<const Stokhos::Quadrature<int,double> > quad = 
       rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
     RCP<ParameterList> expn_params = Teuchos::rcp(new ParameterList);

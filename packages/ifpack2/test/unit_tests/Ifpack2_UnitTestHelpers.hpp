@@ -47,7 +47,8 @@ Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_tr
   Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowmap, 0));
 
   Teuchos::Array<GlobalOrdinal> cols;
-  for(GlobalOrdinal g_row = rowmap->getMinGlobalIndex(); g_row<=rowmap->getMaxGlobalIndex(); ++g_row) {
+ for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
+    GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
     if (g_row == rowmap->getMinAllGlobalIndex() ||
         g_row == rowmap->getMaxAllGlobalIndex()) cols.resize(2);
     else cols.resize(3);
@@ -79,8 +80,8 @@ Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_test_gra
 
   size_t global_size = rowmap->getGlobalNumElements();
   Teuchos::Array<GlobalOrdinal> cols;
-  for(GlobalOrdinal g_row = rowmap->getMinGlobalIndex(); g_row<=rowmap->getMaxGlobalIndex(); ++g_row) {
-
+  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
+    GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
     if (g_row == rowmap->getMinAllGlobalIndex()) {
       cols.resize(global_size);
       for(size_t i=0; i<global_size; ++i) {
@@ -107,33 +108,34 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
 {
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap, 3/*tri-diagonal matrix*/));
 
-  Teuchos::Array<GlobalOrdinal> col(1);
-  Teuchos::Array<Scalar> coef(1);
+  Teuchos::Array<GlobalOrdinal> col(3);
+  Teuchos::Array<Scalar> coef(3);
 
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar two = one + one;
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  
+  size_t upper_limit;
 
-  for(GlobalOrdinal g_row = rowmap->getMinLocalIndex(); g_row<=rowmap->getMaxLocalIndex(); ++g_row) {
+  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
+    GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
+
     if (g_row == rowmap->getMinGlobalIndex()) {
-      col.resize(2);
-      coef.resize(2);
+      upper_limit=2;
       col[0] = g_row;
       col[1] = g_row+1;
       coef[0] = two;
       coef[1] = zero;
     }
     else if (g_row == rowmap->getMaxGlobalIndex()) {
-      col.resize(2);
-      coef.resize(2);
+      upper_limit=2;
       col[0] = g_row-1;
       col[1] = g_row;
       coef[0] = zero;
       coef[1] = two;
     }
     else {
-      col.resize(3);
-      coef.resize(3);
+      upper_limit=3;
       col[0] = g_row-1;
       col[1] = g_row;
       col[2] = g_row+1;
@@ -142,11 +144,10 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
       coef[2] = zero;
     }
 
-    crsmatrix->insertGlobalValues(g_row, col(), coef() );
+    crsmatrix->insertGlobalValues(g_row, col(0,upper_limit), coef(0,upper_limit) );
   }
 
   crsmatrix->fillComplete();
-
   return crsmatrix;
 }
 
@@ -166,7 +167,8 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   Scalar two = one*mag_two;
   const Scalar onetenth = one / mag_ten;
 
-  for(GlobalOrdinal g_row = rowmap->getMinLocalIndex(); g_row<=rowmap->getMaxLocalIndex(); ++g_row) {
+  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
+    GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
     if (g_row == rowmap->getMinGlobalIndex()) {
       col.resize(2);
       coef.resize(2);

@@ -15,7 +15,7 @@
 
 #include <stk_adapt/sierra_element/stk_percept_code_types.hpp>
 
-//#include <Slib_Exception.h>
+//#include <stk_util/parallel/Exception.hpp>
 
 #include <stk_adapt/sierra_element/MeshObjTopology.hpp>
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>

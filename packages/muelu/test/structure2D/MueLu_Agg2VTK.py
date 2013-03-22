@@ -29,13 +29,13 @@ def create_qconvex_input(agg_globalnodeidx, global_nodecoords):
   local_nodeidx2global_nodeidx = {}
 
   no_of_aggnodes = len(agg_globalnodeidx)
-  
+
   f = open("local_agg.inp","w")
   f.write(str(len(global_nodecoords[0])))	# write dimension
   f.write("\r\n")
   f.write(str(no_of_aggnodes)) # no of nodes for aggregate
   f.write("\r\n")
-  
+
   for i in range(0,len(agg_globalnodeidx)):
     # store information in map local_nodeidx 2 global_nodeidx
     local_nodeidx2global_nodeidx[i] = agg_globalnodeidx[i]
@@ -73,14 +73,14 @@ def run_qconvex_with_input(inputfile,local_nodeidx2global_nodeidx):
     lfacetslength = 0
     globalnodeidx_for_polygon = []
     return lfacets, lfacetslength, globalnodeidx_for_polygon
-  
+
   if "qhull input error: input is less than 3-dimensional" in qconvex_stdout:
     print "Error in qhull: input is less than 3-dimensional"
     lfacets = []
     lfacetslength = 0
     globalnodeidx_for_polygon = []
     return lfacets, lfacetslength, globalnodeidx_for_polygon
-  
+
   if "qhull input error: dimension 1 (first number) should be at least 2" in qconvex_stdout:
     print "Error in qhull: dimension is 1"
     lfacets = []
@@ -95,34 +95,34 @@ def run_qconvex_with_input(inputfile,local_nodeidx2global_nodeidx):
 
   number_of_points = int(line1[0])
   number_of_facets  = int(line1[1])
-  
+
   lfacets = []    # list of all facets with all nodeidx stored
   for i in range(2+number_of_points,2+number_of_points+number_of_facets):
     # split face i
     linei = outlines[i].split(" ")
     no_nodes_in_facet_i = int(linei[0])
-  
+
     gnodeidx = [] # list of local node ids for current face
-  
+
     for j in range(1,no_nodes_in_facet_i+1):
       lnodeidxi = linei[j]
       gnodeidxi = local_nodeidx2global_nodeidx[int(lnodeidxi)]
       gnodeidx.append(gnodeidxi) # append global node idx to current faces of agg
 
     lfacets.append(gnodeidx) # add face to list of local faces of current aggregate
- 
+
   # calculate some additional data for vtk file format
-  lfacetslength = 0  
+  lfacetslength = 0
   for i in range(0,len(lfacets)):
     lfacetslength = lfacetslength + len(lfacets[i]) + 1
-  
+
   # check if 2d problem and all facets have length 2 (=lines)
   bIs2d = 1
   for i in range(0,len(lfacets)):
     if len(lfacets[i])==3:
       bIs2d = 0
       break
-  
+
   # for 2d problems form a polygon
   globalnodeidx_for_polygon = []
   if bIs2d == 1:
@@ -136,11 +136,11 @@ def run_qconvex_with_input(inputfile,local_nodeidx2global_nodeidx):
 	  globalnodeidx_for_polygon.append(fac[1]) # found facet
 	  lfacet = fac
 	  break
-      
+
   # return list of faces with global node ids
   # and length of all face entries for this aggregate (for vtk output)
   return lfacets, lfacetslength, globalnodeidx_for_polygon
- 
+
 ################################################################################
 # CREATE VTK files
 # routines that write aggregation information to VTK files
@@ -158,7 +158,7 @@ def run_qconvex_with_input(inputfile,local_nodeidx2global_nodeidx):
 # input: agg_facetlengths: overall length of facets information
 # input: dimension (2 or 3) if dimension is 2 facets are lines, then we build the aggregate polygon
 # input agg_polygons: list aggregate polygons (each aggregate = one polygon), empty if dimension == 3
-def create_vtk_file(filename_prototype, level, global_nodecoords, agg_facets, agg_facetlengths, dimension, agg_polygons): 
+def create_vtk_file(filename_prototype, level, global_nodecoords, agg_facets, agg_facetlengths, dimension, agg_polygons):
   # calculate number of all faces
   number_of_facets = 0
   for i in range(0, len(agg_facets)):
@@ -175,7 +175,7 @@ def create_vtk_file(filename_prototype, level, global_nodecoords, agg_facets, ag
   f.write("ASCII\r\n\r\n");
   f.write("DATASET POLYDATA\r\n")
   f.write("POINTS ")                          # print point coords (->global?!)
-  f.write(str(len(global_nodecoords)))          
+  f.write(str(len(global_nodecoords)))
   f.write(" float\r\n")
   for i in range(0,len(global_nodecoords),1): # print point coordinates in list
     node_coordsi = global_nodecoords[i]
@@ -187,7 +187,7 @@ def create_vtk_file(filename_prototype, level, global_nodecoords, agg_facets, ag
       f.write(str(node_coordsi[2]))
     else:
       f.write("0.0")
-    f.write("\r\n") 
+    f.write("\r\n")
   f.write("VERTICES 1 ")            # print vertices
   f.write(str(len(global_nodecoords)+1))
   f.write("\r\n")
@@ -227,14 +227,14 @@ def create_vtk_file(filename_prototype, level, global_nodecoords, agg_facets, ag
     f.write("\r\n")
     for agg in range(0, len(agg_polygons)):
       cur_agg_poly = agg_polygons[agg]
-      f.write(str(len(cur_agg_poly)))      
+      f.write(str(len(cur_agg_poly)))
       for i in range(0,len(cur_agg_poly)):
 	f.write(" ")
 	f.write(str(cur_agg_poly[i]))
       f.write("\r\n")
   f.close();
   print "VTK file " + filename + " generated: OK"
-  
+
 def add_nodeinformation_to_vtk(filename_prototype, level, global_nodecoords,aggid2nodes,aggid2procs):
   nodeid2aggid = {} # empty map nodeid2aggid
   nodeid2proc = {}  # empty map nodeid2proc
@@ -246,7 +246,7 @@ def add_nodeinformation_to_vtk(filename_prototype, level, global_nodecoords,aggi
   # generate filename
   filename = filename_prototype
   filename = filename.replace("%LEVEL", str(level))
-  
+
   f = open(filename,"a")
   f.write("POINT_DATA ")
   f.write(str(len(global_nodecoords)))
@@ -266,7 +266,7 @@ def add_nodeinformation_to_vtk(filename_prototype, level, global_nodecoords,aggi
       f.write("-1.0\r\n") # error
   f.close()
   print "VTK file " + filename + " filled with information: OK"
-  
+
 ################################################################################
 # READ IN AGGREGATES
 # routines that read aggregation information from files
@@ -276,36 +276,36 @@ def checkAggregateLine(line):
 		return 1,line
 	else:
 		return 0,line
-		
+
 def read_aggregates_from_file(filename,procid):
   	aggid2nodes = {}
   	aggid2procs = {}
 	for l in file(filename):
 		line = l.strip()
-	
+
 		# filter out only Agg lines
 		ret,line = checkAggregateLine(line)
 		if ret == 0:
 			continue
-	
+
 		# line now contains a list of all tokens in that line
 		line = line.split(": ")
-	
+
 		# extract aggid and proc number
 		agginfo = line[0]
 		agginfo = agginfo.split(" ")
-		
+
 		aggid = agginfo[1]
 		procid = agginfo[3]
 
 		# handle node ids for aggregate
 		aggnodeids = line[1]
 		aggnodeids = aggnodeids.split(" ")
-			
+
 		# fill in data variables
 		aggid2nodes[aggid] = aggnodeids
 		aggid2procs[aggid] = [int(procid)]
-	
+
 	return aggid2nodes,aggid2procs
 
 ################################################################################
@@ -322,11 +322,11 @@ def readin_aggregates(filename_prototype,procs,level):
     filename = filename_prototype
     filename = filename.replace("%LEVEL",str(level))
     filename = filename.replace("%PROC",str(proc))
-    print "process ", filename  
+    print "process ", filename
     [aggid2nodesfromproc,aggid2procsfromproc] = read_aggregates_from_file(filename,proc)
     aggid2nodes.update(aggid2nodesfromproc)
     aggid2procs.update(aggid2procsfromproc)
-   
+
   return aggid2nodes,aggid2procs
 
 ################################################################################
@@ -356,19 +356,19 @@ def get_rootnodes(aggid2nodes,nodes):
 	dim = 2
 	if len(nodes[0]) == 3:
 		dim = 3
-		
+
 	rootnodes = []
 	for i in range(0,len(aggid2nodes.keys())):
 		rootnodes.append((0,0))
 	for k in aggid2nodes.keys():
 
-		nodecoords = get_agg_coords(nodes,aggid2nodes,k)	
+		nodecoords = get_agg_coords(nodes,aggid2nodes,k)
 
 		x = 0.0
 		y = 0.0
 		z = 0.0
 		for m in nodecoords:
-	
+
 			x = x + m[0]
 			y = y + m[1]
 			if dim==3:
@@ -377,13 +377,13 @@ def get_rootnodes(aggid2nodes,nodes):
 		y = y/len(aggid2nodes[k])
 		if dim == 3:
 			z = z/len(aggid2nodes[k])
-		
+
 		if dim == 2:
 			rootnodes[int(k)] = (x,y)
 		elif dim == 3:
 			rootnodes[int(k)] = (x,y,z)
 		else: print "error: dim must be 2 or 3 but it is " + str(dim)
-	
+
 	return rootnodes
 
 # write nodes file
@@ -395,7 +395,7 @@ def write_nodes_file(filename,aggid2nodes,nodes,dimension):
 
   # calculate root nodes (works only for 2d)
   rootnodes = get_rootnodes(aggid2nodes,nodes)
-  
+
   # write nodes file
   f = open(filename,"w")
   f.write(str(dimension))
@@ -409,9 +409,9 @@ def write_nodes_file(filename,aggid2nodes,nodes,dimension):
       f.write(" ")
       f.write(str(rootnode[2]))
     f.write("\r\n")
-  f.close() 
+  f.close()
   print "node file " + filename + " generated: OK"
-  
+
 ################################################################################
 # check if all files exist to proceed with next level
 # we need a nodesX.txt file for the node coordinates
@@ -423,16 +423,16 @@ def check_files_for_next_level(nextlevel,procs,file_prototype):
   # check if coarse level node coordinates are available
   if path.isfile("nodes"+str(nextlevel)+".txt") == False:
     return False
-  
+
   for p in range(0,procs):
     filename = file_prototype
     filename = filename.replace("%LEVEL",str(nextlevel))
     filename = filename.replace("%PROC",str(p))
     if path.isfile(filename) == False:
       return False
-      
+
   return True
-  
+
 ###########
 # MAIN routine
 def main(argv=None):
@@ -451,9 +451,9 @@ def main(argv=None):
     print "Aggregtaion information for " + str(numprocs) + " processors found"
 
   while check_files_for_next_level(level,numprocs,"aggs_level%LEVEL_proc%PROC.out"):
-    
+
     global_nodecoords,dimension = read_nodecoords_from_file("nodes"+str(level)+".txt")
-  
+
     agg_faces = []  # empty list of all faces of all aggregates
     agg_facelengths = 0
     agg_polygons = [] # empty list with polygons for all aggregates (only 2d)
@@ -461,7 +461,7 @@ def main(argv=None):
     aggid2nodes, aggid2procs = readin_aggregates("aggs_level%LEVEL_proc%PROC.out",numprocs,level)
 
     # collect all aggregates
-    for aggid,agg_nodes in aggid2nodes.iteritems():     
+    for aggid,agg_nodes in aggid2nodes.iteritems():
       # build an aggregate
       local_nodeidx2global_nodeidx = create_qconvex_input(agg_nodes, global_nodecoords)
       lfaces,lfaceslength,polygon = run_qconvex_with_input("local_agg.inp",local_nodeidx2global_nodeidx)
@@ -472,14 +472,14 @@ def main(argv=None):
     # create vtk file
     create_vtk_file("output%LEVEL.vtk",level,global_nodecoords, agg_faces, agg_facelengths, dimension, agg_polygons)
     add_nodeinformation_to_vtk("output%LEVEL.vtk",level,global_nodecoords,aggid2nodes,aggid2procs)
-  
+
     write_nodes_file("nodes"+str(level+1)+".txt",aggid2nodes,global_nodecoords,dimension)
-    
+
     print "VTK Export for level " + str(level) + " finished...\r\n"
-    
+
     level = level + 1
-    
+
   #print check_files_for_next_level(level+1,numprocs,"aggs_level%LEVEL_proc%PROC.out")
-  
+
 if __name__ == "__main__":
   sys.exit(main())

@@ -73,6 +73,13 @@ C     Side set info
 
       CHARACTER*(*) QAINFO(6)
 
+C ... Some codes are embedding carriage returns in title.
+C     Strip them out...
+      LTITLE = lenstr(title)
+      do i=1, ltitle
+        if (ichar(title(i:i)) .eq. 10) title(i:i) = ' '
+      end do
+      
       WRITE (NTXT, 10030) '! Database Title', (QAINFO(I),I=1,3)
       WRITE (NTXT, '(A)') TITLE
 

@@ -87,7 +87,7 @@ public:
   BrusselatorProblemInterface(
 		     const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		     int N, double a, double b, double d1, double d2,
-		     ofstream& file);
+		     std::ofstream& file);
 
   //! Destructor
   ~BrusselatorProblemInterface() {};
@@ -143,7 +143,7 @@ private:
   int n;
 
   //! Stores reference to output file stream
-  ofstream& outputFile;
+  std::ofstream& outputFile;
 
 };
 

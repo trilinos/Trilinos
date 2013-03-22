@@ -496,6 +496,12 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
       // the above status test to control things.
       tmpPL->set("Convergence Tolerance", 1.0);
     }
+    // maximum iterations
+    if (nonnull(solveCriteria->extraParameters)) {
+      if (Teuchos::isParameterType<int>(*solveCriteria->extraParameters,"Maximum Iterations")) {
+        tmpPL->set("Maximum Iterations", Teuchos::get<int>(*solveCriteria->extraParameters,"Maximum Iterations"));
+      }
+    }
   }
   else {
     // No solveCriteria was even passed in!
@@ -598,6 +604,9 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     solveStatus.extraParameters = parameterList ();
   }
   solveStatus.extraParameters->set ("Belos/Iteration Count", 
+				    iterativeSolver_->getNumIters());\
+  // package independent version of the same
+  solveStatus.extraParameters->set ("Iteration Count", 
 				    iterativeSolver_->getNumIters());\
   // NOTE (mfh 13 Dec 2011) Though the most commonly used Belos
   // solvers do implement achievedTol(), some Belos solvers currently

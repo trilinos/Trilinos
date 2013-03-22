@@ -43,17 +43,17 @@
 #include "Panzer_STK_Utilities.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 
 #include <stk_mesh/base/FieldData.hpp>
 
 namespace panzer_stk {
 
-static void gather_in_block(const std::string & blockId, const panzer::DOFManager<int,int> & dofMngr,
+static void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,int> & dofMngr,
                             const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
                             std::map<std::string,Intrepid::FieldContainer<double> > & fc);
 
-void scatter_to_vector(const std::string & blockId, const panzer::DOFManager<int,int> & dofMngr,
+void scatter_to_vector(const std::string & blockId, const panzer::DOFManagerFEI<int,int> & dofMngr,
                        const std::map<std::string,Intrepid::FieldContainer<double> > & fc,
                        const std::vector<std::size_t> & localCellIds,
                        Epetra_Vector & x);
@@ -84,12 +84,12 @@ void write_cell_data(panzer_stk::STK_Interface & mesh,const std::vector<double> 
    }
 }
 
-void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix)
+void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix)
 {
    write_solution_data(dofMngr,mesh,*x(0),prefix,postfix);
 }
 
-void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix)
+void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix)
 {
    typedef Intrepid::FieldContainer<double> FieldContainer;
 
@@ -115,12 +115,12 @@ void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk:
    }
 }
 
-void read_solution_data(const panzer::DOFManager<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_MultiVector & x)
+void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_MultiVector & x)
 {
    read_solution_data(dofMngr,mesh,*x(0));
 }
 
-void read_solution_data(const panzer::DOFManager<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_Vector & x)
+void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_Vector & x)
 {
    typedef Intrepid::FieldContainer<double> FieldContainer;
 
@@ -149,22 +149,19 @@ void read_solution_data(const panzer::DOFManager<int,int> & dofMngr,const panzer
    }
 }
 
-void gather_in_block(const std::string & blockId, const panzer::DOFManager<int,int> & dofMngr,
+void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,int> & dofMngr,
                      const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
                      std::map<std::string,Intrepid::FieldContainer<double> > & fc)
 {
-   panzer::DOFManager<int,int>::const_field_iterator fieldIter;
+   const std::vector<int> & fieldNums = dofMngr.getBlockFieldNumbers(blockId);
 
-   for(fieldIter=dofMngr.beginFieldIter();fieldIter!=dofMngr.endFieldIter();++fieldIter) {
-      int fieldNum = fieldIter->first;
-      std::string fieldStr = fieldIter->second;
+   for(std::size_t fieldIndex=0;fieldIndex<fieldNums.size();fieldIndex++) {
+      int fieldNum = fieldNums[fieldIndex];
+      std::string fieldStr = dofMngr.getFieldString(fieldNum);
 
       // grab the field
-      Teuchos::RCP<const panzer::FieldPattern> fp = dofMngr.getFieldPattern(blockId,fieldNum);
-      if(fp==Teuchos::null) // this field is not in this block
-         continue;
-
-      fc[fieldStr].resize(localCellIds.size(),fp->numberIds());
+      const std::vector<int> & elmtOffset = dofMngr.getGIDFieldOffsets(blockId,fieldNum);
+      fc[fieldStr].resize(localCellIds.size(),elmtOffset.size());
 
       // gather operation for each cell in workset
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
@@ -178,8 +175,6 @@ void gather_in_block(const std::string & blockId, const panzer::DOFManager<int,i
          for(std::size_t i=0;i<GIDs.size();i++)
             LIDs[i] = x.Map().LID(GIDs[i]);
    
-         const std::vector<int> & elmtOffset = dofMngr.getGIDFieldOffsets(blockId,fieldNum);
-   
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
@@ -190,7 +185,7 @@ void gather_in_block(const std::string & blockId, const panzer::DOFManager<int,i
    }
 }
 
-void scatter_to_vector(const std::string & blockId, const panzer::DOFManager<int,int> & dofMngr,
+void scatter_to_vector(const std::string & blockId, const panzer::DOFManagerFEI<int,int> & dofMngr,
                        const std::map<std::string,Intrepid::FieldContainer<double> > & fc,
                        const std::vector<std::size_t> & localCellIds,
                        Epetra_Vector & x)

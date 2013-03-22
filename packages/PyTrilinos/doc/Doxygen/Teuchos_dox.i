@@ -1001,7 +1001,7 @@ validParamList:  [in] This is the list that the parameters and sublist
 in *this are compared against.
 
 depth:  [in] Determines the number of levels of depth that the
-validation will recurse into. A value of dpeth=0 means that only the
+validation will recurse into. A value of depth=0 means that only the
 top level parameters and sublists will be checked. Default: depth =
 large number.
 
@@ -1047,7 +1047,7 @@ validParamList:  [in] This is the list that the parameters and sublist
 in *this are compared against.
 
 depth:  [in] Determines the number of levels of depth that the
-validation will recurse into. A value of dpeth=0 means that only the
+validation will recurse into. A value of depth=0 means that only the
 top level parameters and sublists will be checked. Default: depth =
 large number.
 

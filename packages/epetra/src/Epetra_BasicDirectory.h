@@ -44,6 +44,7 @@
 #ifndef EPETRA_BASICDIRECTORY_H
 #define EPETRA_BASICDIRECTORY_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_Directory.h"
 #include "Epetra_Map.h"
@@ -193,8 +194,12 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   int * SizeList_;
   bool SizeIsConst_;
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int * AllMinGIDs_int_;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   long long * AllMinGIDs_LL_;
+#endif
   
   template<typename int_type>
   const int_type * AllMinGIDs() const;
@@ -210,14 +215,18 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 
 };
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 template<> inline const int * Epetra_BasicDirectory::AllMinGIDs() const
 {
   return AllMinGIDs_int_;
 }
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 template<> inline const long long * Epetra_BasicDirectory::AllMinGIDs() const
 {
   return AllMinGIDs_LL_;
 }
+#endif
 
 #endif /* EPETRA_BASICDIRECTORY_H */

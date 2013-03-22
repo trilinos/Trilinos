@@ -126,6 +126,7 @@ class BlockGmresSolMgr : public SolverManager<ScalarType,MV,OP> {
     
 private:
   typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraitsExt<ScalarType,MV> MVText;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -583,14 +584,17 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   if (params->isParameter("Timer Label")) {
     std::string tempLabel = params->get("Timer Label", label_default_);
 
-    // Update parameter in our list and solver timer
+    // Update parameter in our list, solver timer, and orthogonalization label
     if (tempLabel != label_) {
       label_ = tempLabel;
       params_->set("Timer Label", label_);
       std::string solveLabel = label_ + ": BlockGmresSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+      timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
+      if (ortho_ != Teuchos::null) {
+        ortho_->setLabel( label_ );
+      }
     }
   }
 
@@ -807,7 +811,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   if (timerSolve_ == Teuchos::null) {
     std::string solveLabel = label_ + ": BlockGmresSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+    timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
   }
 
@@ -957,8 +961,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::ParameterList plist;
   plist.set("Block Size",blockSize_);
 
-  int dim = MVT::GetVecLength( *(problem_->getRHS()) );  
-  if (blockSize_*numBlocks_ > dim) {
+  ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );  
+  if (blockSize_*static_cast<ptrdiff_t>(numBlocks_) > dim) {
     int tmpNumBlocks = 0;
     if (blockSize_ == 1)
       tmpNumBlocks = dim / blockSize_;  // Allow for a good breakdown.

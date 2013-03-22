@@ -41,142 +41,157 @@
 // @HEADER
 
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_IntegrationRule.hpp"
+#include "Panzer_Dimension.hpp"
+#include "Panzer_CellData.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
-
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
+#include <sstream>
 
 panzer::PureBasis::
-PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const shards::CellTopology> & cellTopo) :
-  basis_name(basis_type),
-  field_basis_name("Basis: " + basis_type),
-  field_basis_name_D1("Grad Basis: " + basis_type),
-  field_basis_name_D2("D2 Basis: " + basis_type)
+PureBasis(const std::string & basis_type,
+	  const int basis_order,
+	  const int num_cells,
+	  const Teuchos::RCP<const shards::CellTopology> & cell_topology) :
+  topology_(cell_topology),
+  num_cells_(num_cells)
 {
-  dimension = cellTopo->getDimension();
-
-  topology = cellTopo;
-  intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, dimension, cellTopo);
-
-  cardinality = intrepid_basis->getCardinality();
-  num_cells = numCells;
-
-  // is this a HGRAD, HCURL, etc basis
-  initializeIntrospection(basis_type);
-
-  initializeDataLayouts();
+  initialize(basis_type,basis_order);
 }
 
 panzer::PureBasis::
-PureBasis(const std::string & basis_type,const CellData & cell_data) :
-  basis_name(basis_type),
-  field_basis_name("Basis: " + basis_type),
-  field_basis_name_D1("Grad Basis: " + basis_type),
-  field_basis_name_D2("D2 Basis: " + basis_type)
+PureBasis(const std::string & basis_type,const int basis_order,const CellData & cell_data) :
+  topology_(cell_data.getCellTopology()),
+  num_cells_(cell_data.numCells())
 {
-  dimension = cell_data.baseCellDimension();
-
-  topology = cell_data.getCellTopology();
-  intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, dimension, cell_data.getCellTopology());
-
-  cardinality = intrepid_basis->getCardinality();
-  num_cells = cell_data.numCells();
-
-  // is this a HGRAD, HCURL, etc basis
-  initializeIntrospection(basis_type);
-
-  initializeDataLayouts();
+  initialize(basis_type,basis_order);
 }
 
-int panzer::PureBasis::getCardinality() const
+void panzer::PureBasis::initialize(const std::string & in_basis_type,const int in_basis_order)
 {
-  return cardinality;
-}
+  // Support for deprecated basis descriptions
+  std::string basis_type = in_basis_type;
+  int basis_order = in_basis_order;
 
-int panzer::PureBasis::getNumCells() const
-{
-  return num_cells;
-}
+  if (basis_type=="Q1" || basis_type=="T1") {
+    basis_type = "HGrad";
+    basis_order = 1;
+  }
+  else if (basis_type == "Q2" || basis_type=="T2") {
+    basis_type = "HGrad";
+    basis_order = 2;
+  }
+  else if (basis_type == "TEdge1" || basis_type=="QEdge1") {
+    basis_type = "HCurl";
+    basis_order = 1;
+  }
+  // End deprecated basis support
 
-int panzer::PureBasis::getDimension() const
-{
-  return dimension;
-}
+  intrepid_basis_ = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, basis_order, topology_);
 
-std::string panzer::PureBasis::name() const
-{
-  return basis_name;
-}
+  basis_type_ = basis_type;
 
-std::string panzer::PureBasis::fieldName() const
-{
-  return field_basis_name;
-}
+  std::ostringstream os;
+  os << basis_type_ << ":" << basis_order;
+  basis_name_ = os.str();
 
-std::string panzer::PureBasis::fieldNameD1() const
-{
-  return field_basis_name_D1;
-}    
- 
-std::string panzer::PureBasis::fieldNameD2() const
-{
-  return field_basis_name_D2;
-}    
+  field_basis_name_ = "Basis: " + basis_name_;
+  field_basis_name_D1_ = "Grad Basis: " + basis_name_;
+  field_basis_name_D2_ = "D2 Basis: " + basis_name_;
 
-Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > 
-panzer::PureBasis::getIntrepidBasis() const
-{
-   return intrepid_basis;
-}
-
-void panzer::PureBasis::initializeIntrospection(const std::string & name)
-{
-   if(  name=="Q1" || name=="Q2"
-     || name=="T1" || name=="T2")
-      elementSpace = HGRAD;
-   else if(name=="TEdge1")
-      elementSpace = HCURL;
-   else if(name=="QEdge1")
-      elementSpace = HCURL;
-   else { TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-                                     "PureBasis::initializeIntrospection - Invalid basis name \"" 
-                                     << name << "\""); }
-
+  if(  basis_type_ == "HGrad")
+    element_space_ = HGRAD;
+  else if(basis_type_=="HCurl")
+    element_space_ = HCURL;
+  else if(basis_type_=="HDiv")
+    element_space_ = HDIV;
+  else { TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+				    "PureBasis::initializeIntrospection - Invalid basis name \"" 
+				    << basis_type_ << "\""); }
+  
   switch(getElementSpace()) {
   case HGRAD:
-     basisRank = 0;
+     basis_rank_ = 0;
      break;
   case HCURL:
-     basisRank = 1;
+     basis_rank_ = 1;
      break;
   case HDIV:
-     basisRank = 1;
+     basis_rank_ = 1;
      break;
   default:
      TEUCHOS_ASSERT(false);
      break;
   };
 
-}
-
-void panzer::PureBasis::initializeDataLayouts()
-{
   using Teuchos::rcp;
   using PHX::MDALayout;
 
-  functional = rcp(new MDALayout<Cell,BASIS>(num_cells, cardinality));
+  cell_data = rcp(new MDALayout<Cell>(numCells()));
 
-  functional_grad = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
-						      cardinality,
-						      dimension));
+  functional = rcp(new MDALayout<Cell,BASIS>(numCells(), cardinality()));
 
-  coordinates = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
-		   			          cardinality,
-						  dimension));
+  functional_grad = rcp(new MDALayout<Cell,BASIS,Dim>(numCells(),
+						      cardinality(),
+						      dimension()));
 
-  functional_D2 = rcp(new MDALayout<Cell,BASIS,Dim,Dim>(num_cells,
-							cardinality,
-							dimension,
-							dimension));
+  coordinates = rcp(new MDALayout<Cell,BASIS,Dim>(numCells(),
+		   			          cardinality(),
+						  dimension()));
+
+  functional_D2 = rcp(new MDALayout<Cell,BASIS,Dim,Dim>(numCells(),
+							cardinality(),
+							dimension(),
+							dimension()));
+}
+
+int panzer::PureBasis::cardinality() const
+{
+  return intrepid_basis_->getCardinality();
+}
+
+int panzer::PureBasis::numCells() const
+{
+  return num_cells_;
+}
+
+int panzer::PureBasis::dimension() const
+{
+  return topology_->getDimension();
+}
+
+std::string panzer::PureBasis::type() const
+{
+  return basis_type_;
+}
+
+int panzer::PureBasis::order() const
+{
+  return intrepid_basis_->getDegree();
+}
+
+std::string panzer::PureBasis::name() const
+{
+  return basis_name_;
+}
+
+std::string panzer::PureBasis::fieldName() const
+{
+  return field_basis_name_;
+}
+
+std::string panzer::PureBasis::fieldNameD1() const
+{
+  return field_basis_name_D1_;
+}    
+ 
+std::string panzer::PureBasis::fieldNameD2() const
+{
+  return field_basis_name_D2_;
+}    
+
+Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > 
+panzer::PureBasis::getIntrepidBasis() const
+{
+   return intrepid_basis_;
 }

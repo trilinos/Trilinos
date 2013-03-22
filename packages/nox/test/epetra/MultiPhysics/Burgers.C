@@ -59,7 +59,7 @@
 #include "Burgers.H"
 
 // Constructor - creates the Epetra objects (maps and vectors) 
-Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
+Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, std::string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xFactor(5.0),
   viscosity(0.100),
@@ -114,8 +114,8 @@ void Burgers::reset(const Epetra_Vector& x)
 // Empty Reset function
 void Burgers::reset()
 {
-  cout << "WARNING: reset called without passing any update vector !!"
-       << endl;
+  std::cout << "WARNING: reset called without passing any update vector !!"
+       << std::endl;
 }
 
 // Set initialSolution to desired initial condition
@@ -162,7 +162,7 @@ bool Burgers::evaluate(
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
-  vector<Epetra_Vector*> dep(numDep);
+  std::vector<Epetra_Vector*> dep(numDep);
   for( int i = 0; i < numDep; ++i)
     dep[i] = new Epetra_Vector(*OverlapMap);
   Epetra_Vector xvec(*OverlapMap);
@@ -179,7 +179,7 @@ bool Burgers::evaluate(
   {
     dep[i]->Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
                    *Importer, Insert);
-    //cout << "depSoln[" << i << "] :" << dep[i] << endl;
+    //cout << "depSoln[" << i << "] :" << dep[i] << std::endl;
   }
   xvec.Import(*xptr, *Importer, Insert);
   if( NOX::Epetra::Interface::Required::FD_Res == fillType )
@@ -200,7 +200,7 @@ bool Burgers::evaluate(
   double xx[2];
   double uu[2];
   double uuold[2];
-  vector<double*> ddep(numDep);
+  std::vector<double*> ddep(numDep);
   for( int i = 0; i<numDep; i++)
     ddep[i] = new double[2];
   Basis basis;
@@ -210,8 +210,8 @@ bool Burgers::evaluate(
   //
   map<string, int>::iterator id_ptr = nameToMyIndex.find("Temperature");
   if( id_ptr == nameToMyIndex.end() ) {
-    cout << "WARNING: Burgers (\"" << myName << "\") could not get "
-         << "vector for problem \"Temperature\" !!" << endl;
+    std::cout << "WARNING: Burgers (\"" << myName << "\") could not get "
+         << "vector for problem \"Temperature\" !!" << std::endl;
     throw "Burgers ERROR";
   }
   else

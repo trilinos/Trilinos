@@ -397,7 +397,7 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
     W_->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
     Teuchos::ArrayRCP<Scalar > w_ptr = W_->getDataNonConst(0);
 
-    for (size_t i = 0 ; i < NumLocalBlocks_ ; ++i) {    
+    for (LocalOrdinal i = 0 ; i < NumLocalBlocks_ ; ++i) {    
       for (size_t j = 0 ; j < Partitioner_->numRowsInPart(i) ; ++j) {
 	int LID = (*Partitioner_)(i,j);
 	w_ptr[LID]+= Teuchos::ScalarTraits<Scalar>::one();
@@ -439,7 +439,7 @@ void BlockRelaxation<MatrixType,ContainerType>::ExtractSubmatrices()
 
   Containers_.resize(NumLocalBlocks_);
 
-  for (size_t i = 0 ; i < NumLocalBlocks_ ; ++i) {
+  for (LocalOrdinal i = 0 ; i < NumLocalBlocks_ ; ++i) {
     size_t rows = Partitioner_->numRowsInPart(i);
     Containers_[i] = Teuchos::rcp( new ContainerType(rows) );
     TEUCHOS_TEST_FOR_EXCEPTION(Containers_[i]==Teuchos::null, std::runtime_error,
@@ -499,7 +499,7 @@ void BlockRelaxation<MatrixType,ContainerType>::DoJacobi(const Tpetra::MultiVect
 
   if (OverlapLevel_ == 0) {
     // Non-overlapping Jacobi
-    for (size_t i = 0 ; i < NumLocalBlocks_ ; i++) {     
+    for (LocalOrdinal i = 0 ; i < NumLocalBlocks_ ; i++) {     
       // may happen that a partition is empty
       if (Containers_[i]->getNumRows() == 0) continue;
       Containers_[i]->apply(X,Y,Teuchos::NO_TRANS,DampingFactor_,one);     
@@ -508,7 +508,7 @@ void BlockRelaxation<MatrixType,ContainerType>::DoJacobi(const Tpetra::MultiVect
   }
   else {
     // Overlapping Jacobi
-    for (size_t i = 0 ; i < NumLocalBlocks_ ; i++) {
+    for (LocalOrdinal i = 0 ; i < NumLocalBlocks_ ; i++) {
       // may happen that a partition is empty
       if (Containers_[i]->getNumRows() == 0) continue;
       Containers_[i]->weightedApply(X,Y,*W_,Teuchos::NO_TRANS,DampingFactor_,one);
@@ -566,7 +566,7 @@ void BlockRelaxation<MatrixType,ContainerType>::DoGaussSeidel(Tpetra::MultiVecto
   // data exchange is here, once per sweep
   if (IsParallel_)  Y2->doImport(Y,*Importer_,Tpetra::INSERT);
 
-  for (size_t i = 0 ; i < NumLocalBlocks_ ; i++) {
+  for (LocalOrdinal i = 0 ; i < NumLocalBlocks_ ; i++) {
     // may happen that a partition is empty
     if (Containers_[i]->getNumRows() == 0) continue;
     LocalOrdinal LID;
@@ -647,7 +647,7 @@ void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<
   if (IsParallel_)  Y2->doImport(Y,*Importer_,Tpetra::INSERT);
 
   // Forward Sweep
-  for(size_t i = 0 ; i < NumLocalBlocks_ ; i++) {
+  for(LocalOrdinal i = 0 ; i < NumLocalBlocks_ ; i++) {
     // may happen that a partition is empty
     if (Containers_[i]->getNumRows() == 0) continue;
     LocalOrdinal LID;
@@ -675,7 +675,7 @@ void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<
 
   // Reverse Sweep
   Xcopy = X;
-  for(size_t i = NumLocalBlocks_-1; i >=0 ; i--) {
+  for(LocalOrdinal i = NumLocalBlocks_-1; i >=0 ; i--) {
     // may happen that a partition is empty
     if (Containers_[i]->getNumRows() == 0) continue;
     LocalOrdinal LID;

@@ -282,7 +282,7 @@ protected:
   virtual void init();
 
   //! Print and error message and throw and error
-  virtual void invalid(const string& param, double value) const;
+  virtual void invalid(const std::string& param, double value) const;
 
   //! Prints the current iteration information.
   virtual void printUpdate();

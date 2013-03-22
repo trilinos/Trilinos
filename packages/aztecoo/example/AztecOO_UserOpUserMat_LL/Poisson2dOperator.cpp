@@ -77,7 +77,7 @@ Poisson2dOperator::Poisson2dOperator(int nx, int ny, const Epetra_Comm & comm)
 
   myny_ = chunkSize;
 
-  map_ = new Epetra_Map((long long)-1, nx*chunkSize, 0, comm_);
+  map_ = new Epetra_Map((long long)-1, nx*chunkSize, 0LL, comm_);
 
   if (numProc>1) {
     // Build import GID list to build import map and importer

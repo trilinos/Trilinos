@@ -60,10 +60,10 @@ TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)
 #
 # On Mac OS X Gnu compilers, add dynamic lookup for undefined symbols
 # to the pytrilinos library and PyTrilinos extension modules
-SET(EXTRA_LINK_ARGS "")
+SET(EXTRA_LINK_ARGS "${CMAKE_SHARED_LINKER_FLAGS}")
 IF(APPLE)
   IF(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    APPEND_SET(EXTRA_LINK_ARGS "-undefined dynamic_lookup")
+    SET(EXTRA_LINK_ARGS "${EXTRA_LINK_ARGS} -undefined dynamic_lookup")
   ENDIF()
 ENDIF(APPLE)
 
@@ -90,7 +90,7 @@ SET(HEADERS ${HEADERS}
 
 #
 # Core PyTrilinos headers and sources
-APPEND_SET(HEADERS
+LIST(APPEND HEADERS
   PyTrilinos_NumPyImporter.h
   PyTrilinos_PythonException.h
   PyTrilinos_Util.h
@@ -98,7 +98,7 @@ APPEND_SET(HEADERS
   numpy_include.h
   )
 
-APPEND_SET(SOURCES
+LIST(APPEND SOURCES
   PyTrilinos_NumPyImporter.cpp
   PyTrilinos_PythonException.cpp
   PyTrilinos_Util.cpp
@@ -109,11 +109,11 @@ APPEND_SET(SOURCES
 # PyTrilinos + Teuchos headers and sources
 IF(PyTrilinos_ENABLE_Teuchos)
 
-  APPEND_SET(HEADERS
+  LIST(APPEND HEADERS
     PyTrilinos_Teuchos_Util.h
     )
 
-  APPEND_SET(SOURCES
+  LIST(APPEND SOURCES
     PyTrilinos_Teuchos_Util.cpp
     )
 
@@ -123,7 +123,7 @@ ENDIF(PyTrilinos_ENABLE_Teuchos)
 # PyTrilinos + Epetra headers and sources
 IF(PyTrilinos_ENABLE_Epetra)
 
-  APPEND_SET(HEADERS
+  LIST(APPEND HEADERS
     Epetra_NumPyFEVector.h
     Epetra_NumPyIntSerialDenseMatrix.h
     Epetra_NumPyIntSerialDenseVector.h
@@ -136,7 +136,7 @@ IF(PyTrilinos_ENABLE_Epetra)
     PyTrilinos_Epetra_Util.h
     )
 
-  APPEND_SET(SOURCES
+  LIST(APPEND SOURCES
     Epetra_NumPyFEVector.cpp
     Epetra_NumPyIntSerialDenseMatrix.cpp
     Epetra_NumPyIntSerialDenseVector.cpp
@@ -155,11 +155,11 @@ ENDIF(PyTrilinos_ENABLE_Epetra)
 # PyTrilinos + EpetraExt headers and sources
 IF(PyTrilinos_ENABLE_EpetraExt)
 
-  APPEND_SET(HEADERS
+  LIST(APPEND HEADERS
     PyTrilinos_EpetraExt_Util.h
     )
 
-  APPEND_SET(SOURCES
+  LIST(APPEND SOURCES
     PyTrilinos_EpetraExt_Util.cpp
     )
 
@@ -169,7 +169,7 @@ ENDIF(PyTrilinos_ENABLE_EpetraExt)
 # PyTrilinos + ML headers and sources
 IF(PyTrilinos_ENABLE_ML)
 
-  APPEND_SET(HEADERS
+  LIST(APPEND HEADERS
     PyTrilinos_ML_Util.h
     )
 
@@ -182,13 +182,19 @@ ADD_CUSTOM_COMMAND(
   OUTPUT ${SWIG_RUNTIME}
   COMMAND ${SWIG_EXECUTABLE} -python -external-runtime
   )
-APPEND_SET(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_RUNTIME})
+LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_RUNTIME})
 
 #
 # Define the targets for the PyTrilinos library
 TRIBITS_ADD_LIBRARY(pytrilinos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  )
+
+# Link against the Python library to prevent undefined
+# symbols for shared builds with -Wl,--no-undefined.
+TARGET_LINK_LIBRARIES(pytrilinos
+  ${PYTHON_LIBRARIES}
   )
 
 SET_TARGET_PROPERTIES(pytrilinos
@@ -201,8 +207,8 @@ SET(CMAKE_SWIG_FLAGS "")
 GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
   ${CMAKE_CURRENT_SOURCE_DIR}/../doc/Doxygen ABSOLUTE
   )
-APPEND_SET(CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
-APPEND_SET(CMAKE_SWIG_FLAGS -noproxydel)
+LIST(APPEND CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
+LIST(APPEND CMAKE_SWIG_FLAGS -noproxydel)
 
 #
 # Determine the install directory
@@ -221,7 +227,13 @@ MESSAGE(STATUS "PyTrilinos installation path: ${PyTrilinos_INSTALL_DIR}")
 # directory.  This needs to be done before the following loop over the
 # PyTrilinos modules, because of the call to GET_DIRECTORY_PROPERTY().
 ADD_SUBDIRECTORY(PyTrilinos)
-if (HAVE_STK AND TPL_ENABLE_MPI)
+
+#
+# Add the STK subdirectory
+# The STK subpackages stk_io, stk_percept, stk_adapt are needed, and since
+# those are activated in STK only under certain conditions, this conditional
+# becomes somewhat lengthy.
+if (HAVE_STK AND TPL_ENABLE_MPI AND STK_ENABLE_Intrepid AND STK_ENABLE_SEACASIoss AND STK_ENABLE_ThreadPool)
     ADD_SUBDIRECTORY(stk)
 endif ()
 #
@@ -258,20 +270,20 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   # to byte-compile and the installation rules requires a little bit
   # of logic.
   #
-  # PyTrilinos.NOX.Epetra
-  IF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
+  # PyTrilinos.NOX.NestedEpetra
+  IF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/NestedEpetra")
     SET(TRILINOS_LIBS ${NOXEPETRA_LIBRARIES})
     ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
-      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/Epetra/${MODULE_NAME}.py')"
-      COMMENT "Byte compiling NOX/Epetra/${MODULE_NAME}.py"
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling NOX/NestedEpetra/${MODULE_NAME}.py"
       VERBATIM)
     INSTALL(FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.py
-      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc
-      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/NestedEpetra)
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
-      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
-    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc")
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/NestedEpetra)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.pyc")
   #
   # PyTrilinos.NOX
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX")
@@ -333,7 +345,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
       DESTINATION ${PyTrilinos_INSTALL_DIR})
     LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/${MODULE}.pyc")
   #
-  ENDIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
+  ENDIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/NestedEpetra")
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} ${TRILINOS_LIBS})
   SET_TARGET_PROPERTIES(${PyTrilinos_TARGET_NAME} PROPERTIES
     LINK_FLAGS "${EXTRA_LINK_ARGS}"

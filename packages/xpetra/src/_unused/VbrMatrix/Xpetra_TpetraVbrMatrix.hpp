@@ -58,15 +58,15 @@
 
 namespace Xpetra {
 
-  template <class Scalar, 
-            class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+  template <class Scalar,
+            class LocalOrdinal  = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node          = Kokkos::DefaultNode::DefaultNodeType,
             class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
-  class TpetraVbrMatrix : 
+  class TpetraVbrMatrix :
     public VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalOrdinal> {
   public:
-  
+
     //! @name Constructor/Destructor Methods
     //@{
 
@@ -77,7 +77,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Operator Methods
+    //! @name Matrix Methods
     //@{
 
     //! Returns the Map associated with the domain of this operator.
@@ -303,7 +303,7 @@ namespace Xpetra {
     */
     void getLocalBlockEntryView(LocalOrdinal localBlockRow,
                                        LocalOrdinal localBlockCol,
-                                       LocalOrdinal& numPtRows, 
+                                       LocalOrdinal& numPtRows,
                                        LocalOrdinal& numPtCols,
                                        Teuchos::ArrayRCP<const Scalar>& blockEntry) const {  mtx_->getLocalBlockEntryView(localBlockRow, localBlockCol, numPtRows, numPtCols, blockEntry); }
 
@@ -344,11 +344,11 @@ namespace Xpetra {
     RCP< const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_VbrMatrix() const {  return mtx_; }
 
   private:
-  
+
     const RCP< const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
-  
+
   };//class VbrMatrix
-  
+
 }//namespace Xpetra
 
 #define XPETRA_TPETRAVBRMATRIX_SHORT

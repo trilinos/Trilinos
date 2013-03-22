@@ -47,15 +47,43 @@
 
 namespace Kokkos {
 
-  TBBNode::TBBNode(Teuchos::ParameterList &pl) : alreadyInit_(false), tsi_(tbb::task_scheduler_init::deferred) {
-    int numThreads = pl.get<int>("Num Threads",-1);
-    int verbose = pl.get<int>("Verbose",0);
+  TBBNode::TBBNode () :
+    alreadyInit_ (false), 
+    tsi_ (tbb::task_scheduler_init::deferred) 
+  {
+    ParameterList params = getDefaultParameters();
+    int numThreads = params.get<int> ("Num Threads");
+    int verbose = params.get<int> ("Verbose");
     if (numThreads >= 0) {
       if (verbose) {
         std::cout << "TBBNode initializing with numThreads == " << numThreads << std::endl;
       }
       init(numThreads);
     }
+  }
+
+
+  TBBNode::TBBNode (Teuchos::ParameterList &pl) : 
+    alreadyInit_ (false), 
+    tsi_ (tbb::task_scheduler_init::deferred) 
+  {
+    ParameterList params = getDefaultParameters();
+    params.setParameters (pl);
+    int numThreads = params.get<int>("Num Threads");
+    int verbose = params.get<int>("Verbose");
+    if (numThreads >= 0) {
+      if (verbose) {
+        std::cout << "TBBNode initializing with numThreads == " << numThreads << std::endl;
+      }
+      init(numThreads);
+    }
+  }
+
+  ParameterList TBBNode::getDefaultParameters() {
+    ParameterList params;
+    params.set("Verbose"    , 0);
+    params.set("Num Threads",-1);
+    return params;
   }
 
   void TBBNode::init(int numThreads) {

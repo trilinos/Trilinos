@@ -10,6 +10,7 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   10/04/2012 - Some minor code cleanup and the memory bugfix.
    04/26/2011 - Bug fixed for error tolerance for ISINT checks. Removing gratuitous prints.
    07/31/2010 - Code cleanup, adding ability to get out AztecOO iteration counts.
    07/22/2010 - Adding ability to handle nested parameter lists via cell arrays
@@ -81,7 +82,7 @@ extern void _main();
 #define MLMEX_ERROR -1
 
 /* Mode Info */
-typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP, MODE_STATUS, MODE_AGGREGATE} MODE_TYPE;
+typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP, MODE_STATUS, MODE_AGGREGATE, MODE_ERROR} MODE_TYPE;
 
 /* MLMEX Teuchos Parameters*/
 #define MLMEX_INTERFACE "mlmex: interface"
@@ -466,16 +467,11 @@ int ml_epetra_data_pack::status(){
 */
 int ml_epetra_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
   int i,j;
-  int *rnz;
-  
-  /* Nonzero counts for Epetra */
-  rnz=new int[N];
-  for(i=0;i<N;i++) rnz[i]=rowind[i+1]-rowind[i];  
-  
+
   /* Epetra Setup */
   Comm= new Epetra_SerialComm;
   Map=new Epetra_Map(N,0,*Comm);
-  A=new Epetra_CrsMatrix(Copy,*Map,rnz);
+  A=new Epetra_CrsMatrix(Copy,*Map,0);
   
   /* Do the matrix assembly */
   for(i=0;i<N;i++)
@@ -492,9 +488,6 @@ int ml_epetra_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
 
   /* Pull Operator Complexity */
   operator_complexity = Prec->GetML_Aggregate()->operator_complexity / Prec->GetML_Aggregate()->fine_complexity;
-
-  /* Cleanup */
-  delete rnz;
   
   return IS_TRUE;
 }/*end setup*/
@@ -528,7 +521,7 @@ int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, dou
 #ifdef VERBOSE_OUTPUT
   tmp.print(cout,0,true);
 #endif
-  
+
   /* Define Problem / Solver */
   Epetra_LinearProblem Problem(A, &LHS, &RHS);
   AztecOO solver(Problem);
@@ -717,7 +710,7 @@ void mlmex_aggregate(int N,int *colptr, int* rowind, double*vals, Teuchos::Param
 */
 
 MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
-  MODE_TYPE rv;
+  MODE_TYPE rv=MODE_ERROR;
   double *modes;
   /* Check for mode */
   if(nrhs==0)
@@ -765,7 +758,6 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
    prhs    - The problem inputs [I]
    Return value: Teuchos list containing all parameters passed in by the user.
 */
-void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArray *prhs);
 void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArray *prhs){
   mxClassID cid;
   int i,M,N, *opt_int;
@@ -847,7 +839,7 @@ void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArr
   case mxUNKNOWN_CLASS:
   case mxSTRUCT_CLASS:      
   default:
-    mexPrintf("Error parsing input option #%d: %s [type=%d]\n",i,option_name,cid);
+    mexPrintf("Error parsing input option: %s [type=%d]\n",option_name,cid);
     mexErrMsgTxt("Error: An input option is invalid!\n");      
   };        
 }

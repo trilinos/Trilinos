@@ -101,6 +101,7 @@ int write_nemesis(std::string &nemI_out_file,
   int mode3 = EX_CLOBBER;
   int mode4 = mode3|EX_NETCDF4|EX_NOCLASSIC|problem->int64db|problem->int64api;
 
+  ex_opts(EX_DEFAULT); // Eliminate misleading error if the first ex_create fails, but the second succeeds.
   if((exoid=ex_create(nemI_out_file.c_str(), mode4, &cpu_ws, &io_ws)) < 0) {
     /* If int64api or int64db non-zero, then netcdf-4 format is required, so
        fail now...

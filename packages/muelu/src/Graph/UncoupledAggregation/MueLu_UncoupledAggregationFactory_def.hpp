@@ -54,103 +54,188 @@
 #define MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_
 
 #include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_UncoupledAggregationFactory_decl.hpp"
 
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
+#include "MueLu_SmallAggregationAlgorithm.hpp"
 #include "MueLu_UncoupledAggregationAlgorithm.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
+#include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
 
 #include "MueLu_Level.hpp"
-#include "MueLu_Graph.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UncoupledAggregationFactory(RCP<const FactoryBase> graphFact, bool bMaxLinkAggregation, bool bEmergencyAggregation)
-    : graphFact_(graphFact), bDefinitionPhase_(true)
+template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UncoupledAggregationFactory()
+: bDefinitionPhase_(true)
   {
-    algos_.push_back(Teuchos::rcp(new MueLu::OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
-    algos_.push_back(Teuchos::rcp(new MueLu::UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
-    if (bMaxLinkAggregation)   algos_.push_back(Teuchos::rcp(new MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
-    if (bEmergencyAggregation) algos_.push_back(Teuchos::rcp(new MueLu::EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("Graph", graphFact_.get(), this); // we should request data...
+template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    if (currentLevel.GetLevelID() == 0) currentLevel.DeclareInput("coarseAggStat", MueLu::NoFactory::get(), this);
-    else                                currentLevel.DeclareInput("coarseAggStat", this, this);
+  // aggregate parameters (used in aggregation algorithms)
+  // TODO introduce local member function for each aggregation algorithm
+  //      such that each aggregation algorithm can define its own parameters
+  validParamList->set<AggOptions::Ordering>("Ordering", AggOptions::NATURAL, "Ordering strategy (NATURAL|GRAPH|RANDOM)");
+  validParamList->set<LocalOrdinal> ("MaxNeighAlreadySelected", 0, "Number of maximum neighbour nodes that are already aggregated already. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.");
+  validParamList->set<LocalOrdinal> ("MinNodesPerAggregate", 2, "Minimum number of nodes for aggregate");
 
-  }
+  validParamList->set<bool> ("UseOnePtAggregationAlgorithm", true, "Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = on)");
+  validParamList->set<bool> ("UseSmallAggregatesAggregationAlgorithm", false, "Turn on/off build process for small aggregates in user defined regions. (default = off)");
+  validParamList->set<bool> ("UseUncoupledAggregationAlgorithm", true, "Turn on/off uncoupled aggregation process. Do not turn off: this is the main aggregation routine within the uncoupled aggregation process. (default = on)");
+  validParamList->set<bool> ("UseMaxLinkAggregationAlgorithm", true, "Turn on/off MaxLink aggregation algorithm. Adds non-aggregated nodes to the next already aggregated neighbour node with the most links. (default = on)");
+  validParamList->set<bool> ("UseIsolatedNodeAggregationAlgorithm", true, "Turn on/off IsolatedNode aggregation algorithm. Ignores isolated nodes during aggregation process. (default = on)");
+  validParamList->set<bool> ("UseEmergencyAggregationAlgorithm", true, "Turn on/off Emergency aggregation algorithm. Puts all left over nodes into aggregates (including very small aggregates or one-point aggregates). (default = on)");
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & alg) {
-    TEUCHOS_TEST_FOR_EXCEPTION(bDefinitionPhase_==false,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: cannot call Append after Build. Error.");
-    algos_.push_back(alg);
-  }
+  // input parameters
+  validParamList->set< RCP<const FactoryBase> >("Graph", Teuchos::null, "Generating factory of the graph");
+  validParamList->set< RCP<const FactoryBase> >("DofsPerNode", Teuchos::null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
+  validParamList->set< std::string >           ("OnePt aggregate map name", "", "Name of input map for single node aggregates. (default='')");
+  validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory", Teuchos::null, "Generating factory of (DOF) map for single node aggregates.");
+  validParamList->set< std::string >           ("SmallAgg aggregate map name", "", "Name of input map for small aggregates. (default='')");
+  validParamList->set< RCP<const FactoryBase> >("SmallAgg aggregate map factory", Teuchos::null, "Generating factory of (DOF) map for small aggregates.");
+
+  return validParamList;
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  Input(currentLevel, "Graph");
+  Input(currentLevel, "DofsPerNode");
+
+  const ParameterList & pL = GetParameterList();
+  std::string mapOnePtName                     = pL.get<std::string> ("OnePt aggregate map name");
+  Teuchos::RCP<const FactoryBase> mapOnePtFact = GetFactory          ("OnePt aggregate map factory");
+  std::string mapSmallAggName                     = pL.get<std::string> ("SmallAgg aggregate map name");
+  Teuchos::RCP<const FactoryBase> mapSmallAggFact = GetFactory          ("SmallAgg aggregate map factory");
+
+  if(mapOnePtName.length() > 0)
+    currentLevel.DeclareInput(mapOnePtName,mapOnePtFact.get());
+  if(mapSmallAggName.length() > 0)
+    currentLevel.DeclareInput(mapSmallAggName,mapSmallAggFact.get());
+
+}
+
+/*template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & alg) {
+  TEUCHOS_TEST_FOR_EXCEPTION(bDefinitionPhase_==false,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: cannot call Append after Build. Error.");
+  algos_.push_back(alg);
+}*/
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
+{
+  FactoryMonitor m(*this, "Build", currentLevel);
+
+  const ParameterList & pL = GetParameterList();
+  std::string mapOnePtName    = pL.get<std::string> ("OnePt aggregate map name");
+  std::string mapSmallAggName = pL.get<std::string> ("SmallAgg aggregate map name");
+  Teuchos::RCP<const FactoryBase> mapOnePtFact    = GetFactory  ("OnePt aggregate map factory");
+  Teuchos::RCP<const FactoryBase> mapSmallAggFact = GetFactory ("SmallAgg aggregate map factory");
+
+  bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
+
+  bool bUseOnePtAggregationAlgorithm        = pL.get<bool> ("UseOnePtAggregationAlgorithm");
+  bool bUseSmallAggregationAlgorithm        = pL.get<bool> ("UseSmallAggregatesAggregationAlgorithm");
+  bool bUseUncoupledAggregationAglorithm    = pL.get<bool> ("UseUncoupledAggregationAlgorithm");
+  bool bUseMaxLinkAggregationAlgorithm      = pL.get<bool> ("UseMaxLinkAggregationAlgorithm");
+  bool bUseIsolatedNodeAggregationAglorithm = pL.get<bool> ("UseIsolatedNodeAggregationAlgorithm");
+  bool bUseEmergencyAggregationAlgorithm    = pL.get<bool> ("UseEmergencyAggregationAlgorithm");
+
+  // define aggregation algorithms
+  Teuchos::RCP<const FactoryBase> graphFact = GetFactory("Graph");
+  algos_.clear();  // TODO can we keep different aggregation algorithms over more Build calls?
+  if (bUseOnePtAggregationAlgorithm)        algos_.push_back(Teuchos::rcp(new MueLu::OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUseSmallAggregationAlgorithm)        algos_.push_back(Teuchos::rcp(new MueLu::SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUseUncoupledAggregationAglorithm)    algos_.push_back(Teuchos::rcp(new MueLu::UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUseMaxLinkAggregationAlgorithm)      algos_.push_back(Teuchos::rcp(new MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUseIsolatedNodeAggregationAglorithm) algos_.push_back(Teuchos::rcp(new MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUseEmergencyAggregationAlgorithm)    algos_.push_back(Teuchos::rcp(new MueLu::EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+
+
+  RCP<Aggregates> aggregates;
   {
-    FactoryMonitor m(*this, "Aggregation (Uncoupled)", currentLevel);
+    // Level Get
+    RCP<const GraphBase> graph   = Get< RCP<GraphBase> >(currentLevel, "Graph");
+    LocalOrdinal nDofsPerNode = Get<LocalOrdinal>(currentLevel, "DofsPerNode");
 
-    bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
-
-    RCP<Aggregates> aggregates;
-    {
-      // Level Get
-      RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_.get());
-
-      // Build
-      aggregates = rcp(new Aggregates(*graph));
-      aggregates->setObjectLabel("UC");
-
-
-      const LocalOrdinal nRows = graph->GetNodeNumVertices();
-
-      Teuchos::ArrayRCP<unsigned int> aggStat;
-      if(currentLevel.GetLevelID() == 0 && currentLevel.IsAvailable("coarseAggStat",MueLu::NoFactory::get())) {
-        aggStat = currentLevel.Get<Teuchos::ArrayRCP<unsigned int> >("coarseAggStat",MueLu::NoFactory::get());
-      } else if (currentLevel.IsAvailable("coarseAggStat", this)) {
-        aggStat = currentLevel.Get<Teuchos::ArrayRCP<unsigned int> >("coarseAggStat",this);
-      } else {
-        if(nRows > 0) aggStat = Teuchos::arcp<unsigned int>(nRows);
-        for(LocalOrdinal i=0; i<nRows; ++i) {
-          aggStat[i] = NodeStats::READY;
-        }
-      }
-
-      Teuchos::ArrayRCP<unsigned int> coarse_aggStat = Teuchos::arcp<unsigned int>(nRows);
-      for(LocalOrdinal i=0; i<nRows; ++i) {
-        coarse_aggStat[i] = NodeStats::READY;
-      }
-
-      // TODO: check return values of functions
-      LocalOrdinal nonAggregatedNodes = -1;
-      for(size_t a = 0; a < algos_.size(); a++) {
-        nonAggregatedNodes = algos_[a]->BuildAggregates(*graph,*aggregates,aggStat,coarse_aggStat);
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(nonAggregatedNodes > 0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
-
-      LocalOrdinal numAggs = aggregates->GetNumAggregates();
-      coarse_aggStat.resize(Teuchos::as<int>(numAggs));
-      currentLevel.Set("coarseAggStat", coarse_aggStat, this);
+    // TODO create a map of Xpetra::Maps for different
+    // aggregation information (OnePtAggregegates...)
+    Teuchos::RCP<const Map> OnePtMap = Teuchos::null;
+    if(mapOnePtName.length() > 0) {
+      OnePtMap = currentLevel.Get<Teuchos::RCP<const Map> >(mapOnePtName,mapOnePtFact.get());
+    }
+    Teuchos::RCP<const Map> SmallAggMap = Teuchos::null;
+    if(mapSmallAggName.length() > 0) {
+      SmallAggMap = currentLevel.Get<Teuchos::RCP<const Map> >(mapSmallAggName,mapSmallAggFact.get());
     }
 
-    // Level Set
-    currentLevel.Set("Aggregates", aggregates, this);
+    // Build
+    aggregates = rcp(new Aggregates(*graph));
+    aggregates->setObjectLabel("UC");
 
-    aggregates->describe(GetOStream(Statistics0, 0), getVerbLevel());
 
+    const LocalOrdinal nRows = graph->GetNodeNumVertices();
+
+    // construct aggStat information
+    Teuchos::ArrayRCP<unsigned int> aggStat;
+    if(nRows > 0) aggStat = Teuchos::arcp<unsigned int>(nRows);
+    ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+    if (dirichletBoundaryMap == Teuchos::null)
+      dirichletBoundaryMap = ArrayRCP<bool>(nRows,false);
+    for(LocalOrdinal i=0; i<nRows; ++i) {
+      if (dirichletBoundaryMap[i] == false)
+        aggStat[i] = NodeStats::READY;
+      else
+        aggStat[i] = NodeStats::BOUNDARY;
+      GlobalOrdinal grid = graph->GetDomainMap()->getGlobalElement(i) * nDofsPerNode;
+      if(SmallAggMap != Teuchos::null) {
+         // reconstruct global row id (FIXME only works for contiguous maps)
+        for(LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {
+          if(SmallAggMap->isNodeGlobalElement(grid+kr)) {
+            aggStat[i] = MueLu::NodeStats::SMALLAGG;
+          }
+        }
+      }
+      if(OnePtMap != Teuchos::null) {
+        // reconstruct global row id (FIXME only works for contiguous maps)
+        for(LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {
+          if(OnePtMap->isNodeGlobalElement(grid+kr)) {
+            aggStat[i] = MueLu::NodeStats::ONEPT;
+          }
+        }
+      }
+    }
+
+    // TODO: check return values of functions
+    LocalOrdinal nonAggregatedNodes = -1;
+
+    //Teuchos::ParameterList params;
+    for(size_t a = 0; a < algos_.size(); a++) {
+      nonAggregatedNodes = algos_[a]->BuildAggregates(pL,*graph,*aggregates,aggStat);
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(nonAggregatedNodes > 0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
   }
+
+  // Level Set
+  Set(currentLevel, "Aggregates", aggregates);
+
+  GetOStream(Statistics0, 0) << aggregates->description() << std::endl;
+}
 
 } //namespace MueLu
 

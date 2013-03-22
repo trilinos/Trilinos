@@ -41,14 +41,105 @@
 //@HEADER
 */
 
+#include <string>
+#include <iostream>
+#include <cstdlib>
 
-extern int mainHost();
-extern int mainCuda();
+namespace unit_test {
+void product_tensor_legendre();
+}
 
-int main()
+template <typename scalar>
+int mainHost(bool test_flat, bool test_orig, bool test_block, bool check);
+
+template <typename scalar>
+int mainCuda(bool test_flat, bool test_orig, bool test_block, bool check, 
+	     int device_id);
+
+int main(int argc, char *argv[])
 {
-  mainHost();
-  mainCuda();
+  // Defaults
+  bool test_host = true;
+  bool test_cuda = true;
+  bool test_block = true;
+  bool test_flat = true;
+  bool test_orig = true;
+  bool check = true;
+  bool single = false;
+  int device = 0;
+
+  // Parse command line arguments
+  bool print_usage = false;
+  int i=1;
+  while (i<argc) {
+    std::string s(argv[i]);
+    if (s == "cuda")
+      test_cuda = true;
+    else if (s == "no-cuda")
+      test_cuda = false;
+    else if (s == "host")
+      test_host = true;
+    else if (s == "no-host")
+      test_host = false;
+    else if (s == "block")
+      test_block = true;
+    else if (s == "no-block")
+      test_block = false;
+    else if (s == "flat")
+      test_flat = true;
+    else if (s == "no-flat")
+      test_flat = false;
+    else if (s == "orig")
+      test_orig = true;
+    else if (s == "no-orig")
+      test_orig = false;
+    else if (s == "check")
+      check = true;
+    else if (s == "no-check")
+      check = false;
+    else if (s == "single")
+      single = true;
+    else if (s == "double")
+      single = false;
+    else if (s == "device") {
+      ++i;
+      device = std::atoi(argv[i]);
+    }
+    else if (s == "-h" || s == "--help")
+      print_usage = true;
+    else {
+      std::cout << "Invalid argument:  " << s << std::endl;
+      print_usage = true;
+    }
+    ++i;
+  }
+  if (print_usage) {
+    std::cout << "Usage:" << std::endl
+	      << "\t" << argv[0] 
+	      << " [no-][cuda|host|block|flat|orig|check] [single|double] [device device_id]" 
+	      << std::endl << "Defaults are all enabled." << std::endl;
+    return -1;
+  }
+
+  unit_test::product_tensor_legendre();
+
+#if 1
+
+  if (test_host) {
+    if (single)
+      mainHost<float>(test_flat, test_orig, test_block, check);
+    else
+      mainHost<double>(test_flat, test_orig, test_block, check);
+  }
+  if (test_cuda) {
+    if (single)
+      mainCuda<float>(test_flat, test_orig, test_block, check, device);
+    else
+      mainCuda<double>(test_flat, test_orig, test_block, check, device);
+  }
+
+#endif
+
   return 0 ;
 }
 

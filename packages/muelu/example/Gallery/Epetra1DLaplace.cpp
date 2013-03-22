@@ -80,14 +80,14 @@ int main(int argc, char *argv[])
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
-  
+
   Epetra_Map Map(numGlobalElements, 0, Comm);
-  
+
   int NumMyElements = Map.NumMyElements();
-  
+
   std::vector<int> MyGlobalElements(NumMyElements);
   Map.MyGlobalElements(&MyGlobalElements[0]);
-  
+
   int NumNz = 3;
   // std::vector<int> NumNz(NumMyElements);
   // for (i=0; i<NumMyElements; i++)
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
   PrintMemoryUsage("Initial memory usage", "epetra-init.heap");
 
   Epetra_CrsMatrix A(Copy, Map, NumNz);
-  
+
   PrintMemoryUsage("Memory after CrsMatrix constructor", "epetra-after-ctor.heap");
 
   std::vector<double> Values(2);
@@ -109,9 +109,9 @@ int main(int argc, char *argv[])
   std::vector<int> Indices(2);
   double two = 2.0;
   int NumEntries;
-  
+
   for (i=0; i<NumMyElements; i++) {
-  
+
     if (MyGlobalElements[i]==0) {
       Indices[0] = 1;
       NumEntries = 1;
@@ -123,15 +123,15 @@ int main(int argc, char *argv[])
       Indices[1] = MyGlobalElements[i]+1;
       NumEntries = 2;
     }
-    
+
     ierr = A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
     assert(ierr==0);
-    
+
     // Put in the diagonal entry
     ierr = A.InsertGlobalValues(MyGlobalElements[i], 1, &two, &MyGlobalElements[i]);
     assert(ierr==0);
   }
-   
+
   PrintMemoryUsage("Memory after InsertGlobalValues()", "epetra-after-insert.heap");
 
   ierr = A.FillComplete();

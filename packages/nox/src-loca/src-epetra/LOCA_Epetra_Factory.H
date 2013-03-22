@@ -89,7 +89,7 @@ namespace LOCA {
        //! Create bordered system solver strategy
       virtual bool
       createBorderedSolverStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy);
@@ -97,7 +97,7 @@ namespace LOCA {
       //! Create Anasazi operator strategy for Floquet option
       virtual bool
       createAnasaziOperatorStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,

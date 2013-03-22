@@ -78,12 +78,12 @@ WeightedMeritFunction(const WeightedMeritFunction& source) :
 NOX::Thyra::WeightedMeritFunction::~WeightedMeritFunction()
 { }
 
-const string& NOX::Thyra::WeightedMeritFunction::name() const
+const std::string& NOX::Thyra::WeightedMeritFunction::name() const
 {
   return name_;
 }
 
-ostream& NOX::Thyra::WeightedMeritFunction::print(ostream& os, int indent) const
+std::ostream& NOX::Thyra::WeightedMeritFunction::print(std::ostream& os, int indent) const
 {
   return os;
 }
@@ -129,8 +129,8 @@ computeSlope(const NOX::Abstract::Vector& dir,
     double denominator = dir.norm();
  
     if (denominator < 1.0e-12) {
-      cout << "WARNING: NOX::Thyra::WeightedMeritFunction::computeSlope()\n"
-	   << "denominator in perturbation < 1.0e-12! Setting to 1.0!" << endl;
+      std::cout << "WARNING: NOX::Thyra::WeightedMeritFunction::computeSlope()\n"
+		<< "denominator in perturbation < 1.0e-12! Setting to 1.0!" << std::endl;
       denominator = 1.0;
     }
 

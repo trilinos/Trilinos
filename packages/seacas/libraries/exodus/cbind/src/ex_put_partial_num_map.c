@@ -188,7 +188,7 @@ int ex_put_partial_num_map (int exoid,
   }
 
   /* Check input parameters for a valid range of numbers */
-  if (ent_start <= 0 || ent_start > (int)num_mobj) {
+  if (ent_start <= 0 || ent_start > num_mobj) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: start count is invalid in file id %d",
@@ -204,7 +204,7 @@ int ex_put_partial_num_map (int exoid,
     ex_err("ex_put_partial_num_map",errmsg,exerrval);
     return (EX_FATAL);
   }
-  if (ent_start+ent_count-1 > (int)num_mobj) {
+  if (ent_start+ent_count-1 > num_mobj) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: start+count-1 is larger than mesh object count in file id %d",
@@ -260,7 +260,7 @@ int ex_put_partial_num_map (int exoid,
     sprintf(errmsg,
 	    "Internal Error: unrecognized map type in switch: %d in file id %d",
 	    map_type,exoid);
-    ex_err("ex_putt_n_one_attr",errmsg,EX_MSG);
+    ex_err("ex_putt_partial_one_attr",errmsg,EX_MSG);
     return (EX_FATAL);
   }
 
@@ -278,6 +278,9 @@ int ex_put_partial_num_map (int exoid,
   start[0] = ent_start-1;
   count[0] = ent_count;
 
+  if (count[0] == 0)
+    start[0] = 0;
+  
   if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
     status = nc_put_vara_longlong(exoid, varid, start, count, map);
   } else {

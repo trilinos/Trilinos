@@ -188,15 +188,24 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
 //==============================================================================
 Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
                                       Epetra_RowMatrix* Matrix,
-                                      const int Overlap)
+                                      const int Overlap,
+                                      bool overrideSerialDefault)
 {
+  const bool serial = (Matrix->Comm().NumProc() == 1);
+
   switch(PrecType) {
     case POINT_RELAXATION:
-      return(new Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>(Matrix, Overlap));
+      if (serial && !overrideSerialDefault)
+        return(new Ifpack_PointRelaxation(Matrix));
+      else
+        return(new Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>(Matrix, Overlap));
     case POINT_RELAXATION_STAND_ALONE:
       return(new Ifpack_PointRelaxation(Matrix));
     case BLOCK_RELAXATION:
-      return(new Ifpack_AdditiveSchwarz<
+      if (serial && !overrideSerialDefault)
+        return(new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(Matrix));
+      else
+        return(new Ifpack_AdditiveSchwarz<
              Ifpack_BlockRelaxation<Ifpack_DenseContainer> >(Matrix,Overlap));
     case BLOCK_RELAXATION_STAND_ALONE:
       return(new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(Matrix));
@@ -209,24 +218,39 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
       return(new Ifpack_AdditiveSchwarz<
              Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
     case AMESOS:
-      return(new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(Matrix,Overlap));
+      if (serial && !overrideSerialDefault)
+        return(new Ifpack_Amesos(Matrix));
+      else
+        return(new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(Matrix,Overlap));
     case AMESOS_STAND_ALONE:
       return(new Ifpack_Amesos(Matrix));
 #endif
     case IC:
-      return(new Ifpack_AdditiveSchwarz<Ifpack_IC>(Matrix,Overlap));
+      if (serial && !overrideSerialDefault)
+        return(new Ifpack_IC(Matrix));
+      else
+        return(new Ifpack_AdditiveSchwarz<Ifpack_IC>(Matrix,Overlap));
     case IC_STAND_ALONE:
       return(new Ifpack_IC(Matrix));
     case ICT:
-      return(new Ifpack_AdditiveSchwarz<Ifpack_ICT>(Matrix,Overlap));
+      if (serial && !overrideSerialDefault)
+        return(new Ifpack_ICT(Matrix));
+      else
+        return(new Ifpack_AdditiveSchwarz<Ifpack_ICT>(Matrix,Overlap));
     case ICT_STAND_ALONE:
       return(new Ifpack_ICT(Matrix));
     case ILU:
-      return(new Ifpack_AdditiveSchwarz<Ifpack_ILU>(Matrix,Overlap));
+      if (serial && !overrideSerialDefault)
+        return(new Ifpack_ILU(Matrix));
+      else
+        return(new Ifpack_AdditiveSchwarz<Ifpack_ILU>(Matrix,Overlap));
     case ILU_STAND_ALONE:
       return(new Ifpack_ILU(Matrix));
     case ILUT:
-      return(new Ifpack_AdditiveSchwarz<Ifpack_ILUT>(Matrix,Overlap));
+      if (serial && !overrideSerialDefault)
+        return(new Ifpack_ILUT(Matrix));
+      else
+        return(new Ifpack_AdditiveSchwarz<Ifpack_ILUT>(Matrix,Overlap));
     case ILUT_STAND_ALONE:
       return(new Ifpack_ILUT(Matrix));
 #ifdef HAVE_IFPACK_SPARSKIT
@@ -265,10 +289,11 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
 //==============================================================================
 Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
                                       Epetra_RowMatrix* Matrix,
-                                      const int Overlap)
+                                      const int Overlap,
+                                      bool overrideSerialDefault)
 {
   try {
-    return Ifpack::Create(Teuchos::get<EPrecType>(::precTypeNameToIntMap,PrecType),Matrix,Overlap);
+    return Ifpack::Create(Teuchos::get<EPrecType>(::precTypeNameToIntMap,PrecType),Matrix,Overlap,overrideSerialDefault);
   }
   catch( const Teuchos::StringToIntMap::DoesNotExist &excpt ) {
     // The old implementation of this function just silently returned a NULL

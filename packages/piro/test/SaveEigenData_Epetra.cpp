@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -44,22 +44,18 @@
 #include "NOX_Abstract_MultiVector.H"
 #include "NOX_Epetra_MultiVector.H"
 #include "Epetra_Vector.h"
-#include <string>
+
+#include <algorithm>
+#include <iostream>
+#include <iomanip>
 
 SaveEigenData_Epetra::
-SaveEigenData_Epetra(Teuchos::ParameterList& locaParams)
-   :  nsave(0)
+SaveEigenData_Epetra(Teuchos::ParameterList& params)
+   :  nsave(params.get("Save Eigenvectors", 0))
 {
-  bool doEig = locaParams.sublist("Stepper").get("Compute Eigenvalues", false);
-  if (doEig) nsave = locaParams.sublist("Stepper").
-              sublist("Eigensolver").get("Save Eigenvectors",0);
-
-  cout << "\nSaveEigenData_Epetra: Will save up to " 
-       << nsave << " eigenvectors." << endl;
-}
-
-SaveEigenData_Epetra::~SaveEigenData_Epetra()
-{
+  std::cout
+    << "\nSaveEigenData_Epetra: Will save up to "
+    << nsave << " eigenvectors." << std::endl;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -78,21 +74,19 @@ SaveEigenData_Epetra::save(
   Epetra_MultiVector& e_r = ne_r->getEpetraMultiVector();
   Epetra_MultiVector& e_i = ne_i->getEpetraMultiVector();
 
-  int ns = nsave;
-  if (ns > evecs_r->numVectors())
-    ns = evecs_r->numVectors();
+  const int ns = std::min(nsave, evecs_r->numVectors());
 
   for (int i=0; i<ns; i++) {
     if ((*evals_i)[i]==0) {
-      cout << setprecision(8) 
-           << "Eigenvalue " << i << " with value: " << (*evals_r)[i] 
-           << "\n   Has Eigenvector: " << *(e_r(i)) << "\n" << endl;
+      std::cout << std::setprecision(8)
+           << "Eigenvalue " << i << " with value: " << (*evals_r)[i]
+           << "\n   Has Eigenvector: " << *(e_r(i)) << "\n" << std::endl;
     }
     else {
-      cout << setprecision(8) 
-           << "Eigenvalue " << i << " with value: " << (*evals_r)[i] 
-           << " +  " << (*evals_i)[i] << " i \nHas Eigenvector Re, Im" 
-           << *(e_r(i)) << "\n" << *(e_i(i)) << endl;
+      std::cout << std::setprecision(8)
+           << "Eigenvalue " << i << " with value: " << (*evals_r)[i]
+           << " +  " << (*evals_i)[i] << " i \nHas Eigenvector Re, Im"
+           << *(e_r(i)) << "\n" << *(e_i(i)) << std::endl;
     }
   }
 

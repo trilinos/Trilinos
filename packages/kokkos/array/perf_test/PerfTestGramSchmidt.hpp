@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -47,16 +47,10 @@
 //----------------------------------------------------------------------------
 
 template< typename Scalar , class DeviceType >
-struct ModifiedGramSchmidt ;
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-template< typename Scalar >
-struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
+struct ModifiedGramSchmidt
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
-  typedef device_type::size_type  size_type ;
+  typedef DeviceType  device_type ;
+  typedef typename device_type::size_type  size_type ;
 
   typedef KokkosArray::View< Scalar** ,
                              KokkosArray::LayoutLeft ,
@@ -73,6 +67,7 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
   // Reduction   : result = dot( Q(:,j) , Q(:,j) );
   // PostProcess : R(j,j) = result ; inv = 1 / result ;
   struct InvNorm2 {
+    typedef Scalar value_type ;
     value_view  Rjj ;
     value_view  inv ;
 
@@ -82,8 +77,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
       , inv( argInv )
       {}
 
-    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
-    void operator()( Scalar & result ) const
+    KOKKOSARRAY_INLINE_FUNCTION
+    void operator()( const value_type & result ) const
     {
       const Scalar value = sqrt( result );
       *Rjj = value ;
@@ -93,6 +88,7 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
 
   // PostProcess : tmp = - ( R(j,k) = result );
   struct DotM {
+    typedef Scalar value_type ;
 
     value_view  Rjk ;
     value_view  tmp ;
@@ -103,8 +99,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
       , tmp( argTmp )
       {}
 
-    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
-    void operator()( Scalar & result ) const
+    KOKKOSARRAY_INLINE_FUNCTION
+    void operator()( const value_type & result ) const
     {
        *Rjk  = result ;
        *tmp  = - result ;
@@ -113,7 +109,6 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
 
   multivector_type Q ;
   multivector_type R ;
-  double seconds ;
 
   static double factorization( const multivector_type Q ,
                                const multivector_type R )
@@ -129,8 +124,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
     for ( size_type j = 0 ; j < count ; ++j ) {
       // Reduction   : tmp = dot( Q(:,j) , Q(:,j) );
       // PostProcess : tmp = sqrt( tmp ); R(j,j) = tmp ; tmp = 1 / tmp ;
-      const vector_type Qj( Q , j );
-      const value_view  Rjj( R , j , j );
+      const vector_type Qj = KokkosArray::subview< vector_type >( Q , j );
+      const value_view  Rjj = KokkosArray::subview< value_view >( R , j , j );
 
       KokkosArray::dot( Qj , InvNorm2( Rjj , tmp  ) );
 
@@ -138,8 +133,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
       KokkosArray::scale( tmp , Qj );
 
       for ( size_t k = j + 1 ; k < count ; ++k ) {
-        const vector_type Qk( Q , k );
-        const value_view  Rjk( R , j , k );
+        const vector_type Qk = KokkosArray::subview< vector_type >( Q , k );
+        const value_view  Rjk = KokkosArray::subview< value_view >( R , j , k );
 
         // Reduction   : R(j,k) = dot( Q(:,j) , Q(:,k) );
         // PostProcess : tmp = - R(j,k);
@@ -158,7 +153,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
   //--------------------------------------------------------------------------
 
   static double test( const size_t length ,
-                      const size_t count )
+                      const size_t count ,
+                      const size_t iter = 1 )
   {
     multivector_type Q( "Q" , length , count );
     multivector_type R( "R" , count , count );
@@ -174,13 +170,22 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
       }
     }
 
-    KokkosArray::deep_copy( Q , A );
+    double dt_min = 0 ;
 
-    // A = Q * R
+    for ( size_t i = 0 ; i < iter ; ++i ) {
 
-    return factorization( Q , R );
+      KokkosArray::deep_copy( Q , A );
+
+      // A = Q * R
+
+      const double dt = factorization( Q , R );
+
+      if ( 0 == i ) dt_min = dt ;
+      else dt_min = dt < dt_min ? dt : dt_min ;
+    }
+
+    return dt_min ;
   }
-
 };
 
 

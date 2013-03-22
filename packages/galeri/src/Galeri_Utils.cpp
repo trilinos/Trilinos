@@ -57,15 +57,15 @@
 
 namespace Galeri {
 
-// ============================================================================ 
-void 
+// ============================================================================
+void
 Solve(const Epetra_LinearProblem Problem)
 {
   Solve(Problem.GetMatrix(), Problem.GetLHS(), Problem.GetRHS());
 }
 
-// ============================================================================ 
-void 
+// ============================================================================
+void
 Solve(const Epetra_RowMatrix* Matrix, const Epetra_MultiVector* LHS,
       const Epetra_MultiVector* RHS)
 {
@@ -91,13 +91,13 @@ Solve(const Epetra_RowMatrix* Matrix, const Epetra_MultiVector* LHS,
   vector<double> Values(Length);
   vector<int>    Indices(Length);
 
-  for (int j = 0 ; j < Matrix->NumMyRows() ; ++j) 
+  for (int j = 0 ; j < Matrix->NumMyRows() ; ++j)
   {
     int NumEntries;
     int ierr = Matrix->ExtractMyRowCopy(j, Length, NumEntries,
                                         &Values[0], &Indices[0]);
 
-    for (int k = 0 ; k < NumEntries ; ++k) 
+    for (int k = 0 ; k < NumEntries ; ++k)
       DenseMatrix(j,Indices[k]) = Values[k];
   }
 
@@ -121,8 +121,8 @@ Solve(const Epetra_RowMatrix* Matrix, const Epetra_MultiVector* LHS,
        (*LHS)[j][i] = DenseX(i,j);
 }
 
-// ============================================================================ 
-double 
+// ============================================================================
+double
 ComputeNorm(const Epetra_MultiVector* LHS, const Epetra_MultiVector* RHS)
 {
   double TotalNorm = 0.0;
@@ -139,9 +139,9 @@ ComputeNorm(const Epetra_MultiVector* LHS, const Epetra_MultiVector* RHS)
   return(TotalNorm);
 }
 
-// ============================================================================ 
-double 
-ComputeNorm(const Epetra_RowMatrix* A, const Epetra_MultiVector* LHS, 
+// ============================================================================
+double
+ComputeNorm(const Epetra_RowMatrix* A, const Epetra_MultiVector* LHS,
             const Epetra_MultiVector* RHS)
 {
   double TotalNorm = 0.0;
@@ -160,7 +160,7 @@ ComputeNorm(const Epetra_RowMatrix* A, const Epetra_MultiVector* LHS,
 }
 
 // ============================================================================
-Epetra_MultiVector* 
+Epetra_MultiVector*
 CreateCartesianCoordinates(const string CoordType,
                            const Epetra_BlockMap* BlockMap,
                            Teuchos::ParameterList& List)
@@ -181,7 +181,7 @@ CreateCartesianCoordinates(const string CoordType,
 
   int NumMyElements = BlockMap->NumMyElements();
   int * MyGlobalElements = BlockMap->MyGlobalElements();
-  
+
   Epetra_MultiVector* Coord;
 
   if (CoordType == "1D")
@@ -190,20 +190,20 @@ CreateCartesianCoordinates(const string CoordType,
 
     delta_x = lx / (nx - 1);
 
-    for (int i = 0 ; i < NumMyElements ; ++i) 
+    for (int i = 0 ; i < NumMyElements ; ++i)
     {
       ix = MyGlobalElements[i];
       (*Coord)[0][i] = delta_x * ix;
     }
   }
-  else if (CoordType == "2D") 
+  else if (CoordType == "2D")
   {
     Coord = new Epetra_MultiVector(*BlockMap, 2);
 
     delta_x = lx / (nx - 1);
     delta_y = ly / (ny - 1);
 
-    for (int i = 0 ; i < NumMyElements ; ++i) 
+    for (int i = 0 ; i < NumMyElements ; ++i)
     {
       ix = MyGlobalElements[i] % nx;
       iy = (MyGlobalElements[i] - ix) / nx;
@@ -220,14 +220,14 @@ CreateCartesianCoordinates(const string CoordType,
     delta_y = ly / (ny - 1);
     delta_z = lz / (nz - 1);
 
-    for (int i = 0 ; i < NumMyElements ; i++) 
+    for (int i = 0 ; i < NumMyElements ; i++)
     {
       int ixy = MyGlobalElements[i] % (nx * ny);
       iz = (MyGlobalElements[i] - ixy) / (nx * ny);
 
       ix = ixy % nx;
       iy = (ixy - ix) / ny;
-      
+
       (*Coord)[0][i] = delta_x * ix;
       (*Coord)[1][i] = delta_y * iy;
       (*Coord)[2][i] = delta_z * iz;
@@ -236,7 +236,7 @@ CreateCartesianCoordinates(const string CoordType,
   else
   {
     throw(Exception(__FILE__, __LINE__,
-                    "`CoordType' has incorrect value (" 
+                    "`CoordType' has incorrect value ("
                     + CoordType + ")",
                     "in input to function CreateCartesianCoordinates()",
                     "Check the documentation for a list of valid choices"));
@@ -245,7 +245,7 @@ CreateCartesianCoordinates(const string CoordType,
   return(Coord);
 }
 
-// ============================================================================ 
+// ============================================================================
 string toString(const int& x)
 {
   char s[100];
@@ -253,7 +253,7 @@ string toString(const int& x)
   return string(s);
 }
 
-// ============================================================================ 
+// ============================================================================
 string toString(const unsigned int& x)
 {
   char s[100];
@@ -261,7 +261,15 @@ string toString(const unsigned int& x)
   return string(s);
 }
 
-// ============================================================================ 
+// ============================================================================
+string toString(const long int& x)
+{
+  char s[100];
+  sprintf(s, "%ld", x);
+  return string(s);
+}
+
+// ============================================================================
 string toString(const double& x)
 {
   char s[100];
@@ -269,10 +277,10 @@ string toString(const double& x)
   return string(s);
 }
 
-// ============================================================================ 
+// ============================================================================
 void GetNeighboursCartesian2d(const int i, const int nx, const int ny,
-                              int & left, int & right, 
-                              int & lower, int & upper) 
+                              int & left, int & right,
+                              int & lower, int & upper)
 {
   int ix, iy;
   ix = i % nx;
@@ -288,7 +296,7 @@ void GetNeighboursCartesian2d(const int i, const int nx, const int ny,
   else              upper = i + nx;
 }
 
-// ============================================================================ 
+// ============================================================================
 void GetNeighboursCartesian2d(const int i, const int nx, const int ny,
                               int& left, int& right, int& lower, int& upper,
                               int& left2, int& right2, int& lower2, int& upper2)
@@ -316,15 +324,15 @@ void GetNeighboursCartesian2d(const int i, const int nx, const int ny,
   else              upper2 = i + 2 * nx;
 }
 
-// ============================================================================ 
-void GetNeighboursCartesian3d(const int i, 
+// ============================================================================
+void GetNeighboursCartesian3d(const int i,
                               const int nx, const int ny, const int nz,
                               int& left, int& right, int& lower, int& upper,
-                              int& below, int& above) 
+                              int& below, int& above)
 {
   int ixy, iz;
   ixy = i % (nx * ny);
-    
+
   iz = (i - ixy) / (nx * ny);
 
   if (iz == 0)      below = -1;
@@ -333,14 +341,14 @@ void GetNeighboursCartesian3d(const int i,
   else              above = i + nx * ny;
 
   GetNeighboursCartesian2d(ixy, nx, ny, left, right, lower, upper);
-    
+
   if (left  != -1) left  += iz * (nx * ny);
   if (right != -1) right += iz * (nx * ny);
   if (lower != -1) lower += iz * (nx * ny);
   if (upper != -1) upper += iz * (nx * ny);
 }
 
-// ============================================================================ 
+// ============================================================================
 void
 PrintStencil2D(const Epetra_CrsMatrix* Matrix,
                const int nx, const int ny, int GID)
@@ -348,14 +356,14 @@ PrintStencil2D(const Epetra_CrsMatrix* Matrix,
   if (nx <= 0 || ny <= 0)
       throw(Exception(__FILE__, __LINE__, "Input parameter not valid"));
 
-  if (GID == -1) 
+  if (GID == -1)
   {
-    if (ny == 1) 
+    if (ny == 1)
       GID = (int)(nx/2);
-    else 
+    else
       GID = (int)(nx*(ny/2) + nx/2);
   }
-  
+
   int LID = Matrix->RowMatrixRowMap().LID(GID);
 
   // only processor having this node will go on
@@ -365,17 +373,17 @@ PrintStencil2D(const Epetra_CrsMatrix* Matrix,
   int NumEntriesRow;   // local entries on each row
   vector<double> Values(MaxPerRow);
   vector<int>    Indices(MaxPerRow);
-  
+
   int ierr = Matrix->ExtractMyRowCopy(LID, MaxPerRow, NumEntriesRow,
                                       &Values[0], &Indices[0]);
 
   if (ierr)
     throw(Exception(__FILE__, __LINE__,
                     "Matrix->ExtractMyRowCopy() return an error"));
-  
+
   // cycle over nonzero elements, look for elements in positions that we
   // can understand
-  
+
   int size = 5;
   Epetra_IntSerialDenseMatrix SI(size, size);
   Epetra_SerialDenseMatrix    SV(size, size);
@@ -414,13 +422,13 @@ PrintStencil2D(const Epetra_CrsMatrix* Matrix,
   SI(3,4) = Matrix->RowMatrixColMap().LID(GID + 1 + 2 * nx);
   SI(4,4) = Matrix->RowMatrixColMap().LID(GID + 2 + 2 * nx);
 
-  for (int i = 0 ; i < NumEntriesRow ; ++i) 
+  for (int i = 0 ; i < NumEntriesRow ; ++i)
   {
     // convert into block row
     int LocalColID = Indices[i];
     // look for known positions
-    for (int ix = 0 ; ix < size ; ++ix) 
-      for (int iy = 0 ; iy < size ; ++iy) 
+    for (int ix = 0 ; ix < size ; ++ix)
+      for (int iy = 0 ; iy < size ; ++iy)
 	if (SI(ix, iy) == LocalColID)
 	  SV(ix,iy) = Values[i];
   }
@@ -428,9 +436,9 @@ PrintStencil2D(const Epetra_CrsMatrix* Matrix,
   cout << "2D computational stencil at GID " << GID
        << " (grid is " << nx << " x " << ny << ")" << endl;
   cout << endl;
-  for (int iy = 0 ; iy < size ; ++iy) 
+  for (int iy = 0 ; iy < size ; ++iy)
   {
-    for (int ix = 0 ; ix < size ; ++ix) 
+    for (int ix = 0 ; ix < size ; ++ix)
     {
       cout << " " << std::setw(10) << SV(ix,iy);
     }

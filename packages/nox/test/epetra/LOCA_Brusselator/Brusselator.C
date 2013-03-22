@@ -234,7 +234,7 @@ bool Brusselator::evaluate(FillType fType,
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } 
   else {
-    cout << "Brusselator::evaluate() - FillType fType is broken" << endl;
+    std::cout << "Brusselator::evaluate() - FillType fType is broken" << std::endl;
     throw;
   }
 

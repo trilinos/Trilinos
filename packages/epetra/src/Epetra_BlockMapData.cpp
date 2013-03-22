@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_BlockMapData.h"
 #include "Epetra_HashTable.h"
 #include "Epetra_Comm.h"
@@ -49,11 +50,13 @@
 #define EPETRA_BLOCKMAP_NEW_LID
 
 //=============================================================================
-Epetra_BlockMapData::Epetra_BlockMapData(long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm, bool IsLongLong) 
+Epetra_BlockMapData::Epetra_BlockMapData(long long NumGlobalElements, int ElementSize, long long IndexBase, const Epetra_Comm & Comm, bool IsLongLong) 
   : Comm_(Comm.Clone()),
     Directory_(0),
     LID_(0),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     MyGlobalElements_int_(0),
+#endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     MyGlobalElements_LL_(0),
 #endif

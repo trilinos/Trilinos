@@ -1,3 +1,2 @@
-
-#include "Teuchos_config.h"
-#define RTOP_DEPRECATED
+#include "TrilinosSierraConfig.h"
+#include "RTOp_Config_fcs.h"

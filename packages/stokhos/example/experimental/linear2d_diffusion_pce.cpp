@@ -29,6 +29,7 @@
 // Stokhos Stochastic Galerkin
 #include "Stokhos_Epetra.hpp"
 #include "Stokhos_Sacado.hpp"
+#include "Stokhos_Ifpack2.hpp"
 
 // Class implementing our problem
 #include "twoD_diffusion_problem_tpetra.hpp"
@@ -44,7 +45,6 @@
 #include "Ifpack2_Factory.hpp"
 #include "BelosLinearProblem.hpp"
 #include "kokkos_pce_specializations.hpp"
-#include "BelosPCETpetraAdapter.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "MatrixMarket_Tpetra.hpp"
@@ -71,8 +71,10 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 
 #include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_Matrix.hpp"
+#include "Xpetra_Map.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 
 // Random field types
@@ -86,6 +88,12 @@ enum Krylov_Method { GMRES, CG };
 const int num_krylov_method = 2;
 const Krylov_Method krylov_method_values[] = { GMRES, CG };
 const char *krylov_method_names[] = { "GMRES", "CG" };
+
+// Multigrid preconditioning
+enum Multigrid_Smoother { CHEBYSHEV, SGS };
+const int num_multigrid_smoother = 2;
+const Multigrid_Smoother multigrid_smoother_values[] = { CHEBYSHEV, SGS };
+const char *multigrid_smoother_names[] = { "Chebyshev", "SGS" };
 
 // Preconditioning approaches
 enum SG_Prec { NONE, MEAN, STOCHASTIC };
@@ -131,6 +139,72 @@ const char *prec_option_names[] = { "full", "linear"};
 // #define _GNU_SOURCE 1
 // #include <fenv.h>
 
+template<typename ordinal_type, typename value_type, typename Storage>
+//void returnScalarAsDenseMatrix(Scalar const &inval,
+void returnScalarAsDenseMatrix(Sacado::PCE::OrthogPoly<value_type,Storage> const &inval,
+                               Teuchos::RCP<Teuchos::SerialDenseMatrix<ordinal_type,value_type> > & denseEntry,
+                               Teuchos::RCP<Stokhos::Sparse3Tensor<ordinal_type,value_type> > const &Cijk)
+{
+    Stokhos::OrthogPolyApprox<ordinal_type, value_type> val= inval.getOrthogPolyApprox();
+    typedef Stokhos::Sparse3Tensor<ordinal_type, value_type> Cijk_type;
+    ordinal_type pb = val.size();
+    const value_type* cv = val.coeff();
+
+    denseEntry->putScalar(0.0);
+    typename Cijk_type::k_iterator k_begin = Cijk->k_begin();
+    typename Cijk_type::k_iterator k_end = Cijk->k_end();
+    if (pb < Cijk->num_k())
+      k_end = Cijk->find_k(pb);
+    value_type cijk;
+    ordinal_type i,j,k;
+    for (typename Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+      k = index(k_it);
+      for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); j_it != Cijk->j_end(k_it); ++j_it) {
+         j = index(j_it);
+         for (typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it); i_it != Cijk->i_end(j_it); ++i_it) {
+           i = index(i_it);
+           cijk = value(i_it);
+           (*denseEntry)(i,j) += cijk*cv[k];
+         }
+      }
+    }
+}
+
+typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_Matrix;
+typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Xpetra_Map;
+
+template<typename ordinal_type,typename value_type>
+void PrintMatrix(Teuchos::FancyOStream &fos, Teuchos::RCP<Xpetra_Matrix> const &A,
+                Teuchos::RCP<Stokhos::Sparse3Tensor<ordinal_type, value_type> > const & Cijk,
+                Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> > const & basis)
+{
+  ordinal_type sz = basis->size();
+  Teuchos::RCP<Teuchos::SerialDenseMatrix<ordinal_type,value_type> > denseEntry = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type,value_type>(
+             sz, sz));
+    size_t maxLength = A->getNodeMaxNumRowEntries();
+    size_t NumEntries;
+    Scalar val;
+    Teuchos::Array<ordinal_type> Indices(maxLength);
+    Teuchos::Array<Scalar> Values(maxLength);
+    Teuchos::RCP<const Xpetra_Map> colMap = A->getColMap();
+    for (ordinal_type i = 0 ; i < Teuchos::as<ordinal_type>(A->getNodeNumRows()); ++i) {
+      A->getLocalRowCopy(i, Indices(), Values(), NumEntries);
+      fos << "++++++++++++++" << std::endl << "row " << A->getRowMap()->getGlobalElement(i) << ": ";
+      fos << "  col ids: ";
+      for (size_t ii=0; ii<NumEntries; ++ii) fos << colMap->getGlobalElement(Indices[ii]) << " ";
+      fos << std::endl << "++++++++++++++" << std::endl;
+      for (size_t k=0; k< NumEntries; ++k) {
+        val = Values[k];
+        Teuchos::OSTab tab1(fos);
+        fos << std::endl << "col " << colMap->getGlobalElement(Indices[k]) << std::endl;
+        returnScalarAsDenseMatrix(val,denseEntry,Cijk);
+        //TODO tab thing
+        Teuchos::OSTab tab2(fos);
+        denseEntry->print(fos);
+      }
+    }
+}
+
 int main(int argc, char *argv[]) {
   typedef double MeshScalar;
   typedef double BasisScalar;
@@ -150,7 +224,6 @@ int main(int argc, char *argv[]) {
 #endif
 
   LocalOrdinal MyPID;
-
 
   try {
 
@@ -174,17 +247,25 @@ int main(int argc, char *argv[]) {
     // multigrid specific options
     int minAggSize = 1;
     CLP.setOption("min_agg_size", &minAggSize, "multigrid aggregate size");
+    Multigrid_Smoother smoother_type = CHEBYSHEV;
+    CLP.setOption("smoother_type", &smoother_type, 
+                  num_multigrid_smoother, multigrid_smoother_values, multigrid_smoother_names, 
+                  "Multigrid smoother types");
     int smootherSweeps = 3;
     CLP.setOption("smoother_sweeps", &smootherSweeps, "# multigrid smoother sweeps");
-    int plainAgg=1;
-    CLP.setOption("plain_aggregation", &plainAgg, "plain aggregation");
-    LocalOrdinal nsSize=-1;
-    CLP.setOption("nullspace_size", &nsSize, "nullspace dimension");
+    bool plainAgg=false;
+    CLP.setOption("plain_aggregation", "smoothed_aggregation", &plainAgg, "multigrid prolongator smoothing");
+    LocalOrdinal nsSize=1;
+    CLP.setOption("nullspace_size", &nsSize, "multigrid nullspace dimension");
+    int maxAMGLevels=10;
+    CLP.setOption("max_multigrid_levels", &maxAMGLevels, "maximum # levels in multigrid preconditioner");
+
+    bool printTimings=true;
+    CLP.setOption("timings", "notimings", &printTimings, "print timing summary");
 
 
     bool symmetric = false;
-    CLP.setOption("symmetric", "unsymmetric", &symmetric, 
-                  "Symmetric discretization");
+    CLP.setOption("symmetric", "unsymmetric", &symmetric, "Symmetric discretization");
 
     int num_spatial_procs = -1;
     CLP.setOption("num_spatial_procs", &num_spatial_procs, "Number of spatial processors (set -1 for all available procs)");
@@ -255,6 +336,10 @@ int main(int argc, char *argv[]) {
     CLP.setOption("equilibrate", "noequilibrate", &equilibrate,
                   "Equilibrate the linear system");
 
+    bool printHierarchy = false;
+    CLP.setOption("print_hierarchy", "noprint_Hierarchy", &printHierarchy,
+                  "Print matrices in multigrid hierarchy");
+
 
     CLP.parse( argc, argv );
 
@@ -276,7 +361,14 @@ int main(int argc, char *argv[]) {
                 << "\tdiv_tol            = " << div_tol << std::endl
                 << "\tdiv_prec           = " << sg_divprec_names[divprec_method]      << std::endl
                 << "\tprec_level         = " << prec_level << std::endl
-                << "\tmax_it_div     = " << max_it_div << std::endl;
+                << "\tmax_it_div         = " << max_it_div << std::endl
+                << "\t~~~ multigrid options ~~~" << std::endl
+                << "\tsmoother_type      = " << multigrid_smoother_names[smoother_type] << std::endl
+                << "\tsmoother_sweeps    = " << smootherSweeps << std::endl
+                << "\tplain_aggregation  = " << plainAgg << std::endl
+                << "\tmax_multigrid_levels = " << maxAMGLevels << std::endl
+                << "\tnullspace_size     = " << nsSize << std::endl
+                << "\tmin_agg_size       = " << minAggSize << std::endl;
     }
     bool nonlinear_expansion = false;
     if (randField == UNIFORM)
@@ -298,7 +390,7 @@ int main(int argc, char *argv[]) {
       rcp(new Stokhos::CompletePolynomialBasis<LocalOrdinal,BasisScalar>(bases, 1e-12));
     LocalOrdinal sz = basis->size();
     RCP<Stokhos::Sparse3Tensor<LocalOrdinal,BasisScalar> > Cijk = 
-      basis->computeTripleProductTensor(sz);
+      basis->computeTripleProductTensor();
     RCP<const Stokhos::Quadrature<int,double> > quad = 
       rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
     RCP<ParameterList> expn_params = Teuchos::rcp(new ParameterList);
@@ -397,9 +489,8 @@ int main(int argc, char *argv[]) {
     typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsMatrix;
     typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Xpetra_MultiVector;
     typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Xpetra_MultiVectorFactory;
-    typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_Operator;
     typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_TpetraCrsMatrix;
-    typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsOperator;
+    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsMatrixWrap;
     typedef Belos::MueLuOp<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Belos_MueLuOperator;
     //MueLu typedefs
     typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MueLu_Hierarchy;
@@ -442,17 +533,17 @@ int main(int argc, char *argv[]) {
     RCP<Belos_MueLuOperator> M;
     RCP<MueLu_Hierarchy> H;
     RCP<Xpetra_CrsMatrix> xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J));
-    RCP<Xpetra_Operator> xopJ = rcp(new Xpetra_CrsOperator(xcrsJ));
+    RCP<Xpetra_Matrix> xopJ = rcp(new Xpetra_CrsMatrixWrap(xcrsJ));
+    RCP<Xpetra_Matrix> xopJ0;
     if (prec_method != NONE) {
       ParameterList precParams;
       std::string prec_name = "RILUK";
       precParams.set("fact: iluk level-of-fill", 1);
       precParams.set("fact: iluk level-of-overlap", 0);
       //Ifpack2::Factory factory;
-      RCP<Xpetra_Operator> xopJ0;
       if (prec_method == MEAN) {
         RCP<Xpetra_CrsMatrix> xcrsJ0 = rcp(new Xpetra_TpetraCrsMatrix(J0));
-        xopJ0 = rcp(new Xpetra_CrsOperator(xcrsJ0));
+        xopJ0 = rcp(new Xpetra_CrsMatrixWrap(xcrsJ0));
         //M = factory.create<Tpetra_CrsMatrix>(prec_name, J0);
       } else if (prec_method == STOCHASTIC) {
         xopJ0 = xopJ;
@@ -461,10 +552,10 @@ int main(int argc, char *argv[]) {
       H = rcp(new MueLu_Hierarchy(xopJ0));
       M = rcp(new Belos_MueLuOperator(H));
       //M->setParameters(precParams);
-      if (nsSize!=-1) sz=nsSize;
-      RCP<Xpetra_MultiVector> Z = Xpetra_MultiVectorFactory::Build(xcrsJ->getDomainMap(), sz);
+      if (nsSize==-1) nsSize=sz;
+      RCP<Xpetra_MultiVector> Z = Xpetra_MultiVectorFactory::Build(xcrsJ->getDomainMap(), nsSize);
       size_t n = Z->getLocalLength();
-      for (LocalOrdinal j=0; j<sz; ++j) {
+      for (LocalOrdinal j=0; j<nsSize; ++j) {
         ArrayRCP<Scalar> col = Z->getDataNonConst(j);
         for (size_t i=0; i<n; ++i) {
           col[i].reset(expansion);
@@ -482,6 +573,7 @@ int main(int argc, char *argv[]) {
     model->computeResidual(*x, *p, *f);
     model->computeJacobian(*x, *p, *J);
 
+
     // Compute mean for mean-based preconditioner
     if (prec_method == MEAN) {
       size_t nrows = J->getNodeNumRows();
@@ -498,6 +590,7 @@ int main(int argc, char *argv[]) {
       J0->fillComplete();
     }
 
+
     // compute preconditioner
     if (prec_method != NONE) {
       //M->initialize();
@@ -508,22 +601,32 @@ int main(int argc, char *argv[]) {
 
       //smoother
       ParameterList smootherParamList;
-      /*
-      smootherParamList.set("chebyshev: degree", smootherSweeps);
-      smootherParamList.set("chebyshev: ratio eigenvalue", (double) 20);
-      smootherParamList.set("chebyshev: max eigenvalue", (double) -1.0);
-      smootherParamList.set("chebyshev: min eigenvalue", (double) 1.0);
-      smootherParamList.set("chebyshev: zero starting solution", true);
-      RCP<SmootherPrototype> smooPrototype     = rcp( new TrilinosSmoother("CHEBYSHEV", smootherParamList) );
-      */
-      smootherParamList.set("relaxation: sweeps", smootherSweeps);
-      smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
-      RCP<SmootherPrototype> smooPrototype     = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
+      RCP<SmootherPrototype> smooPrototype;
+      switch(smoother_type) {
+        case CHEBYSHEV: {
+          smootherParamList.set("chebyshev: degree", smootherSweeps);
+          smootherParamList.set("chebyshev: ratio eigenvalue", (double) 20);
+          Scalar minusOne=-1.0;
+          smootherParamList.set("chebyshev: max eigenvalue", minusOne);
+          smootherParamList.set("chebyshev: min eigenvalue", (double) 1.0);
+          smootherParamList.set("chebyshev: zero starting solution", true);
+          smooPrototype     = rcp( new TrilinosSmoother("CHEBYSHEV", smootherParamList) );
+          break;
+          }
+
+        case SGS:
+        default:
+          smootherParamList.set("relaxation: sweeps", smootherSweeps);
+          smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
+          smooPrototype     = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
+          break;
+      }
 
       RCP<SmootherFactory>   smooFact      = rcp( new SmootherFactory(smooPrototype) );
       fm->SetFactory("Smoother", smooFact);
 
       // coarse level solve
+      // TODO until KLU in Amesos2 is fully templated, use incomplete factorization as coarsest level solve
       ParameterList coarseParamList;
       coarseParamList.set("fact: level-of-fill", 0);
       RCP<SmootherPrototype> coarsePrototype     = rcp( new TrilinosSmoother("ILUT", coarseParamList) );
@@ -533,9 +636,9 @@ int main(int argc, char *argv[]) {
       //fm->SetFactory("CoarseSolver", smooFact);
 
       //allow for larger aggregates
-      typedef MueLu::UCAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
-      MueLu_UCAggregationFactory;
-      RCP<MueLu_UCAggregationFactory> aggFact = rcp(new MueLu_UCAggregationFactory());
+      typedef MueLu::CoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+      MueLu_CoupledAggregationFactory;
+      RCP<MueLu_CoupledAggregationFactory> aggFact = rcp(new MueLu_CoupledAggregationFactory());
       aggFact->SetMinNodesPerAggregate(minAggSize);
       fm->SetFactory("Aggregates", aggFact);
 
@@ -547,8 +650,19 @@ int main(int argc, char *argv[]) {
         fm->SetFactory("P", sapFactory);
       }
 
-      //H->Setup(*fm, 0, 1);
-      H->Setup(*fm);
+      H->Setup(*fm,0,maxAMGLevels); //start at level 0, at most 3 levels
+
+      if (printHierarchy)
+      {
+        //FIXME #levels
+        RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        int numLevels = H->GetNumLevels();
+        for (int i=0; i<numLevels; ++i) {
+          RCP<Xpetra_Matrix> A = H->GetLevel(i)->Get<RCP<Xpetra_Matrix> >("A");
+          *fos << "================\n" << "matrix A, multigrid level " << i << "\n================" << std::endl;
+          PrintMatrix<LocalOrdinal,BasisScalar>(*fos,A,Cijk,basis);
+        }
+      }
     }
 
     // Setup Belos solver
@@ -567,7 +681,7 @@ int main(int argc, char *argv[]) {
     typedef Belos::MultiVecTraits<double,MV> BTMVT;
     typedef Belos::LinearProblem<double,MV,OP> BLinProb;
     typedef Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BXpetraOp;
-    RCP<OP> belosJ = rcp(new BXpetraOp(xopJ)); // Turns an Xpetra::Operator object into a Belos operator
+    RCP<OP> belosJ = rcp(new BXpetraOp(xopJ)); // Turns an Xpetra::Matrix object into a Belos operator
     RCP< BLinProb > problem = rcp(new BLinProb(belosJ, dx, f));
     if (prec_method != NONE)
       problem->setRightPrec(M);
@@ -642,8 +756,10 @@ int main(int argc, char *argv[]) {
 
     }
 
-    Teuchos::TimeMonitor::summarize(std::cout);
-    Teuchos::TimeMonitor::zeroOutTimers();
+    if (printTimings) {
+      Teuchos::TimeMonitor::summarize(std::cout);
+      Teuchos::TimeMonitor::zeroOutTimers();
+    }
 
   }
   

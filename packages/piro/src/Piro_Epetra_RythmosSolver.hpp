@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,117 +36,118 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
 #ifndef PIRO_EPETRA_RYTHMOSSOLVER_H
 #define PIRO_EPETRA_RYTHMOSSOLVER_H
 
-#include <iostream>
-
-#include "Epetra_Vector.h"
-#include "Epetra_LocalMap.h"
-
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
 #include "EpetraExt_ModelEvaluator.h"
 
-#include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_IntegrationObserverBase.hpp"
+#include "Rythmos_DefaultIntegrator.hpp"
+#include "Rythmos_StepperBase.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
+#include "Piro_RythmosSolver.hpp"
 
-/** \brief Epetra-based Model Evaluator subclass for Charon!
- *
- * This class will support a wide number of different types of abstract
- * problem types that will allow NOX, LOCA, Rythmos, Aristos, and MOOCHO to
- * solve different types of problems with Charon.
- * 
- * ToDo: Finish documentation!
- */
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+/** \brief . */
 
 namespace Piro {
 namespace Epetra {
 
-class RythmosSolver
-    : public EpetraExt::ModelEvaluator
+class RythmosSolver : public EpetraExt::ModelEvaluator
 {
-
-  public:
-
+public:
   typedef double Scalar;
 
   /** \name Constructors/initializers */
   //@{
+  /** \brief Initialize with internally built objects according to the given parameter list. */
+  RythmosSolver(
+      Teuchos::RCP<Teuchos::ParameterList> piroParams,
+      Teuchos::RCP<EpetraExt::ModelEvaluator> model,
+      Teuchos::RCP<Rythmos::IntegrationObserverBase<double> > observer = Teuchos::null);
 
-  /** \brief Takes the number of elements in the discretization . */
-  RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
-                Teuchos::RCP<EpetraExt::ModelEvaluator> model,
-                Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer = Teuchos::null
-                );
-
+  /** \brief Initialize using prebuilt objects. */
+  RythmosSolver(
+      const Teuchos::RCP<Rythmos::DefaultIntegrator<double> > &stateIntegrator,
+      const Teuchos::RCP<Rythmos::StepperBase<double> > &stateStepper,
+      const Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > &timeStepSolver,
+      const Teuchos::RCP<EpetraExt::ModelEvaluator> &model,
+      const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > &lowsFactory,
+      double finalTime,
+      Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
-  ~RythmosSolver();
-
+  /** \brief Initialize using prebuilt objects - passing initial time. */
+  RythmosSolver(
+      const Teuchos::RCP<Rythmos::DefaultIntegrator<double> > &stateIntegrator,
+      const Teuchos::RCP<Rythmos::StepperBase<double> > &stateStepper,
+      const Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > &timeStepSolver,
+      const Teuchos::RCP<EpetraExt::ModelEvaluator> &model,
+      const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > &lowsFactory,
+      double initialTime,
+      double finalTime,
+      Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
+  //@}
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
-
-  Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
-  /** \brief . */
-  Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
-  /** \brief . */
-//  Teuchos::RCP<Epetra_Operator> create_W() const;
-  /** \brief . */
-  EpetraExt::ModelEvaluator::InArgs createInArgs() const;
-  /** \brief . */
-  EpetraExt::ModelEvaluator::OutArgs createOutArgs() const;
-  /** \brief . */
-  void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
-
-  private:
   /** \brief . */
   Teuchos::RCP<const Epetra_Map> get_x_map() const;
   /** \brief . */
   Teuchos::RCP<const Epetra_Map> get_f_map() const;
   /** \brief . */
+  Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
+  /** \brief . */
+  Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
+
+  /** \brief . */
   Teuchos::RCP<const Epetra_Vector> get_x_init() const;
   /** \brief . */
-  Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
+  Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
 
-  //! Valid list for old "Rythmos" parameter list style
-  Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosParameters() const;
-  
-  //! Valid list for new "Rythmos Solver" parameter list style
-  Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosSolverParameters() const;
+  /** \brief . */
+  Teuchos::RCP<Epetra_Operator> create_DgDp_op(int j, int l) const;
 
+  /** \brief . */
+  EpetraExt::ModelEvaluator::InArgs createInArgs() const;
+  /** \brief . */
+  EpetraExt::ModelEvaluator::OutArgs createOutArgs() const;
+
+  /** \brief . */
+  void evalModel(const InArgs& inArgs, const OutArgs& outArgs) const;
   //@}
 
-  private:
+  /** \name Basic information . */
+  //@{
+  /** \brief Return the number of sets of auxiliary parameters. */
+  int Np() const;
+  /** \brief Return the number of sets of auxiliary response functions. */
+  int Ng() const;
+  //@}
 
-   //These are set in the constructor and used in evalModel
-   mutable Teuchos::RCP<Teuchos::ParameterList> piroParams;
-   Teuchos::RCP<EpetraExt::ModelEvaluator> model;
+private:
+  /** \name Parameter list validation . */
+  //@{
+  //! Valid list for old "Rythmos" parameter list style
+  Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosParameters() const;
+  //! Valid list for new "Rythmos Solver" parameter list style
+  Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosSolverParameters() const;
+  //@}
 
-   int num_p;
-   int num_g;
+  Teuchos::RCP<EpetraExt::ModelEvaluator> model;
 
-   Teuchos::RCP<Teuchos::FancyOStream> out;
-   Teuchos::EVerbosityLevel solnVerbLevel;
-   Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > fwdStateIntegrator;
-   Teuchos::RCP<Thyra::ModelEvaluator<double> > fwdStateModel;
-   Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > fwdTimeStepSolver;
-   Scalar t_final;
+  int num_p;
+  int num_g;
 
-   bool oldListStyle;
-   Teuchos::RCP<Rythmos::StepperBase<Scalar> > fwdStateStepper;
-
+  typedef ::Piro::RythmosSolver<double> ThyraRythmosSolver;
+  Teuchos::RCP<ThyraRythmosSolver> thyraImplementation_;
 };
 
 }

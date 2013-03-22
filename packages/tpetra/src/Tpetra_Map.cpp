@@ -45,72 +45,18 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-#include <Kokkos_SerialNode.hpp>
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-#  include <Kokkos_TBBNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-#  include <Kokkos_TPINode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-#  include <Kokkos_OpenMPNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THRUST)
-#  include <Kokkos_ThrustGPUNode.hpp>
-#endif
-
+#include "Tpetra_ETIHelperMacros.h"
 #include "Tpetra_Map_def.hpp"
 
 namespace Tpetra {
 
-  // for default node
-  // <int,int>
-  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-    createNonContigMap<int,int>(const Teuchos::ArrayView<const int> &elementList, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-    createContigMap<int,int>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-    createLocalMap<int,int>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-    createUniformContigMap<int,int>(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_MAP_INSTANT(int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_MAP_INSTANT(int,int,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_MAP_INSTANT(int,int,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_MAP_INSTANT(int,int,Kokkos::OpenMPNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THRUST)
-    TPETRA_MAP_INSTANT(int,int,Kokkos::ThrustGPUNode)
-#endif
+  // for all nodes, lo, go
+  TPETRA_INSTANTIATE_LGN(TPETRA_MAP_INSTANT)
 
-#ifdef HAVE_TPETRA_INST_INT_LONG
-  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
-    createNonContigMap<int,long>(const Teuchos::ArrayView<const long> &elementList, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
-    createContigMap<int,long>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
-    createLocalMap<int,long>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
-    createUniformContigMap<int,long>(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  TPETRA_MAP_INSTANT(int,long,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_MAP_INSTANT(int,long,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_MAP_INSTANT(int,long,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_MAP_INSTANT(int,long,Kokkos::OpenMPNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THRUST)
-    TPETRA_MAP_INSTANT(int,long,Kokkos::ThrustGPUNode)
-#endif
-#endif // <int,long>
+  // for default node, all lo,go
+  TPETRA_INSTANTIATE_LG(TPETRA_MAP_INSTANT_DEFAULTNODE)
 
 } // namespace Tpetra
 

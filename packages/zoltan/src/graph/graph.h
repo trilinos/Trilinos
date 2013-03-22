@@ -52,7 +52,7 @@
 extern "C" {
 #endif
 
-#include "matrix.h"
+#include "zoltan_matrix.h"
 
 typedef struct ZG_ {
   Zoltan_matrix_2d mtx;

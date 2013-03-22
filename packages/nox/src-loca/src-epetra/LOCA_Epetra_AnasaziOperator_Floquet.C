@@ -64,7 +64,7 @@ LOCA::Epetra::AnasaziOperator::Floquet::Floquet(
     grp(grp_),
     xyztInterface()
 {
-  string callingFunction =
+  std::string callingFunction =
     "LOCA::Epetra::AnasaziOperator::Floquet::Floquet()";
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -72,12 +72,12 @@ LOCA::Epetra::AnasaziOperator::Floquet::Floquet(
 
   Teuchos::RCP<NOX::Epetra::Group> NEGrp
       = Teuchos::rcp_dynamic_cast<NOX::Epetra::Group>(grp);
-  if (NEGrp == Teuchos::null) cout << callingFunction << "  NEGrp cast failed " << endl;
-  else cout << callingFunction << "  NEGrp cast succeeded." << endl;
+  if (NEGrp == Teuchos::null) std::cout << callingFunction << "  NEGrp cast failed " << std::endl;
+  else std::cout << callingFunction << "  NEGrp cast succeeded." << std::endl;
 
   xyztInterface = Teuchos::rcp_dynamic_cast<LOCA::Epetra::Interface::xyzt>(NEGrp->getRequiredInterface());
-  if (xyztInterface == Teuchos::null) cout << callingFunction << "  xyztInterface cast failed " << endl;
-  else cout << callingFunction << "  xyztInterface cast succeeded." << endl;
+  if (xyztInterface == Teuchos::null) std::cout << callingFunction << "  xyztInterface cast failed " << std::endl;
+  else std::cout << callingFunction << "  xyztInterface cast succeeded." << std::endl;
 
   // make sure Jacobian is up-to-date
   
@@ -94,7 +94,7 @@ LOCA::Epetra::AnasaziOperator::Floquet::~Floquet()
   xyztInterface->setFloquetFillFlag(false);
 }
 
-const string&
+const std::string&
 LOCA::Epetra::AnasaziOperator::Floquet::label() const
 {
   return myLabel;
@@ -138,7 +138,7 @@ LOCA::Epetra::AnasaziOperator::Floquet::apply(const NOX::Abstract::MultiVector& 
 //  with entries 1/(i+2) led to the Floquet multipliers.
 
 /*
-  cout << " Fixing apply so Floquets at 1/2 1/3 1/4 ... " << endl;
+  std::cout << " Fixing apply so Floquets at 1/2 1/3 1/4 ... " << std::endl;
 
   Teuchos::RCP<NOX::Abstract::MultiVector> tmpVec =  input.clone();
   for (int i=0; i < input.numVectors(); i++) {
@@ -170,7 +170,7 @@ LOCA::Epetra::AnasaziOperator::Floquet::rayleighQuotient(
 					 NOX::Abstract::Vector& evec_i,
 					 double& rq_r, double& rq_i) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Epetra::AnasaziOperator::Floquet::rayleighQuotient()";
 
   // create two-column  multivector of two eigenvectors

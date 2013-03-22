@@ -140,7 +140,7 @@
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   EPETRA_OBJECT_PTR MANGLE(epetra_map_create1_64)(EPETRA_LONG_LONG numGlobalElements,
-                 EPETRA_INT indexBase,
+                 EPETRA_LONG_LONG indexBase,
                  EPETRA_OBJECT_REF comm) {
     Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
     Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(indexBase), comm_);
@@ -149,7 +149,7 @@
 
   EPETRA_OBJECT_PTR MANGLE(epetra_map_create2_64)(EPETRA_LONG_LONG numGlobalElements,
                  EPETRA_INT numMyElements,
-                 EPETRA_INT indexBase,
+                 EPETRA_LONG_LONG indexBase,
                  EPETRA_OBJECT_REF comm) {
     Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
     Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numMyElements), 
@@ -160,7 +160,7 @@
   EPETRA_OBJECT_PTR MANGLE(epetra_map_create3_64)(EPETRA_LONG_LONG numGlobalElements,
                  EPETRA_INT numLocalElements,
                  long long *updateList, 
-                 EPETRA_INT indexBase,
+                 EPETRA_LONG_LONG indexBase,
                  EPETRA_OBJECT_REF comm) {
     Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
     Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numLocalElements),

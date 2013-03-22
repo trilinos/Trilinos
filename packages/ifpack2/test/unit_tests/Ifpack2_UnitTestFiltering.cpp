@@ -31,16 +31,15 @@
 #include <Ifpack2_Version.hpp>
 #include <iostream>
 
-#ifdef HAVE_IFPACK2_QD
-#include <qd/dd_real.h>
-#endif
-
 #include <Ifpack2_UnitTestHelpers.hpp>
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
 #else
 #include <Teuchos_DefaultSerialComm.hpp>
 #endif
+#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_FancyOStream.hpp>
+
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Ifpack2_DiagonalFilter.hpp>
@@ -48,12 +47,7 @@
 #include <Ifpack2_DropFilter.hpp>
 #include <Ifpack2_SingletonFilter.hpp>
 #include <Ifpack2_SparsityFilter.hpp>
-
-#include <Teuchos_RefCountPtr.hpp>
-
-#include <Teuchos_FancyOStream.hpp>
-
-
+#include <Ifpack2_ReorderFilter.hpp>
 
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
@@ -73,7 +67,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   global_size_t num_rows_per_proc = 5;
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc); 
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap), y(rowmap), z(rowmap), a(rowmap),b(rowmap);
+  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap), y(rowmap), z(rowmap), b(rowmap);
 
 
   Matrix->describe(out,Teuchos::VERB_EXTREME);
@@ -106,15 +100,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // create a new matrix, locally filtered  //
   // ====================================== //
   Ifpack2::LocalFilter<CRS > LocalA(Matrix);
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > localrowmap = LocalA.getRowMap();
+  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> lx(rowmap), ly(rowmap), lz(rowmap), la(rowmap),lb(rowmap);
+  lx.randomize();
 
   // Apply w/ filter
-  LocalA.apply(x,y);
+  LocalA.apply(lx,ly);
 
   // Apply w/ GetRow
   size_t max_nz_per_row=LocalA.getNodeMaxNumRowEntries();
   Teuchos::Array<LocalOrdinal> Indices(max_nz_per_row);
   Teuchos::Array<Scalar> Values(max_nz_per_row);
-  Teuchos::ArrayRCP<const Scalar> xview=x.get1dView();
+  Teuchos::ArrayRCP<const Scalar> xview=lx.get1dView();
 
   for(LocalOrdinal i=0; i < (LocalOrdinal)num_rows_per_proc; i++){
     size_t NumEntries;
@@ -123,11 +120,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
     for(LocalOrdinal j=0; (size_t) j < NumEntries; j++){
       sum+=Values[j] * xview[Indices[j]];
     }
-    z.replaceLocalValue(i,sum);
+    lz.replaceLocalValue(i,sum);
   }
     
   // Diff
-  TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+  TEST_COMPARE_FLOATING_ARRAYS(ly.get1dView(), lz.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
 
   // ====================================== //
   // create a new matrix, dropping by value //
@@ -136,14 +133,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   Ifpack2::DropFilter<CRS> DropA(RCP<ROW >(&LocalA,false),1.5);
 
   // Apply w/ filter
-  DropA.apply(x,y);
+  DropA.apply(lx,ly);
 
   // Apply via diagonal
-  Matrix->getLocalDiagCopy(a);
-  z.elementWiseMultiply(1.0,x,a,0.0);
+  LocalA.getLocalDiagCopy(la);
+  lz.elementWiseMultiply(1.0,lx,la,0.0);
 
   // Diff
-  TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+  TEST_COMPARE_FLOATING_ARRAYS(ly.get1dView(), lz.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
 
   // ========================================= //
   // create a new matrix, dropping by sparsity //
@@ -153,13 +150,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   Ifpack2::SparsityFilter<CRS> SparsityA(RCP<ROW >(&LocalA,false),3,3);
 
   // Apply w/ filter
-  SparsityA.apply(x,y);
+  SparsityA.apply(lx,ly);
 
   // Apply via local matrix
-  LocalA.apply(x,z);
+  LocalA.apply(lx,lz);
 
   // Diff
-  TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+  TEST_COMPARE_FLOATING_ARRAYS(ly.get1dView(), lz.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
 
 
   // ======================================== //
@@ -170,13 +167,43 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   Ifpack2::SingletonFilter<CRS> SingletonA(RCP<ROW >(&LocalA,false));
 
   // Apply w/ filter
-  SingletonA.apply(x,y);
+  SingletonA.apply(lx,ly);
 
   // Apply via local matrix
-  LocalA.apply(x,z);
+  LocalA.apply(lx,lz);
 
   // Diff
-  TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+  TEST_COMPARE_FLOATING_ARRAYS(ly.get1dView(), lz.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+
+
+  // ======================================== //
+  // create new matrices, with reordering
+  // ======================================== //
+#ifdef HAVE_IFPACK2_ZOLTAN2
+  // Fill the permulation with a local reversal
+  Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> Ordering((size_t)num_rows_per_proc,(size_t)num_rows_per_proc);
+  Teuchos::ArrayRCP<LocalOrdinal> l_perm=Ordering.getPermutationRCP();
+  for(LocalOrdinal i=0; i < (LocalOrdinal)num_rows_per_proc; i++){
+    l_perm[i] = (LocalOrdinal) (num_rows_per_proc - i - 1);
+  }
+
+  // Now, build a reordering and a reverse reordering
+  Ifpack2::ReorderFilter<CRS> Reorder1(RCP<ROW >(&LocalA,false),
+				       RCP<Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> >(&Ordering,false));
+  Ifpack2::ReorderFilter<CRS> Reorder2(RCP<ROW >(&Reorder1,false),
+				       RCP<Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> >(&Ordering,false));
+
+  // Apply w/ double-reversed reordering
+  Reorder2.apply(lx,ly);
+
+  // Apply via local matrix
+  LocalA.apply(lx,lz);
+
+  // Diff
+  TEST_COMPARE_FLOATING_ARRAYS(ly.get1dView(), lz.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+
+#endif
+
 
 }
 

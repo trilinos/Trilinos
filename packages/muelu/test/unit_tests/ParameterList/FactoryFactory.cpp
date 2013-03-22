@@ -60,12 +60,11 @@ namespace MueLuTests {
   // This is not a real unit test, because output of BuildFactory is not verified. But anyway, it still useful.
   TEUCHOS_UNIT_TEST(FactoryFactory, BuildFactory)
   {
-    std::string  factoryConfigurationFiles[] = {"RAPFactory.xml", "SaPFactory.xml", "TentativePFactory.xml", "TrilinosSmoother.xml", "UCAggregationFactory.xml", "DirectSolver.xml"};
-    int         nFactoryConfigurationFiles = 6;
+    ArrayRCP<std::string> fileList =  TestHelpers::GetFileList(std::string("ParameterList/FactoryFactory/"), std::string(".xml"));
 
-    for(int i=0; i< nFactoryConfigurationFiles; i++) {
-      out << "Processing file: " << factoryConfigurationFiles[i] << std::endl;
-      Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile("ParameterList/FactoryFactory/" + factoryConfigurationFiles[i]);
+    for(int i=0; i< fileList.size(); i++) {
+      out << "Processing file: " << fileList[i] << std::endl;
+      Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile("ParameterList/FactoryFactory/" + fileList[i]);
 
       for (Teuchos::ParameterList::ConstIterator param = paramList->begin(); param != paramList->end(); ++param) {
         Teuchos::OSTab tab(out);
@@ -79,7 +78,7 @@ namespace MueLuTests {
       }
     }
   }
-  
+
 } // namespace MueLuTests
 
 

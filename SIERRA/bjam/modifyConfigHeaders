@@ -1,0 +1,20 @@
+#!/bin/bash
+
+filelist=`ls *_Config.h* *_config.h* VerifyFortran.h`
+
+for file in $filelist; do
+  ext="${file##*.}"
+  name="${file%.*}"
+  mv $file ${name}_fcs.${ext}
+  echo '#include "TrilinosSierraConfig.h"' >  $file
+  echo "#include \"${name}_fcs.${ext}\"" >> $file
+  sed -i '/FC_FUNC/d' ${name}_fcs.${ext}
+  sed -i '/F77_FUNC/d' ${name}_fcs.${ext}
+  sed -i '/F77_BLAS_MANGLE/d' ${name}_fcs.${ext}
+  sed -i '/FortranCInterface_/d' ${name}_fcs.${ext}
+done
+
+sed -i '/FINITE_VALUE_HAVE_GLOBAL_ISINF/d' NOX_Config_fcs.h
+sed -i '/FINITE_VALUE_HAVE_STD_ISINF/d' NOX_Config_fcs.h
+sed -i '/FINITE_VALUE_HAVE_GLOBAL_ISNAN/d' NOX_Config_fcs.h
+sed -i '/FINITE_VALUE_HAVE_STD_ISNAN/d' NOX_Config_fcs.h

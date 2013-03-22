@@ -43,14 +43,8 @@
 #ifndef PANZER_POINT_VALUES_IMPL_HPP
 #define PANZER_POINT_VALUES_IMPL_HPP
 
-#include "Shards_CellTopology.hpp"
-
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
 
-#include "Panzer_ArrayTraits.hpp"
 #include "Panzer_Dimension.hpp"
 
 // ***********************************************************
@@ -87,7 +81,41 @@ namespace panzer {
     point_coords = af.template buildArray<Scalar,Cell,IP,Dim>("point_coords",num_cells, num_points, num_space_dim);
   }
 
+  template <typename Scalar,typename Array>
+  template <typename CoordinateArray>
+  void PointValues<Scalar,Array>::
+  copyNodeCoords(const CoordinateArray& in_node_coords)
+  {
+    // copy cell node coordinates
+    {
+      size_type num_cells = in_node_coords.dimension(0);
+      size_type num_nodes = in_node_coords.dimension(1);
+      size_type num_dims = in_node_coords.dimension(2);
+     
+      for (size_type cell = 0; cell < num_cells;  ++cell)
+	for (size_type node = 0; node < num_nodes; ++node)
+	  for (size_type dim = 0; dim < num_dims; ++dim)
+	    node_coordinates(cell,node,dim) = in_node_coords(cell,node,dim);
+    }
+  }
 
+  template <typename Scalar,typename Array>
+  template <typename CoordinateArray>
+  void PointValues<Scalar,Array>::
+  copyPointCoords(const CoordinateArray& in_point_coords)
+  {
+    // copy reference point values
+    {
+      size_type num_points = in_point_coords.dimension(0);
+      size_type num_dims = in_point_coords.dimension(1);
+     
+      for (size_type point = 0; point < num_points; ++point)
+        for (size_type dim = 0; dim < num_dims; ++dim)
+          coords_ref(point,dim) = in_point_coords(point,dim);
+    }
+  }
+
+/*
   template <typename Scalar,typename Array>
   template <typename NodeCoordinateArray,typename PointCoordinateArray>
   void PointValues<Scalar,Array>::
@@ -98,46 +126,19 @@ namespace panzer {
        TEUCHOS_ASSERT(false); // not implemented!!!!
     }
     
+    copyPointCoords(in_point_coords);
+    copyNodeCoords(in_node_coords);
+
     Intrepid::CellTools<Scalar> cell_tools;
-    
-    // copy reference point values
-    {
-      typedef typename 
-	ArrayTraits<Scalar,Array>::size_type size_type;
-
-      size_type num_points = in_point_coords.dimension(0);
-      size_type num_dims = in_point_coords.dimension(1);
-     
-      for (size_type point = 0; point < num_points; ++point)
-        for (size_type dim = 0; dim < num_dims; ++dim)
-          coords_ref(point,dim) = in_point_coords(point,dim);
-    }
-
-    // copy cell node coordinates
-    {
-      typedef typename 
-	ArrayTraits<Scalar,Array>::size_type size_type;
-
-      size_type num_cells = in_node_coords.dimension(0);
-      size_type num_nodes = in_node_coords.dimension(1);
-      size_type num_dims = in_node_coords.dimension(2);
-     
-      for (size_type cell = 0; cell < num_cells;  ++cell)
-	for (size_type node = 0; node < num_nodes; ++node)
-	  for (size_type dim = 0; dim < num_dims; ++dim)
-	    node_coordinates(cell,node,dim) = in_node_coords(cell,node,dim);
-    }
 
     cell_tools.setJacobian(jac, coords_ref, node_coordinates,*(point_rule->topology));
     cell_tools.setJacobianInv(jac_inv, jac);
     cell_tools.setJacobianDet(jac_det, jac);
     
     // IP coordinates
-    {
-      cell_tools.mapToPhysicalFrame(point_coords, coords_ref, node_coordinates, *(point_rule->topology));
-    }
-
+    cell_tools.mapToPhysicalFrame(point_coords, coords_ref, node_coordinates, *(point_rule->topology));
   }
+*/
 }
 
 #endif

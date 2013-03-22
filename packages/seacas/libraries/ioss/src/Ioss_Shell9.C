@@ -98,6 +98,7 @@ Ioss::Shell9::Shell9()
   : Ioss::ElementTopology("shell9", "ShellQuadrilateral_9")
 {
   Ioss::ElementTopology::alias("shell9", "Shell_Quad_9_3D");
+  Ioss::ElementTopology::alias("shell9", "SHELL_QUADRILATERAL_9");
 }
 
 Ioss::Shell9::~Shell9() {}

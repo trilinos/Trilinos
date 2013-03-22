@@ -67,7 +67,7 @@ LOCA::AnasaziOperator::JacobianInverse::JacobianInverse(
     tmp_r(),
     tmp_i()
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::AnasaziOperator::JacobianInverse::JacobianInverse()";
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -84,7 +84,7 @@ LOCA::AnasaziOperator::JacobianInverse::~JacobianInverse()
 {
 }
 
-const string&
+const std::string&
 LOCA::AnasaziOperator::JacobianInverse::label() const
 {
   return myLabel;
@@ -125,7 +125,7 @@ LOCA::AnasaziOperator::JacobianInverse::rayleighQuotient(
 					 NOX::Abstract::Vector& evec_i,
 					 double& rq_r, double& rq_i) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::AnasaziOperator::JacobianInverse::rayleighQuotient()";
 
   // Allocate temporary vectors

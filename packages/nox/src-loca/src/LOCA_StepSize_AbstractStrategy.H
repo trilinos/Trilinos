@@ -53,6 +53,7 @@
 
 #include "NOX_Abstract_Group.H"     // for ReturnType
 #include "LOCA_Abstract_Iterator.H" // for StepStatus
+#include "Teuchos_ParameterList.hpp"
 
 // Forward declarations
 namespace NOX {
@@ -65,7 +66,7 @@ namespace LOCA {
     class AbstractStrategy;
     class ExtendedVector;
   }
-  class Stepper;
+//  class Stepper;
 }
 
 namespace LOCA {
@@ -130,7 +131,8 @@ namespace LOCA {
 		      const LOCA::MultiContinuation::ExtendedVector& predictor,
 		      const NOX::Solver::Generic& solver,
 		      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-		      const LOCA::Stepper& stepper,
+//		      const LOCA::Stepper& stepper,
+		      const LOCA::Abstract::Iterator& stepper,
 		      double& stepSize) = 0;
 
       //! Return the previous step size

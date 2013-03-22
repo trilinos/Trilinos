@@ -963,8 +963,13 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
   frlw = 0.25;
   /* font size for title (cm) */
   fnstit = 0.5;
-  if (title) ltit = strlen(title);
-  else       ltit = 0;
+  /* mfh 23 Jan 2013: title is always nonnull, since it's an array of
+     fixed nonzero length.  The 'if' test thus results in a compiler
+     warning. */
+  /*if (title) ltit = strlen(title);*/
+  /*else       ltit = 0;*/
+  ltit = strlen(title);
+
   /* position of title : centered horizontally */
   /*                     at 1.0 cm vertically over the drawing */
   ytitof = 1.0;

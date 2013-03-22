@@ -355,8 +355,8 @@ struct svar_init svariables[] =
       ptr->value.svar = svariables[i].value;
     }
 
-    std::sprintf(comm_string, "%c", comment);
-
+    comm_string[0] = '#';
+    
     symrec *ptr = putsym("_C_", STRING_VARIABLE, 1);
     ptr->value.svar = comm_string;
 

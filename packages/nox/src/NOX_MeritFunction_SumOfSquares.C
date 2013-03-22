@@ -72,7 +72,7 @@ computef(const NOX::Abstract::Group& grp) const
       << "ERROR: NOX::MeritFunction::SumOfSquares::computef() - "
       << "F has not been computed yet!.  Please call "
       << "computeF() on the group passed into this function."
-      << endl;
+      << std::endl;
     throw "NOX Error";
   }
 
@@ -88,7 +88,7 @@ computeGradient(const NOX::Abstract::Group& grp,
       << "ERROR: NOX::MeritFunction::SumOfSquares::computeGradient() - "
       << "F has not been computed yet!.  Please call "
       << "computeF() on the group passed into this function."
-      << endl;
+      << std::endl;
     throw "NOX Error";
   }
 
@@ -97,7 +97,7 @@ computeGradient(const NOX::Abstract::Group& grp,
       << "ERROR: NOX::MeritFunction::SumOfSquares::computeGradient() - "
       << "Jacobian has not been computed yet!.  Please call "
       << "computeJacobian() on the group passed into this function."
-      << endl;
+      << std::endl;
     throw "NOX Error";
   }
 
@@ -106,7 +106,7 @@ computeGradient(const NOX::Abstract::Group& grp,
 
   if (status != NOX::Abstract::Group::Ok) {
     utils->err() << "ERROR: NOX::MeritFunction::SumOfSquares::compute"
-		 << "Gradient - applyJacobianTranspose failed!" << endl;
+		 << "Gradient - applyJacobianTranspose failed!" << std::endl;
     throw "NOX Error";
   }
 
@@ -206,14 +206,14 @@ computeSlopeWithoutJacobianTranspose(const Abstract::Vector& dir,
   
   if (status != NOX::Abstract::Group::Ok) 
   {
-    utils->out() << "NOX::MeritFunction::SumOfSquares::computeSlopeWithoutJacobianTranspose -  Unable to apply Jacobian!" << endl;
+    utils->out() << "NOX::MeritFunction::SumOfSquares::computeSlopeWithoutJacobianTranspose -  Unable to apply Jacobian!" << std::endl;
     throw "NOX Error";
   }
 
   // Check that F exists
   if (!grp.isF()) 
   {
-    utils->out() << "NOX::MeritFunction::SumOfSquares::computeSlopeWithoutJacobianTranspose - Invalid F" << endl;
+    utils->out() << "NOX::MeritFunction::SumOfSquares::computeSlopeWithoutJacobianTranspose - Invalid F" << std::endl;
     throw "NOX Error";
   }
 
@@ -236,7 +236,7 @@ computeQuadraticMinimizer(const NOX::Abstract::Group& grp,
       << "computeQuadraticMinimizer() - "
       << "F has not been computed yet!.  Please call "
       << "computeF() on the group passed into this function."
-      << endl;
+      << std::endl;
     throw "NOX Error";
   }
 
@@ -246,7 +246,7 @@ computeQuadraticMinimizer(const NOX::Abstract::Group& grp,
       << "computeQuadraticMinimizer() - "
       << "Jacobian has not been computed yet!.  Please call "
       << "computeJacobian() on the group passed into this function."
-      << endl;
+      << std::endl;
     throw "NOX Error";
   }
 
@@ -260,7 +260,7 @@ computeQuadraticMinimizer(const NOX::Abstract::Group& grp,
     utils->err()
       << "ERROR: NOX::MeritFunction::SumOfSquares::"
       << "computeQuadraticMinimizer() - grp->applyJacobian() has failed!"
-      << endl;
+      << std::endl;
     throw "NOX Error";
   }
 
@@ -269,7 +269,7 @@ computeQuadraticMinimizer(const NOX::Abstract::Group& grp,
 
 }
 
-const string& NOX::MeritFunction::SumOfSquares::name() const
+const std::string& NOX::MeritFunction::SumOfSquares::name() const
 {
   return meritFunctionName;
 }

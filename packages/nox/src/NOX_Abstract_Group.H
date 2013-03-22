@@ -52,7 +52,7 @@
 #define NOX_ABSTRACT_GROUP_H
 
 #include "NOX_Abstract_Vector.H" // for NOX::CopyType
-#include "NOX_Common.H" // for string 
+#include "NOX_Common.H" // for std::string 
 #include "Teuchos_RCP.hpp" 
 #include "Teuchos_Assert.hpp"
 

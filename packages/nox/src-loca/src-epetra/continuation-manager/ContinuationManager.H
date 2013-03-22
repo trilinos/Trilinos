@@ -72,7 +72,7 @@ class ContinuationManager {
     ContinuationManager( 
 	//const Teuchos::RCP< Epetra_MpiComm > & aComm ,
 	const Teuchos::RCP< Epetra_Comm > & aComm ,
-	const string & taskFileName);
+	const std::string & taskFileName);
 
     // Destructor
     ~ContinuationManager();
@@ -93,10 +93,10 @@ class ContinuationManager {
     bool PrintLOCAStepperStatistics(); 
 
     // Returns the name of the actual solution file
-    string GetSolutionFileName() const;
+    std::string GetSolutionFileName() const;
 
     // Returns the name of the continuation file
-    string GetContinuationFileName() const;
+    std::string GetContinuationFileName() const;
 
     // Returns the stepper id 
     int GetStepID() const;
@@ -120,8 +120,8 @@ class ContinuationManager {
     // Setting the task list
     bool SetTaskList( Teuchos::RCP <Teuchos::ParameterList> aTaskList );
 
-    // Makes a string from a given integer
-    string StringifyInt( const int & intNumber , 
+    // Makes a std::string from a given integer
+    std::string StringifyInt( const int & intNumber , 
 	const int & digits) const;
 
   private:
@@ -131,7 +131,7 @@ class ContinuationManager {
     Teuchos::RCP <Epetra_Comm> comm;
 
     // The continuation file name
-    string continuationFileName;
+    std::string continuationFileName;
 
     // The initial step label
     int iniStepLabel;
@@ -155,16 +155,16 @@ class ContinuationManager {
     int maxAllowedSteps;
 
     // The output Directory
-    string outputDir;
+    std::string outputDir;
 
     // The ProblemLOCAPrototype problem
     Teuchos::RCP <ProblemLOCAPrototype> problem;
 
     // The extension for each solution (i.e. ".vtk")
-    string solutionFilesExtension;
+    std::string solutionFilesExtension;
 
     // The flag to be assigned to each solution (i.e. "step_")
-    string solutionFilesPrefix;
+    std::string solutionFilesPrefix;
 
     // The task list
     Teuchos::RCP <Teuchos::ParameterList> taskList;

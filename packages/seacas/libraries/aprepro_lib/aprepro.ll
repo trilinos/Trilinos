@@ -85,6 +85,9 @@ integer {D}+({E})?
 <INITIAL>{WS}"{NOECHO}" |
 {WS}"{ECHO(OFF)}"	    { echo = false;	}
 
+<INITIAL>{WS}"{IMMUTABLE(ON)}"	    { aprepro.stateImmutable = true;	}
+<INITIAL>{WS}"{IMMUTABLE(OFF)}"	    { aprepro.stateImmutable = aprepro.ap_options.immutable; }
+
 <INITIAL>{WS}"{"[Ll]"oop(" { BEGIN(GET_LOOP_VAR);
 			      if (aprepro.ap_options.debugging) 
 				std::cerr << "DEBUG LOOP - Found loop begin test " << yytext << " in file "
@@ -123,7 +126,7 @@ integer {D}+({E})?
 			      *pt = '\0';
 			      s = aprepro.getsym(yytext);
 
-			      if (s == 0 || (s->type != token::SVAR && s->value.var == 0.)) {
+			      if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
 				BEGIN(LOOP_SKIP);
 			      }
 			      else { /* Value defined and != 0. */
@@ -206,7 +209,7 @@ integer {D}+({E})?
 			      char *pt = strchr(yytext, ')');
 			      *pt = '\0';
 			      s = aprepro.getsym(yytext);
-			      if (s == 0 || (s->type != token::SVAR && s->value.var == 0.))
+			      if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.))
 				{
 				  if (ifdef == 1) {
 				    BEGIN(IF_SKIP);
@@ -286,7 +289,7 @@ integer {D}+({E})?
 			       if (quoted == false) {
 				 /* See if this is an aprepro variable referring to a name */
 				 s = aprepro.getsym(yytext);
-				 if (s == 0 || s->type != token::SVAR) {
+				 if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
 				   pt = yytext;
 				 } else {
 				   pt = (char*)s->value.svar;
@@ -474,6 +477,10 @@ namespace SEAMS {
 	aprepro.ap_file_list.pop();
 	/* Turn echoing back on at end of included files. */
 	echo = true;
+	/* Set immutable mode back to global immutable 
+	 * state at end of included file
+	 */
+	aprepro.stateImmutable = aprepro.ap_options.immutable;	
       }
       return (0);
     }

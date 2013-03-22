@@ -24,7 +24,7 @@ def area_of_triangle(p1, p2, p3):
 
 
 # Calculate subset of points that make a convex hull around points
-# Recursively eliminates points that lie inside two neighbouring points 
+# Recursively eliminates points that lie inside two neighbouring points
 # until only convex hull is remaining.
 # :Parameters:
 #    points : ndarray (2 x m)

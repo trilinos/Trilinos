@@ -67,13 +67,12 @@ using std::endl;
 using std::vector;
 
 typedef double                                                  scalar_type;
-typedef ScalarTraits< scalar_type >                             SCT;
-typedef SCT::magnitudeType                                      magnitude_type;
+typedef double                                                  mag_type;
+typedef ScalarTraits< scalar_type >                             STraits;
 typedef Kokkos::SerialNode                                      node_type;
-typedef Tpetra::MultiVector< scalar_type, int, int, node_type > MV;
+typedef Tpetra::MultiVector< scalar_type, int, int, node_type > MultiVec;
 typedef Tpetra::Operator< scalar_type, int, int, node_type >    OP;
-typedef MultiVecTraits< scalar_type, MV >                       MVT;
-typedef OperatorTraits< scalar_type, MV, OP >                   OPT;
+typedef MultiVecTraits< scalar_type, MultiVec >                 MVTraits;
 typedef SerialDenseMatrix< int, scalar_type >                   serial_matrix_type;
 typedef Tpetra::Map< int, int, node_type >                      map_type;
 typedef Tpetra::CrsMatrix< scalar_type, int, int, node_type >   sparse_matrix_type;
@@ -110,8 +109,8 @@ RCP< Kokkos::TBBNode > getNode< Kokkos::TBBNode >() {
 #endif
 
 // this is the tolerance that all tests are performed against
-const magnitude_type TOL = 1.0e-12;
-const magnitude_type ATOL = 10;
+const mag_type TOL = 1.0e-12;
+const mag_type ATOL = 10;
 
 // Declare an output manager for handling local output.
 // In Anasazi, this class is called BasicOutputManager.
@@ -123,26 +122,26 @@ RCP< Anasazi::BasicOutputManager<scalar_type> > MyOM;
 ////////////////////////////////////////////////////////////////////////////////
 
 static int 
-testProject (RCP<OrthoManager<scalar_type,MV> > OM, 
-             RCP<const MV> S, 
-             RCP<const MV> X1, 
-             RCP<const MV> X2);
+testProject (RCP<OrthoManager<scalar_type,MultiVec> > OM, 
+             RCP<const MultiVec> S, 
+             RCP<const MultiVec> X1, 
+             RCP<const MultiVec> X2);
 
 static int 
-testNormalize (RCP<OrthoManager<scalar_type,MV> > OM, 
-               RCP<const MV> S);
+testNormalize (RCP<OrthoManager<scalar_type,MultiVec> > OM, 
+               RCP<const MultiVec> S);
 
 static int 
-testProjectAndNormalize (RCP<OrthoManager< scalar_type ,MV > > OM, 
-                         RCP<const MV> S, 
-                         RCP<const MV> X1, 
-                         RCP<const MV> X2);
+testProjectAndNormalize (RCP<OrthoManager< scalar_type ,MultiVec > > OM, 
+                         RCP<const MultiVec> S, 
+                         RCP<const MultiVec> X1, 
+                         RCP<const MultiVec> X2);
 
 /// Compute and return $\sum_{j=1}^n \| X(:,j) - Y(:,j) \|_2$, where
 /// $n$ is the number of columns in X.
-static magnitude_type 
-MVDiff (const MV& X, 
-        const MV& Y);
+static mag_type 
+MVDiff (const MultiVec& X, 
+        const MultiVec& Y);
 
 
 /// Valid command-line parameter values for the OrthoManager subclass
@@ -186,21 +185,21 @@ defaultOrthoManagerName () { return std::string("TSQR"); }
 /// Instantiate and return an RCP to the specified OrthoManager
 /// subclass.
 ///
-static RCP< OrthoManager<scalar_type,MV> >
+static RCP< OrthoManager<scalar_type,MultiVec> >
 getOrthoManager (const std::string& ortho, 
                  const RCP< sparse_matrix_type >& M)
 {
   if (ortho == "SVQB") {
-    return rcp (new SVQBOrthoManager< scalar_type, MV, OP >(M));
+    return rcp (new SVQBOrthoManager< scalar_type, MultiVec, OP >(M));
   }
   else if (ortho == "Basic" || ortho == "basic" || ortho == "BASIC") {
-    return rcp (new BasicOrthoManager< scalar_type, MV, OP >(M));
+    return rcp (new BasicOrthoManager< scalar_type, MultiVec, OP >(M));
   }
   else if (ortho == "ICGS" || ortho == "Icgs" || ortho == "icgs") {
-    return rcp (new ICGSOrthoManager< scalar_type, MV, OP >(M));
+    return rcp (new ICGSOrthoManager< scalar_type, MultiVec, OP >(M));
   }
   else if (ortho == "TSQR" || ortho == "Tsqr" || ortho == "tsqr") {
-    typedef TsqrMatOrthoManager<scalar_type, MV, OP> ortho_type;
+    typedef TsqrMatOrthoManager<scalar_type, MultiVec, OP> ortho_type;
     const std::string label("Anasazi");
     return rcp (new ortho_type (label, M));
   }
@@ -216,8 +215,8 @@ getOrthoManager (const std::string& ortho,
 int 
 main (int argc, char *argv[]) 
 {
-  const scalar_type ONE = SCT::one();
-  const magnitude_type ZERO = SCT::magnitude(SCT::zero());
+  const scalar_type ONE = STraits::one();
+  const mag_type ZERO = STraits::magnitude(STraits::zero());
   GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
   int info = 0;
@@ -445,26 +444,26 @@ main (int argc, char *argv[])
       }
     
     // Instantiate the specified OrthoManager subclass for testing.
-    RCP< OrthoManager< scalar_type, MV > > OM = getOrthoManager (ortho, M);
+    RCP< OrthoManager< scalar_type, MultiVec > > OM = getOrthoManager (ortho, M);
 
     // "Prototype" multivector, from which to clone other multivectors.
-    RCP< MV > S = rcp (new MV (map, sizeS));
+    RCP< MultiVec > S = rcp (new MultiVec (map, sizeS));
 
     // Create multivectors X1 and X2, using the same map as
     // multivector S.  X1 and X2 must be M-orthonormal and mutually
     // M-orthogonal.
     debugOut << "Generating X1,X2 for testing... ";
-    RCP< MV > X1 = MVT::Clone (*S, sizeX1);
-    RCP< MV > X2 = MVT::Clone (*S, sizeX2);
+    RCP< MultiVec > X1 = MVTraits::Clone (*S, sizeX1);
+    RCP< MultiVec > X2 = MVTraits::Clone (*S, sizeX2);
     debugOut << "done." << endl;
     {
-      magnitude_type err;
+      mag_type err;
 
       //
       // Fill X1 with random values, and test the normalization error.
       //
       debugOut << "Filling X2 with random values... ";
-      MVT::MvRandom(*X1);
+      MVTraits::MvRandom(*X1);
       debugOut << "done." << endl
                << "Calling normalize() on X1... ";
       // The Anasazi and Belos OrthoManager interfaces differ.
@@ -491,7 +490,7 @@ main (int argc, char *argv[])
       // and test the orthogonalization error.
       //
       debugOut << "Filling X1 with random values... ";
-      MVT::MvRandom(*X2);
+      MVTraits::MvRandom(*X2);
       debugOut << "done." << endl
                << "Calling projectAndNormalize(X2,X1)... " << endl;
 
@@ -503,7 +502,7 @@ main (int argc, char *argv[])
       // SerialDenseMatrix arguments in the middle, and they are 
       // not optional.
       const int initialX2Rank = 
-        OM->projectAndNormalize (*X2, tuple< RCP< const MV > > (X1));
+        OM->projectAndNormalize (*X2, tuple< RCP< const MultiVec > > (X1));
       TEUCHOS_TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
                          std::runtime_error, 
                          "projectAndNormalize(X2,X1) returned rank " 
@@ -531,7 +530,7 @@ main (int argc, char *argv[])
       // Test project() on a random multivector S, by projecting S
       // against various combinations of X1 and X2.
       //
-      MVT::MvRandom(*S);
+      MVTraits::MvRandom(*S);
 
       debugOut << "Testing project() by projecting a random multivector S "
         "against various combinations of X1 and X2 " << endl;
@@ -548,8 +547,8 @@ main (int argc, char *argv[])
       serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
       C1.random();
       C2.random();
-      MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
-      MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
+      MVTraits::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
+      MVTraits::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
       debugOut << "Testing project() by projecting [X1 X2]-range multivector "
         "against P_X1 P_X2 " << endl;
@@ -558,13 +557,13 @@ main (int argc, char *argv[])
 
 
     if (sizeS > 2) {
-      MVT::MvRandom(*S);
-      RCP<MV> mid = MVT::Clone(*S,1);
+      MVTraits::MvRandom(*S);
+      RCP<MultiVec> mid = MVTraits::Clone(*S,1);
       serial_matrix_type c(sizeS,1);
-      MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
+      MVTraits::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
       std::vector<int> ind(1); 
       ind[0] = sizeS-1;
-      MVT::SetBlock(*mid,ind,*S);
+      MVTraits::SetBlock(*mid,ind,*S);
 
       debugOut << "Testing normalize() on a rank-deficient multivector " << endl;
       numFailed += testNormalize(OM,S);
@@ -573,14 +572,14 @@ main (int argc, char *argv[])
 
     if (sizeS > 1) {
       // rank-1
-      RCP<MV> one = MVT::Clone(*S,1);
-      MVT::MvRandom(*one);
+      RCP<MultiVec> one = MVTraits::Clone(*S,1);
+      MVTraits::MvRandom(*one);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
-        RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-        MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+        RCP<MultiVec> Si = MVTraits::CloneViewNonConst(*S,ind);
+        MVTraits::MvAddMv(STraits::random(),*one,ZERO,*one,*Si);
       }
 
       debugOut << "Testing normalize() on a rank-1 multivector " << endl;
@@ -590,7 +589,7 @@ main (int argc, char *argv[])
 
     {
       std::vector<int> ind(1); 
-      MVT::MvRandom(*S);
+      MVTraits::MvRandom(*S);
 
       debugOut << "Testing projectAndNormalize() on a random multivector " << endl;
       numFailed += testProjectAndNormalize(OM,S,X1,X2);
@@ -607,8 +606,8 @@ main (int argc, char *argv[])
       serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
       C1.random();
       C2.random();
-      MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
-      MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
+      MVTraits::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
+      MVTraits::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
       debugOut << "Testing projectAndNormalize() by projecting [X1 X2]-range "
         "multivector against P_X1 P_X2 " << endl;
@@ -617,13 +616,13 @@ main (int argc, char *argv[])
 
 
     if (sizeS > 2) {
-      MVT::MvRandom(*S);
-      RCP<MV> mid = MVT::Clone(*S,1);
+      MVTraits::MvRandom(*S);
+      RCP<MultiVec> mid = MVTraits::Clone(*S,1);
       serial_matrix_type c(sizeS,1);
-      MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
+      MVTraits::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
       std::vector<int> ind(1); 
       ind[0] = sizeS-1;
-      MVT::SetBlock(*mid,ind,*S);
+      MVTraits::SetBlock(*mid,ind,*S);
 
       debugOut << "Testing projectAndNormalize() on a rank-deficient "
         "multivector " << endl;
@@ -633,14 +632,14 @@ main (int argc, char *argv[])
 
     if (sizeS > 1) {
       // rank-1
-      RCP<MV> one = MVT::Clone(*S,1);
-      MVT::MvRandom(*one);
+      RCP<MultiVec> one = MVTraits::Clone(*S,1);
+      MVTraits::MvRandom(*one);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
-        RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-        MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+        RCP<MultiVec> Si = MVTraits::CloneViewNonConst(*S,ind);
+        MVTraits::MvAddMv(STraits::random(),*one,ZERO,*one,*Si);
       }
 
       debugOut << "Testing projectAndNormalize() on a rank-1 multivector " << endl;
@@ -674,18 +673,18 @@ main (int argc, char *argv[])
 
 
 static int 
-testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM, 
-                         RCP< const MV > S, 
-                         RCP< const MV > X1, 
-                         RCP< const MV > X2) 
+testProjectAndNormalize (RCP< OrthoManager< scalar_type, MultiVec > > OM, 
+                         RCP< const MultiVec > S, 
+                         RCP< const MultiVec > X1, 
+                         RCP< const MultiVec > X2) 
 {
-  typedef Array< RCP< MV > >::size_type size_type;
+  typedef Array< RCP< MultiVec > >::size_type size_type;
 
-  const scalar_type ONE = SCT::one();
-  const magnitude_type ZERO = SCT::magnitude(SCT::zero());
-  const int sizeS = MVT::GetNumberVecs(*S);
-  const int sizeX1 = MVT::GetNumberVecs(*X1);
-  const int sizeX2 = MVT::GetNumberVecs(*X2);
+  const scalar_type ONE = STraits::one();
+  const mag_type ZERO = STraits::magnitude(STraits::zero());
+  const int sizeS = MVTraits::GetNumberVecs(*S);
+  const int sizeX1 = MVTraits::GetNumberVecs(*X1);
+  const int sizeX2 = MVTraits::GetNumberVecs(*X2);
   int numerr = 0;
   std::ostringstream sout;
 
@@ -723,17 +722,17 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
 
   // test ortho error before orthonormalizing
   if (X1 != null) {
-    magnitude_type err = OM->orthogError(*S,*X1);
+    mag_type err = OM->orthogError(*S,*X1);
     sout << "   || <S,X1> || before     : " << err << endl;
   }
   if (X2 != null) {
-    magnitude_type err = OM->orthogError(*S,*X2);
+    mag_type err = OM->orthogError(*S,*X2);
     sout << "   || <S,X2> || before     : " << err << endl;
   }
 
   for (int t=0; t<numtests; t++) {
 
-    Array<RCP<const MV> > theX;
+    Array<RCP<const MultiVec> > theX;
     RCP<serial_matrix_type > B = rcp( new serial_matrix_type(sizeS,sizeS) );
     Array<RCP<serial_matrix_type > > C;
     if ( (t && 3) == 0 ) {
@@ -766,14 +765,14 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
       // test all outputs for equivalence
 
       // here is where the outputs go
-      Array<RCP<MV> > S_outs;
+      Array<RCP<MultiVec> > S_outs;
       Array<Array<RCP<serial_matrix_type > > > C_outs;
       Array<RCP<serial_matrix_type > > B_outs;
-      RCP<MV> Scopy;
+      RCP<MultiVec> Scopy;
       Array<int> ret_out;
 
       // copies of S,MS
-      Scopy = MVT::CloneCopy(*S);
+      Scopy = MVTraits::CloneCopy(*S);
       // randomize this data, it should be overwritten
       B->random();
       for (size_type i=0; i<C.size(); i++) {
@@ -803,7 +802,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         for (int i=0; i<ret; i++) {
           ind[i] = i;
         }
-        S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
+        S_outs.push_back( MVTraits::CloneViewNonConst(*Scopy,ind) );
         B_outs.push_back( rcp( new serial_matrix_type(Teuchos::Copy,*B,ret,sizeS) ) );
       }
       else {
@@ -821,7 +820,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
       // do we run the reversed input?
       if ( (t && 3) == 3 ) {
         // copies of S,MS
-        Scopy = MVT::CloneCopy(*S);
+        Scopy = MVTraits::CloneCopy(*S);
         // randomize this data, it should be overwritten
         B->random();
         for (size_type i=0; i<C.size(); i++) {
@@ -853,7 +852,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
           for (int i=0; i<ret; i++) {
             ind[i] = i;
           }
-          S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
+          S_outs.push_back( MVTraits::CloneViewNonConst(*Scopy,ind) );
           B_outs.push_back( rcp( new serial_matrix_type(Teuchos::Copy,*B,ret,sizeS) ) );
         }
         else {
@@ -873,7 +872,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
       for (size_type o=0; o<S_outs.size(); o++) {
         // S^T M S == I
         {
-          magnitude_type err = OM->orthonormError(*S_outs[o]);
+          mag_type err = OM->orthonormError(*S_outs[o]);
           if (err > TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -882,15 +881,15 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         // S_in = X1*C1 + C2*C2 + S_out*B
         {
-          RCP<MV> tmp = MVT::Clone(*S,sizeS);
-          MVT::MvTimesMatAddMv(ONE,*S_outs[o],*B_outs[o],ZERO,*tmp);
+          RCP<MultiVec> tmp = MVTraits::Clone(*S,sizeS);
+          MVTraits::MvTimesMatAddMv(ONE,*S_outs[o],*B_outs[o],ZERO,*tmp);
           if (C_outs[o].size() > 0) {
-            MVT::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
+            MVTraits::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
             if (C_outs[o].size() > 1) {
-              MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
+              MVTraits::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
             }
           }
-          magnitude_type err = MVDiff(*tmp,*S);
+          mag_type err = MVDiff(*tmp,*S);
           if (err > ATOL*TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -899,7 +898,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         // <X1,S> == 0
         if (theX.size() > 0 && theX[0] != null) {
-          magnitude_type err = OM->orthogError(*theX[0],*S_outs[o]);
+          mag_type err = OM->orthogError(*theX[0],*S_outs[o]);
           if (err > TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -908,7 +907,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         // <X2,S> == 0
         if (theX.size() > 1 && theX[1] != null) {
-          magnitude_type err = OM->orthogError(*theX[1],*S_outs[o]);
+          mag_type err = OM->orthogError(*theX[1],*S_outs[o]);
           if (err > TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -937,13 +936,13 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
 
 
 static int 
-testNormalize (RCP< OrthoManager< scalar_type, MV > > OM, 
-               RCP< const MV > S)
+testNormalize (RCP< OrthoManager< scalar_type, MultiVec > > OM, 
+               RCP< const MultiVec > S)
 {
 
-  const scalar_type ONE = SCT::one();
-  const magnitude_type ZERO = SCT::magnitude(SCT::zero());
-  const int sizeS = MVT::GetNumberVecs(*S);
+  const scalar_type ONE = STraits::one();
+  const mag_type ZERO = STraits::magnitude(STraits::zero());
+  const int sizeS = MVTraits::GetNumberVecs(*S);
   int numerr = 0;
   std::ostringstream sout;
 
@@ -976,11 +975,11 @@ testNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
       // test all outputs for correctness
 
       // here is where the outputs go
-      RCP<MV> Scopy;
+      RCP<MultiVec> Scopy;
       int ret;
 
       // copies of S,MS
-      Scopy = MVT::CloneCopy(*S);
+      Scopy = MVTraits::CloneCopy(*S);
       // randomize this data, it should be overwritten
       B->random();
       // run test
@@ -1007,7 +1006,7 @@ testNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         for (int i=0; i<ret; i++) {
           ind[i] = i;
         }
-        Scopy = MVT::CloneViewNonConst(*Scopy,ind);
+        Scopy = MVTraits::CloneViewNonConst(*Scopy,ind);
 
         sout << "::: Resulting pre-subset B:" << std::endl;
         TSQR::print_local_matrix (sout, ret, sizeS, B->values(), B->stride());
@@ -1022,7 +1021,7 @@ testNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
       // test all outputs for correctness
       // S^T M S == I
       {
-        magnitude_type err = OM->orthonormError(*Scopy);
+        mag_type err = OM->orthonormError(*Scopy);
         if (err > TOL) {
           sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
           numerr++;
@@ -1031,9 +1030,9 @@ testNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
       }
       // S_in = S_out*B
       {
-        RCP<MV> tmp = MVT::Clone(*S,sizeS);
-        MVT::MvTimesMatAddMv(ONE,*Scopy,*B,ZERO,*tmp);
-        magnitude_type err = MVDiff(*tmp,*S);
+        RCP<MultiVec> tmp = MVTraits::Clone(*S,sizeS);
+        MVTraits::MvTimesMatAddMv(ONE,*Scopy,*B,ZERO,*tmp);
+        mag_type err = MVDiff(*tmp,*S);
         if (err > ATOL*TOL) {
           sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
           numerr++;
@@ -1060,17 +1059,17 @@ testNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
 
 
 static int 
-testProject (RCP< OrthoManager< scalar_type, MV > > OM, 
-             RCP< const MV > S, 
-             RCP< const MV > X1, 
-             RCP< const MV > X2) 
+testProject (RCP< OrthoManager< scalar_type, MultiVec > > OM, 
+             RCP< const MultiVec > S, 
+             RCP< const MultiVec > X1, 
+             RCP< const MultiVec > X2) 
 {
-  typedef Array< RCP< MV > >::size_type size_type;
+  typedef Array< RCP< MultiVec > >::size_type size_type;
 
-  const scalar_type ONE = SCT::one();
-  const int sizeS = MVT::GetNumberVecs(*S);
-  const int sizeX1 = MVT::GetNumberVecs(*X1);
-  const int sizeX2 = MVT::GetNumberVecs(*X2);
+  const scalar_type ONE = STraits::one();
+  const int sizeS = MVTraits::GetNumberVecs(*S);
+  const int sizeX1 = MVTraits::GetNumberVecs(*X1);
+  const int sizeX2 = MVTraits::GetNumberVecs(*X2);
   int numerr = 0;
   std::ostringstream sout;
 
@@ -1108,17 +1107,17 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
 
   // test ortho error before orthonormalizing
   if (X1 != null) {
-    magnitude_type err = OM->orthogError(*S,*X1);
+    mag_type err = OM->orthogError(*S,*X1);
     sout << "   || <S,X1> || before     : " << err << endl;
   }
   if (X2 != null) {
-    magnitude_type err = OM->orthogError(*S,*X2);
+    mag_type err = OM->orthogError(*S,*X2);
     sout << "   || <S,X2> || before     : " << err << endl;
   }
 
   for (int t = 0; t < numtests; ++t) 
     {
-      Array< RCP< const MV > > theX;
+      Array< RCP< const MultiVec > > theX;
       Array< RCP< serial_matrix_type > > C;
       if ( (t && 3) == 0 ) {
         // neither X1 nor X2
@@ -1150,12 +1149,12 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
         // test all outputs for equivalence
 
         // here is where the outputs go
-        Array<RCP<MV> > S_outs;
+        Array<RCP<MultiVec> > S_outs;
         Array<Array<RCP<serial_matrix_type > > > C_outs;
-        RCP<MV> Scopy;
+        RCP<MultiVec> Scopy;
 
         // copies of S,MS
-        Scopy = MVT::CloneCopy(*S);
+        Scopy = MVTraits::CloneCopy(*S);
         // randomize this data, it should be overwritten
         for (size_type i = 0; i < C.size(); ++i) {
           C[i]->random();
@@ -1178,7 +1177,7 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
       // do we run the reversed input?
       if ( (t && 3) == 3 ) {
         // copies of S,MS
-        Scopy = MVT::CloneCopy(*S);
+        Scopy = MVTraits::CloneCopy(*S);
         // randomize this data, it should be overwritten
         for (size_type i = 0; i < C.size(); ++i) {
           C[i]->random();
@@ -1206,14 +1205,14 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
       for (size_type o = 0; o < S_outs.size(); ++o) {
         // S_in = X1*C1 + C2*C2 + S_out
         {
-          RCP<MV> tmp = MVT::CloneCopy(*S_outs[o]);
+          RCP<MultiVec> tmp = MVTraits::CloneCopy(*S_outs[o]);
           if (C_outs[o].size() > 0) {
-            MVT::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
+            MVTraits::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
             if (C_outs[o].size() > 1) {
-              MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
+              MVTraits::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
             }
           }
-          magnitude_type err = MVDiff(*tmp,*S);
+          mag_type err = MVDiff(*tmp,*S);
           if (err > ATOL*TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -1222,7 +1221,7 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         // <X1,S> == 0
         if (theX.size() > 0 && theX[0] != null) {
-          magnitude_type err = OM->orthogError(*theX[0],*S_outs[o]);
+          mag_type err = OM->orthogError(*theX[0],*S_outs[o]);
           if (err > TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -1231,7 +1230,7 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         // <X2,S> == 0
         if (theX.size() > 1 && theX[1] != null) {
-          magnitude_type err = OM->orthogError(*theX[1],*S_outs[o]);
+          mag_type err = OM->orthogError(*theX[1],*S_outs[o]);
           if (err > TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -1252,7 +1251,7 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
           // don't need to check C_outs either
           //   
           // check that S_outs[o1] == S_outs[o2]
-          magnitude_type err = MVDiff(*S_outs[o1],*S_outs[o2]);
+          mag_type err = MVDiff(*S_outs[o1],*S_outs[o2]);
           if (err > TOL) {
             sout << "    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -1279,31 +1278,31 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
 
 
 
-static magnitude_type 
-MVDiff (const MV& X, 
-        const MV& Y) 
+static mag_type 
+MVDiff (const MultiVec& X, 
+        const MultiVec& Y) 
 {
-  const scalar_type ONE = SCT::one();
-  const int ncols_X = MVT::GetNumberVecs(X);
-  TEUCHOS_TEST_FOR_EXCEPTION( (MVT::GetNumberVecs(Y) != ncols_X),
+  const scalar_type ONE = STraits::one();
+  const int ncols_X = MVTraits::GetNumberVecs(X);
+  TEUCHOS_TEST_FOR_EXCEPTION( (MVTraits::GetNumberVecs(Y) != ncols_X),
       std::logic_error,
       "MVDiff: X and Y should have the same number of columns."
       "  X has " << ncols_X << " column(s) and Y has " 
-      << MVT::GetNumberVecs(Y) << " columns." );
+      << MVTraits::GetNumberVecs(Y) << " columns." );
   serial_matrix_type C (ncols_X, ncols_X);
 
   // tmp := X
-  RCP< MV > tmp = MVT::CloneCopy(X);
+  RCP< MultiVec > tmp = MVTraits::CloneCopy(X);
   // tmp := tmp - Y
-  MVT::MvAddMv (-ONE, Y, ONE, *tmp, *tmp);
+  MVTraits::MvAddMv (-ONE, Y, ONE, *tmp, *tmp);
   // $C := (X - Y)^* \cdot (X - Y)$
-  MVT::MvTransMv (ONE, *tmp, *tmp, C);
+  MVTraits::MvTransMv (ONE, *tmp, *tmp, C);
 
   // Compute and return $\sum_{j=1}^n \| X(:,j) - Y(:,j) \|_2$, where
   // $n$ is the number of columns in X.
-  magnitude_type err (0);
+  mag_type err (0);
   for (int i = 0; i < ncols_X; ++i)
-    err += SCT::magnitude (C(i,i));
+    err += STraits::magnitude (C(i,i));
 
-  return SCT::magnitude (SCT::squareroot (err));
+  return STraits::magnitude (STraits::squareroot (err));
 }

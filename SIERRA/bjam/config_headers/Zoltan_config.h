@@ -1,5 +1,2 @@
-#include "TrilinosPlatform_config.h"
-
-#define ZOLTAN_OCT
-#define ZOLTAN_PARMETIS
-
+#include "TrilinosSierraConfig.h"
+#include "Zoltan_config_fcs.h"

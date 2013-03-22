@@ -45,23 +45,24 @@
 // ************************************************************************
 //@HEADER
 #include "NOX_TestUtils.H"
+#include <sstream>
+#include <fstream>
 
-
-bool NOX::getNextQuotedString(const string& line, string::size_type& pos, string& value)
+bool NOX::getNextQuotedString(const std::string& line, std::string::size_type& pos, std::string& value)
 {
   // Initialize value
   value = "";
 
   // Compute the length of the line
-  string::size_type linelength = line.length();
+  std::string::size_type linelength = line.length();
 
   // Find the location of the first quote
-  string::size_type pos1 = line.find('"', pos); 
+  std::string::size_type pos1 = line.find('"', pos); 
   
   // Check that the operation succeeded and that we're not at the end of the line
-  if ((pos1 == string::npos) || (pos1 == linelength - 1))
+  if ((pos1 == std::string::npos) || (pos1 == linelength - 1))
   {
-    pos = string::npos;
+    pos = std::string::npos;
     return false;
   }
 
@@ -69,20 +70,20 @@ bool NOX::getNextQuotedString(const string& line, string::size_type& pos, string
   pos1 = pos1 + 1;
 
   // Find the location of the second quote
-  string::size_type pos2 = line.find('"', pos1); 
+  std::string::size_type pos2 = line.find('"', pos1); 
 
   // Check that the operation was successful
-  if (pos2 == string::npos)
+  if (pos2 == std::string::npos)
   {
-    pos = string::npos;
+    pos = std::string::npos;
     return false;
   }
 
   // Compute the length of the expression
-  string::size_type length = pos2 - pos1;
+  std::string::size_type length = pos2 - pos1;
 
   // Compute the final position
-  pos = (pos2 == (linelength - 1)) ? string::npos : pos2 + 1;
+  pos = (pos2 == (linelength - 1)) ? std::string::npos : pos2 + 1;
 
   // Extract the substring
   value = line.substr(pos1, length);
@@ -91,32 +92,32 @@ bool NOX::getNextQuotedString(const string& line, string::size_type& pos, string
   return true;
 }
 
-bool NOX::getNextString(const string& line, string::size_type& pos, string& value)
+bool NOX::getNextString(const std::string& line, std::string::size_type& pos, std::string& value)
 {
   // Initialize value
   value = "";
 
   // Compute the length of the line
-  string::size_type linelength = line.length();
+  std::string::size_type linelength = line.length();
 
   // Find the location of the first non-space character
-  string::size_type pos1 = line.find_first_not_of(' ', pos); 
+  std::string::size_type pos1 = line.find_first_not_of(' ', pos); 
   
   // Check that the operation succeeded 
-  if (pos1 == string::npos) 
+  if (pos1 == std::string::npos) 
   {
-    pos = string::npos;
+    pos = std::string::npos;
     return false;
   }
 
   // Find the location of the next space, if any
-  string::size_type pos2 = line.find(' ', pos1); 
+  std::string::size_type pos2 = line.find(' ', pos1); 
 
   // Compute the length of the expression
-  string::size_type length = (pos2 == string::npos) ? linelength - pos1 : pos2 - pos1;
+  std::string::size_type length = (pos2 == std::string::npos) ? linelength - pos1 : pos2 - pos1;
 
   // Compute the final position
-  pos = (pos2 == (linelength - 1)) ? string::npos : pos2 + 1;
+  pos = (pos2 == (linelength - 1)) ? std::string::npos : pos2 + 1;
 
   // Extract the substring
   value = line.substr(pos1, length);
@@ -125,41 +126,41 @@ bool NOX::getNextString(const string& line, string::size_type& pos, string& valu
   return true;
 }
 
-bool NOX::getNextInt(const string& line, string::size_type& pos, int& value)
+bool NOX::getNextInt(const std::string& line, std::string::size_type& pos, int& value)
 {
-  string field;
+  std::string field;
   if ((!NOX::getNextString(line,pos,field)) || (field.size() == 0))
     return false;
 
   return ((sscanf(field.c_str(), "%d", &value)) == 1);
 }
 
-bool NOX::getNextDouble(const string& line, string::size_type& pos, double& value)
+bool NOX::getNextDouble(const std::string& line, std::string::size_type& pos, double& value)
 {
-  string field;
+  std::string field;
   if ((!NOX::getNextString(line,pos,field)) || (field.size() == 0))
     return false;
 
   return ((sscanf(field.c_str(), "%le", &value)) == 1);
 }
 
-bool NOX::processTextInputFileLine(const string& line, Teuchos::ParameterList& params, 
+bool NOX::processTextInputFileLine(const std::string& line, Teuchos::ParameterList& params, 
 					Teuchos::ParameterList*& subPtr)
 {
   
-  string::size_type pos;	// current position inside line
+  std::string::size_type pos;	// current position inside line
 
-  string field;			// name of parameter
+  std::string field;			// name of parameter
 
   //bool tmpbool;			// for reading in a boolean
   int tmpint;			// for reading in an int
   double tmpdouble;		// for reading in a double
-  string tmpstring;		// for reading in a string
+  std::string tmpstring;		// for reading in a std::string
   //Value tmpvalue;		// for reading in an Value
   //NOX::Entry tmpvalue;          // darin: use NOX::entry instead of Value
   //Vector tmpvector;		// for reading in an Vector
 
-  string type;			// parameter type (used in new style)
+  std::string type;			// parameter type (used in new style)
 
   static int n = -1;			// size of vector (used in old style)
   char c;			// used to read in '=' character in old style
@@ -178,7 +179,7 @@ bool NOX::processTextInputFileLine(const string& line, Teuchos::ParameterList& p
     
     pos = 0;
     
-    while (pos != string::npos)
+    while (pos != std::string::npos)
     {
       if ((NOX::getNextQuotedString(line, pos, field)) && (field.size() > 0))
 	subPtr = &(subPtr->sublist(field));
@@ -272,7 +273,7 @@ bool NOX::processTextInputFileLine(const string& line, Teuchos::ParameterList& p
 
   else				// old style
   {
-    istringstream linein(line);
+    std::istringstream linein(line);
     linein >> field;
     
     if ((field == "n_parameters") || (field == "continuous_design"))
@@ -285,7 +286,7 @@ bool NOX::processTextInputFileLine(const string& line, Teuchos::ParameterList& p
     {
       if (n == -1)
       {
-	cout << "Error: initial_point specified before n_parameters " << endl;
+	cout << "Error: initial_point specified before n_parameters " << std::endl;
 	return false;
       }
       
@@ -310,7 +311,7 @@ bool NOX::processTextInputFileLine(const string& line, Teuchos::ParameterList& p
     {
       if (n == -1)
       {
-	cout << "Error:lower_bounds specified before n_parameters " << endl;
+	cout << "Error:lower_bounds specified before n_parameters " << std::endl;
 	return false;
       }
       
@@ -327,7 +328,7 @@ bool NOX::processTextInputFileLine(const string& line, Teuchos::ParameterList& p
     {
       if (n == -1)
       {
-	cout << "Error:upper_bounds specified before n_parameters " << endl;
+	cout << "Error:upper_bounds specified before n_parameters " << std::endl;
 	return false;
       }
       
@@ -363,26 +364,26 @@ bool NOX::processTextInputFileLine(const string& line, Teuchos::ParameterList& p
     
     else 
     {
-      cout << "Ignoring unrecognized field." << field << "\n";
+      std::cout << "Ignoring unrecognized field." << field << "\n";
     }
     
   } /* old style */
   return true;
 }
 
-bool NOX::parseTextInputFile(const string filename, Teuchos::ParameterList& params)
+bool NOX::parseTextInputFile(const std::string filename, Teuchos::ParameterList& params)
 {
   // Open the input file
-  ifstream fin;
+  std::ifstream fin;
   fin.open(filename.c_str());
 
   if (!fin) 
   {
-    cout << "Error: Cannot find input file " << filename << endl;
+    std::cout << "Error: Cannot find input file " << filename << std::endl;
     return false;
   }
 
-  string line;			// one line from input file
+  std::string line;			// one line from input file
   Teuchos::ParameterList* subPtr;	// sublist pointer
 
   subPtr = &params;
@@ -393,7 +394,7 @@ bool NOX::parseTextInputFile(const string filename, Teuchos::ParameterList& para
       
     if (!NOX::processTextInputFileLine(line, params, subPtr))
     {
-        cout << "Ignoring input file line: " << line << endl;
+      std::cout << "Ignoring input file line: " << line << std::endl;
     }
   }
 

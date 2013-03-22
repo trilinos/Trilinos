@@ -1,6 +1,0 @@
-- remove PFactory class
-- explain monitor / submonitor
-
-
-
-- PB: Level::GetFactory : skip FactoryManager if user data available but not the case for input arg of factories

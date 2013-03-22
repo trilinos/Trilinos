@@ -47,6 +47,6 @@
 int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElements,
 	     long long * MyGlobalElements, int ElementSize, int * ElementSizeList, 
 	     long long NumGlobalEquations, int NumMyEquations,
-          int IndexBase, Epetra_Comm & Comm,
+         long long IndexBase, Epetra_Comm & Comm,
 	     bool DistributedGlobal, bool IsOneToOne);
 

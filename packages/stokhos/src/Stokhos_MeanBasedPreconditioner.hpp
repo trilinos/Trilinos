@@ -167,6 +167,9 @@ namespace Stokhos {
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
+    //! Flag indicating whether to use apply all vectors simultaneously
+    bool use_block_apply;
+
   }; // class MeanBasedPreconditioner
   
 } // namespace Stokhos

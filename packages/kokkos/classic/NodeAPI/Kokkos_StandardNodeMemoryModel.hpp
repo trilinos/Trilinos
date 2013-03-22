@@ -159,6 +159,7 @@ namespace Kokkos {
       //! \brief Return a non-const view of a buffer for use on the host.
       template <class T> inline
       ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const ArrayRCP<T> &buff) {
+	(void) rw; // Silence "unused parameter" compiler warning
         if (isHostNode == false) {
           CHECK_COMPUTE_BUFFER(buff);
         }

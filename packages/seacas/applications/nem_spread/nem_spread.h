@@ -6,7 +6,7 @@
 #include "globals.h"
 
 #define UTIL_NAME "nem_spread"
-#define VER_STR   "6.07 (2012/07/12)"
+#define VER_STR   "6.09 (2012/11/26)"
 
 extern void check_exodus_error (int, const char *);
 extern double second               (void);

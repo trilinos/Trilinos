@@ -37,6 +37,7 @@
 #endif
 #include "ml_FilterType.h"
 #ifdef HAVE_ML_TEUCHOS
+#include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
 #endif
 #ifdef _MSC_VER
@@ -3580,118 +3581,103 @@ int ML_Epetra::UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList
 
 // ============================================================================
 
+#ifdef HAVE_ML_TEUCHOS
 /*
-  Utility that from an existing Teuchos ParameterList creates a new list, in
+  Utility that from an existing Teuchos::ParameterList creates a new list, in
   which level-specific parameters are replaced with sublists.
 
   Currently, level-specific parameters that begin with "smoother:"
-  or "aggregation:" are placed in sublists.  Coarse options are also placed
+  or "aggregation:" are placed in sublists. Coarse options are also placed
   in a coarse list.
+
+  Example:
+   Input:
+    smoother: type (level 0) = symmetric Gauss-Seidel  
+    smoother: sweeps (level 0) = 1  
+   Output:
+    smoother: list (level 0) -> 
+     smoother: type = symmetric Gauss-Seidel  
+     smoother: sweeps = 1  
 */
-
-#ifdef HAVE_ML_TEUCHOS
-void ML_CreateSublists(ParameterList &List, ParameterList &newList,
-                      int NumLevels)
+void ML_CreateSublists(const ParameterList &List, ParameterList &newList)
 {
-  char listName[80], subname[160];
-  ParameterList  **smList = new ParameterList*[NumLevels];
-  ParameterList  **aggList = new ParameterList*[NumLevels];
-  for (int i=0; i<NumLevels; i++) smList[i] = aggList[i] = 0;
   newList.setName(List.name());
-
-  for (ParameterList::ConstIterator param=List.begin();
-                                    param!=List.end() ; param++)
-  {
-    const string pname=List.name(param);
-    bool pnameIsList = List.isSublist(pname);
-    string::size_type where = pname.find(" (level",0);
-
-    /*
-    The coarse sublist is a special case.  For each of its options:
-       1) If starts with "coarse:"
-          a) change to "smoother:".
-          b) copy to new list's coarse sublist.
-       2) If a smoother option
-          copy as is to new list's coarse sublist.
-    */
-    if (pname.find("coarse:",0) == 0) {
-      ParameterList &coarseList = newList.sublist("coarse: list");
-      if (pnameIsList && pname=="coarse: list") {
-        ParameterList &sublist = List.sublist(pname);
-        for (ParameterList::ConstIterator param=sublist.begin(); param!=sublist.end() ; param++) {
-          ParameterList &coarseList = newList.sublist("coarse: list");
-          const string pname=sublist.name(param);
-          if (pname.find("coarse:",0) == 0) {
-            sprintf(subname,"smoother: %s",pname.c_str()+8);
-            coarseList.setEntry(subname,sublist.entry(param));
-          } else
-            coarseList.setEntry(pname,sublist.entry(param));
-        }
-      } else {
-        sprintf(subname,"smoother: %s",pname.c_str()+8);
-        coarseList.setEntry(subname,List.entry(param));
-      }
-    }
-
-    if ( !pnameIsList && (where != string::npos) )
+  
+  // Copy general (= not level-specific) options and sublists to the new list.
+  // - Coarse and level-specific parameters are not copied yet. They will be moved to sublists later.
+  // - Already existing level-specific lists are copied to the new list but the coarse list is not copied 
+  //   yet because it has to be modified before copy (s/coarse/smoother/)
+  for (ParameterList::ConstIterator param=List.begin(); param!=List.end(); ++param)
     {
-        // Process all ML level-specific options that aren't sublists.
-        if (pname.find("smoother:",0) == 0)
-        {
-          int i=-999;
-          const char *s = pname.c_str()+where;
-          if (sscanf(s," (level %d)",&i)) {
-            // pull out the level number and create/grab a sublist
-            sprintf(listName,"smoother: list (level %d)",i);
-            smList[i] = &(newList.sublist(listName));
-            // shove option w/o level number into sublist
-            strncpy(subname,pname.c_str(),where);
-            subname[where] = '\0';
-            smList[i]->setEntry(subname,List.entry(param));
-          } else {
-            std::cout << "ML_CreateSublist(), Line " << __LINE__
-                 << ". Error in creating smoother sublists" << std::endl;
-            std::cout << "Offending parameter: " << pname << std::endl;
-#           ifdef ML_MPI
-            MPI_Finalize();
-#           endif
-            exit(EXIT_FAILURE);
-          }
-        } else if (pname.find("aggregation:",0) == 0) {
+      const string & pname=List.name(param);
 
-          int i=-999;
-          const char *s = pname.c_str()+where;
-          if (sscanf(s," (level %d)",&i)) {
-            // pull out the level number and create/grab a sublist
-            sprintf(listName,"aggregation: list (level %d)",i);
-            aggList[i] = &(newList.sublist(listName));
-            // shove option w/o level number into sublist
-            strncpy(subname,pname.c_str(),where);
-            subname[where] = '\0';
-            aggList[i]->setEntry(subname,List.entry(param));
-          } else {
-            std::cout << "ML_CreateSublist(), Line " << __LINE__
-                 << ". Error in creating aggregation sublists" << std::endl;
-            std::cout << "Offending parameter: " << pname << std::endl;
-#           ifdef ML_MPI
-            MPI_Finalize();
-#           endif
-            exit(EXIT_FAILURE);
-          }
+      if ((pname.find(" (level",0)  == string::npos || pname.find("smoother: list (level",0) == 0 || pname.find("aggregation: list (level",0) == 0) &&
+          (pname.find("coarse: ",0) == string::npos))
+        {
+          newList.setEntry(pname,List.entry(param));
         }
-    } 
-    else{
-      // Copy general (not level-specific) options and sublists to new list.
-      // Don't copy coarse sublist, since its entries were already copied.
-      if (pname.find("coarse: ",0) == string::npos ) {
-        newList.setEntry(pname,List.entry(param));
+    } // for
+
+  // Copy of the sublist "coarse: list" to the new list. Change "coarse:" to "smoother:" along the way.
+  if (List.isSublist("coarse: list")) {
+    const ParameterList &coarseList = List.sublist("coarse: list");
+    ParameterList &newCoarseList = newList.sublist("coarse: list");
+    for (ParameterList::ConstIterator param=coarseList.begin(); param!=coarseList.end() ; ++param) {
+      const string & pname=coarseList.name(param);
+      
+      if (pname.find("coarse:",0) == 0) {
+        // change "coarse: " to "smoother:"
+        newCoarseList.setEntry("smoother: "+pname.substr(8),coarseList.entry(param));
+      } else {
+        newCoarseList.setEntry(pname,coarseList.entry(param));
       }
     }
-  } //param list iterator
+  } // if
 
-  delete [] smList;
-  delete [] aggList;
-
+    // Copy of level-specific parameters and coarse parameters to sublist
+  for (ParameterList::ConstIterator param=List.begin(); param!=List.end(); ++param)
+    {
+      const string & pname=List.name(param);
+      if (pname.find(" (level",0) != string::npos && pname.find("smoother: list (level",0) != 0 && pname.find("aggregation: list (level",0) != 0)
+        {
+          // Copy level-specific parameters (smoother and aggregation)
+              
+          // Scan pname (ex: pname="smoother: type (level 2)")
+          string type, option;  
+          int levelID=-1;
+          {
+            typedef Teuchos::ArrayRCP<char>::size_type size_type;    // (!)
+            Teuchos::Array<char> ctype  (size_type(pname.size()+1));
+            Teuchos::Array<char> coption(size_type(pname.size()+1));
+              
+            int matched = sscanf(pname.c_str(),"%s %[^(](level %d)", ctype.getRawPtr(), coption.getRawPtr(), &levelID); // use [^(] instead of %s to allow for strings with white-spaces (ex: "ifpack list")
+            type = string(ctype.getRawPtr());
+            option = string(coption.getRawPtr()); option.resize(option.size () - 1); // remove final white-space
+              
+            if (matched != 3 || (type != "smoother:" && type != "aggregation:")) {
+              std::cout << "ML_CreateSublist(), Line " << __LINE__ << ". "
+                        << "Error in creating level-specific sublists" << std::endl
+                        << "Offending parameter: " << pname << std::endl;
+#          ifdef ML_MPI
+              MPI_Finalize();
+#          endif
+              exit(EXIT_FAILURE);
+            }
+          }
+            
+          // Create/grab the corresponding sublist of newList
+          ParameterList &newSubList = newList.sublist(type + " list (level " + Teuchos::toString(levelID) + ")");
+          // Shove option w/o level number into sublist
+          newSubList.setEntry(type + " " + option,List.entry(param));
+            
+        } else if (pname.find("coarse:",0) == 0 && pname != "coarse: list") {
+        // Copy coarse parameters
+        ParameterList &newCoarseList = newList.sublist("coarse: list"); // the coarse sublist is created only if there is at least one "coarse:" parameter
+        newCoarseList.setEntry("smoother: "+pname.substr(8),List.entry(param)); // change "coarse: " to "smoother:"
+      } // end if
+        
+    } // for
+    
 } //ML_CreateSublist()
 
 #endif

@@ -176,11 +176,21 @@ namespace Anasazi {
     //! @name Attribute methods
     //@{ 
 
-    //! Obtain the vector length of *this.
-    int GetNumberVecs () const { return Epetra_MV->NumVectors(); }
-
     //! Obtain the number of vectors in *this.
     int GetVecLength () const { return Epetra_MV->GlobalLength(); }
+
+    //! The number of rows in the multivector.
+    //! \note This method supersedes GetVecLength, which will be deprecated.
+    ptrdiff_t GetGlobalLength () const 
+    {
+       if ( Epetra_MV->Map().GlobalIndicesLongLong() )
+          return static_cast<ptrdiff_t>( Epetra_MV->GlobalLength64() );       
+       else
+          return static_cast<ptrdiff_t>( Epetra_MV->GlobalLength() ); 
+    }
+
+    //! Obtain the vector length of *this.
+    int GetNumberVecs () const { return Epetra_MV->NumVectors(); }
 
     //@}
 

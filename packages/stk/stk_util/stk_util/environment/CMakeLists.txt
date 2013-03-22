@@ -38,9 +38,11 @@ RuntimeDoomed.hpp
 RuntimeMessage.hpp
 RuntimeWarning.hpp
 WallTime.hpp
+FormatTime.hpp
+FormatMemorySize.hpp
   )
 
-IF ( TPL_ENABLE_BoostLib )
+IF ( STK_ENABLE_BoostLib )
   APPEND_SET(HEADERS ProgramOptions.hpp)
 ENDIF()
 
@@ -55,14 +57,16 @@ RuntimeDoomed.cpp
 RuntimeMessage.cpp
 RuntimeWarning.cpp
 WallTime.cpp
+FormatTime.cpp
+FormatMemorySize.cpp
   )
 
-IF ( TPL_ENABLE_BoostLib )
+IF ( STK_ENABLE_BoostLib )
   APPEND_SET(SOURCES ProgramOptions.cpp)
 ENDIF()
 
 
-IF (TPL_ENABLE_MPI)
+IF (STK_ENABLE_MPI)
 ENDIF()
 
 #
@@ -77,4 +81,4 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-        ${CMAKE_INSTALL_PREFIX}/include/stk_util/environment/)
+        ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_util/environment/)

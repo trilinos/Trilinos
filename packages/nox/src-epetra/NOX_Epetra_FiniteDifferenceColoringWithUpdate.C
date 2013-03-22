@@ -143,9 +143,9 @@ bool FiniteDifferenceColoringWithUpdate::computeJacobian(const Epetra_Vector& x,
   FiniteDifferenceColoringWithUpdate* testMatrix =
     dynamic_cast<FiniteDifferenceColoringWithUpdate*>(&Jac);
   if (testMatrix == 0) {
-    cerr << "ERROR: NOX::Epetra::FiniteDifferenceColoringWithUpdate::computeJacobian() - "
+    std::cerr << "ERROR: NOX::Epetra::FiniteDifferenceColoringWithUpdate::computeJacobian() - "
 	 << "Jacobian to evaluate is not a FiniteDifferenceColoringWithUpdate object!"
-         << endl;
+         << std::endl;
     throw "NOX Error";
   }
 

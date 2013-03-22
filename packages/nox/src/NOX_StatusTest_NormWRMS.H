@@ -181,7 +181,7 @@ public:
   checkStatus(const NOX::Solver::Generic& problem,
 	      NOX::StatusTest::CheckType checkType);
   virtual StatusType getStatus() const;
-  virtual ostream& print(ostream& stream, int indent = 0) const;
+  virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
 
 
   /* @name Accessor Functions

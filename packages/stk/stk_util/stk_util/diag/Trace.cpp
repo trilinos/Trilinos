@@ -15,7 +15,8 @@
 
 #include <stk_util/diag/Trace.hpp>
 #include <stk_util/diag/Writer.hpp>
-#include <stk_util/util/FormatTime.hpp>
+#include <stk_util/environment/FormatTime.hpp>
+#include <stk_util/diag/Platform.hpp>
 
 namespace stk {
 namespace diag {
@@ -50,6 +51,12 @@ Traceback::s_tracebackPreserve = 0;
 int
 Traceback::s_tracebackDisplay = 0;
 
+bool
+Traceback::s_coverageEnabled = false;
+
+Traceback::Coverage
+Traceback::s_coverage;
+
 namespace {
 
 bool
@@ -78,17 +85,8 @@ prefix_find(
 size_t
 get_heap_used()
 {
-  return 0;
-//  return Env::get_heap_usage();
+  return sierra::Env::get_heap_usage();
 }
-
-double
-get_cpu_now()
-{
-  return 0.0;
-//  return Env::cpu_now();
-}
-
 
 std::string::const_iterator
 find_next_char(
@@ -311,7 +309,7 @@ Trace::Trace(
                                << push << dendl;
 
     if (dout.shouldPrint(LOG_TRACE_STATS)) {
-      m_startCpuTime = get_cpu_now();
+      m_startCpuTime = sierra::Env::cpu_now();
       m_startMemAlloc = get_heap_used();
     }
   }
@@ -322,7 +320,7 @@ Trace::~Trace()
 {
   if (m_do_trace && (m_flags & IN_TRACE_LIST)) {
     if (m_diagWriter.shouldPrint(LOG_TRACE_STATS)) {
-      m_startCpuTime = get_cpu_now() - m_startCpuTime;
+      m_startCpuTime = sierra::Env::cpu_now() - m_startCpuTime;
       m_startMemAlloc = get_heap_used() - m_startMemAlloc;
     }
 
@@ -336,6 +334,15 @@ Trace::~Trace()
 
     m_diagWriter.decTraceDepth();
   }
+}
+
+
+Writer &
+Trace::verbose_print(
+  Writer &		dout) const
+{
+  dout << "Trace, " << m_functionSpec;
+  return dout;
 }
 
 
@@ -370,6 +377,25 @@ Traceback::printTraceback(
 
   return s.str();
 }
+
+std::ostream &
+Traceback::printCoverage(
+  std::ostream &	os)
+{
+  std::vector<std::pair<const char *, int> >	sorted_list;
+  sorted_list.reserve(s_coverage.size());
+
+  for (Coverage::const_iterator it = s_coverage.begin(); it != s_coverage.end(); ++it)
+    sorted_list.push_back(std::pair<const char *, int>((*it).first, (*it).second));
+
+  std::sort(sorted_list.begin(), sorted_list.end(), CoverageValueSort());
+
+  for (std::vector<std::pair<const char *, int> >::const_iterator it = sorted_list.begin(); it != sorted_list.end(); ++it)
+    os << "<FUNCTION specification=\"" << (*it).first << "\" count=\"" << (*it).second << "\"/>" << std::endl;
+
+  return os;
+}
+
 
 } // namespace diag
 } // namespace stk

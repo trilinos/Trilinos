@@ -79,6 +79,8 @@ public:
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief Throws exception. */
   RCP<LinearOpBase<Scalar> > create_W_op() const;
+  /** \brief Returns null. */
+  RCP<PreconditionerBase<Scalar> > create_W_prec() const;
   /** \brief Returns null . */
   RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
   /** \brief Ignores input and does nothing. */
@@ -163,11 +165,19 @@ StateFuncModelEvaluatorBase<Scalar>::create_W_op() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error
-    ,"Error, if \'W\' is supported by the ModelEvaluator subclass then"
+    ,"Error, if \'W_op\' is supported by the ModelEvaluator subclass then"
     " this function create_W_op() must be overridden by the subclass "
     <<this->description()<<" to return a non-null object!"
     );
   return Teuchos::null; // Should never be called!
+}
+
+
+template<class Scalar>
+RCP<PreconditionerBase<Scalar> >
+StateFuncModelEvaluatorBase<Scalar>::create_W_prec() const
+{
+  return Teuchos::null;
 }
 
 

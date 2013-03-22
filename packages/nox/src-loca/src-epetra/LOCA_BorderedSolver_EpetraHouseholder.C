@@ -154,7 +154,7 @@ LOCA::BorderedSolver::EpetraHouseholder::setMatrixBlocks(
 	 const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	 const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::EpetraHouseholder::setMatrixBlocks";
 
   op = op_;
@@ -279,9 +279,9 @@ LOCA::BorderedSolver::EpetraHouseholder::setMatrixBlocks(
   else {
     globalData->locaErrorCheck->throwError(
 		      callingFunction,
-		      string("Op argument must be of type !\n") + 
-	              string("LOCA::BorderedSolver::JacobianOperator or \n") +
-		      string("LOCA::BorderedSolver::ComplexOperator."));
+		      std::string("Op argument must be of type !\n") + 
+	              std::string("LOCA::BorderedSolver::JacobianOperator or \n") +
+		      std::string("LOCA::BorderedSolver::ComplexOperator."));
   }
 
   Ascaled = Teuchos::null;
@@ -559,8 +559,8 @@ LOCA::BorderedSolver::EpetraHouseholder::applyInverseTranspose(
       globalData->locaErrorCheck->throwError(
 	"LOCA::BorderedSolver::EpetraHouseholder::applyInverseTranspose()",
 	string("Group must implement the LOCA::Abstract::TransposeSolveGroup")
-	+ string(" interface in order to solve the transpose of the bordered")
-	+ string(" system via bordering."));
+	+ std::string(" interface in order to solve the transpose of the bordered")
+	+ std::string(" system via bordering."));
   }
 
   if (isZeroA) { 
@@ -610,7 +610,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
 			      NOX::Abstract::MultiVector& X,
 			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::EpetraHouseholder::applyInverse()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -622,8 +622,8 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   if (!isValidForSolve)
     globalData->locaErrorCheck->throwError(
 		   callingFunction,
-		   string("applyInverse() called with invalid constraint") + 
-		   string(" factorizations.  Call initForSolve() first."));
+		   std::string("applyInverse() called with invalid constraint") + 
+		   std::string(" factorizations.  Call initForSolve() first."));
 
   Teuchos::RCP<const NOX::Abstract::MultiVector> cRHS;
 
@@ -787,7 +787,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
 			      NOX::Abstract::MultiVector& X,
 			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::BorderedSolver::EpetraHouseholder::applyInverseTranspose()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -799,8 +799,8 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
   if (!isValidForTransposeSolve)
     globalData->locaErrorCheck->throwError(
 	    callingFunction,
-	    string("applyInverseTranspose() called with invalid constraint") + 
-	    string(" factorizations.  Call initForSolve() first."));
+	    std::string("applyInverseTranspose() called with invalid constraint") + 
+	    std::string(" factorizations.  Call initForSolve() first."));
 
   Teuchos::RCP<const NOX::Abstract::MultiVector> cRHS;
   

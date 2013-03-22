@@ -61,6 +61,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 #include "Epetra_Comm.h"
 #ifdef EPETRA_MPI
@@ -73,6 +74,14 @@
 #include "TrilinosCouplings_EpetraIntrepidPoissonExample.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
+// ML
+#include "ml_include.h"
+#include "ml_MultiLevelPreconditioner.h"
+
+// MueLu includes
+#include "MueLu.hpp"
+#include "MueLu_ParameterListInterpreter.hpp"
+#include "MueLu_EpetraOperator.hpp"
 
 int
 main (int argc, char *argv[])
@@ -106,6 +115,12 @@ main (int argc, char *argv[])
   typedef Teuchos::ScalarTraits<MT> STM;
   typedef EpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
   typedef EpetraIntrepidPoissonExample::vector_type vector_type;
+  typedef EpetraIntrepidPoissonExample::operator_type operator_type;
+
+  bool success = true;
+  try {
+
+  Epetra_Object::SetTracebackMode(2);
 
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
@@ -160,49 +175,41 @@ main (int argc, char *argv[])
 /**********************************************************************************/
 /********************************** GET XML INPUTS ********************************/
 /**********************************************************************************/
+  ParameterList inputList;
+  if (xmlInputParamsFile != "") {
+    *out << "Reading parameters from XML file \""
+         << xmlInputParamsFile << "\"..." << endl;
+    Teuchos::updateParametersFromXmlFile (xmlInputParamsFile, 
+					  outArg (inputList));
+    if (myRank == 0) {
+      inputList.print (*out, 2, true, true);
+      *out << endl;
+    }
+  }
 
   // Get Pamgen mesh definition string, either from the input
   // ParameterList or from our function that makes a cube and fills in
   // the number of cells along each dimension.
-  std::string meshInput;
-  if (xmlInputParamsFile == "") {
+  std::string meshInput = inputList.get("meshInput", "");
+  if (meshInput == "") {
     *out << "Generating mesh input string: nx = " << nx
          << ", ny = " << ny
          << ", nz = " << nz << endl;
     meshInput = makeMeshInput (nx, ny, nz);
   }
-  else {
-    // Read ParameterList from XML file.
-    ParameterList inputMeshList;
-    *out << "Reading mesh parameters from XML file \""
-         << xmlInputParamsFile << "\"..." << endl;
-    // FIXME (mfh 24 May 2012) If this only reads parameters on Proc
-    // 0, the check for the "meshInput" parameter below will be
-    // broken!
-    Teuchos::updateParametersFromXmlFile (xmlInputParamsFile, outArg (inputMeshList));
-    if (myRank == 0) {
-      inputMeshList.print (*out, 2, true, true);
-      *out << endl;
-    }
-    // If the input ParameterList has a "meshInput" parameter, use
-    // that, otherwise use our function.
-    if (inputMeshList.isParameter ("meshInput")) {
-      // Get Pamgen mesh definition string from the input ParameterList.
-      // There's nothing special about the "meshInput" parameter.
-      // Pamgen itself doesn't read ParameterLists, but takes a string
-      // of commands as input.  We've just chosen to make Pamgen's input
-      // string a parameter in the input ParameterList.
-      meshInput = inputMeshList.get<std::string> ("meshInput");
-    }
-    else {
-      meshInput = makeMeshInput (nx, ny, nz);
-    }
-  }
 
+  // Total application run time
+  {
+  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Time", total_time);
+
+  // Construct linear system
   RCP<sparse_matrix_type> A;
   RCP<vector_type> B, X_exact, X;
-  makeMatrixAndRightHandSide (A, B, X_exact, X, comm, meshInput,
-                              out, err, verbose, debug);
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
+    makeMatrixAndRightHandSide (A, B, X_exact, X, comm, meshInput,
+				out, err, verbose, debug);
+  }
 
   const std::vector<MT> norms = exactResidualNorm (A, B, X_exact);
   // X_exact is the exact solution of the PDE, projected onto the
@@ -212,18 +219,83 @@ main (int argc, char *argv[])
        << "||B||_2 = " << norms[1] << endl
        << "||A||_F = " << norms[2] << endl;
 
+  // Setup preconditioner
+  std::string prec_type = inputList.get("Preconditioner", "None");
+  RCP<operator_type> M;
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
+
+    if (prec_type == "ML") {
+      ParameterList mlParams;
+      if (inputList.isSublist("ML"))
+	mlParams = inputList.sublist("ML");
+      else {
+	ML_Epetra::SetDefaults("SA", mlParams);
+	mlParams.set("ML output", 0);
+      }
+      M = rcp(new ML_Epetra::MultiLevelPreconditioner(*A, mlParams));
+    }
+
+    else if (prec_type == "MueLu") {
+      // Turns a Epetra_CrsMatrix into a MueLu::Matrix
+      RCP<Xpetra::CrsMatrix<ST> > mueluA_ = 
+	rcp(new Xpetra::EpetraCrsMatrix(A));
+      RCP<Xpetra::Matrix <ST> > mueluA  = 
+	rcp(new Xpetra::CrsMatrixWrap<ST>(mueluA_));
+      
+      // Multigrid Hierarchy
+      ParameterList mueluParams;
+      if (inputList.isSublist("MueLu"))
+	mueluParams = inputList.sublist("MueLu");
+      MueLu::ParameterListInterpreter<ST> mueLuFactory(mueluParams);
+      RCP<MueLu::Hierarchy<ST> > H = 
+	mueLuFactory.CreateHierarchy();
+      H->setVerbLevel(Teuchos::VERB_HIGH);
+      H->GetLevel(0)->Set("A", mueluA);
+      
+      // Multigrid setup phase
+      H->Setup();
+
+      // Wrap MueLu Hierarchy as a Tpetra::Operator
+      M = rcp(new MueLu::EpetraOperator(H));
+    }
+  }
+
   bool converged = false;
   int numItersPerformed = 0;
-  const MT tol = STM::squareroot (STM::eps ());
-  const int maxNumIters = 100;
-  solveWithBelos (converged, numItersPerformed, tol, maxNumIters,
-                  X, A, B, Teuchos::null, Teuchos::null);
+  const MT tol = inputList.get("Convergence Tolerance",
+			       STM::squareroot (STM::eps ()));
+  const int maxNumIters = inputList.get("Maximum Iterations", 200);
+  const int num_steps = inputList.get("Number of Time Steps", 1);
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
+    solveWithBelos (converged, numItersPerformed, tol, maxNumIters, num_steps,
+		    X, A, B, Teuchos::null, M);
+  }
+
+  // Compute ||X-X_exact||_2
+  MT norm_x, norm_error;
+  X_exact->Norm2(&norm_x);
+  X_exact->Update(-1.0, *X, 1.0);
+  X_exact->Norm2(&norm_error);
+  *out << endl
+       << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x 
+       << endl;
+
+  } // total time block
 
   // Summarize timings
-  RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");
-  reportParams->set ("Report format", std::string ("YAML"));
-  reportParams->set ("writeGlobalStats", true);
-  Teuchos::TimeMonitor::report (*out, reportParams);
-  return EXIT_SUCCESS;
+  // RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");
+  // reportParams->set ("Report format", std::string ("YAML"));
+  // reportParams->set ("writeGlobalStats", true);
+  // Teuchos::TimeMonitor::report (*out, reportParams);
+  Teuchos::TimeMonitor::summarize(std::cout);
+
+  } //try
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
+
+  if (success)
+    return EXIT_SUCCESS;
+  return EXIT_FAILURE;
 }
 

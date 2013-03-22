@@ -155,7 +155,7 @@ LOCA::Bifurcation::PitchforkBord::StatusTest::NullVectorNormWRMS::getStatus() co
 
 ostream& 
 LOCA::Bifurcation::PitchforkBord::StatusTest::NullVectorNormWRMS::print(
-							    ostream& stream, 
+							    std::ostream& stream, 
 							    int indent) const
 {
   for (int j = 0; j < indent; j++)
@@ -163,7 +163,7 @@ LOCA::Bifurcation::PitchforkBord::StatusTest::NullVectorNormWRMS::print(
   stream << status;
   stream << "Turning Point Scaled Null Vector Update = " 
 	 << NOX::Utils::sciformat(normWRMS, 3) << " < " << tol;
-  stream << endl;
+  stream << std::endl;
 
   return stream;
 }

@@ -16,5 +16,21 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES response_library.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 2
+  XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
   )
   
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  STK_ResponseLibraryTest2
+  SOURCES response_library2.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
+  )
+  
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  STK_VolumeSideResponse
+  SOURCES volumetric_side_response.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
+  )

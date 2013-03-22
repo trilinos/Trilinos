@@ -377,6 +377,13 @@ bool DiagonalFilter<MatrixType>::hasTransposeApply() const
   return A_->hasTransposeApply();
 }
 
+//==========================================================================
+template<class MatrixType> 
+bool DiagonalFilter<MatrixType>::supportsRowViews() const
+{
+  return false;
+}
+
 //==========================================================================  
 template<class MatrixType> 
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType DiagonalFilter<MatrixType>::getFrobeniusNorm() const

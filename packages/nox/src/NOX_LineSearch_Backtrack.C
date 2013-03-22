@@ -91,7 +91,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     utils->err() << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" 
 		 << reductionFactor << "\" for \"Reduction Factor\"!  " 
 		 << "Value must be greater than zero and less than 1.0."
-		 << endl;
+		 << std::endl;
     throw "NOX Error";
   }
 
@@ -117,7 +117,7 @@ compute(NOX::Abstract::Group& grp, double& step,
   if (rtype != NOX::Abstract::Group::Ok)
   {
     utils->err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F"
-		<< endl;
+		<< std::endl;
     throw "NOX Error";
   }
 
@@ -138,11 +138,11 @@ compute(NOX::Abstract::Group& grp, double& step,
 
     if (utils->isPrintType(Utils::InnerIteration)) 
     {
-      utils->out() << setw(3) << nIters << ":";
+      utils->out() << std::setw(3) << nIters << ":";
       utils->out() << " step = " << utils->sciformat(step);
       utils->out() << " old f = " << utils->sciformat(oldF);
       utils->out() << " new f = " << utils->sciformat(newF);
-      utils->out() << endl;
+      utils->out() << std::endl;
     }
 
     nIters ++;
@@ -159,7 +159,7 @@ compute(NOX::Abstract::Group& grp, double& step,
     rtype = grp.computeF();    
     if (rtype != NOX::Abstract::Group::Ok)
     {
-      utils->err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << endl;
+      utils->err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << std::endl;
       throw "NOX Error";
     }
 
@@ -168,15 +168,15 @@ compute(NOX::Abstract::Group& grp, double& step,
 
   if (utils->isPrintType(Utils::InnerIteration)) 
   {
-    utils->out() << setw(3) << nIters << ":";
+    utils->out() << std::setw(3) << nIters << ":";
     utils->out() << " step = " << utils->sciformat(step);
     utils->out() << " old f = " << utils->sciformat(oldF);
     utils->out() << " new f = " << utils->sciformat(newF);
     if (isFailed)
-      utils->out() << " (USING RECOVERY STEP!)" << endl;
+      utils->out() << " (USING RECOVERY STEP!)" << std::endl;
     else
-      utils->out() << " (STEP ACCEPTED!)" << endl;
-    utils->out() << Utils::fill(72) << "\n" << endl;
+      utils->out() << " (STEP ACCEPTED!)" << std::endl;
+    utils->out() << Utils::fill(72) << "\n" << std::endl;
   }
 
   return (!isFailed);

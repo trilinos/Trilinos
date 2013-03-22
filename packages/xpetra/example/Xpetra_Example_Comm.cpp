@@ -55,7 +55,7 @@
 
 // This driver simply tests Teuchos2Epetra_Comm
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
   typedef int                                                       Ordinal;
   typedef double                                                    Scalar;

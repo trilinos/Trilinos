@@ -43,6 +43,7 @@
 #include "Epetra_Util.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include <functional>
 
 //==============================================================================
 // FIXME: allocate Comm_ and Time_ the first Initialize() call
@@ -327,7 +328,8 @@ int Ifpack_ICT::Compute()
     double cutoff = 0.0;
     if (count > LOF) {
       nth_element(AbsRow.begin(), AbsRow.begin() + LOF, AbsRow.begin() + count, 
-                  greater<double>());
+
+		  std::greater<double>());
       cutoff = AbsRow[LOF];
     }
 

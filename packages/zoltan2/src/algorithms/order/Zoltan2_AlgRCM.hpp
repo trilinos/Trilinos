@@ -111,7 +111,7 @@ int AlgRCM(
   size_t count = 0; // CM label, reversed later
   size_t next = 0;
 
-  while (count < nVtx-1){ // Some vertex remains unlabelled
+  while (count < nVtx) {
 
     // Label connected component starting at root
     Q.push(root);

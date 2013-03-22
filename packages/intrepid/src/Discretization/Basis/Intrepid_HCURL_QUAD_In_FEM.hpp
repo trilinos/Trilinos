@@ -48,9 +48,11 @@
 
 #ifndef INTREPID_HCURL_QUAD_In_FEM_HPP
 #define INTREPID_HCURL_QUAD_In_FEM_HPP
-#include "Intrepid_Basis.hpp"
+#include "Intrepid_TensorBasis.hpp"
 #include "Intrepid_ProductTopology.hpp"
 #include "Intrepid_HGRAD_LINE_Cn_FEM.hpp"
+#include "Teuchos_RCP.hpp"
+using Teuchos::rcp;
 
 namespace Intrepid {
   
@@ -65,7 +67,7 @@ namespace Intrepid {
   
 template<class Scalar, class ArrayScalar> 
 class Basis_HCURL_QUAD_In_FEM : 
-    public Basis<Scalar, ArrayScalar> ,
+    public TensorBasis<Scalar, ArrayScalar> ,
     public DofCoordsInterface<ArrayScalar> 
 {
 private:

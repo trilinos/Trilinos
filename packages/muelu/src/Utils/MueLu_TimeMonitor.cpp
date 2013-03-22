@@ -66,7 +66,7 @@ namespace MueLu {
     MPI_Reduce(&localValue, &minTime, ntimers, MPI_DOUBLE, MPI_MIN, rootNode, rawMpiComm);
     MPI_Reduce(&localValue, &avgTime, ntimers, MPI_DOUBLE, MPI_SUM, rootNode, rawMpiComm); avgTime /= comm.getSize();
 #endif // HAVE_MPI
-      
+
     return r;
   }
 

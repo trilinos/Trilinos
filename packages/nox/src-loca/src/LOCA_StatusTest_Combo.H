@@ -126,13 +126,14 @@ public:
     See addOp() and orOp() for details.
   */
   virtual LOCA::StatusTest::StatusType
-  checkStatus( const LOCA::Stepper         & stepper,
+//  checkStatus( const LOCA::Stepper         & stepper,
+  checkStatus( const LOCA::Abstract::Iterator         & stepper,
                LOCA::StatusTest::CheckType   checkType
              );
 
   virtual LOCA::StatusTest::StatusType getStatus() const;
 
-  virtual ostream& print( ostream& stream,
+  virtual std::ostream& print( std::ostream& stream,
                           int indent = 0
                         ) const;
   
@@ -152,7 +153,8 @@ protected:
     this combination test without that check.
   */
   virtual void
-  orOp( const LOCA::Stepper               & stepper,
+//  orOp( const LOCA::Stepper               & stepper,
+  orOp( const LOCA::Abstract::Iterator               & stepper,
               LOCA::StatusTest::CheckType   checkType);
 
   //! Use this for checkStatus when this is an AND type combo. Updates LOCA::StatusTest::Combo::status.
@@ -171,7 +173,8 @@ protected:
     this combination test without that check.
   */
   virtual void
-  andOp( const LOCA::Stepper               & stepper,
+//  andOp( const LOCA::Stepper               & stepper,
+  andOp( const LOCA::Abstract::Iterator               & stepper,
                LOCA::StatusTest::CheckType   checkType );
 
   /*! \brief Check whether or not it is safe to add \c a to this list
@@ -188,7 +191,7 @@ private:
   const ComboType type;
 
   //! Vector of generic status tests
-  vector<Teuchos::RCP<Abstract> > tests;
+  std::vector<Teuchos::RCP<Abstract> > tests;
 
   //! Status
   LOCA::StatusTest::StatusType status;

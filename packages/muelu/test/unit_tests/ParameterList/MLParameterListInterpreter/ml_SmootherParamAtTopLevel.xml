@@ -1,0 +1,5 @@
+<!-- TEST: smoother parameters at the top level -->
+<ParameterList name="MultiLevelPreconditioner">
+  <Parameter name="smoother: type"   type="string" value="symmetric Gauss-Seidel"/>
+  <Parameter name="smoother: sweeps" type="int"    value="2"/>
+</ParameterList>

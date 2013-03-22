@@ -58,6 +58,8 @@
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_IntegerRangeList.hpp>
 
+#include <unistd.h>
+
 #ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
 #endif
@@ -529,7 +531,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       AlgRCB<Adapter>(this->envConst_, problemComm_,
         this->coordinateModel_, solution_);
     }
-    else if (algorithm_ == string("pqjagged")){
+    else if (algorithm_ == string("multijagged")){
     	AlgPQJagged<Adapter>(this->envConst_, problemComm_,
     	        this->coordinateModel_, solution_);
     }
@@ -664,7 +666,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (algorithm == string("rcb") ||
              algorithm == string("rib") ||
-             algorithm == string("pqjagged") ||
+             algorithm == string("multijagged") ||
              algorithm == string("hsfc")){
 
       modelType_ = CoordinateModelType;
@@ -769,7 +771,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (inputType_ == CoordinateAdapterType){
       modelType_ = CoordinateModelType;
-      if(algorithm_ != string("pqjagged"))
+      if(algorithm_ != string("multijagged"))
       algorithm_ = string("rcb");
     }
     else if (inputType_ == VectorAdapterType ||
@@ -899,8 +901,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     // matrix, graph, and so on).  We pass a pointer to the input
     // adapter, cast as the base input type.
 
-    typedef typename Adapter::base_adapter_t base_adapter_t;
-    const Teuchos::ParameterList pl = this->envConst_->getParameters();
+    //KDD Not sure why this shadow declaration is needed
+    //KDD Comment out for now; revisit later if problems.
+    //KDD const Teuchos::ParameterList pl = this->envConst_->getParameters();
     bool exceptionThrow = true;
 
     switch (modelType_) {
@@ -940,7 +943,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       // this->env_ = rcp(new Environment(newParams, oldComm));
       ////////////////////////////////////////////////////////////////////////////
 
-      if(algorithm == string("pqjagged")){
+      if(algorithm == string("multijagged")){
           //int coordinateCnt = this->coordinateModel_->getCoordinateDim();
           //cout << coordinateCnt << " " << pl.getPtr<Array <int> >("pqParts")->size() << endl;
           //exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();
@@ -954,9 +957,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
           for(int i = 0; i < arraySize; ++i){
         	  //cout <<  pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i] << " ";
         	  totalPartCount *= pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i];
+// TODO:  Using pointer in parameter list.   Ross says, "Bad."  Can't print it.
           }
           Teuchos::ParameterList newParams = pl;
+// TODO:  KDD I thought we got rid of sublists in the parameter list??
           Teuchos::ParameterList &parParams = newParams.sublist("partitioning");
+
+// TODO:  KDD Is there a more elegant solution here than changing the paramlist?
+// TODO:  How does this even work?  Where is newParams used?
 
           parParams.set("num_global_parts", totalPartCount);
 

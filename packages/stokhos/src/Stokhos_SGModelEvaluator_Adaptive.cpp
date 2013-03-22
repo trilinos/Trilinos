@@ -92,7 +92,7 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
     supports_x = true;
 
   overlapped_stoch_row_map = 
-    Teuchos::rcp(new Epetra_LocalMap(num_sg_blocks, 0, *(sg_parallel_data->getStochasticComm())));
+    Teuchos::rcp(new Epetra_LocalMap(static_cast<int>(num_sg_blocks), 0, *(sg_parallel_data->getStochasticComm())));
   stoch_row_map = overlapped_stoch_row_map;
 
   if (epetraCijk != Teuchos::null)
@@ -145,7 +145,7 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
 
     Teuchos::RCP<Epetra_BlockMap> W_overlap_map =
       Teuchos::rcp(new Epetra_LocalMap(
-		     num_W_blocks, 0, 
+		     static_cast<int>(num_W_blocks), 0, 
 		     *(sg_parallel_data->getStochasticComm())));
     W_sg_blocks = 
       Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
@@ -186,7 +186,7 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
   // Create parameter maps, names, and initial values
   overlapped_stoch_p_map =
     Teuchos::rcp(new Epetra_LocalMap(
-		   num_p_blocks, 0, 
+		   static_cast<int>(num_p_blocks), 0, 
 		   *(sg_parallel_data->getStochasticComm())));
   for (int i=0; i<num_p_sg; i++) {
     Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(sg_p_index_map[i]);
@@ -311,7 +311,7 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
                                                           sg_row_dof_basis,*sg_parallel_data->getStochasticComm(),scaleOP));
 
   overlapped_stoch_row_map = 
-    Teuchos::rcp(new Epetra_LocalMap(num_sg_blocks, 0, *(sg_parallel_data->getStochasticComm())));
+    Teuchos::rcp(new Epetra_LocalMap(static_cast<int>(num_sg_blocks), 0, *(sg_parallel_data->getStochasticComm())));
   stoch_row_map = overlapped_stoch_row_map;
 
   if (epetraCijk != Teuchos::null)
@@ -364,7 +364,7 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
 
     Teuchos::RCP<Epetra_BlockMap> W_overlap_map =
       Teuchos::rcp(new Epetra_LocalMap(
-		     num_W_blocks, 0, 
+		     static_cast<int>(num_W_blocks), 0, 
 		     *(sg_parallel_data->getStochasticComm())));
     W_sg_blocks = 
       Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
@@ -405,7 +405,7 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
   // Create parameter maps, names, and initial values
   overlapped_stoch_p_map =
     Teuchos::rcp(new Epetra_LocalMap(
-		   num_p_blocks, 0, 
+		   static_cast<int>(num_p_blocks), 0, 
 		   *(sg_parallel_data->getStochasticComm())));
   for (int i=0; i<num_p_sg; i++) {
     Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(sg_p_index_map[i]);

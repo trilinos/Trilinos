@@ -50,6 +50,7 @@
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
@@ -94,6 +95,112 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
    RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new IntrepidType);
    RCP<const panzer::FieldPattern> pattern = rcp(new panzer::IntrepidFieldPattern(basis));
    return pattern;
+}
+
+// quad tests
+TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+   #else
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+   #endif
+
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
+
+   TEUCHOS_ASSERT(numProcs<=2);
+
+   // build a geometric pattern from a single basis
+   RCP<const panzer::FieldPattern> patternC1 
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+
+   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
+   dofManager->setConnManager(connManager,MPI_COMM_WORLD);
+   dofManager->addField("u",patternC1);
+   dofManager->buildGlobalUnknowns();
+
+   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(eComm.getConst(),dofManager);
+   Teuchos::RCP<Epetra_Map> map = laFactory.getMap();
+   Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap();
+   Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph();
+   Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph();
+
+   std::vector<int> owned,ownedAndShared;
+   dofManager->getOwnedIndices(owned);
+   dofManager->getOwnedAndSharedIndices(ownedAndShared);
+  
+   // test maps
+   {
+      TEST_EQUALITY(map->NumMyElements(),(int) owned.size());
+      TEST_EQUALITY(gMap->NumMyElements(),(int) ownedAndShared.size());
+
+      // test indices
+      for(std::size_t i=0;i<owned.size();i++) TEST_ASSERT(map->MyGID(owned[i]));
+      for(std::size_t i=0;i<ownedAndShared.size();i++) TEST_ASSERT(gMap->MyGID(ownedAndShared[i]));
+   }
+
+   // test ograph
+   {
+      TEST_ASSERT(gGraph->Filled());
+
+      TEST_EQUALITY(gGraph->NumMyRows(),(int) ownedAndShared.size());
+      TEST_EQUALITY(gGraph->MaxNumIndices(),numProcs==2 ? 6 : 9);
+
+      std::vector<int> indices(10);
+      int numIndices = 0;
+
+      // Take degree of freedom in middle of mesh: Then look at ghosted graph
+      int err = gGraph->ExtractGlobalRowCopy(3,10,numIndices,&indices[0]);
+      TEST_EQUALITY(err,0);
+
+      indices.resize(numIndices);
+      std::sort(indices.begin(),indices.end());
+      if(numProcs==1) {
+         TEST_EQUALITY(numIndices,9); 
+
+         std::vector<int> compare(9);
+         compare[0] = 0; compare[1] = 1; compare[2] = 2;
+         compare[3] = 3; compare[4] = 4; compare[5] = 5;
+         compare[3] = 6; compare[4] = 7; compare[5] = 8;
+         
+         TEST_EQUALITY(compare.size(),indices.size());
+         TEST_ASSERT(std::equal(compare.begin(),compare.end(),indices.begin()));
+      }
+      else if(numProcs==2 && myRank==0) {
+         TEST_EQUALITY(numIndices,6); 
+
+         std::vector<int> compare(6);
+         compare[0] = 0; compare[1] = 1; compare[2] = 2;
+         compare[3] = 3; compare[4] = 4; compare[5] = 5;
+         
+         TEST_EQUALITY(compare.size(),indices.size());
+         TEST_ASSERT(std::equal(compare.begin(),compare.end(),indices.begin()));
+      }
+      else if(numProcs==2 && myRank==1) {
+         TEST_EQUALITY(numIndices,6); 
+
+         std::vector<int> compare(6);
+         compare[0] = 1; compare[1] = 3; compare[2] = 5;
+         compare[3] = 6; compare[4] = 7; compare[5] = 8;
+         
+         TEST_EQUALITY(compare.size(),indices.size());
+         TEST_ASSERT(std::equal(compare.begin(),compare.end(),indices.begin()));
+      }
+      
+   }
+
+   // test graph
+   {
+      TEST_ASSERT(graph->Filled());
+
+      TEST_EQUALITY(graph->NumMyRows(),(int) owned.size());
+      TEST_EQUALITY(graph->MaxNumIndices(),myRank==0 ? 9 : 6);
+   }
 }
 
 // quad tests
@@ -154,7 +261,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
       int numIndices = 0;
 
       // Take degree of freedom in middle of mesh: Then look at ghosted graph
-      int err = gGraph->ExtractGlobalRowCopy(2,10,numIndices,&indices[0]);
+      int err = gGraph->ExtractGlobalRowCopy(5,10,numIndices,&indices[0]);
       TEST_EQUALITY(err,0);
 
       indices.resize(numIndices);
@@ -175,7 +282,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
 
          std::vector<int> compare(6);
          compare[0] = 0; compare[1] = 1; compare[2] = 2;
-         compare[3] = 3; compare[4] = 4; compare[5] = 5;
+         compare[3] = 3; compare[4] = 5; compare[5] = 7;
          
          TEST_EQUALITY(compare.size(),indices.size());
          TEST_ASSERT(std::equal(compare.begin(),compare.end(),indices.begin()));
@@ -184,7 +291,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
          TEST_EQUALITY(numIndices,6); 
 
          std::vector<int> compare(6);
-         compare[0] = 1; compare[1] = 2; compare[2] = 4;
+         compare[0] = 3; compare[1] = 4; compare[2] = 5;
          compare[3] = 6; compare[4] = 7; compare[5] = 8;
          
          TEST_EQUALITY(compare.size(),indices.size());
@@ -198,7 +305,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
       TEST_ASSERT(graph->Filled());
 
       TEST_EQUALITY(graph->NumMyRows(),(int) owned.size());
-      TEST_EQUALITY(graph->MaxNumIndices(),myRank==0 ? 9 : 6);
+      TEST_EQUALITY(graph->MaxNumIndices(),myRank==0 ? 6 : 9);
    }
 }
 

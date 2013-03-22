@@ -351,7 +351,7 @@ LOCA::MultiContinuation::ExtendedGroup::computePredictor()
   if (isValidPredictor)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ExtendedGroup::computePredictor()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -467,13 +467,13 @@ LOCA::MultiContinuation::ExtendedGroup::getContinuationParameterID(int i) const
   return conParamIDs[i];
 }
 
-const vector<int>&
+const std::vector<int>&
 LOCA::MultiContinuation::ExtendedGroup::getContinuationParameterIDs() const
 {
   return conParamIDs;
 }
 
-string
+std::string
 LOCA::MultiContinuation::ExtendedGroup::getContinuationParameterName(
 								  int i) const
 {
@@ -613,7 +613,7 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
       const Teuchos::RCP<Teuchos::ParameterList>& conParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
-      const vector<int>& paramIDs)
+      const std::vector<int>& paramIDs)
   : globalData(global_data),
     parsedParams(topParams),
     continuationParams(conParams),

@@ -86,11 +86,11 @@ namespace MueLuTests {
       paramList.set("relaxation: sweeps", (int) 1);
       paramList.set("relaxation: damping factor", (double) 1.0);
       paramList.set("relaxation: zero starting solution", false);
-    
+
       IfpackSmoother smoother("point relaxation stand-alone", paramList);
 
       ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
-    
+
       switch (comm->getSize()) {
       case 1:
       case 4:
@@ -116,7 +116,7 @@ namespace MueLuTests {
       paramList.set("relaxation: sweeps", (int) 10);
       paramList.set("relaxation: damping factor", (double) 1.0);
       paramList.set("relaxation: zero starting solution", false);
-    
+
       IfpackSmoother smoother("point relaxation stand-alone", paramList);
 
       ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);

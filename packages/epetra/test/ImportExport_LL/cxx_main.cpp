@@ -62,6 +62,7 @@
 
 int special_submap_import_test(Epetra_Comm& Comm);
 int combine_mode_test(Epetra_Comm& Comm);
+int alternate_import_constructor_test(Epetra_Comm& Comm);
 
 int main(int argc, char *argv[])
 {
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
   // Construct a Source Map that puts approximately the same Number of equations on each processor in 
   // uniform global ordering
 
-  Epetra_Map SourceMap(NumGlobalEquations, NumMyEquations, 0, Comm);
+  Epetra_Map SourceMap(NumGlobalEquations, NumMyEquations, 0LL, Comm);
   
   // Get update list and number of local equations from newly created Map
   int NumMyElements = SourceMap.NumMyElements();
@@ -148,7 +149,7 @@ int main(int argc, char *argv[])
   }
   EPETRA_TEST_ERR(!(NumMyEquations==NumSameIDs+NumPermutedIDs+NumRemoteIDs),ierr);
 
-  Epetra_Map TargetMap((long long) -1, NumMyElements, TargetMyGlobalElements, 0, Comm);
+  Epetra_Map TargetMap((long long) -1, NumMyElements, TargetMyGlobalElements, 0LL, Comm);
 
   // Create a multivector whose elements are GlobalID * (column number +1)
 
@@ -231,7 +232,7 @@ int main(int argc, char *argv[])
   // Construct a Standard Map that puts approximately the same number of equations on each processor in 
   // uniform global ordering
 
-  Epetra_Map StandardMap(NumGlobalEquations, NumMyEquations, 0, Comm);
+  Epetra_Map StandardMap(NumGlobalEquations, NumMyEquations, 0LL, Comm);
   
   // Get update list and number of local equations from newly created Map
   NumMyElements = StandardMap.NumMyElements();
@@ -331,7 +332,7 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(!(StandardMatrix.IndicesAreLocal()),ierr);
   EPETRA_TEST_ERR(!(StandardMatrix.FillComplete()==0),ierr);
   EPETRA_TEST_ERR(!(StandardMatrix.IndicesAreLocal()),ierr);
-  EPETRA_TEST_ERR((StandardMatrix.StorageOptimized()),ierr);
+  //  EPETRA_TEST_ERR((StandardMatrix.StorageOptimized()),ierr);
   EPETRA_TEST_ERR((StandardMatrix.OptimizeStorage()),ierr);
   EPETRA_TEST_ERR(!(StandardMatrix.StorageOptimized()),ierr);
   EPETRA_TEST_ERR(StandardMatrix.UpperTriangular(),ierr);
@@ -352,7 +353,7 @@ int main(int argc, char *argv[])
 
   for (i=0; i< OverlapNumMyElements; i++) OverlapMyGlobalElements[i] = OverlapMinMyGID + i;
 
-  Epetra_Map OverlapMap((long long) -1, OverlapNumMyElements, OverlapMyGlobalElements, 0, Comm);
+  Epetra_Map OverlapMap((long long) -1, OverlapNumMyElements, OverlapMyGlobalElements, 0LL, Comm);
 
   // Create the Overlap Epetra_Matrix
 
@@ -469,7 +470,7 @@ int main(int argc, char *argv[])
   int NumSubMapElements = StandardMap.NumMyElements()/2;
   int SubStart = Comm.MyPID();
   NumSubMapElements = EPETRA_MIN(NumSubMapElements,StandardMap.NumMyElements()-SubStart);
-  Epetra_Map SubMap((long long) -1, NumSubMapElements, StandardMyGlobalElements+SubStart, 0, Comm);
+  Epetra_Map SubMap((long long) -1, NumSubMapElements, StandardMyGlobalElements+SubStart, 0LL, Comm);
 
   Epetra_LongLongVector v3(View, SubMap, SubMap.MyGlobalElements64()); // Fill v3 with GID values for variety
   Epetra_Export subExporter(SubMap, StandardMap); // Export to a subset of indices of standard map
@@ -496,12 +497,22 @@ int main(int argc, char *argv[])
     else cout << "SubMap Import/Export Check Failed" << endl << endl;
   }
 
+#ifdef DOESNT_WORK_IN_PARALLEL
   forierr = special_submap_import_test(Comm);
   EPETRA_TEST_ERR(forierr, ierr);
 
   if (verbose) {
     if (forierr==0) cout << "Special SubMap Import Check OK" << endl << endl;
     else cout << "Special SubMap Import Check Failed" << endl << endl;
+  }
+#endif
+
+  forierr =  alternate_import_constructor_test(Comm);
+  EPETRA_TEST_ERR(forierr, ierr);
+
+  if (verbose) {
+    if (forierr==0) cout << "Alternative Import Constructor Check OK" << endl << endl;
+    else cout << "Alternative Import Constructor Check Failed" << endl << endl;
   }
 
   // Release all objects
@@ -544,8 +555,8 @@ int special_submap_import_test(Epetra_Comm& Comm)
   ids_target[1] = localProc*2+1;
   ids_target[2] = localProc*2+0;
 
-  Epetra_Map map_source((long long) -1, 1, &ids_source[0], 0, Comm);
-  Epetra_Map map_target((long long) -1, 3, &ids_target[0], 0, Comm);
+  Epetra_Map map_source((long long) -1, 1, &ids_source[0], 0LL, Comm);
+  Epetra_Map map_target((long long) -1, 3, &ids_target[0], 0LL, Comm);
 
   Epetra_Import importer(map_target, map_source);
 
@@ -596,8 +607,8 @@ int combine_mode_test(Epetra_Comm& Comm)
   ids_target[1] = localProc*2+1;
   ids_target[2] = localProc*2+0;
 
-  Epetra_Map map_source((long long) -1, 1, &ids_source[0], 0, Comm);
-  Epetra_Map map_target((long long) -1, 3, &ids_target[0], 0, Comm);
+  Epetra_Map map_source((long long) -1, 1, &ids_source[0], 0LL, Comm);
+  Epetra_Map map_target((long long) -1, 3, &ids_target[0], 0LL, Comm);
 
   Epetra_Import importer(map_target, map_source);
 
@@ -635,3 +646,85 @@ int combine_mode_test(Epetra_Comm& Comm)
   return global_result;
 }
 
+
+int test_import_gid(const char * name,Epetra_LongLongVector & Source, Epetra_LongLongVector & Target, const Epetra_Import & Import){
+  int i;
+  bool test_passed=true;
+
+  // Setup
+  for(i=0; i<Source.MyLength(); i++)
+    Source[i] = Source.Map().GID64(i);
+  Target.PutValue(0);
+
+  // Import
+  Target.Import(Source,Import,Add);
+
+  // Test
+  for(i=0; i<Target.MyLength(); i++){
+    if(Target[i] != Target.Map().GID64(i)) test_passed=false;
+  }
+
+  if(!test_passed){
+    printf("[%d] test_import_gid %s failed: ",Source.Map().Comm().MyPID(),name);
+    for(i=0; i<Target.MyLength(); i++)
+      printf("%2lld(%2lld) ",Target[i],Target.Map().GID64(i));
+    printf("\n");
+    fflush(stdout);
+  }
+
+  return !test_passed;
+}
+
+
+
+int alternate_import_constructor_test(Epetra_Comm& Comm) {
+  int rv=0;
+  int nodes_per_proc=10;
+  int numprocs = Comm.NumProc();
+  int mypid    = Comm.MyPID();
+
+  // Only run if we have multiple procs & MPI
+  if(numprocs==0) return 0;
+#ifndef HAVE_MPI
+  return 0;
+#endif
+
+  // Build Map 1 - linear
+  Epetra_Map Map1((long long)-1,nodes_per_proc,(long long)0,Comm);
+  
+  // Build Map 2 - mod striped
+  std::vector<long long> MyGIDs(nodes_per_proc);
+  for(int i=0; i<nodes_per_proc; i++)
+    MyGIDs[i] = (mypid*nodes_per_proc + i) % numprocs;
+  Epetra_Map Map2((long long)-1,nodes_per_proc,&MyGIDs[0],(long long)0,Comm);
+
+  // For testing
+  Epetra_LongLongVector Source(Map1), Target(Map2);
+
+
+  // Build Import 1 - normal
+  Epetra_Import Import1(Map2,Map1);
+  rv = rv|| test_import_gid("Alt test: 2 map constructor",Source,Target, Import1);
+
+  // Build Import 2 - no-comm constructor
+  int Nremote=Import1.NumRemoteIDs();
+  const int * RemoteLIDs = Import1.RemoteLIDs();
+  std::vector<int> RemotePIDs(Nremote+1); // I hate you, stl vector....
+  std::vector<int> AllPIDs;  
+  Epetra_Util::GetPids(Import1,AllPIDs,true);
+
+  for(int i=0; i<Nremote; i++) {
+    RemotePIDs[i]=AllPIDs[RemoteLIDs[i]];
+  }
+  Epetra_Import Import2(Import1.TargetMap(),Import1.SourceMap(),Nremote,&RemotePIDs[0],Import1.NumExportIDs(),Import1.ExportLIDs(),Import1.ExportPIDs());
+
+  rv = rv || test_import_gid("Alt test: no comm constructor",Source,Target,Import2);
+
+
+  // Build Import 3 - Remotes only
+  Epetra_Import Import3(Import1.TargetMap(),Import1.SourceMap(),Nremote,&RemotePIDs[0]);
+  rv = rv || test_import_gid("Alt test: remote only constructor",Source,Target, Import3);
+
+
+  return rv;
+}

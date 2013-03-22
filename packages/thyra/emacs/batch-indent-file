@@ -1,0 +1,24 @@
+;;; File that formattes a source file on the command-line using emacs batch
+;;; mode.  To use this, you have to have installed the 'thyra' style file
+;;; cpp-thyra-styles.el in your ~/elisp/ directory.  You can run this using:
+;;;
+;;;     $ emacs -batch <file-to-indent> -l \
+;;;       <THIS_DIRECTORY>/batch-indent-file -f emacs-format-function
+;;;
+;;; This only fixes the indentation and not any other formatting issue.  Also,
+;;; it is very slow taking almost a minute for a larger C++ file.
+;;;
+;;; Therefore, I don't think this is a very viable way to automated formatting
+;;; but it is perhaps a nice way to fix the formatting of a set of files in
+;;; batch mode, perhaps using a 'find' command and waiting a long time.
+
+(defun emacs-format-function ()
+   "Format the whole buffer."
+   (add-to-list 'load-path (expand-file-name "~/elisp/"))
+   (require 'cpp-thyra-styles)
+   (setq c-set-style "thyra")
+   ;;; (c-set-style "stroustrup")
+   (indent-region (point-min) (point-max) nil)
+   (untabify (point-min) (point-max))
+   (save-buffer)
+)

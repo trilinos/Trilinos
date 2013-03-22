@@ -102,7 +102,7 @@ NOX::Belos::MultiVector::CloneCopy()
 ::Belos::MultiVec<double>*
 NOX::Belos::MultiVector::CloneCopy(int index[], int numvecs)
 {
-  vector<int> idx(index, index+numvecs);
+  std::vector<int> idx(index, index+numvecs);
   NOX::Abstract::MultiVector *newVec = vecPtr->subCopy(idx).release();
   return new NOX::Belos::MultiVector(*newVec, true);
 }
@@ -110,7 +110,7 @@ NOX::Belos::MultiVector::CloneCopy(int index[], int numvecs)
 ::Belos::MultiVec<double>*
 NOX::Belos::MultiVector::CloneView(int index[], int numvecs)
 {
-  vector<int> idx(index, index+numvecs);
+  std::vector<int> idx(index, index+numvecs);
   NOX::Abstract::MultiVector *newVec = vecPtr->subView(idx).release();
   return new NOX::Belos::MultiVector(*newVec, true);
 }
@@ -182,7 +182,7 @@ NOX::Belos::MultiVector::MvNorm(double *normvec,
   else
     nox_norm_type = NOX::Abstract::Vector::MaxNorm;
 
-  vector<double> res(vecPtr->numVectors());
+  std::vector<double> res(vecPtr->numVectors());
   vecPtr->norm(res, nox_norm_type);
 
   for (unsigned int i=0; i<res.size(); i++)
@@ -195,7 +195,7 @@ void
 NOX::Belos::MultiVector::SetBlock(::Belos::MultiVec<double>& A, int index[], 
 				  int numvecs)
 {
-  vector<int> idx(index, index+numvecs);
+  std::vector<int> idx(index, index+numvecs);
 
   // Cast A to a NOX::Belos::MultiVector
   NOX::Belos::MultiVector& nox_belos_A = 

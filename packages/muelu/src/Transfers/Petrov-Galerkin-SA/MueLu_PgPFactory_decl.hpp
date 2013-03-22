@@ -48,7 +48,7 @@
 
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
 #include <Xpetra_Export_fwd.hpp>
@@ -68,7 +68,7 @@ namespace MueLu {
     L2NORM = 1, /* L2 norm */
     DINVANORM  = 2 /* Dinv A norm */
   };
-  
+
   /*!
     @class PgPFactory class.
     @brief Factory for building Petrov-Galerkin Smoothed Aggregation prolongators.
@@ -88,10 +88,10 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    PgPFactory(RCP</*PFactory*/const FactoryBase> InitialPFact = Teuchos::null, RCP< const FactoryBase /* SingleLevelFactoryBase*/> AFact = Teuchos::null);
+    PgPFactory();
 
     //! Destructor.
-    virtual ~PgPFactory();
+    virtual ~PgPFactory() { }
 
     //@}
 
@@ -140,19 +140,13 @@ namespace MueLu {
 
   private:
 
-    void MultiplySelfAll(const RCP<Operator>& Op, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
+    void MultiplySelfAll(const RCP<Matrix>& Op, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
 
-    void MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
+    void MultiplyAll(const RCP<Matrix>& left, const RCP<Matrix>& right, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
 
-    void ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Operator>& A, const RCP<Operator>& P0, const RCP<Operator>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const;
+    void ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const;
 
   private:
-
-    //! Input factories
-    //RCP<PFactory> initialPFact_;        //! Ptentative Factory
-    RCP<const FactoryBase> initialPFact_;        //! Ptentative Factory
-    //RCP<SingleLevelFactoryBase> AFact_; //! A Factory
-    RCP<const FactoryBase> AFact_; //! A Factory
 
     //! Factory parameters
     std::string diagonalView_;

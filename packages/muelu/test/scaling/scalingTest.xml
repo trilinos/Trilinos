@@ -1,168 +1,222 @@
 <ParameterList name="MueLu">
-  
+
   <!-- Configuration of the Xpetra operator (fine level) -->
-  <ParameterList name="Operator">
-    <Parameter name="PDE equations" type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
+  <ParameterList name="Matrix">
+    <Parameter name="PDE equations"                         type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
   </ParameterList>
 
   <!-- Factory collection -->
   <ParameterList name="Factories">
 
-    <ParameterList name="myTentativePFact">
-      <Parameter name="factory" type="string" value="TentativePFactory"/>
-    </ParameterList>
+    <!-- Note that ParameterLists must be defined prior to being used -->
 
-    <ParameterList name="myTentativeRFact">
-      <Parameter name="factory" type="string" value="TransPFactory"/>
-      <Parameter name="P" type="string" value="myTentativePFact"/>
-    </ParameterList>
+    <!-- -->
+    <!-- Non-permuted factories -->
+    <!-- -->
 
     <ParameterList name="myCoalesceDropFact">
-      <Parameter name="factory" type="string" value="CoalesceDropFactory"/>
-      <Parameter name="Nullspace" type="string" value="myTentativePFact"/>
+      <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
+      <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
+      <!--
+      <Parameter name="aggregation threshold"               type="double" value="0.1"/>
+      -->
+    </ParameterList>
+
+    <ParameterList name="CoupledAggregationFact">
+      <Parameter name="factory"                             type="string" value="CoupledAggregationFactory"/>
+      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
+      <Parameter name="Ordering"                            type="string" value="Natural"/>
+      <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
+      <Parameter name="Phase3AggCreation"                   type="double" value="0.5"/>
+      <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
+    </ParameterList>
+
+    <ParameterList name="UncoupledAggregationFact">
+      <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
+      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
+      <Parameter name="Ordering"                            type="string" value="Natural"/>
+      <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
+      <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
+    </ParameterList>
+
+    <ParameterList name="myAggExportFact">
+      <Parameter name="factory"                             type="string" value="AggregationExportFactory"/>
+      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
+    </ParameterList>
+
+    <ParameterList name="myTentativePFact">
+      <Parameter name="factory"                             type="string" value="TentativePFactory"/>
     </ParameterList>
 
     <ParameterList name="myProlongatorFact">
-      <Parameter name="factory"  type="string" value="SaPFactory"/>
-      <Parameter name="InitialP" type="string" value="myTentativePFact"/>
-      <!--    <Parameter name="DampingFactor" type="double" value="4./3"/> -->
+      <Parameter name="factory"                             type="string" value="SaPFactory"/>
+      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
+      <!-- <Parameter name="Damping factor"                      type="double" value="4./3"/> -->
+    </ParameterList>
+
+    <ParameterList name="myTentativeRFact"> <!-- for projecting coordinates -->
+      <Parameter name="factory"                             type="string" value="TransPFactory"/>
+      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
     </ParameterList>
 
     <ParameterList name="myRestrictorFact">
-      <Parameter name="factory" type="string" value="TransPFactory"/>
-      <Parameter name="P" type="string" value="myProlongatorFact"/>
+      <Parameter name="factory"                             type="string" value="TransPFactory"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
     </ParameterList>
 
-    <ParameterList name="myCoordinateTransfertFact">
-      <Parameter name="factory"         type="string" value="MultiVectorTransferFactory"/>
-      <Parameter name="vectorName"      type="string" value="Coordinates"/>
-      <Parameter name="restrictionName" type="string" value="R"/>
-      <Parameter name="R"               type="string" value="myTentativeRFact"/>
+    <ParameterList name="myTransferCoordinatesFact">
+      <Parameter name="factory"                             type="string" value="MultiVectorTransferFactory"/>
+      <Parameter name="Vector name"                         type="string" value="Coordinates"/>
+      <Parameter name="R"                                   type="string" value="myTentativeRFact"/>
     </ParameterList>
-    
+
     <ParameterList name="myRAPFact">
-      <Parameter name="factory" type="string" value="RAPFactory"/>
-      <Parameter name="P" type="string" value="myProlongatorFact"/>
-      <Parameter name="R" type="string" value="myRestrictorFact"/>
+      <Parameter name="factory"                             type="string" value="RAPFactory"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
       <ParameterList name="TransferFactories">
-        <Parameter name="For Coordinates" type="string" value="myCoordinateTransfertFact"/>
+        <Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/>
+        <!-- <Parameter name="Visualization"                     type="string" value="myAggExportFact"/> -->
       </ParameterList>
     </ParameterList>
 
-
-
 <!-- -->
-<!-- -->
-<!-- -->
-<!-- -->
+<!-- Repartitioning -->
 <!-- -->
 
     <ParameterList name="myZoltanInterface">
-      <Parameter name="factory" type="string" value="ZoltanInterface"/>
-      <Parameter name="A"        type="string" value="myRAPFact"/>
-      <Parameter name="TransferFactory" type="string" value="myCoordinateTransfertFact"/>
+      <Parameter name="factory"                             type="string" value="ZoltanInterface"/>
+      <Parameter name="A"                                   type="string" value="myRAPFact"/>
+      <Parameter name="Coordinates"                         type="string" value="myTransferCoordinatesFact"/>
     </ParameterList>
 
     <ParameterList name="myRepartitionFact">
-      <Parameter name="factory" type="string" value="RepartitionFactory"/>
-      <Parameter name="Factory"          type="string" value="myZoltanInterface"/>
-      <Parameter name="A"                type="string" value="myRAPFact"/>
-      <Parameter name="minRowsPerProc"   type="int"    value="800"/> <!-- default = 2000 -->
-      <Parameter name="nonzeroImbalance" type="double" value="1.1"/> <!-- default = 1.2 -->
-      <Parameter name="startLevel"       type="int"    value="2"/>   <!-- default = 1 -->
+      <Parameter name="factory"                             type="string" value="RepartitionFactory"/>
+      <Parameter name="A"                                   type="string" value="myRAPFact"/>
+      <Parameter name="Partition"                           type="string" value="myZoltanInterface"/>
+      <Parameter name="minRowsPerProcessor"                 type="int"    value="800"/> <!-- default = 2000 -->
+      <Parameter name="nonzeroImbalance"                    type="double" value="1.1"/> <!-- default = 1.2 -->
+      <Parameter name="startLevel"                          type="int"    value="2"/>   <!-- default = 1 -->
+      <Parameter name="diffusiveHeuristic"                  type="int"    value="0"/>
     </ParameterList>
 
-    <ParameterList name="myPermutedProlongatorFact">
-      <Parameter name="factory" type="string" value="PermutedTransferFactory"/>
-      <Parameter name="RepartitionFactory" type="string" value="myRepartitionFact"/>
-      <Parameter name="A"                  type="string" value="myRAPFact"/>
-      <Parameter name="P"                  type="string" value="myProlongatorFact"/>
-      <Parameter name="type"     type="string" value="Interpolation"/>
+    <ParameterList name="myRebalanceProlongatorFact">
+      <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
+      <Parameter name="type"                                type="string" value="Interpolation"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
     </ParameterList>
 
-    <ParameterList name="myPermutedRestrictionFact">
-      <Parameter name="factory" type="string" value="PermutedTransferFactory"/>
-      <Parameter name="RepartitionFactory" type="string" value="myRepartitionFact"/>
-      <Parameter name="R"                  type="string" value="myRestrictorFact"/>
-      <Parameter name="type"               type="string" value="Restriction"/>
-      <Parameter name="P"                  type="string" value="myTentativePFact"/>
-      <Parameter name="TransferFactory"    type="string" value="myCoordinateTransfertFact"/>
+    <ParameterList name="myRebalanceRestrictionFact">
+      <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
+      <Parameter name="type"                                type="string" value="Restriction"/>
+      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
+      <Parameter name="Coordinates"                         type="string" value="myTransferCoordinatesFact"/>
+      <Parameter name="Nullspace"                           type="string" value="myTentativePFact"/>
     </ParameterList>
-    
-    <ParameterList name="myPermutedRAPFactory">
-      <Parameter name="factory" type="string" value="RAPFactory"/>
-      <Parameter name="P" type="string" value="myPermutedProlongatorFact"/>
-      <Parameter name="R" type="string" value="myPermutedRestrictionFact"/>
+
+    <ParameterList name="myRebalanceAFact">
+      <Parameter name="factory"                             type="string" value="RebalanceAcFactory"/>
+      <Parameter name="A"                                   type="string" value="myRAPFact"/>
     </ParameterList>
-    
+
 <!-- -->
 <!-- -->
 <!-- -->
 <!-- -->
 <!-- -->
 
-    <ParameterList name="myAggregationFact">
-      <Parameter name="factory" type="string" value="UCAggregationFactory"/>
-      <Parameter name="Ordering"                type="string" value="Natural"/> <!-- Natural, Random, Graph -->
-      <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
-      <Parameter name="Phase3AggCreation"       type="double" value="0.5"/>
-      <Parameter name="MinNodesPerAggregate"    type="int"    value="2"/>
-    </ParameterList>
+    <!-- =======================  SMOOTHERS  ======================= -->
 
-    <ParameterList name="SymGaussSeidel">
-      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-      
-      <Parameter name="type"                         type="string" value="RELAXATION"/>
+    <ParameterList name="Chebyshev">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="CHEBYSHEV"/>
+
       <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type"           type="string" value="Symmetric Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
-        <Parameter name="relaxation: damping factor" type="double" value="1"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="Chebyshev"> <!-- interpreter not tested yet -->
-      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-      
-      <Parameter name="type" type="string" value="CHEBYSHEV"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="chebyshev: degree"                 type="int"     value="1"/>>
-        <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="20"/>
-        <Parameter name="chebyshev: max eigenvalue"         type="double"  value="-1.0"/>
+        <Parameter name="chebyshev: degree"                 type="int"     value="2"/>>
+        <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="7"/>
         <Parameter name="chebyshev: min eigenvalue"         type="double"  value="1.0"/>
         <Parameter name="chebyshev: zero starting solution" type="bool"    value="true"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="SymGaussSeidel">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="RELAXATION"/>
+
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps"                type="int"    value="2"/>
+        <Parameter name="relaxation: damping factor"        type="double" value="1"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="ForwardGaussSeidel">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string"  value="RELAXATION"/>
+
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string"  value="Gauss-Seidel"/>
+        <Parameter name="relaxation: backward mode"         type="bool"    value="false"/>
+        <Parameter name="relaxation: sweeps"                type="int"     value="2"/>
+        <Parameter name="relaxation: damping factor"        type="double"  value="1"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="BackwardGaussSeidel">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string"  value="RELAXATION"/>
+
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string"  value="Gauss-Seidel"/>
+        <Parameter name="relaxation: backward mode"         type="bool"    value="true"/>
+        <Parameter name="relaxation: sweeps"                type="int"     value="2"/>
+        <Parameter name="relaxation: damping factor"        type="double"  value="1"/>
+      </ParameterList>
+    </ParameterList>
 
   </ParameterList>
-   
+
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
-    
-    <Parameter name="numDesiredLevel" type="int" value="10"/> <!-- Max number of levels -->
-    
+
+    <Parameter name="numDesiredLevel"                       type="int"      value="10"/> <!-- Max number of levels -->
+    <Parameter name="maxCoarseSize"                         type="int"      value="500"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="verbosity"                             type="string"   value="High"/>
+
     <ParameterList name="FineLevel">
-      <Parameter name="startLevel" type="int" value="0"/>
-      <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
-      <Parameter name="Aggregates" type="string" value="myAggregationFact"/>
-      <Parameter name="Graph"      type="string" value="myCoalesceDropFact"/>
+      <Parameter name="startLevel"                          type="int"      value="0"/>
+      <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
+      <!-- <Parameter name="PreSmoother"                         type="string"   value="ForwardGaussSeidel"/> -->
+      <!-- <Parameter name="PostSmoother"                        type="string"   value="BackwardGaussSeidel"/> -->
+      <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="myRebalanceRestrictionFact"/>
+      <Parameter name="Coordinates"                         type="string"   value="myRebalanceRestrictionFact"/>
+      <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
+      <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
     </ParameterList>
 
+    <!-- Will result in a new FactoryMap for a new FactoryManager on Level 1.  Will be used as a model for FM's on later levels.
+         Will refer to Factory Collection defined above. -->
     <ParameterList name="OtherLevels">
-      <Parameter name="startLevel" type="int" value="1"/>
-      <Parameter name="A"          type="string" value="myPermutedRAPFactory"/>
-      <Parameter name="P"          type="string" value="myPermutedProlongatorFact"/> <!-- TODO: should not be needed -->
-      <Parameter name="R"          type="string" value="myPermutedRestrictionFact"/> <!-- TODO: should not be needed -->
-      <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
-      <Parameter name="Aggregates" type="string" value="myAggregationFact"/>
-      <Parameter name="Graph"      type="string" value="myCoalesceDropFact"/>
-      <Parameter name="Nullspace"  type="string" value="myPermutedRestrictionFact"/>
+      <Parameter name="startLevel"                          type="int"      value="1"/>
+      <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
+      <!-- <Parameter name="PreSmoother"                         type="string" value="ForwardGaussSeidel"/> -->
+      <!-- <Parameter name="PostSmoother"                        type="string" value="BackwardGaussSeidel"/> -->
+      <Parameter name="A"                                   type="string"   value="myRebalanceAFact"/>
+      <Parameter name="P"                                   type="string"   value="myRebalanceProlongatorFact"/>
+      <Parameter name="R"                                   type="string"   value="myRebalanceRestrictionFact"/>
+      <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="myRebalanceRestrictionFact"/>
+      <Parameter name="Coordinates"                         type="string"   value="myRebalanceRestrictionFact"/>
+      <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
+      <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
     </ParameterList>
-    
+
     <ParameterList name="CoarsestLevel">
-      <Parameter name="startLevel"   type="int" value="-1"/>
-      <Parameter name="CoarseSolver" type="string" value="DirectSolver"/>
+      <Parameter name="startLevel"                          type="int"      value="-1"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
       <!-- TODO: check how last level is built (A,P,R) fact -->
     </ParameterList>
-    
+
   </ParameterList>
 </ParameterList>

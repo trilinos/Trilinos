@@ -35,5 +35,5 @@ ENDIF()
 
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/include/stk_percept/util/)
+    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_percept/util/)
 

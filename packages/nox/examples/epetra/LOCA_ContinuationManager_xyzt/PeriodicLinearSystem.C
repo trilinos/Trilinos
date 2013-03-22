@@ -212,7 +212,7 @@ GetContinuableParams() const
 }
 
 bool PeriodicLinearSystem::
-SetContinuableParameter(string label,double value)
+SetContinuableParameter(std::string label,double value)
 {
 
   // These are the continuable parameters
@@ -225,7 +225,7 @@ SetContinuableParameter(string label,double value)
 }
 
 bool PeriodicLinearSystem::
-UpdateContinuationFile( const string & fileName,
+UpdateContinuationFile( const std::string & fileName,
           const int & idStep,
           const Teuchos::ParameterList & continuationFileParams)
 {
@@ -270,7 +270,7 @@ GetContinuationFileParameters()
 }
 
 bool PeriodicLinearSystem::
-PrintSolutionFile(const string & fileName, const Epetra_Vector & x,
+PrintSolutionFile(const std::string & fileName, const Epetra_Vector & x,
     const Teuchos::ParameterList & xParams)
 {
 

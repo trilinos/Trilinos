@@ -52,7 +52,7 @@ extern "C" {
 #include <math.h>
 #include "zz_const.h"
 #include "zz_util_const.h"
-#include "matrix.h"
+#include "zoltan_matrix.h"
 #include "graph.h"
 #include "graph_const.h"
 #include "params_const.h"

@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   // linear algebra library
   // this example require Tpetra+Ifpack2+Amesos2 or Epetra+Ifpack+Amesos
 #if   defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
-  Xpetra::UnderlyingLib lib = Xpetra::UseTpetra; 
+  Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
 #elif defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)  && defined(HAVE_MUELU_AMESOS)
   Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
 #endif
@@ -105,23 +105,23 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
   // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-  RCP<Operator> A = rcp(new CrsOperator(map, 3));
+  RCP<Matrix> A = rcp(new CrsMatrixWrap(map, 3));
 
   // Add rows one-at-a-time
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1), 
+      A->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1),
                             Teuchos::tuple<Scalar> (2.0, -1.0));
     }
     else if (myGlobalElements[i] == numGlobalElements - 1) {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]), 
+      A->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]),
                             Teuchos::tuple<Scalar> (-1.0, 2.0));
     }
     else {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
+      A->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1),
                             Teuchos::tuple<Scalar> (-1.0, 2.0, -1.0));
     }
   }
@@ -151,24 +151,24 @@ int main(int argc, char *argv[]) {
   B->setSeed(846930886); B->randomize();
   //B->putScalar((Scalar) 1.0);
 
-  // Operator and Multivector type that will be used with Belos
+  // Matrix and Multivector type that will be used with Belos
   typedef MultiVector          MV;
   typedef Belos::OperatorT<MV> OP;
 
   // Define Operator and Preconditioner
-  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Operator object into a Belos operator
+  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
   RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
 
   // Construct a Belos LinearProblem object
   RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
   belosProblem->setLeftPrec(belosPrec);
-    
+
   bool set = belosProblem->setProblem();
   if (set == false) {
     std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return EXIT_FAILURE;
   }
-    
+
   // Belos parameter list
   int maxIts = 20;
   double tol = 1e-4;
@@ -179,23 +179,23 @@ int main(int argc, char *argv[]) {
 
   // Create an iterative solver manager
   RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-    
+
   // Perform solve
   Belos::ReturnType ret = solver->solve();
-  
+
   // Get the number of iterations for this solve.
   std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-  
+
   // Compute actual residuals.
   int numrhs=1;
   bool badRes = false;
   std::vector<SC> actual_resids(numrhs);
   std::vector<SC> rhs_norm(numrhs);
-  RCP<MultiVector> resid = MultiVectorFactory::Build(map, numrhs); 
+  RCP<MultiVector> resid = MultiVectorFactory::Build(map, numrhs);
 
   typedef Belos::OperatorTraits<SC, MV, OP> OPT;
   typedef Belos::MultiVecTraits<SC, MV>     MVT;
-    
+
   OPT::Apply(*belosOp, *X, *resid);
   MVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
   MVT::MvNorm(*resid, actual_resids);

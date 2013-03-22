@@ -53,9 +53,14 @@
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
+
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
+
+// no gpu support for RTI
+#undef HAVE_KOKKOSCLASSIC_THRUST
 #include <Tpetra_HybridPlatform.hpp>
+
 #include <Tpetra_MatrixIO.hpp>
 #include <Tpetra_RTI.hpp>
 #include <Tpetra_RTIOp.hpp>

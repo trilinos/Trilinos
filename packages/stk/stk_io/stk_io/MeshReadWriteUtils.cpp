@@ -965,6 +965,27 @@ void process_input_request(MeshData &mesh_data,
 }
 
 void input_mesh_fields(Ioss::Region *region, stk::mesh::BulkData &bulk,
+                           double time)
+{
+  // Find the step on the database with time closest to the requested time...
+  int step_count = region->get_property("state_count").get_int();
+  double delta_min = 1.0e30;
+  int    step_min  = 0;
+  for (int istep = 0; istep < step_count; istep++) {
+	double state_time = region->get_state_time(istep+1);
+	double delta = state_time - time;
+	if (delta < 0.0) delta = -delta;
+	if (delta < delta_min) {
+	  delta_min = delta;
+	  step_min  = istep;
+	  if (delta == 0.0) break;
+	}
+  }
+  // Exodus steps are 1-based;
+  input_mesh_fields(region, bulk, step_min+1);
+}
+
+void input_mesh_fields(Ioss::Region *region, stk::mesh::BulkData &bulk,
                            int step)
 {
 	// Pick which time index to read into solution field.

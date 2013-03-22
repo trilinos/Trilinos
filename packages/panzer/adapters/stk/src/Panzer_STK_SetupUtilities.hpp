@@ -47,7 +47,6 @@
 #include "Panzer_Workset.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_PhysicsBlock.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -60,79 +59,42 @@ namespace panzer_stk {
 /** Build volumetric worksets for a STK mesh
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] eb_to_ipb Map that keys the element block id to the InputPhysicsBlock object for that element block.
-  * \param[in] workset_size The size of each workset measured in the number of elements
+  * \param[in] pb Physics block associated with a particular element block
   *
-  * \returns Map relating block IDs to vectors of worksets on that element block.
-  */
-std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb, 
-              const std::size_t workset_size);
-
-
-/** Build volumetric worksets for a STK mesh
-  *
-  * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] eBlock Element block ID to build the worksets from
-  * \param[in] ipb Input physics block to be associated with the element block
-  * \param[in] workset_size The size of each workset measured in the number of elements
-  *
-  * \returns Map relating block IDs to vectors of worksets on that element block.
+  * \returns vector of worksets for the corresponding element block.
   */
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const std::string & eBlock,
-              const panzer::InputPhysicsBlock & ipb, 
-              const std::size_t workset_size);
+              const panzer::PhysicsBlock & pb);
 
-/** Build volumetric worksets for a STK mesh
+/** Build volumetric worksets for a STK mesh with elements that touch a particular sideset.
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
   * \param[in] pb Physics block associated with the element block
   * \param[in] workset_size The size of each workset measured in the number of elements
+  * \param[in] sideset The sideset id used to locate volume elements associated with the sideset
   *
-  * \returns Map relating block IDs to vectors of worksets on that element block.
+  * \returns vector of worksets for the corresponding element block.
   */
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::PhysicsBlock & pb, 
-              const std::size_t workset_size);
+              const panzer::PhysicsBlock & pb,
+              const std::string & sideset);
 
 /** Build boundary condition worksets for a STK mesh
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] eb_to_ipb Map that keys the element block id to the InputPhysicsBlock object for that element block.
+  * \param[in] pb Physics block associated with the element block
+  * \param[in] bc Boundary condition object
   *
-  * \returns Map relating block IDs to vectors of worksets on that element block.
+  * \returns Map relating local element side IDs to a workset.
   *
-  * \note Current implementation does not use different workset sizes for the 
-  *       boundary conditions.
+  * \note All elements for a bc that are associated with a particular
+  *       side ID are grouped into a single workset
   */
-const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb,
-                const std::vector<panzer::BC> & bcs);
-
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::PhysicsBlock & pb,
-                const panzer::BC & bc);
-
-/** Build boundary condition worksets for a STK mesh
-  *
-  * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] ipb Input physics block to use
-  * \param[in] bc Boundary condition to build workset over
-  *
-  * \returns Map relating block IDs to vectors of worksets on that element block.
-  *
-  * \note Current implementation does not use different workset sizes for the 
-  *       boundary conditions.
-  */
-Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::InputPhysicsBlock & ipb,
                 const panzer::BC & bc);
 
 // namespace may not be neccssary in the future, currently avoids

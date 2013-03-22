@@ -149,9 +149,9 @@ namespace Xpetra {
     RCP< const Epetra_Export> getEpetra_Export() const { return export_; }
 
     //@}
-    
+
   private:
-    
+
     RCP<const Epetra_Export> export_;
 
   }; // EpetraExport class

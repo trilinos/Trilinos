@@ -605,7 +605,11 @@ namespace Belos {
       // z = M\r
       if ( lp_->getLeftPrec() != Teuchos::null ) {
         lp_->applyLeftPrec( *r_, *z_ );
-      } else {
+      } 
+      else if ( lp_->getRightPrec() != Teuchos::null ) {
+        lp_->applyRightPrec( *r_, *z_ );
+      }
+      else {
         z_ = r_;
       }
 

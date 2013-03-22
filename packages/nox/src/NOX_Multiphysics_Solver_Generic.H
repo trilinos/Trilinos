@@ -62,6 +62,7 @@ namespace NOX {
   }
 }
 #include "Teuchos_RCP.hpp"
+#include <vector>
 
 namespace NOX {
 namespace Multiphysics {
@@ -121,7 +122,7 @@ public:
     call reset() again with the modified objects.
   */
   virtual bool 
-  reset(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
+  reset(const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
 	const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
 	const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
 	const Teuchos::RCP<Teuchos::ParameterList>& params) = 0;

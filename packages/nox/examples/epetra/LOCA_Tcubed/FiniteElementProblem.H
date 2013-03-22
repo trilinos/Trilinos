@@ -100,7 +100,7 @@ public:
   Epetra_CrsMatrix& getJacobian();
 
   // Set a bifurcation parameter in the application physics
-  bool set(string label, double value);
+  bool set(std::string label, double value);
 
   //! Print solution to output file
   void printSolution(const Epetra_Vector& x_, double conParam);

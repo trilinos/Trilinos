@@ -50,7 +50,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Panzer_config.hpp"
-#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
@@ -60,7 +59,7 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
@@ -88,7 +87,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-void testInitialzation(panzer::InputPhysicsBlock& ipb,
+void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 		       std::vector<panzer::BC>& bcs);
 
 // calls MPI_Init and MPI_Finalize
@@ -109,7 +108,8 @@ int main(int argc,char * argv[])
    ////////////////////////////////////////////////////
 
    // factory definitions
-   Example::EquationSetFactory eqset_factory; // where poison equation is defined
+   Teuchos::RCP<Example::EquationSetFactory> eqset_factory = 
+     Teuchos::rcp(new Example::EquationSetFactory); // where poison equation is defined
    Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
 
    panzer_stk::SquareQuadMeshFactory mesh_factory;
@@ -133,23 +133,31 @@ int main(int argc,char * argv[])
    // construct input physics and physics block
    ////////////////////////////////////////////////////////
 
-   panzer::InputPhysicsBlock ipb;
+   Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
    std::vector<panzer::BC> bcs;
    std::vector<RCP<panzer::PhysicsBlock> > physicsBlocks;
    {
       bool build_transient_support = false;
 
-      testInitialzation(ipb, bcs);
+      testInitialization(ipb, bcs);
       
-      int base_cell_dimension = mesh->getCellTopology("eblock-0_0")->getDimension();
-      const panzer::CellData volume_cell_data(workset_size, base_cell_dimension,mesh->getCellTopology("eblock-0_0"));
+      const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0"));
 
       // GobalData sets ostream and parameter interface to physics
       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
+      // Can be overridden by the equation set
+      int default_integration_order = 1;
+      
       // the physics block nows how to build and register evaluator with the field manager
       RCP<panzer::PhysicsBlock> pb 
-	= rcp(new panzer::PhysicsBlock(ipb, "eblock-0_0", volume_cell_data, eqset_factory, gd, build_transient_support));
+	= rcp(new panzer::PhysicsBlock(ipb,
+				       "eblock-0_0", 
+				       default_integration_order,
+				       volume_cell_data,
+				       eqset_factory,
+				       gd,
+				       build_transient_support));
 
       // we can have more than one physics block, one per element block
       physicsBlocks.push_back(pb);
@@ -215,10 +223,11 @@ int main(int argc,char * argv[])
    // setup field manager builder
    /////////////////////////////////////////////////////////////
 
-   Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-         Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
-   fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-   fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,
+   Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+         Teuchos::rcp(new panzer::FieldManagerBuilder);
+   fmb->setWorksetContainer(wkstContainer);
+   fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+   fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,
                              *linObjFactory,user_data);
 
    // setup assembly engine
@@ -227,8 +236,8 @@ int main(int argc,char * argv[])
    // build assembly engine: The key piece that brings together everything and 
    //                        drives and controls the assembly process. Just add
    //                        matrices and vectors
-   panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-   panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
+   panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
+   panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
    ae_tm.buildObjects(builder);
 
    // assemble linear system
@@ -303,7 +312,7 @@ int main(int argc,char * argv[])
 
       // get X Epetra_Vector from ghosted container
       RCP<panzer::EpetraLinearObjContainer> ep_ghostCont = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghostCont);
-      panzer_stk::write_solution_data(*rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ep_ghostCont->get_x());
+      panzer_stk::write_solution_data(*dofManager,*mesh,*ep_ghostCont->get_x());
       mesh->writeToExodus("output.exo");
    }
 
@@ -313,18 +322,18 @@ int main(int argc,char * argv[])
    return 0;
 }
 
-void testInitialzation(panzer::InputPhysicsBlock& ipb,
+void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 		       std::vector<panzer::BC>& bcs)
 {
-   panzer::InputEquationSet ies;
-   ies.name = "Poisson";
-   ies.basis = "Q1";
-   ies.integration_order = 2;
-   ies.model_id = "solid";
-   ies.prefix = "";
-  ipb.physics_block_id = "4";
-   ipb.eq_sets.push_back(ies);
-   
+  {
+    Teuchos::ParameterList& p = ipb->sublist("Poisson Physics");
+    p.set("Type","Poisson");
+    p.set("Model ID","solid");
+    p.set("Basis Type","HGrad");
+    p.set("Basis Order",1);
+    p.set("Integration Order",2);
+  }
+  
    {
       std::size_t bc_id = 0;
       panzer::BCType bctype = panzer::BCT_Dirichlet;

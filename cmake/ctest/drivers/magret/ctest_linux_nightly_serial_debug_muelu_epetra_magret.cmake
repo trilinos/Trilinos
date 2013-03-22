@@ -67,8 +67,15 @@ SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu)
+SET(Trilinos_PACKAGES MueLu Xpetra)
 SET(EXTRA_EXCLUDE_PACKAGES Kokkos Ifpack2 ML Tpetra Stratimikos Triutils AztecOO)
+
+SET(EXTRA_CONFIGURE_OPTIONS
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+  "-DSuperLU_INCLUDE_DIRS=/usr/local/superlu/4.3/include"
+  "-DSuperLU_LIBRARY_DIRS=/usr/local/superlu/4.3/lib64"
+  "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
+)
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test

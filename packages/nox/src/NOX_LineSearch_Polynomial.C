@@ -88,7 +88,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 
   Teuchos::ParameterList& p = params.sublist("Polynomial");
   
-  string choice = p.get("Sufficient Decrease Condition", "Armijo-Goldstein");
+  std::string choice = p.get("Sufficient Decrease Condition", "Armijo-Goldstein");
 
   if (choice == "Armijo-Goldstein")
     suffDecrCond = ArmijoGoldstein;  
@@ -98,7 +98,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     suffDecrCond = None;
   else 
   {
-    print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Sufficient Decrease Condition\"" << endl;
+    print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Sufficient Decrease Condition\"" << std::endl;
     throw "NOX Error";
   }
 
@@ -112,7 +112,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     interpolationType = Quadratic3;
   else 
   {
-    print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Interpolation Type\"" << endl;
+    print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Interpolation Type\"" << std::endl;
     throw "NOX Error";
   }
 
@@ -124,7 +124,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     recoveryStepType = LastComputedStep;
   }
   else {
-    print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Recovery Step Type\"" << endl;
+    print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Recovery Step Type\"" << std::endl;
     throw "NOX Error";
   }
 
@@ -163,7 +163,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
     counter.incrementNumLineSearches();
 
   // Get the linear solve tolerance if doing ared/pred for conv criteria
-  string direction = const_cast<Teuchos::ParameterList&>(s.getList()).
+  std::string direction = const_cast<Teuchos::ParameterList&>(s.getList()).
     sublist("Direction").get("Method", "Newton");
   double eta = (suffDecrCond == AredPred) ? 
     const_cast<Teuchos::ParameterList&>(s.getList()).
@@ -348,7 +348,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
     }
   }
 
-  string message = (isFailed) ? "(USING RECOVERY STEP!)" : "(STEP ACCEPTED!)";
+  std::string message = (isFailed) ? "(USING RECOVERY STEP!)" : "(STEP ACCEPTED!)";
   print.printStep(nIters, step, oldValue, newValue, message, (suffDecrCond != AredPred));
 
   paramsPtr->set("Adjusted Tolerance", 1.0 - step * (1.0 - eta));
@@ -398,7 +398,7 @@ checkConvergence(double newValue, double oldValue,
     break;
   default:
     
-    print.err() << "NOX::LineSearch::Polynomial::isSufficientDecrease - Unknown convergence criteria" << endl;
+    print.err() << "NOX::LineSearch::Polynomial::isSufficientDecrease - Unknown convergence criteria" << std::endl;
     throw "NOX Error";
     
   }
@@ -445,7 +445,7 @@ void NOX::LineSearch::Polynomial::printOpeningRemarks() const
   {
     if (!Teuchos::is_null(meritFuncPtr)) 
       print.out() << "       Merit Function = " << meritFuncPtr->name() 
-		  << endl;
+		  << std::endl;
   }
 }
 
@@ -453,5 +453,5 @@ void NOX::LineSearch::Polynomial::printBadSlopeWarning(double slope) const
 {
     print.out(NOX::Utils::Warning) 
       << "WARNING: Computed slope is positive (slope = " 
-      << slope << ").\n" << "Using recovery step!" << endl;
+      << slope << ").\n" << "Using recovery step!" << std::endl;
 }

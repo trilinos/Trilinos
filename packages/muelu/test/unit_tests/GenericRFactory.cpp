@@ -65,7 +65,7 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -104,7 +104,10 @@ namespace MueLuTests {
     const RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), nEle, 0, comm);
     Teuchos::ParameterList matrixParameters;
     matrixParameters.set("nx",nEle);
-    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>("Laplace1D", map, matrixParameters);
+
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace1D", map, matrixParameters);
+    RCP<Matrix> Op = Pr->BuildMatrix();
 
     // build nullspace
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -124,14 +127,14 @@ namespace MueLuTests {
     Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
     // define transfer operators
-    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-    UCAggFact->SetMinNodesPerAggregate(3);
-    UCAggFact->SetMaxNeighAlreadySelected(0);
-    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-    UCAggFact->SetPhase3AggCreation(0.5);
+    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+    CoupledAggFact->SetMinNodesPerAggregate(3);
+    CoupledAggFact->SetMaxNeighAlreadySelected(0);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    CoupledAggFact->SetPhase3AggCreation(0.5);
 
     RCP<SaPFactory>         Pfact = rcp( new SaPFactory());
-    RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+    RCP<Factory>           Rfact = rcp( new GenericRFactory() );
     H->SetMaxCoarseSize(1);
 
     // setup smoothers
@@ -148,18 +151,18 @@ namespace MueLuTests {
     FactoryManager M;
     M.SetFactory("P", Pfact);
     M.SetFactory("R", Rfact);
-    M.SetFactory("Aggregates", UCAggFact);
+    M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
 
     H->Setup(M, 0, maxLevels);
 
     RCP<Level> coarseLevel = H->GetLevel(1);
-    RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
-    RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
+    RCP<Matrix> P1 = coarseLevel->Get< RCP<Matrix> >("P");
+    RCP<Matrix> R1 = coarseLevel->Get< RCP<Matrix> >("R");
     RCP<Level> coarseLevel2 = H->GetLevel(2);
-    RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
-    RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
+    RCP<Matrix> P2 = coarseLevel2->Get< RCP<Matrix> >("P");
+    RCP<Matrix> R2 = coarseLevel2->Get< RCP<Matrix> >("R");
 
     TEST_EQUALITY(Finest->IsAvailable("PreSmoother"), true);
     TEST_EQUALITY(Finest->IsAvailable("PostSmoother"), true);
@@ -184,8 +187,8 @@ namespace MueLuTests {
     // note: the Epetra matrix-matrix multiplication using implicit transpose is buggy in parallel case
     //       (for multiplication of a square matrix with a rectangular matrix)
     //       however it seems to work for two rectangular matrices
-    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > RP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(R1,false,P1,false);
-    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP = MueLu::Utils<Scalar,LO,GO>::Multiply(*R1,false,*P1,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::Multiply(*P1,true,*P1,false);
 
     RCP<Vector> x = VectorFactory::Build(RP->getDomainMap());
     RCP<Vector> bRP  = VectorFactory::Build(RP->getRangeMap());
@@ -197,8 +200,8 @@ namespace MueLuTests {
 
     TEST_EQUALITY(bRP->norm1() - bPtP->norm1() < 1e-12, true);
 
-    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > RP2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(R2,false,P2,false);
-    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtP2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P2,true,P2,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP2 = MueLu::Utils<Scalar,LO,GO>::Multiply(*R2,false,*P2,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP2 = MueLu::Utils<Scalar,LO,GO>::Multiply(*P2,true,*P2,false);
 
     x = VectorFactory::Build(RP2->getDomainMap());
     bRP  = VectorFactory::Build(RP2->getRangeMap());
@@ -213,7 +216,7 @@ namespace MueLuTests {
 
     //R1->describe(*fos,Teuchos::VERB_EXTREME);
 
-    /*RCP<CrsOperator> crsP1 = rcp_dynamic_cast<CrsOperator>(P1);
+    /*RCP<CrsMatrixWrap> crsP1 = rcp_dynamic_cast<CrsMatrixWrap>(P1);
     RCP<CrsMatrix> crsMat = crsP1->getCrsMatrix();
     RCP<Xpetra::EpetraCrsMatrix> epcrsMat = rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(crsMat);
     RCP<Epetra_CrsMatrix> epMat = epcrsMat->getEpetra_CrsMatrixNonConst();
@@ -237,7 +240,7 @@ namespace MueLuTests {
     for (int i=1; i<5; i++) {
       // generate problem
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-      RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(50*i*comm->getSize());
+      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(50*i*comm->getSize());
 
       // Multigrid Hierarchy
       Hierarchy H(A);
@@ -252,7 +255,7 @@ namespace MueLuTests {
         out << "||NS|| = " << norms[0] << std::endl;
 
       RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
-      RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+      RCP<Factory>           Rfact = rcp( new GenericRFactory() );
       RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
 
       // setup smoothers

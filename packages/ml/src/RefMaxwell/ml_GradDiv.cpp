@@ -9,6 +9,7 @@
 #include "ml_epetra.h"
 #include "ml_epetra_utils.h"
 #include "ml_MultiLevelPreconditioner.h"
+#include "ml_RefMaxwell_Utils.h"
 #include "ml_EdgeMatrixFreePreconditioner.h"
 #include "ml_FaceMatrixFreePreconditioner.h"
 #include "ml_ValidateParameters.h"
@@ -18,10 +19,6 @@
 using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
-
-
-// ================================================ ====== ==== ==== == = 
-extern double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 
 // ================================================ ====== ==== ==== == = 
 ML_Epetra::GradDivPreconditioner::GradDivPreconditioner(const Epetra_CrsMatrix & K2_Matrix,
@@ -97,7 +94,7 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
   
   /* Validate List */
   Teuchos::ParameterList newList;
-  ML_CreateSublists(List_,newList,0);
+  ML_CreateSublists(List_,newList);
   List_ = newList;
   // TODO: Re-add validation
   //  ValidateGradDivParameters(List_);
@@ -377,7 +374,6 @@ int ML_Epetra::SetDefaultsGradDiv(Teuchos::ParameterList & inList,bool OverWrite
   Teuchos::ParameterList & List22_=inList.sublist("graddiv: 22list");
   Teuchos::ParameterList & List11c_=List11_.sublist("face matrix free: coarse");
   Teuchos::ParameterList & List22c_=List22_.sublist("edge matrix free: coarse");
-  Teuchos::ParameterList & ListIf_=inList.sublist("smoother: ifpack list");
 
   /* (1,1) coarse */
   ML_Epetra::SetDefaults("SA",List11c);

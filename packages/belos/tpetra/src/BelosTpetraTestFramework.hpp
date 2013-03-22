@@ -286,7 +286,7 @@ namespace Belos {
 	// Convert the read-in matrix data into a Tpetra::CrsMatrix.
 	typedef ArrayView<const int>::size_type size_type;
 	ArrayView<const double> valView (val, static_cast<size_type> (nnz));
-	ArrayView<const double> indView (ind, static_cast<size_type> (nnz));
+	ArrayView<const int> indView (ind, static_cast<size_type> (nnz));
 	ArrayView<const int> ptrView (ptr, static_cast<size_type> (numCols+1));
 	return convert<double, int> (rowMap, domainMap, rangeMap, 
 				     valView, indView, ptrView);

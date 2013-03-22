@@ -59,7 +59,7 @@
 #include <Xpetra_CrsGraph.hpp>
 
 #include <MatrixMarket_Tpetra.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraParameters.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
@@ -162,7 +162,7 @@ public:
    *
    * Problems can be "Laplace1D", "Laplace2D", "Star2D", "BigStar2D", 
    * "Laplace3D", "Brick3D" and "Identity".
-   * See Galeri::Xpetra::CreateCrsMatrix() for more information
+   * See Galeri::Xpetra::BuildProblem() for more information
    * about problem types.
    */
   UserInputForTests(int x, int y, int z, string matrixType,
@@ -259,8 +259,8 @@ UserInputForTests::UserInputForTests(string path, string testData,
 #endif
 {
   bool zoltan1 = false;
-  string::size_type loc = path.find("/data/");  // Zoltan2 data
-  if (loc == string::npos)
+  string::size_type loc = path.find("/zoltan/test/");  // Zoltan1 data
+  if (loc != string::npos)
     zoltan1 = true;
 
   if (zoltan1)
@@ -498,7 +498,6 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 {
   std::ostringstream fname;
   fname << path << "/" << testData << ".mtx";
-
   RCP<Kokkos::DefaultNode::DefaultNodeType> dnode 
     = Kokkos::DefaultNode::getDefaultNode();
 
@@ -710,10 +709,10 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   }
 
   try{
-    M_ = Galeri::Xpetra::CreateCrsMatrix<scalar_t, lno_t, gno_t, 
-      Tpetra::Map<lno_t, gno_t>, 
-      Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> >(params.GetMatrixType(),
-         map, params.GetParameterList()); 
+    RCP<Galeri::Xpetra::Problem<Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t>, Tpetra::MultiVector<scalar_t, lno_t, gno_t> > > Pr =
+        Galeri::Xpetra::BuildProblem<scalar_t, lno_t, gno_t, Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t>, Tpetra::MultiVector<scalar_t, lno_t, gno_t> >
+        (params.GetMatrixType(), map, params.GetParameterList());
+    M_ = Pr->BuildMatrix();
   }
   catch (std::exception &e) {    // Probably not enough memory
     TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());

@@ -47,6 +47,7 @@
 
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_WorksetFactoryBase.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
 
 namespace panzer {
 
@@ -127,15 +128,15 @@ public:
      */ 
    void clear();
 
-   //! Look up an input physics block, throws an exception if it can be found.
+   //! Look up an input physics block, throws an exception if it can not be found.
    const PhysicsBlock & lookupPhysicsBlock(const std::string & eBlock) const;
 
    //! Access to volume worksets
    Teuchos::RCP<std::vector<Workset> > getVolumeWorksets(const std::string & eBlock);
 
-   //! Access, and construction of volume worksets
-   Teuchos::RCP<std::vector<Teuchos::RCP<std::vector<Workset> > > > getVolumeWorksets() const;
- 
+   //! Access to volume worksets
+   Teuchos::RCP<std::vector<Workset> > getWorksets(const WorksetDescriptor & wd);
+
    //! Access, and construction of side worksets
    Teuchos::RCP<std::map<unsigned,Workset> > getSideWorksets(const BC & bc);
 
@@ -156,17 +157,18 @@ public:
    { return getSideWorksets(bc)->end(); }
 
    /** Allocate worksets associated with the element blocks in a vector, this
-     * will overwrite an previously constructed worksets.
+     * will overwrite any previously constructed worksets.
      */
    void allocateVolumeWorksets(const std::vector<std::string> & eBlocks);
 
    /** Allocate worksets associated with the BC objects in a vector, this
-     * will overwrite an previously constructed worksets.
+     * will overwrite any previously constructed worksets.
      */
    void allocateSideWorksets(const std::vector<BC> & bcs);
 
 private:
-   typedef std::map<std::string,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
+   // typedef std::map<std::string,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
+   typedef boost::unordered_map<WorksetDescriptor,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
    typedef std::map<SideId,Teuchos::RCP<std::map<unsigned,Workset> >,LessSide> SideMap;
 
    Teuchos::RCP<const WorksetFactoryBase> wkstFactory_;      //! How to construct worksets

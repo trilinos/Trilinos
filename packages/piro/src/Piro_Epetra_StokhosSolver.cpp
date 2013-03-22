@@ -60,10 +60,19 @@ Piro::Epetra::StokhosSolver::
 setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
       const Teuchos::RCP<NOX::Epetra::Observer>& noxObserver)
 {
-  sg_nonlin_model = sg_solver_factory.createSGModel(model, noxObserver);
-  Teuchos::RCP<EpetraExt::ModelEvaluator> sg_block_solver =
-    sg_solver_factory.createSGSolver(sg_nonlin_model);
+  sg_nonlin_model = sg_solver_factory.createSGModel(model);
+  const Teuchos::RCP<NOX::Epetra::Observer> sg_observer =
+    sg_solver_factory.createSGObserver(noxObserver);
+  const Teuchos::RCP<EpetraExt::ModelEvaluator> sg_block_solver =
+    sg_solver_factory.createSGSolver(sg_nonlin_model, sg_observer);
   sg_solver = sg_solver_factory.createSGSolverAdapter(sg_block_solver);
+}
+
+void
+Piro::Epetra::StokhosSolver::
+resetSolverParameters(const Teuchos::ParameterList& new_solver_params)
+{
+  sg_solver_factory.resetSolverParameters(new_solver_params);
 }
 
 Teuchos::RCP<const Epetra_Comm>

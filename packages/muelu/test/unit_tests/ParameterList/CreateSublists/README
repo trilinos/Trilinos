@@ -1,0 +1,9 @@
+smootherAll.xml        -- global parameters should not be touched
+smootherList.xml       -- existing sublist should be kept
+
+smootherLvl.xml        -- level specific parameters should be turned into sublist
+smootherLvl2.xml       -- same example with two level
+smootherLvl2-2.xml     -- same example with two level and two parameters each
+
+smootherMixed.xml      -- mixing level specific parameters and parameters sublist
+smootherMixed2.xml     -- same example switching order of parameters

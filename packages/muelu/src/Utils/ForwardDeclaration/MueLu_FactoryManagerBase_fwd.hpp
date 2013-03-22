@@ -46,6 +46,9 @@
 #ifndef MUELU_FACTORYMANAGERBASE_FWD_HPP
 #define MUELU_FACTORYMANAGERBASE_FWD_HPP
 
+
+
+
 namespace MueLu {
   class FactoryManagerBase;
 }
@@ -53,5 +56,7 @@ namespace MueLu {
 #ifndef MUELU_FACTORYMANAGERBASE_SHORT
 #define MUELU_FACTORYMANAGERBASE_SHORT
 #endif
+
+
 
 #endif // MUELU_FACTORYMANAGERBASE_FWD_HPP

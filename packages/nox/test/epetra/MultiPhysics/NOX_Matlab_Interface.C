@@ -69,7 +69,7 @@ Matlab_Interface::Matlab_Interface(NOX::Solver::Manager &  noxSolver) :
   engine(*enginePtr),
   solver(noxSolver)
 {
-  cout << "matlab started\n";
+  std::cout << "matlab started\n";
 
   // Verify we are using an Epetra concrete implemntation
   const NOX::Epetra::Group * testGroup = &(dynamic_cast<const NOX::Epetra::Group &>(solver.getSolutionGroup()));
@@ -146,7 +146,7 @@ Matlab_Interface::interact()
 
   while(1) 
   {
-    // Prompt the user and get a string
+    // Prompt the user and get a std::string
     printf(">> ");
     if (fgets(s, BUFSIZE, stdin) == NULL) 
     {
@@ -179,7 +179,7 @@ Matlab_Interface::doCommand( std::string command )
   {
     command.erase(0,1);
     // Remove any carriage returns
-    if( command.find('\n') != string::npos )
+    if( command.find('\n') != std::string::npos )
       command.replace( command.find('\n'), 1, "");
 
     status = doNOXCommand( command );
@@ -210,7 +210,7 @@ bool
 Matlab_Interface::doNOXCommand( std::string & command )
 {
 
-  cout << "NOX     : " << command << endl;
+  std::cout << "NOX     : " << command << std::endl;
 
   // Allow for "#" no-op
   if( '#' == command[0] )
@@ -225,16 +225,16 @@ Matlab_Interface::doNOXCommand( std::string & command )
   {
     // Convenience methods
 
-    if( command.find("?") != string::npos )
+    if( command.find("?") != std::string::npos )
     {
-      cout << "\n\tCommand Summary:\n" << endl;
+      std::cout << "\n\tCommand Summary:\n" << std::endl;
 
       std::map< CommandBase::CommandCategory, std::string >::iterator cIter = CommandBase::categoryDescription.begin() ,
                                                                  cIter_end = CommandBase::categoryDescription.end()     ;
 
       for(  ; cIter_end != cIter; ++cIter )
       {
-        std::cout << "\n\t" << (*cIter).second << endl << endl;
+        std::cout << "\n\t" << (*cIter).second << std::endl << std::endl;
 
         std::list<CommandBase *>::const_iterator iter = commands.begin() ,
                                              iter_end = commands.end()   ;
@@ -245,11 +245,11 @@ Matlab_Interface::doNOXCommand( std::string & command )
 
       if( !mapHandler->getUserMaps().empty() )
       {
-        cout << "\n\tUser Defined (Mapped) Command Summary:\n" << endl;
+        std::cout << "\n\tUser Defined (Mapped) Command Summary:\n" << std::endl;
 
-        for( std::map<string, string>::const_iterator iter = 
+        for( std::map<string, std::string>::const_iterator iter = 
             mapHandler->getUserMaps().begin(); iter != mapHandler->getUserMaps().end(); ++iter )
-          cout << "\t\t" << (*iter).first << " --> " << (*iter).second << endl;
+          std::cout << "\t\t" << (*iter).first << " --> " << (*iter).second << std::endl;
       }
 
       return true;
@@ -258,16 +258,16 @@ Matlab_Interface::doNOXCommand( std::string & command )
     std::list<CommandBase *>::const_iterator iter = commands.begin() ,
                                          iter_end = commands.end()   ;
     for(  ; iter_end != iter; ++iter )
-      if( string::npos != command.find((*iter)->getCommand()) )
+      if( std::string::npos != command.find((*iter)->getCommand()) )
         return (*iter)->doCommand(command);
 
-    cout << "\n" << command << " : Not found." << endl;
+    std::cout << "\n" << command << " : Not found." << std::endl;
     return false;
 
   }
   catch( const char * msg )
   {
-    cout << msg << endl;
+    std::cout << msg << std::endl;
     return false;
   }
 
@@ -328,13 +328,13 @@ Matlab_Interface::CMD_map::doCommand( std::string commandLine )
   std::string::size_type loc = commandLine.find(" ");
   if( std::string::npos == loc )
   {
-    cout << "Could not get two valid arguments." << endl;
+    std::cout << "Could not get two valid arguments." << std::endl;
     return false;
   }
   std::string arg1 = commandLine.substr(0, loc);
   commandLine.replace( 0, loc+1, ""); 
   std::string arg2 = commandLine;
-  cout << "Mapping \"" << arg1 << "\" to \"" << arg2 << "\"" << endl;
+  std::cout << "Mapping \"" << arg1 << "\" to \"" << arg2 << "\"" << std::endl;
   userMaps[ arg1 ] = arg2;
   return false;
 }
@@ -350,7 +350,7 @@ Matlab_Interface::CMD_map::writeMaps( std::ofstream & os )
   for( ; iter_end != iter; ++iter )
   {
     std::string cLine = "#map " + (*iter).first + " " + (*iter).second;
-    os << cLine << endl;
+    os << cLine << std::endl;
   }
 
   return;
@@ -364,17 +364,17 @@ Matlab_Interface::CMD_showStack::doCommand( std::string commandLine )
 
   if( 0 == driver )
   {
-    cout << "ERROR: No valid driver registered with showStack." << endl;
+    std::cout << "ERROR: No valid driver registered with showStack." << std::endl;
     return false;
   }
 
   // Show the command stack
-  cout << "Command Stack :\n" << endl;
+  std::cout << "Command Stack :\n" << std::endl;
 
   std::list< std::string >::const_iterator iter = driver->getCommandStack().begin()  ,
                                        iter_end = driver->getCommandStack().end()    ;
   for( ; iter_end != iter; ++iter )
-    cout << (*iter) << endl;
+    std::cout << (*iter) << std::endl;
 
   return true;
 }
@@ -387,12 +387,12 @@ Matlab_Interface::CMD_clearStack::doCommand( std::string commandLine )
 
   if( 0 == driver )
   {
-    cout << "ERROR: No valid driver registered with clearStack." << endl;
+    std::cout << "ERROR: No valid driver registered with clearStack." << std::endl;
     return false;
   }
 
   // Show the command stack
-  cout << "Command Stack Cleared." << endl;
+  std::cout << "Command Stack Cleared." << std::endl;
 
   driver->getCommandStack().clear();
 
@@ -405,7 +405,7 @@ bool
 Matlab_Interface::CMD_isF::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isF() ? "True" : "False" );
-  cout << " --> " << isValid << endl;
+  std::cout << " --> " << isValid << std::endl;
   return true;
 }
 
@@ -415,7 +415,7 @@ bool
 Matlab_Interface::CMD_isJacobian::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isJacobian() ? "True" : "False" );
-  cout << " --> " << isValid << endl;
+  std::cout << " --> " << isValid << std::endl;
   return true;
 }
 
@@ -425,7 +425,7 @@ bool
 Matlab_Interface::CMD_isGradient::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isGradient() ? "True" : "False" );
-  cout << " --> " << isValid << endl;
+  std::cout << " --> " << isValid << std::endl;
   return true;
 }
 
@@ -435,7 +435,7 @@ bool
 Matlab_Interface::CMD_isNewton::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isNewton() ? "True" : "False" );
-  cout << " --> " << isValid << endl;
+  std::cout << " --> " << isValid << std::endl;
   return true;
 }
 
@@ -445,7 +445,7 @@ bool
 Matlab_Interface::CMD_isNormNewtonSolveResidual::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isNormNewtonSolveResidual() ? "True" : "False" );
-  cout << " --> " << isValid << endl;
+  std::cout << " --> " << isValid << std::endl;
   return true;
 }
 
@@ -455,7 +455,7 @@ bool
 Matlab_Interface::CMD_isPreconditioner::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isPreconditioner() ? "True" : "False" );
-  cout << " --> " << isValid << endl;
+  std::cout << " --> " << isValid << std::endl;
   return true;
 }
 
@@ -465,7 +465,7 @@ bool
 Matlab_Interface::CMD_isConditionNumber::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isConditionNumber() ? "True" : "False" );
-  cout << " --> " << isValid << endl;
+  std::cout << " --> " << isValid << std::endl;
   return true;
 }
 
@@ -483,15 +483,15 @@ bool
 Matlab_Interface::CMD_showValid::showValid( const NOX::Epetra::Group * p_Grp )
 {
   std::string isValid = (p_Grp->isF() ? "True" : "False" );
-  cout << " isF              --> " << isValid << endl;
+  std::cout << " isF              --> " << isValid << std::endl;
   isValid = (p_Grp->isJacobian() ? "True" : "False" );
-  cout << " isJacobian       --> " << isValid << endl;
+  std::cout << " isJacobian       --> " << isValid << std::endl;
   isValid = (p_Grp->isGradient() ? "True" : "False" );
-  cout << " isGradient       --> " << isValid << endl;
+  std::cout << " isGradient       --> " << isValid << std::endl;
   isValid = (p_Grp->isNewton() ? "True" : "False" );
-  cout << " isNewton         --> " << isValid << endl;
+  std::cout << " isNewton         --> " << isValid << std::endl;
   isValid = (p_Grp->isPreconditioner() ? "True" : "False" );
-  cout << " isPreconditioner --> " << isValid << endl;
+  std::cout << " isPreconditioner --> " << isValid << std::endl;
   return true;
 }
 
@@ -500,7 +500,7 @@ Matlab_Interface::CMD_showValid::showValid( const NOX::Epetra::Group * p_Grp )
 bool 
 Matlab_Interface::CMD_getJacobianConditionNumber::doCommand( std::string commandLine )
 {
-  cout << groupPtr->getJacobianConditionNumber() << endl;
+  std::cout << groupPtr->getJacobianConditionNumber() << std::endl;
   return true;
 }
 
@@ -509,7 +509,7 @@ Matlab_Interface::CMD_getJacobianConditionNumber::doCommand( std::string command
 bool 
 Matlab_Interface::CMD_getNormF::doCommand( std::string commandLine )
 {
-  cout << groupPtr->getNormF() << endl;
+  std::cout << groupPtr->getNormF() << std::endl;
   return true;
 }
 
@@ -530,7 +530,7 @@ bool
 Matlab_Interface::CMD_computeF::doCommand( std::string commandLine )
 {
   NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeF();
-  cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+  std::cout << "Return Status = " << returnMsg[ returnStatus ] << std::endl;
   return true;
 }
 
@@ -540,7 +540,7 @@ bool
 Matlab_Interface::CMD_computeJacobian::doCommand( std::string commandLine )
 {
   NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeJacobian();
-  cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+  std::cout << "Return Status = " << returnMsg[ returnStatus ] << std::endl;
   return true;
 }
 
@@ -550,7 +550,7 @@ bool
 Matlab_Interface::CMD_computeGradient::doCommand( std::string commandLine )
 {
   NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeGradient();
-  cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+  std::cout << "Return Status = " << returnMsg[ returnStatus ] << std::endl;
   return true;
 }
 
@@ -565,7 +565,7 @@ Matlab_Interface::CMD_computeNewton::doCommand( std::string commandLine )
                                                        sublist("Linear Solver");
   Teuchos::ParameterList & lsParams = const_cast<Teuchos::ParameterList &>(const_lsParams);
   NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeNewton(lsParams);
-  cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+  std::cout << "Return Status = " << returnMsg[ returnStatus ] << std::endl;
   return true;
 }
 
@@ -632,7 +632,7 @@ Matlab_Interface::CMD_getJacobian::doCommand( std::string commandLine )
     return true; 
   }
 
-  cout << "Could not get a valid matrix." << endl;
+  std::cout << "Could not get a valid matrix." << std::endl;
   return false;
 }
 
@@ -644,7 +644,7 @@ Matlab_Interface::CMD_read::doCommand( std::string commandLine )
 
   if( 0 == driver )
   {
-    cout << "ERROR: No valid driver registered with reader." << endl;
+    std::cout << "ERROR: No valid driver registered with reader." << std::endl;
     return false;
   }
 
@@ -653,7 +653,7 @@ Matlab_Interface::CMD_read::doCommand( std::string commandLine )
   ifstream inFile(commandLine.c_str());
   if( !inFile )
   {
-    cout << "ERROR: Could not open file \"" << commandLine << "\"" << endl;
+    std::cout << "ERROR: Could not open file \"" << commandLine << "\"" << std::endl;
     return false;
   }
 
@@ -681,50 +681,50 @@ Matlab_Interface::CMD_write::doCommand( std::string commandLine )
 
   if( 0 == driver )
   {
-    cout << "ERROR: No valid driver registered with reader." << endl;
+    std::cout << "ERROR: No valid driver registered with reader." << std::endl;
     return false;
   }
 
   commandLine.replace( commandLine.find(command), command.size()+1, ""); 
 
-  ofstream outFile(commandLine.c_str());
+  std::ofstream outFile(commandLine.c_str());
   if( !outFile )
   {
-    cout << "ERROR: Could not open file \"" << commandLine << "\"" << endl;
+    std::cout << "ERROR: Could not open file \"" << commandLine << "\"" << std::endl;
     return false;
   }
 
   // First, we write out all maps
-  outFile << "######################" << endl;
-  outFile << "####### Maps #########" << endl;
-  outFile << "######################" << endl;
-  outFile << "##" << endl;
+  outFile << "######################" << std::endl;
+  outFile << "####### Maps #########" << std::endl;
+  outFile << "######################" << std::endl;
+  outFile << "##" << std::endl;
   driver->getMapHandler()->writeMaps( outFile );
-  outFile << "##" << endl;
-  outFile << "##" << endl;
+  outFile << "##" << std::endl;
+  outFile << "##" << std::endl;
 
   // Then we write out all macros
-  outFile << "######################" << endl;
-  outFile << "###### Macros ########" << endl;
-  outFile << "######################" << endl;
-  outFile << "##" << endl;
+  outFile << "######################" << std::endl;
+  outFile << "###### Macros ########" << std::endl;
+  outFile << "######################" << std::endl;
+  outFile << "##" << std::endl;
   std::map< std::string, Matlab_Interface::CMD_macro * >::const_iterator miter = driver->getUserMacros().begin() ,
                                                    miter_end = driver->getUserMacros().end()   ;
   for( ; miter_end != miter; ++miter )
     (*miter).second->writeMacro( outFile );
 
-  outFile << "##" << endl;
-  outFile << "##" << endl;
+  outFile << "##" << std::endl;
+  outFile << "##" << std::endl;
 
   // Now dump the command stack
-  outFile << "######################" << endl;
-  outFile << "### Command Stack ####" << endl;
-  outFile << "######################" << endl;
-  outFile << "##" << endl;
+  outFile << "######################" << std::endl;
+  outFile << "### Command Stack ####" << std::endl;
+  outFile << "######################" << std::endl;
+  outFile << "##" << std::endl;
   std::list< std::string >::const_iterator siter = driver->getCommandStack().begin()  ,
                                        siter_end = driver->getCommandStack().end()    ;
   for( ; siter_end != siter; ++siter )
-    outFile << (*siter) << endl;
+    outFile << (*siter) << std::endl;
 
   return true;
 }
@@ -736,7 +736,7 @@ Matlab_Interface::CMD_newMacro::doCommand( std::string commandLine )
 {
   if( 0 == driver )
   {
-    cout << "ERROR: No valid driver registered with newMacro." << endl;
+    std::cout << "ERROR: No valid driver registered with newMacro." << std::endl;
     return false;
   }
 
@@ -747,12 +747,12 @@ Matlab_Interface::CMD_newMacro::doCommand( std::string commandLine )
   std::map< std::string, Matlab_Interface::CMD_macro * >::iterator iter = userMacros.find(commandLine);
   if( userMacros.end() != iter )
   {
-    cout << "Replacing macro \"" << commandLine << "\"" << endl;
+    std::cout << "Replacing macro \"" << commandLine << "\"" << std::endl;
     delete (*iter).second;
     driver->removeCommand( (*iter).second );
   }
   else
-    cout << "Creating macro \"" << commandLine << "\"" << endl;
+    std::cout << "Creating macro \"" << commandLine << "\"" << std::endl;
 
   Matlab_Interface::CMD_macro * p_macro = new Matlab_Interface::CMD_macro( engine, solver, commandLine );
   Matlab_Interface::CMD_macro & macro   = *p_macro;
@@ -780,7 +780,7 @@ Matlab_Interface::CMD_macro::doCommand( std::string commandLine )
 {
   if( 0 == driver )
   {
-    cout << "ERROR: No valid driver registered with macro." << endl;
+    std::cout << "ERROR: No valid driver registered with macro." << std::endl;
     return false;
   }
 
@@ -792,11 +792,11 @@ Matlab_Interface::CMD_macro::doCommand( std::string commandLine )
 
   if( !p_macro )
   {
-    cout << "Macro \"" << commandLine << "\" not found." << endl;
+    std::cout << "Macro \"" << commandLine << "\" not found." << std::endl;
     return false;
   }
 
-  cout << "Doing macro \"" << commandLine << "\"" << endl;
+  std::cout << "Doing macro \"" << commandLine << "\"" << std::endl;
   
   std::list< std::string >::iterator iter = p_macro->macroCommands.begin() ,
                                  iter_end = p_macro->macroCommands.end()   ;
@@ -814,13 +814,13 @@ Matlab_Interface::CMD_macro::writeMacro( std::ofstream & os )
 {
 
   std::string cLine = "#newMacro " + macroName;
-  os << cLine << endl;
+  os << cLine << std::endl;
 
   std::list< std::string >::const_iterator iter = macroCommands.begin() ,
                                        iter_end = macroCommands.end()   ;
   for( ; iter_end != iter; ++iter )
   {
-    os << (*iter) << endl;
+    os << (*iter) << std::endl;
   }
 
   return;
@@ -832,12 +832,12 @@ void
 Matlab_Interface::CMD_macro::describe()
 {
 
-  cout << "\n\tMacro \"" << macroName << "\" :" << endl;
+  std::cout << "\n\tMacro \"" << macroName << "\" :" << std::endl;
 
   std::list< std::string >::const_iterator iter = macroCommands.begin() ,
                                        iter_end = macroCommands.end()   ;
   for( ; iter_end != iter; ++iter )
-    cout << "\t\t" << (*iter) << endl;
+    std::cout << "\t\t" << (*iter) << std::endl;
 
   return;
 }

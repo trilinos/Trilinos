@@ -51,7 +51,7 @@
 #include <Kokkos_VbrMatrix.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
-// #include "Xpetra_Operator.hpp"
+// #include "Xpetra_Matrix.hpp"
 #include "Xpetra_BlockMap.hpp"
 #include "Xpetra_MultiVector.hpp"
 // #include "Xpetra_BlockCrsGraph.hpp"
@@ -79,7 +79,7 @@ and replaced, but no new entries (indices and/or coefficients) may be inserted.
 In other words, the sparsity pattern or structure of the matrix may not be
 changed.
 
-Use of the matrix as an Operator (performing matrix-vector multiplication) is
+Use of the matrix as an Matrix (performing matrix-vector multiplication) is
 only allowed when it is in the optimized-storage state.
 
 VbrMatrix has two constructors, one which leaves the matrix in the optimized-
@@ -93,12 +93,12 @@ to the optimized-storage state by calling the method fillComplete().
 Once in the optimized-storage state, the VbrMatrix can not be returned to the
 non-optimized-storage state.
 */
-template <class Scalar, 
-          class LocalOrdinal  = int, 
-          class GlobalOrdinal = LocalOrdinal, 
-          class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+template <class Scalar,
+          class LocalOrdinal  = int,
+          class GlobalOrdinal = LocalOrdinal,
+          class Node          = Kokkos::DefaultNode::DefaultNodeType,
           class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
-class VbrMatrix { //: public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+class VbrMatrix { //: public Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
  public:
 
   //! @name Constructor/Destructor Methods
@@ -118,7 +118,7 @@ class VbrMatrix { //: public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,
   /*! \c X is required to be post-imported, i.e., described by the column map
       of the matrix. \c Y is required to be pre-exported, i.e., described by
       the row map of the matrix.
-      See also the Operator::apply method which is implemented below.
+      See also the Matrix::apply method which is implemented below.
   */
   //TODO virtual
   template <class DomainScalar, class RangeScalar>
@@ -148,7 +148,7 @@ class VbrMatrix { //: public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,
 
   //@}
 
-  //! @name Operator Methods
+  //! @name Matrix Methods
   //@{
 
   //! Returns the Map associated with the domain of this operator.
@@ -172,7 +172,7 @@ class VbrMatrix { //: public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,
                     Teuchos::ETransp trans = Teuchos::NO_TRANS,
                     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
                     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const =0;
-  
+
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
       Both \c X and \c Y are required to have constant stride.
@@ -374,7 +374,7 @@ class VbrMatrix { //: public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,
   */
   virtual void getLocalBlockEntryView(LocalOrdinal localBlockRow,
                              LocalOrdinal localBlockCol,
-                             LocalOrdinal& numPtRows, 
+                             LocalOrdinal& numPtRows,
                              LocalOrdinal& numPtCols,
                              Teuchos::ArrayRCP<const Scalar>& blockEntry) const =0;
 
@@ -407,7 +407,7 @@ class VbrMatrix { //: public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,
     Throws an exception if the input-vector's map is not the same as
     getBlockRowMap()->getPointMap().
   */
-  //TODO: need Vector  
+  //TODO: need Vector
 virtual void getLocalDiagCopy(Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const =0;
 #endif // XPETRA_NOT_IMPLEMENTED
   //@}

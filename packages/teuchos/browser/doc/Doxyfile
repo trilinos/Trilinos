@@ -18,9 +18,21 @@ OUTPUT_DIRECTORY       = ../browser/doc
 # What and how documentation is extracted
 #
 INPUT                  = ../browser/doc/index.doc ../browser/doc/groups.doc \
-                         ../src \
-                         ../example \
-                         ../test
+                         ../core/src \
+                         ../core/example \
+                         ../core/test \
+                         ../parameterlist/src \
+                         ../parameterlist/example \
+                         ../parameterlist/test \
+                         ../comm/src \
+                         ../comm/example \
+                         ../comm/test \
+                         ../numerics/src \
+                         ../numerics/example \
+                         ../numerics/test \
+                         ../remainder/src \
+                         ../remainder/example \
+                         ../remainder/test
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 

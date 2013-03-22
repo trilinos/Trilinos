@@ -118,8 +118,9 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
 
-   // now that edges are built, sidets can be added
+   // now that edges are built, side and node sets can be added
    addSideSets(mesh);
+   addNodeSets(mesh);
 }
 
 //! From ParameterListAcceptor
@@ -226,6 +227,8 @@ void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_In
    mesh.addSideset("bottom",side_ctd);
    mesh.addSideset("front",side_ctd);
    mesh.addSideset("back",side_ctd);
+
+   mesh.addNodeset("origin");
 }
 
 void CubeHexMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
@@ -467,6 +470,24 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
          if(side->owner_rank()==machRank_)
             mesh.addEntityToSideset(*side,right);
       }
+   }
+
+   mesh.endModification();
+}
+
+void CubeHexMeshFactory::addNodeSets(STK_Interface & mesh) const
+{
+   mesh.beginModification();
+
+   // get all part vectors
+   stk::mesh::Part * origin = mesh.getNodeset("origin");
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   if(machRank_==0) 
+   {
+      // add zero node to origin node set
+      stk::mesh::Entity * node = bulkData->get_entity(mesh.getNodeRank(),1);
+      mesh.addEntityToNodeset(*node,origin);
    }
 
    mesh.endModification();

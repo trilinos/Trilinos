@@ -48,6 +48,7 @@
 #include <sstream>
 #include <vector>
 #include <KokkosArray_ProductTensor.hpp>
+#include <KokkosArray_CrsProductTensorLegendre.hpp>
 #include <KokkosArray_BlockCrsMatrix.hpp>
 
 #include <TestGenerateGraph.hpp>
@@ -64,11 +65,12 @@ IntType generate_matrix_value( const IntType inner_row ,
   return 1 + inner_row + 10 * outer_row + 20 * outer_column ;
 }
 
-template< typename Scalar , class Device >
+template< typename Scalar >
 inline
-void generate_tensor( const size_t M , std::map< KokkosArray::ProductTensorIndex<3,Device> , Scalar > & tensor )
+void generate_tensor( const size_t M ,
+                      std::map< KokkosArray::ProductTensorIndex<3> , Scalar > & tensor )
 {
-  typedef KokkosArray::ProductTensorIndex<3,Device> index_type ;
+  typedef KokkosArray::ProductTensorIndex<3> index_type ;
 
   for ( size_t i = 0 ; i < M ; ++i ) {
     if ( 0 < i ) {
@@ -91,7 +93,7 @@ void generate_matrix(
   typedef typename matrix_type::block_vector_type    block_vector_type ;
   typedef typename matrix_type::graph_type           graph_type ;
   typedef typename matrix_type::block_spec           tensor_type ;
-  typedef KokkosArray::ProductTensorIndex<3,Device>  index_type ;
+  typedef KokkosArray::ProductTensorIndex<3>         index_type ;
 
   typedef KokkosArray::Impl::Multiply< tensor_type > tensor_multiply ;
 
@@ -146,8 +148,8 @@ void test_tensor_crs_matrix( const size_t M , const size_t N , const bool print 
   typedef KokkosArray::SparseProductTensor< 3 , IntType , Device > block_spec ;
   typedef KokkosArray::BlockCrsMatrix< block_spec , value_type , Device > matrix_type ;
 
-  typedef typename matrix_type::graph_type      graph_type ;
-  typedef KokkosArray::ProductTensorIndex<3,Device>  index_type ;
+  typedef typename matrix_type::graph_type    graph_type ;
+  typedef KokkosArray::ProductTensorIndex<3>  index_type ;
 
   matrix_type matrix ;
 

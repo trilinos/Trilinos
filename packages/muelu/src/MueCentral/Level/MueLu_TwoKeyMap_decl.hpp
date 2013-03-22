@@ -61,15 +61,19 @@ namespace MueLu {
     class TwoKeyMap : public BaseClass {
 
     private:
-     
+
       //! Sub-map container (Key2 -> Value)
       typedef Teuchos::map<Key2, Value> SubMap;
 
       //! Map of a map (Key1 -> SubMap)
       typedef Teuchos::map<Key1, SubMap> Map;
 
-      //! 
+      //!
       Map map_;
+
+    public:
+      typedef typename Map::iterator iterator;
+      typedef typename Map::const_iterator const_iterator;
 
     public:
 
@@ -96,6 +100,12 @@ namespace MueLu {
       const Teuchos::map<Key2, Value> & Get(const Key1 & key1) const;
 
       bool IsKey(const Key1 & key1) const;
+
+      iterator       begin()       { return map_.begin(); }
+      const_iterator begin() const { return map_.begin(); }
+
+      iterator       end()         { return map_.end(); }
+      const_iterator end() const   { return map_.end(); }
     };
 
   } // namespace UTILS

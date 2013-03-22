@@ -50,7 +50,7 @@
 namespace Xpetra {
 
   EpetraVector::EpetraVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut) : EpetraMultiVector(map,1,zeroOut) { }
-  
+
   void EpetraVector::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::replaceGlobalValue"); getEpetra_MultiVector()->ReplaceGlobalValue(globalRow, 0, value); }
 
   void EpetraVector::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::sumIntoGlobalValue");getEpetra_MultiVector()->SumIntoGlobalValue(globalRow, 0, value); }
@@ -59,15 +59,15 @@ namespace Xpetra {
 
   void EpetraVector::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::sumIntoLocalValue");getEpetra_MultiVector()->SumIntoMyValue(myRow, 0, value); }
 
-  double EpetraVector::dot(const Vector<double,int,int,Kokkos::DefaultNode::DefaultNodeType> &a) const { 
+  double EpetraVector::dot(const Vector<double,int,int,Kokkos::DefaultNode::DefaultNodeType> &a) const {
        XPETRA_MONITOR("EpetraVector::dot");
 
       XPETRA_DYNAMIC_CAST(const EpetraVector, a, tA, "This Xpetra::EpetraVector method only accept Xpetra::EpetraVector as input arguments.");
-      //      return getEpetra_Vector()->Dot(*tA.getEpetra_Vector()); 
+      //      return getEpetra_Vector()->Dot(*tA.getEpetra_Vector());
 
       // other way: use the MultiVector Dot instead of VectorDot:
       double r;
-      getEpetra_MultiVector()->Epetra_MultiVector::Dot(*tA.getEpetra_MultiVector(), &r); 
+      getEpetra_MultiVector()->Epetra_MultiVector::Dot(*tA.getEpetra_MultiVector(), &r);
       return r;
     }
 
@@ -77,16 +77,16 @@ namespace Xpetra {
 
     Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::normInf() const { XPETRA_MONITOR("EpetraVector::normInf"); double r; getEpetra_MultiVector()->NormInf(&r); return r; }
 
-  Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::normWeighted(const Vector<double,int,int,Kokkos::DefaultNode::DefaultNodeType> &weights) const { 
+  Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::normWeighted(const Vector<double,int,int,Kokkos::DefaultNode::DefaultNodeType> &weights) const {
       XPETRA_MONITOR("EpetraVector::normWeighted");
       XPETRA_DYNAMIC_CAST(const EpetraVector, weights, tWeights, "This Xpetra::EpetraVector method only accept Xpetra::EpetraVector as input arguments.");
-      double r; 
-      getEpetra_MultiVector()->NormWeighted(*tWeights.getEpetra_MultiVector(), &r); return r; 
+      double r;
+      getEpetra_MultiVector()->NormWeighted(*tWeights.getEpetra_MultiVector(), &r); return r;
     }
 
     double EpetraVector::meanValue() const { XPETRA_MONITOR("EpetraVector::meanValue"); double r; getEpetra_MultiVector()->MeanValue(&r); return r; }
 
-    std::string EpetraVector::description() const { 
+    std::string EpetraVector::description() const {
       XPETRA_MONITOR("EpetraVector::description");
       // This implementation come from Epetra_Vector_def.hpp (without modification)
       std::ostringstream oss;
@@ -96,9 +96,9 @@ namespace Xpetra {
       return oss.str();
     }
 
-    void EpetraVector::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const { 
+    void EpetraVector::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
       XPETRA_MONITOR("EpetraVector::describe");
-      
+
       if (verbLevel > Teuchos::VERB_NONE)
         getEpetra_Vector()->Print(out);
 
@@ -129,7 +129,7 @@ namespace Xpetra {
 //       Teuchos::OSTab tab(out);
 //       if (vl != VERB_NONE) {
 //         // VERB_LOW and higher prints description()
-//         if (myImageID == 0) out << this->description() << std::endl; 
+//         if (myImageID == 0) out << this->description() << std::endl;
 //         for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
 //           if (myImageID == imageCtr) {
 //             if (vl != VERB_LOW) {
@@ -141,11 +141,11 @@ namespace Xpetra {
 //                   Teuchos::RCP<Node> node = this->lclMV_.getNode();
 //                   KOKKOS_NODE_TRACE("Vector::describe()")
 //                     Teuchos::ArrayRCP<const double> myview = node->template viewBuffer<double>(
-//                                                                                                this->getLocalLength(), 
+//                                                                                                this->getLocalLength(),
 //                                                                                                MVT::getValues(this->lclMV_) );
 //                   // VERB_EXTREME prints values
 //                   for (size_t i=0; i<this->getLocalLength(); ++i) {
-//                     out << setw(width) << this->getMap()->getGlobalElement(i) 
+//                     out << setw(width) << this->getMap()->getGlobalElement(i)
 //                         << ": "
 //                         << myview[i] << endl;
 //                   }
@@ -161,12 +161,21 @@ namespace Xpetra {
 //       }
     }
 
+  EpetraVector::EpetraVector(const RCP<Epetra_MultiVector> &mv, size_t j)
+    : EpetraMultiVector(rcp((*mv)(j), false)), // view of the vector number j. false == I do not own the data.
+      internalRefToBaseMV_(mv)                 // keep an internal reference to the initial MultiVector to avoid desallocation of the view.
+  {
+    // The view of the internal data of 'mv' is only valid until the destruction of 'mv'.
+    // The new vector hold an internal reference to 'mv' in order to keep the view valid after disappearance of 'mv' references in user code.
+    // This implements the logic of subArray rcp (as required by the Tpetra interface).
+  }
+
   // TODO: move that elsewhere
   Epetra_Vector & toEpetra(Vector<double, int, int> &x) {
     XPETRA_DYNAMIC_CAST(      EpetraVector, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }
-  
+
   const Epetra_Vector & toEpetra(const Vector<double, int, int> &x) {
     XPETRA_DYNAMIC_CAST(const EpetraVector, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();

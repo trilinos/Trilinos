@@ -116,7 +116,7 @@ namespace LOCA {
 	const Teuchos::RCP<NOX::Abstract::Group>& grp);
 
       //! Return strategy name given by \c eigenParams
-      const string& strategyName(Teuchos::ParameterList& eigenParams) const;
+      const std::string& strategyName(Teuchos::ParameterList& eigenParams) const;
 
     private:
 

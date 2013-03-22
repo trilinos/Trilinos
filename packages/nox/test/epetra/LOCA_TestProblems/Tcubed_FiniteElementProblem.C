@@ -174,7 +174,7 @@ Tcubed_FiniteElementProblem::evaluate(FillType f,
     rhs = tmp_rhs;
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } else {
-    cout << "ERROR: Tcubed_FiniteElementProblem::fillMatrix() - FillType flag is broken" << endl;
+    std::cout << "ERROR: Tcubed_FiniteElementProblem::fillMatrix() - FillType flag is broken" << std::endl;
     throw;
   }
 
@@ -303,7 +303,7 @@ Tcubed_FiniteElementProblem::getJacobian()
 }
 
 bool 
-Tcubed_FiniteElementProblem::setParameter(string label, double value)
+Tcubed_FiniteElementProblem::setParameter(std::string label, double value)
 {
   if (label == "Nonlinear Factor")
     factor = value;

@@ -70,7 +70,7 @@ namespace MueLu {
   public:
     //!@nameConstructors/Destructors.
     //@{
-    AdvSmootherPrototype() 
+    AdvSmootherPrototype()
       : type_("undefined")
     {}
 
@@ -95,7 +95,7 @@ namespace MueLu {
     */
     //TODO: remove, type_ should be const
     void SetType(std::string & type) { type_ = type; }
-  
+
     //@}
 
   private:

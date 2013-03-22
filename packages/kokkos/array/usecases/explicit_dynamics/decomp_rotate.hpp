@@ -106,7 +106,7 @@ struct decomp_rotate<Scalar, KOKKOSARRAY_MACRO_DEVICE>{
 
 
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void additive_decomp(int ielem, Scalar * v_gr, Scalar * str_ten)const {
 
   //  In addition to calculating stretching_tensor,
@@ -134,7 +134,7 @@ struct decomp_rotate<Scalar, KOKKOSARRAY_MACRO_DEVICE>{
 
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void polar_decomp(int ielem, Scalar * v_gr, Scalar * str_ten, Scalar * str, Scalar * vort, Scalar * rot_old, Scalar * rot_new)const {
 
     Scalar dt = *dt_value;
@@ -268,7 +268,7 @@ struct decomp_rotate<Scalar, KOKKOSARRAY_MACRO_DEVICE>{
   }
 
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void rotate_tensor(int ielem, Scalar * str_ten, Scalar * str, Scalar * rot_new)const {
 
     Scalar t[9];
@@ -300,7 +300,7 @@ struct decomp_rotate<Scalar, KOKKOSARRAY_MACRO_DEVICE>{
 
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( int ielem )const {
 
     //   Local scratch space to avoid multiple

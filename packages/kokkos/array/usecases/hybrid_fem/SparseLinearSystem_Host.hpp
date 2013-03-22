@@ -44,64 +44,87 @@
 #ifndef SPARSELINEARSYSTEM_HOST_HPP
 #define SPARSELINEARSYSTEM_HOST_HPP
 
-#include <SparseLinearSystem.hpp>
-#include <KokkosArray_Host.hpp>
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if defined( __INTEL_COMPILER )
 
 namespace KokkosArray {
 namespace Impl {
 
-template< typename AScalarType , typename VScalarType >
+template< typename AScalarType ,
+          typename VScalarType ,
+          class LayoutType >
 struct Multiply< CrsMatrix<AScalarType,Host> ,
-                 View<VScalarType[],Host > ,
-                 View<VScalarType[],Host > >
+                 View<VScalarType*,LayoutType,Host > ,
+                 View<VScalarType*,LayoutType,Host > >
 {
-  typedef Host                                      device_type ;
-  typedef device_type::size_type                    size_type ;
-  typedef View< VScalarType[] , device_type >  vector_type ;
+  typedef Host                             device_type ;
+  typedef typename device_type::size_type  size_type ;
+
+  typedef View<       VScalarType*, LayoutType, device_type, MemoryUnmanaged >  vector_type ;
+  typedef View< const VScalarType*, LayoutType, device_type, MemoryUnmanaged >  vector_const_type ;
+
   typedef CrsMatrix< AScalarType , device_type >    matrix_type ;
 
 private:
 
-  matrix_type  m_A ;
-  vector_type  m_x ;
-  vector_type  m_y ;
+  matrix_type        m_A ;
+  vector_const_type  m_x ;
+  vector_type        m_y ;
 
 public:
 
   //--------------------------------------------------------------------------
 
   inline
-  void operator()( const size_type iRow ) const
+  void operator()( HostThread & this_thread ) const
   {
-    const size_type iEntryBegin = m_A.graph.row_map[iRow];
-    const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+    const std::pair<size_type,size_type> range =
+      this_thread.work_range( m_y.dimension_0() );
 
-    double sum = 0 ;
+    size_type iEntryBegin = m_A.graph.row_map[range.first];
 
-    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
-      sum += m_A.coefficients(iEntry) * m_x( m_A.graph.entries(iEntry) );
+    for ( size_type iRow = range.first ; iRow < range.second ; ++iRow ) {
+
+      const size_type iEntryEnd = m_A.graph.row_map[iRow+1];
+
+      double sum = 0 ;
+
+#pragma simd reduction(+:sum)
+#pragma ivdep
+      for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+        sum += m_A.coefficients(iEntry) * m_x( m_A.graph.entries(iEntry) );
+      }
+
+      m_y(iRow) = sum ;
+
+      iEntryBegin = iEntryEnd ;
     }
-
-    m_y(iRow) = sum ;
   }
 
-  static void apply( const matrix_type & A ,
-                     const size_type nrow ,
-                     const size_type ncol ,
-                     const vector_type & x ,
-                     const vector_type & y )
+  //--------------------------------------------------------------------------
+
+  Multiply( const matrix_type & A ,
+            const size_type nrow ,
+            const size_type , // ncol ,
+            const vector_type & x ,
+            const vector_type & y )
+    : m_A( A ), m_x( x ), m_y( y )
   {
-    Multiply op ;
-    op.m_A = A ;
-    op.m_x = x ;
-    op.m_y = y ;
-    parallel_for( nrow , op );
+    HostParallelLaunch< Multiply >( *this );
   }
 };
 
-} /* namespace Impl */
-} /* namespace KokkosArray */
+//----------------------------------------------------------------------------
 
+} // namespace Impl
+} // namespace KokkosArray
 
-#endif /* #ifndef SPARSELINEARSYSTEM_HOST_HPP */
+#endif /* #if defined( __INTEL_COMPILER ) */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif /* #ifndef SPARSELINEARSYSTEM_HPP */
 

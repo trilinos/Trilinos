@@ -49,16 +49,17 @@
 
 #include "IOContFileUtils.H"
 
-#include "iostream"
-#include "sstream"
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 using namespace std;
 
-bool WriteHeaderToContFile( const string & fileName,
+bool WriteHeaderToContFile( const std::string & fileName,
     const Teuchos::ParameterList & fileParams )
 {
   // The file to open
-  ofstream oFile(fileName.c_str());
+  std::ofstream oFile(fileName.c_str());
 
   // Writing the header
   oFile << "#" << setw(6) << "ID";
@@ -75,13 +76,13 @@ bool WriteHeaderToContFile( const string & fileName,
   return true;
 }
 
-bool UpdateContFile( const string & fileName,
+bool UpdateContFile( const std::string & fileName,
     const int & idStep,
     const Teuchos::ParameterList & fileParams )
 {
 
   // The file to open
-  ofstream oFile(fileName.c_str(), ios_base::app);
+  std::ofstream oFile(fileName.c_str(), ios_base::app);
 
   // Writing the id
   oFile << scientific << setw(7)  << idStep;
@@ -98,17 +99,17 @@ bool UpdateContFile( const string & fileName,
   return true;
 }
 
-bool RestartContFile( const string & fileName, const int & idStep )
+bool RestartContFile( const std::string & fileName, const int & idStep )
 {
   // Copying the continuation in a backup file
-  string fileNameBak = fileName + ".bak";
-  string command = "cp " + fileName + " " + fileNameBak;
+  std::string fileNameBak = fileName + ".bak";
+  std::string command = "cp " + fileName + " " + fileNameBak;
   system (command.c_str());
 
   // String of the line to cut from
-  ostringstream ostream;
-  ostream << idStep + 1; 
-  string lineNumber = ostream.str();
+  std::ostringstream os;
+  os << idStep + 1; 
+  std::string lineNumber = os.str();
 
   // Cutting the file
   command =  "sed '" + lineNumber + ",$ d' " + fileNameBak + " > " + fileName;

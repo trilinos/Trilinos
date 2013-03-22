@@ -6,7 +6,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   EpetraExtDiagScaledMatProdTransformer_UnitTests
   SOURCES
     EpetraExtDiagScaledMatProdTransformer_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    LocalUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   ARGS "--matrix-file=FourByFour.mtx --matrix-file-2=FourByEight.mtx"
@@ -16,7 +16,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   EpetraExtAddTransformer_UnitTests
   SOURCES
     EpetraExtAddTransformer_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    LocalUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   ARGS "--matrix-file=FourByFour.mtx --matrix-file-2=FourByFour_2.mtx"
@@ -26,7 +26,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   EpetraExtDiagScalingTransformer_UnitTests
   SOURCES
     EpetraExtDiagScalingTransformer_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    LocalUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   ARGS "--matrix-file=FourByFour.mtx"

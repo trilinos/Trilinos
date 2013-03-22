@@ -54,11 +54,15 @@ namespace panzer {
 /** This integrates a scalar quanity over each cell.
   * It is useful for comptuing integral responses.
 
-    <Parameter name="Integral Name" type="string" value="<Name to give to the integral field>"/>
-    <Parameter name="Integrand Name" type="string" value="<Name of integrand>"/>
-    <Parameter name="IR" type="RCP<IntegrationRule>" value="<user specified IntegrationRule>"/>
-    <Parameter name="Multiplier" type="double" value="<Scaling factor, default=1>"/>
-    <Parameter name="Field Multipliers" type="RCP<vector<string> >" value="<Other scalar multiplier fields>"/>
+  \verbatim
+    <ParameterList>
+      <Parameter name="Integral Name" type="string" value="<Name to give to the integral field>"/>
+      <Parameter name="Integrand Name" type="string" value="<Name of integrand>"/>
+      <Parameter name="IR" type="RCP<IntegrationRule>" value="<user specified IntegrationRule>"/>
+      <Parameter name="Multiplier" type="double" value="<Scaling factor, default=1>"/>
+      <Parameter name="Field Multipliers" type="RCP<const vector<string> >" value="<Other scalar multiplier fields>"/>
+    </ParameterList>
+  \endverbatim
   */
 PHX_EVALUATOR_CLASS(Integrator_Scalar)
   

@@ -238,7 +238,7 @@ bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir,
   {
 
     int m = memory.size();
-    vector<double> alpha(m);
+    std::vector<double> alpha(m);
     double beta;
   
     for (int i = m-1; i >= 0; i --)
@@ -267,12 +267,12 @@ compute(NOX::Abstract::Vector& dir,
   return NOX::Direction::Generic::compute( dir, soln, solver );
 }
 
-void NOX::Direction::QuasiNewton::throwError(const string& functionName, 
-					     const string& errorMsg)
+void NOX::Direction::QuasiNewton::throwError(const std::string& functionName, 
+					     const std::string& errorMsg)
 {
   if (utils->isPrintType(Utils::Error))
     utils->err() << "NOX::Direction::QuasiNewton::" << functionName 
-		 << " - " << errorMsg << endl;
+		 << " - " << errorMsg << std::endl;
   throw "NOX Error";
 }
 

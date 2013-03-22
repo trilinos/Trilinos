@@ -79,7 +79,7 @@ Excn::SystemInterface::SystemInterface()
     debugLevel_(0), screenWidth_(0),
     stepMin_(1), stepMax_(INT_MAX), stepInterval_(1), subcycle_(-1), cycle_(-1), compressData_(0),
     sumSharedNodes_(false), addProcessorId_(false), mapIds_(true), omitNodesets_(false), omitSidesets_(false),
-    largeModel_(false), append_(false), intIs64Bit_(false)
+    largeModel_(false), append_(false), intIs64Bit_(false), subcycleJoin_(false)
 {
   enroll_options();
 }
@@ -181,6 +181,11 @@ void Excn::SystemInterface::enroll_options()
 		  "\t\tcycle $val ($val < #).  The cycle number is 0-based.",
 		  "-1");
 
+  options_.enroll("join_subcycles", GetLongOption::NoValue,
+		  "If -subcycle is specified, then after the subcycle files are processed,\n"
+		  "\t\trun epu one more time and join the subcycle files into a single file.",
+		  NULL);
+  
   options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
 		  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
 		  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
@@ -430,6 +435,10 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
+  if (options_.retrieve("join_subcycles")) {
+    subcycleJoin_ = true;
+  }
+
   if (options_.retrieve("map")) {
     mapIds_ = true;
   }
@@ -496,13 +505,13 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
       // in the form: "/directory/sub/basename.ext.#proc.34"
       bool success = decompose_filename(basename_);
       if (!success) {
-        std::cerr << "\nERROR: If the '-auto' option is specified, the basename must specify an existing filename.\n"
+        std::cerr << "\nERROR: (EPU) If the '-auto' option is specified, the basename must specify an existing filename.\n"
                   << "       The entered basename does not contain an extension or processor count.\n";
         return false;
       }
     }
   } else {
-    std::cerr << "\nERROR: basename not specified\n\n";
+    std::cerr << "\nERROR: (EPU) basename not specified\n\n";
     return false;
   }
   return true;
@@ -611,7 +620,7 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   std::string tmp = s.substr(ind+1); // Skip the '.'
   processorCount_ = strtol(tmp.c_str(), NULL, 10);
   if (processorCount_ <= 0) {
-    std::cerr << "\nERROR: Invalid processor count specified: '"
+    std::cerr << "\nERROR: (EPU) Invalid processor count specified: '"
 	      << processorCount_ << "'. Must be greater than zero.\n";
     return false;
   }

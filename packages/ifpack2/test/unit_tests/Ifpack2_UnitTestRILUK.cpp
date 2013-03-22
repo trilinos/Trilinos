@@ -37,7 +37,7 @@
 #include <Ifpack2_Version.hpp>
 #include <iostream>
 
-#ifdef HAVE_IFPACK2_QD
+#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 #include <qd/dd_real.h>
 #endif
 
@@ -156,7 +156,7 @@ UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
 #endif
 
-#ifdef HAVE_IFPACK2_QD
+#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)
 #endif
 

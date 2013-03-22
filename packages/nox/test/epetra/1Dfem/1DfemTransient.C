@@ -394,8 +394,8 @@ int main(int argc, char *argv[])
   // The number of unknowns must be at least equal to the 
   // number of processors.
   if (NumGlobalElements < NumProc) {
-    cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << endl;
+    std::cout << "numGlobalBlocks = " << NumGlobalElements 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
     throw "NOX Error";
   }
 
@@ -538,7 +538,7 @@ int main(int argc, char *argv[])
     timeStep++;
     time += dt;
 
-    utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << endl;
+    utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << std::endl;
   
     NOX::StatusTest::StatusType status = solver->solve();
 
@@ -546,7 +546,7 @@ int main(int argc, char *argv[])
     if (status != NOX::StatusTest::Converged) {
         ierr++;
         if (utils.isPrintType(NOX::Utils::Error))
-          utils.out() << "Nonlinear solver failed to converge!" << endl;
+          utils.out() << "Nonlinear solver failed to converge!" << std::endl;
     }
 
     
@@ -577,10 +577,10 @@ int main(int argc, char *argv[])
 
   // Output the parameter list
   if (utils.isPrintType(NOX::Utils::Parameters)) {
-    utils.out() << endl << "Final Parameters" << endl
-	 << "****************" << endl;
+    utils.out() << std::endl << "Final Parameters" << std::endl
+	 << "****************" << std::endl;
     solver->getList().print(utils.out());
-    utils.out() << endl;
+    utils.out() << std::endl;
   }
 
   // Test for convergence
@@ -598,9 +598,9 @@ int main(int argc, char *argv[])
 
   // Summarize test results  
   if (ierr == 0)
-    utils.out() << "Test passed!" << endl;
+    utils.out() << "Test passed!" << std::endl;
   else 
-    utils.out() << "Test failed!" << endl;
+    utils.out() << "Test failed!" << std::endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize();

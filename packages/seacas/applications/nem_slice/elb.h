@@ -42,7 +42,7 @@
 #include <exodusII.h>
 #include "elb_elem.h"
 
-#define ELB_VERSION	"4.04"
+#define ELB_VERSION	"4.05"
 #define UTIL_NAME	"nem_slice"
 #define ELB_FALSE	0
 #define ELB_TRUE	1
@@ -248,7 +248,7 @@ struct Graph_Description
   size_t nadj;
   size_t max_nsur;
   std::vector<INT> adj;
-  std::vector<size_t> start;
+  std::vector<INT> start;
   std::vector<std::vector<INT> > sur_elem;
   Graph_Description<INT>() :
     nadj(0),  max_nsur(0)

@@ -80,15 +80,15 @@ namespace Xpetra {
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
-    TpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode())
+    TpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP< Node > &node=Kokkos::Details::getNode<Node>())
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, indexBase, comm, toTpetra(lg), node))) {  }
 
     //! Constructor with a user-defined contiguous distribution.
-    TpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode())
+    TpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::Details::getNode<Node>())
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, numLocalElements, indexBase, comm, node))) {  }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-    TpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode())
+    TpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::Details::getNode<Node>())
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, elementList, indexBase, comm, node))) {  }
 
     //! Destructor.
@@ -166,7 +166,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name 
+    //! @name
     //@{
 
     //! Get this Map's Comm object.
@@ -177,7 +177,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name 
+    //! @name
     //@{
 
     //! Return a simple one-line description of this object.
@@ -192,7 +192,7 @@ namespace Xpetra {
     //@{
 
     //! TpetraMap constructor to wrap a Tpetra::Map object
-    TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map) 
+    TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map)
       : map_(map) { }
 
     //! Get the library used by this object (Tpetra or Epetra?)
@@ -202,7 +202,7 @@ namespace Xpetra {
     const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > & getTpetra_Map() const { return map_; }
 
     //@}
-   
+
   protected:
 
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > map_;
@@ -236,7 +236,7 @@ namespace Xpetra {
     //! Non-member function to create a locally replicated Map with a specified node.
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
-    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
+    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
       XPETRA_MONITOR("useTpetra::createLocalMapWithNode");
 
       return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
@@ -245,7 +245,7 @@ namespace Xpetra {
     //! Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
     template <class LocalOrdinal, class GlobalOrdinal>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
-    createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
+    createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
       XPETRA_MONITOR("useTpetra::createContigMap");
 
       return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createContigMap<LocalOrdinal,GlobalOrdinal>(numElements, localNumElements, comm)));
@@ -254,8 +254,8 @@ namespace Xpetra {
     //! Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
-    createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
+    createContigMapWithNode(global_size_t numElements, size_t localNumElements,
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
       XPETRA_MONITOR("useTpetra::createContigMap");
       return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
     }
@@ -266,14 +266,14 @@ namespace Xpetra {
 // TODO: remove?
 //!  Returns true if \c map is identical to this map. Implemented in TpetraMap::isSameAs().
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator== (const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { 
+bool operator== (const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) {
   XPETRA_MONITOR("TpetraMap==TpetraMap");
   return map1.isSameAs(map2);
 }
 
 //! Returns true if \c map is not identical to this map. Implemented in TpetraMap::isSameAs().
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator!= (const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { 
+bool operator!= (const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) {
   XPETRA_MONITOR("TpetraMap!=TpetraMap");
   return !map1.isSameAs(map2);
 }

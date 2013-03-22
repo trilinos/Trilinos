@@ -60,7 +60,7 @@
 /* CREATE INITAL MATRIX                                                           */
 /**********************************************************************************/
 #include <Xpetra_Map.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -86,11 +86,11 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
-  
+
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
   //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   // custom parameters
@@ -98,14 +98,14 @@ int main(int argc, char *argv[]) {
   LO its=10;
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
-  
+
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
-  
+
   matrixParameters.check();
   xpetraParameters.check();
   // TODO: check custom parameters
@@ -120,7 +120,9 @@ int main(int argc, char *argv[]) {
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+  RCP<Matrix> Op = Pr->BuildMatrix();
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
@@ -131,7 +133,7 @@ int main(int argc, char *argv[]) {
   aggOptions.SetMaxNeighAlreadySelected(0);
   aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
   aggOptions.SetPhase3AggCreation(0.5);
-  UCAggregationFactory aggFact(aggOptions);
+  CoupledAggregationFactory aggFact(aggOptions);
   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
   double t0 = MPI_Wtime();
   RCP<Aggregates> aggregates = aggFact.Build(*graph);

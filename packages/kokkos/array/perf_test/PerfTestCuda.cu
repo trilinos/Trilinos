@@ -51,12 +51,10 @@
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
 
-#include <KokkosArray_Cuda_macros.hpp>
 #include <PerfTestHexGrad.hpp>
 #include <PerfTestBlasKernels.hpp>
 #include <PerfTestGramSchmidt.hpp>
 #include <PerfTestDriver.hpp>
-#include <KokkosArray_Clear_macros.hpp>
 
 namespace Test {
 

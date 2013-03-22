@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Comm.h"
@@ -1597,6 +1598,7 @@ int  Epetra_MultiVector::NormInf (double* Result) const {
 }
       DoubleTemp_[i] = normval;
 #else
+      (void) normval; // silence unused value warning in non-OpenMP build
       int jj = IAMAX(myLength, Pointers_[i]);
       if (jj>-1) DoubleTemp_[i] = std::abs(Pointers_[i][jj]);
 #endif

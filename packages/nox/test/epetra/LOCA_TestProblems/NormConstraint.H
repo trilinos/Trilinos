@@ -104,7 +104,7 @@ public:
   virtual void setParam(int paramID, double val);
 
   //! Sets parameters indexed by paramIDs
-  virtual void setParams(const vector<int>& paramIDs, 
+  virtual void setParams(const std::vector<int>& paramIDs, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
   //! Compute continuation constraint equations
@@ -122,7 +122,7 @@ public:
    * \c true, then the \c dgdp contains \f$g\f$ on input.
    */
   virtual NOX::Abstract::Group::ReturnType
-  computeDP(const vector<int>& paramIDs, 
+  computeDP(const std::vector<int>& paramIDs, 
 	    NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 	    bool isValidG);
 

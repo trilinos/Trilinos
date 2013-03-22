@@ -37,12 +37,6 @@
 
 #include <vector>
 #include <smart_assert.h>               // for SMART_ASSERT
-extern "C" {
-#define NO_NETCDF_2
-#include <netcdf.h>
-#include <exodusII.h>
-#include <exodusII_int.h>
-}
 
   /*!
    * This set of classes provides a thin wrapper around the exodusII

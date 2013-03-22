@@ -50,8 +50,9 @@ ENDIF()
 TRIBITS_ADD_LIBRARY(
   stk_mesh_fixtures
   NOINSTALLHEADERS ${HEADERS}
+  DEPLIBS stk_mesh_base stk_mesh_fem
   SOURCES ${SOURCES}
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/include/stk_mesh/fixtures/)
+    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_mesh/fixtures/)

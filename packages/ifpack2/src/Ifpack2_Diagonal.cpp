@@ -33,20 +33,17 @@
 
 #include "Ifpack2_Diagonal_def.hpp"
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+#include "Ifpack2_ETIHelperMacros.h"
 
 namespace Ifpack2 {
-#ifdef HAVE_TPETRA_INST_FLOAT
-IFPACK2_INST(Diagonal,float,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_DOUBLE
-IFPACK2_INST(Diagonal,double,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-IFPACK2_INST(Diagonal,std::complex<float>,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-IFPACK2_INST(Diagonal,std::complex<double>,int,int);
-#endif
+
+  #define LCLINST(S,LO,GO) \
+          IFPACK2_INST(Diagonal,S,LO,GO)
+
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+  IFPACK2_INSTANTIATE_SLG(LCLINST)
+
 }
 
 #endif

@@ -44,6 +44,7 @@
 #ifndef EPETRA_LONGLONGVECTOR_H
 #define EPETRA_LONGLONGVECTOR_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Distributor.h"
@@ -251,7 +252,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   int MyLength() const {return(Map().NumMyPoints());};
 
   //! Returns the global vector length of vectors in the multi-vector.
-  long long GlobalLength() const {return(Map().NumGlobalPoints64());};
+  long long GlobalLength64() const {return(Map().NumGlobalPoints64());};
   //@}
 
   //! @name I/O methods

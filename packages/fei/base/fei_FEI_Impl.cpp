@@ -1,45 +1,10 @@
-/*
-// @HEADER
-// ************************************************************************
-//             FEI: Finite Element Interface to Linear Solvers
-//                  Copyright (2005) Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, the
-// U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alan Williams (william@sandia.gov) 
-//
-// ************************************************************************
-// @HEADER
-*/
-
+/*--------------------------------------------------------------------*/
+/*    Copyright 2005 Sandia Corporation.                              */
+/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
 
 #include <fei_macros.hpp>
 
@@ -1369,7 +1334,7 @@ int fei::FEI_Impl::getBlockElemIDList(GlobalID elemBlockID,
     throw std::runtime_error(osstr.str());
   }
 
-  const MapIntInt& elemIDSet = block->getConnectivityIDs();
+  std::map<int,int>& elemIDSet = block->getConnectivityIDs();
 
   fei::copyKeysToArray(elemIDSet, numElems, elemIDs);
 
@@ -1497,67 +1462,67 @@ int fei::FEI_Impl::putNodalFieldData(int fieldID,
     if (wrapper_[0].get() != NULL) {
       std::vector<int> numbers(numNodes);
       for(int i=0; i<numNodes; ++i) {
-	err = rowSpace_->getGlobalBlkIndex(nodeIDType_, nodeIDs[i], numbers[i]);
-	if (err != 0) {
-	  fei::console_out() << "fei::FEI_Impl::putNodalFieldData ERROR, nodeID "
-	       << nodeIDs[i] << " not found."<<FEI_ENDL;
-	  ERReturn(-1);
-	}
+        err = rowSpace_->getGlobalBlkIndex(nodeIDType_, nodeIDs[i], numbers[i]);
+        if (err != 0) {
+          fei::console_out() << "fei::FEI_Impl::putNodalFieldData ERROR, nodeID "
+            << nodeIDs[i] << " not found."<<FEI_ENDL;
+          ERReturn(-1);
+        }
       }
 
       int fieldSize = 0;
       try {
-	fieldSize = rowSpace_->getFieldSize(fieldID);
+        fieldSize = rowSpace_->getFieldSize(fieldID);
       }
       catch (std::runtime_error& exc) {
-	fei::console_out() << "fei::FEI_Impl::putNodalFieldData ERROR: " <<exc.what()<<FEI_ENDL;
-	ERReturn(-1);
+        fei::console_out() << "fei::FEI_Impl::putNodalFieldData ERROR: " <<exc.what()<<FEI_ENDL;
+        ERReturn(-1);
       }
 
       fei::SharedPtr<LinearSystemCore> linSysCore = wrapper_[0]->getLinearSystemCore();
       if (linSysCore.get() != NULL) {
-	linSysCore->putNodalFieldData(fieldID, fieldSize, 
-				      &numbers[0], numNodes, nodeData);
-	data_passed = true;
+        linSysCore->putNodalFieldData(fieldID, fieldSize, 
+            &numbers[0], numNodes, nodeData);
+        data_passed = true;
       }
       else {
-	//If we enter this block, we're probably dealing with a FiniteElementData
-	//instance.
-	fei::SharedPtr<FiniteElementData> fedata = wrapper_[0]->getFiniteElementData();
-	if (fedata.get() != NULL) {
-	  fedata->putNodalFieldData(fieldID, fieldSize, numNodes,
-				    &numbers[0], nodeData);
-	  data_passed = true;
-	}
+        //If we enter this block, we're probably dealing with a FiniteElementData
+        //instance.
+        fei::SharedPtr<FiniteElementData> fedata = wrapper_[0]->getFiniteElementData();
+        if (fedata.get() != NULL) {
+          fedata->putNodalFieldData(fieldID, fieldSize, numNodes,
+              &numbers[0], nodeData);
+          data_passed = true;
+        }
       }
     }
 
     if (!data_passed) {
       //If we get to here and data_passed is false, wrapper_[0] is probably NULL.
       if (wrapper_[0].get() == NULL) {
-	fei::SharedPtr<fei::Vector> dataVector =factory_[0]->createVector(matGraph_);
+        fei::SharedPtr<fei::Vector> dataVector =factory_[0]->createVector(matGraph_);
 
-	CHK_ERR( dataVector->copyInFieldData(fieldID, nodeIDType_,
-					     numNodes, nodeIDs, nodeData) );
-	if (fieldID == -3) {
-	  CHK_ERR( linSys_->putAttribute("coordinates", dataVector.get()) );
-	}
-	else {
-	  FEI_OSTRINGSTREAM osstr;
-	  osstr << "fieldID:" << fieldID;
-	  CHK_ERR( linSys_->putAttribute(osstr.str().c_str(), dataVector.get()) );
-	}
+        CHK_ERR( dataVector->copyInFieldData(fieldID, nodeIDType_,
+              numNodes, nodeIDs, nodeData) );
+        if (fieldID == -3) {
+          CHK_ERR( linSys_->putAttribute("coordinates", dataVector.get()) );
+        }
+        else {
+          FEI_OSTRINGSTREAM osstr;
+          osstr << "fieldID:" << fieldID;
+          CHK_ERR( linSys_->putAttribute(osstr.str().c_str(), dataVector.get()) );
+        }
       }
       else {
-	fei::console_out() << "fei::FEI_Impl::putNodalFieldData ERROR, non-null LibraryWrapper"
-	     << " contains neither LinearSystemCore or FiniteElementData. " <<FEI_ENDL;
-	ERReturn(-1);
+        fei::console_out() << "fei::FEI_Impl::putNodalFieldData ERROR, non-null LibraryWrapper"
+          << " contains neither LinearSystemCore or FiniteElementData. " <<FEI_ENDL;
+        ERReturn(-1);
       }
     }
     return(0);
   }
 
   CHK_ERR( x_->copyInFieldData(fieldID, nodeIDType_,
-			       numNodes, nodeIDs, nodeData));
+        numNodes, nodeIDs, nodeData));
   return(0);
 }

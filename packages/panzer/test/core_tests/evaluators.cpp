@@ -178,12 +178,11 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basisLayout;
     {
       std::size_t numCells = 10;
-      int baseCellDim = 2;
       int cubatureDegree = 2;
-      panzer::CellData cellData(numCells,baseCellDim,topo);
+      panzer::CellData cellData(numCells,topo);
       ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
-      basis = rcp(new PureBasis(basisType,cellData));
+      basis = rcp(new PureBasis(basisType,1,cellData));
       basisLayout = rcp(new BasisIRLayout(basis,*ir));
     }
 
@@ -209,12 +208,11 @@ namespace panzer {
       RCP<panzer::PureBasis> basis;
       {
         std::size_t numCells = 10;
-        int baseCellDim = 2;
         int cubatureDegree = 2;
-        panzer::CellData cellData(numCells,baseCellDim,topo);
+        panzer::CellData cellData(numCells,topo);
         ir = rcp(new IntegrationRule(cubatureDegree,cellData));
         std::string basisType = "Q1";
-        basis = rcp(new PureBasis(basisType,cellData));
+        basis = rcp(new PureBasis(basisType,1,cellData));
         basisLayout = rcp(new BasisIRLayout(basis,*ir));
       }
   
@@ -235,12 +233,11 @@ namespace panzer {
       RCP<panzer::PureBasis> basis;
       {
         std::size_t numCells = 10;
-        int baseCellDim = 2;
         int cubatureDegree = 2;
-        panzer::CellData cellData(numCells,baseCellDim,topo);
+        panzer::CellData cellData(numCells,topo);
         ir = rcp(new IntegrationRule(cubatureDegree,cellData));
         std::string basisType = "QEdge1";
-        basis = rcp(new PureBasis(basisType,cellData));
+        basis = rcp(new PureBasis(basisType,1,cellData));
         basisLayout = rcp(new BasisIRLayout(basis,*ir));
       }
   
@@ -269,12 +266,11 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basis;
     {
       std::size_t numCells = 10;
-      int baseCellDim = 2;
       int cubatureDegree = 2;
-      panzer::CellData cellData(numCells,baseCellDim,topo);
+      panzer::CellData cellData(numCells,topo);
       ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
-      basis = rcp(new BasisIRLayout(basisType,*ir));
+      basis = rcp(new BasisIRLayout(basisType,1,*ir));
     }
 
     ParameterList p("Integrator_BasisTimesScalar Test");
@@ -303,12 +299,11 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basis;
     {
       std::size_t numCells = 10;
-      int baseCellDim = 2;
       int cubatureDegree = 2;
-      panzer::CellData cellData(numCells,baseCellDim,topo);
+      panzer::CellData cellData(numCells,topo);
       ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
-      basis = rcp(new BasisIRLayout(basisType,*ir));
+      basis = rcp(new BasisIRLayout(basisType,1,*ir));
     }
 
     ParameterList p("Integrator_GradBasisDotVector Test");

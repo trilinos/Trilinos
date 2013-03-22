@@ -46,24 +46,29 @@
 #ifndef MUELU_COALESCEDROPFACTORY_DECL_HPP
 #define MUELU_COALESCEDROPFACTORY_DECL_HPP
 
-#include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_ImportFactory_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_CrsGraph_fwd.hpp>
 #include <Xpetra_CrsGraphFactory.hpp> //TODO
-#include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_StridedMap_fwd.hpp>
+#include <Xpetra_Map_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Graph_fwd.hpp"
+#include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_PreDropFunctionBaseClass_fwd.hpp"
+#include "MueLu_PreDropFunctionConstVal_fwd.hpp"
 
 namespace MueLu {
 
@@ -72,7 +77,7 @@ namespace MueLu {
     @brief Factory for creating a graph base on a given matrix.
 
     Factory for creating graphs from matrices with entries selectively dropped.
-  
+
     - TODO This factory is very incomplete.
     - TODO The Build method simply builds the matrix graph with no dropping.
   */
@@ -88,10 +93,12 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> AmalgFact = Teuchos::null);
+    CoalesceDropFactory();
 
     //! Destructor
     virtual ~CoalesceDropFactory() { }
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //@}
 
@@ -101,24 +108,17 @@ namespace MueLu {
     void DeclareInput(Level &currentLevel) const;
 
     /// set predrop function
-    void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &predrop);
+    void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &predrop) { predrop_ = predrop; }
 
     //@}
 
     void Build(Level &currentLevel) const; // Build
 
-
-
   private:
 
-    //! A Factory
-    RCP<const FactoryBase> AFact_;
-
-    /// pre-drop function
-    RCP<PreDropFunctionBaseClass> predrop_;
-
-    /// SubBlockUnAmalgamationFactory (for generating the UnAmalgamation information)
-    RCP<const FactoryBase> AmalgFact_;
+    // pre-drop function
+    mutable
+     RCP<PreDropFunctionBaseClass> predrop_;
 
   }; //class CoalesceDropFactory
 

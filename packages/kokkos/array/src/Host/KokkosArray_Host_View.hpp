@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -44,39 +44,43 @@
 #ifndef KOKKOSARRAY_HOST_VIEW_HPP
 #define KOKKOSARRAY_HOST_VIEW_HPP
 
+#include <KokkosArray_Host.hpp>
 #include <KokkosArray_View.hpp>
-#include <Host/KokkosArray_Host_Parallel.hpp>
 
-#include <KokkosArray_Host_macros.hpp>
-#include <impl/KokkosArray_ViewOperLeft_macros.hpp>
-#include <impl/KokkosArray_ViewOperRight_macros.hpp>
-#include <impl/KokkosArray_View_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
+#include <Host/KokkosArray_Host_Parallel.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
+namespace Impl {
 
-template< class DataType , class LayoutType >
-void View< DataType , LayoutType , Host >::internal_private_create(
-  const std::string & label ,
-  const View< DataType , LayoutType , Host >::shape_type shape )
+template< class DataType , class LayoutType , class ManagedType , class Specialize >
+struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType , Specialize > >
 {
-  typedef typename View< DataType , LayoutType , Host >::shape_type shape_type ;
+  typedef View< DataType , LayoutType , Host , ManagedType , Specialize > view_type ;
+  typedef typename view_type::scalar_type scalar_type ;
 
-  const size_t count = Impl::ShapeMap<shape_type>::allocation_count( shape );
+  static void apply( const view_type & view )
+  {
+    const size_t count = ViewAssignment< Specialize >::allocation_count( view );
+    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , count );
+  }
+};
 
-  oper_type::m_shape = shape ;
-  oper_type::m_ptr_on_device = (value_type *)
-    memory_space::allocate( label ,
-                            typeid(value_type) ,
-                            sizeof(value_type) ,
-                            count );
+template< class DataType , class LayoutType , class ManagedType >
+struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType , Impl::LayoutScalar > >
+{
+  typedef View< DataType , LayoutType , Host , ManagedType , Impl::LayoutScalar > view_type ;
+  typedef typename view_type::scalar_type scalar_type ;
 
-  Impl::HostParallelFill<value_type>( oper_type::m_ptr_on_device , 0 , count );
-}
+  static void apply( const view_type & view )
+  {
+    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , 1 );
+  }
+};
 
+} // namespace Impl
 } // namespace KokkosArray
 
 //----------------------------------------------------------------------------
@@ -294,80 +298,57 @@ struct HostViewRemap< OutputView , InputView , 0 >
     { *arg_out = *arg_in ; }
 };
 
-//----------------------------------------------------------------------------
-// Deep copy views with either different value types
-// or different layouts.
-
-template< class DataTypeDst , class LayoutDst ,
-          class DataTypeSrc , class LayoutSrc >
-struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host > ,
-                     View< DataTypeSrc , LayoutSrc , Host > ,
-                     true_type  /* Same value_type  */ ,
-                     false_type /* Different layout_type */ ,
-                     true_type  /* Same rank */ >
-{
-  typedef View< DataTypeDst , LayoutDst , Host > dst_type ;
-  typedef View< DataTypeSrc , LayoutSrc , Host > src_type ;
-
-  static inline
-  void apply( const dst_type & dst , const src_type & src )
-  {
-    assert_shapes_equal_dimension( dst.shape() , src.shape() );
-
-    HostViewRemap< dst_type , src_type , dst_type::Rank >( dst , src );
-  }
-};
-
-template< class DataTypeDst , class LayoutDst ,
-          class DataTypeSrc , class LayoutSrc ,
-          class SameLayout >
-struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host > ,
-                     View< DataTypeSrc , LayoutSrc , Host > ,
-                     false_type /* Different value_type  */ ,
-                     SameLayout /* Any layout */ ,
-                     true_type  /* Same rank */ >
-{
-  typedef View< DataTypeDst , LayoutDst , Host > dst_type ;
-  typedef View< DataTypeSrc , LayoutSrc , Host > src_type ;
-
-  static inline
-  void apply( const dst_type & dst , const src_type & src )
-  {
-    assert_shapes_equal_dimension( dst.shape() , src.shape() );
-
-    HostViewRemap< dst_type , src_type , dst_type::Rank >( dst , src );
-  }
-};
-
 } // namespace Impl
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+/** \brief Deep copy equal dimension arrays in the host space which
+ *         have different layouts or specializations.
+ */
 
-template< typename ValueType , class LayoutSrc >
+template< class DT , class DL , class DM , class DS ,
+          class ST , class SL , class SM , class SS >
+inline
+void deep_copy( const View< DT, DL, Host, DM, DS> & dst ,
+                const View< ST, SL, Host, SM, SS> & src ,
+                const typename Impl::enable_if<(
+                  // Destination is not constant:
+                  Impl::is_same< typename ViewTraits<DT,DL,Host,DM>::value_type ,
+                                 typename ViewTraits<DT,DL,Host,DM>::non_const_value_type >::value
+                  &&
+                  // Same rank
+                  ( unsigned( ViewTraits<DT,DL,Host,DM>::rank ) ==
+                    unsigned( ViewTraits<ST,SL,Host,SM>::rank ) )
+                  &&
+                  // Different layout or different specialization:
+                  ( ( ! Impl::is_same< typename DL::array_layout ,
+                                       typename SL::array_layout >::value )
+                    ||
+                    ( ! Impl::is_same< DS , SS >::value )
+                  )
+                )>::type * = 0 )
+{
+  typedef View< DT, DL, Host, DM, DS> dst_type ;
+  typedef View< ST, SL, Host, SM, SS> src_type ;
+
+  assert_shapes_equal_dimension( dst.shape() , src.shape() );
+
+  Impl::HostViewRemap< dst_type , src_type , dst_type::rank >( dst , src );
+}
+
+/** \brief  Deep copy of scalar value */
+
+template< typename ValueType , class LayoutSrc , class MemoryTraits >
 inline
 void deep_copy( ValueType & dst ,
-                const View< ValueType , LayoutSrc , Host > & src )
-{
-  typedef View< ValueType , LayoutSrc , Host > src_type ;
-  typedef typename src_type::shape_type        src_shape ;
+                const View< ValueType , LayoutSrc , Host , MemoryTraits , Impl::LayoutScalar > & src )
+{ dst = src ; }
 
-  typedef typename Impl::assert_shape_is_rank_zero< src_shape >::type ok_rank ;
-
-  dst = *src ;
-}
-
-template< typename ValueType , class LayoutDst >
+template< typename ValueType , class LayoutDst , class MemoryTraits >
 inline
-void deep_copy( const View< ValueType , LayoutDst , Host > & dst ,
+void deep_copy( const View< ValueType , LayoutDst , Host , MemoryTraits , Impl::LayoutScalar > & dst ,
                 const ValueType & src )
-{
-  typedef View< ValueType , LayoutDst , Host > dst_type ;
-  typedef typename dst_type::shape_type        dst_shape ;
-
-  typedef typename Impl::assert_shape_is_rank_zero< dst_shape >::type ok_rank ;
-
-  *dst = src ;
-}
+{ dst = src ; }
 
 } // namespace KokkosArray
 

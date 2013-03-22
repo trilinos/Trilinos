@@ -128,13 +128,13 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
-
-  ////
+#ifdef HAVE_TPETRA_DEBUG
+  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor1, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -146,17 +146,18 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ?  1 : 0),0,comm), std::invalid_argument);
       TEST_THROW(M map(0,(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
+#endif // HAVE_TPETRA_DEBUG
 
-
-  ////
+#ifdef HAVE_TPETRA_DEBUG
+  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor2, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -168,17 +169,18 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ?  1 :  0),0,0,comm), std::invalid_argument);
       TEST_THROW(M map(0,0,(myImageID == 0 ? 0 : 1),comm), std::invalid_argument);
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
+#endif // HAVE_TPETRA_DEBUG
 
-
-  ////
+#ifdef HAVE_TPETRA_DEBUG
+  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor3, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -190,18 +192,18 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ? GSTI :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
       TEST_THROW(M map(0, tuple<GO>(myImageID+1), (myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-
+#endif // HAVE_TPETRA_DEBUG
 
 #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_ENABLE_SS_TESTING) && defined(HAVE_MPI)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, RogersUnsignedGOBugVerification, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     if (numImages < 2) return;
@@ -220,7 +222,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, compatabilityTests, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -233,12 +235,12 @@ namespace {
     // * same number of global entries, but different number of local entries on every node
     // * same number of global entries, but different number of local entries on some nodes
     // * different number of global entries, different number of local entries
-    // 
+    //
     // for each, also:
     // test symmetry   : m1.isCompatible(m2) <=> m2.isCompatible(m1)
     // test reflexivity: m1.isCompatible(m1), m2.isCompatible(m2)
     {
-      M m1(GSTI,myImageID,0,comm), 
+      M m1(GSTI,myImageID,0,comm),
         m2(GSTI,myImageID,0,comm);
       TEST_IS_COMPATIBLE( m1, m2, true );
     }
@@ -259,7 +261,7 @@ namespace {
         // image 0 and numImages-1 get map1:numLocal==[0,numImages-1] and map2:numLocal==[numImages-1,0], the others get numLocal==myImageID
         LO mynl1, mynl2;
         if (myImageID == 0) {
-          mynl1 = 0; 
+          mynl1 = 0;
           mynl2 = numImages-1;
         }
         else if (myImageID == numImages-1) {
@@ -282,7 +284,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, sameasTests, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -316,7 +318,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, ContigUniformMap, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -360,14 +362,14 @@ namespace {
         TEST_EQUALITY_CONST( map.isNodeGlobalElement(i), true );
       }
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
-  // 
+  //
   // INSTANTIATIONS
   //
 
@@ -378,13 +380,22 @@ namespace {
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#   define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
+#   ifdef HAVE_TPETRA_DEBUG
+  // mfh 20 Feb 2013: The invalidConstructor{1,2,3} tests are now only
+  // valid in a debug build (HAVE_TPETRA_DEBUG).
+#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor2, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, M, LO, GO )
       //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor3, M, LO, GO )
+#   else
+#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, M, LO, GO )
+#   endif // HAVE_TPETRA_DEBUG
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
       typedef Xpetra::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
@@ -398,13 +409,22 @@ namespace {
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#   define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
+#   ifdef HAVE_TPETRA_DEBUG
+  // mfh 20 Feb 2013: The invalidConstructor{1,2,3} tests are now only
+  // valid in a debug build (HAVE_TPETRA_DEBUG).
+#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor2, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, M, LO, GO )
       //JG TODO FAILED: TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor3, M, LO, GO )
+#   else
+#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, M, LO, GO )
+#   endif // HAVE_TPETRA_DEBUG
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
       typedef Xpetra::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \

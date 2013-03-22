@@ -47,10 +47,10 @@
 #define MUELU_AMESOSSMOOTHER_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
 
 #include <Teuchos_ParameterList.hpp>
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 
 class Epetra_LinearProblem;
 class Amesos_BaseSolver;
@@ -67,7 +67,7 @@ namespace MueLu {
   /*!
     @class AmesosSmoother
     @brief Class that encapsulates Amesos direct solvers.
-    
+
     This class creates an Amesos preconditioner factory.  The factory is capable of generating direct solvers
     based on the type and ParameterList passed into the constructor.  See the constructor for more information.
   */
@@ -113,7 +113,7 @@ namespace MueLu {
 
     */
 
-    AmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null);
+    AmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList());
 
     //! Destructor
     virtual ~AmesosSmoother();
@@ -129,7 +129,7 @@ namespace MueLu {
 
     //! @name Setup and Apply methods.
     //@{
-    
+
     /*! @brief Set up the direct solver.
       This creates the underlying Amesos solver object according to the parameter list options passed into the
       AmesosSmoother constructor.  This includes doing a numeric factorization of the matrix.
@@ -149,13 +149,13 @@ namespace MueLu {
     //@}
 
     RCP<SmootherPrototype> Copy() const;
-    
-    //! @name Overridden from Teuchos::Describable 
+
+    //! @name Overridden from Teuchos::Describable
     //@{
-    
+
     //! Return a simple one-line description of this object.
     std::string description() const;
-    
+
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
@@ -164,11 +164,11 @@ namespace MueLu {
 
   private:
 
-    // Important note: 
+    // Important note:
     // linearProblem_ must be destroyed before A_, because destructor of linearProblem_ is using A_.
-    // In C++, destructor of member objects are called in the reverse order they appear within the declaration for the class. 
+    // In C++, destructor of member objects are called in the reverse order they appear within the declaration for the class.
     // ==18029== Invalid read of size 8
-    // ==18029==    at 0xC0780A: Epetra_LinearProblem::GetOperator() const (Epetra_LinearProblem.h:173)
+    // ==18029==    at 0xC0780A: Epetra_LinearProblem::GetMatrix() const (Epetra_LinearProblem.h:173)
     // ==18029==    by 0xC5EC27: Amesos_Superlu::PrintTiming() const (Amesos_Superlu.cpp:664)
     // ==18029==    by 0xC628C6: Amesos_Superlu::~Amesos_Superlu() (Amesos_Superlu.cpp:108)
 
@@ -178,8 +178,8 @@ namespace MueLu {
     //! parameter list that is used by Amesos internally
     Teuchos::ParameterList paramList_;
 
-    //! Operator. Not used directly, but held inside of linearProblem_. So we have to keep an RCP pointer to it!
-    RCP<Operator> A_;
+    //! Matrix. Not used directly, but held inside of linearProblem_. So we have to keep an RCP pointer to it!
+    RCP<Matrix> A_;
 
     //! Problem that Amesos uses internally.
     RCP<Epetra_LinearProblem> linearProblem_;
@@ -187,22 +187,21 @@ namespace MueLu {
     //! pointer to Amesos solver object
     RCP<Amesos_BaseSolver> prec_;
 
-    //! A Factory
-    RCP<FactoryBase> AFact_;
-
   }; // class AmesosSmoother
 
   //! Non-member templated function GetAmesosSmoother() returns a new AmesosSmoother object when <Scalar, LocalOrdinal, GlobalOrdinal> == <double, int, int>. Otherwise, an exception is thrown.
   //! This function simplifies the usage of AmesosSmoother objects inside of templates as templates do not have to be specialized for <double, int, int> (see DirectSolver for an example).
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > GetAmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null) { 
+  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > GetAmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "AmesosSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     return Teuchos::null;
   }
   //
   template <>
-  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > GetAmesosSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact) { 
-    return rcp( new AmesosSmoother(type, paramList, AFact) );
+  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > GetAmesosSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact) {
+    RCP<AmesosSmoother> smoo = rcp( new AmesosSmoother(type, paramList) );
+    smoo->SetFactory("A", AFact);
+    return smoo;
   }
 
 } // namespace MueLu

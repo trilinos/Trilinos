@@ -120,8 +120,8 @@ int main(int argc, char *argv[])
   // The number of unknowns must be at least equal to the 
   // number of processors.
   if (NumGlobalElements < NumProc) {
-    cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << endl;
+    std::cout << "numGlobalBlocks = " << NumGlobalElements 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
     exit(1);
   }
 
@@ -275,11 +275,11 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_TEUCHOS_EXTENDED
   // Write the parameter list to a file
-  cout << "Writing parameter list to \"input.xml\"" << endl;
+  std::cout << "Writing parameter list to \"input.xml\"" << std::endl;
   Teuchos::writeParameterListToXmlFile(*paramList, "input.xml");
 
   // Read in the parameter list from a file
-  cout << "Reading parameter list from \"input.xml\"" << endl;
+  std::cout << "Reading parameter list from \"input.xml\"" << std::endl;
   Teuchos::RCP<Teuchos::ParameterList> paramList2 = 
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::updateParametersFromXmlFile("input.xml", paramList2.ptr());
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
   LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
   if (status == LOCA::Abstract::Iterator::Finished) 
-    globalData->locaUtils->out() << "\nAll tests passed" << endl;
+    globalData->locaUtils->out() << "\nAll tests passed" << std::endl;
   else {
     if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
       globalData->locaUtils->out() 

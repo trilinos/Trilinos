@@ -46,6 +46,7 @@
 #  include <Tpetra_DirectoryImpl_decl.hpp>
 #endif
 #include <Tpetra_Distributor.hpp>
+#include <Tpetra_Map.hpp>
 
 namespace Tpetra {
   namespace Details {
@@ -126,7 +127,7 @@ namespace Tpetra {
 
       // Make room for the min global ID on each proc, plus one
       // entry at the end for the max cap.
-      allMinGIDs_.resize (comm->getSize () + 1);
+      allMinGIDs_ = arcp<GO>(comm->getSize () + 1);
       // Get my process' min global ID.
       GO minMyGID = map->getMinGlobalIndex ();
       // Gather all of the min global IDs into the first getSize()
@@ -135,8 +136,8 @@ namespace Tpetra {
                                    allMinGIDs_.getRawPtr ());
       // Put the max cap at the end.  Adding one lets us write loops
       // over the global IDs with the usual strict less-than bound.
-      allMinGIDs_.back() = map->getMaxAllGlobalIndex() +
-        Teuchos::OrdinalTraits<GO>::one();
+      allMinGIDs_[comm->getSize ()] = map->getMaxAllGlobalIndex()
+                                      + Teuchos::OrdinalTraits<GO>::one();
     }
 
     template<class LO, class GO, class NT>
@@ -231,16 +232,11 @@ namespace Tpetra {
         { // We go through all this trouble to avoid overflow and
           // signed / unsigned casting mistakes (that were made in
           // previous versions of this code).
-          const GO one = Teuchos::OrdinalTraits<GO>::one();
-          const GO two = one + one;
-          const GO nOverP_GID = static_cast<GO> (nOverP);
+          const GO one = as<GO> (1);
+          const GO two = as<GO> (2);
+          const GO nOverP_GID = as<GO> (nOverP);
           const GO lowerBound = GID / std::max(nOverP_GID, one) + two;
-          // It's probably not OK to cast this to int in general.  It
-          // works as long as |GID| <= the global number of entries
-          // and nOverP is appropriately sized for int.  Trouble may
-          // ensue if the index base has an exotic value.
-          const int lowerBound_int = static_cast<int> (lowerBound);
-          curRank = std::min (lowerBound_int, numProcs - 1);
+          curRank = as<int>(std::min(lowerBound, as<GO>(numProcs - 1)));
         }
         bool found = false;
         while (curRank >= 0 && curRank < numProcs) {
@@ -316,6 +312,8 @@ namespace Tpetra {
       // The "Directory Map" (see below) will have a range of elements
       // from the minimum to the maximum GID of the user Map, and a
       // minimum GID of minAllGID from the user Map.
+      //
+      // FIXME (mfh 13 Jan 2013) See Bug 5822.
       const global_size_t numGlobalEntries = maxAllGID - minAllGID + 1;
 
       // We can't afford to replicate the whole directory on each
@@ -336,11 +334,18 @@ namespace Tpetra {
       // it means yet.
       //
       // Allocate process ID List and LID list.  Initialize to
-      // invalid values, in case the user global element list does
-      // fill all IDs from minAllGID to maxAllGID (e.g., allows
-      // global indices to be all even integers).
-      nodeIDs_.resize (dir_numMyEntries, -1);
-      LIDs_.resize (dir_numMyEntries, LINVALID);
+      // invalid values, in case the user global element list does not
+      // fill all IDs from minAllGID to maxAllGID.
+      //
+      // FIXME (mfh 13 Jan 2013) See Bug 5822.  dir_numMyEntries may
+      // be quite large if the difference between the smallest and
+      // largest GID on all processes is large, even if the actual
+      // total number of GIDs is small (i.e., if the noncontiguous Map
+      // is very "sparse").
+      nodeIDs_ = arcp<int>(dir_numMyEntries);
+      std::fill (nodeIDs_.getRawPtr (), nodeIDs_.getRawPtr () + dir_numMyEntries, -1);
+      LIDs_ = arcp<LO>(dir_numMyEntries);
+      std::fill (LIDs_.getRawPtr (), LIDs_.getRawPtr () + dir_numMyEntries, LINVALID);
 
       // Get list of process IDs that own the directory entries for the
       // Map GIDs.  These will be the targets of the sends that the
@@ -478,25 +483,60 @@ namespace Tpetra {
       distor.createFromRecvs (globalIDs, dirImages (), sendGIDs, sendImages);
       const size_t numSends = sendGIDs.size ();
 
+      //
+      // mfh 13 Nov 2012:
+      //
+      // The code below temporarily stores LO, GO, and int values in
+      // an array of global_size_t.  If one of the signed types (LO
+      // and GO should both be signed) happened to be -1 (or some
+      // negative number, but -1 is the one that came up today), then
+      // conversion to global_size_t will result in a huge
+      // global_size_t value, and thus conversion back may overflow.
+      // (Teuchos::as doesn't know that we meant it to be an LO or GO
+      // all along.)
+      //
+      // The overflow normally would not be a problem, since it would
+      // just go back to -1 again.  However, Teuchos::as does range
+      // checking on conversions in a debug build, so it throws an
+      // exception (std::range_error) in this case.  Range checking is
+      // generally useful in debug mode, so we don't want to disable
+      // this behavior globally.
+      //
+      // We solve this problem by forgoing use of Teuchos::as for the
+      // conversions below from LO, GO, or int to global_size_t, and
+      // the later conversions back from global_size_t to LO, GO, or
+      // int.
+      //
+      // I've recorded this discussion as Bug 5760.
+      //
+
       //    global_size_t >= GO
       //    global_size_t >= size_t >= int
       //    global_size_t >= size_t >= LO
       // Therefore, we can safely store all of these in a global_size_t
       Array<global_size_t> exports (packetSize * numSends);
       {
+        // Packet format:
+        // - If computing LIDs: (GID, PID, LID)
+        // - Otherwise:         (GID, PID)
+        //
+        // "PID" means "process ID" (a.k.a. "node ID," a.k.a. "rank").
         LO curLID;
         typename Array<global_size_t>::iterator exportsIter = exports.begin();
         typename ArrayRCP<GO>::const_iterator gidIter = sendGIDs.begin();
         for ( ; gidIter != sendGIDs.end(); ++gidIter) {
-          *exportsIter++ = as<global_size_t> (*gidIter);
+          // Don't use as() here (see above note).
+          *exportsIter++ = static_cast<global_size_t> (*gidIter);
           curLID = directoryMap_->getLocalElement (*gidIter);
           TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
             Teuchos::typeName (*this) << "::getEntriesImpl(): The Directory "
             "Map's global ID " << *gidIter << " does not have a corresponding "
             "local ID.  Please report this bug to the Tpetra developers.");
-          *exportsIter++ = as<global_size_t> (nodeIDs_[curLID]);
+          // Don't use as() here (see above note).
+          *exportsIter++ = static_cast<global_size_t> (nodeIDs_[curLID]);
           if (computeLIDs) {
-            *exportsIter++ = as<global_size_t> (LIDs_[curLID]);
+            // Don't use as() here (see above note).
+            *exportsIter++ = static_cast<global_size_t> (LIDs_[curLID]);
           }
         }
       }
@@ -504,6 +544,10 @@ namespace Tpetra {
       Array<global_size_t> imports (packetSize * distor.getTotalReceiveLength ());
       distor.doPostsAndWaits (exports ().getConst (), packetSize, imports ());
 
+      //
+      // mfh 13 Nov 2012: See note above on conversions between
+      // global_size_t and LO, GO, or int.
+      //
       typename Array<global_size_t>::iterator ptr = imports.begin();
       const size_t numRecv = numEntries - numMissing;
 
@@ -518,14 +562,17 @@ namespace Tpetra {
       typedef typename Array<GO>::iterator IT;
       // we know these conversions are in range, because we loaded this data
       for (size_t i = 0; i < numRecv; ++i) {
-        GO curGID = as<GO> (*ptr++);
+        // Don't use as() here (see above note).
+        GO curGID = static_cast<GO> (*ptr++);
         std::pair<IT, IT> p1 = std::equal_range (sortedIDs.begin(), sortedIDs.end(), curGID);
         if (p1.first != p1.second) {
           //found it
           size_t j = p1.first - sortedIDs.begin();
-          nodeIDs[offset[j]] = as<int>(*ptr++);
+          // Don't use as() here (see above note).
+          nodeIDs[offset[j]] = static_cast<int>(*ptr++);
           if (computeLIDs) {
-            localIDs[offset[j]] = as<LO>(*ptr++);
+            // Don't use as() here (see above note).
+            localIDs[offset[j]] = static_cast<LO>(*ptr++);
           }
           if (nodeIDs[offset[j]] == -1) {
             res = IDNotPresent;
@@ -543,9 +590,10 @@ namespace Tpetra {
 // Must be expanded from within the Tpetra::Details namespace!
 //
 #define TPETRA_DIRECTORY_IMPL_INSTANT(LO,GO,NODE)                     \
-  template<> class Directory< LO , GO , NODE >;                       \
-  template<> class ReplicatedDirectory< LO , GO , NODE >;             \
-  template<> class DistributedContiguousDirectory< LO , GO , NODE >;  \
-  template<> class DistributedNoncontiguousDirectory< LO , GO , NODE >;
+  template class Directory< LO , GO , NODE >;                         \
+  template class ReplicatedDirectory< LO , GO , NODE >;               \
+  template class DistributedContiguousDirectory< LO , GO , NODE >;    \
+  template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
+
 
 #endif // __Tpetra_DirectoryImpl_def_hpp

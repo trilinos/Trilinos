@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <vector>
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 
@@ -52,16 +53,17 @@
 //
 //  Returns:  N_rows and nnz replicated across all processes
 //
-void Trilinos_Util_CountMatrixMarket( const char *data_file, 
+template<typename int_type>
+void TTrilinos_Util_CountMatrixMarket( const char *data_file, 
 				      std::vector<int> &non_zeros,
-				      int &N_rows, int &nnz, 
+				      int_type &N_rows, int_type &nnz, 
 				      const Epetra_Comm  &comm) { 
 
   FILE *in_file ;
   
   N_rows = 0 ; 
   nnz = 0 ; 
-  int vecsize = non_zeros.size(); 
+  int_type vecsize = non_zeros.size(); 
   assert( vecsize == 0 ) ; 
   const int BUFSIZE = 800 ; 
   char buffer[BUFSIZE] ; 
@@ -85,16 +87,21 @@ void Trilinos_Util_CountMatrixMarket( const char *data_file,
     if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
     fgets( buffer, BUFSIZE, in_file ) ;
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
-      int i, j; 
+      int_type i, j; 
       float val ; 
-      sscanf( buffer, "%d %d %f", &i, &j, &val ) ; 
-      int needvecsize = i;
+      if(sizeof(int) == sizeof(int_type))
+        sscanf( buffer, "%d %d %f", &i, &j, &val ) ; 
+      else if(sizeof(long long) == sizeof(int_type))
+        sscanf( buffer, "%lld %lld %f", &i, &j, &val ) ; 
+      else
+        assert(false);
+      int_type needvecsize = i;
       if (symmetric) needvecsize = EPETRA_MAX(i,j) ;
       if ( needvecsize >= vecsize ) {
-	int oldvecsize = vecsize; 
-	vecsize += EPETRA_MAX(1000,needvecsize-vecsize) ; 
+	int_type oldvecsize = vecsize; 
+	vecsize += EPETRA_MAX((int_type) 1000,needvecsize-vecsize) ; 
 	non_zeros.resize(vecsize) ; 
-        for ( int i= oldvecsize; i < vecsize ; i++ ) non_zeros[i] = 0 ; 
+        for ( int_type i= oldvecsize; i < vecsize ; i++ ) non_zeros[i] = 0 ; 
       }
       N_rows = EPETRA_MAX( N_rows, i ) ; 
       if (symmetric) N_rows = EPETRA_MAX( N_rows, j ) ; 
@@ -119,3 +126,25 @@ void Trilinos_Util_CountMatrixMarket( const char *data_file,
   comm.Broadcast( &nnz, 1, 0 );
   return;
 }
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
+void Trilinos_Util_CountMatrixMarket( const char *data_file, 
+				      std::vector<int> &non_zeros,
+				      int &N_rows, int &nnz, 
+				      const Epetra_Comm  &comm) {
+  TTrilinos_Util_CountMatrixMarket<int>(data_file, non_zeros, N_rows, nnz, comm);
+}
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+void Trilinos_Util_CountMatrixMarket( const char *data_file, 
+				      std::vector<int> &non_zeros,
+				      long long &N_rows, long long &nnz, 
+				      const Epetra_Comm  &comm) {
+  TTrilinos_Util_CountMatrixMarket<long long>(data_file, non_zeros, N_rows, nnz, comm);
+}
+
+#endif

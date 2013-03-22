@@ -65,7 +65,7 @@ namespace Xpetra {
   public:
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     //! Destructor.
     virtual ~DistObject() { }
@@ -75,24 +75,24 @@ namespace Xpetra {
     //! @name Public methods for redistributing data
     //@{
 
-    //! Import using an Import object ("forward mode").
+    //! Import data into this object using an Import object ("forward mode").
     virtual void doImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)= 0;
 
-    //! Export using an Export object ("forward mode").
-    virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &dest, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM)= 0;
+    //! Export data into this object using an Export object ("forward mode").
+    virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM)= 0;
 
-    //! Import using an Export object ("reverse mode").
+    //! Import data into this object using an Export object ("reverse mode").
     virtual void doImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM)= 0;
 
-    //! Export using an Import object ("reverse mode").
-    virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &dest, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)= 0;
+    //! Export data into this object using an Import object ("reverse mode").
+    virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)= 0;
 
     //@}
 
     //! @name Attribute accessor methods
     //@{
 
-    //! The Map with which this DistObject was constructed.
+    //! The Map describing the parallel distribution of this object.
     virtual const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getMap() const = 0;
 
     //@}

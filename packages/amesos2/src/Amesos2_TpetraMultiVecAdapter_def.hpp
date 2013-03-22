@@ -217,6 +217,7 @@ namespace Amesos2 {
 		Node> >::describe(Teuchos::FancyOStream& os,
 				  const Teuchos::EVerbosityLevel verbLevel) const
   {
+      mv_->describe(os, verbLevel);
 
   }
 

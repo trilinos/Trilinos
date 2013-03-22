@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Map.h"
 
 
@@ -51,21 +52,9 @@ Epetra_Map::Epetra_Map(int numGlobalElements, int indexBase, const Epetra_Comm& 
 {
   SetLabel("Epetra::Map");
 }
-
-Epetra_Map::Epetra_Map(unsigned int numGlobalElements, int indexBase, const Epetra_Comm& comm)
-  : Epetra_BlockMap(numGlobalElements, 1, indexBase, comm) // Map is just a special case of BlockMap
-{
-  SetLabel("Epetra::Map");
-}
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-Epetra_Map::Epetra_Map(long long numGlobalElements, int indexBase, const Epetra_Comm& comm)
-  : Epetra_BlockMap(numGlobalElements, 1, indexBase, comm) // Map is just a special case of BlockMap
-{
-  SetLabel("Epetra::Map");
-}
-
-Epetra_Map::Epetra_Map(unsigned long long numGlobalElements, int indexBase, const Epetra_Comm& comm)
+Epetra_Map::Epetra_Map(long long numGlobalElements, long long indexBase, const Epetra_Comm& comm)
   : Epetra_BlockMap(numGlobalElements, 1, indexBase, comm) // Map is just a special case of BlockMap
 {
   SetLabel("Epetra::Map");
@@ -79,21 +68,9 @@ Epetra_Map::Epetra_Map(int numGlobalElements, int numMyElements, int indexBase, 
 {
   SetLabel("Epetra::Map");
 }
-
-Epetra_Map::Epetra_Map(unsigned int numGlobalElements, int numMyElements, int indexBase, const Epetra_Comm& comm)
-  : Epetra_BlockMap(numGlobalElements, numMyElements, 1, indexBase, comm) // Map is just a special case of BlockMap
-{
-  SetLabel("Epetra::Map");
-}
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements, int indexBase, const Epetra_Comm& comm)
-  : Epetra_BlockMap(numGlobalElements, numMyElements, 1, indexBase, comm) // Map is just a special case of BlockMap
-{
-  SetLabel("Epetra::Map");
-}
-
-Epetra_Map::Epetra_Map(unsigned long long numGlobalElements, int numMyElements, int indexBase, const Epetra_Comm& comm)
+Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements, long long indexBase, const Epetra_Comm& comm)
   : Epetra_BlockMap(numGlobalElements, numMyElements, 1, indexBase, comm) // Map is just a special case of BlockMap
 {
   SetLabel("Epetra::Map");
@@ -113,12 +90,38 @@ Epetra_Map::Epetra_Map(int numGlobalElements, int numMyElements,
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements,
                        const long long * myGlobalElements,
-                       int indexBase, const Epetra_Comm& comm)
+                       long long indexBase, const Epetra_Comm& comm)
   : Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, 1, indexBase, comm) // Map is just a special case of BlockMap
 {
   SetLabel("Epetra::Map");
 }
 #endif
+
+//==============================================================================
+// Epetra_Map constructor for a user-defined arbitrary distribution of constant block size elements w/ user provided globals.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+Epetra_Map::Epetra_Map(int numGlobalElements, int numMyElements,
+                       const int * myGlobalElements,
+                       int indexBase, const Epetra_Comm& comm,
+		       bool UserIsDistributedGlobal,
+		       int UserMinAllGID, int UserMaxAllGID)
+  : Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, 1, indexBase, comm, UserIsDistributedGlobal, UserMinAllGID, UserMaxAllGID) // Map is just a special case of BlockMap
+{
+  SetLabel("Epetra::Map");
+}
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements,
+                       const long long * myGlobalElements,
+                       int indexBase, const Epetra_Comm& comm,
+		       bool UserIsDistributedGlobal,
+		       long long UserMinAllGID, long long UserMaxAllGID)
+  : Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, 1, indexBase, comm, UserIsDistributedGlobal, UserMinAllGID, UserMaxAllGID) // Map is just a special case of BlockMap
+{
+  SetLabel("Epetra::Map");
+}
+#endif
+
 //==============================================================================
 Epetra_Map::Epetra_Map(const Epetra_Map& map)
   : Epetra_BlockMap(map) // Map is just a special case of BlockMap

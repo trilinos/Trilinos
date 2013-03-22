@@ -1,0 +1,2 @@
+# Make sure the build directory does not get checked in
+build

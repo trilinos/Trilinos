@@ -114,7 +114,7 @@ namespace MueLu {
 
   public:
 
-    TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, const std::string & varName);
+    TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, const std::string& varName);
 
     virtual ~TopSmootherFactory();
 
@@ -123,7 +123,8 @@ namespace MueLu {
     void Build(Level & level) const;
 
   private:
-    RCP<const FactoryBase> smootherFact_;
+    RCP<const FactoryBase> presmootherFact_;
+    RCP<const FactoryBase> postsmootherFact_;
   };
 
 } // namespace MueLu

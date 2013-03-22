@@ -593,6 +593,9 @@ AztecOOLinearOpWithSolve::solveImpl(
       tol = solveCriteria->requestedTol;
       isDefaultSolveCriteria = false;
     }
+    if (nonnull(solveCriteria->extraParameters)) {
+      maxIterations = solveCriteria->extraParameters->get("Maximum Iterations",maxIterations);
+    }
   }
 
   //
@@ -768,6 +771,9 @@ AztecOOLinearOpWithSolve::solveImpl(
     overallSolveStatus.extraParameters = Teuchos::parameterList ();
   }
   overallSolveStatus.extraParameters->set ("AztecOO/Iteration Count",
+                                            totalIterations);
+  // package independent version of the same
+  overallSolveStatus.extraParameters->set ("Iteration Count",
                                             totalIterations);
   overallSolveStatus.extraParameters->set ("AztecOO/Achieved Tolerance",
                                             overallSolveStatus.achievedTol);

@@ -44,6 +44,7 @@
 #ifndef KOKKOSARRAY_STOCHASTICPRODUCTTENSOR_HPP
 #define KOKKOSARRAY_STOCHASTICPRODUCTTENSOR_HPP
 
+#include <ostream>
 #include <KokkosArray_ProductTensor.hpp>
 
 namespace KokkosArray {
@@ -71,61 +72,92 @@ namespace KokkosArray {
  *  The bases space is sparse due to orthogonality within the
  *  expansion.
  */
-template< typename ValueType , class BasesType , class Device ,
+template< typename ValueType , class PolynomialType , class Device ,
           template< unsigned , typename , class >
           class TensorType = SparseProductTensor >
 class StochasticProductTensor {
 public:
-  typedef Device                           device_type ;
-  typedef typename device_type::size_type  size_type ;
-  typedef ValueType                        value_type ;
 
-  /** \brief  How many variables are being expanded. */
-  size_type variable_count() const ;
+  typedef Device                                      device_type ;
+  typedef typename device_type::size_type             size_type ;
+  typedef ValueType                                   value_type ;
+  typedef TensorType< 3 , value_type , device_type >  tensor_type ;
 
-  /** \brief  Polynomial degree of a given variable */
-  template< typename iType >
-  size_type variable_degree( const iType & ) const ;
+private:
+
+  tensor_type                                     m_tensor ;
+  KokkosArray::View< size_type** , device_type >  m_degree_map ;
+  size_type                                       m_variable ;
+
+  template< class T , class I >
+  friend class Impl::CreateSparseProductTensor ;
+
+public:
+
+  inline
+  ~StochasticProductTensor() {}
+
+  inline
+  StochasticProductTensor()
+    : m_tensor()
+    , m_degree_map()
+    , m_variable(0)
+    {}
+
+  inline
+  StochasticProductTensor( const StochasticProductTensor & rhs )
+    : m_tensor(       rhs.m_tensor )
+    , m_degree_map(   rhs.m_degree_map )
+    , m_variable(     rhs.m_variable )
+    {}
+
+  inline
+  StochasticProductTensor & operator = ( const StochasticProductTensor & rhs )
+  {
+    m_tensor       = rhs.m_tensor ;
+    m_degree_map   = rhs.m_degree_map ;
+    m_variable     = rhs.m_variable ;
+    return *this ;
+  }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  const tensor_type & tensor() const { return m_tensor ; }
 
   /** \brief  Dimension: number of bases and
    *          length of the vector block (and tensor).
    */
-  size_type dimension() const ;
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type dimension() const { return m_tensor.dimension(); }
+
+  /** \brief  How many variables are being expanded. */
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type variable_count() const { return m_variable ; }
+
+  /** \brief  Polynomial degree of a given variable */
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type variable_degree( const iType & iVariable ) const
+    { return m_degree_map( 0 , iVariable ); }
 
   /** \brief  Basis function 'iBasis' is the product of
    *          'variable_count()' polynomials.  Return the
    *          polynomial degree of component 'iVariable'.
    */
   template< typename iType , typename jType >
-  size_type bases_degree( const iType & iBasis , const jType & iVariable ) const ;
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type bases_degree( const iType & iBasis , const jType & iVariable ) const
+    { return m_degree_map( iBasis + 1 , iVariable ); }
 
-  /** \brief  Number of non-zero entries in the tensor < \psi_I , \psi_J , \psi_K >
-   *
-   *  The tensor is symmetric so only unique entries are stored with I >= J >= K
-   */
-  size_type tensor_count() const ;
-
-  /** \brief  Coordinates of the 'iEntry' non-zero entry */
-  template< typename iType , typename jType >
-  size_type tensor_coordinate( const iType & iEntry , const jType & coord ) const ;
-
-  /** \brief  Value of the 'iEntry' non-zero entry */
-  template< typename iType >
-  const value_type & tensor_value( const iType & iEntry ) const ;
-
-  /** \brief  Storage size for block coefficients. */
-  size_type size() const ;
-
-  ~StochasticProductTensor();
-  StochasticProductTensor();
-  StochasticProductTensor( const StochasticProductTensor & );
-  StochasticProductTensor & operator = ( const StochasticProductTensor & );
-
-private:
-
-  template< class T , class I >
-  friend
-  class CreateSparseProductTensor ;
+  void print( std::ostream & s ) const
+  {
+    for ( unsigned i = 1 ; i < m_degree_map.dimension_0() ; ++i ) {
+      s << "  bases[" << i - 1 << "] (" ;
+      for ( unsigned j = 0 ; j < m_degree_map.dimension_1() ; ++j ) {
+        s << " " << m_degree_map(i,j);
+      }
+      s << " )" << std::endl ;
+    }
+  }
 };
 
 //----------------------------------------------------------------------------

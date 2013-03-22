@@ -51,6 +51,7 @@
 #include <KokkosArray_View.hpp>
 #include <SparseLinearSystem.hpp>
 #include <SparseLinearSystemFill.hpp>
+#include <ImplicitFunctors.hpp>
 #include <FEMesh.hpp>
 
 //----------------------------------------------------------------------------
@@ -89,18 +90,10 @@ struct PerformanceData {
 
 //----------------------------------------------------------------------------
 
-template< typename ScalarType , typename ScalarCoordType , class Device >
-struct ElementComputation ;
-
-template< typename ScalarType , typename ScalarCoordType , class Device >
-struct DirichletBoundary ;
-
-//----------------------------------------------------------------------------
-
 template< typename Scalar , class FixtureType >
 PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
-                     const int global_max_x ,
-                     const int global_max_y ,
+                     const int , // global_max_x ,
+                     const int , // global_max_y ,
                      const int global_max_z ,
                      const bool print_sample )
 {
@@ -116,7 +109,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
   const comm::Machine machine = mesh.parallel_data_map.machine ;
 
-  const size_t element_count = mesh.elem_node_ids.dimension(0);
+  const size_t element_count = mesh.elem_node_ids.dimension_0();
 
   const size_t iteration_limit = 200 ;
   const double residual_tolerance = 1e-14 ;
@@ -129,7 +122,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Sparse linear system types:
 
-  typedef KokkosArray::View< Scalar[] , device_type >   vector_type ;
+  typedef KokkosArray::View< Scalar* , device_type >   vector_type ;
   typedef KokkosArray::CrsMatrix< Scalar , device_type >     matrix_type ;
   typedef typename matrix_type::graph_type         matrix_graph_type ;
   typedef typename matrix_type::coefficients_type  matrix_coefficients_type ;
@@ -175,10 +168,10 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   // Allocate linear system coefficients and rhs:
 
   const size_t local_owned_length =
-    linsys_matrix.graph.row_map.dimension(0) - 1 ;
+    linsys_matrix.graph.row_map.dimension_0() - 1 ;
 
   linsys_matrix.coefficients =
-    matrix_coefficients_type( "coeff" , linsys_matrix.graph.entries.dimension(0) );
+    matrix_coefficients_type( "coeff" , linsys_matrix.graph.entries.dimension_0() );
 
   linsys_rhs      = vector_type( "rhs" , local_owned_length );
   linsys_solution = vector_type( "solution" , local_owned_length );
@@ -268,10 +261,12 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 //----------------------------------------------------------------------------
 
 template< typename Scalar , class Device >
-void driver( const char * label ,
+void driver( const char * const label ,
              comm::Machine machine ,
+             const int gang_count ,
              const int elem_count_beg ,
-             const int elem_count_end , int runs )
+             const int elem_count_end ,
+             const int runs )
 {
   typedef Scalar              scalar_type ;
   typedef Device              device_type ;
@@ -283,6 +278,9 @@ void driver( const char * label ,
                           fixture_element_type > fixture_type ;
 
   typedef typename fixture_type::FEMeshType mesh_type ;
+
+  const size_t proc_count = comm::size( machine );
+  const size_t proc_rank  = comm::rank( machine );
 
   if ( elem_count_beg == 0 || elem_count_end == 0 || runs == 0 ) return ;
 
@@ -301,8 +299,7 @@ void driver( const char * label ,
     const int n  = ix * iy * iz ;
 
     mesh_type mesh =
-      fixture_type::create( comm::size( machine ) ,
-                            comm::rank( machine ) ,
+      fixture_type::create( proc_count , proc_rank , gang_count ,
                             ix , iy , iz );
 
     mesh.parallel_data_map.machine = machine ;

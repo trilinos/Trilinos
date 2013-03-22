@@ -116,9 +116,9 @@ int main(int argc, char *argv[])
 
   // The number of unknowns must be at least equal to the number of processors.
   if (NumGlobalElements < NumProc) {
-    cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << endl;
-    cout << "Test failed!" << endl;
+    std::cout << "numGlobalBlocks = " << NumGlobalElements 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
+    std::cout << "Test failed!" << std::endl;
     throw "NOX Error";
   }
 
@@ -266,10 +266,10 @@ int main(int argc, char *argv[])
   {
     if (printing.isPrintType(NOX::Utils::Parameters)) 
     {
-      printing.out() << endl << "Final Parameters" << endl
-	   << "****************" << endl;
+      printing.out() << std::endl << "Final Parameters" << std::endl
+	   << "****************" << std::endl;
       solver->getList().print(printing.out());
-      printing.out() << endl;
+      printing.out() << std::endl;
     }
   }
 
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
   if (solvStatus != NOX::StatusTest::Converged) {
       status = 1;
       if (printing.isPrintType(NOX::Utils::Error))
-	printing.out() << "Nonlinear solver failed to converge!" << endl;
+	printing.out() << "Nonlinear solver failed to converge!" << std::endl;
   }
   // 2. Nonlinear solve iterations (16)
   if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 16)
@@ -302,15 +302,15 @@ int main(int argc, char *argv[])
     status = 3;
   // Summarize test results 
   if (status == 0)
-    printing.out() << "Test passed!" << endl;
+    printing.out() << "Test passed!" << std::endl;
   else 
-    printing.out() << "Test failed!" << endl;
+    printing.out() << "Test failed!" << std::endl;
   
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  printing.out() << "Status = " << status << endl;
+  printing.out() << "Status = " << status << std::endl;
 
   // Final return value (0 = successfull, non-zero = failure)
   return status;

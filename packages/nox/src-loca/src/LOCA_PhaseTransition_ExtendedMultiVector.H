@@ -119,7 +119,7 @@ namespace LOCA {
 	 * given multivector
 	 */
 	ExtendedMultiVector(const ExtendedMultiVector& source, 
-			    const vector<int>& index, bool view);
+			    const std::vector<int>& index, bool view);
 
 	//! Destructor.
 	virtual ~ExtendedMultiVector();
@@ -152,14 +152,14 @@ namespace LOCA {
 	 * columns are copies of the columns of \c *this given by \c index.
 	 */
 	virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-	subCopy(const vector<int>& index) const;
+	subCopy(const std::vector<int>& index) const;
 
 	/*! 
 	 * \brief Creates a new multi-vector with \c index.size() columns that 
 	 * shares the columns of \c *this given by \c index.
 	 */
 	virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-	subView(const vector<int>& index) const;
+	subView(const std::vector<int>& index) const;
 
 	//! Returns the solution vector component of extended multivector
 	virtual Teuchos::RCP<const NOX::Abstract::MultiVector> 

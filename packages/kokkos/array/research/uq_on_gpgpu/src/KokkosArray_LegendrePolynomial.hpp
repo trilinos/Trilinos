@@ -44,6 +44,9 @@
 #ifndef KOKKOSARRAY_LEGENDREPOLYNOMIALS_HPP
 #define KOKKOSARRAY_LEGENDREPOLYNOMIALS_HPP
 
+#include <cmath>
+#include <KokkosArray_Macros.hpp>
+
 namespace KokkosArray {
 
 //----------------------------------------------------------------------------
@@ -59,19 +62,45 @@ namespace KokkosArray {
  *                            = kd_{k,n} * 2 / ( 2 * k + 1 ) 
  *
  */
-template< unsigned MaximumDegree , class Device >
+template< unsigned MaximumDegree >
 class NormalizedLegendrePolynomialBases {
 public:
-  template< typename Scalar >
-  void evaluate( unsigned P , Scalar x , Scalar values[] ) const ;
 
-  NormalizedLegendrePolynomialBases();
+  template< typename Scalar >
+  KOKKOSARRAY_INLINE_FUNCTION
+  void evaluate( unsigned N , Scalar x , Scalar value[] ) const
+  {
+    double vkm1 = 0 ;
+    double vk   = 1 ;
+
+    value[0] = vk * m_norm[0];
+
+    for ( unsigned k = 1 ; k <= N ; ++k ) {
+      const double vkm2 = vkm1 ;
+      vkm1 = vk ;
+      vk = ( vkm1 * x * (2*k-1) - vkm2 * (k-1) ) / double(k);
+      value[k] = vk * m_norm[k];
+    }
+  }
+
+  NormalizedLegendrePolynomialBases()
+  {
+    for ( unsigned k = 0 ; k <= MaximumDegree ; ++k ) {
+      m_norm[k] = std::sqrt( 1.0 + 2.0*k );
+    }
+  }
+
+private:
+
+  double m_norm[ MaximumDegree + 1 ];
+
 };
 
 //----------------------------------------------------------------------------
 
 namespace Impl {
-void gauss_legendre( unsigned n , double point[] , double weight[] );
+unsigned guass_legendre_available( unsigned n );
+void     gauss_legendre( unsigned n , double point[] , double weight[] );
 }
 
 //----------------------------------------------------------------------------
@@ -85,14 +114,21 @@ private:
   GaussLegendre( const GaussLegendre & );
   GaussLegendre operator = ( const GaussLegendre & );
 
-  enum { Maximum   = unsigned(20) };
-  enum { Available = unsigned(32) };
-  enum { Desired   = unsigned(1 + PolyDegree / 2) };
+  enum { Desired = unsigned( 1 + PolyDegree / 2 ) };
 
 public:
-  enum { N = unsigned(Desired) < unsigned(Maximum)
-           ? Desired
-           : ( unsigned(Desired) <= unsigned(Available) ? Available : 0 ) };
+
+  /** \brief  N = number of points and weights for available 
+   *          integration rules that satisfy the desired degree.
+   */
+
+  enum { N = 1024 < Desired ?    0 : (
+              512 < Desired ? 1024 : (
+              256 < Desired ?  512 : (
+              128 < Desired ?  256 : (
+               64 < Desired ?  128 : (
+               32 < Desired ?   64 : (
+               20 < Desired ?   32 : Desired )))))) };
 
   ~GaussLegendre() {}
   GaussLegendre() { Impl::gauss_legendre( N , points , weights ); }

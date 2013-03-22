@@ -106,9 +106,8 @@ class SystemInterface
   int time_step_start; // First step to compare (1-based)
   int time_step_stop;  // Last step to compare
   int time_step_increment;  // Step increment
-  int time_step_start2; // First step to compare (1-based) (2nd file)
-  int time_step_stop2;  // Last step to compare (2nd file)
-  int time_step_increment2;  // Step increment  (2nd file)
+  
+  std::pair<int,int> explicit_steps;  // Only compare these two steps (db1:db2) if nonzero.
   
   int max_number_of_names;
   

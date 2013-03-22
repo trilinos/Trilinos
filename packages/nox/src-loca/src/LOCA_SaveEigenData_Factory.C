@@ -71,11 +71,11 @@ LOCA::SaveEigenData::Factory::create(
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
-  string methodName = "LOCA::SaveEigenData::Factory::create()";
+  std::string methodName = "LOCA::SaveEigenData::Factory::create()";
   Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> strategy;
 
   // Get name of strategy
-  const string& name = strategyName(*eigenParams);
+  const std::string& name = strategyName(*eigenParams);
 
   if (name == "Default")
     strategy = 
@@ -85,7 +85,7 @@ LOCA::SaveEigenData::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = eigenParams->get(
+    std::string userDefinedName = eigenParams->get(
 					  "User-Defined Save Eigen Data Name",
 					  "???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
@@ -107,7 +107,7 @@ LOCA::SaveEigenData::Factory::create(
   return strategy;
 }
 
-const string&
+const std::string&
 LOCA::SaveEigenData::Factory::strategyName(
 				  Teuchos::ParameterList& eigenParams) const
 {

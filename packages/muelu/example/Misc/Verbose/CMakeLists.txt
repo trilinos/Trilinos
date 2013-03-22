@@ -1,9 +1,11 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-TRIBITS_ADD_EXECUTABLE(
-  Verbose
-  SOURCES Verbose.cpp
-  COMM serial mpi
-  DEPLIBS muelu xpetra
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Ifpack)
+  TRIBITS_ADD_EXECUTABLE(
+    Verbose
+    SOURCES Verbose.cpp
+    COMM serial mpi
+    DEPLIBS muelu xpetra
   )
+ENDIF()

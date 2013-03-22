@@ -60,7 +60,8 @@
 
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
 
-#include "MueLu_Graph.hpp"
+//#include "MueLu_Graph.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
@@ -73,8 +74,8 @@ OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::OnePt
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const {
-  Monitor m(*this, "Coarsen Uncoupled (OnePtAggregationAlgorithm)");
+LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
+  Monitor m(*this, "BuildAggregates");
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
   const int myRank = graph.GetComm()->getRank();
@@ -90,7 +91,6 @@ LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
   // main loop over all local rows of grpah(A)
   while (iNode1 < nRows) {
 
-  //std::cout << aggStat[iNode1] << std::endl;
     if (aggStat[iNode1] == NodeStats::ONEPT) {
 
       aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'ag'
@@ -98,8 +98,6 @@ LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
       ag.list.push_back(iNode1);
       ag.index = nLocalAggregates++;
 
-      // prepare aggStat array for next coarser level
-      coarse_aggStat[ag.index] = NodeStats::ONEPT;       // mark coarse node as "1pt aggregate"
       // finalize aggregate
       for(size_t k=0; k<ag.list.size(); k++) {
         aggStat[ag.list[k]] = NodeStats::AGGREGATED;

@@ -256,7 +256,16 @@ norm_squared(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
 Stokhos::ProductLanczosGramSchmidtPCEBasis<ordinal_type, value_type>::
-computeTripleProductTensor(ordinal_type order) const
+computeTripleProductTensor() const
+
+{
+  return Teuchos::null;
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Stokhos::ProductLanczosGramSchmidtPCEBasis<ordinal_type, value_type>::
+computeLinearTripleProductTensor() const
 
 {
   return Teuchos::null;
@@ -273,7 +282,7 @@ evaluateZero(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::ProductLanczosGramSchmidtPCEBasis<ordinal_type, value_type>::
-evaluateBases(const Teuchos::Array<value_type>& point,
+evaluateBases(const Teuchos::ArrayView<const value_type>& point,
 	      Teuchos::Array<value_type>& basis_vals) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented!");

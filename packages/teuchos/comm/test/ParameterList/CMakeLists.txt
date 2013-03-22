@@ -1,0 +1,25 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
+
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ParameterList_UnitTest_Parallel
+  SOURCES ParameterList_UnitTest_Parallel.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  ParameterList_UnitTest_Parallel
+  NAME_POSTFIX one
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyPLXmlFiles
+  DEST_FILES input.xml
+  SOURCE_PREFIX "_"
+  EXEDEPS ParameterList_UnitTest_Parallel
+  )

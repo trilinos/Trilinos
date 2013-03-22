@@ -62,9 +62,9 @@
 #include <Epetra_Vector.h>
 #include <Epetra_LinearProblem.h>
 
-// EpetraExt includes
-#include <EpetraExt_CrsMatrixIn.h>
-#include <EpetraExt_VectorIn.h>
+// // EpetraExt includes
+// #include <EpetraExt_CrsMatrixIn.h>
+// #include <EpetraExt_VectorIn.h>
 
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>
@@ -75,11 +75,11 @@
 #include <MueLu.hpp> // TODO Usefull?
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>  
+#include <MueLu_UseShortNames.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 
 int main(int argc,char * argv[])
 {
@@ -89,7 +89,7 @@ int main(int argc,char * argv[])
   //
   // MPI initialization
   //
-  
+
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -104,7 +104,7 @@ int main(int argc,char * argv[])
   // Parameters
   //
 
-  Teuchos::CommandLineProcessor clp(false); 
+  Teuchos::CommandLineProcessor clp(false);
 
   Galeri::Xpetra::Parameters<int> matrixParameters(clp, 256); // manage parameters of the test case
   // Xpetra::Parameters              xpetraParameters(clp);   // manage parameters of xpetra
@@ -120,7 +120,7 @@ int main(int argc,char * argv[])
   }
 
   // Read in parameter list
-  Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName); 
+  Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   //
   // Construct the problem
@@ -133,11 +133,13 @@ int main(int argc,char * argv[])
   //
   //   // read in the RHS vector
   //   Epetra_Vector * ptrb = 0;
-  //   EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",A->OperatorRangeMap(),ptrb);
+  //   EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",A->MatrixRangeMap(),ptrb);
   //   RCP<const Epetra_Vector> b = rcp(ptrb);
-  
+
   RCP<const Map> map = MapFactory::createUniformContigMap(lib, matrixParameters.GetNumGlobalElements(), comm);
-  RCP<const Epetra_CrsMatrix> A = Galeri::Xpetra::CreateCrsMatrix<double, int, int, Map,  Xpetra::EpetraCrsMatrix>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList())->getEpetra_CrsMatrix();
+  RCP<Galeri::Xpetra::Problem<Map,Xpetra::EpetraCrsMatrix,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<double, int, int, Map,  Xpetra::EpetraCrsMatrix, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<const Epetra_CrsMatrix> A = Pr->BuildMatrix()->getEpetra_CrsMatrix();
 
   //
   // Allocate vectors
@@ -148,7 +150,7 @@ int main(int argc,char * argv[])
 
   RCP<Epetra_Vector> B = rcp(new Epetra_Vector(A->DomainMap()));
   B->SetSeed(846930886); B->Random();
-  
+
   //
   // Build Thyra linear algebra objects
   //
@@ -166,7 +168,7 @@ int main(int argc,char * argv[])
   linearSolverBuilder.setParameterList(paramList);              // Setup solver parameters using a Stratimikos parameter list.
 
   // Build a new "solver factory" according to the previously specified parameter list.
-  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder); 
+  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
 
   // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);

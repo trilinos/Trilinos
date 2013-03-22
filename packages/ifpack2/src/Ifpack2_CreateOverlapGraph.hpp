@@ -32,6 +32,7 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Import.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
@@ -63,13 +64,16 @@ Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > CreateOve
   const Teuchos::RCP<const MapType> DomainMap = input_graph->getDomainMap();
   const Teuchos::RCP<const MapType> RangeMap = input_graph->getRangeMap();
 
-  for (int level=1; level <= OverlapLevel; level++) {
+  for (int level=0; level < OverlapLevel; level++) {
     OldGraph = OverlapGraph;
     OldRowMap = OverlapRowMap;
 
-    Teuchos::RCP<const ImportType> OverlapImporter = OldGraph->getImporter();
+    Teuchos::RCP<const ImportType> OverlapImporter; 
+    if(level==0) OverlapImporter = input_graph->getImporter();
+    else OverlapImporter = OldGraph->getImporter();
+
     OverlapRowMap = OverlapImporter->getTargetMap();
-    if (level<OverlapLevel) {
+    if (level<OverlapLevel-1) {
       OverlapGraph = Teuchos::rcp( new GraphType(OverlapRowMap, 0) );
     }
     else {
@@ -84,6 +88,54 @@ Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > CreateOve
 
   return OverlapGraph;
 }
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CreateOverlapMatrix(const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& input_graph, int OverlapLevel)
+{
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatrixType;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> MapType;
+  typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> ImportType;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(OverlapLevel < 0, std::runtime_error, "Ifpack2::CreateOverlapMatrix: OverlapLevel must be >= 0.");
+
+  Teuchos::RCP<MatrixType> OverlapGraph;
+
+  const int numProcs = input_graph->getMap()->getComm()->getSize();
+  if (OverlapLevel == 0 || numProcs < 2) return input_graph;
+
+  Teuchos::RCP<const MapType> OverlapRowMap = input_graph->getRowMap();
+
+  Teuchos::RCP<const MatrixType> OldGraph;
+  Teuchos::RCP<const MapType> OldRowMap;
+  const Teuchos::RCP<const MapType> DomainMap = input_graph->getDomainMap();
+  const Teuchos::RCP<const MapType> RangeMap = input_graph->getRangeMap();
+
+  for (int level=0; level < OverlapLevel; level++) {
+    OldGraph = OverlapGraph;
+    OldRowMap = OverlapRowMap;
+
+    Teuchos::RCP<const ImportType> OverlapImporter; 
+    if(level==0) OverlapImporter = input_graph->getGraph()->getImporter();
+    else OverlapImporter = OldGraph->getGraph()->getImporter();
+
+    OverlapRowMap = OverlapImporter->getTargetMap();
+    if (level<OverlapLevel-1) {
+      OverlapGraph = Teuchos::rcp( new MatrixType(OverlapRowMap, 0) );
+    }
+    else {
+      // On last iteration, we want to filter out all columns except those that
+      // correspond to rows in the graph.  This assures that our matrix is square
+      OverlapGraph = Teuchos::rcp( new MatrixType(OverlapRowMap, OverlapRowMap, 0) );
+    }
+
+    OverlapGraph->doImport(*input_graph, *OverlapImporter, Tpetra::INSERT);
+    OverlapGraph->fillComplete(DomainMap, RangeMap);
+  }
+
+  return OverlapGraph;
+}
+
+
 
 }//namespace Ifpack2
 

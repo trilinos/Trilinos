@@ -3627,6 +3627,8 @@ namespace stk {
       add_field("cg_d", node_rank(), scalarDimension);
       add_field("cg_s", node_rank(), scalarDimension);
 
+      // hessian
+      add_field("cg_h", node_rank(), scalarDimension*scalarDimension);
     }
 
     void PerceptMesh::add_spacing_fields()

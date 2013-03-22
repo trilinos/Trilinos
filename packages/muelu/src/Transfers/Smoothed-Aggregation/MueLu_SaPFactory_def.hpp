@@ -46,7 +46,7 @@
 #ifndef MUELU_SAPFACTORY_DEF_HPP
 #define MUELU_SAPFACTORY_DEF_HPP
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_SaPFactory_decl.hpp"
 
@@ -59,53 +59,35 @@
 
 namespace MueLu {
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SaPFactory(RCP<const FactoryBase> InitialPFact, RCP<const FactoryBase> AFact)
-    : initialPFact_(InitialPFact), AFact_(AFact),
-      dampingFactor_(4./3), diagonalView_("current") {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< Scalar >                ("Damping factor",          4./3, "Smoothed-Aggregation damping factor");
+    validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
+    // validParamList->set                       ("Diagonal view",      "current", "Diagonal view used during the prolongator smoothing process");
+
+    return validParamList;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~SaPFactory() {}
-  
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDampingFactor(Scalar dampingFactor) {
-    dampingFactor_ = dampingFactor;
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDiagonalView(std::string const& diagView) {
-    diagonalView_ = diagView;
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Scalar SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDampingFactor() {
-    return dampingFactor_;
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDiagonalView() {
-    return diagonalView_;
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    fineLevel.DeclareInput("A",AFact_.get(),this);
+    Input(fineLevel, "A");
 
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
-    // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
-    RCP<const FactoryBase> initialPFact = initialPFact_;
+    RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
-    coarseLevel.DeclareInput("P",initialPFact.get(),this);
+    coarseLevel.DeclareInput("P", initialPFact.get(), this); // --
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level &coarseLevel) const {
-    return BuildP(fineLevel,coarseLevel);
+    return BuildP(fineLevel, coarseLevel);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
 
@@ -114,76 +96,87 @@ namespace MueLu {
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
     // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
-    RCP<const FactoryBase> initialPFact = initialPFact_;
+    RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
 
     // Level Get
-    RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
-    RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact.get());
+    RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
+    RCP<Matrix> Ptent = coarseLevel.Get< RCP<Matrix> >("P", initialPFact.get());
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utils2::Transpose(A,true); // build transpose of A explicitely
+      A = Utils2::Transpose(A, true); // build transpose of A explicitely
     }
 
     //Build final prolongator
-    RCP<Operator> finalP; // output
+    RCP<Matrix> finalP; // output
 
-    //FIXME Xpetra::Operator should calculate/stash max eigenvalue
+    //FIXME Xpetra::Matrix should calculate/stash max eigenvalue
     //FIXME SC lambdaMax = A->GetDinvALambda();
 
-    if (dampingFactor_ != Teuchos::ScalarTraits<Scalar>::zero()) {
+    const ParameterList & pL = GetParameterList();
+    Scalar dampingFactor = pL.get<Scalar>("Damping factor");
+    if (dampingFactor != Teuchos::ScalarTraits<Scalar>::zero()) {
 
       //Teuchos::ParameterList matrixList;
-      //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.Get< RCP<Operator> >("A")->getRowMap(),matrixList);
-      //RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,false,Ptent,false);
+      //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Identity", Get< RCP<Matrix> >(fineLevel, "A")->getRowMap(), matrixList);
+      //RCP<Matrix> newPtent = Utils::TwoMatrixMultiply(I, false, Ptent, false);
       //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
 
-      RCP<Operator> AP;
+      RCP<Matrix> AP;
       {
         SubFactoryMonitor m2(*this, "MxM: A x Ptentative", coarseLevel);
         //JJH -- If I switch doFillComplete to false, the resulting matrix seems weird when printed with describe.
         //JJH -- The final prolongator is wrong, to boot.  So right now, I fillComplete AP, but avoid fillComplete
         //JJH -- in the scaling.  Long story short, we're doing 2 fillCompletes, where ideally we'd do just one.
         bool doFillComplete=true;
-        bool optimizeStorage=false;
-        AP = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
+
+        bool optimizeStorage=true;
+
+        // FIXME: ADD() need B.getProfileType()==DynamicProfile
+        if (A->getRowMap()->lib() == Xpetra::UseTpetra) {
+          optimizeStorage=false;
+        }
+
+        AP = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
       }
 
       {
         SubFactoryMonitor m2(*this, "Scaling (A x Ptentative) by D^{-1}", coarseLevel);
-        bool doFillComplete=false;
+        bool doFillComplete=true;
         bool optimizeStorage=false;
-        Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(A);
-        Utils::MyOldScaleMatrix(AP,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
+        Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(*A);
+        Utils::MyOldScaleMatrix(AP, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
       }
 
       Scalar lambdaMax;
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
-        Magnitude stopTol = 1e-4;
-        lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
-        //Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 50,(Scalar)1e-7, true);
-        GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor_/lambdaMax << " (" << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
+        lambdaMax = A->GetMaxEigenvalueEstimate();
+        if (lambdaMax == -Teuchos::ScalarTraits<SC>::one()) {
+          GetOStream(Statistics1, 0) << "Calculating max eigenvalue estimate now" << std::endl;
+          Magnitude stopTol = 1e-4;
+          lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
+          A->SetMaxEigenvalueEstimate(lambdaMax);
+        } else {
+          GetOStream(Statistics1, 0) << "Using cached max eigenvalue estimate" << std::endl;
+        }
+        GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
       }
 
       {
         SubFactoryMonitor m2(*this, "M+M: P = (Ptentative) + (D^{-1} x A x Ptentative)", coarseLevel);
-        
-        bool doTranspose=false; 
-        if (AP->isFillComplete())
-          Utils2::TwoMatrixAdd(Ptent,doTranspose,Teuchos::ScalarTraits<Scalar>::one(),AP,doTranspose,-dampingFactor_/lambdaMax,finalP);
-        else {
-          Utils2::TwoMatrixAdd(Ptent,doTranspose,Teuchos::ScalarTraits<Scalar>::one(),AP,-dampingFactor_/lambdaMax);
-          finalP = AP;
-        }
+
+        bool doTranspose=false;
+        bool PtentHasFixedNnzPerRow=true;
+        Utils2::TwoMatrixAdd(Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), AP, doTranspose, -dampingFactor/lambdaMax, finalP, PtentHasFixedNnzPerRow);
       }
 
       {
         SubFactoryMonitor m2(*this, "FillComplete() of P", coarseLevel);
         finalP->fillComplete( Ptent->getDomainMap(), Ptent->getRangeMap() );
       }
-      
+
     } else {
       finalP = Ptent;
     }
@@ -192,8 +185,8 @@ namespace MueLu {
     if(!restrictionMode_)
       {
         // prolongation factory is in prolongation mode
-        coarseLevel.Set("P", finalP, this);
-	
+        Set(coarseLevel, "P", finalP);
+
         ///////////////////////// EXPERIMENTAL
         if(Ptent->IsView("stridedMaps")) finalP->CreateView("stridedMaps", Ptent);
         ///////////////////////// EXPERIMENTAL
@@ -201,9 +194,9 @@ namespace MueLu {
     else
       {
         // prolongation factory is in restriction mode
-        RCP<Operator> R = Utils2::Transpose(finalP,true); // use Utils2 -> specialization for double
-        coarseLevel.Set("R", R, this);
-	
+        RCP<Matrix> R = Utils2::Transpose(finalP, true); // use Utils2 -> specialization for double
+        Set(coarseLevel, "R", R);
+
         ///////////////////////// EXPERIMENTAL
         if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);
         ///////////////////////// EXPERIMENTAL
@@ -211,6 +204,21 @@ namespace MueLu {
 
   } //Build()
 
+  // deprecated
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDampingFactor(Scalar dampingFactor) {
+    SetParameter("Damping factor", ParameterEntry(dampingFactor)); // revalidate
+  }
+
+  // deprecated
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Scalar SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDampingFactor() {
+    const ParameterList & pL = GetParameterList();
+    return pL.get<Scalar>("Damping factor");
+  }
+
 } //namespace MueLu
 
 #endif // MUELU_SAPFACTORY_DEF_HPP
+
+//TODO: restrictionMode_ should use the parameter list.

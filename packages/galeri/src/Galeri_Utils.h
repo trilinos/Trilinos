@@ -76,6 +76,8 @@ string toString(const int& x);
 
 string toString(const unsigned int& x);
 
+string toString(const long int& x);
+
 string toString(const double& x);
 
 void 

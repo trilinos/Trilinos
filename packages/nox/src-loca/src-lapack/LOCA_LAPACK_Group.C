@@ -144,9 +144,9 @@ LOCA::LAPACK::Group::applyJacobianTransposeInverse(
 {
 
   if (!isJacobian()) {
-    cerr << "ERROR: " 
+    std::cerr << "ERROR: " 
 	 << "LOCA::LAPACK::Group::applyJacobianTransposeInverse()"
-	 << " - invalid Jacobian" << endl;
+	 << " - invalid Jacobian" << std::endl;
     throw "NOX Error";
   }
 
@@ -170,9 +170,9 @@ LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector(
 {
 
   if (!isJacobian()) {
-    cerr << "ERROR: " 
+    std::cerr << "ERROR: " 
 	 << "LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector()"
-	 << " - invalid Jacobian" << endl;
+	 << " - invalid Jacobian" << std::endl;
     throw "NOX Error";
   }
 
@@ -227,7 +227,7 @@ LOCA::LAPACK::Group::setParam(int paramID, double val)
 }
 
 void
-LOCA::LAPACK::Group::setParam(string paramID, double val)
+LOCA::LAPACK::Group::setParam(std::string paramID, double val)
 {
   resetIsValid();
   params.setValue(paramID, val);
@@ -246,7 +246,7 @@ LOCA::LAPACK::Group::getParam(int paramID) const
 }
 
 double
-LOCA::LAPACK::Group::getParam(string paramID) const
+LOCA::LAPACK::Group::getParam(std::string paramID) const
 {
   return params.getValue(paramID);
 }
@@ -402,7 +402,7 @@ LOCA::LAPACK::Group::isComplex() const
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::computeComplex(double frequency)
 {
-  string callingFunction = "LOCA::LAPACK::computeComplex()";
+  std::string callingFunction = "LOCA::LAPACK::computeComplex()";
 
 #ifdef HAVE_TEUCHOS_COMPLEX
   NOX::Abstract::Group::ReturnType finalStatus;

@@ -36,6 +36,9 @@
 #include "Stokhos_QuadOrthogPolyExpansion.hpp"
 #include "Stokhos_ForUQTKOrthogPolyExpansion.hpp"
 //#include "Stokhos_DerivOrthogPolyExpansion.hpp"
+#include "Stokhos_CompletePolynomialBasis.hpp"
+#include "Stokhos_PseudoSpectralOrthogPolyExpansion.hpp"
+#include "Stokhos_PseudoSpectralOperatorFactory.hpp"
 
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP<Stokhos::OrthogPolyExpansion<ordinal_type, value_type> >
@@ -64,18 +67,17 @@ create(Teuchos::ParameterList& sgParams)
     Cijk = sgParams.template get<Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > >("Triple Product Tensor");
   else {
     std::string tp_type = sgParams.get("Triple Product Size", "Full");
-    ordinal_type tp_sz;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      tp_type != "Full" && tp_type != "Linear", 
+      Teuchos::Exceptions::InvalidParameter,
+      std::endl <<  "Invalid triple product expansion type  " << tp_type <<
+      std::endl);
+
     if (tp_type == "Full")
-      tp_sz = basis->size();
-    else if (tp_type == "Linear")
-      tp_sz = basis->dimension()+1;
+      Cijk = basis->computeTripleProductTensor();
     else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-			 std::endl << 
-			 "Error!  Stokhos::ExpansionFactory::create():  " <<
-			 "Invalid triple product expansion type  " << tp_type <<
-			 std::endl);
-    Cijk = basis->computeTripleProductTensor(tp_sz);
+      Cijk = basis->computeLinearTripleProductTensor();
+    
     sgParams.set("Triple Product Tensor", Cijk);
   }
 
@@ -84,6 +86,7 @@ create(Teuchos::ParameterList& sgParams)
   if (exp_type == "Algebraic")
     expansion = 
       Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, Teuchos::rcp(&expParams,false)));
+
   else if (exp_type == "Quadrature") {
     Teuchos::ParameterList& quadParams = sgParams.sublist("Quadrature");
     Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > quad;
@@ -96,9 +99,8 @@ create(Teuchos::ParameterList& sgParams)
     }
     expansion = 
       Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, quad, Teuchos::rcp(&expParams,false)));
-   
-
  }
+
   else if (exp_type == "For UQTK") {
 #ifdef HAVE_STOKHOS_FORUQTK
     typename Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type,value_type>::EXPANSION_METHOD method = 
@@ -114,6 +116,7 @@ create(Teuchos::ParameterList& sgParams)
 		       "ForUQTK expansion requires ForUQTK!" << std::endl);
 #endif
   }
+
   /*
   else if (exp_type == "Derivative") {
     Teuchos::RCP<const Stokhos::DerivBasis<ordinal_type,value_type> > deriv_basis = Teuchos::rcp_dynamic_cast<const Stokhos::DerivBasis<ordinal_type,value_type> >(basis, true);
@@ -137,6 +140,25 @@ create(Teuchos::ParameterList& sgParams)
 		     deriv_basis, Bij, Cijk, Dijk));
   }
   */
+
+  else if (exp_type == "Pseudospectral") {
+    typedef Stokhos::PseudoSpectralOperator<ordinal_type,value_type> psop_type;
+    Teuchos::ParameterList& psopParams = 
+      sgParams.sublist("Pseudospectral Operator");
+    Teuchos::RCP<const psop_type> psop;
+    if (psopParams.template isType<Teuchos::RCP<const psop_type> >(
+	  "Stochastic Galerkin Pseudospectral Operator"))
+      psop = psopParams.template get<Teuchos::RCP<const psop_type> >(
+	"Stochastic Galerkin Pseudospectral Operator");
+    else {
+      psop = 
+	Stokhos::PseudoSpectralOperatorFactory<ordinal_type,value_type>::create(sgParams);
+      psopParams.set("Stochastic Galerkin Pseudospectral Operator", psop);
+    }
+    expansion = 
+      Teuchos::rcp(new Stokhos::PseudoSpectralOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, psop, Teuchos::rcp(&expParams,false)));
+  }
+
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 		       std::endl << 

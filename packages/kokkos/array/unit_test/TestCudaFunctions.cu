@@ -45,18 +45,16 @@
 
 #include <iostream>
 
-#include <KokkosArray_View.hpp>
-
-#include <KokkosArray_CrsArray.hpp>
-
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
+
+#include <KokkosArray_View.hpp>
+#include <KokkosArray_CrsArray.hpp>
+
 
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
-
-#include <KokkosArray_Cuda_macros.hpp>
 
 #include <TestViewAPI.hpp>
 #include <TestCrsArray.hpp>
@@ -64,22 +62,36 @@
 #include <TestReduce.hpp>
 #include <TestMultiReduce.hpp>
 
-#include <KokkosArray_Clear_macros.hpp>
-
 namespace Test {
 
-void test_device_cuda_init() {
-  KokkosArray::Cuda::initialize();
+__global__
+void test_abort()
+{
+  KokkosArray::VerifyExecutionSpaceCanAccessDataSpace<
+    KokkosArray::CudaSpace ,
+    KokkosArray::HostSpace >::verify();
 }
+
 
 void test_device_cuda_view_impl()
 {
+  // test_abort<<<32,32>>>(); // Aborts the kernel with CUDA version 4.1 or greater
+
   test_view_impl< KokkosArray::Cuda >();
 }
 
 void test_device_cuda_view_api()
 {
   TestViewAPI< double , KokkosArray::Cuda >();
+
+#if 0
+  KokkosArray::View<double, KokkosArray::Cuda > x("x");
+  KokkosArray::View<double[1], KokkosArray::Cuda > y("y");
+  // *x = 10 ;
+  // x() = 10 ;
+  // y[0] = 10 ;
+  // y(0) = 10 ;
+#endif
 }
 
 void test_device_cuda_crsarray() {
@@ -88,8 +100,17 @@ void test_device_cuda_crsarray() {
 
 void test_device_cuda_reduce() {
   TestReduce< long ,   KokkosArray::Cuda >( 10000000 );
-  TestReduce< long ,   KokkosArray::Cuda >( 1000000 );
   TestReduce< double , KokkosArray::Cuda >( 1000000 );
+}
+
+void test_device_cuda_reduce_dynamic() {
+  TestReduceDynamic< long ,   KokkosArray::Cuda >( 10000000 );
+  TestReduceDynamic< double , KokkosArray::Cuda >( 1000000 );
+}
+
+void test_device_cuda_reduce_dynamic_view() {
+  TestReduceDynamicView< long ,   KokkosArray::Cuda >( 10000000 );
+  TestReduceDynamicView< double , KokkosArray::Cuda >( 1000000 );
 }
 
 void test_device_cuda_multi_reduce() {

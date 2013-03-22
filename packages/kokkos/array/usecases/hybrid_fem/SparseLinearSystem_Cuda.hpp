@@ -44,8 +44,9 @@
 #ifndef SPARSELINEARSYSTEM_CUDA_HPP
 #define SPARSELINEARSYSTEM_CUDA_HPP
 
+#if defined( __CUDACC__ )
+
 #include <cusparse.h>
-#include <SparseLinearSystem.hpp>
 #include <KokkosArray_Cuda.hpp>
 
 namespace KokkosArray {
@@ -74,28 +75,22 @@ CudaSparseSingleton & CudaSparseSingleton::singleton()
 
 template<>
 struct Multiply< CrsMatrix<double,Cuda> ,
-                 View<double[],Cuda > ,
-                 View<double[],Cuda > >
+                 View<double*,Cuda > ,
+                 View<double*,Cuda > >
 {
   typedef Cuda                                      device_type ;
   typedef device_type::size_type                    size_type ;
   typedef double                                    scalar_type ;
-  typedef View< scalar_type[] , device_type >  vector_type ;
+  typedef View< scalar_type* , device_type >        vector_type ;
   typedef CrsMatrix< scalar_type , device_type >    matrix_type ;
-
-private:
-
-  matrix_type  m_A ;
-  vector_type  m_x ;
-  vector_type  m_y ;
 
 public:
 
-  static void apply( const matrix_type & A ,
-                     const size_type nrow ,
-                     const size_type ncol ,
-                     const vector_type & x ,
-                     const vector_type & y )
+  Multiply( const matrix_type & A ,
+            const size_type nrow ,
+            const size_type ncol ,
+            const vector_type & x ,
+            const vector_type & y )
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const scalar_type alpha = 1 , beta = 0 ;
@@ -122,28 +117,22 @@ public:
 
 template<>
 struct Multiply< CrsMatrix<float,Cuda> ,
-                 View<float[],Cuda > ,
-                 View<float[],Cuda > >
+                 View<float*,Cuda > ,
+                 View<float*,Cuda > >
 {
   typedef Cuda                                      device_type ;
   typedef device_type::size_type                    size_type ;
   typedef float                                     scalar_type ;
-  typedef View< scalar_type[] , device_type >  vector_type ;
+  typedef View< scalar_type* , device_type >        vector_type ;
   typedef CrsMatrix< scalar_type , device_type >    matrix_type ;
-
-private:
-
-  matrix_type  m_A ;
-  vector_type  m_x ;
-  vector_type  m_y ;
 
 public:
 
-  static void apply( const matrix_type & A ,
-                     const size_type nrow ,
-                     const size_type ncol ,
-                     const vector_type & x ,
-                     const vector_type & y )
+  Multiply( const matrix_type & A ,
+            const size_type nrow ,
+            const size_type ncol ,
+            const vector_type & x ,
+            const vector_type & y )
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const scalar_type alpha = 1 , beta = 0 ;
@@ -170,6 +159,6 @@ public:
 } /* namespace Impl */
 } /* namespace KokkosArray */
 
-
+#endif /* #if defined( __CUDACC__ ) */
 #endif /* #ifndef SPARSELINEARSYSTEM_CUDA_HPP */
 

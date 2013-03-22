@@ -144,7 +144,7 @@ namespace LOCA {
 	 * where \f$p\f$ is the parameter indexed by \b paramIDs.
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDCeDp(const vector<int>& paramIDs, 
+	computeDCeDp(const std::vector<int>& paramIDs, 
 		     const NOX::Abstract::Vector& yVector,
 		     const NOX::Abstract::Vector& zVector,
 		     double w,

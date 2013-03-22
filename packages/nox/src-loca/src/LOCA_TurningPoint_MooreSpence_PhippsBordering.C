@@ -124,7 +124,7 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solve(
 	   const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
            LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::PhippsBordering::solve()";
   NOX::Abstract::Group::ReturnType status;
   
@@ -144,7 +144,7 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solve(
     result.getScalars();
 
   int m = input.numVectors();
-  vector<int> index_input(m);
+  std::vector<int> index_input(m);
   for (int i=0; i<m; i++)
     index_input[i] = i;
   
@@ -208,7 +208,7 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveTranspose(
 	   const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
            LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::PhippsBordering::solveTranspose()";
   NOX::Abstract::Group::ReturnType status;
   
@@ -229,7 +229,7 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveTranspose(
 
   int m = input.numVectors();
 
-  vector<int> index_input(m);
+  std::vector<int> index_input(m);
   for (int i=0; i<m; i++)
     index_input[i] = i;
   
@@ -302,16 +302,16 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveContiguous(
 		  NOX::Abstract::MultiVector& result_null,
 	          NOX::Abstract::MultiVector::DenseMatrix& result_param) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::PhippsBordering::solveContiguous()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
   int m = input_x.numVectors()-2;
-  vector<int> index_input(m);
-  vector<int> index_input_dp(m+1);
-  vector<int> index_null(1);
-  vector<int> index_dp(1);
+  std::vector<int> index_input(m);
+  std::vector<int> index_input_dp(m+1);
+  std::vector<int> index_null(1);
+  std::vector<int> index_dp(1);
   for (int i=0; i<m; i++) {
     index_input[i] = i;
     index_input_dp[i] = i;
@@ -457,16 +457,16 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveTransposeContiguous(
 		  NOX::Abstract::MultiVector& result_null,
 	          NOX::Abstract::MultiVector::DenseMatrix& result_param) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::PhippsBordering::solveTransposeContiguous()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
   int m = input_x.numVectors()-2;
-  vector<int> index_input(m);
-  vector<int> index_input_dp(m+1);
-  vector<int> index_null(1);
-  vector<int> index_dp(1);
+  std::vector<int> index_input(m);
+  std::vector<int> index_input_dp(m+1);
+  std::vector<int> index_null(1);
+  std::vector<int> index_dp(1);
   for (int i=0; i<m; i++) {
     index_input[i] = i;
     index_input_dp[i] = i;

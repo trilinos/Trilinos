@@ -98,7 +98,7 @@ namespace NOX {
        */
       virtual NOX::Abstract::MultiVector&
       setBlock(const NOX::Abstract::MultiVector& source, 
-	       const vector<int>& index) = 0;
+	       const std::vector<int>& index) = 0;
 
       //! Append the vectors in \c source to \c *this
       virtual NOX::Abstract::MultiVector&
@@ -193,14 +193,14 @@ namespace NOX {
        * columns are copies of the columns of \c *this given by \c index.
        */
       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-      subCopy(const vector<int>& index) const = 0;
+      subCopy(const std::vector<int>& index) const = 0;
 
       /*! 
        * \brief Creates a new multi-vector with \c ndex.size() columns that 
        * shares the columns of \c *this given by \c index.
        */
       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-      subView(const vector<int>& index) const = 0;
+      subView(const std::vector<int>& index) const = 0;
 
       //@}
 
@@ -208,7 +208,7 @@ namespace NOX {
 
       //! Norm.
       virtual void
-      norm(vector<double>& result,
+      norm(std::vector<double>& result,
 	   NOX::Abstract::Vector::NormType type = 
 	   NOX::Abstract::Vector::TwoNorm) const = 0;
 

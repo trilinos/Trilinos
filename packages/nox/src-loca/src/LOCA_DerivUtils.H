@@ -55,6 +55,7 @@
 
 #include "NOX_Abstract_Group.H" // For CopyType
 #include "NOX_Abstract_MultiVector.H" // For DenseMatrix
+#include <vector>
 
 namespace LOCA {
   class GlobalData;
@@ -115,14 +116,14 @@ namespace LOCA {
      */
     virtual NOX::Abstract::Group::ReturnType 
     computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp, 
-		const vector<int>& param_ids,
+		const std::vector<int>& param_ids,
 		NOX::Abstract::MultiVector& result,
 		bool isValidF) const;
 
     //! Compute derivative of Jn with respect to particular parameter param_id
     virtual NOX::Abstract::Group::ReturnType 
     computeDJnDp(LOCA::MultiContinuation::AbstractGroup&,
-		 const vector<int>& paramIDs, 
+		 const std::vector<int>& paramIDs, 
 		 const NOX::Abstract::Vector& nullVector,
 		 NOX::Abstract::MultiVector& result,
 		 bool isValid) const;
@@ -148,7 +149,7 @@ namespace LOCA {
      */
     virtual NOX::Abstract::Group::ReturnType 
     computeDwtJnDp(LOCA::MultiContinuation::AbstractGroup& grp,
-		   const vector<int>& paramIDs, 
+		   const std::vector<int>& paramIDs, 
 		   const NOX::Abstract::Vector& w,
 		   const NOX::Abstract::Vector& nullVector,
 		   NOX::Abstract::MultiVector::DenseMatrix& result,
@@ -160,7 +161,7 @@ namespace LOCA {
      */
     virtual NOX::Abstract::Group::ReturnType 
     computeDwtJDp(LOCA::MultiContinuation::AbstractGroup& grp,
-		  const vector<int>& paramIDs, 
+		  const std::vector<int>& paramIDs, 
 		  const NOX::Abstract::Vector& w,
 		  NOX::Abstract::MultiVector& result,
 		  bool isValid) const;
@@ -182,7 +183,7 @@ namespace LOCA {
     //! Compute derivative of (J+iwM)(y+iz) with respect to parameter, 
     virtual NOX::Abstract::Group::ReturnType 
     computeDCeDp(LOCA::Hopf::MooreSpence::AbstractGroup& grp,
-		 const vector<int>& paramIDs,	     
+		 const std::vector<int>& paramIDs,	     
 		 const NOX::Abstract::Vector& yVector,
 		 const NOX::Abstract::Vector& zVector,
 		 double w,
@@ -215,7 +216,7 @@ namespace LOCA {
     //! Compute derivative of (w1+iw2)^T(J+iwM)(y+iz) w.r.t. parameter p
     virtual NOX::Abstract::Group::ReturnType 
     computeDwtCeDp(LOCA::Hopf::MinimallyAugmented::AbstractGroup& grp,
-		   const vector<int>& paramIDs, 
+		   const std::vector<int>& paramIDs, 
 		   const NOX::Abstract::Vector& w1,
 		   const NOX::Abstract::Vector& w2,
 		   const NOX::Abstract::Vector& yVector,

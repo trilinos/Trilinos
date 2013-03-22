@@ -1185,13 +1185,21 @@ Epetra_CrsMatrix::__getitem__;
     }
   }
 
-  int InsertGlobalValues(const int Row, const int Size, 
-                         const Epetra_SerialDenseVector& Values,
-                         const Epetra_IntSerialDenseVector& Entries)
+  int InsertGlobalValues(const int row,
+                         const int size, 
+                         const Epetra_SerialDenseVector & values,
+                         const Epetra_IntSerialDenseVector & entries)
   {
-    return self->InsertGlobalValues(1, &Row,
-                                    Size, (int*)Entries.Values(),
-                                    Values.Values());
+    return self->InsertGlobalValues(1, &row, size, (int*)entries.Values(),
+                                    values.Values());
+  }
+
+  int InsertGlobalValues(const Epetra_IntSerialDenseVector & rows,
+                         const Epetra_IntSerialDenseVector & cols,
+                         const Epetra_SerialDenseMatrix & values,
+                         int format=Epetra_FECrsMatrix::COLUMN_MAJOR)
+  {
+    return self->InsertGlobalValues(rows, cols, values, format);
   }
 
   int InsertGlobalValue(int i, int j, double val)

@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 
   // A maximum of 2 procesors is allowed since there are only 2 equations
   if (NumProc >= 3) {
-    cout << "ERROR: Maximum number of processors is 2!" << endl;
+    std::cout << "ERROR: Maximum number of processors is 2!" << std::endl;
     exit(1);
   }
 
@@ -160,22 +160,22 @@ int main(int argc, char *argv[])
 
   // Identify the test problem
   if (printing.isPrintType(NOX::Utils::TestDetails))
-    cout << "Starting epetra/DS6.5.1/DS_6_5_1.exe" << endl;
+    std::cout << "Starting epetra/DS6.5.1/DS_6_5_1.exe" << std::endl;
 
   // Identify processor information
 #ifdef HAVE_MPI
   if (printing.isPrintType(NOX::Utils::TestDetails)) {
-    cout << "Parallel Run" << endl;
-    cout << "Number of processors = " << NumProc << endl;
-    cout << "Print Process = " << MyPID << endl;
+    std::cout << "Parallel Run" << std::endl;
+    std::cout << "Number of processors = " << NumProc << std::endl;
+    std::cout << "Print Process = " << MyPID << std::endl;
   }
   Comm.Barrier();
   if (printing.isPrintType(NOX::Utils::TestDetails))
-    cout << "Process " << MyPID << " is alive!" << endl;
+    std::cout << "Process " << MyPID << " is alive!" << std::endl;
   Comm.Barrier();
 #else
   if (printing.isPrintType(NOX::Utils::TestDetails))
-    cout << "Serial Run" << endl;
+    std::cout << "Serial Run" << std::endl;
 #endif
   // Sublist for line search 
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
@@ -253,10 +253,10 @@ int main(int argc, char *argv[])
 
   // Output the parameter list
   if (printing.isPrintType(NOX::Utils::Parameters)) {
-    cout << endl << "Final Parameters" << endl
-	 << "****************" << endl;
+    std::cout << std::endl << "Final Parameters" << std::endl
+	 << "****************" << std::endl;
     solver->getList().print(cout);
-    cout << endl;
+    std::cout << std::endl;
   }
 
   // Print solution
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 
   // 1. Convergence
   if (status != NOX::StatusTest::Converged) {
-    if (MyPID==0) cout << "Nonlinear solver failed to converge!" << endl;
+    if (MyPID==0) std::cout << "Nonlinear solver failed to converge!" << std::endl;
     testStatus = 1;
   }
   // 2. Nonlinear Iterations (7)
@@ -300,9 +300,9 @@ int main(int argc, char *argv[])
   }
 
   if (testStatus == 0)
-    cout << "Test passed!" << endl;
+    std::cout << "Test passed!" << std::endl;
   else
-    cout << "Test failed!" << endl;
+    std::cout << "Test failed!" << std::endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

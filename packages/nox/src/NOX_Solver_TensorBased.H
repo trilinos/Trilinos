@@ -364,8 +364,8 @@ protected:
 		      double oldfprime, double lambda);
 
   //! Throw an error with a method's name and error message
-  void throwError(const string& functionName,
-		  const string& errorMsg) const;
+  void throwError(const std::string& functionName,
+		  const std::string& errorMsg) const;
   
 protected:
   

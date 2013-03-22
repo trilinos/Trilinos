@@ -48,6 +48,9 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 
+#define PANZER_USE_FAST_QUAD 1
+// #define PANZER_USE_FAST_QUAD 0
+
 namespace panzer {
 
 //**********************************************************************
@@ -117,7 +120,38 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
 { 
   for (int i=0; i < residual.size(); ++i)
     residual[i] = 0.0;
-  
+
+#if PANZER_USE_FAST_QUAD
+  // do a scaled copy
+  for (int i=0; i < flux.size(); ++i)
+    tmp[i] = multiplier * flux[i];
+
+  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+       field != field_multipliers.end(); ++field) {
+    PHX::MDField<ScalarT,Cell,IP> field_data = *field;
+
+    for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+      for (std::size_t qp = 0; qp < num_qp; ++qp) {
+        ScalarT tmpVar = field_data(cell,qp);  
+
+        for (std::size_t dim = 0; dim < num_dim; ++dim)
+          tmp(cell,qp,dim) *= tmpVar;
+      }
+    }
+  } 
+
+  const Intrepid::FieldContainer<double> & weighted_grad_basis = workset.bases[basis_index]->weighted_grad_basis;
+
+  // perform integration and vector dot product (at the same time! whoah!)
+  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (std::size_t basis = 0; basis < num_nodes; ++basis) {
+      for (std::size_t qp = 0; qp < num_qp; ++qp) {
+        for (std::size_t dim = 0; dim < num_dim; ++dim)
+          residual(cell,basis) += tmp(cell,qp,dim)*weighted_grad_basis(cell,basis,qp,dim);
+      }
+    }
+  }
+#else
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
   {
     for (std::size_t qp = 0; qp < num_qp; ++qp)
@@ -137,6 +171,7 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
        integrate<ScalarT>(residual, tmp, 
    		       (workset.bases[basis_index])->weighted_grad_basis, 
 		       Intrepid::COMP_BLAS);
+#endif
 }
 
 //**********************************************************************

@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,16 +36,18 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
 #include "MockModelEval_A.hpp"
 
+#include <iostream>
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-MockModelEval_A::MockModelEval_A(const MPI_Comm appComm) 
+MockModelEval_A::MockModelEval_A(const MPI_Comm appComm)
 {
 
 #ifdef HAVE_MPI
@@ -72,11 +74,11 @@ MockModelEval_A::MockModelEval_A(const MPI_Comm appComm)
     p_init = rcp(new Epetra_Vector(*p_map));
     for (int i=0; i<numParameters; i++) (*p_init)[i]= 1.0;
 
-    //set up jacobian graph 
+    //set up jacobian graph
     jacGraph = rcp(new Epetra_CrsGraph(Copy, *x_map, vecLength, true));
     std::vector<int> indices(vecLength);
-    for (int i=0; i<vecLength; i++) indices[i]=i;;
-    for (int i=0; i<x_map->NumMyElements(); i++) 
+    for (int i=0; i<vecLength; i++) indices[i]=i;
+    for (int i=0; i<x_map->NumMyElements(); i++)
       jacGraph->InsertGlobalIndices(x_map->GID(i), vecLength, &indices[0]);
     jacGraph->FillComplete();
 }
@@ -119,7 +121,7 @@ RCP<const  Teuchos::Array<std::string> > MockModelEval_A::get_p_names(int l) con
                      l << std::endl);
 
   Teuchos::Ordinal num_p = p_init->MyLength();
-  RCP<Teuchos::Array<std::string> > p_names = 
+  RCP<Teuchos::Array<std::string> > p_names =
       rcp(new Teuchos::Array<std::string>(num_p) );
   for (int i=0; i<num_p; i++) {
     std::stringstream ss;
@@ -201,18 +203,17 @@ void MockModelEval_A::evalModel( const InArgs& inArgs,
 
   // Parse InArgs
   RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
-  if (!p_in.get()) cout << "ERROR: MockModelEval_A requires p as inargs" << endl;
-  //int numParameters = p_in->GlobalLength();
+  if (!p_in.get()) std::cerr << "ERROR: MockModelEval_A requires p as inargs\n";
 
   RCP<const Epetra_Vector> x_in = inArgs.get_x();
-  if (!x_in.get()) cout << "ERROR: MockModelEval_A requires x as inargs" << endl;
+  if (!x_in.get()) std::cerr << "ERROR: MockModelEval_A requires x as inargs\n";
   int vecLength = x_in->GlobalLength();
   int myVecLength = x_in->MyLength();
 
   // Parse OutArgs
 
-  RCP<Epetra_Vector> f_out = outArgs.get_f(); 
-  RCP<Epetra_Vector> g_out = outArgs.get_g(0); 
+  RCP<Epetra_Vector> f_out = outArgs.get_f();
+  RCP<Epetra_Vector> g_out = outArgs.get_g(0);
   Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
   Teuchos::RCP<Epetra_MultiVector> dfdp_out;
   if (outArgs.Np() > 0)
@@ -225,9 +226,9 @@ void MockModelEval_A::evalModel( const InArgs& inArgs,
   if (f_out != Teuchos::null) {
     for (int i=0; i<myVecLength; i++) {
       int gid = x_in->Map().GID(i);
-      if (gid==0) // x_0^2 = p_0
+      if (gid==0) // f_0 = (x_0)^2 - p_0
        (*f_out)[i] = (*x_in)[i] * (*x_in)[i] -  (*p_in)[i];
-      else // x^2 = (i+p_1)^2
+      else // f_i = x_i^2 - (i+p_1)^2 (for i != 0)
        (*f_out)[i] = (*x_in)[i] * (*x_in)[i] - (gid + (*p_in)[1])*(gid + (*p_in)[1]);
     }
   }
@@ -246,63 +247,61 @@ void MockModelEval_A::evalModel( const InArgs& inArgs,
   if (dfdp_out != Teuchos::null) {
     dfdp_out->PutScalar(0.0);
     for (int i=0; i<myVecLength; i++) {
-      int gid = x_in->Map().GID(i);
+      const int gid = x_in->Map().GID(i);
       if   (gid==0) (*dfdp_out)[0][i] = -1.0;
       else          (*dfdp_out)[1][i] =  -2.0* (gid + (*p_in)[1]);
     }
   }
 
-  // ObjFn = 0.5*(Sum(x)-Sum(p)-12)^2 + 0.5*(p0-1)^2:  min at 1,3
+  // Response: g = 0.5*(Sum(x)-Sum(p)-12)^2 + 0.5*(p0-1)^2
+  // min g(x(p), p) s.t. f(x, p) = 0 reached for p_0 = 1, p_1 = 3
 
   double term1, term2;
-  x_in->MeanValue(&term1); 
+  x_in->MeanValue(&term1);
   term1 =  vecLength * term1 - ((*p_in)[0] + (*p_in)[1]) - 12.0;
   term2 = (*p_in)[0] - 1.0;
-  
+
   if (!is_null(g_out)) {
     (*g_out)[0] = 0.5*term1*term1 + 0.5*term2*term2;
   }
 
   if (dgdx_out != Teuchos::null) {
-     dgdx_out->PutScalar(term1);
-   }
+    dgdx_out->PutScalar(term1);
+  }
   if (dgdp_out != Teuchos::null) {
-     dgdp_out->PutScalar(0.0);
-     (*dgdp_out)[0][0] = -term1 + term2;
-     (*dgdp_out)[0][1] = -term1;
-   }
+    dgdp_out->PutScalar(0.0);
+    (*dgdp_out)[0][0] = -term1 + term2;
+    (*dgdp_out)[0][1] = -term1;
+  }
 
-  // Modify for time dependent (implicit timeintegration or eigensolves
-  // Check if time dependent
-  RCP<const Epetra_Vector> x_dot = inArgs.get_x_dot();
+  // Modify for time dependent (implicit time integration or eigensolves)
+  const RCP<const Epetra_Vector> x_dot = inArgs.get_x_dot();
 
   if (x_dot.get()) {
-    double alpha =  inArgs.get_alpha();
-    double beta  =  inArgs.get_beta();
+    // Velocity provided: Time dependent problem
+    double alpha = inArgs.get_alpha();
+    double beta = inArgs.get_beta();
     if (alpha==0.0 && beta==0.0) {
-      cout << "MockModelEval Warning: alpha=beta=0 -- setting beta=1" << endl;
+      std::cerr << "MockModelEval Warning: alpha=beta=0 -- setting beta=1\n";
       beta = 1.0;
     }
 
     if (f_out != Teuchos::null) {
+      // f(x, x_dot) = f(x) - x_dot
       for (int i=0; i<myVecLength; i++) {
-	//(*f_out)[i] = -alpha*(*x_dot)[i] + beta * (*f_out)[i];
-         (*f_out)[i] = -(*x_dot)[i] + (*f_out)[i];
+        (*f_out)[i] = -(*x_dot)[i] + (*f_out)[i];
       }
     }
-    if (dfdp_out != Teuchos::null) {
-      dfdp_out->Scale(beta);
-    }
     if (W_out != Teuchos::null) {
-      Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
+      // W(x, x_dot) = beta * W(x) - alpha * Id
+      const Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
         Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out, true);
       W_out_crs->Scale(beta);
 
-      double diag = -alpha;
+      const double diag = -alpha;
       for (int i=0; i<myVecLength; i++) {
         W_out_crs->SumIntoMyValues(i, 1, &diag, &i);
       }
-   cout << " W_crs  = " << *W_out_crs << endl;
     }
-  } 
-} 
+  }
+}

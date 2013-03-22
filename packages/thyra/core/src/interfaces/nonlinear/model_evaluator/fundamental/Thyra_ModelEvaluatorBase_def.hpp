@@ -213,23 +213,23 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
   )
 {
   using ModelEvaluatorHelperPack::condCloneVec;
-  if( inArgs.supports(IN_ARG_x_dot) && inArgs.get_x_dot().get() ) {
+  if( inArgs.supports(IN_ARG_x_dot) && nonnull(inArgs.get_x_dot()) ) {
     if(supports(IN_ARG_x_dot) || !ignoreUnsupported)
       set_x_dot(condCloneVec(inArgs.get_x_dot(),cloneObjects));
   }
-  if( inArgs.supports(IN_ARG_x) && inArgs.get_x().get() ) {
+  if( inArgs.supports(IN_ARG_x) && nonnull(inArgs.get_x()) ) {
     if(supports(IN_ARG_x) || !ignoreUnsupported)
       set_x(condCloneVec(inArgs.get_x(),cloneObjects));
   }
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
-  if( inArgs.supports(IN_ARG_x_dot_poly) && inArgs.get_x_dot_poly().get() ) {
+  if( inArgs.supports(IN_ARG_x_dot_poly) && nonnull(inArgs.get_x_dot_poly()) ) {
     if(supports(IN_ARG_x_dot_poly) || !ignoreUnsupported) {
       TEUCHOS_TEST_FOR_EXCEPT(
         cloneObjects && "Have not implemented cloning for x_dot_poly yet!" );
       set_x_dot_poly(inArgs.get_x_dot_poly());
     }
   }
-  if( inArgs.supports(IN_ARG_x_poly) && inArgs.get_x_poly().get() ) {
+  if( inArgs.supports(IN_ARG_x_poly) && nonnull(inArgs.get_x_poly()) ) {
     if(supports(IN_ARG_x_poly) || !ignoreUnsupported) {
       TEUCHOS_TEST_FOR_EXCEPT(
         cloneObjects && "Have not implemented cloning for x_poly yet!" );
@@ -238,19 +238,19 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
   }
 #endif // HAVE_THYRA_ME_POLYNOMIAL
   const int min_Np = TEUCHOS_MIN(this->Np(),inArgs.Np());
-  for( int l = 0; l < min_Np; ++l ) {
-    if(inArgs.get_p(l).get())
+  for (int l = 0; l < min_Np; ++l) {
+    if (nonnull(inArgs.get_p(l)))
       set_p(l,condCloneVec(inArgs.get_p(l),cloneObjects));
   }
-  if( inArgs.supports(IN_ARG_t) ) {
+  if (inArgs.supports(IN_ARG_t)) {
     if(supports(IN_ARG_t) || !ignoreUnsupported)
       set_t(inArgs.get_t());
   }
-  if( inArgs.supports(IN_ARG_alpha) ) {
+  if (inArgs.supports(IN_ARG_alpha)) {
     if(supports(IN_ARG_alpha) || !ignoreUnsupported)
       set_alpha(inArgs.get_alpha());
   }
-  if( inArgs.supports(IN_ARG_beta) ) {
+  if (inArgs.supports(IN_ARG_beta)) {
     if(supports(IN_ARG_beta) || !ignoreUnsupported)
       set_beta(inArgs.get_beta());
   }
@@ -727,6 +727,25 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_W_op() const
 
 
 template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_W_prec(
+  const RCP<PreconditionerBase<Scalar> > &W_prec
+  )
+{
+  assert_supports(OUT_ARG_W_prec);
+  W_prec_ = W_prec;
+}
+
+
+template<class Scalar>
+RCP<PreconditionerBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_W_prec() const
+{
+  assert_supports(OUT_ARG_W_prec);
+  return W_prec_;
+}
+
+
+template<class Scalar>
 ModelEvaluatorBase::DerivativeProperties
 ModelEvaluatorBase::OutArgs<Scalar>::get_W_properties() const
 {
@@ -879,31 +898,36 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setArgs(
   const int min_Np = TEUCHOS_MIN(this->Np(),inputOutArgs.Np());
   const int min_Ng = TEUCHOS_MIN(this->Ng(),inputOutArgs.Ng());
   // f
-  if ( inputOutArgs.supports(OUT_ARG_f) && inputOutArgs.get_f().get() ) {
+  if ( inputOutArgs.supports(OUT_ARG_f) && nonnull(inputOutArgs.get_f()) ) {
     if ( supports(OUT_ARG_f) || !ignoreUnsupported )
       set_f(inputOutArgs.get_f());
   }
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
   // f_poly
-  if ( inputOutArgs.supports(OUT_ARG_f_poly) && inputOutArgs.get_f_poly().get() ) {
+  if ( inputOutArgs.supports(OUT_ARG_f_poly) && nonnull(inputOutArgs.get_f_poly()) ) {
     if ( supports(OUT_ARG_f_poly) || !ignoreUnsupported )
       set_f_poly(inputOutArgs.get_f_poly());
   }
 #endif // HAVE_THYRA_ME_POLYNOMIAL
   // g(j)
   for ( int j = 0; j < min_Ng; ++j ) {
-    if ( inputOutArgs.get_g(j).get() )
+    if ( nonnull(inputOutArgs.get_g(j)) )
       set_g(j,inputOutArgs.get_g(j));
   }
   // W
-  if( inputOutArgs.supports(OUT_ARG_W) && inputOutArgs.get_W().get() ) {
+  if( inputOutArgs.supports(OUT_ARG_W) && nonnull(inputOutArgs.get_W()) ) {
     if ( supports(OUT_ARG_W) || !ignoreUnsupported )
       set_W(inputOutArgs.get_W());
   }
   // W_op
-  if( inputOutArgs.supports(OUT_ARG_W_op) && inputOutArgs.get_W_op().get() ) {
+  if( inputOutArgs.supports(OUT_ARG_W_op) && nonnull(inputOutArgs.get_W_op()) ) {
     if ( supports(OUT_ARG_W_op) || !ignoreUnsupported )
       set_W_op(inputOutArgs.get_W_op());
+  }
+  // W_prec
+  if( inputOutArgs.supports(OUT_ARG_W_prec) && nonnull(inputOutArgs.get_W_prec()) ) {
+    if ( supports(OUT_ARG_W_prec) || !ignoreUnsupported )
+      set_W_prec(inputOutArgs.get_W_prec());
   }
   // DfDp(l)
   for ( int l = 0; l < min_Np; ++l ) {
@@ -954,11 +978,11 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setFailed() const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   isFailed_ = true;
-  if( this->supports(OUT_ARG_f) && this->get_f().get() ) {
+  if( this->supports(OUT_ARG_f) && nonnull(this->get_f()) ) {
     assign(this->get_f().ptr(),ST::nan());
   }
   for( int j = 0; j < this->Ng(); ++j ) {
-    if(this->get_g(j).get())
+    if (nonnull(this->get_g(j)))
       assign(this->get_g(j).ptr(),ST::nan());
   }
   // ToDo: Set other objects to NaN as well!

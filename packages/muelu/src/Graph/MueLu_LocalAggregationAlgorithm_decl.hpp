@@ -52,7 +52,9 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
+
+#include "MueLu_AggOptions.hpp" // includes Ordering enum
 
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \
@@ -64,16 +66,7 @@
 
 namespace MueLu {
 
-  namespace AggOptions {
-    /* Options defining how to pick-up the next root node in the local aggregation procedure */
-    enum Ordering {
-      NATURAL = 0, /* node ordering   */
-      RANDOM  = 1, /* random ordering */
-      GRAPH   = 2  /* graph ordering  */
-    };
-  } // namespace AggOptions
-
-  using namespace AggOptions;
+  using namespace AggOptions; // necessary
 
   /* ************************************************************************* */
   /* definition of the structure from ML for holding aggregate information     */
@@ -123,7 +116,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact = Teuchos::null);
+    LocalAggregationAlgorithm();
 
     //! Destructor.
     virtual ~LocalAggregationAlgorithm() { }
@@ -136,7 +129,7 @@ namespace MueLu {
     void SetOrdering(Ordering ordering)                          { ordering_                = ordering;                }
     void SetMinNodesPerAggregate(int minNodesPerAggregate)       { minNodesPerAggregate_    = minNodesPerAggregate;    }
     void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
-    
+
     Ordering GetOrdering()                const { return ordering_;                }
     int      GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
     int      GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
@@ -147,7 +140,7 @@ namespace MueLu {
     //@{
 
     /*! @brief Local aggregation. */
-    void CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const; // CoarsenUncoupled
+    void CoarsenUncoupled(GraphBase const & graph, Aggregates & aggregates) const; // CoarsenUncoupled
 
   private:
     //! Aggregation options (TODO: Teuchos::ParameterList?)
@@ -162,13 +155,13 @@ namespace MueLu {
       @param list On input, a bunch of integers. On output, the same integers in a different order
       that is determined randomly.
     */
-    void RandomReorder(Teuchos::ArrayRCP<LO> list) const; 
+    void RandomReorder(Teuchos::ArrayRCP<LO> list) const;
 
     /*! @brief Generate a random number in the range [min, max] */
     int RandomOrdinal(int min, int max) const;
 
     //@}
-  
+
   }; //class LocalAggregationFactory
 
 } //namespace MueLu

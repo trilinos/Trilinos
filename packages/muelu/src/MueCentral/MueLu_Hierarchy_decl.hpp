@@ -51,7 +51,7 @@
 
 #include <Xpetra_ConfigDefs.hpp>  // global_size_t
 #include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -79,10 +79,10 @@ namespace MueLu {
     @class Hierarchy
     @brief Provides methods to build a multigrid hierarchy and apply multigrid cycles.
 
-    Allows users to manually populate operators at different levels within 
-    a multigrid method and push them into the hierarchy via SetLevel() 
-    and/or to supply factories for automatically generating prolongators, 
-    restrictors, and coarse level discretizations.  Additionally, this class contains 
+    Allows users to manually populate operators at different levels within
+    a multigrid method and push them into the hierarchy via SetLevel()
+    and/or to supply factories for automatically generating prolongators,
+    restrictors, and coarse level discretizations.  Additionally, this class contains
     an apply method that supports V and W cycles.
   */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps> //TODO: or BlockSparseOp ?
@@ -99,7 +99,7 @@ namespace MueLu {
     Hierarchy();
 
     //! Constructor
-    Hierarchy(const RCP<Operator> & A);
+    Hierarchy(const RCP<Matrix> & A);
 
     //! Destructor.
     virtual ~Hierarchy();
@@ -117,6 +117,7 @@ namespace MueLu {
 
   private:
     int LastLevelID() const;
+    void DumpCurrentGraph() const;
 
   public:
 
@@ -125,7 +126,6 @@ namespace MueLu {
 
     //! Add a new level at the end of the hierarchy
     void AddNewLevel();
-
 
     //! Retrieve a certain level from hierarchy.
     RCP<Level> & GetLevel(const int levelID = 0);
@@ -139,38 +139,6 @@ namespace MueLu {
     bool GetImplicitTranspose() const;
 
     //@}
-
-    //! @name Populate Methods.
-    //@{
-
-    /*!
-      @brief Constructs components of the hierarchy.
-
-      Invoke a set of factories to populate (construct prolongation, 
-      restriction, coarse level discretizations, and smoothers in this
-      order) a multigrid Hierarchy starting with information on 'startLevel'
-      and continuing for at most 'numDesiredLevels'.
-    */
-    Teuchos::ParameterList FullPopulate(const FactoryBase & PFact, 
-                                        const FactoryBase & RFact, 
-                                        const TwoLevelFactoryBase & AcFact, 
-                                        const SmootherFactory & SmooFact, 
-                                        const int &startLevel = 0, const int &numDesiredLevels = 10);
-
-    /*! @brief Populate hierarchy with A's, R's, and P's.
-
-    Invoke a set of factories to populate (construct prolongation, 
-    restriction, and coarse level discretizations in this
-    order) a multigrid Hierarchy starting with information on 'startLevel' 
-    and continuing for at most 'numDesiredLevels'. 
-
-    @return  List containing starting and ending level numbers, operator complexity, \#nonzeros in the fine
-    matrix, and the sum of nonzeros all matrices (including the fine).
-    */
-    Teuchos::ParameterList FillHierarchy(const PFactory & PFact, const RFactory & RFact, 
-                                         const TwoLevelFactoryBase & AcFact, 
-                                         const int startLevel = 0, const int numDesiredLevels = 10);
-    // FillHierarchy
 
     //! Helper function
     void CheckLevel(Level& level, int levelID);
@@ -216,40 +184,13 @@ namespace MueLu {
     bool Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManagerBase> fineLevelManager /* = Teuchos::null */, const Teuchos::Ptr<const FactoryManagerBase> coarseLevelManager,
                const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager = Teuchos::null);
 
-    //! 
-    Teuchos::ParameterList Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
-
-    /*! @brief Set solve method for coarsest level.
-
-    @param smooFact  fully constructed SmootherFactory 
-    @param pop       whether to use pre, post, or both pre and post smoothing 
-
-    Note: Whether the SmootherFactory builds both a pre- and post-smoother can be also be
-    controlled by SmootherFactory::SetSmootherPrototypes. This approach is a bit cumbersome, 
-    however.
-    */
-    //TODO: remove PRE/POST
-
-    void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH);
-
-    /*! @brief Construct smoothers on all levels but the coarsest.
-
-    Invoke a set of factories to construct smoothers within 
-    a multigrid Hierarchy starting with information on 'startLevel' 
-    and continuing for at most 'numDesiredLevels'. 
-
-    Note: last level smoother will not be set here. Use SetCoarsestSolver()
-    to define a smoother for the last level. Otherwise, a direct solve is
-    assumed
-    */
-    void SetSmoothers(SmootherFactory const & smooFact, LO const & startLevel = 0, LO numDesiredLevels = -1); //SetSmoothers()
-
-    // #define GimmeNorm(someVec, someLabel);
+    //!
+    void Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
 
     /*!
       @brief Apply the multigrid preconditioner.
 
-      In theory, more general cycle types than just V- and W-cycles are possible.  However, 
+      In theory, more general cycle types than just V- and W-cycles are possible.  However,
       the enumerated type CycleType would have to be extended.
 
       @param B right-hand side of linear problem
@@ -261,6 +202,17 @@ namespace MueLu {
     void Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value = 1
                  const bool &InitialGuessIsZero = false, const CycleType &Cycle = VCYCLE, const LO &startLevel = 0);
 
+    /*!
+      @brief Print matrices in the multigrid hierarchy to file.
+
+      @param[in] start start level
+      @param[in] end   end level
+
+      Default behavior is to print system and transfer matrices from the entire hierarchy.
+      Files are named "A_0.m", "P_1.m", "R_1.m", etc, and are in matrix market coordinate format.
+    */
+    void Write(const LO &start=-1, const LO &end=-1);
+
     //@}
 
     //! @name Permanent storage
@@ -268,11 +220,11 @@ namespace MueLu {
 
     //! Call Level::Keep(ename, factory) for each level of the Hierarchy.
     void Keep(const std::string & ename, const FactoryBase* factory = NoFactory::get());
-    
+
     //! Call Level::Delete(ename, factory) for each level of the Hierarchy.
-    void Delete(const std::string& ename, const FactoryBase* factory = NoFactory::get()); 
-    
-    //! Call Level::AddKeepFlag for each level of the Hierarchy.      
+    void Delete(const std::string& ename, const FactoryBase* factory = NoFactory::get());
+
+    //! Call Level::AddKeepFlag for each level of the Hierarchy.
     void AddKeepFlag(const std::string & ename, const FactoryBase* factory = NoFactory::get(), KeepType keep = MueLu::Keep);
 
     //! Call Level::RemoveKeepFlag for each level of the Hierarchy
@@ -282,22 +234,37 @@ namespace MueLu {
 
     //! @name Overridden from Teuchos::Describable
     //@{
-    
+
     //! Return a simple one-line description of this object.
     std::string description() const;
+
+    /*! @brief Print the Hierarchy with some verbosity level to a FancyOStream object.
     
-    //! Print the object with some verbosity level to an FancyOStream object.
+        @param[in] out The Teuchos::FancyOstream.
+        @param[in] verbLevel Controls amount of output.
+    */
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+    Teuchos::ParameterList print(Teuchos::FancyOStream &out=*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)),
+                                 const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
 
     /*! Indicate whether the multigrid method is a preconditioner or a solver.
-    
+
       This is used in conjunction with the verbosity level to determine whether the residuals can be printed.
     */
     void IsPreconditioner(const bool flag);
 
     //@}
+
+    void EnableGraphDumping(const std::string& filename, int levelID = 1) {
+      isDumpingEnabled_ = true;
+      dumpLevel_ = levelID;
+      dumpFile_  = filename;
+    }
+
+    int GetNumberOfLevels() {
+      return Teuchos::as<int>(Levels_.size());
+    }
 
   private:
     //! Copy constructor is not implemented.
@@ -309,6 +276,11 @@ namespace MueLu {
     Xpetra::global_size_t maxCoarseSize_;
     bool implicitTranspose_;
     bool isPreconditioner_;
+
+    //! graph dumping
+    bool isDumpingEnabled_;
+    int  dumpLevel_;
+    std::string dumpFile_;
 
   }; //class Hierarchy
 

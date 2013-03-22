@@ -126,7 +126,7 @@ public:
 
   virtual StatusType getStatus() const;
 
-  virtual ostream& print(ostream& stream, int indent = 0) const;
+  virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
   
 protected:
 
@@ -179,7 +179,7 @@ private:
   const ComboType type;
 
   //! Vector of generic status tests
-  vector<Teuchos::RCP<Generic> > tests;
+  std::vector<Teuchos::RCP<Generic> > tests;
 
   //! %Status
   StatusType status;

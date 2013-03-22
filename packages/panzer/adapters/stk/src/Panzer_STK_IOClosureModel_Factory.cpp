@@ -50,8 +50,9 @@ template< >
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
 panzer_stk::IOClosureModelFactory<panzer::Traits::Residual>::
 buildClosureModels(const std::string& model_id,
-		   const panzer::InputEquationSet& set,
-		   const Teuchos::ParameterList& models, 
+		   const Teuchos::ParameterList& models,
+		   const panzer::FieldLayoutLibrary& fl,
+		   const Teuchos::RCP<panzer::IntegrationRule>& ir, 
 		   const Teuchos::ParameterList& default_params, 
 		   const Teuchos::ParameterList& user_data,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -65,7 +66,7 @@ buildClosureModels(const std::string& model_id,
 
   // build user evaluators
   RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > user_evals = 
-    userCMF_->buildClosureModels(model_id,set,models,default_params,user_data,global_data,fm);
+    userCMF_->buildClosureModels(model_id,models,fl,ir,default_params,user_data,global_data,fm);
 
   // add user evaluators to evaluator list
   RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > evaluators = 
@@ -77,8 +78,7 @@ buildClosureModels(const std::string& model_id,
   if(!blockIdEvaluated_[block_id]) {
      typedef std::map<std::string,std::vector<std::string> > BlockIdToFields;
 
-     Teuchos::RCP<panzer::IntegrationRule> intRule = default_params.get<Teuchos::RCP<panzer::IntegrationRule> >("IR");
-     int worksetsize = intRule->dl_scalar->dimension(0);
+     int worksetsize = ir->dl_scalar->dimension(0);
 
      // if a requested field is found then add in cell avg quantity evaluator
      BlockIdToFields::const_iterator cellAvgItr = blockIdToCellAvgFields_.find(block_id);
@@ -89,7 +89,7 @@ buildClosureModels(const std::string& model_id,
         // setup averge cell fields
         Teuchos::ParameterList pl;
         pl.set("Mesh",mesh_);
-        pl.set("IR",intRule);
+        pl.set("IR",ir);
         pl.set("Field Names",fieldNames);
         pl.set("Scatter Name", block_id+"_Cell_Avg_Fields");
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval

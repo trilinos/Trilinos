@@ -48,6 +48,6 @@
 #include "NOX_Version.H"
 #include "Trilinos_version.h"
 
-string NOX::version() { 
+std::string NOX::version() { 
   return("NOX in Trilinos " TRILINOS_VERSION_STRING); 
 }

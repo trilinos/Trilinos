@@ -44,8 +44,6 @@
 #ifndef PARALLELCOMM_HPP
 #define PARALLELCOMM_HPP
 
-#include <cstddef>
-
 //------------------------------------------------------------------------
 
 #if defined( HAVE_MPI )
@@ -102,7 +100,7 @@ namespace comm {
 // Stub for non-parallel
 
 struct Machine {
-  static Machine init( int * argc , char *** argv )
+  static Machine init( int * , char *** )
   { return Machine(); }
 
   static void finalize() {}

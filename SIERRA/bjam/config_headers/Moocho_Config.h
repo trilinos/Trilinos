@@ -1,6 +1,2 @@
-
-#include "Teuchos_config.h"
-
-#define HAVE_MOOCHO_QPKWIK 1
-#define HAVE_MOOCHO_FORTRAN 1
-#define HAVE_MOOCHO_THYRA 1
+#include "TrilinosSierraConfig.h"
+#include "Moocho_Config_fcs.h"

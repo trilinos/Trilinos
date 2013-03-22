@@ -55,6 +55,7 @@
 #include "MueLu_Aggregates_fwd.hpp"
 
 #include "MueLu_Graph_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                  /* any aggregate.                          */
@@ -71,14 +72,14 @@
                                  /* ArbitrateAndCommunicate() is            */
                                  /* invoked to arbitrate.                   */
 
-/***************************************************************************** 
+/*****************************************************************************
    Structure holding aggregate information. Right now, nAggregates, IsRoot,
    Vertex2AggId, procWinner are populated.  This allows us to look at a node
-   and determine the aggregate to which it has been assigned and the id of the 
+   and determine the aggregate to which it has been assigned and the id of the
    processor that owns this aggregate. It is not so easy to determine vertices
    within the kth aggregate or the size of the kth aggregate. Thus, it might be
-   useful to have a secondary structure which would be a rectangular CrsGraph 
-   where rows (or vertices) correspond to aggregates and colunmns (or edges) 
+   useful to have a secondary structure which would be a rectangular CrsGraph
+   where rows (or vertices) correspond to aggregates and colunmns (or edges)
    correspond to nodes. While not strictly necessary, it might be convenient.
 ****************************************************************************/
 
@@ -90,42 +91,89 @@ namespace MueLu {
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
-     
-    Aggregates(const Graph & graph);
+
+    /*! @brief Standard constructor for Aggregates structure
+     *
+     * Standard constructor of aggregates takes a Graph object as parameter.
+     * Uses the graph.GetImportMap() to initialize the internal vector for mapping nodes to (local) aggregate ids as well as
+     * the mapping of node to the owning processor id.
+     *
+     */
+    Aggregates(const GraphBase & graph);
+
+    /*! @brief Constructor for Aggregates structure
+     *
+     * This constructor takes a RCP pointer to a map which is used for the internal mappings of nodes to the (local) aggregate ids and the owning processor.
+     *
+     */
+    Aggregates(const RCP<const Map> & map);
+
+    /*! @brief Destructor
+     *
+     */
     virtual ~Aggregates() { }
-     
-    LO GetNumAggregates() const           { return nAggregates_;        } // rename GetNumLocal ?
+
+    LO GetNumAggregates() const           { return nAggregates_;        } ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
+
+    /*! @brief Set number of local aggregates on current processor.
+    
+        This has to be done by the aggregation routines.
+    */
     void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
-    RCP<LOVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       } // LocalOrdinal because it's an array of local id
+    /*! @brief Returns a nonconstant vector that maps local node IDs to local aggregates IDs.
+
+        For local node ID i, the corresponding vector entry v[i] is the local aggregate id to which i belongs on the current processor.
+    */
+    RCP<LOVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       }
+
+    /*! @brief Returns nonconsant vector that maps local node IDs to owning processor IDs.
+
+        For local node ID i, the corresponding vector entry v[i] is the owning processor ID.
+    */
     RCP<LOVector> & GetProcWinnerNonConst()       { return procWinner_;         }
-    const RCP<LOVector> & GetVertex2AggId() const { return vertex2AggId_;       } // LocalOrdinal because it's an array of local id
+    /*! @brief Returns constant vector that maps local node IDs to local aggregates IDs.
+
+        For local node ID i, the corresponding vector entry v[i] is the local aggregate id to which i belongs on the current processor.
+    */
+    const RCP<LOVector> & GetVertex2AggId() const { return vertex2AggId_;       }
+
+    /*! @brief Returns constant vector that maps local node IDs to owning processor IDs.
+
+        For local node ID i, the corresponding vector entry v[i] is the owning processor ID.
+    */
     const RCP<LOVector> & GetProcWinner() const   { return procWinner_;         }
 
-    bool IsRoot(LO i) const               { return isRoot_[i];          } // Local
-    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         } // Local
+    //! Returns true if node with given local node id is marked to be a root node
+    bool IsRoot(LO i) const               { return isRoot_[i];          }
+
+    /*! @brief Set root node information.
     
-    const RCP<const Map> GetMap() const { return vertex2AggId_->getMap(); }
+    Used by aggregation methods only.
+    */
+    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         }
+
+    const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
     /*! @brief Compute sizes of aggregates
-     * 
+     *
      * returns the number of nodes in each aggregate in an array.
-     * 
+     *
      */
     Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const;
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
-     
+
     //! Return a simple one-line description of this object.
     std::string description() const;
-     
+
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
 
   private:
     LO   nAggregates_;              /* Number of aggregates on this processor  */
-    
+
     RCP<LOVector> vertex2AggId_;    /* vertex2AggId[k] gives a local id        */
                                     /* corresponding to the aggregate to which */
                                     /* local id k has been assigned.  While k  */

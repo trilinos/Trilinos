@@ -111,7 +111,7 @@ int MatrixFree::SetUseTranspose(bool UseTranspose)
 {
   if (UseTranspose == true) {
     utils.out() << "ERROR: NOX::Epetra::MatrixFree::SetUseTranspose() - Transpose is "
-	 << "unavailable in Matrix-Free mode!" << endl;
+	 << "unavailable in Matrix-Free mode!" << std::endl;
     throw "NOX Error";
   }
   return (-1);
@@ -153,7 +153,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // Make sure the norm is not zero, otherwise we can get an inf perturbation
   if (vectorNorm == 0.0) {
-    //utils.out(Utils::Warning) << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm is zero" << endl;
+    //utils.out(Utils::Warning) << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm is zero" << std::endl;
     vectorNorm = 1.0;
     wrappedY->PutScalar(0.0);
     return 0;
@@ -229,7 +229,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 int MatrixFree::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   utils.out() << "ERROR: NOX::MatrixFree::ApplyInverse - Not available for Matrix Free!"
-       << endl;
+       << std::endl;
   throw "NOX Error";
   return (-1);
 }
@@ -237,7 +237,7 @@ int MatrixFree::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 double MatrixFree::NormInf() const
 {
   utils.out() << "ERROR: NOX::Epetra::MatrixFree::NormInf() - Not Available for "
-       << "Matrix-Free mode!" << endl;
+       << "Matrix-Free mode!" << std::endl;
   throw "NOX Error";
   return 1.0;
 }

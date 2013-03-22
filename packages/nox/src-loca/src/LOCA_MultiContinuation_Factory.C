@@ -73,13 +73,13 @@ LOCA::MultiContinuation::Factory::create(
       const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
-      const vector<int>& paramIDs)
+      const std::vector<int>& paramIDs)
 {
-  string methodName = "LOCA::MultiContinuation::Factory::create()";
+  std::string methodName = "LOCA::MultiContinuation::Factory::create()";
   Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy> strategy;
 
   // Get name of strategy
-  const string& name = strategyName(*stepperParams);
+  const std::string& name = strategyName(*stepperParams);
 
   if (name == "Natural")
     strategy = 
@@ -102,7 +102,7 @@ LOCA::MultiContinuation::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = stepperParams->get("User-Defined Name",
+    std::string userDefinedName = stepperParams->get("User-Defined Name",
 							 "???");
     if ((*stepperParams).INVALID_TEMPLATE_QUALIFIER
 	isType< Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy> >(userDefinedName))
@@ -123,7 +123,7 @@ LOCA::MultiContinuation::Factory::create(
   return strategy;
 }
 
-const string&
+const std::string&
 LOCA::MultiContinuation::Factory::strategyName(
 				  Teuchos::ParameterList& stepperParams) const
 {

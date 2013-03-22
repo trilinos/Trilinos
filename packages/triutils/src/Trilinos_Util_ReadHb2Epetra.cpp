@@ -41,18 +41,22 @@
 
 #include "Trilinos_Util.h"
 #include "iohb.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#include <vector>
+#include <algorithm>
 
-void Trilinos_Util_ReadHb2Epetra(char *data_file,
+void Trilinos_Util_ReadHb2Epetra_internal(char *data_file,
 				 const Epetra_Comm  &comm, 
 				 Epetra_Map *& map, 
 				 Epetra_CrsMatrix *& A, 
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
-				 Epetra_Vector *&xexact) {
+				 Epetra_Vector *&xexact,
+				 bool FakeLongLong) {
   FILE *in_file ;
   int numGlobalEquations=0, N_columns=0, n_entries=0, Nrhs=0;
   char Title[73], Key[9], Rhstype[4];
@@ -218,12 +222,49 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
   comm.Broadcast(&numGlobalEquations, 1, 0);
   int nlocal = 0;
   if (comm.MyPID()==0) nlocal = numGlobalEquations;
-  map = new Epetra_Map(numGlobalEquations, nlocal, 0, comm); // Create map with all elements on PE 0
-  
-  A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix on PE 0
-  if (comm.MyPID()==0)
-    for (int i=0; i<numGlobalEquations; i++)
-      A->InsertGlobalValues(i, pntr1[i+1]-pntr1[i], val1+pntr1[i], indx1+pntr1[i]);
+
+  // Note: We avoid converting all functions called by this function (and functions
+  // called by them) to support genuine long longs.  Instead we (optionally) fake
+  // long long in this function by having all int based data converted to long long
+  // so that all the tests/code that uses this function at least run.  Even though this
+  // code will not be able to handle "large" maps, it will at least work with
+  // long long. -- jhurani@txcorp.com
+
+  if(FakeLongLong) {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    map = new Epetra_Map((long long) numGlobalEquations, nlocal, (long long) 0, comm); // Create map with all elements on PE 0
+    A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix on PE 0
+
+    std::vector<long long> LL_indices;
+    if (comm.MyPID()==0) {
+      for (int i=0; i<numGlobalEquations; i++) {
+        if(pntr1[i+1]-pntr1[i] > 0) {
+          LL_indices.resize(pntr1[i+1]-pntr1[i]);
+		  const int* begin = indx1+pntr1[i];
+		  const int* end = begin + LL_indices.size();
+		  std::copy(begin, end, LL_indices.begin());
+		  A->InsertGlobalValues((long long) i, pntr1[i+1]-pntr1[i], val1+pntr1[i], &LL_indices.front());
+        }
+      }
+    }
+#else
+    throw "Trilinos_Util_ReadHb2Epetra_internal: long long requested but no long long maps";
+#endif
+  }
+  else
+  {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    map = new Epetra_Map(numGlobalEquations, nlocal, 0, comm); // Create map with all elements on PE 0
+    A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix on PE 0
+
+    if (comm.MyPID()==0)
+      for (int i=0; i<numGlobalEquations; i++)
+        A->InsertGlobalValues(i, pntr1[i+1]-pntr1[i], val1+pntr1[i], indx1+pntr1[i]);
+#else
+    throw "Trilinos_Util_ReadHb2Epetra_internal: int requested but no int maps";
+#endif
+  }
+
   A->FillComplete();
   
   x = new Epetra_Vector(Copy, *map, hbx);
@@ -256,3 +297,31 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
   }
   return;
 }
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
+void Trilinos_Util_ReadHb2Epetra(char *data_file,
+				 const Epetra_Comm  &comm, 
+				 Epetra_Map *& map, 
+				 Epetra_CrsMatrix *& A, 
+				 Epetra_Vector *& x, 
+				 Epetra_Vector *& b,
+				 Epetra_Vector *&xexact) {
+  Trilinos_Util_ReadHb2Epetra_internal(data_file, comm, map, A, x, b, xexact, false);
+}
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+void Trilinos_Util_ReadHb2Epetra64(char *data_file,
+				 const Epetra_Comm  &comm, 
+				 Epetra_Map *& map, 
+				 Epetra_CrsMatrix *& A, 
+				 Epetra_Vector *& x, 
+				 Epetra_Vector *& b,
+				 Epetra_Vector *&xexact) {
+  Trilinos_Util_ReadHb2Epetra_internal(data_file, comm, map, A, x, b, xexact, true);
+}
+
+#endif

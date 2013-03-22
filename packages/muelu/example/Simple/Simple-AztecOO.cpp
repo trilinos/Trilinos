@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm comm;
 #endif
-  
+
   //
   // Parameters
   //
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     if (myGlobalElements[i] == 0) {
 
       //TODO: should be rewritten in an Epetra style
-      A->InsertGlobalValues(myGlobalElements[i], 2, 
+      A->InsertGlobalValues(myGlobalElements[i], 2,
                             Teuchos::tuple<Scalar> (2.0, -1.0).getRawPtr(),
                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1).getRawPtr());
 
@@ -139,9 +139,9 @@ int main(int argc, char *argv[]) {
   // Construct a multigrid preconditioner
   //
 
-  // Turns a Epetra_CrsMatrix into a MueLu::Operator
+  // Turns a Epetra_CrsMatrix into a MueLu::Matrix
   RCP<Xpetra::CrsMatrix<SC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(A)); //TODO: should not be needed
-  RCP<Xpetra::Operator <SC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsOperator<SC, LO, GO, NO, LMO>(mueluA_));
+  RCP<Xpetra::Matrix <SC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<SC, LO, GO, NO, LMO>(mueluA_));
 
   // Multigrid Hierarchy
   RCP<Hierarchy> H = rcp(new Hierarchy(mueluA));
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Epetra_Vector> X = rcp(new Epetra_Vector(map));
   RCP<Epetra_Vector> B = rcp(new Epetra_Vector(map));
-  
+
   X->PutScalar((Scalar) 0.0);
   B->SetSeed(846930886); B->Random();
   //B->PutScalar((Scalar) 1.0);
@@ -184,6 +184,8 @@ int main(int argc, char *argv[]) {
   double tol = 1e-4;
 
   aztecSolver.Iterate(maxIts, tol);
+
+  //TODO: test solution
 
 #ifdef HAVE_MPI
   MPI_Finalize();

@@ -6,5 +6,12 @@
 /*! @defgroup MueLuTransferClasses The main MueLu prolongator classes
 */
 
+/*! @defgroup MueLuTimerClasses The MueLu timing classes.
+
+   
+  You should use FactoryMonitor and SubFactoryMonitor within factories.
+  Use Monitor and SubMonitor in non-factory objects.
+*/
+
 /*! @defgroup MueLuManagingDataDependencies Handling data dependencies between factories
 */

@@ -59,7 +59,7 @@ namespace NOX {
 
     //! A simple square matrix class for use by NOX::LAPACK::Group.
     /*! 
-     * The matrix is stored as a vector<T> array. It is templated so
+     * The matrix is stored as a std::vector<T> array. It is templated so
      * it can store entries of different types.  For example, the LOCA
      * LAPACK group stores a complex matrix for Hopf tracking.
      */
@@ -128,7 +128,7 @@ namespace NOX {
 } // namespace NOX
 
 template <typename T>
-ostream& operator<<(ostream& stream, const NOX::LAPACK::Matrix<T>& v) {
+std::ostream& operator<<(std::ostream& stream, const NOX::LAPACK::Matrix<T>& v) {
   v.print(stream);
   return stream;
 }

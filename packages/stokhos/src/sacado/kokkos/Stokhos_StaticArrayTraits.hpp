@@ -32,7 +32,11 @@
 #ifndef STOKHOS_STATIC_ARRAY_TRAITS_HPP
 #define STOKHOS_STATIC_ARRAY_TRAITS_HPP
 
+#include <cstring>
+
 #include "Sacado_Traits.hpp"
+
+#include "KokkosArray_Macros.hpp"
 
 namespace Stokhos {
 
@@ -41,33 +45,78 @@ namespace Stokhos {
    */
   template <typename T, typename node, 
 	    bool isScalar = Sacado::IsScalarType<T>::value>
-  struct StaticArrayTraits {
+  struct StaticArrayTraits {};
+
+  /*!
+   * \brief Static array allocation class that works for any type
+   */
+  template <typename T, typename N>
+  struct StaticArrayTraits<T, N, false> {
 
     typedef T value_type;
-    typedef node node_type;
+    typedef N node_type;
     
     //! Copy array from \c src to \c dest of length \c sz
-    static inline void copy(const T* src, T*  dest, std::size_t sz);
+    static
+    KOKKOSARRAY_INLINE_FUNCTION
+    void copy(const T* src, T*  dest, std::size_t sz) {
+      for (std::size_t i=0; i<sz; ++i)
+	*(dest++) = *(src++);
+    }
 
     //! Zero out array \c dest of length \c sz
-    static inline void zero(T* dest, std::size_t sz);
+    static 
+    KOKKOSARRAY_INLINE_FUNCTION
+    void zero(T* dest, std::size_t sz) {
+      for (std::size_t i=0; i<sz; ++i)
+	*(dest++) = T(0.);
+    }
 
     //! Fill array \c dest of length \c sz with value \c v
-    static inline void fill(T* desk, std::size_t sz, const T& v);
+    static 
+    KOKKOSARRAY_INLINE_FUNCTION
+    void fill(T* dest, std::size_t sz, const T& v) {
+      for (std::size_t i=0; i<sz; ++i)
+	*(dest++) = v;
+    }
+
+  };
+
+  /*!
+   * \brief Static array allocation class that is specialized for scalar
+   * i.e., fundamental or built-in types (float, double, etc...).
+   */
+  template <typename T, typename N>
+  struct StaticArrayTraits<T,N,true> {
+
+    typedef T value_type;
+    typedef N node_type;
+    
+    //! Copy array from \c src to \c dest of length \c sz
+    static 
+    KOKKOSARRAY_INLINE_FUNCTION
+    void copy(const T* src, T* dest, std::size_t sz) {
+      if (sz > 0) std::memcpy(dest,src,sz*sizeof(T));
+    }
+    
+    //! Zero out array \c dest of length \c sz
+    static 
+    KOKKOSARRAY_INLINE_FUNCTION
+    void zero(T* dest, std::size_t sz) {
+      if (sz > 0) std::memset(dest,0,sz*sizeof(T));
+    }
+
+    //! Fill array \c dest of length \c sz with value \c v
+    static 
+    KOKKOSARRAY_INLINE_FUNCTION
+    void fill(T* dest, std::size_t sz, T v) {
+      //std::memset(dest,v,sz*sizeof(T)); // memset doesn't work if v != 0?
+      for (std::size_t i=0; i<sz; ++i)
+	*(dest++) = v;
+    }
+
   };
 
 } // namespace Stokhos
-
-// Host specialization
-#include "KokkosArray_Host.hpp"
-#include "KokkosArray_Host_macros.hpp"
-#include "Stokhos_StaticArrayTraits_impl.hpp"
-#include "KokkosArray_Clear_macros.hpp"
-
-// Cuda specialization
-#include "KokkosArray_Cuda.hpp"
-#include "KokkosArray_Cuda_macros.hpp"
-#include "Stokhos_StaticArrayTraits_impl.hpp"
-#include "KokkosArray_Clear_macros.hpp"
 
 #endif // STOKHOS_STATIC_ARRAY_TRAITS_HPP

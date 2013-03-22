@@ -254,7 +254,7 @@ public:
 
     int info;
     NOX::LAPACK::Matrix<double> Acopy(A);
-    vector<int> ipiv(n,0);
+    std::vector<int> ipiv(n,0);
     solution = b;
     DGESV_F77(&n, &NOX::LAPACK::i_one, &Acopy(0,0), &n, &ipiv[0], &solution(0), &n, &info);
   };
@@ -363,7 +363,7 @@ int main(int argc, char* argv[])
   // -- Line Search --
   Teuchos::ParameterList& lineSearchParams = solverParams.sublist("Line Search");
 
-  string lineSearchType = "Polynomial";
+  std::string lineSearchType = "Polynomial";
 
   if (lineSearchType == "None")
   {
@@ -391,7 +391,7 @@ int main(int argc, char* argv[])
   Teuchos::ParameterList& directionParams = solverParams.sublist("Direction");
   
   // Set direction type
-  string directionMethod = "Newton";
+  std::string directionMethod = "Newton";
   directionParams.set("Method", directionMethod);
 
   // One last detail
@@ -410,28 +410,28 @@ int main(int argc, char* argv[])
   // ** Output solution **
 
   // Print the final parameter list from the solver
-  cout << "\n" << "-- Parameter List From Solver --" << "\n";
-  solver->getList().print(cout);
+  std::cout << "\n" << "-- Parameter List From Solver --" << "\n";
+  solver->getList().print(std::cout);
 
   // Get the answer from the solver
   NOX::LAPACK::Group solnGrp = 
     dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
   
   // Print the answer from the solver
-  cout << "\n" << "-- Final Solution From Solver --" << "\n";
+  std::cout << "\n" << "-- Final Solution From Solver --" << "\n";
   solnGrp.print();
 
   // Print the true answer
   solnGrp.setX(linear.getSolution());
   solnGrp.computeF();
-  cout << "\n" << "-- Expected Solution --" << "\n";
+  std::cout << "\n" << "-- Expected Solution --" << "\n";
   solnGrp.print();
 
   // Warn user if solve failed
   if (status == NOX::StatusTest::Converged)
-    cout << "Example Passed!" << endl;
+    std::cout << "Example Passed!" << std::endl;
   else
-    cout << "Error: Solve failed to converge!" << endl;
+    std::cout << "Error: Solve failed to converge!" << std::endl;
 
 }
 

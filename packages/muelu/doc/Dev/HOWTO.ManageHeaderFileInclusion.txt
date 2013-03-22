@@ -2,8 +2,8 @@ How to manage header inclusion
 ---------------------------------
 
 Basic rules:
-- Always include headers of classes that you are using, never rely on an 
-  include of include. Refactoring can easily change the inclusion pattern and 
+- Always include headers of classes that you are using, never rely on an
+  include of include. Refactoring can easily change the inclusion pattern and
   break your class.
 - Never include files that are unused.
 - Use forward declaration instead of full class declaration as much as possible.

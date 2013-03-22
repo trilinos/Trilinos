@@ -301,6 +301,8 @@ public:
   ModelEvaluatorBase::InArgs<double> getUpperBounds() const;
   /** \brief . */
   RCP<LinearOpBase<double> > create_W_op() const;
+  /** \brief Returns null currently. */
+  RCP<PreconditionerBase<double> > create_W_prec() const;
   /** \breif . */
   RCP<const LinearOpWithSolveFactoryBase<double> > get_W_factory() const;
   /** \brief . */

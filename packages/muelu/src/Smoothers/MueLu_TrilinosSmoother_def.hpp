@@ -47,7 +47,7 @@
 #define MUELU_TRILINOSSMOOTHER_DEF_HPP
 
 #include <Xpetra_Map.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_TrilinosSmoother_decl.hpp"
 
@@ -61,10 +61,10 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TrilinosSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap, RCP<FactoryBase> AFact)
     : type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
-  { 
+  {
     TEUCHOS_TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "overlap_ < 0");
   }
-    
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     currentLevel.DeclareInput("A", AFact_.get()); // TODO: also call Ifpack or Ifpack2::DeclareInput?
@@ -76,16 +76,17 @@ namespace MueLu {
     if (SmootherPrototype::IsSetup() == true) VerboseObject::GetOStream(Warnings0, 0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
     TEUCHOS_TEST_FOR_EXCEPTION(s_ != Teuchos::null, Exceptions::RuntimeError, "IsSetup() == false but s_ != Teuchos::null. This does not make sense");
 
-    Xpetra::UnderlyingLib lib = currentLevel.Get< RCP<Operator> >("A", AFact_.get())->getRowMap()->lib();
+    Xpetra::UnderlyingLib lib = currentLevel.Get< RCP<Matrix> >("A", AFact_.get())->getRowMap()->lib();
 
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_IFPACK2
-      s_ = rcp( new Ifpack2Smoother(type_, paramList_, overlap_, AFact_) );
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+      s_ = rcp( new Ifpack2Smoother(type_, paramList_, overlap_) );
+      s_->SetFactory("A", AFact_);
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Tpetra matrices. Compile MueLu with Ifpack2.");
 #endif
     } else if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_IFPACK
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
       s_ = GetIfpackSmoother<SC,LO,GO,NO,LMO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_, AFact_);
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Epetra matrices. Compile MueLu with Ifpack.");
@@ -93,7 +94,7 @@ namespace MueLu {
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib != UseTpetra && lib != UseEpetra");
     }
-    
+
     TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "");
 
     s_->Setup(currentLevel);
@@ -118,8 +119,8 @@ namespace MueLu {
   std::string TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2ToIfpack1Type(std::string const & type) {
     if (type == "RELAXATION") { return "point relaxation stand-alone"; }
     if (type == "CHEBYSHEV")  { return "Chebyshev"; }
-    if (type == "ILU")        { return "ILU"; } //TODO: ILU is not a valid Ifpack2 type. This is just a temporary work-around to use TrilinosSmoother with Epetra + ILU
-    
+    if (type == "ILUT")        { return "ILU"; } //TODO: ILU is not a valid Ifpack2 type. This is just a temporary work-around to use TrilinosSmoother with Epetra + ILU
+
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unkown type: " + type);
   }
 
@@ -134,15 +135,19 @@ namespace MueLu {
         ifpack1List.set("relaxation: type", "symmetric Gauss-Seidel");
       }
     }
-      
+
     return ifpack1List;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
     std::ostringstream out;
-    out << SmootherPrototype::description();
-    out << "{type = " << type_ << "}";
+    if (s_ != Teuchos::null)
+      out << s_->description();
+    else {
+      out << SmootherPrototype::description();
+      out << "{type = " << type_ << "}";
+    }
     return out.str();
   }
 
@@ -153,20 +158,20 @@ namespace MueLu {
     //       // Teuchos::OSTab tab2(out);
     //       s_->print(out, verbLevel);
     //     }
-    
+
     //     if (verbLevel & Debug) {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0) {
       out0 << "Prec. type: " << type_ << std::endl;
     }
-      
-    if (verbLevel & Parameters1) { 
+
+    if (verbLevel & Parameters1) {
       out0 << "PrecType: " << type_ << std::endl;
       out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
       out0 << "Overlap: " << overlap_ << std::endl;
     }
-      
+
     if (verbLevel & Debug) {
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
            << "-" << std::endl

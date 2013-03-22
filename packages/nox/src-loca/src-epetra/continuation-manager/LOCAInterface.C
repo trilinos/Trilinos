@@ -104,7 +104,7 @@ printSolution (const Epetra_Vector &x, const double conParam)
       problem->GetSolutionFileParameters();
 
     // Retrieving the file name from the continuation Manager
-    string solutionFileName = continuationManager->GetSolutionFileName();
+    std::string solutionFileName = continuationManager->GetSolutionFileName();
 
     // Printing a Solution File
     problem->PrintSolutionFile(solutionFileName,x,*solutionFileParams);
@@ -120,7 +120,7 @@ printSolution (const Epetra_Vector &x, const double conParam)
     problem->GetContinuationFileParameters();
 
   // Getting the continuation file name from the Continuation manager
-  string continuationFileName = continuationManager->GetContinuationFileName();
+  std::string continuationFileName = continuationManager->GetContinuationFileName();
 
   // Getting the step id from the continuation manager
   int stepId = continuationManager->GetStepID();
@@ -136,7 +136,7 @@ computeShiftedMatrix (double alpha, double beta,
                            const Epetra_Vector &x, Epetra_Operator &A)
 {
 
-cout << " AGS HACK -- LOCAInterface::computeShiftedMatrix RETURNS JACOBIAN!!! " << endl;
+cout << " AGS HACK -- LOCAInterface::computeShiftedMatrix RETURNS JACOBIAN!!! " << std::endl;
   problem->ComputeJacF(x);
   problem->GetJacF()->Scale(alpha);
 

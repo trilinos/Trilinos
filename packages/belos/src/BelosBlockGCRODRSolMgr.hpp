@@ -61,6 +61,7 @@
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
@@ -127,6 +128,7 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP> {
 private:
 
   typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraitsExt<ScalarType,MV> MVText;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -1809,10 +1811,8 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
   // Inform the linear problem of the linear systems to solve/generate.
   problem_->setLSIndex( currIdx );
 
-  // Check the number of blocks and change them is necessary.
-  int dim = MVT::GetVecLength( *(problem_->getRHS()) );
-     
   //ADD ERROR CHECKING TO MAKE SURE SIZE OF BLOCK KRYLOV SUBSPACE NOT LARGER THAN dim
+  //ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );
  
   // reset loss of orthogonality flag
   loaDetected_ = false;
@@ -1922,16 +1922,16 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
       primeList.set("Keep Hessenberg",true);
       primeList.set("Initialize Hessenberg",true);
       
-      int dim = MVT::GetVecLength( *(problem_->getRHS()) );
-      if (blockSize_*numBlocks_ > dim) {//if user has selected a total subspace dimension larger than system dimension
-        int tmpNumBlocks = 0;
+      ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );
+      if (blockSize_*static_cast<ptrdiff_t>(numBlocks_) > dim) {//if user has selected a total subspace dimension larger than system dimension
+        ptrdiff_t tmpNumBlocks = 0;
         if (blockSize_ == 1)
           tmpNumBlocks = dim / blockSize_;  // Allow for a good breakdown.
         else{
           tmpNumBlocks = ( dim - blockSize_) / blockSize_;  // Allow for restarting.
           printer_->stream(Warnings) << "Belos::BlockGmresSolMgr::solve():  Warning! Requested Krylov subspace dimension is larger than operator dimension!"
                                      << std::endl << "The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
-          primeList.set("Num Blocks",tmpNumBlocks);
+          primeList.set("Num Blocks",Teuchos::as<int>(tmpNumBlocks));
         }
       }
       else{

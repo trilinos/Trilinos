@@ -65,7 +65,7 @@ public:
 
   /** \brief . */
   MueLuPreconditionerFactory();
-    
+
   /** \brief Set the strategy object used to extract an
    * <tt>Epetra_Operator</tt> view of an input forward operator.
    *
@@ -136,7 +136,7 @@ private:
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
 };
-  
+
   //! Dynamically register MueLu adapters in Stratimikos
   void addMueLuToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
                                     const std::string & stratName="MueLu");

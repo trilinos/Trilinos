@@ -37,6 +37,7 @@
 #include "Stokhos_Dense3Tensor.hpp"
 #include "Stokhos_OneDOrthogPolyBasis.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_ArrayView.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Stokhos {
@@ -89,13 +90,17 @@ namespace Stokhos {
     /*!
      * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
      * \f$C_{ijk} = \langle\Psi_i\Psi_j\Psi_k\rangle\f$ where \f$\Psi_l\f$
-     * represents basis polynomial \f$l\f$ and \f$i,j=0,\dots,P\f$ where
-     * \f$P\f$ is size()-1 and \f$k=0,\dots,p\f$ where \f$p\f$
-     * is the supplied \c order.
+     * represents basis polynomial \f$l\f$ and \f$i,j,k=0,\dots,P\f$ where
+     * \f$P\f$ is size()-1.
      */
     virtual 
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
-    computeTripleProductTensor(ordinal_type order) const = 0;
+    computeTripleProductTensor() const = 0;
+
+    //! Compute linear triple product tensor where k = 0,1
+    virtual 
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    computeLinearTripleProductTensor() const = 0;
 
     //! Evaluate basis polynomial \c i at zero
     virtual value_type evaluateZero(ordinal_type i) const = 0;
@@ -105,8 +110,9 @@ namespace Stokhos {
      * Size of returned array is given by size(), and coefficients are
      * ordered from order 0 up to size size()-1.
      */
-    virtual void evaluateBases(const Teuchos::Array<value_type>& point,
-			       Teuchos::Array<value_type>& basis_vals) const = 0;
+    virtual void evaluateBases(
+      const Teuchos::ArrayView<const value_type>& point,
+      Teuchos::Array<value_type>& basis_vals) const = 0;
 
     //! Print basis to stream \c os
     virtual void print(std::ostream& os) const = 0;

@@ -58,7 +58,7 @@
     </ParameterList>
 
     <ParameterList name="Assembly">
-        <Parameter name="Workset Size" type="unsigned long" value="1"/>
+        <Parameter name="Workset Size" type="int" value="1"/>
     </ParameterList>
 
     <ParameterList name="Physics Blocks">
@@ -66,13 +66,12 @@
         <ParameterList name="solid">
 
             <ParameterList name="EQ 0">
-                <Parameter name="Name" type="string" value="Energy"/> 
-                <Parameter name="Basis" type="string" value="Q1"/> 
+                <Parameter name="Type" type="string" value="Energy"/> 
+                <Parameter name="Basis Type" type="string" value="HGrad"/> 
+                <Parameter name="Basis Order" type="int" value="1"/> 
                 <Parameter name="Integration Order" type="int" value="2"/> 
                 <Parameter name="Model ID" type="string" value="fluid model"/> 
                 <Parameter name="Prefix" type="string" value=""/>
-                <ParameterList name="Options">
-                </ParameterList>
             </ParameterList>
 
         </ParameterList>
@@ -81,14 +80,10 @@
 
     <ParameterList name="Closure Models">
  
-        <ParameterList name="Response Model">
+        <ParameterList name="fluid model">
 
             <ParameterList name="Volume Integral">
             </ParameterList>
-
-        </ParameterList>
-
-        <ParameterList name="fluid model">
 
             <ParameterList name="SOURCE_TEMPERATURE">
                 <Parameter name="Type" type="string" value="Parameter"/>

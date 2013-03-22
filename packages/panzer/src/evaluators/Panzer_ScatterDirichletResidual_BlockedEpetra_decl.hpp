@@ -53,6 +53,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
+#include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 
 namespace Thyra {
    template <typename ScalarT> class ProductVectorBase;
@@ -156,6 +157,8 @@ private:
   std::size_t local_side_id_;
 
   Teuchos::RCP<Thyra::ProductVectorBase<double> > dirichletCounter_;
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
 
   ScatterDirichletResidual_BlockedEpetra() {}
 };
@@ -215,6 +218,8 @@ private:
   std::size_t local_side_id_;
 
   Teuchos::RCP<Thyra::ProductVectorBase<double> > dirichletCounter_;
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
 
   ScatterDirichletResidual_BlockedEpetra();
 };

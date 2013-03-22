@@ -78,54 +78,53 @@ public:
   void barrier();
 
   //----------------------------------------------------------------------
+
+  inline
+  void * reduce_data() const
+    {
+#if defined( __INTEL_COMPILER )
+__assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
+#endif
+      return m_reduce ;
+    }
+
+  //----------------------------------------------------------------------
   /** \brief  This thread participates in the fan-in reduction.
    *
    */
-  template< class ReduceTraits , class Finalize >
+  template< class ReduceOper >
   inline
-  void reduce( typename ReduceTraits::value_type & update ,
-               const Finalize & finalize )
-  {
-    typedef typename ReduceTraits::value_type value_type ;
+  void reduce( const ReduceOper & reduce )
+    {
+      // Fan-in reduction of other threads' reduction data.
 
-    // Fan-in reduction of other threads' reduction data.
-    // 1) Wait for source thread to complete its work and
-    //    set its own state to 'Rendezvous'.
-    // 2) Join source thread reduce data.
-    // 3) Release source thread's reduction data and
-    //    set the source thread's state to 'Inactive' state.
+      for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
 
-    for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
-      // Wait until the source thread is finished with its work
-      // and enters the reducing state.
-      // Join the source thread's reduction data into this thread.
-      // Release the source thread.
+        // Wait for source thread to complete its work and
+        // set its own state to 'Rendezvous'.
+        m_fan[i]->wait( HostThread::ThreadActive );
 
-      m_fan[i]->wait( HostThread::ThreadActive );
+        // Join source thread reduce data.
+        reduce.join( reduce_data() , m_fan[i]->reduce_data() );
 
-      ReduceTraits::join( update, *((const value_type *) m_fan[i]->m_reduce) );
+        // Reset the source thread to 'Active' state.
+        m_fan[i]->set( HostThread::ThreadActive );
+      }
+
+      if ( m_thread_rank ) {
+        // If this is not the root thread then it will give its
+        // reduction data to another thread.
+        // Set the 'Rendezvous' state.
+        // Wait for the other thread to process reduction data
+        // and then reactivate this thread.
+
+        set(  HostThread::ThreadRendezvous );
+        wait( HostThread::ThreadRendezvous );
+      }
+      else {
+        reduce.finalize( reduce_data() );
+      }
     }
-
-    if ( m_thread_rank ) {
-      // If this is not the root thread then it will give its
-      // reduction data to another thread.
-      // Set the reduction data and then set the 'Rendezvous' state.
-      // Wait for the other thread to claim reduction data and
-      // deactivate this thread.
-
-      m_reduce = & update ;
-      set(  HostThread::ThreadRendezvous );
-      wait( HostThread::ThreadRendezvous );
-      m_reduce = NULL ;
-    }
-    else {
-      finalize( update );
-    }
-
-    for ( unsigned i = m_fan_count ; 0 < i ; ) {
-      m_fan[--i]->set( HostThread::ThreadActive );
-    }
-  }
 
   //----------------------------------------------------------------------
 
@@ -147,17 +146,16 @@ private:
   static const unsigned max_fan_count = 16 ;
   static const unsigned max_thread_count = 1 << max_fan_count ;
 
-  HostThread         *  m_fan[ max_fan_count ] ;
-  unsigned              m_fan_count ;
-  unsigned              m_thread_rank ;
-  unsigned              m_thread_count ;
-  unsigned              m_gang_rank ;
-  unsigned              m_gang_count ;
-  unsigned              m_worker_rank ;
-  unsigned              m_worker_count ;
-  unsigned              m_work_chunk ;
-  const void * volatile m_reduce ;    ///< Reduction memory
-  long         volatile m_state ;     ///< Thread control flag
+  HostThread   *  m_fan[ max_fan_count ] ;
+  size_type       m_fan_count ;
+  size_type       m_thread_rank ;
+  size_type       m_thread_count ;
+  size_type       m_gang_rank ;
+  size_type       m_gang_count ;
+  size_type       m_worker_rank ;
+  size_type       m_worker_count ;
+  void         *  m_reduce ;    ///< Reduction memory
+  long   volatile m_state ;     ///< Thread control flag
 
   friend class HostInternal ;
   friend class HostThreadWorker ;
@@ -237,16 +235,6 @@ public:
     : m_dst( dst ), m_src( src ), m_count( count )
     { HostParallelLaunch< HostParallelCopy >( *this ); }
 };
-
-template< typename ValueType >
-struct DeepCopy<ValueType,Host::memory_space,Host::memory_space> {
-
-  DeepCopy( ValueType * dst , const ValueType * src , size_t count )
-  {
-    HostParallelCopy< ValueType , ValueType >( dst , src , count );
-  }
-};
-
 
 template< typename DstType >
 class HostParallelFill {

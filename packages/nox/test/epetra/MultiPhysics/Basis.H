@@ -62,7 +62,7 @@ class Basis {
 
   // Calculates the values of u and x at the specified gauss point
   void getBasis(int gp, double *x, double *u, double *uold, 
-                vector<double*>& dep);
+                std::vector<double*>& dep);
 
  public:
   // Variables that are calculated at the gauss point
@@ -70,7 +70,7 @@ class Basis {
   double xx, eta, wt;
   double uu, duu;
   double uuold, duuold;
-  vector<double> ddep;
+  std::vector<double> ddep;
   double dx;
 };
 

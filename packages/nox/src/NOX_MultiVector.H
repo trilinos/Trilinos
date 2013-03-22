@@ -53,6 +53,7 @@
 
 #include "NOX_Abstract_MultiVector.H" // base class
 #include "Teuchos_RCP.hpp"
+#include <vector>
 
 namespace NOX {
 
@@ -107,9 +108,9 @@ namespace NOX {
      */
     virtual NOX::Abstract::MultiVector&
     setBlock(const NOX::Abstract::MultiVector& source, 
-	     const vector<int>& index);
+	     const std::vector<int>& index);
     virtual NOX::Abstract::MultiVector&
-    setBlock(const NOX::MultiVector& source, const vector<int>& index);
+    setBlock(const NOX::MultiVector& source, const std::vector<int>& index);
 
     //! Append the vectors in \c source to \c *this
     virtual NOX::Abstract::MultiVector&
@@ -211,14 +212,14 @@ namespace NOX {
      * columns are copies of the columns of \c *this given by \c index.
      */
     virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
-    subCopy(const vector<int>& index) const;
+    subCopy(const std::vector<int>& index) const;
 
     /*! 
      * \brief Creates a new multi-vector with \c index.size() columns that 
      * shares the columns of \c *this given by \c index.
      */
     virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-    subView(const vector<int>& index) const;
+    subView(const std::vector<int>& index) const;
 
     //@}
 
@@ -226,7 +227,7 @@ namespace NOX {
 
     //! Norm.
     virtual void
-    norm(vector<double>& result,
+    norm(std::vector<double>& result,
 	 NOX::Abstract::Vector::NormType type = 
 	 NOX::Abstract::Vector::TwoNorm) const;
 
@@ -256,7 +257,7 @@ namespace NOX {
   protected:
     
     //! Stores pointers to NOX::Abstract::Vector's
-    vector< Teuchos::RCP<NOX::Abstract::Vector> > vecs;
+    std::vector< Teuchos::RCP<NOX::Abstract::Vector> > vecs;
 
     //! Create %MultiVector holding \c numvecs vectors
     MultiVector(int numvecs);

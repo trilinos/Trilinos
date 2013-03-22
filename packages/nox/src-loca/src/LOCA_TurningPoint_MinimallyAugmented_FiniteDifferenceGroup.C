@@ -72,7 +72,7 @@ LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
-computeDwtJnDp(const vector<int>& paramIDs, 
+computeDwtJnDp(const std::vector<int>& paramIDs, 
 	       const NOX::Abstract::Vector& w,
 	       const NOX::Abstract::Vector& nullVector,
 	       NOX::Abstract::MultiVector::DenseMatrix& result,
@@ -84,7 +84,7 @@ computeDwtJnDp(const vector<int>& paramIDs,
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
-computeDwtJDp(const vector<int>& paramIDs, 
+computeDwtJDp(const std::vector<int>& paramIDs, 
 	       const NOX::Abstract::Vector& w,
 	       NOX::Abstract::MultiVector& result,
 	       bool isValid)

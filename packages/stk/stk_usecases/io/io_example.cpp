@@ -161,7 +161,8 @@ namespace stk_example_io {
   /// for the application with less complication and overhead.
   void io_example( stk::ParallelMachine comm,
 		   const std::string& in_filename,
-		   const std::string& out_filename)
+		   const std::string& out_filename,
+		   const std::string& decomp_method)
   {
     // Initialize IO system.  Registers all element types and storage
     // types and the exodusII default database type.
@@ -172,8 +173,12 @@ namespace stk_example_io {
 	      << "========================================================================\n";
 
     std::string dbtype("exodusII");
+    Ioss::PropertyManager properties;
+    if (!decomp_method.empty()) {
+      properties.add(Ioss::Property("DECOMPOSITION_METHOD", Ioss::Utils::uppercase(decomp_method)));
+    }
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(dbtype, in_filename, Ioss::READ_MODEL,
-						    comm);
+						    comm, properties);
     if (dbi == NULL || !dbi->ok()) {
       std::cerr  << "ERROR: Could not open database '" << in_filename
 		 << "' of type '" << dbtype << "'\n";
@@ -920,6 +925,7 @@ namespace stk_example_io {
     desc.add_options()
       ("help,h",        "produce help message")
       ("mesh",         bopt::value<std::string>(), "mesh file" )
+      ("decomposition,D", bopt::value<std::string>(), "decomposition method" )
       ("directory,d",  bopt::value<std::string>(), "working directory" )
       ("output-log,o", bopt::value<std::string>(), "output log path" )
       ("runtest,r",    bopt::value<std::string>(), "runtest pid file" );
@@ -945,7 +951,11 @@ namespace stk_example_io {
     if ( vm.count("mesh") ) {
       std::string in_filename = boost::any_cast<std::string>(vm["mesh"].value());
       std::string out_filename = in_filename + ".out";
-      stk_example_io::io_example(comm, in_filename, out_filename );
+      std::string decomp_method;
+      if (vm.count("decomposition")) {
+	decomp_method = boost::any_cast<std::string>(vm["decomposition"].value());
+      }
+      stk_example_io::io_example(comm, in_filename, out_filename, decomp_method );
     } else {
       std::cout << "OPTION ERROR: The '--mesh <filename>' option is required!\n";
       std::exit(EXIT_FAILURE);

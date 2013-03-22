@@ -28,6 +28,7 @@
 
 #ifndef AMESOS_CSPARSE_H
 #define AMESOS_CSPARSE_H
+#ifdef HAVE_AMESOS_CSPARSE
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
@@ -47,9 +48,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
-#ifdef HAVE_AMESOS_CSPARSE
 #include "cs.h"
-#endif
 
 //! Amesos_CSparse: Interface to the CSparse package.
 
@@ -212,4 +211,6 @@ private:
   //int nrhs_; // Number of RHS
 
 };  // class Amesos_CSparse  
+
+#endif
 #endif // AMESOS_CSPARSE_H

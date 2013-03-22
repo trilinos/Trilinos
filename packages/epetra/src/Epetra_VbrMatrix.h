@@ -1022,7 +1022,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     int GlobalMaxNumNonzeros() const {return(Graph_->GlobalMaxNumNonzeros());};
 
     //! Returns the index base for row and column indices for this graph.
-    int IndexBase() const {return(Graph_->IndexBase());};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  //! Index base for this map.
+  int  IndexBase() const {
+    if(RowMap().GlobalIndicesInt())
+      return (int) IndexBase64();
+    throw "Epetra_VbrMatrix::IndexBase: GlobalIndices not int.";
+  }
+#endif
+  long long  IndexBase64() const {return(Graph_->IndexBase64());};
 
     //! Returns a pointer to the Epetra_CrsGraph object associated with this matrix.
     const Epetra_CrsGraph & Graph() const {return(*Graph_);};

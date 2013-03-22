@@ -53,13 +53,21 @@ from testutil import fromPyTrilinosImport
 Epetra = fromPyTrilinosImport('Epetra', options.testharness)
 
 def main():
+  # Initialize the communicator and timer
   comm  = Epetra.PyComm()
+  timer = Epetra.Time(comm)
+
+  # Output the Epetra version
   if comm.MyPID() == 0: print Epetra.Version()
+
+  # Set up the problem
   nElem = 1000
   map   = Epetra.Map(nElem, 0, comm)
   x     = Epetra.Vector(map)
   b     = Epetra.Vector(map)
   b.Random()
+
+  # Manipulate the Epetra.Vectors
   x.Update(2.0, b, 0.0)   # x = 2*b
   xNorm = x.Norm2()
   bNorm = b.Norm2()
@@ -69,6 +77,9 @@ def main():
 
   # Synchronize processors
   comm.Barrier()
+
+  # Print the time
+  if comm.MyPID() == 0: print "Elapsed time =", timer.ElapsedTime(), "sec"
 
   if comm.MyPID() == 0: print "End Result: TEST PASSED"
 

@@ -107,9 +107,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LocalMap : public Epetra_Map {
     \return Pointer to a Epetra_Map object.
 
   */ 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 	Epetra_LocalMap(int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
-	Epetra_LocalMap(unsigned int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
-	Epetra_LocalMap(long long NumMyElements, int IndexBase, const Epetra_Comm& Comm);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+	Epetra_LocalMap(long long NumMyElements, long long IndexBase, const Epetra_Comm& Comm);
+#endif
 	
   //! Epetra_LocalMap copy constructor.
   

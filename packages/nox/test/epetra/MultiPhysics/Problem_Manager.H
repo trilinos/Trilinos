@@ -112,7 +112,7 @@ public:
   GenericEpetraProblem & getProblem(int id);
 
   // Get a problem given its name
-  GenericEpetraProblem & getProblem(string name);
+  GenericEpetraProblem & getProblem(std::string name);
 
   // Get a group given its unique id
   const NOX::Epetra::Group & getProblemSolutionGroup(int id);
@@ -150,7 +150,7 @@ public:
   {  return jacOperator; }
 
   // Create a dependence of Problem A equations on Problem B variables
-  void createDependency(string nameA, string nameB, bool interfacialCoupling = false);
+  void createDependency(std::string nameA, std::string nameB, bool interfacialCoupling = false);
 
   // Create a dependence of Problem A equations on Problem B variables
   void createDependency(GenericEpetraProblem& problemA, GenericEpetraProblem& problemB, 
@@ -259,24 +259,24 @@ public:
   bool solveSchurBased();
 
   // Output summary of copled problems
-  void outputStatus( ostream & os );
+  void outputStatus( std::ostream & os );
 
   // Create a filename for given problem, time-step, etc.
-  string createIOname(GenericEpetraProblem &, int timeStep = 0);
+  std::string createIOname(GenericEpetraProblem &, int timeStep = 0);
 
   // Solve problems using matrix-free coupling
-  void outputSolutions( const string outputDir, int timeStep = 0 );
+  void outputSolutions( const std::string outputDir, int timeStep = 0 );
 
   // Query whether or not offBlocks ar used
   bool useOffBlocks()
   { return doOffBlocks; }
 
   // Return my name
-  string getName() const 
+  std::string getName() const 
   { return GenericEpetraProblem::getName(); };
 
   // Return the problem name queries
-  string getProblemName(int id) 
+  std::string getProblemName(int id) 
   { return Names[id]; };
 
   // These allow inheritance from GenericEpetraProblem base class
@@ -347,7 +347,7 @@ private:
   Teuchos::RCP<Epetra_Map> compositeMap;	// Composite map for all registered problems
   Teuchos::RCP<Epetra_Vector> compositeSoln;	// Composite map for all registered problems
   map<int, Teuchos::RCP<GenericEpetraProblem> > Problems; // Problem container
-  map<int, string> Names;                   // Problem names
+  map<int, std::string> Names;                   // Problem names
   map<string, int> NameLookup;              // Needed to lookup problems by name
   map<int, Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> > LinearSystems;
   					    // Linear Systems container
@@ -374,7 +374,7 @@ private:
 
   // These containers allow off-diagonal block contributions representing
   // inter-problem coupling
-  map<int, vector<OffBlock_Manager*> > OffBlock_Managers;    
+  map<int, std::vector<OffBlock_Manager*> > OffBlock_Managers;    
 #endif
 
   map<int, Teuchos::RCP<Epetra_Operator> > BlockInverseOperators; // inverses (or approximations) to diagonal blocks

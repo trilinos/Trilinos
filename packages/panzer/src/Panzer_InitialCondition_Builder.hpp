@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_INITIAL_CONDITION_BUILDER_DECL_HPP
-#define PANZER_INITIAL_CONDITION_BUILDER_DECL_HPP
+#ifndef PANZER_INITIAL_CONDITION_BUILDER_HPP
+#define PANZER_INITIAL_CONDITION_BUILDER_HPP
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_PhysicsBlock.hpp"
@@ -52,7 +52,9 @@
 #include "Phalanx_FieldManager.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+
 #include <vector>
+#include <map>
 
 namespace panzer {
 
@@ -75,15 +77,13 @@ namespace panzer {
 					  const Teuchos::ParameterList& user_data,
 					  const bool write_graphviz_file,
 					  const std::string& graphviz_file_prefix,
-					  std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers);
+					  std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers);
 
-  void evaluateInitialCondition(const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
-				const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers,
+  void evaluateInitialCondition(WorksetContainer & wkstContainer,
+				const std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers,
 				Teuchos::RCP<panzer::LinearObjContainer> loc,
 				const double time_stamp);
   
 }
-
-#include "Panzer_InitialCondition_Builder_impl.hpp"
 
 #endif

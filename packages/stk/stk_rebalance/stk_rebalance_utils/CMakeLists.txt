@@ -19,4 +19,4 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-  ${CMAKE_INSTALL_PREFIX}/include/stk_rebalance_utils)
+  ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_rebalance_utils)

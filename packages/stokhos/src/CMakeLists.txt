@@ -8,6 +8,19 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 SET(HAVE_STOKHOS_DAKOTA ${${PACKAGE_NAME}_ENABLE_TriKota})
 
+# OpenMP support -- Add our own option to turn it off
+# without turning it off globally
+SET(Stokhos_ENABLE_OpenMP_Default OFF)
+IF(Trilinos_ENABLE_OpenMP)
+  SET(Stokhos_ENABLE_OpenMP_Default ON)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Stokhos_ENABLE_OpenMP
+  HAVE_STOKHOS_OPENMP
+  "Enable OpenMP support in Stokhos."
+  ${Stokhos_ENABLE_OpenMP_Default}
+  )
+
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
@@ -53,6 +66,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_LegendreBasisImp.hpp
   Stokhos_ClenshawCurtisLegendreBasis.hpp
   Stokhos_ClenshawCurtisLegendreBasisImp.hpp
+  Stokhos_GaussPattersonLegendreBasis.hpp
+  Stokhos_GaussPattersonLegendreBasisImp.hpp
   Stokhos_StieltjesPCEBasis.hpp
   Stokhos_StieltjesPCEBasisImp.hpp
   Stokhos_StieltjesBasis.hpp
@@ -67,9 +82,16 @@ SET(HEADERS ${HEADERS}
   Stokhos_OrthogPolyBasis.hpp
   Stokhos_ProductBasis.hpp
   Stokhos_DerivBasis.hpp
+  Stokhos_GrowthRules.hpp
   Stokhos_ProductBasisUtils.hpp
   Stokhos_CompletePolynomialBasis.hpp
   Stokhos_CompletePolynomialBasisImp.hpp
+  Stokhos_TensorProductBasis.hpp
+  Stokhos_TensorProductBasisImp.hpp
+  Stokhos_TotalOrderBasis.hpp
+  Stokhos_TotalOrderBasisImp.hpp
+  Stokhos_SmolyakBasis.hpp
+  Stokhos_SmolyakBasisImp.hpp
   Stokhos_GramSchmidtBasis.hpp
   Stokhos_GramSchmidtBasisImp.hpp
   Stokhos_ReducedPCEBasis.hpp
@@ -110,6 +132,13 @@ SET(HEADERS ${HEADERS}
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_QuadratureFactory.hpp
   Stokhos_QuadratureFactoryImp.hpp
+  Stokhos_PseudoSpectralOperator.hpp
+  Stokhos_TensorProductPseudoSpectralOperator.hpp
+  Stokhos_SmolyakPseudoSpectralOperator.hpp
+  Stokhos_SmolyakPseudoSpectralOperatorImp.hpp
+  Stokhos_QuadraturePseudoSpectralOperator.hpp
+  Stokhos_PseudoSpectralOperatorFactory.hpp
+  Stokhos_PseudoSpectralOperatorFactoryImp.hpp
   Stokhos_StandardStorage.hpp
   Stokhos_StaticStandardStorage.hpp
   Stokhos_StaticFixedStandardStorage.hpp
@@ -130,6 +159,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_AlgebraicOrthogPolyExpansionImp.hpp
   Stokhos_QuadOrthogPolyExpansion.hpp
   Stokhos_QuadOrthogPolyExpansionImp.hpp
+  Stokhos_PseudoSpectralOrthogPolyExpansion.hpp
+  Stokhos_PseudoSpectralOrthogPolyExpansionImp.hpp
   Stokhos_DerivOrthogPolyExpansion.hpp
   Stokhos_DerivOrthogPolyExpansionImp.hpp
   Stokhos_ForUQTKOrthogPolyExpansion.hpp
@@ -294,9 +325,9 @@ IF (Stokhos_ENABLE_Sacado)
     )
   IF (Stokhos_ENABLE_KokkosArray)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/impl)
     SET(HEADERS ${HEADERS}
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
+      sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
       sacado/kokkos/Stokhos_StaticArrayTraits.hpp
       sacado/kokkos/Stokhos_DynArrayTraits.hpp
       sacado/kokkos/Stokhos_LocalStorage.hpp
@@ -305,23 +336,13 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_DynamicStorage.hpp
       sacado/kokkos/Stokhos_DynamicStridedStorage.hpp
       sacado/kokkos/Stokhos_DynamicThreadedStorage.hpp
+      sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
       sacado/kokkos/Sacado_MP_Vector.hpp
       sacado/kokkos/Sacado_MP_VectorTraits.hpp
-      sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
-      sacado/kokkos/impl/Stokhos_StaticArrayTraits_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynArrayTraits_impl.hpp
-      sacado/kokkos/impl/Stokhos_LocalStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_StaticStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_StaticFixedStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynamicStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynamicStridedStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynamicThreadedStorage_cuda_impl.hpp
-      sacado/kokkos/impl/Sacado_MP_Vector_impl.hpp
-      sacado/kokkos/impl/Sacado_MP_Vector_ops.hpp
-      sacado/kokkos/impl/Stokhos_Sacado_Kokkos_MathFunctions_impl.hpp
+      sacado/kokkos/Sacado_MP_Vector_ops.hpp
     )
   ENDIF()
-  IF (Stokhos_ENABLE_MueLu)
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_MueLu)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
     TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
     SET(HEADERS ${HEADERS}
@@ -333,7 +354,7 @@ IF (Stokhos_ENABLE_Sacado)
       APPEND_GLOB(SOURCES muelu/explicit_instantiation/*.cpp)
     ENDIF()
   ENDIF()
-  IF (Stokhos_ENABLE_Tpetra)
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Tpetra)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
     IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
       SET(SOURCES ${SOURCES}
@@ -344,13 +365,49 @@ IF (Stokhos_ENABLE_Sacado)
 	)
     ENDIF()
   ENDIF()
-  IF (Stokhos_ENABLE_Ifpack2)
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Belos)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/belos)
+    SET(HEADERS ${HEADERS}
+      belos/BelosPCETpetraAdapter.hpp
+      )
+  ENDIF()
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Ifpack2 AND Stokhos_ENABLE_Belos)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ifpack2)
+    SET(HEADERS ${HEADERS}
+      ifpack2/Stokhos_Ifpack2.hpp
+      )
     IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       SET(SOURCES ${SOURCES}
 	ifpack2/ifpack2_pce_instantiations.cpp
 	)
     ENDIF()
+  ENDIF()
+ENDIF()
+
+IF (Stokhos_ENABLE_KokkosArray)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Host)
+  SET(HEADERS ${HEADERS}
+    kokkos/Stokhos_Multiply.hpp
+    kokkos/Stokhos_CrsMatrix.hpp
+    kokkos/Stokhos_BlockCrsMatrix.hpp
+    kokkos/Stokhos_StochasticProductTensor.hpp
+    kokkos/Stokhos_CrsProductTensor.hpp
+    kokkos/Stokhos_FlatSparse3Tensor.hpp
+    kokkos/Host/Stokhos_Host_CrsMatrix.hpp
+    kokkos/Host/Stokhos_Host_BlockCrsMatrix.hpp
+    kokkos/Host/Stokhos_Host_StochasticProductTensor.hpp
+    kokkos/Host/Stokhos_Host_CrsProductTensor.hpp
+    kokkos/Host/Stokhos_Host_FlatSparse3Tensor.hpp
+    )
+  IF(Stokhos_ENABLE_CUDA AND KokkosArray_ENABLE_DeviceCuda)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
+    SET(HEADERS ${HEADERS}
+      kokkos/Cuda/Stokhos_Cuda_CrsMatrix.hpp
+      kokkos/Cuda/Stokhos_Cuda_BlockCrsMatrix.hpp
+      kokkos/Cuda/Stokhos_Cuda_StochasticProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_CrsProductTensor.hpp
+      )
   ENDIF()
 ENDIF()
 
@@ -374,7 +431,7 @@ ENDIF()
 
 # CUDA/Thrust
 IF (Stokhos_ENABLE_Thrust)
-  # this is a manual specification of include dirs, necessary because 
+  # this is a manual specification of include dirs, necessary because
   # CUDA_COMPILE doesn't recognize the package architecture system.
   GET_PROPERTY(Stokhos_CUDA_INC_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
   LIST(APPEND Stokhos_CUDA_INC_DIRS ${Teuchos_INCLUDE_DIRS})
@@ -384,7 +441,7 @@ IF (Stokhos_ENABLE_Thrust)
   #message("Stokhos_CUDA_INC_DIRS = ${Stokhos_CUDA_INC_DIRS}")
   CUDA_INCLUDE_DIRECTORIES(${Stokhos_CUDA_INC_DIRS})
   CUDA_COMPILE(CUDA_SOURCES
-    Stokhos_CUDAStorage.cu 
+    Stokhos_CUDAStorage.cu
     Stokhos_CUDAQuadOrthogPolyExpansion.cu
   )
   SET(HEADERS ${HEADERS}
@@ -405,3 +462,5 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+
+#

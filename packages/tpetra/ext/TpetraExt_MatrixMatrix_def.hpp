@@ -79,6 +79,7 @@ void Multiply(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C,
   bool call_FillComplete_on_result)
 {
+  //TEUCHOS_FUNC_TIME_MONITOR_DIFF("My Matrix Mult", mmm_multiply);
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> Matrix_t;
   //
   //This method forms the matrix-matrix product C = op(A) * op(B), where
@@ -98,6 +99,8 @@ void Multiply(
     "Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
     "a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
     "\n\n MatrixMatrix::Multiply(): Matrix B is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION(C.isLocallyIndexed() , std::runtime_error,
+    "MatrixMatrix::Add ERROR, input matrix C must not be locally indexed!");
 
   //Convience typedefs
   typedef CrsMatrixStruct<
@@ -111,14 +114,14 @@ void Multiply(
   RCP<const Matrix_t > Aprime = null;
   RCP<const Matrix_t > Bprime = null;
   if(transposeA){
-    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  at(A);
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> at (Teuchos::rcpFromRef (A));
     Aprime = at.createTranspose();
   }
   else{
     Aprime = rcpFromRef(A);
   }
   if(transposeB){
-    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  bt(B);
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> bt (Teuchos::rcpFromRef (B));
     Bprime=bt.createTranspose();
   }
   else{
@@ -183,6 +186,7 @@ void Multiply(
 
   //If the result matrix C is not already FillComplete'd, we will do a
   //preprocessing step to create the nonzero structure,
+ /*
   if (!C.isFillComplete()) {
     CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsgraphbuilder(C.getRowMap());
 
@@ -199,6 +203,7 @@ void Multiply(
       call_FillComplete_on_result = false;
     }
   }
+  */
 
   //Now call the appropriate method to perform the actual multiplication.
 
@@ -236,6 +241,10 @@ void Add(
     "MatrixMatrix::Add ERROR, input matrix A.isFillComplete() is false; it is required to be true. (Result matrix B is not required to be isFillComplete()).");
   TEUCHOS_TEST_FOR_EXCEPTION(B.isFillComplete() , std::runtime_error,
     "MatrixMatrix::Add ERROR, input matrix B must not be fill complete!");
+  TEUCHOS_TEST_FOR_EXCEPTION(B.isStaticGraph() , std::runtime_error,
+    "MatrixMatrix::Add ERROR, input matrix B must not have static graph!");
+  TEUCHOS_TEST_FOR_EXCEPTION(B.isLocallyIndexed() , std::runtime_error,
+    "MatrixMatrix::Add ERROR, input matrix B must not be locally indexed!");
   TEUCHOS_TEST_FOR_EXCEPTION(B.getProfileType()!=DynamicProfile, std::runtime_error,
     "MatrixMatrix::Add ERROR, input matrix B must have a dynamic profile!");
   //Convience typedef
@@ -247,7 +256,7 @@ void Add(
     SpMatOps> CrsMatrix_t;
   RCP<const CrsMatrix_t> Aprime = null;
   if( transposeA ){
-	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
+	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(Teuchos::rcpFromRef (A));
     Aprime = theTransposer.createTranspose(DoOptimizeStorage); 
   }
   else{
@@ -323,7 +332,7 @@ void Add(
 
   //explicit tranpose A formed as necessary
   if( transposeA ) {
-	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
+	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(Teuchos::rcpFromRef (A));
     Aprime = theTransposer.createTranspose(DoOptimizeStorage);
   }
   else{
@@ -332,7 +341,7 @@ void Add(
 
   //explicit tranpose B formed as necessary
   if( transposeB ) {
-	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(B);
+	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(Teuchos::rcpFromRef (B));
     Bprime = theTransposer.createTranspose(DoOptimizeStorage);
   }
   else{
@@ -399,13 +408,14 @@ void mult_A_B(
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool onlyCalculateStructure)
 {
+  //TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
   LocalOrdinal C_firstCol = Bview.colMap->getMinLocalIndex();
   LocalOrdinal C_lastCol = Bview.colMap->getMaxLocalIndex();
 
   LocalOrdinal C_firstCol_import = OrdinalTraits<LocalOrdinal>::zero();
   LocalOrdinal C_lastCol_import = OrdinalTraits<LocalOrdinal>::invalid();
 
-  ArrayView<const GlobalOrdinal> bcols =Bview.colMap->getNodeElementList();
+  ArrayView<const GlobalOrdinal> bcols = Bview.colMap->getNodeElementList();
   ArrayView<const GlobalOrdinal> bcols_import = null;
   if (Bview.importColMap != null) {
     C_firstCol_import = Bview.importColMap->getMinLocalIndex();
@@ -414,30 +424,39 @@ void mult_A_B(
     bcols_import = Bview.importColMap->getNodeElementList();
   }
 
-  size_t C_numCols = C_lastCol - C_firstCol + OrdinalTraits<LocalOrdinal>::one();
-  size_t C_numCols_import = C_lastCol_import - C_firstCol_import + OrdinalTraits<LocalOrdinal>::one();
+  size_t C_numCols = C_lastCol - C_firstCol +
+                        OrdinalTraits<LocalOrdinal>::one();
+  size_t C_numCols_import = C_lastCol_import - C_firstCol_import +
+                                OrdinalTraits<LocalOrdinal>::one();
 
   if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
 
   Array<Scalar> dwork = onlyCalculateStructure ? Array<Scalar>() : Array<Scalar>(C_numCols);
   Array<GlobalOrdinal> iwork = Array<GlobalOrdinal>(C_numCols);
+  Array<size_t> iwork2 = Array<size_t>(C_numCols);
 
   Array<Scalar> C_row_i = dwork;
   Array<GlobalOrdinal> C_cols = iwork;
+  Array<size_t> c_index = iwork2;
+  Array<GlobalOrdinal> combined_index = Array<GlobalOrdinal>(2*C_numCols);
+  Array<Scalar> combined_values = onlyCalculateStructure ? Array<Scalar>() : Array<Scalar>(2*C_numCols);
 
-  size_t C_row_i_length, j, k;
+  size_t C_row_i_length, j, k, lastj, last_index;
 
   // Run through all the hash table lookups once and for all
   Array<LocalOrdinal> Acol2Brow(Aview.colMap->getNodeNumElements());
   if(Aview.colMap->isSameAs(*Bview.rowMap)){
     // Maps are the same: Use local IDs as the hash
-    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex();i<=Aview.colMap->getMaxLocalIndex();i++)
-      Acol2Brow[i]=i;				
+    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex(); i <=
+            Aview.colMap->getMaxLocalIndex(); i++)
+      Acol2Brow[i]=i;
   }
   else {
     // Maps are not the same:  Use the map's hash
-    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex();i<=Aview.colMap->getMaxLocalIndex();i++)
-      Acol2Brow[i]=Bview.rowMap->getLocalElement(Aview.colMap->getGlobalElement(i));
+    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex(); i <=
+            Aview.colMap->getMaxLocalIndex(); i++)
+      Acol2Brow[i]=Bview.rowMap->getLocalElement(
+            Aview.colMap->getGlobalElement(i));
   }
 
   //To form C = A*B we're going to execute this expression:
@@ -449,6 +468,9 @@ void mult_A_B(
 
   bool C_filled = C.isFillComplete();
 
+  for (size_t i = 0; i < C_numCols; i++)
+      c_index[i] = OrdinalTraits<size_t>::invalid();
+
   //loop over the rows of A.
   for(size_t i=0; i<Aview.numRows; ++i) {
 
@@ -458,6 +480,7 @@ void mult_A_B(
     if (Aview.remote[i]) {
       continue;
     }
+
 
     ArrayView<const LocalOrdinal> Aindices_i = Aview.indices[i];
     ArrayView<const Scalar> Aval_i  = onlyCalculateStructure ? null : Aview.values[i];
@@ -472,49 +495,134 @@ void mult_A_B(
     //result matrix C.
 
 
+    C_row_i_length = OrdinalTraits<size_t>::zero();
 
-    for(k=OrdinalTraits<size_t>::zero(); k<Aview.numEntriesPerRow[i]; ++k) {
-      LocalOrdinal Ak=Acol2Brow[Aindices_i[k]];
+    for(k = OrdinalTraits<size_t>::zero(); k < Aview.numEntriesPerRow[i]; ++k) {
+      LocalOrdinal Ak = Acol2Brow[Aindices_i[k]];
       Scalar Aval = onlyCalculateStructure ? Teuchos::as<Scalar>(0) : Aval_i[k];
 
-      ArrayView<const LocalOrdinal> Bcol_inds = Bview.indices[Ak];
-      ArrayView<const Scalar> Bvals_k = onlyCalculateStructure ? null : Bview.values[Ak];
+      if (Bview.remote[Ak]) continue;
 
-      C_row_i_length = OrdinalTraits<size_t>::zero();
+      const LocalOrdinal *Bcol_inds = Bview.indices[Ak].getRawPtr();
+      const Scalar *Bvals_k = onlyCalculateStructure ? NULL :
+                                     Bview.values[Ak].getRawPtr();
 
-      if (Bview.remote[Ak]) {
-        for(j=OrdinalTraits<size_t>::zero(); j<Bview.numEntriesPerRow[Ak]; ++j) {
-          if(!onlyCalculateStructure){
-            C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+      lastj = Bview.numEntriesPerRow[Ak];
+
+        for(j=OrdinalTraits<size_t>::zero(); j< lastj; ++j) {
+          LocalOrdinal col = Bcol_inds[j];
+          //assert(col >= 0 && col < C_numCols);
+          if (c_index[col] == OrdinalTraits<size_t>::invalid()){
+          //assert(C_row_i_length >= 0 && C_row_i_length < C_numCols);
+            if(!onlyCalculateStructure){
+                // This has to be a +=  so insertGlobalValue goes out
+                C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+            }
+            C_cols[C_row_i_length] = col;
+            c_index[col] = C_row_i_length;
+            C_row_i_length++;
           }
-          C_cols[C_row_i_length++] = bcols_import[Bcol_inds[j]];
-        }
-      }
-      else {
-        for(j=OrdinalTraits<size_t>::zero(); j<Bview.numEntriesPerRow[Ak]; ++j) {
-          if(!onlyCalculateStructure){
-            C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+          else {
+            if(!onlyCalculateStructure){
+              C_row_i[c_index[col]] += Aval*Bvals_k[j];
+            }
           }
-          C_cols[C_row_i_length++] = bcols[Bcol_inds[j]];
         }
-      }
+    }
+
+    for (size_t ii = 0; ii < C_row_i_length; ii++) {
+      c_index[C_cols[ii]] = OrdinalTraits<size_t>::invalid();
+      C_cols[ii] = bcols[C_cols[ii]];
+      combined_index[ii] = C_cols[ii];
+      if (!onlyCalculateStructure)
+          combined_values[ii] = C_row_i[ii];
+    }
+    last_index = C_row_i_length;
 
       //
       //Now put the C_row_i values into C.
       //
-
+      // We might have to revamp this later.
+    /*if (!onlyCalculateStructure)
+    {
       C_filled ?
         C.sumIntoGlobalValues(
-          global_row, 
-          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length), 
-          onlyCalculateStructure ? null : C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length))
+          global_row,
+          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length),
+          onlyCalculateStructure ? null :
+          C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length))
         :
         C.insertGlobalValues(
-          global_row, 
-          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length), 
-          onlyCalculateStructure ? null : C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length));
+          global_row,
+          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length),
+          onlyCalculateStructure ? null :
+          C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length));
+    }*/
 
+    C_row_i_length = OrdinalTraits<size_t>::zero();
+
+    for(k = OrdinalTraits<size_t>::zero(); k < Aview.numEntriesPerRow[i]; ++k) {
+      LocalOrdinal Ak = Acol2Brow[Aindices_i[k]];
+      Scalar Aval = onlyCalculateStructure ? Teuchos::as<Scalar>(0) : Aval_i[k];
+
+      if (!Bview.remote[Ak]) continue;
+
+      const LocalOrdinal *Bcol_inds = Bview.indices[Ak].getRawPtr();
+      const Scalar *Bvals_k = onlyCalculateStructure ? NULL :
+                                     Bview.values[Ak].getRawPtr();
+
+      lastj = Bview.numEntriesPerRow[Ak];
+        for(j=OrdinalTraits<size_t>::zero(); j< lastj; ++j) {
+          LocalOrdinal col = Bcol_inds[j];
+          //assert(col >= 0 && col < C_numCols);
+          if (c_index[col] == OrdinalTraits<size_t>::invalid()){
+          //assert(C_row_i_length >= 0 && C_row_i_length < C_numCols);
+            if(!onlyCalculateStructure){
+                // This has to be a +=  so insertGlobalValue goes out
+                C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+            }
+            C_cols[C_row_i_length] = col;
+            c_index[col] = C_row_i_length;
+            C_row_i_length++;
+            }
+            else {
+              if(!onlyCalculateStructure){
+                // This has to be a +=  so insertGlobalValue goes out
+                C_row_i[c_index[col]] += Aval*Bvals_k[j];
+              }
+            }
+        }
     }
+
+    for (size_t ii = 0; ii < C_row_i_length; ii++) {
+      c_index[C_cols[ii]] = OrdinalTraits<size_t>::invalid();
+      C_cols[ii] = bcols_import[C_cols[ii]];
+      combined_index[last_index] = C_cols[ii];
+      if (!onlyCalculateStructure)
+          combined_values[last_index] = C_row_i[ii];
+      last_index++;
+    }
+
+      //
+      //Now put the C_row_i values into C.
+      //
+      // We might have to revamp this later.
+    if (!onlyCalculateStructure)
+    {
+      C_filled ?
+        C.sumIntoGlobalValues(
+          global_row,
+          combined_index.view(OrdinalTraits<size_t>::zero(), last_index),
+          onlyCalculateStructure ? null : combined_values.view(
+          OrdinalTraits<size_t>::zero(), last_index))
+        :
+        C.insertGlobalValues(
+          global_row,
+          combined_index.view(OrdinalTraits<size_t>::zero(), last_index),
+          onlyCalculateStructure ? null : combined_values.view(
+          OrdinalTraits<size_t>::zero(), last_index));
+    }
+
   }
 
 }
@@ -627,7 +735,7 @@ void import_and_extract_views(
     }
 
     RCP<const Map_t> MremoteRowMap = rcp(new Map_t(
-      OrdinalTraits<GlobalOrdinal>::invalid(), 
+      OrdinalTraits<global_size_t>::invalid(), 
       MremoteRows(), 
       Mrowmap->getIndexBase(), 
       Mrowmap->getComm(), 

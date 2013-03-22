@@ -136,7 +136,9 @@ namespace Piro {
 	const Teuchos::Array<Teuchos::RCP<Teuchos::ParameterList> >& piroParams,
 	const Teuchos::RCP<AbstractNetworkModel>& network_model,
 	const Teuchos::RCP<Teuchos::ParameterList>& params,
-	const Teuchos::RCP<const Epetra_Comm>& comm);
+	const Teuchos::RCP<const Epetra_Comm>& comm,
+	const Teuchos::Array< Teuchos::RCP<NOX::Epetra::Observer> >& observers =
+	Teuchos::Array<Teuchos::RCP<NOX::Epetra::Observer> >());
 
       /** \name Overridden from EpetraExt::ModelEvaluator . */
       //@{
@@ -169,6 +171,7 @@ namespace Piro {
     protected:
 
       void do_dimension_reduction(
+	int model_index,
 	const InArgs& inArgs,
 	const InArgs& solver_inargs, 
 	const OutArgs& solver_outargs,
@@ -181,6 +184,7 @@ namespace Piro {
 	Teuchos::RCP<Teuchos::ParameterList>& reduced_params) const;
 
       void do_dimension_projection(
+	int model_index,
 	const InArgs& inArgs, 
 	const InArgs& reduced_inargs, 
 	const OutArgs& reduced_outargs,
@@ -198,6 +202,7 @@ namespace Piro {
       Teuchos::RCP<AbstractNetworkModel> network_model;
       Teuchos::RCP<Teuchos::ParameterList> params;
       Teuchos::RCP<const Epetra_Comm> comm;
+      Teuchos::Array< Teuchos::RCP<NOX::Epetra::Observer> > observers;
       
       Teuchos::Array< Teuchos::RCP<EpetraExt::ModelEvaluator> > solvers;
       Teuchos::Array< Teuchos::RCP<Piro::Epetra::StokhosSolver> > sgSolvers;
@@ -251,7 +256,7 @@ namespace Piro {
       mutable Teuchos::Array<EDerivativeMultiVectorOrientation> dgdp_sg_layout;
       mutable Teuchos::Array<Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> > dgdp_sg;
 
-      bool reduce_dimension;
+      Teuchos::Array<int> reduce_dimension;
       mutable Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad;
     };
 

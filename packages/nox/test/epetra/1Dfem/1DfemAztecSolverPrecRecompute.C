@@ -120,9 +120,9 @@ int main(int argc, char *argv[])
   // The number of unknowns must be at least equal to the 
   // number of processors.
   if (NumGlobalElements < NumProc) {
-    cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << endl;
-    cout << "Test failed!" << endl;
+    std::cout << "numGlobalBlocks = " << NumGlobalElements 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
+    std::cout << "Test failed!" << std::endl;
     throw "NOX Error";
   }
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
   // Create Linear Objects
   // Get the vector from the Problem
   if (verbose)
-    p.out() << "Creating Vectors and Matrices" << endl;
+    p.out() << "Creating Vectors and Matrices" << std::endl;
   Teuchos::RCP<Epetra_Vector> solution_vec = 
     interface->getSolution();
   Teuchos::RCP<Epetra_Vector> rhs_vec = 
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
 
 
   if (verbose)
-    p.out() << "Evaluating F and J" << endl;
+    p.out() << "Evaluating F and J" << std::endl;
   solution_vec->PutScalar(1.0);
   interface->computeF(*solution_vec, *rhs_vec);
   rhs_vec->Scale(-1.0);
@@ -194,11 +194,11 @@ int main(int argc, char *argv[])
   double norm =0.0;
   rhs_vec->Norm2(&norm);
   if (verbose)
-    p.out() << "Step 0, ||F|| = " << norm << endl;
+    p.out() << "Step 0, ||F|| = " << norm << std::endl;
 
   
   if (verbose)
-    p.out() << "Creating Ifpack preconditioner" << endl;
+    p.out() << "Creating Ifpack preconditioner" << std::endl;
     
   Ifpack Factory;
   Teuchos::RCP<Ifpack_Preconditioner> PreconditionerPtr;
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 
 
   if (verbose)
-    p.out() << "Creating Aztec Solver" << endl;
+    p.out() << "Creating Aztec Solver" << std::endl;
 
   Teuchos::RCP<AztecOO> aztecSolverPtr = Teuchos::rcp(new AztecOO());
   if (verbose)
@@ -224,9 +224,9 @@ int main(int argc, char *argv[])
   // *******************************
 
   if (verbose) {
-    p.out() << "**********************************************" << endl;
-    p.out() << "Testing Newton solve with prec reuse" << endl;
-    p.out() << "**********************************************" << endl;
+    p.out() << "**********************************************" << std::endl;
+    p.out() << "Testing Newton solve with prec reuse" << std::endl;
+    p.out() << "**********************************************" << std::endl;
   }
 
   int step_number = 0;
@@ -238,11 +238,11 @@ int main(int argc, char *argv[])
     step_number++;
 
     if (verbose)
-      p.out() << "Step " << step_number << ", ||F|| = " << norm << endl;
+      p.out() << "Step " << step_number << ", ||F|| = " << norm << std::endl;
 
     if (step_number != 1) {
       if (verbose) 
-	p.out() << "Recomputing Preconditioner (reusing graph)" << endl;
+	p.out() << "Recomputing Preconditioner (reusing graph)" << std::endl;
       
       PreconditionerPtr->Compute();
 
@@ -270,11 +270,11 @@ int main(int argc, char *argv[])
   }
 
   if (verbose) {
-    p.out() << "Final Step " << step_number << ", ||F|| = " << norm << endl;
+    p.out() << "Final Step " << step_number << ", ||F|| = " << norm << std::endl;
     if (converged)
-      p.out() << "Converged!!" << endl;
+      p.out() << "Converged!!" << std::endl;
     else 
-      p.out() << "Failed!!" << endl;
+      p.out() << "Failed!!" << std::endl;
   }
 
   // Tests
@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
 
   if (verbose)
     p.out() << "Total Number of Linear Iterations = "
-	    << total_linear_iterations << endl;
+	    << total_linear_iterations << std::endl;
 
   if (Comm.NumProc() == 1 && total_linear_iterations != 10)
     status = 1;
@@ -293,16 +293,16 @@ int main(int argc, char *argv[])
 
   // Summarize test results 
   if (converged && status == 0)
-    p.out() << "Test passed!" << endl;
+    p.out() << "Test passed!" << std::endl;
   else 
-    p.out() << "Test failed!" << endl;
+    p.out() << "Test failed!" << std::endl;
   
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
   if (verbose)
-    p.out() << "Status = " << status << endl;
+    p.out() << "Status = " << status << std::endl;
 
   // Final return value (0 = successfull, non-zero = failure)
   return status;

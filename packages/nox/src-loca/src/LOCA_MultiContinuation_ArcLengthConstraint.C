@@ -129,7 +129,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::setParam(int paramID, double val)
 
 void
 LOCA::MultiContinuation::ArcLengthConstraint::setParams(
-			 const vector<int>& paramIDs, 
+			 const std::vector<int>& paramIDs, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   isValidConstraints = false;
@@ -141,7 +141,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()
   if (isValidConstraints)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -189,11 +189,11 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ArcLengthConstraint::computeDP(
-		                const vector<int>& paramIDs, 
+		                const std::vector<int>& paramIDs, 
 		                NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 				bool isValidG)
 {
-   string callingFunction = 
+   std::string callingFunction = 
     "LOCA::MultiContinuation::ArcLengthConstraint::computeDP()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -218,7 +218,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeDP(
   // If a param ID is equal to a constraint param ID, then that column
   // of dgdp is given by that column of the scaled predictor, other wise
   // that column is zero
-  vector<int>::const_iterator it;
+  std::vector<int>::const_iterator it;
   int idx;
   for (unsigned int i=0; i<paramIDs.size(); i++) {
     it = find(conParamIDs.begin(), conParamIDs.end(), paramIDs[i]);

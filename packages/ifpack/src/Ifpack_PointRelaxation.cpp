@@ -528,6 +528,7 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
 
           int NumEntries;
           int col;
+	  (void) col; // Forestall compiler warning for unused variable.
           IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
                                                    &Values[0], &Indices[0]));
           double dtemp = 0.0;

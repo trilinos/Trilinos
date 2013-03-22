@@ -63,7 +63,7 @@ MaxIters(int maxIterations, const NOX::Utils* u) :
 
   if (maxiters < 1) 
   {
-    utils.err() << "NOX::StatusTest::MaxIters - must choose a number greater than zero" << endl;
+    utils.err() << "NOX::StatusTest::MaxIters - must choose a number greater than zero" << std::endl;
     throw "NOX Error";
   }
 }
@@ -99,13 +99,13 @@ NOX::StatusTest::StatusType NOX::StatusTest::MaxIters::getStatus() const
   return status;
 }
 
-ostream& NOX::StatusTest::MaxIters::print(ostream& stream, int indent) const
+std::ostream& NOX::StatusTest::MaxIters::print(std::ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
   stream << "Number of Iterations = " << niters << " < " << maxiters;
-  stream << endl;
+  stream << std::endl;
  return stream;
 }
 

@@ -91,7 +91,7 @@ buildElementDescriptor(stk::mesh::EntityId elmtId,std::vector<stk::mesh::EntityI
 
 class STK_Interface {
 public:
-   typedef int ProcIdData;
+   typedef double ProcIdData; // ECC: Not sure why?
    typedef stk::mesh::Field<double> SolutionFieldType;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
    typedef stk::mesh::Field<ProcIdData> ProcIdFieldType;
@@ -391,6 +391,8 @@ public:
    stk::mesh::Field<double> * getCellField(const std::string & fieldName,
                                            const std::string & blockId) const;
 
+   ProcIdFieldType * getProcessorIdField() { return processorIdField_; }
+
    //! Has <code>initialize</code> been called on this mesh object?
    bool isInitialized() const { return initialized_; }
 
@@ -415,7 +417,7 @@ public:
      */
    template <typename ArrayT>
    void setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
-                             const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
+                             const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue=1.0);
 
    /** Reads a particular field into an array. Notice this is setup to work with
      * the worksets associated with Panzer.
@@ -451,7 +453,7 @@ public:
      */
    template <typename ArrayT>
    void setCellFieldData(const std::string & fieldName,const std::string & blockId,
-                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
+                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue=1.0);
 
    /** Get vertices associated with a number of elements of the same geometry.
      *
@@ -462,7 +464,7 @@ public:
      *       If the size of <code>localIds</code> is 0, the function will silently return
      */
    template <typename ArrayT>
-   void getElementVertices(std::vector<std::size_t> & localIds, ArrayT & vertices) const;
+   void getElementVertices(const std::vector<std::size_t> & localIds, ArrayT & vertices) const;
 
    // const stk::mesh::fem::FEMInterface & getFEMInterface() const 
    // { return *femPtr_; }
@@ -641,7 +643,7 @@ protected:
 
 template <typename ArrayT>
 void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
-                                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues)
+                                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue)
 {
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
@@ -658,7 +660,7 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
 
          double * solnData = stk::mesh::field_data(*field,*node);
          // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-         solnData[0] = solutionValues(cell,i);
+         solnData[0] = scaleValue*solutionValues(cell,i);
       }
    }
 }
@@ -691,7 +693,7 @@ void STK_Interface::getSolutionFieldData(const std::string & fieldName,const std
 
 template <typename ArrayT>
 void STK_Interface::setCellFieldData(const std::string & fieldName,const std::string & blockId,
-                                     const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues)
+                                     const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue)
 {
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
@@ -703,12 +705,12 @@ void STK_Interface::setCellFieldData(const std::string & fieldName,const std::st
 
       double * solnData = stk::mesh::field_data(*field,*element);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-      solnData[0] = solutionValues[cell];
+      solnData[0] = scaleValue*solutionValues[cell];
    }
 }
 
 template <typename ArrayT>
-void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementIds, ArrayT & vertices) const
+void STK_Interface::getElementVertices(const std::vector<std::size_t> & localElementIds, ArrayT & vertices) const
 {
 
    // nothing to do! silently return

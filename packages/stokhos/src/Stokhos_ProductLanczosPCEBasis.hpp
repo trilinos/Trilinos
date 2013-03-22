@@ -102,13 +102,17 @@ namespace Stokhos {
     /*!
      * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
      * \f$C_{ijk} = \langle\Psi_i\Psi_j\Psi_k\rangle\f$ where \f$\Psi_l\f$
-     * represents basis polynomial \f$l\f$ and \f$i,j=0,\dots,P\f$ where
-     * \f$P\f$ is size()-1 and \f$k=0,\dots,p\f$ where \f$p\f$
-     * is the supplied \c order.
+     * represents basis polynomial \f$l\f$ and \f$i,j,k=0,\dots,P\f$ where
+     * \f$P\f$ is size()-1.
      */
     virtual 
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
-    computeTripleProductTensor(ordinal_type order) const;
+    computeTripleProductTensor() const;
+
+    //! Compute linear triple product tensor where k = 0,1,..,d
+    virtual 
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    computeLinearTripleProductTensor() const;
 
     //! Evaluate basis polynomial \c i at zero
     virtual value_type evaluateZero(ordinal_type i) const;
@@ -118,8 +122,9 @@ namespace Stokhos {
      * Size of returned array is given by size(), and coefficients are
      * ordered from order 0 up to size size()-1.
      */
-    virtual void evaluateBases(const Teuchos::Array<value_type>& point,
-			       Teuchos::Array<value_type>& basis_vals) const;
+    virtual void evaluateBases(
+      const Teuchos::ArrayView<const value_type>& point,
+      Teuchos::Array<value_type>& basis_vals) const;
 
     //! Print basis to stream \c os
     virtual void print(std::ostream& os) const;
@@ -132,21 +137,20 @@ namespace Stokhos {
     //! \name Implementation of Stokhos::ProductBasis methods
     //@{
 
-    //! Get orders of each coordinate polynomial given an index \c i
+   //! Get orders of each coordinate polynomial given an index \c i
     /*!
      * The returned array is of size \f$d\f$, where \f$d\f$ is the dimension of
      * the basis, and entry \f$l\f$ is given by \f$i_l\f$ where
      * \f$\Psi_i(x) = \psi_{i_1}(x_1)\dots\psi_{i_d}(x_d)\f$.
      */
-    virtual Teuchos::Array<ordinal_type> getTerm(ordinal_type i) const;
+    virtual const MultiIndex<ordinal_type>& term(ordinal_type i) const;
 
     //! Get index of the multivariate polynomial given orders of each coordinate
     /*!
      * Given the array \c term storing \f$i_1,\dots,\i_d\f$, returns the index
      * \f$i\f$ such that \f$\Psi_i(x) = \psi_{i_1}(x_1)\dots\psi_{i_d}(x_d)\f$.
      */
-    virtual ordinal_type 
-    getIndex(const Teuchos::Array<ordinal_type>& term) const;
+    virtual ordinal_type index(const MultiIndex<ordinal_type>& term) const;
 
     //! Return coordinate bases
     /*!
@@ -155,6 +159,9 @@ namespace Stokhos {
     Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, 
 							   value_type> > > 
     getCoordinateBases() const;
+
+    //! Return maximum order allowable for each coordinate basis
+    virtual MultiIndex<ordinal_type> getMaxOrders() const;
 
     //@}
 

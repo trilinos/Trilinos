@@ -4,6 +4,8 @@ CXXETRA_DEFINES = -ptused
 
 #if HasFlexBison
 BISON = bison --yacc --defines
+/* NOTE: Strip out the isatty line in the generated source */
+/*       Causes Trilinos build to fail */
 FLEX = flex
 
 apr_parser.cc aprepro_parser.h: aprepro.yy

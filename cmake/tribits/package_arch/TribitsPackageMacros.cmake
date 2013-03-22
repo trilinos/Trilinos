@@ -136,12 +136,12 @@ ENDMACRO()
 #     If specified, then shadowing warnings will be turned on for supported
 #     platforms/compilers.  The default is for shadowing warnings to be turned
 #     off.  Note that this can be overridden globally by setting the cache
-#     variable ${PROJECT_NAME}_ENABLE_SHADOWING_WARNIGNS.
+#     variable ${PROJECT_NAME}_ENABLE_SHADOWING_WARNINGS.
 #
 #   DISABLE_STRONG_WARNINGS
 #
 #     If specified, then all strong warnings will be turned off, if they are
-#     not already turned off by global cache varaibles.
+#     not already turned off by global cache variables.
 #
 #   CLEANED
 #
@@ -193,9 +193,14 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   #
 
   TRIBITS_SET_COMMON_VARS(${PACKAGE_NAME_IN})
+  
+  SET(${PACKAGE_NAME_IN}_DISABLE_STRONG_WARNINGS OFF
+     CACHE BOOL
+     "If set to true, then strong warnings for package ${PACKAGE_NAME_IN} will be disabled."
+     )
 
   # Set up the compile flags for the package
-  TRIBITS_SETUP_COMPILER_FLASGS()
+  TRIBITS_SETUP_COMPILER_FLAGS(${PACKAGE_NAME_IN})
 
   # Set up circular reference detection test failure
   IF (PARSE_DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
@@ -330,6 +335,11 @@ MACRO(TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION)
     "Enable the use of explicit template instantiation."
     ${${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION}
     )
+ENDMACRO()
+
+MACRO(TRIBITS_ADD_ETI_SUPPORT)
+  APPEND_GLOBAL_SET(${PROJECT_NAME}_ETI_PACKAGES ${PACKAGE_NAME})
+  GLOBAL_NULL_SET(${PACKAGE_NAME}_ETI_LIBRARYSET)
 ENDMACRO()
 
 

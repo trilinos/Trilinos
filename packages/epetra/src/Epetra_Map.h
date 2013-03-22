@@ -141,11 +141,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
   */ 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_Map(int NumGlobalElements, int IndexBase, const Epetra_Comm& Comm);
-  Epetra_Map(unsigned int NumGlobalElements, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-  Epetra_Map(long long NumGlobalElements, int IndexBase, const Epetra_Comm& Comm);
-  Epetra_Map(unsigned long long NumGlobalElements, int IndexBase, const Epetra_Comm& Comm);
+  Epetra_Map(long long NumGlobalElements, long long IndexBase, const Epetra_Comm& Comm);
 #endif
 
 
@@ -179,11 +177,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
   */ 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_Map(int NumGlobalElements, int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
-  Epetra_Map(unsigned int NumGlobalElements, int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-  Epetra_Map(long long NumGlobalElements, int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
-  Epetra_Map(unsigned long long NumGlobalElements, int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
+  Epetra_Map(long long NumGlobalElements, int NumMyElements, long long IndexBase, const Epetra_Comm& Comm);
 #endif
 
 
@@ -231,9 +227,37 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_Map(long long NumGlobalElements, int NumMyElements,
              const long long *MyGlobalElements,
-             int IndexBase, const Epetra_Comm& Comm);
+             long long IndexBase, const Epetra_Comm& Comm);
 #endif
   
+#if defined(EPETRA_NO_32BIT_GLOBAL_INDICES) && defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+  // default implementation so that no compiler/linker error in case neither 32 nor 64
+  // bit indices present.
+  Epetra_Map() {}
+#endif
+
+ //! Epetra_Map constructor for a user-defined arbitrary distribution of elements, where the user provides all the globals.
+  /*! \warning This method is intended for expert developer use only, and should never be called by user code.
+   */
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_Map(long long NumGlobal_Elements, int NumMy_Elements,
+	     const long long * myGlobalElements, 
+	     int indexBase,
+	     const Epetra_Comm& comm,
+	     bool UserIsDistributedGlobal,
+	     long long UserMinAllGID, long long UserMaxAllGID);
+#endif
+  
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  Epetra_Map(int NumGlobal_Elements, int NumMy_Elements,
+	     const int * myGlobalElements, 
+	     int indexBase,
+	     const Epetra_Comm& comm,
+	     bool UserIsDistributedGlobal,
+	     int UserMinAllGID, int UserMaxAllGID);
+#endif
+
+ 
   //! Epetra_Map copy constructor.
   Epetra_Map(const Epetra_Map& map);
   

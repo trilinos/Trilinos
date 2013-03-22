@@ -1,0 +1,20 @@
+<ParameterList name="Poisson2D Input">
+   <Parameter name="meshInput" type="string" value = "
+     mesh
+       rectilinear
+          nx = 20
+          ny = 20
+          bx = 1
+          by = 1
+          gmin = 0 0
+          gmax = 1 1
+       end
+       set assign
+          sideset, ilo, 1
+          sideset, jlo, 2
+          sideset, klo, 3
+          sideset, ihi, 4
+       end
+     end"
+   />
+</ParameterList>

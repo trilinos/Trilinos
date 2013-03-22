@@ -340,7 +340,7 @@ private:
   //! Number of application of the preconditioner (should be greater than 0).
   int NumSweeps_;
   //! Number of local blocks
-  size_t NumLocalBlocks_;
+  LocalOrdinal NumLocalBlocks_;
   //! Which type of point relaxation approach to use
   int PrecType_;
   //! Minimum diagonal value

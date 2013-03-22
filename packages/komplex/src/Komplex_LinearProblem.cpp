@@ -69,7 +69,7 @@ int Komplex_LinearProblem::UpdateValues(double c0r, double c0i, const Epetra_Row
   bool firstTime = false;
   KomplexMatrix_->PutScalar(0.0);
   TEUCHOS_TEST_FOR_EXCEPT(ProcessValues(c0r, c0i, A0, c1r, c1i, A1, Xr, Xi, Br, Bi, firstTime)!=0);
-
+  return(0);
 }
 //==============================================================================
 int Komplex_LinearProblem::ProcessValues(double c0r, double c0i, const Epetra_RowMatrix & A0,

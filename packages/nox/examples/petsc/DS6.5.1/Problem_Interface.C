@@ -73,12 +73,12 @@ bool Problem_Interface::computeJacobian(const Vec& x, Mat& Jac)
 
 bool Problem_Interface::computePreconditioner(Mat& M)
 {
-  cout << "ERROR: Problem_Interface::computePreconditioner() - Use Explicit Jaciban only for this test problem!" << endl;
+  std::cout << "ERROR: Problem_Interface::computePreconditioner() - Use Explicit Jaciban only for this test problem!" << std::endl;
   throw;
 }
 bool Problem_Interface::preconditionVector(Vec& y)
 {
-  cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jaciban only for this test problem!" << endl;
+  std::cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jaciban only for this test problem!" << std::endl;
   throw;
 }
 //-----------------------------------------------------------------------------

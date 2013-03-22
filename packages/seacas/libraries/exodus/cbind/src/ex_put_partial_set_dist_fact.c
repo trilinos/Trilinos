@@ -152,6 +152,9 @@ int ex_put_partial_set_dist_fact (int   exoid,
 
   start[0] = offset-1;
   count[0] = num_to_put;
+  if (num_to_put == 0)
+    start[0] = 0;
+  
   /* write out the distribution factors array */
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_vara_float(exoid, dist_id, start, count, set_dist_fact);

@@ -56,8 +56,8 @@ namespace Xpetra {
 
   //! \brief A implementation of the Platform class for MPI-based platforms.
   /*!
-    This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal. 
-    The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
+    This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal.
+    The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal
     type, if omitted, defaults to the \c LocalOrdinal type.
   */
   template<class Node=Kokkos::DefaultNode::DefaultNodeType>
@@ -66,7 +66,7 @@ namespace Xpetra {
     //! Typedef indicating the node type over which the platform is templated. This default to the Kokkos default node type.
     typedef Node NodeType;
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     //! Constructor
     explicit MpiPlatform(Teuchos::RCP<Node> node);
@@ -80,7 +80,7 @@ namespace Xpetra {
     //@}
 
     //! @name Class Creation and Accessor Methods
-    //@{ 
+    //@{
 
     //! Comm Instance
     Teuchos::RCP< const Teuchos::Comm<int> > getComm() const;
@@ -90,7 +90,7 @@ namespace Xpetra {
 
     //@}
 
-  protected: 
+  protected:
     //! Node object instantiated for the platform.
     Teuchos::RCP<Node> node_;
 
@@ -101,32 +101,32 @@ namespace Xpetra {
 
   template <class Node>
   MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
-    : node_(node) { 
+    : node_(node) {
     comm_ = Teuchos::createMpiComm<int>(rawMpiComm);
   }
 
   template <class Node>
   MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node)
-    : node_(node) { 
+    : node_(node) {
     comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
-  } 
+  }
 
   template <class Node>
   MpiPlatform<Node>::~MpiPlatform() {  }
 
   template <class Node>
-  MpiPlatform<Node>::MpiPlatform(const MpiPlatform<Node> &platform) { 
+  MpiPlatform<Node>::MpiPlatform(const MpiPlatform<Node> &platform) {
     comm_ = platform.comm_;
   }
 
   template <class Node>
-  Teuchos::RCP< const Teuchos::Comm<int> > 
-  MpiPlatform<Node>::getComm() const { 
+  Teuchos::RCP< const Teuchos::Comm<int> >
+  MpiPlatform<Node>::getComm() const {
     return comm_;
   }
 
   template <class Node>
-  Teuchos::RCP<Node> MpiPlatform<Node>::getNode() const 
+  Teuchos::RCP<Node> MpiPlatform<Node>::getNode() const
   {  return node_; }
 
 } // namespace Xpetra

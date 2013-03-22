@@ -456,6 +456,13 @@ bool SparsityFilter<MatrixType>::hasTransposeApply() const
   return true;
 }
 
+//==========================================================================
+template<class MatrixType> 
+bool SparsityFilter<MatrixType>::supportsRowViews() const
+{
+  return false;
+}
+
 //==========================================================================  
 template<class MatrixType> 
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType SparsityFilter<MatrixType>::getFrobeniusNorm() const

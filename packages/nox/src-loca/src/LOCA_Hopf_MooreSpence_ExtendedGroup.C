@@ -99,7 +99,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::ExtendedGroup(
     globalData->locaErrorCheck->throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");
   }
-  string bifParamName = hopfParams->get("Bifurcation Parameter", "None");
+  std::string bifParamName = hopfParams->get("Bifurcation Parameter", "None");
   const ParameterVector& p = grpPtr->getParams();
   bifParamID[0] = p.getIndex(bifParamName);
 
@@ -260,7 +260,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::computeF()
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Hopf::MooreSpence::ExtendedGroup::computeF()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -310,7 +310,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::computeJacobian()
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Hopf::MooreSpence::ExtendedGroup::computeJacobian()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -401,7 +401,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::computeNewton(
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Hopf::MooreSpence::ExtendedGroup::computeNewton()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -509,7 +509,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Hopf::MooreSpence::ExtendedGroup::applyJacobianMultiVector()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -729,7 +729,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::getNewtonPtr() const
 double
 LOCA::Hopf::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual() const 
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::Hopf::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual()";
   NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::Hopf::MooreSpence::ExtendedVector residual = *fVec;
@@ -794,7 +794,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::copy(
 
 void
 LOCA::Hopf::MooreSpence::ExtendedGroup::setParamsMulti(
-			  const vector<int>& paramIDs, 
+			  const std::vector<int>& paramIDs, 
 			  const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
@@ -826,7 +826,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::setParam(int paramID, double val)
 }
 
 void
-LOCA::Hopf::MooreSpence::ExtendedGroup::setParam(string paramID, double val)
+LOCA::Hopf::MooreSpence::ExtendedGroup::setParam(std::string paramID, double val)
 {
   const LOCA::ParameterVector& pVec = grpPtr->getParams();
   if (pVec.getIndex(paramID) == bifParamID[0])
@@ -848,18 +848,18 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::getParam(int paramID) const
 }
 
 double
-LOCA::Hopf::MooreSpence::ExtendedGroup::getParam(string paramID) const
+LOCA::Hopf::MooreSpence::ExtendedGroup::getParam(std::string paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::Hopf::MooreSpence::ExtendedGroup::computeDfDpMulti(
-					    const vector<int>& paramIDs, 
+					    const std::vector<int>& paramIDs, 
 					    NOX::Abstract::MultiVector& dfdp, 
 					    bool isValid_F)
 {
-   string callingFunction = 
+   std::string callingFunction = 
     "LOCA::Hopf::MooreSpence::ExtendedGroup::computeDfDpMulti()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -1089,7 +1089,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::init(bool perturbSoln,
      globalData->locaUtils->out() << 
        "\tIn LOCA::Hopf::MooreSpence::ExtendedGroup::init(), " << 
        "applying random perturbation to initial solution of size: " << 
-       globalData->locaUtils->sciformat(perturbSize) << endl;
+       globalData->locaUtils->sciformat(perturbSize) << std::endl;
     }
     Teuchos::RCP<NOX::Abstract::Vector> perturb = 
       xVec->getXVec()->clone(NOX::ShapeCopy);

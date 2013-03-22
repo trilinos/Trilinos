@@ -153,6 +153,8 @@ public:
   /** \brief . */
   RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief . */
+  RCP<PreconditionerBase<Scalar> > create_W_prec() const;
+  /** \brief . */
   RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
@@ -467,6 +469,14 @@ RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_W_op() const
 {
   return getUnderlyingModel()->create_W_op();
+}
+
+
+template<class Scalar>
+RCP<PreconditionerBase<Scalar> >
+ModelEvaluatorDelegatorBase<Scalar>::create_W_prec() const
+{
+  return getUnderlyingModel()->create_W_prec();
 }
 
 

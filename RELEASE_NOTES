@@ -12,13 +12,13 @@ large-scale, complex multi-physics engineering and scientific problems.
 
 Packages:
 
-The Trilinos 11.0 general release contains 51 packages: Amesos, Amesos2,
+The Trilinos 11.0 general release contains 54 packages: Amesos, Amesos2,
 Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
 ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
 Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
 Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards,
 ShyLU*, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra,
-Tpetra, TriKota, TrilinosCouplings, Trios*, Triutils, Xpetra*, Zoltan, Zoltan2*.
+Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra*, Zoltan, Zoltan2*.
 
 (* denotes package is being released externally as a part of Trilinos for the
 first time.)
@@ -40,11 +40,11 @@ Framework Release Notes:
   10.12 (making sure that deprecated warnings are enabled).  Save the full build
   output to a file to be searched for deprecated warnings.
 
-  3) Search the build output of the client code for ‚Äúdeprecated‚Äù warnings
+  3) Search the build output of the client code for "deprecated" warnings
   which give file names and line numbers for deprecated features.  For each
   deprecated warning or feature:
 
-  3.a) Look at the Trilinos source code referenced in the ‚Äúdeprecated‚Äù
+  3.a) Look at the Trilinos source code referenced in the "deprecated"
   warning and see why the feature (or file) was deprecated and what instructions
   there are for using an alternant implementation.  In many cases, the
   deprecated function or macro will be calling a non-deprecated variation.
@@ -69,7 +69,7 @@ Framework Release Notes:
   helpful, email trilinos-users@software.sandia.gov for advice.
 
   To see a discussion of the why and how of the management of deprecated code in
-  Trilinos, see Section 6.5 ‚ÄúRegulated Backward Compatibility: Details‚Äù in
+  Trilinos, see Section 6.5 "Regulated Backward Compatibility: Details" in
   the TriBITS Lifecycle Model technical report:
 
       http://www.ornl.gov/~8vt/TribitsLifecycleModel_v1.0.pdf
@@ -90,40 +90,40 @@ Amesos2
 
 Epetra
   Added support for 64-bit global indices
-  †
+  
   Epetra supports 64-bit global indices beginning with Trilinos Release 11.0
-  by using the "long long" datatype.† Epetra still supports 32-bit global
+  by using the "long long" datatype. Epetra still supports 32-bit global
   indices and the interface for using them remains the same.
-  †
+  
   - To construct Epetra objects for 64-bit indices, certain input arguments
-    must be "long long" instead of "int".† For example, compare
-    †
-    † 32: Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
-    ††††††††††††††††††††† const int *MyGlobalElements, ...)
-    † 64: Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
-    ††††††††††††††††††††† const long long *MyGlobalElements, ...)
-  †
-  - New member functions that return a long long value have a suffix "64".† For
-    example, GID64, NumGlobalNonzeros64, MaxAllGID64, etc.† These functions work
-    whether the underlying object is 32-bit or 64-bit based.† The older
+    must be "long long" instead of "int". For example, compare
+    
+      32: Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
+                          const int *MyGlobalElements, ...)
+      64: Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
+                          const long long *MyGlobalElements, ...)
+
+  - New member functions that return a long long value have a suffix "64". For
+    example, GID64, NumGlobalNonzeros64, MaxAllGID64, etc. These functions work
+    whether the underlying object is 32-bit or 64-bit based. The older
     non-suffixed functions work for 32-bit objects only.
-  †
+
   - New classes added for "long long" data: Epetra_LongLongVector,
     Epetra_LongLongSerialDenseVector, Epetra_LongLongSerialDenseMatrix.
-  †
+
   - To build Epetra and dependent packages without any 64-bit support turn on
-    the CMake flag Trilinos_NO_64BIT_GLOBAL_INDICES.† Default is off.
-  †
+    the CMake flag Trilinos_NO_64BIT_GLOBAL_INDICES. Default is off.
+
   - To enforce that a code is truly compatible with 64-bit Epetra
     turn on the CMake flag Trilinos_NO_32BIT_GLOBAL_INDICES, and fix any
-    compile-time or run-time errors.† Default is off.
-  †
+    compile-time or run-time errors. Default is off.
+
   Epetra 64-bit support FAQ (compile problem)
-  †
+
   Epetra-dependent code may not compile if it relied on automatic type
   conversion to "int" from non-int types when constructing Epetra objects or
-  calling certain member functions.† This is because now there can be ambiguity
-  due to overloading.† Use explicit conversion to either "int" or "long long".
+  calling certain member functions. This is because now there can be ambiguity
+  due to overloading. Use explicit conversion to either "int" or "long long".
 
 Kokkos
   - Non-backwards compatible change: row pointers for CRS objects are not longer
@@ -154,6 +154,8 @@ ShyLU
     model.
 
   - Should be used as Ifpack preconditioner (for now).
+
+  - ShyLU should be considered *EXPERIMENTAL* code.
 
 Teuchos
   - Dropped deprecated code in Trilinos 10.12 (see general release notes on

@@ -5,7 +5,7 @@ $TMPL_HEADERS
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_Vector.hpp"
 
-#include "Xpetra_EpetraMap.hpp" 
+#include "Xpetra_EpetraMap.hpp"
 #include "Xpetra_EpetraExport.hpp"
 #include "Xpetra_Utils.hpp"
 #include "Xpetra_EpetraUtils.hpp"
@@ -103,13 +103,13 @@ $TMPL_PUBLIC_FUNCTIONS
       Teuchos::ScalarTraits< Scalar >::seedrandom(seed);
       vec_->SetSeed(seed);
     }
- 
+
     //@}
-    
+
   private:
 
     RCP< Epetra_MultiVector > vec_;
-    
+
   }; // $TMPL_CLASS class
 
 } // Xpetra namespace

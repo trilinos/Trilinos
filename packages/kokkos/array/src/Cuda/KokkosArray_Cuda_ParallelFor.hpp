@@ -55,8 +55,8 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType >
-class ParallelFor< FunctorType , Cuda , Cuda::size_type > {
+template< class FunctorType , class WorkSpec >
+class ParallelFor< FunctorType , Cuda , WorkSpec > {
 public:
 
   const FunctorType     m_work_functor ;
@@ -106,8 +106,25 @@ template< class FunctorType >
 class ParallelFor< FunctorType , Cuda , CudaWorkConfig > {
 public:
 
+  const FunctorType m_work_functor ;
+
+  inline
+  __device__
+  void operator()(void) const
+  {
+    Cuda::size_type iwork = threadIdx.x + blockDim.x * (
+                            threadIdx.y + blockDim.y * (
+                            threadIdx.z + blockDim.z * (
+                            blockIdx.x + gridDim.x * (
+                            blockIdx.y + gridDim.y * (
+                            blockIdx.z )))));
+
+    m_work_functor( iwork );
+  }
+
   ParallelFor( const CudaWorkConfig & work_config ,
                const FunctorType    & functor )
+  : m_work_functor( functor )
   {
     const dim3 grid( work_config.grid[0] ,
                      work_config.grid[1] ,
@@ -117,7 +134,7 @@ public:
                       work_config.block[1] ,
                       work_config.block[2] );
 
-    CudaParallelLaunch< ParallelFor >( functor , grid , block , work_config.shared );
+    CudaParallelLaunch< ParallelFor >( *this , grid , block , work_config.shared );
   }
 };
 

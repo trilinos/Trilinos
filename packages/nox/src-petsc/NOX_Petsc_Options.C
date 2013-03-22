@@ -191,8 +191,8 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
           sdParams.set("Scaling Type", "Quadratic Model Min");
         else 
         {
-          if(rank == 0) cout << "WARNING: Unsupported Steepest Descent "
-                             << "Scaling Type --> " << optionString << endl;
+          if(rank == 0) std::cout << "WARNING: Unsupported Steepest Descent "
+                             << "Scaling Type --> " << optionString << std::endl;
           sdParams.set("Scaling Type", "None"); // default
         }
       }

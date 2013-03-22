@@ -59,7 +59,7 @@ namespace Xpetra {
 
   /** \brief Returns a default platform appropriate for the enviroment.
 
-  The DefaultPlatform mechanism is useful for easily accessing default 
+  The DefaultPlatform mechanism is useful for easily accessing default
   Comm and Node types on a particular system.
 
   If HAVE_MPI is defined, then an instance of <tt>MpiPlatform</tt> will be

@@ -73,8 +73,8 @@
 #include <Teuchos_RCP.hpp>
 
 #include "Xpetra_EpetraMap.hpp"
-#include "Xpetra_Operator.hpp"
-#include "Xpetra_CrsOperator.hpp"
+#include "Xpetra_Matrix.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_EpetraVector.hpp"
 
@@ -205,8 +205,8 @@ int main(int argc, char *argv[])
 
   // matrix-matrix multiply
   Teuchos::RCP<Epetra_CrsMatrix> AP = Teuchos::rcp(new Epetra_CrsMatrix(Copy,rcpA->RangeMap(),1));
-  EpetraExt::MatrixMatrix::Multiply(*rcpA,false,*P,false,*AP,false);
-  AP->FillComplete(P->DomainMap(),rcpA->RangeMap());
+  EpetraExt::MatrixMatrix::Multiply(*rcpA,false,*P,false,*AP);
+  //  AP->FillComplete(P->DomainMap(),rcpA->RangeMap());
   //std::cout << *AP << std::endl;
   AP->Apply(*x,*b2);
   normx = 0.0;
@@ -227,8 +227,8 @@ int main(int argc, char *argv[])
 
   // calculate A^T Px
   Teuchos::RCP<Epetra_CrsMatrix> APexpl = Teuchos::rcp(new Epetra_CrsMatrix(Copy,rcpA->DomainMap(),20));
-  EpetraExt::MatrixMatrix::Multiply(*rcpAT,false,*P,false,*APexpl,false);
-  APexpl->FillComplete(P->DomainMap(),rcpA->DomainMap()); // check me
+  EpetraExt::MatrixMatrix::Multiply(*rcpAT,false,*P,false,*APexpl);
+  //  APexpl->FillComplete(P->DomainMap(),rcpA->DomainMap()); // check me
   APexpl->Apply(*x,*b2);
   normx = 0.0;
   b2->Norm1(&normx);
@@ -236,8 +236,8 @@ int main(int argc, char *argv[])
 
   // calculate A^T Px
   Teuchos::RCP<Epetra_CrsMatrix> APimpl = Teuchos::rcp(new Epetra_CrsMatrix(Copy,rcpA->RangeMap(),20));
-  EpetraExt::MatrixMatrix::Multiply(*rcpA,true,*P,false,*APimpl,false);
-  APimpl->FillComplete(P->DomainMap(),APimpl->RangeMap()); // check me
+  EpetraExt::MatrixMatrix::Multiply(*rcpA,true,*P,false,*APimpl);
+  //  APimpl->FillComplete(P->DomainMap(),APimpl->RangeMap()); // check me
   APimpl->Apply(*x,*b2);
   normx = 0.0;
   b2->Norm1(&normx);
@@ -249,18 +249,18 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////
 
 
-   // wrap original matrix to Operator
+   // wrap original matrix to Matrix
    Teuchos::RCP<Xpetra::EpetraMap> xrgMap = Teuchos::rcp(new Xpetra::EpetraMap(rgMap));
    Teuchos::RCP<Xpetra::EpetraMap> xdoMap = Teuchos::rcp(new Xpetra::EpetraMap(doMap));
 
    Teuchos::RCP<Xpetra::EpetraCrsMatrix> Pop = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(P) );
    Teuchos::RCP<Xpetra::CrsMatrix<double> > crsP = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<double> >(Pop);
-   Teuchos::RCP<Xpetra::CrsOperator<double> > crsPOp = Teuchos::rcp( new Xpetra::CrsOperator<double>(crsP) );
+   Teuchos::RCP<Xpetra::CrsMatrixWrap<double> > crsPOp = Teuchos::rcp( new Xpetra::CrsMatrixWrap<double>(crsP) );
    crsPOp->fillComplete(xdoMap,xrgMap);
 
    Teuchos::RCP<Xpetra::EpetraCrsMatrix> Aop = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(rcpA) );
    Teuchos::RCP<Xpetra::CrsMatrix<double> > crsA = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<double> >(Aop);
-   Teuchos::RCP<Xpetra::CrsOperator<double> > crsAOp = Teuchos::rcp( new Xpetra::CrsOperator<double>(crsA) );
+   Teuchos::RCP<Xpetra::CrsMatrixWrap<double> > crsAOp = Teuchos::rcp( new Xpetra::CrsMatrixWrap<double>(crsA) );
    crsAOp->fillComplete(xrgMap,xrgMap);
 
    // wrap vectors
@@ -276,13 +276,13 @@ int main(int argc, char *argv[])
 
    // if (Comm.MyPID() == 0) std::cout << "||Pop x||_1 = " << bb1->norm1() << std::endl;
 
-   //Teuchos::RCP<Xpetra::Operator<double> > crsPOpT = MueLu::Utils2<double>::Transpose(crsPOp,false);
+   //Teuchos::RCP<Xpetra::Matrix<double> > crsPOpT = MueLu::Utils2<double>::Transpose(crsPOp,false);
 
    //crsPOpT->apply(*xx2,*bb2);
    //if (Comm.MyPID() == 0) std::cout << "||Pop^T x||_1 = " << bb2->norm1() << std::endl;
 
    // calculate APx
-   Teuchos::RCP<Xpetra::Operator<double> > crsAP = MueLu::Utils<double>::TwoMatrixMultiply(crsAOp,false,crsPOp,false);
+   Teuchos::RCP<Xpetra::Matrix<double> > crsAP = MueLu::Utils<double>::Multiply(*crsAOp,false,*crsPOp,false);
    //crsAP->describe(*fos,Teuchos::VERB_EXTREME);
    bb1->putScalar(0.0);
    crsAP->apply(*xx,*bb1);
@@ -290,8 +290,8 @@ int main(int argc, char *argv[])
    if (Comm.MyPID() == 0) std::cout << "Xpetra: ||A Pop x||_1 = " << normx << std::endl;
 
    // calculate A^T P x explicitely
-   Teuchos::RCP<Xpetra::Operator<double> > crsAOpT = MueLu::Utils2<double>::Transpose(crsAOp,false);
-   Teuchos::RCP<Xpetra::Operator<double> > AtPexpl = MueLu::Utils<double>::TwoMatrixMultiply(crsAOpT,false,crsPOp,false);
+   Teuchos::RCP<Xpetra::Matrix<double> > crsAOpT = MueLu::Utils2<double>::Transpose(crsAOp,false);
+   Teuchos::RCP<Xpetra::Matrix<double> > AtPexpl = MueLu::Utils<double>::Multiply(*crsAOpT,false,*crsPOp,false);
    bb1->putScalar(0.0);
    AtPexpl->apply(*xx,*bb1);
    normx = bb1->norm1();
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
        std::cout << "Xpetra: ||A^T_expl Pop x||_1 = " << normx << std::endl;
 
    // calculate A^T P x
-   Teuchos::RCP<Xpetra::Operator<double> > AtPimpl = MueLu::Utils<double>::TwoMatrixMultiply(crsAOp,true,crsPOp,false);
+   Teuchos::RCP<Xpetra::Matrix<double> > AtPimpl = MueLu::Utils<double>::Multiply(*crsAOp,true,*crsPOp,false);
    bb1->putScalar(0.0);
    AtPimpl->apply(*xx,*bb1);
    normx = bb1->norm1();

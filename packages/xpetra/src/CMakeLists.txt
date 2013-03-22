@@ -7,14 +7,7 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 # A) Package-specific configuration options
 #
 
-CONFIGURE_FILE(
-  ../cmake/Xpetra_config.hpp.in 
-  ${CMAKE_CURRENT_BINARY_DIR}/Xpetra_config.hpp
-  )
-
-# Note: cannot use the macro TRIBITS_CONFIGURE_FILE() because 
-# Xpetra_config.hpp.in is not in ${PACKAGE_SOURCE_DIR}/cmake
-## TRIBITS_CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Xpetra_config.hpp)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 
 #
 # B) Define the header and source files (and directories)
@@ -26,13 +19,13 @@ CONFIGURE_FILE(
 
 SET(HEADERS "")
 
-SET(SOURCES 
+SET(SOURCES
   Utils/Xpetra_Utils.cpp
   Utils/Xpetra_EpetraUtils.cpp
   Platform/Xpetra_DefaultPlatform.cpp
   )
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  APPEND_GLOB(SOURCES 
+  APPEND_GLOB(SOURCES
     Map/Xpetra_EpetraMap.cpp
     Import/Xpetra_EpetraImport.cpp
     Export/Xpetra_EpetraExport.cpp
@@ -46,7 +39,7 @@ ENDIF()
 
 #SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-IF (NOT Trilinos_ENABLE_Kokkos)
+IF (NOT ${PROJECT_NAME}_ENABLE_Kokkos)
   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/FakeKokkos)
   APPEND_GLOB(HEADERS FakeKokkos/*.hpp)
 ENDIF()
@@ -64,23 +57,24 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/MultiVector)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Vector)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsMatrix)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/RowMatrix)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/RowGraph)
 
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 #Note: Do not use */*.hpp. Append FakeKokkos/*.hpp only if Kokkos is disabled.
+APPEND_GLOB(HEADERS Headers/*.hpp)
+APPEND_GLOB(HEADERS Platform/*.hpp)
+APPEND_GLOB(HEADERS Utils/*.hpp)
+APPEND_GLOB(HEADERS Utils/ForwardDeclaration/*.hpp)
+APPEND_GLOB(HEADERS Map/*.hpp)
+APPEND_GLOB(HEADERS Import/*.hpp)
+APPEND_GLOB(HEADERS Export/*.hpp)
+APPEND_GLOB(HEADERS DistObject/*.hpp)
 APPEND_GLOB(HEADERS CrsGraph/*.hpp)
+APPEND_GLOB(HEADERS MultiVector/*.hpp)
+APPEND_GLOB(HEADERS Vector/*.hpp)
 APPEND_GLOB(HEADERS CrsMatrix/*.hpp)
 APPEND_GLOB(HEADERS RowMatrix/*.hpp)
-APPEND_GLOB(HEADERS Headers/*.hpp)
-APPEND_GLOB(HEADERS DistObject/*.hpp)
-APPEND_GLOB(HEADERS Export/*.hpp)
-APPEND_GLOB(HEADERS Import/*.hpp)
-APPEND_GLOB(HEADERS Map/*.hpp)
-APPEND_GLOB(HEADERS MultiVector/*.hpp)
-APPEND_GLOB(HEADERS Platform/*.hpp)
 APPEND_GLOB(HEADERS RowGraph/*.hpp)
-APPEND_GLOB(HEADERS Utils/*.hpp)
-APPEND_GLOB(HEADERS Vector/*.hpp)
-APPEND_GLOB(HEADERS Utils/ForwardDeclaration/*.hpp)
 
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 

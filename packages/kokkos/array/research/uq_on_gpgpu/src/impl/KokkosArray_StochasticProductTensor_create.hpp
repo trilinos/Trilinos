@@ -72,7 +72,7 @@ public:
 
 private:
 
-  typedef ProductTensorIndex< 3 , device_type > product_tensor_index_type ;
+  typedef ProductTensorIndex< 3 > product_tensor_index_type ;
   typedef typename type::tensor_type tensor_type ;
   typedef std::map< product_tensor_index_type , ValueType >  tensor_map_type ;
 
@@ -160,12 +160,13 @@ private:
   void populate_tensor()
   {
     const double  tolerance( 1e-12 );
-    const double  scaling( std::sqrt( (double)( 1 << m_variable_count )));
+    const double  scaling( (double)( 1 << m_variable_count ));
 
     // Integration rule required for integration of triple product of 
     // maximum degree polynomial
 
     const int rule_count = 1 + ( 3 * m_maximum_degree ) / 2 ;
+    // const int rule_count = 32 ;
 
     std::vector< double >  integral_sum( m_variable_count );
     std::vector< double >  poly_values(  m_maximum_degree + 1 );
@@ -204,7 +205,7 @@ private:
             }
           }
 
-          double value = scaling ;
+          double value = 1.0/scaling ;
           for ( int iv = 0 ; iv < m_variable_count ; ++iv ) {
             value *= integral_sum[iv] ;
           }

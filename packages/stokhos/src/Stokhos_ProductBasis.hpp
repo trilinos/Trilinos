@@ -32,6 +32,7 @@
 #define STOKHOS_PRODUCTBASIS_HPP
 
 #include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_ProductBasisUtils.hpp"
 
 namespace Stokhos {
 
@@ -64,16 +65,14 @@ namespace Stokhos {
      * the basis, and entry \f$l\f$ is given by \f$i_l\f$ where
      * \f$\Psi_i(x) = \psi_{i_1}(x_1)\dots\psi_{i_d}(x_d)\f$.
      */
-    virtual Teuchos::Array<ordinal_type> 
-    getTerm(ordinal_type i) const = 0;
+    virtual const MultiIndex<ordinal_type>& term(ordinal_type i) const = 0;
 
     //! Get index of the multivariate polynomial given orders of each coordinate
     /*!
      * Given the array \c term storing \f$i_1,\dots,\i_d\f$, returns the index
      * \f$i\f$ such that \f$\Psi_i(x) = \psi_{i_1}(x_1)\dots\psi_{i_d}(x_d)\f$.
      */
-    virtual ordinal_type 
-    getIndex(const Teuchos::Array<ordinal_type>& term) const = 0;
+    virtual ordinal_type index(const MultiIndex<ordinal_type>& term) const = 0;
 
     //! Return array of coordinate bases
     /*!
@@ -83,6 +82,9 @@ namespace Stokhos {
     Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,
 							   value_type> > > 
     getCoordinateBases() const = 0;
+
+    //! Return maximum order allowable for each coordinate basis
+    virtual MultiIndex<ordinal_type> getMaxOrders() const = 0;
 
   private:
 

@@ -199,7 +199,7 @@ bool FiniteElementProblem::evaluate(FillType f,
     rhs = tmp_rhs;
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
   } else {
-    cout << "ERROR: FiniteElementProblem::fillMatrix() - FillType flag is broken" << endl;
+    std::cout << "ERROR: FiniteElementProblem::fillMatrix() - FillType flag is broken" << std::endl;
     throw;
   }
 
@@ -325,7 +325,7 @@ Epetra_CrsMatrix& FiniteElementProblem::getJacobian()
   return *A;
 }
 
-bool FiniteElementProblem::set(string label, double value)
+bool FiniteElementProblem::set(std::string label, double value)
 {
   if (label == "Nonlinear Factor")
     factor = value;
@@ -337,8 +337,8 @@ bool FiniteElementProblem::set(string label, double value)
     // do nothing for now
   }
   else {
-    cout << "ERROR: FiniteElementProblem::set() - label is invalid "
-	 << "for this problem!" << endl;
+    std::cout << "ERROR: FiniteElementProblem::set() - label is invalid "
+	 << "for this problem!" << std::endl;
     exit(-1);
   }
   return true;

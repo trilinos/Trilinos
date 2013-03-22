@@ -43,6 +43,9 @@
 // ***********************************************************************
 //
 // @HEADER
+$TMPL_CONDITION_OPEN1
+$TMPL_CONDITION_OPEN2
+
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
 
@@ -58,3 +61,5 @@ typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
 template class MueLu::$TMPL_CLASS<pce_type, int, int>;
 
 #endif
+
+$TMPL_CONDITION_CLOSE

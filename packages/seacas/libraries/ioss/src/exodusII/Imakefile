@@ -33,10 +33,14 @@
 CXXEXTRA_INCLUDES = -I..
 EXTRA_INCLUDES = -I..
 
+#if !defined(BuildParallelAwareExodus)
+IOPX = -DNO_DOF_EXODUS_SUPPORT -DHAVE_MPI
+#endif
+
 #if defined SGIArchitecture
-CXXETRA_DEFINES = -ptused -DNO_MPI
+CXXETRA_DEFINES = -ptused -DNO_MPI ${IOPX}
 #else
-CXXEXTRA_DEFINES = -DNO_MPI
+CXXEXTRA_DEFINES = -DNO_MPI ${IOPX}
 #endif
 
 SRCS =  Ioex_DatabaseIO.C  Ioex_IOFactory.C  Ioex_Internals.C   Ioex_SuperElement.C

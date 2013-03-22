@@ -46,29 +46,24 @@
 #ifndef MUELU_GENERICRFACTORY_DEF_HPP
 #define MUELU_GENERICRFACTORY_DEF_HPP
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_GenericRFactory_decl.hpp"
 
+#include "MueLu_FactoryBase.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_DisableMultipleCallCheck.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GenericRFactory(RCP<PFactory> PFact)
-    : PFact_(PFact)
-  { }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~GenericRFactory() {}
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    RCP<PFactory> PFact = PFact_;
-    if (PFact_ == Teuchos::null) { PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(coarseLevel.GetFactoryManager()->GetFactory("P"))); /* ! */ }
-    
+    RCP<const FactoryBase> PFact1 = GetFactory("P");
+    if (PFact1 == Teuchos::null) { PFact1 = coarseLevel.GetFactoryManager()->GetFactory("P"); }
+    RCP<PFactory> PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(PFact1));;
+
     bool rmode = PFact->isRestrictionModeSet();
     PFact->setRestrictionMode(true);             // set restriction mode
 
@@ -78,7 +73,7 @@ namespace MueLu {
     // however, here we have to run the code in PFact.Build again,
     // so we have to request the dependencies of PFact first!
     // The dependencies are (automatically) cleaned up after the second
-    // run of PFact.Build in coarseLevel.Get<RCP<Operator> >("R",PFact.get())!
+    // run of PFact.Build in coarseLevel.Get<RCP<Matrix> >("R",PFact.get())!
     coarseLevel.DeclareDependencies(PFact.get());
 
     coarseLevel.DeclareInput("R", PFact.get(), this);  // we expect the prolongation operator factory to produce "R" as output
@@ -88,26 +83,23 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
-    return BuildR(fineLevel,coarseLevel);
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildR(Level & fineLevel, Level & coarseLevel) const {
     FactoryMonitor m(*this, "Call prolongator factory for calculating restrictor", coarseLevel);
 
-    RCP<PFactory> PFact = PFact_;
-    if (PFact_ == Teuchos::null) { PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(coarseLevel.GetFactoryManager()->GetFactory("P"))); /* ! */ }
+    RCP<const FactoryBase> PFact1 = GetFactory("P");
+    if (PFact1 == Teuchos::null) { PFact1 = coarseLevel.GetFactoryManager()->GetFactory("P"); }
+    RCP<PFactory> PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(PFact1));;
+    MueLu::DisableMultipleCallCheck check(PFact);
 
     // BuildR
     bool rmode = PFact->isRestrictionModeSet();
     PFact->setRestrictionMode(true);     // switch prolongator factory to restriction mode
 
     //PFact->Build(fineLevel, coarseLevel);  // call PFactory::Build explicitely
-    RCP<Operator> R = coarseLevel.Get<RCP<Operator> >("R",PFact.get());
+    RCP<Matrix> R = coarseLevel.Get<RCP<Matrix> >("R",PFact.get());
 
     PFact->setRestrictionMode(rmode);    // reset restriction mode flag
 
-    coarseLevel.Set("R", R, this);
+    Set(coarseLevel, "R", R);
 
   } //BuildR
 

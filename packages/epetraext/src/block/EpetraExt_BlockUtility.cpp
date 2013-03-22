@@ -49,11 +49,11 @@ using std::vector;
 
 //==============================================================================
 Epetra_Map * BlockUtility::GenerateBlockMap(
-	const Epetra_BlockMap & BaseMap,
+        const Epetra_BlockMap & BaseMap,
         const int * RowIndices,
-	int NumBlockRows,
+        int NumBlockRows,
         const Epetra_Comm & GlobalComm,
-	int Offset) 
+        int Offset)
 {
   int BaseIndex = BaseMap.IndexBase();
   if (Offset == 0)
@@ -75,36 +75,36 @@ Epetra_Map * BlockUtility::GenerateBlockMap(
   int GlobalSize;
   GlobalComm.SumAll( &TotalSize, &GlobalSize, 1 );
 
-  Epetra_Map *GlobalMap = 
-    new Epetra_Map( GlobalSize, TotalSize, &GlobalGIDs[0], BaseIndex, 
-		    GlobalComm );
+  Epetra_Map *GlobalMap =
+    new Epetra_Map( GlobalSize, TotalSize, &GlobalGIDs[0], BaseIndex,
+                    GlobalComm );
 
   return GlobalMap;
 }
 
 //==============================================================================
 Epetra_Map * BlockUtility::GenerateBlockMap(
-	const Epetra_BlockMap & BaseMap,
+        const Epetra_BlockMap & BaseMap,
         const std::vector<int>& RowIndices,
-	const Epetra_Comm & GlobalComm,
-	int Offset ) 
+        const Epetra_Comm & GlobalComm,
+        int Offset )
 {
-  return GenerateBlockMap(BaseMap, &RowIndices[0], RowIndices.size(), 
-			  GlobalComm, Offset);
+  return GenerateBlockMap(BaseMap, &RowIndices[0], RowIndices.size(),
+                          GlobalComm, Offset);
 }
 
 //==============================================================================
 Epetra_Map * BlockUtility::GenerateBlockMap(
-	const Epetra_BlockMap & BaseMap,
+        const Epetra_BlockMap & BaseMap,
         const Epetra_BlockMap& BlockMap,
-	const Epetra_Comm & GlobalComm,
-	int Offset) 
+        const Epetra_Comm & GlobalComm,
+        int Offset)
 {
-  return GenerateBlockMap(BaseMap, 
-			  BlockMap.MyGlobalElements(), 
-			  BlockMap.NumMyElements(), 
-			  GlobalComm,
-			  Offset);
+  return GenerateBlockMap(BaseMap,
+                          BlockMap.MyGlobalElements(),
+                          BlockMap.NumMyElements(),
+                          GlobalComm,
+                          Offset);
 }
 
 //==============================================================================
@@ -112,7 +112,7 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
         const Epetra_CrsGraph & BaseGraph,
         const vector< vector<int> > & RowStencil,
         const vector<int> & RowIndices,
-        const Epetra_Comm & GlobalComm ) 
+        const Epetra_Comm & GlobalComm )
 {
 
   const Epetra_BlockMap & BaseMap = BaseGraph.RowMap();
@@ -142,7 +142,7 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
   vector<int> Indices(MaxIndices);
   int NumIndices;
 
-  Epetra_CrsGraph * GlobalGraph = new Epetra_CrsGraph( Copy, 
+  Epetra_CrsGraph * GlobalGraph = new Epetra_CrsGraph( Copy,
                                dynamic_cast<Epetra_BlockMap&>(GlobalMap),
                                0 );
 
@@ -178,7 +178,7 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
         const Epetra_RowMatrix & BaseMatrix,
         const vector< vector<int> > & RowStencil,
         const vector<int> & RowIndices,
-        const Epetra_Comm & GlobalComm ) 
+        const Epetra_Comm & GlobalComm )
 {
 
   const Epetra_BlockMap & BaseMap = BaseMatrix.RowMatrixRowMap();
@@ -207,10 +207,10 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
 
   int MaxIndices = BaseMatrix.MaxNumEntries();
   vector<int> Indices(MaxIndices);
-  vector<double> Values(MaxIndices); 
+  vector<double> Values(MaxIndices);
   int NumIndices;
 
-  Epetra_CrsGraph * GlobalGraph = new Epetra_CrsGraph( Copy, 
+  Epetra_CrsGraph * GlobalGraph = new Epetra_CrsGraph( Copy,
                                dynamic_cast<Epetra_BlockMap&>(GlobalMap),
                                0 );
 
@@ -246,31 +246,32 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
 Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
         const Epetra_CrsGraph & BaseGraph,
         const Epetra_CrsGraph & LocalBlockGraph,
-        const Epetra_Comm & GlobalComm ) 
+        const Epetra_Comm & GlobalComm )
 {
   const Epetra_BlockMap & BaseRowMap = BaseGraph.RowMap();
   const Epetra_BlockMap & BaseColMap = BaseGraph.ColMap();
   int ROffset = BlockUtility::CalculateOffset(BaseRowMap);
+  (void) ROffset; // Silence "unused variable" compiler warning.
   int COffset = BlockUtility::CalculateOffset(BaseColMap);
 
   //Get Base Global IDs
   const Epetra_BlockMap & BlockRowMap = LocalBlockGraph.RowMap();
   const Epetra_BlockMap & BlockColMap = LocalBlockGraph.ColMap();
-  
+
   int NumBlockRows = BlockRowMap.NumMyElements();
   vector<int> RowIndices(NumBlockRows);
   BlockRowMap.MyGlobalElements(&RowIndices[0]);
 
   int Size = BaseRowMap.NumMyElements();
-  
-  Epetra_Map *GlobalRowMap = 
+
+  Epetra_Map *GlobalRowMap =
     GenerateBlockMap(BaseRowMap, BlockRowMap, GlobalComm);
-  
+
 
   int MaxIndices = BaseGraph.MaxNumIndices();
   vector<int> Indices(MaxIndices);
 
-  Epetra_CrsGraph * GlobalGraph = new Epetra_CrsGraph( Copy, 
+  Epetra_CrsGraph * GlobalGraph = new Epetra_CrsGraph( Copy,
                                dynamic_cast<Epetra_BlockMap&>(*GlobalRowMap),
                                0 );
 
@@ -279,7 +280,7 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
   for( int i = 0; i < NumBlockRows; ++i )
   {
     LocalBlockGraph.ExtractMyRowView(i, NumBlockIndices, BlockIndices);
-    
+
     for( int j = 0; j < Size; ++j )
     {
       int GlobalRow = GlobalRowMap->GID(j+i*Size);
@@ -302,9 +303,9 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
   const Epetra_BlockMap & BlockDomainMap = LocalBlockGraph.DomainMap();
   const Epetra_BlockMap & BlockRangeMap = LocalBlockGraph.RangeMap();
 
-  Epetra_Map *GlobalDomainMap = 
+  Epetra_Map *GlobalDomainMap =
     GenerateBlockMap(BaseDomainMap, BlockDomainMap, GlobalComm);
-  Epetra_Map *GlobalRangeMap = 
+  Epetra_Map *GlobalRangeMap =
     GenerateBlockMap(BaseRangeMap, BlockRangeMap, GlobalComm);
 
   GlobalGraph->FillComplete(*GlobalDomainMap, *GlobalRangeMap);
@@ -317,9 +318,9 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
 }
 
 //==============================================================================
-void BlockUtility::GenerateRowStencil(const Epetra_CrsGraph& LocalBlockGraph, 
-				      std::vector<int> RowIndices, 
-				      std::vector< std::vector<int> >& RowStencil)
+void BlockUtility::GenerateRowStencil(const Epetra_CrsGraph& LocalBlockGraph,
+                                      std::vector<int> RowIndices,
+                                      std::vector< std::vector<int> >& RowStencil)
 {
   // Get row indices
   int NumMyRows = LocalBlockGraph.NumMyRows();
@@ -334,21 +335,21 @@ void BlockUtility::GenerateRowStencil(const Epetra_CrsGraph& LocalBlockGraph,
       int Row = RowIndices[i];
       int NumCols = LocalBlockGraph.NumGlobalIndices(Row);
       RowStencil[i].resize(NumCols);
-      LocalBlockGraph.ExtractGlobalRowCopy(Row, NumCols, NumCols, 
-					   &RowStencil[i][0]);
+      LocalBlockGraph.ExtractGlobalRowCopy(Row, NumCols, NumCols,
+                                           &RowStencil[i][0]);
       for (int k=0; k<NumCols; k++)
-	RowStencil[i][k] -= Row;
+        RowStencil[i][k] -= Row;
     }
   }
   else {
     for (int i=0; i<NumMyRows; i++) {
       int NumCols = LocalBlockGraph.NumMyIndices(i);
       RowStencil[i].resize(NumCols);
-      LocalBlockGraph.ExtractMyRowCopy(i, NumCols, NumCols, 
-				       &RowStencil[i][0]);
+      LocalBlockGraph.ExtractMyRowCopy(i, NumCols, NumCols,
+                                       &RowStencil[i][0]);
       for (int k=0; k<NumCols; k++)
-	RowStencil[i][k] = LocalBlockGraph.GCID(RowStencil[i][k]) - 
-	  RowIndices[i];
+        RowStencil[i][k] = LocalBlockGraph.GCID(RowStencil[i][k]) -
+          RowIndices[i];
     }
   }
 }

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if 1
+#if 0
 int mymode = EX_MAPS_INT64_DB|EX_MAPS_INT64_API|EX_BULK_INT64_DB|EX_BULK_INT64_API|EX_IDS_INT64_API|EX_IDS_INT64_DB;
 typedef int64_t INT;
 #else

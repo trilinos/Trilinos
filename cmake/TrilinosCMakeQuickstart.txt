@@ -32,7 +32,8 @@ Section C: Configuring Trilinos
   --  Enable coverage testing
   --  Viewing configure options and documentation
   --  Enabling extra external repositories with add-on packages
-  --  Reconfiguring from scratch
+  --  Enabling extra external repositories through a file
+  --  Reconfiguring completely from scratch
   --  Viewing configure errors
   --  Adding configure timers
 Section D: Building
@@ -116,11 +117,11 @@ C) Configuring (Makefile Generator)
   can be a sub-directory of the Trilinos base source directory or anywhere
   else.
 
-  NOTE: If you mistakenly try to configure for an in-source build
-  (e.g. with 'cmake .') you will get an error message and instructions
-  on how to resolve the problem by deleting the generated
-  CMakeCache.txt file (and other generated files) and then directions
-  on how to create a different build directory as shown above.
+  NOTE: If you mistakenly try to configure for an in-source build (e.g. with
+  'cmake .') you will get an error message and instructions on how to resolve
+  the problem by deleting the generated CMakeCache.txt file (and other
+  generated files) and then follow directions on how to create a different
+  build directory as shown above.
 
 
 (*) Basic configuration of Trilinos:
@@ -296,9 +297,10 @@ C) Configuring (Makefile Generator)
 
     NOTES:
  
-    1) Setting CMAKE_<LANG>_FLAGS with override but will not replace any other
+    1) Setting CMAKE_<LANG>_FLAGS will override but will not replace any other
     internally set flags in CMAKE_<LANG>_FLAGS defined by the Trilinos CMake
-    system.  To get rid of these default flags, see below.
+    system because these flags will come after those set internally.  To get
+    rid of these default flags, see below.
 
     2) For each compiler type (e.g. C, C++ (CXX), Fortran), CMake passes
     compiler options to the compiler in the order:
@@ -362,7 +364,18 @@ C) Configuring (Makefile Generator)
     *not* arbitrary linker flags.  To pass in extra linker flags that are not
     libraries, use the built-in CMake variable CMAKE_EXE_LINKER_FLAGS instead.
   
-  e) Overriding all (strong warnings and debug/release) compiler options:
+  e) Turning off strong warnings for individual packages:
+
+    To turn off strong warnings (for all langauges) for a given TriBITS
+    package, set:
+
+      -D <TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS:BOOL=ON
+
+    This will only affect the compilation of the sources for
+    <TRIBITS_PACKAGES>, not warnings generated from the header files in
+    downstream packages or client code.
+
+  f) Overriding all (strong warnings and debug/release) compiler options:
   
     To override all compiler options, including both strong warning options
     and debug/release options, configure with:
@@ -381,7 +394,7 @@ C) Configuring (Makefile Generator)
     need to be turned off by default but they are shown above to make it clear
     what other CMake cache variables can add compiler and link arguments.
 
-  f) Enable and disable shadowing warnings for all Trilinos packages:
+  g) Enable and disable shadowing warnings for all Trilinos packages:
   
     To enable shadowing warnings for all Trilinos packages (that don't already
     have them turned on) then use:
@@ -396,7 +409,7 @@ C) Configuring (Makefile Generator)
     decide for itself if shadowing warnings will be turned on or off for that
     package.
   
-  g) Removing warnings as errors for CLEANED packages:
+  h) Removing warnings as errors for CLEANED packages:
   
     To remove the -Werror flag (or some other flag that is set) from being
     applied to compile CLEANED packages like Teuchos, set the following when
@@ -817,7 +830,7 @@ C) Configuring (Makefile Generator)
   a) Viewing available configure-time options with documentation
   
     $ cd $BUILD_DIR
-    $ rm CMakeCache.txt
+    $ rm -rf CMakeCache.txt CMakeFiles/
     $ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
       $TRILINOS_HOME
   
@@ -829,7 +842,7 @@ C) Configuring (Makefile Generator)
   b) Viewing available configure-time options without documentation
   
     $ cd $BUILD_DIR
-    $ rm CMakeCache.txt
+    $ rm -rf CMakeCache.txt CMakeFiles/
     $ cmake -LA SAME_AS_ABOVE $TRILINOS_HOME
   
   
@@ -860,16 +873,43 @@ C) Configuring (Makefile Generator)
   the list of official Trilinos packages and you are free to enable any that
   you would like just like any other Trilinos package.
 
+  NOTE: If Trilinos_EXTRAREPOS_FILE and
+  Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE are specified then the list of
+  extra repositories <EXTRAREPO> must be a subset of the extra repos read in
+  from this file.
+
+
+(*) Enabling extra external repositories through a file
+
+  -DTrilinos_EXTRAREPOS_FILE:FILEPATH=<EXTRAREPOSFILE>
+  -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
+
+  NOTE: Specifing extra repositories through an extra repos file allows
+  greater flexibility in the specification of extra repos.  This is not
+  helpful for a basic configure of the project but is useful in automated
+  testing using the TribitsCTestDriverCore.cmake script and the
+  checkin-test.py script.
+
+  NOTE: If Trilinos_IGNORE_MISSING_EXTRA_REPOSITORIES is set to TRUE, then any
+  extra repositories selected who's directory is missing will be ignored.
+
   
-(*) Reconfiguring from scratch
+(*) Reconfiguring completely from scratch
   
-      $ rm CMakeCache.txt ; find . -name CMakeFiles -exec rm -rf {} \;
+      $ rm -rf CMakeCache.txt CMakeFiles/
+      $ find . -name CMakeFiles -exec rm -rf {} \;
       $ ./do-configure
   
     NOTE: Removing the CMakeCache.txt file is often needed when removing
-    variables from the configure line.  Removing the CMakeFiles directories is
+    variables from the configure line.  Removing the CMakeFiles/ directories is
     needed if there are changes in some CMake modules or the CMake version
-    itself.
+    itself.  However, usually removing just the top-level CMakeCache.txt and
+    CMakeFiles/ directory is enough to guarantee a clean reconfigure from a
+    dirty build directory.
+
+    WARNING: Later versions of CMake (2.8.10.2+) require that
+    you remove the top-level CMakeFiles/ directory whenever you remove the
+    CMakeCache.txt file.
 
 
 (*) Viewing configure errors:

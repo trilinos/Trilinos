@@ -1031,80 +1031,7 @@ namespace stk {
       //std::cout << "tmp dump_elements 3" << std::endl;
       //m_eMesh.dump_elements();
 
-#if defined( STK_PERCEPT_HAS_GEOMETRY )
-      if (m_geomSnap)
-        {
-
-          //SMOOTHING_OPTIONS option = SNAP_PLUS_SMOOTH;
-          SMOOTHING_OPTIONS option = USE_LINE_SEARCH_WITH_MULTIPLE_STATES;
-
-          GeometryKernelOpenNURBS gk;
-          // set to 0.0 for no checks, > 0.0 for a fixed check delta, < 0.0 (e.g. -0.5) to check against local edge length average times this |value|
-          double doCheckMovement = 0.0; 
-          //double doCheckMovement = -1.0; 
-
-          // anything exceeding a value > 0.0 will be printed
-          double doCheckCPUTime = 0.0;  
-          //double doCheckCPUTime = 0.1;
-
-          MeshGeometry mesh_geometry(&gk, doCheckMovement, doCheckCPUTime);
-          GeometryFactory factory(&gk, &mesh_geometry);
-          factory.read_file(m_geomFile, &m_eMesh);
-
-          switch(option) {
-          case SNAP_PLUS_SMOOTH:
-            {
-              mesh_geometry.snap_points_to_geometry(&m_eMesh);
-              if (doCheckMovement != 0.0) 
-                mesh_geometry.print_node_movement_summary();
-
-#if defined (STK_PERCEPT_HAS_MESQUITE)
-              if (m_doSmoothGeometry)
-                {
-                  smoothGeometry(mesh_geometry,option);
-                  mesh_geometry.snap_points_to_geometry(&m_eMesh);
-                }
-#endif
-            }
-            break;
-          case USE_LINE_SEARCH_WITH_MULTIPLE_STATES:
-            {
-              //VERIFY_OP_ON(m_eMesh.get_coordinates_field()->number_of_states(), ==, 3, "Must use PerceptMesh::set_num_coordinate_field_states(3) to use new smoothing.");
-
-#ifdef STK_PERCEPT_HAS_MESQUITE
-              if (m_doSmoothGeometry)
-                {
-                  // make a copy of current non-snapped state (dst,src)
-                  m_eMesh.copy_field(m_eMesh.get_field("coordinates_NM1"), m_eMesh.get_coordinates_field() );
-
-                }
-#endif
-
-              // do the snap
-              mesh_geometry.snap_points_to_geometry(&m_eMesh);
-              if (doCheckMovement != 0.0) 
-                mesh_geometry.print_node_movement_summary();
-
-#ifdef STK_PERCEPT_HAS_MESQUITE
-              if (m_doSmoothGeometry)
-                {
-                  // make a copy of current snapped state
-                  m_eMesh.copy_field(m_eMesh.get_field("coordinates_N"), m_eMesh.get_coordinates_field() );
-
-                  // reset current state to non-snapped state
-                  m_eMesh.copy_field(m_eMesh.get_coordinates_field(), m_eMesh.get_field("coordinates_NM1") );
-
-                  smoothGeometry(mesh_geometry,option);
-                  //mesh_geometry.snap_points_to_geometry(&m_eMesh);
-                }
-#endif
-              
-            }
-            break;
-          }
-
-        }
-#endif
+      snapAndSmooth(m_geomSnap, m_geomFile);
 
       /**/                                                TRACE_PRINT( "Refiner:doBreak ... done");
 
@@ -1122,7 +1049,6 @@ namespace stk {
 #endif
 
     } // doBreak
-
     
     // FIXME - temp until we figure out what to do with parent/child, persistence, etc.
     // FIXME - just deletes elements, not family trees for now
@@ -1327,6 +1253,85 @@ namespace stk {
     }
 #endif
 #endif
+
+    void Refiner::snapAndSmooth(bool geomSnap, std::string geomFile)
+    {
+      std::cout << " geomFile= " << geomFile << " geomSnap= " << geomSnap << std::endl;
+#if defined( STK_PERCEPT_HAS_GEOMETRY )
+      if (geomFile == "") return;
+      std::cout << " 2 geomFile= " << geomFile << " geomSnap= " << geomSnap << std::endl;
+
+      //SMOOTHING_OPTIONS option = SNAP_PLUS_SMOOTH;
+      SMOOTHING_OPTIONS option = USE_LINE_SEARCH_WITH_MULTIPLE_STATES;
+
+      GeometryKernelOpenNURBS gk;
+      // set to 0.0 for no checks, > 0.0 for a fixed check delta, < 0.0 (e.g. -0.5) to check against local edge length average times this |value|
+      double doCheckMovement = 0.0; 
+      //double doCheckMovement = -1.0; 
+
+      // anything exceeding a value > 0.0 will be printed
+      double doCheckCPUTime = 0.0;  
+      //double doCheckCPUTime = 0.1;
+
+      MeshGeometry mesh_geometry(&gk, doCheckMovement, doCheckCPUTime);
+      GeometryFactory factory(&gk, &mesh_geometry);
+      factory.read_file(geomFile, &m_eMesh);
+
+      switch(option) {
+      case SNAP_PLUS_SMOOTH:
+        {
+          mesh_geometry.snap_points_to_geometry(&m_eMesh);
+          if (doCheckMovement != 0.0) 
+            mesh_geometry.print_node_movement_summary();
+
+#if defined (STK_PERCEPT_HAS_MESQUITE)
+          if (m_doSmoothGeometry)
+            {
+              smoothGeometry(mesh_geometry,option);
+              mesh_geometry.snap_points_to_geometry(&m_eMesh);
+            }
+#endif
+        }
+        break;
+      case USE_LINE_SEARCH_WITH_MULTIPLE_STATES:
+        {
+          //VERIFY_OP_ON(m_eMesh.get_coordinates_field()->number_of_states(), ==, 3, "Must use PerceptMesh::set_num_coordinate_field_states(3) to use new smoothing.");
+          stk::mesh::FieldBase *nm1_field = m_eMesh.get_field("coordinates_NM1");
+
+#ifdef STK_PERCEPT_HAS_MESQUITE
+          if (m_doSmoothGeometry && nm1_field)
+            {
+              // make a copy of current non-snapped state (dst,src)
+              m_eMesh.copy_field(m_eMesh.get_field("coordinates_NM1"), m_eMesh.get_coordinates_field() );
+            }
+#endif
+
+          // do the snap
+          if (geomSnap)
+            mesh_geometry.snap_points_to_geometry(&m_eMesh);
+          if (doCheckMovement != 0.0) 
+            mesh_geometry.print_node_movement_summary();
+
+#ifdef STK_PERCEPT_HAS_MESQUITE
+          if (m_doSmoothGeometry && nm1_field)
+            {
+              // make a copy of current snapped state
+              m_eMesh.copy_field(m_eMesh.get_field("coordinates_N"), m_eMesh.get_coordinates_field() );
+
+              // reset current state to non-snapped state
+              m_eMesh.copy_field(m_eMesh.get_coordinates_field(), m_eMesh.get_field("coordinates_NM1") );
+
+              smoothGeometry(mesh_geometry,option);
+              //mesh_geometry.snap_points_to_geometry(&m_eMesh);
+            }
+#endif
+              
+        }
+        break;
+      }
+
+#endif
+    }
 
 #if defined( STK_PERCEPT_HAS_MESQUITE ) && defined(STK_PERCEPT_HAS_GEOMETRY)
     void Refiner::smoothGeometry(MeshGeometry& mesh_geometry, SMOOTHING_OPTIONS option)

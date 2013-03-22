@@ -35,9 +35,10 @@ XCOMM $Id: Imakefile,v 1.10 2007/02/09 18:22:43 gdsjaar Exp $
 
 CODE = grepos
 
+SRCSF = gp_comand.F
 SRCS = \
 grepos.f \
-gp_centroid.f gp_chkss.f  gp_comand.f gp_comid.f \
+gp_centroid.f gp_chkss.f  gp_comid.f \
 gp_dbieb1.f   gp_dbielb.f gp_dbinam.f gp_dbinm1.f gp_dbist1.f \
 gp_dbist2.f   gp_dbiste.f gp_dbmir1.f gp_dbmirr.f gp_dboelb.f \
 gp_dbonam.f   gp_dboqa.f  gp_dboste.f gp_dbpelb.f gp_dbpini.f gp_deform.f \
@@ -55,7 +56,7 @@ gp_spoff.f    gp_swpess.f gp_swpid.f  gp_wrpxyz.f gp_xyzmod.f \
 gp_zess.f     gp_zlnk.f   gp_zmap.f   gp_zmess.f  gp_zmfixd.f gp_zmmap.f \
 gp_zmnps.f    gp_zmxyz.f  gp_znps.f   gp_zxyz.f 
 
-OBJS = ${SRCS:.f=.o}
+OBJS = ${SRCS:.f=.o} ${SRCSF:.F=.o}
 
 LIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPLIB) $(SUPES) 
 

@@ -80,7 +80,7 @@ Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> Y_direct;
 
 int  
 testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
-	  double reltol, double abstol, const string& testName) {
+	  double reltol, double abstol, const std::string& testName) {
   int ierr = 0;
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
@@ -133,7 +133,7 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
     ++ierr;
   
   for (int i=0; i<Y_bordering->numCols(); i++) {
-    stringstream sstr;
+    std::stringstream sstr;
     sstr << "Column " << i;
     ierr += testCompare->testVector((*X_bordering)[i],
 				    (*X_direct)[i], reltol, abstol,
@@ -142,7 +142,7 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
 
   for (int i=0; i<Y_bordering->numRows(); i++) 
     for (int j=0; j<Y_bordering->numCols(); j++) {
-      stringstream sstr;
+      std::stringstream sstr;
       sstr << "Scalars entry (" << i << "," << j << ")";
       ierr += testCompare->testValue((*Y_bordering)(i,j),
 				     (*Y_direct)(i,j), reltol,
@@ -243,8 +243,8 @@ int main(int argc, char *argv[])
 
     // Create the constraints object & constraint param IDs list
     constraints = Teuchos::rcp(new LinearConstraint(nConstraints, p, *xnew));
-    Teuchos::RCP< vector<int> > constraintParamIDs = 
-      Teuchos::rcp(new vector<int>(1));
+    Teuchos::RCP< std::vector<int> > constraintParamIDs = 
+      Teuchos::rcp(new std::vector<int>(1));
     (*constraintParamIDs)[0] = p.getIndex("alpha");
 
     // Create bordering solver
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
 							       nRHS));
 
-    string testName;
+    std::string testName;
 
     // Test all nonzero
     testName = "Testing all nonzero";
@@ -411,22 +411,22 @@ int main(int argc, char *argv[])
   }
 
   catch (std::exception& e) {
-    cout << e.what() << endl;
+    std::cout << e.what() << std::endl;
     ierr = 1;
   }
   catch (const char *s) {
-    cout << s << endl;
+    std::cout << s << std::endl;
     ierr = 1;
   }
   catch (...) {
-    cout << "Caught unknown exception!" << endl;
+    std::cout << "Caught unknown exception!" << std::endl;
     ierr = 1;
   }
 
   if (ierr == 0)
-    cout << "All tests passed!" << endl;
+    std::cout << "All tests passed!" << std::endl;
   else
-    cout << ierr << " test(s) failed!" << endl;
+    std::cout << ierr << " test(s) failed!" << std::endl;
 
   return ierr;
 }

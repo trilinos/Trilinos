@@ -54,6 +54,8 @@
 #include "NOX_Abstract_Group.H" // base class
 #include "NOX_Abstract_MultiVector.H"
 #include "LOCA_Abstract_Iterator.H"
+#include <vector>
+#include <string>
 
 namespace LOCA {
   class ParameterVector;
@@ -96,9 +98,8 @@ namespace LOCA {
       virtual void copy(const NOX::Abstract::Group& source) = 0;
 
       //! Set parameters indexed by (integer) paramIDs
-      virtual void setParamsMulti(
-		     const vector<int>& paramIDs, 
-		     const NOX::Abstract::MultiVector::DenseMatrix& vals) = 0;
+      virtual void setParamsMulti(const std::vector<int>& paramIDs, 
+				  const NOX::Abstract::MultiVector::DenseMatrix& vals) = 0;
 
       //! Set the parameter vector in the group to p (pVector = p).  
       virtual void setParams(const LOCA::ParameterVector& p) = 0;
@@ -106,8 +107,8 @@ namespace LOCA {
        //! Set parameter indexed by (integer) paramID
       virtual void setParam(int paramID, double val) = 0;
 
-      //! Set parameter indexed by (string) paramID
-      virtual void setParam(string paramID, double val) = 0;
+      //! Set parameter indexed by (std::string) paramID
+      virtual void setParam(std::string paramID, double val) = 0;
 
       //! Return a const reference to the ParameterVector owned by the group. 
       virtual const LOCA::ParameterVector& getParams() const = 0;
@@ -115,8 +116,8 @@ namespace LOCA {
       //! Return copy of parameter indexed by (integer) paramID
       virtual double getParam(int paramID) const = 0;
 
-      //! Return copy of parameter indexed by (string) paramID
-      virtual double getParam(string paramID) const = 0;
+      //! Return copy of parameter indexed by (std::string) paramID
+      virtual double getParam(std::string paramID) const = 0;
 
       /*! 
        * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
@@ -125,7 +126,7 @@ namespace LOCA {
        * computed.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDfDpMulti(const vector<int>& paramIDs, 
+      computeDfDpMulti(const std::vector<int>& paramIDs, 
 		       NOX::Abstract::MultiVector& dfdp, 
 		       bool isValidF) = 0;
 

@@ -56,11 +56,13 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 
-#include "MueLu_Graph_fwd.hpp"
+//#include "MueLu_Graph_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 
-#include "MueLu_Graph.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
+
+#include "MueLu_AggOptions.hpp"
 
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \
@@ -72,16 +74,7 @@
 
 namespace MueLu {
 
-namespace AggOptions {
-/* Options defining how to pick-up the next root node in the local aggregation procedure */
-enum UncoupledOrdering {
-  NATURAL = 0, /* node ordering   */
-  RANDOM  = 1, /* random ordering */
-  GRAPH   = 2  /* graph ordering  */   // TODO rename GRAPH
-};
-} // namespace AggOptions
-
-using namespace AggOptions; // necessary to hide MPI::GRAPH
+using namespace AggOptions; // necessary
 
 /* In the algorithm, aggStat[]=READY/NOTSEL/SELECTED indicates whether a node has been aggregated. */
 namespace NodeStats {
@@ -97,7 +90,9 @@ enum NodeState {
   AGGREGATED = 3,   /* indicates that a node has been assigned  */
   /* to an aggregate.                         */
 
-  ONEPT = 4  /* indicates that a node shall be preserved over all multigrid levels as 1 point aggregate */
+  ONEPT    = 4,  /* indicates that a node shall be preserved over all multigrid levels as 1 point aggregate */
+  SMALLAGG = 5,   /* indicates that a node shall be aggregated separately from standard nodes with small aggregates (only neighbour nodes which are also marked with the SMALLAGG flag) */
+  BOUNDARY = 6     // node is a Dirichlet node and should never be aggregated
 };
 } // namespace NodeStats
 
@@ -138,14 +133,14 @@ class AggregationAlgorithmBase
   //@{
 
   //! BuildAggregates routine.
-  virtual LocalOrdinal BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const = 0;
+  virtual LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const = 0;
   //@}
 
   //! @name Build routines
   //@{
 
   //! BuildAggregates routine.
-  virtual void PrintAggregationInformation(const std::string phase, Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
+  virtual void PrintAggregationInformation(const std::string phase, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
     const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
     const LocalOrdinal nRows = graph.GetNodeNumVertices();
     const LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates();
@@ -177,25 +172,7 @@ class AggregationAlgorithmBase
 
   //@}
 
-  //! @name Set/get methods.
-  //@{
-
-  void SetOrdering(AggOptions::UncoupledOrdering ordering)                          { ordering_                = ordering;                }
-  void SetMinNodesPerAggregate(int minNodesPerAggregate)       { minNodesPerAggregate_    = minNodesPerAggregate;    }
-  void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
-
-  AggOptions::UncoupledOrdering GetOrdering()                const { return ordering_;                }
-  int      GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
-  int      GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
-
-  //@}
-
-
   private:
-    //! Aggregation options (TODO: Teuchos::ParameterList?)
-    AggOptions::UncoupledOrdering ordering_;                /**<  natural, random, graph           */
-    int      minNodesPerAggregate_;    /**<  aggregate size control           */
-    int      maxNeighAlreadySelected_; /**<  complexity control               */
 
   }; // class AggregationAlgorithmBase
 

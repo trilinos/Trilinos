@@ -184,7 +184,7 @@ namespace LOCA {
 	 * \c true, then the \c dgdp contains \f$g\f$ on input.
 	 */
 	virtual NOX::Abstract::Group::ReturnType
-	computeDP(const vector<int>& paramIDs, 
+	computeDP(const std::vector<int>& paramIDs, 
 		  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 		  bool isValidG);
 

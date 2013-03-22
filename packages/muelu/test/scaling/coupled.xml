@@ -1,0 +1,6 @@
+    <ParameterList name="CoupledAggregationFactory">
+      <Parameter name="Ordering"                type="string" value="Natural"/>
+      <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
+      <Parameter name="Phase3AggCreation"       type="double" value="0.5"/>
+      <Parameter name="MinNodesPerAggregate"    type="int"    value="3"/>
+    </ParameterList>

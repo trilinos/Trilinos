@@ -60,10 +60,10 @@ using namespace Galeri;
 // main driver //
 // =========== //
 
-int main(int argv, char* argc[])
+int main(int argc, char* argv[])
 {
 #ifdef HAVE_MPI
-  MPI_Init(&argv, &argc);
+  MPI_Init(&argc, &argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;

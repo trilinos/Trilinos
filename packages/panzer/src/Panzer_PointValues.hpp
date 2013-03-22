@@ -43,23 +43,32 @@
 #ifndef PANZER_POINT_VALUES_HPP
 #define PANZER_POINT_VALUES_HPP
 
-#include "Teuchos_RCP.hpp"
+#include "Panzer_config.hpp"
 #include "Panzer_PointRule.hpp"
 #include "Panzer_ArrayTraits.hpp"
+
+#include "Teuchos_RCP.hpp"
+
+#include "Intrepid_CellTools.hpp"
 
 namespace panzer {
 
   template <typename Scalar,typename Array>
   struct PointValues {
-    //! Get a double array
-    typedef typename ArrayTraits<Scalar,Array>::template mod_scalar<double>::array_type DoubleArray;
+    typedef typename ArrayTraits<Scalar,Array>::size_type size_type;
     
     //! Sizes/allocates memory for arrays
     template <typename ArrayFactory>
     void setupArrays(const Teuchos::RCP<const panzer::PointRule>& pr,const ArrayFactory & af);
 
     template <typename NodeCoordinateArray,typename PointCoordinateArray>
-    void evaluateValues(const NodeCoordinateArray & node_coordinates,const PointCoordinateArray & point_coordinates);
+    inline void evaluateValues(const NodeCoordinateArray & node_coordinates,const PointCoordinateArray & point_coordinates);
+
+    template <typename CoordinateArray>
+    void copyNodeCoords(const CoordinateArray& in_node_coords);
+
+    template <typename CoordinateArray>
+    void copyPointCoords(const CoordinateArray& in_point_coords);
 
     Array coords_ref;          // <Point,Dim>
     Array node_coordinates;    // <Cell,NODE,Dim>
@@ -73,8 +82,29 @@ namespace panzer {
     Teuchos::RCP<const panzer::PointRule> point_rule;
   };
 
-} // namespace panzer
+  template <typename Scalar,typename Array>
+  template <typename NodeCoordinateArray,typename PointCoordinateArray>
+  void PointValues<Scalar,Array>::
+  evaluateValues(const NodeCoordinateArray& in_node_coords,
+                 const PointCoordinateArray & in_point_coords)
+  {
+    if (point_rule->isSide()) {
+       TEUCHOS_ASSERT(false); // not implemented!!!!
+    }
+    
+    copyPointCoords(in_point_coords);
+    copyNodeCoords(in_node_coords);
 
-#include "Panzer_PointValues_impl.hpp"
+    Intrepid::CellTools<Scalar> cell_tools;
+
+    cell_tools.setJacobian(jac, coords_ref, node_coordinates,*(point_rule->topology));
+    cell_tools.setJacobianInv(jac_inv, jac);
+    cell_tools.setJacobianDet(jac_det, jac);
+    
+    // IP coordinates
+    cell_tools.mapToPhysicalFrame(point_coords, coords_ref, node_coordinates, *(point_rule->topology));
+  }
+
+} // namespace panzer
 
 #endif

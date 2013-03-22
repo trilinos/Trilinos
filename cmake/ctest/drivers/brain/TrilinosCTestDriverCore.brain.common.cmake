@@ -27,8 +27,12 @@ SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
   "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
   "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
+  "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc/SuperLU_4.3/SRC"
+  "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc/SuperLU_4.3/lib"
+  "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
   "-DTPL_ENABLE_BinUtils=ON"
   "-DTPL_ENABLE_Matio=OFF"
+  "-DTPL_ENABLE_SuperLU=ON"
   "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
   )
 

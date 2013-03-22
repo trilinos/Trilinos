@@ -65,7 +65,7 @@
 
 namespace panzer {
 
-  template<typename, typename>  class FieldManagerBuilder;
+  class FieldManagerBuilder;
   template<typename, typename>  class EpetraLinearObjFactory;
   #ifdef HAVE_STOKHOS
      template<typename, typename>  class SGEpetraLinearObjFactory;
@@ -78,14 +78,14 @@ namespace panzer {
   class ModelEvaluator_Epetra : public EpetraExt::ModelEvaluator {
   public:
 
-    ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+    ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                           const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 			  const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
 			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
 			  const Teuchos::RCP<panzer::GlobalData>& global_data,
 			  bool build_transient_support);
     
-    ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+    ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                           const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 			  const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
 			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
@@ -93,7 +93,7 @@ namespace panzer {
 			  bool build_transient_support);
 
     #ifdef HAVE_STOKHOS
-       ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+       ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                              const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
    			     const Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> >& sg_lof,
    			     const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
@@ -241,9 +241,9 @@ namespace panzer {
     
     /** @} */
     
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb_;
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb_;
     mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
-    mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm_;   // they control and provide access to evaluate
+    mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;   // they control and provide access to evaluate
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
     //Teuchos::RCP<panzer::ParamLib> parameter_library_;
     mutable Teuchos::Array<panzer::ParamVec> parameter_vector_;
@@ -281,7 +281,7 @@ namespace panzer {
     * appropriate constructor of ModelEvaluator_Epetra.
     */
   Teuchos::RCP<ModelEvaluator_Epetra> 
-  buildEpetraME(const Teuchos::RCP<FieldManagerBuilder<int,int> >& fmb,
+  buildEpetraME(const Teuchos::RCP<FieldManagerBuilder>& fmb,
                 const Teuchos::RCP<ResponseLibrary<panzer::Traits> >& rLibrary,
 	        const Teuchos::RCP<LinearObjFactory<panzer::Traits> >& lof,
 	        const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,

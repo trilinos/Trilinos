@@ -63,6 +63,7 @@
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -118,6 +119,7 @@ namespace Belos {
     
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -563,7 +565,7 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
       params_->set("Timer Label", label_);
       std::string solveLabel = label_ + ": RCGSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+      timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
     }
   }
@@ -674,7 +676,7 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
   if (timerSolve_ == Teuchos::null) {
     std::string solveLabel = label_ + ": RCGSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+    timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
   }
 
@@ -740,7 +742,7 @@ void RCGSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
     else {
 
       // Initialize the state storage
-      TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(numBlocks_) > MVText::GetGlobalLength(*rhsMV),std::invalid_argument,
                          "Belos::RCGSolMgr::initializeStateStorage(): Cannot generate a Krylov basis with dimension larger the operator!");
 
       // If the subspace has not been initialized before, generate it using the RHS from lp_.
@@ -1037,6 +1039,18 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
                      "Belos::RCGSolMgr::solve(): Linear problem is not a valid object.");
   TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),RCGSolMgrLinearProblemFailure,
                      "Belos::RCGSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
+  TEUCHOS_TEST_FOR_EXCEPTION((problem_->getLeftPrec() != Teuchos::null)&&(problem_->getRightPrec() != Teuchos::null),
+                     RCGSolMgrLinearProblemFailure,
+                     "Belos::RCGSolMgr::solve(): RCG does not support split preconditioning, only set left or right preconditioner.");
+
+  // Grab the preconditioning object
+  Teuchos::RCP<OP> precObj;
+  if (problem_->getLeftPrec() != Teuchos::null) {
+    precObj = Teuchos::rcp_const_cast<OP>(problem_->getLeftPrec());
+  }
+  else if (problem_->getRightPrec() != Teuchos::null) {
+    precObj = Teuchos::rcp_const_cast<OP>(problem_->getRightPrec());
+  }
 
   // Create indices for the linear systems to be solved.
   int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
@@ -1047,9 +1061,9 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
   problem_->setLSIndex( currIdx );
 
   // Check the number of blocks and change them if necessary.
-  int dim = MVT::GetVecLength( *(problem_->getRHS()) );
+  ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );
   if (numBlocks_ > dim) {
-    numBlocks_ = dim;
+    numBlocks_ = Teuchos::asSafe<int>(dim);
     params_->set("Num Blocks", numBlocks_);
     printer_->stream(Warnings) <<
       "Warning! Requested Krylov subspace dimension is larger than operator dimension!" << std::endl <<
@@ -1085,14 +1099,14 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
     MVT::MvTransMv( one, *Utmp, *AUtmp, UTAUtmp );
     // Initialize AUTAU  ( AUTAU = AU'*(M\AU) )
     Teuchos::SerialDenseMatrix<int,ScalarType> AUTAUtmp( Teuchos::View, *AUTAU_, recycleBlocks_, recycleBlocks_ );
-    if ( problem_->getLeftPrec() != Teuchos::null ) {
+    if ( precObj != Teuchos::null ) {
       index.resize(recycleBlocks_);
       for (int i=0; i<recycleBlocks_; ++i) { index[i] = i; }
       index.resize(recycleBlocks_);
       for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
-      Teuchos::RCP<MV> LeftPCAU = MVT::CloneViewNonConst( *U1_, index ); // use U1 as temp storage
-      problem_->applyLeftPrec( *AUtmp, *LeftPCAU );
-      MVT::MvTransMv( one, *AUtmp, *LeftPCAU, AUTAUtmp );
+      Teuchos::RCP<MV> PCAU = MVT::CloneViewNonConst( *U1_, index ); // use U1 as temp storage
+      OPT::Apply( *precObj, *AUtmp, *PCAU );
+      MVT::MvTransMv( one, *AUtmp, *PCAU, AUTAUtmp );
     } else {
       MVT::MvTransMv( one, *AUtmp, *AUtmp, AUTAUtmp );
     }
@@ -1162,8 +1176,8 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
         MVT::MvTimesMatAddMv( -one, *AUtmp, Utr, one, *r_ );
       }
 
-      if ( problem_->getLeftPrec() != Teuchos::null ) {
-        problem_->applyLeftPrec( *r_, *z_ );
+      if ( precObj != Teuchos::null ) {
+        OPT::Apply( *precObj, *r_, *z_ );
       } else {
         z_ = r_;
       }
@@ -1763,13 +1777,13 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
           MVT::MvTransMv( one, *Utmp, *AUtmp, UTAUtmp );
           // Initialize AUTAU  ( AUTAU = AU'*(M\AU) )
           Teuchos::SerialDenseMatrix<int,ScalarType> AUTAUtmp( Teuchos::View, *AUTAU_, recycleBlocks_, recycleBlocks_ );
-          if ( problem_->getLeftPrec() != Teuchos::null ) {
+          if ( precObj != Teuchos::null ) {
             index.resize(recycleBlocks_);
             for (int i=0; i<recycleBlocks_; ++i) { index[i] = i; }
             index.resize(recycleBlocks_);
             for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
             Teuchos::RCP<MV> LeftPCAU = MVT::CloneViewNonConst( *U1_, index ); // use U1 as temp storage
-            problem_->applyLeftPrec( *AUtmp, *LeftPCAU );
+            OPT::Apply( *precObj, *AUtmp, *LeftPCAU );
             MVT::MvTransMv( one, *AUtmp, *LeftPCAU, AUTAUtmp );
           } else {
             MVT::MvTransMv( one, *AUtmp, *AUtmp, AUTAUtmp );

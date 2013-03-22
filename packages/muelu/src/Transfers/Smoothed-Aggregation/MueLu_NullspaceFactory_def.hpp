@@ -46,7 +46,7 @@
 #ifndef MUELU_NULLSPACEFACTORY_DEF_HPP
 #define MUELU_NULLSPACEFACTORY_DEF_HPP
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
@@ -56,27 +56,14 @@
 
 namespace MueLu {
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NullspaceFactory(RCP<const FactoryBase> AFact, RCP<const FactoryBase> nullspaceFact)
-    : nspName_("Nullspace"), AFact_(AFact), nullspaceFact_(nullspaceFact)
-  { }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NullspaceFactory(std::string nspName, RCP<const FactoryBase> nullspaceFact)
-    : nspName_(nspName), AFact_(Teuchos::null), nullspaceFact_(nullspaceFact)
-  {  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~NullspaceFactory() {}
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
 
     // only request "A" in DeclareInput if
     // 1) there is not nspName_ (e.g. "Nullspace") is available in Level AND
     // 2) it is the finest level (i.e. LevelID == 0)
-    if (currentLevel.IsAvailable(nspName_) == false && currentLevel.GetLevelID() == 0)
-      currentLevel.DeclareInput("A", AFact_.get(),this);
+    if (currentLevel.IsAvailable(nspName_, NoFactory::get()) == false && currentLevel.GetLevelID() == 0)
+      Input(currentLevel, "A");
 
     if (currentLevel.GetLevelID() !=0) {
 
@@ -87,11 +74,11 @@ namespace MueLu {
       // 2) nullspaceFact_ must be a TentativePFactory i.e. at least a TwoLevelFactoryBase derived object
 
 
-      currentLevel.DeclareInput("Nullspace", nullspaceFact_.get(),this);
+      currentLevel.DeclareInput("Nullspace", GetFactory(nspName_).get(), this); /* ! "Nullspace" and nspName_ mismatch possible here */
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Nullspace factory", currentLevel);
 
@@ -101,29 +88,29 @@ namespace MueLu {
 
     if (currentLevel.GetLevelID() == 0) {
 
-      if (currentLevel.IsAvailable(nspName_)) {
+      if (currentLevel.IsAvailable(nspName_, NoFactory::get())) {
         //FIXME: with the new version of Level::GetFactory(), this never happens.
 
         // When a fine nullspace have already been defined by user using Set("Nullspace", ...), we use it.
-        nullspace = currentLevel.Get< RCP<MultiVector> >(nspName_);
+        nullspace = currentLevel.Get< RCP<MultiVector> >(nspName_, NoFactory::get());
         GetOStream(Runtime1, 0) << "Use user-given nullspace " << nspName_ << ": nullspace dimension=" << nullspace->getNumVectors() << " nullspace length=" << nullspace->getGlobalLength() << std::endl;
-      
+
       } else {
         // "Nullspace" (nspName_) is not available
-        RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get()); // no request since given by user
-        
+        RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
+
         // determine numPDEs
         LocalOrdinal numPDEs = 1;
         if(A->IsView("stridedMaps")==true) {
           Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-          TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
+          TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null, Exceptions::BadCast, "MueLu::CoalesceFactory::Build: cast to strided row map failed.");
           numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
           oldView = A->SwitchToView(oldView);
         }
-        
+
         GetOStream(Runtime1, 0) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
         nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
-        
+
         for (int i=0; i<numPDEs; ++i) {
           ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
           int numBlocks = nsValues.size() / numPDEs;
@@ -133,16 +120,16 @@ namespace MueLu {
         }
       } // end if "Nullspace" not available
     } else {
-        // on coarser levels always use "Nullspace" as variable name, since it is expected by
-        // tentative P factory to be "Nullspace"
+      // on coarser levels always use "Nullspace" as variable name, since it is expected by
+      // tentative P factory to be "Nullspace"
 
-        nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
-       
-      }
+      nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory(nspName_).get()); /* ! "Nullspace" and nspName_ mismatch possible here */
+
+    }
 
     // provide "Nullspace" variable on current level (used by TentativePFactory)
-    currentLevel.Set("Nullspace", nullspace, this);
-    
+    Set(currentLevel, "Nullspace", nullspace);
+
   } // Build
 
 } //namespace MueLu

@@ -36,30 +36,35 @@
 #include "Sacado_mpl_next.hpp"
 #include "Sacado_mpl_deref.hpp"
 
+#include "KokkosArray_Macros.hpp"
+
 namespace Stokhos {
 
   namespace mpl {
 
     template <class Seq, 
-	      class node_t,
+	      class node_t, 
 	      class Iter1 = typename Sacado::mpl::begin<Seq>::type, 
 	      class Iter2 = typename Sacado::mpl::end<Seq>::type>
-    struct for_each {};
+    struct for_each {
+      typedef node_t node_type;
+      template <typename Op>
+      KOKKOSARRAY_INLINE_FUNCTION
+      for_each(const Op& op) {
+	op(typename Sacado::mpl::deref<Iter1>::type());
+	for_each<Seq, node_type, typename Sacado::mpl::next<Iter1>::type, Iter2> f(op);
+      }
+    };
+
+    template <class Seq, class node_t, class Iter1>
+    struct for_each<Seq, node_t, Iter1, Iter1> {
+      template <typename Op>
+      KOKKOSARRAY_INLINE_FUNCTION
+      for_each(const Op& op) {}
+    };
 
   }
 
 }
-
-// Host specialization
-#include "KokkosArray_Host.hpp"
-#include "KokkosArray_Host_macros.hpp"
-#include "Stokhos_mpl_for_each_impl.hpp"
-#include "KokkosArray_Clear_macros.hpp"
-
-// Cuda specialization
-#include "KokkosArray_Cuda.hpp"
-#include "KokkosArray_Cuda_macros.hpp"
-#include "Stokhos_mpl_for_each_impl.hpp"
-#include "KokkosArray_Clear_macros.hpp"
 
 #endif // STOKHOS_MPL_FOR_EACH_HPP

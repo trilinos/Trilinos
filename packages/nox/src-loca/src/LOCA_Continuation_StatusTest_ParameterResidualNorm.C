@@ -117,7 +117,7 @@ LOCA::Continuation::StatusTest::ParameterResidualNorm::print(ostream& stream,
     stream << ' ';
   stream << status;
   stream << "Continuation Scaled Parameter Residual = " << NOX::Utils::sciformat(paramResidualNorm, 3) << " < " << tol;
-  stream << endl;
+  stream << std::endl;
 
   return stream;
 } 

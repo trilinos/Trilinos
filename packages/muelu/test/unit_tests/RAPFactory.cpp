@@ -59,14 +59,14 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
-  
+
   TEUCHOS_UNIT_TEST(RAPFactory, Constructor)
   {
     out << "version: " << MueLu::Version() << std::endl;
@@ -83,14 +83,16 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-    Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    Level fineLevel, coarseLevel; TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
+    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
     fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;
-    SaPFactory sapFactory(rcpFromRef(tentpFactory));
-    TransPFactory transPFactory(rcpFromRef(sapFactory)); //todo:rcpFromRef
+    SaPFactory sapFactory;
+    sapFactory.SetFactory("P",rcpFromRef(tentpFactory));
+    TransPFactory transPFactory;
+    transPFactory.SetFactory("P", rcpFromRef(sapFactory));  //todo:rcpFromRef
 
     coarseLevel.Request("P",&sapFactory);
     coarseLevel.Request("R",&transPFactory);
@@ -100,15 +102,18 @@ namespace MueLuTests {
     sapFactory.Build(fineLevel,coarseLevel);
     transPFactory.Build(fineLevel,coarseLevel);
 
-    RAPFactory rap(rcpFromRef(sapFactory), rcpFromRef(transPFactory));
+    RAPFactory rap;
+    rap.SetFactory("P", rcpFromRef(sapFactory));
+    rap.SetFactory("R", rcpFromRef(transPFactory));
+
     coarseLevel.Request(rap);
 
     coarseLevel.Request("A",&rap);
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
-    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
-    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &transPFactory);
+    RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A");
+    RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", &sapFactory);
+    RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", &transPFactory);
 
     RCP<MultiVector> workVec1 = MultiVectorFactory::Build(P->getRangeMap(),1);
     RCP<MultiVector> workVec2 = MultiVectorFactory::Build(Op->getRangeMap(),1);
@@ -121,17 +126,17 @@ namespace MueLuTests {
     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     R->apply(*workVec2,*result1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", &rap);
+    RCP<Matrix> coarseOp = coarseLevel.Get< RCP<Matrix> >("A", &rap);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);
     coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-  
+
     Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the Galerkin triple "
         << "matrix product by comparing (RAP)*X to R(A(P*X))." << std::endl;
-    out << "||X||_2 = " << normX << std::endl; 
+    out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
@@ -154,22 +159,23 @@ namespace MueLuTests {
     defManager->SetFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
     defManager->SetFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
     defManager->SetFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-    defManager->SetFactory("Aggregates", rcp(new UCAggregationFactory()));   // real aggregation factory for Ptent
+    defManager->SetFactory("Aggregates", rcp(new CoupledAggregationFactory()));   // real aggregation factory for Ptent
 
     Level fineLevel, coarseLevel;
-    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     // overwrite default factory manager
     fineLevel.SetFactoryManager(defManager);
     coarseLevel.SetFactoryManager(defManager);
 
-    RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(19*comm->getSize());
+    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(19*comm->getSize());
     fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;
-    SaPFactory sapFactory(rcpFromRef(tentpFactory));
-    TransPFactory transPFactory(rcpFromRef(sapFactory));
-
+    SaPFactory sapFactory;
+    sapFactory.SetFactory("P",rcpFromRef(tentpFactory));
+    TransPFactory transPFactory;
+    transPFactory.SetFactory("P", rcpFromRef(sapFactory));
     coarseLevel.Request("P", &sapFactory);
     coarseLevel.Request("R", &transPFactory);
 
@@ -177,17 +183,18 @@ namespace MueLuTests {
     coarseLevel.Request(transPFactory);
     sapFactory.Build(fineLevel, coarseLevel);
     transPFactory.Build(fineLevel,coarseLevel);
-    RAPFactory rap(rcpFromRef(sapFactory), rcpFromRef(transPFactory));
-
+    RAPFactory rap;
+    rap.SetFactory("P", rcpFromRef(sapFactory));
+    rap.SetFactory("R", rcpFromRef(transPFactory));
     coarseLevel.Request("A", &rap);
 
     rap.SetImplicitTranspose(true);
     coarseLevel.Request(rap);
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
-    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
-    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &transPFactory);
+    RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A");
+    RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", &sapFactory);
+    RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", &transPFactory);
 
     //std::string filename = "A.dat";
     //Utils::Write(filename,Op);
@@ -208,17 +215,17 @@ namespace MueLuTests {
     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     P->apply(*workVec2,*result1,Teuchos::TRANS,(SC)1.0,(SC)0.0);
 
-    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", &rap);
+    RCP<Matrix> coarseOp = coarseLevel.Get< RCP<Matrix> >("A", &rap);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
     coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-  
+
     Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the Galerkin triple "
         << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit tranpose of P." << std::endl;
-    out << "||X||_2 = " << normX << std::endl; 
+    out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);

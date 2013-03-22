@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 
   if (numGlobalBlocks < numProc) {
     if (verbose) {
-      std::cout << "numGlobalBlocks = " << numGlobalBlocks 
+      std::cout << "numGlobalBlocks = " << numGlobalBlocks
                 << " cannot be less than the number of processors = " << numProc << std::endl;
     }
     return -1;
@@ -116,13 +116,13 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView<const Ordinal> myGlobalBlocks = blkmap->getNodeBlockIDs();
 
   // Create an OTeger vector NumNz that is used to build the Petra Matrix.
-  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
+  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
   // on this processor
 
   // Create a Tpetra::VbrMatrix using the BlockMap.
   Teuchos::RCP< Tpetra::VbrMatrix<Scalar,Ordinal> > A;
   A = Teuchos::rcp( new Tpetra::VbrMatrix<Scalar,Ordinal>(blkmap, 3) );
-  
+
   // Add  rows one-at-a-time.
   // We will build a block-tridiagonal matrix where the diagonal block has 2
   // on the diagonal and the off-diagonal blocks have -1 on the diagonal.
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Iterate (again)
-  lambda = power_method<Scalar,Ordinal>(A, niters, tolerance, verbose);  
+  lambda = power_method<Scalar,Ordinal>(A, niters, tolerance, verbose);
 
   /* end main
    */
@@ -188,34 +188,45 @@ int main(int argc, char *argv[]) {
 
 template <class Scalar, class Ordinal>
 Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal> > &A, size_t niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose) {
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+  typedef Scalar scalar_type;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef typename STS::magnitudeType magnitude_type;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
   const bool NO_INITIALIZE_TO_ZERO = false;
   // create three vectors; do not bother initializing q to zero, as we will fill it with random below
-  Tpetra::Vector<Scalar,Ordinal> z(A->getRangeMap(), NO_INITIALIZE_TO_ZERO),
-                                 q(A->getRangeMap(), NO_INITIALIZE_TO_ZERO),
-                                 r(A->getRangeMap(), NO_INITIALIZE_TO_ZERO);
+  Tpetra::Vector<scalar_type, Ordinal> z (A->getRangeMap (), NO_INITIALIZE_TO_ZERO);
+
+  // mfh 26 Nov 2012: For some reason, not initializing r to zero
+  // causes the norm of r to be NaN in the loop below.  This fixes
+  // a test failure on my workstation.
+  Tpetra::Vector<scalar_type, Ordinal> q (A->getRangeMap ()); //, NO_INITIALIZE_TO_ZERO);
+  Tpetra::Vector<scalar_type, Ordinal> r (A->getRangeMap ()); //, NO_INITIALIZE_TO_ZERO);
+
   // Fill z with random numbers
-  z.randomize();
+  z.randomize ();
   // Variables needed for iteration
-  const Scalar ONE  = Teuchos::ScalarTraits<Scalar>::one();
-  const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-  Scalar lambda = static_cast<Scalar>(0.0);
-  Magnitude normz, residual = static_cast<Magnitude>(0.0);
+  scalar_type lambda = STS::zero ();
+  magnitude_type normz, residual = STM::zero ();
+
   // power iteration
   for (size_t iter = 0; iter < niters; ++iter) {
-    normz = z.norm2();          // Compute 2-norm of z
-    q.scale(ONE/normz, z);      // Set q = z / normz
-    A->apply(q, z);             // Compute z = A*q
-    lambda = q.dot(z);          // Approximate maximum eigenvalue: lamba = dot(q,z)
+    normz = z.norm2 ();               // Compute 2-norm of z
+    q.scale (STS::one () / normz, z); // Compute q = z / normz
+    A->apply (q, z);                  // Compute z = A*q
+    lambda = q.dot (z);               // Approximate maximum eigenvalue: lambda = dot(q, z)
     if ( iter % 100 == 0 || iter + 1 == niters ) {
-      r.update(ONE, z, -lambda, q, ZERO);     // Compute A*q - lambda*q
-      residual = Teuchos::ScalarTraits<Scalar>::magnitude(r.norm2() / lambda);
+      r.update (STS::one (), z, -lambda, q, STS::zero ());     // Compute A*q - lambda*q
+
+      magnitude_type r_norm = r.norm2 ();
+      residual = STS::magnitude (r_norm / lambda);
       if (verbose) {
-        std::cout << "Iter = " << iter << "  Lambda = " << lambda 
-                  << "  Residual of A*q - lambda*q = " 
-                  << residual << std::endl;
+        std::cout << "Iter = " << iter << ": lambda = " << lambda
+                  << ", ||A*q - lambda*q||_2 = " << r_norm
+                  << ", ||A*q - lambda*q||_2 / lambda = " << residual
+                  << std::endl;
       }
-    } 
+    }
     if (residual < tolerance) {
       break;
     }

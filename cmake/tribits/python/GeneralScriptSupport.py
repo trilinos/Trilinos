@@ -312,7 +312,7 @@ g_dumpAllSysCmnds = os.environ.has_key("GENERAL_SCRIPT_SUPPORT_DUMD_COMMANDS")
 
 
 def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None, \
-  workingDir="" \
+  workingDir="", getStdErr=False \
   ):
   if g_dumpAllSysCmnds:
     print "\nDUMP SYS CMND: " + cmnd + "\n"
@@ -336,8 +336,12 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None, \
   rtnObject = None
   try:
     if rtnOutput:
-      child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
-        env=environment).stdout
+      if getStdErr:
+        child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
+          stderr = subprocess.STDOUT, env=environment).stdout
+      else:
+        child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
+          env=environment).stdout
       data = child.read()
       rtnCode = child.close()
       rtnObject = (data, rtnCode)
@@ -403,9 +407,12 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
   return rtn
 
 
-def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir=""):
+def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir="", \
+  getStdErr=False \
+  ):
   """Run a shell command and return its output"""
-  (data, err) = runSysCmndInterface(cmnd, rtnOutput=True, workingDir=workingDir)
+  (data, err) = runSysCmndInterface(cmnd, rtnOutput=True, workingDir=workingDir,
+    getStdErr=getStdErr)
   if err:
     if throwOnError:
       raise RuntimeError, '%s failed w/ exit code %d' % (cmnd, err)
@@ -513,6 +520,11 @@ def expandDirsDict(trilinosDirsDict_inout):
 def removeIfExists(fileName):
   if os.path.exists(fileName):
     echoRunSysCmnd("rm "+fileName)
+
+
+def removeDirIfExists(dirName):
+  if os.path.exists(dirName):
+    echoRunSysCmnd("rm -rf "+dirName)
 
 
 def writeStrToFile(fileName, fileBodyStr):

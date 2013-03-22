@@ -89,7 +89,7 @@ NOX::LAPACK::Group::Group(const NOX::LAPACK::Group& source, NOX::CopyType type) 
     break;
 
   default:
-    cerr << "NOX:LAPACK::Group - invalid CopyType for copy constructor." << endl;
+    std::cerr << "NOX:LAPACK::Group - invalid CopyType for copy constructor." << std::endl;
     throw "NOX LAPACK Error";
   }
 
@@ -208,12 +208,12 @@ NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeGradient()
     return NOX::Abstract::Group::Ok;
   
   if (!isF()) {
-    cerr << "ERROR: NOX::LAPACK::Group::computeGrad() - F is out of date wrt X!" << endl;
+    std::cerr << "ERROR: NOX::LAPACK::Group::computeGrad() - F is out of date wrt X!" << std::endl;
     return NOX::Abstract::Group::BadDependency;
   }
 
   if (!isJacobian()) {
-    cerr << "ERROR: NOX::LAPACK::Group::computeGrad() - Jacobian is out of date wrt X!" << endl;
+    std::cerr << "ERROR: NOX::LAPACK::Group::computeGrad() - Jacobian is out of date wrt X!" << std::endl;
     return NOX::Abstract::Group::BadDependency;
   }
   
@@ -233,12 +233,12 @@ NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeNewton(Teuchos::Para
     return NOX::Abstract::Group::Ok;
 
   if (!isF()) {
-    cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid F" << endl;
+    std::cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid F" << std::endl;
     throw "NOX Error";
   }
 
   if (!isJacobian()) {
-    cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid Jacobian" << endl;
+    std::cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid Jacobian" << std::endl;
     throw "NOX Error";
   }
 
@@ -313,7 +313,7 @@ NOX::LAPACK::Group::applyJacobianInverse(Teuchos::ParameterList& p,
 {
 
   if (!isJacobian()) {
-    cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverse() - invalid Jacobian" << endl;
+    std::cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverse() - invalid Jacobian" << std::endl;
     throw "NOX Error";
   }
 
@@ -332,8 +332,8 @@ NOX::LAPACK::Group::applyJacobianInverseMultiVector(
 {
 
   if (!isJacobian()) {
-    cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverseMultiVector() "
-	 << "- invalid Jacobian" << endl;
+    std::cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverseMultiVector() "
+	 << "- invalid Jacobian" << std::endl;
     throw "NOX Error";
   }
 
@@ -403,8 +403,8 @@ double NOX::LAPACK::Group::getNormF() const
   if (isValidF) 
     return fVector.norm();
   
-  cerr << "ERROR: NOX::LAPACK::Group::getNormF() "
-       << "- invalid F, please call computeF() first." << endl;
+  std::cerr << "ERROR: NOX::LAPACK::Group::getNormF() "
+       << "- invalid F, please call computeF() first." << std::endl;
   throw "NOX Error";
   
   return 0.0;
@@ -443,13 +443,13 @@ Teuchos::RCP< const NOX::Abstract::Vector > NOX::LAPACK::Group::getNewtonPtr() c
 
 void NOX::LAPACK::Group::print() const
 {
-  cout << "x = " << xVector << "\n";
+  std::cout << "x = " << xVector << "\n";
 
   if (isValidF) {
-    cout << "F(x) = " << fVector << "\n";
+    std::cout << "F(x) = " << fVector << "\n";
   }
   else
-    cout << "F(x) has not been computed" << "\n";
+    std::cout << "F(x) has not been computed" << "\n";
   
-  cout << endl;
+  std::cout << std::endl;
 }

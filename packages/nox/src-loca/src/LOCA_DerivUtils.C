@@ -90,11 +90,11 @@ LOCA::DerivUtils::clone(NOX::CopyType type) const
 
 NOX::Abstract::Group::ReturnType
 LOCA::DerivUtils::computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp,
-			      const vector<int>& param_ids,
+			      const std::vector<int>& param_ids,
 			      NOX::Abstract::MultiVector& result,
 			      bool isValidF) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDfDp()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -142,12 +142,12 @@ LOCA::DerivUtils::computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp,
 
 NOX::Abstract::Group::ReturnType 
 LOCA::DerivUtils::computeDJnDp(LOCA::MultiContinuation::AbstractGroup& grp, 
-			       const vector<int>& paramIDs, 
+			       const std::vector<int>& paramIDs, 
 			       const NOX::Abstract::Vector& nullVector,
 			       NOX::Abstract::MultiVector& result,
 			       bool isValid) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDJnDp()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -209,7 +209,7 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 				const NOX::Abstract::MultiVector& aVector,
 				NOX::Abstract::MultiVector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDJnDxa()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -245,7 +245,7 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector& JnVector,
 				NOX::Abstract::MultiVector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDJnDxa()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -284,13 +284,13 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 NOX::Abstract::Group::ReturnType 
 LOCA::DerivUtils::computeDwtJnDp(
 			      LOCA::MultiContinuation::AbstractGroup& grp, 
-			      const vector<int>& paramIDs,
+			      const std::vector<int>& paramIDs,
 			      const NOX::Abstract::Vector& w,
 			      const NOX::Abstract::Vector& nullVector,
 			      NOX::Abstract::MultiVector::DenseMatrix& result,
 			      bool isValid) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDwtJnDp()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -360,12 +360,12 @@ LOCA::DerivUtils::computeDwtJnDp(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::DerivUtils::computeDwtJDp(LOCA::MultiContinuation::AbstractGroup& grp, 
-				const vector<int>& paramIDs, 
+				const std::vector<int>& paramIDs, 
 				const NOX::Abstract::Vector& w,
 				NOX::Abstract::MultiVector& result,
 				bool isValid) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDwtJDp()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -427,7 +427,7 @@ LOCA::DerivUtils::computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,
 				 const NOX::Abstract::Vector& nullVector,
 				 NOX::Abstract::Vector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDwtJnDx()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -477,7 +477,7 @@ LOCA::DerivUtils::computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,
 				 const NOX::Abstract::Vector& nullVector,
 				 NOX::Abstract::MultiVector& result) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDwtJnDx()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -523,7 +523,7 @@ LOCA::DerivUtils::computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,
 
 NOX::Abstract::Group::ReturnType 
 LOCA::DerivUtils::computeDCeDp(LOCA::Hopf::MooreSpence::AbstractGroup& grp,
-			       const vector<int>& paramIDs,	     
+			       const std::vector<int>& paramIDs,	     
 			       const NOX::Abstract::Vector& yVector,
 			       const NOX::Abstract::Vector& zVector,
 			       double w,
@@ -531,7 +531,7 @@ LOCA::DerivUtils::computeDCeDp(LOCA::Hopf::MooreSpence::AbstractGroup& grp,
 			       NOX::Abstract::MultiVector& result_imag,
 			       bool isValid) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDCeDp()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -602,7 +602,7 @@ LOCA::DerivUtils::computeDCeDxa(
 			    NOX::Abstract::MultiVector& result_real,
 			    NOX::Abstract::MultiVector& result_imag) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDCeDxa()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -645,7 +645,7 @@ LOCA::DerivUtils::computeDCeDxa(
 			    NOX::Abstract::MultiVector& result_real,
 			    NOX::Abstract::MultiVector& result_imag) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDCeDxa()";
   NOX::Abstract::Group::ReturnType status, finalStatus = 
     NOX::Abstract::Group::Ok;
@@ -689,7 +689,7 @@ LOCA::DerivUtils::computeDCeDxa(
 NOX::Abstract::Group::ReturnType 
 LOCA::DerivUtils::computeDwtCeDp(
 			  LOCA::Hopf::MinimallyAugmented::AbstractGroup& grp,
-			  const vector<int>& paramIDs, 
+			  const std::vector<int>& paramIDs, 
 			  const NOX::Abstract::Vector& w1,
 			  const NOX::Abstract::Vector& w2,
 			  const NOX::Abstract::Vector& yVector,
@@ -699,7 +699,7 @@ LOCA::DerivUtils::computeDwtCeDp(
 			  NOX::Abstract::MultiVector::DenseMatrix& result_imag,
 			  bool isValid) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDwtCeDp()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -774,7 +774,7 @@ LOCA::DerivUtils::computeDwtCeDx(
 			    NOX::Abstract::Vector& result_real,
 			    NOX::Abstract::Vector& result_imag) const
 {
-  string callingFunction = 
+  std::string callingFunction = 
     "LOCA::DerivUtils::computeDwtCeDxa()";
   NOX::Abstract::Group::ReturnType status, finalStatus = 
     NOX::Abstract::Group::Ok;

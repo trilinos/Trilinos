@@ -59,7 +59,7 @@ ProblemLOCAPrototype::~ProblemLOCAPrototype()
 
 
 bool ProblemLOCAPrototype::
-PrintSolutionFile( const string & fileName, const Epetra_Vector & x,
+PrintSolutionFile( const std::string & fileName, const Epetra_Vector & x,
   const Teuchos::ParameterList & xParams)
 {
   return true;
@@ -98,7 +98,7 @@ GetContinuationFileParameters()
 }
 
 bool ProblemLOCAPrototype::
-UpdateContinuationFile( const string & fileName, 
+UpdateContinuationFile( const std::string & fileName, 
   const int & idStep,
   const Teuchos::ParameterList & continuationFileParams)
 {

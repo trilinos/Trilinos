@@ -52,6 +52,7 @@
 #define LOCA_BORDEREDSOLVER_BORDERING_H
 
 #include "LOCA_BorderedSolver_AbstractStrategy.H"  // base class
+#include <vector>
 
 // forward declarations
 namespace LOCA {
@@ -263,8 +264,8 @@ namespace LOCA {
 		      const NOX::Abstract::MultiVector* AA,
 		      const LOCA::MultiContinuation::ConstraintInterface* BB,
 		      const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		      vector<int>& indexF,
-		      vector<int>& indexA,
+		      std::vector<int>& indexF,
+		      std::vector<int>& indexA,
 		      const NOX::Abstract::MultiVector* F,
 		      const NOX::Abstract::MultiVector::DenseMatrix* G,
 		      NOX::Abstract::MultiVector& X,
@@ -292,8 +293,8 @@ namespace LOCA {
 		      const NOX::Abstract::MultiVector* AA,
 		      const NOX::Abstract::MultiVector* BB,
 		      const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		      vector<int>& indexF,
-		      vector<int>& indexA,
+		      std::vector<int>& indexF,
+		      std::vector<int>& indexA,
 		      const NOX::Abstract::MultiVector* F,
 		      const NOX::Abstract::MultiVector::DenseMatrix* G,
 		      NOX::Abstract::MultiVector& X,

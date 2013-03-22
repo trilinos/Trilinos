@@ -824,7 +824,14 @@ namespace {
 
     data.resize(isize);
 
+    if (field_name == "mesh_model_coordinates_x") return;
+    if (field_name == "mesh_model_coordinates_y") return;
+    if (field_name == "mesh_model_coordinates_z") return;
     if (field_name == "connectivity_raw") return;
+    if (field_name == "element_side_raw") return;
+    if (field_name == "ids_raw") return;
+    if (field_name == "node_connectivity_status") return;
+    if (field_name == "owning_processor") return;
     ige->get_field_data(field_name, &data[0], isize);
     oge->put_field_data(field_name, &data[0], isize);
   }

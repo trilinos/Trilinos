@@ -62,6 +62,8 @@ class Epetra_Import;
 class Epetra_Export;
 class Epetra_Vector;
 class Epetra_MultiVector;
+class Epetra_IntSerialDenseVector;
+
 
 // Define this to see a complete dump a an Epetra_CrsMatrix::Multiply(...) call
 //#define EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
@@ -243,10 +245,75 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
   */
   
   Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& Graph);
+
+//! Epetra CrsMatrix constructor that also fuses Import and FillComplete().
+  /*!
+    A common use case is to create an empty destination Epetra_CrsMatrix,
+    redistribute from a source CrsMatrix (by an Import or Export
+    operation), then call FillComplete() on the destination
+    CrsMatrix.  This constructor fuses these three cases, for an
+    Import redistribution.
+    
+    Fusing redistribution and FillComplete() exposes potential
+    optimizations.  For example, it may make constructing the column
+    map faster, and it may avoid intermediate unoptimized storage in
+    the destination Epetra_CrsMatrix.  These optimizations may improve
+    performance for specialized kernels like sparse matrix-matrix
+    multiply, as well as for redistributing data after doing load
+    balancing.
+  
+    The resulting matrix is fill complete (in the sense of
+    Filled()) and has optimized storage (in the sense of
+    StorageOptimized()).  It the DomainMap is taken from the SourceMatrix,
+    the RangeMap is presumed to be RowImporter.TargetMap() if not specified
+    
+    \param SourceMatrix [in] The source matrix from which to
+    import.  The source of an Import must have a nonoverlapping
+    distribution.
+    
+    \param RowImporter [in] The Import instance containing a
+    precomputed redistribution plan.  The source Map of the
+    Import must be the same as the row Map of sourceMatrix.
+
+  */
+  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter, const Epetra_Map * RangeMap=0);
+
+  //! Epetra CrsMatrix constructor that also fuses Ex[prt and FillComplete().
+  /*!
+    A common use case is to create an empty destination Epetra_CrsMatrix,
+    redistribute from a source CrsMatrix (by an Import or Export
+    operation), then call FillComplete() on the destination
+    CrsMatrix.  This constructor fuses these three cases, for an
+    Import redistribution.
+    
+    Fusing redistribution and FillComplete() exposes potential
+    optimizations.  For example, it may make constructing the column
+    map faster, and it may avoid intermediate unoptimized storage in
+    the destination Epetra_CrsMatrix.  These optimizations may improve
+    performance for specialized kernels like sparse matrix-matrix
+    multiply, as well as for redistributing data after doing load
+    balancing.
+  
+    The resulting matrix is fill complete (in the sense of
+    Filled()) and has optimized storage (in the sense of
+    StorageOptimized()).  It the DomainMap is taken from the SourceMatrix,
+    the RangeMap is presumed to be RowImporter.TargetMap() if not specified
+    
+    \param SourceMatrix [in] The source matrix from which to
+    import.  The source of an Import must have a nonoverlapping
+    distribution.
+    
+    \param RowExporter [in] The Export instance containing a
+    precomputed redistribution plan.  The source Map of the
+    Import must be the same as the row Map of sourceMatrix.
+
+  */
+  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowImporter, const Epetra_Map * RangeMap=0);
+
   
   //! Copy constructor.
   Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix);
-  
+
   //! Epetra_CrsMatrix Destructor
   virtual ~Epetra_CrsMatrix();
   //@}
@@ -976,7 +1043,15 @@ or if the number of entries in this row exceed the Length parameter.
   int NumAllocatedMyEntries(int Row) const {return(Graph_.NumAllocatedMyIndices(Row));}
   
   //! Returns the index base for row and column indices for this graph.
-  int IndexBase() const {return(Graph_.IndexBase());}
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  //! Index base for this map.
+  int  IndexBase() const {
+    if(RowMap().GlobalIndicesInt())
+      return (int) IndexBase64();
+    throw "Epetra_CrsMatrix::IndexBase: GlobalIndices not int.";
+  }
+#endif
+  long long  IndexBase64() const {return(Graph_.IndexBase64());};
   
   
   //! Returns true if the graph associated with this matrix was pre-constructed and therefore not changeable.
@@ -1014,6 +1089,20 @@ or if the number of entries in this row exceed the Length parameter.
       \pre (IndicesAreLocal()==false && IndicesAreGlobal()==false) || ColMap().PointSameAs(newmap)==true
   */
   int ReplaceColMap(const Epetra_BlockMap& newmap);
+
+  //! Replaces the current DomainMap & Importer with the user-specified map object.
+  /** Replaces the current DomainMap and Importer with the user-specified map object, but only
+      if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap 
+      and Importer's SourceMap matches the DomainMap (assuming the importer isn't null).  If an Importer
+      is passed in, Epetra_CrsMatrix will copy it.
+
+      Returns 0 if map/importer is replaced, -1 if not.
+      
+      \pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
+
+  */
+  int ReplaceDomainMapAndImporter(const Epetra_Map & NewDomainMap, const Epetra_Import * NewImporter);
+
 
 
   //! Returns the Epetra_Map object that describes the set of column-indices that appear in each processor's locally owned matrix rows.
@@ -1058,7 +1147,13 @@ or if the number of entries in this row exceed the Length parameter.
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int LRID( long long GRID_in) const {return(Graph_.LRID(GRID_in));}
 #endif
-  
+
+#if defined(EPETRA_NO_32BIT_GLOBAL_INDICES) && defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+  // default implementation so that no compiler/linker error in case neither 32 nor 64
+  // bit indices present.
+  int LRID(long long GRID_in) const {return(Graph_.LRID(GRID_in));}
+#endif
+
   //! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int  GRID(int LRID_in) const {
@@ -1276,6 +1371,41 @@ or if the number of entries in this row exceed the Length parameter.
     } 
     else { IndexOffset = 0; Indices = 0; Values_in  = 0; return (-1);} }
   
+    
+    //! Returns a reference to the Epetra_IntSerialDenseVector used to hold the local IndexOffsets (CRS rowptr)
+    /*!
+       \warning This method is intended for experts only, its use may require user code modifications in future versions of Epetra.
+    */
+    Epetra_IntSerialDenseVector& ExpertExtractIndexOffset();
+
+    //! Returns a reference to the Epetra_IntSerialDenseVector used to hold the local All_Indices (CRS colind)
+    /*!
+       \warning This method is intended for experts only, its use may require user code modifications in future versions of Epetra.
+    */
+    Epetra_IntSerialDenseVector& ExpertExtractIndices();  
+
+    //! Returns a reference to the double* used to hold the values array
+    /*!
+       \warning This method is intended for experts only, its use may require user code modifications in future versions of Epetra.    
+    */
+    double *& ExpertExtractValues() {return All_Values_;}
+
+
+    //! Performs a FillComplete on an object that aready has filled CRS data
+    /*! Performs a lightweight FillComplete on an object that already has filled IndexOffsets, All_Indices and All_Values.
+      This routine is needed to support the EpetraExt::MatrixMatrix::Multiply and should not be called by users.    
+       \warning Epetra_CrsMatrix will assume ownership of the Importer you pass in.  You should not deallocate it afterwards.
+       \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    int ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer=0, int NumMyDiagonals=-1);
+
+
+    //! Makes sure this matrix has a unique CrsGraphData object
+    /*! This routine is needed to support the EpetraExt::MatrixMatrix::Multiply and should not be called by users.
+      \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    int ExpertMakeUniqueCrsGraphData();
+
   //! Forces FillComplete() to locally order ghostnodes associated with each remote processor in ascending order.
   /*! To be compliant with AztecOO, FillComplete() already locally orders ghostnodes such that
       information received from processor k has a lower local numbering than information received
@@ -1388,6 +1518,35 @@ or if the number of entries in this row exceed the Length parameter.
                        Epetra_Distributor& Distor,
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);
+
+  // For fused constructor
+  int PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & Source, 
+				   int NumExportIDs,
+				   int * ExportLIDs,
+				   int & LenExports,
+				   char *& Exports,
+				   int & SizeOfPacket,
+				   int * Sizes,
+				   bool & VarSizes,
+				   Epetra_Distributor & Distor);
+  
+  // For fused constructor
+  template<typename int_type>
+  int UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& Source, 
+				    int NumSameIDs,
+				    int NumRemoteIDs,
+				    const int * RemoteLIDs,
+				    int NumPermuteIDs,
+				    const int *PermuteToLIDs,
+				    const int *PermuteFromLIDs,
+				    int LenImports,
+				    char* Imports,
+				    std::vector<int> & pids,
+				    std::vector<int_type> &CSR_colind_LL);
+
+  // For fused constructor
+  template<typename int_type>
+  int LowCommunicationMakeColMapAndReindex(const Epetra_Map& domainMap, const int * owningPIDs, std::vector<int>& RemotePIDs, const int_type *colind_LL=0);
 
   //! Sort column entries, row-by-row, in ascending order.
   int SortEntries();

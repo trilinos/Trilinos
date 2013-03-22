@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_FECrsGraph.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
@@ -224,7 +225,7 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
 
   Epetra_Map* sourceMap = new Epetra_Map((int_type) -1, (int) nonlocalRowData<int_type>().size(),
           presentRowIndices,
-                                         Map().IndexBase(), Map().Comm());
+                                         (int_type) Map().IndexBase64(), Map().Comm());
 
   //If sourceMap has global size 0, then no nonlocal data exists and we can
   //skip most of this function.
@@ -249,7 +250,7 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
 
   Epetra_Map* colMap = new Epetra_Map((int_type) -1, (int) allColumns.entries_.size(),
              &allColumns.entries_[0],
-                                      Map().IndexBase(), Map().Comm());
+                                      (int_type) Map().IndexBase64(), Map().Comm());
 
   //now we need to create a graph with sourceMap and colMap, and fill it with
   //our nonlocal data so we can then export it to the correct owning processors

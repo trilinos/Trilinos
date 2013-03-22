@@ -200,9 +200,9 @@ Teuchos::RCP<Epetra_CrsGraph> Stokhos::adapt_utils::buildAdaptedGraph(
 
    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
    if(kExpOrder<0)
-      Cijk = masterBasis->computeTripleProductTensor(masterBasis->size());
+      Cijk = masterBasis->computeTripleProductTensor();
    else
-      Cijk = masterBasis->computeTripleProductTensor(kExpOrder);
+      Cijk = masterBasis->computeLinearTripleProductTensor();
 
    // iterate over nonzero structure of graph
    int maxNNZ = determGraph.MaxNumNonzeros();

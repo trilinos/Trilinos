@@ -52,10 +52,9 @@ using Teuchos::rcp;
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Panzer_FieldManagerBuilder.hpp"
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Integrator_BasisTimesVector.hpp"
 #include "Panzer_GatherOrientation.hpp"
@@ -74,19 +73,22 @@ using Teuchos::rcp;
 
 #include "PointEvaluator.hpp"
 
+#include "user_app_EquationSetFactory.hpp"
+
 #include <cstdio> // for get char
 #include <vector>
 #include <string>
 
 namespace panzer {
 
-  Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize,const std::string & basisName);
-  void testInitialization(panzer::InputPhysicsBlock& ipb);
+  Teuchos::RCP<panzer::PureBasis> buildBasis(const std::size_t& worksetSize,const std::string & basisName);
+  void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb);
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY);
-  Teuchos::RCP<panzer::IntegrationRule> buildIR(std::size_t worksetSize,int cubature_degree);
+  Teuchos::RCP<panzer::IntegrationRule> buildIR(const std::size_t& worksetSize,const int& cubature_degree);
 
   class BilinearPointEvaluator : public PointEvaluation<panzer::Traits::Residual::ScalarT> {
   public:
+    virtual ~BilinearPointEvaluator() {}
     virtual void evaluateContainer(const Intrepid::FieldContainer<double> & points,
                                    PHX::MDField<panzer::Traits::Residual::ScalarT> & field) const
     {
@@ -119,9 +121,18 @@ namespace panzer {
     Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
     Teuchos::RCP<panzer::PureBasis> basis_qedge1 = buildBasis(workset_size,"QEdge1");
 
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList();
     testInitialization(ipb);
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,"eblock-0_0",ipb,workset_size); 
+
+    const int default_int_order = 1;
+    std::string eBlockID = "eblock-0_0";    
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
+    panzer::CellData cellData(workset_size,mesh->getCellTopology("eblock-0_0"));
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
+      Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
+
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock); 
     TEST_EQUALITY(work_sets->size(),1);
 
     Teuchos::RCP<panzer::IntegrationRule> ir = buildIR(workset_size,4);
@@ -129,7 +140,7 @@ namespace panzer {
 
     // build connection manager and field manager
     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-    RCP<panzer::DOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
+    RCP<panzer::DOFManagerFEI<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManagerFEI<int,int>(conn_manager,MPI_COMM_WORLD));
     dofManager->addField(fieldName_q1,Teuchos::rcp(new panzer::IntrepidFieldPattern(basis_q1->getIntrepidBasis())));
     dofManager->addField(fieldName_qedge1,Teuchos::rcp(new panzer::IntrepidFieldPattern(basis_qedge1->getIntrepidBasis())));
     dofManager->setOrientationsRequired(true);
@@ -227,24 +238,25 @@ namespace panzer {
     TEST_FLOATING_EQUALITY(fieldData_qedge1(0,3),0.344719536524,1e-5);  // 3 edge basis is [(1-x_ref)/4, 0] 
   }
 
-  Teuchos::RCP<panzer::IntegrationRule> buildIR(std::size_t workset_size,int cubature_degree)
+  Teuchos::RCP<panzer::IntegrationRule> buildIR(const std::size_t& workset_size, const int& cubature_degree)
   {
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-     const int base_cell_dimension = 2;
-     const panzer::CellData cell_data(workset_size, base_cell_dimension,topo);
+     const panzer::CellData cell_data(workset_size,topo);
 
      return Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
   }
 
-  Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize,const std::string & basisName)
+  Teuchos::RCP<panzer::PureBasis> buildBasis(const std::size_t& worksetSize,
+					     const std::string& basisName)
   { 
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-     panzer::CellData cellData(worksetSize,2,topo);
-     return Teuchos::rcp(new panzer::PureBasis(basisName,cellData)); 
+     panzer::CellData cellData(worksetSize,topo);
+     // hard coded to first order
+     return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData)); 
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
@@ -266,25 +278,29 @@ namespace panzer {
     return mesh;
   }
 
-  void testInitialization(panzer::InputPhysicsBlock& ipb)
+  void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb)
   {
-    panzer::InputEquationSet ies;
-    ies.name = "Energy";
-    ies.basis = "Q1";
-    ies.integration_order = 1;
-    ies.model_id = "solid";
-    ies.prefix = "";
-
-    panzer::InputEquationSet iesb;
-    iesb.name = "Energy";
-    iesb.basis = "QEdge1";
-    iesb.integration_order = 4;
-    iesb.model_id = "solid";
-    iesb.prefix = "";
-
-    ipb.physics_block_id = "1";
-    ipb.eq_sets.push_back(ies);
-    ipb.eq_sets.push_back(iesb);
+    // Physics block
+    ipb->setName("test physics");
+    {
+      Teuchos::ParameterList& p = ipb->sublist("a");
+      p.set("Type","Energy");
+      p.set("Prefix","");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",2);
+      p.set("Integration Order",1);
+    }
+    {
+      Teuchos::ParameterList& p = ipb->sublist("b");
+      p.set("Type","Energy");
+      p.set("Prefix","ION_");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HCurl");
+      p.set("Basis Order",1);
+      p.set("Integration Order",4);
+    }
+    
   }
 
 }

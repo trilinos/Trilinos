@@ -53,8 +53,10 @@
 #ifndef NOX_LAPACK_VECTOR_H
 #define NOX_LAPACK_VECTOR_H
 
+#include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H" // base class
-#include "NOX_Common.H" // for #include<vector>
+#include <vector>
+#include <ostream>
 
 namespace NOX {
 
@@ -72,7 +74,7 @@ namespace NOX {
   //! 0
   const int i_zero = 0;
   
-    //! Implementation of NOX::Abstract::Vector for STL vector<double> (using LAPACK for some computations)
+    //! Implementation of NOX::Abstract::Vector for STL std::vector<double> (using LAPACK for some computations)
     class Vector : public NOX::Abstract::Vector {
 
     public:	
@@ -101,7 +103,7 @@ namespace NOX {
       virtual NOX::Abstract::Vector& random(bool useSeed = false, int seed =  1);
 
       //! Replace this vector with STL double vector y
-      NOX::Abstract::Vector& operator=(const vector<double>& y);
+      NOX::Abstract::Vector& operator=(const std::vector<double>& y);
 
       // derived
       NOX::Abstract::Vector& operator=(const NOX::LAPACK::Vector& y);
@@ -182,7 +184,7 @@ namespace NOX {
 	\f[ \left[ \; 0.1 \; 2.34 \; 5 \; \right] \f] 
 	It will be all on one line, with a single space between each entry, bracketed on either side.
       */
-      ostream& leftshift(ostream& stream) const;
+      std::ostream& leftshift(std::ostream& stream) const;
 
       // derived
       void print(std::ostream& stream) const;
@@ -199,11 +201,11 @@ namespace NOX {
       int n;
 
       //! The vector owned by this object
-      vector<double> x;
+      std::vector<double> x;
     };
 
     //! Function for printing
-    ostream& operator<<(ostream& stream, const NOX::LAPACK::Vector& v);
+    std::ostream& operator<<(std::ostream& stream, const NOX::LAPACK::Vector& v);
 
   } // namespace LAPACK
 } // namespace NOX

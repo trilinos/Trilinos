@@ -70,8 +70,9 @@ development of new multigrid preconditioning techniques.
 \section muelu_authors Authors and Contributors
 
   - Jeremie Gaidamour, Sandia National Labs
-  - Axel Gerstenberger, Sandia National Labs
+  - Axel Gerstenberger, Rolls Royce
   - Jonathan Hu, Sandia National Labs
+  - Andrey Prokopenko, Sandia National Labs
   - Chris Siefert, Sandia National Labs
   - Ray Tuminaro, Sandia National Labs
   - Tobias Wiesner, Technical University Munich
@@ -81,7 +82,7 @@ development of new multigrid preconditioning techniques.
 \verbinclude COPYRIGHT_AND_LICENSE
 
 \section muelu_questions For All Questions and Comments...
-  
+
    Please contact Jeremie Gaidamour (jngaida@sandia.gov), Jonathan Hu (jhu@sandia.gov),
    or Ray Tuminaro (rstumin@sandia.gov).
 
@@ -129,7 +130,7 @@ Long Term:
 
 \ref faq2
 
-\section faq1 1. Why name the code MueLu?  
+\section faq1 1. Why name the code MueLu?
 Why not?
 
 \section faq2 2. Put your question here?

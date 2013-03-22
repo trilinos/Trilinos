@@ -1,0 +1,50 @@
+#!/bin/sh
+
+# cmake script for building HOMME Trilinos components under GNU on jaguar at ORNL
+
+# Step 1: Modify the default environment
+#   module swap PrgEnv-pgi PrgEnv-gnu
+#   module add cmake
+# Step 2: Point to trilinos, your install dir
+#   TRILINOS_SRC_DIR=...
+#   TRILINOS_INSTALL_DIR=...
+if [ ! $TRILINOS_SRC_DIR ]
+then 
+  echo Must specify location of Trilinos source in variable TRILINOS_SRC_DIR
+  exit 1
+fi
+if [ ! $TRILINOS_INSTALL_DIR ]
+then 
+  TRILINOS_INSTALL_DIR=/tmp/work/$USER/TRILINOS_GNU
+  echo TRILINOS_INSTALL_DIR not set; setting to $TRILINOS_INSTALL_DIR
+fi
+
+EXTRA_ARGS=$@
+
+cmake \
+  -D CMAKE_INSTALL_PREFIX:PATH="$TRILINOS_INSTALL_DIR" \
+  -D CMAKE_BUILD_TYPE=RELEASE \
+  -D Trilinos_ENABLE_Epetra:BOOL=ON \
+  -D Trilinos_ENABLE_EpetraExt=ON \
+  -D Trilinos_ENABLE_NOX:BOOL=ON \
+  -D Trilinos_ENABLE_Stratimikos=ON \
+  -D Trilinos_ENABLE_Belos=ON \
+  -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+  -D Trilinos_ENABLE_INSTALL_CMAKE_CONFIG_FILES:BOOL=ON \
+  -D TPL_ENABLE_MPI:BOOL=ON \
+\
+  -D MPI_CXX_COMPILER:FILEPATH="$ASYNCPE_DIR/bin/CC" \
+  -D MPI_C_COMPILER:FILEPATH="$ASYNCPE_DIR/bin/cc" \
+  -D MPI_Fortran_COMPILER:FILEPATH="$ASYNCPE_DIR/bin/ftn" \
+\
+  -D BLAS_LIBRARY_NAMES="sci_gnu" \
+  -D LAPACK_LIBRARY_NAMES="sci_gnu" \
+  -D BLAS_LIBRARY_DIRS=$CRAY_LIBSCI_PREFIX_DIR/lib \
+  -D LAPACK_LIBRARY_DIRS=$CRAY_LIBSCI_PREFIX_DIR/lib \
+\
+  ${TRILINOS_SRC_DIR}
+
+
+# -D CMAKE_CXX_FLAGS:STRING="-fast -Mipa=fast,inline -Msmartalloc -DMPICH_IGNORE_CXX_SEEK ${EXPMACRO}" \
+# -D CMAKE_C_FLAGS:STRING="-fast -Mipa=fast,inline -Msmartalloc ${EXPMACRO}" \
+# -D CMAKE_Fortran_FLAGS:STRING="-fast -Mipa=fast,inline" \

@@ -397,7 +397,7 @@ namespace LOCA {
 
 	//! Set parameters indexed by (integer) paramIDs
 	virtual void setParamsMulti(
-		     const vector<int>& paramIDs, 
+		     const std::vector<int>& paramIDs, 
 		     const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
 	//! Set the parameter vector in the group to p (pVector = p).  
@@ -406,8 +406,8 @@ namespace LOCA {
 	//! Set parameter indexed by (integer) paramID
 	virtual void setParam(int paramID, double val);
 
-	//! Set parameter indexed by (string) paramID
-	virtual void setParam(string paramID, double val);
+	//! Set parameter indexed by (std::string) paramID
+	virtual void setParam(std::string paramID, double val);
 
 	//! Return a const reference to the ParameterVector owned by the group.
 	virtual const ParameterVector& getParams() const;
@@ -415,8 +415,8 @@ namespace LOCA {
 	//! Return copy of parameter indexed by (integer) paramID
 	virtual double getParam(int paramID) const;
 
-	//! Return copy of parameter indexed by (string) paramID
-	virtual double getParam(string paramID) const;
+	//! Return copy of parameter indexed by (std::string) paramID
+	virtual double getParam(std::string paramID) const;
 
 	/*! 
 	 * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
@@ -425,7 +425,7 @@ namespace LOCA {
 	 * computed.
 	 */
 	virtual NOX::Abstract::Group::ReturnType
-	computeDfDpMulti(const vector<int>& paramIDs, 
+	computeDfDpMulti(const std::vector<int>& paramIDs, 
 			 NOX::Abstract::MultiVector& dfdp, 
 			 bool isValidF);
 
@@ -619,10 +619,10 @@ namespace LOCA {
 	Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
 
 	//! Stores indices for getting f part of fMultiVec
-	vector<int> index_f;
+	std::vector<int> index_f;
 
 	//! Stores indices for getting df/dp part of fMultiVec
-	vector<int> index_dfdp;
+	std::vector<int> index_dfdp;
 
 	//! Stores the bifurcation parameter index
 	int bifParamID;

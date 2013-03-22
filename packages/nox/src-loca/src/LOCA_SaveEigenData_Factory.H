@@ -85,7 +85,7 @@ namespace LOCA {
      *   </ul>
      * </ul>
      * User-defined strategies are defined by supplying the parameter
-     * "User-Defined Save Eigen Data Name" which is the string name of the
+     * "User-Defined Save Eigen Data Name" which is the std::string name of the
      * strategy, and then a parameter with this name that is of the type
      * Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy>.  This
      * allows the user to supply a user-defined strategy without providing
@@ -115,7 +115,7 @@ namespace LOCA {
 	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
 
       //! Return strategy name given by \c eigenParams
-      const string& strategyName(Teuchos::ParameterList& eigenParams) const;
+      const std::string& strategyName(Teuchos::ParameterList& eigenParams) const;
 
     private:
 

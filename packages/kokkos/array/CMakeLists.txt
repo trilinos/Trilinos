@@ -3,6 +3,17 @@ INCLUDE(TribitsSubPackageMacros)
 
 TRIBITS_SUBPACKAGE(Array)
 
+SET(KokkosArray_ENABLE_DeviceCuda_Default OFF)
+IF(TPL_ENABLE_CUDA)
+  SET(KokkosArray_ENABLE_DeviceCuda_Default ON)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  KokkosArray_ENABLE_DeviceCuda
+  HAVE_KOKKOSARRAY_CUDA
+  "Enable CUDA support in KokkosArray."
+  ${KokkosArray_ENABLE_DeviceCuda_Default}
+  )
+
 ADD_SUBDIRECTORY(src)
 
 TRIBITS_ADD_TEST_DIRECTORIES(perf_test)

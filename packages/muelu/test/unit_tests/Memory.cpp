@@ -65,7 +65,7 @@ namespace {
     out << " PrintMemoryUsage()" << PrintMemoryUsage() << std::endl;
     out << " PrintMemoryInfo()"  << PrintMemoryInfo()  << std::endl;
 
-    out << "Allocation of " << n << " double (sizeof(double=" << sizeof(double) << "), total=" << sizeof(double)*n/(1024*1024) << " MB)" << std::endl; 
+    out << "Allocation of " << n << " double (sizeof(double=" << sizeof(double) << "), total=" << sizeof(double)*n/(1024*1024) << " MB)" << std::endl;
 
     double* array = new double[n];
 
@@ -79,7 +79,7 @@ namespace {
     out << "Delete:" << std::endl;
 
     delete[] array;
-    
+
     out << " PrintMemoryUsage()" << PrintMemoryUsage() << std::endl;
     out << " PrintMemoryInfo()"  << PrintMemoryInfo()  << std::endl;
 

@@ -160,6 +160,20 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
            On entry, contains the processor from which all processors will receive a copy of Values.
   */
 
+  int Broadcast(long long * MyVals, int Count, int Root) const;
+
+  //! Epetra_MpiComm Broadcast function.
+  /*! Take list of input values from the root processor and sends to all other processors.
+    \param Values InOut
+           On entry, the root processor contains the list of values.  On exit,
+	   all processors will have the same list of values.  Note that values must be
+	   allocated on all processor before the broadcast.
+    \param Count In
+           On entry, contains the length of the list of Values.
+    \param Root In
+           On entry, contains the processor from which all processors will receive a copy of Values.
+  */
+
   int Broadcast(char * MyVals, int Count, int Root) const;
   //@}
 

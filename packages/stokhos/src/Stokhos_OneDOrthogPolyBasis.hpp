@@ -157,6 +157,12 @@ namespace Stokhos {
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const = 0;
 
+    /*!
+     * Return polynomial degree of exactness for a given number of quadrature
+     * points.
+     */
+    virtual ordinal_type quadDegreeOfExactness(ordinal_type n) const = 0;
+
     /*! 
      * \brief Clone this object with the option of building a higher order
      * basis.
@@ -168,6 +174,12 @@ namespace Stokhos {
      * for column indices in a spatially varying adaptive refinement context.
      */
     virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const = 0;
+
+    //! Evaluate coefficient growth rule for Smolyak-type bases
+    virtual ordinal_type coefficientGrowth(ordinal_type n) const = 0;
+
+    //! Evaluate point growth rule for Smolyak-type bases
+    virtual ordinal_type pointGrowth(ordinal_type n) const = 0;
 
     //! Function pointer needed for level_to_order mappings
     typedef int ( *LevelToOrderFnPtr ) ( int level, int growth );

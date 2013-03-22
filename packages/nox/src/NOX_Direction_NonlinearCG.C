@@ -121,7 +121,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
   if (ok != Abstract::Group::Ok) 
   {
     if (utils->isPrintType(Utils::Warning))
-      utils->out() << "NOX::Direction::NonlinearCG::compute - Unable to compute F." << endl;
+      utils->out() << "NOX::Direction::NonlinearCG::compute - Unable to compute F." << std::endl;
     return false;
   }
 
@@ -134,7 +134,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     if (ok != Abstract::Group::Ok) 
     {
       if (utils->isPrintType(Utils::Warning))
-        utils->out() << "NOX::Direction::NonlinearCG::compute - Unable to compute Jacobian." << endl;
+        utils->out() << "NOX::Direction::NonlinearCG::compute - Unable to compute Jacobian." << std::endl;
       return false;
     }
 
@@ -144,7 +144,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     if( ok != Abstract::Group::Ok ) 
     {
       if (utils->isPrintType(Utils::Warning))
-        utils->out() << "NOX::Direction::NonlinearCG::compute - Unable to apply Right Preconditioner." << endl;
+        utils->out() << "NOX::Direction::NonlinearCG::compute - Unable to apply Right Preconditioner." << std::endl;
       return false;
     }
   }
@@ -172,7 +172,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
       if( beta < 0.0 ) 
       {
         if (utils->isPrintType(Utils::OuterIteration))
-          utils->out() << "BETA < 0, (" << beta << ") --> Resetting to zero" << endl;
+          utils->out() << "BETA < 0, (" << beta << ") --> Resetting to zero" << std::endl;
         beta = 0.0;
       }
     } 
@@ -189,7 +189,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     if( (niter % restartFrequency) == 0 )
     {
       if( utils->isPrintType(Utils::OuterIteration) )
-        utils->out() << "Resetting beta --> 0" << endl;
+        utils->out() << "Resetting beta --> 0" << std::endl;
 
       beta = 0 ;  // Restart with Steepest Descent direction
     }

@@ -31,7 +31,7 @@ TEUCHOS_UNIT_TEST(basis_interaction_graph, test_square)
    int porder = 3;
 
    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = buildBasis(num_KL,porder);
-   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(basis->size());
+   Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor();
    Teuchos::RCP<Stokhos::ParallelData> sg_parallel_data;
 
    {
@@ -98,7 +98,7 @@ TEUCHOS_UNIT_TEST(basis_interaction_graph, test_isotropic_rect)
 
    out << "Master Array Basis = \n";
    for(int i=0;i<masterBasis->size();i++) {
-      Teuchos::Array<int> masterArray = masterBasis->getTerm(i);
+     Stokhos::MultiIndex<int> masterArray = masterBasis->term(i);
       for(int i=0;i<num_KL;i++) { 
          out << masterArray[i] << " ";
       }
@@ -107,7 +107,7 @@ TEUCHOS_UNIT_TEST(basis_interaction_graph, test_isotropic_rect)
 
    out << "Row Array Basis = \n";
    for(int i=0;i<rowBasis->size();i++) {
-      Teuchos::Array<int> rowArray = rowBasis->getTerm(i);
+     Stokhos::MultiIndex<int> rowArray = rowBasis->term(i);
       for(int i=0;i<num_KL;i++) { 
          out << rowArray[i] << " ";
       }
@@ -140,9 +140,9 @@ TEUCHOS_UNIT_TEST(basis_interaction_graph, test_isotropic_rect)
    // loop over rectangle graph making sure it matches with the master graph
    bool graphs_match = true;
    for(std::size_t i=0;i<rectBig.rowCount();i++) {
-      std::size_t masterI = masterBasis->getIndex(rowBasis->getTerm(i));
+      std::size_t masterI = masterBasis->index(rowBasis->term(i));
       for(std::size_t j=0;j<rectBig.colCount();j++) {
-         std::size_t masterJ = masterBasis->getIndex(colBasis->getTerm(j));
+         std::size_t masterJ = masterBasis->index(colBasis->term(j));
          graphs_match &= (rectBig(i,j)==masterBig(masterI,masterJ));
       }
    }

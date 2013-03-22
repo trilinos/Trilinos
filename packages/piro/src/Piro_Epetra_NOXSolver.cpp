@@ -41,7 +41,6 @@
 // @HEADER
 
 #include "Piro_Epetra_NOXSolver.hpp"
-#include "Piro_ValidPiroParameters.hpp"
 #include "Piro_Epetra_MatrixFreeDecorator.hpp"
 #include "Piro_Epetra_SensitivityOperator.hpp"
 
@@ -60,8 +59,6 @@ Piro::Epetra::NOXSolver::NOXSolver(
   observer(observer_),
   utils(piroParams->sublist("NOX").sublist("Printing"))
 {
-  //piroParams->validateParameters(*Piro::getValidPiroParameters(),0);
-
   Teuchos::RCP<Teuchos::ParameterList> noxParams =
 	Teuchos::rcp(&(piroParams->sublist("NOX")),false);
   Teuchos::ParameterList& printParams = noxParams->sublist("Printing");

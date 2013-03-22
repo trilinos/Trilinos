@@ -110,7 +110,7 @@ public:
   PrePostOperator() {};
 
   //! Copy constructor (doesnothing)
-  PrePostOperator(const NOX::Abstract::PrePostOperator& source) {};
+  PrePostOperator(const NOX::Abstract::PrePostOperator& /*source*/) {};
 
   //! %Abstract %Vector destructor (does nothing)
   virtual ~PrePostOperator() {};
@@ -132,22 +132,22 @@ public:
 } // namespace NOX
 
 inline void NOX::Abstract::PrePostOperator::
-runPreIterate(const NOX::Solver::Generic& solver) {
+runPreIterate(const NOX::Solver::Generic& /*solver*/) {
   return;
 }
 
 inline void NOX::Abstract::PrePostOperator::
-runPostIterate(const NOX::Solver::Generic& solver) {
+runPostIterate(const NOX::Solver::Generic& /*solver*/) {
   return;
 }
 
 inline void NOX::Abstract::PrePostOperator::
-runPreSolve(const NOX::Solver::Generic& solver) {
+runPreSolve(const NOX::Solver::Generic& /*solver*/) {
   return;
 }
 
 inline void NOX::Abstract::PrePostOperator::
-runPostSolve(const NOX::Solver::Generic& solver) {
+runPostSolve(const NOX::Solver::Generic& /*solver*/) {
   return;
 }
 

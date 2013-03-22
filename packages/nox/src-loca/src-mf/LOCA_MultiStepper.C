@@ -175,7 +175,7 @@ LOCA::MultiStepper::reset(
 LOCA::Abstract::Iterator::IteratorStatus
 LOCA::MultiStepper::run() {
   NOX::StatusTest::StatusType solverStatus;
-  string callingFunction = "LOCA::MultiStepper::run()";
+  std::string callingFunction = "LOCA::MultiStepper::run()";
 
   // Perform solve of initial conditions
   solverStatus = solverPtr->solve();
@@ -291,7 +291,7 @@ LOCA::MultiStepper::printInitializationInfo()
 void 
 LOCA::MultiStepper::getConParamData()
 {
-  string callingFunction = "LOCA::MultiStepper::getConParamInfo()";
+  std::string callingFunction = "LOCA::MultiStepper::getConParamInfo()";
 
   // Get number of continuation parameters
   int numParams = 
@@ -303,13 +303,13 @@ LOCA::MultiStepper::getConParamData()
   for (int i=1; i<=numParams; i++) {
 
     // create sublist name
-    stringstream sublistStream;
+    std::stringstream sublistStream;
     sublistStream << "Continuation Parameter " << i;
-    string sublistName = sublistStream.str();
+    std::string sublistName = sublistStream.str();
 
     // Get sublist for continuation parameter
     if (!stepperList->isSublist(sublistName)) {
-      stringstream errorStream;
+      std::stringstream errorStream;
       errorStream << "No sublist for continuation parameter " << i << "!";
       globalData->locaErrorCheck->throwError(callingFunction, 
 					     errorStream.str());
@@ -321,7 +321,7 @@ LOCA::MultiStepper::getConParamData()
 
     // Get continuation parameter name
     if (!conSublistPtr->isParameter("Parameter Name")) {
-      stringstream errorStream;
+      std::stringstream errorStream;
       errorStream << "\"Parameter Name\" for parameter sublist " 
                   << i << " is not set!";
       globalData->locaErrorCheck->throwError(callingFunction, 
@@ -332,7 +332,7 @@ LOCA::MultiStepper::getConParamData()
 
     // Get initial value
     if (!conSublistPtr->isParameter("Initial Value")) {
-      stringstream errorStream;
+      std::stringstream errorStream;
       errorStream << "\"Initial Value\" for parameter sublist " 
                   << i << " is not set!";
       globalData->locaErrorCheck->throwError(callingFunction, 
@@ -342,7 +342,7 @@ LOCA::MultiStepper::getConParamData()
 
     // Get max value
     if (!conSublistPtr->isParameter("Max Value")) {
-      stringstream errorStream;
+      std::stringstream errorStream;
       errorStream << "\"Max Value\" for parameter sublist " 
                   << i << " is not set!";
       globalData->locaErrorCheck->throwError(callingFunction, 
@@ -352,7 +352,7 @@ LOCA::MultiStepper::getConParamData()
 
     // Get min value
     if (!conSublistPtr->isParameter("Min Value")) {
-      stringstream errorStream;
+      std::stringstream errorStream;
       errorStream << "\"Min Value\" for parameter sublist " 
                   << i << " is not set!";
       globalData->locaErrorCheck->throwError(callingFunction, 
@@ -362,7 +362,7 @@ LOCA::MultiStepper::getConParamData()
 
     // Get initial step size
     if (!conSublistPtr->isParameter("Initial Step Size")) {
-      stringstream errorStream;
+      std::stringstream errorStream;
       errorStream << "\"Initial Step Size\" for parameter sublist " 
                   << i << " is not set!";
       globalData->locaErrorCheck->throwError(callingFunction, 
@@ -372,7 +372,7 @@ LOCA::MultiStepper::getConParamData()
 
     // Get initial max size
     if (!conSublistPtr->isParameter("Max Step Size")) {
-      stringstream errorStream;
+      std::stringstream errorStream;
       errorStream << "\"Max Step Size\" for parameter sublist " 
                   << i << " is not set!";
       globalData->locaErrorCheck->throwError(callingFunction, 
@@ -382,7 +382,7 @@ LOCA::MultiStepper::getConParamData()
 
     // Get initial min size
     if (!conSublistPtr->isParameter("Min Step Size")) {
-      stringstream errorStream;
+      std::stringstream errorStream;
       errorStream << "\"Min Step Size\" for parameter sublist " 
                   << i << " is not set!";
       globalData->locaErrorCheck->throwError(callingFunction, 
@@ -408,10 +408,10 @@ LOCA::MultiStepper::buildConstrainedGroup(
   if (!constraintsList->isParameter("Constraint Object"))
     return grp;
 
-  string methodName = "LOCA::MultiStepper::buildConstrainedGroup()";
+  std::string methodName = "LOCA::MultiStepper::buildConstrainedGroup()";
 
   Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> constraints;
-  Teuchos::RCP< vector<string> > constraintParamNames;
+  Teuchos::RCP< std::vector<std::string> > constraintParamNames;
 
   // Get constraint object
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
@@ -424,15 +424,15 @@ LOCA::MultiStepper::buildConstrainedGroup(
 
   // Get parameter names for constraints
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RCP< vector<string> > >("Constraint Parameter Names"))
+      isType< Teuchos::RCP< std::vector<std::string> > >("Constraint Parameter Names"))
     constraintParamNames = (*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RCP< vector<string> > >("Constraint Parameter Names");
+      get< Teuchos::RCP< std::vector<std::string> > >("Constraint Parameter Names");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< vector<string> >!");
+	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< std::vector<std::string> >!");
 
   // Convert names to integer IDs
-  vector<int> constraintParamIDs(constraintParamNames->size());
+  std::vector<int> constraintParamIDs(constraintParamNames->size());
   const LOCA::ParameterVector& pvec = grp->getParams();
   for (unsigned int i=0; i<constraintParamIDs.size(); i++)
     constraintParamIDs[i] = pvec.getIndex((*constraintParamNames)[i]);

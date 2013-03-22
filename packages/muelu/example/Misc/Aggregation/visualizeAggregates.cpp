@@ -68,7 +68,7 @@
 // Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -80,7 +80,7 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 
   // Timing
   Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
+  Teuchos::TimeMonitor Monitor(myTime);
 
 
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
@@ -135,10 +135,10 @@ int main(int argc, char *argv[]) {
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
 
-  // Epetra_CrsMatrix -> Xpetra::Operator
+  // Epetra_CrsMatrix -> Xpetra::Matrix
   RCP<Xpetra::CrsMatrix<double, int, int> > exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-  RCP<Xpetra::CrsOperator<double, int, int> > crsOp = Teuchos::rcp(new Xpetra::CrsOperator<double, int, int>(exA));
-  RCP<Xpetra::Operator<double, int, int> > Op = Teuchos::rcp_dynamic_cast<Xpetra::Operator<double, int, int> >(crsOp);
+  RCP<Xpetra::CrsMatrixWrap<double, int, int> > crsOp = Teuchos::rcp(new Xpetra::CrsMatrixWrap<double, int, int>(exA));
+  RCP<Xpetra::Matrix<double, int, int> > Op = Teuchos::rcp_dynamic_cast<Xpetra::Matrix<double, int, int> >(crsOp);
 
   // Epetra_Vector -> Xpetra::Vector
   RCP<Xpetra::Vector<double,int,int> > xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
@@ -160,37 +160,42 @@ int main(int argc, char *argv[]) {
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
 
-
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-  UCAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-  UCAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+  CoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+  CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
   std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
   if (aggOrdering == "natural") {
     *out << "aggregate ordering :                    NATURAL" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   } else if (aggOrdering == "random") {
     *out << "aggregate ordering :                    RANDOM" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
   } else if (aggOrdering == "graph") {
     *out << "aggregate ordering :                    GRAPH" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
   } else {
     std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
     throw(MueLu::Exceptions::RuntimeError(msg));
   }
-  UCAggFact->SetPhase3AggCreation(0.5);
-  Finest->Keep("Aggregates",UCAggFact.get());
+  CoupledAggFact->SetPhase3AggCreation(0.5);
+  Finest->Keep("Aggregates",CoupledAggFact.get());
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
-  RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
-  RCP<RFactory> Rfact = rcp( new GenericRFactory(Pfact));
-  RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
-  Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+//   RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
+//   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(CoupledAggFact,nspFact));
+//   //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
+//   //RCP<FactoryBase2> Rfact  = rcp( new GenericRFactory(Pfact));
+//   RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
+//   RCP<FactoryBase2>   Rfact  = rcp( new TransPFactory(Pfact) );
+//   RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
+//   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+//   Finest->Keep("Aggregates",CoupledAggFact.get());
+//   Finest->Keep("Nullspace",nspFact.get());
 
   // build level smoothers
   RCP<SmootherPrototype> smooProto;
@@ -206,21 +211,17 @@ int main(int argc, char *argv[]) {
   if (maxLevels > 1)
     SmooFact = rcp( new SmootherFactory(smooProto) );
 
-  Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
+  RCP<FactoryManager> M = rcp(new FactoryManager());
+  M->SetFactory("Aggregates", CoupledAggFact);
+  M->SetFactory("Smoother", SmooFact);
 
-  H->SetCoarsestSolver(*SmooFact,MueLu::PRE);
-
-
-  *out << "======================\n Multigrid statistics \n======================" << std::endl;
-  status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
+  H->Setup(*M,0,maxLevels);
 
   // print out aggregation information
   for(LocalOrdinal l=0; l<H->GetNumLevels()-1;l++) {
     RCP<Level> level = H->GetLevel((int)l);
-    ExportAggregates(level, UCAggFact.get(),comm);
+    ExportAggregates(level, CoupledAggFact.get(),comm);
   }
-
 
   return EXIT_SUCCESS;
 }
@@ -235,7 +236,7 @@ void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase
     return;
   }
   Teuchos::RCP<Aggregates> aggregates = level->Get< Teuchos::RCP<Aggregates> >("Aggregates",aggFact);
-  Teuchos::RCP<Operator> Op = level->Get<Teuchos::RCP<Operator> >("A");
+  Teuchos::RCP<Matrix> Op = level->Get<Teuchos::RCP<Matrix> >("A");
 
   Teuchos::RCP<LOVector>vertex2AggId_vector = aggregates->GetVertex2AggId();
   Teuchos::RCP<LOVector>procWinner_vector = aggregates->GetProcWinner();
@@ -282,7 +283,3 @@ void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase
   }
   fout.close();
 }
-
-
-
-

@@ -76,7 +76,7 @@ namespace MueLu {
 
     //! Build pre-smoother and/or post-smoother
     virtual void Build(Level & currentLevel) const = 0;
-  
+
     virtual void BuildSmoother(Level & currentLevel, PreOrPost const preOrPost = BOTH) const = 0;
     //@}
 

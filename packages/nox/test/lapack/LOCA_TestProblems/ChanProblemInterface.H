@@ -88,7 +88,7 @@ public:
   //! Constructor.  Also generates an initial guess
   ChanProblemInterface(
 		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    int N, double a, double b, double s, ofstream& file);
+		    int N, double a, double b, double s, std::ofstream& file);
 
   //! Destructor
   ~ChanProblemInterface() {};
@@ -153,7 +153,7 @@ private:
   int n;
 
   //! Stores pointer to output file stream
-  ofstream* outputFilePtr;
+  std::ofstream* outputFilePtr;
 
 };
 

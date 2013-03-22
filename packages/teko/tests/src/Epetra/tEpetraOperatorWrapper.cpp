@@ -140,22 +140,22 @@ bool tEpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
          << "Using Trilinos_Util to create test matrices" );
 
    // create some big blocks to play with
-   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm);
+   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm,false); // CJ TODO FIXME: change for Epetra64
    FGallery.Set("nx",nx);
    FGallery.Set("ny",ny);
    RCP<Epetra_CrsMatrix> F = rcp(FGallery.GetMatrix(),false);
 
-   Trilinos_Util::CrsMatrixGallery CGallery("laplace_2d",comm);
+   Trilinos_Util::CrsMatrixGallery CGallery("laplace_2d",comm,false); // CJ TODO FIXME: change for Epetra64
    CGallery.Set("nx",nx);
    CGallery.Set("ny",ny);
    RCP<Epetra_CrsMatrix> C = rcp(CGallery.GetMatrix(),false);
 
-   Trilinos_Util::CrsMatrixGallery BGallery("diag",comm);
+   Trilinos_Util::CrsMatrixGallery BGallery("diag",comm,false); // CJ TODO FIXME: change for Epetra64
    BGallery.Set("nx",nx*ny);
    BGallery.Set("a",5.0);
    RCP<Epetra_CrsMatrix> B = rcp(BGallery.GetMatrix(),false);
 
-   Trilinos_Util::CrsMatrixGallery BtGallery("diag",comm);
+   Trilinos_Util::CrsMatrixGallery BtGallery("diag",comm,false); // CJ TODO FIXME: change for Epetra64
    BtGallery.Set("nx",nx*ny);
    BtGallery.Set("a",3.0);
    RCP<Epetra_CrsMatrix> Bt = rcp(BtGallery.GetMatrix(),false);

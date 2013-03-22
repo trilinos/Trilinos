@@ -51,7 +51,7 @@
 #ifndef NOX_DIRECTION_UTILS_INEXACTNEWTON_H
 #define NOX_DIRECTION_UTILS_INEXACTNEWTON_H
 
-#include "NOX_Common.H"  // for string
+#include "NOX_Common.H"  // for std::string
 #include "Teuchos_RCP.hpp"
 
 // Forward declaration
@@ -213,7 +213,7 @@ public:
 private:
 
   //! Print an error message
-  void throwError(const string& functionName, const string& errorMsg);
+  void throwError(const std::string& functionName, const std::string& errorMsg);
 
 private:
 
@@ -262,10 +262,10 @@ private:
   double eta_initial;
 
   //! Name of the method used for calculating the inexact forcing term.
-  string method;
+  std::string method;
   
   //! Name of the direction method that forcing terms will be used by.
-  string directionMethod;
+  std::string directionMethod;
   
   //! Parameter used for Type 2 forcing term calculation.
   double alpha;

@@ -62,6 +62,7 @@
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
@@ -158,6 +159,7 @@ namespace Belos {
     
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -728,8 +730,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       params_->set ("Timer Label", label_);
       std::string solveLabel = label_ + ": GCRODRSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerSolve_ = Teuchos::TimeMonitor::getNewTimer (solveLabel);
+      timerSolve_ = Teuchos::TimeMonitor::getNewCounter (solveLabel);
 #endif
+      if (ortho_ != Teuchos::null) {
+        ortho_->setLabel( label_ );
+      }
     }
   }
 
@@ -919,13 +924,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // NOTE (mfh 12 Jan 2011) This overrides the "depTol" parameter that
   // may have been specified in "Orthogonalization Parameters".  We
   // retain this behavior for backwards compatibility.
-  bool gotValidOrthoKappa = false;
   if (params->isParameter ("Orthogonalization Constant")) {
     const MagnitudeType orthoKappa = 
       params->get ("Orthogonalization Constant", orthoKappa_default_);
     if (orthoKappa > 0) {
       orthoKappa_ = orthoKappa;
-      gotValidOrthoKappa = true;
       // Update parameter in our list.
       params_->set("Orthogonalization Constant", orthoKappa_);
       // Only DGKS currently accepts this parameter.
@@ -1067,7 +1070,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   if (timerSolve_.is_null()) {
     std::string solveLabel = label_ + ": GCRODRSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+    timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
   }
 
@@ -1161,7 +1164,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
     else {
 
       // Initialize the state storage
-      TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(numBlocks_) > MVText::GetGlobalLength(*rhsMV),std::invalid_argument,
                          "Belos::GCRODRSolMgr::initializeStateStorage(): Cannot generate a Krylov basis with dimension larger the operator!");
 
       // If the subspace has not been initialized before, generate it using the RHS from lp_.
@@ -1303,9 +1306,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   problem_->setLSIndex( currIdx );
 
   // Check the number of blocks and change them is necessary.
-  int dim = MVT::GetVecLength( *(problem_->getRHS()) );  
-  if (numBlocks_ > dim) {
-    numBlocks_ = dim;
+  ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );  
+  if (static_cast<ptrdiff_t>(numBlocks_) > dim) {
+    numBlocks_ = Teuchos::as<int>(dim);
     printer_->stream(Warnings) << 
       "Warning! Requested Krylov subspace dimension is larger than operator dimension!" << std::endl <<
       " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << numBlocks_ << std::endl;
@@ -1675,8 +1678,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
             // Create the restart vector (first block in the current Krylov basis)
             problem_->computeCurrPrecResVec( &*r_ );
             index.resize( 1 ); index[0] = 0;
-            RCP<MV> v0 =  MVT::CloneViewNonConst( *V_,  index );
-            MVT::SetBlock(*r_,index,*v0); // V(:,0) = r
+            RCP<MV> v00 =  MVT::CloneViewNonConst( *V_,  index );
+            MVT::SetBlock(*r_,index,*v00); // V(:,0) = r
 
             // Set the new state and initialize the solver.
             GCRODRIterState<ScalarType,MV> restartState;
@@ -1732,6 +1735,14 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLS();
 
+      // If we didn't build a recycle space this solve but ran at least k iterations,
+      // force build of new recycle space
+
+      if (!builtRecycleSpace_) {
+        buildRecycleSpace2(gcrodr_iter);
+        printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
+      }
+
       // Update indices for the linear systems to be solved.
       numRHS2Solve -= 1;
       if ( numRHS2Solve > 0 ) {
@@ -1742,14 +1753,6 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       }
       else {
         currIdx.resize( numRHS2Solve );
-      }
-
-      // If we didn't build a recycle space this solve but ran at least k iterations,
-      // force build of new recycle space
-
-      if (!builtRecycleSpace_) {
-        buildRecycleSpace2(gcrodr_iter);
-        printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
       }
 
     }// while ( numRHS2Solve > 0 )
@@ -2062,7 +2065,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
 
 //  Compute the harmonic eigenpairs of the projected, dense system.
 template<class ScalarType, class MV, class OP>
-int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m, 
+int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m, 
 						     const Teuchos::SerialDenseMatrix<int,ScalarType>& HH, 
 						     const Teuchos::RCP<const MV>& VV,
 						     Teuchos::SerialDenseMatrix<int,ScalarType>& PP) {
@@ -2096,25 +2099,25 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   
   // A_tmp = | C'*U        0 |
   //         | V_{m+1}'*U  I |
-  Teuchos::SerialDenseMatrix<int,ScalarType> A_tmp( keff+m+1, keff+m );
+  Teuchos::SerialDenseMatrix<int,ScalarType> A_tmp( keffloc+m+1, keffloc+m );
 
-  // A_tmp(1:keff,1:keff) = C' * U;
-  index.resize(keff);
-  for (int i=0; i<keff; ++i) { index[i] = i; }
+  // A_tmp(1:keffloc,1:keffloc) = C' * U;
+  index.resize(keffloc);
+  for (i=0; i<keffloc; ++i) { index[i] = i; }
   Teuchos::RCP<const MV> Ctmp  = MVT::CloneView( *C_, index );
   Teuchos::RCP<const MV> Utmp  = MVT::CloneView( *U_, index );
-  Teuchos::SerialDenseMatrix<int,ScalarType> A11( Teuchos::View, A_tmp, keff, keff );
+  Teuchos::SerialDenseMatrix<int,ScalarType> A11( Teuchos::View, A_tmp, keffloc, keffloc );
   MVT::MvTransMv( one, *Ctmp, *Utmp, A11 );
 
-  // A_tmp(keff+1:m-k+keff+1,1:keff) = V' * U;
-  Teuchos::SerialDenseMatrix<int,ScalarType> A21( Teuchos::View, A_tmp, m+1, keff, keff );
+  // A_tmp(keffloc+1:m-k+keffloc+1,1:keffloc) = V' * U;
+  Teuchos::SerialDenseMatrix<int,ScalarType> A21( Teuchos::View, A_tmp, m+1, keffloc, keffloc );
   index.resize(m+1);
   for (i=0; i < m+1; i++) { index[i] = i; }
   Teuchos::RCP<const MV> Vp = MVT::CloneView( *VV, index );
   MVT::MvTransMv( one, *Vp, *Utmp, A21 );
 
-  // A_tmp(keff+1:m-k+keff,keff+1:m-k+keff) = eye(m-k);
-  for( i=keff; i<keff+m; i++ ) {
+  // A_tmp(keffloc+1:m-k+keffloc,keffloc+1:m-k+keffloc) = eye(m-k);
+  for( i=keffloc; i<keffloc+m; i++ ) {
     A_tmp(i,i) = one;
   }
 

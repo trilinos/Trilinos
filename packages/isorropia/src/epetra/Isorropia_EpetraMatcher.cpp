@@ -451,9 +451,9 @@ int Matcher::getNumberOfMatchedVertices()
 
 Teuchos::RCP<Epetra_CrsMatrix> Matcher::applyRowPermutation()
 {
-    int nmatch = matched_;
+    //int nmatch = matched_; // suppress compiler warning
     const int *mrows = &mateU_[0];
-    const int *mcols = &mateV_[0];
+    //const int *mcols = &mateV_[0]; // suppress compiler warning
 
     // Create a new matrix with row permutation
     int max_entries = A_->MaxNumEntries();
@@ -483,8 +483,8 @@ Teuchos::RCP<Epetra_CrsMatrix> Matcher::applyRowPermutation()
 
 Teuchos::RCP<Epetra_CrsMatrix> Matcher::applyColumnPermutation()
 {
-    int nmatch = matched_;
-    const int *mrows = &mateU_[0];
+    //int nmatch = matched_; // suppress compiler warning
+    //const int *mrows = &mateU_[0]; // suppress compiler warning
     const int *mcols = &mateV_[0];
 
     // Create a new matrix with column permutation
@@ -733,8 +733,14 @@ int Matcher::construct_layered_graph()
         {
 #ifdef ISORROPIA_HAVE_OMP
             tid=omp_get_thread_num();
+#else
+	    // FIXME (mfh 07 Feb 2013) When I found this code, tid was
+	    // not initialized if ISORROPIA_HAVE_OMP was not defined.
+	    // I'm not sure what its value should be, but it's
+	    // reasonable to set it to zero (one thread, whose ID (tid
+	    // == "thread ID") is zero).
+	    tid = 0;
 #endif
-            
             pqind=startInd[tid];
                     
             i=Queue_[s]; // starting with a unmatched row vertex          
@@ -981,7 +987,9 @@ int Matcher::find_set_del_M()
                 minL=minL<lnt?minL:lnt;
                 med.push_back(lnt);
             }
-            #endif
+#else
+	    (void) lnt; // suppress compiler warning
+#endif // ISORROPIA_MATCHING_STATS
         }
                 
     }
@@ -1032,7 +1040,9 @@ int Matcher::DW_phase()
                     minL=minL<lnt?minL:lnt;
                     med.push_back(lnt);
                 }
-#endif
+#else
+		(void) lnt; // suppress compiler warning
+#endif // ISORROPIA_MATCHING_STATS
             }
         }
     }
@@ -1107,7 +1117,9 @@ int Matcher::dfs_augment()
                     minL=minL<lnt?minL:lnt;
                     med.push_back(lnt);
                 }
-#endif
+#else
+		(void) lnt; // suppress compiler warning
+#endif // ISORROPIA_MATCHING_STATS
             }
         }
             
@@ -1150,6 +1162,14 @@ int Matcher::SGM()
             ind=CRS_indices_[j];
 #ifdef ISORROPIA_HAVE_OMP
             lock=omp_test_lock(&scannedV_[ind]);
+#else
+	    // mfh 07 Feb 2013: lock wasn't getting initialized if
+	    // ISORROPIA_HAVE_OMP was not defined.  omp_test_lock()
+	    // returns nonzero if the thread successfully acquired the
+	    // lock.  If there's only one thread, that thread will
+	    // always be successful, so the default value of lock
+	    // should be nonzero.
+	    lock = 1;
 #endif
             if(lock>0)
             {
@@ -1176,12 +1196,15 @@ int Matcher::match_dfs()
     double start,end;
 #ifdef ISORROPIA_HAVE_OMP
     start=omp_get_wtime();
+#else
+    (void) start; // suppress compiler warning for unused variable
 #endif
     totc=dfs_augment();
 #ifdef ISORROPIA_HAVE_OMP
     end=omp_get_wtime();
+#else
+    (void) end; // suppress compiler warning for unused variable
 #endif
-    
         
 #ifdef ISORROPIA_MATCHING_STATS
     std::cout<<"Total time: "<<(end-start)<<" seconds"<<" matching=";
@@ -1197,8 +1220,9 @@ int Matcher::match_hk()
     icm_=0;
 #ifdef ISORROPIA_HAVE_OMP
     start=omp_get_wtime();
+#else
+    (void) start; // suppress compiler warning
 #endif
-    
     
     while(true)
     {
@@ -1224,6 +1248,8 @@ int Matcher::match_hk()
     }
 #ifdef ISORROPIA_HAVE_OMP
     end=omp_get_wtime();
+#else
+    (void) end; // suppress compiler warning
 #endif
     
 #ifdef ISORROPIA_MATCHING_STATS

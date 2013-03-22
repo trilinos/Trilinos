@@ -7,23 +7,23 @@ sources:
 Man Pages
 
 Man pages are available for all files and functions in the directory
-TRILINOS_HOME/tifpack/doc/man, where TRILINOS_HOME is the location of your
+TRILINOS_HOME/ifpack2/doc/man, where TRILINOS_HOME is the location of your
 copy of Trilinos.  To use these pages with the Unix man utility, add
 the directory to your man path as follows:
 
-setenv MANPATH `echo $MANPATH`:TRILINOS_HOME/tifpack/doc/man
+setenv MANPATH `echo $MANPATH`:TRILINOS_HOME/ifpack2/doc/man
 
 
 LaTeX User Guide
 
 A postscript version of this guide is in
-TRILINOS_HOME/tifpack/doc/latex/user_guide.ps.  The LaTeX source is in the
+TRILINOS_HOME/ifpack2/doc/latex/user_guide.ps.  The LaTeX source is in the
 directory TRILINOS_HOME/tifpack/doc/latex.
 
 HTML Online User Guide
 
 The online guide is initiated by pointing your browser to
-TRILINOS_HOME/tifpack/doc/html/index.html
+TRILINOS_HOME/ifpack2/doc/html/index.html
 
 Any question, comments or suggestions are welcome.  Please send to
 Mike Heroux at 

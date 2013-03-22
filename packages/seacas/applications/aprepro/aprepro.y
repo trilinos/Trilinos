@@ -36,13 +36,15 @@
 #include "my_aprepro.h"
 #include <stdlib.h>
 
+void immutable_modify(symrec* var);
 void undefined_warning(char* var);
 void redefined_warning(char* var);
+void set_type(symrec *var, int type);
 void yyerror(char* var);
-void warning(char *string);
 int  yylex(void);
-
-int   echo = True;
+extern int echo;
+extern int state_immutable;
+extern aprepro_options ap_options;
 
 symrec *format;
 %}
@@ -57,7 +59,9 @@ symrec *format;
 %token	<string> QSTRING	/* Quoted string			*/
 %token	<tptr>	UNDVAR 	/* Variable and function		*/
 %token  <tptr>  VAR
-%token	<tptr>	SVAR 	/* String Variable and function		*/
+%token	<tptr>	SVAR 	/* String Variable */
+%token  <tptr>  IMMVAR  /* Immutable Variable */
+%token	<tptr>	IMMSVAR /* Immutable String Variable */
 %token  <tptr>  FNCT
 %token  <tptr>  SFNCT
 %type	<val>	exp 
@@ -119,15 +123,18 @@ bool:     sexp '<' sexp         { $$ = (strcmp($1,$3) <  0 ? 1 : 0);	}
 
 sexp:     QSTRING		{ $$ = $1;				}
         | SVAR			{ $$ = $1->value.svar;			}
+        | IMMSVAR		{ $$ = $1->value.svar;			}
     	| UNDVAR '=' sexp	{ $$ = $3; $1->value.svar = $3;
-				  $1->type = SVAR;			}
-        | SVAR '=' sexp		{ $$ = $3; 
-				  $1->value.svar = $3;
-				  redefined_warning($1->name);          }
-        | VAR '=' sexp		{ $$ = $3; 
-				  $1->value.svar= $3;
-				  redefined_warning($1->name);          
-				  $1->type = SVAR; 		}
+	                          set_type($1, SVAR);			}
+        | SVAR '=' sexp         { $$ = $3; 
+                                  $1->value.svar = $3;
+                                  redefined_warning($1->name);          }
+        | VAR '=' sexp          { $$ = $3; 
+                                  $1->value.svar= $3;
+                                  redefined_warning($1->name);          
+                                  $1->type = SVAR;              }
+	| IMMSVAR '=' sexp	{ immutable_modify($1); YYERROR; }
+        | IMMVAR '=' sexp	{ immutable_modify($1); YYERROR; }
         | SFNCT '(' sexp ')'	{ $$ = (*($1->value.strfnct))($3);	}
 	| SFNCT '(' ')'		{ $$ = (*($1->value.strfnct))();	}
         | SFNCT '(' exp  ')'	{ $$ = (*($1->value.strfnct))($3);	}
@@ -148,6 +155,7 @@ exp:	  NUM			{ $$ = $1; 				}
         | INC NUM		{ $$ = $2 + 1;				}
         | DEC NUM		{ $$ = $2 - 1;				}
         | VAR			{ $$ = $1->value.var;			}
+        | IMMVAR		{ $$ = $1->value.var;			}
 	| INC VAR		{ $$ = ++($2->value.var);		}
 	| DEC VAR		{ $$ = --($2->value.var);		}
 	| VAR INC		{ $$ = ($1->value.var)++;		}
@@ -166,38 +174,50 @@ exp:	  NUM			{ $$ = $1; 				}
 				  $$ = $1->value.var; 
 				  MATH_ERROR("Power");
 				}
+        | INC IMMVAR		{ immutable_modify($2); YYERROR; }
+	| DEC IMMVAR		{ immutable_modify($2); YYERROR; }
+	| IMMVAR INC		{ immutable_modify($1); YYERROR; }
+	| IMMVAR DEC		{ immutable_modify($1); YYERROR; }
+        | IMMVAR '=' exp	{ immutable_modify($1); YYERROR; }
+	| IMMSVAR '=' exp	{ immutable_modify($1); YYERROR; }
+	| IMMVAR EQ_PLUS exp	{ immutable_modify($1); YYERROR; }
+	| IMMVAR EQ_MINUS exp	{ immutable_modify($1); YYERROR; }
+	| IMMVAR EQ_TIME exp	{ immutable_modify($1); YYERROR; }
+	| IMMVAR EQ_DIV exp	{ immutable_modify($1); YYERROR; }
+	| IMMVAR EQ_POW exp	{ immutable_modify($1); YYERROR; }
+
 	| UNDVAR		{ $$ = $1->value.var;
 				  undefined_warning($1->name);          }
 	| INC UNDVAR		{ $$ = ++($2->value.var);		
-				  $2->type = VAR;                       
+	                          set_type($2, VAR);                       
 				  undefined_warning($2->name);          }
 	| DEC UNDVAR		{ $$ = --($2->value.var);		
-				  $2->type = VAR;                       
+	                          set_type($2, VAR);                       
 				  undefined_warning($2->name);          }
 	| UNDVAR INC		{ $$ = ($1->value.var)++;		
-				  $1->type = VAR;                       
+	                          set_type($1, VAR);                       
 				  undefined_warning($1->name);          }
 	| UNDVAR DEC		{ $$ = ($1->value.var)--;		
-				  $1->type = VAR;                       
+	                          set_type($1, VAR);                       
 				  undefined_warning($1->name);          }
 	| UNDVAR '=' exp	{ $$ = $3; $1->value.var = $3;
-				  $1->type = VAR;                       }
+	                          set_type($1, VAR);                    }
 	| UNDVAR EQ_PLUS exp	{ $1->value.var += $3; $$ = $1->value.var; 
-				  $1->type = VAR;                       
+	                          set_type($1, VAR);                       
 				  undefined_warning($1->name);          }
 	| UNDVAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; 
-				  $1->type = VAR;                       
+	                          set_type($1, VAR);                       
 				  undefined_warning($1->name);          }
 	| UNDVAR EQ_TIME exp	{ $1->value.var *= $3; $$ = $1->value.var; 
-				  $1->type = VAR;                       
+	                          set_type($1, VAR);                       
 				  undefined_warning($1->name);          }
 	| UNDVAR EQ_DIV exp	{ $1->value.var /= $3; $$ = $1->value.var; 
-				  $1->type = VAR;                       
+	                          set_type($1, VAR);                       
 				  undefined_warning($1->name);          }
 	| UNDVAR EQ_POW exp	{ errno = 0;
 				  $1->value.var = pow($1->value.var,$3); 
 				  $$ = $1->value.var; 
-				  $1->type = VAR;                       
+	                          set_type($1, VAR);                       
 				  MATH_ERROR("Power");
 				  undefined_warning($1->name);          }
 	| FNCT '(' ')'		{ $$ = (*($1->value.fnctptr))();	}

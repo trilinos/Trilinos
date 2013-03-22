@@ -55,6 +55,8 @@
 
 #include "NOX_Abstract_Group.H"
 
+#include <vector>
+
 // Forward declarations
 namespace Teuchos {
   class ParameterList;
@@ -151,7 +153,7 @@ namespace LOCA {
       //! Create predictor strategy
       virtual bool
       createPredictorStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& predictorParams,
        Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& strategy);
@@ -159,18 +161,18 @@ namespace LOCA {
       //! Create continuation strategy
       virtual bool
       createContinuationStrategy(
-      const string& strategyName,
+      const std::string& strategyName,
       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
       const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
-      const vector<int>& paramIDs,
+      const std::vector<int>& paramIDs,
       Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>& strategy);
 
       //! Create bifurcation strategy
       virtual bool
       createBifurcationStrategy(
-      const string& strategyName,
+      const std::string& strategyName,
       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
       const Teuchos::RCP<Teuchos::ParameterList>& bifurcationParams,
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
@@ -179,7 +181,7 @@ namespace LOCA {
       //! Create step size strategy
       virtual bool
       createStepSizeStrategy(
-         const string& strategyName,
+         const std::string& strategyName,
          const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams,
 	 Teuchos::RCP<LOCA::StepSize::AbstractStrategy>& strategy);
@@ -187,7 +189,7 @@ namespace LOCA {
       //! Create bordered system solver strategy
       virtual bool
       createBorderedSolverStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy);
@@ -195,7 +197,7 @@ namespace LOCA {
       //! Create eigensolver strategy
       virtual bool
       createEigensolverStrategy(
-         const string& strategyName,
+         const std::string& strategyName,
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
 	 Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>& strategy);
@@ -203,7 +205,7 @@ namespace LOCA {
       //! Create eigenvalue sorting strategy
       virtual bool
       createEigenvalueSortStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
        Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy>& strategy);
@@ -211,7 +213,7 @@ namespace LOCA {
       //! Create strategy to save eigenvector/value data
       virtual bool
       createSaveEigenDataStrategy(
-        const string& strategyName,
+        const std::string& strategyName,
 	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
 	Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy>& strategy);
@@ -219,7 +221,7 @@ namespace LOCA {
       //! Create Anasazi operator
       virtual bool
       createAnasaziOperatorStrategy(
-      const string& strategyName,
+      const std::string& strategyName,
       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
       const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
@@ -229,7 +231,7 @@ namespace LOCA {
       //! Create Moore-Spence turning point solver strategy
       virtual bool
       createMooreSpenceTurningPointSolverStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy>& strategy);
@@ -237,7 +239,7 @@ namespace LOCA {
       //! Create Moore-Spence pitchfork solver strategy
       virtual bool
       createMooreSpencePitchforkSolverStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy>& strategy);
@@ -245,7 +247,7 @@ namespace LOCA {
       //! Create Moore-Spence Hopf solver strategy
       virtual bool
       createMooreSpenceHopfSolverStrategy(
-       const string& strategyName,
+       const std::string& strategyName,
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy>& strategy);

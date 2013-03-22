@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -59,21 +59,16 @@ namespace Tpetra {
   Directory<LO, GO, NT>::
   Directory (const Teuchos::RCP<const Map<LO, GO, NT> >& map)
   {
-    using Teuchos::Comm;
-    using Teuchos::gatherAll;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-
     // Create an implementation object of the appropriate type,
     // depending on whether the Map is distributed or replicated, and
     // contiguous or noncontiguous.
     RCP<const Details::Directory<LO, GO, NT> > dir;
     if (map->isDistributed ()) {
       if (map->isContiguous ()) {
-	dir = rcp (new Details::DistributedContiguousDirectory<LO, GO, NT> (map));
+        dir = rcp (new Details::DistributedContiguousDirectory<LO, GO, NT> (map));
       }
       else {
-	dir = rcp (new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map));
+        dir = rcp (new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map));
       }
     }
     else {
@@ -86,37 +81,40 @@ namespace Tpetra {
   }
 
   template<class LO, class GO, class NT>
+  Directory<LO, GO, NT>::Directory() {}
+
+  template<class LO, class GO, class NT>
   Directory<LO, GO, NT>::~Directory() {}
 
   template<class LO, class GO, class NT>
-  LookupStatus 
+  LookupStatus
   Directory<LO, GO, NT>::
-  getDirectoryEntries (const Teuchos::ArrayView<const GO>& globalIDs, 
-		       const Teuchos::ArrayView<int>& nodeIDs) const 
+  getDirectoryEntries (const Teuchos::ArrayView<const GO>& globalIDs,
+                       const Teuchos::ArrayView<int>& nodeIDs) const
   {
     const bool computeLIDs = false;
     return impl_->getEntries (globalIDs, nodeIDs, Teuchos::null, computeLIDs);
   }
 
   template<class LO, class GO, class NT>
-  LookupStatus 
+  LookupStatus
   Directory<LO, GO, NT>::
-  getDirectoryEntries (const Teuchos::ArrayView<const GO>& globalIDs, 
-                       const Teuchos::ArrayView<int>& nodeIDs, 
-                       const Teuchos::ArrayView<LO>& localIDs) const 
+  getDirectoryEntries (const Teuchos::ArrayView<const GO>& globalIDs,
+                       const Teuchos::ArrayView<int>& nodeIDs,
+                       const Teuchos::ArrayView<LO>& localIDs) const
   {
     const bool computeLIDs = true;
     return impl_->getEntries (globalIDs, nodeIDs, localIDs, computeLIDs);
   }
 
   template<class LO, class GO, class NT>
-  std::string 
+  std::string
   Directory<LO, GO, NT>::description () const
   {
     using Teuchos::TypeNameTraits;
-    
+
     std::ostringstream os;
-    os << "Directory" 
+    os << "Directory"
        << "<" << TypeNameTraits<LO>::name ()
        << ", " << TypeNameTraits<GO>::name ()
        << ", " << TypeNameTraits<NT>::name () << ">";

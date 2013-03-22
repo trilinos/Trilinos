@@ -139,7 +139,7 @@ LOCA::Parameter::SublistParser::parseSublists(
 }
 
 Teuchos::RCP<Teuchos::ParameterList> 
-LOCA::Parameter::SublistParser::getSublist(const string& name)
+LOCA::Parameter::SublistParser::getSublist(const std::string& name)
 {
   // Find name in list, if it exists.
   SublistMapIterator i = sublistMap.find(name);

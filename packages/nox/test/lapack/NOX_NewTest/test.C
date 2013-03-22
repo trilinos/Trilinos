@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 
   // Identify the test
   if (printing.isPrintType(NOX::Utils::TestDetails)) {
-    cout << "Starting lapack/NOX_NewTest/NOX_NewTest.exe" << endl;
+    std::cout << "Starting lapack/NOX_NewTest/NOX_NewTest.exe" << std::endl;
   }
 
   // Final return value (0 = succefull, non-zero = failure)
@@ -88,9 +88,9 @@ int main(int argc, char *argv[]) {
 
   
   if (status == 0) 
-    cout << "Test passed!" << endl;
+    std::cout << "Test passed!" << std::endl;
   else 
-    cout << "Test failed!" << endl;
+    std::cout << "Test failed!" << std::endl;
 
   // Final return value (0 = succefull, non-zero = failure)
   return status;

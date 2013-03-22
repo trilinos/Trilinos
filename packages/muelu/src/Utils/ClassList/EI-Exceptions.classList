@@ -1,0 +1,9 @@
+# List of classes that do not need to be instantiated (ex: Interfaces)
+SolverBase
+Smoother
+HierarchyManager
+PreDropFunctionBaseClass
+SmootherBase
+PRFactory
+FakeSmootherPrototype
+HierarchyFactory

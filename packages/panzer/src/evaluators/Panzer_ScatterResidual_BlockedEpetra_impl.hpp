@@ -56,6 +56,7 @@
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
@@ -192,8 +193,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   // RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
-   RCP<const BLOC> blockedContainer = blockedContainer_; // rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
+   RCP<const BLOC> blockedContainer = blockedContainer_;
 
    RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f(),true);
 
@@ -306,10 +306,18 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_));
+
+   if(blockedContainer_==Teuchos::null) {
+     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true);
+     blockedContainer_ = rcp_dynamic_cast<const BLOC>(gdata->getGhostedLOC());
+   }
 }
 
 // **********************************************************************
@@ -333,15 +341,10 @@ evaluateFields(typename Traits::EvalData workset)
    std::vector<LO> LIDs;
    std::vector<double> jacRow;
 
-   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-   out.setOutputToRootOnly(-1);
-   out.setShowProcRank(true);
-
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   // RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
    RCP<const BLOC> blockedContainer = blockedContainer_;
 
    RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f());
@@ -435,7 +438,25 @@ evaluateFields(typename Traits::EvalData workset)
 
                // Sum Jacobian
                int err = subJac->SumIntoMyValues(r_lid, end-start, &jacRow[start],&LIDs[start]);
-               TEUCHOS_ASSERT_EQUALITY(err,0);
+               if(err!=0) {
+                 RCP<const Epetra_Map> rr = blockedContainer->getMapForBlock(GIDs[start].first);
+                 bool sameColMap = subJac->ColMap().SameAs(*rr);
+
+                 std::stringstream ss;
+                 ss << "Failed inserting row: " << GIDs[rowOffset].second << " (" << r_lid << "): ";
+                 for(int i=start;i<end;i++)
+                   ss << GIDs[i].second << " (" << LIDs[i] << ") ";
+                 ss << std::endl;
+                 ss << "Into block " << blockRowIndex << ", " << blockColIndex << std::endl;
+
+                 ss << "scatter field = ";
+                 scatterFields_[fieldIndex].print(ss);
+                 ss << std::endl;
+
+                 ss << "Same map = " << (sameColMap ? "true" : "false") << std::endl; 
+                 
+                 TEUCHOS_TEST_FOR_EXCEPTION(err!=0,std::runtime_error,ss.str());
+               }
             }
          } // end rowBasisNum
       } // end fieldIndex

@@ -316,6 +316,7 @@ void BlockCrsMatrix::ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, 
   int *BlkIndices;
   int BlkNumIndices;
   int ierr=0;
+  (void) ierr; // Forestall compiler warning for unused variable.
 
   for (int i=0; i<BaseMap.NumMyElements(); i++) {
 

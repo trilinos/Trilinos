@@ -54,11 +54,11 @@ using namespace boost::mpl::placeholders;
 
 namespace panzer {
 
-  template<typename Traits,typename LO,typename GO>
+  template<typename Traits>
   class AssemblyEngine_TemplateManager : 
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				panzer::Base,
-                                panzer::AssemblyEngine<_,LO,GO> > {
+                                panzer::AssemblyEngine<_> > {
 
   public:
 

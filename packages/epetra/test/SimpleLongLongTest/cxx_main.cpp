@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   // Construct a Map that puts approximately the same Number of equations on each processor
 
-  Epetra_Map MapInt(NumGlobalEquations, NumMyEquations, MyGlobalElementsInt, 0, Comm);
+  Epetra_Map MapInt(NumGlobalEquations, NumMyEquations, MyGlobalElementsInt, 0LL, Comm);
 
   EPETRA_TEST_ERR(!(MapInt.GlobalIndicesInt()),ierr);
   EPETRA_TEST_ERR(MapInt.GlobalIndicesLongLong(),ierr);

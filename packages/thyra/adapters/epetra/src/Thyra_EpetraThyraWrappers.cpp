@@ -140,26 +140,26 @@ Thyra::create_VectorSpace(
   const RCP<const Epetra_Map> &epetra_map
   )
 {
+  using Teuchos::as; using Teuchos::inoutArg;
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     !epetra_map.get(), std::invalid_argument,
     "create_VectorSpace::initialize(...): Error!" );
 #endif // TEUCHOS_DEBUG
-  RCP<const Teuchos::Comm<Ordinal> >
-    comm = create_Comm(Teuchos::rcp(&epetra_map->Comm(),false)).assert_not_null();
-  Teuchos::set_extra_data( epetra_map, "epetra_map", Teuchos::inOutArg(comm) );
+  RCP<const Teuchos::Comm<Ordinal> > comm =
+    create_Comm(Teuchos::rcpFromRef(epetra_map->Comm())).assert_not_null();
+  Teuchos::set_extra_data(epetra_map, "epetra_map", inoutArg(comm));
   const Ordinal localSubDim = epetra_map->NumMyElements();
   RCP<DefaultSpmdVectorSpace<double> > vs =
     defaultSpmdVectorSpace<double>(
       comm, localSubDim, epetra_map->NumGlobalElements());
-#ifndef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    vs->dim() != epetra_map->NumGlobalElements(), std::logic_error
-    ,"create_VectorSpace(...): Error, vs->dim() = "<<vs->dim()<<" != "
-    "epetra_map->NumGlobalElements() = "<<epetra_map->NumGlobalElements()<<"!"
-    );
-#endif		
-  Teuchos::set_extra_data( epetra_map, "epetra_map", Teuchos::inOutArg(vs) );
+  TEUCHOS_ASSERT_EQUALITY(vs->dim(), as<Ordinal>(epetra_map->NumGlobalElements()));
+  // NOTE: It is impossible to trigger the above exception unless
+  // NumGlobalElemenets() overflows 'int'.  However, this is a nice sanity
+  // check to stop the code early in case we seen an overflow in practice.
+  // Because this assert will only likely trigger in a non-debug build, we
+  // will unguard the assert since it is very cheap to perform.
+  Teuchos::set_extra_data( epetra_map, "epetra_map", inoutArg(vs) );
   return vs;
 }
 

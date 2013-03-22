@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Map.h"
 #ifdef EPETRA_MPI
@@ -680,3 +681,4 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
 
   return(ierr);
 }
+

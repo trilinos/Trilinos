@@ -52,167 +52,11 @@
 
 #include <impl/KokkosArray_Timer.hpp>
 
-#include <FEMesh.hpp>
+#include <ExplicitFunctors.hpp>
 
 //----------------------------------------------------------------------------
 
 namespace Explicit {
-
-template<typename Scalar , class Device >
-struct Fields {
-
-  static const int NumStates     = 2 ;
-  static const int SpatialDim    = 3 ;
-  static const int ElemNodeCount = 8 ;
-
-  // Indices for full 3x3 tensor:
-
-  static const int K_F_XX = 0 ;
-  static const int K_F_YY = 1 ;
-  static const int K_F_ZZ = 2 ;
-  static const int K_F_XY = 3 ;
-  static const int K_F_YZ = 4 ;
-  static const int K_F_ZX = 5 ;
-  static const int K_F_YX = 6 ;
-  static const int K_F_ZY = 7 ;
-  static const int K_F_XZ = 8 ;
-
-  //  Indexes into a 3 by 3 symmetric tensor stored as a length 6 vector
-
-  static const int K_S_XX = 0 ;
-  static const int K_S_YY = 1 ;
-  static const int K_S_ZZ = 2 ;
-  static const int K_S_XY = 3 ;
-  static const int K_S_YZ = 4 ;
-  static const int K_S_ZX = 5 ;
-  static const int K_S_YX = 3 ;
-  static const int K_S_ZY = 4 ;
-  static const int K_S_XZ = 5 ;
-
-  //  Indexes into a 3 by 3 skew symmetric tensor stored as a length 3 vector
-
-  static const int K_V_XY = 0 ;
-  static const int K_V_YZ = 1 ;
-  static const int K_V_ZX = 2 ;
-
-
-
-  typedef Device                           device_type ;
-  typedef typename device_type::size_type  size_type ;
-
-  typedef HybridFEM::FEMesh<double,ElemNodeCount,device_type>  FEMesh ;
-
-  typedef typename FEMesh::node_coords_type    node_coords_type ;
-  typedef typename FEMesh::elem_node_ids_type  elem_node_ids_type ;
-  typedef typename FEMesh::node_elem_ids_type  node_elem_ids_type ;
-  typedef typename KokkosArray::ParallelDataMap   parallel_data_map ;
-
-  typedef KokkosArray::View< double[][ SpatialDim ][ NumStates ] , device_type > geom_state_array_type ;
-  typedef KokkosArray::View< Scalar[][ SpatialDim ] , device_type > geom_array_type ;
-  typedef KokkosArray::View< Scalar[] ,               device_type > array_type ;
-  typedef KokkosArray::View< Scalar ,                 device_type >  scalar_type ;
-
-  typedef KokkosArray::View< Scalar[][  6 ] ,    device_type >  elem_sym_tensor_type ;
-  typedef KokkosArray::View< Scalar[][  9 ] ,    device_type >  elem_tensor_type ;
-  typedef KokkosArray::View< Scalar[][  9 ][ NumStates ] , device_type >  elem_tensor_state_type ;
-  typedef KokkosArray::View< Scalar[][ SpatialDim ][ ElemNodeCount ] , device_type > elem_node_geom_type ;
-  
-  // Parameters:
-  const int num_nodes ;
-  const int num_nodes_owned ;
-  const int num_elements ;
-
-  const Scalar  lin_bulk_visc;
-  const Scalar  quad_bulk_visc;
-  const Scalar  two_mu;
-  const Scalar  bulk_modulus;
-  const Scalar  density;
-
-  // Mesh:
-  const elem_node_ids_type  elem_node_connectivity ;
-  const node_elem_ids_type  node_elem_connectivity ;
-  const node_coords_type    model_coords ;
-
-  // Compute:
-  const scalar_type                dt ;
-  const scalar_type                prev_dt ;
-  const geom_state_array_type      displacement ;
-  const geom_state_array_type      velocity ;
-  const geom_array_type            acceleration ;
-  const geom_array_type            internal_force ;
-  const array_type                 nodal_mass ;
-  const array_type                 elem_mass ;
-  const array_type                 internal_energy ;
-  const elem_sym_tensor_type       stress_new ;
-  const elem_tensor_state_type     rotation ;
-  const elem_node_geom_type        element_force ;
-  const elem_tensor_type           vel_grad ;
-  const elem_sym_tensor_type       stretch ;
-  const elem_sym_tensor_type       rot_stretch ;
-  
-  Fields(
-      const FEMesh & mesh,
-      Scalar arg_lin_bulk_visc,
-      Scalar arg_quad_bulk_visc,
-      Scalar youngs_modulus,
-      Scalar poissons_ratio,
-      Scalar arg_density )
-    : num_nodes(       mesh.parallel_data_map.count_owned +
-                       mesh.parallel_data_map.count_receive )
-    , num_nodes_owned( mesh.parallel_data_map.count_owned )
-    , num_elements(    mesh.elem_node_ids.dimension_0() )
-    , lin_bulk_visc(  arg_lin_bulk_visc )
-    , quad_bulk_visc( arg_quad_bulk_visc )
-    , two_mu(youngs_modulus/(1.0+poissons_ratio))
-    , bulk_modulus(youngs_modulus/(3*(1.0-2.0*poissons_ratio)))
-    , density(arg_density)
-
-    // mesh
-
-    , elem_node_connectivity( mesh.elem_node_ids ) // ( num_elements , ElemNodeCount )
-    , node_elem_connectivity( mesh.node_elem_ids ) // ( num_nodes , ... )
-    , model_coords(  mesh.node_coords )            // ( num_nodes , 3 )
-
-    // compute with input/output
-
-    , dt(              "dt" )
-    , prev_dt(         "prev_dt" )
-    , displacement(    "displacement" ,   num_nodes )
-    , velocity(        "velocity" ,       num_nodes )
-    , acceleration(    "acceleration" ,   num_nodes_owned )
-    , internal_force(  "internal_force" , num_nodes_owned )
-    , nodal_mass(      "nodal_mass" ,     num_nodes_owned )
-    , elem_mass(       "elem_mass" ,       num_elements )
-    , internal_energy( "internal_energy" , num_elements )
-    , stress_new(      "stress_new" ,      num_elements )
-
-    // temporary arrays
-
-    , rotation(      "rotation" ,  num_elements )
-    , element_force( "element_force" ,  num_elements )
-    , vel_grad(      "vel_grad" , num_elements )
-    , stretch(       "stretch" , num_elements )
-    , rot_stretch(   "rot_stretch" , num_elements )
-  { }
-};
-
-} /* namespace Explicit */
-
-//----------------------------------------------------------------------------
-
-namespace Explicit {
-
-template< typename Scalar , class DeviceType > struct grad ;
-template< typename Scalar , class DeviceType > struct initialize_element ;
-template< typename Scalar , class DeviceType > struct initialize_node ;
-template< typename Scalar , class DeviceType > struct decomp_rotate ;
-template< typename Scalar , class DeviceType > struct internal_force ;
-template< typename Scalar , class DeviceType > struct nodal_step ;
-template< typename Scalar , class DeviceType > struct pack_state ;
-template< typename Scalar , class DeviceType > struct unpack_state ;
-
-//----------------------------------------------------------------------------
-
 
 struct PerformanceData {
   double mesh_time ;
@@ -349,7 +193,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 #if defined( HAVE_MPI )
 
   typedef typename
-    fields_type::geom_state_array_type::value_type  comm_value_type ;
+    fields_type::geom_state_array_type::scalar_type  comm_value_type ;
 
   const unsigned comm_value_count = 6 ;
 
@@ -497,8 +341,12 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
 
 template <typename Scalar, typename Device>
-static void driver( const char * label , comm::Machine machine ,
-                    int elem_count_beg , int elem_count_end , int runs )
+static void driver( const char * const label ,
+                    comm::Machine machine ,
+                    const int gang_count ,
+                    const int elem_count_beg ,
+                    const int elem_count_end ,
+                    const int runs )
 {
   typedef Scalar              scalar_type ;
   typedef Device              device_type ;
@@ -511,15 +359,21 @@ static void driver( const char * label , comm::Machine machine ,
 
   typedef typename fixture_type::FEMeshType mesh_type ;
 
-  const int space = 16 ;
+  const size_t proc_count = comm::size( machine );
+  const size_t proc_rank  = comm::rank( machine );
+
+  const int space = 15 ;
+  const int steps = 1000 ;
+  const int print_sample = 0 ;
 
   if ( comm::rank( machine ) == 0 ) {
 
     std::cout << std::endl ;
     std::cout << "\"MiniExplicitDynamics with KokkosArray " << label
+              << " time_steps(" << steps << ")"
               << "\"" << std::endl;
     std::cout << std::left << std::setw(space) << "\"Element\" , ";
-    std::cout << std::left << std::setw(space) << "\"Time Steps\" , ";
+    std::cout << std::left << std::setw(space) << "\"Node\" , ";
     std::cout << std::left << std::setw(space) << "\"Initialize\" , ";
     std::cout << std::left << std::setw(space) << "\"ElemForce\" , ";
     std::cout << std::left << std::setw(space) << "\"NodeUpdate\" , ";
@@ -530,7 +384,7 @@ static void driver( const char * label , comm::Machine machine ,
     std::cout << std::endl;
 
     std::cout << std::left << std::setw(space) << "\"count\" , ";
-    std::cout << std::left << std::setw(space) << "\"iterations\" , ";
+    std::cout << std::left << std::setw(space) << "\"count\" , ";
     std::cout << std::left << std::setw(space) << "\"microsec\" , ";
     std::cout << std::left << std::setw(space) << "\"microsec\" , ";
     std::cout << std::left << std::setw(space) << "\"microsec\" , ";
@@ -541,9 +395,6 @@ static void driver( const char * label , comm::Machine machine ,
     std::cout << std::endl;
   }
 
-  const int steps = 1000 ;
-  const int print_sample = 0 ;
-
   for(int i = elem_count_beg ; i < elem_count_end ; i *= 2 )
   {
     const int iz = std::max( 1 , (int) cbrt( ((double) i) / 2.0 ) );
@@ -553,8 +404,8 @@ static void driver( const char * label , comm::Machine machine ,
     const int nnode = ( ix + 1 ) * ( iy + 1 ) * ( iz + 1 );
 
     mesh_type mesh =
-      fixture_type::create( comm::size( machine ) ,
-                            comm::rank( machine ) , ix , iy , iz );
+      fixture_type::create( proc_count , proc_rank , gang_count ,
+                            ix , iy , iz );
 
     mesh.parallel_data_map.machine = machine ;
 
@@ -579,6 +430,7 @@ static void driver( const char * label , comm::Machine machine ,
        ( best.comm_time + best.central_diff ) / ( nnode * perf.number_of_steps );
 
    std::cout << std::setw(space-3) << nelem << " , "
+             << std::setw(space-3) << nnode << " , "
              << std::setw(space-3) << best.number_of_steps << " , "
              << std::setw(space-3) << best.init_time * 1000000 << " , "
              << std::setw(space-3)

@@ -598,6 +598,7 @@ struct AZ_CONVERGE_STRUCT *AZ_converge_create()
   temp->not_initialized = AZ_TRUE;
   temp->isnan = 0;
   temp->converged = 0;
+  temp->epsilon = 0;
 
   return temp;
 }

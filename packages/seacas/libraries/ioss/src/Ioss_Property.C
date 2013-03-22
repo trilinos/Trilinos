@@ -77,17 +77,17 @@ Ioss::Property::Property(const std::string &name,
   name_(name), type_(type), storage_(storage), isImplicit_(is_it_implicit)
 { data_.pval = data; }
 
-Ioss::Property::Property(const std::string &name, const int value,
+Ioss::Property::Property(const std::string &name, int value,
 			     bool is_it_implicit) :
   name_(name), type_(INTEGER), storage_(SCALAR), isImplicit_(is_it_implicit)
 { data_.ival = value; }
 
-Ioss::Property::Property(const std::string &name, const int64_t  value,
+Ioss::Property::Property(const std::string &name, int64_t  value,
 			     bool is_it_implicit) :
   name_(name), type_(INTEGER), storage_(SCALAR), isImplicit_(is_it_implicit)
 { data_.ival = value; }
 
-Ioss::Property::Property(const std::string &name, const double   value,
+Ioss::Property::Property(const std::string &name, double   value,
 			     bool is_it_implicit) :
   name_(name), type_(REAL), storage_(SCALAR), isImplicit_(is_it_implicit)
 { data_.rval = value; }
@@ -96,6 +96,11 @@ Ioss::Property::Property(const std::string &name, const std::string &value,
 			     bool is_it_implicit) :
   name_(name), type_(STRING), storage_(SCALAR), isImplicit_(is_it_implicit)
 { data_.sval = new std::string(value); }
+
+Ioss::Property::Property(const std::string &name, void *value,
+			 bool is_it_implicit) :
+  name_(name), type_(POINTER), storage_(SCALAR), isImplicit_(is_it_implicit)
+{ data_.pval = value; }
 
 // To set implicit property
 Ioss::Property::Property(const Ioss::GroupingEntity* ge,

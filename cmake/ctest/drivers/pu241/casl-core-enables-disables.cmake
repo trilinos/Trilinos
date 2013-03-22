@@ -17,17 +17,29 @@ FOREACH(EXCLUDED_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
 ENDFOREACH()
 
 # Turn off float and complex testing because CASL does not need them
-SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL "")
-SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL "")
+SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL
+  "Disabled in casl-core-enables-disables.cmake")
+SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL
+  "Disabled in casl-core-enables-disables.cmake")
+
+# We don't need ThreadPool or the Kokkoss::TPINode instnatiations (VRI Kanban
+# #2852, Trilinos #5861)
+SET(${PROJECT_NAME}_ENABLE_ThreadPool OFF CACHE BOOL
+  "Disabled in casl-core-enables-disables.cmake")
 
 # We don't want or need HDF5 support in EpetraExt
-SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
+SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL
+  "Disabled in casl-core-enables-disables.cmake")
 
 # Turn off STK tests since they are constantly failing.  NOTE: Since CASL is
 # not developing on STK, only using it, this should not represent a big risk
 # for STK or CASL.
 SET(STK_ENABLE_TESTS OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
 SET(STK_ENABLE_EXAMPLES OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
+
+# Turn off MPI support in SEACAS because it that triggers usage of paralllel
+# NETCSF which we don't need for CASL (VRI Kanban #2823)
+SET(SEACASExodus_ENABLE_MPI OFF CACHE BOOL "")
 
 # We don't have the Matio TPL for SEACAS
 SET(TPL_ENABLE_Matio OFF CACHE BOOL "")
@@ -55,5 +67,7 @@ SET(Optika_DO_GUI_UNIT_TESTS OFF CACHE BOOL "")
 # Turn on configure timing
 SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "")
 
-# Don't create *Config.cmake files since they are massively expensive to create
+# Don't create *Config.cmake export makefiles since they are massively
+# expensive to create and we don't need them (yet) in VERA.
 SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES OFF CACHE BOOL "")
+SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES OFF CACHE BOOL "")

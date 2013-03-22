@@ -973,5 +973,25 @@ operator << (std::ostream& os, const OrthogPoly<T,Storage>& a)
   return os;
 }
 
+template <typename T, typename Storage>
+std::istream& 
+operator >> (std::istream& is, OrthogPoly<T,Storage>& a)
+{
+  typedef typename OrthogPoly<T,Storage>::ordinal_type ordinal_type;
+
+  // Read in the opening "["
+  char bracket;
+  is >> bracket;
+      
+  for (ordinal_type i=0; i<a.size(); i++) {
+    is >> a.fastAccessCoeff(i);
+  }
+
+  // Read in the closing "]"
+
+  is >> bracket;
+  return is;
+}
+
 } // namespace PCE
 } // namespace Sacado

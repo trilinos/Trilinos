@@ -105,6 +105,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("schwarz: combine mode", "Zero"); // use string mode for this
   params.set("schwarz: reordering type", "none");
   params.set("schwarz: filter singletons", false);
+  params.set("schwarz: overlap level", (int)0);
 
   // Ifpack2_BlockRelaxation.hpp
   // params.set("relaxation: type", "Jacobi"); // already set
@@ -114,6 +115,14 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: type", "greedy");
   params.set("partitioner: local parts", (int)1);
   params.set("partitioner: overlap", (int)0);
+
+  // Krylov smoother
+  params.set("krylov: iteration type",(int)1);
+  params.set("krylov: number of iterations",(int)5);
+  params.set("krylov: residual tolerance",(double)0.001);
+  params.set("krylov: block size",(int)1);
+  params.set("krylov: zero starting solution", true);
+  params.set("krylov: preconditioner type",(int)1);
 
   // Ifpack2_METISPartitioner.hpp
   params.set("partitioner: use symmetric graph", true);

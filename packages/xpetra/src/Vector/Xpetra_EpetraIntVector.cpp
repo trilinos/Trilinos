@@ -75,40 +75,48 @@ namespace Xpetra {
 
   void EpetraIntVector::setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVector::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVector::setSeed(): Functionnality not available in Epetra"); }
 
+  Teuchos::RCP< const Vector< int,int,int > > EpetraIntVector::getVector(size_t j) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+  }
+
+  Teuchos::RCP< Vector< int,int,int > > EpetraIntVector::getVectorNonConst(size_t j) {
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+  }
+
   Teuchos::ArrayRCP<const int> EpetraIntVector::getData(size_t j) const {
-    XPETRA_MONITOR("EpetraIntVector::getData"); 
+    XPETRA_MONITOR("EpetraIntVector::getData");
 
     int * data = vec_->Values();
     int localLength = vec_->MyLength();
-  
+
     return ArrayRCP<int>(data, 0, localLength, false); // not ownership
   }
 
   Teuchos::ArrayRCP<int> EpetraIntVector::getDataNonConst(size_t j) {
-    XPETRA_MONITOR("EpetraIntVector::getDataNonConst"); 
+    XPETRA_MONITOR("EpetraIntVector::getDataNonConst");
 
     int * data = vec_->Values();
     int localLength = vec_->MyLength();
-  
+
     return ArrayRCP<int>(data, 0, localLength, false); // not ownership
   }
 
   void EpetraIntVector::dot(const MultiVector<int,int,int> &A, const Teuchos::ArrayView<int> &dots) const {
-    XPETRA_MONITOR("EpetraIntVector::dot"); 
+    XPETRA_MONITOR("EpetraIntVector::dot");
 
     //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
   void EpetraIntVector::abs(const MultiVector<int,int,int> &A) {
-    XPETRA_MONITOR("EpetraIntVector::abs"); 
+    XPETRA_MONITOR("EpetraIntVector::abs");
 
     //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
   void EpetraIntVector::reciprocal(const MultiVector<int,int,int> &A) {
-    XPETRA_MONITOR("EpetraIntVector::reciprocal"); 
+    XPETRA_MONITOR("EpetraIntVector::reciprocal");
 
     //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
@@ -116,8 +124,8 @@ namespace Xpetra {
 
   void EpetraIntVector::scale(const int &alpha) { XPETRA_MONITOR("EpetraIntVector::scale"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::update(const int &alpha, const MultiVector<int,int,int> &A, const int &beta) { 
-    XPETRA_MONITOR("EpetraIntVector::update"); 
+  void EpetraIntVector::update(const int &alpha, const MultiVector<int,int,int> &A, const int &beta) {
+    XPETRA_MONITOR("EpetraIntVector::update");
 
     // XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
@@ -146,24 +154,24 @@ namespace Xpetra {
   void EpetraIntVector::multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,int> &A, const MultiVector<int,int,int> &B, const int &beta) { XPETRA_MONITOR("EpetraIntVector::multiply"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Not available in Epetra"); }
 
   void EpetraIntVector::elementWiseMultiply(int scalarAB, const Vector<int,int,int> &A, const MultiVector<int,int,int> &B, int scalarThis) {
-    XPETRA_MONITOR("EpetraIntVector::elementWiseMultiply"); 
+    XPETRA_MONITOR("EpetraIntVector::elementWiseMultiply");
 
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra_EpetraIntVector: elementWiseMultiply not implemented because Epetra_IntVector does not support this operation");
   }
 
   void EpetraIntVector::replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
-  
+
   void EpetraIntVector::sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
-  
+
   void EpetraIntVector::replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
-  
+
   void EpetraIntVector::sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
   size_t EpetraIntVector::getNumVectors() const { XPETRA_MONITOR("EpetraIntVector::getNumVectors"); return 1; }
 
   std::string EpetraIntVector::description() const {
     XPETRA_MONITOR("EpetraIntVector::description");
-    
+
     // This implementation come from Epetra_Vector_def.hpp (without modification)
     std::ostringstream oss;
     oss << Teuchos::Describable::description();
@@ -192,7 +200,7 @@ namespace Xpetra {
       vec_->Print(out);
   }
 
-  void EpetraIntVector::doImport(const DistObject<int, int, int> &source, 
+  void EpetraIntVector::doImport(const DistObject<int, int, int> &source,
                                  const Import<int, int> &importer, CombineMode CM) {
     XPETRA_MONITOR("EpetraIntVector::doImport");
 
@@ -200,7 +208,7 @@ namespace Xpetra {
     XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
-    int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM)); 
+    int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
@@ -212,19 +220,19 @@ namespace Xpetra {
     XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
-    int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM)); 
+    int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
   void EpetraIntVector::doImport(const DistObject<int, int, int> &source,
                                  const Export<int, int>& exporter, CombineMode CM) {
     XPETRA_MONITOR("EpetraIntVector::doImport");
-  
+
     XPETRA_DYNAMIC_CAST(const EpetraIntVector, source, tSource, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraIntVector as input arguments.");
     XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
-  
+
     const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
-    int err = vec_->Import(v, *tExporter.getEpetra_Export(), toEpetra(CM)); 
+    int err = vec_->Import(v, *tExporter.getEpetra_Export(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
@@ -236,7 +244,7 @@ namespace Xpetra {
     XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
-    int err = vec_->Export(v, *tExporter.getEpetra_Export(), toEpetra(CM)); 
+    int err = vec_->Export(v, *tExporter.getEpetra_Export(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 

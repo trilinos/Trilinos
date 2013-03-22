@@ -90,12 +90,13 @@ public:
   virtual ~MaxIters();
 
   virtual LOCA::StatusTest::StatusType
-  checkStatus(const LOCA::Stepper& stepper,
+//  checkStatus(const LOCA::Stepper& stepper,
+  checkStatus(const LOCA::Abstract::Iterator& stepper,
               LOCA::StatusTest::CheckType status);
 
   virtual LOCA::StatusTest::StatusType getStatus() const;
 
-  virtual ostream& print(ostream& stream, int indent = 0) const;
+  virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
 
   //! Returns the Maximum number of iterations set in the constructor.
   virtual int getMaxIters() const;

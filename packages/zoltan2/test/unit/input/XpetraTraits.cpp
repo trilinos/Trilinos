@@ -207,9 +207,6 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Original Tpetra graph" << std::endl;
   
-    Teuchos::RCP<Teuchos::FancyOStream>
-      outStream = Teuchos::VerboseObjectBase::getDefaultOStream();
-    Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
     G->describe(*outStream,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(G->getRowMap()));
@@ -372,9 +369,6 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Original Xpetra graph" << std::endl;
   
-    Teuchos::RCP<Teuchos::FancyOStream>
-      outStream = Teuchos::VerboseObjectBase::getDefaultOStream();
-    Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
     G->describe(*outStream,v);
   
     ArrayRCP<gno_t> newRowIds = roundRobinMap(G->getRowMap());

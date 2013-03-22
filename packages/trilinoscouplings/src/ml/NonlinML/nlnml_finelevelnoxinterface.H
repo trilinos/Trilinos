@@ -185,7 +185,7 @@ public:
    \param block_pde   (Out)  : on exit, allocated vector of length NumMyRows containing the number of
                                PDE a certain row belongs to.
    */
-  virtual bool getBlockInfo(int *nblocks, vector<int>& blocks, vector<int>& block_pde) = 0;
+  virtual bool getBlockInfo(int *nblocks, std::vector<int>& blocks, std::vector<int>& block_pde) = 0;
 
   //! Dummy routine to apply constraints
   /*! If the underlying application needs to apply constraints to the

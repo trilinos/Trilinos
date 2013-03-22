@@ -98,10 +98,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLUDist_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/openmpi1.4/SuperLU_DIST_2.5/SRC"
     "-DSuperLUDist_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/openmpi1.4/SuperLU_DIST_2.5/lib"
     "-DSuperLUDist_LIBRARY_NAMES:STRING=superlu_dist_2.5"
-    "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.1/SRC"
-    "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.1/lib"
-    "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.1"
+    "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.3/SRC"
+    "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.3/lib"
+    "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
     "-DTPL_ENABLE_Matio=OFF"
+    "-DTPL_ENABLE_SuperLU=ON"
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 

@@ -46,8 +46,8 @@
 #ifndef MUELU_THRESHOLDAFILTERFACTORY_DEF_HPP
 #define MUELU_THRESHOLDAFILTERFACTORY_DEF_HPP
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 
 #include "MueLu_ThresholdAFilterFactory_decl.hpp"
 
@@ -57,8 +57,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ThresholdAFilterFactory(const std::string& ename, const FactoryBase* fac, const Scalar threshold)
-    : varName_(ename), factory_(fac), threshold_(threshold)
+  ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ThresholdAFilterFactory(const std::string& ename, const Scalar threshold)
+    : varName_(ename), threshold_(threshold)
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -66,20 +66,20 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput(varName_,factory_,this);
+    Input(currentLevel, varName_);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const {
     FactoryMonitor m(*this, "A filter (thresholding)", currentLevel);
 
-    typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OOperator; //TODO
-    typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOOperator; //TODO
+    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OMatrix; //TODO
+    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOMatrix; //TODO
 
-    RCP<OOperator> Ain = currentLevel.Get< RCP<OOperator> >(varName_, factory_);
+    RCP<OMatrix> Ain = Get< RCP<OMatrix> >(currentLevel, varName_);
 
-    // create new empty Operator
-    RCP<CrsOOperator> Aout = rcp(new CrsOOperator(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile)); //FIXME
+    // create new empty Matrix
+    RCP<CrsOMatrix> Aout = rcp(new CrsOMatrix(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile)); //FIXME
 
     // loop over local rows
     for(size_t row=0; row<Ain->getNodeNumRows(); row++)
@@ -113,7 +113,7 @@ namespace MueLu {
 
     GetOStream(Statistics0, 0) << "Nonzeros in " << varName_ << "(input): " << Ain->getGlobalNumEntries() << ", Nonzeros after filtering " << varName_ << " (parameter: " << threshold_ << "): " << Aout->getGlobalNumEntries() << std::endl;
 
-    currentLevel.Set(varName_, Teuchos::rcp_dynamic_cast<OOperator>(Aout), this);
+    currentLevel.Set(varName_, Teuchos::rcp_dynamic_cast<OMatrix>(Aout), this);
   }
 
 } // namespace MueLu

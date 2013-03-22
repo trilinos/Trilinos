@@ -121,7 +121,7 @@ NOX::StatusTest::StatusType NOX::StatusTest::Stagnation::getStatus() const
   return status;
 }
 
-ostream& NOX::StatusTest::Stagnation::print(ostream& stream, int indent) const
+std::ostream& NOX::StatusTest::Stagnation::print(std::ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
@@ -131,7 +131,7 @@ ostream& NOX::StatusTest::Stagnation::print(ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << "             (convergence rate = " << convRate << ")";
-  stream << endl;
+  stream << std::endl;
  return stream;
 }
 

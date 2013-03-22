@@ -38,6 +38,7 @@
 #include <vector>
 #include <stdint.h>
 #include <iostream>
+#include <Ioss_EntityType.h>
 
 namespace Iogn {
   typedef std::vector<int64_t> MapVector;
@@ -187,7 +188,7 @@ namespace Iogn {
     */
     explicit GeneratedMesh(const std::string &parameters, int proc_count = 1, int my_proc = 0);
     GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z, int proc_count = 1, int my_proc = 0);
-    GeneratedMesh() { };
+    GeneratedMesh();
     virtual ~GeneratedMesh();
 
     /**
@@ -331,6 +332,7 @@ namespace Iogn {
      */
     int64_t shell_element_count_proc(ShellLocation) const;
 
+    int64_t timestep_count() const {return timestepCount;}
     /**
      * Return number of elements in the element block with id
      * 'block_number'. The 'block_number' ranges from '1' to
@@ -354,6 +356,7 @@ namespace Iogn {
     
     virtual int64_t communication_node_count_proc() const;
     virtual void node_communication_map(MapVector &map, std::vector<int> &proc);
+    virtual void owning_processor(int *owner, int64_t num_node);
     
     /** 
      * Fill the passed in 'map' argument with the node map
@@ -455,11 +458,15 @@ namespace Iogn {
     int64_t get_num_y() const {return numY;}
     int64_t get_num_z() const {return numZ;}
 
+    size_t get_variable_count(Ioss::EntityType type) const
+    { return variableCount.find(type) != variableCount.end() ? variableCount.find(type)->second : 0; }
+
   private:
     
     GeneratedMesh( const GeneratedMesh & );
     GeneratedMesh & operator = ( const GeneratedMesh & );
 
+    void set_variable_count(const std::string &type, size_t count);
     void parse_options(const std::vector<std::string> &groups);
     void show_parameters() const;
     void initialize();
@@ -474,6 +481,9 @@ namespace Iogn {
     size_t processorCount;
     size_t myProcessor;
 
+    size_t timestepCount;
+    std::map<Ioss::EntityType, size_t> variableCount;
+
     double offX, offY, offZ; /** Offsets in X, Y, and Z directions */
     double sclX, sclY, sclZ; /** Scale in X, Y, and Z directions
 			      * location of node at (i,j,k)
@@ -482,57 +492,6 @@ namespace Iogn {
     bool doRotation;
   };
 
-class DashSurfaceMesh : public GeneratedMesh
-{
-public:
-    enum {
-        INVALID                 = -1,
-        SPATIAL_DIMENSION       =  3,
-        NUM_NODES_PER_QUAD_FACE =  4
-    };
 
-    explicit DashSurfaceMesh(const std::vector<double>    &coords,
-                        const std::vector< int64_t > &quadSurface1,
-                        const std::vector< int64_t > &quadSurface2)
-    : mCoordinates(coords),
-      mQuadSurface1(quadSurface1),
-      mQuadSurface2(quadSurface2)
-    {}
-
-    virtual ~DashSurfaceMesh() { }
-
-    virtual int64_t node_count() const;
-    virtual int64_t node_count_proc() const;
-    virtual int64_t element_count() const;
-    virtual int64_t element_count(int64_t block_number) const;
-    virtual int64_t block_count() const;
-    virtual int64_t nodeset_count() const;
-    virtual int64_t sideset_count() const;
-    virtual int64_t element_count_proc() const;
-    virtual int64_t element_count_proc(int64_t block_number) const;
-    virtual int64_t nodeset_node_count_proc(int64_t id) const;
-    virtual int64_t sideset_side_count_proc(int64_t id) const;
-    virtual int64_t communication_node_count_proc() const;
-    virtual void coordinates(double *coord) const;
-    virtual void coordinates(std::vector<double> &coord) const;
-    virtual void coordinates(int component, std::vector<double> &xyz) const;
-    virtual void coordinates(std::vector<double> &x, std::vector<double> &y, std::vector<double> &z) const;
-    virtual void connectivity(int64_t block_number, int* connect) const;
-    virtual std::pair<std::string, int> topology_type(int64_t block_number) const;
-    virtual void sideset_elem_sides(int64_t setId, Int64Vector &elem_sides) const;
-    virtual void nodeset_nodes(int64_t nset_id, Int64Vector &nodes) const;
-    virtual void node_communication_map(MapVector &map, std::vector<int> &proc);
-    virtual void node_map(IntVector &map);
-    virtual void node_map(MapVector &map);
-    virtual void element_map(int block_number, IntVector &map) const;
-    virtual void element_map(int64_t block_number, MapVector &map) const;
-    virtual void element_map(MapVector &map) const;
-    virtual void element_map(IntVector &map) const;
-
-    const std::vector<double>    &mCoordinates;
-    const std::vector< int64_t > &mQuadSurface1;
-    const std::vector< int64_t > &mQuadSurface2;
-
-};
 }
 #endif

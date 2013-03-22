@@ -176,40 +176,38 @@ namespace Iohb {
 
       DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 
-      if (region->property_exists("file_format")) {
-	std::string format = region->get_property("file_format").get_string();
+      if (properties.exists("FILE_FORMAT")) {
+	std::string format = properties.get("FILE_FORMAT").get_string();
 	if (format == "spyhis")
 	  new_this->fileFormat = SPYHIS;
       }
 
-       if (region->property_exists("append_output")) {
-       new_this->appendOutput = (region->get_property("append_output").get_int() == 1);
-      }
+      bool append = open_create_behavior() == Ioss::DB_APPEND;
 
       if (util().parallel_rank() == 0) {
 	new_this->logStream = open_stream(get_filename().c_str(),
 					  &(new_this->streamNeedsDelete),
-					  new_this->appendOutput);
+					  append);
       } else {
 	// All processors except processor 0
 	new_this->logStream = NULL;
       }
 
       // Pull variables from the regions property data...
-      if (region->property_exists("time_stamp_format")) {
-	new_this->tsFormat = region->get_property("time_stamp_format").get_string();
+      if (properties.exists("TIME_STAMP_FORMAT")) {
+	new_this->tsFormat = properties.get("TIME_STAMP_FORMAT").get_string();
       }
 
-      if (region->property_exists("precision")) {
-	new_this->precision_ = region->get_property("precision").get_int();
+      if (properties.exists("PRECISION")) {
+	new_this->precision_ = properties.get("PRECISION").get_int();
       }
 
-      if (region->property_exists("show_labels")) {
-	new_this->showLabels = (region->get_property("show_labels").get_int() == 1);
+      if (properties.exists("SHOW_LABELS")) {
+	new_this->showLabels = (properties.get("SHOW_LABELS").get_int() == 1);
       }
 
-      if (region->property_exists("show_legend")) {
-	new_this->showLegend = (region->get_property("show_legend").get_int() == 1 && !new_this->appendOutput);
+      if (properties.exists("SHOW_LEGEND")) {
+	new_this->showLegend = (properties.get("SHOW_LEGEND").get_int() == 1 && !new_this->appendOutput);
       }
 
       if (fileFormat == SPYHIS) {
@@ -409,7 +407,7 @@ namespace Iohb {
       }
     } else {
       std::ostringstream errmsg;
-      errmsg << "FATAL: Can not handle non-TRANSIENT or non-REDUCTION fields on regions.\n";
+      errmsg << "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions.\n";
       IOSS_ERROR(errmsg);
     }
     return num_to_get;

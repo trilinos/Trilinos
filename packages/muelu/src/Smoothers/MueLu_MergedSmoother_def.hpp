@@ -59,9 +59,9 @@ namespace MueLu {
 
     SmootherPrototype::IsSetup(false);
   }
-    
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MergedSmoother(const MergedSmoother& src) 
+  MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MergedSmoother(const MergedSmoother& src)
     : reverseOrder_(src.reverseOrder_), verbose_(src.verbose_)
   {
     // Deep copy of src.smootherList_
@@ -84,7 +84,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReverseOrder()  { reverseOrder_ = false; }
- 
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetReverseOrder() const { return reverseOrder_; } // TODO: GetOrder() is a better name (+ enum to define order)
 
@@ -102,16 +102,16 @@ namespace MueLu {
     //         *out_ << "MueLu::MergedSmoother<>::Setup() - isSetup==|" << SmootherPrototype::IsSetup() << "|" << std::endl;
 
     if (SmootherPrototype::IsSetup()) return; // skip setup
-      
+
     for (typename ArrayView<RCP<SmootherPrototype> >::iterator it = smootherList_.begin(); it != smootherList_.end(); ++it) {
       try {
-        (*it)->Setup(level);          
-      } catch(MueLu::Exceptions::RuntimeError e) { 
+        (*it)->Setup(level);
+      } catch(MueLu::Exceptions::RuntimeError e) {
         std::string msg = "MueLu::MergedSmoother<>::Setup(): Runtime Error.\n One of the underlying smoother throwed the following exception: \n"; msg += e.what();
-        throw MueLu::Exceptions::RuntimeError(msg); 
+        throw MueLu::Exceptions::RuntimeError(msg);
       }
     }
-      
+
     SmootherPrototype::IsSetup(true);
   }
 
@@ -124,34 +124,34 @@ namespace MueLu {
     //         *out_ << "MueLu::MergedSmoother<>::Apply(): reverseOrder_==" << reverseOrder_ << std::endl;
 
     if (reverseOrder_ == false) {
-        
+
       //for (vector<SmootherPrototype>::iterator it = smootherList_.begin(); it != smootherList_.end(); ++it)
       for (typename ArrayView<RCP<SmootherPrototype> >::iterator it = smootherList_.begin(); it != smootherList_.end(); ++it) {
         try {
           //             if (verbose_)
           //               *out_ << "MueLu::MergedSmoother<>::Apply() ." << std::endl;
           (*it)->Apply(X,B,InitialGuessIsZero);
-        } catch(MueLu::Exceptions::RuntimeError e) { 
+        } catch(MueLu::Exceptions::RuntimeError e) {
           std::string msg = "MueLu::MergedSmoother<>::Apply(): Runtime Error.\n One of the underlying smoothers throwed the following exception: \n"; msg += e.what();
-          throw MueLu::Exceptions::RuntimeError(msg); 
+          throw MueLu::Exceptions::RuntimeError(msg);
         }
       }
-        
+
     } else {
-   
+
       // NOTE: reverse_iterators not provided by ArrayRCP :-(
-      // for (...::reverse_iterator rit = smootherList_.rbegin(); rit != smootherList_.rend(); ++rit) 
+      // for (...::reverse_iterator rit = smootherList_.rbegin(); rit != smootherList_.rend(); ++rit)
       for (typename ArrayRCP<RCP<SmootherPrototype> >::size_type i = smootherList_.size() - 1; i >= 0; i--)
         try {
           smootherList_[i]->Apply(X,B,InitialGuessIsZero);
-        } catch(MueLu::Exceptions::RuntimeError e) { 
+        } catch(MueLu::Exceptions::RuntimeError e) {
           std::string msg = "MueLu::MergedSmoother<>::Apply(): Runtime Error. One of the underlying smoothers throws the following exception: \n"; msg += e.what();
-          throw MueLu::Exceptions::RuntimeError(msg); 
+          throw MueLu::Exceptions::RuntimeError(msg);
         }
     }
-        
+
   }
-      
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Print(std::string prefix) const {
     throw(Exceptions::NotImplemented("MueLu::MergedSmoother<>::Print() is not implemented"));
@@ -164,7 +164,7 @@ namespace MueLu {
 
     //       if (verbose_)
     //         *out_ << "MueLu::MergedSmoother<>::CopyParameters()" << std::endl;
-      
+
     RCP<MergedSmoother> srcMergedSmoother = rcp_dynamic_cast<MergedSmoother>(src); // TODO: check if dynamic cast fails
 
     reverseOrder_ = srcMergedSmoother->GetReverseOrder();
@@ -183,7 +183,7 @@ namespace MueLu {
 
       // test 1: same list size
       reuse = reuse && (thisSmootherList.size() == srcSmootherList.size());
-        
+
       if (reuse) {
 
         //  test 2: one-by-one comparison of smoother types
@@ -205,7 +205,7 @@ namespace MueLu {
 
         //           if (verbose_)
         //             *out_ << "MueLu::MergedSmoother<>::CopyParameters() -> reuse" << std::endl;
-      
+
         // Call CopyParameters for each smoothers and update IsSetup status of the MergedSmoother
         for (typename ArrayRCP<RCP<SmootherPrototype> >::size_type i = 0; i < srcSmootherList.size(); i++) {
           if (srcSmootherList[i] != Teuchos::null) {
@@ -230,14 +230,14 @@ namespace MueLu {
 
     }
   }
-  
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   ArrayRCP<RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > > MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SmootherListDeepCopy(const ArrayRCP<const RCP<SmootherPrototype> >& srcSmootherList) {
     ArrayRCP<RCP<SmootherPrototype> > newSmootherList(srcSmootherList.size());
     for (typename ArrayRCP<RCP<SmootherPrototype> >::size_type i = 0; i < srcSmootherList.size(); i++) {
       newSmootherList[i] = srcSmootherList[i]->Copy();
     }
-    
+
     return newSmootherList;
   }
 

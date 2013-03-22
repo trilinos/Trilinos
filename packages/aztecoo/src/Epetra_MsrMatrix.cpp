@@ -42,6 +42,7 @@
 //@HEADER
 */
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_Vector.h"
@@ -59,6 +60,14 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * a_mat)
     NormInf_(-1.0),
     NormOne_(-1.0)
 {
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+  // We throw rather than let the compiler error out so that the
+  // rest of the library is available and all possible tests can run.
+  const char* error = "Epetra_MsrMatrix::Epetra_MsrMatrix: Not available for 64-bit Maps.";
+  std::cerr << error << std::endl;
+  throw Comm_->ReportError(error, -2);
+#endif
+
 #ifdef AZTEC_MPI
   MPI_Comm * mpicomm = (MPI_Comm * ) AZ_get_comm(proc_config);
   Comm_ = new Epetra_MpiComm(*mpicomm);
@@ -72,15 +81,25 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * a_mat)
   int NumExternal = a_mat->data_org[AZ_N_external];
   NumMyCols_ = NumMyRows_ + NumExternal;
   NumMyNonzeros_ = bindx[NumMyRows_] - bindx[0] + NumMyRows_;
-  //Comm_->SumAll(&NumMyNonzeros_, &NumGlobalNonzeros_, 1);
-  long long NumMyNonzerosLL_ = (long long) NumMyNonzeros_;
-  Comm_->SumAll(&NumMyNonzerosLL_, &NumGlobalNonzeros_, 1);
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  long long tmp_NumMyNonzeros = NumMyNonzeros_;
+  Comm_->SumAll(&tmp_NumMyNonzeros, &NumGlobalNonzeros_, 1);
+#else
+    int tmp_NumGlobalNonzeros = 0;
+    Comm_->SumAll(&NumMyNonzeros_, &tmp_NumGlobalNonzeros, 1);
+	NumGlobalNonzeros_ = tmp_NumGlobalNonzeros;
+#endif
 
   int * MyGlobalElements = a_mat->update;
   if (MyGlobalElements==0) 
     throw Comm_->ReportError("Aztec matrix has no update list: Check if AZ_Transform was called.", -2);
 
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+  DomainMap_ = 0;
+#else
   DomainMap_ = new Epetra_Map(-1, NumMyRows_, MyGlobalElements, 0, *Comm_);
+#endif
 
   double * dbleColGIDs = new double[NumMyCols_];
   int * ColGIDs = new int[NumMyCols_];
@@ -88,7 +107,11 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * a_mat)
   AZ_exchange_bdry(dbleColGIDs, a_mat->data_org, proc_config);
   {for (int i=0; i<NumMyCols_; i++) ColGIDs[i] = (int) dbleColGIDs[i];}
 
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+  ColMap_ = 0;
+#else
   ColMap_ = new Epetra_Map(-1, NumMyCols_, ColGIDs, 0, *Comm_);
+#endif
 
   Importer_ = new Epetra_Import(*ColMap_, *DomainMap_);
   
@@ -156,7 +179,7 @@ int Epetra_MsrMatrix::Multiply(bool TransA,
   for (int i=0; i<NumVectors; i++)
     Amat_->matvec(xptrs[i], yptrs[i], Amat_, proc_config_);
   
-  double flops = NumGlobalNonzeros();
+  double flops = (double) NumGlobalNonzeros64();
   flops *= 2.0;
   flops *= (double) NumVectors;
   UpdateFlops(flops);
@@ -228,7 +251,7 @@ int Epetra_MsrMatrix::InvRowSums(Epetra_Vector& x) const {
     else
       x[i] = 1.0/scale;
   }
-  UpdateFlops(NumGlobalNonzeros());
+  UpdateFlops(NumGlobalNonzeros64());
   EPETRA_CHK_ERR(ierr);
   return(0);
 }
@@ -279,7 +302,7 @@ int Epetra_MsrMatrix::InvColSums(Epetra_Vector& x) const {
     else
       (*xp)[i] = 1.0/scale;
   }
-  UpdateFlops(NumGlobalNonzeros());
+  UpdateFlops(NumGlobalNonzeros64());
   EPETRA_CHK_ERR(ierr);
   return(0);
 }
@@ -309,7 +332,7 @@ int Epetra_MsrMatrix::LeftScale(const Epetra_Vector& x) {
   }
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
-  UpdateFlops(NumGlobalNonzeros());
+  UpdateFlops(NumGlobalNonzeros64());
   return(0);
 }
 
@@ -349,7 +372,7 @@ int Epetra_MsrMatrix::RightScale(const Epetra_Vector& x) {
   if (x_tmp!=0) delete x_tmp;
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
-  UpdateFlops(NumGlobalNonzeros());
+  UpdateFlops(NumGlobalNonzeros64());
   return(0);
 }
 
@@ -367,7 +390,7 @@ double Epetra_MsrMatrix::NormInf() const {
     Local_NormInf = EPETRA_MAX(Local_NormInf, sum);
   }
   Comm().MaxAll(&Local_NormInf, &NormInf_, 1);
-  UpdateFlops(NumGlobalNonzeros());
+  UpdateFlops(NumGlobalNonzeros64());
   return(NormInf_);
 }
 //=============================================================================
@@ -400,7 +423,7 @@ double Epetra_MsrMatrix::NormOne() const {
   x->MaxValue(&NormOne_); // Find max
   if (x_tmp!=0) delete x_tmp;
   delete x;
-  UpdateFlops(NumGlobalNonzeros());
+  UpdateFlops(NumGlobalNonzeros64());
   return(NormOne_);
 }
 //=============================================================================
@@ -414,10 +437,10 @@ void Epetra_MsrMatrix::Print(ostream& os) const {
       const Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
       const int             oldp = os.precision(12); */
       if (MyPID==0) {
-	os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows(); os << endl;
-	os <<    "Number of Global Cols        = "; os << NumGlobalCols(); os << endl;
-	os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals(); os << endl;
-	os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros(); os << endl;
+	os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows64(); os << endl;
+	os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << endl;
+	os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << endl;
+	os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << endl;
 	if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << endl;
 	if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << endl;
       }
@@ -457,7 +480,7 @@ void Epetra_MsrMatrix::Print(ostream& os) const {
 	os << endl;
       }
       for (i=0; i<NumMyRows_; i++) {
-	int Row = RowMatrixRowMap().GID(i); // Get global row number
+	long long Row = RowMatrixRowMap().GID64(i); // Get global row number
 	int NumEntries = GetRow(i); // ith row is now in Values_ and Indices_
 	
 	for (j = 0; j < NumEntries ; j++) {   
@@ -466,7 +489,7 @@ void Epetra_MsrMatrix::Print(ostream& os) const {
 	  os.width(10);
 	  os <<  Row ; os << "    ";	
 	  os.width(10);
-	  os <<  RowMatrixColMap().GID(Indices_[j]); os << "    ";
+	  os <<  RowMatrixColMap().GID64(Indices_[j]); os << "    ";
 	  os.width(20);
 	  os <<  Values_[j]; os << "    ";
 	  os << endl;

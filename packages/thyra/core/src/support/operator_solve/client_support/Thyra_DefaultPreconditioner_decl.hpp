@@ -222,6 +222,7 @@ private:
 // ///////////////////////
 // Related functions
 
+
 /** \brief Create a precondioner from a single linear operator not targeted to
  * be used on the left or the right.
  *
@@ -235,6 +236,22 @@ unspecifiedPrec(
 {
   return Teuchos::rcp(new DefaultPreconditioner<Scalar>(unspecifiedPrecOp));
 }
+
+
+/** \brief Create a precondioner from a single linear operator not targeted to
+ * be used on the left or the right.
+ *
+ * \relates DefaultPreconditioner
+ */
+template <class Scalar>
+Teuchos::RCP<DefaultPreconditioner<Scalar> >
+nonconstUnspecifiedPrec(
+  const Teuchos::RCP<LinearOpBase<Scalar> > &unspecifiedPrecOp
+  )
+{
+  return Teuchos::rcp(new DefaultPreconditioner<Scalar>(unspecifiedPrecOp));
+}
+
 
 /** \brief Create a precondioner from a single linear operator targeted to be
  * used on the left.

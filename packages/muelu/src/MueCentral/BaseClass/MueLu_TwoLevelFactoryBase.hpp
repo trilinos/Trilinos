@@ -47,7 +47,7 @@
 #define MUELU_TWOLEVELFACTORY_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_FactoryBase.hpp"
+#include "MueLu_Factory.hpp"
 #include "MueLu_Level.hpp"
 
 namespace MueLu {
@@ -61,8 +61,7 @@ namespace MueLu {
     @ingroup MueLuBaseClasses
   */
 
-
-  class TwoLevelFactoryBase : public FactoryBase {
+  class TwoLevelFactoryBase : public Factory {
 
   public:
 
@@ -70,10 +69,15 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    TwoLevelFactoryBase() {}
+    TwoLevelFactoryBase()
+#ifdef HAVE_MUELU_DEBUG
+      : multipleCallCheck_(FIRSTCALL), lastLevel_(NULL)
+#endif
+    { }
 
     //! Destructor.
-    virtual ~TwoLevelFactoryBase() {}
+    virtual ~TwoLevelFactoryBase()
+    { }
 
     //@}
 
@@ -104,12 +108,37 @@ namespace MueLu {
 
     //!
     virtual void CallBuild(Level & requestedLevel) const {
+#ifdef HAVE_MUELU_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION((multipleCallCheck_ == ENABLED) && (lastLevel_ == &requestedLevel), Exceptions::RuntimeError, this->ShortClassName() << "::Build() called twice for the same level (levelID=" << requestedLevel.GetLevelID() << "). This is likely due to a configuration error.");
+      if (multipleCallCheck_ == FIRSTCALL) multipleCallCheck_ = ENABLED;
+      lastLevel_ = &requestedLevel;
+#endif
+
       TEUCHOS_TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
       Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
     }
 
     //@}
 
+    void EnableMultipleCallCheck() const {
+#ifdef HAVE_MUELU_DEBUG
+      multipleCallCheck_ = ENABLED;
+#endif
+    }
+
+    void DisableMultipleCallCheck() const {
+#ifdef HAVE_MUELU_DEBUG
+      multipleCallCheck_ = DISABLED;
+#endif
+    }
+
+#ifdef HAVE_MUELU_DEBUG
+  private:
+
+    enum multipleCallCheckEnum { ENABLED, DISABLED, FIRSTCALL };
+    mutable multipleCallCheckEnum multipleCallCheck_;
+    mutable Level* lastLevel_; // can be a dangling pointers. do not dereference.
+#endif
   }; //class TwoLevelFactoryBase
 
 

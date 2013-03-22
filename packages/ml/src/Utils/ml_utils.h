@@ -236,6 +236,8 @@ std::cout << "--- Leaving:
 #endif
    void ML_print_align(int int2match, char *space, int pad);
 
+   int ML_estimate_avg_nz_per_row(ML_Operator * matrix, double * avg_nz);
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 }

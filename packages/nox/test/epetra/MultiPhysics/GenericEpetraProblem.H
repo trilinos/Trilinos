@@ -84,7 +84,7 @@ public:
 
   // Constructor
   GenericEpetraProblem(const Epetra_Comm& Comm, int NumGlobalElements = 0,
-                       string name = "");
+                       std::string name = "");
 
   // Destructor
   virtual ~GenericEpetraProblem();
@@ -112,10 +112,10 @@ public:
   virtual int getId() const { return myId; }; 
 
   // Query the name for this problem
-  virtual string getName() const { return myName; }; 
+  virtual std::string getName() const { return myName; }; 
 
   // Set the name for this problem
-  virtual void setName(string name_) { myName = name_; }; 
+  virtual void setName(std::string name_) { myName = name_; }; 
 
   // Set the problem Manager with which this problem interacts 
   // (ie for transfers)
@@ -139,7 +139,7 @@ public:
   { return false; }
 
   // Default no-op method that allows a child to provide off-block structural info,
-  virtual void getOffBlockIndices( map<int, vector<int> > & )
+  virtual void getOffBlockIndices( map<int, std::vector<int> > & )
   { return; }
 
   // Do pre-transfer stuff, eg compute fluxes
@@ -192,11 +192,11 @@ public:
 			     Teuchos::ParameterList& printParams);
 
   // Output problem description
-  virtual void outputStatus( ostream & os ) 
+  virtual void outputStatus( std::ostream & os ) 
   { return; }
 
   // Output current solution state 
-  virtual void outputSolutionStatus( ostream & os ) const;
+  virtual void outputSolutionStatus( std::ostream & os ) const;
 
   // Provide for transient inherited problems
   virtual void setdt( double dt );
@@ -205,7 +205,7 @@ public:
   virtual double getdt() const;
 
   // Accessor for container of dependent problems
-  virtual vector<int> & getDependentProblems()
+  virtual std::vector<int> & getDependentProblems()
   { return depProblems; }
 
 protected:
@@ -216,7 +216,7 @@ protected:
 protected:
 
   int                                           myId            ; // My unique integer id 
-  string                                        myName          ; 
+  std::string                                        myName          ; 
   Problem_Manager *                             myManager       ; // Problem Manager with which this problem interacts
   Epetra_Map *                                  OverlapMap      ;
   Epetra_Import *                               Importer        ;
@@ -224,7 +224,7 @@ protected:
   Teuchos::RCP<Epetra_Vector>           initialSolution ;
   Teuchos::RCP<Epetra_CrsGraph>         AA              ;
   Teuchos::RCP<Epetra_CrsMatrix>        A               ;
-  vector<int>                                   depProblems     ; // List of problems that this one depends on
+  std::vector<int>                                   depProblems     ; // List of problems that this one depends on
   map<string, int>                              nameToMyIndex   ;
   map<int, Epetra_Vector*>                      depSolutions    ; // Solutions from other Problems needed by this Problem
   map<int, XferOp*>                             xferOperators   ; // Container of transfer operators

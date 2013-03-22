@@ -37,6 +37,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 
 
 namespace TrilinosCouplings {
@@ -84,6 +85,9 @@ namespace IntrepidPoissonExample {
 ///   iterative method should perform, regardless of whether it
 ///   converged.
 ///
+/// \param num_steps [in] Number of "time steps", i.e., the number of
+//    times the solver is called in a fake time-step loop.
+///
 /// \param X [in/out] On input: the initial guess(es) for the iterative
 ///   method.  On output: the computed approximate solution.
 ///
@@ -104,6 +108,7 @@ solveWithBelos (bool& converged,
                 int& numItersPerformed,
                 const typename Teuchos::ScalarTraits<ST>::magnitudeType& tol,
                 const int maxNumIters,
+		const int num_steps,
                 const Teuchos::RCP<MV>& X,
                 const Teuchos::RCP<const OP>& A,
                 const Teuchos::RCP<const MV>& B,
@@ -115,7 +120,8 @@ solveWithBelos (bool& converged,
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef Belos::LinearProblem<ST, MV, OP > problem_type;
-  typedef Belos::PseudoBlockCGSolMgr<ST, MV, OP> solver_type;
+  //typedef Belos::PseudoBlockCGSolMgr<ST, MV, OP> solver_type;
+  typedef Belos::PseudoBlockGmresSolMgr<ST, MV, OP> solver_type;
   typedef Belos::MultiVecTraits<ST, MV> MVT;
 
   // Set these in advance, so that if the Belos solver throws an
@@ -136,6 +142,10 @@ solveWithBelos (bool& converged,
   belosParams->set ("Block Size", numColsB);
   belosParams->set ("Maximum Iterations", maxNumIters);
   belosParams->set ("Convergence Tolerance", tol);
+  belosParams->set ("Orthogonalization", "ICGS");
+  belosParams->set("Output Frequency",10);
+  belosParams->set("Output Style",1);
+  belosParams->set("Verbosity",33);
 
   RCP<problem_type> problem = rcp (new problem_type (A, X, B));
   if (! M_left.is_null ()) {
@@ -144,16 +154,34 @@ solveWithBelos (bool& converged,
   if (! M_right.is_null ()) {
     problem->setRightPrec (M_right);
   }
-  const bool set = problem->setProblem ();
-  TEUCHOS_TEST_FOR_EXCEPTION(! set, std::runtime_error, "solveWithBelos: The "
-    "Belos::LinearProblem's setProblem() method returned false.  This probably "
-    "indicates that there is something wrong with A, X, or B.");
 
-  solver_type solver (problem, belosParams);
-  Belos::ReturnType result = solver.solve ();
+  // Create solver
+  solver_type solver;
+  solver.setParameters(belosParams);
 
-  converged = (result == Belos::Converged);
-  numItersPerformed = solver.getNumIters ();
+  // Enter "time step" loop -- we're really solving the same system repeatedly
+  converged = true;
+  numItersPerformed = 0;
+  for (int step=0; step<num_steps; ++step) {
+
+    // Set x
+    MVT::MvInit(*X);
+
+    // Reset problem
+    const bool set = problem->setProblem ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! set, std::runtime_error, "solveWithBelos: The "
+      "Belos::LinearProblem's setProblem() method returned false.  "
+      "This probably indicates that there is something wrong with A, X, or B.");
+    solver.setProblem(problem);
+
+    // Solve
+    Belos::ReturnType result = solver.solve ();
+
+    converged = converged && (result == Belos::Converged);
+    numItersPerformed += solver.getNumIters ();
+
+  }
 }
 
 } // namespace IntrepidPoissonExample

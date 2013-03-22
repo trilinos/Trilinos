@@ -50,11 +50,11 @@
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>  
+#include <MueLu_UseShortNames.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 
 
 int main(int argc, char *argv[]) {
@@ -71,9 +71,9 @@ int main(int argc, char *argv[]) {
   // Parameters
   //
 
-  Teuchos::CommandLineProcessor clp(false); // Note: 
+  Teuchos::CommandLineProcessor clp(false); // Note:
 
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 5000); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
 
   std::string xmlFileName = "muelu_ParameterList.xml"; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'muelu_ParameterList.xml'");
@@ -92,14 +92,16 @@ int main(int argc, char *argv[]) {
   //
 
   RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator>  A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Matrix> A = Pr->BuildMatrix();
 
   //
   // Construct a multigrid preconditioner
   //
 
   // Multigrid Hierarchy
-  ParameterListInterpreter mueLuFactory(xmlFileName);
+  ParameterListInterpreter mueLuFactory(xmlFileName,*comm);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
   H->GetLevel(0)->Set("A", A);
 
@@ -111,7 +113,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Vector> X = VectorFactory::Build(map);
   RCP<Vector> B = VectorFactory::Build(map);
-  
+
   X->putScalar((Scalar) 0.0);
   B->setSeed(846930886); B->randomize();
 

@@ -88,8 +88,9 @@ namespace Stokhos {
      * \param normalize whether polynomials should be given unit norm
      */
     JacobiBasis(ordinal_type p, 
-      value_type alphaIndex, 
-      value_type betaIndex, bool normalize = false);
+		value_type alphaIndex, 
+		value_type betaIndex, bool normalize = false, 
+		GrowthPolicy growth = SLOW_GROWTH);
 
     //! Destructor
     ~JacobiBasis();

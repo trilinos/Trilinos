@@ -1,0 +1,67 @@
+AdaptiveSaMLParameterListInterpreter
+AggregationExportFactory
+AmalgamationFactory
+Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+AlgebraicPermutationStrategy
+BlockedCoarseMapFactory
+BlockedGaussSeidelSmoother
+BlockedPFactory
+BlockedRAPFactory
+BraessSarazinSmoother
+CGSolver - #ifdef HAVE_MUELU_EXPERIMENTAL
+CoalesceDropFactory
+CoarseMapFactory
+Constraint - #ifdef HAVE_MUELU_EXPERIMENTAL
+ConstraintFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+CoordinatesTransferFactory
+CoupledRBMFactory
+DemoFactory
+DirectSolver
+DistanceLaplacianFactory
+EminPFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+FactoryFactory
+FactoryManager
+FakeSmootherPrototype
+FilteredAFactory
+GaussSeidelSmoother
+GenericRFactory
+Hierarchy
+HierarchyManager
+HierarchyFactory
+Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+LocalPermutationStrategy
+MapTransferFactory
+MergedSmoother
+MLParameterListInterpreter
+MultiVectorTransferFactory
+NullspaceFactory
+NullspacePresmoothFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+ParameterListInterpreter
+PatternFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+PermutationFactory
+PermutingSmoother
+PgPFactory
+PreDropFunctionBaseClass
+PreDropFunctionConstVal
+ProjectorSmoother
+RAPFactory
+RAPShiftFactory
+RebalanceAcFactory
+RebalanceTransferFactory
+RepartitionFactory - #ifdef HAVE_MPI
+RigidBodyModeFactory
+SaPFactory
+SchurComplementFactory
+SimpleSmoother
+Smoother
+SmootherBase
+SmootherFactory
+SmootherPrototype
+SolverBase
+SteepestDescentSolver - #ifdef HAVE_MUELU_EXPERIMENTAL
+SubBlockAFactory
+TentativePFactory
+ThresholdAFilterFactory
+TpetraOperator
+TransPFactory
+TrilinosSmoother

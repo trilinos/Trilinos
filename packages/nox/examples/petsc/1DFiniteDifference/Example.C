@@ -81,7 +81,7 @@ static char help[] =
 
 /*
    User-defined routines.  Note that immediately before each routine below,
-   we define the macro __FUNCT__ to be a string containing the routine name.
+   we define the macro __FUNCT__ to be a std::string containing the routine name.
    If defined, this macro is used in the PETSc error handlers to provide a
    complete traceback of routine names.  All PETSc library routines use this
    macro, and users can optionally employ it as well in their application
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
   NOX::StatusTest::StatusType status = solver->solve();
 
   if (status != NOX::StatusTest::Converged)
-    cout << "Nonlinear solver failed to converge!" << endl;
+    std::cout << "Nonlinear solver failed to converge!" << std::endl;
 
   // Get the Petsc_Vector with the final solution from the solver
   const NOX::Petsc::Group& finalGroup = 

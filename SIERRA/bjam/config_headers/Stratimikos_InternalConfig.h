@@ -1,26 +1,23 @@
 
-#include "TrilinosPlatform_config.h"
+#define HAVE_MPI
 
-/* Define if want to build with stratimikos enabled */
-#define HAVE_STRATIMIKOS_AMESOS 1
+#define HAVE_STRATIMIKOS_AMESOS
 
-/* Define if want to build with stratimikos enabled */
-#define HAVE_STRATIMIKOS_AZTECOO 1
+#define HAVE_STRATIMIKOS_AZTECOO
 
-/* Define if want to build with stratimikos enabled */
-#define HAVE_STRATIMIKOS_IFPACK 1
+#define HAVE_STRATIMIKOS_BELOS
 
-/* Define if want to build with stratimikos enabled */
-#define HAVE_STRATIMIKOS_ML 1
+#define HAVE_STRATIMIKOS_EPETRAEXT
 
-/* Define if want to build with ml enabled */
-#define HAVE_STRATIMIKOS_ML_NOX 1
+#define HAVE_STRATIMIKOS_IFPACK
 
-/* Define if want to build with thyra enabled */
-#define HAVE_STRATIMIKOS_THYRA_EPETRA 1
+#define HAVE_STRATIMIKOS_ML
 
-/* Define if want to build with thyra enabled */
-#define HAVE_STRATIMIKOS_THYRA_EPETRAEXT 1
+#ifndef STRATIMIKOS_FUNC_TIME_MONITOR
+#  define STRATIMIKOS_TEUCHOS_TIME_MONITOR
+#  define STRATIMIKOS_FUNC_TIME_MONITOR(FUNCNAME) \
+     TEUCHOS_FUNC_TIME_MONITOR_DIFF(FUNCNAME, STRATIMIKOS)
+#  define STRATIMIKOS_FUNC_TIME_MONITOR_DIFF(FUNCNAME, DIFF) \
+     TEUCHOS_FUNC_TIME_MONITOR_DIFF(FUNCNAME, DIFF)
+#endif
 
-/* Define if want to build with stratimikos enabled */
-#define HAVE_STRATIMIKOS_TRIUTILS 1

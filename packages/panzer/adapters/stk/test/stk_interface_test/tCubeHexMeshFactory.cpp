@@ -50,6 +50,7 @@
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
+#include "Panzer_STK_SetupUtilities.hpp"
 
 #include "Shards_BasicTopologies.hpp"
 
@@ -74,7 +75,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, defaults)
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube.exo");
+      mesh->writeToExodus("CubeHex.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -133,7 +134,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, element_counts)
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube_oddelmt.exo");
+      mesh->writeToExodus("CubeHex_oddelmt.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -152,6 +153,8 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
+
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    int xe = 4, ye = 5, ze = 2;
    int bx = 4, by = 2, bz = 3;
@@ -172,7 +175,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube_allblock.exo");
+      mesh->writeToExodus("CubeHex_allblock.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -184,6 +187,28 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),(std::size_t) xe*ye*(ze+1)+xe*(ye+1)*ze+(xe+1)*ye*ze);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),(std::size_t) xe*(ye+1)*(ze+1)+(xe+1)*(ye+1)*ze+(xe+1)*ye*(ze+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(std::size_t) (xe+1)*(ye+1)*(ze+1));
+
+   std::vector<std::string> sidesets, nodesets;
+   mesh->getNodesetNames(nodesets);
+   TEST_EQUALITY(nodesets.size(),1);
+
+   std::vector<stk::mesh::Entity *> nodes;
+   mesh->getMyNodes("origin","eblock-0_0_0",nodes); 
+   if(rank==0) {
+      std::vector<std::size_t> localNodeIds;
+      std::vector<stk::mesh::Entity*> elements;
+
+      TEST_EQUALITY(nodes.size(),1);
+      workset_utils::getNodeElements(*mesh,"eblock-0_0_0",nodes,localNodeIds,elements);
+
+      TEST_EQUALITY(localNodeIds.size(),1);
+      TEST_EQUALITY(elements.size(),1);
+      TEST_EQUALITY(elements[0]->identifier(),1);
+      TEST_EQUALITY(localNodeIds[0],0);
+   }
+   else {
+      TEST_EQUALITY(nodes.size(),0);
+   }
 }
 
 TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, two_block)
@@ -206,7 +231,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, two_block)
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube_2block.exo");
+      mesh->writeToExodus("CubeHex_2block.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -251,7 +276,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, sub_two_block)
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube_sub_2block.exo");
+      mesh->writeToExodus("CubeHex_sub_2block.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());

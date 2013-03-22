@@ -152,7 +152,7 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="Tpetra" type="LO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Xpetra" type="LO"/>
     <EmailAddresses>
@@ -196,7 +196,6 @@
     </EmailAddresses>
   </SubProject>
   <SubProject name="Trios">
-    <Dependency name="Teuchos" type="LO"/>
     <EmailAddresses>
       <Email address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -302,9 +301,10 @@
     <Dependency name="Triutils" type="TR"/>
     <Dependency name="Tpetra" type="LR"/>
     <Dependency name="EpetraExt" type="ILO"/>
-    <Dependency name="Xpetra" type="ILO"/>
-    <Dependency name="Belos" type="TR"/>
-    <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="Xpetra" type="LO"/>
+    <Dependency name="Galeri" type="TR"/>
+    <Dependency name="Belos" type="LR"/>
+    <Dependency name="Anasazi" type="TO"/>
     <Dependency name="Zoltan2" type="LO"/>
     <EmailAddresses>
       <Email address="ifpack2-regression@software.sandia.gov"/>
@@ -338,7 +338,7 @@
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="ILO"/>
-    <Dependency name="EpetraExt" type="TO"/>
+    <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Xpetra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="LO"/>
@@ -531,6 +531,32 @@
       <Email address="moertel-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="MueLu">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="LO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="LO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Xpetra" type="LR"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="TO"/>
+    <Dependency name="Galeri" type="TO"/>
+    <Dependency name="Amesos2" type="LO"/>
+    <Dependency name="Amesos" type="LO"/>
+    <Dependency name="Ifpack" type="LO"/>
+    <Dependency name="ML" type="LO"/>
+    <Dependency name="Belos" type="TO"/>
+    <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="Zoltan2" type="LO"/>
+    <Dependency name="Ifpack2" type="LO"/>
+    <Dependency name="Stratimikos" type="LO"/>
+    <EmailAddresses>
+      <Email address="muelu-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="TrilinosCouplings">
     <Dependency name="Teuchos" type="ILO"/>
     <Dependency name="ThreadPool" type="ILO"/>
@@ -547,18 +573,22 @@
     <Dependency name="Isorropia" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos2" type="ITO"/>
     <Dependency name="Amesos" type="LO"/>
     <Dependency name="Pamgen" type="TO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="LO"/>
     <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="Zoltan2" type="ITO"/>
+    <Dependency name="Ifpack2" type="ITO"/>
     <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="FEI" type="ILO"/>
     <Dependency name="Teko" type="TO"/>
     <Dependency name="Intrepid" type="TO"/>
     <Dependency name="STK" type="LO"/>
     <Dependency name="NOX" type="LO"/>
+    <Dependency name="MueLu" type="TO"/>
     <EmailAddresses>
       <Email address="trilinoscouplings-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -636,32 +666,6 @@
       <Email address="aristos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="MueLu">
-    <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Epetra" type="LO"/>
-    <Dependency name="Zoltan" type="LO"/>
-    <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="Tpetra" type="LO"/>
-    <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Xpetra" type="LR"/>
-    <Dependency name="Isorropia" type="ILO"/>
-    <Dependency name="AztecOO" type="TO"/>
-    <Dependency name="Galeri" type="TO"/>
-    <Dependency name="Amesos2" type="LO"/>
-    <Dependency name="Amesos" type="LO"/>
-    <Dependency name="Ifpack" type="LO"/>
-    <Dependency name="ML" type="LO"/>
-    <Dependency name="Belos" type="TO"/>
-    <Dependency name="Anasazi" type="ILO"/>
-    <Dependency name="Zoltan2" type="ILO"/>
-    <Dependency name="Ifpack2" type="LO"/>
-    <Dependency name="Stratimikos" type="LO"/>
-    <EmailAddresses>
-      <Email address="muelu-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="Stokhos">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
@@ -681,7 +685,7 @@
     <Dependency name="Amesos" type="ILO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
-    <Dependency name="Belos" type="TO"/>
+    <Dependency name="Belos" type="LO"/>
     <Dependency name="Anasazi" type="LO"/>
     <Dependency name="Zoltan2" type="ILO"/>
     <Dependency name="Ifpack2" type="LO"/>
@@ -723,9 +727,9 @@
     <Dependency name="Teko" type="ILO"/>
     <Dependency name="TriKota" type="LO"/>
     <Dependency name="NOX" type="LO"/>
+    <Dependency name="MueLu" type="ILO"/>
     <Dependency name="Rythmos" type="LO"/>
     <Dependency name="MOOCHO" type="LO"/>
-    <Dependency name="MueLu" type="ILO"/>
     <Dependency name="Stokhos" type="LO"/>
     <EmailAddresses>
       <Email address="piro-regression@software.sandia.gov"/>
@@ -767,9 +771,9 @@
     <Dependency name="STK" type="LO"/>
     <Dependency name="Phalanx" type="LR"/>
     <Dependency name="NOX" type="TO"/>
+    <Dependency name="MueLu" type="LO"/>
     <Dependency name="Rythmos" type="TO"/>
     <Dependency name="MOOCHO" type="ITO"/>
-    <Dependency name="MueLu" type="LO"/>
     <Dependency name="Stokhos" type="LO"/>
     <Dependency name="Piro" type="TO"/>
     <EmailAddresses>
@@ -849,9 +853,11 @@
   <SubProject name="PyTrilinos">
     <Dependency name="Teuchos" type="LO"/>
     <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Shards" type="ILO"/>
     <Dependency name="Triutils" type="LO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
@@ -862,13 +868,17 @@
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="LO"/>
     <Dependency name="Amesos" type="LO"/>
+    <Dependency name="Pamgen" type="ILO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="Komplex" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Anasazi" type="LO"/>
     <Dependency name="Stratimikos" type="ILO"/>
+    <Dependency name="FEI" type="ILO"/>
     <Dependency name="Teko" type="ILO"/>
+    <Dependency name="Intrepid" type="ILO"/>
+    <Dependency name="STK" type="LO"/>
     <Dependency name="NOX" type="LO"/>
     <EmailAddresses>
       <Email address="pytrilinos-regression@software.sandia.gov"/>
@@ -877,9 +887,11 @@
   <SubProject name="WebTrilinos">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Shards" type="ILO"/>
     <Dependency name="Triutils" type="ILR"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
@@ -890,13 +902,17 @@
     <Dependency name="AztecOO" type="LR"/>
     <Dependency name="Galeri" type="LR"/>
     <Dependency name="Amesos" type="LR"/>
+    <Dependency name="Pamgen" type="ILO"/>
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="Komplex" type="ILO"/>
     <Dependency name="ML" type="LR"/>
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="Stratimikos" type="ILO"/>
+    <Dependency name="FEI" type="ILO"/>
     <Dependency name="Teko" type="ILO"/>
+    <Dependency name="Intrepid" type="ILO"/>
+    <Dependency name="STK" type="ILO"/>
     <Dependency name="NOX" type="ILO"/>
     <Dependency name="PyTrilinos" type="LR"/>
     <EmailAddresses>
@@ -906,25 +922,18 @@
   <SubProject name="Didasko">
     <Dependency name="Teuchos" type="TO"/>
     <Dependency name="ThreadPool" type="ITO"/>
-    <Dependency name="RTOp" type="ITO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="TO"/>
     <Dependency name="Triutils" type="TO"/>
-    <Dependency name="Tpetra" type="TO"/>
+    <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="TO"/>
     <Dependency name="Xpetra" type="ITO"/>
-    <Dependency name="Thyra" type="ITO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="TO"/>
     <Dependency name="Galeri" type="TO"/>
     <Dependency name="Amesos" type="TO"/>
     <Dependency name="Ifpack" type="TO"/>
     <Dependency name="ML" type="TO"/>
-    <Dependency name="Belos" type="TO"/>
-    <Dependency name="Anasazi" type="TO"/>
-    <Dependency name="Stratimikos" type="ITO"/>
-    <Dependency name="Teko" type="ITO"/>
-    <Dependency name="NOX" type="TO"/>
     <EmailAddresses>
       <Email address="didasko-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -981,9 +990,9 @@
     <Dependency name="Teko" type="ILO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="NOX" type="LR"/>
+    <Dependency name="MueLu" type="ILO"/>
     <Dependency name="Rythmos" type="ILO"/>
     <Dependency name="MOOCHO" type="ILO"/>
-    <Dependency name="MueLu" type="ILO"/>
     <Dependency name="Stokhos" type="LR"/>
     <Dependency name="Piro" type="LR"/>
     <EmailAddresses>

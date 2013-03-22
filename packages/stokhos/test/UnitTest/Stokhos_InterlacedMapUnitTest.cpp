@@ -64,11 +64,10 @@ TEUCHOS_UNIT_TEST(map_test, copyToInterlace)
    Teuchos::RCP<Stokhos::ParallelData> sg_parallel_data;
    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion; 
    {
-      int sz = basis->size();
       if(full_expansion)
-        Cijk = basis->computeTripleProductTensor(sz);
+        Cijk = basis->computeTripleProductTensor();
       else
-        Cijk = basis->computeTripleProductTensor(num_KL+1);
+        Cijk = basis->computeLinearTripleProductTensor();
    
       Teuchos::ParameterList parallelParams;
       parallelParams.set("Number of Spatial Processors", numProc);

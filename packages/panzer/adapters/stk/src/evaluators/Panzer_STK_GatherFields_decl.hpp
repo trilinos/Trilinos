@@ -67,38 +67,9 @@ namespace panzer_stk {
 template<typename EvalT, typename Traits> 
 class GatherFields
   : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits> {
+    public PHX::EvaluatorDerived<EvalT, Traits> {
 
 public:
-  GatherFields(const Teuchos::RCP<const panzer_stk::STK_Interface> & mesh,const Teuchos::ParameterList & p) {}
-  
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm) {}
-  
-  void evaluateFields(typename Traits::EvalData d) { TEUCHOS_ASSERT(false); }
-public:
-
-  GatherFields();
-};
-
-// **************************************************************
-// **************************************************************
-// * Specializations
-// **************************************************************
-// **************************************************************
-
-
-// **************************************************************
-// Residual 
-// **************************************************************
-template<typename Traits>
-class GatherFields<panzer::Traits::Residual,Traits>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits> {
-   
-  
-public:
-  
   GatherFields(const Teuchos::RCP<const panzer_stk::STK_Interface> & mesh,const Teuchos::ParameterList & p);
   
   void postRegistrationSetup(typename Traits::SetupData d,
@@ -107,7 +78,7 @@ public:
   void evaluateFields(typename Traits::EvalData d);
 
 private:
-  typedef typename panzer::Traits::Residual::ScalarT ScalarT;
+  typedef typename EvalT::ScalarT ScalarT;
   typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
 
   std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::NODE> > gatherFields_;
@@ -116,6 +87,7 @@ private:
   Teuchos::RCP<const STK_Interface> mesh_;
 
   GatherFields();
+
 };
 
 }

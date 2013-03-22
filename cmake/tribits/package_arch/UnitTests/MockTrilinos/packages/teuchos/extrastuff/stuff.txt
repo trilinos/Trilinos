@@ -1,0 +1,2 @@
+This is just some extra stuff in an external git repo that might be cloned
+under Teuchos and provide some extra stuff.

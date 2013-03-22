@@ -80,6 +80,10 @@ public:
      */
    virtual int getFieldNum(const std::string & str) const;
 
+   virtual int getNumFields() const { return 2; }
+   virtual void getFieldOrder(std::vector<std::string> & order) const 
+   { order.push_back("U"); order.push_back("T"); } 
+
    virtual const std::string & getFieldString(int fieldNum) const;
 
    /** Get the communicator 

@@ -22,7 +22,7 @@ namespace Xpetra {
   template <class S, class LO, class GO, class N, class SpMatOps>
   class CrsMatrix;
 #endif
-  
+
   class $TMPL_CLASS
   $TMPL_INHERITANCE
   {
@@ -65,11 +65,11 @@ $TMPL_PUBLIC_FUNCTIONS
 
     //! Get the underlying Epetra graph
     RCP< const Epetra_CrsGraph> getEpetra_CrsGraph() const { return graph_; }
-    
+
     //@}
-    
+
   private:
-    
+
     RCP<Epetra_CrsGraph> graph_;
 
   }; // $TMPL_CLASS class

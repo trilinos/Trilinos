@@ -89,6 +89,18 @@ namespace panzer {
 					    const panzer::PhysicsBlock& side_pb,
 					    const panzer::LinearObjFactory<panzer::Traits> & lof,
 					    const Teuchos::ParameterList& user_data) const;
+
+    virtual void 
+    buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+				      const panzer::PhysicsBlock& side_pb,
+				      const LinearObjFactory<panzer::Traits> & lof,
+				      const Teuchos::ParameterList& user_data) const;
+
+    virtual void
+    buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+					           const panzer::PhysicsBlock& side_pb,
+						   const LinearObjFactory<panzer::Traits> & lof,
+						   const Teuchos::ParameterList& user_data) const;
     //@}
 
     //! \name Derived from PHX::EvaluatorWithDefaultImpl
@@ -124,6 +136,16 @@ namespace panzer {
 
     //@}
 
+    
+    //! \name Query methods for underlying data
+    //@{ 
+
+    //! Returns the boundary condition data for this object
+    const panzer::BC bc() const;
+
+    //@}
+
+    
   private:
 
     //! \name Utility functions used by default implementation

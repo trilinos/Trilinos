@@ -84,25 +84,25 @@ LOCA::Parameter::Library::operator = (const LOCA::Parameter::Library& l) {
 }
 
 LOCA::Parameter::Library::ParameterMapIterator
-LOCA::Parameter::Library::getEntryMapIterator(const string& name) {
+LOCA::Parameter::Library::getEntryMapIterator(const std::string& name) {
   return library.find(name);
 }
 
 LOCA::Parameter::Library::ParameterMapConstIterator
-LOCA::Parameter::Library::getEntryMapIterator(const string& name) const {
+LOCA::Parameter::Library::getEntryMapIterator(const std::string& name) const {
   return library.find(name);
 }
 
 LOCA::Parameter::Library::ValueTypeMapIterator
 LOCA::Parameter::Library::getEntryIterator(
-				   const string& valueTypeString, 
+				   const std::string& valueTypeString, 
 				   const ParameterMapIterator& paramIterator) {
   return (*paramIterator).second->find(valueTypeString);
 }
 
 LOCA::Parameter::Library::ValueTypeMapConstIterator
 LOCA::Parameter::Library::getEntryIterator(
-		       const string& valueTypeString, 
+		       const std::string& valueTypeString, 
 		       const ParameterMapConstIterator& paramIterator) const {
   return (*paramIterator).second->find(valueTypeString);
 }

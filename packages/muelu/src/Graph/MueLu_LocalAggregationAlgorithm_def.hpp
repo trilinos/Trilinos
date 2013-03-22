@@ -53,7 +53,7 @@
 
 #include "MueLu_LocalAggregationAlgorithm_decl.hpp"
 
-#include "MueLu_Graph.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_LinkedList.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -61,13 +61,13 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact)
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::LocalAggregationAlgorithm()
     : ordering_(NATURAL), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0)
   { }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  void LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarsenUncoupled(GraphBase const & graph, Aggregates & aggregates) const {
     Monitor m(*this, "Coarsen Uncoupled");
 
     std::string orderingType;
@@ -110,7 +110,7 @@ namespace MueLu {
     /*    (GetMaxNeighAlreadySelected() = 0 ===> Vanek's scheme) */
     /* ============================================================= */
 
-    /* some general variable declarations */   
+    /* some general variable declarations */
     Teuchos::ArrayRCP<LO> randomVector;
     RCP<MueLu::LinkedList> nodeList; /* list storing the next node to pick as a root point for ordering_ == GRAPH */
     MueLu_SuperNode  *aggHead=NULL, *aggCurrent=NULL, *supernode=NULL;
@@ -123,7 +123,7 @@ namespace MueLu {
         randomVector = Teuchos::arcp<LO>(nRows); //size_t or int ?-> to be propagated
         for (my_size_t i = 0; i < nRows; ++i) randomVector[i] = i;
         RandomReorder(randomVector);
-      } 
+      }
     else if ( ordering_ == GRAPH )  /* graph ordering */
       {
         nodeList = rcp(new MueLu::LinkedList());
@@ -134,9 +134,9 @@ namespace MueLu {
     {
       LO iNode  = 0;
       LO iNode2 = 0;
-          
+
       Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0); // output only: contents ignored
-          
+
       while (iNode2 < nRows)
         {
 
@@ -146,14 +146,14 @@ namespace MueLu {
 
           if      ( ordering_ == NATURAL ) iNode = iNode2++;
           else if ( ordering_ == RANDOM )  iNode = randomVector[iNode2++];
-          else if ( ordering_ == GRAPH ) 
+          else if ( ordering_ == GRAPH )
             {
-              if ( nodeList->IsEmpty() ) 
+              if ( nodeList->IsEmpty() )
                 {
-                  for ( int jNode = 0; jNode < nRows; ++jNode ) 
+                  for ( int jNode = 0; jNode < nRows; ++jNode )
                     {
                       if ( aggStat[jNode] == READY )
-                        { 
+                        {
                           nodeList->Add(jNode); //TODO optim: not necessary to create a node. Can just set iNode value and skip the end
                           break;
                         }
@@ -171,12 +171,12 @@ namespace MueLu {
           /* consider further only if the node is in READY mode    */
           /*------------------------------------------------------ */
 
-          if ( aggStat[iNode] == READY ) 
+          if ( aggStat[iNode] == READY )
             {
               // neighOfINode is the neighbor node list of node 'iNode'.
               Teuchos::ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode);
               typename Teuchos::ArrayView<const LO>::size_type length = neighOfINode.size();
-                
+
               supernode = new MueLu_SuperNode;
               try {
                 supernode->list = Teuchos::arcp<int>(length+1);
@@ -187,44 +187,44 @@ namespace MueLu {
               supernode->maxLength = length;
               supernode->length = 1;
               supernode->list[0] = iNode;
-                
+
               int selectFlag = 1;
               {
                 /*--------------------------------------------------- */
                 /* count the no. of neighbors having been aggregated  */
                 /*--------------------------------------------------- */
-                  
+
                 int count = 0;
                 for (typename Teuchos::ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                   {
                     int index = *it;
-                    if ( index < nRows ) 
+                    if ( index < nRows )
                       {
-                        if ( aggStat[index] == READY || 
-                             aggStat[index] == NOTSEL ) 
+                        if ( aggStat[index] == READY ||
+                             aggStat[index] == NOTSEL )
                           supernode->list[supernode->length++] = index;
                         else count++;
-                          
+
                       }
                   }
-                  
+
                 /*--------------------------------------------------- */
                 /* if there are too many neighbors aggregated or the  */
                 /* number of nodes in the new aggregate is too few,   */
                 /* don't do this one                                  */
                 /*--------------------------------------------------- */
-                  
+
                 if ( count > GetMaxNeighAlreadySelected() ) selectFlag = 0;
               }
 
-              // Note: the supernode length is actually 1 more than the 
-              //       number of nodes in the candidate aggregate. The 
-              //       root is counted twice. I'm not sure if this is 
+              // Note: the supernode length is actually 1 more than the
+              //       number of nodes in the candidate aggregate. The
+              //       root is counted twice. I'm not sure if this is
               //       a bug or a feature ... so I'll leave it and change
               //       < to <= in the if just below.
 
-              if (selectFlag != 1 || 
-                  supernode->length <= GetMinNodesPerAggregate()) 
+              if (selectFlag != 1 ||
+                  supernode->length <= GetMinNodesPerAggregate())
                 {
                   aggStat[iNode] = NOTSEL;
                   delete supernode;
@@ -234,16 +234,16 @@ namespace MueLu {
                         {
                           int index = *it;
                           if  ( index < nRows && aggStat[index] == READY )
-                            { 
+                            {
                               nodeList->Add(index);
-                            } 
-                        } 
-                    } 
-                } 
-              else 
+                            }
+                        }
+                    }
+                }
+              else
                 {
                   aggregates.SetIsRoot(iNode);
-                  for ( int j = 0; j < supernode->length; ++j ) 
+                  for ( int j = 0; j < supernode->length; ++j )
                     {
                       int jNode = supernode->list[j];
                       aggStat[jNode] = SELECTED;
@@ -257,24 +257,24 @@ namespace MueLu {
                             {
                               int index = *it;
                               if ( index < nRows && aggStat[index] == READY )
-                                { 
+                                {
                                   nodeList->Add(index);
                                 }
-                            } 
-                        } 
+                            }
+                        }
                     }
                   supernode->next = NULL;
                   supernode->index = nAggregates;
-                  if ( nAggregates == 0 ) 
+                  if ( nAggregates == 0 )
                     {
                       aggHead = supernode;
                       aggCurrent = supernode;
-                    } 
-                  else 
+                    }
+                  else
                     {
                       aggCurrent->next = supernode;
                       aggCurrent = supernode;
-                    } 
+                    }
                   nAggregates++;
                   // unused aggCntArray[nAggregates] = supernode->length;
                 }
@@ -285,9 +285,9 @@ namespace MueLu {
 
     } // end of 'main loop'
 
-    nodeList = Teuchos::null; 
+    nodeList = Teuchos::null;
 
-    /* Update aggregate object */  
+    /* Update aggregate object */
     aggregates.SetNumAggregates(nAggregates);
 
     /* Verbose */
@@ -296,14 +296,14 @@ namespace MueLu {
 
       if (IsPrint(Warnings0)) {
         GO localReady=0, globalReady;
-          
+
         // Compute 'localReady'
-        for ( my_size_t i = 0; i < nRows; ++i ) 
+        for ( my_size_t i = 0; i < nRows; ++i )
           if (aggStat[i] == READY) localReady++;
-            
+
         // Compute 'globalReady'
         sumAll(comm, localReady, globalReady);
-            
+
         if(globalReady > 0)
           GetOStream(Warnings0, 0) << "Warning: " << globalReady << " READY nodes left" << std::endl;
       }
@@ -311,31 +311,31 @@ namespace MueLu {
       if (IsPrint(Statistics1)) {
         // Compute 'localSelected'
         LO localSelected=0;
-        for ( my_size_t i = 0; i < nRows; ++i ) 
+        for ( my_size_t i = 0; i < nRows; ++i )
           if ( aggStat[i] == SELECTED ) localSelected++;
-          
+
         // Compute 'globalSelected'
         GO globalSelected; sumAll(comm, (GO)localSelected, globalSelected);
-          
+
         // Compute 'globalNRows'
         GO globalNRows; sumAll(comm, (GO)nRows, globalNRows);
-          
+
         GetOStream(Statistics1, 0) << "Nodes aggregated = " << globalSelected << " (" << globalNRows << ")" << std::endl;
       }
-          
+
       if (IsPrint(Statistics1)) {
         GO nAggregatesGlobal; sumAll(comm, (GO)nAggregates, nAggregatesGlobal);
         GetOStream(Statistics1, 0) << "Total aggregates = " << nAggregatesGlobal << std::endl;
       }
 
     } // verbose
-        
+
       /* ------------------------------------------------------------- */
       /* clean up                                                      */
       /* ------------------------------------------------------------- */
 
     aggCurrent = aggHead;
-    while ( aggCurrent != NULL ) 
+    while ( aggCurrent != NULL )
       {
         supernode = aggCurrent;
         aggCurrent = aggCurrent->next;
@@ -344,16 +344,16 @@ namespace MueLu {
 
   } // CoarsenUncoupled
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RandomReorder(Teuchos::ArrayRCP<LO> list) const {
     //TODO: replace int
     int n = list.size();
     for(int i=0; i<n-1; i++) {
       std::swap(list[i], list[RandomOrdinal(i,n-1)]);
     }
-  } 
+  }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   int LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RandomOrdinal(int min, int max) const {
     return min + static_cast<int>((max-min+1) * (static_cast<double>(std::rand()) / (RAND_MAX + 1.0)));
   }

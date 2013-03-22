@@ -76,7 +76,7 @@ LOCA::MultiPredictor::Factory::create(
        const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RCP<Teuchos::ParameterList>& predictorParams)
 {
-  string methodName = "LOCA::MultiPredictor::Factory::create()";
+  std::string methodName = "LOCA::MultiPredictor::Factory::create()";
   Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> strategy;
 
   // Get solver sublist
@@ -84,7 +84,7 @@ LOCA::MultiPredictor::Factory::create(
     topParams->getSublist("Linear Solver");
 
   // Get name of strategy
-  const string& name = strategyName(*predictorParams);
+  const std::string& name = strategyName(*predictorParams);
 
   if (name == "Constant")
     strategy = 
@@ -113,7 +113,7 @@ LOCA::MultiPredictor::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = predictorParams->get("User-Defined Name",
+    std::string userDefinedName = predictorParams->get("User-Defined Name",
 							   "???");
     if ((*predictorParams).INVALID_TEMPLATE_QUALIFIER
 	isType< Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> >(userDefinedName))
@@ -134,7 +134,7 @@ LOCA::MultiPredictor::Factory::create(
   return strategy;
 }
 
-const string&
+const std::string&
 LOCA::MultiPredictor::Factory::strategyName(
 				  Teuchos::ParameterList& predictorParams) const
 {

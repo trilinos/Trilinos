@@ -115,36 +115,34 @@ namespace MueLu {
     //! increment request counter and add reqFactory to the list
     //! of requesting factories
     void Request(const FactoryBase* reqFactory) {
-      count_++;   // increment request counter
-      if(requests_.count(reqFactory)==0) {
+      request_container::iterator it = requests_.find(reqFactory);
+      if (it == requests_.end())
         requests_[reqFactory] = 1;
-      } else
-      {
-        int cnt = requests_[reqFactory];
-        requests_[reqFactory] = ++cnt;
-      }
+      else
+        (it->second)++;
+      count_++;   // increment request counter
     }
 
     //! release data
     //! decrement request counter and try to remove reqFactory from list of
     //! requesting factories
     void Release(const FactoryBase* reqFactory) {
-      TEUCHOS_TEST_FOR_EXCEPTION(requests_.count(reqFactory) == 0, Exceptions::RuntimeError, "MueLu::VariableContainer::Release(): cannot call Release if factory has not been requested before by factory " << reqFactory);
-      if(requests_.count(reqFactory) > 0) {
-        int cnt = requests_[reqFactory];
-        requests_[reqFactory] = --cnt;
-        if(cnt == 0 && GetKeepFlag() == 0) {
-          requests_.erase(reqFactory);
-        }
+      request_container::iterator it = requests_.find(reqFactory);
+      TEUCHOS_TEST_FOR_EXCEPTION(it == requests_.end(), Exceptions::RuntimeError, "MueLu::VariableContainer::Release(): cannot call Release if factory has not been requested before by factory " << reqFactory);
+      if (it != requests_.end()) {
+        (it->second)--;
+        if (!it->second && !GetKeepFlag())
+          requests_.erase(it);
       }
       count_--; // decrement request counter
     }
 
     //! returns how often the data has been requested by the factory reqFactory.
     int NumRequests(const FactoryBase* reqFactory) const {
-      if(requests_.count(reqFactory)>0) {
-        return requests_.find(reqFactory)->second;
-      }
+      request_container::const_iterator it = requests_.find(reqFactory);
+      if (it != requests_.end())
+        return it->second;
+
       return 0;
     }
 
@@ -182,6 +180,9 @@ namespace MueLu {
     //! returns the keep flag combination
     KeepType GetKeepFlag() const { return keep_; }
 
+    typedef std::map<const FactoryBase*,int> request_container;
+    const request_container& Requests() const { return requests_; }
+
     //@}
 
   private:
@@ -189,7 +190,8 @@ namespace MueLu {
     bool                              available_;   ///< is data available?
     KeepType                          keep_;        ///< keep flag
     int                               count_;       ///< number of requests by all factories
-    std::map<const FactoryBase*,int>  requests_;    ///< requesting factories
+
+    request_container                 requests_;    ///< requesting factories
   };
 
 }

@@ -125,7 +125,7 @@ namespace {
     out << "nodeIDList(): "; for(IntConstIt it = nodeIDList.begin(); it != nodeIDList.end(); ++it) { out << *it << " "; }
   }
 
-  // 
+  //
   // INSTANTIATIONS
   //
 

@@ -301,9 +301,9 @@ template <typename User>
   lno_t next = 0;
   for (size_t i=0; i < nrows; i++){
     lno_t row = i + base_;
-    lno_t nnz = matrix_->getNumEntriesInLocalRow(row);
+    nnz = matrix_->getNumEntriesInLocalRow(row);
     matrix_->getLocalRowView(row, indices, nzs);
-    for (lno_t j=0; j < nnz; j++){
+    for (size_t j=0; j < nnz; j++){
       // TODO - this will be slow
       //   Is it possible that global columns ids might be stored in order?
       columnIds_[next++] = colMap_->getGlobalElement(indices[j]);

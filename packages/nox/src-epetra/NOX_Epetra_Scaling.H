@@ -51,6 +51,8 @@
 #include "NOX_Common.H"           // for <string>
 #include "NOX_Abstract_Vector.H"  // 
 #include "Teuchos_RCP.hpp"
+#include <vector>
+#include <ostream>
 
 // Forward Declarations
 class Epetra_Vector;
@@ -113,25 +115,25 @@ public:
 				Epetra_Vector& result);
 
   //! Printing 
-  virtual void print(ostream& os);
+  virtual void print(std::ostream& os);
 
 private:
   
   //! Scaling type
-  vector<ScaleType> scaleType;
+  std::vector<ScaleType> scaleType;
 
   //! Source type
-  vector<SourceType> sourceType;
+  std::vector<SourceType> sourceType;
 
   //! Scaling vector pointer
-  vector< Teuchos::RCP<Epetra_Vector> > scaleVector;
+  std::vector< Teuchos::RCP<Epetra_Vector> > scaleVector;
 
   //! Temporary vector
   Teuchos::RCP<Epetra_Vector> tmpVectorPtr;
 
 };
 
-ostream& operator<<(ostream& os, NOX::Epetra::Scaling& scalingObject);
+  std::ostream& operator<<(std::ostream& os, NOX::Epetra::Scaling& scalingObject);
 
 }  // namespace Epetra
 }  // namespace NOX

@@ -49,7 +49,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherPrototype_fwd.hpp"
 #include "MueLu_SmootherBase.hpp"
-#include "MueLu_SmootherPrototypeBase.hpp"
+#include "MueLu_Factory.hpp"
 
 namespace MueLu {
 
@@ -67,7 +67,7 @@ namespace MueLu {
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class SmootherPrototype : public SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>, public SmootherPrototypeBase {
+  class SmootherPrototype : public SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>, public Factory {
 #undef MUELU_SMOOTHERPROTOTYPE_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -102,16 +102,29 @@ namespace MueLu {
 
     //! Get the state of a smoother prototype.
     bool IsSetup() const;
-    
+
     //! Set the state of a smoother prototype.
-    // Developpers: this method must be called by our Setup() method.
+    // Developpers: this method must be called by your Setup() method.
     void IsSetup(bool const &ToF);
-    
+
+    //@}
+
+    //! @name Implements FactoryBase interface
+    //@{
+    virtual void CallBuild(Level & requestedLevel) const {
+      TEUCHOS_TEST_FOR_EXCEPT(true);
+    }
+
+    //!
+    virtual void CallDeclareInput(Level & requestedLevel) const {
+      DeclareInput(requestedLevel);
+    }
+
     //@}
 
   private:
     bool isSetup_;
-  
+
   }; // class SmootherPrototype
 
 } // namespace MueLu

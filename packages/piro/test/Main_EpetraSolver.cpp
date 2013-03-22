@@ -1,12 +1,12 @@
-// @HEADER
+ // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,30 +36,33 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
 #include <iostream>
 #include <string>
 
+#include "Piro_Epetra_SolverFactory.hpp"
+#include "Piro_ProviderHelpers.hpp"
+#include "Piro_Epetra_PerformSolve.hpp"
+
 #include "MockModelEval_A.hpp"
+
+#include "Piro_ConfigDefs.hpp"
+
+#ifdef Piro_ENABLE_NOX
 #include "SaveEigenData_Epetra.hpp"
+#endif /* Piro_ENABLE_NOX */
+
+#ifdef Piro_ENABLE_Rythmos
+#include "Piro_RythmosNOX_RowSumUpdater.hpp"
+#endif /* Piro_ENABLE_Rythmos */
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-
-#include "Piro_ConfigDefs.hpp"
-
-#ifdef Piro_ENABLE_NOX
-#include "Piro_Epetra_NOXSolver.hpp"
-#include "Piro_Epetra_LOCASolver.hpp"
-#endif
-#ifdef Piro_ENABLE_Rythmos
-#include "Piro_Epetra_RythmosSolver.hpp"
-#endif
 
 
 int main(int argc, char *argv[]) {
@@ -68,7 +71,7 @@ int main(int argc, char *argv[]) {
   int overall_status=0; // 0 = pass, failures are incremented over multiple tests
   bool success=true;
 
-  // Initialize MPI 
+  // Initialize MPI
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   int Proc=mpiSession.getRank();
 #ifdef HAVE_MPI
@@ -83,14 +86,28 @@ int main(int argc, char *argv[]) {
 
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
- 
+
+  Piro::Epetra::SolverFactory solverFactory;
+
+#ifdef Piro_ENABLE_NOX
+  solverFactory.setProvider<LOCA::SaveEigenData::AbstractStrategy>(
+      "My SaveEigenData",
+      Piro::providerFromReferenceAcceptingConstructor<SaveEigenData_Epetra>());
+#endif /* Piro_ENABLE_NOX */
+
+#ifdef Piro_ENABLE_Rythmos
+  solverFactory.setProvider<Rythmos::IntegrationObserverBase<double> >(
+      "Rythmos Row Sum Updater",
+      Piro::providerFromDefaultConstructor<Piro::RythmosNOXRowSumUpdaterObserver<double> >());
+#endif /* Piro_ENABLE_Rythmos */
+
 #ifdef Piro_ENABLE_Rythmos
   int numTests=5;
 #else
   int numTests=3;
 #endif
   for (int iTest=0; iTest<numTests; iTest++) {
-  
+
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Solve_NOX_1.xml"; break;
@@ -111,7 +128,7 @@ int main(int argc, char *argv[]) {
           << "======  Running input file "<< iTest <<": "<< inputFile <<"\n"
           << "===================================================\n"
           << endl;
-    
+
     try {
 
       // Create (1) a Model Evaluator and (2) a ParameterList
@@ -121,64 +138,33 @@ int main(int argc, char *argv[]) {
          rcp(new Teuchos::ParameterList("Piro Parameters"));
       Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
-      // Use these two objects to construct a Piro solved application 
-      //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
-      RCP<EpetraExt::ModelEvaluator> piro;
+      // Wrap original model into a Piro solver to build a response-only application
+      const RCP<EpetraExt::ModelEvaluator> piro = solverFactory.createSolver(piroParams, Model);
 
-      std::string& solver = piroParams->get("Piro Solver","NOX");
-#ifdef Piro_ENABLE_NOX
-      if (solver=="NOX")
-        piro = rcp(new Piro::Epetra::NOXSolver(piroParams, Model));
-      else if (solver=="LOCA") {
-        RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigs =
-            rcp(new SaveEigenData_Epetra(piroParams->sublist("LOCA")));
-        piro = rcp(new Piro::Epetra::LOCASolver(
-                       piroParams, Model, Teuchos::null, saveEigs));
-      }
-      else
-#endif
-#ifdef Piro_ENABLE_Rythmos
-      if (solver=="Rythmos")
-        piro = rcp(new Piro::Epetra::RythmosSolver(piroParams, Model));
-      else 
-#endif
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-          "Error: Unknown Piro Solver : " << solver);
+      const Teuchos::RCP<Teuchos::ParameterList> solveParams =
+        Teuchos::sublist(Teuchos::sublist(piroParams, "Analysis"), "Solve");
 
-      bool computeSens = piroParams->get("Compute Sensitivities", false);
+      Teuchos::Array<Teuchos::RCP<const Epetra_Vector> > responses;
+      Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Epetra_MultiVector> > > sensitivities;
+      Piro::Epetra::PerformSolve(*piro, *solveParams, responses, sensitivities);
 
-      // Now the (somewhat cumbersome) setting of inputs and outputs
-      EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
-      int num_p = inArgs.Np();     // Number of *vectors* of parameters
-      RCP<Epetra_Vector> p1 = rcp(new Epetra_Vector(*(piro->get_p_init(0))));
-      int numParams = p1->MyLength(); // Number of parameters in p1 vector
-      inArgs.set_p(0,p1);
+      // Extract
+      const RCP<const Epetra_Vector> g1 = responses[0];
+      const RCP<const Epetra_Vector> gx = responses[1];
+      const RCP<const Epetra_MultiVector> dgdp = sensitivities[0][0];
 
-      // Set output arguments to evalModel call
-      EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
-      int num_g = outArgs.Ng(); // Number of *vectors* of responses
-      RCP<Epetra_Vector> g1 = rcp(new Epetra_Vector(*(piro->get_g_map(0))));
-      outArgs.set_g(0,g1);
-      // Solution vector is returned as extra respons vector
-      RCP<Epetra_Vector> gx = rcp(new Epetra_Vector(*(piro->get_g_map(1))));
-      outArgs.set_g(1,gx);
-
-      RCP<Epetra_MultiVector> dgdp = rcp(new Epetra_MultiVector(g1->Map(), numParams));
-      if (computeSens) outArgs.set_DgDp(0, 0, dgdp);
-
-      // Now, solve the problem and return the responses
-      piro->evalModel(inArgs, outArgs);
+      const RCP<const Epetra_Vector> p1 = piro->get_p_init(0);
 
       // Print out everything
       if (Proc == 0)
-        cout << "Finished Model Evaluation: Printing everything {Exact in brackets}" 
+        cout << "Finished Model Evaluation: Printing everything {Exact in brackets}"
              << "\n-----------------------------------------------------------------"
              << std::setprecision(9) << endl;
 
       p1->Print(cout << "\nParameters! {1,1}\n");
       g1->Print(cout << "\nResponses! {8.0}\n");
       gx->Print(cout << "\nSolution! {1,2,3,4}\n");
-      if (computeSens)
+      if (Teuchos::nonnull(dgdp))
         dgdp->Print(cout <<"\nSensitivities {2.0, -8.0}\n");
 
       if (Proc == 0)
@@ -192,9 +178,9 @@ int main(int argc, char *argv[]) {
   }
 
   if (Proc==0) {
-    if (overall_status==0) 
+    if (overall_status==0)
       cout << "\nTEST PASSED\n" << endl;
-    else 
+    else
       cout << "\nTEST Failed:  " << overall_status << endl;
   }
 

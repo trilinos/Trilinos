@@ -54,7 +54,7 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Parameters.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -64,13 +64,13 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManager.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 
 #include "MueLu_Exceptions.hpp"
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 
 
 typedef double Scalar;
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,random,graph)");
   clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
   clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
-  
+
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -153,7 +153,9 @@ int main(int argc, char *argv[]) {
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator> A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+  RCP<Matrix> A = Pr->BuildMatrix();
 
   //  return EXIT_SUCCESS;
   /**********************************************************************************/
@@ -163,34 +165,34 @@ int main(int argc, char *argv[]) {
   Level Finest;
   Finest.SetLevelID(0);  // must be level 0 for NullspaceFactory
   Finest.Set("A", A);
-  
+
   Finest.SetFactoryManager( rcp( new FactoryManager() ));
 
-  UCAggregationFactory UCAggFact;
-  Finest.Request(UCAggFact);
+  CoupledAggregationFactory CoupledAggFact;
+  Finest.Request(CoupledAggFact);
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-  UCAggFact.SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
-  UCAggFact.SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+  CoupledAggFact.SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
+  CoupledAggFact.SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
   std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
   if (aggOrdering == "natural") {
        *out << "aggregate ordering :                    NATURAL" << std::endl;
-       UCAggFact.SetOrdering(MueLu::AggOptions::NATURAL);
+       CoupledAggFact.SetOrdering(MueLu::AggOptions::NATURAL);
   } else if (aggOrdering == "random") {
        *out << "aggregate ordering :                    RANDOM" << std::endl;
-       UCAggFact.SetOrdering(MueLu::AggOptions::RANDOM);
+       CoupledAggFact.SetOrdering(MueLu::AggOptions::RANDOM);
   } else if (aggOrdering == "graph") {
        *out << "aggregate ordering :                    GRAPH" << std::endl;
-       UCAggFact.SetOrdering(MueLu::AggOptions::GRAPH);
+       CoupledAggFact.SetOrdering(MueLu::AggOptions::GRAPH);
   } else {
     std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
     throw(MueLu::Exceptions::RuntimeError(msg));
   }
-  UCAggFact.SetPhase3AggCreation(0.5);
+  CoupledAggFact.SetPhase3AggCreation(0.5);
   *out << "=============================================================================" << std::endl;
 
-  UCAggFact.Build(Finest);
+  CoupledAggFact.Build(Finest);
 
   return EXIT_SUCCESS;
 }

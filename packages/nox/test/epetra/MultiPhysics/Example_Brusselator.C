@@ -157,8 +157,8 @@ int main(int argc, char *argv[])
   bool          doOffBlocks     = false ;
   bool          convection      = true  ;
   bool          libloose        = true  ;
-  string        outputDir       = "."   ;
-  string        goldDir         = "."   ;
+  std::string        outputDir       = "."   ;
+  std::string        goldDir         = "."   ;
 
   clp.setOption( "verbose", "no-verbose", &verbose, "Verbosity on or off." );
   clp.setOption( "n", &NumGlobalNodes, "Number of elements" );
@@ -191,8 +191,8 @@ int main(int argc, char *argv[])
   // The number of unknowns must be at least equal to the number of processors.
   if (NumGlobalNodes < NumProc) 
   {
-    cout << "numGlobalNodes = " << NumGlobalNodes 
-	 << " cannot be < number of processors = " << NumProc << endl;
+    std::cout << "numGlobalNodes = " << NumGlobalNodes 
+	 << " cannot be < number of processors = " << NumProc << std::endl;
     exit(1);
   }
 
@@ -318,17 +318,17 @@ int main(int argc, char *argv[])
   
   // Identify the test problem
   if( outputUtils.isPrintType(NOX::Utils::TestDetails) )
-    outputUtils.out() << "Starting epetra/MultiPhysics/example_brusselator.exe" << endl;
+    outputUtils.out() << "Starting epetra/MultiPhysics/example_brusselator.exe" << std::endl;
 
   // Identify processor information
 #ifdef HAVE_MPI
-  outputUtils.out() << "This test is broken in parallel." << endl;
-  outputUtils.out() << "Test failed!" << endl;
+  outputUtils.out() << "This test is broken in parallel." << std::endl;
+  outputUtils.out() << "Test failed!" << std::endl;
   MPI_Finalize();
   return -1;
 #else
   if (outputUtils.isPrintType(NOX::Utils::TestDetails))
-    outputUtils.out() << "Serial Run" << endl;
+    outputUtils.out() << "Serial Run" << std::endl;
 #endif
 
   // Create a TestCompare class
@@ -343,7 +343,7 @@ int main(int argc, char *argv[])
     timeStep++;
     time += dt;
   
-    cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
+    std::cout << "Time Step: " << timeStep << ",\tTime: " << time << std::endl;
   
     // Solve the coupled problem
     if( runMF )
@@ -354,13 +354,13 @@ int main(int argc, char *argv[])
     {
       // Create the loose coupling solver manager
       Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > > solversVec =
-        Teuchos::rcp( new vector<Teuchos::RCP<NOX::Solver::Generic> > );
+        Teuchos::rcp( new std::vector<Teuchos::RCP<NOX::Solver::Generic> > );
 
       map<int, Teuchos::RCP<NOX::Solver::Generic> >::iterator iter = problemManager.getSolvers().begin(),
                                                                   iter_end = problemManager.getSolvers().end()   ;
       for( ; iter_end != iter; ++iter )
       {
-        cout << " ........  registered Solver::Manager # " << (*iter).first << endl;
+        std::cout << " ........  registered Solver::Manager # " << (*iter).first << std::endl;
         solversVec->push_back( (*iter).second );
       }
 
@@ -387,17 +387,17 @@ int main(int argc, char *argv[])
     for( ; iter_end != iter; ++iter )
     {
       GenericEpetraProblem & problem = *(*iter).second;
-      string msg = "Numerical-to-Gold Solution comparison for problem \"" + problem.getName() + "\"";
+      std::string msg = "Numerical-to-Gold Solution comparison for problem \"" + problem.getName() + "\"";
 
       // Get the gold copy to comapre against current solution
-      string baseFileame = problemManager.createIOname( problem, timeStep );
-      string goldFileame = goldDir + "gold_brusselator/" + baseFileame;
+      std::string baseFileame = problemManager.createIOname( problem, timeStep );
+      std::string goldFileame = goldDir + "gold_brusselator/" + baseFileame;
 
       Epetra_Vector * tmpVec = NULL;
       int ierr = NOX::Epetra::DebugTools::readVector( goldFileame, Comm, tmpVec );
       if( ierr != 0 )
       {
-        outputUtils.out() << "ERROR opening gold copy file \"" << goldFileame << "\"." << endl;
+        outputUtils.out() << "ERROR opening gold copy file \"" << goldFileame << "\"." << std::endl;
         status = ierr;
         break;
       }
@@ -426,26 +426,26 @@ int main(int argc, char *argv[])
 
   // Output timing info
   if(MyPID==0)
-    cout << "\nTimings :\n\tWallTime --> " << myTimer.WallTime() - startWallTime << " sec."
-         << "\n\tElapsedTime --> " << myTimer.ElapsedTime() << " sec." << endl << endl;
+    std::cout << "\nTimings :\n\tWallTime --> " << myTimer.WallTime() - startWallTime << " sec."
+         << "\n\tElapsedTime --> " << myTimer.ElapsedTime() << " sec." << std::endl << std::endl;
 
   if( 1 ) // this will be turned on later
   {
     // Summarize test results  
     if( status == 0 )
-      outputUtils.out() << "Test passed!" << endl;
+      outputUtils.out() << "Test passed!" << std::endl;
     else 
-      outputUtils.out() << "Test failed!" << endl;
+      outputUtils.out() << "Test failed!" << std::endl;
   }
   else // force this test to pass for now, but at least warn of failure
   {
     // Summarize test results  
     if( status == 0 )
-      outputUtils.out() << "Test passed!" << endl;
+      outputUtils.out() << "Test passed!" << std::endl;
     else 
     {
-      outputUtils.out() << "This test actually F-A-I-L-E-D." << endl;
-      outputUtils.out() << "Test passed!" << endl;
+      outputUtils.out() << "This test actually F-A-I-L-E-D." << std::endl;
+      outputUtils.out() << "Test passed!" << std::endl;
     }
   }
 

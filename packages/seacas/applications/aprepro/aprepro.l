@@ -44,10 +44,11 @@
 #define show(x)   printf("<%s>", x);
 #undef yywrap
 int yywrap(void);
-#define MAX_INCLUDE_DEPTH 64
+#define MAX_INCLUDE_DEPTH 128
 YY_BUFFER_STATE file_pointer[MAX_INCLUDE_DEPTH];
 file_rec ap_file_list[MAX_INCLUDE_DEPTH];
-int nfile = 0;
+extern int nfile;
+
 int ifdef;
 int file_must_exist = 0; /* Global used by include/conditional include */
 #define LINENUM_INC	ap_file_list[nfile].lineno++
@@ -80,7 +81,6 @@ char  *temp_f, *tmpstr;
 
 /* Routines used by material database routines */
 extern char *get_temp_filename(void);
-extern void  conv_string(char *string);
 extern FILE *open_file(char *file, char *mode);
 extern FILE *check_open_file(char *file, char *mode);
  
@@ -118,6 +118,9 @@ integer {D}+({E})?
 <INITIAL>{WS}"{NOECHO}" |
 {WS}"{ECHO(OFF)}"	    { echo = False;	}
 
+<INITIAL>{WS}"{IMMUTABLE(ON)}"	    { state_immutable = True;	}
+<INITIAL>{WS}"{IMMUTABLE(OFF)}"	    { state_immutable = ap_options.immutable; }
+
 <INITIAL>{WS}"{"[Ll]"oop(" { BEGIN(GET_LOOP_VAR); }
 
 <GET_LOOP_VAR>{number}")".*"\n" |
@@ -145,7 +148,7 @@ integer {D}+({E})?
 			      *pt = '\0';
 			      s = getsym(yytext);
 
-			      if (s == 0 || (s->type != SVAR && s->value.var == 0.))
+			      if (s == 0 || (s->type != SVAR && s->type != IMMSVAR && s->value.var == 0.))
 				{
 				  BEGIN(LOOP_SKIP);
 				}
@@ -225,7 +228,7 @@ integer {D}+({E})?
 			      char *pt = strchr(yytext, ')');
 			      *pt = '\0';
 			      s = getsym(yytext);
-			      if (s == 0 || (s->type != SVAR && s->value.var == 0.))
+			      if (s == 0 || (s->type != SVAR && s->type != IMMSVAR && s->value.var == 0.))
 				{
 				  if (ifdef == 1) {
 				    BEGIN(IF_SKIP);
@@ -305,7 +308,7 @@ integer {D}+({E})?
 			       if (quoted == False) {
 				 /* See if this is an aprepro variable referring to a name */
 				 s = getsym(yytext);
-				 if (s == 0 || s->type != SVAR) {
+				 if (s == 0 || (s->type != SVAR && s->type != IMMSVAR)) {
 				   pt = yytext;
 				 } else {
 				   pt = s->value.svar;
@@ -479,9 +482,25 @@ int yywrap(void)
 	  yy_switch_to_buffer (file_pointer[--nfile]);
 	  /* Turn echoing back on at end of included files. */
 	  echo = True;
+	  /* Set immutability back to global immutable state */
+	  state_immutable = ap_options.immutable;	  
 	}
       return (0);
     }
+}
+
+void set_type(symrec *var, int type)
+{
+  if (var->name[0] == '_' || !state_immutable) {
+    var->type = type;
+  } else {
+    if (type == VAR)
+      var->type = IMMVAR;
+    else if (type == SVAR)
+      var->type = IMMSVAR;
+    else
+    var->type = type;
+  }
 }
 
 /* Print error message to standard error and return.  Note: internally
@@ -492,7 +511,7 @@ int yywrap(void)
 void yyerror (char *s)
 {
   fprintf (stderr,
-	   "Aprepro: ERR:  %s (%s, line %d)\n",
+	   "Aprepro: ERROR:  %s (%s, line %d)\n",
 	   s, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
 }
 
@@ -504,12 +523,19 @@ void undefined_warning (char *var)
 	     var, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
 }
 
+void immutable_modify(symrec *var)
+{
+  fprintf (stderr,
+	   "Aprepro: (IMMUTABLE) Variable '%s' is immutable and cannot be modified (%s, line %d)\n",
+	   var->name, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
+}
+
 void redefined_warning (char *var)
 {
   if (*var != '_' && ap_options.warning_msg == True)
     fprintf (stderr,
-	     "Aprepro: WARN: Variable '%s' redefined (%s, line %d)\n",
-	     var, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
+             "Aprepro: WARN: Variable '%s' redefined (%s, line %d)\n",
+             var, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
 }
 
 void warning (char *string)
@@ -538,7 +564,7 @@ char *do_execute (char string[])
   while ((i = input ()) != '}' && i != EOF)
     ;				/* eat up values */
   if (i == EOF) {
-    yyerror ("Aprepro: ERR: End-of-file in execute() command");
+    yyerror ("End-of-file in execute() command");
   }
 
   /* Allocate space for string + '}' + '{' + end_of_string */
@@ -577,7 +603,7 @@ char *do_rescan (char *string)
   while ((i = input ()) != '}' && i != EOF)
     ;				/* eat up values */
   if (i == EOF) {
-    yyerror ("Aprepro: ERR: End-of-file in rescan() command");
+    yyerror ("End-of-file in rescan() command");
   }
   
   {
@@ -615,6 +641,14 @@ void push_file(char *tmp_file, int is_tmp, int loop_count)
     yy_switch_to_buffer(yy_create_buffer( yyin, YY_BUF_SIZE));        
 }
 
+
+void add_input_file(char *filename)
+{
+  yyin = open_file(filename, "r");
+  file_pointer[nfile] = yy_create_buffer(yyin, YY_BUF_SIZE);        
+  NEWSTR(filename, ap_file_list[nfile].name);
+  SET_FILE_LIST(nfile, 0, False, 0);
+}
 
 static int get_input(char *buf, int size)
 {

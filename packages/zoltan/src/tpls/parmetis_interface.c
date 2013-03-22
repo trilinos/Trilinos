@@ -304,7 +304,7 @@ int Zoltan_ParMetis(
 
     /* First check for ParMetis 3 routines */
     if (strcmp(alg, "PARTKWAY") == 0){
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS library "
                                   "ParMETIS_V3_PartKway");
       ParMETIS_V3_PartKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
                            &wgtflag, &numflag, &ncon, &num_part, prt.part_sizes,
@@ -313,7 +313,7 @@ int Zoltan_ParMetis(
     }
     else if (strcmp(alg, "PARTGEOMKWAY") == 0){
       indextype ndims = geo->ndims;
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS library "
                                   "ParMETIS_V3_PartGeomKway");
       ParMETIS_V3_PartGeomKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,gr.ewgts,
                                &wgtflag, &numflag, &ndims, geo->xyz, &ncon,
@@ -323,13 +323,13 @@ int Zoltan_ParMetis(
     }
     else if (strcmp(alg, "PARTGEOM") == 0){
       indextype ndims = geo->ndims;
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS library "
                                   "ParMETIS_V3_PartGeom");
       ParMETIS_V3_PartGeom(gr.vtxdist, &ndims, geo->xyz, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "ADAPTIVEREPART") == 0){
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS library "
                                   "ParMETIS_V3_AdaptiveRepart");
       ParMETIS_V3_AdaptiveRepart(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,
                                  vsp.vsize, gr.ewgts, &wgtflag, &numflag, &ncon,
@@ -338,7 +338,7 @@ int Zoltan_ParMetis(
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "REFINEKWAY") == 0){
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library "
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS library "
                                   "ParMETIS_V3_RefineKway");
       ParMETIS_V3_RefineKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
                              &wgtflag, &numflag, &ncon, &num_part,
@@ -359,14 +359,22 @@ int Zoltan_ParMetis(
   if (IS_LOCAL_GRAPH(gr.graph_type)) {
     /* Check for Metis routines */
     if (strcmp(alg, "PARTKWAY") == 0){
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS 4 library "
-                                  "METIS_WPartGraphKway");
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library ");
       /* Use default options for METIS */
       options[0] = 0;
+
+#if !defined(METIS_VER_MAJOR) || METIS_VER_MAJOR < 5
       METIS_WPartGraphKway (gr.vtxdist+1, gr.xadj, gr.adjncy, 
                             gr.vwgt, gr.ewgts, &wgtflag,
                             &numflag, &num_part, prt.part_sizes, 
                             options, &edgecut, prt.part);
+#else
+      METIS_PartGraphKway (gr.vtxdist+1, &ncon, gr.xadj, gr.adjncy,
+                           gr.vwgt, vsp.vsize, gr.ewgts, &num_part,
+                           prt.part_sizes, imb_tols, options,
+                           &edgecut, prt.part);
+#endif
+
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
     }
     else {
@@ -710,7 +718,7 @@ int Zoltan_ParMetis_Order(
 
 #ifdef ZOLTAN_PARMETIS
   if (IS_GLOBAL_GRAPH(gr.graph_type)){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS library");
 
     ParMETIS_V3_NodeND (gr.vtxdist, gr.xadj, gr.adjncy, 
                         &numflag, options, ord.rank, ord.sep_sizes, &comm);

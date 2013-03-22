@@ -9,7 +9,7 @@
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -38,13 +38,15 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
 
 #ifndef KOKKOSARRAY_LAYOUT_HPP
 #define KOKKOSARRAY_LAYOUT_HPP
+
+#include <impl/KokkosArray_ArrayTraits.hpp>
 
 namespace KokkosArray {
 
@@ -55,6 +57,19 @@ struct LayoutLeft { typedef LayoutLeft array_layout ; };
  *         (C or lexigraphical scheme).
  */
 struct LayoutRight { typedef LayoutRight array_layout ; };
+
+
+/** \brief  Left-to-right striding of multi-indices (Fortran scheme) by tiles.
+ */
+template < unsigned ArgN0 , unsigned ArgN1 ,
+           bool IsPowerOfTwo = ( Impl::is_power_of_two<ArgN0>::value &&
+                                 Impl::is_power_of_two<ArgN1>::value )
+         >
+struct LayoutTileLeft {
+  typedef LayoutTileLeft<ArgN0,ArgN1,IsPowerOfTwo> array_layout ;
+  enum { N0 = ArgN0 };
+  enum { N1 = ArgN1 };
+};
 
 } /* namespace KokkosArray */
 

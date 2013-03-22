@@ -71,13 +71,11 @@ TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
 
    // auxiliary information needed to construct basis object
    std::size_t numCells = 10;
-   int baseCellDim = 2;
-   int cubatureDegree = 2;
    std::string basisType = "Q1";
-   panzer::CellData cellData(numCells,baseCellDim,topo);
+   panzer::CellData cellData(numCells,topo);
 
    // build basis
-   RCP<const panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
+   RCP<const panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,1,cellData));
 
    std::string scatterName = "Residual_NS";
 
@@ -100,7 +98,7 @@ TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
 
    // test residual scatter evaluator
    {
-      panzer::ScatterResidual_Epetra<Residual,panzer::Traits,int,int> scatterResidual(Teuchos::null,scatterParams);
+      panzer::ScatterResidual_Epetra<Residual,panzer::Traits,int,int> scatterResidual(Teuchos::null,Teuchos::null,scatterParams);
 
       const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual.evaluatedFields();
       TEST_EQUALITY(evalFields.size(),1); // this is a dummy holder for the sake of the field manager
@@ -120,7 +118,7 @@ TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
 
    // test jacobian scatter evaluator
    {
-      panzer::ScatterResidual_Epetra<Jacobian,panzer::Traits,int,int> scatterJacobian(Teuchos::null,scatterParams);
+      panzer::ScatterResidual_Epetra<Jacobian,panzer::Traits,int,int> scatterJacobian(Teuchos::null,Teuchos::null,scatterParams);
 
       const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterJacobian.evaluatedFields();
       TEST_EQUALITY(evalFields.size(),1); // this is a dummy holder for the sake of the field manager

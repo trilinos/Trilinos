@@ -118,7 +118,7 @@ namespace LOCA {
       int nev;
 
       //! Which eigenvalues are of interest
-      string which;
+      std::string which;
 
     }; // Class DGGEVStrategy
 

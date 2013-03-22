@@ -384,7 +384,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
   if (testMatrix == 0) {
     utils.out() << "ERROR: NOX::Epetra::FiniteDifference::computeJacobian() - "
 		<< "Jacobian to evaluate is not a FiniteDifference object!" 
-		<< endl;
+		<< std::endl;
     throw "NOX Error";
   }
 

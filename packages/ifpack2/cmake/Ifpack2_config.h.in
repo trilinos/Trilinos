@@ -9,6 +9,12 @@
 /* Define if we have the QD extended-precision TPL */
 #cmakedefine HAVE_IFPACK2_QD
 
+/* Define if we have Zoltan2 */
+#cmakedefine HAVE_IFPACK2_ZOLTAN2
+
+/* Define if we have Xpetra */
+#cmakedefine HAVE_IFPACK2_XPETRA
+
 /* Define if explicit instantiation is enabled. */
 #cmakedefine HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 

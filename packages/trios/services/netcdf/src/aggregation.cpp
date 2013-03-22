@@ -1,3 +1,45 @@
+/**
+//@HEADER
+// ************************************************************************
+//
+//                   Trios: Trilinos I/O Support
+//                 Copyright 2011 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
+//
+// *************************************************************************
+//@HEADER
+ */
 /*
  * aggregation.cpp
  *
@@ -187,7 +229,7 @@ int use_direct(const int ncid)
 
 void add_participant_for_file(const int ncid,
                               const NNTI_peer_t *caller,
-                              const write_type write_type)
+                              const write_type requested_write_type)
 {
     file_details_t *details    =NULL;
     participant_t  *participant=NULL;
@@ -205,12 +247,12 @@ void add_participant_for_file(const int ncid,
     participant->p=*caller;
     details->participants->push_back(participant);
 
-    details->type = write_type;
+    details->type = requested_write_type;
 }
 
 void set_participant_count(const int ncid,
                            const NNTI_peer_t *caller,
-                           const write_type write_type,
+                           const write_type requested_write_type,
                            const int num_participants)
 {
     file_details_t *details    =NULL;
@@ -228,14 +270,13 @@ void set_participant_count(const int ncid,
     participant=new participant_t();
     participant->p=*caller;
     details->participants->push_back(participant);
-    details->type = write_type;
+    details->type = requested_write_type;
     details->num_participants=num_participants;
 }
 
 void remove_participant_for_file(const int ncid, const NNTI_peer_t *caller)
 {
     file_details_t *details    =NULL;
-    participant_t  *participant=NULL;
     participants_iterator_t iter;
 
     log_level debug_level = netcdf_debug_level;
@@ -246,16 +287,6 @@ void remove_participant_for_file(const int ncid, const NNTI_peer_t *caller)
         goto out;
     }
 
-    iter = details->participants->begin();
-    for (;iter != details->participants->end(); ++iter) {
-        participant = *iter;
-//        if (participant->p == *caller) {
-//            details->participants->remove(participant);
-//            delete(participant);
-//            break;
-//        }
-    }
-
 out:
     return;
 }
@@ -263,17 +294,13 @@ out:
 void add_participant_chunk(const NNTI_peer_t *caller,
                            aggregation_chunk_details_t *chunk_details)
 {
-    int rc=NSSI_OK;
-
     file_details_t  *file_details=NULL;
-
-    log_level debug_level = netcdf_debug_level;
 
     log_debug(netcdf_debug_level, "adding chunk: ncid(%d) varid(%d)", chunk_details->ncid, chunk_details->varid);
 
     chunk_details->datatype_size=0;
     MPI_Type_size(chunk_details->datatype, &chunk_details->datatype_size);
-    if ((chunk_details->len/chunk_details->num_elements) != chunk_details->datatype_size) {
+    if ((chunk_details->len/chunk_details->num_elements) != (size_t)chunk_details->datatype_size) {
         log_warn(netcdf_debug_level, "datatype size conflict: (%d/%d)==%d is not equal to %d",
                  chunk_details->len, chunk_details->num_elements, chunk_details->len/chunk_details->num_elements, chunk_details->datatype_size);
     }
@@ -376,8 +403,8 @@ static void recursive_print_chunk(aggregation_chunk_details_t *details, int offs
     if (current_dim < details->ndims-1) {
         for (int i=0;i<details->count[current_dim];i++) {
             my_offset = index[current_dim];
-            for (int i=current_dim+1;i<details->ndims;i++) {
-                my_offset *= details->count[i];
+            for (int j=current_dim+1;j<details->ndims;j++) {
+                my_offset *= details->count[j];
             }
 
             index[current_dim+1]=0;
@@ -423,8 +450,6 @@ static void recursive_print_chunk(aggregation_chunk_details_t *details, int offs
 void print_chunk(aggregation_chunk_details_t *details)
 {
     int *index=(int *)calloc(details->ndims, sizeof(int));
-    int offset=0;
-    int current_dim=0;
     char tmp_str[20];
     char out_str[1024];
     int remaining=1023;
@@ -514,27 +539,6 @@ static void recursive_copy_chunk(aggregation_chunk_details_t *src,
     }
 }
 
-static void recursive_aggregate_chunks(aggregation_chunk_t *src1,
-                                       aggregation_chunk_t *src2,
-                                       aggregation_chunk_t *dst)
-{
-    int *src_index=(int *)calloc(src1->details->ndims, sizeof(int));
-    int *dst_index=(int *)calloc(dst->details->ndims, sizeof(int));
-    int src_offset=0;
-    long dst_offset=0;
-    long current_dim=0;
-
-    memset(src_index, 0, src1->details->ndims*sizeof(int));
-    memset(dst_index, 0, dst->details->ndims*sizeof(int));
-    recursive_copy_chunk(src1->details, dst->details, src_offset, dst_offset, src_index, dst_index, current_dim);
-    memset(src_index, 0, src2->details->ndims*sizeof(int));
-    memset(dst_index, 0, dst->details->ndims*sizeof(int));
-    recursive_copy_chunk(src2->details, dst->details, src_offset, dst_offset, src_index, dst_index, current_dim);
-
-    free(src_index);
-    free(dst_index);
-}
-
 static void copy_chunk(aggregation_chunk_details_t *src,
                        aggregation_chunk_details_t *dst)
 {
@@ -558,8 +562,6 @@ aggregation_chunk_t *aggregate_chunks(aggregation_chunk_t *c1,
 {
     aggregation_chunk_t *out=new aggregation_chunk_t;
 
-    int src_buf_size=0;
-
     log_debug(netcdf_debug_level, "entered");
 
     assert(c1->details->ndims == c2->details->ndims);
@@ -570,7 +572,6 @@ aggregation_chunk_t *aggregate_chunks(aggregation_chunk_t *c1,
     out->details->ncid          = c1->details->ncid;
     out->details->varid         = c1->details->varid;
     out->details->ndims         = c1->details->ndims;
-//    out->details->buf           = calloc(c1->details->len+c2->details->len, c1->details->datatype_size);
     out->details->buf           = NULL;
     out->details->atype         = c1->details->atype;
     out->details->len           = c1->details->len+c2->details->len;
@@ -659,7 +660,7 @@ int try_aggregation(const int ncid, const int varid)
 
     var_details->chunks->sort(compare_chunks_for_aggregation);
 
-    log_level old=netcdf_debug_level;
+//    log_level old=netcdf_debug_level;
 //    netcdf_debug_level=LOG_ALL;
 //    log_debug(netcdf_debug_level, "*****************");
 //    log_debug(netcdf_debug_level, "start aggregation (begin list)");

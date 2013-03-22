@@ -77,7 +77,7 @@ public:
 	  map<string, double> SrcTermExponent,
 	  map<string, double> SrcTermWeight,
           int NumGlobalUnknowns = 0,
-          string name = "");
+          std::string name = "");
   
   // Destructor
   ~HMX_PDE();
@@ -99,7 +99,7 @@ public:
 		Epetra_Vector *rhsVector);
 
   // Set name of field to use for temperature field
-  void setTempFieldName(string name)
+  void setTempFieldName(std::string name)
     { tempFieldName = name; };
 
   // Compute my Source term - Epetra_Vector arguments
@@ -144,7 +144,7 @@ protected:
   map<string, double> SrcTermExponent;
   map<string, double> SrcTermWeight;
 
-  string tempFieldName; // Needed to id temp field
+  std::string tempFieldName; // Needed to id temp field
 
   FillType flag;
   Epetra_Import *ColumnToOverlapImporter;

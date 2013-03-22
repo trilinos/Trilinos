@@ -30,6 +30,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
 BroadcastArg.hpp
 DistributedIndex.hpp
+MPI.hpp
 ParallelComm.hpp
 Parallel.hpp
 ParallelIndex.hpp
@@ -61,4 +62,4 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/include/stk_util/parallel/)
+    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_util/parallel/)

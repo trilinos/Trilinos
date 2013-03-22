@@ -60,7 +60,7 @@ struct initialize_element<Scalar, KOKKOSARRAY_MACRO_DEVICE>
   {}
 
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void get_nodes( int ielem, int * nodes) const
   {
     for( int i=0; i<NumNodePerElement; ++i) {
@@ -68,7 +68,7 @@ struct initialize_element<Scalar, KOKKOSARRAY_MACRO_DEVICE>
     }
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( int ielem )const {
     int nodes[NumNodePerElement];
     get_nodes(ielem,nodes);

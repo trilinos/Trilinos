@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -50,6 +50,17 @@ namespace Impl {
 /* TR1 conformal compile-time array traits utilities.
  * Prefer to use TR1 when portably available.
  */
+//----------------------------------------------------------------------------
+
+template< bool , class = void >
+struct enable_if ;
+
+template< class T >
+struct enable_if< true , T > { typedef T type ; };
+
+template< class , class T = void >
+struct enable_if_type { typedef T type ; };
+
 //----------------------------------------------------------------------------
 
 template <class T, T v>
@@ -76,6 +87,35 @@ struct int_ : public integral_constant<int,I> {};
 /** \brief  If is the same type */
 template< class X , class Y > struct is_same : public false_type {};
 template< class X >           struct is_same<X,X> : public true_type {};
+
+//----------------------------------------------------------------------------
+
+template <size_t N>
+struct is_power_of_two
+{
+  enum type { value = (N > 0) && !(N & (N-1)) };
+};
+
+template < size_t N , bool OK = is_power_of_two<N>::value >
+struct power_of_two ;
+
+template < size_t N >
+struct power_of_two<N,true>
+{
+  enum type { value = 1+ power_of_two<(N>>1),true>::value };
+};
+
+template <>
+struct power_of_two<2,true>
+{
+  enum type { value = 1 };
+};
+
+template <>
+struct power_of_two<1,true>
+{
+  enum type { value = 0 };
+};
 
 //----------------------------------------------------------------------------
 

@@ -109,6 +109,16 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    stk::io::create_input_mesh("exodusii", fileName_, parallelMach,
                                     *femMetaData, *meshData); 
 
+   // add in "FAMILY_TREE" entity for doing refinement
+   std::size_t dimension = femMetaData->spatial_dimension();
+   std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(dimension);
+   entity_rank_names.push_back("FAMILY_TREE");
+   femMetaData->set_entity_rank_names(entity_rank_names);
+
+   // read in other transient fields, these will be useful later when
+   // trying to read other fields for use in solve
+   stk::io::define_input_fields(*meshData,*femMetaData);
+
    // store mesh data pointer for later use in initializing 
    // bulk data
    metaData.declare_attribute_with_delete(meshData);

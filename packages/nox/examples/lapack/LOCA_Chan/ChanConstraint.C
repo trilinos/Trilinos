@@ -121,7 +121,7 @@ ChanConstraint::setParam(int paramID, double val)
 
 void
 ChanConstraint::setParams(
-			 const vector<int>& paramIDs, 
+			 const std::vector<int>& paramIDs, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   for (unsigned int i=0; i<paramIDs.size(); i++)
@@ -145,7 +145,7 @@ ChanConstraint::computeDX()
 }
 
 NOX::Abstract::Group::ReturnType
-ChanConstraint::computeDP(const vector<int>& paramIDs, 
+ChanConstraint::computeDP(const std::vector<int>& paramIDs, 
 			  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
 			  bool isValidG)
 {

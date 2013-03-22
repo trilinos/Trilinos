@@ -39,13 +39,13 @@ IF(NOT BUILD_SHARED_LIBS)
 ENDIF()
 
 # Set the package version number
-SET(PyTrilinos_VERSION 4.8d)
+SET(PyTrilinos_VERSION 4.10d)
 
 # Define the list of PyTrilinos packages and modules.  Packages are
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
 # of modules is similar to the packages, except it contains the names
 # of python modules that correspond to nested namespaces, such as
-# NOX.__init__ or NOX.Epetra.Interface.
+# NOX.__init__ or NOX.NestedEpetra.Interface.
 SET(PyTrilinos_PACKAGES "")
 SET(PyTrilinos_MODULES  "")
 
@@ -122,8 +122,8 @@ IF(PyTrilinos_ENABLE_NOX)
   APPEND_SET(PyTrilinos_MODULES  NOX.StatusTest)
   APPEND_SET(PyTrilinos_MODULES  NOX.Solver    )
   IF(NOX_ENABLE_Epetra)
-    APPEND_SET(PyTrilinos_MODULES NOX.Epetra.__init__ )
-    APPEND_SET(PyTrilinos_MODULES NOX.Epetra.Interface)
+    APPEND_SET(PyTrilinos_MODULES NOX.NestedEpetra.__init__ )
+    APPEND_SET(PyTrilinos_MODULES NOX.NestedEpetra.Interface)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_NOX)
 
@@ -148,8 +148,9 @@ ENDIF(PyTrilinos_ENABLE_NOX)
 #  ENDIF(NOX_ENABLE_Epetra)
 #ENDIF(NOX_ENABLE_LOCA)
 
-# Python interpreter and header files are required
+# Python interpreter, library, and header files are required.
 FIND_PACKAGE(PythonInterp 2.2 REQUIRED)
+FIND_PACKAGE(PythonLibs 2.2 REQUIRED)
 FIND_PACKAGE(PythonInclude REQUIRED)
 
 # Python module numpy is required
@@ -182,6 +183,9 @@ ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 SET(PyTrilinos_INSTALL_PREFIX ${PyTrilinos_DEFAULT_INSTALL_PREFIX}
   CACHE PATH "The path prefix for where PyTrilinos will be installed, e.g. /usr/local")
 
+# Add the util directory
+ADD_SUBDIRECTORY(util)
+
 # Add the src directory, which builds the pytrilinos library,
 # generates the wrapper code, builds the PyTrilinos python package and
 # compiles the PyTrilinos extension modules
@@ -202,6 +206,8 @@ TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 TRIBITS_EXCLUDE_FILES(
   doc/PyTrilinos-SciProg/CoupledSolver.png
   doc/PyTrilinos-SciProg/CoupledSolver.pptx
+  doc/PyTrilinos-SciProg/PyTrilinos.bib
+  doc/PyTrilinos-SciProg/PyTrilinos.tex
   doc/PyTrilinos-SciProg/Response.pdf
   doc/PyTrilinos-SciProg/Response.tex
   doc/PyTrilinos-SciProg/cage12rcb8.png

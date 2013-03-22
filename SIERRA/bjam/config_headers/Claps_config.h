@@ -1,5 +1,2 @@
-
-#include "TrilinosPlatform_config.h"
-
-/* Define if want to build claps-sclaps */
-#define HAVE_CLAPS_SCLAPS 
+#include "TrilinosSierraConfig.h"
+#include "Claps_config_fcs.h"

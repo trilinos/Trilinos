@@ -112,9 +112,9 @@ int main(int argc, char *argv[])
     status += 1;
 
   if (status == 0)
-    u->out(NOX::Utils ::Debug) << "passed!" << endl;
+    u->out(NOX::Utils ::Debug) << "passed!" << std::endl;
   else 
-    u->out(NOX::Utils ::Debug) << "failed!" << endl;
+    u->out(NOX::Utils ::Debug) << "failed!" << std::endl;
     
   u->out(NOX::Utils::Debug) << "Testing isOwner() via const get()...";
 
@@ -129,9 +129,9 @@ int main(int argc, char *argv[])
     status += 1;
 
   if (status == 0)
-    u->out(NOX::Utils ::Debug) << "passed!" << endl;
+    u->out(NOX::Utils ::Debug) << "passed!" << std::endl;
   else 
-    u->out(NOX::Utils ::Debug) << "failed!" << endl;
+    u->out(NOX::Utils ::Debug) << "failed!" << std::endl;
     
   
 
@@ -141,9 +141,9 @@ int main(int argc, char *argv[])
 
   if (myPID == printProc) {
     if (status == 0) 
-      std::cout << "\nTest passed!" << endl;
+      std::cout << "\nTest passed!" << std::endl;
     else
-      std::cout << "\nTest Failed!" << endl;
+      std::cout << "\nTest Failed!" << std::endl;
   }
 
   // Final return value (0 = successfull, non-zero = failure)

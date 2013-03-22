@@ -116,7 +116,8 @@ int Drumm1(const Epetra_Map& map, bool verbose)
   //now we'll load a Epetra_FECrsMatrix with data that matches the
   //above-described finite-element problem.
 
-  int indexBase = 0, ierr = 0;
+  long long indexBase = 0;
+  int ierr = 0;
   long long myNodes[4];
   double values[9];
   values[0] = 2.0;
@@ -208,7 +209,8 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 
   if (numProcs != 2) return(0);
 
-  int indexBase = 0, ierr = 0;
+  long long indexBase = 0;
+  int ierr = 0;
 
   double* values = new double[9];
   values[0] = 2.0;
@@ -316,7 +318,7 @@ int Drumm3(const Epetra_Map& map, bool verbose)
   if (Numprocs != 2) return(0);
 
   long long NumGlobalRows = 4;
-  int IndexBase = 0;
+  long long IndexBase = 0;
   Epetra_Map Map(NumGlobalRows, IndexBase, Comm);
 
   // Construct FECrsMatrix
@@ -459,7 +461,7 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   int numElems = 4;
   int numNodesPerElem = 4;
 
-  int indexBase = 0;
+  long long indexBase = 0;
 
   //Create a map using epetra-defined linear distribution.
   Epetra_Map map(numNodes, indexBase, Comm);
@@ -692,7 +694,7 @@ int submatrix_formats(const Epetra_Comm& Comm, bool verbose)
 
   int numLocalElements = 3;
   long long numGlobalElements = numLocalElements*numProcs;
-  int indexBase = 0;
+  long long indexBase = 0;
 
   Epetra_Map map(numGlobalElements, numLocalElements, indexBase, Comm);
 
@@ -782,13 +784,13 @@ int rectangular(const Epetra_Comm& Comm, bool verbose)
   long long numGlobalRows = numprocs*numMyRows;
   long long* myrows = new long long[numMyRows];
 
-  int myFirstRow = localproc*numMyRows;
+  long long myFirstRow = ((long long)localproc)*numMyRows;
   int i;
   for(i=0; i<numMyRows; ++i) {
     myrows[i] = myFirstRow+i;
   }
 
-  Epetra_Map map(numGlobalRows, numMyRows, myrows, 0, Comm);
+  Epetra_Map map(numGlobalRows, numMyRows, myrows, 0LL, Comm);
 
   Epetra_FECrsMatrix A(Copy, map, 30);
 
@@ -823,7 +825,7 @@ int rectangular(const Epetra_Comm& Comm, bool verbose)
   int numMyCols = (int) numcols/numprocs;
   int rem = (int) (numcols%numprocs);
   if (localproc<rem) ++numMyCols;
-  Epetra_Map domainmap(numcols, numMyCols, 0, Comm);
+  Epetra_Map domainmap(numcols, numMyCols, 0LL, Comm);
 
   EPETRA_CHK_ERR( A.GlobalAssemble(domainmap, map) );
 

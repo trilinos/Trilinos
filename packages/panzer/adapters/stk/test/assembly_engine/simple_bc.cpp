@@ -65,9 +65,7 @@ using Teuchos::rcp;
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
-#include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
-#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -78,16 +76,16 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
+// This unit test set tracks some particularly nasty corner cases for
+// boundary conditions.
+
 namespace panzer {
 
-  void testInitialzation(const panzer_stk::STK_Interface& mesh,
-			 panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
-  void testInitialzation_multiblock(const panzer_stk::STK_Interface& mesh,
-			 panzer::InputPhysicsBlock& ipb,
-			 std::vector<panzer::BC>& bcs);
-
+  void testInitialzation_multiblock(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
+				    std::vector<panzer::BC>& bcs);
 
   TEUCHOS_UNIT_TEST(bc_test, basic)
   {
@@ -104,17 +102,18 @@ namespace panzer {
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = 
+      Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
-    testInitialzation(*mesh, ipb, bcs);
+    testInitialzation(ipb, bcs);
 
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+      Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
     const std::size_t workset_size = 20;
-    user_app::MyFactory eqset_factory;
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     {
@@ -124,16 +123,15 @@ namespace panzer {
       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
         
-      std::map<std::string,panzer::InputPhysicsBlock> 
-        physics_id_to_input_physics_blocks;
-      physics_id_to_input_physics_blocks["test physics"] = ipb;
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
-       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-
+      int default_integration_order = 1;
+      
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
-                                 physics_id_to_input_physics_blocks,
-                                 Teuchos::as<int>(mesh->getDimension()), workset_size,
+				 ipb,
+				 default_integration_order,
+				 workset_size,
                                  eqset_factory,
 				 gd,
 		   	         false,
@@ -176,11 +174,12 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-    fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+    fmb->setWorksetContainer(wkstContainer);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
-    panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-    panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
+    panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
+    panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
     ae_tm.buildObjects(builder);
     
     RCP<panzer::EpetraLinearObjContainer> eGhosted 
@@ -205,28 +204,28 @@ namespace panzer {
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
   }
 
-  void testInitialzation(const panzer_stk::STK_Interface& mesh,
-			 panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
-    panzer::InputEquationSet ies_1;
-    ies_1.name = "Energy";
-    ies_1.basis = "Q1";
-    ies_1.integration_order = 1;
-    ies_1.model_id = "solid";
-    ies_1.prefix = "";
-
-    panzer::InputEquationSet ies_2;
-    ies_2.name = "Energy";
-    ies_2.basis = "Q1";
-    ies_2.integration_order = 1;
-    ies_2.model_id = "ion solid";
-    ies_2.prefix = "ION_";
-
-    ipb.physics_block_id = "test physics";
-    ipb.eq_sets.push_back(ies_1);
-    ipb.eq_sets.push_back(ies_2);
-
+    // Physics block
+    Teuchos::ParameterList& physics_block = ipb->sublist("test physics");
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("a");
+      p.set("Type","Energy");
+      p.set("Prefix","");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+    }
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("b");
+      p.set("Type","Energy");
+      p.set("Prefix","ION_");
+      p.set("Model ID","ion solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+    }
+    
     // TEMPERATURE BCs
     {
       std::size_t bc_id = 0;
@@ -344,6 +343,8 @@ namespace panzer {
     }
   }
 
+  // *******************************************************************************
+  // *******************************************************************************
   TEUCHOS_UNIT_TEST(bc_test, multiblock)
   { 
     using Teuchos::RCP;
@@ -362,17 +363,17 @@ namespace panzer {
 
     TEUCHOS_ASSERT(Comm->NumProc()==2);
 
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
-    testInitialzation_multiblock(*mesh, ipb, bcs);
+    testInitialzation_multiblock(ipb, bcs);
 
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+      Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
     const std::size_t workset_size = 20;
-    user_app::MyFactory eqset_factory;
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     {
@@ -384,16 +385,15 @@ namespace panzer {
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
       block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
         
-      std::map<std::string,panzer::InputPhysicsBlock> 
-        physics_id_to_input_physics_blocks;
-      physics_id_to_input_physics_blocks["test physics"] = ipb;
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
-       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-
+      int default_integration_order = 1;
+      
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
-                                 physics_id_to_input_physics_blocks,
-                                 Teuchos::as<int>(mesh->getDimension()), workset_size,
+				 ipb,
+				 default_integration_order,
+				 workset_size,
                                  eqset_factory,
 				 gd,
 		   	         false,
@@ -435,11 +435,12 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-    fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+    fmb->setWorksetContainer(wkstContainer);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
-    panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-    panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
+    panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
+    panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
     ae_tm.buildObjects(builder);
     
     RCP<panzer::EpetraLinearObjContainer> eGhosted 
@@ -542,19 +543,20 @@ namespace panzer {
     }
   }
 
-  void testInitialzation_multiblock(const panzer_stk::STK_Interface& mesh,
-			 panzer::InputPhysicsBlock& ipb,
-			 std::vector<panzer::BC>& bcs)
+  void testInitialzation_multiblock(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
+				    std::vector<panzer::BC>& bcs)
   {
-    panzer::InputEquationSet ies_1;
-    ies_1.name = "Energy";
-    ies_1.basis = "Q1";
-    ies_1.integration_order = 1;
-    ies_1.model_id = "solid";
-    ies_1.prefix = "";
-
-    ipb.physics_block_id = "test physics";
-    ipb.eq_sets.push_back(ies_1);
+    // Physics block
+    Teuchos::ParameterList& physics_block = ipb->sublist("test physics");
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("a");
+      p.set("Type","Energy");
+      p.set("Prefix","");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",2);
+      p.set("Integration Order",1);
+    }
 
     // TEMPERATURE BCs
     {

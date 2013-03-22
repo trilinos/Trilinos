@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,23 +34,28 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include "TpetraExt_BlockExtraction.hpp"
 #include <numeric>
 #include <algorithm>
 
+#include <Tpetra_TestingUtilities.hpp>
+
+#include <Tpetra_Map.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <TpetraExt_BlockExtraction.hpp>
+
 namespace {
+
+  using Tpetra::TestingUtilities::getNode;
+  using Tpetra::TestingUtilities::getDefaultComm;
 
   using std::string;
   using Teuchos::RCP;
+  using Teuchos::null;
   using Teuchos::rcp;
   using Teuchos::Comm;
   using Teuchos::ScalarTraits;
@@ -61,7 +66,6 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::global_size_t;
 
-  bool testMpi = true;
   // string filedir;
   // double errorTolSlack = 1e+1;
 
@@ -72,7 +76,7 @@ namespace {
     //     "filedir",&filedir,"Directory of expected matrix files.");
     clp.addOutputSetupOptions(true);
     clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
+        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
         "Test MPI (if available) or force test of serial.  In a serial build,"
         " this option is ignored and a serial comm is always used." );
     // clp.setOption(
@@ -80,45 +84,40 @@ namespace {
     //     "Slack off of machine epsilon used to check test results" );
   }
 
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    RCP<const Comm<int> > ret;
-    if (testMpi) {
-      ret = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    else {
-      ret = rcp(new Teuchos::SerialComm<int>());
-    }
-    return ret;
-  }
 
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, Scalar, Node )
   {
-    typedef Tpetra::Map<LO,GO> Map;
+    using Teuchos::as;
+    typedef Tpetra::Map<LO,GO,Node> Map;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
     // set the block sizes
     // note one block of zero size, to test capability
     Teuchos::Tuple<int,7> block_sizes = Teuchos::tuple<int>(1,3,5,0,5,3,1) ;
     const int maxBlockSize = *std::max_element( block_sizes.begin(), block_sizes.end() );
     // create a Map
-    const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), (size_t)0 );
-    RCP<const Map> map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
-    RCP<const RowMatrix<Scalar,LO,GO> > mat;
+    const size_t numLocal = std::accumulate (block_sizes.begin(), block_sizes.end(), as<size_t> (0));
+    RCP<const Map> map = Tpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
+    RCP<const RowMatrix<Scalar,LO,GO,Node> > mat;
     {
-      RCP<CrsMatrix<Scalar,LO,GO> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
+      RCP<CrsMatrix<Scalar,LO,GO,Node> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
       for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
         // add diagonal entries
-        mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(1.0) );
+        mat_crs->insertGlobalValues (gid, tuple<GO> (gid), tuple<Scalar> (as<Scalar> (1)));
         // add some entries outside of the diagonal block
-        if (gid - maxBlockSize >= map->getMinGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid - maxBlockSize), tuple<Scalar>(1.0) );
-        if (gid + maxBlockSize <= map->getMaxGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid + maxBlockSize), tuple<Scalar>(1.0) );
+        if (gid >= map->getMinGlobalIndex() + maxBlockSize) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid - maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+        }
+        if (gid + maxBlockSize <= map->getMaxGlobalIndex()) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid + maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+        }
       }
       mat_crs->fillComplete();
       mat = mat_crs;
@@ -184,44 +183,53 @@ namespace {
       }
       Teuchos::ArrayRCP<Scalar> out_diags;
       Teuchos::ArrayRCP<LO>     out_offsets;
-      RCP<CrsMatrix<Scalar,LO,GO> > not_fill_complete = Tpetra::createCrsMatrix<Scalar>( map );
+      RCP<CrsMatrix<Scalar,LO,GO,Node> > not_fill_complete = Tpetra::createCrsMatrix<Scalar>( map );
       TEST_THROW( Tpetra::Ext::extractBlockDiagonals( *not_fill_complete, bfirsts().getConst(), out_diags, out_offsets ) , std::runtime_error );
     }
   }
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockDiagonalExtraction, SimpleExtraction, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockDiagonalExtraction, SimpleExtraction, LO, GO, Scalar, Node )
   {
-    typedef Tpetra::Map<LO,GO>           Map;
-    typedef Tpetra::BlockMap<LO,GO> BlockMap;
+    using Teuchos::as;
+    typedef Tpetra::Map<LO,GO,Node>           Map;
+    typedef Tpetra::BlockMap<LO,GO,Node> BlockMap;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
 
     //
     // set the block sizes
     // note one block of zero size, to test capability
-    Teuchos::Tuple<int,7> block_sizes = Teuchos::tuple<int>(1,3,5,0,5,3,1) ;
+    Teuchos::Array<int> block_sizes = Teuchos::tuple<int>(1,3,5,0,5,3,1);
     const int maxBlockSize = *std::max_element( block_sizes.begin(), block_sizes.end() );
     const size_t expected_alloc_size = std::inner_product( block_sizes.begin(), block_sizes.end(), block_sizes.begin(), 0 );
     //
     // create a point Map
     //
-    const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), (size_t)0 );
-    RCP<const Map> map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
+    const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), as<size_t>(0) );
+    RCP<const Map> map = Tpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
     //
     // fill matrix for testing
     //
-    RCP<const RowMatrix<Scalar,LO,GO> > mat;
+    RCP<const RowMatrix<Scalar,LO,GO,Node> > mat;
     {
-      RCP<CrsMatrix<Scalar,LO,GO> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
+      RCP<CrsMatrix<Scalar,LO,GO,Node> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
       for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
         // add diagonal entries
-        mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(1.0) );
+        mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar> (as<Scalar> (1)));
+        out << gid << " ";
         // add some entries outside of the diagonal block
-        if (gid - maxBlockSize >= map->getMinGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid - maxBlockSize), tuple<Scalar>(1.0) );
-        if (gid + maxBlockSize <= map->getMaxGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid + maxBlockSize), tuple<Scalar>(1.0) );
+        if (gid >= map->getMinGlobalIndex () + maxBlockSize) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid - maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+          out << gid - maxBlockSize << " ";
+        }
+        if (gid + maxBlockSize <= map->getMaxGlobalIndex ()) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid + maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+          out << gid + maxBlockSize << " ";
+        }
       }
       mat_crs->fillComplete();
       mat = mat_crs;
@@ -240,10 +248,10 @@ namespace {
     //
     Teuchos::ArrayRCP<Scalar> block_diagonals1;
     Teuchos::ArrayRCP<LO>     block_offsets1;
-    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO>( *mat, block_firsts(), block_diagonals1, block_offsets1 );
+    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO,Node>( *mat, block_firsts(), block_diagonals1, block_offsets1 );
     //
     // independently test first extraction
-    // 
+    //
     {
       TEST_EQUALITY( (size_t)expected_alloc_size, (size_t)block_diagonals1.size() );
       TEST_EQUALITY( (size_t)block_sizes.size(), (size_t)block_offsets1.size() );
@@ -258,13 +266,13 @@ namespace {
     //
     Teuchos::Tuple<GO,7> globalBlockIDs = Teuchos::tuple<GO>(1,2,3,4,5,6,7) ;
     RCP<const BlockMap> bmap = rcp(new BlockMap(map,globalBlockIDs,block_sizes,map->getNode()));
-    // 
+    //
     // perform second extraction
     //
     Teuchos::ArrayRCP<Scalar> block_diagonals2;
     Teuchos::ArrayRCP<LO>     block_offsets2;
-    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO>( *mat, *bmap, block_diagonals2, block_offsets2 );
-    // 
+    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO,Node>( *mat, *bmap, block_diagonals2, block_offsets2 );
+    //
     // independently test second extraction
     //
     {
@@ -285,18 +293,20 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockRowExtraction, DiagonalExtraction, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockRowExtraction, DiagonalExtraction, LO, GO, Scalar, Node )
   {
-    typedef Tpetra::Map<LO,GO>           Map;
-    typedef Tpetra::BlockMap<LO,GO> BlockMap;
+    using Teuchos::as;
+    typedef Tpetra::Map<LO,GO,Node>           Map;
+    typedef Tpetra::BlockMap<LO,GO,Node> BlockMap;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     //
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
     const int myImageID = comm->getRank();
     //
     // set the block sizes
-    // try to hit the border cases: some zero block at the outside and inside, 
+    // try to hit the border cases: some zero block at the outside and inside,
     Teuchos::Tuple<int,6> block_sizes = Teuchos::tuple<int>( myImageID%2 , 2 , 0 , myImageID+1 , 3, (myImageID+1)%2 );
     const int numBlocks = (int)block_sizes.size();
     const int maxBlockSize = *std::max_element( block_sizes.begin(), block_sizes.end() );
@@ -304,20 +314,24 @@ namespace {
     // create a point Map
     //
     const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), 0 );
-    RCP<const Map> map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
+    RCP<const Map> map = Tpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
     //
     // fill matrix for testing
-    // 
     //
-    RCP<const RowMatrix<Scalar,LO,GO> > mat;
+    //
+    RCP<const RowMatrix<Scalar,LO,GO,Node> > mat;
     {
-      RCP<CrsMatrix<Scalar,LO,GO> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
+      RCP<CrsMatrix<Scalar,LO,GO,Node> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
       for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
         // add diagonal entries
-        mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(1.0) );
+        mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar> (as<Scalar> (1)) );
         // add some entries outside of the diagonal block; max
-        if (gid - maxBlockSize >= map->getMinGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid - maxBlockSize), tuple<Scalar>(1.0) );
-        if (gid + maxBlockSize <= map->getMaxGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid + maxBlockSize), tuple<Scalar>(1.0) );
+        if (gid >= map->getMinGlobalIndex() + maxBlockSize) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid - maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+        }
+        if (gid + maxBlockSize <= map->getMaxGlobalIndex()) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid + maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+        }
       }
       mat_crs->fillComplete();
       mat = mat_crs;
@@ -329,14 +343,14 @@ namespace {
     Teuchos::Tuple<GO,6> globalBlockIDs = Teuchos::tuple<GO>(1,2,3,4,5,6);
     RCP<const BlockMap> bmap = rcp(new BlockMap(map,globalBlockIDs,block_sizes,map->getNode()));
 
-    // 
+    //
     // perform block diagonal extraction
-    // 
+    //
     Teuchos::ArrayRCP<Scalar> block_diagonals;
     Teuchos::ArrayRCP<LO>     block_offsets;
-    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO>( *mat, *bmap, block_diagonals, block_offsets );
+    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO,Node>( *mat, *bmap, block_diagonals, block_offsets );
 
-    // 
+    //
     // perform block row extractions
     //
     int total_num_nonzeros_extracted = 0;
@@ -354,14 +368,14 @@ namespace {
         TEST_EQUALITY_CONST( block_entries.size() > 0, true );
         // find the diagonal, compare it against block_diagonals[b]
         bool diagFound = false;
-        for (Teuchos_Ordinal jj=0; jj < block_entries.size(); ++jj) 
+        for (Teuchos_Ordinal jj=0; jj < block_entries.size(); ++jj)
         {
           // block row partitioning is block column partitioning for this test
           // therefore, we don't need to compare global block IDs; local block IDs will suffice
-          if ( block_indices[jj] == b ) 
+          if ( block_indices[jj] == b )
           {
             // can't find the diagonal block twice
-            TEST_EQUALITY_CONST( diagFound, false ); 
+            TEST_EQUALITY_CONST( diagFound, false );
             TEST_COMPARE_ARRAYS( block_entries[jj], block_diagonals(block_offsets[b],block_sizes[b]*block_sizes[b]) );
             diagFound = true;
           }
@@ -377,20 +391,18 @@ namespace {
   }
 
 
-  // 
+  //
   // INSTANTIATIONS
   //
 
-#define UNIT_TEST_ORDINAL_SCALAR(LO, GO, SCALAR) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockDiagonalExtraction, SimpleExtraction, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockRowExtraction,      DiagonalExtraction, LO, GO, SCALAR )
+#define UNIT_TEST_GROUP(SCALAR, LO, GO, NODE) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockDiagonalExtraction, SimpleExtraction, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockRowExtraction,      DiagonalExtraction, LO, GO, SCALAR, NODE )
 
-#define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-        UNIT_TEST_ORDINAL_SCALAR(LO, GO, double)
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-UNIT_TEST_GROUP_ORDINAL(int, int)
-UNIT_TEST_GROUP_ORDINAL(int, long)
+  TPETRA_INSTANTIATE_SLGN_NOGPU( UNIT_TEST_GROUP )
 
 }
 

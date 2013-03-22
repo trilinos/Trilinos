@@ -14,40 +14,55 @@ ASSERT_DEFINED(
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND
     ${PACKAGE_NAME}_ENABLE_EpetraExt AND
-    ${PACKAGE_NAME}_ENABLE_Amesos) 
+    ${PACKAGE_NAME}_ENABLE_Ifpack AND
+    ${PACKAGE_NAME}_ENABLE_Amesos)
 
-  IF(Trilinos_ENABLE_AztecOO) 
+  IF(Trilinos_ENABLE_AztecOO)
     # build only if AztecOO available, too
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Navier2D_Test
-      SOURCES Navier2D_epetra.cpp
+      Navier2D_Epetra
+      SOURCES Navier2D_Epetra.cpp
       COMM serial mpi
       DEPLIBS muelu xpetra
       )
-    
+
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Navier2DBlocked_Test
-      SOURCES Navier2D_blocked_epetra.cpp
+      Navier2DBlocked_Epetra
+      SOURCES Navier2DBlocked_Epetra.cpp
       COMM serial mpi
       DEPLIBS muelu xpetra
       )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Navier2DBlocked_BraessSarazinSmoother
-      SOURCES Navier2D_blocked_bssmoother.cpp
+      SOURCES Navier2DBlocked_BraessSarazinSmoother.cpp
       COMM serial mpi
       DEPLIBS muelu xpetra
       )
 
+   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
+   #   Navier2DBlocked_SimpleSmoother
+   #   SOURCES Navier2DBlocked_SimpleSmoother.cpp
+   #   COMM serial mpi
+   #   DEPLIBS muelu xpetra
+   #   )
+
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Navier2DBlocked_BraessSarazin
-      SOURCES Navier2D_blocked_bs.cpp
+      SOURCES Navier2DBlocked_BraessSarazin.cpp
       COMM serial mpi
       DEPLIBS muelu xpetra
       )
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(Navier2D_test_copyfiles
+      
+   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
+   #   Navier2DBlocked_Simple
+   #   SOURCES Navier2DBlocked_Simple.cpp
+   #   COMM serial mpi
+   #   DEPLIBS muelu xpetra
+   #   )  
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(Navier2D_cp
       SOURCE_FILES A5932_re1000.txt b5932_re1000.txt
       )
   ENDIF()
-  
+
 ENDIF()

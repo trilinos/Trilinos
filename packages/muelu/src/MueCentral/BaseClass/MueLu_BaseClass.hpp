@@ -61,12 +61,12 @@ namespace MueLu {
   class BaseClass
     : public VerboseObject, public Describable
   {
-    
+
   public:
 
     //! @name Constructors/Destructors
     //@{
-    
+
     //! Destructor.
     virtual ~BaseClass() {}
 

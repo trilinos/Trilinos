@@ -12,21 +12,21 @@
 </ul>
 
 <em>
-\section piro_disclaimer  Disclaimer for Beta-Release in Trilinos 10.2
-Piro is an immature package that is being released for the
-first time as part of Trilinos 10.2 in March-April 2010. 
+\section piro_disclaimer  Disclaimer for Beta-Release in Trilinos 11.2
+Piro is an immature package that was released for the
+first time as part of Trilinos 10.2 in March-April 2010.
 At this point, any expectations of documentation, full algorithmic
-coverage, and backward-compatibility should be limited. 
+coverage, and backward-compatibility should be limited.
 </em>
 
-Piro Keywords:  Nonlinear Sovlers, Time Integration, Optimization, 
+Piro Keywords:  Nonlinear Sovlers, Time Integration, Optimization,
    UQ, Continuation, Multi-Physics Coupling, Network Solvers
 
-\section piro_intro Introduction 
+\section piro_intro Introduction
 
 Piro is the top-level, unifying package of the Embedded Nonlinear
-Analysis Capability area. The main purpose of the package is to 
-provide driver classes for the common uses of Trilinos nonlinear 
+Analysis Capability area. The main purpose of the package is to
+provide driver classes for the common uses of Trilinos nonlinear
 analysis tools. These drivers all can be constructed similarly,
 with a ModelEvaluator and a ParameterList, to make it simple to
 switch between different types of analysis. They also all inherit
@@ -35,18 +35,18 @@ that the resulting analysis can in turn driven by non-intrusive
 analysis routines.
 
 The name Piro is an acronym for "Paramters In -- Responses Out,"
-which is a Tarzan-grammar description of the abstraction for 
+which is a Tarzan-grammar description of the abstraction for
 a solved forward problem.
 It also is the name of a Native American Peublo originally
 located near present day Socorro, New Mexico.
 
 \section piro_overview Piro Description
 
-Piro attempts to unify the usage of the nonlinear analysis 
+Piro attempts to unify the usage of the nonlinear analysis
 capabilities in Trilinos. It requires that the application
-code present itself using the ModelEvaluator interface 
-abstraction (either the Thyra or EpetraExt version). 
-The Piro solvers can be constructed using just the 
+code present itself using the ModelEvaluator interface
+abstraction (either the Thyra or EpetraExt version).
+The Piro solvers can be constructed using just the
 ModelEvaluator and a Teuchos::ParameterList, and then
 can be solved with a single "evalModel" call.
 
@@ -64,7 +64,7 @@ by Piro include:
 Each of these solvers not only takes a ModelEvaluator as
 the interface to the application code, but also itself
 inherits from the ModelEvaluator interface. These are
-of the ResponseOnlyModelEvaluator variety (which is 
+of the ResponseOnlyModelEvaluator variety (which is
 currently a class in Thyra, but just a useful
 description for EpetraExt). A ResponseOnlyModelEvaluator
 takes parameters as inputs and produces
@@ -73,26 +73,26 @@ it may also produce gradients of the response with respect
 to the parameters, and, in the future, Hessians.
 
 As a ResponseOnlyModelEvaluator, any Piro solver will
-satisfy the interface for non-intrusive optimization 
+satisfy the interface for non-intrusive optimization
 and UQ algorithms. In Trilinos, these include:
 <ul>
 <li>OptiPack: Distributed memory optimization algorithms with line searches
 <li>MOOCHO: Distributed memory SQP methods with constraints
-<li>Dakota via TriKota: The entire Dakota framework 
-(developed at Sandia independently from Trilinos) is available 
+<li>Dakota via TriKota: The entire Dakota framework
+(developed at Sandia independently from Trilinos) is available
 through the adapters and build system of the TriKota package.
 </ul>
 
 
 \section piro_use Piro Use Case
 
-To get concrete, here is a typical use case (which can be seen 
+To get concrete, here is a typical use case (which can be seen
 in the test directory).
 <ul>
 <li> Wrap your application code in an EpetraExt::ModelEvaluator,
 taking a solution vector and parameters as input, and producing
 a residual vector, Jacobian, and response (objective function).
-<li> Construct this model, and use it and a parameter list 
+<li> Construct this model, and use it and a parameter list
 (specified in an XML file) to construct a Piro::Epetra::NOXSolver
 <li> Call the Piro::Epetra::Analyze method with this solver and
 a parameter list to perform optimization of this model.
@@ -105,24 +105,24 @@ application.
 
 The design of Piro leads to confusion, because the ModelEvaluator
 is the interface abstraction at two levels. The full ModelEvaluator
-(that takes a statevector as input and returns a residual) is the 
-abstraction around the users application. The Piro Solvers (typically 
-nonlinear or transient) eliminate the statevector so that the residual 
-is satisfied, and present themselves as a ModelEvaluator as well 
+(that takes a statevector as input and returns a residual) is the
+abstraction around the users application. The Piro Solvers (typically
+nonlinear or transient) eliminate the statevector so that the residual
+is satisfied, and present themselves as a ModelEvaluator as well
 (in this case, the ResponseOnly variety) for non-intrusive algorithms.
 
 This design allows for flexibility, particularly in expanding this
-coupling beyond two levels. For instance, multi-physics coupling 
-algorithms can combine separate models into a single coupled model. 
-A UQ study of a coupled model with transient heat transfer and 
-quasi-steady fluid flow, could involve ModelEvaluators at 4 levels, 
+coupling beyond two levels. For instance, multi-physics coupling
+algorithms can combine separate models into a single coupled model.
+A UQ study of a coupled model with transient heat transfer and
+quasi-steady fluid flow, could involve ModelEvaluators at 4 levels,
 and not just two.
 
 \section piro_help Piro Contacts
 
 Piro is developed by Andy Salinger, Roscoe Bartlett, Todd Coffey,
 Roger Pawlowski, and Eric Phipps. Much of the code is adapted from
-tests and examples for NOX, LOCA, Rythmos, Stokhos, MOOCHO, 
+tests and examples for NOX, LOCA, Rythmos, Stokhos, MOOCHO,
 OptiPack, and TriKota, and was developed and matured in the Albany
 application code before being library-ized into Piro.
 

@@ -99,11 +99,11 @@ int main (int argc, char **argv)
   char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
   char *block_names[10], *nset_names[10], *sset_names[10];
   char *attrib_names[10];
-  char name[MAX_STR_LENGTH+1];
   char title[MAX_LINE_LENGTH+1], elem_type[MAX_STR_LENGTH+1];
   char title_chk[MAX_LINE_LENGTH+1];
   char *cdum = 0;
   char *prop_names[3];
+  char *name = NULL;
 
   CPU_word_size = 0;                    /* sizeof(float) */
   IO_word_size = 0;                     /* use what is stored in file */
@@ -142,6 +142,8 @@ int main (int argc, char **argv)
     max_name_length = max_use_name_length;
     ex_set_max_name_length(exoid, max_name_length);
   }
+  
+  name = (char *) calloc(max_name_length+1, sizeof(char));
   
   /* read database parameters */
   error = ex_get_init (exoid, title, &num_dim, &num_nodes, &num_elem,
@@ -1201,6 +1203,7 @@ int main (int argc, char **argv)
   if (num_node_sets > 0)
     free (num_nodes_per_set);
 
+  free (name);
   error = ex_close (exoid);
   printf ("\nafter ex_close, error = %3d\n", error);
   return 0;

@@ -40,6 +40,7 @@
 //@HEADER
 
 #include "AztecOO.h"
+#include "Epetra_ConfigDefs.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
@@ -153,7 +154,7 @@ int main(int argc, char *argv[])
   int local_n = 30;
   long long global_n = ((long long)numprocs)*((long long)local_n);
 
-  Epetra_Map emap(global_n, 0, comm);
+  Epetra_Map emap(global_n, 0LL, comm);
 
   Epetra_CrsMatrix* A = create_and_fill_crs_matrix(emap);
 
@@ -503,7 +504,7 @@ int test_azoo_conv_with_scaling(int conv_option, int scaling_option,
   int numprocs = comm.NumProc();
   long long globalN = ((long long)numprocs)*((long long)localN);
  
-  Epetra_Map emap(globalN, 0, comm);
+  Epetra_Map emap(globalN, 0LL, comm);
   Epetra_CrsMatrix* Acrs = create_and_fill_crs_matrix(emap);
 
   Epetra_Vector x_crs(emap), b_crs(emap);
@@ -1413,7 +1414,7 @@ int test_bug2554(Epetra_Comm& Comm, bool verbose)
 //a regression test.
 
   // Construct maps that do not have consecutive indices 
-  int             RowIndices[3];
+  long long             RowIndices[3];
   if (Comm.MyPID() == 0) {
     RowIndices[0] = 1;
     RowIndices[1] = 2;
@@ -1424,12 +1425,12 @@ int test_bug2554(Epetra_Comm& Comm, bool verbose)
     RowIndices[1] = 5;
     RowIndices[2] = 6;
   }
-  Epetra_Map      RowMap((long long)-1, 3, RowIndices, 0, Comm);
+  Epetra_Map      RowMap((long long)-1, 3, RowIndices, 0LL, Comm);
 
   // Construct a graph with two entries per line 
   Epetra_CrsGraph Graph(Copy, RowMap, 2);
   for (int i = 0; i < RowMap.NumMyElements(); i++) {
-    int             ig = RowIndices[i];
+    long long             ig = RowIndices[i];
     Graph.InsertGlobalIndices(ig, 1, &ig);
   }
   Graph.FillComplete();

@@ -33,21 +33,17 @@
 
 #include "Ifpack2_SingletonFilter_def.hpp"
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+#include "Ifpack2_ETIHelperMacros.h"
 
 namespace Ifpack2 {
-#ifdef HAVE_TPETRA_INST_FLOAT
-IFPACK2_INST(SingletonFilter,float,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_DOUBLE
-IFPACK2_INST(SingletonFilter,double,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-IFPACK2_INST(SingletonFilter,std::complex<float>,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-IFPACK2_INST(SingletonFilter,std::complex<double>,int,int);
-#endif
+
+  #define LCLINST(S,LO,GO) \
+          IFPACK2_INST(SingletonFilter,S,LO,GO)
+
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+  IFPACK2_INSTANTIATE_SLG(LCLINST)
+
 }
 
 #endif
-

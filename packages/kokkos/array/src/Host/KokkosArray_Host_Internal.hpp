@@ -45,6 +45,7 @@
 #define KOKKOSARRAY_HOST_INTERNAL_HPP
 
 #include <KokkosArray_Host.hpp>
+#include <KokkosArray_HostSpace.hpp>
 #include <Host/KokkosArray_Host_Parallel.hpp>
 
 //----------------------------------------------------------------------------
@@ -82,18 +83,16 @@ public:
 class HostInternal {
 protected:
 
-  enum { THREAD_COUNT_MAX = 1023 };
-
   HostWorkerBlock  m_worker_block ;
-  int              m_node_rank ;     // Rank of the process' NUMA node, if set
-  unsigned         m_node_count ;    // Count of NUMA nodes
-  unsigned         m_node_pu_count ; // Assuming all nodes are equivalent
-  unsigned         m_page_size ;     //
+
+  unsigned         m_gang_capacity ;   // Maximum number of gangs
+  unsigned         m_worker_capacity ; // Maixmum number of workers per gang
+
   unsigned         m_cache_line_size ; //
   unsigned         m_thread_count ;  // Number of threads
   unsigned         m_gang_count ;    // Number of NUMA nodes used
   unsigned         m_worker_count ;  // Number of threads per NUMA node
-  unsigned         m_work_chunk ;    // Granularity of work partitioning
+  unsigned         m_reduce_scratch_size ;   // Sizeof reduction memory
   HostThread       m_master_thread ;
   //! Array of all worker threads (including master); accessible to the threads.
   HostThread     * m_thread[ HostThread::max_thread_count ];
@@ -128,6 +127,8 @@ private:
 
   void activate_threads();
 
+  void execute_serial( const HostThreadWorker & worker );
+
 public:
   /// \brief Assert at run time that the calling worker thread is inactive.
   ///
@@ -154,16 +155,23 @@ public:
 
   void finalize();
 
+  virtual void print_configuration( std::ostream & ) const ;
+
   inline void execute( const HostThreadWorker & worker );
 
   void driver( const size_t );
 
   bool is_master_thread() const ;
 
+  void resize_reduce_scratch( unsigned size );
+  void resize_reduce_thread( HostThread & thread ) const ;
+  void * reduce_scratch() const ;
+
   //! Access the one HostInternal instance.
   static HostInternal & singleton();
 
   friend class KokkosArray::Host ;
+  friend class KokkosArray::HostSpace ;
 };
 
 } /* namespace Impl */

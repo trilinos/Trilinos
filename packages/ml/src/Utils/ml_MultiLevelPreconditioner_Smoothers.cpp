@@ -271,7 +271,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
         int i = cout.precision(0);
         cout.setf(std::ios::fixed);
         cout << msg << "# global rows = " << global[0] 
-             << ", # estim. global nnz = " << global[1] << endl;
+             << ", # estim. global nnz = " << global[1];
+        cout.precision(2);
+        cout << ", # nnz per row = " << ((double)global[1]) / global[0] << endl;
         cout.precision(i);
         cout.unsetf(std::ios::fixed);
       }

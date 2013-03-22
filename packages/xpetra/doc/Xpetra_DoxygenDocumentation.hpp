@@ -42,7 +42,7 @@ Xpetra is used by the MueLu and Zoltan2 projects.
 \verbinclude COPYRIGHT_AND_LICENSE
 
 \section xpetra_questions For All Questions and Comments...
-  
+
    Please contact Jeremie Gaidamour (jngaida@sandia.gov) or Jonathan Hu (jhu@sandia.gov).
 
 */
@@ -89,7 +89,7 @@ Long Term:
 
 \ref faq2
 
-\section faq1 1. Why name the code Xpetra?  
+\section faq1 1. Why name the code Xpetra?
 Why not?
 
 \section faq2 2. Put your question here?

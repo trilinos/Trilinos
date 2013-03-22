@@ -94,7 +94,7 @@ TEUCHOS_UNIT_TEST(tExplicitOps, transpose)
    int ny = 53;
 
    // create some big blocks to play with
-   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm);
+   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm,false); // CJ TODO FIXME: change for Epetra64
    FGallery.Set("nx",nx);
    FGallery.Set("ny",ny);
    Epetra_CrsMatrix & epetraF = FGallery.GetMatrixRef();

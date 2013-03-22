@@ -60,9 +60,9 @@
 
 //Xpetra
 #include <Xpetra_MapExtractor_fwd.hpp>
-#include <Xpetra_CrsOperator_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
-//#include <Xpetra_Operator.hpp>
+//#include <Xpetra_Matrix.hpp>
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_StridedMap_fwd.hpp"
 
@@ -98,7 +98,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SchurComplementFactory(Teuchos::RCP<const FactoryBase> AFact,Scalar omega/*, size_t row, size_t col, LocalOrdinal blksize = 1*/);
+    SchurComplementFactory(/*Scalar omega*/);
 
     //! Destructor.
     virtual ~SchurComplementFactory();
@@ -109,8 +109,7 @@ namespace MueLu {
 
     void DeclareInput(Level &currentLevel) const;
 
-    //! Add a factory manager
-    //void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //@}
 
@@ -124,9 +123,9 @@ namespace MueLu {
 
 
   private:
-    Teuchos::RCP<const FactoryBase>     AFact_;  ///< generating factory of input variable (blocked A operator)
+    //Teuchos::RCP<const FactoryBase>     AFact_;  ///< generating factory of input variable (blocked A operator)
 
-    Scalar                              omega_;  ///< damping parameter
+    //Scalar                              omega_;  ///< damping parameter
 
     // bool switchRowOrder_;          ///< TODO NOT USED YET
 

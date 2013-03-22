@@ -53,7 +53,7 @@
 #ifndef MUELU_BLOCKEDPFACTORY_DECL_HPP_
 #define MUELU_BLOCKEDPFACTORY_DECL_HPP_
 
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"
@@ -106,7 +106,8 @@ namespace MueLu {
 
     // setup blocked transfer operator
     // use Teuchos::null as AFactory -> standard "A" variable (in this case the blocked operator A)
-    RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory(Teuchos::null));
+    RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory());
+    PFact->SetFactory("A",Teuchos::null); // not necessary (use blocked operator A)
     PFact->AddFactoryManager(M11); // add factory manager for first block row
     PFact->AddFactoryManager(M22); // add factory manager for second block row
 
@@ -135,10 +136,12 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    BlockedPFactory(RCP<FactoryBase> AFact = Teuchos::null);
+    BlockedPFactory(/*RCP<FactoryBase> AFact = Teuchos::null*/);
 
     //! Destructor.
     virtual ~BlockedPFactory();
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //@}
 
@@ -185,7 +188,7 @@ namespace MueLu {
 
     //! Input factories
     std::vector<Teuchos::RCP<const FactoryManagerBase> > FactManager_;
-    RCP<FactoryBase> AFact_; //! A Factory
+    //RCP<FactoryBase> AFact_; //! A Factory
 
     //! Factory parameters
     std::string diagonalView_;

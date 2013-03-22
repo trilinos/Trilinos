@@ -1,5 +1,8 @@
 INCLUDE(AddSubdirectories)
 
+# for TpetraTestingUtilities.hpp
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
+
 ADD_SUBDIRECTORIES(
   Platform
   Map
@@ -24,14 +27,6 @@ ADD_SUBDIRECTORIES(
   )
 
 ADD_SUBDIRECTORY(BugTests)
-
-TRIBITS_ADD_LIBRARY(
-  tpetratestlib
-  SOURCES UnitTestMissingExplicitInstantiations.cpp
-  DEPLIBS tpetra teuchos
-  TESTONLY
-)
-
 
 IF (Tpetra_ENABLE_Epetra)
   ADD_SUBDIRECTORY(EpetraRowMatrix)

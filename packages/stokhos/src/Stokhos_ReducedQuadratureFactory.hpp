@@ -154,13 +154,7 @@ namespace Stokhos {
       Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
       Teuchos::ETransp transa, Teuchos::EUplo uplo) const;
 
-    void solver_BasisPursuit(
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
-      const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
-      Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
-      Teuchos::ETransp transa, Teuchos::EUplo uplo) const;
-
-    void solver_OrthogonalMatchingPursuit(
+    void solver_CompressedSensing(
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
       const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
       Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
@@ -169,6 +163,11 @@ namespace Stokhos {
     ordinal_type computeRank(
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& R,
       const value_type tol) const;
+
+    /*!
+     * \brief Compute bionomial coefficient (n ; k) = n!/( k! (n-k)! )
+     */
+    ordinal_type n_choose_k(const ordinal_type& n, const ordinal_type& k) const;
 
   private:
 

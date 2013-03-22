@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -101,6 +101,7 @@ public:
   void setModel(const RCP< const ModelEvaluator<double> > &model);
   /** \brief . */
   RCP< const ModelEvaluator<double> > getModel() const;
+
   /** \brief . */
   SolveStatus<double> solve(
     VectorBase<double> *x,
@@ -116,8 +117,11 @@ public:
   get_nonconst_W(const bool forceUpToDate);
   /** \brief . */
   RCP< const LinearOpWithSolveBase<double> > get_W() const;
-  
+
   //@}
+
+  /** \brief . */
+  void setBasePoint(const ModelEvaluatorBase::InArgs<double> &modelInArgs);
 
   RCP<const NOX::Solver::Generic> getNOXSolver() const;
 
@@ -127,7 +131,7 @@ private:
   void resetSolver();
 
   //! Builds status tests - first looks for parameter list to use, otherwise builds a default set of status tests.
-  RCP<NOX::StatusTest::Generic> 
+  RCP<NOX::StatusTest::Generic>
   buildStatusTests(Teuchos::ParameterList& p);
 
   void
@@ -144,6 +148,7 @@ private:
   RCP<Teuchos::ParameterList> param_list_;
   RCP<Teuchos::ParameterList> valid_param_list_;
   RCP<const ModelEvaluator<double> > model_;
+  ModelEvaluatorBase::InArgs<double> basePoint_;
 
   RCP<NOX::Thyra::Group> nox_group_;
   RCP<NOX::StatusTest::Generic> status_test_;

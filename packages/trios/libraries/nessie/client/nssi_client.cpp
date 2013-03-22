@@ -1,41 +1,45 @@
-/* ************************************************************************
-
-                   Trios: Trilinos I/O Support
-                 Copyright 2011 Sandia Corporation
-
- Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- the U.S. Government retains certain rights in this software.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are
- met:
-
- 1. Redistributions of source code must retain the above copyright
- notice, this list of conditions and the following disclaimer.
-
- 2. Redistributions in binary form must reproduce the above copyright
- notice, this list of conditions and the following disclaimer in the
- documentation and/or other materials provided with the distribution.
-
- 3. Neither the name of the Corporation nor the names of the
- contributors may be used to endorse or promote products derived from
- this software without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
- EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
- CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
-
-*************************************************************************/
+/**
+//@HEADER
+// ************************************************************************
+//
+//                   Trios: Trilinos I/O Support
+//                 Copyright 2011 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
+//
+// *************************************************************************
+//@HEADER
+ */
 /*-------------------------------------------------------------------------*/
 /**  @file rpc_client.cc
  *
@@ -51,6 +55,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_nssi_client.h"
 #include "Trios_nssi_request.h"
 #include "Trios_nssi_types.h"
+#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
 #include "Trios_logger.h"
 #include "Trios_threads.h"
 #include "Trios_timer.h"
@@ -123,8 +129,6 @@ client_init ()
     // Initialize the thread counter
     nthread_counter_init(&request_count);
 
-//    register_service_encodings();
-
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_GET_SERVICE, void, void, nssi_service);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_KILL_SERVICE, nssi_kill_service_args, void, void);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_TRACE_RESET, nssi_trace_reset_args, void, void);
@@ -191,8 +195,11 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
 
     char *buf=NULL;
     NNTI_buffer_t encoded_long_res_hdl;
-    NNTI_buffer_t incoming_hdl;
     NNTI_status_t status;
+
+    int8_t        long_res_ack;
+    NNTI_buffer_t long_res_ack_hdl;
+    NNTI_status_t long_res_ack_status;
 
     log_level debug_level = rpc_debug_level;
 
@@ -317,6 +324,36 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
                 goto cleanup;
             }
             trios_stop_timer("xdr_decode_result - decode", call_time);
+
+            trios_start_timer(call_time);
+            rc=NNTI_register_memory(
+                    &transports[request->svc->transport_id],
+                    (char *)&long_res_ack,
+                    sizeof(long_res_ack),
+                    1,
+                    NNTI_SEND_SRC,
+                    &request->svc->svc_host,
+                    &long_res_ack_hdl);
+            trios_stop_timer("NNTI_register_memory - long result ack", call_time);
+            if (rc != NNTI_OK) {
+                log_error(debug_level, "failed registering long result ack: %s",
+                        nnti_err_str(rc));
+            }
+
+            trios_start_timer(call_time);
+            rc=NNTI_send(&request->svc->svc_host, &long_res_ack_hdl, &header.result_ack_addr);
+            trios_stop_timer("NNTI_send - long result ack", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed sending short result: %s",
+                        nnti_err_str(rc));
+            }
+            trios_start_timer(call_time);
+            rc=NNTI_wait(&long_res_ack_hdl, NNTI_SEND_SRC, -1, &long_res_ack_status);
+            trios_stop_timer("NNTI_wait - long result ack", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed waiting for short result: %s",
+                        nnti_err_str(rc));
+            }
         }
     }
 
@@ -332,6 +369,12 @@ cleanup:
         }
         if (buf != NULL) {
             free(buf);
+        }
+
+        NNTI_unregister_memory(&long_res_ack_hdl);
+        if (rc != NNTI_OK) {
+            log_error(debug_level, "failed unregistering long result ack: %s",
+                    nnti_err_str(rc));
         }
     }
 
@@ -409,18 +452,14 @@ int nssi_get_service(
 {
     int rc = NSSI_OK;
     int cleanup_rc = NSSI_OK;
-    int rc2 = NSSI_OK;
-    nssi_service svc;
-    nssi_request req;
 
     /* local count does not need protection */
-    static unsigned long local_count;
+    static int64_t local_count;
 
     /* xdrs for the header and the args. */
     XDR hdr_xdrs, res_xdrs;
 
     NNTI_peer_t   peer_hdl;
-    NNTI_buffer_t request_hdl;
 
     nssi_request_header req_header;   /* the request header */
     nssi_result_header  res_header;   /* the request header */
@@ -802,7 +841,7 @@ int nssi_test(nssi_request *req, int *rc) {
 
 int nssi_wait(nssi_request *req, int *rc)
 {
-    log_debug(rpc_debug_level, "calling nssi_timedwait");
+    log_debug(rpc_debug_level, "calling nssi_timedwait(timeout=-1)");
     return nssi_timedwait(req, -1, rc);
 }
 
@@ -816,10 +855,7 @@ static int cleanup_long_args(
         int timeout)
 {
     int rc = NSSI_OK;
-    int rc2=0;
-
     char *buf;
-    NNTI_status_t status;
 
     trios_declare_timer(call_time);
 
@@ -828,21 +864,6 @@ static int cleanup_long_args(
     }
 
     log_debug(rpc_debug_level, "waiting for long args");
-
-    /* If we created a portal for long arguments, we need to wait
-     * for the server to fetch the arguments.
-     */
-    trios_start_timer(call_time);
-    rc=NNTI_wait(
-            &req->long_args_hdl,
-            NNTI_GET_SRC,
-            -1,
-            &status);
-    trios_stop_timer("NNTI_wait - long args", call_time);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed waiting for service to get long args: %s",
-                nnti_err_str(rc));
-    }
 
     buf=NNTI_BUFFER_C_POINTER(&req->long_args_hdl);
     rc=NNTI_unregister_memory(&req->long_args_hdl);
@@ -1223,7 +1244,7 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
 
         goto cleanup;
 
-        break;
+//        break;
 
     case NSSI_REQUEST_COMPLETE:
         log_debug(rpc_debug_level,"timedwait finished");
@@ -1231,26 +1252,9 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
 
         goto cleanup;
 
-        break;
+//        break;
 
     default:
-        /* if the request status is not complete, we need to do some work */
-        if (req->data != NULL) {
-            log_debug(debug_level, "calling NNTI_wait for data_hdl");
-            trios_start_timer(call_time);
-            rc=NNTI_wait(
-                    &req->data_hdl,
-                    (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
-                    timeout,
-                    &status);
-            trios_stop_timer("NNTI_wait - data", call_time);
-            if (status.result != NNTI_OK) {
-                log_info(debug_level, "NNTI_wait for data_hdl failed");
-                rc = status.result;
-                req->status = NSSI_REQUEST_ERROR;
-                break;
-            }
-        }
         log_debug(debug_level, "calling NNTI_wait for result");
         trios_start_timer(call_time);
         rc=NNTI_wait(
@@ -1259,6 +1263,11 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
                 timeout,
                 &status);
         trios_stop_timer("NNTI_wait - short result", call_time);
+        if (status.result == NNTI_ETIMEDOUT) {
+            log_info(debug_level, "NNTI_wait for result timed out");
+            rc = status.result;
+            return rc;
+        }
         if (status.result != NNTI_OK) {
             log_info(debug_level, "NNTI_wait for result failed");
             rc = status.result;
@@ -1480,7 +1489,6 @@ static int encode_args(
          *   "fetch" the arguments using the \ref nssi_ptl_get method.
          */
         else {
-            static nssi_size args_counter = 1;
 
             log_debug(rpc_debug_level,"putting args (len=%d) "
                     "in long request", args_size);
@@ -1585,10 +1593,8 @@ int nssi_call_rpc(
         void *result,
         nssi_request *request)
 {
-    long timeout = (10)*(DEFAULT_RPC_TIMEOUT);
-
     /* local count does not need protection */
-    static unsigned long local_count;
+    static int64_t local_count;
 
     /* local variables */
     int rc=NSSI_OK;  /* return code */
@@ -1696,7 +1702,7 @@ int nssi_call_rpc(
         log_debug (debug_level, "allocating short result (size=%d)", NSSI_SHORT_RESULT_SIZE);
         request->short_result_hdl=&request->short_result;
         trios_start_timer(call_time);
-        buf=(char *)malloc(NSSI_SHORT_RESULT_SIZE);  // Freed in cleanup portion of timedwait
+        buf=(char *)calloc(NSSI_SHORT_RESULT_SIZE, sizeof(char));  // Freed in cleanup portion of timedwait
         trios_stop_timer("malloc - short result", call_time);
         if (!buf)   {
             log_fatal(rpc_debug_level, "malloc() failed!");
@@ -1921,7 +1927,6 @@ int nssi_multicast_rpc_sync(
 {
     int rc = NSSI_OK;
     int rc2 = NSSI_OK;
-    nssi_size i;
     std::vector <nssi_request> reqs(num_svcs);
 
     rc = nssi_multicast_rpc(svcs, num_svcs, opcode, args, data, data_size, results, result_size, &reqs[0]);

@@ -53,26 +53,17 @@ found = False
 #otherwise send it to the list of packages that were modified.
 #this is to cut down on the number of "extra" emails that get sent out when
 #someone merges master onto a package branch and then pushes.
-if not re.match("^master", shortrefname) and not re.match("^trilinos-release", shortrefname):
-  for pair in emails:
-    index = pair[1].find("-")
-    packageRE = pair[1][:index]
-    if re.match(packageRE, shortrefname):
-      recipients[pair[1]] = 1
+for dir in dirs:
+  #print "\ndir =", dir
+  for regex_email in emails:
+    (regex, email) = regex_email
+    #print "\nregex =", regex
+    #print "email =", email
+    if re.match(regex, dir):
+      recipients[email] = 1
       found = True
+      #print "FOUND IT!"
       break
-else:
-  for dir in dirs:
-    #print "\ndir =", dir
-    for regex_email in emails:
-      (regex, email) = regex_email
-      #print "\nregex =", regex
-      #print "email =", email
-      if re.match(regex, dir):
-        recipients[email] = 1
-        found = True
-        #print "FOUND IT!"
-        break
 
 if not found:
   recipients[defaultEmail] = 1

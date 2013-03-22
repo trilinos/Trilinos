@@ -717,12 +717,10 @@ std::string map_topology_cell_to_ioss( const CellTopologyData *cell_top,
 	break ;
 
   case shards::Line<2>::key :
-	if (spatial_dimension == 2) extype = "edge2d2";
-	else                        extype = "edge2";
+        extype = "edge2";
 	break ;
   case shards::Line<3>::key :
-	if (spatial_dimension == 2) extype = "edge2d3";
-	else                        extype = "edge3";
+        extype = "edge3";
 	break ;
 
   case shards::ShellLine<2>::key : extype.assign( "shellline2d2" ); break ;
@@ -1060,7 +1058,8 @@ void define_side_block(stk::mesh::Part &part,
     stk::io::get_cell_topology(part) :
     stk::mesh::fem::FEMMetaData::get(part).get_cell_topology(part).getCellTopologyData();
 
-  if (side_topology == NULL) {
+  if (side_topology == NULL && side_count > 0) {
+    // Non-empty side blocks must have an associated topology
     std::ostringstream msg ;
     msg << " INTERNAL_ERROR: Part " << part.name() << " returned NULL from get_cell_topology()";
     throw std::runtime_error( msg.str() );

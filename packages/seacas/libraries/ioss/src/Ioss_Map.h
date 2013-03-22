@@ -39,76 +39,47 @@
 #include <stdint.h>
 
 namespace Ioss {
+  class Field;
+  
   typedef std::vector<int64_t> MapContainer;
-  // map global to local ids
   typedef std::pair<int64_t,int64_t> IdPair;
   typedef std::vector<IdPair> ReverseMapContainer;
 
-  typedef ReverseMapContainer::value_type RMCValuePair;
-
-  // Class to support storing global/local element id map in sorted vector...
-  class IdPairCompare
-    {
-    public:
-      IdPairCompare() {}
-      bool operator()(const IdPair& lhs, const IdPair &rhs) const
-	{ return key_less(lhs.first, rhs.first); }
-      bool operator()(const IdPair& lhs, const IdPair::first_type &k) const
-	{ return key_less(lhs.first, k); }
-      bool operator()(const IdPair::first_type& k, const IdPair &rhs) const
-	{ return key_less(k, rhs.first); }
-      // Assignment operator
-      // Copy constructor
-    private:
-      bool key_less(const IdPair::first_type &k1, const IdPair::first_type &k2) const
-	{ return k1 < k2; }
-    };
-
-  class IdPairEqual
-    {
-    public:
-      IdPairEqual() {}
-      bool operator()(const IdPair& lhs, const IdPair &rhs) const
-	{ return key_equal(lhs.first, rhs.first); }
-      bool operator()(const IdPair& lhs, const IdPair::first_type &k) const
-	{ return key_equal(lhs.first, k); }
-      bool operator()(const IdPair::first_type& k, const IdPair &rhs) const
-	{ return key_equal(k, rhs.first); }
-      // Assignment operator
-      // Copy constructor
-    private:
-      bool key_equal(const IdPair::first_type &k1, const IdPair::first_type &k2) const
-	{ return k1 == k2; }
-    };
-
   class Map {
   public:
-    Map(); // Default constructor
-
+    Map() : entityType("unknown"), defined(false)
+      {} 
+    Map(const std::string &entity_type) : entityType(entity_type), defined(false)
+      {}
+    
     int64_t global_to_local(int64_t global, bool must_exist = true) const;
-    int64_t local_to_global(int64_t local) const;
 
-    static void build_reverse_map(ReverseMapContainer *Map, const int64_t *ids,
-				  int64_t num_to_get, int64_t offset,
-				  const std::string& type, int processor);
+    template <typename INT>
+      void set_map(INT *ids, size_t count, size_t offset);
 
-    static void build_reverse_map(ReverseMapContainer *Map, const int *ids,
-				  int num_to_get, int offset,
-				  const std::string& type, int processor);
+    void build_reverse_map(int processor);
+    void build_reverse_map(int64_t num_to_get, int64_t offset, int processor);
 
-    // Determines whether the input map is sequential (map[i] == i)
-    // Assumes that map is '1-based', size stored in [0]
-    static bool is_sequential(const MapContainer& the_map);
+    void release_memory(); //! Release memory for all maps.
+      
+    void reverse_map_data(void *data, const Ioss::Field &field, size_t count) const;
 
-    static void verify_no_duplicate_ids(ReverseMapContainer &reverse_map,
-					const std::string &type, int processor);
+    void map_data(void *data, const Ioss::Field &field, size_t count) const;
 
-    int64_t  entityCount;
-    bool sequentialG2L; // true if reverse node map is sequential (local==global)
-    bool entityReordered;
-    MapContainer forwardMap;
-    ReverseMapContainer reverseMap;
-    MapContainer reorderMap;
+    void map_implicit_data(void *data, const Ioss::Field &field, size_t count, size_t offset) const;
+
+    template <typename T>
+      size_t map_field_to_db_scalar_order(T* variables, std::vector<double> &db_var,
+					  size_t begin_offset, size_t count, size_t stride, size_t offset);
+
+    void build_reorder_map(int64_t start, int64_t count);
+
+    MapContainer        map;
+    MapContainer        reorder;
+    ReverseMapContainer reverse;
+    std::string         entityType; // node, element, edge, face
+    bool defined; // For use by some clients; not all, so don't read too much into value...
+    
   private:
     Map(const Map& from); // do not implement
     Map& operator=(const Map& from); // do not implement

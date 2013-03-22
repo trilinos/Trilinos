@@ -9,9 +9,9 @@ Use --help to list available options.
 
 Example:
 
-- MueLu ParameterList
+- MueLu ParameterList - Main example
 
-- Stratimikos     - Call MueLu via the stratimikos interface
+- Stratimikos         - Call MueLu via the stratimikos interface
 
    Usage:
     ./MueLu_Stratimikos.exe : use xml configuration file stratimikos_ParameterList.xml
@@ -19,8 +19,8 @@ Example:
    Note:
     The source code is not MueLu specific and can be used with any Stratimikos strategy.
 
-- MLParameterList  - Run MueLu using a parameter list formatted for ML
-                     Can also run ML for comparison purposes
+- MLParameterList     - Run MueLu using a parameter list formatted for ML
+                        Can also run ML for comparison purposes
 #TODO: change name
 
    Usage:

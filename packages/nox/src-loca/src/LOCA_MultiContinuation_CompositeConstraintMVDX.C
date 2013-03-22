@@ -54,13 +54,13 @@
 
 LOCA::MultiContinuation::CompositeConstraintMVDX::CompositeConstraintMVDX(
     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-    const vector< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterfaceMVDX> >& constraintObjects) :
+    const std::vector< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterfaceMVDX> >& constraintObjects) :
   LOCA::MultiContinuation::CompositeConstraint(),
   constraintMVDXPtrs(constraintObjects),
   compositeDX()
 {
   // Copy constraint object pointers into temporary array of base class
-  vector<Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> > tmp(constraintObjects.size());
+  std::vector<Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> > tmp(constraintObjects.size());
   for (unsigned int i=0; i<constraintObjects.size(); i++)
     tmp[i] = constraintObjects[i];
 
@@ -125,7 +125,7 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::clone(NOX::CopyType type) cons
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::CompositeConstraintMVDX::computeDX()
 {
-    string callingFunction = 
+    std::string callingFunction = 
     "LOCA::MultiContinuation::CompositeConstraintMVDX::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;

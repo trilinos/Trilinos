@@ -54,7 +54,6 @@
 // for testing gather/scatter construction
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_CellData.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"

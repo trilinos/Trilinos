@@ -1,0 +1,9 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+TRIBITS_ADD_EXECUTABLE(
+  Doc
+  SOURCES Doc.cpp
+  COMM serial mpi
+  DEPLIBS muelu xpetra
+  )

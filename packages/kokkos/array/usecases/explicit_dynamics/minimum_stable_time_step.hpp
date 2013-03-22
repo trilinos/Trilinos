@@ -59,18 +59,18 @@ struct minimum_stable_time_step<Scalar ,KOKKOSARRAY_MACRO_DEVICE>{
       {}
 
 
-    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     static void init(value_type &update) {
       update = 1.0e32;
     }
 
-    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     static void join(volatile value_type &update, const volatile value_type & source) {
       update = update < source ? update : source;
     }
 
 
-    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void operator()(int ielem, value_type & update) const {
       value_type source = region.elem_t_step(ielem);
       update = update < source ? update : source;
@@ -104,7 +104,7 @@ struct set_next_time_step<Scalar ,KOKKOSARRAY_MACRO_DEVICE>{
       {}
 
 
-    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void operator()(Scalar & result) const {
       region.delta_t(next_state) = result;
     }

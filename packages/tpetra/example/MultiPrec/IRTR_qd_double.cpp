@@ -41,19 +41,22 @@
 // @HEADER
 */
 
+#include <iostream>
+#include <qd/qd_real.h>
+
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_HybridPlatform.hpp>
 #include <TpetraExt_TypeStack.hpp>
 
-#include <iostream>
-
-#include <qd/qd_real.h>
 #include <IRTRDriver.hpp>
+
+// no CXX11 on the GPU
+#undef HAVE_KOKKOSCLASSIC_THRUST
+#include <Tpetra_HybridPlatform.hpp>
 
 /** \file IRTR_qd.cpp
     \brief An example of a high-precision eigensolver using Tpetra::RTI and qd_real.

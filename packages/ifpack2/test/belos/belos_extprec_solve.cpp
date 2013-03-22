@@ -129,7 +129,7 @@ int main(int argc, char*argv[])
     int expected_iters = 0;
     Ifpack2::getParameter(test_params, "expectNumIters", expected_iters);
     int actual_iters = solver->getNumIters();
-    if (ret == Belos::Converged && actual_iters == expected_iters && norms[0] < 1.e-7) {
+    if (ret == Belos::Converged && actual_iters <= expected_iters && norms[0] < 1.e-7) {
       if (comm->getRank() == 0) {
         std::cout << "End Result: TEST PASSED" << std::endl;
       }

@@ -61,7 +61,7 @@ class TriUtilsTestCase(unittest.TestCase):
     def setUp(self):
         self.comm    = Epetra.PyComm()
         self.numProc = self.comm.NumProc()
-        self.gallery = TriUtils.CrsMatrixGallery("laplace_2d",self.comm)
+        self.gallery = TriUtils.CrsMatrixGallery("laplace_2d",self.comm,False)
         self.gallery.Set("nx",10*self.numProc)
         self.gallery.Set("ny",10*self.numProc)
         self.comm.Barrier()

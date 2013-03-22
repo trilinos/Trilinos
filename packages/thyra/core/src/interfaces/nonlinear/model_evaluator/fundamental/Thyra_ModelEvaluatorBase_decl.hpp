@@ -423,13 +423,14 @@ public:
 
   /** \brief .  */
   enum EOutArgsMembers {
-    OUT_ARG_f       ///< .
-    ,OUT_ARG_W      ///< .
-    ,OUT_ARG_W_op   ///< .
-    ,OUT_ARG_f_poly ///< .
+    OUT_ARG_f,  ///< .
+    OUT_ARG_W,  ///< .
+    OUT_ARG_W_op,  ///< .
+    OUT_ARG_W_prec, ///< .
+    OUT_ARG_f_poly  ///< .
   };
   /** \brief .  */
-  static const int NUM_E_OUT_ARGS_MEMBERS=4;
+  static const int NUM_E_OUT_ARGS_MEMBERS=5;
 
   /** \brief . */
   enum EOutArgsDfDp {
@@ -512,6 +513,10 @@ public:
     void set_W_op( const RCP<LinearOpBase<Scalar> > &W_op );
     /** \brief Precondition: <tt>supports(OUT_ARG_W_op)==true</tt>.  */
     RCP<LinearOpBase<Scalar> > get_W_op() const;
+    /** \brief Precondition: <tt>supports(OUT_ARG_W_op)==true</tt>.  */
+    void set_W_prec( const RCP<PreconditionerBase<Scalar> > &W_prec );
+    /** \brief Precondition: <tt>supports(OUT_ARG_W_op)==true</tt>.  */
+    RCP<PreconditionerBase<Scalar> > get_W_prec() const;
     /** \brief Return the known properties of <tt>W</tt> (precondition:
      * <tt>supports(OUT_ARG_f)==true</tt>). */
     DerivativeProperties get_W_properties() const;
@@ -634,6 +639,7 @@ public:
     g_t g_; // Ng
     RCP<LinearOpWithSolveBase<Scalar> > W_;
     RCP<LinearOpBase<Scalar> > W_op_;
+    RCP<PreconditionerBase<Scalar> > W_prec_;
     DerivativeProperties W_properties_;
     deriv_t DfDp_; // Np
     deriv_properties_t DfDp_properties_; // Np
@@ -826,6 +832,8 @@ std::string Thyra::toString(ModelEvaluatorBase::EOutArgsMembers arg)
       return "OUT_ARG_W";
     case ModelEvaluatorBase::OUT_ARG_W_op:
       return "OUT_ARG_W_op";
+    case ModelEvaluatorBase::OUT_ARG_W_prec:
+      return "OUT_ARG_W_prec";
     case ModelEvaluatorBase::OUT_ARG_f_poly:
       return "OUT_ARG_f_poly";
 #ifdef TEUCHOS_DEBUG

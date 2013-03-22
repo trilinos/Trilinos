@@ -109,7 +109,8 @@ namespace LOCA {
 		      const LOCA::MultiContinuation::ExtendedVector& predictor,
 		      const NOX::Solver::Generic& solver,
 		      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-		      const LOCA::Stepper& stepper,
+//		      const LOCA::Stepper& stepper,
+		      const LOCA::Abstract::Iterator& stepper,
 		      double& stepSize);
 
     protected:

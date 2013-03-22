@@ -1,5 +1,6 @@
 
 INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/utils)
@@ -9,6 +10,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers/BlockedTrans
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers/BlockedSmoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters)
 
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
@@ -30,7 +32,7 @@ APPEND_SET(SOURCES
   Aggregates.cpp
   CoalesceDropFactory.cpp
   Memory.cpp
-  #UCAggregationFactory.cpp
+  #CoupledAggregationFactory.cpp
   TwoKeyMap.cpp
   GenericRFactory.cpp
   ThresholdAFilterFactory.cpp
@@ -41,7 +43,12 @@ APPEND_SET(SOURCES
   SubBlockAFactory.cpp
   ParameterList/FactoryFactory.cpp
   ParameterList/ParameterListInterpreter.cpp
+# ParameterList/MLParameterListInterpreter.cpp
+  ParameterList/CreateSublists.cpp
   MultiVectorTransferFactory.cpp
+  PermutedTransferFactory.cpp
+  DistanceLaplacian.cpp
+#  BlockedPFactory.cpp
 )
 
 ### Tests that require other Trilinos packages
@@ -58,25 +65,29 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_Zoltan
   )
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  APPEND_SET(SOURCES Adapters/TpetraOperatorAdapter.cpp)
+  APPEND_SET(SOURCES Adapters/CreateTpetraPreconditioner.cpp)
+ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Ifpack2)
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
   APPEND_SET(SOURCES Smoothers/Ifpack2Smoother.cpp)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Ifpack)
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
   APPEND_SET(SOURCES Smoothers/IfpackSmoother.cpp)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Amesos)
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Amesos)
   APPEND_SET(SOURCES Smoothers/AmesosSmoother.cpp)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   APPEND_SET(SOURCES Smoothers/Amesos2Smoother.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Belos)
-  APPEND_SET(SOURCES BelosAdapters.cpp)
+  APPEND_SET(SOURCES Adapters/BelosAdapters.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
@@ -91,55 +102,62 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     UnitTests
     SOURCES ${SOURCES}
     COMM serial mpi
-    DEPLIBS muelu xpetra
+    DEPLIBS muelu muelu-adapters xpetra
     )
-  
+
   IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt
       AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
-    
+
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsEpetra"
-      ARGS "--linAlgebra=0"
+      ARGS "--linAlgebra=Epetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 1
       COMM serial mpi
       )
-    
+
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsEpetra"
-      ARGS "--linAlgebra=0"
+      ARGS "--linAlgebra=Epetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4
       COMM mpi
       )
-    
+
   ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-    
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTpetra_cp
+      SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
+      SOURCE_FILES test.xml testWithRebalance.xml
+      )
+
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsTpetra"
-      ARGS "--linAlgebra=1"
+      ARGS "--linAlgebra=Tpetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 1
       COMM serial mpi
       )
-    
+
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsTpetra"
-      ARGS "--linAlgebra=1"
+      ARGS "--linAlgebra=Tpetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4
       COMM mpi
       )
-    
+
   ENDIF()
 
 ENDIF() # Galeri TMP
 
 ADD_SUBDIRECTORY(ParameterList/FactoryFactory/)
 ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)
+ADD_SUBDIRECTORY(ParameterList/MLParameterListInterpreter/)
+ADD_SUBDIRECTORY(ParameterList/CreateSublists/)

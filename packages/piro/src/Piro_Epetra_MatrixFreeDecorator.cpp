@@ -298,12 +298,18 @@ int  Piro::Epetra::MatrixFreeOperator::Apply
     return 0;
   }
 
-  double eta = lambda * (lambda + solutionNorm/vectorNorm);
+  const double eta = lambda * (lambda + solutionNorm/vectorNorm);
 
-  xPert->Update(1.0, *xBase, eta, *v, 0.0);
-  if (haveXdot)
-    xdotPert->Update(1.0, *xdotBase, eta, *v, 0.0);
-  
+  if (haveXdot) {
+    const double alpha_W = modelInArgs.get_alpha();
+    const double beta_W = modelInArgs.get_beta();
+
+    xPert->Update(1.0, *xBase, beta_W * eta, *v, 0.0);
+    xdotPert->Update(1.0, *xdotBase, alpha_W * eta, *v, 0.0);
+  } else {
+    xPert->Update(1.0, *xBase, eta, *v, 0.0);
+  }
+
   EpetraExt::ModelEvaluator::OutArgs modelOutArgs =
     model->createOutArgs();
 

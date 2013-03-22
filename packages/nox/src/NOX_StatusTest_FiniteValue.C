@@ -49,7 +49,7 @@
 //@HEADER
 
 #include "NOX_StatusTest_FiniteValue.H" // class definition
-#include "NOX_Common.H"  // for string class
+#include "NOX_Common.H"  // for std::string class
 #include "NOX_Solver_Generic.H"  
 #include "NOX_Abstract_Group.H"
 
@@ -127,12 +127,12 @@ NOX::StatusTest::StatusType NOX::StatusTest::FiniteValue::getStatus() const
   return status;
 }
 
-ostream& NOX::StatusTest::FiniteValue::print(ostream& stream, int indent) const
+std::ostream& NOX::StatusTest::FiniteValue::print(std::ostream& stream, int indent) const
 {
 
 
   // Set the correct label for the check result
-  string label = "Unknown";
+  std::string label = "Unknown";
   if (result == 0)
     label = "Finite";
   else if (result == -1)
@@ -148,7 +148,7 @@ ostream& NOX::StatusTest::FiniteValue::print(ostream& stream, int indent) const
   stream << ") = ";
   stream << label;
   //stream << " (" << normValue << ")";
-  stream << endl;
+  stream << std::endl;
   
   return stream;
 }

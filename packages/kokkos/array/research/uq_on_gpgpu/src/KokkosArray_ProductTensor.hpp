@@ -45,52 +45,30 @@
 #define KOKKOSARRAY_PRODUCTTENSOR_HPP
 
 #include <map>
+
+#include <KokkosArray_ProductTensorIndex.hpp>
 #include <KokkosArray_CrsArray.hpp>
 #include <impl/KokkosArray_Multiply.hpp>
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 namespace KokkosArray {
+namespace Impl {
+
+template< class Tensor , class Input >
+class CreateProductTensor ;
+
+template< class Tensor , class Input >
+class CreateSparseProductTensor ;
+
+} // namespace Impl
+} // namespace KokkosArray
 
 //----------------------------------------------------------------------------
-/** \brief  Use symmetry to compress the product tensor index space.
- *
- *  By symmetry the coordinates of a particular index can be
- *  arbitrarily reordered.  Compression due to symmetry results
- *  in { D! / ( (D-Rank)! * Rank! ) } unique entries in the index space.
- *
- *  Indices are lexigraphically ordered.
- *  coord(0) >= coord(1) >= ... >= coord(Rank-1)
- */
-template< unsigned Rank , class Device >
-class ProductTensorIndex {
-public:
-  typedef Device                           device_type ;
-  typedef typename device_type::size_type  size_type ;
-
-  ProductTensorIndex();
-  ProductTensorIndex( const ProductTensorIndex & );
-  ProductTensorIndex & operator = ( const ProductTensorIndex & );
-
-  explicit ProductTensorIndex( size_type offset );
-
-  // ProductTensorIndex( size_type coord0 , size_type coord1 , ... );
-
-  ProductTensorIndex & operator ++ ();
-
-  /** \brief  Coordinate 'c' where 0 <= c < Rank */
-  size_type coord( size_type c ) const ;
-
-  /** \brief  Offset of this entry in the index space */
-  size_type offset() const ;
-
-  bool operator == ( const ProductTensorIndex & ) const ;
-  bool operator != ( const ProductTensorIndex & ) const ;
-  bool operator <  ( const ProductTensorIndex & ) const ;
-  bool operator <= ( const ProductTensorIndex & ) const ;
-  bool operator >  ( const ProductTensorIndex & ) const ;
-  bool operator >= ( const ProductTensorIndex & ) const ;
-};
-
 //----------------------------------------------------------------------------
+
+namespace KokkosArray {
 
 /** \brief  Sparse product tensor using coordinate storage.
  */
@@ -124,6 +102,65 @@ private:
   friend class CreateSparseProductTensor ;
 };
 
+template< typename ValueType , class DeviceType >
+class SparseProductTensor< 3 , ValueType , DeviceType > {
+public:
+
+  typedef DeviceType                       device_type ;
+  typedef typename device_type::size_type  size_type ;
+  typedef ValueType                        value_type ;
+
+private:
+
+  typedef KokkosArray::View< size_type[][3] , device_type >  map_type ;
+  typedef KokkosArray::View< value_type[] ,   device_type >  vec_type ;
+
+public:
+
+  inline
+  ~SparseProductTensor() {}
+
+  inline
+  SparseProductTensor() : m_coord() , m_value() , m_dimen(0) {}
+
+  inline
+  SparseProductTensor( const SparseProductTensor & rhs )
+  : m_coord( rhs.m_coord ) , m_value( rhs.m_value ) , m_dimen( rhs.m_dimen ) {}
+
+  inline
+  SparseProductTensor & operator = ( const SparseProductTensor & rhs )
+  {
+    m_coord = rhs.m_coord ;
+    m_value = rhs.m_value ;
+    m_dimen = rhs.m_dimen ;
+    return *this ;
+  }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type dimension() const { return m_dimen ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type entry_count() const
+  { return m_value.dimension_0(); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  const value_type & value( const size_type entry ) const
+  { return m_value( entry ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type coord( const size_type entry , const size_type c ) const
+  { return m_coord( entry , c ); }
+
+private:
+
+  map_type   m_coord ;
+  vec_type   m_value ;
+  size_type  m_dimen ;
+
+  template< class T , class I >
+  friend class Impl::CreateSparseProductTensor ;
+};
+
 // Specialization for Multiply action of a tensor:
 //
 // Multiply< SparseProductTensor<R,V,D> >
@@ -136,7 +173,13 @@ private:
 //  A[ Multiply< SparseProductTensor<R,V,D> >::matrix_size( block ) ]
 //  x[ Multiply< SparseProductTensor<R,V,> >::vector_size( block ) ]
 //  y[ Multiply< SparseProductTensor<R,V,> >::vector_size( block ) ]
+
+} /* namespace KokkosArray */
+
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
 
 /** \brief  Sparse product tensor with replicated entries
  *          to provide subsets with a given coordinate.
@@ -182,24 +225,111 @@ public:
   /** \brief  End entries with a coordinate 'i' */
   size_type entry_end( size_type i ) const ;
 
+  /** \brief  Number of entries with a coordinate 'i' */
+  size_type num_entry( size_type i ) const ;
+
   /** \brief  Coordinates of an entry */
   size_type coord( size_type entry , size_type c ) const ;
 
   /** \brief  Value of an entry */
   const value_type & value( size_type entry ) const ;
+
+  /** \brief Number of non-zero's */
+  size_type num_non_zeros() const ;
 };
 
+template< typename ValueType , class DeviceType >
+class CrsProductTensor< 3 , ValueType , DeviceType > {
+public:
+
+  typedef DeviceType                       device_type ;
+  typedef typename device_type::size_type  size_type ;
+  typedef ValueType                        value_type ;
+
+private:
+
+  typedef KokkosArray::View< value_type[] , device_type >  vec_type ;
+
+  //KokkosArray::CrsArray< size_type[2] , device_type >  m_coord ;
+  KokkosArray::View< size_type[][2] , device_type >  m_coord ;
+  KokkosArray::View< value_type[] , device_type >      m_value ;
+  KokkosArray::View< size_type[] , device_type >       m_num_entry ;
+  KokkosArray::View< size_type[] , device_type >       m_row_map ;
+  size_type                                            m_entry_max ;
+  size_type                                            m_nnz ;
+
+  template< class T , class I >
+  friend class Impl::CreateSparseProductTensor ;
+
+public:
+
+  inline
+  ~CrsProductTensor() {}
+
+  inline
+  CrsProductTensor() : m_coord() , m_value() , m_num_entry() , m_row_map() , 
+		       m_entry_max(0) , m_nnz(0) {}
+
+  inline
+  CrsProductTensor( const CrsProductTensor & rhs )
+    : m_coord( rhs.m_coord ) , m_value( rhs.m_value ) , m_num_entry( rhs.m_num_entry ) , m_row_map( rhs.m_row_map ) , 
+      m_entry_max( rhs.m_entry_max ), m_nnz( rhs.m_nnz ) {}
+
+  inline
+  CrsProductTensor & operator = ( const CrsProductTensor & rhs )
+  {
+    m_coord = rhs.m_coord ;
+    m_value = rhs.m_value ;
+    m_num_entry = rhs.m_num_entry ;
+    m_row_map = rhs.m_row_map ;
+    m_entry_max = rhs.m_entry_max ;
+    m_nnz = rhs.m_nnz;
+    return *this ;
+  }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type dimension() const { return m_row_map.dimension_0() - 1 ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type entry_count() const
+  { return m_coord.dimension_0(); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type entry_maximum() const
+  { return m_entry_max ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type entry_begin( size_type i ) const
+  { return m_row_map[i]; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type entry_end( size_type i ) const
+  { return m_row_map[i] + m_num_entry(i); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type num_entry( size_type i ) const
+  { return m_num_entry(i); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  const size_type& coord( const size_type entry , const size_type c ) const
+  { return m_coord( entry , c ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  const value_type & value( const size_type entry ) const
+  { return m_value( entry ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  size_type num_non_zeros() const 
+  { return m_nnz; }
+
+};
+
+} /* namespace KokkosArray */
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-namespace Impl {
-
-template< class Tensor , class Input >
-class CreateProductTensor ;
-
-template< class Tensor , class Input >
-class CreateSparseProductTensor ;
-
-}
+namespace KokkosArray {
 
 template< class Tensor , class Input >
 typename Impl::CreateSparseProductTensor<Tensor,Input>::type

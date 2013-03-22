@@ -46,7 +46,7 @@ namespace Kokkos {
 
   OpenMPNode::OpenMPNode () :
     curNumThreads_ (-1), // Default: Let OpenMP pick the number of threads
-    verbose_ (false) // Default: No verbose status output
+    verbose_ (false)     // Default: No verbose status output
   {
     init (curNumThreads_);
   }
@@ -54,50 +54,13 @@ namespace Kokkos {
 
   OpenMPNode::OpenMPNode (Teuchos::ParameterList &pl) :
     curNumThreads_ (-1), // Default: Let OpenMP pick the number of threads
-    verbose_ (false) // Default: No verbose status output
+    verbose_ (false)     // Default: No verbose status output
   {
-    // Don't set state (in this case, curNumThreads_) until we've read
-    // in all the parameters.
-    //
-    // -1 or 0 mean let OpenMP pick the number of threads.  A positive
-    // value means that we should tell OpenMP how many threads to use.
-    const int curNumThreads = pl.get<int>("Num Threads", -1);
-    //
-    // We allow the "Verbose" parameter to be either bool or int.
-    // It's really a Boolean value (verbose or not), but the original
-    // author used int and this has been around for a while, so we
-    // keep this option for backwards compatibility.
-    //
-    bool verbose = false; // Default value of the "Verbose" parameter.
-    try {
-      verbose = pl.get<bool> ("Verbose"); // Is it a bool?
-    }
-    catch (Teuchos::Exceptions::InvalidParameterName&) {
-      // "Verbose" isn't a parameter in the input list; use the
-      // default value.  We catch InvalidParameterName first so that
-      // we don't bother trying for the int value of the "Verbose"
-      // parameter if there's no "Verbose" parameter at all.
-    }
-    catch (Teuchos::Exceptions::InvalidParameterType&) {
-      try {
-        int verboseInt = pl.get<int> ("Verbose"); // Is it an int?
-        verbose = (verboseInt != 0);
-      }
-      catch (Teuchos::Exceptions::InvalidParameterName&) {
-        // This should be impossible.
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::OpenMPNode "
-          "constructor: should never get here!  \"Verbose\" is both a parameter "
-          "and not a parameter in the input ParameterList.  Please report this "
-          "bug to the Kokkos developers.");
-      }
-      catch (Teuchos::Exceptions::InvalidParameterType&) {
-        // "Verbose" parameter exists, but is neither a bool nor an int.
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Kokkos::"
-          "OpenMPNode constructor: If you provide a \"Verbose\" parameter, it "
-          "must be either of type bool or of type int.");
-      }
-    }
-
+    ParameterList params = getDefaultParameters();
+    params.setParameters(pl);
+    const int curNumThreads = params.get<int>("Num Threads");
+    int verboseInt = params.get<int>("Verbose");
+    bool verbose = (verboseInt != 0);
     if (verbose) {
       std::cout << "OpenMPNode initializing with \"Num Threads\" = "
                 << curNumThreads << std::endl;
@@ -105,6 +68,14 @@ namespace Kokkos {
     init (curNumThreads);
     curNumThreads_ = curNumThreads; // Now it's safe to set state.
     verbose_ = verbose;
+  }
+
+  ParameterList OpenMPNode::getDefaultParameters() 
+  {
+    ParameterList params;
+    params.set("Verbose",      0);
+    params.set("Num Threads", -1);
+    return params;
   }
 
   OpenMPNode::~OpenMPNode() {}

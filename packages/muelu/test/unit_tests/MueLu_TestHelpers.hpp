@@ -47,6 +47,7 @@
 #define MUELU_TEST_HELPERS_H
 
 #include <string>
+#include <dirent.h>
 
 // Teuchos
 #include "Teuchos_Comm.hpp"
@@ -58,7 +59,7 @@
 #include "Xpetra_DefaultPlatform.hpp"
 #include "Xpetra_Parameters.hpp"
 #include "Xpetra_MapFactory.hpp"
-#include "Xpetra_CrsOperator.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
 
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
@@ -71,7 +72,7 @@
 #include "MueLu_Level.hpp"
 
 // Galeri
-#include "Galeri_XpetraMatrixFactory.hpp"
+#include "Galeri_XpetraProblemFactory.hpp"
 #include "Galeri_XpetraMatrixTypes.hpp"
 
 #include "MueLu_NoFactory.hpp"
@@ -92,51 +93,51 @@ namespace MueLuTests {
   using Teuchos::rcpFromRef;
 
   namespace TestHelpers {
-    
+
     using Xpetra::global_size_t;
 
     class Parameters {
 
     private:
       Parameters() {} // static class
-      
+
     public:
-      
+
       static Xpetra::Parameters xpetraParameters;
-      
+
       inline static RCP<const Teuchos::Comm<int> > getDefaultComm() {
         return Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
       }
-      
+
       inline static Xpetra::UnderlyingLib getLib() {
         return TestHelpers::Parameters::xpetraParameters.GetLib();
       }
     };
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class Factory {
+    class TestFactory {
 #include "MueLu_UseShortNames.hpp"
 
-    private: 
-      Factory() {} // static class
+    private:
+      TestFactory() {} // static class
 
     public:
 
       //
       // Method that creates a map containing a specified number of local elements per process.
       //
-      static const RCP<const Map> BuildMap(LO numElementsPerProc) { 
+      static const RCP<const Map> BuildMap(LO numElementsPerProc) {
 
         RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  
+
         const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
-  
+
         return MapFactory::Build(TestHelpers::Parameters::getLib(), INVALID, numElementsPerProc, 0, comm);
-  
+
       } // BuildMap()
 
       // Create a matrix as specified by parameter list options
-      static RCP<Operator> BuildMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) {
+      static RCP<Matrix> BuildMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) {
         RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
         if (lib == Xpetra::NotSpecified)
@@ -162,34 +163,36 @@ namespace MueLuTests {
         }
 
         RCP<const Map> map = MapFactory::Build(lib, numGlobalElements, 0, comm);
+        RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+            Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, matrixList);
+        RCP<Matrix> Op = Pr->BuildMatrix();
 
-        RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>(matrixType,map,matrixList);
         return Op;
       } // BuildMatrix()
 
       // Create a 1D Poisson matrix with the specified number of rows
       // nx: global number of rows
-      static RCP<Operator> Build1DPoisson(int nx, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
+      static RCP<Matrix> Build1DPoisson(int nx, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
         Teuchos::ParameterList matrixList;
         matrixList.set("nx", nx);
         matrixList.set("matrixType","Laplace1D");
-        RCP<Operator> A = BuildMatrix(matrixList,lib);
+        RCP<Matrix> A = BuildMatrix(matrixList,lib);
         return A;
       } // Build1DPoisson()
 
       // Create a 2D Poisson matrix with the specified number of rows
       // nx: global number of rows
       // ny: global number of rows
-      static RCP<Operator> Build2DPoisson(int nx, int ny=-1, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
+      static RCP<Matrix> Build2DPoisson(int nx, int ny=-1, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
         Teuchos::ParameterList matrixList;
         if (ny==-1) ny=nx;
         matrixList.set("nx", nx);
         matrixList.set("ny", ny);
         matrixList.set("matrixType","Laplace2D");
-        RCP<Operator> A = BuildMatrix(matrixList,lib);
+        RCP<Matrix> A = BuildMatrix(matrixList,lib);
         return A;
       } // Build2DPoisson()
- 
+
       // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
       // This method initializes LevelID and linked list of level
       static void createSingleLevelHierarchy(Level& currentLevel) {
@@ -198,7 +201,7 @@ namespace MueLuTests {
 
         currentLevel.SetLevelID(0);
       }
-      
+
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
       // This method initializes LevelID and linked list of level
       static void createTwoLevelHierarchy(Level& fineLevel, Level& coarseLevel) {
@@ -211,8 +214,8 @@ namespace MueLuTests {
         fineLevel.SetLevelID(0);
         coarseLevel.SetLevelID(1);
       }
-      
-#ifdef HAVE_MUELU_IFPACK
+
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
       static RCP<SmootherPrototype> createSmootherPrototype(const std::string& type="Gauss-Seidel", LO sweeps=1) {
         Teuchos::ParameterList  ifpackList;
         ifpackList.set("relaxation: type", type);
@@ -224,12 +227,17 @@ namespace MueLuTests {
 
     }; // class Factory
 
+
+
+    //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
+    ArrayRCP<std::string> GetFileList(const std::string & dirPath, const std::string & filter);
+
   } // namespace TestHelpers
 
 } // namespace MueLu
 
 
-// Macro to skip a test when UnderlyingLib==Epetra or Tpetra 
+// Macro to skip a test when UnderlyingLib==Epetra or Tpetra
 #define MUELU_TEST_ONLY_FOR(UnderlyingLib) \
   if (TestHelpers::Parameters::getLib() == UnderlyingLib)
 

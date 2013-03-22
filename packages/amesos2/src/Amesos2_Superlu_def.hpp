@@ -288,7 +288,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
                              slu_type>::do_get(B, bValues(),
                                                as<size_t>(ld_rhs),
-                                               ROOTED);
+                                               ROOTED, this->rowIndexBase_);
   }
 
   int ierr = 0; // returned error code
@@ -359,7 +359,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Util::put_1d_data_helper<
       MultiVecAdapter<Vector>,slu_type>::do_put(X, xValues(),
                                          as<size_t>(ld_rhs),
-                                         ROOTED);
+                                         ROOTED, this->rowIndexBase_);
   }
 
 
@@ -450,13 +450,13 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
 
     setStringToIntegralParameter<SLU::IterRefine_t>("IterRefine", "NOREFINE",
                                                     "Type of iterative refinement to use",
-                                                    tuple<string>("NOREFINE", "SINGLE", "DOUBLE"),
+                                                    tuple<string>("NOREFINE", "SLU_SINGLE", "SLU_DOUBLE"),
                                                     tuple<string>("Do not use iterative refinement",
                                                                   "Do single iterative refinement",
                                                                   "Do double iterative refinement"),
                                                     tuple<SLU::IterRefine_t>(SLU::NOREFINE,
-                                                                             SLU::SINGLE,
-                                                                             SLU::DOUBLE),
+                                                                             SLU::SLU_SINGLE,
+                                                                             SLU::SLU_DOUBLE),
                                                     pl.getRawPtr());
 
     // Note: MY_PERMC not yet supported
@@ -527,10 +527,15 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
 
+    TEUCHOS_TEST_FOR_EXCEPTION( this->rowIndexBase_ != this->columnIndexBase_,
+                        std::runtime_error,
+                        "Row and column maps have different indexbase ");
     Util::get_ccs_helper<
     MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
-                                                    nzvals_(), rowind_(), colptr_(),
-                                                    nnz_ret, ROOTED, ARBITRARY);
+                                                    nzvals_(), rowind_(),
+                                                    colptr_(), nnz_ret, ROOTED,
+                                                    ARBITRARY,
+                                                    this->rowIndexBase_);
   }
 
   // Get the SLU data type for this type of matrix

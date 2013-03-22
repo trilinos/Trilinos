@@ -7,12 +7,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp)
+FILE(GLOB HEADERS KokkosArray_*.hpp)
 
 #-----------------------------------------------------------------------------
 # Sources always included
 
-LIST(APPEND SOURCES KokkosArray_Host_Impl.cpp KokkosArray_Host_MemorySpace.cpp)
+LIST(APPEND SOURCES KokkosArray_Host_Impl.cpp KokkosArray_HostSpace.cpp)
 
 #-----------------------------------------------------------------------------
 # Hardware locality detection functionality depends upon TPL availability
@@ -43,8 +43,13 @@ ENDIF()
 
 TRIBITS_ADD_LIBRARY(
   kokkosarray_devicehost
-  HEADERS ${HEADERS}
+  NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS 
   )
+
+SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR})
+
+INSTALL(FILES ${HEADERS} DESTINATION ${TRILINOS_INCDIR}/Host/)
+
 

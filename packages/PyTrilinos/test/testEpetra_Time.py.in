@@ -1,0 +1,130 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2013) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+#
+# System imports
+#from   numpy    import *
+from   optparse import *
+import sys
+import time
+import unittest
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+
+##########################################################################
+
+class EpetraTimeTestCase(unittest.TestCase):
+    "TestCase for Epetra.Time"
+
+    # Need tests for ResetStartTime
+
+    def setUp(self):
+        self.comm     = Epetra.PyComm()
+        self.duration = 0.5
+        self.delta    = 0.005
+        self.comm.Barrier()
+
+    def tearDown(self):
+        self.comm.Barrier()
+
+    def testWallTime(self):
+        "Test Epetra.Time WallTime method"
+        timer = Epetra.Time(self.comm)
+        wt1 = timer.WallTime()
+        time.sleep(self.duration)
+        wt2 = timer.WallTime()
+        self.assertAlmostEqual(wt2-wt1, self.duration, delta=self.delta)
+
+    def testElapsedTime(self):
+        "Test Epetra.Time ElapsedTime method"
+        timer = Epetra.Time(comm)
+        time.sleep(self.duration)
+        et = timer.ElapsedTime()
+        self.assertAlmostEqual(et, self.duration, delta=self.delta)
+
+    def testResetStartTime(self):
+        "Test Epetra.Time ResetStartTime method"
+        timer = Epetra.Time(comm)
+        wt1   = timer.WallTime()
+        time.sleep(self.duration)
+        et1 = timer.ElapsedTime()
+        self.assertAlmostEqual(et1, self.duration, delta=self.delta)
+        timer.ResetStartTime()
+        time.sleep(self.duration)
+        et2 = timer.ElapsedTime()
+        wt2 = timer.WallTime()
+        self.assertAlmostEqual(et2    , self.duration, delta=self.delta)
+        self.assertAlmostEqual(wt2-wt1, et1+et2      , delta=self.delta)
+
+##########################################################################
+
+if __name__ == "__main__":
+
+    # Create the test suite object
+    suite = unittest.TestSuite()
+
+    # Add the test cases to the test suite
+    suite.addTest(unittest.makeSuite(EpetraTimeTestCase))
+
+    # Create a communicator
+    comm    = Epetra.PyComm()
+    iAmRoot = comm.MyPID() == 0
+
+    # Run the test suite
+    if iAmRoot: print >>sys.stderr, \
+          "\n*********************\nTesting Epetra.Object\n*********************\n"
+    verbosity = options.verbosity * int(iAmRoot)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+
+    # Compute the total number of errors and failures
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
+    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
+    sys.exit(errsPlusFails)

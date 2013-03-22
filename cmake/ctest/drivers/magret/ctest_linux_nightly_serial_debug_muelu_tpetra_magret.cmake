@@ -62,20 +62,19 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.magret.gcc.cmake")
 
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_MueLu_TpetraTEST)
+SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_MueLu_Tpetra)
 SET(CTEST_PARALLEL_LEVEL 8)
-#SET(CTEST_TEST_TYPE Nightly)
+SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu Tpetra Ifpack2 Amesos2 Belos)
-SET(EXTRA_EXCLUDE_PACKAGES ML Epetra Triutils)
+SET(Trilinos_PACKAGES MueLu Xpetra)
+SET(EXTRA_EXCLUDE_PACKAGES ML Epetra Triutils Zoltan)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-D MueLu_ENABLE_TESTS=ON"
-  "-D MueLu_ENABLE_EXAMPLES=ON"
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
-  "-DTPL_SuperLU_INCLUDE_DIRS=/home/jngaida/opt/stow/superlu/4.1/include"
-  "-DTPL_SuperLU_LIBRARIES=/home/jngaida/opt/stow/superlu/4.1/lib64/libsuperlu_4.1.a"
+  "-DSuperLU_INCLUDE_DIRS=/usr/local/superlu/4.3/include"
+  "-DSuperLU_LIBRARY_DIRS=/usr/local/superlu/4.3/lib64"
+  "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
 )
 
 #

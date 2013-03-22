@@ -69,7 +69,7 @@ extern "C" {
 
 // Structure to hold info for each continuation parameter
 struct ParamData {
-  string name;
+  std::string name;
   int ID;
   double initialValue;
   double minValue;
@@ -87,7 +87,7 @@ struct LOCAData {
      const Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>& g, 
      const Teuchos::RCP<Teuchos::ParameterList>& par,
      const Teuchos::RCP<NOX::StatusTest::Generic>& st,
-     const Teuchos::RCP< list<ParamData> >& conParamData);
+     const Teuchos::RCP< std::list<ParamData> >& conParamData);
 
   Teuchos::RCP<LOCA::GlobalData> globalData;
   Teuchos::RCP<LOCA::Parameter::SublistParser> topParams;
@@ -95,7 +95,7 @@ struct LOCAData {
   Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy> grp;
   Teuchos::RCP<Teuchos::ParameterList> p;
   Teuchos::RCP<NOX::StatusTest::Generic> status;
-  Teuchos::RCP< list<ParamData> > paramData;
+  Teuchos::RCP< std::list<ParamData> > paramData;
   MFNSpace space;
   int np;
   double maxNonlinearIterations;

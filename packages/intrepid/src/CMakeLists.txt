@@ -61,6 +61,40 @@ APPEND_SET(HEADERS
   )
 
 #
+# MiniTensor headers
+#
+IF (TPL_ENABLE_Boost)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Shared/MiniTensor)
+  APPEND_SET(HEADERS
+    Shared/MiniTensor/Intrepid_MiniTensor.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Definitions.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Geometry.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Geometry.i.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Geometry.t.h
+    Shared/MiniTensor/Intrepid_MiniTensor_LinearAlgebra.h
+    Shared/MiniTensor/Intrepid_MiniTensor_LinearAlgebra.i.h
+    Shared/MiniTensor/Intrepid_MiniTensor_LinearAlgebra.t.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.i.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.t.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Tensor.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Tensor.i.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Tensor.t.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Tensor3.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Tensor3.i.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Tensor3.t.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Tensor4.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Tensor4.i.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Tensor4.t.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Utilities.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Utilities.i.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Vector.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Vector.i.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Vector.t.h
+  )
+ENDIF()
+
+#
 # Discretization headers
 #
 

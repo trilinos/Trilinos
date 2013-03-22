@@ -228,7 +228,25 @@ in the above example to do an export operation to y, adding the contributions th
   */ 
 
   Epetra_Import( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap );
-  
+
+  //! Expert-only import constructor.
+  /*! The additional RemotePIDs argument should be filled with the owning PIDs (from the SourceMap) of the remote GIDs 
+    in the TargetMap.  The normal Import constructor computes this for you with a call to RemoteIDList.  However in
+    some cases (MakeImportExport) we already have this information.
+
+    WARNING: THIS METHOD IS FOR INTERNAL USE ONLY.  USERS SHOULD NOT CALL THIS CONSTRUCTOR */
+  Epetra_Import( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap, int NumRemotePIDs,const int * RemotePIDs);
+
+  //! Expert-only import constructor
+  /*! The RemotePIDs argument should be filled with the owning PIDs (from the SourceMap) of the remote GIDs 
+    in the TargetMap.  The normal Import constructor computes this for you with a call to RemoteIDList.  However in
+    some cases (MakeImportExport) we already have this information.  We also require information on the Export PIDs/GIDs so
+    we can use the Distributor's CreateFromSendsAndReceives method.  
+    WARNING: THIS METHOD IS FOR INTERNAL USE ONLY.  USERS SHOULD NOT CALL THIS CONSTRUCTOR */
+  Epetra_Import( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap, int NumRemotePIDs,const int * RemotePIDs,		 
+		 const int & NumExportIDs, const int * ExportLIDs,  const int * ExportPIDs);
+
+
   //! Epetra_Import copy constructor. 
   Epetra_Import(const Epetra_Import& Importer);
   
@@ -316,7 +334,11 @@ in the above example to do an export operation to y, adding the contributions th
   
 
   template<typename int_type>
-  void Construct( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap );
+  void Construct( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap, int NumRemotePIDs=-1, const int * UserRemotePIDs=0);
+
+  template<typename int_type>
+    void Construct_Expert( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap, int NumRemotePIDs,const int * RemotePIDs, const int & NumExportIDs, const int * ExportLIDs,  const int * ExportPIDs);
+
 };
 
 #endif /* EPETRA_IMPORT_H */

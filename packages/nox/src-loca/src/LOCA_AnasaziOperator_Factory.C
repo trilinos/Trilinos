@@ -77,11 +77,11 @@ LOCA::AnasaziOperator::Factory::create(
        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
        const Teuchos::RCP<NOX::Abstract::Group>& grp)
 {
-  string methodName = "LOCA::AnasaziOperator::Factory::create()";
+  std::string methodName = "LOCA::AnasaziOperator::Factory::create()";
   Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> strategy;
 
   // Get name of strategy
-  const string& name = strategyName(*eigenParams);
+  const std::string& name = strategyName(*eigenParams);
 
   if (name == "Jacobian Inverse")
     strategy = 
@@ -153,7 +153,7 @@ LOCA::AnasaziOperator::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = 
+    std::string userDefinedName = 
       eigenParams->get("Operator User-Defined Name", "???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
 	isType< Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> >(userDefinedName))
@@ -174,7 +174,7 @@ LOCA::AnasaziOperator::Factory::create(
   return strategy;
 }
 
-const string&
+const std::string&
 LOCA::AnasaziOperator::Factory::strategyName(
 				  Teuchos::ParameterList& eigenParams) const
 {

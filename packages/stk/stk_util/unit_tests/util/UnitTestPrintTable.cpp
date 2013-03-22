@@ -10,7 +10,7 @@
 #include <map>
 #include <iostream>
 
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 

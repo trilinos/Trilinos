@@ -43,8 +43,6 @@
 #ifndef PANZER_TEST_SCATTER_IMPL_HPP
 #define PANZER_TEST_SCATTER_IMPL_HPP
 
-#include "Panzer_DOFManager.hpp"
-
 template <typename EvalT,typename Traits>
 int panzer::TestScatter<EvalT, Traits>::offset = 0;
 
