@@ -137,6 +137,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
 
 
 
+  
   int size = input.size();
   if(fail){
     size = -1;
@@ -301,6 +302,137 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
     delete [] coords;
   }
 }
+
+void readFile(string fname, scalar_t ***coords, int &dim, gno_t &g, lno_t &n){
+  ifstream ifs ( fname.c_str());
+
+  ifs >> g;
+  ifs >> n >> dim;
+  
+  scalar_t **c = new scalar_t *[dim];
+  for (int i = 0; i < dim; ++i){
+    c[i] = new scalar_t[n];
+  }
+  for (int j = 0; j < dim; ++j){
+    for (long i = 0; i < n; ++i){
+      ifs >> c[j][i];
+    }
+  }
+  *coords = c;
+  ifs.close();
+}
+
+
+std::string toString(int obj){
+  std::stringstream ss (std::stringstream::in |std::stringstream::out);
+  ss << obj;
+  std::string tmp = "";
+  ss >> tmp;
+  return tmp;
+}
+
+
+
+void testFromDataFile2(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string fname, std::string pqParts, partId_t k,
+                      bool force_binary, bool force_linear)
+{
+  //std::string fname("simple");
+  cout << "running " << fname << endl;
+  
+  //UserInputForTests uinput(testDataFilePath, fname, comm, true);
+  
+  scalar_t **coords = NULL;
+  int coord_dim = 0, weight_dim = 0;
+  
+  
+  gno_t numGlobalPoints;
+  lno_t numLocalPoints;
+  readFile(fname + toString(comm->getRank()), &coords, coord_dim, numGlobalPoints, numLocalPoints);
+  
+  cout << "dim:" << coord_dim <<  " numGlobalPoints:" << numGlobalPoints 
+  << " numLocalPoints:" << numLocalPoints << endl;
+  
+  RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
+      new Tpetra::Map<lno_t, gno_t, node_t> (numGlobalPoints, numLocalPoints, 0, comm));
+
+  Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(coord_dim);
+  for (int i=0; i < coord_dim; i++){
+    if(numLocalPoints > 0){
+      Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalPoints);
+      coordView[i] = a;
+    } else{
+      Teuchos::ArrayView<const scalar_t> a;
+      coordView[i] = a;
+    }
+  }
+
+  RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmVector = RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >(
+      new Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>( mp, coordView.view(0, coord_dim), coord_dim));
+
+
+  RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
+  vector<const scalar_t *> weights;
+  if(weight_dim){
+
+  }
+  vector <int> stride;
+
+
+	
+  typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
+  //inputAdapter_t ia(coordsConst);
+  inputAdapter_t ia(coordsConst,weights, stride);
+  
+  
+  Teuchos::ParameterList params("test params");
+  
+  
+  params.set("pqParts", pqParts);
+  params.set("timer_output_stream" , "std::cout");
+  params.set("parallel_part_calculation_count", k);
+  if(force_binary){
+    params.set("force_binary_search", "yes");
+  }
+  else {
+    params.set("force_binary_search", "no");
+  }
+  if(force_linear){
+    params.set("force_linear_search", "yes");
+  }
+  else {
+    params.set("force_linear_search", "no");
+  }
+  
+  params.set("num_global_parts", numParts);
+  params.set("algorithm", "pqjagged");
+  params.set("compute_metrics", "true");
+  params.set("imbalance_tolerance", double(imbalance));
+  params.set("bisection_num_test_cuts", 7);
+  
+#ifdef HAVE_ZOLTAN2_MPI
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
+                                                       MPI_COMM_WORLD);
+#else
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
+#endif
+  
+  problem.solve();
+  
+  //const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
+  //problem.getSolution();
+  
+  if (comm->getRank() == 0){
+    problem.printMetrics(cout);
+    
+    cout << "testFromDataFile is done " << endl;
+  }
+  
+  problem.printTimers();
+  
+  
+}
+
+
 
 void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string fname, std::string pqParts, partId_t k,
     bool force_binary, bool force_linear)
@@ -568,6 +700,8 @@ int main(int argc, char *argv[])
     case 0:
       testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, k, force_binary, force_linear);
       break;
+      case 1:
+      testFromDataFile2(tcomm,numParts, imbalance,fname,pqParts, k, force_binary, force_linear);        
     default:
       GeometricGen(tcomm, numParts, imbalance, fname, pqParts/*, paramFile*/, k, force_binary, force_linear);
       break;
