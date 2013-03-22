@@ -97,7 +97,6 @@ Amesos2::Util::to_epetra_comm(Teuchos::RCP<const Teuchos::Comm<int> > c)
   if( mpiTeuchosComm.get() ){
     Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
       rawMpiComm = mpiTeuchosComm->getRawMpiComm();
-    set_extra_data( mpiTeuchosComm, "mpiTeuchosComm", Teuchos::inOutArg(rawMpiComm) );
     Teuchos::RCP<const Epetra_MpiComm>
       mpiComm = rcp(new Epetra_MpiComm(*rawMpiComm()));
     return mpiComm;
@@ -107,7 +106,6 @@ Amesos2::Util::to_epetra_comm(Teuchos::RCP<const Teuchos::Comm<int> > c)
     serialTeuchosComm = rcp_dynamic_cast<const Teuchos::SerialComm<int> >(c);
   if( serialTeuchosComm.get() ){
     Teuchos::RCP<const Epetra_SerialComm> serialComm = rcp(new Epetra_SerialComm());
-    set_extra_data( serialTeuchosComm, "serialTeuchosComm", Teuchos::inOutArg(serialComm) );
     return serialComm;
   }
 #endif	// HAVE_MPI
