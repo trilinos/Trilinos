@@ -48,7 +48,9 @@
 
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Teuchos_RCP.hpp"
+
 #include "Stokhos_OrthogPolyExpansion.hpp"
+#include "Stokhos_EpetraVectorOrthogPoly.hpp"
 
 #include <vector>
 
@@ -79,9 +81,19 @@ public:
    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > getExpansion() const
    { return expansion_; }
 
+   /** Used to get around a minor flaw in the Stokhos::EpetraVectorOrthogPoly where
+     * it contains a view of the data it uses and distributes through an RCP mechansism.
+     * When it is deallocated then the eventual content of those RCPs (while still
+     * technically valid pointers to Epetra_Vector objects that are views of another 
+     * Epetra_Vector that have been deallocated) is no longer valid. Yuck!
+     */
+   void storeForSafeKeeping(const Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> & v)
+   { sg_vecs_.push_back(v); }
+
 private:
    CoeffVector coeffs_;
    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion_;
+   std::vector<Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> > sg_vecs_;
 };
 
 }
