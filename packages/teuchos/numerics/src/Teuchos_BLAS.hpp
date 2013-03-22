@@ -262,15 +262,15 @@ namespace Teuchos
     class MagValue {
     public:
       void
-      blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const; 
+      blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const;
     };
 
-    // Complex-arithmetic specialization. 
+    // Complex-arithmetic specialization.
     template<typename ScalarType>
     class MagValue<ScalarType, true> {
     public:
       void
-      blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const; 
+      blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const;
     };
 
     // Real-arithmetic specialization.
@@ -280,7 +280,7 @@ namespace Teuchos
       void
       blas_dabs1(const ScalarType* a, ScalarType* ret) const;
     };
- 
+
     template<typename ScalarType, bool isComplex>
     class GivensRotator {
     public:
@@ -480,18 +480,18 @@ namespace Teuchos
 
     // Real-valued implementation of MagValue
     template<typename ScalarType>
-    void 
+    void
     MagValue<ScalarType, false>::
-    blas_dabs1(const ScalarType* a, ScalarType* ret) const 
+    blas_dabs1(const ScalarType* a, ScalarType* ret) const
     {
-      *ret = Teuchos::ScalarTraits<ScalarType>::magnitude( *a );  
+      *ret = Teuchos::ScalarTraits<ScalarType>::magnitude( *a );
     }
 
     // Complex-valued implementation of MagValue
     template<typename ScalarType>
-    void 
+    void
     MagValue<ScalarType, true>::
-    blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const 
+    blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const
     {
       *ret = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(a->real());
       *ret += ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(a->imag());
@@ -618,7 +618,7 @@ namespace Teuchos
         result += temp;
         ix += incx;
       }
-   
+
     return result;
   } /* end ASUM */
 
@@ -680,7 +680,7 @@ namespace Teuchos
 
     if ( n < ione || incx < ione )
       return result;
-  
+
     details::MagValue<ScalarType, ScalarTraits<ScalarType>::isComplex> mval;
 
     mval.blas_dabs1( &x[ix], &maxval );
