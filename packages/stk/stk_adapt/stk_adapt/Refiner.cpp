@@ -633,7 +633,7 @@ namespace stk {
                               std::string ptopo_name = part_cell_topo.getName();
                               if (ptopo_name.find("Beam") != std::string::npos)
                                 {
-                                  std::cout << "P[0] Info: will refine block: " << part->name() << " with topology= " << part_cell_topo.getName() << std::endl;
+                                  std::cout << "P[0] INFO: will refine block: " << part->name() << " with topology= " << part_cell_topo.getName() << std::endl;
                                 }
                             }
                         }
@@ -1407,7 +1407,7 @@ namespace stk {
                       //std::cout << " per,part = " << per << " " << parts[ip]->name() << std::endl;
                       if (per == m_eMesh.side_rank())
                         {
-                          std::cout << "Info::smoothing: freezing points on boundary: " << parts[ip]->name() << std::endl;
+                          std::cout << "INFO::smoothing: freezing points on boundary: " << parts[ip]->name() << std::endl;
                           boundarySelector = boundarySelector | *parts[ip];
                         }
                     }

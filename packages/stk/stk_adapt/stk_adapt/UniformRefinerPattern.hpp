@@ -103,11 +103,17 @@ namespace stk {
 
 #  define NN(i_entity_rank, j_ordinal_on_subDim_entity) new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity][0]
 
+#  define NN_Q(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity) \
+       new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][k_ordinal_of_node_on_entity]
+
 #else
 
 #  define NN(i_entity_rank, j_ordinal_on_subDim_entity) \
     ( ((unsigned)i_entity_rank < new_sub_entity_nodes.size() && (unsigned)j_ordinal_on_subDim_entity < new_sub_entity_nodes[i_entity_rank].size() \
        && new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity].size() ) ? new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity][0] : 0u )
+
+#  define NN_Q(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity) \
+    new_sub_entity_nodes_check(new_sub_entity_nodes, i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity);
 
 #endif
 
@@ -116,8 +122,6 @@ namespace stk {
 
 #define EDGE_N_Q(iedge, inode_on_edge) new_sub_entity_nodes[m_eMesh.edge_rank()][iedge][inode_on_edge]
 #define FACE_N_Q(iface, inode_on_face) new_sub_entity_nodes[m_eMesh.face_rank()][iface][inode_on_face]
-#define NN_Q(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity) \
-    new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][k_ordinal_of_node_on_entity]
 
 #define NN_Q_P(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity, perm) \
     new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][perm[k_ordinal_of_node_on_entity]]
@@ -127,6 +131,16 @@ namespace stk {
     /// signifies a part that has been defined automatically during adaptivity
     struct STK_Adapt_Auto_Part {};
     extern STK_Adapt_Auto_Part stk_adapt_auto_part;
+
+    static int new_sub_entity_nodes_check( NewSubEntityNodesType& new_sub_entity_nodes, int i_entity_rank, int j_ordinal_of_entity, int k_ordinal_of_node_on_entity)
+    {
+      VERIFY_OP_ON((unsigned)i_entity_rank, <, new_sub_entity_nodes.size(), "new_sub_entity_nodes_check 1");
+      VERIFY_OP_ON((unsigned)j_ordinal_of_entity < new_sub_entity_nodes[i_entity_rank], "new_sub_entity_nodes_check 2");
+      VERIFY_OP_ON((unsigned)k_ordinal_of_node_on_entity < new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity], "new_sub_entity_nodes_check 3");
+
+      return new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][k_ordinal_of_node_on_entity];
+    }
+
 
 
     /// The base class for all refinement patterns
@@ -355,6 +369,7 @@ namespace stk {
       static const unsigned topo_key_pyramid13  = shards::Pyramid<13>::key;
       static const unsigned topo_key_pyramid5   = shards::Pyramid<5>::key;
       static const unsigned topo_key_tet4       = shards::Tetrahedron<4>::key;
+      static const unsigned topo_key_tet10      = shards::Tetrahedron<10>::key;
 
       static const unsigned s_shell_line_2_key = shards::ShellLine<2>::key;
       static const unsigned s_shell_line_3_key = shards::ShellLine<3>::key;
@@ -1273,10 +1288,10 @@ namespace stk {
         unsigned iChildStart = 0;
         //unsigned iChildEnd = num_child-1;
         // SPECIAL CASE ALERT
-        if (fromTopoKey == topo_key_pyramid5)
+        if (fromTopoKey == topo_key_pyramid5 || fromTopoKey == topo_key_pyramid13)
           {
             num_child = getNumNewElemPerElem();
-            if (toTopoKey == topo_key_tet4)
+            if (toTopoKey == topo_key_tet4 || toTopoKey == topo_key_tet10)
               {
                 iChildStart = 6;
                 //iChildEnd = 9;
@@ -1912,6 +1927,11 @@ namespace stk {
                 if (i_face <= 2)  // quad faces
                   n_ord = 9;
               }
+            if (fromTopoKey == topo_key_pyramid13)
+              {
+                if (i_face == 4)  // quad face
+                  n_ord = 9;
+              }
 
             i_ord = 0;
             unsigned fnl=0;
@@ -1926,32 +1946,16 @@ namespace stk {
                 unsigned j_e_node = face_nodes[i_face_n];
                 if (childNodeIdx == j_e_node)
                   {
-                    if (fromTopoKey == topo_key_hex27)
+                    if (doRenumber &&
+
+                        ( (fromTopoKey == topo_key_hex27) ||
+                          (fromTopoKey == topo_key_hex20) ||
+                          (fromTopoKey == topo_key_wedge15 && i_face <= 2) ||
+                          (fromTopoKey == topo_key_pyramid13 && i_face == 4) )
+                        )
                       {
-                        if (doRenumber)
-                          {
-                            i_ord = renumber_quad_face_interior_nodes(i_face_n);
-                          }
-                      }
-                    if (fromTopoKey == topo_key_hex20)
-                      {
-                        if (doRenumber)
-                          {
-                            // FIXME - just reuse quad9 renumbering
-                            i_ord = renumber_quad_face_interior_nodes(i_face_n);
-                            //i_ord = renumber_quad_face_interior_nodes_quad8(i_face_n);
-                            //std::cout << "tmp childNodeIdx= " << childNodeIdx << " i_ord= " << i_ord << " i_face_n= " << i_face_n << " fnl= " << fnl <<  std::endl;
-                          }
-                      }
-                    if (fromTopoKey == topo_key_wedge15 && i_face <= 2)
-                      {
-                        if (doRenumber)
-                          {
-                            // FIXME - just reuse quad9 renumbering
-                            i_ord = renumber_quad_face_interior_nodes(i_face_n);
-                            //i_ord = renumber_quad_face_interior_nodes_quad8(i_face_n);
-                            //std::cout << "tmp childNodeIdx= " << childNodeIdx << " i_ord= " << i_ord << " i_face_n= " << i_face_n << " fnl= " << fnl <<  std::endl;
-                          }
+                        i_ord = renumber_quad_face_interior_nodes(i_face_n);
+                        //std::cout << "tmp childNodeIdx= " << childNodeIdx << " i_ord= " << i_ord << " i_face_n= " << i_face_n << " fnl= " << fnl <<  std::endl;
                       }
 
                     return true;
@@ -2333,7 +2337,7 @@ namespace stk {
 
       /// this is called one time (during code development) to generate and print a table of the extra refinement info
 
-#define DEBUG_PRINT_REF_TOPO_X 0
+#define DEBUG_PRINT_REF_TOPO_X 1
       static void
       printRefinementTopoX_Table(std::ostream& out = std::cout )
       {

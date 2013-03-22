@@ -79,10 +79,10 @@ namespace stk {
 
     void ReferenceMeshSmoother::run_algorithm()
     {
-      std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk ReferenceMeshSmoother innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
+      //std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk ReferenceMeshSmoother innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
 
       //if (!m_eMesh->get_rank()) 
-      std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk ReferenceMeshSmoother: running shape improver... \n" << std::endl;
+      //std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk ReferenceMeshSmoother: running shape improver... \n" << std::endl;
 
       PerceptMesh *eMesh = m_eMesh;
       m_num_nodes = m_eMesh->get_number_nodes();
@@ -209,7 +209,7 @@ namespace stk {
                   bool conv = check_convergence();
                   if (!m_eMesh->get_rank())
                   {
-                    std::cout << "P[" << m_eMesh->get_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " m_dnew= " << m_dnew 
+                    std::cout << "P[" << m_eMesh->get_rank() << "] " << "INFO: iter= " << iter << " dmax= " << m_dmax << " m_dnew= " << m_dnew 
                               << " m_d0= " << m_d0 << " m_alpha= " << m_alpha << " m_scale= " << m_scale << " m_grad_norm= " << m_grad_norm << " m_grad_norm_scaled = " << m_grad_norm_scaled
                               << " num_invalid= " << num_invalid_0 
                               << " m_global_metric= " << m_global_metric << " stage= " << stage << " m_untangled= " << m_untangled
@@ -244,7 +244,8 @@ namespace stk {
 
       MPI_Barrier( MPI_COMM_WORLD );
 
-      std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk ReferenceMeshSmoother: running shape improver... done \n" << std::endl;
+      if (!m_eMesh->get_rank()) 
+        std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk ReferenceMeshSmoother: running shape improver... done \n" << std::endl;
 
     }
 

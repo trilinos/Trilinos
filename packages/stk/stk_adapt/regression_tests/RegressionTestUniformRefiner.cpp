@@ -386,7 +386,7 @@ namespace stk
             Wedge15_Wedge15_8        :: printRefinementTopoX_Table(file);
 
             //Pyramid5_Pyramid5_10     :: printRefinementTopoX_Table(file);
-            //Pyramid13_Pyramid13_10   :: printRefinementTopoX_Table(file);
+            Pyramid13_Pyramid13_10   :: printRefinementTopoX_Table(file);
 
             // Not supported by Sierra
             // Wedge18_Wedge18_8        :: printRefinementTopoX_Table(file);
@@ -1117,7 +1117,7 @@ namespace stk
 
             eMesh.commit();
             //eMesh.delete_side_sets();
-            
+
             //eMesh.print_info("test",2);
             eMesh.print_info();
             eMesh.save_as(output_files_loc+"cylinder_tet4_hex8_4_0.e");
@@ -1976,7 +1976,7 @@ namespace stk
               {
                 breaker.doBreak();
               }
-            
+
             eMesh.save_as(output_files_loc+"cylinder_tet10_tet10_"+toString(numRefines)+"_"+procs_string[p_size]+".e");
             // end_demo
 
@@ -2484,7 +2484,7 @@ namespace stk
 
           }
         // end_demo
-        
+
       }
 
       //======================================================================================================================
@@ -2566,7 +2566,7 @@ namespace stk
 
           }
         // end_demo
-        
+
       }
 
       //======================================================================================================================
@@ -2839,7 +2839,7 @@ namespace stk
 
               bool isCommitted = true;
               percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-              
+
               //em1.print_info("hetero_enrich", 4);
 
               em1.save_as(input_files_loc+"pyramid_enrich_0.e");
@@ -2874,6 +2874,28 @@ namespace stk
 
                 eMesh1.save_as(output_files_loc+"pyramid_enrich_1.e");
                 eMesh1.save_as(input_files_loc+"pyramid_quadratic_refine_0.e");
+                eMesh1.close();
+              }
+
+            if (1)
+              {
+                percept::PerceptMesh eMesh1(3);
+
+                eMesh1.open(input_files_loc+"pyramid_quadratic_refine_0.e");
+
+                Pyramid13_Pyramid13_10 break_pattern(eMesh1);
+                //int scalarDimension = 0; // a scalar
+                stk::mesh::FieldBase* proc_rank_field = 0;      //eMesh1.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+                eMesh1.commit();
+                //eMesh1.print_info("hetero_enrich_2", 4);
+
+                UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
+
+                //breaker.setRemoveOldElements(false);
+                breaker.setIgnoreSideSets(true);
+                breaker.doBreak();
+
+                eMesh1.save_as(output_files_loc+"pyramid13_refine_1.e");
                 eMesh1.close();
               }
           }
@@ -3107,7 +3129,7 @@ namespace stk
 
               bool isCommitted = true;
               percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-              
+
               //em1.print_info("hetero_enrich", 4);
 
 
@@ -3223,7 +3245,7 @@ namespace stk
             //                         )
             percept::WedgeFixture wedgeFixture;
 
-            mesh::BulkData *bulk = 
+            mesh::BulkData *bulk =
               wedgeFixture.createMesh(MPI_COMM_WORLD,
                                       4, 3, 2,
                                       0, 1,
@@ -3355,7 +3377,7 @@ namespace stk
               stk::percept::SingleTetFixture::Point points[] = {{0,0,0},{1,0,0},{0.5,std::sqrt(3)/2.,0.0},{0.5,1./(2.0*std::sqrt(3.)), std::sqrt(2./3.)}};
               unsigned ntets=1;
               stk::percept::SingleTetFixture::TetIds tetIds[] = {{1,2,3,4}}; // one-based
-  
+
               stk::percept::SingleTetFixture mesh(pm, false, npts, points, ntets, tetIds);
               stk::io::put_io_part_attribute(  mesh.m_block_tet );
               mesh.m_metaData.commit();
@@ -3427,14 +3449,14 @@ namespace stk
             const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::NODE_RANK );
 
             // cluster the mesh towards the bump
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
-                //if (boundarySelector_5(**k)) 
+                //if (boundarySelector_5(**k))
                   {
                     stk::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
-                
+
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
                         stk::mesh::Entity entity = bucket[iEntity];
@@ -3447,17 +3469,17 @@ namespace stk
             eMesh.save_as(input_files_loc+"tet_4_smooth.0.e");
 
             // save state of original mesh
-            // field, dst, src: 
+            // field, dst, src:
             eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
-                if (boundarySelector_5(**k)) 
+                if (boundarySelector_5(**k))
                   {
                     stk::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
-                
+
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
                         stk::mesh::Entity entity = bucket[iEntity];
@@ -3470,7 +3492,7 @@ namespace stk
                   }
               }
             // save state of projected mesh
-            // field, dst, src: 
+            // field, dst, src:
             eMesh.copy_field(eMesh.get_field("coordinates_N"), eMesh.get_coordinates_field());
 
             eMesh.save_as(input_files_loc+"tet_4_smooth.0_perturbed.e");

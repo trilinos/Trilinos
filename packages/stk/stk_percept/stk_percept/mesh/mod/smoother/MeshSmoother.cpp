@@ -232,19 +232,19 @@ namespace stk {
           //int  msq_debug             = debug; // 1,2,3 for more debug info
 
           //bool do_untangle_only = false;
-          std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
+          //std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
           this->run_algorithm();
 
           //if (!m_eMesh->get_rank())
 
           num_invalid = parallel_count_invalid_elements(eMesh);
-          //if (!m_eMesh->get_rank())
-          std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk MeshSmoother num_invalid after= " << num_invalid << " "
-                    << (num_invalid ? " ERROR still have invalid elements after smoothing" :
-                        " SUCCESS: smoothed and removed invalid elements ")
-                    << std::endl;
+          if (!m_eMesh->get_rank())
+            std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk MeshSmoother num_invalid after= " << num_invalid << " "
+                      << (num_invalid ? " ERROR still have invalid elements after smoothing" :
+                          " SUCCESS: smoothed and removed invalid elements ")
+                      << std::endl;
           MPI_Barrier( MPI_COMM_WORLD );
-          std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk after barrier" << std::endl;
+          //std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk after barrier" << std::endl;
         }
 
 

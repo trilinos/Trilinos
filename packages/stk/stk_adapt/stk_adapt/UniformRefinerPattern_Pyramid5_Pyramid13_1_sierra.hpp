@@ -66,14 +66,14 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(1);
-        needed_entities[0].first = m_eMesh.edge_rank();   
+        needed_entities[0].first = m_eMesh.edge_rank();
         setToOne(needed_entities);
       }
 
       virtual unsigned getNumNewElemPerElem() { return 1; }
 
-      void 
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
+      void
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
@@ -81,7 +81,7 @@ namespace stk {
                                         element, new_sub_entity_nodes, element_pool,
                                         proc_rank_field);
       }
-      
+
     };
 
   } // namespace adapt

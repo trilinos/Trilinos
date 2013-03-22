@@ -951,7 +951,7 @@ namespace stk {
       m_total_metric = metric_check;
       if (check_convergence() || metric_check == 0.0)
         {
-          PRINT_1( "tmp srk already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
+          PRINT_1( "INFO: already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
           //update_node_positions
           return total_metric(0.0,1.0, total_valid);
         }
@@ -1013,14 +1013,14 @@ namespace stk {
             eMesh->nodal_field_axpby(-1.0, cg_g_field, 0.0, cg_d_field);
             restarted = true;
 
-            PRINT_1( "can't reduce metric= " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor << " norm_gradient = " << std::sqrt(norm_gradient2) );
+            PRINT_1( "WARNING: can't reduce metric= " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor << " norm_gradient = " << std::sqrt(norm_gradient2) );
 
             metric_0 = total_metric( 0.0, 1.0, total_valid);
             if (m_stage != 0) VERIFY_OP_ON(total_valid, ==, true, "bad mesh...");
             double metric_1 = total_metric( 1.e-6, 1.0, total_valid);
-            PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 );
+            PRINT_1( "WARNING: " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 );
             metric_1 = total_metric( -1.e-6, 1.0, total_valid);
-            PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
+            PRINT_1( "WARNING: " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
             total_valid = false;
           }
 
@@ -1031,7 +1031,7 @@ namespace stk {
             double mfac = alpha*armijo_offset_factor;
             converged = (metric < metric_0 + mfac);
             if (m_untangled) converged = converged && total_valid;
-            PRINT_1(  "tmp srk ### alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac)
+            PRINT(  "tmp srk ### alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac)
                     << " m_untangled = " << m_untangled
                     << " total_valid= " << total_valid );
             if (!converged)
@@ -1042,11 +1042,11 @@ namespace stk {
 
         if (!converged)
           {
-            PRINT_1( "can't reduce metric 2nd time = " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor << " norm_gradient = " << std::sqrt(norm_gradient2) << " m_scale= " << m_scale);
-            PRINT_1( "tmp srk 2nd m_dnew= " << m_dnew << " m_dmax= " << m_dmax << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
+            PRINT_1( "WARNING: can't reduce metric 2nd time = " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor << " norm_gradient = " << std::sqrt(norm_gradient2) << " m_scale= " << m_scale);
+            PRINT_1( "WARNING: 2nd m_dnew= " << m_dnew << " m_dmax= " << m_dmax << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
             if (check_convergence())
               {
-                PRINT_1( "tmp srk 2nd already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
+                PRINT_1( "INFO: 2nd already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
                 return total_metric(0.0,1.0, total_valid);
               }
             //debug_print(0);
@@ -1055,13 +1055,13 @@ namespace stk {
             double metric_1 = total_metric( 1.e-6, 1.0, total_valid);
             metric_0 = total_metric( 0.0, 1.0, total_valid);
             //do_print_elem_val = false;
-            PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 );
+            PRINT_1( "WARNING: " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 );
             metric_1 = total_metric( -1.e-6, 1.0, total_valid);
-            PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
+            PRINT_1( "WARNING: " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
 
             if (false && (m_dmax < 1.e-3 && m_stage == 1 && m_untangled))
               {
-                PRINT_1( "tmp srk 2nd allowing convergence... m_dmax= " << m_dmax << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
+                PRINT_1( "INFO: 2nd allowing convergence... m_dmax= " << m_dmax << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
                 return total_metric(0.0,1.0, total_valid);
               }
             throw std::runtime_error("can't reduce metric");
@@ -1087,7 +1087,7 @@ namespace stk {
                       }
                     if (fm < f2 && (m_stage!=0 && !total_valid))
                       {
-                        PRINT_1( "tmp srk WARNING !total_valid alpha_quadratic= " << alpha_quadratic << " alpha= " << a2 );
+                        PRINT_1( "WARNING: !total_valid alpha_quadratic= " << alpha_quadratic << " alpha= " << a2 );
                       }
                   }
               }
@@ -1100,7 +1100,7 @@ namespace stk {
                 double fn = total_metric( an, 1.0, total_valid);
                 if (fn < metric_0 && total_valid)
                   {
-                    PRINT_1("tmp srk found accelerated alpha = " << an );
+                    PRINT_1("INFO: found accelerated alpha = " << an );
                     alpha = an;
                   }
               }
@@ -1597,7 +1597,7 @@ namespace stk {
               }
           }
       }
-      std::cout << "tmp srk snap_nodes dmax= " << dmax << std::endl;
+      //std::cout << "tmp srk snap_nodes dmax= " << dmax << std::endl;
     }
 
 

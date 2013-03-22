@@ -17,6 +17,7 @@
  */
 
 #include <stdexcept>
+#include <boost/lexical_cast.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -32,11 +33,11 @@
 //using sierra::Diag::Tracespec;
 //#define RuntimeError() std::runtime_exception
 
-namespace stk { 
+namespace stk {
 
   using namespace percept;
-  
-  namespace adapt { 
+
+  namespace adapt {
     namespace Elem {
 
   namespace StdMeshObjTopologies {
@@ -691,7 +692,7 @@ namespace stk {
      *
      * {Ord, Rnk-assoc, Ord-rnk-assoc, Ord-node-on-subcell, num-rnk-assoc, param-coord}
      */
-    
+
 #if 0
     template<> RefTopoX RefinementTopologyExtra< shards:: Quadrilateral<9>  > :: refinement_topology = {
       {	0,	0,	0,	0,	1,	{-1,	-1,	0} },
@@ -718,7 +719,7 @@ namespace stk {
       {	21,	2,	0,	5,	9,	{-0.5,	-0.5,	0} },
       {	22,	2,	0,	6,	9,	{0.5,	-0.5,	0} },
       {	23,	2,	0,	7,	9,	{0.5,	0.5,	0} },
-      {	24,	2,	0,	8,	9,	{-0.5,	0.5,	0} } 
+      {	24,	2,	0,	8,	9,	{-0.5,	0.5,	0} }
 
     };
 #endif
@@ -1236,19 +1237,19 @@ namespace stk {
         {9,   1,         1,      0,       1,             {1.0, 0.5, 0.0} },
         {10,  1,         2,      0,       1,             {0.5, 1.0, 0.0} },
         {11,  1,         3,      0,       1,             {0.0, 0.5, 0.0} },
-                                                            
+
         {12,  1,         8,      0,       1,             {0.0, 0.0, 0.5} },
         {13,  1,         9,      0,       1,             {1.0, 0.0, 0.5} },
         {14,  1,         10,     0,       1,             {1.0, 1.0, 0.5} },
         {15,  1,         11,     0,       1,             {0.0, 1.0, 0.5} },
-                                                            
+
         {16,  1,         4,      0,       1,             {0.5, 0.0, 1.0} },
         {17,  1,         5,      0,       1,             {1.0, 0.5, 1.0} },
         {18,  1,         6,      0,       1,             {0.5, 1.0, 1.0} },
         {19,  1,         7,      0,       1,             {0.0, 0.5, 1.0} },
-                                                            
+
         {20,  3,         0,      0,       1,             {0.5, 0.5, 0.5} },
-                                                                      
+
         {21,  2,         4,      0,       1,             {0.5, 0.5, 0.0} },
         {22,  2,         5,      0,       1,             {0.5, 0.5, 1.0} },
         {23,  2,         3,      0,       1,             {0.0, 0.5, 0.5} },
@@ -1613,7 +1614,7 @@ namespace stk {
           static const UInt hex20_child_7[] = { 23, 20, 26, 15, 19, 22, 18, 7,
                                                 77, 76, 56, 57, 73, 80, 63, 42, 72, 64, 48, 49 , EUA };
 
-          
+
           static const UInt * hex20_child_node_table[]  =
             { hex20_child_0 , hex20_child_1 , hex20_child_2 , hex20_child_3 ,
               hex20_child_4 , hex20_child_5 , hex20_child_6 , hex20_child_7  };
@@ -2154,14 +2155,14 @@ namespace stk {
           static const_top_ptr tet10_child[]  =
             { &tet10, &tet10, &tet10, &tet10, &tet10, &tet10, &tet10, &tet10 };
 
-          static const UInt   tet4_child_0[] = { 0, 4, 6, 7, 10, 31, 15, 16, 27, 25 , EUA};
-          static const UInt   tet4_child_1[] = { 4, 1, 5, 8, 11, 12, 30, 34, 17, 26 , EUA};
-          static const UInt   tet4_child_2[] = { 6, 5, 2, 9, 24, 13, 14, 33, 28, 18 , EUA};
-          static const UInt   tet4_child_3[] = { 7, 8, 9, 3, 23, 32, 29, 19, 20, 21 , EUA};
-          static const UInt   tet4_child_4[] = { 8, 7, 6, 4, 23, 25, 22, 34, 27, 31 , EUA};
-          static const UInt   tet4_child_5[] = { 6, 9, 8, 5, 33, 32, 22, 24, 28, 26 , EUA};
-          static const UInt   tet4_child_6[] = { 9, 8, 7, 6, 32, 23, 29, 33, 22, 25 , EUA};
-          static const UInt   tet4_child_7[] = { 5, 6, 4, 8, 24, 31, 30, 26, 22, 34 , EUA};
+          static const UInt   tet4_child_0[] = { 0, 4, 6, 7,   10, 31, 15, 16, 27, 25 , EUA};
+          static const UInt   tet4_child_1[] = { 4, 1, 5, 8,   11, 12, 30, 34, 17, 26 , EUA};
+          static const UInt   tet4_child_2[] = { 6, 5, 2, 9,   24, 13, 14, 33, 28, 18 , EUA};
+          static const UInt   tet4_child_3[] = { 7, 8, 9, 3,   23, 32, 29, 19, 20, 21 , EUA};
+          static const UInt   tet4_child_4[] = { 8, 7, 6, 4,   23, 25, 22, 34, 27, 31 , EUA};
+          static const UInt   tet4_child_5[] = { 6, 9, 8, 5,   33, 32, 22, 24, 28, 26 , EUA};
+          static const UInt   tet4_child_6[] = { 9, 8, 7, 6,   32, 23, 29, 33, 22, 25 , EUA};
+          static const UInt   tet4_child_7[] = { 5, 6, 4, 8,   24, 31, 30, 26, 22, 34 , EUA};
           static const UInt * tet4_child_node_table[]  =
             { tet4_child_0 , tet4_child_1 , tet4_child_2 , tet4_child_3 ,
               tet4_child_4 , tet4_child_5 , tet4_child_6 , tet4_child_7 };
@@ -2351,7 +2352,7 @@ namespace stk {
       {	14,	1,	5,	0,	1,	{0,	0.5,	1} },
       {	15,	2,	0,	0,	1,	{0.5,	0,	0.5} },
       {	16,	2,	1,	0,	1,	{0.5,	0.5,	0.5} },
-      {	17,	2,	2,	0,	1,	{0,	0.5,	0.5} } 
+      {	17,	2,	2,	0,	1,	{0,	0.5,	0.5} }
 
     };
 #endif
@@ -2564,6 +2565,171 @@ namespace stk {
     }
 
 
+    /**
+     *                               PARENT Linear: 5-Node Pyramid Nodes
+     *
+     *     3                   2
+     *      o-----------------o
+     *      |\               /|
+     *      | \             / |
+     *      |  \           /  |
+     *      |   \         /   |
+     *      |    \       /    |
+     *      |     \     /     |
+     *      |      \   /      |
+     *      |       \ /       |
+     *      |        o 4      |
+     *      |       / \       |
+     *      |      /   \      |
+     *      |     /     \     |
+     *      |    /       \    |
+     *      |   /         \   |
+     *      |  /           \  |
+     *      | /             \ |
+     *      |/               \|
+     *      o-----------------o
+     *     0                   1
+     *
+     *                               CHILDREN 5-Node Pyramid Nodes
+     *                               6 new Pyramids, 4 new Tets
+     *
+     *      3--------7--------2
+     *      |\      / \      /|
+     *      | \    /   \    / |
+     *      |  \  /     \  /  |          static const UInt   child_0[] = {  0, 5, 13, 8, 9, EUA };
+     *      |   \/       \/   |          static const UInt   child_1[] = {  5, 1, 6, 13, 10, EUA };
+     *      |   12-------11   |          static const UInt   child_2[] = {  13, 6, 2, 7, 11, EUA };
+     *      |  /| \     /| \  |          static const UInt   child_3[] = {  8, 13, 7, 3, 12, EUA };
+     *      | / |  \   / |  \ |          static const UInt   child_4[] = {  9, 12, 11, 10, 13, EUA };
+     *      |/  |   \ /  |   \|          static const UInt   child_5[] = {  9, 10, 11, 12, 4, EUA };
+     *      8   |   4,13 |    6          static const UInt   child_6[] = {  13, 10, 9, 5, EUA };
+     *      |\  |   / \  |   /|          static const UInt   child_7[] = {  13, 11, 10, 6, EUA };
+     *      | \ |  /   \ |  / |          static const UInt   child_8[] = {  13, 12, 11, 7, EUA };
+     *      |  \| /     \| /  |          static const UInt   child_9[] = {  13, 9, 12, 8, EUA };
+     *      |   9/______10/   |
+     *      |   /\       /\   |
+     *      |  /  \     /  \  |
+     *      | /    \   /    \ |
+     *      |/      \ /      \|
+     *      o--------5--------o
+     *     0                   1
+     *
+     *                               PARENT Quadratic 13- & 14-Node Pyramid Nodes
+     *
+     *     3                   2
+     *      o--------7--------o
+     *      |\               /|
+     *      | \             / |
+     *      |  \           /  |
+     *      |   \         /   |
+     *      |   12       11   |
+     *      |     \     /     |
+     *      |      \   /      |
+     *      |       \ /       |
+     *      8        o 4,13   6  Node 13 is centroid node of the Quad face
+     *      |       / \       |
+     *      |      /   \      |
+     *      |     /     \     |
+     *      |    9      10    |
+     *      |   /         \   |
+     *      |  /           \  |
+     *      | /             \ |
+     *      |/               \|
+     *      o--------5--------o
+     *     0                   1
+     *
+     *
+     *
+     *                               CHILDREN 13, and 14-Node Pyramid Nodes
+     *                               6 new Pyramids, 4 new Tets
+     *
+     *      3---19---7---18---2
+     *      |\      / \      /|          Note: the 99's are filled in programatically by the RefinementTopoolgy code.
+     *      | 42  43   44  45 |
+     *      |  \  /     \  /  |          static const UInt   children[][14] = {{  0, 5, 13, 8, 9,    99,99,99,99, 99,99,99,99, 99, EUA},
+     *     20   \/       \/  17           {  5, 1, 6, 13, 10,   99,99,99,99, 99,99,99,99, 99, EUA},
+     *      |   12--41---11   |           {  13, 6, 2, 7, 11,   99,99,99,99, 99,99,99,99, 99, EUA},
+     *      |  /| \     /| \  |           {  8, 13, 7, 3, 12,   99,99,99,99, 99,99,99,99, 99, EUA},
+     *      |37 | 38  39 | 40 |           {  9, 12, 11, 10, 13, 99,99,99,99, 99,99,99,99, 99, EUA},
+     *      |/  |   \ /  |   \|           {  9, 10, 11, 12, 4,  99,99,99,99, 99,99,99,99, 99, EUA},
+     *      8  35   4,13 36   6           {  13, 10, 9, 5,      99,99,99,99, 99,99,99,99, 99, EUA},
+     *      |\  |   / \  |   /|           {  13, 11, 10, 6,     99,99,99,99, 99,99,99,99, 99, EUA},
+     *      |31 | 32  33 |  34|           {  13, 12, 11, 7,     99,99,99,99, 99,99,99,99, 99, EUA},
+     *      |  \| /     \| /  |           {  13, 9, 12, 8,      99,99,99,99, 99,99,99,99, 99, EUA} };
+     *      |   9/__30__10/   |
+     *      21  /\       /\  16
+     *      |  /  \     /  \  |
+     *      | 26   27  28  29 |          Edges (note: these may not be in edge-orientation order, but not necessary, just used to build child tables)
+     *      |/      \ /      \|
+     *      o---14---5---15---o          static const UInt edges[][3] = {
+     *     0                   1            {0,5,14},{5,1,15},{1,6,16},{6,2,17},{2,7,18},{7,3,19},{3,8,20},{8,0,21},
+     *                                      {5,13,22},{8,13,23},{13,6,24},{13,7,25},
+     *                                      {0,9,26},{5,9,27},{5,10,28},{1,10,29},{9,10,30},{8,9,31},{9,4,32},{10,4,33},{6,10,34}
+     *                                      {9,12,35},{10,11,36},{8,12,37},{4,12,38},{4,11,39},{6,11,40},{12,11,41},{3,12,42},{7,12,43},{7,11,44},{2,11,45} };
+     *
+     *
+     *                               Additional nodes on edges from the 4 Tets
+     *
+     *      3--------7--------2
+     *      |\      /|\      /|
+     *      | \    / | \    / |
+     *      |  \  /  |  \  /  |         add_edges[] = {
+     *      |   \/   53  \/   |            {13,5,46},{13,9,47},{13,10,48},
+     *      |   12   |   11   |            {13,8,49},{13,6,50},{13,12,51},{13,11,52},{13,7 ,53} };
+     *      |  /  \  |  /  \  |
+     *      | /   51 | 52   \ |
+     *      |/      \|/      \|
+     *      8---49--4,13--50--6
+     *      |\      /|\      /|
+     *      | \   47 | 48   / |
+     *      |  \  /  |  \  /  |
+     *      |   9/  46  10/   |
+     *      |   /\   |   /\   |
+     *      |  /  \  |  /  \  |
+     *      | /    \ | /    \ |
+     *      |/      \|/      \|
+     *      o--------5--------o
+     *     0                   1
+     *
+     *
+     * |    Bottom Quadrilateral face
+     * |
+     * |    3---19----7---18----2        Faces (quad faces on bottom):
+     * |    |         |         |
+     * |    |         |         |        static const UInt face_centroids[][5] = {
+     * |    20  56   25   57   17          {0,5,13,8,46},{5,1,6,13,47},{8,13,7,3,48},{13,6,2,7,49} };
+     * |    |         |         |
+     * |    |         |         |
+     * |    8----23--13----24---6        Original Edges:
+     * |    |         |         |
+     * |    |         |         |        static const UInt original_edges[][5] = {
+     * |    21  54   22   55   16          {0,1,5,14,15},{1,2,6,16,17},{2,3,7,18,19},{3,0,8,20,21},
+     * |    |         |         |          {0,4,9,26,32},{1,4,10,29,33},{2,4,11,45,39},{3,4,12,42,38} };
+     * |    |         |
+     * |    0---14----5----15-- 1        Original Faces:
+     * |
+     *                                   static const UInt original_quad_faces[][] = {};
+     *
+     *  quad_face_nodes = {0,3,2,1, 8,7,6,5, 13, 21,20,19,18,17,16,15,14, 23,25,24,22, 54, 56, 57, 55}
+     *
+     */
+    template<unsigned M>
+    static void print_table(unsigned N, UInt table[][M], std::string name)
+    {
+      std::cout << "static UInt " << name << "[" << N << "][" << M << "] = {\n";
+      for (unsigned ic=0; ic < N; ic++)
+        {
+          UInt * child = table[ic];
+          for (unsigned jc=0; jc < M; jc++)
+            {
+              bool end = (child[jc] == EUA || jc== M-1);
+              std::cout << (jc==0?"{":"") << (child[jc] == EUA?"EUA":boost::lexical_cast<std::string>(child[jc])) << (end?(ic==(N-1)?"}\n":"},\n"):", ");
+              if (end) break;
+            }
+        }
+      std::cout << "};" << std::endl;
+    }
+
     // Pyramids with 5 or 13 nodes (3D solid).
     //   eclass ==  SOLID        = > sdim ==  3 && mdim ==  3
     const MeshObjTopology *
@@ -2573,6 +2739,8 @@ namespace stk {
       /* %TRACE[NONE]% */  /* %TRACE% */
       static MeshObjTopology pyramid5(shards::getCellTopologyData<shards::Pyramid<5> >());
       static MeshObjTopology pyramid13(shards::getCellTopologyData<shards::Pyramid<13> >());
+      static MeshObjTopology tet4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
+      static MeshObjTopology tet10(shards::getCellTopologyData<shards::Tetrahedron<10> >());
 
       static bool first = true ;
 
@@ -2582,61 +2750,145 @@ namespace stk {
 
         { // Children and child nodes
 
-          static const_top_ptr tet4 = StdMeshObjTopologies::Solid_Tet_4();
-
-          //Note 13 Node Pyramid Refinement not yet complete.
           static const_top_ptr pyramid5_child[]  =
-            {&pyramid5, &pyramid5, &pyramid5, &pyramid5, &pyramid5,
-             &pyramid5, tet4, tet4, tet4, tet4};
+            {&pyramid5, &pyramid5, &pyramid5, &pyramid5, &pyramid5, &pyramid5,
+             &tet4, &tet4, &tet4, &tet4};
 
           static const_top_ptr pyramid13_child[]  =
-            {&pyramid13, &pyramid13, &pyramid13, &pyramid13,
-             &pyramid13, &pyramid13, &pyramid13, &pyramid13,
-             &pyramid13, &pyramid13, &pyramid13, &pyramid13 };
+            {&pyramid13, &pyramid13, &pyramid13, &pyramid13, &pyramid13, &pyramid13,
+             &tet10, &tet10, &tet10, &tet10
+            };
 
-          static const UInt   child_0[] = {  0, 5, 13, 8, 9 , EUA};
-          static const UInt   child_1[] = {  5, 1, 6, 13, 10 , EUA};
-          static const UInt   child_2[] = {  13, 6, 2, 7, 11 , EUA};
-          static const UInt   child_3[] = {  8, 13, 7, 3, 12 , EUA};
-          static const UInt   child_4[] = {  9, 12, 11, 10, 13 , EUA};
-          static const UInt   child_5[] = {  9, 10, 11, 12, 4 , EUA};
-          static const UInt   child_6[] = {  13, 10, 9, 5 , EUA};
-          static const UInt   child_7[] = {  13, 11, 10, 6 , EUA};
-          static const UInt   child_8[] = {  13, 12, 11, 7 , EUA};
-          static const UInt   child_9[] = {  13, 9, 12, 8 , EUA};
+          //           static const UInt   child_0[] = {  0, 5, 13, 8, 9 , EUA};
+          //           static const UInt   child_1[] = {  5, 1, 6, 13, 10 , EUA};
+          //           static const UInt   child_2[] = {  13, 6, 2, 7, 11 , EUA};
+          //           static const UInt   child_3[] = {  8, 13, 7, 3, 12 , EUA};
+          //           static const UInt   child_4[] = {  9, 12, 11, 10, 13 , EUA};
+          //           static const UInt   child_5[] = {  9, 10, 11, 12, 4 , EUA};
+          //           static const UInt   child_6[] = {  13, 10, 9, 5 , EUA};
+          //           static const UInt   child_7[] = {  13, 11, 10, 6 , EUA};
+          //           static const UInt   child_8[] = {  13, 12, 11, 7 , EUA};
+          //           static const UInt   child_9[] = {  13, 9, 12, 8 , EUA};
 
+          //Note: the 99's are filled in programatically
+
+          typedef const UInt * const *ChildNodeTableConst;
+
+          static UInt child_node_table_0[][15] = {
+            {  0, 5, 13, 8, 9,    99,99,99,99, 99,99,99,99, 99, EUA},
+            {  5, 1, 6, 13, 10,   99,99,99,99, 99,99,99,99, 99, EUA},
+            {  13, 6, 2, 7, 11,   99,99,99,99, 99,99,99,99, 99, EUA},
+            {  8, 13, 7, 3, 12,   99,99,99,99, 99,99,99,99, 99, EUA},
+            {  9, 12, 11, 10, 13, 99,99,99,99, 99,99,99,99, 99, EUA},
+            {  9, 10, 11, 12, 4,  99,99,99,99, 99,99,99,99, 99, EUA},
+            {  13, 10, 9, 5,      99,99,99,99, 99,99,99,99, 99, EUA},
+            {  13, 11, 10, 6,     99,99,99,99, 99,99,99,99, 99, EUA},
+            {  13, 12, 11, 7,     99,99,99,99, 99,99,99,99, 99, EUA},
+            {  13, 9, 12, 8,      99,99,99,99, 99,99,99,99, 99, EUA}
+          };
+          (void)child_node_table_0;
+
+          // Generated from above table - see below
+          static const UInt cnode[][15] = {
+            { 0, 5, 13, 8, 9, 14, 46, 49, 21, 26, 27, 47, 31, EUA},
+            { 5, 1, 6, 13, 10, 15, 16, 50, 46, 28, 29, 34, 48, EUA},
+            { 13, 6, 2, 7, 11, 50, 17, 18, 53, 52, 40, 45, 44, EUA},
+            { 8, 13, 7, 3, 12, 49, 53, 19, 20, 37, 51, 43, 42, EUA},
+            { 9, 12, 11, 10, 13, 35, 41, 36, 30, 47, 51, 52, 48, EUA},
+            { 9, 10, 11, 12, 4, 30, 36, 41, 35, 32, 33, 39, 38, EUA},
+            { 13, 10, 9, 5, 48, 30, 47, 46, 28, 27, EUA},
+            { 13, 11, 10, 6, 52, 36, 48, 50, 40, 34, EUA},
+            { 13, 12, 11, 7, 51, 41, 52, 53, 43, 44, EUA},
+            { 13, 9, 12, 8, 47, 35, 51, 49, 31, 37, EUA}
+          };
           static const UInt * child_node_table[]  =
-            { child_0 , child_1 , child_2,  child_3 , child_4 ,
-              child_5, child_6, child_7, child_8, child_9 };
+            {cnode[0], cnode[1], cnode[2], cnode[3], cnode[4], cnode[5], cnode[6], cnode[7], cnode[8], cnode[9] };
+
+          // Edges (note: these may not be in edge-orientation order, but not necessary, just used to build child tables)
+
+          static const UInt edges[][3] = { // total 40 (32 + 8 additional tet edges)
+            {0,5,14},{5,1,15},{1,6,16},{6,2,17},{2,7,18},{7,3,19},{3,8,20},{8,0,21},   // outer edges = 8
+            {5,13,22},{8,13,23},{13,6,24},{13,7,25},  // quad face edges = 4
+            {0,9,26},{5,9,27},{5,10,28},{1,10,29},{9,10,30},{8,9,31},{9,4,32},{10,4,33},{6,10,34},  // tri-face edges = 20
+            {9,12,35},{10,11,36},{8,12,37},{4,12,38},{4,11,39},{6,11,40},{12,11,41},{3,12,42},{7,12,43},{7,11,44},{2,11,45},
+
+            // additional edges from tets
+            {13,5,46},{13,9,47},{13,10,48},
+            {13,8,49},{13,6,50},{13,12,51},{13,11,52},{13,7 ,53}
+
+          };
+          //static int n_edge_table = 40;
+          static UInt n_edge_table = sizeof(edges)/(3*sizeof(UInt));
+          if (n_edge_table != 40) throw std::logic_error("bad table");
+
+          static bool did_compute_child_nodes = false; // toggle this to regenerate the child_node_table
+          if (!did_compute_child_nodes)
+            {
+              did_compute_child_nodes = true;
+              for (unsigned ic=0; ic < 10; ic++)
+                {
+                  UInt * child = child_node_table_0[ic];
+                  const CellTopologyData * topo_data = shards::getCellTopologyData<shards::Pyramid<5> >();
+                  if (ic > 5) {
+                    topo_data = shards::getCellTopologyData<shards::Tetrahedron<4> >();
+                  }
+                  shards::CellTopology topo(topo_data);
+                  int nv = topo_data->vertex_count;
+                  unsigned n_edge = topo.getEdgeCount();
+                  for (unsigned i_edge = 0; i_edge < n_edge; i_edge++)
+                    {
+                      int i0 = child[topo_data->edge[i_edge].node[0]];
+                      int i1 = child[topo_data->edge[i_edge].node[1]];
+
+                      bool found = false;
+                      for (unsigned j_edge = 0; j_edge < n_edge_table; j_edge++)
+                        {
+                          int j0 = edges[j_edge][0];
+                          int j1 = edges[j_edge][1];
+                          int quadratic_edge_node = edges[j_edge][2];
+                          //std::cout << " i0= " << i0 << " i1= " << i1 << " j0= " << j0 << " j1= " << j1 << std::endl;
+                          if ( (i0 == j0 && i1 == j1) || (i0 == j1 && i1 == j0))
+                            {
+                              found = true;
+                              child[nv  + i_edge] = quadratic_edge_node;
+                            }
+                        }
+                      if (!found) throw std::logic_error("bad pyramid edge table");
+                    }
+                  child[nv+n_edge] = EUA;
+                }
+              print_table(10, child_node_table_0, "cnode");
+
+            }
 
           // Edge topology and node tables including edges' child-nodes
 
-          /* TODO: Update the 99's with the child nodes for the 13 node pyramid */
-          static const UInt   edge_0[] = { 0, 1,   5   , 99, 99     , EUA};
-          static const UInt   edge_1[] = { 1, 2,   6   , 99, 99     , EUA};
-          static const UInt   edge_2[] = { 2, 3,   7   , 99, 99     , EUA};
-          static const UInt   edge_3[] = { 3, 0,   8   , 99, 99     , EUA};
-          static const UInt   edge_4[] = { 0, 4,   9   , 99, 99     , EUA};
-          static const UInt   edge_5[] = { 1, 4,  10   , 99, 99     , EUA};
-          static const UInt   edge_6[] = { 2, 4,  11   , 99, 99     , EUA};
-          static const UInt   edge_7[] = { 3, 4,  12   , 99, 99     , EUA};
-          static const UInt * edge_table[]  =
-            { edge_0 , edge_1 , edge_2 , edge_3 ,
-              edge_4 , edge_5 , edge_6 , edge_7 };
+          static const UInt edge_t[][5] = {
+            {0, 1, 5, 14, 15},
+            {1, 2, 6, 16, 17},
+            {2, 3, 7, 18, 19},
+            {3, 0, 8, 20, 21},
+            {0, 4, 9, 26, 32},
+            {1, 4, 10, 29, 33},
+            {2, 4, 11, 45, 39},
+            {3, 4, 12, 42, 38}
+          };
+
+          static const UInt * edge_table[]  = { edge_t[0], edge_t[1], edge_t[2], edge_t[3], edge_t[4], edge_t[5], edge_t[6], edge_t[7] };
 
           // Face topology, nodes tables, and edge tables
 
-          static const UInt face_0[] = { 0, 1, 4,     5,  10,  9         , EUA};
-          static const UInt face_1[] = { 1, 2, 4,     6,  11, 10         , EUA};
-          static const UInt face_2[] = { 2, 3, 4,     7,  12, 11         , EUA};
-          static const UInt face_3[] = { 3, 0, 4,     8,   9,  12        , EUA};
-          static const UInt face_4[] = { 0, 3, 2, 1,  8,   7,  6,  5, 13 , EUA};
-
+          static const UInt face_0[] = { 0, 1, 4,     5,  10,  9, 14,15,29,33,32,26,27,28,30,EUA};
+          static const UInt face_1[] = { 1, 2, 4,     6,  11, 10, 16,17,45,39,33,29,34,40,36,EUA};
+          static const UInt face_2[] = { 2, 3, 4,     7,  12, 11, 18,19,42,38,39,45,44,43,41,EUA};
+          static const UInt face_3[] = { 3, 0, 4,     8,   9,  12, 20,21,26,32,38,42,31,35,37,EUA};
+          //static const UInt face_4[] = { 0, 3, 2, 1,  8,   7,  6,  5, 13 ,14,15,16,17,18,19,20,21, EUA};
+          static const UInt face_4[] = {0,3,2,1, 8,7,6,5, 13, 21,20,19,18,17,16,15,14, 23,25,24,22, 54, 56, 57, 55, EUA};
           static const UInt * face_table[]  =
             { face_0 , face_1 , face_2 , face_3 , face_4 };
 
           static RefinementTopology pyramid5_refinement(&pyramid5, 10, pyramid5_child, 14, child_node_table, 8, edge_table, 5, face_table, 0, NULL, NULL, false);
-          static RefinementTopology pyramid13_refinement(&pyramid13, 0, pyramid13_child, 0, child_node_table, 8, edge_table, 5, face_table, 0, NULL, NULL, false);
+          static RefinementTopology pyramid13_refinement(&pyramid13, 10, pyramid13_child, 54, child_node_table, 8, edge_table, 5, face_table, 0, NULL, NULL, false);
         }
       }
 

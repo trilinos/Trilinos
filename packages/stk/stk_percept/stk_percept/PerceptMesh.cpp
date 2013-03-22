@@ -60,6 +60,8 @@
 
 #include <stk_percept/Intrepid_HGRAD_HEX_C2_Serendipity_FEM.hpp>
 
+#define ALLOW_IOSS_PROPERTIES_SETTING_FOR_LARGE_RUNS 0
+
 namespace stk {
   namespace percept {
 
@@ -1186,6 +1188,22 @@ namespace stk {
         }
       m_iossMeshData->m_property_manager.add(Ioss::Property("MAXIMUM_NAME_LENGTH", 100));
 
+      if (ALLOW_IOSS_PROPERTIES_SETTING_FOR_LARGE_RUNS)
+        {
+          //export IOSS_PROPERTIES="INTEGER_SIZE_API=8:INTEGER_SIZE_DB=8:PARALLEL_IO_MODE=mpiposix:DECOMPOSITION_METHOD=RIB:COMPOSE_RESULTS=NO:COMPOSE_RESTART=NO"
+
+#define ADD(prop,val) \
+          do { if (m_iossMeshData->m_property_manager.exists(prop)) m_iossMeshData->m_property_manager.erase(prop); \
+            m_iossMeshData->m_property_manager.add(Ioss::Property(prop, val)); } while (0)
+
+          ADD("INTEGER_SIZE_DB", 8);
+          ADD("INTEGER_SIZE_API", 8);
+          ADD("PARALLEL_IO_MODE", "mpiposix");
+          ADD("DECOMPOSITION_METHOD", "RIB");
+          ADD("COMPOSE_RESTART", "NO");
+          ADD("COMPOSE_RESULTS", "NO");
+        }
+
       std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
 #if PERCEPT_USE_FAMILY_TREE
       entity_rank_names.push_back("FAMILY_TREE");
@@ -2257,6 +2275,22 @@ namespace stk {
         if (!mesh_data.bulk_data_is_set())
           mesh_data.set_bulk_data(bulk_data);
       }
+
+#define ERASE(prop) \
+          do { if (mesh_data.m_property_manager.exists(prop)) mesh_data.m_property_manager.erase(prop); } while(0)
+      if (ALLOW_IOSS_PROPERTIES_SETTING_FOR_LARGE_RUNS)
+        {
+#define ADD1(prop,val) \
+          do { if (mesh_data.m_property_manager.exists(prop)) mesh_data.m_property_manager.erase(prop); \
+            mesh_data.m_property_manager.add(Ioss::Property(prop, val)); } while (0)
+
+          ADD1("INTEGER_SIZE_DB", 8);
+          ADD1("INTEGER_SIZE_API", 8);
+          ERASE("PARALLEL_IO_MODE");
+          ERASE("DECOMPOSITION_METHOD");
+          ERASE("COMPOSE_RESULTS");
+          ERASE("COMPOSE_RESTART");
+        }
 
       //std::cout << "tmp srk out_filename= " << out_filename << " m_streaming_size= " << m_streaming_size << std::endl;
       if (p_size == 1 && m_streaming_size)
