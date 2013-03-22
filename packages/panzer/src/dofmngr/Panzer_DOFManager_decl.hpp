@@ -160,14 +160,8 @@ public:
   void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
   { connMngr_->getElementBlockIds(elementBlockIds); }
   
-  /** Because we only have one element block, if the field is present, and
-    * the block is valid. It works
-    */
   bool fieldInBlock(const std::string & field, const std::string & block) const;
 
-  /** Because we only have one element block, we are guarenteed 
-    * that all fields are going to be in the one block we have
-    */
   const std::vector<int> & getBlockFieldNumbers(const std::string & blockId) const;
 
 //************************************************************************

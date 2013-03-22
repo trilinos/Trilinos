@@ -133,8 +133,21 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
       Intrepid::FieldContainer<double> & fieldData = data[blockId];
       fieldData.resize(connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
 
-      // get degree of freedom coordiantes
-      connManager_->getDofCoords(blockId,*fieldPattern,localCellIds,fieldData);
+      if(fieldPattern->supportsInterpolatoryCoordinates()) {
+         // get degree of freedom coordiantes
+         connManager_->getDofCoords(blockId,*fieldPattern,localCellIds,fieldData);
+      }
+      else {
+         Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+         out.setOutputToRootOnly(-1);
+         out << "WARNING: In ParameterListCallback::buildCoordinates(), the Intrepid::FieldPattern in "
+             << "block \"" << blockId << "\" does not support interpolatory coordinates. "
+             << "This may be fine if coordinates are not actually needed. However if they are then bad things "
+             << "will happen. Enjoy!" << std::endl;
+
+         coordinatesBuilt_ = true;
+         return;
+      }
    }
 
    Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > resultVec 
