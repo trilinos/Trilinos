@@ -43,12 +43,19 @@
       <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
     </ParameterList>
 
+    <ParameterList name="myFilteredAFact">
+      <Parameter name="factory"                             type="string" value="FilteredAFactory"/>
+      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
+      <Parameter name="lumping"                             type="bool"   value="true"/>
+    </ParameterList>
+
     <ParameterList name="myTentativePFact">
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
     </ParameterList>
 
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"                             type="string" value="SaPFactory"/>
+      <Parameter name="A"                                   type="string" value="myFilteredAFact"/>
       <Parameter name="P"                                   type="string" value="myTentativePFact"/>
       <!-- <Parameter name="Damping factor"                      type="double" value="4./3"/> -->
     </ParameterList>
@@ -180,15 +187,13 @@
   <ParameterList name="Hierarchy">
 
     <Parameter name="numDesiredLevel"                       type="int"      value="10"/> <!-- Max number of levels -->
-    <Parameter name="maxCoarseSize"                         type="int"      value="500"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="maxCoarseSize"                         type="int"      value="1000"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/> <!--None, Low, Medium, High, Extreme -->
 
     <ParameterList name="AllButCoarsestLevel">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
-      <!-- FIXME FIXME FIXME FIXME FIXME uncomment once we have coordinates -->
-      <!--
       <Parameter name="Nullspace"                           type="string"   value="myRebalanceRestrictionFact"/>
       <Parameter name="Coordinates"                         type="string"   value="myRebalanceRestrictionFact"/>
       <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
@@ -196,7 +201,6 @@
       <Parameter name="A"                                   type="string"   value="myRebalanceAFact"/>
       <Parameter name="P"                                   type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRebalanceRestrictionFact"/>
-      -->
     </ParameterList>
 
     <ParameterList name="CoarsestLevel">
