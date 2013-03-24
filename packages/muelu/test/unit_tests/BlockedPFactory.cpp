@@ -51,7 +51,6 @@
 
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
@@ -68,72 +67,69 @@
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLuTests {
 
   /////////////////////////
   // helper function
-
+  // note: we assume "domainmap" to be linear starting with GIDs from domainmap->getMinAllGlobalIndex() to
+  //       domainmap->getMaxAllGlobalIndex() and build a quadratic triangular matrix with the stencil (b,a,c)
   Teuchos::RCP<CrsMatrixWrap> GenerateProblemMatrix(const Teuchos::RCP<const Map> rangemap, const Teuchos::RCP<const Map> domainmap, Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
+	 Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(rangemap, 3);
 
-    Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(rangemap, 3);
+	 LocalOrdinal NumMyRowElements = rangemap->getNodeNumElements();
 
-    LocalOrdinal NumMyRowElements = rangemap->getNodeNumElements();
+	 GlobalOrdinal minGColId = domainmap->getMinAllGlobalIndex();  // minimum over all procs
+	 GlobalOrdinal maxGColId = domainmap->getMaxAllGlobalIndex();  // maximum over all procs
+	 GlobalOrdinal numGColElements = domainmap->getGlobalNumElements();
+	 std::cout << maxGColId << " " << minGColId << " " << numGColElements <<std::endl;
+	 TEUCHOS_TEST_FOR_EXCEPTION(maxGColId-minGColId!=numGColElements-1,MueLu::Exceptions::RuntimeError,"GenerateProblemMatrix: incosistent number of map elements.");
 
-    Teuchos::ArrayView<const GlobalOrdinal> MyGlobalColElements = domainmap->getNodeElementList();
-    GlobalOrdinal NumGlobalColElements = domainmap->getGlobalNumElements();
-    //GlobalOrdinal nIndexBase = domainmap->getIndexBase();
+	 GlobalOrdinal minGRowId = rangemap->getMinAllGlobalIndex(); // minimum over all procs
+	 GlobalOrdinal maxGRowId = rangemap->getMaxAllGlobalIndex(); // maximum over all procs
+	 TEUCHOS_TEST_FOR_EXCEPTION(maxGRowId-minGRowId!=maxGColId-minGColId,MueLu::Exceptions::RuntimeError,"GenerateProblemMatrix: incosistent number of map elements between range and domain maps.");
 
-    GlobalOrdinal NumEntries;
-    LocalOrdinal nnz=2;
-    std::vector<Scalar> Values(nnz);
-    std::vector<GlobalOrdinal> Indices(nnz);
+	 GlobalOrdinal offset = minGColId - minGRowId;
 
-    for (LocalOrdinal i = 0; i < NumMyRowElements; ++i)
-    {
-      if(i < MyGlobalColElements.size()) {
-        if (MyGlobalColElements[i] == domainmap->getMinGlobalIndex())
-        {
-          // off-diagonal for first row
-          Indices[0] = domainmap->getMinGlobalIndex();
-          NumEntries = 1;
-          Values[0] = c;
-        }
-        else if (MyGlobalColElements[i] == domainmap->getMinGlobalIndex() + NumGlobalColElements - 1)
-        {
-          // off-diagonal for last row
-          Indices[0] = domainmap->getMinGlobalIndex() + NumGlobalColElements - 2;
-          NumEntries = 1;
-          Values[0] = b;
-        }
-        else
-        {
-          // off-diagonal for internal row
-          Indices[0] = MyGlobalColElements[i] - 1;
-          Values[1] = b;
-          Indices[1] = MyGlobalColElements[i] + 1;
-          Values[0] = c;
-          NumEntries = 2;
-        }
+	 GlobalOrdinal NumEntries;
+	 LocalOrdinal nnz=2;
+	 std::vector<Scalar> Values(nnz);
+	 std::vector<GlobalOrdinal> Indices(nnz);
 
-        // put the off-diagonal entries
-        // Xpetra wants ArrayViews (sigh)
-        Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
-        Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
-        mtx->insertGlobalValues(rangemap->getGlobalElement(i), iv, av);
+	 // loop over all local rows
+	 for (LocalOrdinal i = 0; i < NumMyRowElements; ++i) {
+		 GlobalOrdinal grid = rangemap->getGlobalElement(i);
+		 if(grid == minGRowId) {
+			 NumEntries = 1;
+			 Values[0]  = c;
+			 Indices[0] = minGColId+1;
+		 } else if (grid == maxGRowId) {
+			 NumEntries = 1;
+			 Values[0]  = b;
+			 Indices[0] = maxGColId-1;
+		 } else {
+			 NumEntries = 2;
+			 Indices[0] = offset + rangemap->getMinGlobalIndex() + i - 1;
+			 Indices[1] = offset + rangemap->getMinGlobalIndex() + i + 1;
+			 Values[0] = b;
+			 Values[1] = c;
+		 }
+		// put the off-diagonal entries
+		// Xpetra wants ArrayViews (sigh)
+		Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
+		Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
+		mtx->insertGlobalValues(rangemap->getGlobalElement(i), iv, av);
 
         // Put in the diagonal entry
-        mtx->insertGlobalValues(rangemap->getGlobalElement(i),
-            Teuchos::tuple<GlobalOrdinal>(MyGlobalColElements[i]),
+        mtx->insertGlobalValues(grid,
+            Teuchos::tuple<GlobalOrdinal>(offset + rangemap->getMinGlobalIndex() + i),
             Teuchos::tuple<Scalar>(a) );
+	 }
 
-      }
+	mtx->fillComplete(domainmap,rangemap);
+	return mtx;
 
-    } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
-
-    mtx->fillComplete(domainmap,rangemap);
-
-    return mtx;
   }
 
   TEUCHOS_UNIT_TEST(BlockedPFactory, Constructor)
@@ -155,6 +151,8 @@ namespace MueLuTests {
 
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
+    // the test matrix has to be a nxn block matrix with quadratic blocks
+    // where the subblocks use consequent numbering of global DOF ids.
     std::vector<size_t> stridingInfo;
     stridingInfo.push_back(1);
 
@@ -168,7 +166,6 @@ namespace MueLuTests {
     localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
     Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
     bigMap = MapFactory::Build(lib, numElements, eleList, 0, comm); // create full big map (concatenation of map1 and map2)
-
     std::vector<Teuchos::RCP<const Map> > maps;
     maps.push_back(map1); maps.push_back(map2);
 
@@ -178,8 +175,6 @@ namespace MueLuTests {
     RCP<CrsMatrixWrap> Op12 = GenerateProblemMatrix(map1,map2,1, 0, 0);
     RCP<CrsMatrixWrap> Op21 = GenerateProblemMatrix(map2,map1,1, 0, 0);
     RCP<CrsMatrixWrap> Op22 = GenerateProblemMatrix(map2,map2,3,-2,-1);
-
-    //Op11->describe(out, Teuchos::VERB_EXTREME);
 
     // build blocked operator
     Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps>(mapExtractor,mapExtractor,10));
@@ -255,10 +250,18 @@ namespace MueLuTests {
     RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > bP = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps> >(P);
     TEST_EQUALITY(bP!=Teuchos::null,true);
 
-    TEST_EQUALITY(bOp->Rows(),2);
-    TEST_EQUALITY(bOp->Cols(),2);
+    TEST_EQUALITY(bP->Rows(),2);
+    TEST_EQUALITY(bP->Cols(),2);
 
-    // TODO add some more tests
+    // create test and rhs vector
+    RCP<const Map> fullMap = mapExtractor->getFullMap();
+    TEST_EQUALITY(fullMap == bigMap, true);
+    RCP<Vector> iones = VectorFactory::Build(fullMap);
+    RCP<Vector> rones = VectorFactory::Build(fullMap);
+    iones->putScalar(1.0);
+    bP->apply(*iones,*rones); // the subblocks are chosen, such that bP*ones = zero (except for the first and row and the middle row)
+    TEST_EQUALITY(rones->norm1(),5.0);
+    TEST_EQUALITY(rones->normInf(),2.0);
   } //Constructor
 }
 

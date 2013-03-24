@@ -66,8 +66,15 @@ bool GlobalEvaluationDataContainer::containsDataObject(const std::string & key) 
 Teuchos::RCP<GlobalEvaluationData> GlobalEvaluationDataContainer::getDataObject(const std::string & key) const
 {
    boost::unordered_map<std::string,Teuchos::RCP<GlobalEvaluationData> >::const_iterator itr = lookupTable_.find(key); 
-   TEUCHOS_TEST_FOR_EXCEPTION(itr==lookupTable_.end(),std::logic_error,
-                      "In GlobalEvaluationDataContainer::getDataObject(key) failed to find the data object specified by \""+key+"\"");
+   if(itr==lookupTable_.end()) {
+     std::stringstream ss;
+     ss << "Valid keys = ";
+     for(const_iterator litr=begin();litr!=end();++litr)
+       ss << "\"" << litr->first << "\" ";
+
+     TEUCHOS_TEST_FOR_EXCEPTION(itr==lookupTable_.end(),std::logic_error,
+                        "In GlobalEvaluationDataContainer::getDataObject(key) failed to find the data object specified by \""+key+"\"\n   " + ss.str());
+   }
 
    return itr->second; 
 }

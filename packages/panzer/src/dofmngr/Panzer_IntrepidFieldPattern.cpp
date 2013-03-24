@@ -157,14 +157,6 @@ void IntrepidFieldPattern::findContainedSubcells(const shards::CellTopology & ce
 void IntrepidFieldPattern::buildSubcellClosure(const shards::CellTopology & cellTopo,unsigned dim,unsigned subCell,
                                                std::set<std::pair<unsigned,unsigned> > & closure)
 {
-#if 0
-   // get all nodes on requested sub cell
-   std::vector<unsigned> nodes;
-   getSubcellNodes(cellTopo,dim,subCell,nodes);
-
-   closure.insert(std::make_pair(dim,subCell));
-   findContainedSubcells(cellTopo,dim-1,nodes,closure);
-#else
    switch(dim) {
    case 0:
       closure.insert(std::make_pair(0,subCell));
@@ -188,7 +180,21 @@ void IntrepidFieldPattern::buildSubcellClosure(const shards::CellTopology & cell
       // beyond a two dimension surface this thing crashes!
       TEUCHOS_ASSERT(false);
    };
-#endif
+}
+
+bool IntrepidFieldPattern::supportsInterpolatoryCoordinates() const
+{
+   typedef Intrepid::DofCoordsInterface<Intrepid::FieldContainer<double> > CoordsInterface;
+
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   // cast basis object to DofCoordsInterface: throw on failure
+   RCP<CoordsInterface> coordsInterface
+         = rcp_dynamic_cast<CoordsInterface>(intrepidBasis_,false);
+
+   // if cast succeeds then coordinates are supported! Otherwise they are not!
+   return coordsInterface!=Teuchos::null;
 }
 
 /** Get the local coordinates for this field. This is independent of element
