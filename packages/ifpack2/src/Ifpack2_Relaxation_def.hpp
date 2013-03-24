@@ -404,11 +404,9 @@ void Relaxation<MatrixType>::apply(
       Xcopy = rcpFromRef (X);
     }
 
-    if (ZeroStartingSolution_) {
-      Y.putScalar (STS::zero ());
-    }
-
     // Each of the following methods updates the flop count itself.
+    // All implementations handle zeroing out the starting solution
+    // (if necessary) themselves.
     switch (PrecType_) {
     case Ifpack2::JACOBI:
       ApplyInverseJacobi(*Xcopy,Y);
@@ -586,37 +584,20 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
     // For the first Jacobi sweep, if we are allowed to assume that
     // the initial guess is zero, then Jacobi is just diagonal
     // scaling.  (A_ij * x_j = 0 for i != j, since x_j = 0.)
-    //
-    // Compute the diagonal scaling as
-    // Y(i,j) = Y(i,j) + DampingFactor_ * X(i,j) * D(i).
-    Y.elementWiseMultiply (DampingFactor_, *Diagonal_, X, STS::one ());
+    // Compute it as Y(i,j) = DampingFactor_ * X(i,j) * D(i).
+    Y.elementWiseMultiply (DampingFactor_, *Diagonal_, X, STS::zero ());
 
     // Count (global) floating-point operations.  Ifpack2 represents
     // this as a floating-point number rather than an integer, so that
     // overflow (for a very large number of calls, or a very large
     // problem) is approximate instead of catastrophic.
-    //
-    // It's unfair to count the multiply if the damping factor is one.
     double flopUpdate = 0.0;
     if (DampingFactor_ == STS::one ()) {
-      // The update would normally be
-      //
-      // Y(i,j) = Y(i,j) + X(i,j) * D(i),
-      //
-      // but we're also assuming that Y is zero on input, so it's
-      // unfair to count the update addition.  (Flop counts aren't
-      // about counting the number of floating-point operations we
-      // actually did; they are about counting the number that the
-      // algorithm _requires_ us to have done.)
+      // Y(i,j) = X(i,j) * D(i): one multiply for each entry of Y.
       flopUpdate = numGlobalRows * numVectors;
-    }
-    else {
-      // The update would normally be
-      //
-      // Y(i,j) = Y(i,j) + DampingFactor_ * X(i,j) * D(i),
-      //
-      // but we're also assuming that Y is zero on input, so it's
-      // unfair to count the update addition.
+    } else {
+      // Y(i,j) = DampingFactor_ * X(i,j) * D(i):
+      // Two multiplies per entry of Y.
       flopUpdate = 2.0 * numGlobalRows * numVectors;
     }
     ApplyFlops_ += flopUpdate;
@@ -693,11 +674,17 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
-  size_t NumVectors = X.getNumVectors();
+  // Tpetra's GS implementation for CrsMatrix handles zeroing out the
+  // starting multivector itself.  The generic RowMatrix version here
+  // does not, so we have to zero out Y here.
+  if (ZeroStartingSolution_) {
+    Y.putScalar (STS::zero ());
+  }
 
-  size_t maxLength = A_->getNodeMaxNumRowEntries();
-  Array<local_ordinal_type> Indices(maxLength);
-  Array<scalar_type> Values(maxLength);
+  const size_t NumVectors = X.getNumVectors ();
+  const size_t maxLength = A_->getNodeMaxNumRowEntries ();
+  Array<local_ordinal_type> Indices (maxLength);
+  Array<scalar_type> Values (maxLength);
 
   RCP<MV> Y2;
   if (IsParallel_) {
@@ -793,7 +780,8 @@ ApplyInverseGS_CrsMatrix (const MatrixType& A,
 
   const Tpetra::ESweepDirection direction =
     DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
-  A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction, NumSweeps_);
+  A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
+                     NumSweeps_, ZeroStartingSolution_);
 
   // For each column of output, for each sweep over the matrix:
   //
@@ -865,8 +853,15 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
-  size_t NumVectors = X.getNumVectors ();
-  size_t maxLength = A_->getNodeMaxNumRowEntries ();
+  // Tpetra's GS implementation for CrsMatrix handles zeroing out the
+  // starting multivector itself.  The generic RowMatrix version here
+  // does not, so we have to zero out Y here.
+  if (ZeroStartingSolution_) {
+    Y.putScalar (STS::zero ());
+  }
+
+  const size_t NumVectors = X.getNumVectors ();
+  const size_t maxLength = A_->getNodeMaxNumRowEntries ();
   Array<local_ordinal_type> Indices (maxLength);
   Array<scalar_type> Values (maxLength);
 
@@ -962,7 +957,8 @@ ApplyInverseSGS_CrsMatrix (const MatrixType& A,
   typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
-  A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction, NumSweeps_);
+  A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
+                     NumSweeps_, ZeroStartingSolution_);
 
   // For each column of output, for each sweep over the matrix:
   //

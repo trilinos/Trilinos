@@ -1173,6 +1173,11 @@ namespace Tpetra {
     /// \param numSweeps [in] Number of sweeps.  We count each
     ///   Symmetric sweep (including both its Forward and its
     ///   Backward sweep) as one.
+    /// \param zeroInitialGuess [in] If true, this method will fill X
+    ///   with zeros initially.  If false, this method will assume
+    ///   that X contains a possibly nonzero initial guess on input.
+    ///   Note that a nonzero initial guess may impose an additional
+    ///   nontrivial communication cost (an additional Import).
     ///
     /// \pre Domain, range, and row Maps of the sparse matrix are all the same.
     /// \pre No other argument aliases X.
@@ -1182,7 +1187,8 @@ namespace Tpetra {
                      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
                      const Scalar& dampingFactor,
                      const ESweepDirection direction,
-                     const int numSweeps) const;
+                     const int numSweeps,
+                     const bool zeroInitialGuess) const;
 
     //! Whether apply() allows applying the transpose or conjugate transpose.
     bool hasTransposeApply() const;
@@ -1814,7 +1820,7 @@ namespace Tpetra {
       nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
 
     targetNnzPerRowVec.doImport(sourceNnzPerRowVec,importer,Tpetra::INSERT);
-  
+
 
     ArrayRCP<size_t> MyNnz(importer.getTargetMap()->getNodeNumElements());
 
@@ -1908,7 +1914,7 @@ namespace Tpetra {
       nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
 
     targetNnzPerRowVec.doExport(sourceNnzPerRowVec,exporter,Tpetra::INSERT);
-  
+
 
     ArrayRCP<size_t> MyNnz(exporter.getTargetMap()->getNodeNumElements());
 
@@ -1918,7 +1924,7 @@ namespace Tpetra {
 
     RCP<CrsMatrixType> destMat =
       rcp (new CrsMatrixType (exporter.getTargetMap (),
-			      MyNnz,
+                              MyNnz,
                               StaticProfile,
                               params));
     destMat->doExport (*sourceMatrix, exporter, INSERT);

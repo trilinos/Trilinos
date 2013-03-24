@@ -2708,7 +2708,8 @@ namespace Tpetra {
                    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
                    const Scalar& dampingFactor,
                    const ESweepDirection direction,
-                   const int numSweeps) const
+                   const int numSweeps,
+                   const bool zeroInitialGuess) const
   {
     using Teuchos::null;
     using Teuchos::RCP;
@@ -2818,16 +2819,28 @@ namespace Tpetra {
       if (X.isConstantStride ()) {
         X_colMap = rcpFromRef (X);
         X_domainMap = rcpFromRef (X);
+        // Column Map and domain Map are the same, so there are no
+        // remote entries.  Thus, if we are not setting the initial
+        // guess to zero, we don't have to worry about setting remote
+        // entries to zero, even though we are not doing an Import in
+        // this case.
+        if (zeroInitialGuess) {
+          X_colMap->putScalar (STS::zero ());
+        }
         // No need to copy back to X at end.
       }
       else { // We must copy X into a constant stride multivector.
         // Just use the cached column Map multivector for that.
+        // force=true means fill with zeros, so no need to fill
+        // remote entries (not in domain Map) with zeros.
         X_colMap = getColumnMapMultiVector (X, true);
         // X_domainMap is always a domain Map view of the column Map
         // multivector.  In this case, the domain and column Maps are
         // the same, so X_domainMap _is_ X_colMap.
         X_domainMap = X_colMap;
-        *X_domainMap = X; // Copy X into constant stride multivector
+        if (! zeroInitialGuess) { // Don't copy if zero initial guess
+          *X_domainMap = X; // Copy X into constant stride multivector
+        }
         copyBackOutput = true; // Don't forget to copy back at end.
         TPETRA_EFFICIENCY_WARNING(
           ! X.isConstantStride (),
@@ -2887,18 +2900,22 @@ namespace Tpetra {
         "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-      // We could just copy X into X_domainMap.  However, that wastes
-      // a copy, because the Import also does a copy (plus
-      // communication).  Since the typical use case for Gauss-Seidel
-      // is a small number of sweeps (2 is typical), we don't want to
-      // waste that copy.  Thus, we do the Import here, and skip the
-      // first Import in the first sweep.  Importing directly from X
-      // effects the copy into X_domainMap (which is a view of
-      // X_colMap).
-      X_colMap->doImport (X, *importer, INSERT);
-
+      if (zeroInitialGuess) {
+        // No need for an Import, since we're filling with zeros.
+        X_colMap->putScalar (STS::zero ());
+      } else {
+        // We could just copy X into X_domainMap.  However, that
+        // wastes a copy, because the Import also does a copy (plus
+        // communication).  Since the typical use case for
+        // Gauss-Seidel is a small number of sweeps (2 is typical), we
+        // don't want to waste that copy.  Thus, we do the Import
+        // here, and skip the first Import in the first sweep.
+        // Importing directly from X effects the copy into X_domainMap
+        // (which is a view of X_colMap).
+        X_colMap->doImport (X, *importer, INSERT);
+      }
       copyBackOutput = true; // Don't forget to copy back at end.
-    }
+    } // if column and domain Maps are (not) the same
 
     // The Gauss-Seidel / SOR kernel expects multivectors of constant
     // stride.  X_colMap is by construction, but B might not be.  If
@@ -2927,7 +2944,8 @@ namespace Tpetra {
 
     for (int sweep = 0; sweep < numSweeps; ++sweep) {
       if (! importer.is_null () && sweep > 0) {
-        // We already did the first Import for the zeroth sweep above.
+        // We already did the first Import for the zeroth sweep above,
+        // if it was necessary.
         X_colMap->doImport (*X_domainMap, *importer, INSERT);
       }
 
@@ -2942,16 +2960,9 @@ namespace Tpetra {
                                                  Kokkos::Forward);
         // mfh 18 Mar 2013: Aztec's implementation of "symmetric
         // Gauss-Seidel" does _not_ do an Import between the forward
-        // and backward sweeps.  This makes sense, because Aztec
-        // considers "symmetric Gauss-Seidel" a subdomain solver.
-        const bool doImportBetweenDirections = false;
-
-        if (doImportBetweenDirections) {
-          // Communicate again before the Backward sweep, if necessary.
-          if (! importer.is_null ()) {
-            X_colMap->doImport (*X_domainMap, *importer, INSERT);
-          }
-        }
+        // and backward sweeps.  This makes symmetric Gauss-Seidel a
+        // symmetric preconditioner if the matrix A is symmetric.  We
+        // imitate Aztec's behavior here.
         this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                  dampingFactor,
                                                  Kokkos::Backward);
