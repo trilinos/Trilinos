@@ -51,7 +51,7 @@ namespace stk {
         needed_entities.resize(3);
         needed_entities[0] = NeededEntityType(m_eMesh.edge_rank(), 3u);
         needed_entities[1] = NeededEntityType(m_eMesh.face_rank(), 9u);   // cheating here - we re-use the full quadratic face
-        needed_entities[2] = NeededEntityType(stk::mesh::MetaData::ELEMENT_RANK, 3u);
+        needed_entities[2] = NeededEntityType(stk::mesh::MetaData::ELEMENT_RANK, 4u);
       }
 
       virtual unsigned getNumNewElemPerElem() { return 6; }
@@ -103,7 +103,7 @@ namespace stk {
         needed_entities.resize(3);
         needed_entities[0] = NeededEntityType(m_eMesh.edge_rank(), 3u);
         needed_entities[1] = NeededEntityType(m_eMesh.face_rank(), 9u);   // cheating here - we re-use the full quadratic face
-        needed_entities[2] = NeededEntityType(stk::mesh::MetaData::ELEMENT_RANK, 3u);
+        needed_entities[2] = NeededEntityType(stk::mesh::MetaData::ELEMENT_RANK, 4u);
       }
 
       virtual unsigned getNumNewElemPerElem() { return 4; }
@@ -122,8 +122,8 @@ namespace stk {
 
     //================================================================================================================================================================
     template <>
-    //class UniformRefinerPattern<shards::Pyramid<13>, shards::Pyramid<13>, 6, SierraPort > : public URP<shards::Pyramid<13>, shards::Pyramid<13>  >
-    class UniformRefinerPattern<shards::Pyramid<13>, shards::Pyramid<13>, 10, SierraPort > : public UniformRefinerPatternBase
+    class UniformRefinerPattern<shards::Pyramid<13>, shards::Pyramid<13>, 10, SierraPort > : public URP<shards::Pyramid<13>, shards::Pyramid<13>  >
+                               //class UniformRefinerPattern<shards::Pyramid<13>, shards::Pyramid<13>, 10, SierraPort > : public UniformRefinerPatternBase
     {
       UniformRefinerPattern<shards::Quadrilateral<8>, shards::Quadrilateral<8>, 4, SierraPort > * m_face_breaker;
       UniformRefinerPattern<shards::Triangle<6>, shards::Triangle<6>, 4, SierraPort > * m_face_breaker_tri;
@@ -148,7 +148,7 @@ namespace stk {
       }
 
       //UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Pyramid<13>, shards::Pyramid<13>  >(eMesh), m_eMesh(eMesh)
-      UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : m_eMesh(eMesh)
+      UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : URP<shards::Pyramid<13>, shards::Pyramid<13>  >(eMesh), m_eMesh(eMesh)
       {
         m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
         m_do_strip_hashes=false;
@@ -260,7 +260,7 @@ namespace stk {
         needed_entities.resize(3);
         needed_entities[0] = NeededEntityType(m_eMesh.edge_rank(), 3u);
         needed_entities[1] = NeededEntityType(m_eMesh.face_rank(), 9u);   // cheating here - we re-use the full quadratic face
-        needed_entities[2] = NeededEntityType(stk::mesh::MetaData::ELEMENT_RANK, 3u);
+        needed_entities[2] = NeededEntityType(stk::mesh::MetaData::ELEMENT_RANK, 4u);
       }
 
       virtual unsigned getNumNewElemPerElem()

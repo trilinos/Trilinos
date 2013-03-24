@@ -2713,6 +2713,10 @@ namespace stk {
         {
           setupBasisTable();
         }
+      std::string msg=std::string("No basis available for this topology")+topo.getName();
+      if (m_basisTable.find(key) ==  m_basisTable.end()) std::cout << msg << std::endl;
+      VERIFY_OP_ON( (m_basisTable.find(key) ==  m_basisTable.end()), == , false, "No basis available for this topology");
+
       PerceptMesh::BasisTypeRCP  basis =  m_basisTable[key];
 
       return basis;

@@ -106,6 +106,9 @@ namespace stk {
 #  define NN_Q(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity) \
        new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][k_ordinal_of_node_on_entity]
 
+#define NN_Q_P(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity, perm) \
+    new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][perm[k_ordinal_of_node_on_entity]]
+
 #else
 
 #  define NN(i_entity_rank, j_ordinal_on_subDim_entity) \
@@ -113,7 +116,10 @@ namespace stk {
        && new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity].size() ) ? new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity][0] : 0u )
 
 #  define NN_Q(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity) \
-    new_sub_entity_nodes_check(new_sub_entity_nodes, i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity);
+    new_sub_entity_nodes_check(new_sub_entity_nodes, i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity)
+
+#define NN_Q_P(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity, perm) \
+    new_sub_entity_nodes_check_perm(new_sub_entity_nodes, i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity, perm)
 
 #endif
 
@@ -123,8 +129,6 @@ namespace stk {
 #define EDGE_N_Q(iedge, inode_on_edge) new_sub_entity_nodes[m_eMesh.edge_rank()][iedge][inode_on_edge]
 #define FACE_N_Q(iface, inode_on_face) new_sub_entity_nodes[m_eMesh.face_rank()][iface][inode_on_face]
 
-#define NN_Q_P(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity, perm) \
-    new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][perm[k_ordinal_of_node_on_entity]]
 
     struct SierraPort {};
 
@@ -132,13 +136,22 @@ namespace stk {
     struct STK_Adapt_Auto_Part {};
     extern STK_Adapt_Auto_Part stk_adapt_auto_part;
 
-    static int new_sub_entity_nodes_check( NewSubEntityNodesType& new_sub_entity_nodes, int i_entity_rank, int j_ordinal_of_entity, int k_ordinal_of_node_on_entity)
+    inline int new_sub_entity_nodes_check( NewSubEntityNodesType& new_sub_entity_nodes, int i_entity_rank, int j_ordinal_of_entity, int k_ordinal_of_node_on_entity)
     {
       VERIFY_OP_ON((unsigned)i_entity_rank, <, new_sub_entity_nodes.size(), "new_sub_entity_nodes_check 1");
-      VERIFY_OP_ON((unsigned)j_ordinal_of_entity < new_sub_entity_nodes[i_entity_rank], "new_sub_entity_nodes_check 2");
-      VERIFY_OP_ON((unsigned)k_ordinal_of_node_on_entity < new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity], "new_sub_entity_nodes_check 3");
+      VERIFY_OP_ON((unsigned)j_ordinal_of_entity, < , new_sub_entity_nodes[i_entity_rank].size(), "new_sub_entity_nodes_check 2");
+      VERIFY_OP_ON((unsigned)k_ordinal_of_node_on_entity,  < , new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity].size(), "new_sub_entity_nodes_check 3");
 
       return new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][k_ordinal_of_node_on_entity];
+    }
+
+    inline int new_sub_entity_nodes_check_perm( NewSubEntityNodesType& new_sub_entity_nodes, int i_entity_rank, int j_ordinal_of_entity, int k_ordinal_of_node_on_entity, const unsigned *perm)
+    {
+      VERIFY_OP_ON((unsigned)i_entity_rank, <, new_sub_entity_nodes.size(), "new_sub_entity_nodes_check 1");
+      VERIFY_OP_ON((unsigned)j_ordinal_of_entity, < , new_sub_entity_nodes[i_entity_rank].size(), "new_sub_entity_nodes_check 2");
+      VERIFY_OP_ON((unsigned)k_ordinal_of_node_on_entity,  < , new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity].size(), "new_sub_entity_nodes_check 3");
+
+      return new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][perm[k_ordinal_of_node_on_entity]];
     }
 
 
@@ -651,8 +664,32 @@ namespace stk {
         MDArray basis_val(elem_nodes.size(), 1);
         //std::cout << "tmp fieldStride= " << fieldStride << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
 
-        PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
-        basis->getValues(basis_val, input_param_coords, OPERATOR_VALUE);
+        /// special for pyramid
+        if (cell_topo.getKey() == topo_key_pyramid13) // || cell_topo.getKey() == topo_key_pyramid5)
+          {
+            // input is [-1,1]x[-1,1]x[0,1]
+            double r = input_param_coords(0,0);
+            double s = input_param_coords(0,1);
+            double t = input_param_coords(0,2);
+            // transform to [0,1]x[0,1]x[0,0.49999] 
+            r = (1+r)/2;
+            s = (1+s)/2;
+            t = t*0.49999;
+            double bases[] = {-(((-1 + r + t)*(-1 + s + t))/(-1 + 2*t)),
+                              ((r - t)*(-1 + s + t))/(-1 + 2*t),
+                              -(((r - t)*(s - t))/(-1 + 2*t)),
+                              ((s - t)*(-1 + r + t))/(-1 + 2*t),
+                              2*t};
+            for (unsigned ii=0; ii < 5; ii++)
+              {
+                basis_val(ii,0) = bases[ii];
+              }
+          }
+        else
+          {
+            PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
+            basis->getValues(basis_val, input_param_coords, OPERATOR_VALUE);
+          }
         if (0)
           std::cout << "\n tmp input_param_coords= "
                     << input_param_coords(0,0) << " "
@@ -800,13 +837,17 @@ namespace stk {
 
             /// unfortunately, Intrepid doesn't support a quadratic Line<3> element
 
-            if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8 || toTopoKey == topo_key_hex20 || toTopoKey == topo_key_pyramid13)
+            if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8 
+                || toTopoKey == topo_key_hex20 
+                || toTopoKey == topo_key_pyramid13 || toTopoKey == topo_key_pyramid5
+                || toTopoKey == topo_key_tet10)
               {
                 //std::cout << "tmp here 1 i_new_node= " << i_new_node << " base element= " << std::endl;
                 if ( EXTRA_PRINT_URP_IF) eMesh.print_entity(std::cout, element, eMesh.get_coordinates_field() );
 
+
                 interpolateIntrepid(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
-                if (0)
+                if (0) // field == eMesh.get_coordinates_field())
                   {
                     std::cout << "tmp input_param_coords= "
                               << input_param_coords(0,0) << " "

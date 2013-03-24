@@ -2869,6 +2869,7 @@ namespace stk
                 UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
 
                 //breaker.setRemoveOldElements(false);
+                //eMesh1.set_respect_spacing(false);
                 breaker.setIgnoreSideSets(true);
                 breaker.doBreak();
 

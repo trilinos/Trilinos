@@ -1012,7 +1012,9 @@ namespace stk {
           m_nodeRegistry->makeCentroid(m_eMesh.get_coordinates_field());
           //std::cout << "tmp makeCentroid...done " << std::endl;
           //std::cout << "tmp interpolateFields... " << std::endl;
+
           m_nodeRegistry->interpolateFields();
+
           //std::cout << "tmp interpolateFields...done " << std::endl;
 #if defined(STK_BUILT_IN_SIERRA)
           if (m_rbar_names.size()) 

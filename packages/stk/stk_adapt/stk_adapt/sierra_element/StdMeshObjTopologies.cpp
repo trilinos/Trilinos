@@ -2668,14 +2668,14 @@ namespace stk {
      *                                      {9,12,35},{10,11,36},{8,12,37},{4,12,38},{4,11,39},{6,11,40},{12,11,41},{3,12,42},{7,12,43},{7,11,44},{2,11,45} };
      *
      *
-     *                               Additional nodes on edges from the 4 Tets
-     *
-     *      3--------7--------2
+     *    >>OLD, incorrect<<         Additional nodes on edges from the 4 Tets
+     *                               Left here for reference - there are holes in the numbering, but that's ok, these are really only
+     *      3--------7--------2      labels, anyways, so we can live with the holes.
      *      |\      /|\      /|
      *      | \    / | \    / |
      *      |  \  /  |  \  /  |         add_edges[] = {
-     *      |   \/   53  \/   |            {13,5,46},{13,9,47},{13,10,48},
-     *      |   12   |   11   |            {13,8,49},{13,6,50},{13,12,51},{13,11,52},{13,7 ,53} };
+     *      |   \/   53  \/   |            {13,5,22},{13,9,47},{13,10,48},
+     *      |   12   |   11   |            {13,8,23},{13,6,24},{13,12,51},{13,11,52},{13,7 ,53} };
      *      |  /  \  |  /  \  |
      *      | /   51 | 52   \ |
      *      |/      \|/      \|
@@ -2683,7 +2683,37 @@ namespace stk {
      *      |\      /|\      /|
      *      | \   47 | 48   / |
      *      |  \  /  |  \  /  |
-     *      |   9/  46  10/   |
+     *      |   9/  22  10/   |
+     *      |   /\   |   /\   |
+     *      |  /  \  |  /  \  |
+     *      | /    \ | /    \ |
+     *      |/      \|/      \|
+     *      o--------5--------o
+     *     0                   1
+     *
+     *    renum 1: 53->25, 50->24, 46->22, 49->23
+     *    Holes:  45,*,47,48,*,*,51,52,*,54,55,56,57
+     *    New:    45, ,46,47,    48,49,  50,51,52,53
+     *    Renumber: 47->46,48->47,49->
+     *
+     *    >> NEW, corrected <<
+     *
+     *                               Additional nodes on edges from the 4 Tets
+     *
+     *      3--------7--------2
+     *      |\      /|\      /|
+     *      | \    / | \    / |
+     *      |  \  /  |  \  /  |         add_edges[] = {
+     *      |   \/   25  \/   |            {13,5,22},{13,9,46},{13,10,47},
+     *      |   12   |   11   |            {13,8,23},{13,6,24},{13,12,48},{13,11,49},{13,7 ,25} };
+     *      |  /  \  |  /  \  |
+     *      | /   48 | 49   \ |
+     *      |/      \|/      \|
+     *      8---23--4,13--24--6
+     *      |\      /|\      /|
+     *      | \   46 | 47   / |
+     *      |  \  /  |  \  /  |
+     *      |   9/  22  10/   |
      *      |   /\   |   /\   |
      *      |  /  \  |  /  \  |
      *      | /    \ | /    \ |
@@ -2697,20 +2727,20 @@ namespace stk {
      * |    3---19----7---18----2        Faces (quad faces on bottom):
      * |    |         |         |
      * |    |         |         |        static const UInt face_centroids[][5] = {
-     * |    20  56   25   57   17          {0,5,13,8,46},{5,1,6,13,47},{8,13,7,3,48},{13,6,2,7,49} };
+     * |    20  52   25   53   17          {0,5,13,8,22},{5,1,6,13,46},{8,13,7,3,47},{13,6,2,7,23} };
      * |    |         |         |
      * |    |         |         |
      * |    8----23--13----24---6        Original Edges:
      * |    |         |         |
      * |    |         |         |        static const UInt original_edges[][5] = {
-     * |    21  54   22   55   16          {0,1,5,14,15},{1,2,6,16,17},{2,3,7,18,19},{3,0,8,20,21},
+     * |    21  50   22   51   16          {0,1,5,14,15},{1,2,6,16,17},{2,3,7,18,19},{3,0,8,20,21},
      * |    |         |         |          {0,4,9,26,32},{1,4,10,29,33},{2,4,11,45,39},{3,4,12,42,38} };
      * |    |         |
      * |    0---14----5----15-- 1        Original Faces:
      * |
      *                                   static const UInt original_quad_faces[][] = {};
      *
-     *  quad_face_nodes = {0,3,2,1, 8,7,6,5, 13, 21,20,19,18,17,16,15,14, 23,25,24,22, 54, 56, 57, 55}
+     *  quad_face_nodes = {0,3,2,1, 8,7,6,5, 13, 21,20,19,18,17,16,15,14, 23,25,24,22, 50, 52, 53, 51}
      *
      */
     template<unsigned M>
@@ -2789,18 +2819,19 @@ namespace stk {
           (void)child_node_table_0;
 
           // Generated from above table - see below
-          static const UInt cnode[][15] = {
-            { 0, 5, 13, 8, 9, 14, 46, 49, 21, 26, 27, 47, 31, EUA},
-            { 5, 1, 6, 13, 10, 15, 16, 50, 46, 28, 29, 34, 48, EUA},
-            { 13, 6, 2, 7, 11, 50, 17, 18, 53, 52, 40, 45, 44, EUA},
-            { 8, 13, 7, 3, 12, 49, 53, 19, 20, 37, 51, 43, 42, EUA},
-            { 9, 12, 11, 10, 13, 35, 41, 36, 30, 47, 51, 52, 48, EUA},
-            { 9, 10, 11, 12, 4, 30, 36, 41, 35, 32, 33, 39, 38, EUA},
-            { 13, 10, 9, 5, 48, 30, 47, 46, 28, 27, EUA},
-            { 13, 11, 10, 6, 52, 36, 48, 50, 40, 34, EUA},
-            { 13, 12, 11, 7, 51, 41, 52, 53, 43, 44, EUA},
-            { 13, 9, 12, 8, 47, 35, 51, 49, 31, 37, EUA}
+          static UInt cnode[10][15] = {
+            {0, 5, 13, 8, 9, 14, 22, 23, 21, 26, 27, 46, 31, EUA},
+            {5, 1, 6, 13, 10, 15, 16, 24, 22, 28, 29, 34, 47, EUA},
+            {13, 6, 2, 7, 11, 24, 17, 18, 25, 49, 40, 45, 44, EUA},
+            {8, 13, 7, 3, 12, 23, 25, 19, 20, 37, 48, 43, 42, EUA},
+            {9, 12, 11, 10, 13, 35, 41, 36, 30, 46, 48, 49, 47, EUA},
+            {9, 10, 11, 12, 4, 30, 36, 41, 35, 32, 33, 39, 38, EUA},
+            {13, 10, 9, 5, 47, 30, 46, 22, 28, 27, EUA},
+            {13, 11, 10, 6, 49, 36, 47, 24, 40, 34, EUA},
+            {13, 12, 11, 7, 48, 41, 49, 25, 43, 44, EUA},
+            {13, 9, 12, 8, 46, 35, 48, 23, 31, 37, EUA}
           };
+
           static const UInt * child_node_table[]  =
             {cnode[0], cnode[1], cnode[2], cnode[3], cnode[4], cnode[5], cnode[6], cnode[7], cnode[8], cnode[9] };
 
@@ -2813,15 +2844,15 @@ namespace stk {
             {9,12,35},{10,11,36},{8,12,37},{4,12,38},{4,11,39},{6,11,40},{12,11,41},{3,12,42},{7,12,43},{7,11,44},{2,11,45},
 
             // additional edges from tets
-            {13,5,46},{13,9,47},{13,10,48},
-            {13,8,49},{13,6,50},{13,12,51},{13,11,52},{13,7 ,53}
+            {13,5,22},{13,9,46},{13,10,47},
+            {13,8,23},{13,6,24},{13,12,48},{13,11,49},{13,7 ,25}
 
           };
           //static int n_edge_table = 40;
           static UInt n_edge_table = sizeof(edges)/(3*sizeof(UInt));
           if (n_edge_table != 40) throw std::logic_error("bad table");
 
-          static bool did_compute_child_nodes = false; // toggle this to regenerate the child_node_table
+          static bool did_compute_child_nodes = true; // toggle this to regenerate the child_node_table
           if (!did_compute_child_nodes)
             {
               did_compute_child_nodes = true;
@@ -2863,15 +2894,15 @@ namespace stk {
 
           // Edge topology and node tables including edges' child-nodes
 
-          static const UInt edge_t[][5] = {
-            {0, 1, 5, 14, 15},
-            {1, 2, 6, 16, 17},
-            {2, 3, 7, 18, 19},
-            {3, 0, 8, 20, 21},
-            {0, 4, 9, 26, 32},
-            {1, 4, 10, 29, 33},
-            {2, 4, 11, 45, 39},
-            {3, 4, 12, 42, 38}
+          static const UInt edge_t[][6] = {
+            {0, 1, 5, 14, 15, EUA},
+            {1, 2, 6, 16, 17, EUA},
+            {2, 3, 7, 18, 19, EUA},
+            {3, 0, 8, 20, 21, EUA},
+            {0, 4, 9, 26, 32, EUA},
+            {1, 4, 10, 29, 33, EUA},
+            {2, 4, 11, 45, 39, EUA},
+            {3, 4, 12, 42, 38, EUA}
           };
 
           static const UInt * edge_table[]  = { edge_t[0], edge_t[1], edge_t[2], edge_t[3], edge_t[4], edge_t[5], edge_t[6], edge_t[7] };
@@ -2883,12 +2914,12 @@ namespace stk {
           static const UInt face_2[] = { 2, 3, 4,     7,  12, 11, 18,19,42,38,39,45,44,43,41,EUA};
           static const UInt face_3[] = { 3, 0, 4,     8,   9,  12, 20,21,26,32,38,42,31,35,37,EUA};
           //static const UInt face_4[] = { 0, 3, 2, 1,  8,   7,  6,  5, 13 ,14,15,16,17,18,19,20,21, EUA};
-          static const UInt face_4[] = {0,3,2,1, 8,7,6,5, 13, 21,20,19,18,17,16,15,14, 23,25,24,22, 54, 56, 57, 55, EUA};
+          static const UInt face_4[] = {0,3,2,1, 8,7,6,5, 13, 21,20,19,18,17,16,15,14, 23,25,24,22, 50, 52, 53, 51, EUA};
           static const UInt * face_table[]  =
             { face_0 , face_1 , face_2 , face_3 , face_4 };
 
           static RefinementTopology pyramid5_refinement(&pyramid5, 10, pyramid5_child, 14, child_node_table, 8, edge_table, 5, face_table, 0, NULL, NULL, false);
-          static RefinementTopology pyramid13_refinement(&pyramid13, 10, pyramid13_child, 54, child_node_table, 8, edge_table, 5, face_table, 0, NULL, NULL, false);
+          static RefinementTopology pyramid13_refinement(&pyramid13, 10, pyramid13_child, 50,child_node_table, 8, edge_table, 5, face_table, 0, NULL, NULL, false);
         }
       }
 
