@@ -81,6 +81,7 @@ namespace MueLu {
     validParamList->set<int>                     ("startLevel",             1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
     validParamList->set<LO>                      ("minRowsPerProcessor", 1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
     validParamList->set<double>                  ("nonzeroImbalance",     1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
+    validParamList->set<bool>                    ("fixedOrder",         false, "Use sorting of recv PIDs to force reproducibility");
     // validParamList->set<GO>                   ("minNnzPerProcessor",    -1, "Minimum number of nonzeros over all processes. If any process falls below this, repartitioning is initiated."); // FIXME: Unused; LO instead of GO?
 
     {
@@ -439,6 +440,24 @@ namespace MueLu {
     for (int i=0; i<pidsIReceiveFrom.size(); ++i)
       pidsIReceiveFrom[i] = status[i].MPI_SOURCE;
 
+    if (pL.get<bool>("fixedOrder")) {
+      // Sort pids for reproducibility (and numDofsIReceiveFromOnePid for consistency)
+      GetOStream(Runtime0,0) << "Sorting recv PIDs for results reproducibility" << std::endl;
+
+      // For simplicity, do insertion sort of pidsIReceiveFrom and use that permutation for numDofsIReceiveFrom
+      // NOTE: if insertion sort becomes slow for some use cases, we may replace it with the quicksort Tpetra::sort2
+      for (int i = 1; i < howManyPidsSendToThisPartition; i++) {
+        GO d = pidsIReceiveFrom[i], v = numDofsIReceiveFromOnePid[i];
+        int j;
+        for (j = i-1; j >= 0 && pidsIReceiveFrom[j] > d; j--) {
+          pidsIReceiveFrom         [j+1] = pidsIReceiveFrom[j];
+          numDofsIReceiveFromOnePid[j+1] = numDofsIReceiveFromOnePid[j];
+        }
+        pidsIReceiveFrom         [j+1] = d;
+        numDofsIReceiveFromOnePid[j+1] = v;
+      }
+    }
+
     comm->barrier();
 
     // =================================================================================================
@@ -638,7 +657,7 @@ namespace MueLu {
     RCP<Teuchos::Hashtable<GO, GO> > hashTable;
     hashTable = rcp(new Teuchos::Hashtable<GO, GO>(numPartitions + numPartitions/2));
     Teuchos::Hashtable<GO, GO>& htref = *hashTable;
-    
+
     ArrayRCP<const GO> decompEntries;
     if (decomposition->getLocalLength() > 0)
       decompEntries = decomposition->getData(0);
