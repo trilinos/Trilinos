@@ -369,6 +369,7 @@ void Relaxation<MatrixType>::apply(
                  scalar_type alpha,
                  scalar_type beta) const
 {
+  using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
@@ -389,38 +390,55 @@ void Relaxation<MatrixType>::apply(
     "X has " << X.getNumVectors() << " columns, but Y has "
     << Y.getNumVectors() << " columns.");
 
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    beta != STS::zero (), std::logic_error,
+    "Ifpack2::Relaxation::apply: beta = " << beta << " != 0 case not "
+    "implemented.");
   {
     // Reset the timer each time, since Relaxation uses the same Time
     // object to track times for different methods.
     Teuchos::TimeMonitor timeMon (*Time_, true);
 
-    // If X and Y are pointing to the same memory location,
-    // we need to create an auxiliary vector, Xcopy
-    RCP<const MV> Xcopy;
-    if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-      Xcopy = rcp (new MV (X));
+    // Special case: alpha == 0.
+    if (alpha == STS::zero ()) {
+      // No floating-point operations, so no need to update a count.
+      Y.putScalar (STS::zero ());
     }
     else {
-      Xcopy = rcpFromRef (X);
-    }
+      // If X and Y are pointing to the same memory location,
+      // we need to create an auxiliary vector, Xcopy
+      RCP<const MV> Xcopy;
+      if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
+        Xcopy = rcp (new MV (X));
+      }
+      else {
+        Xcopy = rcpFromRef (X);
+      }
 
-    // Each of the following methods updates the flop count itself.
-    // All implementations handle zeroing out the starting solution
-    // (if necessary) themselves.
-    switch (PrecType_) {
-    case Ifpack2::JACOBI:
-      ApplyInverseJacobi(*Xcopy,Y);
-      break;
-    case Ifpack2::GS:
-      ApplyInverseGS(*Xcopy,Y);
-      break;
-    case Ifpack2::SGS:
-      ApplyInverseSGS(*Xcopy,Y);
-      break;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Ifpack2::Relaxation::apply: Invalid preconditioner type enum value "
-        << PrecType_ << ".  Please report this bug to the Ifpack2 developers.");
+      // Each of the following methods updates the flop count itself.
+      // All implementations handle zeroing out the starting solution
+      // (if necessary) themselves.
+      switch (PrecType_) {
+      case Ifpack2::JACOBI:
+        ApplyInverseJacobi(*Xcopy,Y);
+        break;
+      case Ifpack2::GS:
+        ApplyInverseGS(*Xcopy,Y);
+        break;
+      case Ifpack2::SGS:
+        ApplyInverseSGS(*Xcopy,Y);
+        break;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+          "Ifpack2::Relaxation::apply: Invalid preconditioner type enum value "
+          << PrecType_ << ".  Please report this bug to the Ifpack2 developers.");
+      }
+      if (alpha != STS::one ()) {
+        Y.scale (alpha);
+        const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
+        const double numVectors = as<double> (Y.getNumVectors ());
+        ApplyFlops_ += numGlobalRows * numVectors;
+      }
     }
   }
   ApplyTime_ += Time_->totalElapsedTime ();
@@ -612,6 +630,7 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
   // mat-vec will clobber its contents anyway.
   MV A_times_Y (Y.getMap (), numVectors, false);
   for (int j = startSweep; j < NumSweeps_; ++j) {
+    // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
     applyMat (Y, A_times_Y);
     A_times_Y.update (STS::one (), X, -STS::one ());
     Y.elementWiseMultiply (DampingFactor_, *Diagonal_, A_times_Y, STS::one ());
