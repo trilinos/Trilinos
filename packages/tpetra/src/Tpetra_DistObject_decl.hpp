@@ -325,8 +325,37 @@ namespace Tpetra {
               const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
     //@}
 
-  protected:
+  private:
+    //! @name Methods for use only by experts
+    //@{
 
+    /// \brief "Filter out" processes which contain no elements in this object's Map.
+    ///
+    /// \warning This method is ONLY for use by experts.
+    /// \warning We make NO promises of backwards compatibility.
+    ///   This method may change or disappear at any time.
+    ///
+    /// On input, this object is distributed over the Map returned by
+    /// getMap().  Some processes in that Map's communicator may
+    /// contain zero elements of the Map.  Create a new communicator
+    /// and Map which excludes those processes with zero elements.
+    /// Free any residual data stored on those process, set this
+    /// object's Map to the new Map, and return the new Map.
+    ///
+    /// This method has collective semantics.  On exit, the only
+    /// method of this object which is safe to call on the excluded
+    /// processes is the destructor.  This implies that subclasses'
+    /// destructors must not contain communication operations.
+    ///
+    /// \return The object's new Map.  Its communicator is a new
+    ///   communicator, distinct from the old Map's communicator,
+    ///   which contains a subset of the processes in the old
+    ///   communicator.
+    Teuchos::RCP<const Teuchos::Map<LocalOrdinal, GlobalOrdinal, Node> >
+    filterEmptyProcesses ();
+    //@}
+
+  protected:
     /// \enum ReverseOption
     /// \brief Whether the data transfer should be performed in forward or reverse mode.
     ///

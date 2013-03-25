@@ -167,7 +167,7 @@ mpiCommStatus (MPI_Status rawMpiStatus)
 /// \tparam OrdinalType Same as the template parameter of Comm.
 ///
 /// This class wraps MPI_Request, which is MPI's reification of a
-/// nonblocking communication operation. 
+/// nonblocking communication operation.
 ///
 /// Users would not normally create an instance of this class.  Calls
 /// to nonblocking communication operations (such as \c ireceive() or
@@ -264,24 +264,24 @@ public:
       // MPI_Cancel fails, it's probably a bad idea to call MPI_Wait.
       const int err = MPI_Cancel (&rawMpiRequest_);
       if (err == MPI_SUCCESS) {
-	// The MPI_Cancel succeeded.  Now wait on the request.  Ignore
-	// any reported error, since we can't do anything about those
-	// in the destructor (other than kill the program).  If
-	// successful, MPI_Wait will set the MPI_Request to
-	// MPI_REQUEST_NULL.  We ignore the returned MPI_Status, since
-	// if the user let the request fall out of scope, she must not
-	// care about the status.
-	//
-	// mfh 21 Oct 2012: The MPI standard requires completing a
-	// canceled request by calling a function like MPI_Wait,
-	// MPI_Test, or MPI_Request_free.  MPI_Wait on a canceled
-	// request behaves like a local operation (it does not
-	// communicate or block waiting for communication).  One could
-	// also call MPI_Request_free instead of MPI_Wait, but
-	// MPI_Request_free is intended more for persistent requests
-	// (created with functions like MPI_Recv_init).
-	(void) MPI_Wait (&rawMpiRequest_, MPI_STATUS_IGNORE);
-      } 
+        // The MPI_Cancel succeeded.  Now wait on the request.  Ignore
+        // any reported error, since we can't do anything about those
+        // in the destructor (other than kill the program).  If
+        // successful, MPI_Wait will set the MPI_Request to
+        // MPI_REQUEST_NULL.  We ignore the returned MPI_Status, since
+        // if the user let the request fall out of scope, she must not
+        // care about the status.
+        //
+        // mfh 21 Oct 2012: The MPI standard requires completing a
+        // canceled request by calling a function like MPI_Wait,
+        // MPI_Test, or MPI_Request_free.  MPI_Wait on a canceled
+        // request behaves like a local operation (it does not
+        // communicate or block waiting for communication).  One could
+        // also call MPI_Request_free instead of MPI_Wait, but
+        // MPI_Request_free is intended more for persistent requests
+        // (created with functions like MPI_Recv_init).
+        (void) MPI_Wait (&rawMpiRequest_, MPI_STATUS_IGNORE);
+      }
     }
   }
 
@@ -318,7 +318,7 @@ mpiCommRequest (MPI_Request rawMpiRequest,
 /// This class uses MPI (the Message Passing Interface) to implement
 /// the Comm interface.  It includes constructors that take an
 /// MPI_Comm from the application.
-/// 
+///
 /// Assertions:
 /// - <tt>getRawMpiComm().get() != NULL<tt>
 /// - <tt>*getRawMpiComm() != MPI_COMM_NULL</tt>
@@ -455,11 +455,11 @@ public:
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
   /** \brief . */
-  virtual void 
-  send (const Ordinal bytes, 
-	const char sendBuffer[], 
-	const int destRank, 
-	const int tag) const;
+  virtual void
+  send (const Ordinal bytes,
+        const char sendBuffer[],
+        const int destRank,
+        const int tag) const;
   /** \brief . */
   virtual void ssend(
     const Ordinal bytes, const char sendBuffer[], const int destRank
@@ -479,20 +479,20 @@ public:
     const int destRank
     ) const;
   //! Variant of isend() that takes a tag.
-  virtual RCP<CommRequest<Ordinal> > 
+  virtual RCP<CommRequest<Ordinal> >
   isend (const ArrayView<const char> &sendBuffer,
-	 const int destRank,
-	 const int tag) const;
+         const int destRank,
+         const int tag) const;
   /** \brief . */
   virtual RCP<CommRequest<Ordinal> > ireceive(
     const ArrayView<char> &Buffer,
     const int sourceRank
     ) const;
   /** \brief . */
-  virtual RCP<CommRequest<Ordinal> > 
-  ireceive (const ArrayView<char> &Buffer, 
-	    const int sourceRank, 
-	    const int tag) const;
+  virtual RCP<CommRequest<Ordinal> >
+  ireceive (const ArrayView<char> &Buffer,
+            const int sourceRank,
+            const int tag) const;
   /** \brief . */
   virtual void waitAll(
     const ArrayView<RCP<CommRequest<Ordinal> > > &requests
@@ -553,12 +553,12 @@ private:
 
   //! The number of processes in the communicator.
   int size_;
-  
+
   /// \brief The current tag, to use for all MPI functions that need it.
   ///
   /// Each MpiComm instance always uses the same tag.  Different
   /// MpiComm instances use different tags.  The tag is set in
-  /// MpiComm's constructor.  Please refer to 
+  /// MpiComm's constructor.  Please refer to
   /// <a href="https://software.sandia.gov/bugzilla/show_bug.cgi?id=5740">Bug 5740</a>
   /// for further discussion.
   int tag_;
@@ -701,12 +701,12 @@ MpiComm<Ordinal>::MpiComm (MPI_Comm rawMpiComm)
 
 
 template<typename Ordinal>
-MpiComm<Ordinal>::MpiComm (const MpiComm<Ordinal>& other) : 
+MpiComm<Ordinal>::MpiComm (const MpiComm<Ordinal>& other) :
   rawMpiComm_ (opaqueWrapper<MPI_Comm> (MPI_COMM_NULL)) // <- This will be set below
 {
   // These are logic errors, since they violate MpiComm's invariants.
   RCP<const OpaqueWrapper<MPI_Comm> > origCommPtr = other.getRawMpiComm ();
-  TEUCHOS_TEST_FOR_EXCEPTION(origCommPtr == null, std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(origCommPtr == null, std::logic_error,
     "Teuchos::MpiComm copy constructor: "
     "The input's getRawMpiComm() method returns null.");
   MPI_Comm origComm = *origCommPtr;
@@ -721,7 +721,7 @@ MpiComm<Ordinal>::MpiComm (const MpiComm<Ordinal>& other) :
   // MpiComm's tag.  See Bug 5740.
   if (true) {
     rawMpiComm_ = origCommPtr;
-  } 
+  }
   else { // false (not run)
     MPI_Comm newComm;
     const int err = MPI_Comm_dup (origComm, &newComm);
@@ -984,7 +984,7 @@ void
 MpiComm<Ordinal>::send (const Ordinal bytes,
                         const char sendBuffer[],
                         const int destRank,
-			const int tag) const
+                        const int tag) const
 {
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::send(...)" );
   const int err = MPI_Send (const_cast<char*> (sendBuffer), bytes, MPI_CHAR,
@@ -1088,9 +1088,9 @@ MpiComm<Ordinal>::isend (const ArrayView<const char> &sendBuffer,
 
   MPI_Request rawMpiRequest = MPI_REQUEST_NULL;
   const int err =
-    MPI_Isend (const_cast<char*> (sendBuffer.getRawPtr ()), 
-	       as<Ordinal> (sendBuffer.size ()), MPI_CHAR, 
-	       destRank, tag_, *rawMpiComm_, &rawMpiRequest);
+    MPI_Isend (const_cast<char*> (sendBuffer.getRawPtr ()),
+               as<Ordinal> (sendBuffer.size ()), MPI_CHAR,
+               destRank, tag_, *rawMpiComm_, &rawMpiRequest);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm::isend: MPI_Isend() failed with error \""
     << mpiErrorCodeToString (err) << "\".");
@@ -1111,9 +1111,9 @@ isend (const ArrayView<const char> &sendBuffer,
 
   MPI_Request rawMpiRequest = MPI_REQUEST_NULL;
   const int err =
-    MPI_Isend (const_cast<char*> (sendBuffer.getRawPtr ()), 
-	       as<Ordinal> (sendBuffer.size ()), MPI_CHAR, 
-	       destRank, tag, *rawMpiComm_, &rawMpiRequest);
+    MPI_Isend (const_cast<char*> (sendBuffer.getRawPtr ()),
+               as<Ordinal> (sendBuffer.size ()), MPI_CHAR,
+               destRank, tag, *rawMpiComm_, &rawMpiRequest);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm::isend: MPI_Isend() failed with error \""
     << mpiErrorCodeToString (err) << "\".");
@@ -1149,7 +1149,7 @@ template<typename Ordinal>
 RCP<CommRequest<Ordinal> >
 MpiComm<Ordinal>::ireceive (const ArrayView<char> &recvBuffer,
                             const int sourceRank,
-			    const int tag) const
+                            const int tag) const
 {
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::ireceive(...)" );
 
@@ -1408,7 +1408,7 @@ MpiComm<Ordinal>::duplicate() const
   MPI_Comm newRawComm = MPI_COMM_NULL;
   const int err = MPI_Comm_dup (origRawComm, &newRawComm);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, "Teuchos"
-    "::MpiComm::duplicate: MPI_Comm_dup failed with the following error: " 
+    "::MpiComm::duplicate: MPI_Comm_dup failed with the following error: "
     << mpiErrorCodeToString (err));
 
   // Wrap the raw communicator, and pass the (const) wrapped
@@ -1440,7 +1440,7 @@ MpiComm<Ordinal>::split(const int color, const int key) const
     return RCP< Comm<Ordinal> >();
   } else {
     return rcp(new MpiComm<Ordinal>(
-                   rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >( 
+                   rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >(
                                      opaqueWrapper(newComm,MPI_Comm_free))));
   }
 }
@@ -1454,7 +1454,7 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
 
   // Get the group that this communicator is in.
   MPI_Group thisGroup;
-  err = MPI_Comm_group(*rawMpiComm_, &thisGroup);
+  err = MPI_Comm_group (*rawMpiComm_, &thisGroup);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::logic_error,
     "Failed to obtain the current communicator's group.  "
     "MPI_Comm_group failed with error \""
@@ -1475,7 +1475,7 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
   // Create a new communicator from the new group.
   MPI_Comm newComm;
   try {
-    err = MPI_Comm_create(*rawMpiComm_, newGroup, &newComm);
+    err = MPI_Comm_create (*rawMpiComm_, newGroup, &newComm);
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::logic_error,
       "Failed to create subcommunicator.  MPI_Comm_create failed with error \""
       << mpiErrorCodeToString (err) << "\".");
@@ -1501,11 +1501,13 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
     << mpiErrorCodeToString (err) << "\".");
 
   if (newComm == MPI_COMM_NULL) {
-    return RCP< Comm<Ordinal> >();
+    return RCP<Comm<Ordinal> > ();
   } else {
-    return rcp(new MpiComm<Ordinal>(
-                   rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >(
-                                     opaqueWrapper(newComm,MPI_Comm_free))));
+    using Teuchos::details::safeCommFree;
+    typedef OpaqueWrapper<MPI_Comm> ow_type;
+    RCP<const ow_type> wrapper =
+      rcp_implicit_cast<const ow_type> (opaqueWrapper (newComm, safeCommFree));
+    return rcp (new MpiComm<Ordinal> (wrapper));
   }
 }
 
