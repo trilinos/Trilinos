@@ -1118,7 +1118,7 @@ namespace Tpetra {
       std::copy(indices.begin(), indices.end(),
                 lclInds1D_.begin()+rowInfo.offset1D+rowInfo.numEntries);
     else
-      std::copy(indices.begin(), indices.end(), 
+      std::copy(indices.begin(), indices.end(),
                 lclInds2D_[myRow].begin()+rowInfo.numEntries);
     numRowEntries_[myRow] += numNewInds;
     nodeNumEntries_ += numNewInds;
@@ -1804,8 +1804,8 @@ namespace Tpetra {
       SLocalGlobalViews inds_view;
       SLocalGlobalNCViews inds_ncview;
       inds_ncview.linds = filtered_indices();
-      const size_t numFilteredEntries = 
-	filterIndices<LocalIndices>(inds_ncview);
+      const size_t numFilteredEntries =
+        filterIndices<LocalIndices>(inds_ncview);
       inds_view.linds = filtered_indices (0, numFilteredEntries);
       insertLocalIndicesImpl(localRow, inds_view.linds);
     }
@@ -1814,7 +1814,7 @@ namespace Tpetra {
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      indicesAreAllocated() == false || isLocallyIndexed() == false, 
+      indicesAreAllocated() == false || isLocallyIndexed() == false,
       std::logic_error,
       ": Violated stated post-conditions. Please contact Tpetra team.");
 #endif
@@ -1855,14 +1855,14 @@ namespace Tpetra {
     if (myRow != Teuchos::OrdinalTraits<LO>::invalid ()) {
       // If we have a column map, use it to filter the entries.
       if (hasColMap ()) {
-	Array<GO> filtered_indices(indices);
-	SLocalGlobalViews inds_view;
+        Array<GO> filtered_indices(indices);
+        SLocalGlobalViews inds_view;
         SLocalGlobalNCViews inds_ncview;
         inds_ncview.ginds = filtered_indices();
         const size_t numFilteredEntries =
           filterIndices<GlobalIndices> (inds_ncview);
         inds_view.ginds = filtered_indices (0, numFilteredEntries);
-	insertGlobalIndicesImpl(myRow, inds_view.ginds);
+        insertGlobalIndicesImpl(myRow, inds_view.ginds);
       }
       else {
        insertGlobalIndicesImpl(myRow, indices);
@@ -2874,35 +2874,44 @@ namespace Tpetra {
   {
     typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
     typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
+
     TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap (), std::logic_error, "Tpetra::"
       "CrsGraph: It's not allowed to call makeImportExport() unless the graph "
       "has a column Map.");
     RCP<ParameterList> params = this->getNonconstParameterList (); // could be null
-    // Create the Import instance if necessary.
-    if (domainMap_ != colMap_ && (! domainMap_->isSameAs (*colMap_))) {
-      if (params.is_null () || ! params->isSublist ("Import")) {
-        importer_ = rcp (new import_type (domainMap_, colMap_));
-      }
-      else {
-        RCP<ParameterList> importSublist = sublist (params, "Import", true);
-        importer_ = rcp (new import_type (domainMap_, colMap_, importSublist));
-      }
-    }
-    else {
-      importer_ = null;
-    }
-    // Create the Export instance if necessary.
-    if (rangeMap_ != rowMap_ && (!rangeMap_->isSameAs(*rowMap_))) {
-      if (params.is_null () || ! params->isSublist ("Export")) {
-        exporter_ = rcp (new export_type (rowMap_, rangeMap_));
-      }
-      else {
-        RCP<ParameterList> exportSublist = sublist (params, "Export", true);
-        exporter_ = rcp (new export_type (rowMap_, rangeMap_, exportSublist));
+
+    // Don't do any checks to see if we need to create the Import, if
+    // it exists already.
+    //
+    // FIXME (mfh 25 Mar 2013) This will become incorrect if we
+    // change CrsGraph in the future to allow changing the column
+    // Map after fillComplete.  For now, the column Map is fixed
+    // after the first fillComplete call.
+    if (importer_.is_null ()) {
+      // Create the Import instance if necessary.
+      if (domainMap_ != colMap_ && (! domainMap_->isSameAs (*colMap_))) {
+        if (params.is_null () || ! params->isSublist ("Import")) {
+          importer_ = rcp (new import_type (domainMap_, colMap_));
+        } else {
+          RCP<ParameterList> importSublist = sublist (params, "Import", true);
+          importer_ = rcp (new import_type (domainMap_, colMap_, importSublist));
+        }
       }
     }
-    else {
-      exporter_ = null;
+
+    // Don't do any checks to see if we need to create the Export, if
+    // it exists already.
+    if (exporter_.is_null ()) {
+      // Create the Export instance if necessary.
+      if (rangeMap_ != rowMap_ && ! rangeMap_->isSameAs (*rowMap_)) {
+        if (params.is_null () || ! params->isSublist ("Export")) {
+          exporter_ = rcp (new export_type (rowMap_, rangeMap_));
+        }
+        else {
+          RCP<ParameterList> exportSublist = sublist (params, "Export", true);
+          exporter_ = rcp (new export_type (rowMap_, rangeMap_, exportSublist));
+        }
+      }
     }
   }
 

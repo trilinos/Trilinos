@@ -2044,9 +2044,11 @@ namespace Tpetra {
         "constructor as const.");
     }
     else {
-      // Set the graph's domain and range Maps.
-      // This may clear the Import/Export objects.
-      myGraph_->setDomainRangeMaps(domainMap, rangeMap);
+      // Set the graph's domain and range Maps.  This will clear the
+      // Import if the domain Map has changed (is a different
+      // pointer), and the Export if the range Map has changed (is a
+      // different pointer).
+      myGraph_->setDomainRangeMaps (domainMap, rangeMap);
       // Make the graph's column Map, if necessary.
       if (! myGraph_->hasColMap()) {
         myGraph_->makeColMap();
@@ -2055,9 +2057,14 @@ namespace Tpetra {
       if (myGraph_->isGloballyIndexed()) {
         myGraph_->makeIndicesLocal();
       }
-      if (! myGraph_->isSorted()) sortEntries();
-      if (! myGraph_->isMerged()) mergeRedundantEntries();
-      myGraph_->makeImportExport(); // Make Import and Export objects
+      if (! myGraph_->isSorted()) {
+        sortEntries();
+      }
+      if (! myGraph_->isMerged()) {
+        mergeRedundantEntries();
+      }
+      // Make the Import and Export, if they haven't been made already.
+      myGraph_->makeImportExport();
       myGraph_->computeGlobalConstants();
       myGraph_->fillComplete_ = true;
       myGraph_->checkInternalState();
