@@ -665,27 +665,6 @@ void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, glo
 }
 
 
-/*! \brief Function returning the available thread number by the processor.
- *
- */
-int pqJagged_getNumThreads(){
-  int numThreads = 1;
-
-
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel shared(numThreads)
-  {
-    numThreads = omp_get_num_threads();
-  }
-
-#endif
-
-
-  return numThreads;
-
-}
-
-
 /*! \brief Function to determine the local minimum and maximum coordinate, and local total weight
  * in the given set of local points.
  * \param partitionedPointPermutations is the indices of coordinates in the given partition.
@@ -2773,7 +2752,14 @@ void AlgPQJagged(
       pqJagged_uniformWeights, pqJagged_uniformParts, pqJagged_partSizes
   );
 
-  int numThreads = pqJagged_getNumThreads();
+  int numThreads = 1;
+
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel shared(numThreads)
+  {
+    numThreads = omp_get_num_threads();
+  }
+#endif
 
   partId_t totalDimensionCut = 0;
   partId_t totalPartCount = 1;
