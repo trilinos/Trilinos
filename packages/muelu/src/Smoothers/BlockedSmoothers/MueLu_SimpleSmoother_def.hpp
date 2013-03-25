@@ -167,58 +167,67 @@ namespace MueLu {
 
     Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
-    RCP<MultiVector> vwork1 = MultiVectorFactory::Build(F_->getRowMap(),1);
-    RCP<MultiVector> vwork2 = MultiVectorFactory::Build(F_->getRowMap(),1);
-    RCP<MultiVector> vwork3 = MultiVectorFactory::Build(F_->getRowMap(),1);
-    RCP<MultiVector> pwork1 = MultiVectorFactory::Build(Z_->getRowMap(),1);
-    RCP<MultiVector> pwork2 = MultiVectorFactory::Build(Z_->getRowMap(),1);
-
-    RCP<MultiVector> residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
-
+    // wrap current solution vector in RCP
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
 
-    //rcpX->describe(*fos, Teuchos::VERB_EXTREME);
+    // create residual vector
+    // contains current residual of current solution X with rhs B
+    RCP<MultiVector> residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
 
-    // TODO loop
+    // incrementally improve solution vector X
     for (LocalOrdinal run = 0; run < nSweeps_; ++run) {
-      vwork1->putScalar(0.0);
-      vwork2->putScalar(0.0);
-      vwork3->putScalar(0.0);
-      pwork1->putScalar(0.0);
-      pwork2->putScalar(0.0);
-
+      // 1) calculate current residual
       residual->update(1.0,B,0.0); // residual = B
       A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
 
-      Teuchos::RCP<MultiVector> r0 = rangeMapExtractor_->ExtractVector(residual, 0);
-      Teuchos::RCP<MultiVector> r1 = rangeMapExtractor_->ExtractVector(residual, 1);
+      // split residual vector
+      Teuchos::RCP<MultiVector> r1 = rangeMapExtractor_->ExtractVector(residual, 0);
+      Teuchos::RCP<MultiVector> r2 = rangeMapExtractor_->ExtractVector(residual, 1);
 
-      Teuchos::RCP<MultiVector> vx = domainMapExtractor_->ExtractVector(rcpX, 0);
-      Teuchos::RCP<MultiVector> px = domainMapExtractor_->ExtractVector(rcpX, 1);
+      // 2) solve F * \Delta \tilde{x}_1 = r_1
+      //    start with zero guess \Delta \tilde{x}_1
+      RCP<MultiVector> xtilde1 = MultiVectorFactory::Build(F_->getRowMap(),1);
+      xtilde1->putScalar(0.0);
+      velPredictSmoo_->Apply(*xtilde1,*r1);
 
-      velPredictSmoo_->Apply(*vwork1,*r0);
+      // 3) calculate rhs for SchurComp equation
+      //    r_2 - D \Delta \tilde{x}_1
+      RCP<MultiVector> schurCompRHS = MultiVectorFactory::Build(Z_->getRowMap(),1);
+      D_->apply(*xtilde1,*schurCompRHS);
+      schurCompRHS->update(1.0,*r2,-1.0);
 
-      D_->apply(*vwork1,*pwork1);
-      pwork1->update(1.0,*r1,-1.0);
+      // 4) solve SchurComp equation
+      //    start with zero guess \Delta \tilde{x}_2
+      RCP<MultiVector> xtilde2 = MultiVectorFactory::Build(Z_->getRowMap(),1);
+      xtilde2->putScalar(0.0);
+      schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
 
-      pwork2->update(1.0,*px,0.0);
-      schurCompSmoo_->Apply(*pwork2,*pwork1);
-      pwork2->scale(omega_);
+      // 5) scale xtilde2 with omega
+      //    store this in xhat2
+      RCP<MultiVector> xhat2 = MultiVectorFactory::Build(Z_->getRowMap(),1);
+      xhat2->update(omega_,*xtilde2,0.0);
 
-      G_->apply(*pwork2,*vwork2);
-      vwork3->elementWiseMultiply(1.0,*diagFinv_,*vwork2,0.0);
+      // 6) calculate xhat1
+      RCP<MultiVector> xhat1      = MultiVectorFactory::Build(F_->getRowMap(),1);
+      RCP<MultiVector> xhat1_temp = MultiVectorFactory::Build(F_->getRowMap(),1);
+      G_->apply(*xhat2,*xhat1_temp); // store result temporarely in xtilde1_temp
+      xhat1->elementWiseMultiply(1/omega_,*diagFinv_,*xhat1_temp,0.0);
+      xhat1->update(1.0,*xtilde1,-1.0);
 
-      px->update(1.0,*pwork2,1.0); // update px
+      // 7) extract parts of solution vector X
+      Teuchos::RCP<MultiVector> x1 = domainMapExtractor_->ExtractVector(rcpX, 0);
+      Teuchos::RCP<MultiVector> x2 = domainMapExtractor_->ExtractVector(rcpX, 1);
 
-      vx->update(1.0,*vwork1,1.0); // check me with 0.0)
-      vx->update(-1.0,*vwork3,1.0);
+      // 8) update solution vector with increments xhat1 and xhat2
+      //    rescale increment for x2 with omega_
+      x1->update(1.0,*xhat1,1.0);    // x1 = x1_old + xhat1
+      x2->update(omega_,*xhat2,1.0); // x2 = x2_old + omega xhat2
 
-      domainMapExtractor_->InsertVector(vx, 0, rcpX);
-      domainMapExtractor_->InsertVector(px, 1, rcpX);
+      // write back solution in global vector X
+      domainMapExtractor_->InsertVector(x1, 0, rcpX);
+      domainMapExtractor_->InsertVector(x2, 1, rcpX);
 
-      //rcpX->describe(*fos, Teuchos::VERB_EXTREME);
     }
-
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

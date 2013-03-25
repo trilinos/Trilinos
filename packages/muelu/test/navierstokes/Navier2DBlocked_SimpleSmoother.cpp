@@ -394,7 +394,7 @@ int main(int argc, char *argv[]) {
 
   // default parameters
   LO SIMPLE_nSweeps = 100;
-  Scalar SIMPLE_omega = 0.02;
+  Scalar SIMPLE_omega = 0.6;
   LO SC_nSweeps = 1;
   Scalar SC_omega = 1.0;
   LO PRED_nSweeps = 3;
