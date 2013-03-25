@@ -45,6 +45,7 @@
 #include <complex>
 
 #include "Sacado.hpp"
+#include "Sacado_mpl_disable_if.hpp"
 
 namespace Intrepid {
 
@@ -74,33 +75,72 @@ namespace Intrepid {
   ///
   /// Type promotion
   ///
-  template <typename S, typename T>
-  struct Promote
-  {
-    typedef typename Sacado::Promote<S, T> type;
-  };
-
-  template <typename S, typename T>
-  struct Promote<Intrepid::Tensor<T>, S> {};
-
-  template <typename S, typename T>
-  struct Promote<S, Intrepid::Tensor<T> > {};
-
-  /*
   using Sacado::Promote;
+  using Sacado::mpl::lazy_disable_if;
 
-  template <typename S, typename T>
-  struct Elevate
-  {
-    typedef typename Sacado::Promote<S, T> type;
+  //
+  template <typename S>
+  struct is_vector {
+    static const bool value = false;
   };
 
-  template <typename S, typename T>
-  struct Elevate<Intrepid::Tensor<T>, S> {};
+  template <typename S>
+  struct is_vector< Vector<S> > {
+    static const bool value = true;
+  };
 
-  template <typename S, typename T>
-  struct Elevate<S, Intrepid::Tensor<T> > {};
-  */
+  template <typename T>
+  struct apply_vector {
+    typedef Vector<typename T::type> type;
+  };
+
+  //
+  template <typename S>
+  struct is_tensor {
+    static const bool value = false;
+  };
+
+  template <typename S>
+  struct is_tensor< Tensor<S> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct apply_tensor {
+    typedef Tensor<typename T::type> type;
+  };
+
+  //
+  template <typename S>
+  struct is_tensor3 {
+    static const bool value = false;
+  };
+
+  template <typename S>
+  struct is_tensor3< Tensor3<S> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct apply_tensor3 {
+    typedef Tensor3<typename T::type> type;
+  };
+
+  //
+  template <typename S>
+  struct is_tensor4 {
+    static const bool value = false;
+  };
+
+  template <typename S>
+  struct is_tensor4< Tensor4<S> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct apply_tensor4 {
+    typedef Tensor4<typename T::type> type;
+  };
 
 } // namespace Intrepid
 
