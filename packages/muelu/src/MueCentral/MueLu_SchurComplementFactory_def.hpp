@@ -75,9 +75,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 RCP<const ParameterList> SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used for building SchurComplement (must be a 2x2 blocked operator)");
-  validParamList->set< Scalar >          ("omega",          Teuchos::ScalarTraits<SC>::one(), "Scaling parameter in S = - 1/omega D diag{F}^{-1} G + Z");
-  //validParamList->set< bool >                  ("lumping",                false, "Use lumping for dropped values");
+  validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A used for building SchurComplement (must be a 2x2 blocked operator)");
+  validParamList->set< Scalar >          ("omega",   Teuchos::ScalarTraits<SC>::one(), "Scaling parameter in S = - 1/omega D diag{F}^{-1} G + Z");
+  validParamList->set< bool >            ("lumping", false, "Use lumping, i.e. use the row sum of the absolute values on the diagonal as approximation of A00 (and A00^{-1}). default: false, just use diag(A00).");
 
   return validParamList;
 }
@@ -115,24 +115,23 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
   const ParameterList& pL = GetParameterList();
   Scalar omega = pL.get<Scalar>("omega");
 
-  // extract diagonal of F. store it in ArrayRCP object
-  Teuchos::ArrayRCP<SC> AdiagFinv = Utils::GetMatrixDiagonal(*F);
-  ////////// EXPERIMENTAL
-  // fix zeros on diagonal
-  /*for(size_t t = 0; t < AdiagFinv.size(); t++) {
-    if(AdiagFinv[t] == 0.0) {
-      std::cout << "SchurComp: fixed zero diagonal entry" << std::endl;
-      AdiagFinv[t] = 1.0;
-    }
-  }*/
-  ////////// EXPERIMENTAL
   // copy the value of G so we can do the left scale.
   RCP<Matrix> FhatinvG = MatrixFactory::Build(G->getRowMap(), G->getGlobalMaxNumRowEntries());
   RCP<Matrix> emptyMat = MatrixFactory::Build(G->getRowMap(), G->getGlobalMaxNumRowEntries());
   emptyMat->fillComplete(G->getDomainMap(),G->getRowMap());
   Utils2::TwoMatrixAdd(G,false,1.0,emptyMat,false,-1.0/omega,FhatinvG);
   FhatinvG->fillComplete(G->getDomainMap(),G->getRowMap()); // complete the matrix. left scaling does not change the pattern of the operator.
-  Utils::MyOldScaleMatrix(FhatinvG,AdiagFinv,true,false,false);  // TODO check the MyOldScaleMatrix routine...
+
+  bool lumping = pL.get<bool>("lumping");
+  if(!lumping) {
+    // extract diagonal of F. store it in ArrayRCP object
+    Teuchos::ArrayRCP<SC> AdiagFinv = Utils::GetMatrixDiagonal(*F);
+    Utils::MyOldScaleMatrix(FhatinvG,AdiagFinv,true,false,false);  // TODO check the MyOldScaleMatrix routine...
+  } else {
+    // use diagonal of lumped matrix as approximation
+    Teuchos::ArrayRCP<SC> AdiagFinv = Utils::GetLumpedMatrixDiagonal(*F);
+    Utils::MyOldScaleMatrix(FhatinvG,AdiagFinv,true,false,false);  // TODO check the MyOldScaleMatrix routine...
+  }
 
   // build D \hat{F}^{-1} G
   RCP<Matrix> DFhatinvG = Utils::Multiply(*D,false,*FhatinvG,false);

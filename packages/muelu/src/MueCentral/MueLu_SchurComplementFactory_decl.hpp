@@ -98,7 +98,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SchurComplementFactory(/*Scalar omega*/);
+    SchurComplementFactory();
 
     //! Destructor.
     virtual ~SchurComplementFactory();
@@ -123,9 +123,6 @@ namespace MueLu {
 
 
   private:
-    //Teuchos::RCP<const FactoryBase>     AFact_;  ///< generating factory of input variable (blocked A operator)
-
-    //Scalar                              omega_;  ///< damping parameter
 
     // bool switchRowOrder_;          ///< TODO NOT USED YET
 

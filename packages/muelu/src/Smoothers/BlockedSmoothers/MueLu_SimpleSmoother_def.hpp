@@ -36,14 +36,15 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SimpleSmoother(LocalOrdinal sweeps, Scalar omega)
-    : type_("SIMPLE"), nSweeps_(sweeps), omega_(omega), A_(Teuchos::null)
+  SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SimpleSmoother(LocalOrdinal sweeps, Scalar omega, bool SIMPLEC)
+    : type_("SIMPLE"), bSIMPLEC_(SIMPLEC), nSweeps_(sweeps), omega_(omega), A_(Teuchos::null)
   {
     RCP<SchurComplementFactory> SchurFact = Teuchos::rcp(new SchurComplementFactory());
     SchurFact->SetParameter("omega",Teuchos::ParameterEntry(omega));
+    SchurFact->SetParameter("lumping",Teuchos::ParameterEntry(SIMPLEC));
     SchurFact->SetFactory("A", this->GetFactory("A"));
 
-    // define smoother/solver for BraessSarazin
+    // define smoother/solver for SchurComplement equation
     Teuchos::ParameterList SCparams;
     std::string SCtype;
     RCP<SmootherPrototype> smoProtoSC     = rcp( new DirectSolver(SCtype,SCparams) );
@@ -104,16 +105,16 @@ namespace MueLu {
     // - Create and set the inverse of the diagonal of F
     // - Set the smoother for the Schur Complement
 
-    FactoryMonitor m(*this, "Setup blocked Braess-Sarazin Smoother", currentLevel);
+    FactoryMonitor m(*this, "Setup blocked SIMPLE Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-            this->GetOStream(Warnings0, 0) << "Warning: MueLu::BreaessSarazinSmoother::Setup(): Setup() has already been called";
+            this->GetOStream(Warnings0, 0) << "Warning: MueLu::SimpleSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
     A_ = Factory::Get<RCP<Matrix> > (currentLevel, "A");
 
     RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
-    TEUCHOS_TEST_FOR_EXCEPTION(bA == Teuchos::null, Exceptions::BadCast, "MueLu::BraessSarazinSmoother::Setup: input matrix A is not of type BlockedCrsMatrix! error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(bA == Teuchos::null, Exceptions::BadCast, "MueLu::SimpleSmoother::Setup: input matrix A is not of type BlockedCrsMatrix! error.");
 
     // store map extractors
     rangeMapExtractor_ = bA->getRangeMapExtractor();
@@ -137,20 +138,25 @@ namespace MueLu {
 
     // Create the inverse of the diagonal of F
     RCP<Vector> diagFVector = VectorFactory::Build(F_->getRowMap());
-    F_->getLocalDiagCopy(*diagFVector);       // extract diagonal of F
-
-    ////////// EXPERIMENTAL
-    // fix zeros on diagonal
-    /*Teuchos::ArrayRCP< Scalar > diagFdata = diagFVector->getDataNonConst(0);
-    for(size_t t = 0; t < diagFdata.size(); t++) {
-      if(diagFdata[t] == 0.0) {
-        std::cout << "fixed zero diagonal entry" << std::endl;
-        diagFdata[t] = 1.0;
+    if(!bSIMPLEC_) {
+      F_->getLocalDiagCopy(*diagFVector);       // extract diagonal of F
+      diagFVector->reciprocal(*diagFVector);    // build reciprocal
+    } else {
+      const RCP<const Map> rowmap = F_->getRowMap();
+      size_t locSize = rowmap->getNodeNumElements();
+      Teuchos::ArrayRCP<SC> diag = diagFVector->getDataNonConst(0);
+      Teuchos::ArrayView<const LO> cols;
+      Teuchos::ArrayView<const SC> vals;
+      for (size_t i=0; i<locSize; ++i) { // loop over rows
+        F_->getLocalRowView(i,cols,vals);
+        Scalar absRowSum = Teuchos::ScalarTraits<Scalar>::zero();
+        for (LO j=0; j<cols.size(); ++j) { // loop over cols
+          absRowSum += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+        }
+        diag[i] = absRowSum;
       }
-    }*/
-    ////////// EXPERIMENTAL
-
-    diagFVector->reciprocal(*diagFVector);    // build reciprocal
+      diagFVector->reciprocal(*diagFVector);    // build reciprocal
+    }
     diagFinv_ = diagFVector;
 
     // Set the Smoother
