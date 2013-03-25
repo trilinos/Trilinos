@@ -95,8 +95,6 @@ namespace MueLu {
       return;
     }
 
-    GetOStream(Runtime0, 0) << "=== Building Zoltan ===" << std::endl;
-
     // Tell Zoltan what kind of local/global IDs we will use.
     // In our case, each GID is two ints and there are no local ids.
     // One can skip this step if the IDs are just single ints.

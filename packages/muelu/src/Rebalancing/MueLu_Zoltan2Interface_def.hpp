@@ -100,13 +100,9 @@ namespace MueLu {
       return;
     }
 
-    GetOStream(Runtime0, 0) << "=== Building Zoltan2 ===" << std::endl;
-
     RCP<MultiVector> multiVectorXYZ = Get< RCP<MultiVector> >(level, "Coordinates");
     size_t           dim = multiVectorXYZ->getNumVectors();
     LocalOrdinal blkSize = A->GetFixedBlockSize();
-
-    GetOStream(Runtime0,0) << "dimension = " << dim << std::endl;
 
     Array<ArrayRCP<SC> > XYZ(dim);
     if (IsAvailable(level, "Coordinates")) {
@@ -177,9 +173,7 @@ namespace MueLu {
     InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), XYZ[0].get(), (dim >= 2 ? XYZ[1].get() : NULL), (dim >= 3 ? XYZ[2].get() : NULL));
 
     const Teuchos::MpiComm<int>& comm = static_cast<const Teuchos::MpiComm<int>& >(*map->getComm());
-    GetOStream(Runtime0,0) << "Zoltan2: after comm" << std::endl;
     RCP<ProblemType> problem(new ProblemType(&adapter, &params, *comm.getRawMpiComm()));
-    GetOStream(Runtime0,0) << "Zoltan2: after ProblemType" << std::endl;
 
     problem->solve();
 
@@ -199,7 +193,6 @@ namespace MueLu {
           decompEntries[localID + j] = partNum;
       }
     }
-    GetOStream(Runtime0,0) << decomposition << std::endl;
 
     Set(level, "Partition", decomposition);
 
