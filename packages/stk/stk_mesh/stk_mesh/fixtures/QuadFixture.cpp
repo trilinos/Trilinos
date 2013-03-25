@@ -27,13 +27,14 @@ namespace mesh {
 namespace fixtures {
 
 QuadFixture::QuadFixture( stk::ParallelMachine pm ,
-                          unsigned nx , unsigned ny )
+                          unsigned nx , unsigned ny,
+                          const std::vector<std::string>& rank_names )
   : m_spatial_dimension(2),
-    m_fem_meta( m_spatial_dimension ),
-    m_bulk_data( m_fem_meta, pm ),
-    m_quad_part( declare_part<shards::Quadrilateral<4> >(m_fem_meta, "quad_part" ) ),
-    m_coord_field( m_fem_meta.declare_field<CoordFieldType>("Coordinates") ),
-    m_coord_gather_field( m_fem_meta.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
+    m_meta( m_spatial_dimension, rank_names ),
+    m_bulk_data( m_meta, pm ),
+    m_quad_part( declare_part<shards::Quadrilateral<4> >(m_meta, "quad_part" ) ),
+    m_coord_field( m_meta.declare_field<CoordFieldType>("Coordinates") ),
+    m_coord_gather_field( m_meta.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
     m_nx( nx ),
     m_ny( ny )
 {
@@ -44,7 +45,7 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
   put_field(
       m_coord_field,
       MetaData::NODE_RANK,
-      m_fem_meta.universal_part(),
+      m_meta.universal_part(),
       m_spatial_dimension
       );
 
@@ -52,13 +53,13 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
   put_field(
       m_coord_gather_field,
       MetaData::ELEMENT_RANK,
-      m_fem_meta.universal_part(),
+      m_meta.universal_part(),
       nodes_per_elem
       );
 
   // Field relation so coord-gather-field on elements points
   // to coord-field of the element's nodes
-  m_fem_meta.declare_field_relation(
+  m_meta.declare_field_relation(
       m_coord_gather_field,
       element_node_stencil<Quad4, 2>,
       m_coord_field

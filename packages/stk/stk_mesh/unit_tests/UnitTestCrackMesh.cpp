@@ -28,7 +28,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy2D )
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
   for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
     stk::mesh::fixtures::QuadFixture fixture( pm , nx , ny );
-    fixture.m_fem_meta.commit();
+    fixture.m_meta.commit();
     fixture.generate_mesh();
 
     fixture.m_bulk_data.modification_begin();

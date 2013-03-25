@@ -193,7 +193,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
   unsigned p_rank = stk::parallel_machine_rank(pm);
 
   stk::mesh::fixtures::QuadFixture fixture(pm, 1 /*nx*/, p_size /*ny*/);
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
   stk::mesh::BulkData & bulk = fixture.m_bulk_data;
 

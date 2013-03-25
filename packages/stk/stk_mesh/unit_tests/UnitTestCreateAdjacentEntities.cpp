@@ -158,7 +158,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
 
   stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, NX, NY);
 
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
 
   {

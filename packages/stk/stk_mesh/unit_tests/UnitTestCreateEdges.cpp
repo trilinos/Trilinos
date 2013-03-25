@@ -31,7 +31,7 @@ STKUNIT_UNIT_TEST ( UnitTestCreateEdges, Quad_2x1 )
 {
   stk::mesh::fixtures::QuadFixture fixture( MPI_COMM_WORLD, 2, 1);
 
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
 
   {
@@ -61,7 +61,7 @@ STKUNIT_UNIT_TEST ( UnitTestCreateEdges, Quad_3x1 )
 {
   stk::mesh::fixtures::QuadFixture fixture( MPI_COMM_WORLD, 3, 1);
 
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
 
   {
@@ -91,7 +91,7 @@ STKUNIT_UNIT_TEST ( UnitTestCreateEdges, Quad_2x2 )
 {
   stk::mesh::fixtures::QuadFixture fixture( MPI_COMM_WORLD, 2, 2);
 
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
 
   stk::mesh::skin_mesh(fixture.m_bulk_data, stk::topology::ELEMENT_RANK, NULL);
@@ -362,7 +362,7 @@ STKUNIT_UNIT_TEST( UnitTestCreateEdges , testCreateEdges3x3 )
 
   stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, NX, NY);
 
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
 
   {

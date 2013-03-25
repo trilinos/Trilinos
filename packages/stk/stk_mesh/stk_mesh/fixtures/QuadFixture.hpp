@@ -44,12 +44,12 @@ class QuadFixture
    * Set up meta data to support this fixture. Meta data is left uncommitted
    * to allow additional modifications by the client.
    */
-  QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny );
+  QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny, const std::vector<std::string>& rank_names = std::vector<std::string>() );
 
   ~QuadFixture() {}
 
   const unsigned                m_spatial_dimension;
-  MetaData                      m_fem_meta ;
+  MetaData                      m_meta ;
   BulkData                      m_bulk_data ;
   Part &                        m_quad_part ;
   CoordFieldType &              m_coord_field ;
@@ -104,8 +104,8 @@ class QuadFixture
    */
   void generate_mesh();
 
- private:
   void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
+ private:
 
   QuadFixture();
   QuadFixture( const QuadFixture & );

@@ -1625,9 +1625,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFieldComm)
   if (p_size <= 4)
   {
     stk::mesh::fixtures::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
-    PressureFieldType& p_field = fixture.m_fem_meta.declare_field<PressureFieldType>("p");
-    stk::mesh::put_field( p_field , stk::mesh::MetaData::NODE_RANK , fixture.m_fem_meta.universal_part());
-    fixture.m_fem_meta.commit();
+    PressureFieldType& p_field = fixture.m_meta.declare_field<PressureFieldType>("p");
+    stk::mesh::put_field( p_field , stk::mesh::MetaData::NODE_RANK , fixture.m_meta.universal_part());
+    fixture.m_meta.commit();
     fixture.generate_mesh();
     stk::mesh::BulkData & bulk = fixture.m_bulk_data;
 
