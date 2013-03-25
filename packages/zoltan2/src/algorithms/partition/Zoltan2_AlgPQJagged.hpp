@@ -409,6 +409,8 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
   if (pe)
     //aa = pe->getValue(&aa);
     concurrentPartCount = pe->getValue(&concurrentPartCount);
+  else
+    concurrentPartCount = 1;
 
   //concurrentPartCount = partId_t(aa);
 
