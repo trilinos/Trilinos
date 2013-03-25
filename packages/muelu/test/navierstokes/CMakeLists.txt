@@ -40,12 +40,12 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
       DEPLIBS muelu xpetra
       )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Navier2DBlocked_SimpleSmoother
-      SOURCES Navier2DBlocked_SimpleSmoother.cpp
-      COMM serial mpi
-      DEPLIBS muelu xpetra
-      )
+    #TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    #  Navier2DBlocked_SimpleSmoother
+    #  SOURCES Navier2DBlocked_SimpleSmoother.cpp
+    #  COMM serial mpi
+    #  DEPLIBS muelu xpetra
+    #  )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Navier2DBlocked_BraessSarazin
@@ -54,12 +54,12 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
       DEPLIBS muelu xpetra
       )
       
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Navier2DBlocked_Simple
-      SOURCES Navier2DBlocked_Simple.cpp
-      COMM serial mpi
-      DEPLIBS muelu xpetra
-      )  
+    #TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    #  Navier2DBlocked_Simple
+    #  SOURCES Navier2DBlocked_Simple.cpp
+    #  COMM serial mpi
+    #  DEPLIBS muelu xpetra
+    #  )  
    
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Navier2D_cp
       SOURCE_FILES A5932_re1000.txt b5932_re1000.txt
