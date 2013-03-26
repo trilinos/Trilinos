@@ -130,7 +130,7 @@ namespace MueLu {
     Set<RCP <Matrix> >(coarseLevel, "A", bAc);
 
     if (transferFacts_.begin() != transferFacts_.end()) {
-      SubFactoryMonitor m(*this, "Projections", coarseLevel);
+      SubFactoryMonitor m1(*this, "Projections", coarseLevel);
 
       // call Build of all user-given transfer factories
       for(std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it) {
