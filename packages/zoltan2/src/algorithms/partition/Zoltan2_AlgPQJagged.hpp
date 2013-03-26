@@ -78,6 +78,9 @@
     (Wachieved) / ((totalW) * (expectedRatio)) - 1
 //#define mpi_communication
 
+#define KCUTOFF 0.80
+#define defaultK 16
+
 namespace Teuchos{
 template <typename Ordinal, typename T>
 class PQJaggedCombinedReductionOp  : public ValueTypeReductionOp<Ordinal,T>
@@ -406,12 +409,13 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
   //TODO: FIX ME.
   //double aa = 1;
   pe = pl.getEntryPtr("parallel_part_calculation_count");
-  if (pe)
+  if (pe){
     //aa = pe->getValue(&aa);
     concurrentPartCount = pe->getValue(&concurrentPartCount);
-
+  }else {
+    concurrentPartCount = 1;
   //concurrentPartCount = partId_t(aa);
-
+  }
   int val = 0;
   pe = pl.getEntryPtr("average_cuts");
   if (pe)
@@ -503,8 +507,10 @@ void pqJagged_getInputValues(
     scalar_t **pqJagged_values, const int &criteriaDim, scalar_t **pqJagged_weights, ArrayView<const gno_t> &pqJagged_gnos, bool &ignoreWeights,
     bool *pqJagged_uniformWeights, bool *pqJagged_uniformParts, scalar_t **pqJagged_partSizes
 ){
+/*
   typedef typename Adapter::node_t node_t;
   typedef typename Adapter::lno_t lno_t;
+*/
   typedef StridedData<lno_t, scalar_t> input_t;
 
   ArrayView<const gno_t> gnos;
@@ -2745,10 +2751,12 @@ void AlgPQJagged(
 
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Init");
+/*
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gno_t gno_t;
 
   typedef typename Adapter::lno_t lno_t;
+*/
   const Teuchos::ParameterList &pl = env->getParameters();
 
   std::bitset<NUM_RCB_PARAMS> params;
