@@ -548,8 +548,6 @@ bool StartupSierra(int *			  argc,
       if ( get_param("create-xml").empty() && get_param("version").empty() && get_param("help").empty() ) {
         if (env_data.m_inputFileRequired) {
           throw RuntimeError() << "No input file specified.  An input file must be specified with the '-i' option";
-        } else {
-          std::cerr << "WARNING: No input file specified.  An input file should be specified with the '-i' option!" << std::endl;
         }
       }
     } else if ( env_data.m_checkSubCycle ) {
@@ -622,8 +620,10 @@ bool StartupSierra(int *			  argc,
 
     std::string out_path = trueOut;
 
-    if (out_path == "-")
+    if (out_path == "-" || originalFileName.empty())
+    {
       out_path = "cout";
+    }
 
     std::string out_ostream;
 
