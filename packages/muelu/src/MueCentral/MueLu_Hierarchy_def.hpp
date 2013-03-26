@@ -456,7 +456,7 @@ namespace MueLu {
     LO endLevel = end;
 
     if (startLevel==-1) startLevel = 0;
-    if (endLevel==-1)   endLevel = Levels_.size();
+    if (endLevel==-1)   endLevel = Levels_.size()-1;
 
     TEUCHOS_TEST_FOR_EXCEPTION(startLevel > endLevel, Exceptions::RuntimeError, "MueLu::Hierarchy::Write : startLevel must be <= endLevel");
 
