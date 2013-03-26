@@ -261,18 +261,19 @@ namespace MueLu {
     // Use a hashtable to record how many local rows belong to each partition.
     RCP<Teuchos::Hashtable<GO, GO> > hashTable;
     hashTable = rcp(new Teuchos::Hashtable<GO, GO>(numPartitions + numPartitions/2));
+    Teuchos::Hashtable<GO,GO>& htref = *hashTable;
     ArrayRCP<const GO> decompEntries;
     if (decomposition->getLocalLength() > 0)
       decompEntries = decomposition->getData(0);
     bool flag=false;
     for (int i=0; i<decompEntries.size(); ++i) {
       if (decompEntries[i] >= numPartitions) flag = true;
-      if (hashTable->containsKey(decompEntries[i])) {
-        GO count = hashTable->get(decompEntries[i]);
+      if (htref.containsKey(decompEntries[i])) {
+        GO count = htref.get(decompEntries[i]);
         ++count;
-        hashTable->put(decompEntries[i], count);
+        htref.put(decompEntries[i], count);
       } else {
-        hashTable->put(decompEntries[i], 1);
+        htref.put(decompEntries[i], 1);
       }
     }
     int problemPid;
@@ -284,7 +285,7 @@ namespace MueLu {
 
     Teuchos::Array<GO> allPartitionsIContributeTo;
     Teuchos::Array<GO> allLocalPartSize;
-    hashTable->arrayify(allPartitionsIContributeTo, allLocalPartSize);
+    htref.arrayify(allPartitionsIContributeTo, allLocalPartSize);
 
     GO indexBase = decomposition->getMap()->getIndexBase();
 
@@ -300,13 +301,14 @@ namespace MueLu {
     ArrayRCP<GO> data;
     if (localPartSizeVec->getLocalLength() > 0)
       data = localPartSizeVec->getDataNonConst(0);
-    for (int i=0; i<hashTable->size(); ++i)
+    for (int i=0; i<htref.size(); ++i)
       data[i] = allLocalPartSize[i];
     data = Teuchos::null;
 
     // Target map is nonoverlapping.  Pid k has GID N if and only if k owns partition N.
     GO myPartitionNumber;
     Array<int> partitionOwners;
+    partitionOwners.reserve(numPartitions);
     DeterminePartitionPlacement(currentLevel, myPartitionNumber, partitionOwners);
 
 /*
@@ -327,7 +329,9 @@ namespace MueLu {
 
     GO numDofsThatStayWithMe=0;
     Teuchos::Array<GO> partitionsIContributeTo;
+    partitionsIContributeTo.reserve(allPartitionsIContributeTo.size());
     Teuchos::Array<GO> localPartSize;
+    localPartSize.reserve(allPartitionsIContributeTo.size());
     for (int i=0; i<allPartitionsIContributeTo.size(); ++i)
     {
       if (allPartitionsIContributeTo[i] != myPartitionNumber) {
@@ -339,12 +343,13 @@ namespace MueLu {
     }
 
     // Note: "numPartitionsISendTo" does not include this PID
-    GO numPartitionsISendTo = hashTable->size();
+    GO numPartitionsISendTo = htref.size();
     // I'm a partition owner, so don't count my own.
     if (myPartitionNumber >= 0 && numPartitionsISendTo>0 && numDofsThatStayWithMe>0) numPartitionsISendTo--;
     assert(numPartitionsISendTo == partitionsIContributeTo.size());
 
     Array<int> partitionOwnersISendTo;
+    partitionOwnersISendTo.reserve(allPartitionsIContributeTo.size());
     for (int i=0; i<partitionsIContributeTo.size(); ++i) {
       partitionOwnersISendTo.push_back(partitionOwners[partitionsIContributeTo[i]]);
     }
@@ -379,9 +384,10 @@ namespace MueLu {
     RCP<GOVector> partitionsISendTo = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(sourceMap, false);
     if (partitionsISendTo->getLocalLength() > 0)
       data = partitionsISendTo->getDataNonConst(0);
+    const Map& sourceMapRef = *sourceMap;
     for (int i=0; i<data.size(); ++i) {
       // don't count myself as someone I send to... (sourceMap is based on allPartitionsIContributeTo)
-      if (sourceMap->getGlobalElement(i) != myPartitionNumber)
+      if (sourceMapRef.getGlobalElement(i) != myPartitionNumber)
         data[i] = 1;
       else
         data[i] = 0;
@@ -489,32 +495,35 @@ namespace MueLu {
 
     // store offsets for easy random access
     hashTable = rcp(new Teuchos::Hashtable<GO, GO>(partitionsIContributeTo.size() + partitionsIContributeTo.size()/2));
+    Teuchos::Hashtable<GO,GO>& htref1 = *hashTable;
     for (int i=0; i<partitionsIContributeTo.size(); ++i) {
-      hashTable->put(partitionsIContributeTo[i], (GO)gidOffsetsForPartitionsIContributeTo[i]);
+      htref1.put(partitionsIContributeTo[i], (GO)gidOffsetsForPartitionsIContributeTo[i]);
     }
     //store gid offset for those dofs that will remain with me
     if (myPartitionNumber > -1)
-      hashTable->put(myPartitionNumber, ((GO)partitionSizeOffset) + myPartitionSize - numDofsThatStayWithMe);
+      htref1.put(myPartitionNumber, ((GO)partitionSizeOffset) + myPartitionSize - numDofsThatStayWithMe);
     if (decomposition->getLocalLength() > 0)
       decompEntries = decomposition->getData(0);
     Array<GO> uniqueGIDsBeforePermute;
+    uniqueGIDsBeforePermute.reserve(decompEntries.size());
     for (int i=0; i<decompEntries.size(); ++i) {
-      GO gid = hashTable->get(decompEntries[i]);
+      GO gid = htref1.get(decompEntries[i]);
       uniqueGIDsBeforePermute.push_back(gid);
       gid++;
-      hashTable->put(decompEntries[i], gid);
+      htref1.put(decompEntries[i], gid);
     }
     decompEntries = Teuchos::null;
 
     // Synthetic GIDS for permuted system.
 
     Array<GO> uniqueGIDsAfterPermute;
+    uniqueGIDsAfterPermute.reserve(myPartitionSize);
     for (int i=0; i<myPartitionSize; ++i) {
         uniqueGIDsAfterPermute.push_back((GO)partitionSizeOffset+i);
     }
 
     // =================================================================================================
-    // Create and apply an importer to communicate column GIDs for the permutation matrix.
+    // Create and apply an importer to communicate row GIDs that will make up the permuted row map
     // =================================================================================================
 
     //TODO we should really supply the global size as another sanity check
@@ -539,14 +548,15 @@ namespace MueLu {
     }
 
     //load source vector with unpermuted GIDs.
-    RCP<const Map> originalRowMap = A->getRowMap();
+    //RCP<const Map> originalRowMap = A->getRowMap();
+    const Map& originalRowMap = *(A->getRowMap());
 
     //sanity check
-    assert(vectorData.size() == (GO) originalRowMap->getNodeNumElements());
+    assert(vectorData.size() == (GO) originalRowMap.getNodeNumElements());
 
 
     for (LO i=0; i<vectorData.size(); ++i) {
-      GO gid = originalRowMap->getGlobalElement(i);
+      GO gid = originalRowMap.getGlobalElement(i);
       if (gid == (GO) Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid())
         throw(Exceptions::RuntimeError("Encountered an unexpected error with A's rowmap."));
       vectorData[i] = gid;
@@ -627,6 +637,8 @@ namespace MueLu {
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: hashing", currentLevel));
     RCP<Teuchos::Hashtable<GO, GO> > hashTable;
     hashTable = rcp(new Teuchos::Hashtable<GO, GO>(numPartitions + numPartitions/2));
+    Teuchos::Hashtable<GO, GO>& htref = *hashTable;
+    
     ArrayRCP<const GO> decompEntries;
     if (decomposition->getLocalLength() > 0)
       decompEntries = decomposition->getData(0);
@@ -634,12 +646,12 @@ namespace MueLu {
     assert(decompEntries.size() == nnzPerRow.size());
     for (int i=0; i<decompEntries.size(); ++i) {
       if (decompEntries[i] >= numPartitions) flag = true;
-      if (hashTable->containsKey(decompEntries[i])) {
-        GO count = hashTable->get(decompEntries[i]);
+      if (htref.containsKey(decompEntries[i])) {
+        GO count = htref.get(decompEntries[i]);
         count += nnzPerRow[i];
-        hashTable->put(decompEntries[i], count);
+        htref.put(decompEntries[i], count);
       } else {
-        hashTable->put(decompEntries[i], nnzPerRow[i]);
+        htref.put(decompEntries[i], nnzPerRow[i]);
       }
     }
 
@@ -652,11 +664,12 @@ namespace MueLu {
 
     Teuchos::Array<GO> allPartitionsIContributeTo;
     Teuchos::Array<GO> localNnzPerPartition;
-    hashTable->arrayify(allPartitionsIContributeTo, localNnzPerPartition);
+    htref.arrayify(allPartitionsIContributeTo, localNnzPerPartition);
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build target map", currentLevel));
     //map in which all pids have all partition numbers as GIDs.
     //FIXME this next map ctor can be a real time hog in parallel
     Array<GO> allPartitions;
+    allPartitions.reserve(numPartitions);
     for (int i=0; i<numPartitions; ++i) allPartitions.push_back(i);
     RCP<Map> targetMap = MapFactory::Build(decomposition->getMap()->lib(),
                                            numPartitions*comm->getSize(),
@@ -755,7 +768,7 @@ namespace MueLu {
         if (procWinner[i] == mypid) {
           GO partitionSize;
           //prefer partitions for which this pid has DOFs over partitions for which it doesn't.
-          if (hashTable->containsKey(i)) partitionSize = hashTable->get(i);
+          if (htref.containsKey(i)) partitionSize = htref.get(i);
           else                           partitionSize = 1;
           if (partitionSize > largestPartitionSize) {
             myPartitionNumber = i;
@@ -768,7 +781,7 @@ namespace MueLu {
       //Check to see if my newly assigned partition is one for which I have no DOFs.
       bool gotALeftoverPartitionThisRound=false;
       if (myPartitionNumber > -1 && (myPartitionNumber != myPartitionNumberLastRound)) {
-        if (hashTable->containsKey(myPartitionNumber)) gotALeftoverPartitionThisRound = false;
+        if (htref.containsKey(myPartitionNumber)) gotALeftoverPartitionThisRound = false;
         else                                           gotALeftoverPartitionThisRound = true;
       }
 

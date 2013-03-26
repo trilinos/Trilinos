@@ -1275,7 +1275,7 @@ namespace MueLu {
       {
       Teuchos::TimeMonitor tmm(*Teuchos::TimeMonitor::getNewTimer("YY Tpetra Transpose Only"));
       Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer(*tpetraOp); //more than meets the eye
-      A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
+      A = transposer.createTranspose();
       }
 
       //RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A=Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::simple_Transpose(tpetraOp);
