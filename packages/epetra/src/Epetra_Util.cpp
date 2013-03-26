@@ -500,9 +500,9 @@ int Epetra_Util::GetPidGidPairs(const Epetra_Import & Importer,std::vector< std:
 
   // Start by claiming that I own all the data
   if(use_minus_one_for_local)
-    for(i=0;i <N; i++) gpids[i]=std::make_pair(-1,Importer.TargetMap().GID(i));
+    for(i=0;i <N; i++) gpids[i]=std::make_pair(-1,Importer.TargetMap().GID64(i));
   else
-    for(i=0;i <N; i++) gpids[i]=std::make_pair(mypid,Importer.TargetMap().GID(i));
+    for(i=0;i <N; i++) gpids[i]=std::make_pair(mypid,Importer.TargetMap().GID64(i));
 
   // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
   // MpiDistributor so it ought to duplicate that effect.
