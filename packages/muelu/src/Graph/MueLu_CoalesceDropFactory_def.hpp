@@ -269,7 +269,7 @@ namespace MueLu {
             std::set<GO>        filter;
 
             LO numRows = 0;
-            for (LO id = 0; id < numElements; id++) {
+            for (LO id = 0; id < static_cast<LO>(numElements); id++) {
               GO amalgID = elementAList[id]/blkSize;
               if (filter.find(amalgID) == filter.end()) {
                 elementList[numRows++] = amalgID;
