@@ -90,13 +90,13 @@ namespace Tpetra {
       reduceAll<int, GST> (*comm, REDUCE_MAX, numGlobalElements, outArg (maxNumGlobalElements));
       TEUCHOS_TEST_FOR_EXCEPTION(
         minNumGlobalElements != maxNumGlobalElements || numGlobalElements != minNumGlobalElements,
-	std::invalid_argument,
-	"Tpetra::Map constructor: All processes must provide the same number "
-	"of global elements.  Process 0 set numGlobalElements = " 
-	<< proc0NumGlobalElements << ".  The calling process " 
-	<< comm->getRank () << " set numGlobalElements = " << numGlobalElements 
-	<< ".  The min and max values over all processes are " 
-	<< minNumGlobalElements << " resp. " << maxNumGlobalElements << ".");
+        std::invalid_argument,
+        "Tpetra::Map constructor: All processes must provide the same number "
+        "of global elements.  Process 0 set numGlobalElements = "
+        << proc0NumGlobalElements << ".  The calling process "
+        << comm->getRank () << " set numGlobalElements = " << numGlobalElements
+        << ".  The min and max values over all processes are "
+        << minNumGlobalElements << " resp. " << maxNumGlobalElements << ".");
 
       GO proc0IndexBase = indexBase;
       broadcast<int, GO> (*comm_, 0, outArg (proc0IndexBase));
@@ -106,13 +106,13 @@ namespace Tpetra {
       reduceAll<int, GO> (*comm, REDUCE_MAX, indexBase, outArg (maxIndexBase));
       TEUCHOS_TEST_FOR_EXCEPTION(
         minIndexBase != maxIndexBase || indexBase != minIndexBase,
-        std::invalid_argument, 
-	"Tpetra::Map constructor: "
-	"All processes must provide the same indexBase argument.  "
-	"Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
-	"process " << comm->getRank () << " set indexBase = " << indexBase 
-	<< ".  The min and max values over all processes are " 
-	<< minIndexBase << " resp. " << maxIndexBase << ".");
+        std::invalid_argument,
+        "Tpetra::Map constructor: "
+        "All processes must provide the same indexBase argument.  "
+        "Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
+        "process " << comm->getRank () << " set indexBase = " << indexBase
+        << ".  The min and max values over all processes are "
+        << minIndexBase << " resp. " << maxIndexBase << ".");
     }
 #endif // HAVE_TPETRA_DEBUG
 
@@ -136,7 +136,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(
       (numGlobalElements < 1 && numGlobalElements != 0),
       std::invalid_argument,
-      "Tpetra::Map constructor: numGlobalElements (= " 
+      "Tpetra::Map constructor: numGlobalElements (= "
       << numGlobalElements << ") must be nonnegative.");
 
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -171,14 +171,14 @@ namespace Tpetra {
 
       GO startIndex;
       if (myRank < remainder) {
-	numLocalElements = as<size_t> (1) + as<size_t> (quotient);
-	// myRank was originally an int, so it should never overflow
-	// reasonable GO types.
+        numLocalElements = as<size_t> (1) + as<size_t> (quotient);
+        // myRank was originally an int, so it should never overflow
+        // reasonable GO types.
         startIndex = as<GO> (myRank) * as<GO> (numLocalElements);
       } else {
-	numLocalElements = as<size_t> (quotient);
-        startIndex = as<GO> (myRank) * as<GO> (numLocalElements) + 
-	  as<GO> (remainder);
+        numLocalElements = as<size_t> (quotient);
+        startIndex = as<GO> (myRank) * as<GO> (numLocalElements) +
+          as<GO> (remainder);
       }
 
       minMyGID_  = indexBase + startIndex;
@@ -231,8 +231,8 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     // Keep this for later debug checks.
     GST debugGlobalSum = 0; // Will be global sum of numLocalElements
-    reduceAll<int, GST> (*comm, REDUCE_SUM, as<GST> (numLocalElements), 
-			 outArg (debugGlobalSum));
+    reduceAll<int, GST> (*comm, REDUCE_SUM, as<GST> (numLocalElements),
+                         outArg (debugGlobalSum));
     // In debug mode only, check whether numGlobalElements and
     // indexBase are the same over all processes in the communicator.
     {
@@ -244,15 +244,15 @@ namespace Tpetra {
       reduceAll<int, GST> (*comm, REDUCE_MAX, numGlobalElements, outArg (maxNumGlobalElements));
       TEUCHOS_TEST_FOR_EXCEPTION(
         minNumGlobalElements != maxNumGlobalElements || numGlobalElements != minNumGlobalElements,
-	std::invalid_argument,
-	"Tpetra::Map constructor: All processes must provide the same number "
-	"of global elements.  This is true even if that argument is Teuchos::"
-	"OrdinalTraits<global_size_t>::invalid() to signal that the Map should "
-	"compute the global number of elements.  Process 0 set numGlobalElements"
-	" = " << proc0NumGlobalElements << ".  The calling process " 
-	<< comm->getRank () << " set numGlobalElements = " << numGlobalElements 
-	<< ".  The min and max values over all processes are " 
-	<< minNumGlobalElements << " resp. " << maxNumGlobalElements << ".");
+        std::invalid_argument,
+        "Tpetra::Map constructor: All processes must provide the same number "
+        "of global elements.  This is true even if that argument is Teuchos::"
+        "OrdinalTraits<global_size_t>::invalid() to signal that the Map should "
+        "compute the global number of elements.  Process 0 set numGlobalElements"
+        " = " << proc0NumGlobalElements << ".  The calling process "
+        << comm->getRank () << " set numGlobalElements = " << numGlobalElements
+        << ".  The min and max values over all processes are "
+        << minNumGlobalElements << " resp. " << maxNumGlobalElements << ".");
 
       GO proc0IndexBase = indexBase;
       broadcast<int, GO> (*comm_, 0, outArg (proc0IndexBase));
@@ -262,24 +262,24 @@ namespace Tpetra {
       reduceAll<int, GO> (*comm, REDUCE_MAX, indexBase, outArg (maxIndexBase));
       TEUCHOS_TEST_FOR_EXCEPTION(
         minIndexBase != maxIndexBase || indexBase != minIndexBase,
-        std::invalid_argument, 
-	"Tpetra::Map constructor: "
-	"All processes must provide the same indexBase argument.  "
-	"Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
-	"process " << comm->getRank () << " set indexBase = " << indexBase 
-	<< ".  The min and max values over all processes are " 
-	<< minIndexBase << " resp. " << maxIndexBase << ".");
+        std::invalid_argument,
+        "Tpetra::Map constructor: "
+        "All processes must provide the same indexBase argument.  "
+        "Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
+        "process " << comm->getRank () << " set indexBase = " << indexBase
+        << ".  The min and max values over all processes are "
+        << minIndexBase << " resp. " << maxIndexBase << ".");
 
       // Make sure that the sum of numLocalElements over all processes
       // equals numGlobalElements.
       TEUCHOS_TEST_FOR_EXCEPTION(
-        numGlobalElements != GSTI && debugGlobalSum != numGlobalElements, 
-	std::invalid_argument, 
-	"Tpetra::Map constructor: The sum of numLocalElements over all "
-	"processes = " << debugGlobalSum << " != numGlobalElements = " 
-	<< numGlobalElements << ".  If you would like this constructor to "
-	"compute numGlobalElements for you, you may set numGlobalElements = "
-	"Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid() on input.");
+        numGlobalElements != GSTI && debugGlobalSum != numGlobalElements,
+        std::invalid_argument,
+        "Tpetra::Map constructor: The sum of numLocalElements over all "
+        "processes = " << debugGlobalSum << " != numGlobalElements = "
+        << numGlobalElements << ".  If you would like this constructor to "
+        "compute numGlobalElements for you, you may set numGlobalElements = "
+        "Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid() on input.");
     }
 #endif // HAVE_TPETRA_DEBUG
 
@@ -294,7 +294,7 @@ namespace Tpetra {
 
     // Compute my local offset.  This is an inclusive scan, so to get
     // the final offset, we subtract off the input.
-    GO scanResult = 0; 
+    GO scanResult = 0;
     scan<int, GO> (*comm, REDUCE_SUM, numLocalElements, outArg (scanResult));
     const GO myOffset = scanResult - numLocalElements;
 
@@ -308,17 +308,17 @@ namespace Tpetra {
       const int numProcs = comm->getSize ();
       GST globalSum = scanResult;
       if (numProcs > 1) {
-	broadcast (*comm, numProcs - 1, outArg (globalSum));
+        broadcast (*comm, numProcs - 1, outArg (globalSum));
       }
       numGlobalElements_ = globalSum;
 
 #ifdef HAVE_TPETRA_DEBUG
       // No need for an all-reduce here; both come from collectives.
       TEUCHOS_TEST_FOR_EXCEPTION(
-        globalSum != debugGlobalSum, std::logic_error, 
-	"Tpetra::Map constructor (contiguous nonuniform): "
-	"globalSum = " << globalSum << " != debugGlobalSum = " << debugGlobalSum
-	<< ".  Please report this bug to the Tpetra developers.");
+        globalSum != debugGlobalSum, std::logic_error,
+        "Tpetra::Map constructor (contiguous nonuniform): "
+        "globalSum = " << globalSum << " != debugGlobalSum = " << debugGlobalSum
+        << ".  Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
     }
     numLocalElements_ = numLocalElements;
@@ -347,16 +347,16 @@ namespace Tpetra {
     comm->barrier ();
     for (int p = 0; p < numProcs; ++p) {
       if (p == myRank) {
-	std::ostringstream os;
-	os << "- Proc " << comm->getRank () << ": " << endl
-	   << "  - numGlobalElements_: " << numGlobalElements_ << endl
-	   << "  - numLocalElements_: " << numLocalElements_ << endl
-	   << "  - indexBase_: " << indexBase_ << endl
-	   << "  - minAllGID_: " << minAllGID_ << endl
-	   << "  - maxAllGID_: " << maxAllGID_ << endl
-	   << "  - minMyGID_: " << minMyGID_ << endl
-	   << "  - maxMyGID_: " << maxMyGID_ << endl;
-	cerr << os.str ();
+        std::ostringstream os;
+        os << "- Proc " << comm->getRank () << ": " << endl
+           << "  - numGlobalElements_: " << numGlobalElements_ << endl
+           << "  - numLocalElements_: " << numLocalElements_ << endl
+           << "  - indexBase_: " << indexBase_ << endl
+           << "  - minAllGID_: " << minAllGID_ << endl
+           << "  - maxAllGID_: " << maxAllGID_ << endl
+           << "  - minMyGID_: " << minMyGID_ << endl
+           << "  - maxMyGID_: " << maxMyGID_ << endl;
+        cerr << os.str ();
       }
       comm->barrier ();
       comm->barrier ();
@@ -406,8 +406,8 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     // Keep this for later debug checks.
     GST debugGlobalSum = 0; // Will be global sum of numLocalElements
-    reduceAll<int, GST> (*comm, REDUCE_SUM, as<GST> (numLocalElements), 
-			 outArg (debugGlobalSum));
+    reduceAll<int, GST> (*comm, REDUCE_SUM, as<GST> (numLocalElements),
+                         outArg (debugGlobalSum));
     // In debug mode only, check whether numGlobalElements and
     // indexBase are the same over all processes in the communicator.
     {
@@ -419,15 +419,15 @@ namespace Tpetra {
       reduceAll<int, GST> (*comm, REDUCE_MAX, numGlobalElements, outArg (maxNumGlobalElements));
       TEUCHOS_TEST_FOR_EXCEPTION(
         minNumGlobalElements != maxNumGlobalElements || numGlobalElements != minNumGlobalElements,
-	std::invalid_argument,
-	"Tpetra::Map constructor: All processes must provide the same number "
-	"of global elements.  This is true even if that argument is Teuchos::"
-	"OrdinalTraits<global_size_t>::invalid() to signal that the Map should "
-	"compute the global number of elements.  Process 0 set numGlobalElements"
-	" = " << proc0NumGlobalElements << ".  The calling process " 
-	<< comm->getRank () << " set numGlobalElements = " << numGlobalElements 
-	<< ".  The min and max values over all processes are " 
-	<< minNumGlobalElements << " resp. " << maxNumGlobalElements << ".");
+        std::invalid_argument,
+        "Tpetra::Map constructor: All processes must provide the same number "
+        "of global elements.  This is true even if that argument is Teuchos::"
+        "OrdinalTraits<global_size_t>::invalid() to signal that the Map should "
+        "compute the global number of elements.  Process 0 set numGlobalElements"
+        " = " << proc0NumGlobalElements << ".  The calling process "
+        << comm->getRank () << " set numGlobalElements = " << numGlobalElements
+        << ".  The min and max values over all processes are "
+        << minNumGlobalElements << " resp. " << maxNumGlobalElements << ".");
 
       GO proc0IndexBase = indexBase;
       broadcast<int, GO> (*comm_, 0, outArg (proc0IndexBase));
@@ -437,24 +437,24 @@ namespace Tpetra {
       reduceAll<int, GO> (*comm, REDUCE_MAX, indexBase, outArg (maxIndexBase));
       TEUCHOS_TEST_FOR_EXCEPTION(
         minIndexBase != maxIndexBase || indexBase != minIndexBase,
-        std::invalid_argument, 
-	"Tpetra::Map constructor: "
-	"All processes must provide the same indexBase argument.  "
-	"Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
-	"process " << comm->getRank () << " set indexBase = " << indexBase 
-	<< ".  The min and max values over all processes are " 
-	<< minIndexBase << " resp. " << maxIndexBase << ".");
+        std::invalid_argument,
+        "Tpetra::Map constructor: "
+        "All processes must provide the same indexBase argument.  "
+        "Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
+        "process " << comm->getRank () << " set indexBase = " << indexBase
+        << ".  The min and max values over all processes are "
+        << minIndexBase << " resp. " << maxIndexBase << ".");
 
       // Make sure that the sum of numLocalElements over all processes
       // equals numGlobalElements.
       TEUCHOS_TEST_FOR_EXCEPTION(
-        ((numGlobalElements != GSTI) && (debugGlobalSum != numGlobalElements)), 
-	std::invalid_argument, 
-	"Tpetra::Map constructor: The sum of entryList.size() over all "
-	"processes = " << debugGlobalSum << " != numGlobalElements = " 
-	<< numGlobalElements << ".  If you would like this constructor to "
-	"compute numGlobalElements for you, you may set numGlobalElements = "
-	"Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid() on input.");
+        ((numGlobalElements != GSTI) && (debugGlobalSum != numGlobalElements)),
+        std::invalid_argument,
+        "Tpetra::Map constructor: The sum of entryList.size() over all "
+        "processes = " << debugGlobalSum << " != numGlobalElements = "
+        << numGlobalElements << ".  If you would like this constructor to "
+        "compute numGlobalElements for you, you may set numGlobalElements = "
+        "Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid() on input.");
     }
 #endif // HAVE_TPETRA_DEBUG
 
@@ -466,8 +466,8 @@ namespace Tpetra {
     if (numGlobalElements != GSTI) {
       numGlobalElements_ = numGlobalElements; // Use the user's value.
     } else { // The user wants us to compute the sum.
-      reduceAll<int, GST> (*comm, REDUCE_SUM, as<GST> (numLocalElements), 
-			   outArg (numGlobalElements_));
+      reduceAll<int, GST> (*comm, REDUCE_SUM, as<GST> (numLocalElements),
+                           outArg (numGlobalElements_));
     }
 
     // mfh 20 Feb 2013: We've never quite done the right thing for
@@ -478,7 +478,7 @@ namespace Tpetra {
     // map to the same LID.  Furthermore, the order of the input GID
     // list matters, so it's not desirable to sort for determining
     // uniqueness.
-    // 
+    //
     // I've chosen for now to write this code as if the input GID list
     // contains no duplicates.  If this is not desired, we could use
     // the lookup table itself to determine uniqueness: If we haven't
@@ -499,14 +499,14 @@ namespace Tpetra {
       minMyGID_ = entryList[0];
       maxMyGID_ = entryList[0];
       for (size_t i = 0; i < numLocalElements_; ++i) {
-	const GO curGid = entryList[i];
-	const LO curLid = as<LO> (i);
+        const GO curGid = entryList[i];
+        const LO curLid = as<LO> (i);
 
         lgMap_[curLid] = curGid; // LID -> GID table
         glMap_->add (curGid, curLid); // GID -> LID table
 
-	// While iterating through entryList, we compute its
-	// (process-local) min and max elements.
+        // While iterating through entryList, we compute its
+        // (process-local) min and max elements.
         if (curGid < minMyGID_) {
           minMyGID_ = curGid;
         }
@@ -553,7 +553,7 @@ namespace Tpetra {
       reduceAll (*comm, REDUCE_MAX, 2, minMaxInput, minMaxOutput);
       minAllGID_ = -minMaxOutput[0];
       maxAllGID_ = minMaxOutput[1];
-    } 
+    }
     else { // unsigned; use two reductions
       // This is always correct, no matter the signedness of GO.
       reduceAll (*comm_, REDUCE_MIN, minMyGID_, outArg (minAllGID_));
@@ -581,7 +581,7 @@ namespace Tpetra {
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  LocalOrdinal 
+  LocalOrdinal
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   getLocalElement(GlobalOrdinal globalIndex) const {
     if (isContiguous()) {
@@ -590,7 +590,7 @@ namespace Tpetra {
       }
       return Teuchos::as<LocalOrdinal>(globalIndex - getMinGlobalIndex());
     }
-    else if (globalIndex >= firstContiguousGID_ && 
+    else if (globalIndex >= firstContiguousGID_ &&
              globalIndex <= lastContiguousGID_) {
       return Teuchos::as<LocalOrdinal>(globalIndex - firstContiguousGID_);
     }
@@ -604,7 +604,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  GlobalOrdinal 
+  GlobalOrdinal
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   getGlobalElement(LocalOrdinal localIndex) const {
     if (localIndex < getMinLocalIndex() || localIndex > getMaxLocalIndex()) {
@@ -619,7 +619,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool 
+  bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   isNodeLocalElement (LocalOrdinal localIndex) const {
     if (localIndex < getMinLocalIndex() || localIndex > getMaxLocalIndex()) {
@@ -630,7 +630,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool 
+  bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   isNodeGlobalElement (GlobalOrdinal globalIndex) const {
     if (isContiguous()) {
@@ -648,7 +648,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool 
+  bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const {
     using Teuchos::outArg;
@@ -718,9 +718,9 @@ namespace Tpetra {
         }
       }
       else {
-	// FIXME (mfh 20 Feb 2013) Calling getNodeElementList() is
-	// unnecessary if the Map has contiguous GIDs.  It also forces
-	// the Map to create and cache the GID list.
+        // FIXME (mfh 20 Feb 2013) Calling getNodeElementList() is
+        // unnecessary if the Map has contiguous GIDs.  It also forces
+        // the Map to create and cache the GID list.
 
         /* Note: std::equal requires that the latter range is as large as the former.
          * We know the ranges have equal length, because they have the same number of
@@ -793,10 +793,10 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void 
+  void
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  describe (Teuchos::FancyOStream &out, 
-	    const Teuchos::EVerbosityLevel verbLevel) const 
+  describe (Teuchos::FancyOStream &out,
+            const Teuchos::EVerbosityLevel verbLevel) const
   {
     using std::endl;
     using std::setw;
@@ -867,6 +867,96 @@ namespace Tpetra {
         comm_->barrier();
         comm_->barrier();
       }
+    }
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+  Map<LocalOrdinal, GlobalOrdinal, Node>::
+  removeEmptyProcesses () const
+  {
+    using Teuchos::Comm;
+    using Teuchos::null;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef Teuchos::OrdinalTraits<GlobalOrdinal> OTG;
+
+    // Create the new communicator.  split() returns a valid
+    // communicator on all processes.  On processes where color == 0,
+    // ignore the result.  Passing key == 0 tells MPI to order the
+    // processes in the new communicator by their rank in the old
+    // communicator.
+    const int color = (numLocalElements_ == 0) ? 0 : 1;
+    // MPI_Comm_split must be called collectively over the original
+    // communicator.  We can't just call it on processes with color
+    // one, even though we will ignore its result on processes with
+    // color zero.
+    RCP<const Comm<int> > newComm = comm_->split (color, 0);
+    if (color == 0) {
+      newComm = null;
+    }
+
+    // Create the Map to return.
+    if (newComm.is_null ()) {
+      return null; // my process does not participate in the new Map
+    } else {
+      // The default constructor that's useful for clone() above is
+      // also useful here.
+      RCP<Map> map            = rcp (new Map ());
+
+      map->comm_              = newComm;
+      map->indexBase_         = indexBase_;
+      map->numGlobalElements_ = numGlobalElements_;
+      map->numLocalElements_  = numLocalElements_;
+      map->minMyGID_          = minMyGID_;
+      map->maxMyGID_          = maxMyGID_;
+      map->minAllGID_         = minAllGID_;
+      map->maxAllGID_         = maxAllGID_;
+      map->firstContiguousGID_= firstContiguousGID_;
+      map->lastContiguousGID_ = lastContiguousGID_;
+
+      // Contiguity hasn't changed.  The directory has changed, but
+      // we've taken care of that above.
+      map->contiguous_ = contiguous_;
+
+      // If the original Map was NOT distributed, then the new Map
+      // cannot be distributed.
+      //
+      // If the number of processes in the new communicator is 1, then
+      // the new Map is not distributed.
+      //
+      // Otherwise, we have to check the new Map using an all-reduce
+      // (over the new communicator).  For example, the original Map
+      // may have had some processes with zero elements, and all other
+      // processes with the same number of elements as in the whole
+      // Map.  That Map is technically distributed, because of the
+      // processes with zero elements.  Removing those processes would
+      // make the new Map locally replicated.
+      if (! distributed_ || newComm->getSize () == 1) {
+        map->distributed_ = false;
+      } else {
+        const int iOwnAllGids = (numLocalElements_ == numGlobalElements_) ? 1 : 0;
+        int allProcsOwnAllGids = 0;
+        reduceAll<int, int> (*newComm, REDUCE_MIN, iOwnAllGids, outArg (allProcsOwnAllGids));
+        map->distributed_ = (allProcsOwnAllGids == 1) ? false : true;
+      }
+
+      map->lgMap_ = lgMap_;
+      map->glMap_ = glMap_;
+      map->node_ = node_;
+
+      // This is collective on all processes in the new communicator.
+      //
+      // FIXME (mfh 26 Mar 2013) It should be possible to "filter" the
+      // directory more efficiently than just recreating it.  If
+      // directory recreation proves a bottleneck, we can always
+      // revisit this.  On the other hand, this is only collective
+      // over the new, presumably much smaller communicator, so it may
+      // not be worth the effort to optimize.
+      map->setupDirectory ();
+      return map;
     }
   }
 
@@ -961,9 +1051,9 @@ Tpetra::createUniformContigMap(global_size_t numElements, const Teuchos::RCP< co
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createUniformContigMapWithNode (global_size_t numElements, 
-					const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
-					const Teuchos::RCP<Node>& node) 
+Tpetra::createUniformContigMapWithNode (global_size_t numElements,
+                                        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                                        const Teuchos::RCP<Node>& node)
 {
   using Teuchos::rcp;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
@@ -1022,10 +1112,10 @@ Tpetra::createNonContigMapWithNode(const Teuchos::ArrayView<const GlobalOrdinal>
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef Tpetra::global_size_t GST;
   return rcp (new map_type (Teuchos::OrdinalTraits<GST>::invalid (),
-			    elementList,
-			    Teuchos::OrdinalTraits<GST>::zero (),
-			    comm, 
-			    node));
+                            elementList,
+                            Teuchos::OrdinalTraits<GST>::zero (),
+                            comm,
+                            node));
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1096,8 +1186,8 @@ Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdina
 
   const global_size_t GINV =
     Teuchos::OrdinalTraits<global_size_t>::invalid ();
-  return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (), 
-			    M->getComm (), M->getNode ()));
+  return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
+                            M->getComm (), M->getNode ()));
 }
 
 //
