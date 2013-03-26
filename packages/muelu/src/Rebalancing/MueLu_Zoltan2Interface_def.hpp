@@ -90,8 +90,20 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix>         A = Get< RCP<Matrix> >(level, "A");
-    RCP<const Map>    map = A->getRowMap();
     GO           numParts = Get<GO>(level, "number of partitions");
+    LocalOrdinal  blkSize = A->GetFixedBlockSize();
+
+    if (!IsAvailable(level, "Coordinates")) {
+      std::cout << GetFactory("Coordinates") << std::endl;
+
+      level.print(*getOStream());
+      throw Exceptions::RuntimeError("MueLu::ZoltanInterface::Build(): no coordinates available");
+    }
+
+    RCP<MultiVector> coords = Get< RCP<MultiVector> >(level, "Coordinates");
+    size_t              dim = coords->getNumVectors();
+
+    RCP<const Map> map = coords->getMap();
 
     if (numParts == 1) {
       // Single processor, decomposition is trivial: all zeros
@@ -100,20 +112,35 @@ namespace MueLu {
       return;
     }
 
-    RCP<MultiVector> multiVectorXYZ = Get< RCP<MultiVector> >(level, "Coordinates");
-    size_t           dim = multiVectorXYZ->getNumVectors();
-    LocalOrdinal blkSize = A->GetFixedBlockSize();
+    GO numElements = map->getNodeNumElements();
+    std::vector<const SC*> values(dim), weights(1);
+    std::vector<int>       strides;
 
-    Array<ArrayRCP<SC> > XYZ(dim);
-    if (IsAvailable(level, "Coordinates")) {
-      for (size_t i = 0; i < dim; i++)
-        XYZ[i] = Utils::CoalesceCoordinates(multiVectorXYZ->getDataNonConst(i), 1);
+    for (size_t k = 0; k < dim; k++)
+      values[k] = coords->getData(k).get();
 
-    } else {
-      std::cout << GetFactory("Coordinates") << std::endl;
+    Array<SC> numEntriesPerRow(numElements);
+    for (LO i = 0; i < numElements; i++)
+      for (size_t j = 0; j < blkSize; j++)
+        numEntriesPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
+    weights[0] = numEntriesPerRow.getRawPtr();
 
-      level.print(*getOStream());
-      throw Exceptions::RuntimeError("MueLu::ZoltanInterface::Build(): no coordinates available");
+    {
+      std::ostringstream ss;
+      ss << coords->getMap()->getComm()->getRank() << ".log";
+      std::ofstream ofs(ss.str().c_str());
+
+      ofs << numElements << " " << dim << std::endl;
+      Teuchos::ArrayView<const GO> elements = map->getNodeElementList();
+      for (LO i = 0; i < numElements; i++)
+        ofs << elements[i] << std::endl;
+      for (size_t k = 0; k < dim; k++) {
+        const SC* xyz = coords->getData(k).get();
+        for (LO i = 0; i < numElements; i++)
+          ofs << xyz[i] << std::endl;
+      }
+      for (LO i = 0; i < numElements; i++)
+        ofs << weights[0][i] << std::endl;
     }
 
     Teuchos::ParameterList params;
@@ -159,39 +186,27 @@ namespace MueLu {
 
     params.set("partitioning_approach",   "partition");
     params.set("compute_metrics",         "true");
-    // Setting "parallel_part_calculation_count" fixes the hang up in solve()
-    // Siva:
-    //    "The default value for it is wrong, I will fix the default values.
-    //     The actual value should be much more than one for good performance,
-    //     but I will take care of it in the default and you can remove it then."
-    // params.set("parallel_part_calculation_count", 1);
 
     typedef Zoltan2::BasicCoordinateInput<Zoltan2::BasicUserTypes<SC,GO,LO,GO> > InputAdapterType;
     typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;
 
-    GO numElements = map->getNodeNumElements();
-    InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), XYZ[0].get(), (dim >= 2 ? XYZ[1].get() : NULL), (dim >= 3 ? XYZ[2].get() : NULL));
+    InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), values, strides, weights, strides);
 
     const Teuchos::MpiComm<int>& comm = static_cast<const Teuchos::MpiComm<int>& >(*map->getComm());
     RCP<ProblemType> problem(new ProblemType(&adapter, &params, *comm.getRawMpiComm()));
 
     problem->solve();
 
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition;
-    // if (newDecomp) {
-    if (true) {
-      decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map, false);
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(), false);
+    ArrayRCP<GO>                      decompEntries = decomposition->getDataNonConst(0);
 
-      // FIXME: int should not be hardcoded
-      const int * parts = problem->getSolution().getPartList();
+    const zoltan2_partId_t * parts = problem->getSolution().getPartList();
 
-      ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-      for (GO localID = 0; localID < numElements; localID++) {
-        int partNum = parts[localID];
+    for (GO localID = 0; localID < numElements; localID++) {
+      int partNum = parts[localID];
 
-        for (LO j = 0; j < blkSize; j++)
-          decompEntries[localID + j] = partNum;
-      }
+      for (LO j = 0; j < blkSize; j++)
+        decompEntries[localID*blkSize + j] = partNum;
     }
 
     Set(level, "Partition", decomposition);
