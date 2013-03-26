@@ -155,12 +155,12 @@ namespace Tpetra {
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Teuchos::Map<LocalOrdinal, GlobalOrdinal, Node> >
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  filterEmptyProcesses ()
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  removeEmptyProcesses (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Tpetra::DistObject::filterEmptyProcesses: Not implemented");
+      "Tpetra::DistObject::removeEmptyProcesses: Not implemented");
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

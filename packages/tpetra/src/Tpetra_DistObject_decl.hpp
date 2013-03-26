@@ -319,7 +319,7 @@ namespace Tpetra {
     /// \brief Print a descriptiion of this object to the given output stream.
     ///
     /// We declare this method virtual so that subclasses of
-    /// DistObject may override it.
+    /// Distobject may override it.
     virtual void
     describe (Teuchos::FancyOStream &out,
               const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
@@ -329,30 +329,47 @@ namespace Tpetra {
     //! @name Methods for use only by experts
     //@{
 
-    /// \brief "Filter out" processes which contain no elements in this object's Map.
+    /// \brief Remove processes which contain no elements in this object's Map.
     ///
     /// \warning This method is ONLY for use by experts.
     /// \warning We make NO promises of backwards compatibility.
     ///   This method may change or disappear at any time.
     ///
     /// On input, this object is distributed over the Map returned by
-    /// getMap().  Some processes in that Map's communicator may
-    /// contain zero elements of the Map.  Create a new communicator
-    /// and Map which excludes those processes with zero elements.
-    /// Free any residual data stored on those process, set this
-    /// object's Map to the new Map, and return the new Map.
+    /// getMap() (the "original Map," with its communicator, the
+    /// "original communicator").  The input \c newMap of this method
+    /// <i>must</i> be the same as the result of calling
+    /// <tt>getMap()->removeEmptyProcesses()</tt>.  On processes in
+    /// the original communicator which contain zero elements
+    /// ("excluded processes," as opposed to "included processes"),
+    /// the input \c newMap must be \c Teuchos::null (which is what
+    /// <tt>getMap()->removeEmptyProcesses()</tt> returns anyway).
     ///
-    /// This method has collective semantics.  On exit, the only
-    /// method of this object which is safe to call on the excluded
-    /// processes is the destructor.  This implies that subclasses'
-    /// destructors must not contain communication operations.
+    /// On included processes, reassign this object's Map (that would
+    /// be returned by getMap()) to the input \c newMap, and do any
+    /// work that needs to be done to restore correct semantics.  On
+    /// excluded processes, free any data that needs freeing, and do
+    /// any other work that needs to be done to restore correct
+    /// semantics.
+    ///
+    /// This method has collective semantics over the original
+    /// communicator.  On exit, the only method of this object which
+    /// is safe to call on excluded processes is the destructor.  This
+    /// implies that subclasses' destructors must not contain
+    /// communication operations.
     ///
     /// \return The object's new Map.  Its communicator is a new
     ///   communicator, distinct from the old Map's communicator,
     ///   which contains a subset of the processes in the old
     ///   communicator.
-    Teuchos::RCP<const Teuchos::Map<LocalOrdinal, GlobalOrdinal, Node> >
-    filterEmptyProcesses ();
+    ///
+    /// \note This is an in-place operation, unlike Map's method with
+    ///   the same name.
+    ///
+    /// \note To implementers of DistObject subclasses: The default
+    ///   implementation of this class throws std::logic_error.
+    virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
+    removeEmptyProcesses (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
     //@}
 
   protected:
