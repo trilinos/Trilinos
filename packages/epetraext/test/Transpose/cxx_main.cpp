@@ -126,8 +126,7 @@ int main(int argc, char *argv[])
   double start = timer.ElapsedTime();
 
   //bool IgnoreNonLocalCols = false;
-  bool MakeDataContiguous = true;
-  EpetraExt::RowMatrix_Transpose transposer( MakeDataContiguous );
+  EpetraExt::RowMatrix_Transpose transposer;
 
   if (verbose) cout << "\nTime to construct transposer  = " << timer.ElapsedTime() - start << endl;
   
@@ -179,7 +178,7 @@ int main(int argc, char *argv[])
   }
 
   start = timer.ElapsedTime();
-  EpetraExt::RowMatrix_Transpose transposer1( MakeDataContiguous );
+  EpetraExt::RowMatrix_Transpose transposer1;
 
   Epetra_CrsMatrix & transA1 = dynamic_cast<Epetra_CrsMatrix&>(transposer1(*Avbr));
   if (verbose) cout << "\nTime to create transpose matrix  = " << timer.ElapsedTime() - start << endl;
