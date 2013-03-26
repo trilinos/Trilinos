@@ -66,7 +66,7 @@ ExplicitTranspose(
   jac_trans(),
   prec_trans(),
   scaling_trans(),
-  transposer(true) // make data contiguous
+  transposer() // make data contiguous
 {
   // Get transpose scaling object
   if (solverParams->isParameter("Transpose Scaling"))

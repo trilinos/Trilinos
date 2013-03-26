@@ -95,16 +95,11 @@ namespace MueLu {
         Teuchos::TimeMonitor tmm (*Teuchos::TimeMonitor::getNewCounter ("ZZ Tpetra Transpose Only"));
         Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node,
           LocalMatOps> transposer (tpetraOp);
-        const Tpetra::OptimizeOption opt = optimizeTranspose ?
-          Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage;
-        A = transposer.createTranspose (opt);
+        A = transposer.createTranspose();
       }
       RCP<Xpetra::TpetraCrsMatrix<SC> > AA = rcp(new Xpetra::TpetraCrsMatrix<SC>(A) );
       RCP<Xpetra::CrsMatrix<SC> > AAA = rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
       RCP<Xpetra::CrsMatrixWrap<SC> > AAAA = rcp( new Xpetra::CrsMatrixWrap<SC> (AAA) );
-      if (! AAAA->isFillComplete ()) {
-        AAAA->fillComplete (Op->getRangeMap (), Op->getDomainMap ());
-      }
       return AAAA;
 #else
       throw(Exceptions::RuntimeError("Tpetra"));
