@@ -669,7 +669,7 @@ int pqJagged_getNumThreads(){
 #pragma omp parallel shared(numThreads)
   {
     numThreads = omp_get_num_threads();
-    cout << "threading:" << numThreads << endl;
+    //cout << "threading:" << numThreads << endl;
   }
 
 #endif
@@ -1308,7 +1308,7 @@ void pqJagged_1DPart_getPartWeights(
       myPartWeights[i] = 0;
     }
 
-
+  //cout << "pqJagged_uniformWeights:" << pqJagged_uniformWeights << endl;
   for(partId_t i = 0; i < noCuts; ++i){
     //if(isDone[i]) continue;
     myLeftClosest[i] = maxScalar;
@@ -1333,6 +1333,7 @@ void pqJagged_1DPart_getPartWeights(
 
       partId_t lc = 0;
       partId_t uc = noCuts - 1;
+
       scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
       bool isInserted = false;
       bool onLeft = false;
@@ -2934,11 +2935,13 @@ void AlgPQJagged(
   typedef typename Adapter::gno_t gno_t;
 
   typedef typename Adapter::lno_t lno_t;
+  /*
   if(comm->getRank() == 0){
     cout << "size of gno:" << sizeof(gno_t) << endl;
     cout << "size of lno:" << sizeof(lno_t) << endl;
     cout << "size of scalar_t:" << sizeof(scalar_t) << endl;
   }
+  */
   env->timerStart(MACRO_TIMERS, "PQJagged Total");
 
 
@@ -3020,10 +3023,10 @@ void AlgPQJagged(
   if (comm->getRank() == 0){
     //cout <<"c:" << pqJagged_coordinates[0][0]  << " " << pqJagged_coordinates[1][0]  << " "<< pqJagged_coordinates[2][0] << endl;
   }
-
+/*
   if (comm->getRank() == 0)
   cout << "concurrent:" << concurrentPartCount << endl;
-
+*/
   // coordinates of the cut lines. First one is the min, last one is max coordinate.
   // kddnote if (keep_cuts)
   // coordinates of the cut lines.
@@ -3293,7 +3296,7 @@ void AlgPQJagged(
         pqJagged_getLocalMinMaxTotalCoord<scalar_t, lno_t>(
             partitionedPointCoordinates,
             pqCoord,
-            pqJagged_uniformWeights,
+            pqJagged_uniformWeights[0],
             pqJagged_weights[0],
             numThreads,
             coordinateBegin,
@@ -3418,6 +3421,7 @@ void AlgPQJagged(
       //}
 
       //env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_chunks");
+      
       for(int kk = 0; kk < concurrentPart; ++kk){
 
         if(globalMinMaxTotal[kk] > globalMinMaxTotal[kk + concurrentPart]) {
@@ -3485,10 +3489,7 @@ void AlgPQJagged(
 
         currentOut += partNo[i] ;
       }
-/*
-      if(myRank == 0)
-        cout << endl;
-*/
+
     } // end of this partitioning dimension
 
     // swap the indices' memory
