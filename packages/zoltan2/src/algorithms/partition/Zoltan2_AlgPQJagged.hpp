@@ -404,6 +404,8 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
   if (pe)
     //aa = pe->getValue(&aa);
     concurrentPartCount = pe->getValue(&concurrentPartCount);
+  else
+    concurrentPartCount = 1;
 
   //concurrentPartCount = partId_t(aa);
 
@@ -2984,8 +2986,15 @@ void AlgPQJagged(
       pqJagged_coordinates,criteriaDim, pqJagged_weights,pqJagged_gnos, ignoreWeights,
       pqJagged_uniformWeights, pqJagged_uniformParts, pqJagged_partSizes
   );
-  
-  int numThreads = pqJagged_getNumThreads();
+
+  int numThreads = 1;
+
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel shared(numThreads)
+  {
+    numThreads = omp_get_num_threads();
+  }
+#endif
 
   partId_t totalDimensionCut = 0;
   partId_t totalPartCount = 1;

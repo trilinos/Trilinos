@@ -155,15 +155,12 @@ prec.compute ();
 \section Ifpack_Relaxation_Algorithms Algorithms
 
 We now briefly describe the relaxation algorithms this class
-implements.  Consider a linear system of type
-\f[
-A x = b,
-\f]
-where \f$A\f$ is a square matrix, and \f$x\f$, \f$b\f$ are two vectors
-of compatible dimensions.  Suppose that \f$x^{(0)}\f$ is the starting
-vector and \f$x^{(k)}\f$ is the approximate solution for \f$x\f$
-computed by iteration $k+1$.  Here, \f$x^{(k)}_i\f$ is the $i$-th
-element of vector \f$x^{(k)}\f$.
+implements.  Consider the linear system \f$Ax=b\f$, where \f$A\f$ is a
+square matrix, and \f$x\f$ and \f$b\f$ are two vectors of compatible
+dimensions.  Suppose that \f$x^{(0)}\f$ is the starting vector and
+\f$x^{(k)}\f$ is the approximate solution for \f$x\f$ computed by
+iteration $k+1$ of whatever relaxation method we are using.  Here,
+\f$x^{(k)}_i\f$ is the $i$-th element of vector \f$x^{(k)}\f$.
 
 The Jacobi method computes
 \f[
@@ -208,7 +205,7 @@ Jacobi or SOR.  For example, the computational kernels for the above SOR
 sweeps actually do not require branches in the inner loop to distinguish
 between the lower triangle, diagonal, and upper triangle of A.  One can
 see this by multiplying through the forward sweep expression by \f$A_{ii}\f$
-and combining terms, then dividing through again by \fA_{ii}\f$.  This
+and combining terms, then dividing through again by \f$A_{ii}\f$.  This
 results in the expression
 \f[
 x^{(k+1)}_i = x^{(k)}_i + \omega b_i - \frac{\omega}{A_{ii}} ( \sum_{j \geq i} A_{ij} x^{(k)}_j + \sum_{j < i} x^{(k+1)}_j ).

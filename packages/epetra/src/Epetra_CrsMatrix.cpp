@@ -4581,18 +4581,22 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
 	// on the LIDs directly.
 	int insertPoint = -1;
 	if(UseLL)  {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 	  long long jg = D.RowMap_.GID64(i);
 	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements64(), NumIndices, insertPoint)>-1) {
 	    D.NumMyBlockDiagonals_++;
 	    D.NumMyDiagonals_ ++; 
 	  }
+#endif
 	}
 	else {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 	  int jg = D.RowMap_.GID(i);
 	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements(), NumIndices, insertPoint)>-1) {
 	    D.NumMyBlockDiagonals_++;
 	    D.NumMyDiagonals_ ++; 
 	  }
+#endif
 	}
       }
     }
@@ -4977,9 +4981,8 @@ int Epetra_CrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & 
     }
   }
   else {
-    int_type* MyGlobalElements;
-    if (!UseLL) MyGlobalElements = (int_type*)domainMap.MyGlobalElements();
-    else MyGlobalElements = (int_type*)domainMap.MyGlobalElements64();
+    int_type* MyGlobalElements = 0;
+    domainMap.MyGlobalElementsPtr(MyGlobalElements);
 
     int* ElementSizeList = 0;
     if(DoSizes) 
@@ -5156,8 +5159,17 @@ int Epetra_CrsMatrix::UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& 
 
     for(j=Source_rowptr[i]; j<Source_rowptr[i+1]; j++) {
       CSR_vals[ToRow + j - FromRow]                = Source_vals[j];      
-      if(UseLL) CSR_colind_LL[ToRow + j - FromRow] = SourceMatrix.GCID64(Source_colind[j]);
-      else      CSR_colind[ToRow + j - FromRow]    = SourceMatrix.GCID(Source_colind[j]);
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      if(UseLL)
+          CSR_colind_LL[ToRow + j - FromRow] = SourceMatrix.GCID64(Source_colind[j]);
+      else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+      if(!UseLL)
+          CSR_colind[ToRow + j - FromRow]    = SourceMatrix.GCID(Source_colind[j]);
+      else
+#endif
+      throw ReportError("Epetra_CrsMatrix: Neither 32 bit nor 64 bit indices available",-3);
       pids[ToRow + j - FromRow]                    = (SourcePids[Source_colind[j]] != MyPID) ? SourcePids[Source_colind[j]] : -1;
     }
   }
@@ -5170,8 +5182,18 @@ int Epetra_CrsMatrix::UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& 
 
     for(j=Source_rowptr[FromLID]; j<Source_rowptr[FromLID+1]; j++) {
       CSR_vals[ToRow + j - FromRow]                = Source_vals[j];      
-      if(UseLL) CSR_colind_LL[ToRow + j - FromRow] = SourceMatrix.GCID64(Source_colind[j]);
-      else      CSR_colind[ToRow + j - FromRow]    = SourceMatrix.GCID(Source_colind[j]);
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      if(UseLL)
+          CSR_colind_LL[ToRow + j - FromRow] = SourceMatrix.GCID64(Source_colind[j]);
+      else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+      if(!UseLL)
+          CSR_colind[ToRow + j - FromRow]    = SourceMatrix.GCID(Source_colind[j]);
+      else
+#endif
+      throw ReportError("Epetra_CrsMatrix: Neither 32 bit nor 64 bit indices available",-3);
       pids[ToRow + j - FromRow]                    = (SourcePids[Source_colind[j]] != MyPID) ? SourcePids[Source_colind[j]] : -1;
     }
   }
@@ -5349,11 +5371,19 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   std::vector<int> RemotePIDs;
   int * pids_ptr = pids.size() ? &pids[0] : 0;
   
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(UseLL) {
     long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;
     LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs,CSR_colind_LL_ptr);
   }
-  else LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs);  
+  else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(!UseLL)
+     LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs);  
+  else
+#endif
+    throw ReportError("Epetra_CrsMatrix: Neither 32 bit nor 64 bit indices available",-3);
 
   /********************************************/
   /**** 5) Call ExpertStaticFillComplete() ****/
@@ -5489,11 +5519,19 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
   std::vector<int> RemotePIDs;
   int * pids_ptr = pids.size() ? &pids[0] : 0;
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(UseLL) {
     long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;
     LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs,CSR_colind_LL_ptr);
   }
-  else LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs);  
+  else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(!UseLL)
+    LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs);  
+  else
+#endif
+    throw ReportError("Epetra_CrsMatrix: Neither 32 bit nor 64 bit indices available",-3);
 
   /********************************************/
   /**** 5) Call ExpertStaticFillComplete() ****/

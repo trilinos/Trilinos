@@ -214,11 +214,24 @@ namespace MueLu {
     GO numPartitions;
     if (IsAvailable(currentLevel, "number of partitions")) {
       numPartitions = Get<GO>(currentLevel, "number of partitions");
+
     } else {
-      if ((GO)A->getGlobalNumRows() < minRowsPerProcessor) numPartitions = 1;
-      else                                                 numPartitions = A->getGlobalNumRows() / minRowsPerProcessor;
+      if ((GO)A->getGlobalNumRows() < minRowsPerProcessor) {
+        // System is too small, migrate it to a single processor
+        numPartitions = 1;
+
+      } else {
+        // Make sure that each processor has approximately minRowsPerProcessor
+        numPartitions = A->getGlobalNumRows() / minRowsPerProcessor;
+      }
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
+
+      // Zoltan2: try to make number of processors to be 2x2x? for pqJagged algorithm
+      // 1x1x2 to 1x1x7 are acceptable
+      if ((numPartitions > 8) && (numPartitions % 4))
+        numPartitions -= numPartitions % 4;
+
       Set(currentLevel, "number of partitions", numPartitions);
     }
     GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;

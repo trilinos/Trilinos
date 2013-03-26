@@ -394,11 +394,12 @@ int main(int argc, char *argv[]) {
 
   // default parameters
   LO SIMPLE_nSweeps = 100;
-  Scalar SIMPLE_omega = 0.02;
+  Scalar SIMPLE_omega = 0.5;
   LO SC_nSweeps = 1;
   Scalar SC_omega = 1.0;
   LO PRED_nSweeps = 3;
   Scalar PRED_omega = 1.0;
+  LO useSIMPLEC = 0;
 
   int SC_bUseDirectSolver = 1;
 
@@ -411,6 +412,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("SchurComp_sweeps",    &SC_nSweeps,"number of sweeps for SIMPLE internal SchurComp solver/smoother (GaussSeidel)");
   clp.setOption("SchurComp_omega",     &SC_omega,  "damping parameter for SIMPLE internal SchurComp solver/smoother (GaussSeidel)");
   clp.setOption("SchurComp_solver",    &SC_bUseDirectSolver,  "if 1: use direct solver for SchurComp equation, otherwise use GaussSeidel smoother (=default)");
+  clp.setOption("useSIMPLEC",    &useSIMPLEC,  "if 1: use SIMPLEC instead of SIMPLE (default = 0 (SIMPLE))");
 
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -517,7 +519,7 @@ int main(int argc, char *argv[]) {
 
   // define SIMPLE Smoother with SIMPLE_nSweeps and SIMPLE_omega as scaling factor
   // AFact_ = Teuchos::null (= default) for the 2x2 blocked operator
-  RCP<SimpleSmoother> SimpleSm = rcp( new SimpleSmoother(SIMPLE_nSweeps,SIMPLE_omega) );
+  RCP<SimpleSmoother> SimpleSm = rcp( new SimpleSmoother(SIMPLE_nSweeps,SIMPLE_omega,useSIMPLEC) );
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(SimpleSm) );
 
@@ -534,7 +536,7 @@ int main(int argc, char *argv[]) {
   RCP<SmootherFactory> SmooPredictFact = rcp( new SmootherFactory(smoProtoPredict) );
   // define temporary FactoryManager that is used as input for BraessSarazin smoother
   RCP<FactoryManager> MPredict = rcp(new FactoryManager());
-  MPredict->SetFactory("A",                 A00Fact);         // SchurComplement operator for correction step (defined as "A")
+  MPredict->SetFactory("A",                 A00Fact);
   MPredict->SetFactory("Smoother",          SmooPredictFact);    // solver/smoother for correction step
   MPredict->SetFactory("PreSmoother",               SmooPredictFact);
   MPredict->SetFactory("PostSmoother",              SmooPredictFact);
@@ -548,6 +550,8 @@ int main(int argc, char *argv[]) {
   // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
   RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
   SFact->SetParameter("omega", Teuchos::ParameterEntry(1.0)); // for Simple, omega is always 1.0 in the SchurComplement
+  if(useSIMPLEC == 1) SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+  else                SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
   SFact->SetFactory("A",MueLu::NoFactory::getRCP());
 
   // define smoother/solver for BraessSarazin
@@ -610,6 +614,11 @@ int main(int argc, char *argv[]) {
 
   Teuchos::Array<Teuchos::ScalarTraits<double>::magnitudeType> test = MueLu::Utils<double, int, int>::ResidualNorm(*bOp, *xtest, *xR);
   *out << "residual norm: " << test[0] << std::endl;
+
+  if (test[0] > 10e-8) {
+    *out << "no convergence" << std::endl;
+    return EXIT_FAILURE;
+  }
 
   return EXIT_SUCCESS;
 }

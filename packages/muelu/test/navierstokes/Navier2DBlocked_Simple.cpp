@@ -689,24 +689,15 @@ int main(int argc, char *argv[]) {
   MPredict->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
 
 
-  RCP<SimpleSmoother> smootherPrototype     = rcp( new SimpleSmoother(3,0.15) );
+  RCP<SimpleSmoother> smootherPrototype     = rcp( new SimpleSmoother(3,0.6) );
   smootherPrototype->SetVelocityPredictionFactoryManager(MPredict);    // set temporary factory manager in BraessSarazin smoother
 
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
-  RCP<SimpleSmoother> coarseSolverPrototype = rcp( new SimpleSmoother(1,0.10) );
+  RCP<SimpleSmoother> coarseSolverPrototype = rcp( new SimpleSmoother(3,0.6) );
 
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
-
-  /*RCP<FactoryManager> MB = rcp(new FactoryManager());
-  MB->SetFactory("A",     SFact);
-  MB->SetFactory("Smoother",    SmooSCFact);
-  MB->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
-  smootherPrototype->SetFactoryManager(MB);
-  coarseSolverPrototype->SetFactoryManager(MB);*/
-
-
 
   // main factory manager
   FactoryManager M;

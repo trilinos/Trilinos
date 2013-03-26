@@ -456,13 +456,13 @@ namespace MueLu {
     LO endLevel = end;
 
     if (startLevel==-1) startLevel = 0;
-    if (endLevel==-1)   endLevel = Levels_.size();
+    if (endLevel==-1)   endLevel = Levels_.size()-1;
 
     TEUCHOS_TEST_FOR_EXCEPTION(startLevel > endLevel, Exceptions::RuntimeError, "MueLu::Hierarchy::Write : startLevel must be <= endLevel");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(startLevel < 0 || endLevel > Levels_.size(), Exceptions::RuntimeError, "MueLu::Hierarchy::Write bad start or end level");
+    TEUCHOS_TEST_FOR_EXCEPTION(startLevel < 0 || endLevel >= Levels_.size(), Exceptions::RuntimeError, "MueLu::Hierarchy::Write bad start or end level");
 
-    for (LO i=startLevel; i<endLevel; ++i) {
+    for (LO i=startLevel; i<endLevel+1; ++i) {
 
       std::ostringstream buf; buf << i;
       std::string fileName = "A_" + buf.str() + ".m";

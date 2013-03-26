@@ -56,7 +56,7 @@ namespace MueLu {
 
     /*! @brief Constructor
     */
-    SimpleSmoother(const LocalOrdinal sweeps = 1, const Scalar omega = 1.0);
+    SimpleSmoother(const LocalOrdinal sweeps = 1, const Scalar omega = 1.0, bool SIMPLEC = false);
 
     //! Destructor
     virtual ~SimpleSmoother();
@@ -109,6 +109,7 @@ namespace MueLu {
     //! smoother type
     std::string type_;
 
+    const bool                            bSIMPLEC_;        //!< use SIMPLEC instead of SIMPLE (i.e. with absolute row sum approximation for A00 instead of plain diagonal)
     const LocalOrdinal                    nSweeps_;         //!< number of Braess Sarazin sweeps
     const Scalar                          omega_;           //!< damping/scaling factor
 

@@ -719,6 +719,16 @@ namespace Belos {
     }
   };
 
+  // Partial specialization for MV=Tpetra::MultiVector.
+  template<class Scalar, class LO, class GO, class Node>
+  class MultiVecTraitsExt<Scalar, Tpetra::MultiVector<Scalar, LO, GO, Node> > {
+  public:
+    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    static ptrdiff_t GetGlobalLength( const MV& mv ) {
+      return Teuchos::as<ptrdiff_t> (mv.getGlobalLength ());
+    }
+  };
+
 } // end of Belos namespace
 
 #endif

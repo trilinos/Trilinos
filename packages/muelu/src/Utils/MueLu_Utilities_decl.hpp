@@ -280,6 +280,14 @@ namespace MueLu {
     */
     static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(const Matrix &A);
 
+    /*! @brief Extract Matrix Diagonal of lumped matrix
+
+    Returns Matrix diagonal of lumped matrix in ArrayRCP.
+
+    Note -- it's assumed that A has been fillComplete'd.
+    */
+    static Teuchos::ArrayRCP<SC> GetLumpedMatrixDiagonal(const Matrix &A);
+
     /*! @brief Extract Overlapped Matrix Diagonal
 
     Returns overlapped Matrix diagonal in ArrayRCP.

@@ -632,6 +632,26 @@ namespace MueLu {
   } //GetMatrixDiagonal
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetLumpedMatrixDiagonal(const Matrix &A)
+  {
+    const RCP<const Map> rowmap = A.getRowMap();
+    size_t locSize = rowmap->getNodeNumElements();
+    Teuchos::ArrayRCP<SC> diag(locSize);
+    Teuchos::ArrayView<const LO> cols;
+    Teuchos::ArrayView<const SC> vals;
+    for (size_t i=0; i<locSize; ++i) { // loop over rows
+      A.getLocalRowView(i,cols,vals);
+      Scalar absRowSum = Teuchos::ScalarTraits<Scalar>::zero();
+      for (LO j=0; j<cols.size(); ++j) { // loop over cols
+        absRowSum += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+      }
+      diag[i] = absRowSum;
+    }
+    //for (int i=0; i<locSize; ++i) std::cout << "diag[" << i << "] = " << diag[i] << std::endl;
+    return diag;
+  } //GetMatrixDiagonal
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixOverlappedDiagonal(const Matrix &A)
   {
     Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);  //FIXME should this return a Vector instead?
