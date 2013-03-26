@@ -660,6 +660,9 @@ void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, glo
 }
 
 
+#if 0
+// KDDKDD 3/26/13  This function is defined but not used,
+// KDDKDD          causing compiler warning, so I am commenting it out.
 /*! \brief Function returning the available thread number by the processor.
  *
  */
@@ -680,6 +683,7 @@ int pqJagged_getNumThreads(){
   return numThreads;
 
 }
+#endif
 
 
 /*! \brief Function to determine the local minimum and maximum coordinate, and local total weight
