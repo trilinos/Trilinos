@@ -614,7 +614,8 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <class T>
-  ArrayRCP<ArrayRCP<T> > CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::allocateValues2D() const
+  ArrayRCP<Array<T> >
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::allocateValues2D() const
   {
     const char tfecfFuncName[] = "allocateValues2D()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -625,22 +626,18 @@ namespace Tpetra {
         getProfileType() != DynamicProfile,
         std::runtime_error, ": graph indices must be allocated in a dynamic profile."
     );
-    ArrayRCP<ArrayRCP<T> > values2D;
-    values2D = arcp<ArrayRCP<T> >(getNodeNumRows());
+    ArrayRCP<Array<T> > values2D;
+    values2D = arcp<Array<T> > (getNodeNumRows ());
     if (lclInds2D_ != null) {
-      const size_t numRows = lclInds2D_.size();
-      for (size_t r=0; r != numRows; ++r) {
-        if (!lclInds2D_[r].empty()) {
-          values2D[r] = arcp<T>(lclInds2D_[r].size());
-        }
+      const size_t numRows = lclInds2D_.size ();
+      for (size_t r = 0; r < numRows; ++r) {
+        values2D[r].resize (lclInds2D_[r].size ());
       }
     }
     else if (gblInds2D_ != null) {
-      const size_t numRows = gblInds2D_.size();
-      for (size_t r=0; r != numRows; ++r) {
-        if (!gblInds2D_[r].empty()) {
-          values2D[r] = arcp<T>(gblInds2D_[r].size());
-        }
+      const size_t numRows = gblInds2D_.size ();
+      for (size_t r = 0; r < numRows; ++r) {
+        values2D[r].resize (gblInds2D_[r].size ());
       }
     }
     return values2D;
@@ -655,7 +652,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   updateAllocAndValues (RowInfo rowinfo,
                         size_t newAllocSize,
-                        ArrayRCP<T> &rowVals)
+                        Array<T>& rowVals)
   {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement(rowinfo.localRow) );
@@ -711,7 +708,7 @@ namespace Tpetra {
       if (lclInds1D_ != null) {
         view = lclInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
       }
-      else if (!lclInds2D_[rowinfo.localRow].empty()) {
+      else if (! lclInds2D_[rowinfo.localRow].empty()) {
         view = lclInds2D_[rowinfo.localRow] ();
       }
     }
@@ -731,7 +728,7 @@ namespace Tpetra {
       if (gblInds1D_ != null) {
         view = gblInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
       }
-      else if (!gblInds2D_[rowinfo.localRow].empty()) {
+      else if (! gblInds2D_[rowinfo.localRow].empty()) {
         view = gblInds2D_[rowinfo.localRow] ();
       }
     }
@@ -1398,33 +1395,37 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::findGlobalIndex(RowInfo rowinfo, GlobalOrdinal ind, size_t hint) const
+  size_t
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint) const
   {
     typedef typename ArrayView<const GlobalOrdinal>::iterator IT;
-    bool found = true;
-    // get a view of the row, if it wasn't passed by the caller
-    ArrayView<const GlobalOrdinal> rowinds = getGlobalView(rowinfo);
-    IT rptr, locptr = Teuchos::NullIteratorTraits<IT>::getNull();
-    rptr = rowinds.begin();
-    if (hint < rowinfo.numEntries && rowinds[hint] == ind) {
+    ArrayView<const GlobalOrdinal> indices = getGlobalView (rowinfo);
+
+    // We don't actually require that the hint be a valid index.
+    // If it is not in range, we just ignore it.
+    if (hint < rowinfo.numEntries && indices[hint] == ind) {
       return hint;
     }
-    if (isSorted()) {
-      // binary search
-      std::pair<IT,IT> p = std::equal_range(rptr,rptr+rowinfo.numEntries,ind);
-      if (p.first == p.second) found = false;
-      else locptr = p.first;
+
+    IT beg = indices.begin ();
+    IT end = indices.begin () + rowinfo.numEntries; // not indices.end()
+    if (isSorted ()) { // use binary search
+      const std::pair<IT,IT> p = std::equal_range (beg, end, ind);
+      if (p.first == p.second) { // range of matching entries is empty
+        return Teuchos::OrdinalTraits<size_t>::invalid ();
+      } else {
+        return p.first - beg;
+      }
     }
-    else {
-      // direct search
-      locptr = std::find(rptr,rptr+rowinfo.numEntries,ind);
-      if (locptr == rptr+rowinfo.numEntries) found = false;
+    else { // not sorted; must use linear search
+      const IT loc = std::find (beg, end, ind);
+      if (loc == end) {
+        return Teuchos::OrdinalTraits<size_t>::invalid ();
+      } else {
+        return loc - beg;
+      }
     }
-    size_t ret = OrdinalTraits<size_t>::invalid();
-    if (found) {
-      ret = (locptr - rptr);
-    }
-    return ret;
   }
 
 

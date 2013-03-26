@@ -1680,8 +1680,8 @@ namespace Tpetra {
     /// always matches that of graph_, as the graph does the
     /// allocation for the matrix.
     //@{
-    ArrayRCP<Scalar>                       values1D_;
-    ArrayRCP<ArrayRCP<Scalar> >            values2D_;
+    ArrayRCP<Scalar> values1D_;
+    ArrayRCP<Array<Scalar> > values2D_;
     //@}
 
     // TODO: these could be allocated at resumeFill() and de-allocated at fillComplete() to make for very fast getView()/getViewNonConst()
