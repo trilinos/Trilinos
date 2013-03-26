@@ -628,7 +628,7 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
   const int startSweep = ZeroStartingSolution_ ? 1 : 0;
   // We don't need to initialize the result MV, since the sparse
   // mat-vec will clobber its contents anyway.
-  MV A_times_Y (Y.getMap (), numVectors, false);
+  MV A_times_Y (Y.getMap (), as<size_t>(numVectors), false);
   for (int j = startSweep; j < NumSweeps_; ++j) {
     // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
     applyMat (Y, A_times_Y);
