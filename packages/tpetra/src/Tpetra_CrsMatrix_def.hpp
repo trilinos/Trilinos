@@ -1402,12 +1402,10 @@ namespace Tpetra {
         }
       }
       else if (staticGraph_->getProfileType() == DynamicProfile) {
-        typename ArrayRCP<Scalar>::iterator it;
+        typename Array<Scalar>::iterator it;
         for (size_t row=0; row < nlrs; ++row) {
-          if (values2D_[row] != null) {
-            for (it = values2D_[row].begin(); it != values2D_[row].end(); ++it) {
-              (*it) *= alpha;
-            }
+          for (it = values2D_[row].begin(); it != values2D_[row].end(); ++it) {
+            (*it) *= alpha;
           }
         }
       }
@@ -1582,6 +1580,10 @@ namespace Tpetra {
   typename ScalarTraits<Scalar>::magnitudeType
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getFrobeniusNorm() const
   {
+    using Teuchos::as;
+    using Teuchos::outArg;
+    using Teuchos::reduceAll;
+    typedef typename ArrayRCP<const Scalar>::size_type size_type;
     // TODO: push localFrobNorm() down to the LocalMatOps class
     //
     // check the cache first
@@ -1590,55 +1592,57 @@ namespace Tpetra {
       Magnitude mySum = STM::zero();
       if (getNodeNumEntries() > 0) {
         if (isStorageOptimized ()) {
-          // can do this in one pass through A
-          typename ArrayRCP<const Scalar>::iterator valit, valend;
-          valit = values1D_.begin();
-          valend = valit + getNodeNumEntries();
-          while (valit != valend) {
-            const Scalar val = *valit++;
+          // "Optimized" storage is packed storage.  That means we can
+          // iterate in one pass through the 1-D values array.
+          const size_type numEntries = as<size_type> (getNodeNumEntries ());
+          for (size_type k = 0; k < numEntries; ++k) {
+            const Scalar val = values1D_[k];
             mySum += STS::real (val) * STS::real (val) +
               STS::imag (val) * STS::imag (val);
           }
         }
         else if (getProfileType() == StaticProfile) {
-          // must hit each row individually
+          // Storage is 1-D, but not packed.  That means we have to go
+          // through the rows one at a time to get their lengths.
           const size_t numRows = getNodeNumRows();
-          for (size_t r=0; r != numRows; ++r) {
-            typename ArrayRCP<const Scalar>::iterator valit, valend;
-            RowInfo rowInfo = myGraph_->getRowInfo(r);
-            valit = values1D_.begin() + rowInfo.offset1D;
-            valend = valit + rowInfo.numEntries;
-            while (valit != valend) {
-              const Scalar val = *valit++;
+          for (size_t r = 0; r < numRows; ++r) {
+            RowInfo rowInfo = myGraph_->getRowInfo (r);
+            const size_type numEntries = as<size_type> (rowInfo.numEntries);
+            ArrayView<const Scalar> A_r =
+              values1D_.view (rowInfo.offset1D, numEntries);
+            for (size_type k = 0; k < numEntries; ++k) {
+              const Scalar val = A_r[k];
               mySum += STS::real (val) * STS::real (val) +
                 STS::imag (val) * STS::imag (val);
             }
           }
         }
         else if (getProfileType() == DynamicProfile) {
-          // must hit each row individually
-          const size_t numRows = getNodeNumRows();
-          for (size_t r=0; r != numRows; ++r) {
-            typename ArrayRCP<const Scalar>::iterator valit, valend;
-            RowInfo rowInfo = myGraph_->getRowInfo(r);
-            valit = values2D_[r].begin();
-            valend = valit + rowInfo.numEntries;
-            while (valit != valend) {
-              const Scalar val = *valit++;
+          // Storage is 2-D.  That means we have to go through the
+          // rows one at a time to get their lengths.
+          const size_t numRows = getNodeNumRows ();
+          for (size_t r = 0; r < numRows; ++r) {
+            RowInfo rowInfo = myGraph_->getRowInfo (r);
+            const size_type numEntries = as<size_type> (rowInfo.numEntries);
+            ArrayView<const Scalar> A_r = values2D_[r].view (0, numEntries);
+            for (size_type k = 0; k < numEntries; ++k) {
+              const Scalar val = A_r[k];
               mySum += STS::real (val) * STS::real (val) +
                 STS::imag (val) * STS::imag (val);
             }
           }
         }
         else {
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, typeName(*this) << "::getFrobeniusNorm(): Internal logic error. Please contact Tpetra team.");
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::logic_error, typeName(*this) << "::getFrobeniusNorm(): "
+            "Internal logic error. Please contact Tpetra team.");
         }
       }
       Magnitude totalSum;
-      Teuchos::reduceAll(*(getComm()), Teuchos::REDUCE_SUM, mySum, outArg(totalSum));
-      frobNorm = STM::squareroot(totalSum);
+      reduceAll (* (getComm ()), Teuchos::REDUCE_SUM, mySum, outArg (totalSum));
+      frobNorm = STM::squareroot (totalSum);
     }
-    if (isFillComplete()) {
+    if (isFillComplete ()) {
       // cache the result
       frobNorm_ = frobNorm;
     }
@@ -1648,13 +1652,15 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::replaceDomainMapAndImporter(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter)
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  replaceDomainMapAndImporter (const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newDomainMap,
+                               Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >& newImporter)
   {
-    const char tfecfFuncName[] = "replaceDomainMapAndImporter()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( myGraph_ == Teuchos::null, std::runtime_error, " requires a graph.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isStaticGraph(), std::runtime_error, " does not work on static graphs.");
-
-    myGraph_->replaceDomainMapAndImporter(newDomainMap,newImporter);
+    const char tfecfFuncName[] = "replaceDomainMapAndImporter";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( myGraph_.is_null (), std::runtime_error, ": This method requires that the matrix have a graph.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isStaticGraph(), std::runtime_error, ": This method does not work if the matrix has a const graph.");
+    myGraph_->replaceDomainMapAndImporter (newDomainMap, newImporter);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2044,9 +2050,11 @@ namespace Tpetra {
         "constructor as const.");
     }
     else {
-      // Set the graph's domain and range Maps.
-      // This may clear the Import/Export objects.
-      myGraph_->setDomainRangeMaps(domainMap, rangeMap);
+      // Set the graph's domain and range Maps.  This will clear the
+      // Import if the domain Map has changed (is a different
+      // pointer), and the Export if the range Map has changed (is a
+      // different pointer).
+      myGraph_->setDomainRangeMaps (domainMap, rangeMap);
       // Make the graph's column Map, if necessary.
       if (! myGraph_->hasColMap()) {
         myGraph_->makeColMap();
@@ -2055,9 +2063,14 @@ namespace Tpetra {
       if (myGraph_->isGloballyIndexed()) {
         myGraph_->makeIndicesLocal();
       }
-      if (! myGraph_->isSorted()) sortEntries();
-      if (! myGraph_->isMerged()) mergeRedundantEntries();
-      myGraph_->makeImportExport(); // Make Import and Export objects
+      if (! myGraph_->isSorted()) {
+        sortEntries();
+      }
+      if (! myGraph_->isMerged()) {
+        mergeRedundantEntries();
+      }
+      // Make the Import and Export, if they haven't been made already.
+      myGraph_->makeImportExport();
       myGraph_->computeGlobalConstants();
       myGraph_->fillComplete_ = true;
       myGraph_->checkInternalState();

@@ -366,19 +366,19 @@ namespace Tpetra {
         if (this->isLocallyIndexed ()) {
           ArrayView<const LocalOrdinal> linds;
           for (LocalOrdinal lrow = rowMap_->getMinLocalIndex ();
-	       lrow <= rowMap_->getMaxLocalIndex ();
-	       ++lrow) {
+               lrow <= rowMap_->getMaxLocalIndex ();
+               ++lrow) {
             this->getLocalRowView (lrow, linds);
             if (linds.size ()) {
-	      clonedGraph->insertLocalIndices (lrow, linds);
-	    }
+              clonedGraph->insertLocalIndices (lrow, linds);
+            }
           }
         }
         else { // this->isGloballyIndexed()
           Array<LocalOrdinal> linds;
           for (LocalOrdinal lrow =  rowMap_->getMinLocalIndex();
-	       lrow <= rowMap_->getMaxLocalIndex();
-	       ++lrow) {
+               lrow <= rowMap_->getMaxLocalIndex();
+               ++lrow) {
             size_t theNumEntries;
             linds.resize( this->getNumEntriesInLocalRow(lrow) );
             this->getLocalRowCopy(rowMap_->getGlobalElement(lrow), linds(), theNumEntries);
@@ -391,24 +391,24 @@ namespace Tpetra {
         if (this->isGloballyIndexed ()) {
           ArrayView<const GlobalOrdinal> ginds;
           for (GlobalOrdinal grow =  rowMap_->getMinGlobalIndex();
-	       grow <= rowMap_->getMaxGlobalIndex();
-	       ++grow) {
+               grow <= rowMap_->getMaxGlobalIndex();
+               ++grow) {
             this->getGlobalRowView(grow, ginds);
             if (ginds.size ()) {
-	      clonedGraph->insertGlobalIndices (grow, ginds);
-	    }
+              clonedGraph->insertGlobalIndices (grow, ginds);
+            }
           }
         }
         else { // this->isLocallyIndexed()
           Array<GlobalOrdinal> ginds;
           for (GlobalOrdinal grow =  rowMap_->getMinGlobalIndex();
-	       grow <= rowMap_->getMaxGlobalIndex();
-	       ++grow) {
-	    size_t theNumEntries;
-	    ginds.resize( this->getNumEntriesInGlobalRow(grow) );
-	    this->getGlobalRowCopy(grow, ginds(), theNumEntries);
-	    if (theNumEntries) clonedGraph->insertGlobalIndices(grow, ginds(0,theNumEntries) );
-	  }
+               grow <= rowMap_->getMaxGlobalIndex();
+               ++grow) {
+            size_t theNumEntries;
+            ginds.resize( this->getNumEntriesInGlobalRow(grow) );
+            this->getGlobalRowCopy(grow, ginds(), theNumEntries);
+            if (theNumEntries) clonedGraph->insertGlobalIndices(grow, ginds(0,theNumEntries) );
+          }
         }
       }
 
@@ -435,10 +435,10 @@ namespace Tpetra {
           const bool caughtExceptionOnClone = true;
           TEUCHOS_TEST_FOR_EXCEPTION(
             caughtExceptionOnClone, std::runtime_error,
-	    Teuchos::typeName (*this) << endl
-	    << "caught the following exception while calling fillComplete() on "
-	    "clone of type" << endl << Teuchos::typeName (*clonedGraph)
-	    << endl << ":" << e.what() << endl);
+            Teuchos::typeName (*this) << endl
+            << "caught the following exception while calling fillComplete() on "
+            "clone of type" << endl << Teuchos::typeName (*clonedGraph)
+            << endl << ":" << e.what() << endl);
         }
       }
       return clonedGraph;
@@ -537,15 +537,15 @@ namespace Tpetra {
           \post <tt>isFillActive() == false<tt>
           \post <tt>isFillComplete() == true<tt>
 
-	  Parameters:
+          Parameters:
           - "Optimize Storage" (\c bool): Default is false.  If true,
             then isStorageOptimized() returns true after fillComplete
             finishes.  See isStorageOptimized() for consequences.
        */
-      void 
-      fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, 
-		    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, 
-		    const RCP<ParameterList> &params = null);
+      void
+      fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
+                    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
+                    const RCP<ParameterList> &params = null);
 
       /*! \brief Signal that data entry is complete.
 
@@ -810,10 +810,10 @@ namespace Tpetra {
 
 
     /** Replaces the current domainMap and importer with the user-specified map object, but only
-	if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap 
-	and Importer's SourceMap matches the DomainMap (assuming the importer isn't null). 
-	
-	\pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
+        if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap
+        and Importer's SourceMap matches the DomainMap (assuming the importer isn't null).
+
+        \pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
 
   */
     void replaceDomainMapAndImporter(const Teuchos::RCP< const map_type >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter);
@@ -855,10 +855,10 @@ namespace Tpetra {
       template <class T>
       ArrayRCP<T> allocateValues1D () const;
       template <class T>
-      ArrayRCP<ArrayRCP<T> > allocateValues2D () const;
+      ArrayRCP<Array<T> > allocateValues2D () const;
 
       template <ELocalGlobal lg, class T>
-      RowInfo updateAllocAndValues (RowInfo rowinfo, size_t allocSize, ArrayRCP<T> &rowVals);
+      RowInfo updateAllocAndValues (RowInfo rowinfo, size_t allocSize, Array<T>& rowVals);
 
       //! \name Methods governing changes between global and local indices
       //@{
@@ -869,7 +869,7 @@ namespace Tpetra {
       /// processes to use local indices.  Likewise, if at least one
       /// process has set global indices, set all the processes to use
       /// global indices.
-      /// 
+      ///
       /// \note To developers: See this method's internal comments.
       void computeIndexState();
       void makeColMap (); //!< Make the column Map.
