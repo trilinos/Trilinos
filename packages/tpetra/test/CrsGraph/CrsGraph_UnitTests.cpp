@@ -1153,6 +1153,41 @@ namespace {
 
   }
 
+
+ ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, TwoArraysESFC, LO, GO , Node )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<Node> node = getNode<Node>();
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    // test filtering
+    if (numImages > 1) {
+      const size_t numLocal = 2;
+      const RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+      ArrayRCP<size_t> rowptr(numLocal+1);
+      ArrayRCP<LO>     colind(numLocal); // one unknown per row      
+      rowptr[0] = 0; rowptr[1] = 1; rowptr[2] = 2; 
+      colind[0] = Teuchos::as<LO>(0);
+      colind[1] = Teuchos::as<LO>(1);
+      
+      RCP<GRAPH> G = rcp(new GRAPH(rmap,rmap,rowptr,colind) );
+      TEST_EQUALITY_CONST( G->hasColMap(), true );
+
+      TEST_NOTHROW( G->expertStaticFillComplete(rmap,rmap) );
+      TEST_EQUALITY( G->getRowMap(), rmap );
+      TEST_EQUALITY( G->getColMap(), rmap );
+    }
+
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+
 //
 // INSTANTIATIONS
 //
@@ -1175,7 +1210,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs      , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K  , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC , LO, GO, NODE )
 
 #define NC_TESTS(N2) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NodeConversion, int, int, N2 )

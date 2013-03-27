@@ -60,6 +60,8 @@
 
 namespace Tpetra {
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
@@ -91,7 +93,8 @@ namespace Tpetra {
     checkInternalState();
   }
 
-
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
@@ -123,7 +126,8 @@ namespace Tpetra {
     checkInternalState();
   }
 
-
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
@@ -161,6 +165,8 @@ namespace Tpetra {
   }
 
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
@@ -200,6 +206,39 @@ namespace Tpetra {
   }
 
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
+            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
+	    ArrayRCP<size_t> & rowPointers, 
+	    ArrayRCP<LocalOrdinal> & columnIndices, 
+            const RCP<ParameterList>& params)
+  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
+  , rowMap_(rowMap)
+  , colMap_(colMap)
+  , nodeNumEntries_(0)
+  , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
+  , pftype_(StaticProfile)
+  , numAllocForAllRows_(0)
+  , indicesAreAllocated_(true)
+  , indicesAreLocal_(true)
+  , indicesAreGlobal_(false)
+  , fillComplete_(false)
+  , haveGlobalConstants_(false)
+  , haveRowInfo_(true)
+  , insertGlobalIndicesWarnedEfficiency_(false)
+  , insertLocalIndicesWarnedEfficiency_(false)
+  {
+    staticAssertions();
+    lclInds1D_ = columnIndices;
+    rowPtrs_   = rowPointers;
+    checkInternalState();
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::~CrsGraph()
   {}
@@ -2263,6 +2302,71 @@ namespace Tpetra {
     //
     checkInternalState();
   }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+										       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+										       const RCP<Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
+										       const RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
+										       const RCP<ParameterList> &params)
+  {
+#ifdef HAVE_TPETRA_DEBUG
+    rowMap_->getComm ()->barrier ();
+#endif // HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "expertStaticFillComplete()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillComplete() == true || hasColMap() == false,
+					   std::runtime_error, ": fillComplete cannot have already been called and a ColMap is required.");
+
+    // To make life easier, this matrix gets flagged as static profile
+    pftype_= StaticProfile;
+
+    // Note: We don't need to do the following things which are normally done in fillComplete: 
+    // allocateIndices, globalAssemble, makeColMap, makeIndicesLocal, sortAllIndices, mergeAllIndices
+
+    // Note: Need to do this so computeGlobalConstants & fillLocalGraph work
+    nodeNumEntries_ = nodeNumAllocated_ = rowPtrs_[getNodeNumRows()];
+
+    // Constants from allocateIndices
+    numAllocForAllRows_ = 0;
+    numAllocPerRow_     = null;
+    indicesAreAllocated_ = true;
+
+    // Constants from makeIndicesLocal
+    indicesAreLocal_  = true;
+    indicesAreGlobal_ = false;
+
+    // set domain/range map: may clear the import/export objects
+    setDomainRangeMaps(domainMap,rangeMap);
+
+    // Presume the user sorted and merged the arrays first
+    setSorted(true);
+    setMerged(true);
+
+    // makeImportExport won't create a new importer/exporter if I set one here first.
+    importer_=Teuchos::null;
+    exporter_=Teuchos::null;
+    if(importer != Teuchos::null && importer->getSourceMap()->isSameAs(*getDomainMap()) && importer->getTargetMap()->isSameAs(*getColMap()))
+      importer_ = importer;
+    if(exporter != Teuchos::null && exporter->getSourceMap()->isSameAs(*getRowMap()) && exporter->getTargetMap()->isSameAs(*getRangeMap()))
+      exporter_ = exporter;
+    makeImportExport();
+
+    // Compute the constants
+    computeGlobalConstants();
+
+    // Since we have a StaticProfile, fillLocalGraph will do the right thing...
+    fillLocalGraph(params);
+    fillComplete_ = true;
+
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == true || isFillComplete() == false, std::logic_error, ": Violated stated post-conditions. Please contact Tpetra team.");
+#endif
+    checkInternalState();
+  }
+
 
 
   /////////////////////////////////////////////////////////////////////////////

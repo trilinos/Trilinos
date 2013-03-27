@@ -274,6 +274,32 @@ namespace Tpetra {
               ProfileType pftype = DynamicProfile,
               const RCP<ParameterList>& params = null);
 
+    /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
+    ///
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param rowPointers [in] The beginning of each row in the graph,
+    ///   as in a CSR "rowptr" array.  The length of this vector should be
+    ///   equal to the number of rows in the graph, plus one.  This last
+    ///   entry should store the nunber of nonzeros in the graph.
+    ///
+    /// \param columnIndices [in] The local indices of the columns,
+    ///   as in a CSR "colind" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the graph.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+	      ArrayRCP<size_t> & rowPointers, 
+	      ArrayRCP<LocalOrdinal> & columnIndices, 
+              const RCP<ParameterList>& params = null);
+
+
     /// \brief Create a cloned CrsGraph for a different Node type.
     ///
     /// This method creates a new CrsGraph on a specified Kokkos Node
@@ -554,6 +580,19 @@ namespace Tpetra {
           \note This method calls fillComplete( getRowMap(), getRowMap(), os ). See parameter options there.
        */
       void fillComplete (const RCP<ParameterList> &params = null);
+
+
+      //! Performs a fillComplete on an object that aready has filled CRS data, courtest of the two arrays constructor
+      /*! Performs a lightweight fillComplete on an object that already has filled lclInds1D_ and rowPtrs_.  If the
+	graph has been constructed in any other way, it will throw an error.  This routine is needed to support other 
+	Trilinos packages should not be called by users.    
+         \warning This method is intended for expert developer use only, and should never be called by user code.
+      */
+      void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+				    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+				    const RCP<Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+				    const RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+				    const RCP<ParameterList> &params=Teuchos::null);
 
       //@}
 
