@@ -376,6 +376,37 @@ namespace Tpetra {
     explicit CrsMatrix (const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& graph,
                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+    /// \brief Constructor specifying column Map and arrays containing the matrix in sorted, local ids.
+    ///
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param colMap [in] Distribution of columns of the matrix.
+    ///
+    /// \param rowPointers [in] The beginning of each row in the matrix,
+    ///   as in a CSR "rowptr" array.  The length of this vector should be
+    ///   equal to the number of rows in the graph, plus one.  This last
+    ///   entry should store the nunber of nonzeros in the matrix.
+    ///
+    /// \param columnIndices [in] The local indices of the columns,
+    ///   as in a CSR "colind" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the matrix.
+    ///
+    /// \param values [in] The local entries in the matrix,
+    ///   as in a CSR "vals" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the matrix.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+	      ArrayRCP<size_t> & rowPointers, 
+	      ArrayRCP<LocalOrdinal> & columnIndices, 
+	      ArrayRCP<Scalar> & values, 
+              const RCP<ParameterList>& params = null);
+
+
     /// \brief Create a cloned CrsMatrix for a different node type.
     ///
     /// This method creates a new CrsMatrix on a specified node type,
@@ -709,6 +740,19 @@ namespace Tpetra {
     */
     void fillComplete(const RCP<ParameterList> &params = null);
 
+
+    //! Performs a fillComplete on an object that aready has filled CRS data, courtest of the three arrays constructor
+    /*! Performs a lightweight fillComplete on an object that already has filled lclInds1D_ and rowPtrs_ (in the graph) and values1D_ (in the matrix).  
+      If the matrix has been constructed in any other way, it will throw an error.  This routine is needed to support other 
+      Trilinos packages should not be called by users.    
+      \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+				  const RCP<Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+				  const RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+				  const RCP<ParameterList> &params=Teuchos::null);
+    
     /** Replaces the current domainMap and importer with the user-specified map object, but only
       if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap
       and Importer's SourceMap matches the DomainMap (assuming the importer isn't null).

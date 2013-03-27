@@ -229,6 +229,38 @@ namespace Tpetra {
     checkInternalState();
   }
 
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node,
+            class LocalMatOps>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+             const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+	     ArrayRCP<size_t> & rowPointers, 
+	     ArrayRCP<LocalOrdinal> & columnIndices, 
+	     ArrayRCP<Scalar> & values, 
+             const RCP<Teuchos::ParameterList>& params) :
+    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
+    insertGlobalValuesWarnedEfficiency_ (false),
+    insertLocalValuesWarnedEfficiency_ (false)
+  {
+    try {
+      myGraph_ = rcp (new Graph (rowMap, colMap, rowPointers,columnIndices,params));
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+        typeName(*this) << "::CrsMatrix(): caught exception while allocating "
+        "CrsGraph object: " << std::endl << e.what ());
+    }
+    staticGraph_ = myGraph_;
+    values1D_    = values;
+    resumeFill(params);
+    checkInternalState();
+  }
+
+
+
   template<class Scalar,
            class LocalOrdinal,
            class GlobalOrdinal,
@@ -2124,6 +2156,66 @@ namespace Tpetra {
     checkInternalState();
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+											       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+											       const RCP<Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
+											       const RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
+											       const RCP<ParameterList> &params)
+  {
+  const char tfecfFuncName[] = "experStaticFillComplete()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
+      std::runtime_error, ": Matrix fill state must be active (isFillActive() "
+      "must be true) before calling fillComplete().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null, std::logic_error,
+					  ": myGraph_ is null.  This is not allowed.");
+
+#ifdef HAVE_TPETRA_DEBUG
+    getRowMap ()->getComm ()->barrier ();
+#endif // HAVE_TPETRA_DEBUG
+    
+    // We will presume globalAssemble is not needed, so we do the ESFC on the graph
+    myGraph_->expertStaticFillComplete(domainMap,rangeMap,importer,exporter);
+
+    computeGlobalConstants();
+    
+    // Fill the local matrix & MatOps
+    fillLocalGraphAndMatrix(params);
+    lclMatOps_ = rcp (new sparse_ops_type (getNode ()));
+
+    // This is where we take the local graph and matrix, and turn them
+    // into (possibly optimized) sparse kernels.
+    lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (), lclMatrix_);
+
+    // Once we've initialized the sparse kernels, we're done with the
+    // local objects.  We may now release them and their memory, since
+    // they will persist in the local sparse ops if necessary.  We
+    // keep the local graph if the parameters tell us to do so.
+    bool preserveLocalGraph = false;
+    if (params != null) {
+      preserveLocalGraph = params->get ("Preserve Local Graph", false);
+    }
+    if (! preserveLocalGraph) {
+      myGraph_->lclGraph_ = null;
+    }
+
+    // Now we're fill complete!
+    fillComplete_ = true;
+
+    // Sanity checks at the end.
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillActive(), std::logic_error,
+      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillComplete(), std::logic_error,
+      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+    checkInternalState();
+
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
