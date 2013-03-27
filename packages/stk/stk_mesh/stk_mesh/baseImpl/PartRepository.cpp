@@ -143,84 +143,6 @@ Part * PartRepository::declare_part( const std::string & arg_name , EntityRank a
   return p;
 }
 
-Part * PartRepository::declare_part( const PartVector & part_intersect )
-{
-  static const char method[] = "stk::mesh::impl::PartRepository::declare_part" ;
-  TraceIf(method, LOG_PART);
-
-  PartVector pset_clean ;
-
-  for ( PartVector::const_iterator
-        i = part_intersect.begin() ; i != part_intersect.end() ; ++i ) {
-    Part * const p = *i ;
-    assert_superset( *m_universal_part, *p , method );
-
-    // If 'p' is a superset of another member
-    // then it is redundant in this intersection.
-    // Only keep non-redundant intersections.
-
-    PartVector::const_iterator j = part_intersect.begin();
-    for ( ; j != part_intersect.end() &&
-            ! contain( (*j)->supersets() , *p ) ; ++j );
-    if ( j == part_intersect.end() ) {
-      pset_clean.push_back( p );
-    }
-  }
-
-  // Sort and unique the intersection
-  order( pset_clean );
-
-  Part * p = NULL ;
-  if ( 1 == pset_clean.size() ) {
-    // Only one remaining part, it is the subset.
-    p = pset_clean[0] ;
-  }
-  else {
-    const char separator[] = "^" ;
-    // Generate a name and rank reflecting the intersection.
-    // Rank is the minimum rank of the intersection members.
-
-    std::string p_name ;
-    EntityRank p_rank = InvalidEntityRank;
-
-    p_name.assign("{");
-    for ( PartVector::iterator
-          i = pset_clean.begin() ; i != pset_clean.end() ; ++i ) {
-      if ( i != pset_clean.begin() ) { p_name.append( separator ); }
-      p_name.append( (*i)->name() );
-      if ( (*i)->primary_entity_rank() < p_rank ) {
-        p_rank = (*i)->primary_entity_rank();
-      }
-    }
-    p_name.append("}");
-
-    const PartVector & all_parts = get_all_parts();
-    p = find( all_parts, p_name );
-    if ( p == NULL ) {
-      // Create the part:
-
-      p = declare_part_impl( p_name , p_rank );
-
-      // Define the part to be an intersection of the given parts:
-
-      p->m_partImpl.set_intersection_of( pset_clean );
-
-      for ( PartVector::iterator
-            i = pset_clean.begin() ; i != pset_clean.end() ; ++i ) {
-        declare_subset( **i, *p );
-      }
-    }
-    else {
-      // This error is "inconceivable" and is
-      // only possible by heroic malicious abuse.
-      ThrowInvalidArgMsgIf( pset_clean != p->intersection_of(),
-                            p_name << " FAILED FROM MALICIOUS ABUSE" );
-    }
-  }
-
-  return p ;
-}
-
 Part * PartRepository::declare_part_impl( const std::string & name, EntityRank rank)
 {
   size_t ordinal = get_all_parts().size();
@@ -267,24 +189,6 @@ void PartRepository::declare_subset( Part & superset, Part & subset )
       declare_subset( **i, subset );
     }
 
-    // Induced intersection-part membership:
-
-    const PartVector & superset_subsets = superset.subsets();
-    for ( PartVector::const_iterator
-          i =  superset_subsets.begin() ;
-          i != superset_subsets.end() ; ++i ) {
-
-      Part & pint = **i ;
-
-      if ( ! pint.intersection_of().empty() && ( & pint != & subset ) ) {
-
-        // If 'subset' is a subset of every member of 'pint.intersection_of()'
-        // then it is by definition a subset of 'pint.
-        if ( contain( subset.supersets() , pint.intersection_of() ) ) {
-          declare_subset( pint, subset );
-        }
-      }
-    }
   }
 }
 

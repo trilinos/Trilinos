@@ -298,18 +298,6 @@ Part & MetaData::declare_internal_part( const std::string & p_name , EntityRank 
   return declare_part(internal_name, rank);
 }
 
-Part & MetaData::declare_part( const PartVector & part_intersect )
-{
-  require_not_committed();
-
-  for ( PartVector::const_iterator
-        i = part_intersect.begin() ; i != part_intersect.end() ; ++i ) {
-    require_not_relation_target(*i);
-  }
-
-  return *m_part_repo.declare_part( part_intersect );
-}
-
 void MetaData::declare_part_subset( Part & superset , Part & subset )
 {
   if (!is_initialized()) {

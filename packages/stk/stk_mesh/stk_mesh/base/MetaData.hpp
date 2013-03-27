@@ -192,14 +192,6 @@ public:
    */
   Part & declare_part( const std::string & p_name);
 
-  /** \brief  Declare a part as the defined-intersection
-   *          of the given collection of parts.
-   *
-   *  The entity type rank will be the smallest entity type rank
-   *  of the parts in the intersection, if any member has an
-   *  entity type rank.
-   */
-  Part & declare_part( const PartVector & p_name);
 
   /** \brief  Declare a part with a given cell topology
    */

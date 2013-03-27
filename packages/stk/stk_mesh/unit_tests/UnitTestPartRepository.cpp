@@ -43,7 +43,6 @@ public:
    stk::mesh::Part * part_1_A;
    stk::mesh::Part * part_1_B;
    stk::mesh::Part * part_2_A;
-   std::vector<stk::mesh::Part *> intersection;
    stk::mesh::PartRelation relation;
    const CellTopologyData * singleton;
 };
@@ -62,7 +61,6 @@ UnitTestPartRepository::UnitTestPartRepository()
   , part_1_A (           partRepo_1.declare_part("A",0) )
   , part_1_B (           partRepo_1.declare_part("B",0) )
   , part_2_A (           partRepo_2.declare_part("A",0) )
-  , intersection ( )
   , relation ( )
   , singleton ( NULL )
 {
@@ -95,20 +93,6 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, subset_equal_superset )
     );
 }
 
-STKUNIT_UNIT_TEST( UnitTestPartRepository, universal_in_intersection )
-{
-  UnitTestPartRepository upr;
-  upr.intersection.push_back(upr.universal_part);
-  STKUNIT_ASSERT_THROW(
-    upr.partRepo.declare_part(upr.intersection),
-    std::runtime_error
-    );
-  upr.intersection.push_back(upr.part_A);
-  STKUNIT_ASSERT_THROW(
-    upr.partRepo.declare_part(upr.intersection),
-    std::runtime_error
-    );
-}
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, circular_subset )
 {
@@ -143,25 +127,6 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, two_part_repositories )
     upr.partRepo_1.declare_subset(*upr.part_1_A,*upr.part_2_A),
     std::runtime_error
     );
-
-  // intersection contains parts from another part repository
-  {
-    upr.intersection.push_back(upr.part_1_A);
-    upr.intersection.push_back(upr.part_1_B);
-    STKUNIT_ASSERT_THROW(
-        upr.partRepo_2.declare_part( upr.intersection ),
-        std::runtime_error
-        );
-  }
-  // intersection contains parts from multiple part repositories
-  {
-    upr.intersection.push_back(upr.part_1_A);
-    upr.intersection.push_back(upr.part_2_A);
-    STKUNIT_ASSERT_THROW(
-        upr.partRepo_1.declare_part( upr.intersection ),
-        std::runtime_error
-        );
-  }
 }
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, invalid_relation )

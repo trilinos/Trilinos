@@ -80,9 +80,6 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
   part_vector.push_back(& pc);
   part_vector.push_back(& pd);
 
-  //Part * const intersection_part = &
-  metadata.declare_part(part_vector);
-
   //Test declare_part_subset
   STKUNIT_ASSERT_THROW(  metadata.declare_part_subset( pe, pe), std::runtime_error);
 
