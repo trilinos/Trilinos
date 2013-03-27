@@ -58,7 +58,6 @@
 
 
 namespace Tpetra {
-
   /// \class DistObject
   /// \brief Base class for distributed Tpetra objects that support data redistribution.
   ///
@@ -363,13 +362,24 @@ namespace Tpetra {
     ///   which contains a subset of the processes in the old
     ///   communicator.
     ///
-    /// \note This is an in-place operation, unlike Map's method with
-    ///   the same name.
+    /// \note The name differs from Map's method
+    ///   removeEmptyProcesses(), in order to emphasize that the
+    ///   operation on DistObject happens in place, modifying the
+    ///   input, whereas the operation removeEmptyProcess() on Map
+    ///   does not modify the input.
     ///
     /// \note To implementers of DistObject subclasses: The default
     ///   implementation of this class throws std::logic_error.
-    virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
-    removeEmptyProcesses (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
+    virtual void
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
+
+    template<class PT, class LO, class GO, class NT>
+    friend void
+    removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input,
+                                 const Teuchos::RCP<const Map<LO, GO, NT> >& newMap);
+    template<class PT, class LO, class GO, class NT>
+    friend void
+    removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input);
     //@}
 
   protected:
@@ -595,6 +605,86 @@ namespace Tpetra {
     Teuchos::RCP<Teuchos::Time> unpackAndCombineTimer_;
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
   }; // class DistObject
+
+
+  /// \brief Remove processes which contain no elements in this object's Map.
+  ///
+  /// \warning This method is ONLY for use by experts.  The fact that
+  ///   the documentation of this method starts with a "Vocabulary"
+  ///   section should give you proper respect for the complicated
+  ///   semantics of this method in a parallel MPI run.
+  /// \warning We make NO promises of backwards compatibility.
+  ///   This method may change or disappear at any time.
+  ///
+  /// Vocabulary:
+  /// - The Map returned by <tt>input->getMap() on input to this
+  ///   method is the "original Map."
+  /// - The communicator returned by <tt>input->getComm() on
+  ///   input to this method is the "original communicator."
+  /// - All processes in the original communicator which contain zero
+  ///   elements in the original Map are "excluded processes."
+  /// - All other processes in the original communicator are "included
+  ///   processes."
+  ///
+  /// Preconditions:
+  /// - The nonnull object \c input is distributed over the
+  ///   original Map.
+  /// - The input Map <tt>newMap</tt> <i>must</i> be the same as the
+  ///   result of calling removeEmptyProcesses() on the original Map.
+  /// - On excluded processes, <tt>newMap</tt> must be
+  ///   <tt>Teuchos::null</tt>.  (This is what
+  ///   <tt>getMap()->removeEmptyProcesses()</tt> returns anyway on
+  ///   excluded processes.)
+  ///
+  /// This method has collective semantics over the original
+  /// communicator.
+  ///
+  /// On included processes, reassign this object's Map (that would be
+  /// returned by getMap()) to the input \c newMap, and do any work
+  /// that needs to be done to restore correct semantics.  The input
+  /// DistObject \c input will be nonnull on return.
+  ///
+  /// On excluded processes, free any data in \c input that need
+  /// freeing, do any other work that needs to be done to restore
+  /// correct semantics, and set \c input to null before returning.
+  ///
+  /// \warning On excluded processes, calling this function
+  ///   invalidates any other references to the input DistObject
+  ///   <tt>input</tt>.  Calling any methods (other than the
+  ///   destructor) on the input on excluded processes has undefined
+  ///   behavior in that case, and may result in deadlock.
+  ///
+  /// \note The name differs from Map's method
+  ///   removeEmptyProcesses(), in order to emphasize that the
+  ///   operation on DistObject happens in place, modifying the
+  ///   input, whereas the operation removeEmptyProcess() on Map
+  ///   does not modify the input.
+  ///
+  /// \note To implementers of DistObject subclasses: The default
+  ///   implementation of this class throws std::logic_error.
+  ///
+  /// \note To implementers of DistObject subclasses: On exit, the
+  ///   only method of this object which is safe to call on excluded
+  ///   processes is the destructor.  This implies that subclasses'
+  ///   destructors must not contain communication operations.
+  template<class PT, class LO, class GO, class NT>
+  void
+  removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input,
+                               const Teuchos::RCP<const Map<LO, GO, NT> >& newMap);
+
+  /// \brief Remove processes which contain no elements in this object's Map.
+  ///
+  /// \warning This method is ONLY for use by experts.
+  /// \warning We make NO promises of backwards compatibility.
+  ///   This method may change or disappear at any time.
+  ///
+  /// This method behaves just like the two-argument version of
+  /// removeEmptyProcessesInPlace, except that it first calls
+  /// removeEmptyProcess() on the input DistObject's Map to compute
+  /// the new Map.
+  template<class PT, class LO, class GO, class NT>
+  void
+  removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input);
 } // namespace Tpetra
 
 #endif /* TPETRA_DISTOBJECT_DECL_HPP */
