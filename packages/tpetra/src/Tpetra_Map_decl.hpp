@@ -609,6 +609,27 @@ namespace Tpetra {
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
     removeEmptyProcesses () const;
 
+    /// \brief Replace this Map's communicator with a subset communicator.
+    ///
+    /// \pre The input communicator's processes are a subset of this
+    ///   Map's current communicator's processes.
+    /// \pre On processes which are not included in the input
+    ///   communicator, the input communicator is null.
+    ///
+    /// This method must be called collectively on the original
+    /// communicator.  It leaves the original Map and communicator
+    /// unchanged.
+    ///
+    /// \note This method differs from removeEmptyProcesses(), in that
+    ///   it does not assume that excluded processes have zero
+    ///   entries.  For example, one might wish to remove empty
+    ///   processes from the row Map of a CrsGraph using
+    ///   removeEmptyProcesses(), and then apply the resulting subset
+    ///   communicator to the column, domain, and range Maps of the
+    ///   same graph.  For the latter three Maps, one would in general
+    ///   use this method instead of removeEmptyProcesses().
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
     //@}
 
   protected:
@@ -626,7 +647,6 @@ namespace Tpetra {
     Map() {}
 
   private:
-
     //! Create this Map's Directory, if it hasn't been created already.
     void setupDirectory();
 

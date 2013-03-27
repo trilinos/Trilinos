@@ -873,6 +873,57 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
   Map<LocalOrdinal, GlobalOrdinal, Node>::
+  replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const
+  {
+    using Teuchos::Comm;
+    using Teuchos::null;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef global_size_t GST;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Map<LO, GO, Node> map_type;
+
+    // mfh 26 Mar 2013: The lazy way to do this is simply to recreate
+    // the Map by calling its ordinary public constructor, using the
+    // original Map's data.  This only involves O(1) all-reduces over
+    // the new communicator, which in the common case only includes a
+    // small number of processes.
+
+    // Make Map compute the global number of elements.
+    const GST globalNumElts = OrdinalTraits<GST>::invalid ();
+    ArrayView<const GO> myElts = this->getNodeElementList ();
+    RCP<Node> node = this->getNode ();
+
+    // Create the Map to return.
+    if (newComm.is_null ()) {
+      return null; // my process does not participate in the new Map
+    } else {
+      // Map requires that the index base equal the global min GID.
+      // Figuring out the global min GID requires a reduction over all
+      // processes in the new communicator.  It could be that some (or
+      // even all) of these processes contain zero entries.  (Recall
+      // that this method, unlike removeEmptyProcesses(), may remove
+      // an arbitrary subset of processes.)  We deal with this by
+      // doing a min over the min GID on each process if the process
+      // has more than zero entries, or the global max GID, if that
+      // process has zero entries.  If no processes have any entries,
+      // then the index base doesn't matter anyway.
+      const GO myMinGid = (this->getNodeNumElements () == 0) ?
+        this->getMaxAllGlobalIndex () : this->getMinGlobalIndex ();
+      GO newIndexBase = OrdinalTraits<GO>::invalid ();
+      reduceAll<int, GO> (*newComm, REDUCE_MIN, myMinGid, outArg (newIndexBase));
+      return rcp (new map_type (globalNumElts, myElts, newIndexBase, newComm, node));
+    }
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+  Map<LocalOrdinal, GlobalOrdinal, Node>::
   removeEmptyProcesses () const
   {
     using Teuchos::Comm;
@@ -955,6 +1006,7 @@ namespace Tpetra {
       // revisit this.  On the other hand, this is only collective
       // over the new, presumably much smaller communicator, so it may
       // not be worth the effort to optimize.
+      map->directory_ = null; // just to make sure setDirectory() works
       map->setupDirectory ();
       return map;
     }
