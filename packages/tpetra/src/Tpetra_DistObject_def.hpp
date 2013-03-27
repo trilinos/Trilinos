@@ -155,12 +155,31 @@ namespace Tpetra {
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+  void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  removeEmptyProcesses (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
+  removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Tpetra::DistObject::removeEmptyProcesses: Not implemented");
+      "Tpetra::DistObject::removeEmptyProcessesInPlace: Not implemented");
+  }
+
+  template<class PT, class LO, class GO, class NT>
+  void
+  removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input,
+                               const Teuchos::RCP<const Map<LO, GO, NT> >& newMap)
+  {
+    input->removeEmptyProcessesInPlace (newMap);
+    if (newMap.is_null ()) { // my process is excluded
+      input = Teuchos::null;
+    }
+  }
+
+  template<class PT, class LO, class GO, class NT>
+  void
+  removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input)
+  {
+    Teuchos::RCP<const Map<LO, GO, NT> > newMap = input->getMap ()->removeEmptyProcesses ();
+    removeEmptyProcessesInPlace<PT, LO, GO, NT> (input, newMap);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
