@@ -2749,6 +2749,7 @@ void AlgPQJagged(
 
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Init");
+  //cout << "Here I go:" << endl;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gno_t gno_t;
 
