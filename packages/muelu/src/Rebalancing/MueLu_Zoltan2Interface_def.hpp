@@ -125,24 +125,6 @@ namespace MueLu {
         numEntriesPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
     weights[0] = numEntriesPerRow.getRawPtr();
 
-    {
-      std::ostringstream ss;
-      ss << coords->getMap()->getComm()->getRank() << ".log";
-      std::ofstream ofs(ss.str().c_str());
-
-      ofs << numElements << " " << dim << std::endl;
-      Teuchos::ArrayView<const GO> elements = map->getNodeElementList();
-      for (LO i = 0; i < numElements; i++)
-        ofs << elements[i] << std::endl;
-      for (size_t k = 0; k < dim; k++) {
-        const SC* xyz = coords->getData(k).get();
-        for (LO i = 0; i < numElements; i++)
-          ofs << xyz[i] << std::endl;
-      }
-      for (LO i = 0; i < numElements; i++)
-        ofs << weights[0][i] << std::endl;
-    }
-
     Teuchos::ParameterList params;
 
     bool usePQJagged = true;
