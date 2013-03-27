@@ -115,6 +115,7 @@ namespace MueLu {
 
 #ifdef OLD_AND_BUSTED
 	rebalancedAc = MatrixFactory::Build(originalAc,*rebalanceImporter,targetMap,targetMap);
+        RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
         rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
 #endif
         Set(coarseLevel, "A", rebalancedAc);
