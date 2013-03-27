@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList& analysisParams = appParams.sublist("Analysis");
 
 #ifdef Piro_ENABLE_NOX
-      solverFactory.setDefaultProvider<NOX::Epetra::Observer>(
+      solverFactory.setSource<NOX::Epetra::Observer>(
           Piro::providerFromDefaultConstructor<ObserveSolution_Epetra>());
 #endif
 

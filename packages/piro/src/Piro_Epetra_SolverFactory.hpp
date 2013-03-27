@@ -45,7 +45,7 @@
 
 #include "EpetraExt_ModelEvaluator.h"
 
-#include "Piro_ExtensibleFactory.hpp"
+#include "Piro_Provider.hpp"
 
 #include "Piro_ConfigDefs.hpp"
 
@@ -83,13 +83,13 @@ public:
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<EpetraExt::ModelEvaluator> &model);
 
-  //! Replace the default auxiliary object provider
+  //! Set the auxiliary object provider of type T
+  template <typename T>
+  void setSource(const Provider<T> &p);
+
+  //! Deprecated - Set the auxiliary object provider of type T
   template <typename T>
   void setDefaultProvider(const Provider<T> &p);
-
-  //! Register a new auxiliary object provider
-  template <typename T>
-  void setProvider(const std::string &key, const Provider<T> &p);
 
 private:
   template <typename T>
@@ -99,36 +99,36 @@ private:
   Teuchos::RCP<T> create(const Teuchos::RCP<Teuchos::ParameterList> &params);
 
   template <typename T>
-  ExtensibleFactory<T> &getFactory();
+  Provider<T> &getSource();
 
 #ifdef Piro_ENABLE_NOX
-  ExtensibleFactory<NOX::Epetra::Observer> noxObserverFactory_;
-  ExtensibleFactory<NOX::Epetra::ModelEvaluatorInterface> noxInterfaceFactory_;
-  ExtensibleFactory<NOX::Epetra::LinearSystem> noxLinearSystemFactory_;
-  ExtensibleFactory<LOCA::SaveEigenData::AbstractStrategy> saveEigFactory_;
-  ExtensibleFactory<LOCA::StatusTest::Abstract> statusTestFactory_;
-  ExtensibleFactory<Piro::Epetra::AdaptiveSolutionManager> adaptSolMgrFactory_;
+  Provider<NOX::Epetra::Observer> noxObserverSource_;
+  Provider<NOX::Epetra::ModelEvaluatorInterface> noxInterfaceSource_;
+  Provider<NOX::Epetra::LinearSystem> noxLinearSystemSource_;
+  Provider<LOCA::SaveEigenData::AbstractStrategy> saveEigSource_;
+  Provider<LOCA::StatusTest::Abstract> statusTestSource_;
+  Provider<Piro::Epetra::AdaptiveSolutionManager> adaptSolMgrSource_;
 #endif /* Piro_ENABLE_NOX */
 
 #ifdef Piro_ENABLE_Rythmos
-  ExtensibleFactory<Rythmos::IntegrationObserverBase<double> > rythmosObserverFactory_;
+  Provider<Rythmos::IntegrationObserverBase<double> > rythmosObserverSource_;
 #endif /* Piro_ENABLE_Rythmos */
 };
 
 template <typename T>
 inline
 void
-SolverFactory::setDefaultProvider(const Piro::Provider<T> &p)
+SolverFactory::setSource(const Piro::Provider<T> &p)
 {
-  this->getFactory<T>().setDefaultProvider(p);
+  this->getSource<T>() = p;
 }
 
 template <typename T>
 inline
 void
-SolverFactory::setProvider(const std::string &key, const Piro::Provider<T> &p)
+SolverFactory::setDefaultProvider(const Piro::Provider<T> &p)
 {
-  this->getFactory<T>().setProvider(key, p);
+  this->setSource(p);
 }
 
 } // namespace Epetra

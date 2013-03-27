@@ -55,15 +55,10 @@
 #include "SaveEigenData_Epetra.hpp"
 #endif /* Piro_ENABLE_NOX */
 
-#ifdef Piro_ENABLE_Rythmos
-#include "Piro_RythmosNOX_RowSumUpdater.hpp"
-#endif /* Piro_ENABLE_Rythmos */
-
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-
 
 int main(int argc, char *argv[]) {
 
@@ -90,16 +85,9 @@ int main(int argc, char *argv[]) {
   Piro::Epetra::SolverFactory solverFactory;
 
 #ifdef Piro_ENABLE_NOX
-  solverFactory.setProvider<LOCA::SaveEigenData::AbstractStrategy>(
-      "My SaveEigenData",
+  solverFactory.setSource<LOCA::SaveEigenData::AbstractStrategy>(
       Piro::providerFromReferenceAcceptingConstructor<SaveEigenData_Epetra>());
 #endif /* Piro_ENABLE_NOX */
-
-#ifdef Piro_ENABLE_Rythmos
-  solverFactory.setProvider<Rythmos::IntegrationObserverBase<double> >(
-      "Rythmos Row Sum Updater",
-      Piro::providerFromDefaultConstructor<Piro::RythmosNOXRowSumUpdaterObserver<double> >());
-#endif /* Piro_ENABLE_Rythmos */
 
 #ifdef Piro_ENABLE_Rythmos
   int numTests=5;
