@@ -1248,7 +1248,7 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
     }
     return (returncode);
   }
-  int ierr1, ierr2;
+  int ierr1 = 0, ierr2 = 0;
 #ifdef HAVE_EPETRA_ATOMIC_CRS_UPDATES
 #pragma omp critical
 #endif
