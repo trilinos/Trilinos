@@ -110,6 +110,17 @@ public:
     CreateDefaultView();
   }
 
+  //! Constructor specifying fixed number of entries for each row and column map
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, maxNumEntriesPerRow, pftype);
+
+    // Default view
+    CreateDefaultView();
+  }
+
   //! Constructor specifying (possibly different) number of entries in each row.
   CrsMatrixWrap(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile)
     : finalDefaultView_(false)

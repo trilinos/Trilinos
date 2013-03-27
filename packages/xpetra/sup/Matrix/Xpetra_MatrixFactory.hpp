@@ -84,6 +84,11 @@ namespace Xpetra {
       // TEUCHOS_TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"?");
     }
 
+    //! Constructor specifying the max number of non-zeros per row and providing column map
+    static RCP<Matrix> Build(const RCP<const Map>& rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
+      return rcp(new CrsMatrixWrap(rowMap, colMap, maxNumEntriesPerRow, pftype));
+    }
+
     //! Constructor specifying (possibly different) number of entries in each row.
     static RCP<Matrix> Build(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile) {
       return rcp( new CrsMatrixWrap(rowMap, NumEntriesPerRowToAlloc, pftype) );
