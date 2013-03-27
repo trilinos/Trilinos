@@ -144,16 +144,16 @@ namespace MueLu {
         pqParts << numParts;
 
       else if (dim == 2) {
-        GO p = sqrt(numParts);
+        GO p = Teuchos::as<GO>(sqrt(numParts));
         while (numParts % p)
           p--;
         pqParts << p << "," << numParts/p;
 
       } else if (dim == 3) {
-        GO p = pow(numParts,1./3), q;
+        GO p = Teuchos::as<GO>(pow(numParts,1./3)), q;
         while (numParts % p)
           p--;
-        q = sqrt(numParts / p);
+        q = Teuchos::as<GO>(sqrt(numParts / p));
         while (numParts % (p*q))
           q--;
         pqParts << p << "," << q << "," << numParts/(p*q);
