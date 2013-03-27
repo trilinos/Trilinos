@@ -47,6 +47,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sys/types.h>
+#include <unistd.h>
+
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
