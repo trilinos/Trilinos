@@ -94,7 +94,7 @@ namespace MueLu {
     // NOTE: the good thing is that we mostly deal with local IDs
 
     // Calculate max entries per row
-    RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getNodeMaxNumRowEntries());
+    RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
 
     Array<GO>   newInds;
     Array<SC>   newVals;
@@ -156,8 +156,12 @@ namespace MueLu {
         for (size_t k = 0; k < blkSize; k++)
           filter[indsG[j]*blkSize+k] = 0;
     }
-    filteredA->fillComplete(A->getDomainMap(), A->getRangeMap());
+    RCP<ParameterList> fillCompleteParams(new ParameterList);;
+    fillCompleteParams->set("No Nonlocal Changes", true);
+    filteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
+
     filteredA->SetFixedBlockSize(blkSize);
+
     // TODO: Can we reuse max eigenvalue from A?
     // filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
 

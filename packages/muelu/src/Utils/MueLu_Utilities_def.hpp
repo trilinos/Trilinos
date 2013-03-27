@@ -1134,7 +1134,8 @@ namespace MueLu {
         if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
           throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
         RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-        params->set("Optimize Storage",doOptimizeStorage);
+        params->set("Optimize Storage",    doOptimizeStorage);
+        params->set("No Nonlocal Changes", true);
         Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
       }
 #else
