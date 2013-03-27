@@ -67,15 +67,21 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedCoarseMapFactory(RCP<const FactoryBase> prevCoarseMapFact, RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> nullspaceFact)
-  : prevCoarseMapFact_(prevCoarseMapFact)
-  {
-    this->SetFactory("Aggregates", aggregatesFact);
-    this->SetFactory("Nullspace", nullspaceFact);
-  }
+  BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedCoarseMapFactory()
+  {  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~BlockedCoarseMapFactory() {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Generating factory for aggregates.");
+    validParamList->set< RCP<const FactoryBase> >("Nullspace",  Teuchos::null, "Generating factory for null space.");
+    validParamList->set< RCP<const FactoryBase> >("CoarseMap",  Teuchos::null, "Generating factory of previous coarse map. (must be set by user!).");
+    return validParamList;
+  }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::setDomainMapOffset(GlobalOrdinal offset) {
@@ -92,14 +98,19 @@ namespace MueLu {
   void BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "Aggregates");
     this->Input(currentLevel, "Nullspace");
-    currentLevel.DeclareInput("CoarseMap",  prevCoarseMapFact_.get(), this); // --
+
+    // Get CoarseMap from previously defined block
+    RCP<const FactoryBase> prevCoarseMapFact = this->GetFactory("CoarseMap");
+    TEUCHOS_TEST_FOR_EXCEPTION(prevCoarseMapFact==Teuchos::null, Exceptions::RuntimeError, "MueLu::BlockedCoarseMapFactory::getDomainMapOffset: user did not specify CoarseMap of previous block. Do not forget to set the CoarseMap factory.");
+    currentLevel.DeclareInput("CoarseMap", prevCoarseMapFact.get(), this); // --
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "BlockedCoarseMap factory", currentLevel);
 
-    RCP<const Map> subPDomainMap = currentLevel.Get<RCP<const Map> >("CoarseMap", prevCoarseMapFact_.get());
+    RCP<const FactoryBase> prevCoarseMapFact = this->GetFactory("CoarseMap");
+    RCP<const Map> subPDomainMap = currentLevel.Get<RCP<const Map> >("CoarseMap", prevCoarseMapFact.get() /*prevCoarseMapFact_.get()*/);
 
     GlobalOrdinal maxGlobalIndex = subPDomainMap->getMaxAllGlobalIndex();
 
