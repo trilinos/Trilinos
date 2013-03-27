@@ -710,8 +710,8 @@ int main(int argc, char *argv[]) {
      EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
      EpetraExt::MultiVectorToMatrixMarketFile("nodeOnBound.dat",nBound,0,0,false);
 
-    // Put element to node mapping in multivector for output
-     Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
+   // Put element to node mapping in multivector for output
+     Epetra_Map   globalMapElem((int) numElemsGlobal, numElems, 0, Comm);
      Epetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
      for (int ielem=0; ielem<numElems; ielem++) {
         for (int inode=0; inode<numNodesPerElem; inode++) {
