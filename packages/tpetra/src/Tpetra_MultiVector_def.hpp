@@ -2513,6 +2513,17 @@ namespace Tpetra {
     cview_ = Teuchos::null;
     ncview_ = Teuchos::null;
   }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
+  {
+    this->map_ = newMap;
+    // mfh 26 Mar 2013: Do we want to release views?
+  }
+
 } // namespace Tpetra
 
 //

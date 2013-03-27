@@ -3203,14 +3203,119 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  //                                                                         //
-  //                         Deprecated methods                              //
-  //                                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
+  {
+    using Teuchos::Comm;
+    using Teuchos::null;
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
+    typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
+    RCP<const Comm<int> > newComm = newMap->getComm ();
+
+    // We'll set all the state "transactionally," so that this method
+    // satisfies the strong exception guarantee.  This object's state
+    // won't be modified until the end of this method.
+    RCP<const map_type> rowMap, domainMap, rangeMap, colMap;
+    RCP<import_type> importer;
+    RCP<export_type> exporter;
+
+    rowMap = newMap;
+    if (! domainMap_.is_null ()) {
+      if (domainMap_.getRawPtr () == rowMap_.getRawPtr ()) {
+        // Common case: original domain and row Maps are identical.
+        // In that case, we need only replace the original domain Map
+        // with the new Map.  This ensures that the new domain and row
+        // Maps _stay_ identical.
+        domainMap = newMap;
+      } else {
+        domainMap = domainMap_->replaceCommWithSubset (newComm);
+      }
+    }
+    if (! rangeMap_.is_null ()) {
+      if (rangeMap_.getRawPtr () == rowMap_.getRawPtr ()) {
+        // Common case: original range and row Maps are identical.  In
+        // that case, we need only replace the original range Map with
+        // the new Map.  This ensures that the new range and row Maps
+        // _stay_ identical.
+        rangeMap = newMap;
+      } else {
+        rangeMap = rangeMap_->replaceCommWithSubset (newComm);
+      }
+    }
+    if (! colMap.is_null ()) {
+      colMap = colMap_->replaceCommWithSubset (newComm);
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rowMap->getComm ().getRawPtr () != newMap->getComm ().getRawPtr (),
+      std::logic_error,
+      "Tpetra::Map::removeEmptyProcessesInPlace: "
+      "New row Map's communicator does not match input Map's communicator.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! domainMap.is_null () && domainMap->getComm ().getRawPtr () != newMap->getComm ().getRawPtr (),
+      std::logic_error,
+      "Tpetra::Map::removeEmptyProcessesInPlace: "
+      "New domain Map's communicator does not match input Map's communicator.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! rangeMap.is_null () && rangeMap->getComm ().getRawPtr () != newMap->getComm ().getRawPtr (),
+      std::logic_error,
+      "Tpetra::Map::removeEmptyProcessesInPlace: "
+      "New range Map's communicator does not match input Map's communicator.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! colMap.is_null () && colMap->getComm ().getRawPtr () != newMap->getComm ().getRawPtr (),
+      std::logic_error,
+      "Tpetra::Map::removeEmptyProcessesInPlace: "
+      "New column Map's communicator does not match input Map's communicator.  "
+      "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+    // (Re)create the Export and / or Import if necessary.
+    if (! newComm.is_null ()) {
+      RCP<ParameterList> params = this->getNonconstParameterList (); // could be null
+      //
+      // The operation below are collective on the new communicator.
+      //
+      // (Re)create the Export object if necessary.
+      if (rangeMap != rowMap && ! rangeMap->isSameAs (*rowMap)) {
+        if (params.is_null () || ! params->isSublist ("Export")) {
+          exporter = rcp (new export_type (rowMap, rangeMap));
+        }
+        else {
+          RCP<ParameterList> exportSublist = sublist (params, "Export", true);
+          exporter = rcp (new export_type (rowMap, rangeMap, exportSublist));
+        }
+      }
+      // (Re)create the Import object if necessary.
+      if (domainMap != colMap && (! domainMap->isSameAs (*colMap))) {
+        if (params.is_null () || ! params->isSublist ("Import")) {
+          importer = rcp (new import_type (domainMap, colMap));
+        } else {
+          RCP<ParameterList> importSublist = sublist (params, "Import", true);
+          importer = rcp (new import_type (domainMap, colMap, importSublist));
+        }
+      }
+    } // if newComm is not null
+
+    // Defer side effects until the end.  If no destructors throw
+    // exceptions (they shouldn't anyway), then this method satisfies
+    // the strong exception guarantee.
+    exporter_ = exporter;
+    importer_ = importer;
+    rowMap_ = rowMap;
+    domainMap_ = domainMap;
+    rangeMap_ = rangeMap;
+    colMap_ = colMap;
+  }
 
 } // namespace Tpetra
 

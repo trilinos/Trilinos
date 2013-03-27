@@ -4036,13 +4036,27 @@ namespace Tpetra {
     return Y_rowMap;
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  //                                                                         //
-  //                         Deprecated methods                              //
-  //                                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node,
+            class LocalMatOps>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      myGraph_.is_null (), std::logic_error, "Tpetra::CrsMatrix::"
+      "removeEmptyProcessesInPlace: This method does not work when the matrix "
+      "was created with a constant graph (that is, when it was created using "
+      "the version of its constructor that takes an RCP<const CrsGraph>).  "
+      "This is because the matrix is not allowed to modify the graph in that "
+      "case, but removing empty processes requires modifying the graph.");
+    myGraph_->removeEmptyProcessesInPlace (newMap);
+    // In the nonconst graph case, staticGraph_ is just a const
+    // pointer to myGraph_.
+    staticGraph_ = Teuchos::rcp_const_cast<const Graph> (myGraph_);
+  }
 
 } // namespace Tpetra
 

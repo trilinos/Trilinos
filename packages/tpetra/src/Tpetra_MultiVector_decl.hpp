@@ -938,6 +938,9 @@ namespace Tpetra {
     mutable bool createViewsNonConstRaisedEfficiencyWarning_;
 
     //@}
+
+    void
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
   }; // class MultiVector
 
   /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.
