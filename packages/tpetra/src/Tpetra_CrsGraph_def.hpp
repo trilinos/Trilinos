@@ -1971,6 +1971,7 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "setAllIndices()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false, std::runtime_error, ": requires a ColMap.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( (size_t)rowPointers.size() != getNodeNumRows()+1, std::runtime_error, ": requires rowPointers.size() == getNodeNumRows()+1");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( lclInds1D_ != Teuchos::null || gblInds1D_ != Teuchos::null, std::runtime_error, ": cannot have 1D data structures allocated.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( lclInds2D_ != Teuchos::null || gblInds2D_ != Teuchos::null, std::runtime_error, ": cannot have 2D data structures allocated.");
 
@@ -2351,6 +2352,14 @@ namespace Tpetra {
     const char tfecfFuncName[] = "expertStaticFillComplete()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillComplete() == true || hasColMap() == false,
 					   std::runtime_error, ": fillComplete cannot have already been called and a ColMap is required.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getNodeNumRows() > 0 && rowPtrs_==Teuchos::null,
+					   std::runtime_error, ": a matrix will getNodeNumRows()>0 requires rowptr to be set.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( domainMap == Teuchos::null || rangeMap == Teuchos::null,
+					   std::runtime_error, ": requires a non-null domainMap & rangeMap.");
+
+
 
     // To make life easier, this matrix gets flagged as static profile
     pftype_= StaticProfile;

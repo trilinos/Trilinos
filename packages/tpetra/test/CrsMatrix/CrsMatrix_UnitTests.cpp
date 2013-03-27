@@ -1466,6 +1466,10 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
     TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
+    TEST_EQUALITY_CONST(eye->getRowMap()!=Teuchos::null, true);
+    TEST_EQUALITY_CONST(eye->getColMap()!=Teuchos::null, true);
+    TEST_EQUALITY_CONST(eye->getDomainMap()!=Teuchos::null, true);
+    TEST_EQUALITY_CONST(eye->getRangeMap()!=Teuchos::null, true);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getColMap())   , true);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getDomainMap()), true);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getRangeMap()) , true);
@@ -1531,6 +1535,10 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
     TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
+    TEST_EQUALITY_CONST(eye->getRowMap()!=Teuchos::null, true);
+    TEST_EQUALITY_CONST(eye->getColMap()!=Teuchos::null, true);
+    TEST_EQUALITY_CONST(eye->getDomainMap()!=Teuchos::null, true);
+    TEST_EQUALITY_CONST(eye->getRangeMap()!=Teuchos::null, true);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getColMap())   , true);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getDomainMap()), true);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getRangeMap()) , true);

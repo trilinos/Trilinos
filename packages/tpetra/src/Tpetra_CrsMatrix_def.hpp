@@ -1481,6 +1481,7 @@ namespace Tpetra {
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllValues(ArrayRCP<size_t> & rowPointers,ArrayRCP<LocalOrdinal> & columnIndices, ArrayRCP<Scalar> & values) 
   {
     const char tfecfFuncName[] = "setAllValues()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null,std::runtime_error," requires that myGraph_ != Teuchos::null.");
     try {
       myGraph_->setAllIndices(rowPointers,columnIndices);
@@ -2187,8 +2188,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
       std::runtime_error, ": Matrix fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null, std::logic_error,
-					  ": myGraph_ is null.  This is not allowed.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null, std::logic_error,": myGraph_ is null.  This is not allowed.");
 
 #ifdef HAVE_TPETRA_DEBUG
     getRowMap ()->getComm ()->barrier ();

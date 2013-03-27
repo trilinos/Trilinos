@@ -531,6 +531,7 @@ namespace Tpetra {
       //! Sets the 1D pointer arrays of the graph. 
       /**
 	 \pre <tt>hasColMap() == true</tt>
+	 \pre <tt>rowPointers.size() != getNodeNumRows()+1</tt>
 	 \pre No insert routines have been called.
 									
 	\warning This method is intended for expert developer use only, and should never be called by user code.
