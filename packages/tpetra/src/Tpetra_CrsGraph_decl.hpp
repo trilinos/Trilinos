@@ -528,12 +528,21 @@ namespace Tpetra {
         */
       void removeLocalIndices(LocalOrdinal localRow);
 
+      //! Sets the 1D pointer arrays of the graph. 
+      /**
+	 \pre <tt>hasColMap() == true</tt>
+	 \pre No insert routines have been called.
+									
+	\warning This method is intended for expert developer use only, and should never be called by user code.
+      */
+      void setAllIndices(ArrayRCP<size_t> & rowPointers,ArrayRCP<LocalOrdinal> & columnIndices);
+    
       //@}
 
       //! @name Transformational Methods
       /**
           Each of the methods in this group is a global collective. It is
-          necessary to call these mehtods on all nodes participating in the
+          necessary to call these methods on all nodes participating in the
           communicator associated with this graph.
         */
       //@{

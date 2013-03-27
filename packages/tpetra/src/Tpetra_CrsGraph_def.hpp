@@ -248,8 +248,7 @@ namespace Tpetra {
   , insertLocalIndicesWarnedEfficiency_(false)
   {
     staticAssertions();
-    lclInds1D_ = columnIndices;
-    rowPtrs_   = rowPointers;
+    setAllIndices(rowPointers,columnIndices);
     checkInternalState();
   }
 
@@ -1965,6 +1964,23 @@ namespace Tpetra {
 #endif
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllIndices(ArrayRCP<size_t> & rowPointers,ArrayRCP<LocalOrdinal> & columnIndices) 
+  {
+    const char tfecfFuncName[] = "setAllIndices()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false, std::runtime_error, ": requires a ColMap.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( lclInds1D_ != Teuchos::null || gblInds1D_ != Teuchos::null, std::runtime_error, ": cannot have 1D data structures allocated.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( lclInds2D_ != Teuchos::null || gblInds2D_ != Teuchos::null, std::runtime_error, ": cannot have 2D data structures allocated.");
+
+    indicesAreAllocated_ = true;
+    indicesAreLocal_     = true;
+    pftype_              = StaticProfile; // if the profile wasn't static before, it sure is now.
+    lclInds1D_           = columnIndices;
+    rowPtrs_             = rowPointers;
+    checkInternalState();
+  }
 
   // TODO: in the future, globalAssemble() should use import/export functionality
   /////////////////////////////////////////////////////////////////////////////

@@ -680,6 +680,18 @@ namespace Tpetra {
     //! Scale the current values of a matrix, this = alpha*this.
     void scale(const Scalar &alpha);
 
+    //! Sets the 1D pointer arrays of the graph.  
+    /**
+       \pre <tt>hasColMap() == true</tt>
+       \pre <tt>getGraph() != Teuchos::null</tt>
+       \pre No insert/sum routines have been called
+
+       \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    void setAllValues(ArrayRCP<size_t> & rowPointers,ArrayRCP<LocalOrdinal> & columnIndices, ArrayRCP<Scalar> & values);
+
+    
+
     //@}
     //! @name Transformational Methods
     //@{
