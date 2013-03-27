@@ -680,8 +680,8 @@ namespace Tpetra {
   ///
   /// This method behaves just like the two-argument version of
   /// removeEmptyProcessesInPlace, except that it first calls
-  /// removeEmptyProcess() on the input DistObject's Map to compute
-  /// the new Map.
+  /// removeEmptyProcessesInPlace() on the input DistObject's Map to
+  /// compute the new Map.
   template<class PT, class LO, class GO, class NT>
   void
   removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input);

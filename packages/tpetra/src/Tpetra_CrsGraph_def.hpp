@@ -3283,7 +3283,7 @@ namespace Tpetra {
     if (! newComm.is_null ()) {
       RCP<ParameterList> params = this->getNonconstParameterList (); // could be null
       //
-      // The operation below are collective on the new communicator.
+      // The operations below are collective on the new communicator.
       //
       // (Re)create the Export object if necessary.
       if (rangeMap != rowMap && ! rangeMap->isSameAs (*rowMap)) {
