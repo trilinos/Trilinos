@@ -47,26 +47,6 @@
 namespace Intrepid {
 
   ///
-  /// Scalar vector product
-  /// \param s scalar factor
-  /// \param u vector factor
-  /// \return \f$ s u \f$
-  ///
-  template<typename S, typename T>
-  Vector<typename Promote<S, T>::type>
-  operator*(S const & s, Vector<T> const & u);
-
-  ///
-  /// Vector scalar product
-  /// \param u vector factor
-  /// \param s scalar factor
-  /// \return \f$ s u \f$
-  ///
-  template<typename S, typename T>
-  Vector<typename Promote<S, T>::type>
-  operator*(Vector<T> const & u, S const & s);
-
-  ///
   /// Tensor Frobenius norm
   /// \return \f$ \sqrt{A:A} \f$
   ///

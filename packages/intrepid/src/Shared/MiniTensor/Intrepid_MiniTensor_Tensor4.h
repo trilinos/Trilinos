@@ -228,7 +228,7 @@ namespace Intrepid {
   /// \return \f$ s A \f$
   ///
   template<typename S, typename T>
-  Tensor4<typename Promote<S, T>::type>
+  typename lazy_disable_if< is_tensor4<S>, apply_tensor4< Promote<S,T> > >::type
   operator*(S const & s, Tensor4<T> const & A);
 
   ///
@@ -238,7 +238,7 @@ namespace Intrepid {
   /// \return \f$ s A \f$
   ///
   template<typename S, typename T>
-  Tensor4<typename Promote<S, T>::type>
+  typename lazy_disable_if< is_tensor4<S>, apply_tensor4< Promote<S,T> > >::type
   operator*(Tensor4<T> const & A, S const & s);
 
   ///
