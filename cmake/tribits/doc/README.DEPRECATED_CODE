@@ -6,20 +6,20 @@
 
 This document describes the process to use for deprecating code within a major
 version sequence and finally removing deprecated code when transitioning to a
-new the major project version X to X+1 for the TriBITS version numbering
+new the major repository version X to X+1 for the TriBITS version numbering
 scheme X.Y.Z.  This information is given as a processes with different phases.
 
 Outline:
   1. Setting up support for deprecated code handling
   2. Deprecating code but maintaining backward compatibility
-    2.a. Deprecating C/C++ classes, structs, functions, typdefs, etc
+    2.a. Deprecating C/C++ classes, structs, functions, typdefs, etc.
     2.b. Deprecating preprocessor macros
     2.c. Deprecating an entire header and/or source file
   3. Hiding deprecated code to certify and facilitate later removal
     3.a. Hiding C/C++ entities
     3.b. Hiding entire deprecated header and source files
   4. Physically removing deprecated code
-    4.a. Removing entire deprecated header and source files.
+    4.a. Removing entire deprecated header and source files
     4.b. Removing deprecated code from remaining files
 
 1) Setting up support for deprecated code handling
@@ -42,10 +42,9 @@ file needs to have:
 
   @<PACKAGE_UCNAME>_DEPRECATED_DECLARATIONS@
 
-(where PACKAGE_UCNAME is the upper-case name of the TriBITS package.)
+where PACKAGE_UCNAME is the upper-case name of the TriBITS package.
 
-That is all that is needed to provide support for TriBITS deprecated code
-support.
+That is all that is needed to provide support for TriBITS deprecated code.
 
 When a TriBITS project is configured with:
 
@@ -81,7 +80,7 @@ code in an upstream package (which might have its deprecated code hidden).
 2) Deprecating code but maintaining backward compatibility
 
 One of the most important aspects of the TriBITS lifecycle model for
-later-stage Productioin Growth and Production Maintenance code is to provide
+later-stage Production Growth and Production Maintenance code is to provide
 backward compatibility between a continuous stream of versions of the software
 within a major version number X in the version numbering scheme X.Y.Z.  In all
 cases, if a piece of client code builds and runs correctly against version
@@ -95,7 +94,7 @@ code is free of deprecated warnings by hiding deprecated code.  Below, we
 describe the different types of entities that one wants to deprecate and how
 to support hiding code (which also facilitates removing it later).
 
-2.a) Deprecating C/C++ classes, structs, functions, typdefs, etc
+2.a) Deprecating C/C++ classes, structs, functions, typdefs, etc.
 
 To deprecate standard C/C++ constructs, you just use the standard TriBITS
 compile-time macro <PACKAGE_UCNAME>_DEPRECATED which is properly ifdefed by the
@@ -112,10 +111,10 @@ you would deprecate standard C/C++ constructs with:
   <PACKAGE_UCNAME>_DEPRECATED typedef someTypeDef int;
 
 The GCC and Intel C and C++ compilers both support adding extra attributes
-including is the __deprecated__ attribute.  When this attribute is applied to
-a given C/C++ entity, it produces a compiler warning that can be searched for
-in the compiler output and elevated to an error (when -Werror is also passed
-to the compiler).
+including the __deprecated__ attribute.  When this attribute is applied to a
+given C/C++ entity, it produces a compiler warning that can be searched for in
+the compiler output and elevated to an error (when -Werror is also passed to
+the compiler).
 
 2.b) Deprecating preprocessor macros
 
@@ -124,10 +123,12 @@ therefore cannot directly take advantage of a feature such as the
 __deprecated__ attribute of the GCC/Intel compilers.  However, in some cases,
 for function-like macros can such as:
 
+  // The definition of the macro
   #define SOME_OLD_FUNC_MACRO(ARG1, ARG2, ...) ...
 
   ...
 
+  // A use of the macro
   SOME_OLD_FUNC_MACRO(a, b, ...)
 
 there is a strategy where one can define the macro to call a dummy deprecated
@@ -137,6 +138,7 @@ function such as with:
   inline void SOME_OLD_FUNC_MACRO_is_deprecated()
   {}
 
+  // The definition of the macro
   #define SOME_OLD_FUNC_MACRO(ARG1, ARG2, ...) \
     { \
       SOME_OLD_FUNC_MACRO_is_deprecated(); \
@@ -145,6 +147,7 @@ function such as with:
 
   ...
 
+  // A use of the macro
   SOME_OLD_FUNC_MACRO(a, b, ...)
 
 In the above example, client code calling SOME_OLD_FUNC_MACRO(...) will now
@@ -201,9 +204,9 @@ In order to hide entire deprecated header and source fiels when the CMake
 variable <PACAKGE_NAME>_HIDE_DEPRECATED_CODE=ON is set, one needs to move the
 headers and sources to another directory and provide for conditional inclusion
 in the TriBITS build of the library.  For example, suppose someone wants to
-remove support for the deprecated files SomeOldStuff.hpp and SomeOldStuff.cpp,
-one would move the files onto a new 'deprecated' directory and then write the
-CMakeLists.txt file like:
+remove support for the deprecated files SomeOldStuff.hpp and SomeOldStuff.cpp.
+In this case, one would move the files onto a new 'deprecated' directory and
+then write the CMakeLists.txt file like:
 
   SET(HEADERS "")
   SET(SOURCES "")
@@ -249,16 +252,18 @@ get the payoff in the reduction of technical debt that occurs when removing
 what is no longer needed or wanted.
 
 NOTE: It is recommended to remove deprecated files first, then remove
-deprecated file fragments from remaining files.
+deprecated file fragments from remaining files.  Also, create git commits
+after each step.
 
 NOTE: It is recommended that before deprecated code is actually removed, that
-the TriBITS project set the variable <PROJECT_NAME>_HIDE_DEPRECATED_CODE be
-changed from OFF to ON so that downstream clients will see the effects of
-hiding the deprecated code before the code is actually removed.  In fact, this
-variable should be set several days to a week or more more before the code is
-actually removed.  This way, downstream code developers will get a "shock"
-about removal of the deprecated code but can manually set
--D<PROJECT_NAME>_HIDE_DEPRECATED_CODE=OFF to keep building in the short term.
+the TriBITS project set the variable <PROJECT_NAME>_HIDE_DEPRECATED_CODE by
+default be changed from OFF to ON so that downstream clients will see the
+effects of hiding the deprecated code before the code is actually removed.  In
+fact, this variable should be set several days to a week or more more before
+the code is actually removed.  This way, downstream code developers will get a
+"shock" about removal of the deprecated code but can manually configure with
+-D<PROJECT_NAME>_HIDE_DEPRECATED_CODE=OFF to keep building in the short term
+until they can remove their usage of deprecated code.
 
 4.a) Removing entire deprecated header and source files.
 
@@ -286,7 +291,7 @@ machinary for conditionally including deprecated files by leaving the above
 empty CMake code or just commenting it out.
 
 Create a local commit of the removed files and the updated CMakeLists.txt file
-before removing file fragment.  In other words:
+before removing deprecated fragements from source files.  In other words, do:
 
   $ emacs -nw CMakeLists.txt  # Remove the references to the deprecated files
   $ git rm SomeOldStuff.hpp SomeOldStuff.cpp
@@ -298,11 +303,11 @@ The deprecated ifdefed blocks described in 3.a above can be removed manually
 but it is generally prefered to use a tool.  One simple tool is called
 unifdef, that can be downloaded and is documented at:
 
-    http://http://dotat.at/prog/unifdef/
+    http://dotat.at/prog/unifdef/
 
 Just download, build, and installl the program unidef (see unidef/INSTALL in
-untared source) and then run it as described below.  In the example below, the
-program was installed in the user's home directory under:
+untarred source) and then run it as described below.  In the example below,
+the program was installed in the user's home directory under:
 
   ~/install/bin/unidef
 
