@@ -1248,21 +1248,28 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
     }
     return (returncode);
   }
+  int ierr1, ierr2;
+#ifdef HAVE_EPETRA_ATOMIC_CRS_UPDATES
+#pragma omp critical
+#endif
+  {
+	std::vector<int_type>& nonlocalRows_var = nonlocalRows<int_type>();
 
-  std::vector<int_type>& nonlocalRows_var = nonlocalRows<int_type>();
+	//find offset of this row in our list of nonlocal rows.
+	typename std::vector<int_type>::iterator it =
+			std::lower_bound(nonlocalRows_var.begin(), nonlocalRows_var.end(), row);
 
-  //find offset of this row in our list of nonlocal rows.
-  typename std::vector<int_type>::iterator it =
-      std::lower_bound(nonlocalRows_var.begin(), nonlocalRows_var.end(), row);
+	int rowoffset = (int) (it - nonlocalRows_var.begin());
+	if (it == nonlocalRows_var.end() || *it != row) {
+	  ierr1 = InsertNonlocalRow(row, it);
+	}
 
-  int rowoffset = (int) (it - nonlocalRows_var.begin());
-  if (it == nonlocalRows_var.end() || *it != row) {
-    EPETRA_CHK_ERR( InsertNonlocalRow(row, it) );
+	for(int i=0; i<numCols; ++i) {
+	  ierr2 = InputNonlocalValue(rowoffset, cols[i], values[i], mode);
+	}
   }
-
-  for(int i=0; i<numCols; ++i) {
-    EPETRA_CHK_ERR( InputNonlocalValue(rowoffset, cols[i], values[i], mode) );
-  }
+  EPETRA_CHK_ERR(ierr1);
+  EPETRA_CHK_ERR(ierr2);
 
   return(0);
 }
