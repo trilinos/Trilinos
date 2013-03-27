@@ -410,7 +410,7 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
   EpetraExt::RowMatrix_Transpose* Atrans = 0;
   if( transposeA )
   {
-    Atrans = new EpetraExt::RowMatrix_Transpose(false,NULL,false);
+    Atrans = new EpetraExt::RowMatrix_Transpose;
     Aprime = &(dynamic_cast<Epetra_CrsMatrix&>(((*Atrans)(const_cast<Epetra_CrsMatrix&>(A)))));
   }
   else

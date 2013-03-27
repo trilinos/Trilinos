@@ -139,6 +139,7 @@ namespace Iovs {
     bool doLogging; // True if logging field input/output
 
     std::string databaseTitle;
+    std::string paraview_script_filename;
     int spatialDimension;
 
     int64_t nodeCount;
@@ -150,6 +151,8 @@ namespace Iovs {
     // Handle to the ParaView Catalyst dynamic library
     // that is loaded via Sierra user plugin at runtime.
     ParaViewCatalystSierraAdaptorBase* pvcsa;
+    bool globalNodeAndElementIDsCreated;
+    void create_global_node_and_element_ids();
 
     // Bulk Data
 

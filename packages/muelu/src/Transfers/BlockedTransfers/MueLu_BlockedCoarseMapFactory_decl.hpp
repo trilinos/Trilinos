@@ -84,10 +84,12 @@ public:
   //@{
 
   //! Constructor
-  BlockedCoarseMapFactory(RCP<const FactoryBase> prevCoarseMapFact, RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null);
+  BlockedCoarseMapFactory();
 
   //! Destructor
   virtual ~BlockedCoarseMapFactory();
+
+  RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
   //@}
 
@@ -127,7 +129,6 @@ public:
   //@}
 
 private:
-  RCP<const FactoryBase> prevCoarseMapFact_; //! Factory for previous P block, used for defining a proper domain GID offset
 
 }; //class BlockedCoarseMapFactory
 

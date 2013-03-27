@@ -150,10 +150,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Save Eigen Data Strategy">
-    <Parameter name="Type" type="string" value="My SaveEigenData"/>
-      <ParameterList name="My SaveEigenData">
-        <Parameter name="Save Eigenvectors" type="int" value="1"/>
-      </ParameterList>
+    <Parameter name="Save Eigenvectors" type="int" value="1"/>
   </ParameterList>
 </ParameterList>
 

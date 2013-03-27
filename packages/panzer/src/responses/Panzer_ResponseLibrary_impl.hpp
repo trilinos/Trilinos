@@ -672,23 +672,6 @@ buildResponseEvaluators(
 
    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > requiredVolPhysicsBlocks;
    std::vector<WorksetDescriptor> requiredWorksetDesc;
-/*
-   for(std::size_t i=0;i<physicsBlocks.size();i++) {
-     std::string blockId = physicsBlocks[i]->elementBlockID();
-     WorksetDescriptor wd = blockDescriptor(blockId);
-     
-     // is this element block required
-     typename RespFactoryTable::const_iterator itr = respFactories_.find(wd);
-
-     if(itr!=respFactories_.end()) {
-       // one last check for nonzero size
-       if(itr->second.size()>0) {
-         requiredVolPhysicsBlocks.push_back(physicsBlocks[i]);
-         requiredWorksetDesc.push_back(wd);
-       }
-     } 
-   }
-*/
    for(typename RespFactoryTable::const_iterator itr=respFactories_.begin();
        itr!=respFactories_.end();++itr) {
      // is there something to do?
@@ -696,7 +679,6 @@ buildResponseEvaluators(
        continue;
 
      const WorksetDescriptor & wd = itr->first;
-     requiredWorksetDesc.push_back(wd);
 
      // find physics block with right element block
      bool failure = true;
@@ -709,7 +691,9 @@ buildResponseEvaluators(
      }
 
      // we must find at least one physics block
-     TEUCHOS_ASSERT(!failure);
+     // TEUCHOS_ASSERT(!failure);
+     if(!failure)
+       requiredWorksetDesc.push_back(wd);
    }
 
    // build boundary response array

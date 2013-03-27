@@ -62,11 +62,11 @@ namespace Iovs {
   {
     dbState = Ioss::STATE_UNKNOWN;
     this->pvcsa = 0;
+    this->globalNodeAndElementIDsCreated = false;
 
-    std::string script_filename;
     if(props.exists("VISUALIZATION_SCRIPT"))
       {
-      script_filename = props.get("VISUALIZATION_SCRIPT").get_string();
+      this->paraview_script_filename = props.get("VISUALIZATION_SCRIPT").get_string();
       }
     else
       {
@@ -75,10 +75,6 @@ namespace Iovs {
              << "block, unable to initialize ParaView Catalyst";
       IOSS_ERROR(errmsg);
       }
-
-    this->pvcsa = ParaViewCatalystSierraAdaptorBaseFactory::create("ParaViewCatalystSierraAdaptor")();
-    if(this->pvcsa)
-      this->pvcsa->InitializeParaViewCatalyst(script_filename.c_str());
   }
 
   DatabaseIO::~DatabaseIO() 
@@ -99,6 +95,23 @@ namespace Iovs {
   bool DatabaseIO::begin(Ioss::State state)
   {
     dbState = state;
+
+    Ioss::Region *region = this->get_region();
+    if(region->model_defined() && !this->pvcsa)
+      {
+      this->pvcsa = ParaViewCatalystSierraAdaptorBaseFactory::create("ParaViewCatalystSierraAdaptor")();
+      if(this->pvcsa)
+        this->pvcsa->InitializeParaViewCatalyst(this->paraview_script_filename.c_str());
+      std::vector<int> element_block_id_list;
+      Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
+      for(int i = 0;i<ebc.size();i++)
+        {
+        if (ebc[i]->property_exists("id"))
+          element_block_id_list.push_back(ebc[i]->get_property("id").get_int());
+        }
+      if(this->pvcsa)
+        this->pvcsa->InitializeElementBlocks(element_block_id_list);
+      }
     return true;
   }
 
@@ -128,9 +141,15 @@ namespace Iovs {
 
   // Default versions do nothing at this time...
   // Will be used for global variables...
-  bool DatabaseIO::begin_state(Ioss::Region* /* region */, int state, double time)
+  bool DatabaseIO::begin_state(Ioss::Region* region, int state, double time)
   {
     Ioss::SerializeIO   serializeIO__(this);
+
+    if(!this->globalNodeAndElementIDsCreated)
+      {
+      this->create_global_node_and_element_ids();
+      }
+
     if(this->pvcsa)
       this->pvcsa->SetTimeData(time, state - 1);
 
@@ -157,6 +176,40 @@ namespace Iovs {
     // TODO fillin
   }
 
+  void DatabaseIO::create_global_node_and_element_ids()
+  {
+  Ioss::ElementBlockContainer element_blocks = this->get_region()->get_element_blocks();
+  Ioss::ElementBlockContainer::const_iterator I;
+  std::vector<std::string> component_names;
+  std::vector<std::string> element_block_name;
+  element_block_name.push_back("ElementBlockIds");
+  component_names.push_back("GlobalElementId");
+  for (I=element_blocks.begin(); I != element_blocks.end(); ++I)
+    {
+    if ((*I)->property_exists("id"))
+      {
+      int64_t eb_offset = (*I)->get_offset();
+      int bid = (*I)->get_property("id").get_int();
+      if(this->pvcsa)
+        this->pvcsa->CreateGlobalVariable(element_block_name,
+                                          bid,
+                                          &bid);
+      if(this->pvcsa)
+        this->pvcsa->CreateElementVariable(component_names,
+                                           bid,
+                                           &this->elemMap.map[eb_offset + 1]);
+      }
+    }
+
+  component_names.clear();
+  component_names.push_back("GlobalNodeId");
+  if(this->pvcsa)
+    this->pvcsa->CreateNodalVariable(component_names,
+                                     &this->nodeMap.map[1]);
+
+  this->globalNodeAndElementIDsCreated = true;
+  }
+
   //------------------------------------------------------------------------
   int64_t DatabaseIO::put_field_internal(const Ioss::Region* /* region */,
                                          const Ioss::Field& field,
@@ -166,49 +219,50 @@ namespace Iovs {
     // are REDUCTION fields (1 value).  We need to gather these
     // and output them all at one time.  The storage location is a
     // 'globalVariables' array
-    {
       Ioss::SerializeIO serializeIO__(this);
 
       size_t num_to_get = field.verify(data_size);
       Ioss::Field::RoleType role = field.get_role();
+      const Ioss::VariableType *var_type = field.transformed_storage();
       if ((role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) &&
           num_to_get == 1) {
-        const Ioss::VariableType *var_type = field.transformed_storage();
-        int components = var_type->component_count();
+        const char *complex_suffix[] = {".re", ".im"};
         Ioss::Field::BasicType ioss_type = field.get_type();
+        double  *rvar = static_cast<double*>(data);
+        int     *ivar = static_cast<int*>(data);
+        int64_t *ivar64 = static_cast<int64_t*>(data);
 
-        std::vector<std::string> component_names;
-        if (components > 1)
-          {
-          char field_suffix_separator = this->get_field_separator();
-          for (int i=0; i < components; i++)
-            {
-            component_names.push_back(var_type->label_name(field.get_name(), i+1, field_suffix_separator));
-            }
-          }
-        else
-          {
-          component_names.push_back(field.get_name());
+        int comp_count = var_type->component_count();
+        int var_index=0;
+
+        int re_im = 1;
+        if (field.get_type() == Ioss::Field::COMPLEX)
+          re_im = 2;
+        for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
+          std::string field_name = field.get_name();
+          if (re_im == 2) {
+            field_name += complex_suffix[complex_comp];
           }
 
-          if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX) {
-            if(this->pvcsa)
-              this->pvcsa->CreateGlobalVariable(component_names,
-                                                static_cast<double*>(data));
+          std::vector<std::string> component_names;
+          std::vector<double> globalValues;
+          char field_suffix_separator = get_field_separator();
+          for (int i=0; i < comp_count; i++) {
+            std::string var_name = var_type->label_name(field_name, i+1, field_suffix_separator);
+            component_names.push_back(var_name);
+
+            // Transfer from 'variables' array.
+            if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
+              globalValues.push_back(rvar[i]);
+            else if (ioss_type == Ioss::Field::INTEGER)
+              globalValues.push_back(ivar[i]);
+            else if (ioss_type == Ioss::Field::INT64)
+              globalValues.push_back(ivar64[i]);
           }
-          else if (ioss_type == Ioss::Field::INTEGER) {
-            if(this->pvcsa)
-              this->pvcsa->CreateGlobalVariable(component_names,
-                                                static_cast<int*>(data));
-          }
-          else if (ioss_type == Ioss::Field::INT64) {
-            // FIX 64 UNSAFE
-            std::ostringstream errmsg;
-            errmsg << "pfi region: The variable named '" << field.get_name()
-                   << "' is of the type INT64, and this is giving me problems right now\n";
-            IOSS_ERROR(errmsg);
-            exit(-1);  //probably unnecessary, IOS_ERROR should exit I think
-          }
+          if(this->pvcsa)
+            this->pvcsa->CreateGlobalVariable(component_names,
+                                              TOPTR(globalValues));
+        }
       }
       else if (num_to_get != 1) {
         // There should have been a warning/error message printed to the
@@ -224,14 +278,13 @@ namespace Iovs {
         IOSS_ERROR(errmsg);
       }
       return num_to_get;
-    }
   }
 
   int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock* nb,
-                                     const Ioss::Field& field,
-                                     void *data, size_t data_size) const
+                                         const Ioss::Field& field,
+                                         void *data,
+                                         size_t data_size) const
   {
-    {
       Ioss::SerializeIO serializeIO__(this);
 
       size_t num_to_get = field.verify(data_size);
@@ -258,41 +311,49 @@ namespace Iovs {
           } else {
             return field_warning(nb, field, "mesh output");
           }
-
         } else if (role == Ioss::Field::TRANSIENT) {
-          Ioss::Field::BasicType ioss_type = field.get_type ();
+          const char *complex_suffix[] = {".re", ".im"};
+          Ioss::Field::BasicType ioss_type = field.get_type();
           const Ioss::VariableType *var_type = field.transformed_storage();
-          int components = var_type->component_count();
-          std::vector<std::string> component_names;
-          if (components > 1)
-            {
-            char field_suffix_separator = this->get_field_separator();
-            for (int i=0; i < components; i++)
+          std::vector<double> temp(num_to_get);
+          int comp_count = var_type->component_count();
+          int re_im = 1;
+          if (ioss_type == Ioss::Field::COMPLEX)
+            re_im = 2;
+          for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
+            std::string field_name = field.get_name();
+            if (re_im == 2) {
+              field_name += complex_suffix[complex_comp];
+            }
+
+            std::vector<double> interleaved_data(num_to_get*comp_count);
+            std::vector<std::string> component_names;
+            char field_suffix_separator = get_field_separator();
+            for (int i=0; i < comp_count; i++)
               {
-              component_names.push_back(var_type->label_name(field.get_name(), i+1, field_suffix_separator));
+              std::string var_name = var_type->label_name(field_name, i+1, field_suffix_separator);
+              component_names.push_back(var_name);
+
+              size_t begin_offset = (re_im*i)+complex_comp;
+              size_t stride = re_im*comp_count;
+
+              if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
+                this->nodeMap.map_field_to_db_scalar_order(static_cast<double*>(data),
+                    temp, begin_offset, num_to_get, stride, 0);
+              else if (ioss_type == Ioss::Field::INTEGER)
+                this->nodeMap.map_field_to_db_scalar_order(static_cast<int*>(data),
+                    temp, begin_offset, num_to_get, stride, 0);
+              else if (ioss_type == Ioss::Field::INT64)
+                this->nodeMap.map_field_to_db_scalar_order(static_cast<int64_t*>(data),
+                    temp, begin_offset, num_to_get, stride, 0);
+
+              for(int j=0; j < num_to_get; j++)
+                interleaved_data[j*comp_count + i] = temp[j];
               }
-            }
-          else
-            {
-            component_names.push_back(field.get_name());
-            }
-          if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX) {
+
             if(this->pvcsa)
               this->pvcsa->CreateNodalVariable(component_names,
-                                               static_cast<double*>(data));
-          }
-          else if (ioss_type == Ioss::Field::INTEGER) {
-            if(this->pvcsa)
-              this->pvcsa->CreateNodalVariable(component_names,
-                                               static_cast<int*>(data));
-          }
-          else if (ioss_type == Ioss::Field::INT64) {
-            // FIX 64 UNSAFE
-            std::ostringstream errmsg;
-            errmsg << "pfi nodebock: The variable named '" << field.get_name()
-                   << "' is of the type INT64, and this is giving me problems right now\n";
-            IOSS_ERROR(errmsg);
-            exit(-1);  //probably unnecessary, IOS_ERROR should exit I think
+                                               TOPTR(interleaved_data));
           }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO imesh version
@@ -300,14 +361,16 @@ namespace Iovs {
         }
       }
       return num_to_get;
-    }
   }
 
   int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock* eb,
-                                     const Ioss::Field& field,
-                                     void *data, size_t data_size) const
+                                         const Ioss::Field& field,
+                                         void *data, size_t data_size) const
   {
       Ioss::SerializeIO serializeIO__(this);
+
+      if (!eb->property_exists("id"))
+        return 0;
 
       size_t num_to_get = field.verify(data_size);
       if (num_to_get > 0) {
@@ -354,91 +417,54 @@ namespace Iovs {
           }
         }
         else if (role == Ioss::Field::ATTRIBUTE) {
-                /* TODO do we care about attributes?
-          std::string att_name = eb->name() + SEP() + field.get_name();
-          assert(attributeNames.find(att_name) != attributeNames.end());
-          int offset = (*attributeNames.find(att_name)).second;
-          assert(offset > 0);
-
-          int attribute_count = eb->get_property("attribute_count").get_int();
-          assert(offset > 0);
-          assert(offset-1+field.raw_storage()->component_count() <= attribute_count);
-          
-          if (offset == 1 && field.raw_storage()->component_count() == attribute_count) {
-            // Write all attributes in one big chunk...
-            ierr = ex_put_attr(get_file_pointer(), EX_ELEM_BLOCK, id, static_cast<double*>(data));
-            if (ierr < 0)
-              exodus_error(get_file_pointer(), __LINE__, myProcessor);
-          }
-          else {
-            // Write a subset of the attributes.  If scalar, write one;
-            // if higher-order (vector3d, ..) write each component.
-            if (field.raw_storage()->component_count() == 1) {
-              ierr = ex_put_one_attr(get_file_pointer(), EX_ELEM_BLOCK, id,
-                                     offset, static_cast<double*>(data));
-              if (ierr < 0)
-                exodus_error(get_file_pointer(), __LINE__, myProcessor);
-            } else {
-              // Multi-component...  Need a local memory space to push
-              // data into and then write that out to the file...
-              std::vector<double> local_data(element_count);
-              int comp_count = field.raw_storage()->component_count();
-              double *rdata = static_cast<double*>(data);
-              for (int i=0; i < comp_count; i++) {
-                int k = i;
-                for (int j=0; j < element_count; j++) {
-                  local_data[j] = rdata[k];
-                  k += comp_count;
-                }
-                
-                ierr = ex_put_one_attr(get_file_pointer(), EX_ELEM_BLOCK, id,
-                                       offset+i, &local_data[0]);
-                if (ierr < 0)
-                  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-              }
-            }
-          }
-          */
+                /* TODO */
         } else if (role == Ioss::Field::TRANSIENT) {
-          Ioss::Field::BasicType ioss_type = field.get_type ();
+          const char *complex_suffix[] = {".re", ".im"};
           const Ioss::VariableType *var_type = field.transformed_storage();
-          int components = var_type->component_count();
-          if (ioss_type == Ioss::Field::INT64) {
-            // FIX 64 UNSAFE
-            std::cerr << "pfi element 2 INT64 issue\n";
-            std::ostringstream errmsg;
-            errmsg << "pfi element 3: The field named '" << field.get_name()
-                   << "' is of the type INT64, and this is giving me problems right now\n";
-            IOSS_ERROR(errmsg);
-            exit(-1);  //probably unnecessary, IOS_ERROR should exit I think
-          }
+          Ioss::Field::BasicType ioss_type = field.get_type();
+          std::vector<double> temp(num_to_get);
+          ssize_t eb_offset = eb->get_offset();
+          int comp_count = var_type->component_count();
           int bid = 0;
           if (eb->property_exists("id"))
              bid = eb->get_property("id").get_int();
-          std::vector<std::string> component_names;
-          if (components > 1)
-            {
-            char field_suffix_separator = this->get_field_separator();
-            for (int i=0; i < components; i++)
-              {
-              component_names.push_back(var_type->label_name(field.get_name(), i+1, field_suffix_separator));
-              }
+
+          int re_im = 1;
+          if (ioss_type == Ioss::Field::COMPLEX)
+            re_im = 2;
+          for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
+            std::string field_name = field.get_name();
+            if (re_im == 2) {
+              field_name += complex_suffix[complex_comp];
             }
-          else
-            {
-            component_names.push_back(field.get_name());
+
+            std::vector<double> interleaved_data(num_to_get*comp_count);
+            std::vector<std::string> component_names;
+            char field_suffix_separator = get_field_separator();
+            for (int i=0; i < comp_count; i++) {
+              std::string var_name = var_type->label_name(field_name, i+1, field_suffix_separator);
+              component_names.push_back(var_name);
+
+              ssize_t begin_offset = (re_im*i)+complex_comp;
+              ssize_t stride = re_im*comp_count;
+
+              if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
+                this->elemMap.map_field_to_db_scalar_order(static_cast<double*>(data),
+                    temp, begin_offset, num_to_get, stride, eb_offset);
+              else if (ioss_type == Ioss::Field::INTEGER)
+                this->elemMap.map_field_to_db_scalar_order(static_cast<int*>(data),
+                    temp, begin_offset, num_to_get, stride, eb_offset);
+              else if (ioss_type == Ioss::Field::INT64)
+                this->elemMap.map_field_to_db_scalar_order(static_cast<int64_t*>(data),
+                    temp, begin_offset, num_to_get, stride, eb_offset);
+              for(int j=0; j < num_to_get; j++)
+                 interleaved_data[j*comp_count + i] = temp[j];
             }
-          if (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX) {
             if(this->pvcsa)
-              this->pvcsa->CreateElementVariable(component_names,
-                                                 bid,
-                                                 static_cast<int*>(data));
-          } else {
-            if(this->pvcsa)
-              this->pvcsa->CreateElementVariable(component_names,
-                                                 bid,
-                                                 static_cast<double*>(data));
-          }
+               this->pvcsa->CreateElementVariable(component_names,
+                                                  bid,
+                                                  TOPTR(interleaved_data));
+            }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO replace with ITAPS
           // write_global_field(EX_ELEM_BLOCK, field, eb, data);
@@ -449,7 +475,6 @@ namespace Iovs {
 
   void DatabaseIO::write_meta_data ()
   {
-    //std::cout << "DatabaseIO::write_meta_data executing\n";
     Ioss::Region *region = get_region();
 
     // Node Blocks --
@@ -525,7 +550,7 @@ namespace Iovs {
      *       should be in the orginal order...
      */
     assert(num_to_get == nodeCount);
-    
+
     if (dbState == Ioss::STATE_MODEL) {
       if (nodeMap.map.empty()) {
         //std::cout << "DatabaseIO::handle_node_ids nodeMap was empty, resizing and tagging serial\n";

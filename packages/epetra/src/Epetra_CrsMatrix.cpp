@@ -5077,6 +5077,8 @@ int Epetra_CrsMatrix::UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& 
   else
     throw ReportError("EpetraExt::npackAndCombineIntoStaticProfile: Unable to determine source global index type",-1);
 
+  // Zero the rowptr
+  for(i=0; i<N+1; i++) CSR_rowptr[i]=0;
 
   // SameIDs: Always first, always in the same place
   for(i=0; i<NumSameIDs; i++)
@@ -5095,7 +5097,7 @@ int Epetra_CrsMatrix::UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& 
       int   NumEntries = intptr[1];
       int      IntSize = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
       for(i=0; i<NumRemoteIDs; i++) {
-	CSR_rowptr[RemoteLIDs[i]] = NumEntries;
+	CSR_rowptr[RemoteLIDs[i]] += NumEntries;
 	
 	if( i < (NumRemoteIDs-1) ) {
 	  dintptr += IntSize + NumEntries;
@@ -5111,7 +5113,7 @@ int Epetra_CrsMatrix::UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& 
       int         NumEntries = (int) LLptr[1];
       int      IntSize = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
       for(i=0; i<NumRemoteIDs; i++) {
-	CSR_rowptr[RemoteLIDs[i]] = NumEntries;
+	CSR_rowptr[RemoteLIDs[i]] += NumEntries;
 	
 	if( i < (NumRemoteIDs-1) ) {
 	  dintptr += IntSize + NumEntries;
@@ -5122,13 +5124,17 @@ int Epetra_CrsMatrix::UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& 
       }
     }
   }
-  
+
+  // If multiple procs contribute to a row;
+  std::vector<int> NewStartRow(N+1);
+ 
   // Turn row length into a real CSR_rowptr
   int last_len = CSR_rowptr[0];
   CSR_rowptr[0] = 0;
   for(i=1; i<N+1; i++){
-    int new_len = CSR_rowptr[i];
-    CSR_rowptr[i] = last_len + CSR_rowptr[i-1];
+    int new_len    = CSR_rowptr[i];
+    CSR_rowptr[i]  = last_len + CSR_rowptr[i-1];
+    NewStartRow[i] = CSR_rowptr[i];
     last_len=new_len;
   }
 
@@ -5156,6 +5162,7 @@ int Epetra_CrsMatrix::UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& 
   for(i=0; i<NumSameIDs; i++) {
     int FromRow = Source_rowptr[i];
     int ToRow   = CSR_rowptr[i];
+    NewStartRow[i] += Source_rowptr[i+1]-Source_rowptr[i];
 
     for(j=Source_rowptr[i]; j<Source_rowptr[i+1]; j++) {
       CSR_vals[ToRow + j - FromRow]                = Source_vals[j];      
@@ -5179,6 +5186,8 @@ int Epetra_CrsMatrix::UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& 
     int FromLID  = PermuteFromLIDs[i];
     int FromRow = Source_rowptr[FromLID];
     int ToRow   = CSR_rowptr[PermuteToLIDs[i]];
+
+    NewStartRow[PermuteToLIDs[i]] += Source_rowptr[FromLID+1]-Source_rowptr[FromLID];
 
     for(j=Source_rowptr[FromLID]; j<Source_rowptr[FromLID+1]; j++) {
       CSR_vals[ToRow + j - FromRow]                = Source_vals[j];      
@@ -5210,8 +5219,9 @@ int Epetra_CrsMatrix::UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& 
       
       for (i=0; i<NumRemoteIDs; i++) {
 	int ToLID    = RemoteLIDs[i];
-	int StartRow = CSR_rowptr[ToLID];
-	
+	int StartRow = NewStartRow[ToLID];
+	NewStartRow[ToLID]+=NumEntries;	
+
 	double * values  = valptr;
 	int    * Indices = intptr + 2;
 	for(j=0; j<NumEntries; j++){
@@ -5237,7 +5247,8 @@ int Epetra_CrsMatrix::UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& 
       
       for (i=0; i<NumRemoteIDs; i++) {
 	int ToLID    = RemoteLIDs[i];
-	int StartRow = CSR_rowptr[ToLID];
+	int StartRow = NewStartRow[ToLID];
+	NewStartRow[ToLID]+=NumEntries;	
 	
 	double * values        = valptr;
 	long long    * Indices = LLptr + 2;

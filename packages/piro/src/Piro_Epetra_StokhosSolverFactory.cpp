@@ -216,8 +216,8 @@ createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_)
     }
 
     Piro::Epetra::SolverFactory solverFactory;
-    solverFactory.setDefaultProvider<NOX::Epetra::ModelEvaluatorInterface>(nox_interface);
-    solverFactory.setDefaultProvider<NOX::Epetra::LinearSystem>(linsys);
+    solverFactory.setSource<NOX::Epetra::ModelEvaluatorInterface>(nox_interface);
+    solverFactory.setSource<NOX::Epetra::LinearSystem>(linsys);
 
     // Create solver to map p -> g
     const Teuchos::RCP<EpetraExt::ModelEvaluator>  mp_solver
@@ -427,10 +427,10 @@ createSGSolver(const Teuchos::RCP<EpetraExt::ModelEvaluator>& sg_model,
 		       basis, sg_parallel_data, A, base_map, sg_map));
       }
 
-      solverFactory.setDefaultProvider<NOX::Epetra::LinearSystem>(sg_linsys);
+      solverFactory.setSource<NOX::Epetra::LinearSystem>(sg_linsys);
     }
 
-    solverFactory.setDefaultProvider<NOX::Epetra::Observer>(sg_observer);
+    solverFactory.setSource<NOX::Epetra::Observer>(sg_observer);
 
     // Will find preconditioner for Matrix-Free method
     sg_block_solver = solverFactory.createSolver(piroParams, sg_model);

@@ -78,6 +78,9 @@
     (Wachieved) / ((totalW) * (expectedRatio)) - 1
 //#define mpi_communication
 
+#define KCUTOFF 0.80
+#define defaultK 16
+
 namespace Teuchos{
 template <typename Ordinal, typename T>
 class PQJaggedCombinedReductionOp  : public ValueTypeReductionOp<Ordinal,T>
@@ -406,14 +409,13 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
   //TODO: FIX ME.
   //double aa = 1;
   pe = pl.getEntryPtr("parallel_part_calculation_count");
-  if (pe)
+  if (pe){
     //aa = pe->getValue(&aa);
     concurrentPartCount = pe->getValue(&concurrentPartCount);
-  else
+  }else {
     concurrentPartCount = 1;
-
   //concurrentPartCount = partId_t(aa);
-
+  }
   int val = 0;
   pe = pl.getEntryPtr("average_cuts");
   if (pe)
@@ -1285,24 +1287,26 @@ void pqJagged_1DPart_getPartWeights(
 
       partId_t lc = 0;
       partId_t uc = noCuts - 1;
+
       scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
       bool isInserted = false;
       bool onLeft = false;
       bool onRight = false;
       partId_t lastPart = -1;
+      
+      scalar_t coord = pqJagged_coordinates[i];
+
       while(uc >= lc)
       {
     	//comparison_count++;
         lastPart = -1;
         onLeft = false;
         onRight = false;
-        scalar_t coord = pqJagged_coordinates[i];
         scalar_t cut = cutCoordinates_tmp[j];
         scalar_t distance = coord - cut;
         scalar_t absdistance = ABS(distance);
 
         if(absdistance < _EPSILON){
-
           myPartWeights[j * 2 + 1] += w;
           partIds[i] = j * 2 + 1;
 
@@ -1350,21 +1354,26 @@ void pqJagged_1DPart_getPartWeights(
         }
         else {
           if (distance < 0) {
-
             //TODO fix abs
             distance = absdistance;
+            /*
             if (myLeftClosest[j] > distance){
               myLeftClosest[j] = distance;
             }
+             */
             bool _break = false;
             if(j > 0){
               distance = coord - cutCoordinates_tmp[j - 1];
               if(distance > _EPSILON){
+                /*
                 if (myRightClosest[j - 1] > distance){
                   myRightClosest[j - 1] = distance;
                 }
+                 */
                 _break = true;
-              } else if(distance < minus_EPSILON){
+              }
+              /*
+              else if(distance < minus_EPSILON){
                 distance = -distance;
                 if (myLeftClosest[j - 1] > distance){
                   myLeftClosest[j - 1] = distance;
@@ -1373,7 +1382,7 @@ void pqJagged_1DPart_getPartWeights(
               else {
                 myLeftClosest[j - 1] = 0;
                 myRightClosest[j - 1 ] = 0;
-              }
+              }*/
             }
             uc = j - 1;
             onLeft = true;
@@ -1381,27 +1390,33 @@ void pqJagged_1DPart_getPartWeights(
             if(_break) break;
           }
           else {
+            /*
             if (myRightClosest[j] > distance){
               myRightClosest[j] = distance;
             }
+             */
             bool _break = false;
             if(j < noCuts - 1){
-              distance = coord - cutCoordinates_tmp[j + 1];
+              scalar_t distance_ = coord - cutCoordinates_tmp[j + 1];
+              /*
               if(distance > _EPSILON){
                 if (myRightClosest[j + 1] > distance){
                   myRightClosest[j + 1] = distance;
                 }
-              } else if(distance < minus_EPSILON){
+              } else */if(distance_ < minus_EPSILON){
+                /*
                 distance = -distance;
                 if (myLeftClosest[j + 1] > distance){
                   myLeftClosest[j + 1] = distance;
-                }
+                }*/
                 _break = true;
               }
+              /*
               else {
                 myLeftClosest[j + 1] = 0;
                 myRightClosest[j + 1 ] = 0;
               }
+               */
             }
             lc = j + 1;
             onRight = true;
@@ -1414,12 +1429,36 @@ void pqJagged_1DPart_getPartWeights(
       }
       if(!isInserted){
         if(onRight){
+          
+          
           myPartWeights[2 * lastPart + 2] += w;
           partIds[i] = 2 * lastPart + 2;
+          scalar_t distance = coord - cutCoordinates_tmp[lastPart];
+          if(myRightClosest[lastPart] > distance){
+            myRightClosest[lastPart] = distance;
+          }
+          if(lastPart+1 < noCuts){
+            scalar_t distance_ = cutCoordinates_tmp[lastPart + 1] - coord;
+            if(myLeftClosest[lastPart + 1] > distance_){
+              myLeftClosest[lastPart + 1] = distance_;
+            }
+          }
+          
         }
         else if(onLeft){
           myPartWeights[2 * lastPart] += w;
           partIds[i] = 2 * lastPart;
+          scalar_t distance = cutCoordinates_tmp[lastPart ] - coord;
+          if(myLeftClosest[lastPart] > distance){
+            myLeftClosest[lastPart] = distance;
+          }
+          
+          if(lastPart-1 >= 0){
+            scalar_t distance_ = coord - cutCoordinates_tmp[lastPart - 1];
+            if(myRightClosest[lastPart -1] > distance_){
+              myRightClosest[lastPart -1] = distance_;
+            }
+          }
         }
       }
     }
@@ -2710,6 +2749,7 @@ void AlgPQJagged(
 
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Init");
+  //cout << "Here I go:" << endl;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gno_t gno_t;
 
@@ -2724,7 +2764,7 @@ void AlgPQJagged(
   bool ignoreWeights=false;
 
   bool allowNonRectelinearPart = false;
-  int concurrentPartCount = 0;
+  int concurrentPartCount = 1;
   bool force_binary = false, force_linear = false;
   pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights,allowNonRectelinearPart,  concurrentPartCount,
       force_binary, force_linear);
@@ -2759,7 +2799,9 @@ void AlgPQJagged(
   {
     numThreads = omp_get_num_threads();
   }
+
 #endif
+
 
   partId_t totalDimensionCut = 0;
   partId_t totalPartCount = 1;
@@ -3046,7 +3088,7 @@ void AlgPQJagged(
         pqJagged_getLocalMinMaxTotalCoord<scalar_t, lno_t>(
             partitionedPointCoordinates,
             pqCoord,
-            pqJagged_uniformWeights,
+            pqJagged_uniformWeights[0],
             pqJagged_weights[0],
             numThreads,
             coordinateBegin,
