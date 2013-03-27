@@ -570,6 +570,9 @@ namespace Tpetra {
 
     /// \brief Return a new Map with processes with zero elements removed.
     ///
+    /// \warning This method is only for expert users.  Understanding
+    ///   how to use this method correctly requires some familiarity
+    ///   with semantics of MPI communicators.
     /// \warning We make no promises of backwards compatibility for
     ///   this method.  It may go away or change at any time.
     ///
@@ -580,7 +583,9 @@ namespace Tpetra {
     /// distributed over the new communicator.  The new Map represents
     /// the same distribution as the original Map, except that
     /// processes containing zero elements are not included in the new
-    /// Map or its communicator.
+    /// Map or its communicator.  On processes not included in the new
+    /// Map or communicator, this method returns
+    /// <tt>Teuchos::null</tt>.
     ///
     /// The returned Map always has a distinct communicator from this
     /// Map's original communicator.  The new communicator contains a
@@ -611,6 +616,12 @@ namespace Tpetra {
 
     /// \brief Replace this Map's communicator with a subset communicator.
     ///
+    /// \warning This method is only for expert users.  Understanding
+    ///   how to use this method correctly requires some familiarity
+    ///   with semantics of MPI communicators.
+    /// \warning We make no promises of backwards compatibility for
+    ///   this method.  It may go away or change at any time.
+    ///
     /// \pre The input communicator's processes are a subset of this
     ///   Map's current communicator's processes.
     /// \pre On processes which are not included in the input
@@ -627,7 +638,8 @@ namespace Tpetra {
     ///   removeEmptyProcesses(), and then apply the resulting subset
     ///   communicator to the column, domain, and range Maps of the
     ///   same graph.  For the latter three Maps, one would in general
-    ///   use this method instead of removeEmptyProcesses().
+    ///   use this method instead of removeEmptyProcesses(), giving
+    ///   the new row Map's communicator to this method.
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
     replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
     //@}
