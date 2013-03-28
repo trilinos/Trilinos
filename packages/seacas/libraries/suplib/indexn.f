@@ -56,13 +56,13 @@ C
       end if
 
       do start = (n-2)/2, 0, -1
-        call siftdownn(a, nrow, irow, indx, start, n);
+        call siftdownn(a, nrow, irow, indx, start, n)
       end do
  
       do bottom = n-1, 1, -1
         temp = indx(0)
         indx(0) = indx(bottom)
-        indx(bottom) = temp;
+        indx(bottom) = temp
         call siftdownn(a, nrow, irow, indx, 0, bottom)
       end do
       end
@@ -77,15 +77,15 @@ C
       integer temp
  
       root = start
-      do while(root*2 + 1 < bottom)
+      do while(root*2 + 1 .lt. bottom)
         child = root * 2 + 1
  
-        if ((child + 1 < bottom) .and.
-     *    (a(irow, indx(child)) < a(irow, indx(child+1)))) then
+        if ((child + 1 .lt. bottom) .and.
+     *    (a(irow, indx(child)) .lt. a(irow, indx(child+1)))) then
           child = child + 1
         end if
  
-        if (a(irow, indx(root)) < a(irow, indx(child))) then
+        if (a(irow, indx(root)) .lt. a(irow, indx(child))) then
           temp = indx(child)
           indx(child) = indx(root)
           indx(root) = temp
