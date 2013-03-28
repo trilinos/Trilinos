@@ -142,8 +142,15 @@ namespace Xpetra {
 
     //! Sets the matrix's structure from the Crs arrays
     //** \warning This is an expert-only routine and should not be called from user code. */
-    void setAllValues(ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values);
+    void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values);
 
+    //! Expert static fill complete
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+				  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+				  const RCP<ParameterList> &params=Teuchos::null);
     //@}
 
     //! @name Transformational Methods

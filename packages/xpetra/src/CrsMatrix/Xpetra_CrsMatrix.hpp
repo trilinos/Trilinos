@@ -100,7 +100,7 @@ namespace Xpetra {
 
     //! Sets the matrix's structure from the Crs arrays
     //** \warning This is an expert-only routine and should not be called from user code. */
-    virtual void setAllValues(ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values)=0;
+    virtual void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values)=0;
 
     //@}
 
@@ -119,6 +119,12 @@ namespace Xpetra {
     //!  Replaces the current domainMap and importer with the user-specified objects.
     virtual void replaceDomainMapAndImporter(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter)=0;
 
+    //! Expert static fill complete
+    virtual void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+					  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+					  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+					  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+					  const RCP<ParameterList> &params=Teuchos::null) = 0;
     //@}
 
     //! @name Methods implementing RowMatrix

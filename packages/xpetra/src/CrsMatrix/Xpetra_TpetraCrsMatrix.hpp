@@ -76,6 +76,7 @@ namespace Xpetra {
     typedef TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TpetraCrsMatrixClass;
     typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVectorClass;
     typedef TpetraImport<LocalOrdinal,GlobalOrdinal,Node> TpetraImportClass;
+    typedef TpetraExport<LocalOrdinal,GlobalOrdinal,Node> TpetraExportClass;
 
   public:
 
@@ -171,7 +172,7 @@ namespace Xpetra {
 
     //! Sets the matrix's structure from the Crs arrays
     //** \warning This is an expert-only routine and should not be called from user code. */
-    void setAllValues(ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values) 
+    void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values) 
     { XPETRA_MONITOR("TpetraCrsMatrix::setAllValues"); mtx_->setAllValues(rowptr,colind,values); }
 
 
@@ -193,11 +194,26 @@ namespace Xpetra {
     //!  Replaces the current domainMap and importer with the user-specified objects.
     void replaceDomainMapAndImporter(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter) { 
       XPETRA_MONITOR("TpetraCrsMatrix::replaceDomainMapAndImporter"); 
-      XPETRA_DYNAMIC_CAST( const TpetraImportClass , *newImporter, tImporter, "Xpetra::EpetraCrsMatrix::replaceDomainMapAndImporter only accepts Xpetra::EpetraImport.");
+      XPETRA_DYNAMIC_CAST( const TpetraImportClass , *newImporter, tImporter, "Xpetra::TpetraCrsMatrix::replaceDomainMapAndImporter only accepts Xpetra::TpetraImport.");
       RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > myImport = tImporter.getTpetra_Import();
-      //      mtx_->replaceDomainMapAndImporter( toTpetra(newDomainMap),tImporter.getTpetra_Import());
             mtx_->replaceDomainMapAndImporter( toTpetra(newDomainMap),myImport);
     }
+
+    //! Expert static fill complete
+    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+				  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+				  const RCP<ParameterList> &params=Teuchos::null) {
+      XPETRA_MONITOR("TpetraCrsMatrix::expertStaticFillComplete"); 
+      XPETRA_DYNAMIC_CAST( const TpetraImportClass , *importer, tImporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraImport.");
+      XPETRA_DYNAMIC_CAST( const TpetraExportClass , *exporter, tExporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraExport.");
+      RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > myImport = tImporter.getTpetra_Import();
+      RCP<const Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > myExport = tExporter.getTpetra_Export();
+
+      mtx_->expertStaticFillComplete(toTpetra(domainMap),toTpetra(rangeMap),myImport,myExport,params);
+    }
+
     //@}
 
     //! @name Methods implementing RowMatrix
