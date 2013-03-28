@@ -81,7 +81,8 @@ namespace Xpetra {
 				   const Import<LocalOrdinal,GlobalOrdinal,Node> &importer,
 				   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
 				   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
-				   const Teuchos::RCP<Teuchos::ParameterList>& params)
+				   const Teuchos::RCP<Teuchos::ParameterList>& params):
+    isFillResumed_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(domainMap!=Teuchos::null, Xpetra::Exceptions::NotImplemented, "The Epetra version of the fusedImport constructor does not let you specify the domainMap.");
 
@@ -97,7 +98,8 @@ namespace Xpetra {
 				   const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter,
 				   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
 				   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
-				   const Teuchos::RCP<Teuchos::ParameterList>& params)
+				   const Teuchos::RCP<Teuchos::ParameterList>& params):
+    isFillResumed_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(domainMap!=Teuchos::null, Xpetra::Exceptions::NotImplemented, "The Epetra version of the fusedExport constructor does not let you specify the domainMap.");
 
