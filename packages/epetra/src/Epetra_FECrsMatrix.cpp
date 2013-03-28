@@ -225,8 +225,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     sourceMap_(NULL),
     colMap_(NULL),
     exporter_(NULL),
-    tempMat_(NULL),
-    overlap_(overlap)
+    tempMat_(NULL)
+#ifdef HAVE_EPETRA_THREAD_SAFETY
+	, overlap_(overlap)
+#endif
 {
   myFirstRow_ = RowMap().MinMyGID64();
   myNumRows_ = RowMap().NumMyElements();
@@ -1119,12 +1121,16 @@ int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
       }
     }
     else {
+#ifdef HAVE_EPETRA_THREAD_SAFETY
     	if (! overlap_) {
+#endif
           err = InputNonlocalGlobalValues(rows[i], numCols, cols,
               valuesptr, mode);
           if (err<0) return(err);
           if (err>0) returncode = err;
+#ifdef HAVE_EPETRA_THREAD_SAFETY
     	}
+#endif
     }
   }
 
@@ -1256,7 +1262,6 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
 #pragma omp critical
 #endif
   {
-	  std::cout << "Overlap?\n";
 	std::vector<int_type>& nonlocalRows_var = nonlocalRows<int_type>();
 
 	//find offset of this row in our list of nonlocal rows.
