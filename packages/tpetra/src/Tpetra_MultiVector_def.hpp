@@ -1102,14 +1102,48 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map)
   {
-#ifdef HAVE_TEUCHOS_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(! this->getMap ()->isCompatible (*map),
-      std::invalid_argument, "Tpetra::MultiVector::replaceMap(): The input map "
-      "is not compatible with this multivector's current map.  The replaceMap() "
-      "method is not for data redistribution; use Import or Export for that.");
-#endif // HAVE_TEUCHOS_DEBUG
     this->map_ = map;
   }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  project (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& newRowMap) const
+  {
+    using Teuchos::Comm;
+    using Teuchos::RCP;
+
+    RCP<const Comm<int> > origComm = this->getMap ()->getComm ();
+    RCP<const Comm<int> > newComm = map->getComm ();
+    const int origNumProcs = origComm->getSize ();
+    const int newNumProcs = newComm->getSize ();
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      origNumProcs == newNumProcs && ! this->getMap ()->isCompatible (*map),
+      std::invalid_argument, "Tpetra::MultiVector::project: "
+      "If the input Map's communicator is compatible (has the same number of "
+      "processes as) the current Map's communicator, then the two Maps must be "
+      "compatible.  The replaceMap() method is not for data redistribution; "
+      "use Import or Export for that purpose.");
+
+    // TODO (mfh 28 Mar 2013) Add compatibility checks for projections
+    // of the Map, in case the process counts don't match.
+#endif // HAVE_TEUCHOS_DEBUG
+
+    if (newNumProcs <= origNumProcs) { // subset communicator
+      this->map_ = map;
+    }
+    else if (newNumProcs > origNumProcs) { // strict superset
+      const size_t origNumRows = this->map_->getNodeNumElements ();
+      const size_t newNumRows = map->getNodeNumElements ();
+      if (origNumRows != newNumRows) {
+        ArrayRCP<Scalar> data = node->template allocBuffer<Scalar> (
+      }
+    }
+  }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void

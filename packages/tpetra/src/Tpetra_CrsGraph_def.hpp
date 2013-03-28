@@ -3286,6 +3286,10 @@ namespace Tpetra {
       // The operations below are collective on the new communicator.
       //
       // (Re)create the Export object if necessary.
+      //
+      // FIXME (mfh 28 Mar 2013) If I haven't called fillComplete yet,
+      // I don't have a rangeMap.  I should first check if it's not
+      // null.  Ditto for domain Map.
       if (rangeMap != rowMap && ! rangeMap->isSameAs (*rowMap)) {
         if (params.is_null () || ! params->isSublist ("Export")) {
           exporter = rcp (new export_type (rowMap, rangeMap));

@@ -642,11 +642,32 @@ namespace Tpetra {
   /// On included processes, reassign this object's Map (that would be
   /// returned by getMap()) to the input \c newMap, and do any work
   /// that needs to be done to restore correct semantics.  The input
-  /// DistObject \c input will be nonnull on return.
+  /// DistObject \c input will be nonnull on return.  On excluded
+  /// processes, free any data in \c input that need freeing, do any
+  /// other work that needs to be done to restore correct semantics,
+  /// and set \c input to null before returning.
   ///
-  /// On excluded processes, free any data in \c input that need
-  /// freeing, do any other work that needs to be done to restore
-  /// correct semantics, and set \c input to null before returning.
+  /// The two-argument version of this function is useful if you have
+  /// already precomputed the new Map that excludes processes with
+  /// zero elements.  For example, you might want to apply this Map to
+  /// several different MultiVector instances.  The one-argument
+  /// version of this function is useful if you want the DistObject to
+  /// compute the new Map itself, because you only plan to use it for
+  /// that one DistObject instance.
+  ///
+  /// Here is a sample use case.  Suppose that \c input is some
+  /// subclass of DistObject, like MultiVector, CrsGraph, or
+  /// CrsMatrix.  Suppose also that \c map_type is the corresponding
+  /// specialization of Map.
+  /// \code
+  /// RCP<const map_type> origRowMap = input->getMap ();
+  /// RCP<const map_type> newRowMap = origRowMap->removeEmptyProcesses ();
+  /// removeEmptyProcessesInPlace (input, newRowMap);
+  /// // Either (both the new Map and input are null), or
+  /// // (both the new Map and input are not null).
+  /// assert ((newRowMap.is_null () && input.is_null ()) ||
+  ///         (! newRowMap.is_null () && ! input.is_null ()));
+  /// \endcode
   ///
   /// \warning On excluded processes, calling this function
   ///   invalidates any other references to the input DistObject
@@ -682,9 +703,34 @@ namespace Tpetra {
   /// removeEmptyProcessesInPlace, except that it first calls
   /// removeEmptyProcessesInPlace() on the input DistObject's Map to
   /// compute the new Map.
+  ///
+  /// The two-argument version of this function is useful if you have
+  /// already precomputed the new Map that excludes processes with
+  /// zero elements.  For example, you might want to apply this Map to
+  /// several different MultiVector instances.  The one-argument
+  /// version of this function is useful if you want the DistObject to
+  /// compute the new Map itself, because you only plan to use it for
+  /// that one DistObject instance.
+  ///
+  /// Here is a sample use case.  Suppose that \c input is some
+  /// subclass of DistObject, like MultiVector, CrsGraph, or
+  /// CrsMatrix.  Suppose also that \c map_type is the corresponding
+  /// specialization of Map.
+  /// \code
+  /// removeEmptyProcessesInPlace (input);
+  /// RCP<const map_type> newRowMap;
+  /// if (! input.is_null ()) {
+  ///   newRowMap = input->getMap ();
+  /// }
+  /// // Either (both the new Map and input are null), or
+  /// // (both the new Map and input are not null).
+  /// assert ((newRowMap.is_null () && input.is_null ()) ||
+  ///         (! newRowMap.is_null () && ! input.is_null ()));
+  /// \endcode
   template<class PT, class LO, class GO, class NT>
   void
   removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input);
+
 } // namespace Tpetra
 
 #endif /* TPETRA_DISTOBJECT_DECL_HPP */

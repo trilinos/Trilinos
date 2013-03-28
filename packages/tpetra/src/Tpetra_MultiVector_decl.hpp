@@ -459,31 +459,52 @@ namespace Tpetra {
     ///   pseudorandom number generator within each process.
     void randomize();
 
-    /// \brief Replace the underlying Map with a compatible one.
+    /// \brief Replace the underlying Map in place.
     ///
-    /// This method relabels the rows of the multivector using the
-    /// global IDs in the input Map.  Thus, it implicitly applies a
-    /// permutation, without actually moving data.  This only works if
-    /// the input Map is compatible (in the sense of \c
-    /// Map::isCompatible()) with the multivector's current Map, so
-    /// that the number of rows per process does not change.
+    /// \pre If the new Map's communicator has the same number of
+    ///   processes as the original Map's communicator, then the
+    ///   original Map and new Map must be compatible:
+    ///   <tt>map->isCompatible (this->getMap ())</tt>.
     ///
-    /// We only check for compatibility in debug mode (when Trilinos
-    /// was built with the Trilinos_ENABLE_DEBUG option set).  In that
-    /// case, if the input Map is <i>not</i> compatible, then this
-    /// method throws \c std::invalid_argument.  We only check in
-    /// debug mode because the check requires communication
-    /// (\f$O(1)\f$ all-reduces).
+    /// \pre If the new Map's communicator is a proper subset of the
+    ///   processes of the original Map's communicator, then the
+    ///   projection of the original Map onto the new communicator
+    ///   must be compatible with the new Map.
     ///
-    /// \note This method is <i>not</i> for arbitrary data
-    ///   redistribution.  If you need to move data around, use \c
-    ///   Import or \c Export.
+    /// \pre If the new Map's communicator is a proper superset of the
+    ///   processes of the original Map's communicator, then the
+    ///   projection of the new Map onto the original communicator
+    ///   must be compatible with the original Map.
     ///
-    /// \note This method must always be called as a collective
-    ///   operation on all processes over which the multivector is
-    ///   distributed.  This is because the method reserves the right
-    ///   to check for compatibility of the two Maps, at least in
-    ///   debug mode.
+    /// Replace this object's Map with the given Map.  This relabels
+    /// the rows of the multivector using the global IDs in the input
+    /// Map.  Thus, it implicitly applies a permutation, without
+    /// actually moving data.  If the new Map's communicator is a
+    /// proper superset of the original Map's communicator, project
+    /// the MultiVector onto the new Map by filling in missing rows
+    /// with zeros.  If the new Map's communicator is a proper subset
+    /// of the original Map's communicator, forget about any rows that
+    /// do not exist in the new Map.
+    ///
+    /// This method must always be called collectively on the
+    /// communicator with the largest number of processes: either this
+    /// object's current communicator
+    /// (<tt>this->getMap()->getComm()</tt>), or the new Map's
+    /// communicator (<tt>map->getComm()</tt>).
+    ///
+    /// We only check (some of the) compatibility preconditions in
+    /// debug mode, when Trilinos was built with the CMake configure
+    /// option Trilinos_ENABLE_DEBUG set to ON.  In that case, if the
+    /// input Map is <i>not</i> compatible, then this method throws \c
+    /// std::invalid_argument.  We only check in debug mode because
+    /// the check requires communication (\f$O(1)\f$ all-reduces).
+    ///
+    /// \warning This method must always be called as a collective
+    ///   operation on all processes in the original communicator
+    ///   (<tt>this->getMap ()->getComm ()</tt>).
+    ///
+    /// \note This method does <i>not</i> do data redistribution.  If
+    ///   you need to move data around, use Import or Export.
     void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
     /// \brief Sum values of a locally replicated multivector across all processes.
