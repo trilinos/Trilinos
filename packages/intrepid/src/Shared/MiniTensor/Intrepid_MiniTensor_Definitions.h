@@ -73,12 +73,12 @@ namespace Intrepid {
   template <typename T> class Tensor4;
 
   ///
-  /// Type promotion
+  /// For use with type promotion
   ///
   using Sacado::Promote;
   using Sacado::mpl::lazy_disable_if;
 
-  //
+  // Vector
   template <typename S>
   struct is_vector {
     static const bool value = false;
@@ -94,7 +94,7 @@ namespace Intrepid {
     typedef Vector<typename T::type> type;
   };
 
-  //
+  // 2nd-order tensor
   template <typename S>
   struct is_tensor {
     static const bool value = false;
@@ -110,7 +110,7 @@ namespace Intrepid {
     typedef Tensor<typename T::type> type;
   };
 
-  //
+  // 3rd-order tensor
   template <typename S>
   struct is_tensor3 {
     static const bool value = false;
@@ -126,7 +126,7 @@ namespace Intrepid {
     typedef Tensor3<typename T::type> type;
   };
 
-  //
+  // 4th-order tensor
   template <typename S>
   struct is_tensor4 {
     static const bool value = false;
@@ -142,13 +142,79 @@ namespace Intrepid {
     typedef Tensor4<typename T::type> type;
   };
 
-} // namespace Intrepid
+  // Tensors from 1st to 4th order
+  template <typename S>
+  struct order_1234 {
+    static const bool value = false;
+  };
 
+  template <typename S>
+  struct order_1234< Vector<S> > {
+    static const bool value = true;
+  };
+
+  template <typename S>
+  struct order_1234< Tensor<S> > {
+    static const bool value = true;
+  };
+
+  template <typename S>
+  struct order_1234< Tensor3<S> > {
+    static const bool value = true;
+  };
+
+  template <typename S>
+  struct order_1234< Tensor4<S> > {
+    static const bool value = true;
+  };
+
+} // namespace Intrepid
 
 namespace Sacado {
 
+  /// Specialization of Promote for Intrepid::Index
+  template <>
+  struct Promote<double, Intrepid::Index> {
+    typedef double type;
+  };
+
+  template <>
+  struct Promote<Intrepid::Index, double> {
+    typedef double type;
+  };
+
+  template <>
+  struct Promote<float, Intrepid::Index> {
+    typedef float type;
+  };
+
+  template <>
+  struct Promote<Intrepid::Index, float> {
+    typedef float type;
+  };
+
+  template <>
+  struct Promote<std::complex<double>, Intrepid::Index> {
+    typedef std::complex<double> type;
+  };
+
+  template <>
+  struct Promote<Intrepid::Index, std::complex<double> > {
+    typedef std::complex<double> type;
+  };
+
+  template <>
+  struct Promote<std::complex<float>, Intrepid::Index> {
+    typedef std::complex<float> type;
+  };
+
+  template <>
+  struct Promote<Intrepid::Index, std::complex<float> > {
+    typedef std::complex<float> type;
+  };
+
   ///
-  /// Sacado specializations for Vector
+  /// Sacado traits specializations for Vector
   ///
   template <typename T>
   struct ScalarType< Intrepid::Vector<T> > {
@@ -172,7 +238,7 @@ namespace Sacado {
 
   template <typename T>
   struct Value< Intrepid::Vector<T> > {
-    typedef typename ValueType< T >::type value_type;
+    typedef typename ValueType<T>::type value_type;
     static const Intrepid::Vector<value_type> &
     eval(Intrepid::Vector<T> const & x)
     {
@@ -192,8 +258,8 @@ namespace Sacado {
 
   template <typename T>
   struct ScalarValue< Intrepid::Vector<T> > {
-    typedef typename ValueType< T >::type value_type;
-    typedef typename ScalarType< T >::type scalar_type;
+    typedef typename ValueType<T>::type value_type;
+    typedef typename ScalarType<T>::type scalar_type;
     static const Intrepid::Vector<scalar_type> &
     eval(Intrepid::Vector<T> const & x)
     {
@@ -232,7 +298,7 @@ namespace Sacado {
   };
 
   ///
-  /// Sacado specializations for Tensor
+  /// Sacado traits specializations for Tensor
   ///
   template <typename T>
   struct ScalarType< Intrepid::Tensor<T> > {
@@ -256,7 +322,7 @@ namespace Sacado {
 
   template <typename T>
   struct Value< Intrepid::Tensor<T> > {
-    typedef typename ValueType< T >::type value_type;
+    typedef typename ValueType<T>::type value_type;
     static const Intrepid::Tensor<value_type> &
     eval(Intrepid::Tensor<T> const & x)
     {
@@ -278,8 +344,8 @@ namespace Sacado {
 
   template <typename T>
   struct ScalarValue< Intrepid::Tensor<T> > {
-    typedef typename ValueType< T >::type value_type;
-    typedef typename ScalarType< T >::type scalar_type;
+    typedef typename ValueType<T>::type value_type;
+    typedef typename ScalarType<T>::type scalar_type;
     static const Intrepid::Tensor<scalar_type> &
     eval(Intrepid::Tensor<T> const & x)
     {
@@ -320,7 +386,7 @@ namespace Sacado {
   };
 
   ///
-  /// Sacado specializations for Tensor3
+  /// Sacado traits specializations for Tensor3
   ///
   template <typename T>
   struct ScalarType< Intrepid::Tensor3<T> > {
@@ -344,7 +410,7 @@ namespace Sacado {
 
   template <typename T>
   struct Value< Intrepid::Tensor3<T> > {
-    typedef typename ValueType< T >::type value_type;
+    typedef typename ValueType<T>::type value_type;
     static const Intrepid::Tensor3<value_type> &
     eval(Intrepid::Tensor3<T> const & x)
     {
@@ -368,8 +434,8 @@ namespace Sacado {
 
   template <typename T>
   struct ScalarValue< Intrepid::Tensor3<T> > {
-    typedef typename ValueType< T >::type value_type;
-    typedef typename ScalarType< T >::type scalar_type;
+    typedef typename ValueType<T>::type value_type;
+    typedef typename ScalarType<T>::type scalar_type;
     static const Intrepid::Tensor3<scalar_type> &
     eval(Intrepid::Tensor3<T> const & x)
     {
@@ -412,7 +478,7 @@ namespace Sacado {
   };
 
   ///
-  /// Sacado specializations for Tensor4
+  /// Sacado traits specializations for Tensor4
   ///
   template <typename T>
   struct ScalarType< Intrepid::Tensor4<T> > {
@@ -436,7 +502,7 @@ namespace Sacado {
 
   template <typename T>
   struct Value< Intrepid::Tensor4<T> > {
-    typedef typename ValueType< T >::type value_type;
+    typedef typename ValueType<T>::type value_type;
     static const Intrepid::Tensor4<value_type> &
     eval(Intrepid::Tensor4<T> const & x)
     {
@@ -462,8 +528,8 @@ namespace Sacado {
 
   template <typename T>
   struct ScalarValue< Intrepid::Tensor4<T> > {
-    typedef typename ValueType< T >::type value_type;
-    typedef typename ScalarType< T >::type scalar_type;
+    typedef typename ValueType<T>::type value_type;
+    typedef typename ScalarType<T>::type scalar_type;
     static const Intrepid::Tensor4<scalar_type> &
     eval(Intrepid::Tensor4<T> const & x)
     {

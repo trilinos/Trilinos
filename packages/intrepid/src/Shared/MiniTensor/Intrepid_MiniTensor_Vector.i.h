@@ -687,7 +687,7 @@ namespace Intrepid
   //
   template<typename S, typename T>
   inline
-  typename lazy_disable_if< is_vector<S>, apply_vector< Promote<S,T> > >::type
+  typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
   operator*(S const & s, Vector<T> const & u)
   {
     Index const
@@ -728,7 +728,7 @@ namespace Intrepid
   //
   template<typename S, typename T>
   inline
-  typename lazy_disable_if< is_vector<S>, apply_vector< Promote<S,T> > >::type
+  typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
   operator*(Vector<T> const & u, S const & s)
   {
     return s * u;

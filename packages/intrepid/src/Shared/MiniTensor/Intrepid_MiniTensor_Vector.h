@@ -271,7 +271,7 @@ namespace Intrepid {
   /// \return \f$ s u \f$
   ///
   template<typename S, typename T>
-  typename lazy_disable_if< is_vector<S>, apply_vector< Promote<S,T> > >::type
+  typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
   operator*(S const & s, Vector<T> const & u);
 
   ///
@@ -281,7 +281,7 @@ namespace Intrepid {
   /// \return \f$ s u \f$
   ///
   template<typename S, typename T>
-  typename lazy_disable_if< is_vector<S>, apply_vector< Promote<S,T> > >::type
+  typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
   operator*(Vector<T> const & u, S const & s);
 
   ///

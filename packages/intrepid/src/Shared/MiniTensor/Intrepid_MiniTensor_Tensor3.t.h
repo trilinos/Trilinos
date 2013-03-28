@@ -374,7 +374,7 @@ namespace Intrepid {
   // \return \f$ s A \f$
   //
   template<typename S, typename T>
-  typename lazy_disable_if< is_tensor3<S>, apply_tensor3< Promote<S,T> > >::type
+  typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
   operator*(S const & s, Tensor3<T> const & A)
   {
     Index const
@@ -401,7 +401,7 @@ namespace Intrepid {
   // \return \f$ s A \f$
   //
   template<typename S, typename T>
-  typename lazy_disable_if< is_tensor3<S>, apply_tensor3< Promote<S,T> > >::type
+  typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
   operator*(Tensor3<T> const & A, S const & s)
   {
     return s * A;
