@@ -66,14 +66,18 @@ public:
   const Functor &functor() const { return functor_; }
   Functor &functor() { return functor_; }
 
-  virtual Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) {
-    return functor_(params);
-  }
+  virtual Teuchos::RCP<T> getInstance(const Teuchos::RCP<Teuchos::ParameterList> &params);
 
 private:
   Functor functor_;
 };
 
+template <typename T, typename Functor>
+Teuchos::RCP<T>
+ProviderImpl<T, Functor>::getInstance(const Teuchos::RCP<Teuchos::ParameterList> &params)
+{
+  return functor_(params);
+}
 
 template <typename T>
 struct ProviderFunctorBase :
@@ -151,7 +155,7 @@ public:
   Teuchos::RCP<ProviderBase<T> > ptr() { return ptr_; }
 
   Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) {
-    return (*ptr_)(params);
+    return ptr_->getInstance(params);
   }
 
 private:
