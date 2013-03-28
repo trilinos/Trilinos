@@ -2342,8 +2342,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
 										       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-										       const RCP<Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
-										       const RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
+										       const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
+										       const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
 										       const RCP<ParameterList> &params)
   {
 #ifdef HAVE_TPETRA_DEBUG

@@ -600,8 +600,8 @@ namespace Tpetra {
       */
       void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
 				    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-				    const RCP<Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
-				    const RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+				    const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+				    const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
 				    const RCP<ParameterList> &params=Teuchos::null);
 
       //@}
@@ -1184,14 +1184,14 @@ namespace Tpetra {
       /// the domain Map and the column Map are the same, since no
       /// Import is necessary in that case for sparse matrix-vector
       /// multiply.
-      RCP<Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
+      RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
 
       /// \brief The Export from the row Map to the range Map.
       ///
       /// This gets constructed by fillComplete.  It may be null if
       /// the row Map and the range Map are the same, since no Export
       /// is necessary in that case for sparse matrix-vector multiply.
-      RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
+      RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
 
       // local data, stored in a Kokkos::CrsGraph. only initialized after fillComplete()
       RCP<local_graph_type> lclGraph_;

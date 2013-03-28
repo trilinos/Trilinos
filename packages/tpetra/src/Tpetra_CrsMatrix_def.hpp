@@ -2180,8 +2180,8 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
 											       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-											       const RCP<Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
-											       const RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
+											       const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
+											       const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
 											       const RCP<ParameterList> &params)
   {
   const char tfecfFuncName[] = "experStaticFillComplete()";

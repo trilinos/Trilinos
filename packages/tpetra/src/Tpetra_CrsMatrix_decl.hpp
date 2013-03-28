@@ -761,8 +761,8 @@ namespace Tpetra {
     */
     void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
 				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-				  const RCP<Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
-				  const RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+				  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
 				  const RCP<ParameterList> &params=Teuchos::null);
     
     /** Replaces the current domainMap and importer with the user-specified map object, but only
