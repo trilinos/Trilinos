@@ -226,8 +226,8 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
             const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
-	    ArrayRCP<size_t> & rowPointers, 
-	    ArrayRCP<LocalOrdinal> & columnIndices, 
+	    const ArrayRCP<size_t> & rowPointers, 
+	    const ArrayRCP<LocalOrdinal> & columnIndices, 
             const RCP<ParameterList>& params)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , rowMap_(rowMap)
@@ -1967,7 +1967,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllIndices(ArrayRCP<size_t> & rowPointers,ArrayRCP<LocalOrdinal> & columnIndices) 
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllIndices(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices) 
   {
     const char tfecfFuncName[] = "setAllIndices()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false, std::runtime_error, ": requires a ColMap.");
@@ -2359,10 +2359,8 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( domainMap == Teuchos::null || rangeMap == Teuchos::null,
 					   std::runtime_error, ": requires a non-null domainMap & rangeMap.");
 
-
-
-    // To make life easier, this matrix gets flagged as static profile
-    pftype_= StaticProfile;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( pftype_ !=StaticProfile,
+					   std::runtime_error, ": requires StaticProfile.");
 
     // Note: We don't need to do the following things which are normally done in fillComplete: 
     // allocateIndices, globalAssemble, makeColMap, makeIndicesLocal, sortAllIndices, mergeAllIndices
@@ -2371,8 +2369,8 @@ namespace Tpetra {
     nodeNumEntries_ = nodeNumAllocated_ = rowPtrs_[getNodeNumRows()];
 
     // Constants from allocateIndices
-    numAllocForAllRows_ = 0;
-    numAllocPerRow_     = null;
+    numAllocForAllRows_  = 0;
+    numAllocPerRow_      = null;
     indicesAreAllocated_ = true;
 
     // Constants from makeIndicesLocal
@@ -2389,10 +2387,17 @@ namespace Tpetra {
     // makeImportExport won't create a new importer/exporter if I set one here first.
     importer_=Teuchos::null;
     exporter_=Teuchos::null;
-    if(importer != Teuchos::null && importer->getSourceMap()->isSameAs(*getDomainMap()) && importer->getTargetMap()->isSameAs(*getColMap()))
+    if(importer != Teuchos::null) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!importer->getSourceMap()->isSameAs(*getDomainMap()) || !importer->getTargetMap()->isSameAs(*getColMap()), 
+					    std::invalid_argument,": importer does not match matrix maps.");
       importer_ = importer;
-    if(exporter != Teuchos::null && exporter->getSourceMap()->isSameAs(*getRowMap()) && exporter->getTargetMap()->isSameAs(*getRangeMap()))
+
+    }
+    if(exporter != Teuchos::null) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!exporter->getSourceMap()->isSameAs(*getRowMap()) || !exporter->getTargetMap()->isSameAs(*getRangeMap()),
+					    std::invalid_argument,": exporter does not match matrix maps.");
       exporter_ = exporter;
+    }
     makeImportExport();
 
     // Compute the constants

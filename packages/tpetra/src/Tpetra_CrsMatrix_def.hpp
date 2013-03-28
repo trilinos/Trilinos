@@ -237,9 +237,9 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-	     ArrayRCP<size_t> & rowPointers, 
-	     ArrayRCP<LocalOrdinal> & columnIndices, 
-	     ArrayRCP<Scalar> & values, 
+	     const ArrayRCP<size_t> & rowPointers, 
+	     const ArrayRCP<LocalOrdinal> & columnIndices, 
+	     const ArrayRCP<Scalar> & values, 
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
     insertGlobalValuesWarnedEfficiency_ (false),
@@ -1478,7 +1478,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllValues(ArrayRCP<size_t> & rowPointers,ArrayRCP<LocalOrdinal> & columnIndices, ArrayRCP<Scalar> & values) 
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values) 
   {
     const char tfecfFuncName[] = "setAllValues()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");

@@ -401,9 +401,9 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-	      ArrayRCP<size_t> & rowPointers, 
-	      ArrayRCP<LocalOrdinal> & columnIndices, 
-	      ArrayRCP<Scalar> & values, 
+	      const ArrayRCP<size_t> & rowPointers, 
+	      const ArrayRCP<LocalOrdinal> & columnIndices, 
+	      const ArrayRCP<Scalar> & values, 
               const RCP<ParameterList>& params = null);
 
 
@@ -688,7 +688,7 @@ namespace Tpetra {
 
        \warning This method is intended for expert developer use only, and should never be called by user code.
     */
-    void setAllValues(ArrayRCP<size_t> & rowPointers,ArrayRCP<LocalOrdinal> & columnIndices, ArrayRCP<Scalar> & values);
+    void setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values);
 
     
 
