@@ -3857,13 +3857,14 @@ void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
   int ierr;
     
   // cycle over all the local rows. 
-  
+
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
   int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+#endif  
 
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     
-    // get GID of local row
-    int_type GlobalNode = MyGlobalElements[i];
+
     // extract Crs row
 
     ierr = matrix_->ExtractMyRowView(i,CrsNumEntries,
@@ -3879,6 +3880,8 @@ void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
     // commit the end of submissions (EndSubmitEntries).
     
 #ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+    // get GID of local row
+    int_type GlobalNode = MyGlobalElements[i];
     VbrMatrix_->BeginInsertGlobalValues(GlobalNode, CrsNumEntries, VbrIndices);
 #else
 	// CJ TODO FIXME: Vbr matrices cannot be 64 bit GID based yet.
