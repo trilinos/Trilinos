@@ -124,10 +124,11 @@ namespace MueLu {
       std::string algo = pL.get<std::string>("algorithm");
 
       TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null    && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
-      TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (threshold|laplacian)");
+      TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|laplacian)");
 
       Scalar threshold = Teuchos::as<Scalar>(pL.get<double>("aggregation threshold"));
       GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << std::endl;
+      Set(currentLevel, "Filtering", (threshold > 0));
 
       LocalOrdinal numDropped = 0, numTotal = 0;
       if (algo == "original") {
@@ -391,6 +392,7 @@ namespace MueLu {
 
     } else {
 
+      Set(currentLevel, "Filtering", (predrop_ != Teuchos::null));
       //what Tobias has implemented
 
       LocalOrdinal blockdim = 1;         // block dim for fixed size blocks
