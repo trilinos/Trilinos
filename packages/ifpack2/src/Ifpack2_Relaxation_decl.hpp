@@ -348,6 +348,15 @@ public:
   /// false, meaning that we do forward-mode Gauss-Seidel.  This only
   /// affects standard Gauss-Seidel, not symmetric Gauss-Seidel.
   ///
+  /// The "relaxation: check diagonal entries" (bool) parameter
+  /// defaults to false.  If true, the compute() method will do extra
+  /// work (both computation and communication) to count diagonal
+  /// entries that are zero, have negative real part, or are small in
+  /// magnitude.  The describe() method will then print this
+  /// information for you.  You may find this useful for checking
+  /// whether your input matrix has issues that make Jacobi or
+  /// Gauss-Seidel a poor choice of preconditioner.
+  ///
   /// The last two parameters govern the L1 variant of Gauss-Seidel.
   /// The "relaxation: use l1" (bool) parameter, if true, turns on the
   /// L1 variant.  (In "l1", the first character is a lower-case L,
@@ -533,6 +542,9 @@ public:
 
 private:
 
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
   //! @name Unimplemented methods that you are syntactically forbidden to call.
   //@{
 
@@ -609,6 +621,7 @@ private:
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c Matrix.
   mutable Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
+
   //! How many times to apply the relaxation per apply() call.
   int NumSweeps_;
   //! Which relaxation method to use.
@@ -627,6 +640,9 @@ private:
   bool DoL1Method_;
   //! Eta parameter for modified L1 method
   magnitude_type L1Eta_;
+  //! Whether to spend extra effort and all-reduces checking diagonal entries.
+  bool checkDiagEntries_;
+
   //! Condition number estimate
   magnitude_type Condest_;
   //! If \c true, the preconditioner has been initialized successfully.
@@ -649,6 +665,17 @@ private:
   double ComputeFlops_;
   //! The total number of floating-point operations for all successful calls to apply().
   mutable double ApplyFlops_;
+
+  //! Global magnitude of the diagonal entry with the minimum magnitude.
+  magnitude_type globalMinMagDiagEntryMag_;
+  //! Global magnitude of the diagonal entry with the maximum magnitude.
+  magnitude_type globalMaxMagDiagEntryMag_;
+  //! Global number of small (in magnitude) diagonal entries detected by compute().
+  size_t globalNumSmallDiagEntries_;
+  //! Global number of zero diagonal entries detected by compute().
+  size_t globalNumZeroDiagEntries_;
+  //! Global number of negative (real part) diagonal entries detected by compute().
+  size_t globalNumNegDiagEntries_;
   //@}
 
 }; //class Relaxation
