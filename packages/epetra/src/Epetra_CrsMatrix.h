@@ -1529,20 +1529,6 @@ or if the number of entries in this row exceed the Length parameter.
 
   // For fused constructor
   template<typename int_type>
-  int UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& Source, 
-				    int NumSameIDs,
-				    int NumRemoteIDs,
-				    const int * RemoteLIDs,
-				    int NumPermuteIDs,
-				    const int *PermuteToLIDs,
-				    const int *PermuteFromLIDs,
-				    int LenImports,
-				    char* Imports,
-				    std::vector<int> & pids,
-				    std::vector<int_type> &CSR_colind_LL);
-
-  // For fused constructor
-  template<typename int_type>
   int LowCommunicationMakeColMapAndReindex(const Epetra_Map& domainMap, const int * owningPIDs, std::vector<int>& RemotePIDs, const int_type *colind_LL=0);
 
   //! Sort column entries, row-by-row, in ascending order.
