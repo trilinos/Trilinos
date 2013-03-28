@@ -248,6 +248,7 @@ namespace Tpetra {
   , insertLocalIndicesWarnedEfficiency_(false)
   {
     staticAssertions();
+    globalNumEntries_ = globalNumDiags_ = globalMaxNumRowEntries_ = OrdinalTraits<global_size_t>::invalid();
     setAllIndices(rowPointers,columnIndices);
     checkInternalState();
   }
@@ -1980,6 +1981,7 @@ namespace Tpetra {
     pftype_              = StaticProfile; // if the profile wasn't static before, it sure is now.
     lclInds1D_           = columnIndices;
     rowPtrs_             = rowPointers;
+    nodeNumEntries_ = nodeNumAllocated_ = rowPtrs_[getNodeNumRows()];
     checkInternalState();
   }
 

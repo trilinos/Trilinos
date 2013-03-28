@@ -2206,11 +2206,12 @@ namespace Tpetra {
     // This is where we take the local graph and matrix, and turn them
     // into (possibly optimized) sparse kernels.
     lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (), lclMatrix_);
-
+ 
     // Once we've initialized the sparse kernels, we're done with the
     // local objects.  We may now release them and their memory, since
     // they will persist in the local sparse ops if necessary.  We
     // keep the local graph if the parameters tell us to do so.
+    lclMatrix_ = null;
     bool preserveLocalGraph = false;
     if (params != null) {
       preserveLocalGraph = params->get ("Preserve Local Graph", false);
