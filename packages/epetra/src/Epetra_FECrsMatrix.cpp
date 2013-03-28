@@ -204,7 +204,7 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
               const Epetra_FECrsGraph& graph,
-              bool ignoreNonLocalEntries)
+              bool ignoreNonLocalEntries, bool overlap)
   : Epetra_CrsMatrix(CV, graph),
     myFirstRow_(0),
     myNumRows_(0),
@@ -225,7 +225,8 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     sourceMap_(NULL),
     colMap_(NULL),
     exporter_(NULL),
-    tempMat_(NULL)
+    tempMat_(NULL),
+    overlap_(overlap)
 {
   myFirstRow_ = RowMap().MinMyGID64();
   myNumRows_ = RowMap().NumMyElements();
@@ -1118,10 +1119,12 @@ int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
       }
     }
     else {
-      err = InputNonlocalGlobalValues(rows[i], numCols, cols,
-          valuesptr, mode);
-      if (err<0) return(err);
-      if (err>0) returncode = err;
+    	if (! overlap_) {
+          err = InputNonlocalGlobalValues(rows[i], numCols, cols,
+              valuesptr, mode);
+          if (err<0) return(err);
+          if (err>0) returncode = err;
+    	}
     }
   }
 
@@ -1249,10 +1252,11 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
     return (returncode);
   }
   int ierr1 = 0, ierr2 = 0;
-#ifdef HAVE_EPETRA_ATOMIC_CRS_UPDATES
+#ifdef HAVE_EPETRA_THREAD_SAFETY
 #pragma omp critical
 #endif
   {
+	  std::cout << "Overlap?\n";
 	std::vector<int_type>& nonlocalRows_var = nonlocalRows<int_type>();
 
 	//find offset of this row in our list of nonlocal rows.

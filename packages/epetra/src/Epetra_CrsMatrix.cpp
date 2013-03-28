@@ -955,7 +955,7 @@ int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
     for (j=0; j<NumEntries; j++) {
       int_type Index = Indices[j];
       if (Graph_.FindGlobalIndexLoc(locRow,Index,j,Loc))
-#ifdef HAVE_EPETRA_ATOMIC_CRS_UPDATES
+#ifdef HAVE_EPETRA_THREAD_SAFETY
 #pragma omp atomic
 #endif
         RowValues[Loc] += srcValues[j];
@@ -976,14 +976,14 @@ int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
         // Check whether the next added element is the subsequent element in
         // the graph indices, then we can skip the binary search
         if (Loc < NumColIndices && Index == ColIndices[Loc])
-#ifdef HAVE_EPETRA_ATOMIC_CRS_UPDATES
+#ifdef HAVE_EPETRA_THREAD_SAFETY
 #pragma omp atomic
 #endif
           RowValues[Loc] += srcValues[j];
         else {
           Loc = Epetra_Util_binary_search(Index, ColIndices, NumColIndices, insertPoint);
           if (Loc > -1)
-#ifdef HAVE_EPETRA_ATOMIC_CRS_UPDATES
+#ifdef HAVE_EPETRA_THREAD_SAFETY
 #pragma omp atomic
 #endif
             RowValues[Loc] += srcValues[j];
@@ -997,7 +997,7 @@ int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
       for (j=0; j<NumEntries; j++) {
         int Index = colmap.LID(Indices[j]);
         if (Graph_.FindMyIndexLoc(NumColIndices,ColIndices,Index,j,Loc)) 
-#ifdef HAVE_EPETRA_ATOMIC_CRS_UPDATES
+#ifdef HAVE_EPETRA_THREAD_SAFETY
 #pragma omp atomic
 #endif
           RowValues[Loc] += srcValues[j];

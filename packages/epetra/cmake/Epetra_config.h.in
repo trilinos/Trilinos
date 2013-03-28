@@ -75,7 +75,7 @@
 #cmakedefine HAVE_EPETRA_ARRAY_BOUNDS_CHECK
 
 /* Define if want to have OpenMP atomic updates in Epetra_CrsMatrix::TSumIntoGlobalValues */
-#cmakedefine HAVE_EPETRA_ATOMIC_CRS_UPDATES
+#cmakedefine HAVE_EPETRA_THREAD_SAFETY
 
 /* Define if want to build epetra-examples */
 #cmakedefine HAVE_EPETRA_EXAMPLES
