@@ -275,8 +275,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     precomputed redistribution plan.  The source Map of the
     Import must be the same as the row Map of sourceMatrix.
 
+    \param DomainMap [in] The new domainMap for the new matrix. If not specified,
+    then the DomainMap of the SourceMatrix is used.
+
+    \param RangeMap [in] The new rangeMap for the new matrix. If not specified,
+    then RowImporter.TargetMap() is used.
+
   */
-  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter, const Epetra_Map * RangeMap=0);
+  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter, const Epetra_Map * DomainMap=0, const Epetra_Map * RangeMap=0);
 
   //! Epetra CrsMatrix constructor that also fuses Ex[prt and FillComplete().
   /*!
@@ -307,8 +313,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     precomputed redistribution plan.  The source Map of the
     Import must be the same as the row Map of sourceMatrix.
 
+    \param RangeMap [in] The new rangeMap for the new matrix. If not specified,
+    then RowExporter.TargetMap() is used.
   */
-  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowImporter, const Epetra_Map * RangeMap=0);
+  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowExporter, const Epetra_Map * RangeMap=0);
 
   
   //! Copy constructor.
@@ -1519,17 +1527,6 @@ or if the number of entries in this row exceed the Length parameter.
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);
 
-  // For fused constructor
-  int PackAndPrepareWithOwningPIDs(const Epetra_SrcDistObject & Source, 
-				   int NumExportIDs,
-				   int * ExportLIDs,
-				   int & LenExports,
-				   char *& Exports,
-				   int & SizeOfPacket,
-				   int * Sizes,
-				   bool & VarSizes,
-				   Epetra_Distributor & Distor);
-  
   // For fused constructor
   template<typename int_type>
   int UnpackAndCombineIntoCrsArrays(const Epetra_SrcDistObject& Source, 

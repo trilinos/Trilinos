@@ -307,16 +307,6 @@ class LightweightCrsMatrix {
 		      std::vector<int> &ReverseRecvSizes, const int *ReverseRecvBuffer,
 		      std::vector<int> & ExportPIDs, std::vector<int> & ExportLIDs);
 
-
-  int PackAndPrepareWithOwningPIDs(const Epetra_DistObject & Source, 
-				   int NumExportIDs,
-				   int * ExportLIDs,
-				   int & LenExports,
-				   char *& Exports,
-				   int & SizeOfPacket,
-				   int * Sizes,
-				   bool & VarSizes,
-				   Epetra_Distributor & Distor);
 };
 
 }//namespace EpetraExt

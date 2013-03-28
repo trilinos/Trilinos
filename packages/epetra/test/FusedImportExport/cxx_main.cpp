@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 
     // Execute fused import constructor
     Import1 = new Epetra_Import(*Map1,A->RowMap());
-    B=new Epetra_CrsMatrix(*A,*Import1,&A->RangeMap());
+    B=new Epetra_CrsMatrix(*A,*Import1,0,&A->RangeMap());
 
     diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
 
     // Execute fused import constructor
     Import1 = new Epetra_Import(*Map1,A->RowMap());
-    B=new Epetra_CrsMatrix(*A,*Import1,&A->RangeMap());
+    B=new Epetra_CrsMatrix(*A,*Import1,0,&A->RangeMap());
 
     diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
 
     // Execute fused import constructor
     Import1 = new Epetra_Import(*Map1,A->RowMap());   
-    B=new Epetra_CrsMatrix(*A,*Import1,&A->RangeMap());
+    B=new Epetra_CrsMatrix(*A,*Import1,0,&A->RangeMap());
     
     diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
     
     // Execute fused import constructor
     Import1 = new Epetra_Import(*Map1,A->RowMap());
-    B=new Epetra_CrsMatrix(*A,*Import1,&A->RangeMap());
+    B=new Epetra_CrsMatrix(*A,*Import1,0,&A->RangeMap());
 
     // Build unfused matrix to compare
     C=new Epetra_CrsMatrix(Copy,*Map1,0);
