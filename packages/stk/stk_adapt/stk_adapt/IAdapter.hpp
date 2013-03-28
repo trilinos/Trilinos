@@ -71,25 +71,16 @@ namespace stk {
     class IAdapter : public Refiner
     {
     public:
-
-
       virtual ElementUnrefineCollection  buildUnrefineList() = 0;
 
     protected:
-      IAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
+      IAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0)
+      : Refiner(eMesh, bp, proc_rank_field) {}
 
       virtual void 
       refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, 
                                               vector<NeededEntityType>& needed_entity_ranks) = 0;
-
-
     };
-
-    IAdapter::IAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
-      Refiner(eMesh, bp, proc_rank_field)
-    {
-    }
-
 
   }
 }
