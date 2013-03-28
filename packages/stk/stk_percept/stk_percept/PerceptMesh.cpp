@@ -1162,7 +1162,8 @@ namespace stk {
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
       m_comm = bulkData->parallel();
 
-      setCoordinatesField();
+      if (isCommitted)
+        setCoordinatesField();
       s_static_singleton_instance = this;
     }
 
