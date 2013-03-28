@@ -18,7 +18,6 @@
 
 #include <stk_util/util/CSet.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/PartRelation.hpp>
 #include <stk_mesh/baseImpl/PartImpl.hpp>
 
 //----------------------------------------------------------------------
@@ -81,12 +80,6 @@ public:
 
   /** \brief  Parts that are subsets of this part. */
   const PartVector & subsets() const { return m_partImpl.subsets(); }
-
-  /** \brief  Parts for which this part is defined as the intersection.  */
-  const PartVector & intersection_of() const { return m_partImpl.intersection_of(); }
-
-  /** \brief  PartRelations for which this part is a member, root or target */
-  const std::vector<PartRelation> & relations() const { return m_partImpl.relations(); }
 
   /** \brief  Equality comparison */
   bool operator == ( const Part & rhs ) const { return this == & rhs ; }

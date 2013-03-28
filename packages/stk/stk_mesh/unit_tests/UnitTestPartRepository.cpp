@@ -43,7 +43,6 @@ public:
    stk::mesh::Part * part_1_A;
    stk::mesh::Part * part_1_B;
    stk::mesh::Part * part_2_A;
-   stk::mesh::PartRelation relation;
    const CellTopologyData * singleton;
 };
 
@@ -61,7 +60,6 @@ UnitTestPartRepository::UnitTestPartRepository()
   , part_1_A (           partRepo_1.declare_part("A",0) )
   , part_1_B (           partRepo_1.declare_part("B",0) )
   , part_2_A (           partRepo_2.declare_part("A",0) )
-  , relation ( )
   , singleton ( NULL )
 {
  meta.commit();
@@ -127,17 +125,6 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, two_part_repositories )
     upr.partRepo_1.declare_subset(*upr.part_1_A,*upr.part_2_A),
     std::runtime_error
     );
-}
-
-STKUNIT_UNIT_TEST( UnitTestPartRepository, invalid_relation )
-{
-  UnitTestPartRepository upr;
-  upr.relation.m_root = upr.part_B;
-  upr.relation.m_target = upr.part_A;
-  STKUNIT_ASSERT_THROW(
-      upr.partRepo.declare_part_relation( *upr.part_A, upr.relation, *upr.part_B ),
-      std::runtime_error
-      );
 }
 
 //Test covers declare_attribute_no_delete in PartRepository.hpp and PartImpl.hpp

@@ -215,20 +215,7 @@ public:
   /** \brief  Declare a superset-subset relationship between parts */
   void declare_part_subset( Part & superset , Part & subset );
 
-  /** \brief  Declare an entity-relationship between parts.
-   *
-   *  If \ref stk::mesh::Entity "entity" <b> e1 </b> is a member
-   *  of <em> root_part </em> and there exists an
-   *  \ref stk::mesh::Relation "entity relation"
-   *  from <b> e1 </b> to <b> e2 </b> that satisfies the
-   *  \ref stk_mesh_relations "relation stencil"
-   *  then <b> e2 </b> must be a member of the <em> target_part </em>.
-   */
-  void declare_part_relation( Part & root_part ,
-                              relation_stencil_ptr stencil ,
-                              Part & target_part );
-
-  /** \brief  Declare an attribute on a part.
+    /** \brief  Declare an attribute on a part.
    *          Return the attribute of that type,
    *          which may be an already existing value.
    * \todo REFACTOR  Should be using a shared pointer in this interface.

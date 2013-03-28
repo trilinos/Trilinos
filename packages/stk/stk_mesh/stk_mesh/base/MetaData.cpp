@@ -158,12 +158,7 @@ void MetaData::require_valid_entity_rank( EntityRank rank ) const
 
 void MetaData::require_not_relation_target( const Part * const part ) const
 {
-  std::vector<PartRelation>::const_iterator i_end = part->relations().end();
-  std::vector<PartRelation>::const_iterator i     = part->relations().begin();
-  for ( ; i != i_end ; ++i ) {
-    ThrowRequireMsg( part != i->m_target,
-                     "Part[" << part->name() << "] is a PartRelation target");
-  }
+
 }
 
 //----------------------------------------------------------------------
@@ -361,30 +356,6 @@ void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
   // The new superset / subset relationship can cause a
   // field restriction to become incompatible or redundant.
   m_field_repo.verify_and_clean_restrictions(method, superset, subset, m_part_repo.get_all_parts());
-}
-
-void MetaData::declare_part_relation(
-  Part & root_part ,
-  relation_stencil_ptr stencil ,
-  Part & target_part )
-{
-  require_not_committed();
-  require_not_relation_target( &root_part );
-
-  ThrowErrorMsgIf( !stencil, "stencil function pointer cannot be NULL" );
-
-  ThrowErrorMsgIf( 0 != target_part.subsets().size() ||
-                   0 != target_part.intersection_of().size() ||
-                   1 != target_part.supersets().size(),
-                   "target Part[" << target_part.name() <<
-                   "] cannot be a superset or subset" );
-
-  PartRelation tmp ;
-  tmp.m_root = & root_part ;
-  tmp.m_target = & target_part ;
-  tmp.m_function = stencil ;
-
-  m_part_repo.declare_part_relation( root_part, tmp, target_part );
 }
 
 //----------------------------------------------------------------------
@@ -698,7 +669,6 @@ void pack( CommBuffer & b , const PartVector & pset )
   for ( i = pset.begin() ; i != pset.end() ; ++i ) {
     const Part & p = **i ;
     const PartVector & subsets   = p.subsets();
-    const PartVector & intersect = p.intersection_of();
 
     const size_t       name_len = p.name().size() + 1 ;
     const char * const name_ptr = p.name().c_str();
@@ -718,13 +688,6 @@ void pack( CommBuffer & b , const PartVector & pset )
       const unsigned ord = s.mesh_meta_data_ordinal();
       b.pack<unsigned>( ord );
     }
-    const unsigned intersect_size = static_cast<unsigned>(intersect.size());
-    b.pack<unsigned>( intersect_size );
-    for ( j = intersect.begin() ; j != intersect.end() ; ++j ) {
-      const Part & s = **j ;
-      const unsigned ord = s.mesh_meta_data_ordinal();
-      b.pack<unsigned>( ord );
-    }
   }
 }
 
@@ -739,7 +702,6 @@ bool unpack_verify( CommBuffer & b , const PartVector & pset )
   for ( i = pset.begin() ; ok && i != pset.end() ; ++i ) {
     const Part & p = **i ;
     const PartVector & subsets   = p.subsets();
-    const PartVector & intersect = p.intersection_of();
     const unsigned     name_len = static_cast<unsigned>(p.name().size()) + 1 ;
     const char * const name_ptr = p.name().c_str();
 
@@ -767,15 +729,6 @@ bool unpack_verify( CommBuffer & b , const PartVector & pset )
       ok = b_tmp == s.mesh_meta_data_ordinal();
     }
 
-    if ( ok ) {
-      b.unpack<unsigned>( b_tmp );
-      ok = b_tmp == intersect.size();
-    }
-    for ( j = intersect.begin() ; ok && j != intersect.end() ; ++j ) {
-      const Part & s = **j ;
-      b.unpack<unsigned>( b_tmp );
-      ok = b_tmp == s.mesh_meta_data_ordinal();
-    }
   }
   return ok ;
 }

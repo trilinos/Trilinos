@@ -60,12 +60,6 @@ public:
   /** \brief  Parts that are subsets of this part. */
   const PartVector & subsets() const { return m_subsets ; }
 
-  /** \brief  Parts for which this part is defined as the intersection.  */
-  const PartVector & intersection_of() const { return m_intersect ; }
-
-  /** \brief  PartRelations for which this part is a member, root or target */
-  const std::vector<PartRelation> & relations() const { return m_relations ; }
-
   /** \brief  Equality comparison */
   bool operator == ( const PartImpl & rhs ) const { return this == & rhs ; }
 
@@ -80,8 +74,6 @@ public:
 
   void add_part_to_subset( Part & part);
   void add_part_to_superset( Part & part );
-  void add_relation( PartRelation relation );
-  void set_intersection_of( const PartVector & );
 
   template<class T>
   const T * declare_attribute_with_delete( const T *);
@@ -113,8 +105,6 @@ private:
   CSet                      m_attribute ;
   PartVector                m_subsets ;
   PartVector                m_supersets ;
-  PartVector                m_intersect ;
-  std::vector<PartRelation> m_relations ;
   MetaData          * const m_mesh_meta_data ;
   const unsigned            m_ordinal ;
   EntityRank                m_entity_rank ;

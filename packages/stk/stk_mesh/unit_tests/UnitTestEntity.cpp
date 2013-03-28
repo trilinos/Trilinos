@@ -32,7 +32,6 @@ using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
-using stk::mesh::PartRelation;
 using stk::mesh::EntityKey;
 using stk::mesh::Entity;
 using stk::mesh::Bucket;

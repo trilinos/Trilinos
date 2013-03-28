@@ -77,17 +77,6 @@ namespace mesh {
  *  - if a relation exists from <em>entity_from</em> to <em>entity_to</em>
  *  - then <em>entity_to</em> is induced to be a member of <em>part</em>.
  *
- *  Induced membership may also occur as per the following stencil-based rule.
- *  - Let <em>( part_from , stencil , part_to )</em> be a
- *    \ref stk::mesh::PartRelation "part relation".
- *  - Let <em>( entity_from , relation , entity_to )</em> be an
- *    \ref stk::mesh::Relation "entity relation".
- *  - If <em>entity_from</em> is a explicitly a member of <em>part_from</em>,
- *    and
- *  - if <em>0 <= stencil( entity_from.entity_type() , entity_to.entity_type() ,
- *                         relation.identifier() , relation.kind() )
- *  - then <em>entity_to</em> is a member of <em>part_to</em>.
- *
  *  The negation holds for both of these induced membership rules:
  *  - In the type-based rule the <em>entity_to</em> cannot be a member
  *    of <em>part</em> unless the conditions of the type-based rule

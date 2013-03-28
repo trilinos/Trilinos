@@ -33,7 +33,6 @@
 using stk::mesh::MetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
-using stk::mesh::PartRelation;
 using stk::mesh::Entity;
 using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;

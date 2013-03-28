@@ -139,9 +139,7 @@ bool membership_is_induced( const Part & part , unsigned entity_rank )
      entity_rank < part.primary_entity_rank() &&
                    part.primary_entity_rank() < meta.entity_rank_count() ;
 
-  const bool induced_by_stencil =
-    ! part.relations().empty() &&
-      part.relations().begin()->m_target == & part ;
+  const bool induced_by_stencil = false;
 
   return induced_by_type || induced_by_stencil ;
 }
@@ -162,20 +160,6 @@ void induced_part_membership( const Part & part ,
 
     insert_part_and_supersets( induced_parts , part, include_supersets );
 
-    // Stencil relationship where 'part' is the root:
-    // The 'target' should not have subsets or supersets.
-
-    const std::vector<PartRelation> & part_rel = part.relations();
-
-    for ( std::vector<PartRelation>::const_iterator
-          j = part_rel.begin() ; j != part_rel.end() ; ++j ) {
-
-      if ( & part == j->m_root &&
-           0 <= (* j->m_function)( entity_rank_from , entity_rank_to ,
-                                   relation_identifier ) ) {
-        insert_part_and_supersets( induced_parts , * j->m_target, include_supersets );
-      }
-    }
   }
 }
 

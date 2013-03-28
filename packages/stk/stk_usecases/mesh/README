@@ -39,21 +39,6 @@ UseCase_3:
     coordinate field data for the nodes attached to that element.
 
 
-UseCase_4:
-  3D, 2x Hex and 3x Wedge mesh with linear and quadratic elements and 66 nodes.
-  Includes a coordinate field on nodes, a velocity field on nodes, a centroid
-    field on elements, a temperature field on nodes, a pressure field on vertex
-    nodes, a boundary field on nodes in the sideset, and an element_node
-    coordinate field on the quadratic elements.
-
-  This use case demonstrates how to put the vertex nodes from the quadratic hex
-    and wedge elements into a vertex part through the use of part relations and
-    stencils.  This is used to put the pressure field on the vertex nodes.
-
-  This use case sets up the mesh, assigns the field data, and runs two centroid
-    algorithms on the quadratic hex and wedge elements, then demonstrates how all
-    this data is retrieved from the mesh by verifying the data.
-
 UseCase_ChangeOwner:
   2D, 4x Quadrilateral elements
   This use case demonsrates how to move elements from one processor to another.

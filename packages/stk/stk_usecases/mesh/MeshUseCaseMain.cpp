@@ -15,7 +15,6 @@
 #include <mesh/MeshUseCase_1.hpp>
 #include <mesh/MeshUseCase_2.hpp>
 #include <mesh/MeshUseCase_3.hpp>
-#include <mesh/MeshUseCase_4.hpp>
 #include <mesh/UseCase_ElementDeath.hpp>
 #include <mesh/UseCase_Skinning.hpp>
 #include <mesh/UseCase_ChangeOwner.hpp>
@@ -151,16 +150,6 @@ main(
         printStatus(local_status);
         std::cout << x.what();
       }
-      status = status && local_status;
-    }
-
-    if ( single_process ) {
-      std::cout << "Use Case 4 ... ";
-      stk::mesh::use_cases::UseCase_4_Mesh mesh(parallel_machine);
-      mesh.populate();
-      stk::mesh::use_cases::runAlgorithms(mesh);
-      const bool local_status = stk::mesh::use_cases::verifyMesh(mesh);
-      printStatus(local_status);
       status = status && local_status;
     }
 

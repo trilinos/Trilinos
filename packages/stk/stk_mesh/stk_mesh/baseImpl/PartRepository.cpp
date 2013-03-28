@@ -192,20 +192,6 @@ void PartRepository::declare_subset( Part & superset, Part & subset )
   }
 }
 
-void PartRepository::declare_part_relation( Part & root_part, PartRelation relation, Part & target_part )
-{
-  static const char method[] = "stk::mesh::impl::PartRepository::declare_part_relation" ;
-  TraceIf(method, LOG_PART);
-
-  assert_not_same(      root_part   , target_part        , method );
-  assert_same_universe( root_part   , target_part        , method );
-  assert_same(          root_part   , *relation.m_root   , method );
-  assert_same(          target_part , *relation.m_target , method );
-
-  root_part.m_partImpl.add_relation( relation );
-  target_part.m_partImpl.add_relation( relation );
-}
-
 PartRepository::PartRepository(MetaData * meta)
   : m_meta_data(meta),
     m_universal_part(NULL),

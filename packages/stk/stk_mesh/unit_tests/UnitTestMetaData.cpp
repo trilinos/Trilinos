@@ -22,7 +22,6 @@
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 
 #include <stk_mesh/base/FieldRelation.hpp>
-#include <stk_mesh/base/PartRelation.hpp>
 
 #include <stk_mesh/base/Stencils.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -31,7 +30,6 @@
 using stk::mesh::MetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
-using stk::mesh::PartRelation;
 using stk::mesh::EntityRank;
 using std::cout;
 using std::endl;
@@ -59,9 +57,6 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
   Part &pc = metadata.declare_part( std::string("c") , 0 );
   Part &pd = metadata.declare_part( std::string("d") , 0 );
   Part &pe = metadata.declare_part( std::string("e") , 0 );
-  Part &pf = metadata.declare_part( std::string("f") , 0 );
-  Part &pg = metadata.declare_part( std::string("g") , 0 );
-  Part &ph = metadata.declare_part( std::string("h") , 0 );
   PartVector part_vector;
   metadata_committed.commit();
 
@@ -72,8 +67,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
   //test get_part with valid part
   STKUNIT_ASSERT( metadata.get_part(std::string("a"),"do_not_throw"));
 
-  //test declare part
-  metadata.declare_part_relation( pe,stencil_test_function, pg);
+
 
   part_vector.push_back(& pa);
   part_vector.push_back(& pb);
@@ -82,16 +76,6 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
 
   //Test declare_part_subset
   STKUNIT_ASSERT_THROW(  metadata.declare_part_subset( pe, pe), std::runtime_error);
-
-  //Test declare_part_relation with parts that are not subsets of each other
-  STKUNIT_ASSERT_THROW(  metadata.declare_part_relation( pg,stencil_test_function, ph), std::logic_error);
-
-  //Test declare_part_relation with a NULL stencil function
-  STKUNIT_ASSERT_THROW(  metadata.declare_part_relation( pe,NULL, pe), std::runtime_error);
-
-  //Test declare_part_relation with parts that are subsets of each other
-  metadata.declare_part_subset( pd, pf);
-  STKUNIT_ASSERT_THROW(  metadata.declare_part_relation( pd,stencil_test_function, pf), std::runtime_error);
 
   metadata.commit();
 }

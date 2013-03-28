@@ -20,12 +20,10 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/base/FieldRelation.hpp>
-#include <stk_mesh/base/PartRelation.hpp>
 
 using stk::mesh::MetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
-using stk::mesh::PartRelation;
 using stk::mesh::impl::PartRepository;
 
 namespace {
@@ -66,7 +64,6 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
 
   for ( unsigned i = 1 ; i < NPARTS ; ++i ) {
     STKUNIT_ASSERT( parts[i]->subsets().empty() );
-    STKUNIT_ASSERT( parts[i]->intersection_of().empty() );
     STKUNIT_ASSERT( parts[i]->mesh_meta_data_ordinal() == i );
     STKUNIT_ASSERT( 1u == parts[i]->supersets().size() );
     STKUNIT_ASSERT( &  universal == parts[i]->supersets()[0] );
@@ -186,15 +183,6 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
 
   STKUNIT_ASSERT( intersect( *pabc , *pbcd ) );
   STKUNIT_ASSERT( ! intersect( *pabc , *pdef ) );
-}
-
-// Unit test the PartRelation copy constructor:
-STKUNIT_UNIT_TEST(UnitTestPart, testPartRelation)
-{
-  PartRelation rA;
-  PartRelation rB( rA);
-
-  rA = rB;
 }
 
 } // empty namespace

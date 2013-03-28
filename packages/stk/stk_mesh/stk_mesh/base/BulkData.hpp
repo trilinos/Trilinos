@@ -670,9 +670,9 @@ void BulkData::internal_basic_part_check(const Part* part,
 {
   // const unsigned part_rank = part->primary_entity_rank();
 
-  intersection_ok = part->intersection_of().empty();
-  rel_target_ok   = ( part->relations().empty() ||
-                      part != part->relations().begin()->m_target );
+  intersection_ok = true;
+  rel_target_ok   = true;
+
   // Do we allow arbitrary part changes to entities regardless of part rank? For the sake of the migration, we will for now.
 #ifdef SIERRA_MIGRATION
   rank_ok = true;

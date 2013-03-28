@@ -32,7 +32,6 @@ public:
 
   Part * declare_part( const std::string & arg_name , EntityRank arg_rank );
   void declare_subset( Part & superset, Part & subset );
-  void declare_part_relation( Part & root_part, PartRelation relation, Part & target_part );
 
   template<class T>
   const T * declare_attribute_with_delete( Part & , const T *);

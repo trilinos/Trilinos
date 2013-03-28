@@ -16,7 +16,6 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/FieldRelation.hpp>
-#include <stk_mesh/base/PartRelation.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/baseImpl/PartRepository.hpp>

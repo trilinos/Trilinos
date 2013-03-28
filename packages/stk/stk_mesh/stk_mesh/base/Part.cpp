@@ -35,7 +35,6 @@ print( std::ostream & os , const char * const lead , const Part & p )
 {
   const PartVector & supersets = p.supersets();
   const PartVector & subsets   = p.subsets();
-  const PartVector & intersection = p.intersection_of();
 
   std::vector<Part*>::const_iterator i ;
 
@@ -53,13 +52,7 @@ print( std::ostream & os , const char * const lead , const Part & p )
     const std::string & n = (*i)->name() ; os << " " << n ;
   }
   os << " }" << std::endl ;
-
-  if ( lead != NULL ) { os << lead ; }
-  os << "  Intersection_Of {" ;
-  for ( i = intersection.begin() ; i != intersection.end() ; ++i ) {
-    const std::string & n = (*i)->name() ; os << " " << n ;
-  }
-  os << " } }" << std::endl ;
+  os << " }" << std::endl ;
 
   if ( lead != NULL ) { os << lead ; }
   os << "  Subsets {" ;

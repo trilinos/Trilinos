@@ -34,8 +34,6 @@ void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
     mem_usage.part_bytes += parts[i]->name().length();
     mem_usage.part_bytes += sizeof(Part*)        * parts[i]->supersets().size();
     mem_usage.part_bytes += sizeof(Part*)        * parts[i]->subsets().size();
-    mem_usage.part_bytes += sizeof(Part*)        * parts[i]->intersection_of().size();
-    mem_usage.part_bytes += sizeof(PartRelation) * parts[i]->relations().size();
   }
 
   size_t total_bytes = mem_usage.field_bytes + mem_usage.part_bytes;

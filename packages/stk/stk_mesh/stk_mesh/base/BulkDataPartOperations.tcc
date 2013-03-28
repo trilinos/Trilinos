@@ -386,7 +386,6 @@ void BulkData::internal_propagate_part_changes(
 // Do not allow any of the induced part memberships to explicitly
 // appear in the add or remove parts lists.
 // 1) Intersection part
-// 2) PartRelation target part
 // 3) Part that does not match the entity rank.
 
 template <typename PartT>
