@@ -94,7 +94,7 @@ namespace MueLu {
     // NOTE: the good thing is that we mostly deal with local IDs
 
     // Calculate max entries per row
-    RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
+    RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries(), Xpetra::StaticProfile);
 
     Array<GO>   newInds;
     Array<SC>   newVals;
