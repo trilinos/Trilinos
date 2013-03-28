@@ -164,6 +164,17 @@ namespace Xpetra {
     //! Scale the current values of a matrix, this = alpha*this.
     void scale(const Scalar &alpha) { XPETRA_MONITOR("TpetraCrsMatrix::scale"); mtx_->scale(alpha); }
 
+    //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values)
+    { XPETRA_MONITOR("TpetraCrsMatrix::allocateAllValues"); rowptr.resize(getNodeNumRows()+1), colind.resize(numNonZeros), values.resize(numNonZeros);}
+
+    //! Sets the matrix's structure from the Crs arrays
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    void setAllValues(ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values) 
+    { XPETRA_MONITOR("TpetraCrsMatrix::setAllValues"); mtx_->setAllValues(rowptr,colind,values); }
+
+
     //@}
 
     //! @name Transformational Methods

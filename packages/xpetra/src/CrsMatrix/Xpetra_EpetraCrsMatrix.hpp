@@ -136,6 +136,14 @@ namespace Xpetra {
     //! Scale the current values of a matrix, this = alpha*this.
     void scale(const Scalar &alpha) { XPETRA_MONITOR("EpetraCrsMatrix::scale"); mtx_->Scale(alpha); }
 
+    //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values);
+
+    //! Sets the matrix's structure from the Crs arrays
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    void setAllValues(ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values);
+
     //@}
 
     //! @name Transformational Methods
