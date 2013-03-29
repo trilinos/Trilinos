@@ -195,7 +195,7 @@ operator()( OriginalTypeRef orig )
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
-  TransposeMatrix_ = new Epetra_CrsMatrix(*TempTransA1,*TempTransA1->Exporter(),TransposeRowMap_);
+  TransposeMatrix_ = new Epetra_CrsMatrix(*TempTransA1,*TempTransA1->Exporter(),0,TransposeRowMap_);
 
   newObj_ = TransposeMatrix_;
   delete TempTransA1;
