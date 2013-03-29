@@ -400,7 +400,8 @@ int main(int argc, char *argv[])
       }
 
     // New map
-    Map1=new Epetra_Map((long long)-1,num_local,&MyGIDS[0],(long long)0,Comm);
+    const long long * MyGIDS_ptr = MyGIDS.size() ? &MyGIDS[0] : 0;
+    Map1=new Epetra_Map((long long)-1,num_local,MyGIDS_ptr,(long long)0,Comm);
 
     // Execute fused import constructor
     Import1 = new Epetra_Import(*Map1,A->RowMap());

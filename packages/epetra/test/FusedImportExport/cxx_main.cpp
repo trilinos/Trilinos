@@ -402,7 +402,8 @@ int main(int argc, char *argv[])
       }
 
     // New map
-    Map1=new Epetra_Map(-1,num_local,&MyGIDS[0],0,Comm);
+    const int * MyGIDS_ptr = MyGIDS.size() ? &MyGIDS[0] : 0;
+    Map1=new Epetra_Map(-1,num_local,MyGIDS_ptr,0,Comm);
 
     
     // Execute fused import constructor
