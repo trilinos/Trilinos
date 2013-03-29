@@ -120,6 +120,16 @@ namespace MueLu {
         This has to be done by the aggregation routines.
     */
     void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
+
+    //! @brief Record whether aggregates include DOFs from other processes.
+    void AggregatesCrossProcessors(const bool &flag) {aggregatesIncludeGhosts_ = flag;};
+
+    /*! @brief Return false if and only if no aggregates include DOFs from other processes.
+
+        Used in construction of tentative prolongator to skip a communication phase.
+    */
+    bool AggregatesCrossProcessors() const {return aggregatesIncludeGhosts_;};
+
     /*! @brief Returns a nonconstant vector that maps local node IDs to local aggregates IDs.
 
         For local node ID i, the corresponding vector entry v[i] is the local aggregate id to which i belongs on the current processor.
@@ -185,6 +195,9 @@ namespace MueLu {
 
     Teuchos::ArrayRCP<bool> isRoot_;/* IsRoot[i] indicates whether vertex i  */
                                     /* is a root node.                       */
+
+    //! Set to false iff aggregates do not include any DOFs belong to other processes.
+    bool aggregatesIncludeGhosts_;
 
     //! Array of sizes of each local aggregate.
     mutable Teuchos::ArrayRCP<LO> aggregateSizes_;
