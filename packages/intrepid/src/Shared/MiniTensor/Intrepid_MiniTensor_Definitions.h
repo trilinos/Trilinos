@@ -78,14 +78,14 @@ namespace Intrepid {
   using Sacado::Promote;
   using Sacado::mpl::lazy_disable_if;
 
-  // Vector
-  template <typename S>
+  /// Vector
+  template <typename T>
   struct is_vector {
     static const bool value = false;
   };
 
-  template <typename S>
-  struct is_vector< Vector<S> > {
+  template <typename T>
+  struct is_vector< Vector<T> > {
     static const bool value = true;
   };
 
@@ -94,14 +94,14 @@ namespace Intrepid {
     typedef Vector<typename T::type> type;
   };
 
-  // 2nd-order tensor
-  template <typename S>
+  /// 2nd-order tensor
+  template <typename T>
   struct is_tensor {
     static const bool value = false;
   };
 
-  template <typename S>
-  struct is_tensor< Tensor<S> > {
+  template <typename T>
+  struct is_tensor< Tensor<T> > {
     static const bool value = true;
   };
 
@@ -110,14 +110,14 @@ namespace Intrepid {
     typedef Tensor<typename T::type> type;
   };
 
-  // 3rd-order tensor
-  template <typename S>
+  /// 3rd-order tensor
+  template <typename T>
   struct is_tensor3 {
     static const bool value = false;
   };
 
-  template <typename S>
-  struct is_tensor3< Tensor3<S> > {
+  template <typename T>
+  struct is_tensor3< Tensor3<T> > {
     static const bool value = true;
   };
 
@@ -126,14 +126,14 @@ namespace Intrepid {
     typedef Tensor3<typename T::type> type;
   };
 
-  // 4th-order tensor
-  template <typename S>
+  /// 4th-order tensor
+  template <typename T>
   struct is_tensor4 {
     static const bool value = false;
   };
 
-  template <typename S>
-  struct is_tensor4< Tensor4<S> > {
+  template <typename T>
+  struct is_tensor4< Tensor4<T> > {
     static const bool value = true;
   };
 
@@ -142,29 +142,29 @@ namespace Intrepid {
     typedef Tensor4<typename T::type> type;
   };
 
-  // Tensors from 1st to 4th order
-  template <typename S>
+  /// Tensors from 1st to 4th order
+  template <typename T>
   struct order_1234 {
     static const bool value = false;
   };
 
-  template <typename S>
-  struct order_1234< Vector<S> > {
+  template <typename T>
+  struct order_1234< Vector<T> > {
     static const bool value = true;
   };
 
-  template <typename S>
-  struct order_1234< Tensor<S> > {
+  template <typename T>
+  struct order_1234< Tensor<T> > {
     static const bool value = true;
   };
 
-  template <typename S>
-  struct order_1234< Tensor3<S> > {
+  template <typename T>
+  struct order_1234< Tensor3<T> > {
     static const bool value = true;
   };
 
-  template <typename S>
-  struct order_1234< Tensor4<S> > {
+  template <typename T>
+  struct order_1234< Tensor4<T> > {
     static const bool value = true;
   };
 
@@ -172,7 +172,9 @@ namespace Intrepid {
 
 namespace Sacado {
 
+  ///
   /// Specialization of Promote for Intrepid::Index
+  ///
   template <>
   struct Promote<double, Intrepid::Index> {
     typedef double type;
