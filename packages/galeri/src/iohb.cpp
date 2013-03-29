@@ -221,7 +221,7 @@ Fri Aug 15 16:29:47 EDT 1997
 
 char* substr(const char* S, const int pos, const int len);
 void upcase(char* S);
-void IOHBTerminate(char* message);
+void IOHBTerminate(const char* message);
 
 int readHB_info(const char* filename, int* M, int* N, int* nz, char** Type,
                                                       int* Nrhs)
@@ -1609,7 +1609,7 @@ void upcase(char* S)
        S[i] = toupper(S[i]);
 }
 
-void IOHBTerminate(char* message)
+void IOHBTerminate(const char* message)
 {
    fprintf(stderr,"%s",message);
    exit(1);
