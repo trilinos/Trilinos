@@ -570,9 +570,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Index base for this map.
   int  IndexBase() const {
-    if(GlobalIndicesInt())
+    if(GlobalIndicesInt() || IndexBase64() == (long long) static_cast<int>(IndexBase64()))
       return (int) IndexBase64();
-    throw "Epetra_BlockMap::IndexBase: GlobalIndices not int.";
+    throw "Epetra_BlockMap::IndexBase: GlobalIndices not int and IndexBase cannot fit an int.";
   }
 #endif
   long long  IndexBase64() const {return(BlockMapData_->IndexBase_);};
