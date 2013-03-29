@@ -155,7 +155,7 @@ namespace Belos {
   };
 
   template<class Scalar>
-  ReorthogonalizationCallback<Scalar>::~ReorthogonalizationCallBack () {}
+  ReorthogonalizationCallback<Scalar>::~ReorthogonalizationCallback () {}
 
   /// \class TsqrOrthoManagerImpl
   /// \brief TSQR-based OrthoManager subclass implementation
