@@ -897,7 +897,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   tmp->FillComplete(*(problemmap_.get()),*annmap);
 
   // B is transposed of tmp
-  EpetraExt::RowMatrix_Transpose* trans = new EpetraExt::RowMatrix_Transpose(false);
+  EpetraExt::RowMatrix_Transpose* trans = new EpetraExt::RowMatrix_Transpose();
   Epetra_CrsMatrix* B = &(dynamic_cast<Epetra_CrsMatrix&>(((*trans)(const_cast<Epetra_CrsMatrix&>(*tmp)))));
   delete tmp; tmp = NULL;
   B_ = Teuchos::rcp(new Epetra_CrsMatrix(*B));
