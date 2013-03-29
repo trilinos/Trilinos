@@ -809,7 +809,7 @@ namespace MueLu {
     if (lib == Xpetra::UseEpetra) {
 
 #     if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-      
+
       Epetra_CrsMatrix *A;
       const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(comm);
       int rv = EpetraExt::MatrixMarketFileToCrsMatrix( fileName.c_str(), *epcomm, A);
@@ -1275,7 +1275,7 @@ namespace MueLu {
       RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A;
       {
       Teuchos::TimeMonitor tmm(*Teuchos::TimeMonitor::getNewTimer("YY Tpetra Transpose Only"));
-      Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer(*tpetraOp); //more than meets the eye
+      Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer (tpetraOp); //more than meets the eye
       A = transposer.createTranspose();
       }
 
