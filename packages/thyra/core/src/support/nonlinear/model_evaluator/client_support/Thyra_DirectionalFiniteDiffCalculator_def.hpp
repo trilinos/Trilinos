@@ -173,82 +173,133 @@ private:
 
 
 template<class Scalar>
-const std::string DirectionalFiniteDiffCalculator<Scalar>::FDMethod_name = "FD Method";
+const std::string& DirectionalFiniteDiffCalculator<Scalar>::FDMethod_name()
+{
+  static std::string loc_FDMethod_name = "FD Method";
+  return loc_FDMethod_name;
+}
+
+
 template<class Scalar>
 const RCP<
   Teuchos::StringToIntegralParameterEntryValidator<
     Thyra::DirectionalFiniteDiffCalculatorTypes::EFDMethodType
   >
->
-DirectionalFiniteDiffCalculator<Scalar>::fdMethodValidator
-= Teuchos::rcp(
-  new Teuchos::StringToIntegralParameterEntryValidator<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDMethodType>(
-    Teuchos::tuple<std::string>(
-      "order-one"
-      ,"order-two"
-      ,"order-two-central"
-      ,"order-two-auto"
-      ,"order-four"
-      ,"order-four-central"
-      ,"order-four-auto"
-      )
-    ,Teuchos::tuple<std::string>(
-      "Use O(eps) one sided finite differences (cramped bounds)"
-      ,"Use O(eps^2) one sided finite differences (cramped bounds)"
-      ,"Use O(eps^2) two sided central finite differences"
-      ,"Use \"order-two-central\" when not cramped by bounds, otherwise use \"order-two\""
-      ,"Use O(eps^4) one sided finite differences (cramped bounds)"
-      ,"Use O(eps^4) two sided central finite differences"
-      ,"Use \"order-four-central\" when not cramped by bounds, otherwise use \"order-four\""
-      )
-    ,Teuchos::tuple<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDMethodType>(
-      Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_ONE
-      ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_TWO
-      ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_TWO_CENTRAL
-      ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_TWO_AUTO
-      ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_FOUR
-      ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_FOUR_CENTRAL
-      ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_FOUR_AUTO
-      )
-    ,""
-    )
-  );
-template<class Scalar>
-const std::string DirectionalFiniteDiffCalculator<Scalar>::FDMethod_default = "order-one";
+>&
+DirectionalFiniteDiffCalculator<Scalar>::fdMethodValidator()
+{
+  static RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDMethodType> > 
+    loc_fdMethodValidator 
+    = Teuchos::rcp(
+      new Teuchos::StringToIntegralParameterEntryValidator<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDMethodType>(
+        Teuchos::tuple<std::string>(
+          "order-one"
+          ,"order-two"
+          ,"order-two-central"
+          ,"order-two-auto"
+          ,"order-four"
+          ,"order-four-central"
+          ,"order-four-auto"
+          )
+        ,Teuchos::tuple<std::string>(
+          "Use O(eps) one sided finite differences (cramped bounds)"
+          ,"Use O(eps^2) one sided finite differences (cramped bounds)"
+          ,"Use O(eps^2) two sided central finite differences"
+          ,"Use \"order-two-central\" when not cramped by bounds, otherwise use \"order-two\""
+          ,"Use O(eps^4) one sided finite differences (cramped bounds)"
+          ,"Use O(eps^4) two sided central finite differences"
+          ,"Use \"order-four-central\" when not cramped by bounds, otherwise use \"order-four\""
+          )
+        ,Teuchos::tuple<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDMethodType>(
+          Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_ONE
+          ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_TWO
+          ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_TWO_CENTRAL
+          ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_TWO_AUTO
+          ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_FOUR
+          ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_FOUR_CENTRAL
+          ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_FOUR_AUTO
+          )
+        ,""
+        )
+      );
+  return loc_fdMethodValidator;
+}
+
 
 template<class Scalar>
-const std::string DirectionalFiniteDiffCalculator<Scalar>::FDStepLength_name = "FD Step Length";
-template<class Scalar>
-const double DirectionalFiniteDiffCalculator<Scalar>::FDStepLength_default = -1.0;
+const std::string&
+DirectionalFiniteDiffCalculator<Scalar>::FDMethod_default()
+{
+  static std::string loc_FDMethod_default = "order-one";
+  return loc_FDMethod_default;
+}
+
 
 template<class Scalar>
-const std::string DirectionalFiniteDiffCalculator<Scalar>::FDStepSelectType_name = "FD Step Select Type";
+const std::string&
+DirectionalFiniteDiffCalculator<Scalar>::FDStepSelectType_name()
+{
+  static std::string loc_FDStepSelectType_name = "FD Step Select Type";
+  return loc_FDStepSelectType_name;
+}
+
+
 template<class Scalar>
 const RCP<
   Teuchos::StringToIntegralParameterEntryValidator<
     Thyra::DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType
     >
-  >
-DirectionalFiniteDiffCalculator<Scalar>::fdStepSelectTypeValidator
-= Teuchos::rcp(
-  new Teuchos::StringToIntegralParameterEntryValidator<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType>(
-    Teuchos::tuple<std::string>(
-      "Absolute"
-      ,"Relative"
-      )
-    ,Teuchos::tuple<std::string>(
-      "Use absolute step size \""+FDStepLength_name+"\""
-      ,"Use relative step size \""+FDStepLength_name+"\"*||xo||inf"
-      )
-    ,Teuchos::tuple<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType>(
-      Thyra::DirectionalFiniteDiffCalculatorTypes::FD_STEP_ABSOLUTE
-      ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_STEP_RELATIVE
-      )
-    ,""
-    )
-  );
+  >&
+DirectionalFiniteDiffCalculator<Scalar>::fdStepSelectTypeValidator()
+{
+  static const RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDStepSelectType> >
+    loc_fdStepSelectTypeValidator
+    = Teuchos::rcp(
+      new Teuchos::StringToIntegralParameterEntryValidator<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType>(
+        Teuchos::tuple<std::string>(
+          "Absolute"
+          ,"Relative"
+          )
+        ,Teuchos::tuple<std::string>(
+          "Use absolute step size \""+FDStepLength_name()+"\""
+          ,"Use relative step size \""+FDStepLength_name()+"\"*||xo||inf"
+          )
+        ,Teuchos::tuple<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType>(
+          Thyra::DirectionalFiniteDiffCalculatorTypes::FD_STEP_ABSOLUTE
+          ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_STEP_RELATIVE
+          )
+        ,""
+        )
+      );
+  return loc_fdStepSelectTypeValidator;
+}
+
+
 template<class Scalar>
-const std::string DirectionalFiniteDiffCalculator<Scalar>::FDStepSelectType_default = "Absolute";
+const std::string&
+DirectionalFiniteDiffCalculator<Scalar>::FDStepSelectType_default()
+{
+  static std::string loc_FDStepSelectType_default = "Absolute";
+  return loc_FDStepSelectType_default;
+}
+
+
+template<class Scalar>
+const std::string&
+DirectionalFiniteDiffCalculator<Scalar>::FDStepLength_name()
+{
+  static std::string loc_FDStepLength_name = "FD Step Length";
+  return loc_FDStepLength_name;
+}
+
+
+template<class Scalar>
+const double&
+DirectionalFiniteDiffCalculator<Scalar>::FDStepLength_default()
+{
+  static double loc_FDStepLength_default = -1.0;
+  return loc_FDStepLength_default;
+}
 
 
 // Constructors/initializer
@@ -279,12 +330,12 @@ void DirectionalFiniteDiffCalculator<Scalar>::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==0);
   paramList->validateParameters(*getValidParameters());
   paramList_ = paramList;
-  fd_method_type_ = fdMethodValidator->getIntegralValue(
-    *paramList_,FDMethod_name,FDMethod_default);
-  fd_step_select_type_ = fdStepSelectTypeValidator->getIntegralValue(
-    *paramList_,FDStepSelectType_name,FDStepSelectType_default);
+  fd_method_type_ = fdMethodValidator()->getIntegralValue(
+    *paramList_, FDMethod_name(), FDMethod_default());
+  fd_step_select_type_ = fdStepSelectTypeValidator()->getIntegralValue(
+    *paramList_, FDStepSelectType_name(), FDStepSelectType_default());
   fd_step_size_ = paramList_->get(
-    FDStepLength_name,FDStepLength_default);
+    FDStepLength_name(),FDStepLength_default());
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
 }
 
@@ -325,17 +376,17 @@ DirectionalFiniteDiffCalculator<Scalar>::getValidParameters() const
   if(pl.get()==NULL) {
     pl = Teuchos::parameterList();
     pl->set(
-      FDMethod_name, FDMethod_default,
+      FDMethod_name(), FDMethod_default(),
       "The method used to compute the finite differences.",
-      rcp_implicit_cast<const PEV>(fdMethodValidator)
+      rcp_implicit_cast<const PEV>(fdMethodValidator())
       );
     pl->set(
-      FDStepSelectType_name,FDStepSelectType_default,
+      FDStepSelectType_name(), FDStepSelectType_default(),
       "Method used to select the finite difference step length.",
-      rcp_implicit_cast<const PEV>(fdStepSelectTypeValidator)
+      rcp_implicit_cast<const PEV>(fdStepSelectTypeValidator())
       );
     pl->set(
-      FDStepLength_name,FDStepLength_default
+      FDStepLength_name(), FDStepLength_default()
       ,"The length of the finite difference step to take.\n"
       "A value of < 0.0 means that the step length will be determined automatically."
       );
