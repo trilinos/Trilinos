@@ -121,7 +121,7 @@ namespace MueLu {
 
     Array<SC> numEntriesPerRow(numElements);
     for (LO i = 0; i < numElements; i++)
-      for (size_t j = 0; j < blkSize; j++)
+      for (LO j = 0; j < blkSize; j++)
         numEntriesPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
     weights[0] = numEntriesPerRow.getRawPtr();
 
