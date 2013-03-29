@@ -13,8 +13,11 @@ APPEND_SET(HEADERS
   Galeri_XpetraParameters.hpp
 
   Galeri_XpetraProblemFactory.hpp
+  Galeri_XpetraProblemFactory_Helmholtz.hpp
   Galeri_XpetraMatrixTypes.hpp
+  Galeri_XpetraMatrixTypes_Helmholtz.hpp
   Galeri_StencilProblems.hpp
+  Galeri_StencilProblems_Helmholtz.hpp
   Galeri_Elasticity2DProblem.hpp
   Galeri_Elasticity3DProblem.hpp
 
