@@ -69,20 +69,43 @@ int power_method(bool TransA, Epetra_CrsMatrix& A,
 
 int check_graph_sharing(Epetra_Comm& Comm);
 
-
 double test_with_matvec(const Epetra_CrsMatrix &A, const Epetra_CrsMatrix &B){
-  const Epetra_Map & Xmap = A.DomainMap();
-  const Epetra_Map & Ymap = A.RangeMap();
-  if(!A.RangeMap().SameAs(B.RangeMap()) || !A.DomainMap().SameAs(B.DomainMap())) return 1.0;
-  Epetra_Vector X(Xmap), Y1(Ymap), Y2(Ymap);
+  const Epetra_Map & Xamap  = A.DomainMap();
+  const Epetra_Map & Yamap  = A.RangeMap();
+  const Epetra_Map & Xbmap  = B.DomainMap();
+  const Epetra_Map & Ybmap  = B.RangeMap();
 
-  X.SetSeed(24601);
-  X.Random();
-  A.Apply(X,Y1);
-  B.Apply(X,Y2);
-  Y1.Update(-1.0,Y2,1.0);
+  Epetra_Vector Xa(Xamap), Xb(Xbmap), Ya(Yamap), Yb(Ybmap), Diff(Yamap);
+
+  Xa.SetSeed(24601);
+  Xa.Random();
+
+  // Handle domain map change
+  if(!Xamap.SameAs(Xbmap)) {
+    Epetra_Import Ximport(Xbmap,Xamap);
+    Xb.Import(Xa,Ximport,Insert);
+  }
+  else {
+    Xb=Xa;
+  }
+  
+  // Do the multiplies
+  A.Apply(Xa,Ya);
+  B.Apply(Xb,Yb);
+
+  // Handle Rangemap change
+  if(!Yamap.SameAs(Ybmap)) {
+    Epetra_Import Yimport(Yamap,Ybmap);
+    Diff.Import(Yb,Yimport,Insert);
+  }
+  else {
+    Diff=Yb;
+  }
+
+  // Check solution
+  Diff.Update(-1.0,Ya,1.0);
   double norm;
-  Y1.Norm2(&norm);
+  Diff.Norm2(&norm);
 
   return norm;
 }
@@ -113,7 +136,6 @@ int build_test_matrix(Epetra_MpiComm & Comm, int test_number, Epetra_CrsMatrix *
 
   if(test_number==1){
     // Case 1: Tridiagonal
-    //    int NumMyEquations = 10000;
     int NumMyEquations = 100;
 
     long long NumGlobalEquations = (NumMyEquations * NumProc) + EPETRA_MIN(NumProc,3);
@@ -232,6 +254,7 @@ int main(int argc, char *argv[])
 #define ENABLE_TEST_2
 #define ENABLE_TEST_3
 #define ENABLE_TEST_4
+#define ENABLE_TEST_5
 
   /////////////////////////////////////////////////////////
   // Test #1: Tridiagonal Matrix; Migrate to Proc 0
@@ -259,7 +282,7 @@ int main(int argc, char *argv[])
     // Execute fused export constructor
     delete B;
     Export1 = new Epetra_Export(A->RowMap(),*Map1);
-    B=new Epetra_CrsMatrix(*A,*Export1,&A->RangeMap());
+    B=new Epetra_CrsMatrix(*A,*Export1,0,&A->RangeMap());
 
     diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
@@ -301,7 +324,7 @@ int main(int argc, char *argv[])
     // Execute fused export constructor
     delete B;
     Export1 = new Epetra_Export(A->RowMap(),*Map1);
-    B=new Epetra_CrsMatrix(*A,*Export1,&A->RangeMap());
+    B=new Epetra_CrsMatrix(*A,*Export1,0,&A->RangeMap());
 
     diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
@@ -345,7 +368,7 @@ int main(int argc, char *argv[])
     // Execute fused export constructor
     delete B;
     Export1 = new Epetra_Export(A->RowMap(),*Map1);
-    B=new Epetra_CrsMatrix(*A,*Export1,&A->RangeMap());
+    B=new Epetra_CrsMatrix(*A,*Export1,0,&A->RangeMap());
 
     diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
@@ -396,7 +419,7 @@ int main(int argc, char *argv[])
     // Execute fused export constructor
     delete B;
     Export1 = new Epetra_Export(A->RowMap(),*Map1);
-    B=new Epetra_CrsMatrix(*A,*Export1,&A->RangeMap());
+    B=new Epetra_CrsMatrix(*A,*Export1,0,&A->RangeMap());
 
     diff=test_with_matvec(*B,*C);
     if(diff > diff_tol){
@@ -405,6 +428,45 @@ int main(int argc, char *argv[])
     }
 
     delete A; delete B; delete C; delete Map1; delete Import1; delete Export1;
+  }
+#endif
+
+
+  /////////////////////////////////////////////////////////
+  // Test 5: Tridiagonal Matrix; Migrate to Proc 0, Replace Maps
+  /////////////////////////////////////////////////////////
+#ifdef ENABLE_TEST_5
+  {
+    double diff;
+    ierr=build_test_matrix(Comm,1,A); 
+    long long num_global = A->RowMap().NumGlobalElements64();
+    
+    // New map with all on Proc1
+    if(MyPID==0) Map1=new Epetra_Map(num_global,num_global,(long long)0,Comm);
+    else         Map1=new Epetra_Map(num_global,0,(long long)0,Comm);
+
+    // Execute fused import constructor
+    Import1 = new Epetra_Import(*Map1,A->RowMap());
+    B=new Epetra_CrsMatrix(*A,*Import1,Map1,Map1);
+
+    diff=test_with_matvec(*A,*B);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedImport: Test #5 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+    
+    // Execute fused export constructor
+    delete B;
+    Export1 = new Epetra_Export(A->RowMap(),*Map1);
+    B=new Epetra_CrsMatrix(*A,*Export1,Map1,Map1);
+    
+    diff=test_with_matvec(*A,*B);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedExport: Test #5 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+
+    delete A; delete B; delete Map1; delete Import1; delete Export1;
   }
 #endif
 

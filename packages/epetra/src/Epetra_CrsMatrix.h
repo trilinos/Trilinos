@@ -313,10 +313,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     precomputed redistribution plan.  The source Map of the
     Import must be the same as the row Map of sourceMatrix.
 
+    \param DomainMap [in] The new domainMap for the new matrix. If not specified,
+    then the DomainMap of the SourceMatrix is used.
+
     \param RangeMap [in] The new rangeMap for the new matrix. If not specified,
     then RowExporter.TargetMap() is used.
   */
-  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowExporter, const Epetra_Map * RangeMap=0);
+  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowExporter, const Epetra_Map * DomainMap=0, const Epetra_Map * RangeMap=0);
 
   
   //! Copy constructor.
@@ -1630,5 +1633,15 @@ private:
                        Epetra_Distributor& Distor,
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);
+
+  // Used for fused[import|export] constructors
+  template<class TransferType>
+  void FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, 
+		     const TransferType & RowTransfer, 
+		     const Epetra_Map * DomainMap, 
+		     const Epetra_Map * RangeMap);
+
+
+
 };
 #endif /* EPETRA_CRSMATRIX_H */
