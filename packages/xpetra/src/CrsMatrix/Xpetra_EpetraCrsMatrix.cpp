@@ -84,14 +84,13 @@ namespace Xpetra {
 				   const Teuchos::RCP<Teuchos::ParameterList>& params):
     isFillResumed_(false)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(domainMap!=Teuchos::null, Xpetra::Exceptions::NotImplemented, "The Epetra version of the fusedImport constructor does not let you specify the domainMap.");
-
     XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraCrsMatrix as an input argument.");
     XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraImport as an input argument.");
 
-    const Epetra_Map* mymap = (rangeMap!=Teuchos::null)? &toEpetra(rangeMap): 0;
+    const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra(domainMap): 0;
+    const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra(rangeMap) : 0;
     
-    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tImporter.getEpetra_Import(),mymap));			
+    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tImporter.getEpetra_Import(),myDomainMap,myRangeMap));
   }
 
   EpetraCrsMatrix::EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
@@ -101,14 +100,13 @@ namespace Xpetra {
 				   const Teuchos::RCP<Teuchos::ParameterList>& params):
     isFillResumed_(false)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(domainMap!=Teuchos::null, Xpetra::Exceptions::NotImplemented, "The Epetra version of the fusedExport constructor does not let you specify the domainMap.");
-
     XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraCrsMatrix as an input argument.");
     XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraExport as an input argument.");
 
-    const Epetra_Map* mymap = (rangeMap!=Teuchos::null)? &toEpetra(rangeMap): 0;
-    
-    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tExporter.getEpetra_Export(),mymap));			
+    const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra(domainMap): 0;
+    const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra(rangeMap) : 0;    
+
+    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tExporter.getEpetra_Export(),myDomainMap,myRangeMap));			
   }
 
 
