@@ -1694,6 +1694,14 @@ namespace Tpetra {
     // debugging
     void checkInternalState() const;
 
+    /// \brief Remove processes owning zero rows from the Maps and their communicator.
+    ///
+    /// \param newMap [in] Result of calling the
+    ///   removeEmptyProcesses() method of the row Map.  This
+    ///   pointer will be null on excluded processes.
+    virtual void
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
+
     /// \name (Global) graph pointers
     ///
     /// We keep two graph pointers in order to maintain const

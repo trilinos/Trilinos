@@ -103,8 +103,8 @@ class Comm;
 /// // ... Do some other things ...
 ///
 /// // Wait on the request.  This blocks on the sending process.
-/// // When it finishes, it invalidates the req reference, and 
-/// // returns a status (which wraps MPI_Status in an MPI 
+/// // When it finishes, it invalidates the req reference, and
+/// // returns a status (which wraps MPI_Status in an MPI
 /// // implementation).
 /// RCP<CommStatus<int> > status = wait (comm, ptr (&req));
 /// \endcode
@@ -125,7 +125,7 @@ class Comm;
 /// // the one reference to the request fall out of scope.
 /// req = null;
 /// \endcode
-/// 
+///
 /// \note To implementers: The MPI implementation of this class
 ///   (MpiCommRequest) wraps MPI_Request.  The MPI version of
 ///   waitAll() will need to unpack the array of wrapped requests, and
@@ -193,7 +193,7 @@ public:
 /// copying the RCP does not create a new communicator; the following
 /// two codes do about the same thing, except with a different syntax
 /// (and reference counting in the second code).
-/// 
+///
 /// Raw MPI_Comm handles:
 /// \code
 /// MPI_Comm comm = ...;
@@ -211,7 +211,7 @@ public:
 /// If you want to make a "new communicator" rather than just "copy
 /// the handle," you should call the duplicate() method.  This has the
 /// same behavior as MPI_Comm_dup (which see).
-/// 
+///
 /// The "reference counting" feature means that the subclass of Comm
 /// will take care of freeing the underlying MPI_Comm (and any other
 /// data structures it may use) by calling MPI_Comm_free if necessary,
@@ -242,8 +242,8 @@ public:
 ///   RCP<const Comm<int> > comm = DefaultComm<int>::getComm ();
 ///
 ///   // ... use comm in your code as you would use MPI_COMM_WORLD ...
-///   
-///   // We don't need to call MPI_Finalize, since the 
+///
+///   // We don't need to call MPI_Finalize, since the
 ///   // destructor of GlobalMPISession does that for us.
 ///   return EXIT_SUCCESS;
 /// }
@@ -278,7 +278,7 @@ public:
 /// code on Process 0:
 /// \code
 /// const int count = 10; // Send 10 doubles
-/// double values[10] = ...; 
+/// double values[10] = ...;
 /// const int destinationRank = 1; // Send to Process 1
 /// // You may be able to omit the template arguments of 'send' here.
 /// Teuchos::send<int, double> (*comm, 10, values, destinationRank);
@@ -293,7 +293,7 @@ public:
 /// \endcode
 /// Please refer to the documentation in Teuchos_CommHelpers.hpp for
 /// more details.
-/// 
+///
 /// \section Teuchos_Comm_Former Former documentation
 ///
 /// This interface is templated on the ordinal type but only deals with buffers
@@ -322,8 +322,8 @@ public:
   //! Destructor, declared virtual for safety of derived classes.
   virtual ~Comm() {}
   //@}
-  
-  //! @name Query functions 
+
+  //! @name Query functions
   //@{
 
   /** \brief Returns the rank of this process.
@@ -341,17 +341,17 @@ public:
    * </ul>
    */
   virtual int getSize() const = 0;
-  
+
   //@}
 
-  //! @name Collective Operations 
+  //! @name Collective Operations
   //@{
 
   /** \brief Pause every process in <tt>*this</tt> communicator until all the
    * processes reach this point.
    */
   virtual void barrier() const = 0;
-  
+
   /** \brief Broadcast values from the root process to the slave processes.
    *
    * \param rootRank [in] The rank of the root process.
@@ -457,12 +457,12 @@ public:
    * \param scanReducts [out] Array (length <tt>bytes</tt>) of the reduction
    * up to and including this process.
    */
-	virtual void scan(
+        virtual void scan(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal bytes, const char sendBuffer[], char scanReducts[]
     ) const = 0;
 
-  //! @name Blocking Point-to-Point Operations 
+  //! @name Blocking Point-to-Point Operations
   //@{
 
   /** \brief Possibly blocking send of data from this process to another process.
@@ -490,11 +490,11 @@ public:
     ) const = 0;
 
   //! Variant of send() that takes a tag.
-  virtual void 
-  send (const Ordinal bytes, 
-	const char sendBuffer[], 
-	const int destRank, 
-	const int tag) const = 0;
+  virtual void
+  send (const Ordinal bytes,
+        const char sendBuffer[],
+        const int destRank,
+        const int tag) const = 0;
 
   /** \brief Always blocking send of data from this process to another process.
    *
@@ -560,16 +560,16 @@ public:
     const ArrayView<const char> &sendBuffer,
     const int destRank
     ) const = 0;
-  
+
 
   //@}
 
 
-  //! @name Non-blocking Point-to-Point Operations 
+  //! @name Non-blocking Point-to-Point Operations
   //@{
 
 
-  /** \brief Non-blocking send. 
+  /** \brief Non-blocking send.
    *
    * \param sendBuffer [in] The data buffer to be sent.
    *
@@ -586,12 +586,12 @@ public:
     ) const = 0;
 
   //! Variant of isend() that takes a tag.
-  virtual RCP<CommRequest<Ordinal> > 
+  virtual RCP<CommRequest<Ordinal> >
   isend (const ArrayView<const char> &sendBuffer,
-	 const int destRank,
-	 const int tag) const = 0;
+         const int destRank,
+         const int tag) const = 0;
 
-  /** \brief Non-blocking receive. 
+  /** \brief Non-blocking receive.
    *
    * \param recvBuffer [out] The location for storing the received data.
    *
@@ -611,10 +611,10 @@ public:
     ) const = 0;
 
   //! Variant of ireceive that takes a tag.
-  virtual RCP<CommRequest<Ordinal> > 
+  virtual RCP<CommRequest<Ordinal> >
   ireceive (const ArrayView<char> &recvBuffer,
-	    const int sourceRank,
-	    const int tag) const = 0;
+            const int sourceRank,
+            const int tag) const = 0;
 
   /** \brief Wait on a set of communication requests.
    *
@@ -631,7 +631,7 @@ public:
     ) const = 0;
 
   /// \brief Wait on communication requests, and return their statuses.
-  /// 
+  ///
   /// \pre requests.size() == statuses.size()
   ///
   /// \pre For i in 0, 1, ..., requests.size()-1, requests[i] is
@@ -646,9 +646,9 @@ public:
   ///
   /// \param statuses [out] The status results of waiting on the
   ///   requests.
-  virtual void 
+  virtual void
   waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
-	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const = 0;
+           const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const = 0;
 
   /// \brief Wait on a single communication request, and return its status.
   ///
@@ -667,13 +667,13 @@ public:
   /// nonblocking receive request, you can query the CommStatus
   /// instance for the process ID of the sending process.  (This is
   /// useful for receiving from any process via \c MPI_ANY_SOURCE.)
-  /// 
+  ///
   /// \pre <tt>!is_null(request)</tt> (that is, the Ptr is not null).
   /// \post <tt>is_null(*request)</tt> (that is, the RCP is null).
   ///
   /// This function blocks until the communication operation
   /// associated with the CommRequest object has completed.
-  virtual RCP<CommStatus<Ordinal> > 
+  virtual RCP<CommStatus<Ordinal> >
   wait (const Ptr<RCP<CommRequest<Ordinal> > >& request) const = 0;
 
   //@}
@@ -778,13 +778,16 @@ public:
    * using MPI_Comm_split, with the resulting semantic implications.
    *
    * \param color [in] An integer representing the color for the local
-   * rank.  
+   *   rank.  In the MPI implementation, if this is negative,
+   *   MPI_Comm_split gets <tt>MPI_UNDEFINED</tt> as the color.
    *
    * \param key [in] A key value to order processes of the same color.
+   *   In the MPI implementation, this is passed directly to
+   *   MPI_Comm_split.
    *
    * \return A partitioned communicator.
    */
-  virtual RCP< Comm > split(const int color, const int key) const = 0;
+  virtual RCP<Comm> split (const int color, const int key) const = 0;
 
   /**
    * \brief Create a subcommunicator containing the specified processes.
@@ -803,18 +806,17 @@ public:
    * The destructor of the subclass of Comm handles that itself.
    *
    * In an MPI implementation, the subcommunicator is created using
-   * MPI_Comm_create, with the resulting semantic implications.  
+   * MPI_Comm_create, with the resulting semantic implications.
    *
    * \param ranks The ranks of the processes to include in the subcommunicator.
    * \return The subcommunicator.
    */
-  virtual RCP<Comm> createSubcommunicator(
-    const ArrayView<const int>& ranks) const = 0;
-
+  virtual RCP<Comm>
+  createSubcommunicator (const ArrayView<const int>& ranks) const = 0;
   //@}
-  
+
 }; // class Comm
-  
+
 } // namespace Teuchos
 
 #endif // TEUCHOS_COMM_HPP

@@ -172,7 +172,7 @@ namespace Tpetra {
   public:
     //! @name Typedefs
     //@{
-    
+
     //! The type of local indices.
     typedef LocalOrdinal local_ordinal_type;
     //! The type of global indices.
@@ -568,17 +568,97 @@ namespace Tpetra {
     template <class Node2>
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const;
 
+    /// \brief Return a new Map with processes with zero elements removed.
+    ///
+    /// \warning This method is only for expert users.  Understanding
+    ///   how to use this method correctly requires some familiarity
+    ///   with semantics of MPI communicators.
+    /// \warning We make no promises of backwards compatibility for
+    ///   this method.  It may go away or change at any time.
+    ///
+    /// This method first computes a new communicator, which contains
+    /// only those processes in this Map's communicator (the "original
+    /// communicator") that have a nonzero number of elements in this
+    /// Map (the "original Map").  It then returns a new Map
+    /// distributed over the new communicator.  The new Map represents
+    /// the same distribution as the original Map, except that
+    /// processes containing zero elements are not included in the new
+    /// Map or its communicator.  On processes not included in the new
+    /// Map or communicator, this method returns
+    /// <tt>Teuchos::null</tt>.
+    ///
+    /// The returned Map always has a distinct communicator from this
+    /// Map's original communicator.  The new communicator contains a
+    /// subset of processes from the original communicator.  Even if
+    /// the number of processes in the new communicator equals the
+    /// number of processes in the original communicator, the new
+    /// communicator is distinct.  (In an MPI implementation, the new
+    /// communicator is created using MPI_Comm_split.)
+    ///
+    /// This method must be called collectively on the original
+    /// communicator.  It leaves the original Map and communicator
+    /// unchanged.
+    ///
+    /// This method was intended for applications such as algebraic
+    /// multigrid or other multilevel preconditioners.  Construction
+    /// of each level of the multilevel preconditioner typically
+    /// requires constructing sparse matrices, which in turn requires
+    /// all-reduces over all participating processes at that level.
+    /// Matrix sizes at successively coarser levels shrink
+    /// geometrically.  At the coarsest levels, some processes might
+    /// be left with zero rows of the matrix, or the multigrid
+    /// implementation might "rebalance" (redistribute the matrix) and
+    /// intentionally leave some processes with zero rows.  Removing
+    /// processes with zero rows makes the all-reduces and other
+    /// communication operations cheaper.
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    removeEmptyProcesses () const;
+
+    /// \brief Replace this Map's communicator with a subset communicator.
+    ///
+    /// \warning This method is only for expert users.  Understanding
+    ///   how to use this method correctly requires some familiarity
+    ///   with semantics of MPI communicators.
+    /// \warning We make no promises of backwards compatibility for
+    ///   this method.  It may go away or change at any time.
+    ///
+    /// \pre The input communicator's processes are a subset of this
+    ///   Map's current communicator's processes.
+    /// \pre On processes which are not included in the input
+    ///   communicator, the input communicator is null.
+    ///
+    /// This method must be called collectively on the original
+    /// communicator.  It leaves the original Map and communicator
+    /// unchanged.
+    ///
+    /// \note This method differs from removeEmptyProcesses(), in that
+    ///   it does not assume that excluded processes have zero
+    ///   entries.  For example, one might wish to remove empty
+    ///   processes from the row Map of a CrsGraph using
+    ///   removeEmptyProcesses(), and then apply the resulting subset
+    ///   communicator to the column, domain, and range Maps of the
+    ///   same graph.  For the latter three Maps, one would in general
+    ///   use this method instead of removeEmptyProcesses(), giving
+    ///   the new row Map's communicator to this method.
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
     //@}
 
   protected:
-
+    // This lets other specializations of Map access all of this
+    // specialization's internal methods and data, so that we can
+    // implement clone() without exposing the details of Map to users.
     template <class LO, class GO, class N> friend class Map;
 
-    //! Empty constructor; used for post-construction initialization in clone()
+    /// \brief Default constructor (that does nothing).
+    ///
+    /// We use this in clone() and removeEmptyProcesses(), where we
+    /// have the information to initialize the Map more efficiently
+    /// ourselves, without going through one of the three usual Map
+    /// construction paths.
     Map() {}
 
   private:
-
     //! Create this Map's Directory, if it hasn't been created already.
     void setupDirectory();
 
@@ -662,7 +742,7 @@ namespace Tpetra {
     /// from global to local indices).
     ///
     /// This mapping is built only for a noncontiguous map, by the
-    /// noncontiguous map constructor.  For noncontiguous maps, the 
+    /// noncontiguous map constructor.  For noncontiguous maps, the
     /// getLocalElement() and isNodeGlobalElement() methods use
     /// this mapping.
     RCP<global_to_local_table_type> glMap_;
@@ -808,11 +888,13 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class Node2>
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node2> >
-  Map<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const
+  Map<LocalOrdinal,GlobalOrdinal,Node>::clone (const RCP<Node2> &node2) const
   {
     typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
-    RCP<Map2> map = rcp(new Map2());
-    // the same old stuff...
+    RCP<Map2> map = rcp (new Map2 ());
+    // Fill the new Map with shallow copies of all of the original
+    // Map's data.  This is safe because Map is immutable, so users
+    // can't change the original Map.
     map->comm_              = comm_;
     map->indexBase_         = indexBase_;
     map->numGlobalElements_ = numGlobalElements_;
@@ -827,29 +909,29 @@ namespace Tpetra {
     map->distributed_       = distributed_;
     map->lgMap_             = lgMap_;
     map->glMap_             = glMap_;
-    // the hot new stuff!
+    // New Map gets the new Node instance.
     map->node_              = node2;
-    if (directory_ != null) {
-      // mfh 20 Feb 2013: The weak reference prevents circularity.
+    if (! directory_.is_null ()) {
+      // The weak reference prevents circularity.
       map->directory_ = directory_->template clone<Node2> (map.create_weak ());
     }
     return map;
   }
-}
+} // namespace Tpetra
 
 /// \brief True if map1 is the same as (in the sense of isSameAs()) map2, else false.
 /// \relatesalso Tpetra::Map
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1,
                  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
-{ return map1.isSameAs(map2); }
+{ return map1.isSameAs (map2); }
 
 /// \brief True if map1 is not the same as (in the sense of isSameAs()) map2, else false.
 /// \relatesalso Tpetra::Map
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1,
                  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
-{ return !map1.isSameAs(map2); }
+{ return ! map1.isSameAs (map2); }
 
 #endif // TPETRA_MAP_DECL_HPP
 
