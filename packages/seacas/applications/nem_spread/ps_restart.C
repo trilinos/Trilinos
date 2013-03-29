@@ -202,34 +202,22 @@ void NemSpread<T,INT>::read_restart_data ()
     }
   }
 
-  /* allocate memory for the time values */
-  Restart_Info.Time = (T*)array_alloc (__FILE__, __LINE__, 1, Restart_Info.Block_Size, cpu_ws);
-
   /* allocate space for the global variables */
-  if (Restart_Info.NVar_Glob > 0) {
-    Restart_Info.Glob_Vals = (T**)array_alloc (__FILE__, __LINE__, 2, Restart_Info.Block_Size,
-			   Restart_Info.NVar_Glob, cpu_ws);
-  }
+  Restart_Info.Glob_Vals.resize(Restart_Info.NVar_Glob);
 
   if (Restart_Info.NVar_Elem > 0 ) {
 
     /* allocate storage space */
-    Restart_Info.Elem_Vals = (T ***) array_alloc (__FILE__, __LINE__,
-						  2,Proc_Info[2],
-						  Restart_Info.Block_Size,
-						  sizeof(T *));
+    Restart_Info.Elem_Vals = (T **) array_alloc (__FILE__, __LINE__,
+						 1, Proc_Info[2],
+						 sizeof(T *));
 
     /* now allocate storage for the values */
     for (int iproc = 0; iproc <Proc_Info[2]; iproc++) {
       size_t array_size = Restart_Info.NVar_Elem *
 	(globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc]);
-      Restart_Info.Elem_Vals[iproc][0] = (T*)array_alloc (__FILE__, __LINE__, 1,
-			     (Restart_Info.Block_Size * array_size) , cpu_ws);
-
-      for (int cnt = 1; cnt < Restart_Info.Block_Size; cnt++) {
-	Restart_Info.Elem_Vals[iproc][cnt] =
-	  Restart_Info.Elem_Vals[iproc][cnt-1] + array_size;
-      }
+      Restart_Info.Elem_Vals[iproc] = (T*)array_alloc (__FILE__, __LINE__, 1,
+			     array_size , cpu_ws);
     }
 
     /*
@@ -311,44 +299,33 @@ void NemSpread<T,INT>::read_restart_data ()
 
   if (Restart_Info.NVar_Node > 0 ) {
     /* allocate storage space */
-    Restart_Info.Node_Vals = (T ***) array_alloc (__FILE__, __LINE__,
-						  2,Proc_Info[2],
-						  Restart_Info.Block_Size,
-						  sizeof(T *));
+    Restart_Info.Node_Vals = (T **) array_alloc (__FILE__, __LINE__,
+                                                 1,Proc_Info[2],
+                                                 sizeof(T *));
 
     /* now allocate storage for the values */
     for (int iproc = 0; iproc <Proc_Info[2]; iproc++) {
       size_t array_size = Restart_Info.NVar_Node * (globals.Num_Internal_Nodes[iproc] +
 					     globals.Num_Border_Nodes[iproc] + globals.Num_External_Nodes[iproc]);
-      Restart_Info.Node_Vals[iproc][0] = (T*)array_alloc (__FILE__, __LINE__, 1,
-			     (Restart_Info.Block_Size * array_size), cpu_ws);
+      Restart_Info.Node_Vals[iproc] = (T*)array_alloc (__FILE__, __LINE__, 1,
+			     array_size, cpu_ws);
 
-      for (int cnt = 1; cnt < Restart_Info.Block_Size; cnt++) {
-	Restart_Info.Node_Vals[iproc][cnt] =
-	  Restart_Info.Node_Vals[iproc][cnt-1] + array_size;
-      }
     }
   }
 
   if (Restart_Info.NVar_Sset > 0 ) {
 
     /* allocate storage space */
-    Restart_Info.Sset_Vals = (T ***) array_alloc (__FILE__, __LINE__,
-						  2,Proc_Info[2],
-						  Restart_Info.Block_Size,
+    Restart_Info.Sset_Vals = (T **) array_alloc (__FILE__, __LINE__,
+						  1,Proc_Info[2],
 						  sizeof(T *));
 
     /* now allocate storage for the values */
     for (int iproc = 0; iproc <Proc_Info[2]; iproc++) {
       size_t array_size = Restart_Info.NVar_Sset * globals.Proc_SS_Elem_List_Length[iproc];
                    
-      Restart_Info.Sset_Vals[iproc][0] = (T*)array_alloc (__FILE__, __LINE__, 1,
-			     (Restart_Info.Block_Size * array_size) , cpu_ws);
-
-      for (int cnt = 1; cnt < Restart_Info.Block_Size; cnt++) {
-	Restart_Info.Sset_Vals[iproc][cnt] =
-	  Restart_Info.Sset_Vals[iproc][cnt-1] + array_size;
-      }
+      Restart_Info.Sset_Vals[iproc] = (T*)array_alloc (__FILE__, __LINE__, 1,
+			     array_size , cpu_ws);
     }
 
     /*
@@ -385,22 +362,17 @@ void NemSpread<T,INT>::read_restart_data ()
   if (Restart_Info.NVar_Nset > 0 ) {
 
     /* allocate storage space */
-    Restart_Info.Nset_Vals = (T ***) array_alloc (__FILE__, __LINE__,
-						  2,Proc_Info[2],
-						  Restart_Info.Block_Size,
+    Restart_Info.Nset_Vals = (T **) array_alloc (__FILE__, __LINE__,
+						  1,Proc_Info[2],
 						  sizeof(T *));
 
     /* now allocate storage for the values */
     for (int iproc = 0; iproc <Proc_Info[2]; iproc++) {
       size_t array_size = Restart_Info.NVar_Nset * globals.Proc_NS_List_Length[iproc];
                    
-      Restart_Info.Nset_Vals[iproc][0] = (T*)array_alloc (__FILE__, __LINE__, 1,
-			     (Restart_Info.Block_Size * array_size) , cpu_ws);
+      Restart_Info.Nset_Vals[iproc] = (T*)array_alloc (__FILE__, __LINE__, 1,
+			     array_size , cpu_ws);
 
-      for (int cnt = 1; cnt < Restart_Info.Block_Size; cnt++) {
-	Restart_Info.Nset_Vals[iproc][cnt] =
-	  Restart_Info.Nset_Vals[iproc][cnt-1] + array_size;
-      }
     }
 
     /*
@@ -441,9 +413,7 @@ void NemSpread<T,INT>::read_restart_data ()
    */
 
   /* figure out how many blocks need to be looped over */
-  num_blocks = Restart_Info.Num_Times / Restart_Info.Block_Size;
-  if ((Restart_Info.Num_Times % Restart_Info.Block_Size) != 0)
-    num_blocks++;
+  num_blocks = Restart_Info.Num_Times;
   
   par_exoid = (int*)malloc(Proc_Info[2] * sizeof(int));
   if(!par_exoid) {
@@ -494,17 +464,14 @@ void NemSpread<T,INT>::read_restart_data ()
   for (iblk = 0; iblk < num_blocks; iblk++) {
 
     /* now figure out how many times are in this block */
-    if (((iblk + 1) * Restart_Info.Block_Size) > Restart_Info.Num_Times)
-      times_in_blk = Restart_Info.Num_Times % Restart_Info.Block_Size;
-    else
-      times_in_blk = Restart_Info.Block_Size;
+    times_in_blk = 1;
 
     for (int cnt = 0; cnt < times_in_blk; cnt++) {
-      time_idx = iblk * Restart_Info.Block_Size + cnt;
+      time_idx = iblk; 
       double start_t = second ();
 
       /* read and distribute the variables for this time step */
-      if (read_vars(exoid, Restart_Info.Time_Idx[iblk], 0,
+      if (read_vars(exoid, Restart_Info.Time_Idx[iblk],
 		    TOPTR(eb_ids_global), TOPTR(eb_cnts_global), eb_map_ptr,
 		    eb_cnts_local,
 		    TOPTR(ss_ids_global), TOPTR(ss_cnts_global),
@@ -538,11 +505,9 @@ void NemSpread<T,INT>::read_restart_data ()
 	 * Write out the variable data for the time steps in this
 	 * block to each parallel file.
 	 */
-	for (int cnt1 = 0; cnt1 < times_in_blk; cnt1++) {
-	  time_idx = iblk * Restart_Info.Block_Size + cnt1;
-	  write_var_timestep(par_exoid[iproc], iproc, (time_idx+1), cnt1,
-			     TOPTR(eb_ids_global), TOPTR(ss_ids_global), TOPTR(ns_ids_global));
-	}
+	time_idx = iblk;
+	write_var_timestep(par_exoid[iproc], iproc, (time_idx+1),
+			   TOPTR(eb_ids_global), TOPTR(ss_ids_global), TOPTR(ns_ids_global));
 
 	if (iproc%10 == 0 || iproc ==Proc_Info[2]-1)
 	  fprintf(stderr, "%d", iproc);
@@ -869,13 +834,13 @@ int NemSpread<T,INT>::broadcast_var_param(Restart_Description<T> *restart, int m
 
 
 template <typename T, typename INT>
-int NemSpread<T,INT>::read_vars(int exoid, int index, int blk_cnt, INT *eb_ids,
+int NemSpread<T,INT>::read_vars(int exoid, int index, INT *eb_ids,
 				INT *eb_cnts, INT ***eb_map_ptr, INT **eb_cnts_local,
 				INT *ss_ids, INT *ss_cnts, INT *ns_ids, INT *ns_cnts)
 {
   const char  *yo="read_vars";
 
-  T *ptr = &(Restart_Info.Time[blk_cnt]);
+  T *ptr = &Restart_Info.Time;
   /* first read the time */
   if (ex_get_time(exoid, index, ptr) < 0) {
     fprintf(stderr, "%s: ERROR, unable to get time for restart index %d!\n",
@@ -886,7 +851,7 @@ int NemSpread<T,INT>::read_vars(int exoid, int index, int blk_cnt, INT *eb_ids,
   /***************** Global Variables ********************/
   /* allocate space for the global variables */
   if (Restart_Info.NVar_Glob > 0) {
-    ptr = Restart_Info.Glob_Vals[blk_cnt];
+    ptr = &Restart_Info.Glob_Vals[0];
 
     /* get the global variables */
     if (ex_get_glob_vars(exoid, index, Restart_Info.NVar_Glob, ptr) < 0) {
@@ -897,7 +862,7 @@ int NemSpread<T,INT>::read_vars(int exoid, int index, int blk_cnt, INT *eb_ids,
 
   if (Restart_Info.NVar_Elem > 0 ) {
     printf("Reading %d element variables...\n", Restart_Info.NVar_Elem);
-    if (read_elem_vars(exoid, index, blk_cnt, eb_ids, eb_cnts, eb_map_ptr,
+    if (read_elem_vars(exoid, index, eb_ids, eb_cnts, eb_map_ptr,
                        eb_cnts_local) < 0) {
       fprintf(stderr, "%s: Error distributing elemental variables.\n", yo);
       return -1;
@@ -906,7 +871,7 @@ int NemSpread<T,INT>::read_vars(int exoid, int index, int blk_cnt, INT *eb_ids,
 
   if (Restart_Info.NVar_Node > 0 ) {
     printf("Reading %d nodal variables...\n", Restart_Info.NVar_Node);
-    if (read_nodal_vars(exoid, index, blk_cnt) < 0) {
+    if (read_nodal_vars(exoid, index) < 0) {
       fprintf(stderr, "%s: Error distributing nodal variables.\n", yo);
       return -1;
     }
@@ -914,7 +879,7 @@ int NemSpread<T,INT>::read_vars(int exoid, int index, int blk_cnt, INT *eb_ids,
 
   if (Restart_Info.NVar_Sset > 0 ) {
     printf("Reading %d sideset variables...\n", Restart_Info.NVar_Sset);
-    if (read_sset_vars(exoid, index, blk_cnt, ss_ids, ss_cnts) < 0) {
+    if (read_sset_vars(exoid, index, ss_ids, ss_cnts) < 0) {
       fprintf(stderr, "%s: Error distributing sideset variables.\n", yo);
       return -1;
     }
@@ -923,7 +888,7 @@ int NemSpread<T,INT>::read_vars(int exoid, int index, int blk_cnt, INT *eb_ids,
 
   if (Restart_Info.NVar_Nset > 0 ) {
     printf("Reading %d nodeset variables...\n", Restart_Info.NVar_Nset);
-    if (read_nset_vars(exoid, index, blk_cnt, ns_ids, ns_cnts) < 0) {
+    if (read_nset_vars(exoid, index, ns_ids, ns_cnts) < 0) {
       fprintf(stderr, "%s: Error distributing nodeset variables.\n", yo);
       return -1;
     }
@@ -934,7 +899,7 @@ int NemSpread<T,INT>::read_vars(int exoid, int index, int blk_cnt, INT *eb_ids,
 }
 
 template <typename T, typename INT>
-int NemSpread<T,INT>::read_elem_vars(int exoid, int index, int blk_cnt, INT *eb_ids,
+int NemSpread<T,INT>::read_elem_vars(int exoid, int index, INT *eb_ids,
 				     INT *eb_cnts, INT ***eb_map_ptr,
 				     INT **eb_cnts_local)
 {
@@ -948,7 +913,7 @@ int NemSpread<T,INT>::read_elem_vars(int exoid, int index, int blk_cnt, INT *eb_
   /* loop over the number of element blocks */
   INT     eb_offset=0;
   for (int iblk = 0; iblk < globals.Num_Elem_Blk; iblk++) {
-    read_elem_vars_1(exoid, index, blk_cnt, eb_ids,
+    read_elem_vars_1(exoid, index, eb_ids,
 		     eb_cnts, eb_map_ptr, eb_cnts_local,
 		     iblk, eb_offset, local_offset);
 
@@ -966,7 +931,7 @@ int NemSpread<T,INT>::read_elem_vars(int exoid, int index, int blk_cnt, INT *eb_
 }
 
 template <typename T, typename INT>
-int NemSpread<T,INT>::read_elem_vars_1(int exoid, int index, int blk_cnt, INT *eb_ids,
+int NemSpread<T,INT>::read_elem_vars_1(int exoid, int index, INT *eb_ids,
 				       INT *eb_cnts, INT ***eb_map_ptr,
 				       INT **eb_cnts_local, int iblk,
 				       int eb_offset, INT *local_offset)
@@ -1012,7 +977,7 @@ int NemSpread<T,INT>::read_elem_vars_1(int exoid, int index, int blk_cnt, INT *e
 	  for (size_t i1 = 0; i1 < num_elem; i1++) {
 	    size_t elem_loc = var_offset + i1 + local_offset[iproc];
 		
-	    Restart_Info.Elem_Vals[iproc][blk_cnt][elem_loc] = vals[elem_map[i1]-eb_offset];
+	    Restart_Info.Elem_Vals[iproc][elem_loc] = vals[elem_map[i1]-eb_offset];
 	  }
 	}
       }
@@ -1023,17 +988,17 @@ int NemSpread<T,INT>::read_elem_vars_1(int exoid, int index, int blk_cnt, INT *e
 }
     
 template <typename T, typename INT>
-int NemSpread<T,INT>::read_sset_vars(int exoid, int index, int blk_cnt, INT *ss_ids, INT *ss_cnts)
+int NemSpread<T,INT>::read_sset_vars(int exoid, int index, INT *ss_ids, INT *ss_cnts)
 {
   /* loop over the number of side sets */
   for (int iset = 0; iset < globals.Num_Side_Set; iset++) {
-    read_sset_vars_1(exoid, index, blk_cnt, ss_ids, ss_cnts, iset);
+    read_sset_vars_1(exoid, index, ss_ids, ss_cnts, iset);
   }
   return 0;
 }
 
 template <typename T, typename INT>
-int NemSpread<T,INT>::read_sset_vars_1(int exoid, int index, int blk_cnt, INT *ss_ids,
+int NemSpread<T,INT>::read_sset_vars_1(int exoid, int index, INT *ss_ids,
 				       INT *ss_cnts, int iset)
 {
   /* Allocate memory for temporary storage */
@@ -1060,7 +1025,7 @@ int NemSpread<T,INT>::read_sset_vars_1(int exoid, int index, int blk_cnt, INT *s
 	    for (size_t i1 = 0; i1 < num_elem; i1++) {
 	      INT gelem_loc = globals.Proc_SS_GEMap_List[iproc][i1+ss_offset];
 	      assert(gelem_loc < ss_cnts[iset]);
-	      Restart_Info.Sset_Vals[iproc][blk_cnt][i1+ss_offset+var_offset] = vals[gelem_loc];
+	      Restart_Info.Sset_Vals[iproc][i1+ss_offset+var_offset] = vals[gelem_loc];
 	    }
 	    break;
 	  }
@@ -1074,17 +1039,17 @@ int NemSpread<T,INT>::read_sset_vars_1(int exoid, int index, int blk_cnt, INT *s
 }
     
 template <typename T, typename INT>
-int NemSpread<T,INT>::read_nset_vars(int exoid, int index, int blk_cnt, INT *ns_ids, INT *ns_cnts)
+int NemSpread<T,INT>::read_nset_vars(int exoid, int index, INT *ns_ids, INT *ns_cnts)
 {
   /* loop over the number of node sets */
   for (int iset = 0; iset < globals.Num_Node_Set; iset++) {
-    read_nset_vars_1(exoid, index, blk_cnt, ns_ids, ns_cnts, iset);
+    read_nset_vars_1(exoid, index, ns_ids, ns_cnts, iset);
   }
   return 0;
 }
 
 template <typename T, typename INT>
-int NemSpread<T,INT>::read_nset_vars_1(int exoid, int index, int blk_cnt, INT *ns_ids,
+int NemSpread<T,INT>::read_nset_vars_1(int exoid, int index, INT *ns_ids,
 			    INT *ns_cnts, int iset)
 {
   /* Allocate memory for temporary storage */
@@ -1110,7 +1075,7 @@ int NemSpread<T,INT>::read_nset_vars_1(int exoid, int index, int blk_cnt, INT *n
 	    for (size_t i1 = 0; i1 < num_elem; i1++) {
 	      INT gelem_loc = globals.Proc_NS_GNMap_List[iproc][i1+ns_offset];
 	      assert(gelem_loc < ns_cnts[iset]);
-	      Restart_Info.Nset_Vals[iproc][blk_cnt][i1+ns_offset+var_offset] = vals[gelem_loc];
+	      Restart_Info.Nset_Vals[iproc][i1+ns_offset+var_offset] = vals[gelem_loc];
 	    }
 	    break;
 	  }
@@ -1124,7 +1089,7 @@ int NemSpread<T,INT>::read_nset_vars_1(int exoid, int index, int blk_cnt, INT *n
 }
     
 template <typename T, typename INT>
-int NemSpread<T,INT>::read_nodal_vars(int exoid, int index, int blk_cnt)
+int NemSpread<T,INT>::read_nodal_vars(int exoid, int index)
 {
   /* Allocate memory for temporary storage */
   T *vals = (T*)array_alloc(__FILE__, __LINE__, 1, globals.Num_Node, sizeof(T));
@@ -1153,7 +1118,7 @@ int NemSpread<T,INT>::read_nodal_vars(int exoid, int index, int blk_cnt)
 	
       for (size_t i2 = 0; i2 < loc_count; i2++) {
 	size_t node_loc = var_offset + i2;
-	Restart_Info.Node_Vals[iproc][blk_cnt][node_loc] =
+	Restart_Info.Node_Vals[iproc][node_loc] =
 	  vals[globals.GNodes[iproc][i2]-1];
       }
     }

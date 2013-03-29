@@ -36,6 +36,7 @@
 #define RF_IO_CONST_H
 
 #include <stdio.h>	/* For maximum filename length */
+#include <vector>
 
 /*********** rf_io_const.h -- constants for external IO purposes**************/
 
@@ -64,7 +65,7 @@ struct Restart_Description {
   int       Block_Size;	/* How many time steps will be read and moved
                            before being written to disk                     */
   int      *Time_Idx;	/* Time indicies to read, need to keep track of all */
-  T        *Time;	/* array holding time values for each block read */
+  T         Time;	/* time value */
 
   int       NVar_Glob;	/* Number of global variables read */
   int       NVar_Elem;	/* Number of elemental variables read */
@@ -82,20 +83,15 @@ struct Restart_Description {
   int      *GSset_TT;	/* Global Elemental variable truth table */
 
   /*
-   * There is now a block size that will allow several time steps
-   * to be read in and distributed before they are written to disk.
-   * This should speed up jobs that are spreading many many
-   * time steps.
-   *
    * To be able to support single or double precision exodus files,
    * need to have both float and double pointers here.
    */
-  T   **Glob_Vals; /* Global variable values, only one per variable *
-                          * and processor                                 */
-  T  ***Elem_Vals; /* Element variable values for each processor */
-  T  ***Node_Vals; /* Nodal variable values for each processor */
-  T  ***Nset_Vals; /* Nodeset variable values for each processor */
-  T  ***Sset_Vals; /* Sideset variable values for each processor */
+  std::vector<T> Glob_Vals; /* Global variable values, only one per variable *
+			     * and processor                                 */
+  T  **Elem_Vals; /* Element variable values for each processor */
+  T  **Node_Vals; /* Nodal variable values for each processor */
+  T  **Nset_Vals; /* Nodeset variable values for each processor */
+  T  **Sset_Vals; /* Sideset variable values for each processor */
 
   char    **NV_Name;	/* Names of the nodal variables */
   char    **EV_Name;	/* Names of the elemental variables */
