@@ -1403,7 +1403,10 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   }
    
   // Unpack into arrays
-  Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,N,mynnz,&rowptr_[0],&colind_[0],&vals_[0],SourcePids,TargetPids);
+  int * myrowptr  = rowptr_.size() ? & rowptr_[0] : 0;
+  int * mycolind  = colind_.size() ? & colind_[0] : 0;
+  double * myvals = vals_.size()   ? & vals_[0] : 0;
+  Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,N,mynnz,myrowptr,mycolind,myvals,SourcePids,TargetPids);
 
   /**************************************************************/
   /**** 3) Call Optimized MakeColMap w/ no Directory Lookups ****/
