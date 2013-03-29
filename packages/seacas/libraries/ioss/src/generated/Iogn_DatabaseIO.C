@@ -56,12 +56,12 @@ namespace {
     double *rdata = static_cast<double*>(data);
     if (component_count == 1) {
       for (size_t i=0; i < ids.size(); i++) {
-        rdata[i] = sqrt(ids[i]);
+        rdata[i] = sqrt((double)ids[i]);
       }
     } else {
       for (size_t i=0; i < ids.size(); i++) {
         for (size_t j=0; j < component_count; j++) {
-          rdata[i*component_count + j] = j+sqrt(ids[i]);
+          rdata[i*component_count + j] = j+sqrt((double)ids[i]);
         }
       }
     }
