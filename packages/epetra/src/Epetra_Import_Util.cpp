@@ -562,7 +562,8 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
   int_type * RemoteColIndices=0;
   if(numMyBlockCols > 0) {
     ColIndices.resize(numMyBlockCols);
-    RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back end of ColIndices
+    if(NumLocalColGIDs!=numMyBlockCols) RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back end of ColIndices
+    else RemoteColIndices=0;
   }
 
   for(i = 0; i < NumRemoteColGIDs; i++) 
