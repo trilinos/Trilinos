@@ -163,10 +163,12 @@ namespace Tpetra {
       "Tpetra::DistObject::removeEmptyProcessesInPlace: Not implemented");
   }
 
-  template<class PT, class LO, class GO, class NT>
+  template<class DistObjectType>
   void
-  removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input,
-                               const Teuchos::RCP<const Map<LO, GO, NT> >& newMap)
+  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input,
+                               const Teuchos::RCP<const Map<typename DistObjectType::local_ordinal_type,
+                                                            typename DistObjectType::global_ordinal_type,
+                                                            typename DistObjectType::node_type> >& newMap)
   {
     input->removeEmptyProcessesInPlace (newMap);
     if (newMap.is_null ()) { // my process is excluded
@@ -174,12 +176,18 @@ namespace Tpetra {
     }
   }
 
-  template<class PT, class LO, class GO, class NT>
+  template<class DistObjectType>
   void
-  removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input)
+  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input)
   {
-    Teuchos::RCP<const Map<LO, GO, NT> > newMap = input->getMap ()->removeEmptyProcesses ();
-    removeEmptyProcessesInPlace<PT, LO, GO, NT> (input, newMap);
+    using Teuchos::RCP;
+    typedef typename DistObjectType::local_ordinal_type LO;
+    typedef typename DistObjectType::global_ordinal_type GO;
+    typedef typename DistObjectType::node_type NT;
+    typedef Map<LO, GO, NT> map_type;
+
+    RCP<const map_type> newMap = input->getMap ()->removeEmptyProcesses ();
+    removeEmptyProcessesInPlace<DistObjectType> (input, newMap);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

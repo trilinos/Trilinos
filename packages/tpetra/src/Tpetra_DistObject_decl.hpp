@@ -167,6 +167,22 @@ namespace Tpetra {
             class Node = Kokkos::DefaultNode::DefaultNodeType>
   class DistObject : virtual public Teuchos::Describable {
   public:
+    //! @name Typedefs
+    //@{
+
+    /// \brief The type of each datum being sent or received in an Import or Export.
+    ///
+    /// Note that this type does not always correspond to the
+    /// <tt>Scalar</tt> template parameter of subclasses.
+    typedef Packet packet_type;
+    //! The type of local indices.
+    typedef LocalOrdinal local_ordinal_type;
+    //! The type of global indices.
+    typedef GlobalOrdinal global_ordinal_type;
+    //! The Kokkos Node type.
+    typedef Node node_type;
+
+    //@}
     //! @name Constructors and destructor
     //@{
 
@@ -609,6 +625,8 @@ namespace Tpetra {
 
   /// \brief Remove processes which contain no elements in this object's Map.
   ///
+  /// \tparam DistObjectType A specialization of DistObject.
+  ///
   /// \warning This method is ONLY for use by experts.  The fact that
   ///   the documentation of this method starts with a "Vocabulary"
   ///   section should give you proper respect for the complicated
@@ -686,14 +704,19 @@ namespace Tpetra {
   ///
   /// \note To implementers of DistObject subclasses: On exit, the
   ///   only method of this object which is safe to call on excluded
-  ///   processes is the destructor.  This implies that subclasses'
-  ///   destructors must not contain communication operations.
-  template<class PT, class LO, class GO, class NT>
+  ///   processes is the destructor, or this method with the original
+  ///   Map.  This implies that subclasses' destructors must not
+  ///   contain communication operations.
+  template<class DistObjectType>
   void
-  removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input,
-                               const Teuchos::RCP<const Map<LO, GO, NT> >& newMap);
+  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input,
+                               const Teuchos::RCP<const Map<typename DistObjectType::local_ordinal_type,
+                                                            typename DistObjectType::global_ordinal_type,
+                                                            typename DistObjectType::node_type> >& newMap);
 
   /// \brief Remove processes which contain no elements in this object's Map.
+  ///
+  /// \tparam DistObjectType A specialization of DistObject.
   ///
   /// \warning This method is ONLY for use by experts.
   /// \warning We make NO promises of backwards compatibility.
@@ -727,9 +750,9 @@ namespace Tpetra {
   /// assert ((newRowMap.is_null () && input.is_null ()) ||
   ///         (! newRowMap.is_null () && ! input.is_null ()));
   /// \endcode
-  template<class PT, class LO, class GO, class NT>
+  template<class DistObjectType>
   void
-  removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input);
+  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input);
 
 } // namespace Tpetra
 
