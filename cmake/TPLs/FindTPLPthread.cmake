@@ -55,7 +55,17 @@
 
 INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( Pthread
-  REQUIRED_HEADERS pthread.h
-  REQUIRED_LIBS_NAMES pthread
-  )
+# First use CMake's Thread finder. They are a bit smarter in determining
+# whether threading is already built into the compiler and thus avoid adding
+# superfluous libraries on the command line.
+FIND_PACKAGE(Threads)
+IF(Threads_FOUND)
+  SET(TPL_Pthread_INCLUDE_DIRS "")
+  SET(TPL_Pthread_LIBRARIES "${CMAKE_THREAD_LIBS_INIT}")
+  SET(TPL_Pthread_LIBRARY_DIRS "")
+ELSE()
+  TRIBITS_TPL_DECLARE_LIBRARIES( Pthread
+    REQUIRED_HEADERS pthread.h
+    REQUIRED_LIBS_NAMES pthread
+      )
+ENDIF()

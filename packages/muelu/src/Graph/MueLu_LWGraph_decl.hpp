@@ -78,7 +78,7 @@ namespace MueLu {
     //@{
     LWGraph(const ArrayRCP<const LocalOrdinal> & rowPtrs, const ArrayRCP<const LocalOrdinal> & colPtrs,
             const RCP<const Map>& domainMap, const RCP<const Map>& rangeMap, std::string const & objectLabel="")
-            : rows_(rowPtrs), columns_(colPtrs), domainMap_(domainMap), importMap_(rangeMap), objectLabel_(objectLabel) {}
+            : rows_(rowPtrs), columns_(colPtrs), domainMap_(domainMap), importMap_(rangeMap), domainMapRef_(*domainMap), objectLabel_(objectLabel) {}
 
     virtual ~LWGraph() {}
     //@}
@@ -130,6 +130,7 @@ namespace MueLu {
     const ArrayRCP<const LocalOrdinal> columns_;
     //! Graph maps
     const RCP<const Map> domainMap_, importMap_;
+    const Map& domainMapRef_;
     //! Name of this graph.
     const std::string & objectLabel_;
     //! Boolean array marking Dirichlet rows.

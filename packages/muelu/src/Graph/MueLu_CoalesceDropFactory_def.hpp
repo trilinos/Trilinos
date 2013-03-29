@@ -128,7 +128,7 @@ namespace MueLu {
 
       Scalar threshold = Teuchos::as<Scalar>(pL.get<double>("aggregation threshold"));
       GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << std::endl;
-      Set(currentLevel, "Filtering", (threshold > 0));
+      Set(currentLevel, "Filtering", (threshold != STS::zero()));
 
       LocalOrdinal numDropped = 0, numTotal = 0;
       if (algo == "original") {

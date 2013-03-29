@@ -2660,15 +2660,15 @@ namespace Tpetra {
           cerr << "-- Verifying Maps" << endl;
         }
         TEUCHOS_TEST_FOR_EXCEPTION(
-          as<global_size_t> (dims[0]) != rangeMap.getGlobalNumElements (),
+          as<global_size_t> (dims[0]) != rangeMap->getGlobalNumElements(),
           std::invalid_argument,
-          "The range Map has " << rangeMap.getGlobalNumElements ()
+          "The range Map has " << rangeMap->getGlobalNumElements ()
           << " entries, but the matrix has a global number of rows " << dims[0]
           << ".");
         TEUCHOS_TEST_FOR_EXCEPTION(
-          as<global_size_t> (dims[1]) != domainMap.getGlobalNumElements (),
+          as<global_size_t> (dims[1]) != domainMap->getGlobalNumElements (),
           std::invalid_argument,
-          "The domain Map has " << domainMap.getGlobalNumElements ()
+          "The domain Map has " << domainMap->getGlobalNumElements ()
           << " entries, but the matrix has a global number of columns "
           << dims[1] << ".");
 
