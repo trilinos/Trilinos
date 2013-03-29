@@ -4643,235 +4643,6 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
   return 0;
 }
 
-
-// private ===================================================================
- template<typename int_type>
- int Epetra_CrsMatrix::LowCommunicationMakeColMapAndReindex(const Epetra_Map& domainMap, const int * owningPIDs, std::vector<int>& RemotePIDs, const int_type *colind_LL)
-   {
-  int i,j;
-
-  // Sanity checking - If int_type==int, colind (aka Graph_.CrsGraphData_->data->All_Indices_)  contains GIDs, if not, colind_LL does.
-  bool UseLL=false;
-  if(RowMap().GlobalIndicesLongLong()) UseLL=true;
-
-  if(!UseLL && colind_LL)
-    throw ReportError("LowCommunicationMakeColMapAndReindex can't determine whether it is in long-long or int mode due to argument conflict",-1);
-  
-  // Note: If we legitimately have no column indices, then colind_LL can be null even if we're in UseLL mode.
-
-  // Scan all column indices and sort into two groups: 
-  // Local:  those whose GID matches a GID of the domain map on this processor and
-  // Remote: All others.
-  int numDomainElements = domainMap.NumMyElements();
-  bool * LocalGIDs  = 0;
-  if (numDomainElements>0) LocalGIDs  = new bool[numDomainElements];
-  for (i=0; i<numDomainElements; i++) LocalGIDs[i] = false; // Assume domain GIDs are not local
-
-  bool DoSizes = !domainMap.ConstantElementSize(); // If not constant element size, then error
-  if(DoSizes) EPETRA_CHK_ERR(-1);
-
-  // Because these will always be useful
-  int * rowptr = Graph_.CrsGraphData_->IndexOffset_.Values();
-  int * colind = Graph_.CrsGraphData_->data->All_Indices_.Values(); 
-
-  // Meta-pointer to get around GID/LID issue
-  const int_type * colind_GID=0;
-  if(UseLL) colind_GID = (int_type*) colind_LL;
-  else colind_GID = (int_type*) colind;
-
-  // In principle it is good to have RemoteGIDs and RemotGIDList be as long as the number of remote GIDs
-  // on this processor, but this would require two passes through the column IDs, so we make it the max of 100
-  // and the number of block rows.
-  const int numMyBlockRows = NumMyRows();
-  int  hashsize = numMyBlockRows; if (hashsize < 100) hashsize = 100;
-  Epetra_HashTable<int_type> RemoteGIDs(hashsize); 
-  std::vector<int_type> RemoteGIDList; RemoteGIDList.reserve(hashsize);
-  std::vector<int> PIDList;            PIDList.reserve(hashsize);
-
-  // Here we start using the *int* colind array.  If int_type==int this clobbers the GIDs, if
-  // int_type==long long, then this is the first use of the colind array.
-  // For *local* GID's set colind with with their LID in the domainMap.  For *remote* GIDs, 
-  // we set colind with (numDomainElements+NumRemoteColGIDs) before the increment of
-  // the remote count.  These numberings will be separate because no local LID is greater 
-  // than numDomainElements. 
-
-  int NumLocalColGIDs = 0;
-  int NumRemoteColGIDs = 0;
-  for(i = 0; i < numMyBlockRows; i++) {
-    for(j = rowptr[i]; j < rowptr[i+1]; j++) {
-      int_type GID = colind_GID[j];
-      // Check if GID matches a row GID
-      int LID = domainMap.LID(GID);
-      if(LID != -1) {
-	bool alreadyFound = LocalGIDs[LID];
-	if (!alreadyFound) {
-          LocalGIDs[LID] = true; // There is a column in the graph associated with this domain map GID
-          NumLocalColGIDs++;
-	}
-	colind[j] = LID; 
-      }
-      else {
-	int_type hash_value=RemoteGIDs.Get(GID);
-	if(hash_value  == -1) { // This means its a new remote GID
-	  int PID = owningPIDs[j];
-	  if(PID==-1) throw ReportError("LowCommunicationMakeColMapAndReindex: Cannot figure out if PID is owned.",-1);
-	  colind[j] = numDomainElements + NumRemoteColGIDs;
-	  RemoteGIDs.Add(GID, NumRemoteColGIDs);
-	  RemoteGIDList.push_back(GID);
-	  PIDList.push_back(PID);
-	  NumRemoteColGIDs++;
-	}
-	else
-	  colind[j] = numDomainElements + hash_value;	  
-      }
-    }
-  }
-
-  // Possible short-circuit:  If all domain map GIDs are present as column indices, then set ColMap=domainMap and quit
-  if (domainMap.Comm().NumProc()==1) { 
-    
-    if (NumRemoteColGIDs!=0) {
-      throw ReportError("Some column IDs are not in domainMap.  If matrix is rectangular, you must pass in domainMap to FillComplete",-2); 
-      // Sanity test: When one processor,there can be no remoteGIDs
-    }
-    if (NumLocalColGIDs==numDomainElements) {
-      Graph_.CrsGraphData_->ColMap_ = domainMap;
-      Graph_.CrsGraphData_->HaveColMap_ = true;
-      if (LocalGIDs!=0) delete [] LocalGIDs; 
-      // In this case, we just use the domainMap's indices, which is, not coincidently, what we clobbered colind with up above anyway. 
-      // No further reindexing is needed.
-      return(0); 
-    }
-  }
-      
-  // Now build integer array containing column GIDs
-  // Build back end, containing remote GIDs, first
-  int numMyBlockCols = NumLocalColGIDs + NumRemoteColGIDs;
-  std::vector<int_type> ColIndices;
-  int_type * RemoteColIndices=0;
-  if(numMyBlockCols > 0) {
-    ColIndices.resize(numMyBlockCols);
-    RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back end of ColIndices
-  }
-
-  for(i = 0; i < NumRemoteColGIDs; i++) 
-    RemoteColIndices[i] = RemoteGIDList[i]; 
-
-  // Build permute array for *remote* reindexing.
-  std::vector<int> RemotePermuteIDs(NumRemoteColGIDs);
-  for(i=0; i<NumRemoteColGIDs; i++) RemotePermuteIDs[i]=i;
-
-  // Sort External column indices so that all columns coming from a given remote processor are contiguous
-  int NumListsInt=0;
-  int NumListsLL =0;
-  int* IntSortLists[2];
-  long long * LLSortLists[2];
-  int * RemotePermuteIDs_ptr = RemotePermuteIDs.size() ? &RemotePermuteIDs[0] : 0;
-  if(!UseLL) {
-    // int version
-    IntSortLists[0] = (int*) RemoteColIndices;
-    IntSortLists[1] = RemotePermuteIDs_ptr;
-    NumListsInt=2;
-  }
-  else {
-    //LL version
-    LLSortLists[0]  = (long long*) RemoteColIndices;
-    IntSortLists[0] = RemotePermuteIDs_ptr;
-    NumListsInt = NumListsLL = 1;
-  }
-
-  int * PIDList_ptr = PIDList.size() ? &PIDList[0] : 0;
-  Epetra_Util::Sort(true, NumRemoteColGIDs, PIDList_ptr, 0, 0, NumListsInt, IntSortLists,NumListsLL,LLSortLists);
-
-  // Stash the RemotePIDs  
-  PIDList.resize(NumRemoteColGIDs);
-  RemotePIDs = PIDList;
-
-  if (Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_) {
-    // Sort external column indices so that columns from a given remote processor are not only contiguous
-    // but also in ascending order. NOTE: I don't know if the number of externals associated
-    // with a given remote processor is known at this point ... so I count them here.
-
-    // NTS: Only sort the RemoteColIndices this time...
-    int StartCurrent, StartNext;
-    StartCurrent = 0; StartNext = 1;
-    while ( StartNext < NumRemoteColGIDs ) {
-      if (PIDList[StartNext]==PIDList[StartNext-1]) StartNext++;
-      else {
-	IntSortLists[0] =  &RemotePermuteIDs[StartCurrent];
-	Epetra_Util::Sort(true,StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]),0,0,1,IntSortLists,0,0);
-        StartCurrent = StartNext; StartNext++;
-      }
-    }
-    IntSortLists[0] =  &RemotePermuteIDs[StartCurrent];
-    Epetra_Util::Sort(true, StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]), 0, 0, 1,IntSortLists,0,0);
-  }
-
-  // Reverse the permutation to get the information we actually care about
-  std::vector<int> ReverseRemotePermuteIDs(NumRemoteColGIDs);
-  for(i=0; i<NumRemoteColGIDs; i++) ReverseRemotePermuteIDs[RemotePermuteIDs[i]]=i;
-
-  // Build permute array for *local* reindexing.
-  bool use_local_permute=false;
-  std::vector<int> LocalPermuteIDs(numDomainElements);
-
-  // Now fill front end. Two cases:
-  // (1) If the number of Local column GIDs is the same as the number of Local domain GIDs, we
-  //     can simply read the domain GIDs into the front part of ColIndices, otherwise 
-  // (2) We step through the GIDs of the domainMap, checking to see if each domain GID is a column GID.
-  //     we want to do this to maintain a consistent ordering of GIDs between the columns and the domain.
-
-  if(NumLocalColGIDs == domainMap.NumMyElements()) {
-    if(NumLocalColGIDs > 0) {
-      domainMap.MyGlobalElements(&ColIndices[0]); // Load Global Indices into first numMyBlockCols elements column GID list
-    }
-  }
-  else {
-    int_type* MyGlobalElements = 0;
-    domainMap.MyGlobalElementsPtr(MyGlobalElements);
-
-    int* ElementSizeList = 0;
-    if(DoSizes) 
-      ElementSizeList = domainMap.ElementSizeList();
-    int NumLocalAgain = 0;
-    use_local_permute = true;    
-    for(i = 0; i < numDomainElements; i++) {
-      if(LocalGIDs[i]) {
-	LocalPermuteIDs[i] = NumLocalAgain;
-	ColIndices[NumLocalAgain++] = MyGlobalElements[i];
-      }
-    }
-    assert(NumLocalAgain==NumLocalColGIDs); // Sanity test
-  }
-
-  // Done with this array
-  if (LocalGIDs!=0) delete [] LocalGIDs; 
-
-  // Make Column map with same element sizes as Domain map 
-  int_type * ColIndices_ptr  = ColIndices.size() ? &ColIndices[0] : 0;
-  Epetra_Map temp((int_type)(-1), numMyBlockCols, ColIndices_ptr, (int)domainMap.IndexBase64(), domainMap.Comm());
-
-  Graph_.CrsGraphData_->ColMap_ = temp;
-  Graph_.CrsGraphData_->HaveColMap_ = true;
-
-  // Low-cost reindex of the matrix
-  for(i=0; i<numMyBlockRows; i++){
-    for(j=rowptr[i]; j<rowptr[i+1]; j++){
-      int ID=colind[j];
-      if(ID < numDomainElements){
-	if(use_local_permute) colind[j] = LocalPermuteIDs[colind[j]];
-	// In the case where use_local_permute==false, we just copy the DomainMap's ordering, which it so happens
-	// is what we put in colind to begin with.
-      }
-      else
-	colind[j] =  NumLocalColGIDs + ReverseRemotePermuteIDs[colind[j]-numDomainElements];
-    }
-  }
-  
-  return(0);
-}
-
-
 // ===================================================================
 Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap)
    : Epetra_DistObject(RowImporter.TargetMap(), "Epetra::CrsMatrix"),
@@ -4958,6 +4729,13 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
 
   // Get the owning PIDs
   const Epetra_Import *MyImporter= SourceMatrix.Importer();
+
+  // CMS: This should be the only code that has to change to get the alternative domainmap stuff to work
+
+
+
+
+
   if(MyImporter) Epetra_Util::GetPids(*MyImporter,SourcePids,false);
   else {
     SourcePids.resize(SourceMatrix.ColMap().NumMyElements());
@@ -5005,6 +4783,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   else
     Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,NumMyRows(),mynnz,CSR_rowptr.Values(),CSR_colind.Values(),CSR_vals,SourcePids,TargetPids);
 
+
   /**************************************************************/
   /**** 3) Call Optimized MakeColMap w/ no Directory Lookups ****/
   /**************************************************************/
@@ -5012,23 +4791,25 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   std::vector<int> RemotePIDs;
   int * pids_ptr = TargetPids.size() ? &TargetPids[0] : 0;
   
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(UseLL) {
-    long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;
-    LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs,CSR_colind_LL_ptr);
+   long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;  
+   Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),CSR_colind_LL_ptr,
+							    SourceMatrix.DomainMap(),pids_ptr,
+							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
+							    Graph_.CrsGraphData_->ColMap_);
+   Graph_.CrsGraphData_->HaveColMap_ = true;
   }
-  else
-#endif
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(!UseLL)
-     LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs);  
-  else
-#endif
-    throw ReportError("Epetra_CrsMatrix: Neither 32 bit nor 64 bit indices available",-3);
+  else {
+   Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),SourceMatrix.DomainMap(),pids_ptr,
+							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
+							    Graph_.CrsGraphData_->ColMap_);   
+   Graph_.CrsGraphData_->HaveColMap_ = true;
+  }
 
-  /********************************************/
-  /**** 5) Call ExpertStaticFillComplete() ****/
-  /********************************************/
+
+  /***************************************************/
+  /**** 4) Sort & Call ExpertStaticFillComplete() ****/
+  /***************************************************/
   // Sort the entries
   Epetra_Util::SortCrsEntries(N, CSR_rowptr.Values(), CSR_colind.Values(), CSR_vals);
 
@@ -5188,20 +4969,22 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   /**************************************************************/
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
   std::vector<int> RemotePIDs;
-  int * pids_ptr = TargetPids.size() ? & TargetPids[0] : 0;
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int * pids_ptr = TargetPids.size() ? &TargetPids[0] : 0;
+  
   if(UseLL) {
-    long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;
-    LowCommunicationMakeColMapAndReindex<long long>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs,CSR_colind_LL_ptr);
+   long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;  
+   Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),CSR_colind_LL_ptr,
+							    SourceMatrix.DomainMap(),pids_ptr,
+							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
+							    Graph_.CrsGraphData_->ColMap_);
+   Graph_.CrsGraphData_->HaveColMap_ = true;
   }
-  else
-#endif
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(!UseLL)
-    LowCommunicationMakeColMapAndReindex<int>(SourceMatrix.DomainMap(),pids_ptr,RemotePIDs);  
-  else
-#endif
-    throw ReportError("Epetra_CrsMatrix: Neither 32 bit nor 64 bit indices available",-3);
+  else {
+   Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),SourceMatrix.DomainMap(),pids_ptr,
+							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
+							    Graph_.CrsGraphData_->ColMap_);   
+   Graph_.CrsGraphData_->HaveColMap_ = true;
+  }
 
   /********************************************/
   /**** 5) Call ExpertStaticFillComplete() ****/

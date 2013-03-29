@@ -1527,10 +1527,6 @@ or if the number of entries in this row exceed the Length parameter.
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);
 
-  // For fused constructor
-  template<typename int_type>
-  int LowCommunicationMakeColMapAndReindex(const Epetra_Map& domainMap, const int * owningPIDs, std::vector<int>& RemotePIDs, const int_type *colind_LL=0);
-
   //! Sort column entries, row-by-row, in ascending order.
   int SortEntries();
 

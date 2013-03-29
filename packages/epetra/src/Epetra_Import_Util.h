@@ -150,6 +150,37 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 				  const std::vector<int> &SourcePids,
 				  std::vector<int> &TargetPids);
 
+
+
+// ===================================================================
+//! LowCommunicationMakeColMapAndReindex
+/*! If you know the owning PIDs already, you can make the colmap a lot less expensively.
+   
+   Note: The owningPids vector (on input) should contain of owning PIDs for each column in the ColMap, as from Epetra_Util::GetPids,
+   with the "-1 for local" can be used, or not, here.
+
+   Note: This method will return a std::vector of the RemotePIDs, used for construction of the importer.
+
+   \warning This method is intended for expert developer use only, and should never be called by user code.
+*/
+int LowCommunicationMakeColMapAndReindex(int N, const int *rowptr, int *colind, const Epetra_Map& domainMap, 
+					 const int *owningPIDs, bool SortGhostsAssociatedWithEachProcessor, 
+					 std::vector<int>& RemotePIDs, Epetra_BlockMap & NewColMap);
+ 
+// ===================================================================
+//! LowCommunicationMakeColMapAndReindex
+/*! If you know the owning PIDs already, you can make the colmap a lot less expensively.
+   
+   Note: The owningPids vector (on input) should contain of owning PIDs for each column in the ColMap, as from Epetra_Util::GetPids,
+   with the "-1 for local" can be used, or not, here.
+
+   Note: This method will return a std::vector of the RemotePIDs, used for construction of the importer.
+
+   \warning This method is intended for expert developer use only, and should never be called by user code.
+*/
+int LowCommunicationMakeColMapAndReindex(int N, const int *rowptr, int *colind_LID, long long *colind_GID, const Epetra_Map& domainMap, 
+					 const int *owningPIDs, bool SortGhostsAssociatedWithEachProcessor, std::vector<int>& RemotePIDs, Epetra_BlockMap & NewColMap);
+
 } /* Epetra_Import_Util namespace */
 
 #endif /* EPETRA_IMPORT_UTIL_H */
