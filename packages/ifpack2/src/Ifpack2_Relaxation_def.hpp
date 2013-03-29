@@ -710,7 +710,7 @@ void Relaxation<MatrixType>::compute ()
       localVals[0] = minMagDiagEntryMag;
       // (- (min (- x))) is the same as (max x).
       localVals[1] = -maxMagDiagEntryMag;
-      Array<scalar_type> globalVals (2);
+      Array<magnitude_type> globalVals (2);
       reduceAll<int, magnitude_type> (comm, REDUCE_MIN, 2, localVals.getRawPtr (), globalVals.getRawPtr ());
       globalMinMagDiagEntryMag_ = globalVals[0];
       globalMaxMagDiagEntryMag_ = -globalVals[1];
