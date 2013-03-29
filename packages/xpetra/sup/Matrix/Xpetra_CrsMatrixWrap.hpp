@@ -470,6 +470,12 @@ public:
     return Matrix::operatorViewTable_.get(viewLabel)->GetColMap();
   }
 
+  void removeEmptyProcessesInPlace(const Teuchos::RCP<const Map>& newMap) {
+    matrixData_->removeEmptyProcessesInPlace(newMap);
+    this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetRowMap(matrixData_->getRowMap());
+    this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetColMap(matrixData_->getColMap());
+  }
+
   //@}
 
   //! Implements DistObject interface
