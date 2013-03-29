@@ -169,6 +169,8 @@ int main(int argc, char *argv[])
     int64api = EX_ALL_INT64_API;
   }
   
+  ex_close(exoid);
+  
   int status;
   if (io_ws == 4) {
     if (int64api) {

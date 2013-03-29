@@ -50,11 +50,8 @@ template <typename T>
 struct Restart_Description {
 
   Restart_Description() :
-    Flag(-1), Num_Times(-1), Block_Size(-1),
-    Time_Idx(NULL), Time(NULL),
+    Flag(-1), Num_Times(-1), Time(0),
     NVar_Glob(-1), NVar_Elem(-1), NVar_Node(-1), NVar_Nset(-1), NVar_Sset(-1),
-    Elem_TT(NULL), GElem_TT(NULL), Nset_TT(NULL), GNset_TT(NULL), Sset_TT(NULL), GSset_TT(NULL),
-    Glob_Vals(NULL), Elem_Vals(NULL), Node_Vals(NULL), Nset_Vals(NULL), Sset_Vals(NULL),
     NV_Name(NULL), EV_Name(NULL), GV_Name(NULL), NSV_Name(NULL), SSV_Name(NULL)
   {}
 
@@ -62,9 +59,7 @@ struct Restart_Description {
   int       Flag;	/* Indicates whether restart info is to be processed */
 
   int       Num_Times;	/* The number of time indices to spread */
-  int       Block_Size;	/* How many time steps will be read and moved
-                           before being written to disk                     */
-  int      *Time_Idx;	/* Time indicies to read, need to keep track of all */
+  std::vector<int> Time_Idx;	/* Time indicies to read, need to keep track of all */
   T         Time;	/* time value */
 
   int       NVar_Glob;	/* Number of global variables read */
@@ -73,14 +68,9 @@ struct Restart_Description {
   int       NVar_Nset;	/* Number of nodeset variables read */
   int       NVar_Sset;	/* Number of sideset variables read */
 
-  int     **Elem_TT;	/* Elemental variable truth table */
-  int      *GElem_TT;	/* Global Elemental variable truth table */
-
-  int     **Nset_TT;	/* Elemental variable truth table */
-  int      *GNset_TT;	/* Global Elemental variable truth table */
-
-  int     **Sset_TT;	/* Elemental variable truth table */
-  int      *GSset_TT;	/* Global Elemental variable truth table */
+  std::vector<int>  GElem_TT;	/* Global Elemental variable truth table */
+  std::vector<int>  GNset_TT;	/* Global Elemental variable truth table */
+  std::vector<int>  GSset_TT;	/* Global Elemental variable truth table */
 
   /*
    * To be able to support single or double precision exodus files,
@@ -88,10 +78,10 @@ struct Restart_Description {
    */
   std::vector<T> Glob_Vals; /* Global variable values, only one per variable *
 			     * and processor                                 */
-  T  **Elem_Vals; /* Element variable values for each processor */
-  T  **Node_Vals; /* Nodal variable values for each processor */
-  T  **Nset_Vals; /* Nodeset variable values for each processor */
-  T  **Sset_Vals; /* Sideset variable values for each processor */
+  std::vector<std::vector<T> > Elem_Vals; /* Element variable values for each processor */
+  std::vector<std::vector<T> > Node_Vals; /* Nodal variable values for each processor */
+  std::vector<std::vector<T> > Nset_Vals; /* Nodeset variable values for each processor */
+  std::vector<std::vector<T> > Sset_Vals; /* Sideset variable values for each processor */
 
   char    **NV_Name;	/* Names of the nodal variables */
   char    **EV_Name;	/* Names of the elemental variables */
