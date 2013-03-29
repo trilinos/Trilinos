@@ -1395,22 +1395,32 @@ namespace stk {
               // reset current state to non-snapped state
               m_eMesh.copy_field(m_eMesh.get_coordinates_field(), m_eMesh.get_field("coordinates_NM1") );
 
+              // option to smooth without geometry
               if (geomFile == "")
                 {
-                  // build a selector from all surface parts
+                  bool option_fix_all_internal_and_outer_boundary_nodes=false;
                   stk::mesh::Selector boundarySelector;
-                  const stk::mesh::PartVector parts = m_eMesh.get_fem_meta_data()->get_parts();
-                  for (unsigned ip=0; ip < parts.size(); ip++)
+                  if (option_fix_all_internal_and_outer_boundary_nodes)
                     {
-                      bool stk_auto= stk::mesh::is_auto_declared_part(*parts[ip]);
-                      //const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*parts[ip]);
-                      if (stk_auto) continue;
-                      unsigned per = parts[ip]->primary_entity_rank();
-                      //std::cout << " per,part = " << per << " " << parts[ip]->name() << std::endl;
-                      if (per == m_eMesh.side_rank())
+                      boost::unordered_set<stk::mesh::Entity>& node_set;
+                      m_eMesh.get_skin_node_set(node_set);
+                    }
+                  else
+                    {
+                      // build a selector from all surface parts
+                      const stk::mesh::PartVector parts = m_eMesh.get_fem_meta_data()->get_parts();
+                      for (unsigned ip=0; ip < parts.size(); ip++)
                         {
-                          std::cout << "INFO::smoothing: freezing points on boundary: " << parts[ip]->name() << std::endl;
-                          boundarySelector = boundarySelector | *parts[ip];
+                          bool stk_auto= stk::mesh::is_auto_declared_part(*parts[ip]);
+                          //const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*parts[ip]);
+                          if (stk_auto) continue;
+                          unsigned per = parts[ip]->primary_entity_rank();
+                          //std::cout << " per,part = " << per << " " << parts[ip]->name() << std::endl;
+                          if (per == m_eMesh.side_rank())
+                            {
+                              std::cout << "INFO::smoothing: freezing points on boundary: " << parts[ip]->name() << std::endl;
+                              boundarySelector = boundarySelector | *parts[ip];
+                            }
                         }
                     }
                   smoothGeometry(0, &boundarySelector, option, use_ref_mesh);

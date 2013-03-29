@@ -6,6 +6,8 @@
 #include <string>
 #include <set>
 
+#include <boost/unordered_set.hpp>
+
 
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/function/Function.hpp>
@@ -449,6 +451,11 @@ namespace stk {
       //========================================================================================================================
       // low-level interfaces
 
+      /// return the set of nodes that are on the outer skin or on shared boundaries between
+      /// "blocks" which are defined as element_rank() parts
+      void get_skin_node_set(boost::unordered_set<stk::mesh::Entity>& node_set);
+
+      /// fill @param histogram with statistics about the given field
       void field_stats(Histogram<double>& histogram, std::string field_name, int index= -2);
 
 

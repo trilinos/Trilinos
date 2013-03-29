@@ -6,8 +6,6 @@
 #include <map>
 #include <stdio.h>
 
-
-
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
@@ -43,6 +41,9 @@
 #include <stk_util/diag/PrintTable.hpp>
 
 #include <stk_mesh/base/FieldParallel.hpp>
+
+#include <stk_mesh/base/BoundaryAnalysis.hpp>
+#include <stk_mesh/base/BulkModification.hpp>
 
 #if defined( STK_PERCEPT_HAS_GEOMETRY )
 
@@ -4573,6 +4574,29 @@ namespace stk {
     {
       GeometryVerifier gv(dump_all_elements, badJac);
       return gv.isGeometryBad(*get_bulk_data(), print_table);
+    }
+
+    void PerceptMesh::get_skin_node_set(boost::unordered_set<stk::mesh::Entity>& node_set)
+    {
+      using namespace stk::mesh;
+      EntityVector owned_elements;
+
+      // select owned
+      Selector owned = MetaData::get(*get_bulk_data()).locally_owned_part();
+      get_selected_entities( owned,
+                             get_bulk_data()->buckets(element_rank()),
+                             owned_elements);
+
+      //Part * skin_part = 0;
+      EntityVector elements_closure;
+
+      // compute owned closure
+      find_closure( *get_bulk_data(), owned_elements, elements_closure );
+
+      // compute boundary
+      EntitySideVector boundary;
+      boundary_analysis( *get_bulk_data(), elements_closure, element_rank(), boundary);
+
     }
 
     void PerceptMesh::field_stats(Histogram<double>& histogram, std::string field_name, int index)

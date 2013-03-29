@@ -305,6 +305,32 @@ namespace stk
 
       }
 
+      //======================================================================================================================      
+      //======================================================================================================================      
+      //======================================================================================================================      
+      STKUNIT_UNIT_TEST(perceptMesh, inner_skin)
+      {
+        EXCEPTWATCH;
+
+#if 0
+        // start_demo_open_new_reopen_PerceptMesh
+        PerceptMesh eMesh(3u);
+        eMesh.open("input_files._.hex-7block.g");
+        bool make_part_io_part = true;
+        eMesh.add_inner_skin_part("inner_skin_part", make_part_io_part);
+        eMesh.commit();
+
+        eMesh.get_skin_part("inner_skin_part");
+
+        // save
+        eMesh.save_as(output_files_loc+"hex-7block-skinned.g");
+        eMesh.close();
+#endif
+
+        // end_demo
+
+      }
+
 
     }//    namespace unit_tests
   }//  namespace percept
