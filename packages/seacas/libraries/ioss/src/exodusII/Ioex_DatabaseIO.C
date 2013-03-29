@@ -4180,24 +4180,24 @@ namespace Ioex {
               // Data stored in exodusII file is x0, ..., xn, y0, ..., yn, z0, ..., zn
               // so we have to allocate some scratch memory to read in the data
               // and then map into supplied 'data'
-              std::vector<double> x(num_to_get);
+              std::vector<double> x; x.reserve(num_to_get);
               std::vector<double> y;
               if (spatialDimension > 1)
-                y.resize(num_to_get);
+                y.reserve(num_to_get);
               std::vector<double> z;
               if (spatialDimension == 3)
-                z.resize(num_to_get);
+                z.reserve(num_to_get);
 
               // Cast 'data' to correct size -- double
               double *rdata = static_cast<double*>(data);
 
               size_t index = 0;
               for (size_t i=0; i < num_to_get; i++) {
-                x[i] = rdata[index++];
+                x.push_back(rdata[index++]);
                 if (spatialDimension > 1)
-                  y[i] = rdata[index++];
+                  y.push_back(rdata[index++]);
                 if (spatialDimension == 3)
-                  z[i] = rdata[index++];
+                  z.push_back(rdata[index++]);
               }
               int ierr = ex_put_coord(get_file_pointer(), TOPTR(x), TOPTR(y), TOPTR(z));
               if (ierr < 0)

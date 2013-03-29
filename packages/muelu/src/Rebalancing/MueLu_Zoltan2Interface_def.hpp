@@ -167,7 +167,7 @@ namespace MueLu {
     }
 
     params.set("partitioning_approach",   "partition");
-    params.set("compute_metrics",         "true");
+    // params.set("compute_metrics",         "true");
 
     typedef Zoltan2::BasicCoordinateInput<Zoltan2::BasicUserTypes<SC,GO,LO,GO> > InputAdapterType;
     typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;

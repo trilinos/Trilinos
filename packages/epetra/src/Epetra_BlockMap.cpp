@@ -104,6 +104,14 @@ void Epetra_BlockMap::ConstructAutoUniform(long long NumGlobal_Elements, int Ele
 
 //==============================================================================
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int Element_Size, int Index_Base, const Epetra_Comm& comm)
+  : Epetra_Object("Epetra::BlockMap"),
+    BlockMapData_(0)
+{
+  const bool IsLongLong = true;
+  ConstructAutoUniform(NumGlobal_Elements, Element_Size, static_cast<long long>(Index_Base), comm, IsLongLong);
+}
+
 Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int Element_Size, long long Index_Base, const Epetra_Comm& comm)
   : Epetra_Object("Epetra::BlockMap"),
     BlockMapData_(0)
@@ -198,6 +206,15 @@ void Epetra_BlockMap::ConstructUserLinear(
 //==============================================================================
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements, 
+      int Element_Size, int Index_Base, const Epetra_Comm& comm)
+  : Epetra_Object("Epetra::BlockMap"),
+    BlockMapData_(0)
+{
+  const bool IsLongLong = true;
+  ConstructUserLinear(NumGlobal_Elements, NumMy_Elements, Element_Size,static_cast<long long>(Index_Base), comm, IsLongLong);
+}
+
 Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements, 
       int Element_Size, long long Index_Base, const Epetra_Comm& comm)
   : Epetra_Object("Epetra::BlockMap"),
@@ -317,6 +334,18 @@ void Epetra_BlockMap::ConstructUserConstant(int_type NumGlobal_Elements, int Num
 }
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements,
+                                 const long long * myGlobalElements, 
+         int Element_Size, int indexBase,
+                                 const Epetra_Comm& comm)
+  : Epetra_Object("Epetra::BlockMap"),
+    BlockMapData_(0)
+{
+  const bool IsLongLong = true;
+  ConstructUserConstant(NumGlobal_Elements, NumMy_Elements, myGlobalElements,
+    Element_Size, static_cast<long long>(indexBase), comm, IsLongLong);
+}
+
 Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements,
                                  const long long * myGlobalElements, 
          int Element_Size, long long indexBase,
@@ -473,6 +502,18 @@ void Epetra_BlockMap::ConstructUserVariable(int_type NumGlobal_Elements, int Num
 }
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements,
+                                 const long long * myGlobalElements, 
+         const int *elementSizeList, int indexBase,
+                                 const Epetra_Comm& comm)
+  : Epetra_Object("Epetra::BlockMap"),
+    BlockMapData_(0)
+{
+  const bool IsLongLong = true;
+  ConstructUserVariable(NumGlobal_Elements, NumMy_Elements, myGlobalElements,
+    elementSizeList, static_cast<long long>(indexBase), comm, IsLongLong);
+}
+
 Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements,
                                  const long long * myGlobalElements, 
          const int *elementSizeList, long long indexBase,

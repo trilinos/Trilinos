@@ -44,6 +44,9 @@
 #include "Stokhos_DynamicThreadedStorage.hpp"
 #include "Stokhos_LocalStorage.hpp"
 
+#include "Sacado_MP_ExpressionTraits.hpp"
+#include "Sacado_MP_VectorTraits.hpp"
+
 #include "Sacado_MP_Vector.hpp"
 
 #endif // HAVE_STOKHOS_KOKKOSARRAY

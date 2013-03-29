@@ -1,30 +1,28 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -45,7 +43,7 @@ namespace TotalOrderBasisUnitTest {
   struct UnitTestSetup {
     ValueType rtol, atol, sparse_tol;
     OrdinalType p,d;
-    
+
     UnitTestSetup() {
       rtol = 1e-12;
       atol = 1e-12;
@@ -53,7 +51,7 @@ namespace TotalOrderBasisUnitTest {
       d = 3;
       p = 5;
     }
-    
+
   };
 
   typedef int ordinal_type;
@@ -83,12 +81,12 @@ namespace TotalOrderBasisUnitTest {
       out << "term " << term << " <= " << setup.p << " : ";
       bool is_less = true;
       for (ordinal_type j=0; j<setup.d; j++)
-	is_less = is_less && term[j] <= setup.p;
+        is_less = is_less && term[j] <= setup.p;
       if (is_less)
-	out << "passed" << std::endl;
+        out << "passed" << std::endl;
       else {
-	out << "failed" << std::endl;
-	success = false; 
+        out << "failed" << std::endl;
+        success = false;
       }
 
     }
@@ -119,12 +117,12 @@ namespace TotalOrderBasisUnitTest {
       out << "term " << term << " <= " << setup.p << " : ";
       bool is_less = true;
       for (ordinal_type j=0; j<setup.d; j++)
-	is_less = is_less && term[j] <= j+1;
+        is_less = is_less && term[j] <= j+1;
       if (is_less)
-	out << "passed" << std::endl;
+        out << "passed" << std::endl;
       else {
-	out << "failed" << std::endl;
-	success = false; 
+        out << "failed" << std::endl;
+        success = false;
       }
 
     }
@@ -139,11 +137,11 @@ namespace TotalOrderBasisUnitTest {
     for (ordinal_type i=0; i<setup.d; i++)
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true));
     Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::TotalOrderBasis<ordinal_type,value_type>(bases, setup.sparse_tol));
-    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk =
       basis->computeTripleProductTensor();
 
-    success = Stokhos::testSparse3Tensor(*Cijk, *basis, setup.sparse_tol, 
-					 setup.rtol, setup.atol, out);
+    success = Stokhos::testSparse3Tensor(*Cijk, *basis, setup.sparse_tol,
+                                         setup.rtol, setup.atol, out);
 
   }
 
@@ -155,11 +153,11 @@ namespace TotalOrderBasisUnitTest {
     for (ordinal_type i=0; i<setup.d; i++)
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true));
     Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::TotalOrderBasis<ordinal_type,value_type>(bases, setup.sparse_tol));
-    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk =
       basis->computeLinearTripleProductTensor();
 
-    success = Stokhos::testSparse3Tensor(*Cijk, *basis, setup.sparse_tol, 
-					 setup.rtol, setup.atol, out, true);
+    success = Stokhos::testSparse3Tensor(*Cijk, *basis, setup.sparse_tol,
+                                         setup.rtol, setup.atol, out, true);
 
   }
 

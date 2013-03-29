@@ -53,6 +53,7 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_FactoryManager.hpp"
 
 namespace MueLu {
 
@@ -71,6 +72,8 @@ namespace MueLu {
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Graph");
+    // NOTE: we do this DeclareInput in such complicated fashion because this is not a part of the parameter list
+    currentLevel.DeclareInput("Filtering", currentLevel.GetFactoryManager()->GetFactory("Filtering").get());
   }
 
   // TODO: rewrite the function using AmalgamationInfo
@@ -80,8 +83,14 @@ namespace MueLu {
 
     FactoryMonitor m(*this, "Matrix filtering", currentLevel);
 
+    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
+    if (currentLevel.Get<bool>("Filtering", currentLevel.GetFactoryManager()->GetFactory("Filtering").get()) == false) {
+      GetOStream(Runtime0,0) << "Filtered matrix is not being constructed as no filtering is being done" << std::endl;
+      Set(currentLevel, "A", A);
+      return;
+    }
+
     const ParameterList& pL = GetParameterList();
-    RCP<Matrix>     A = Get< RCP<Matrix> >   (currentLevel, "A");
     RCP<GraphBase>  G = Get< RCP<GraphBase> >(currentLevel, "Graph");
     bool      lumping = pL.get<bool>("lumping");
     size_t    blkSize = A->GetFixedBlockSize();
@@ -94,7 +103,7 @@ namespace MueLu {
     // NOTE: the good thing is that we mostly deal with local IDs
 
     // Calculate max entries per row
-    RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getNodeMaxNumRowEntries());
+    RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries(), Xpetra::StaticProfile);
 
     Array<GO>   newInds;
     Array<SC>   newVals;
@@ -156,8 +165,12 @@ namespace MueLu {
         for (size_t k = 0; k < blkSize; k++)
           filter[indsG[j]*blkSize+k] = 0;
     }
-    filteredA->fillComplete(A->getDomainMap(), A->getRangeMap());
+    RCP<ParameterList> fillCompleteParams(new ParameterList);;
+    fillCompleteParams->set("No Nonlocal Changes", true);
+    filteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
+
     filteredA->SetFixedBlockSize(blkSize);
+
     // TODO: Can we reuse max eigenvalue from A?
     // filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
 

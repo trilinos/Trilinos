@@ -54,6 +54,12 @@ Epetra_Map::Epetra_Map(int numGlobalElements, int indexBase, const Epetra_Comm& 
 }
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_Map::Epetra_Map(long long numGlobalElements, int indexBase, const Epetra_Comm& comm)
+  : Epetra_BlockMap(numGlobalElements, 1, indexBase, comm) // Map is just a special case of BlockMap
+{
+  SetLabel("Epetra::Map");
+}
+
 Epetra_Map::Epetra_Map(long long numGlobalElements, long long indexBase, const Epetra_Comm& comm)
   : Epetra_BlockMap(numGlobalElements, 1, indexBase, comm) // Map is just a special case of BlockMap
 {
@@ -70,6 +76,12 @@ Epetra_Map::Epetra_Map(int numGlobalElements, int numMyElements, int indexBase, 
 }
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements, int indexBase, const Epetra_Comm& comm)
+  : Epetra_BlockMap(numGlobalElements, numMyElements, 1, indexBase, comm) // Map is just a special case of BlockMap
+{
+  SetLabel("Epetra::Map");
+}
+
 Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements, long long indexBase, const Epetra_Comm& comm)
   : Epetra_BlockMap(numGlobalElements, numMyElements, 1, indexBase, comm) // Map is just a special case of BlockMap
 {
@@ -88,6 +100,14 @@ Epetra_Map::Epetra_Map(int numGlobalElements, int numMyElements,
 }
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements,
+                       const long long * myGlobalElements,
+                       int indexBase, const Epetra_Comm& comm)
+  : Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, 1, indexBase, comm) // Map is just a special case of BlockMap
+{
+  SetLabel("Epetra::Map");
+}
+
 Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements,
                        const long long * myGlobalElements,
                        long long indexBase, const Epetra_Comm& comm)

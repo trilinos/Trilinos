@@ -44,6 +44,9 @@
 
 */
 
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_FancyOStream.hpp"

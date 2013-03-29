@@ -34,6 +34,11 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include <Teuchos_TimeMonitor.hpp>
 
+// mfh 28 Mar 2013: Uncomment out these three lines to compute
+// statistics on diagonal entries in compute().
+// #ifndef IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS
+// #  define IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS 1
+// #endif // IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS
 
 namespace {
   // Validate that a given int is nonnegative.
@@ -89,6 +94,34 @@ namespace {
       out << "#\t\tNonnegativeIntValidator" << std::endl;
     }
   };
+
+  // A way to get a small positive number (eps() for floating-point
+  // types, or 1 for integer types) when Teuchos::ScalarTraits doesn't
+  // define it (for example, for integer values).
+  template<class Scalar, const bool isOrdinal=Teuchos::ScalarTraits<Scalar>::isOrdinal>
+  class SmallTraits {
+  public:
+    // Return eps if Scalar is a floating-point type, else return 1.
+    static const Scalar eps ();
+  };
+
+  // Partial specialization for when Scalar is not a floating-point type.
+  template<class Scalar>
+  class SmallTraits<Scalar, true> {
+  public:
+    static const Scalar eps () {
+      return Teuchos::ScalarTraits<Scalar>::one ();
+    }
+  };
+
+  // Partial specialization for when Scalar is a floating-point type.
+  template<class Scalar>
+  class SmallTraits<Scalar, false> {
+  public:
+    static const Scalar eps () {
+      return Teuchos::ScalarTraits<Scalar>::eps ();
+    }
+  };
 } // namespace (anonymous)
 
 namespace Ifpack2 {
@@ -101,14 +134,15 @@ Relaxation (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordina
   Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::Relaxation"))),
   NumSweeps_ (1),
   PrecType_ (Ifpack2::JACOBI),
-  MinDiagonalValue_ (Teuchos::ScalarTraits<scalar_type>::zero ()),
-  DampingFactor_ (Teuchos::ScalarTraits<scalar_type>::one ()),
+  MinDiagonalValue_ (STS::zero ()),
+  DampingFactor_ (STS::one ()),
   IsParallel_ (A->getRowMap ()->getComm ()->getSize () > 1),
   ZeroStartingSolution_ (true),
   DoBackwardGS_ (false),
   DoL1Method_ (false),
   L1Eta_ (Teuchos::as<magnitude_type> (1.5)),
-  Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
+  checkDiagEntries_ (false),
+  Condest_ (-STM::one ()),
   IsInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -118,7 +152,12 @@ Relaxation (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordina
   ComputeTime_ (0.0),
   ApplyTime_ (0.0),
   ComputeFlops_ (0.0),
-  ApplyFlops_ (0.0)
+  ApplyFlops_ (0.0),
+  globalMinMagDiagEntryMag_ (STM::zero ()),
+  globalMaxMagDiagEntryMag_ (STM::zero ()),
+  globalNumSmallDiagEntries_ (0),
+  globalNumZeroDiagEntries_ (0),
+  globalNumNegDiagEntries_ (0)
 {
   this->setObjectLabel ("Ifpack2::Relaxation");
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -143,8 +182,6 @@ Relaxation<MatrixType>::getValidParameters () const
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_implicit_cast;
   using Teuchos::setStringToIntegralParameter;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
-  typedef Teuchos::ScalarTraits<magnitude_type> STM;
   typedef Teuchos::ParameterEntryValidator PEV;
 
   if (validParams_.is_null ()) {
@@ -190,6 +227,9 @@ Relaxation<MatrixType>::getValidParameters () const
       (STM::one() + STM::one()); // 1.5
     pl->set ("relaxation: l1 eta", l1eta);
 
+    const bool checkDiagEntries = false;
+    pl->set ("relaxation: check diagonal entries", checkDiagEntries);
+
     validParams_ = rcp_const_cast<const ParameterList> (pl);
   }
   return validParams_;
@@ -215,6 +255,7 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   const bool doBackwardGS = pl.get<bool> ("relaxation: backward mode");
   const bool doL1Method = pl.get<bool> ("relaxation: use l1");
   const magnitude_type l1Eta = pl.get<magnitude_type> ("relaxation: l1 eta");
+  const bool checkDiagEntries = pl.get<bool> ("relaxation: check diagonal entries");
 
   // "Commit" the changes, now that we've validated everything.
   PrecType_ = precType;
@@ -225,6 +266,7 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   DoBackwardGS_ = doBackwardGS;
   DoL1Method_ = doL1Method;
   L1Eta_ = l1Eta;
+  checkDiagEntries_ = checkDiagEntries;
 }
 
 //==========================================================================
@@ -373,7 +415,6 @@ void Relaxation<MatrixType>::apply(
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -482,11 +523,16 @@ void Relaxation<MatrixType>::compute ()
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::as;
+  using Teuchos::Comm;
   using Teuchos::rcp;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
-  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+  using Teuchos::REDUCE_MAX;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
   typedef Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> import_type;
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
+  const scalar_type zero = STS::zero ();
+  const scalar_type one = STS::one ();
 
   // We don't count initialization in compute() time.
   if (! isInitialized ()) {
@@ -520,7 +566,10 @@ void Relaxation<MatrixType>::compute ()
     // write back to device memory (Diagonal_) at end of scope.
     ArrayRCP<scalar_type> diagHostView = Diagonal_->get1dViewNonConst ();
 
-    // The view below is only valid as long as diagHostView is within scope.
+    // The view below is only valid as long as diagHostView is within
+    // scope.  We extract a raw pointer in release mode because we
+    // don't trust older versions of compilers (like GCC 4.4.x or
+    // Intel < 13) to optimize away ArrayView::operator[].
 #ifdef HAVE_IFPACK2_DEBUG
     ArrayView<scalar_type> diag = diagHostView ();
 #else
@@ -537,7 +586,7 @@ void Relaxation<MatrixType>::compute ()
     // Yang.  "Multigrid Smoothers for Ultraparallel Computing."  SIAM
     // J. Sci. Comput., Vol. 33, No. 5. (2011), pp. 2864-2887.
     if (DoL1Method_ && IsParallel_) {
-      const scalar_type two = STS::one () + STS::one ();
+      const scalar_type two = one + one;
       const size_t maxLength = A_->getNodeMaxNumRowEntries ();
       Array<local_ordinal_type> indices (maxLength);
       Array<scalar_type> values (maxLength);
@@ -557,21 +606,147 @@ void Relaxation<MatrixType>::compute ()
       }
     }
 
-    // Check diagonal elements, replace zero elements with the
-    // minmimum diagonal value, and store their inverses.
+    //
+    // Invert the diagonal entries of the matrix (not in place).
+    //
+
+    // Don't actually divide by zero; that's tacky.  SmallTraits
+    // covers for the lack of eps() in Teuchos::ScalarTraits<Scalar>
+    // when Scalar is not a floating-point type.  (Ifpack2 sometimes
+    // gets instantiated for integer Scalar types.)
+    const scalar_type oneOverMinDiagVal = (MinDiagonalValue_ == zero) ?
+      SmallTraits<scalar_type>::eps () :
+      one / MinDiagonalValue_;
+    // It's helpful not to have to recompute this magnitude each time.
     const magnitude_type minDiagValMag = STS::magnitude (MinDiagonalValue_);
-    const scalar_type zero = STS::zero ();
-    const scalar_type one = STS::one ();
-    for (size_t i = 0 ; i < numMyRows; ++i) {
-      const scalar_type d_i = diag[i];
-      if (STS::magnitude (d_i) < minDiagValMag) {
-        diag[i] = MinDiagonalValue_;
+
+    if (checkDiagEntries_) {
+      //
+      // Check diagonal elements, replace zero elements with the minimum
+      // diagonal value, and store their inverses.  Count the number of
+      // "small" and zero diagonal entries while we're at it.
+      //
+      size_t numSmallDiagEntries = 0; // "small" includes zero
+      size_t numZeroDiagEntries = 0; // # zero diagonal entries
+      size_t numNegDiagEntries = 0; // # negative (real parts of) diagonal entries
+
+      // As we go, keep track of the diagonal entries with the least and
+      // greatest magnitude.  We could use the trick of starting the min
+      // with +Inf and the max with -Inf, but that doesn't work if
+      // scalar_type is a built-in integer type.  Thus, we have to start
+      // by reading the first diagonal entry redundantly.
+      scalar_type minMagDiagEntry = zero;
+      scalar_type maxMagDiagEntry = zero;
+      magnitude_type minMagDiagEntryMag = STM::zero ();
+      magnitude_type maxMagDiagEntryMag = STM::zero ();
+      if (numMyRows > 0) {
+        const scalar_type d_0 = diag[0];
+        const magnitude_type d_0_mag = STS::magnitude (d_0);
+        minMagDiagEntry = d_0;
+        maxMagDiagEntry = d_0;
+        minMagDiagEntryMag = d_0_mag;
+        maxMagDiagEntryMag = d_0_mag;
       }
-      if (d_i != zero) {
-        diag[i] = one / d_i;
+
+      // Go through all the diagonal entries.  Compute counts of
+      // small-magnitude, zero, and negative-real-part entries.  Invert
+      // the diagonal entries that aren't too small.  For those that are
+      // too small in magnitude, replace them with 1/MinDiagonalValue_
+      // (or 1/eps if MinDiagonalValue_ happens to be zero).
+      for (size_t i = 0 ; i < numMyRows; ++i) {
+        const scalar_type d_i = diag[i];
+        const magnitude_type d_i_mag = STS::magnitude (d_i);
+        const magnitude_type d_i_real = STS::real (d_i);
+
+        // We can't compare complex numbers, but we can compare their
+        // real parts.
+        if (d_i_real < STM::zero ()) {
+          ++numNegDiagEntries;
+        }
+        if (d_i_mag < minMagDiagEntryMag) {
+          minMagDiagEntry = d_i;
+          minMagDiagEntryMag = d_i_mag;
+        }
+        if (d_i_mag > maxMagDiagEntryMag) {
+          maxMagDiagEntry = d_i;
+          maxMagDiagEntryMag = d_i_mag;
+        }
+
+        // <= not <, in case minDiagValMag is zero.
+        if (d_i_mag <= minDiagValMag) {
+          ++numSmallDiagEntries;
+          if (d_i_mag == STM::zero ()) {
+            ++numZeroDiagEntries;
+          }
+          diag[i] = oneOverMinDiagVal;
+        } else {
+          diag[i] = one / d_i;
+        }
+      }
+      if (STS::isComplex) { // magnitude: at least 3 flops per diagonal entry
+        ComputeFlops_ += 4.0 * numMyRows;
+      } else {
+        ComputeFlops_ += numMyRows;
+      }
+
+      // Collect global data about the diagonal entries.  Only do this
+      // (which involves O(1) all-reduces) if the user asked us to do
+      // the extra work.
+      //
+      // FIXME (mfh 28 Mar 2013) This is wrong if some processes have
+      // zero rows.  Fixing this requires one of two options:
+      //
+      // 1. Use a custom reduction operation that ignores processes
+      //    with zero diagonal entries.
+      // 2. Split the communicator, compute all-reduces using the
+      //    subcommunicator over processes that have a nonzero number
+      //    of diagonal entries, and then broadcast from one of those
+      //    processes (if there is one) to the processes in the other
+      //    subcommunicator.
+      const Comm<int>& comm = * (A_->getRowMap ()->getComm ());
+
+      // Compute global min and max magnitude of entries.
+      Array<magnitude_type> localVals (2);
+      localVals[0] = minMagDiagEntryMag;
+      // (- (min (- x))) is the same as (max x).
+      localVals[1] = -maxMagDiagEntryMag;
+      Array<scalar_type> globalVals (2);
+      reduceAll<int, magnitude_type> (comm, REDUCE_MIN, 2, localVals.getRawPtr (), globalVals.getRawPtr ());
+      globalMinMagDiagEntryMag_ = globalVals[0];
+      globalMaxMagDiagEntryMag_ = -globalVals[1];
+
+      Array<size_t> localCounts (3);
+      localCounts[0] = numSmallDiagEntries;
+      localCounts[1] = numZeroDiagEntries;
+      localCounts[2] = numNegDiagEntries;
+      Array<size_t> globalCounts (3);
+      reduceAll<int, size_t> (comm, REDUCE_SUM, 3, localCounts.getRawPtr (), globalCounts.getRawPtr ());
+
+      globalNumSmallDiagEntries_ = globalCounts[0];
+      globalNumZeroDiagEntries_ = globalCounts[1];
+      globalNumNegDiagEntries_ = globalCounts[2];
+    }
+    else {
+      // Go through all the diagonal entries.  Invert those that
+      // aren't too small in magnitude.  For those that are too small
+      // in magnitude, replace them with oneOverMinDiagVal.
+      for (size_t i = 0 ; i < numMyRows; ++i) {
+        const scalar_type d_i = diag[i];
+        const magnitude_type d_i_mag = STS::magnitude (d_i);
+
+        // <= not <, in case minDiagValMag is zero.
+        if (d_i_mag <= minDiagValMag) {
+          diag[i] = oneOverMinDiagVal;
+        } else {
+          diag[i] = one / d_i;
+        }
+      }
+      if (STS::isComplex) { // magnitude: at least 3 flops per diagonal entry
+        ComputeFlops_ += 4.0 * numMyRows;
+      } else {
+        ComputeFlops_ += numMyRows;
       }
     }
-    ComputeFlops_ += numMyRows;
 
     if (IsParallel_ && ((PrecType_ == Ifpack2::GS) || (PrecType_ == Ifpack2::SGS))) {
       Importer_ = A_->getGraph ()->getImporter ();
@@ -593,7 +768,6 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::as;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
   const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
@@ -690,7 +864,6 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
   // Tpetra's GS implementation for CrsMatrix handles zeroing out the
@@ -795,7 +968,6 @@ ApplyInverseGS_CrsMatrix (const MatrixType& A,
                           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::as;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   const Tpetra::ESweepDirection direction =
     DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
@@ -869,7 +1041,6 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
   // Tpetra's GS implementation for CrsMatrix handles zeroing out the
@@ -973,7 +1144,6 @@ ApplyInverseSGS_CrsMatrix (const MatrixType& A,
                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::as;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
   A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
@@ -1065,7 +1235,6 @@ describe (Teuchos::FancyOStream &out,
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
   using std::endl;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   const Teuchos::EVerbosityLevel vl =
     (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
@@ -1099,6 +1268,8 @@ describe (Teuchos::FancyOStream &out,
       } else {
         out << "INVALID";
       }
+      // We quote these parameter names because they contain colons.
+      // YAML uses the colon to distinguish key from value.
       out << endl
           << "\"relaxation: sweeps\": " << NumSweeps_ << endl
           << "\"relaxation: damping factor\": " << DampingFactor_ << endl
@@ -1116,6 +1287,22 @@ describe (Teuchos::FancyOStream &out,
           << "Condition number estimate: " << Condest_ << endl
           << "Global number of rows: " << A_->getGlobalNumRows () << endl
           << "Global number of columns: " << A_->getGlobalNumCols () << endl;
+    }
+    if (checkDiagEntries_ && isComputed ()) {
+      out << "Properties of input diagonal entries:" << endl;
+      {
+        OSTab tab3 (out);
+        out << "Magnitude of minimum-magnitude diagonal entry: "
+            << globalMinMagDiagEntryMag_ << endl
+            << "Magnitude of maximum-magnitude diagonal entry: "
+            << globalMaxMagDiagEntryMag_ << endl
+            << "Number of diagonal entries with small magnitude: "
+            << globalNumSmallDiagEntries_ << endl
+            << "Number of zero diagonal entries: "
+            << globalNumZeroDiagEntries_ << endl
+            << "Number of diagonal entries with negative real part: "
+            << globalNumNegDiagEntries_ << endl;
+      }
     }
     out << "Call counts and total times (in seconds): " << endl;
     {
