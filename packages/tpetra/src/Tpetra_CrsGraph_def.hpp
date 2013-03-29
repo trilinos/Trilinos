@@ -226,8 +226,8 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
             const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
-	    const ArrayRCP<size_t> & rowPointers, 
-	    const ArrayRCP<LocalOrdinal> & columnIndices, 
+            const ArrayRCP<size_t> & rowPointers,
+            const ArrayRCP<LocalOrdinal> & columnIndices,
             const RCP<ParameterList>& params)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , rowMap_(rowMap)
@@ -1968,7 +1968,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllIndices(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices) 
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllIndices(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices)
   {
     const char tfecfFuncName[] = "setAllIndices()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false, std::runtime_error, ": requires a ColMap.");
@@ -2342,29 +2342,29 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
-										       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-										       const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
-										       const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
-										       const RCP<ParameterList> &params)
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+                                                                                       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+                                                                                       const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
+                                                                                       const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
+                                                                                       const RCP<ParameterList> &params)
   {
 #ifdef HAVE_TPETRA_DEBUG
     rowMap_->getComm ()->barrier ();
 #endif // HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "expertStaticFillComplete()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillComplete() == true || hasColMap() == false,
-					   std::runtime_error, ": fillComplete cannot have already been called and a ColMap is required.");
+                                           std::runtime_error, ": fillComplete cannot have already been called and a ColMap is required.");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getNodeNumRows() > 0 && rowPtrs_==Teuchos::null,
-					   std::runtime_error, ": a matrix will getNodeNumRows()>0 requires rowptr to be set.");
+                                           std::runtime_error, ": a matrix will getNodeNumRows()>0 requires rowptr to be set.");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( domainMap == Teuchos::null || rangeMap == Teuchos::null,
-					   std::runtime_error, ": requires a non-null domainMap & rangeMap.");
+                                           std::runtime_error, ": requires a non-null domainMap & rangeMap.");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( pftype_ !=StaticProfile,
-					   std::runtime_error, ": requires StaticProfile.");
+                                           std::runtime_error, ": requires StaticProfile.");
 
-    // Note: We don't need to do the following things which are normally done in fillComplete: 
+    // Note: We don't need to do the following things which are normally done in fillComplete:
     // allocateIndices, globalAssemble, makeColMap, makeIndicesLocal, sortAllIndices, mergeAllIndices
 
     // Note: Need to do this so computeGlobalConstants & fillLocalGraph work
@@ -2390,14 +2390,14 @@ namespace Tpetra {
     importer_=Teuchos::null;
     exporter_=Teuchos::null;
     if(importer != Teuchos::null) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!importer->getSourceMap()->isSameAs(*getDomainMap()) || !importer->getTargetMap()->isSameAs(*getColMap()), 
-					    std::invalid_argument,": importer does not match matrix maps.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!importer->getSourceMap()->isSameAs(*getDomainMap()) || !importer->getTargetMap()->isSameAs(*getColMap()),
+                                            std::invalid_argument,": importer does not match matrix maps.");
       importer_ = importer;
 
     }
     if(exporter != Teuchos::null) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!exporter->getSourceMap()->isSameAs(*getRowMap()) || !exporter->getTargetMap()->isSameAs(*getRangeMap()),
-					    std::invalid_argument,": exporter does not match matrix maps.");
+                                            std::invalid_argument,": exporter does not match matrix maps.");
       exporter_ = exporter;
     }
     makeImportExport();
@@ -3368,8 +3368,6 @@ namespace Tpetra {
     typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-    RCP<const Comm<int> > newComm = newMap->getComm ();
-
     // We'll set all the state "transactionally," so that this method
     // satisfies the strong exception guarantee.  This object's state
     // won't be modified until the end of this method.
@@ -3378,6 +3376,9 @@ namespace Tpetra {
     RCP<export_type> exporter;
 
     rowMap = newMap;
+    RCP<const Comm<int> > newComm =
+      (newMap.is_null ()) ? null : newMap->getComm ();
+
     if (! domainMap_.is_null ()) {
       if (domainMap_.getRawPtr () == rowMap_.getRawPtr ()) {
         // Common case: original domain and row Maps are identical.
@@ -3404,45 +3405,19 @@ namespace Tpetra {
       colMap = colMap_->replaceCommWithSubset (newComm);
     }
 
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      rowMap->getComm ().getRawPtr () != newMap->getComm ().getRawPtr (),
-      std::logic_error,
-      "Tpetra::Map::removeEmptyProcessesInPlace: "
-      "New row Map's communicator does not match input Map's communicator.  "
-      "Please report this bug to the Tpetra developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! domainMap.is_null () && domainMap->getComm ().getRawPtr () != newMap->getComm ().getRawPtr (),
-      std::logic_error,
-      "Tpetra::Map::removeEmptyProcessesInPlace: "
-      "New domain Map's communicator does not match input Map's communicator.  "
-      "Please report this bug to the Tpetra developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! rangeMap.is_null () && rangeMap->getComm ().getRawPtr () != newMap->getComm ().getRawPtr (),
-      std::logic_error,
-      "Tpetra::Map::removeEmptyProcessesInPlace: "
-      "New range Map's communicator does not match input Map's communicator.  "
-      "Please report this bug to the Tpetra developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! colMap.is_null () && colMap->getComm ().getRawPtr () != newMap->getComm ().getRawPtr (),
-      std::logic_error,
-      "Tpetra::Map::removeEmptyProcessesInPlace: "
-      "New column Map's communicator does not match input Map's communicator.  "
-      "Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-
     // (Re)create the Export and / or Import if necessary.
     if (! newComm.is_null ()) {
       RCP<ParameterList> params = this->getNonconstParameterList (); // could be null
       //
       // The operations below are collective on the new communicator.
       //
-      // (Re)create the Export object if necessary.
-      //
-      // FIXME (mfh 28 Mar 2013) If I haven't called fillComplete yet,
-      // I don't have a rangeMap.  I should first check if it's not
-      // null.  Ditto for domain Map.
-      if (rangeMap != rowMap && ! rangeMap->isSameAs (*rowMap)) {
+      // (Re)create the Export object if necessary.  If I haven't
+      // called fillComplete yet, I don't have a rangeMap, so I must
+      // first check if the _original_ rangeMap is not null.  Ditto
+      // for the Import object and the domain Map.
+      if (! rangeMap_.is_null () &&
+          rangeMap != rowMap &&
+          ! rangeMap->isSameAs (*rowMap)) {
         if (params.is_null () || ! params->isSublist ("Export")) {
           exporter = rcp (new export_type (rowMap, rangeMap));
         }
@@ -3452,7 +3427,9 @@ namespace Tpetra {
         }
       }
       // (Re)create the Import object if necessary.
-      if (domainMap != colMap && (! domainMap->isSameAs (*colMap))) {
+      if (! domainMap_.is_null () &&
+          domainMap != colMap &&
+          ! domainMap->isSameAs (*colMap)) {
         if (params.is_null () || ! params->isSublist ("Import")) {
           importer = rcp (new import_type (domainMap, colMap));
         } else {

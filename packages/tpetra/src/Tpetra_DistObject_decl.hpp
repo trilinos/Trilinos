@@ -655,15 +655,13 @@ namespace Tpetra {
   ///   excluded processes.)
   ///
   /// This method has collective semantics over the original
-  /// communicator.
-  ///
-  /// On included processes, reassign this object's Map (that would be
-  /// returned by getMap()) to the input \c newMap, and do any work
-  /// that needs to be done to restore correct semantics.  The input
-  /// DistObject \c input will be nonnull on return.  On excluded
-  /// processes, free any data in \c input that need freeing, do any
-  /// other work that needs to be done to restore correct semantics,
-  /// and set \c input to null before returning.
+  /// communicator.  On included processes, reassign this object's Map
+  /// (that would be returned by getMap()) to the input \c newMap, and
+  /// do any work that needs to be done to restore correct semantics.
+  /// The input DistObject \c input will be nonnull on return.  On
+  /// excluded processes, free any data in \c input that need freeing,
+  /// do any other work that needs to be done to restore correct
+  /// semantics, and set \c input to null before returning.
   ///
   /// The two-argument version of this function is useful if you have
   /// already precomputed the new Map that excludes processes with
@@ -723,9 +721,9 @@ namespace Tpetra {
   ///   This method may change or disappear at any time.
   ///
   /// This method behaves just like the two-argument version of
-  /// removeEmptyProcessesInPlace, except that it first calls
-  /// removeEmptyProcessesInPlace() on the input DistObject's Map to
-  /// compute the new Map.
+  /// removeEmptyProcessesInPlace(), except that it first calls
+  /// removeEmptyProcesses() on the input DistObject's Map to compute
+  /// the new Map.
   ///
   /// The two-argument version of this function is useful if you have
   /// already precomputed the new Map that excludes processes with

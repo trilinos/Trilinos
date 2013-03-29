@@ -542,7 +542,9 @@ namespace Tpetra {
     /// corresponding to values in \c indices, then the redundant
     /// indices will be eliminated.  This may happen either at
     /// insertion or during the next call to fillComplete().
-    void insertGlobalIndices (GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal>& indices);
+    void
+    insertGlobalIndices (GlobalOrdinal globalRow,
+                         const ArrayView<const GlobalOrdinal>& indices);
 
     //! Insert graph indices, using local IDs.
     /**
@@ -554,9 +556,14 @@ namespace Tpetra {
        \post <tt>indicesAreAllocated() == true</tt>
        \post <tt>isLocallyIndexed() == true</tt>
 
-       \note If the graph row already contains entries at the indices corresponding to values in \c indices, then the redundant indices will be eliminated; this may happen at insertion or during the next call to fillComplete().
+       \note If the graph row already contains entries at the indices
+         corresponding to values in \c indices, then the redundant
+         indices will be eliminated; this may happen at insertion or
+         during the next call to fillComplete().
     */
-    void insertLocalIndices(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &indices);
+    void
+    insertLocalIndices (LocalOrdinal localRow,
+                        const ArrayView<const LocalOrdinal> &indices);
 
     //! Remove all graph indices from the specified local row.
     /**
@@ -568,10 +575,9 @@ namespace Tpetra {
        \post <tt>indicesAreAllocated() == true</tt>
        \post <tt>isLocallyIndexed() == true</tt>
     */
-    void removeLocalIndices(LocalOrdinal localRow);
+    void removeLocalIndices (LocalOrdinal localRow);
 
     //@}
-
     //! @name Transformational Methods
     /**
        Each of the methods in this group is a global collective. It is
@@ -580,8 +586,12 @@ namespace Tpetra {
     */
     //@{
 
-    //! \brief Communicate non-local contributions to other nodes.
-    void globalAssemble();
+    /// \brief Communicate non-local contributions to other processes.
+    ///
+    /// This method is called automatically by fillComplete().
+    /// Most users do not need to call this themselves,
+    /// though we do permit this.
+    void globalAssemble ();
 
     /*! Resume fill operations.
       After calling fillComplete(), resumeFill() must be called before initiating any changes to the graph.
@@ -591,7 +601,7 @@ namespace Tpetra {
       \post  <tt>isFillActive() == true<tt>
       \post  <tt>isFillComplete() == false<tt>
     */
-    void resumeFill(const RCP<ParameterList> &params = null);
+    void resumeFill (const RCP<ParameterList> &params = null);
 
     /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
@@ -623,13 +633,13 @@ namespace Tpetra {
     */
     void fillComplete (const RCP<ParameterList> &params = null);
 
-
     /// \brief Perform a fillComplete on a graph that already has data, via setAllIndices().
     ///
-    /// The graph must already have filled lclInds1D_ and rowPtrs_.
-    /// If the graph has been constructed in any other way, this
-    /// method will throw an exception.  This routine is needed to
-    /// support other Trilinos packages and should not be called by ordinary users.
+    /// The graph must already have filled local 1-D storage (lclInds1D_
+    /// and rowPtrs_).  If the graph has been constructed in any other way,
+    /// this method will throw an exception.  This routine is needed to
+    /// support other Trilinos packages and should not be called by ordinary
+    /// users.
     ///
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
@@ -979,6 +989,7 @@ namespace Tpetra {
     size_t
     filterIndicesAndValues (const SLocalGlobalNCViews &inds,
                             const ArrayView<T> &vals) const;
+
     template<ELocalGlobal lg, ELocalGlobal I>
     size_t insertIndices (RowInfo rowInfo, const SLocalGlobalViews &newInds);
 

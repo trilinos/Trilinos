@@ -573,6 +573,7 @@ namespace Tpetra {
     /// \warning This method is only for expert users.  Understanding
     ///   how to use this method correctly requires some familiarity
     ///   with semantics of MPI communicators.
+    ///
     /// \warning We make no promises of backwards compatibility for
     ///   this method.  It may go away or change at any time.
     ///
@@ -619,6 +620,7 @@ namespace Tpetra {
     /// \warning This method is only for expert users.  Understanding
     ///   how to use this method correctly requires some familiarity
     ///   with semantics of MPI communicators.
+    ///
     /// \warning We make no promises of backwards compatibility for
     ///   this method.  It may go away or change at any time.
     ///
