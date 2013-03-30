@@ -4704,6 +4704,9 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
   std::vector<int> SourcePids;
   std::vector<int> TargetPids;
 
+  // The new Domain & Range maps
+  const Epetra_Map& MyDomainMap = DomainMap ? *DomainMap : SourceMatrix.DomainMap();
+  const Epetra_Map& MyRangeMap  = RangeMap  ? *RangeMap  : RowMap();
 
   /***************************************************/
   /***** 1) From Epetra_DistObject::DoTransfer() *****/
@@ -4720,8 +4723,6 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
 
   // Get the owning PIDs
   const Epetra_Import *MyImporter= SourceMatrix.Importer();
-
-
 
   if(!DomainMap || DomainMap->SameAs(SourceMatrix.DomainMap())) {
     // Same DomainMap as the Source Matrix
@@ -4793,8 +4794,6 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
   std::vector<int> RemotePIDs;
   int * pids_ptr = TargetPids.size() ? &TargetPids[0] : 0;
-  const Epetra_Map& MyDomainMap = DomainMap ? *DomainMap : SourceMatrix.DomainMap();
-
   if(UseLL) {
    long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;  
    Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),CSR_colind_LL_ptr,
@@ -4821,14 +4820,11 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
   Epetra_Import * MyImport=0;
   int NumRemotePIDs = RemotePIDs.size();
   int *RemotePIDs_ptr = RemotePIDs.size() ? &RemotePIDs[0] : 0;
-  if(!SourceMatrix.DomainMap().SameAs(ColMap()))
-    MyImport = new Epetra_Import(ColMap(),SourceMatrix.DomainMap(),NumRemotePIDs,RemotePIDs_ptr);
+  if(!MyDomainMap.SameAs(ColMap()))
+    MyImport = new Epetra_Import(ColMap(),MyDomainMap,NumRemotePIDs,RemotePIDs_ptr);
 
-  if(RangeMap) ExpertStaticFillComplete(SourceMatrix.DomainMap(),*RangeMap,MyImport); 
-  else {
-    const Epetra_Map *MyRowMap = dynamic_cast<const Epetra_Map*>(&RowTransfer.TargetMap());
-    ExpertStaticFillComplete(SourceMatrix.DomainMap(),*MyRowMap,MyImport);
-  }
+  ExpertStaticFillComplete(MyDomainMap,MyRangeMap,MyImport);
+
   // Note: ExpertStaticFillComplete assumes ownership of the importer, if we made one...
   // We are not to deallocate that here.
 

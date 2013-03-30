@@ -459,12 +459,6 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 }
 
 
-
-
-
-
-
-
 // =========================================================================
 // =========================================================================
   template<typename int_type, class MapType1, class MapType2>
@@ -680,8 +674,6 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
   
   return 0;
 }
-
-
 
 
 // =========================================================================
