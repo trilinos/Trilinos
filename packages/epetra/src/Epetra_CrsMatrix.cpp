@@ -4772,10 +4772,6 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
   delete [] CSR_vals; // should be a noop.
   CSR_vals = new double[mynnz];
 
-  // Change MyPID to -1 in SourcePids
-  for(int i=0; i < (int) SourcePids.size(); i++)
-    if(SourcePids[i] == MyPID) SourcePids[i]=-1;
-   
   // Unpack into arrays
   if(UseLL)
     Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,NumMyRows(),mynnz,CSR_rowptr.Values(),CSR_colind_LL.size()?&CSR_colind_LL[0]:0,CSR_vals,SourcePids,TargetPids);
