@@ -4651,18 +4651,14 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
    // Fused constructor, import & FillComplete
   int rv;
   int N = NumMyRows();
-  Epetra_Util util;
 
   bool communication_needed = RowTransfer.SourceMap().DistributedGlobal();
 
   bool UseLL=false;
-  int SizeofIntType = -1;
   if(SourceMatrix.RowMap().GlobalIndicesInt()) {
-    SizeofIntType = (int)sizeof(int); 
     UseLL=false;
   }
   else if(SourceMatrix.RowMap().GlobalIndicesLongLong()) {
-    SizeofIntType = (int)sizeof(long long); 
     UseLL=true;
   }
   else
@@ -4703,6 +4699,7 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
   // Owning PIDs
   std::vector<int> SourcePids;
   std::vector<int> TargetPids;
+  int MyPID = Comm().MyPID();
 
   // The new Domain & Range maps
   const Epetra_Map& MyDomainMap = DomainMap ? *DomainMap : SourceMatrix.DomainMap();
@@ -4729,7 +4726,7 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
     if(MyImporter) Epetra_Util::GetPids(*MyImporter,SourcePids,false);
     else {
       SourcePids.resize(SourceMatrix.ColMap().NumMyElements());
-      SourcePids.assign(SourceMatrix.ColMap().NumMyElements(),SourceMatrix.Comm().MyPID());
+      SourcePids.assign(SourceMatrix.ColMap().NumMyElements(),MyPID);
     }
   }
   else if(DomainMap->SameAs(RowTransfer.TargetMap()) && SourceMatrix.DomainMap().SameAs(SourceMatrix.RowMap())){
@@ -4739,7 +4736,7 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
     SourcePids.resize(SourceMatrix.ColMap().NumMyElements(),0);
     Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(),&SourcePids[0]);
 
-    TargetRow_pids.PutValue(Comm().MyPID());
+    TargetRow_pids.PutValue(MyPID);
     SourceRow_pids.Export(TargetRow_pids,RowTransfer,Insert); 
   }
   else
@@ -4775,11 +4772,9 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
   delete [] CSR_vals; // should be a noop.
   CSR_vals = new double[mynnz];
 
-  // Reset the Source PIDs (now with -1 rule)
-  if(MyImporter) Epetra_Util::GetPids(*MyImporter,SourcePids,true);
-  else {
-    SourcePids.assign(SourceMatrix.ColMap().NumMyElements(),-1);
-  }
+  // Change MyPID to -1 in SourcePids
+  for(int i=0; i < (int) SourcePids.size(); i++)
+    if(SourcePids[i] == MyPID) SourcePids[i]=-1;
    
   // Unpack into arrays
   if(UseLL)
