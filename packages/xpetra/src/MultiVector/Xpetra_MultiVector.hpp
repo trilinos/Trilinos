@@ -182,6 +182,8 @@ namespace Xpetra {
     //! Print the object with the given verbosity level to a FancyOStream.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
 
+    virtual void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) = 0;
+
     //@}
 
     //! @name Xpetra specific
