@@ -106,7 +106,6 @@ namespace stk {
         return 0;
     }
 
-    inline
     ElementUnrefineCollection IEdgeAdapter::buildUnrefineList()
     {
       ElementUnrefineCollection elements_to_unref;
