@@ -312,23 +312,26 @@ namespace stk
       {
         EXCEPTWATCH;
 
-#if 0
-        // start_demo_open_new_reopen_PerceptMesh
-        PerceptMesh eMesh(3u);
-        eMesh.open("input_files._.hex-7block.g");
-        bool make_part_io_part = true;
-        eMesh.add_inner_skin_part("inner_skin_part", make_part_io_part);
-        eMesh.commit();
+        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
 
-        eMesh.get_skin_part("inner_skin_part");
+        if (p_size == 1 || p_size == 3)
+          {
+            // start_demo_open_new_reopen_PerceptMesh
+            PerceptMesh eMesh(3u);
+            eMesh.open("input_files._.hex-7block_R2.g");
+            bool make_part_io_part = true;
+            eMesh.add_part("inner_skin_part", make_part_io_part);
+            eMesh.commit();
 
-        // save
-        eMesh.save_as(output_files_loc+"hex-7block-skinned.g");
-        eMesh.close();
-#endif
+            eMesh.get_skin_part("inner_skin_part");
 
-        // end_demo
+            // save
+            eMesh.save_as(output_files_loc+"hex-7block-skinned.g");
+            eMesh.close();
 
+            // end_demo
+          }
       }
 
 

@@ -4576,27 +4576,112 @@ namespace stk {
       return gv.isGeometryBad(*get_bulk_data(), print_table);
     }
 
-    void PerceptMesh::get_skin_node_set(boost::unordered_set<stk::mesh::Entity>& node_set)
+    void PerceptMesh::add_part(const std::string& part_name, bool make_part_io_part)
     {
+      stk::mesh::Part& part = get_fem_meta_data()->declare_part(part_name, stk::mesh::MetaData::NODE_RANK);
+      if (make_part_io_part) stk::io::put_io_part_attribute(part);
+    }
+
+    static void get_nodes_on_side(stk::mesh::Entity element, unsigned element_side_ordinal, std::vector<stk::mesh::Entity>& node_vector)
+    {
+      stk::mesh::EntityRank side_entity_rank = stk::mesh::MetaData::get(element).side_rank();
+
+      const CellTopologyData * const element_topo_data = PerceptMesh::get_cell_topology(element);
+      shards::CellTopology element_topo(element_topo_data);
+      const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+      const unsigned *  inodes = 0;
+      unsigned n_elem_side_nodes = 0;
+
+      if (side_entity_rank == stk::mesh::MetaData::EDGE_RANK)
+        {
+          inodes = element_topo_data->edge[element_side_ordinal].node;
+          n_elem_side_nodes = 2;
+        }
+      else if (side_entity_rank == stk::mesh::MetaData::FACE_RANK )
+        {
+          n_elem_side_nodes = element_topo_data->side[element_side_ordinal].topology->vertex_count;
+          // note, some cells have sides with both 3 and 4 nodes (pyramid, prism)
+          inodes = element_topo_data->side[element_side_ordinal].node;
+        }
+
+      for (unsigned knode = 0; knode < n_elem_side_nodes; knode++)
+        {
+          node_vector.push_back(elem_nodes[inodes[knode]].entity());
+        }
+    }
+
+    stk::mesh::Part* PerceptMesh::get_skin_part(const std::string& part_name)
+    {
+      stk::mesh::Part* part = get_fem_meta_data()->get_part(part_name);
+      VERIFY_OP_ON(part, !=, 0, "Need to call add_inner_skin_part first - no available inner skin part");
+
       using namespace stk::mesh;
-      EntityVector owned_elements;
+      EntitySideVector boundary;
 
       // select owned
       Selector owned = MetaData::get(*get_bulk_data()).locally_owned_part();
-      get_selected_entities( owned,
-                             get_bulk_data()->buckets(element_rank()),
-                             owned_elements);
 
-      //Part * skin_part = 0;
-      EntityVector elements_closure;
+      const stk::mesh::PartVector parts = get_fem_meta_data()->get_parts();
+      for (unsigned ip=0; ip < parts.size(); ip++)
+        {
+          //const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*parts[ip]);
+          bool stk_auto= stk::mesh::is_auto_declared_part(*parts[ip]);
+          if (stk_auto) continue;
+          unsigned per = parts[ip]->primary_entity_rank();
+          if (per == element_rank())
+            {
+              //std::cout << "INFO::smoothing: freezing points on boundary: " << parts[ip]->name() << std::endl;
+              EntityVector owned_elements;
 
-      // compute owned closure
-      find_closure( *get_bulk_data(), owned_elements, elements_closure );
+              Selector block(*parts[ip]);
+              block = block & owned;
+              get_selected_entities( block,
+                                     get_bulk_data()->buckets(element_rank()),
+                                     owned_elements);
+              //Part * skin_part = 0;
+              EntityVector elements_closure;
 
-      // compute boundary
-      EntitySideVector boundary;
-      boundary_analysis( *get_bulk_data(), elements_closure, element_rank(), boundary);
+              // compute owned closure
+              find_closure( *get_bulk_data(), owned_elements, elements_closure );
 
+              // compute boundary
+              boundary_analysis( *get_bulk_data(), elements_closure, element_rank(), boundary);
+
+              if (0)
+              {
+                EntitySideVector boundary_local;
+                boundary_analysis( *get_bulk_data(), elements_closure, element_rank(), boundary_local);
+
+                std::cout << "block name= " << parts[ip]->name() << " owned_elements.size= " << owned_elements.size() 
+                          << " elements_closure.size= " << elements_closure.size()
+                          << " boundary_local.size()= " << boundary_local.size() 
+                          << " boundary.size()= " << boundary.size() 
+                          << std::endl;
+              }
+
+            }
+        }
+
+      get_bulk_data()->modification_begin();
+
+      PartVector add_parts(1,part), remove_parts;
+      std::vector<stk::mesh::Entity> node_vector;
+      for (unsigned iesv=0; iesv < boundary.size(); ++iesv)
+        {
+          EntitySide& es = boundary[iesv];
+          node_vector.resize(0);
+          if (es.inside.entity.is_valid()) 
+            get_nodes_on_side(es.inside.entity, es.inside.side_ordinal, node_vector);
+          if (es.outside.entity.is_valid())
+            get_nodes_on_side(es.outside.entity, es.outside.side_ordinal, node_vector);
+          for (unsigned inv=0; inv < node_vector.size(); inv++)
+            {
+              if (node_vector[inv].bucket().owned())
+                get_bulk_data()->change_entity_parts( node_vector[inv], add_parts, remove_parts );
+            }
+        }
+      get_bulk_data()->modification_end();
+      return part;
     }
 
     void PerceptMesh::field_stats(Histogram<double>& histogram, std::string field_name, int index)

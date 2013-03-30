@@ -1402,8 +1402,8 @@ namespace stk {
                   stk::mesh::Selector boundarySelector;
                   if (option_fix_all_internal_and_outer_boundary_nodes)
                     {
-                      boost::unordered_set<stk::mesh::Entity>& node_set;
-                      m_eMesh.get_skin_node_set(node_set);
+                      stk::mesh::Part *skin_part = m_eMesh.get_skin_part("inner_skin_part");
+                      boundarySelector = boundarySelector | *skin_part;
                     }
                   else
                     {
@@ -1423,6 +1423,8 @@ namespace stk {
                             }
                         }
                     }
+                  Selector owned = MetaData::get(*m_eMesh.get_bulk_data()).locally_owned_part();
+                  boundarySelector = boundarySelector & owned;
                   smoothGeometry(0, &boundarySelector, option, use_ref_mesh);
                 }
               else

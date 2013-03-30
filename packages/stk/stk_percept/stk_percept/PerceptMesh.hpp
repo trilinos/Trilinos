@@ -6,7 +6,7 @@
 #include <string>
 #include <set>
 
-#include <boost/unordered_set.hpp>
+//#include <boost/unordered_set.hpp>
 
 
 #include <stk_percept/Percept.hpp>
@@ -445,15 +445,17 @@ namespace stk {
       ///    Histograms<double> *my_hist = eMesh.field_stats(0, "options...");
       Histograms<double> * mesh_field_stats(Histograms<double> *histograms = 0, std::string options="");
 
+      void add_part(const std::string& part_name, bool make_part_io_part=false);
+
+      /// return the set of nodes that are on the outer skin or on shared boundaries between
+      /// "blocks" which are defined as element_rank() parts
+      stk::mesh::Part* get_skin_part(const std::string& part_name);
 
 #ifndef SWIG
 
       //========================================================================================================================
       // low-level interfaces
 
-      /// return the set of nodes that are on the outer skin or on shared boundaries between
-      /// "blocks" which are defined as element_rank() parts
-      void get_skin_node_set(boost::unordered_set<stk::mesh::Entity>& node_set);
 
       /// fill @param histogram with statistics about the given field
       void field_stats(Histogram<double>& histogram, std::string field_name, int index= -2);
