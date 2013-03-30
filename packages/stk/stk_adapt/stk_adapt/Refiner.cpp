@@ -1398,11 +1398,11 @@ namespace stk {
               // option to smooth without geometry
               if (geomFile == "")
                 {
-                  bool option_fix_all_internal_and_outer_boundary_nodes=false;
+                  bool option_fix_all_internal_and_outer_boundary_nodes=true;
                   stk::mesh::Selector boundarySelector;
                   if (option_fix_all_internal_and_outer_boundary_nodes)
                     {
-                      stk::mesh::Part *skin_part = m_eMesh.get_skin_part("inner_skin_part");
+                      stk::mesh::Part *skin_part = m_eMesh.get_skin_part("inner_skin_part", true);
                       boundarySelector = boundarySelector | *skin_part;
                     }
                   else

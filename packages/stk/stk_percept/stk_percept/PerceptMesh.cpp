@@ -4579,7 +4579,9 @@ namespace stk {
     void PerceptMesh::add_part(const std::string& part_name, bool make_part_io_part)
     {
       stk::mesh::Part& part = get_fem_meta_data()->declare_part(part_name, stk::mesh::MetaData::NODE_RANK);
-      if (make_part_io_part) stk::io::put_io_part_attribute(part);
+      if (make_part_io_part && part.attribute<Ioss::GroupingEntity>() == NULL) {
+        stk::io::put_io_part_attribute(part);
+      }
     }
 
     static void get_nodes_on_side(stk::mesh::Entity element, unsigned element_side_ordinal, std::vector<stk::mesh::Entity>& node_vector)
@@ -4610,10 +4612,34 @@ namespace stk {
         }
     }
 
-    stk::mesh::Part* PerceptMesh::get_skin_part(const std::string& part_name)
+    stk::mesh::Part* PerceptMesh::get_skin_part(const std::string& part_name, bool remove_previous_part_nodes)
     {
       stk::mesh::Part* part = get_fem_meta_data()->get_part(part_name);
       VERIFY_OP_ON(part, !=, 0, "Need to call add_inner_skin_part first - no available inner skin part");
+
+      if (remove_previous_part_nodes)
+        {
+          get_bulk_data()->modification_begin();
+          PartVector add_parts, remove_parts(1,part);
+
+          Selector on_skin_part(*part);
+          const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
+          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+            {
+                stk::mesh::Bucket & bucket = **k ;
+                if (bucket.owned() && on_skin_part(bucket))
+                  {
+                    const unsigned num_nodes_in_bucket = bucket.size();
+                    for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                      {
+                        stk::mesh::Entity node = bucket[iNode];
+                        if (node.is_valid())
+                          get_bulk_data()->change_entity_parts( node, add_parts, remove_parts );
+                      }
+                  }
+            }
+          get_bulk_data()->modification_end();
+        }
 
       using namespace stk::mesh;
       EntitySideVector boundary;

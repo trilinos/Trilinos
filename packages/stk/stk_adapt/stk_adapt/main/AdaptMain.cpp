@@ -553,6 +553,7 @@ namespace stk {
       int progress_meter = 0;
       int smooth_geometry = 0;
       int smooth_use_reference_mesh = 1;
+      int fix_all_block_boundaries = 1;
       int snap_geometry = 0;
       std::string internal_test = "";
       int respect_spacing = 1;
@@ -1061,6 +1062,12 @@ namespace stk {
                             proc_rank_field_ptr = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
                           }
 
+                        if (fix_all_block_boundaries)
+                          {
+                            bool make_part_io_part=true;
+                            eMesh.add_part("inner_skin_part", make_part_io_part);
+                          }
+
 #if STK_ADAPT_HAVE_YAML_CPP
                         // FIXME - this is this needed? see above
                         // add global parts not found in this file
@@ -1072,6 +1079,10 @@ namespace stk {
                           }
 #endif
                         eMesh.commit();
+
+
+                        if (fix_all_block_boundaries)
+                          eMesh.get_skin_part("inner_skin_part", true);
 
                         if (print_info)
                           {

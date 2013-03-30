@@ -449,7 +449,7 @@ namespace stk {
 
       /// return the set of nodes that are on the outer skin or on shared boundaries between
       /// "blocks" which are defined as element_rank() parts
-      stk::mesh::Part* get_skin_part(const std::string& part_name);
+      stk::mesh::Part* get_skin_part(const std::string& part_name, bool remove_previous_part_nodes=true);
 
 #ifndef SWIG
 
