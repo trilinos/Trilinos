@@ -503,16 +503,11 @@ namespace Belos {
     using std::ostream;
     using std::endl;
 
-    RCP<const ParameterList> defaults = getValidParameters ();
-
-    RCP<ParameterList> pl;
-    if (params.is_null()) {
-      // We don't need to validate the default parameter values.
-      pl = parameterList (*defaults);
-    } else {
-      pl = params;
-      pl->validateParametersAndSetDefaults (*defaults);
+    if (params_.is_null()) {
+      params_ = parameterList (*getValidParameters());
     }
+    RCP<ParameterList> pl = params;
+    pl->validateParametersAndSetDefaults (*params_);
 
     //
     // Read parameters from the parameter list.  We have already
