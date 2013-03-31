@@ -245,7 +245,6 @@ namespace Belos {
     void
     setProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> > &problem)
     {
-      validateProblem (problem);
       problem_ = problem;
     }
 
