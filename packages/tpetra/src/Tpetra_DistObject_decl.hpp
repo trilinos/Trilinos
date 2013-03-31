@@ -339,14 +339,15 @@ namespace Tpetra {
     describe (Teuchos::FancyOStream &out,
               const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
     //@}
-
-  private:
     //! @name Methods for use only by experts
     //@{
 
     /// \brief Remove processes which contain no elements in this object's Map.
     ///
-    /// \warning This method is ONLY for use by experts.
+    /// \warning This method is ONLY for use by experts.  We highly
+    ///   recommend using the nonmember function of the same name
+    ///   defined in this file.
+    ///
     /// \warning We make NO promises of backwards compatibility.
     ///   This method may change or disappear at any time.
     ///
@@ -389,10 +390,12 @@ namespace Tpetra {
     virtual void
     removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
 
+    // Forward declaration of nonmember function.
     template<class PT, class LO, class GO, class NT>
     friend void
     removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input,
                                  const Teuchos::RCP<const Map<LO, GO, NT> >& newMap);
+    // Forward declaration of nonmember function.
     template<class PT, class LO, class GO, class NT>
     friend void
     removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input);

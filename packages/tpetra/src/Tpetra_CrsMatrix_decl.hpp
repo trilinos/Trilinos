@@ -401,9 +401,9 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-	      const ArrayRCP<size_t> & rowPointers, 
-	      const ArrayRCP<LocalOrdinal> & columnIndices, 
-	      const ArrayRCP<Scalar> & values, 
+              const ArrayRCP<size_t> & rowPointers,
+              const ArrayRCP<LocalOrdinal> & columnIndices,
+              const ArrayRCP<Scalar> & values,
               const RCP<ParameterList>& params = null);
 
 
@@ -680,7 +680,7 @@ namespace Tpetra {
     //! Scale the current values of a matrix, this = alpha*this.
     void scale(const Scalar &alpha);
 
-    //! Sets the 1D pointer arrays of the graph.  
+    //! Sets the 1D pointer arrays of the graph.
     /**
        \pre <tt>hasColMap() == true</tt>
        \pre <tt>getGraph() != Teuchos::null</tt>
@@ -690,7 +690,7 @@ namespace Tpetra {
     */
     void setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values);
 
-    
+
 
     //@}
     //! @name Transformational Methods
@@ -752,29 +752,55 @@ namespace Tpetra {
     */
     void fillComplete(const RCP<ParameterList> &params = null);
 
+    /// \brief Perform a fillComplete on a matrix that already has data.
+    ///
+    /// The matrux must already have filled local 1-D storage
+    /// (lclInds1D_ and rowPtrs_ for the graph, and values1D_ in the
+    /// matrix).  If the matrix has been constructed in any other way,
+    /// this method will throw an exception.  This routine is needed
+    /// to support other Trilinos packages and should not be called by
+    /// ordinary users.
+    ///
+    /// \warning This method is intended for expert developer use
+    ///   only, and should never be called by user code.
+    void
+    expertStaticFillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+                              const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+                              const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+                              const RCP<ParameterList> &params=Teuchos::null);
 
-    //! Performs a fillComplete on an object that aready has filled CRS data, courtest of the three arrays constructor
-    /*! Performs a lightweight fillComplete on an object that already has filled lclInds1D_ and rowPtrs_ (in the graph) and values1D_ (in the matrix).  
-      If the matrix has been constructed in any other way, it will throw an error.  This routine is needed to support other 
-      Trilinos packages should not be called by users.    
-      \warning This method is intended for expert developer use only, and should never be called by user code.
-    */
-    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
-				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-				  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
-				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
-				  const RCP<ParameterList> &params=Teuchos::null);
-    
-    /** Replaces the current domainMap and importer with the user-specified map object, but only
-      if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap
-      and Importer's SourceMap matches the DomainMap (assuming the importer isn't null).
-      Returns 0 if map/importer is replaced, -1 if not.
+    /// \brief Replace the current domain Map and Import with the given objects.
+    ///
+    /// \param newDomainMap [in] New domain Map.  Must be nonnull.
+    /// \param newImporter [in] Optional Import object.  If null, we
+    ///   will compute it.
+    ///
+    /// \pre The matrix must be fill complete:
+    ///   <tt>isFillComplete() == true</tt>.
+    /// \pre If the Import is provided, its target Map must be the
+    ///   same as the column Map of the matrix.
+    /// \pre If the Import is provided, its source Map must be the
+    ///   same as the provided new domain Map.
+    void
+    replaceDomainMapAndImporter (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newDomainMap,
+                                 Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >& newImporter);
 
-      \pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
-
-  */
-    void replaceDomainMapAndImporter(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter);
-
+    /// \brief Remove processes owning zero rows from the Maps and their communicator.
+    ///
+    /// \warning This method is ONLY for use by experts.  We highly
+    ///   recommend using the nonmember function of the same name
+    ///   defined in Tpetra_DistObject_decl.hpp.
+    ///
+    /// \warning We make NO promises of backwards compatibility.
+    ///   This method may change or disappear at any time.
+    ///
+    /// \param newMap [in] This <i>must</i> be the result of calling
+    ///   the removeEmptyProcesses() method on the row Map.  If it
+    ///   is not, this method's behavior is undefined.  This pointer
+    ///   will be null on excluded processes.
+    virtual void
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
 
     //@}
     //! @name Methods implementing RowMatrix
@@ -1693,14 +1719,6 @@ namespace Tpetra {
     void fillLocalGraphAndMatrix(const RCP<ParameterList> &params);
     // debugging
     void checkInternalState() const;
-
-    /// \brief Remove processes owning zero rows from the Maps and their communicator.
-    ///
-    /// \param newMap [in] Result of calling the
-    ///   removeEmptyProcesses() method of the row Map.  This
-    ///   pointer will be null on excluded processes.
-    virtual void
-    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
 
     /// \name (Global) graph pointers
     ///
