@@ -676,6 +676,11 @@ private:
   size_t globalNumZeroDiagEntries_;
   //! Global number of negative (real part) diagonal entries detected by compute().
   size_t globalNumNegDiagEntries_;
+  /// \brief Absolute two-norm difference between computed and actual inverse diagonal.
+  ///
+  /// "Actual inverse diagonal" means the result of 1/diagonal,
+  /// without any protection against zero or small diagonal entries.
+  magnitude_type globalDiagNormDiff_;
   //@}
 
 }; //class Relaxation

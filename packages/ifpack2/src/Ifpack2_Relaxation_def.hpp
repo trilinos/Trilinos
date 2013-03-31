@@ -524,6 +524,7 @@ void Relaxation<MatrixType>::compute ()
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::Comm;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::REDUCE_MAX;
   using Teuchos::REDUCE_MIN;
@@ -561,6 +562,15 @@ void Relaxation<MatrixType>::compute ()
       "created yet.  Please report this bug to the Ifpack2 developers.");
 
     A_->getLocalDiagCopy (*Diagonal_);
+
+    // If we're checking the computed inverse diagonal, then keep a
+    // copy of the original diagonal entries for later comparison.
+    RCP<vector_type> origDiag;
+    if (checkDiagEntries_) {
+      origDiag = rcp (new vector_type (A_->getRowMap ()));
+      *origDiag = *Diagonal_;
+    }
+
     // "Host view" means that if the Node type is a GPU Node, the
     // ArrayRCP points to host memory, not device memory.  It will
     // write back to device memory (Diagonal_) at end of scope.
@@ -683,6 +693,15 @@ void Relaxation<MatrixType>::compute ()
           diag[i] = one / d_i;
         }
       }
+
+      // We're done computing the inverse diagonal, so invalidate the view.
+      // This ensures that the operations below, that use methods on Vector,
+      // produce correct results even on a GPU Node.
+      diagHostView = Teuchos::null;
+
+      // Count floating-point operations of computing the inverse diagonal.
+      //
+      // FIXME (mfh 30 Mar 2013) Shouldn't counts be global, not local?
       if (STS::isComplex) { // magnitude: at least 3 flops per diagonal entry
         ComputeFlops_ += 4.0 * numMyRows;
       } else {
@@ -725,6 +744,13 @@ void Relaxation<MatrixType>::compute ()
       globalNumSmallDiagEntries_ = globalCounts[0];
       globalNumZeroDiagEntries_ = globalCounts[1];
       globalNumNegDiagEntries_ = globalCounts[2];
+
+      // Compute and save the difference between the computed inverse
+      // diagonal, and the original diagonal's inverse.
+      RCP<vector_type> diff = rcp (new vector_type (A_->getRowMap ()));
+      diff->reciprocal (*origDiag);
+      diff->update (-one, *Diagonal_, one);
+      globalDiagNormDiff_ = diff->norm2 ();
     }
     else {
       // Go through all the diagonal entries.  Invert those that
@@ -1301,7 +1327,9 @@ describe (Teuchos::FancyOStream &out,
             << "Number of zero diagonal entries: "
             << globalNumZeroDiagEntries_ << endl
             << "Number of diagonal entries with negative real part: "
-            << globalNumNegDiagEntries_ << endl;
+            << globalNumNegDiagEntries_ << endl
+            << "Abs 2-norm diff between computed and actual inverse "
+            << "diagonal: " << globalDiagNormDiff_ << endl;
       }
     }
     out << "Call counts and total times (in seconds): " << endl;
