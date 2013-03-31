@@ -237,9 +237,9 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-	     const ArrayRCP<size_t> & rowPointers, 
-	     const ArrayRCP<LocalOrdinal> & columnIndices, 
-	     const ArrayRCP<Scalar> & values, 
+             const ArrayRCP<size_t> & rowPointers,
+             const ArrayRCP<LocalOrdinal> & columnIndices,
+             const ArrayRCP<Scalar> & values,
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
     insertGlobalValuesWarnedEfficiency_ (false),
@@ -1478,7 +1478,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values) 
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values)
   {
     const char tfecfFuncName[] = "setAllValues()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
@@ -2178,11 +2178,11 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
-											       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-											       const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
-											       const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
-											       const RCP<ParameterList> &params)
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+                                                                                               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+                                                                                               const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
+                                                                                               const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
+                                                                                               const RCP<ParameterList> &params)
   {
   const char tfecfFuncName[] = "experStaticFillComplete()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
@@ -2193,12 +2193,12 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     getRowMap ()->getComm ()->barrier ();
 #endif // HAVE_TPETRA_DEBUG
-    
+
     // We will presume globalAssemble is not needed, so we do the ESFC on the graph
     myGraph_->expertStaticFillComplete(domainMap,rangeMap,importer,exporter);
 
     computeGlobalConstants();
-    
+
     // Fill the local matrix & MatOps
     fillLocalGraphAndMatrix(params);
     lclMatOps_ = rcp (new sparse_ops_type (getNode ()));
@@ -2206,7 +2206,7 @@ namespace Tpetra {
     // This is where we take the local graph and matrix, and turn them
     // into (possibly optimized) sparse kernels.
     lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (), lclMatrix_);
- 
+
     // Once we've initialized the sparse kernels, we're done with the
     // local objects.  We may now release them and their memory, since
     // they will persist in the local sparse ops if necessary.  We
@@ -4165,7 +4165,8 @@ namespace Tpetra {
       "case, but removing empty processes requires modifying the graph.");
     myGraph_->removeEmptyProcessesInPlace (newMap);
     // In the nonconst graph case, staticGraph_ is just a const
-    // pointer to myGraph_.
+    // pointer to myGraph_.  This assignment is probably redundant,
+    // but it doesn't hurt.
     staticGraph_ = Teuchos::rcp_const_cast<const Graph> (myGraph_);
   }
 

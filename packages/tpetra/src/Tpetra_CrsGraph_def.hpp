@@ -3445,6 +3445,12 @@ namespace Tpetra {
     exporter_ = exporter;
     importer_ = importer;
     rowMap_ = rowMap;
+    // mfh 31 Mar 2013: DistObject's map_ is the row Map of a CrsGraph
+    // or CrsMatrix.  CrsGraph keeps a redundant pointer (rowMap_) to
+    // the same object.  We might want to get rid of this redundant
+    // pointer sometime, but for now, we'll leave it alone and just
+    // set map_ to the same object.
+    this->map_ = rowMap;
     domainMap_ = domainMap;
     rangeMap_ = rangeMap;
     colMap_ = colMap;
