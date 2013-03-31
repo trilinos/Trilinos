@@ -66,16 +66,16 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 // Teuchos::ScalarTraits<int> doesn't define rmax(), alas, so we get
 // INT_MAX from here.
-#include <climits> 
+#include <climits>
 
 namespace Belos {
-  
+
   //! @name MinresSolMgr Exceptions
   //@{
 
-  /// \class MinresSolMgrLinearProblemFailure 
+  /// \class MinresSolMgrLinearProblemFailure
   /// \brief Thrown when solve() called and problem not set up
-  /// 
+  ///
   /// MinresSolMgrLinearProblemFailure is thrown when the linear
   /// problem has not been set up (e.g., setProblem() was not called;
   /// or the constructor was not provided with a linear problem to
@@ -88,7 +88,7 @@ namespace Belos {
   ///
   class MinresSolMgrLinearProblemFailure : public BelosError {
   public:
-    MinresSolMgrLinearProblemFailure (const std::string& what_arg) : 
+    MinresSolMgrLinearProblemFailure (const std::string& what_arg) :
       BelosError(what_arg)
     {}
   };
@@ -113,18 +113,18 @@ namespace Belos {
   ///
   template<class ScalarType, class MV, class OP>
   class MinresSolMgr : public SolverManager<ScalarType,MV,OP> {
-    
+
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits< MagnitudeType > MT;
-    
+
   public:
 
     /// \brief List of valid MINRES parameters and their default values.
-    /// 
+    ///
     /// One way to set up this solver manager with nondefault
     /// parameters, is to make a deep non-const copy of the default
     /// parameters, and change the parameters you want to change.
@@ -137,7 +137,7 @@ namespace Belos {
     static Teuchos::RCP<const Teuchos::ParameterList> defaultParameters();
 
     //! @name Constructors/Destructor
-    //@{ 
+    //@{
 
     /// \brief Default constructor
     ///
@@ -157,33 +157,33 @@ namespace Belos {
     ///   These are the options accepted by the solver manager:
     ///   - "Block Size" - an \c int specifying the block size to be used by the
     ///     underlying MINRES solver. Default: 1 (which is the only valid value!)
-    ///   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that 
+    ///   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that
     ///     residual norms must reach to decide convergence. Default value: 1e-8.
-    ///   - "Maximum Iterations" - an \c int specifying the maximum number of 
+    ///   - "Maximum Iterations" - an \c int specifying the maximum number of
     ///     iterations the underlying solver is allowed to perform. Default: 1000
-    ///   - "Verbosity" - a sum of MsgType (stored as an int) specifying the 
+    ///   - "Verbosity" - a sum of MsgType (stored as an int) specifying the
     ///     verbosity.  Default value: Belos::Errors
-    ///   - "Output Style" - a OutputType specifying the style of output. 
+    ///   - "Output Style" - a OutputType specifying the style of output.
     ///     Default value: Belos::General
-    ///   - "Output Stream" - a reference-counted pointer to the output stream 
-    ///     where all solver output is sent.  Default value: 
+    ///   - "Output Stream" - a reference-counted pointer to the output stream
+    ///     where all solver output is sent.  Default value:
     ///     Teuchos::rcp(&std::cout,false)
     ///   - "Output Frequency" - an \c int specifying how often (in
     ///     terms of number of iterations) intermediate convergence
     ///     information should be written to the output stream.
     ///     Default value: -1 (which means no intermediate convergence
     ///     information is ever written to the output stream)
-    ///   - "Timer Label" - an \c std::string to use as a prefix for the timer 
+    ///   - "Timer Label" - an \c std::string to use as a prefix for the timer
     ///     labels.  Default value: "Belos"
     MinresSolMgr (const Teuchos::RCP<LinearProblem< ScalarType, MV, OP> > &problem,
                   const Teuchos::RCP<Teuchos::ParameterList> &params);
-    
+
     //! Destructor.
     virtual ~MinresSolMgr() {};
     //@}
-    
+
     //! @name Accessor methods
-    //@{ 
+    //@{
 
     //! Return the linear problem to be solved.
     const LinearProblem<ScalarType,MV,OP>& getProblem() const {
@@ -197,12 +197,12 @@ namespace Belos {
       }
       return defaultParams_;
     }
-    
+
     //! Return the list of current parameters for this object.
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { 
-      return params_; 
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
+      return params_;
     }
-    
+
     /// \brief Return all timers for this object.
     ///
     /// Currently only one timer is being used, which is the total
@@ -217,7 +217,7 @@ namespace Belos {
     }
 
     /// \brief Tolerance achieved by the last \c solve() invocation.
-    /// 
+    ///
     /// This is the maximum over all right-hand sides' achieved
     /// convergence tolerances, and is set whether or not the solve
     /// actually managed to achieve the desired convergence tolerance.
@@ -230,45 +230,45 @@ namespace Belos {
       return numIters_;
     }
 
-    /// Whether a loss of accuracy was detected in the solver. 
+    /// Whether a loss of accuracy was detected in the solver.
     ///
     /// \warning This implementation of MINRES does not currently
     ///   attempt to detect a loss of accuracy in the solver; thus we
     ///   always return false (for now).
     bool isLOADetected() const { return false; }
- 
+
     //@}
-    
+
     //! @name Set methods (overridden from \c SolverManager)
     //@{
-   
-    void 
-    setProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> > &problem) 
-    { 
+
+    void
+    setProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> > &problem)
+    {
       validateProblem (problem);
-      problem_ = problem; 
+      problem_ = problem;
     }
-   
-    void 
+
+    void
     setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params);
-    
+
     //@}
-   
+
     //! @name Reset methods (overridden from \c SolverManager)
     //@{
 
-    void 
-    reset (const ResetType type) 
-    { 
+    void
+    reset (const ResetType type)
+    {
       if ((type & Belos::Problem) && ! problem_.is_null()) {
-	problem_->setProblem (); 
+	problem_->setProblem ();
       }
     }
     //@}
- 
+
     //! @name Solver application methods (overridden from \c SolverManager)
-    //@{ 
-    
+    //@{
+
     /// \brief Iterate until the status test tells us to stop.
     ///
     /// This method implements SolverManager::solve() (which see).
@@ -287,20 +287,20 @@ namespace Belos {
     ///   solutions to the linear system will be placed in the linear
     ///   problem and the solver manager will return ::Converged.
     ReturnType solve();
-    
+
     //@}
-    
+
     /** \name Overridden from Teuchos::Describable */
     //@{
-    
+
     std::string description() const;
-    
+
     //@}
-    
+
   private:
     //! Linear problem to solve
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
-    
+
     //! Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
     Teuchos::RCP<std::ostream> outputStream_;
@@ -370,7 +370,7 @@ namespace Belos {
 
     //! Current frequency of output
     int outputFreq_;
-    
+
     //! Timer label
     std::string label_;
 
@@ -391,7 +391,7 @@ namespace Belos {
 
 
   template<class ScalarType, class MV, class OP>
-  Teuchos::RCP<const Teuchos::ParameterList> 
+  Teuchos::RCP<const Teuchos::ParameterList>
   MinresSolMgr<ScalarType, MV, OP>::defaultParameters()
   {
     using Teuchos::ParameterList;
@@ -406,7 +406,7 @@ namespace Belos {
 
     // List of parameters accepted by MINRES, and their default values.
     RCP<ParameterList> pl = parameterList ("MINRES");
-  
+
     pl->set ("Convergence Tolerance", MST::squareroot (MST::eps()),
 	     "Relative residual tolerance that needs to be achieved by "
 	     "the iterative solver, in order for the linear system to be "
@@ -459,7 +459,7 @@ namespace Belos {
     numIters_ (0),
     parametersSet_ (false)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(problem_.is_null(), std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_.is_null(), std::invalid_argument,
 			       "MinresSolMgr: The version of the constructor "
 			       "that takes a LinearProblem to solve was given a "
 			       "null LinearProblem.");
@@ -469,9 +469,9 @@ namespace Belos {
   template<class ScalarType, class MV, class OP>
   void
   MinresSolMgr<ScalarType, MV, OP>::
-  validateProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> >& problem) 
+  validateProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> >& problem)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), 
+    TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(),
       MinresSolMgrLinearProblemFailure,
       "MINRES requires that you have provided a nonnull LinearProblem to the "
       "solver manager, before you call the solve() method.");
@@ -489,7 +489,7 @@ namespace Belos {
   }
 
   template<class ScalarType, class MV, class OP>
-  void 
+  void
   MinresSolMgr<ScalarType, MV, OP>::
   setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
@@ -569,7 +569,7 @@ namespace Belos {
 
     // Do we need to allocate at least one of the implicit or explicit
     // residual norm convergence tests?
-    const bool allocatedConvergenceTests = 
+    const bool allocatedConvergenceTests =
       impConvTest_.is_null() || expConvTest_.is_null();
 
     // Allocate or set the tolerance of the implicit residual norm
@@ -619,7 +619,7 @@ namespace Belos {
       maxIterTest_->setMaxIters (maxIters_);
     }
 
-    // Create the full status test if we need to.  
+    // Create the full status test if we need to.
     //
     // The full status test: the maximum number of iterations have
     // been reached, OR the residual has converged.
@@ -630,7 +630,7 @@ namespace Belos {
     if (needToRecreateFullStatusTest) {
       sTest_ = rcp (new combo_type (combo_type::OR, maxIterTest_, convTest_));
     }
-  
+
     // If necessary, create the status test output class.  This class
     // manages and formats the output from the status test.  We have
     // to recreate the output test if we had to (re)allocate either
@@ -659,7 +659,7 @@ namespace Belos {
 
 
   template<class ScalarType, class MV, class OP>
-  ReturnType MinresSolMgr<ScalarType,MV,OP>::solve() 
+  ReturnType MinresSolMgr<ScalarType,MV,OP>::solve()
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -668,7 +668,7 @@ namespace Belos {
 
     if (! parametersSet_) {
       setParameters (params_);
-    } 
+    }
     std::ostream& dbg = printer_->stream (Debug);
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -678,7 +678,7 @@ namespace Belos {
     // We need a problem to solve, else we can't solve it.
     validateProblem (problem_);
 
-    // Reset the status test for this solve.  
+    // Reset the status test for this solve.
     outputTest_->reset();
 
     // The linear problem has this many right-hand sides to solve.
@@ -710,7 +710,7 @@ namespace Belos {
       currentIndices[0] = currentRHS;
       problem_->setLSIndex (currentIndices);
 
-      dbg << "-- Current right-hand side index being solved: " 
+      dbg << "-- Current right-hand side index being solved: "
 	  << currentRHS << endl;
 
       // Reset the number of iterations.
@@ -720,7 +720,7 @@ namespace Belos {
       // Set the new state and initialize the solver.
       MinresIterationState<ScalarType, MV> newstate;
 
-      // Get the residual vector for the current linear system 
+      // Get the residual vector for the current linear system
       // (that is, for the current right-hand side).
       newstate.Y = MVT::CloneViewNonConst (*(rcp_const_cast<MV> (problem_->getInitResVec())), currentIndices);
       minres_iter->initializeMinres (newstate);
@@ -733,13 +733,13 @@ namespace Belos {
 
 	  // First check for convergence
 	  if (convTest_->getStatus() == Passed) {
-	    dbg << "---- Converged after " << maxIterTest_->getNumIters() 
+	    dbg << "---- Converged after " << maxIterTest_->getNumIters()
 		<< " iterations" << endl;
 	    break;
 	  }
 	  // Now check for max # of iterations
 	  else if (maxIterTest_->getStatus() == Passed) {
-	    dbg << "---- Did not converge after " << maxIterTest_->getNumIters() 
+	    dbg << "---- Did not converge after " << maxIterTest_->getNumIters()
 		<< " iterations" << endl;
 	    // This right-hand side didn't converge!
 	    notConverged.push_back (currentRHS);
@@ -750,28 +750,28 @@ namespace Belos {
 	    // probably our fault.
 	    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
               "Belos::MinresSolMgr::solve(): iterations neither converged, "
-	      "nor reached the maximum number of iterations " << maxIters_ 
+	      "nor reached the maximum number of iterations " << maxIters_
 	      << ".  That means something went wrong.");
 	  }
 	} catch (const std::exception &e) {
-	  printer_->stream (Errors) 
+	  printer_->stream (Errors)
 	    << "Error! Caught std::exception in MinresIter::iterate() at "
 	    << "iteration " << minres_iter->getNumIters() << endl
 	    << e.what() << endl;
 	  throw e;
 	}
       }
-	
+
       // Inform the linear problem that we are finished with the
       // current right-hand side.  It may or may not have converged,
       // but we don't try again if the first time didn't work.
       problem_->setCurrLS();
-    
+
       // Get iteration information for this solve: total number of
       // iterations for all right-hand sides.
       numIters_ += maxIterTest_->getNumIters();
     }
-    
+
     // Print final summary of the solution process
     sTest_->print (printer_->stream (FinalSummary));
 
@@ -813,7 +813,7 @@ namespace Belos {
       // just for the vectors from the last deflation?
       achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
     }
- 
+
     if (notConverged.size() > 0) {
       return Unconverged;
     } else {
@@ -826,7 +826,7 @@ namespace Belos {
   std::string MinresSolMgr<ScalarType,MV,OP>::description() const
   {
     std::ostringstream oss;
-    oss << "Belos::MinresSolMgr< " 
+    oss << "Belos::MinresSolMgr< "
 	<< Teuchos::ScalarTraits<ScalarType>::name()
 	<<", MV, OP >";
     // oss << "{";
@@ -834,7 +834,7 @@ namespace Belos {
     // oss << "}";
     return oss.str();
   }
-  
+
 } // end Belos namespace
 
 #endif /* BELOS_MINRES_SOLMGR_HPP */
