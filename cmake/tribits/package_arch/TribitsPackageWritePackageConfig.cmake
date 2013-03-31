@@ -555,10 +555,16 @@ ENDIF()
   #
   # Configure the version file for ${PROJECT_NAME}
   #
-
-  CONFIGURE_FILE(
-    ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsConfigVersionTemplate.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake @ONLY)
+  IF(${CMAKE_VERSION} VERSION_GREATER 2.8.6)
+    INCLUDE(CMakePackageConfigHelpers)
+    WRITE_BASIC_PACKAGE_VERSION_FILE(${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+                                     VERSION ${${PROJECT_NAME}_VERSION}
+                                     COMPATIBILITY SameMajorVersion)
+  ELSE()
+    CONFIGURE_FILE(
+      ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsConfigVersionTemplate.cmake.in
+      ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake @ONLY)
+  ENDIF()
 
   INSTALL(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
