@@ -383,9 +383,9 @@ int TUnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
       double * values    = valptr;
       int_type * Indices = intptr + 2;
       for(j=0; j<NumEntries; j++){
-	CSR_colind[StartRow + j]  = Indices[2*j];
-	if(MyPID !=  Indices[2*j+1]) TargetPids[StartRow+j]   = Indices[2*j+1];
 	CSR_vals[StartRow + j]   = values[j];	  
+	CSR_colind[StartRow + j] = Indices[2*j];
+	TargetPids[StartRow + j] = (Indices[2*j+1] != MyPID) ? Indices[2*j+1] : -1;
       }
       if( i < (NumRemoteIDs-1) ) {
 	dintptr   += IntSize + NumEntries;

@@ -4738,6 +4738,7 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
 
     TargetRow_pids.PutValue(MyPID);
     SourceRow_pids.Export(TargetRow_pids,RowTransfer,Insert); 
+    SourceCol_pids.Import(SourceRow_pids,*MyImporter,Insert);
   }
   else
     throw ReportError("Epetra_CrsMatrix: Fused import/export constructor only supports *DomainMap==SourceMatrix.DomainMap() || *DomainMap==RowTransfer.TargetMap() && SourceMatrix.DomainMap() == SourceMatrix.RowMap().",-4);
@@ -4777,7 +4778,6 @@ void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, cons
     Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,NumMyRows(),mynnz,CSR_rowptr.Values(),CSR_colind_LL.size()?&CSR_colind_LL[0]:0,CSR_vals,SourcePids,TargetPids);
   else
     Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,NumMyRows(),mynnz,CSR_rowptr.Values(),CSR_colind.Values(),CSR_vals,SourcePids,TargetPids);
-
 
   /**************************************************************/
   /**** 3) Call Optimized MakeColMap w/ no Directory Lookups ****/
