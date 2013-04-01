@@ -326,17 +326,6 @@ public:
   /// factor \f$\omega \f$.  The main documentation of this class
   /// explains how we use this value.  The default value is 1.0.
   ///
-  /// The "relaxation: min diagonal value" (scalar_type) parameter
-  /// limits how close to zero the diagonal elements of the matrix are
-  /// allowed to be.  If the magnitude of a diagonal element of the
-  /// matrix is less than the magnitude of this value, then we set
-  /// that diagonal element to this value.  (We don't actually modify
-  /// the matrix; we just remember the diagonal values.)  The use of
-  /// magnitude rather than the value itself makes this well defined
-  /// if scalar_type is complex.  The default value of this parameter
-  /// is zero, meaning that we do not impose a minimum diagonal value
-  /// by default.
-  ///
   /// The "relaxation: zero starting solution" (bool) parameter
   /// governs whether or not we use the existing values in the output
   /// multivector Y when applying the relaxation.  Its default value
@@ -347,6 +336,30 @@ public:
   /// perform Gauss-Seidel in reverse mode.  The default value is
   /// false, meaning that we do forward-mode Gauss-Seidel.  This only
   /// affects standard Gauss-Seidel, not symmetric Gauss-Seidel.
+  ///
+  /// The "relaxation: fix tiny diagonal entries" (bool) parameter
+  /// defaults to false.  If true, the compute() method will do extra
+  /// work (computation only, no MPI communication) to "fix" diagonal
+  /// entries that are less than or equal to the threshold given by
+  /// the (magnitude of the) "relaxation: min diagonal value"
+  /// parameter.  The default behavior imitates that of Aztec, which
+  /// does not do any special modification of the diagonal.
+  ///
+  /// The "relaxation: min diagonal value" (scalar_type) parameter
+  /// only matters if "relaxation: fix tiny diagonal entries" (see
+  /// above) is true.  This parameter limits how close to zero the
+  /// diagonal elements of the matrix are allowed to be.  If the
+  /// magnitude of a diagonal element of the matrix is less than the
+  /// magnitude of this value, then we set that diagonal element to
+  /// this value.  (We don't actually modify the matrix; we just
+  /// remember the diagonal values.)  The use of magnitude rather than
+  /// the value itself makes this well defined if scalar_type is
+  /// complex.  The default value of this parameter is zero, in which
+  /// case we will replace diagonal entries that are exactly equal to
+  /// zero with a small nonzero value (machine precision for the given
+  /// \c Scalar type) before inverting them.  Note that if
+  /// "relaxation: fix tiny diagonal entries" is false, the default
+  /// value, this parameter does nothing.)
   ///
   /// The "relaxation: check diagonal entries" (bool) parameter
   /// defaults to false.  If true, the compute() method will do extra
@@ -626,8 +639,6 @@ private:
   int NumSweeps_;
   //! Which relaxation method to use.
   int PrecType_;
-  //! Minimum diagonal value
-  scalar_type MinDiagonalValue_;
   //! Damping factor
   scalar_type DampingFactor_;
   //! If \c true, more than 1 processor is currently used.
@@ -640,6 +651,10 @@ private:
   bool DoL1Method_;
   //! Eta parameter for modified L1 method
   magnitude_type L1Eta_;
+  //! Minimum diagonal value
+  scalar_type MinDiagonalValue_;
+  //! Whether to fix up zero or tiny diagonal entries.
+  bool fixTinyDiagEntries_;
   //! Whether to spend extra effort and all-reduces checking diagonal entries.
   bool checkDiagEntries_;
 
