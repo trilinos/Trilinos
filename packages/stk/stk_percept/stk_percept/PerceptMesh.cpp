@@ -4650,12 +4650,17 @@ namespace stk {
       const stk::mesh::PartVector parts = get_fem_meta_data()->get_parts();
       for (unsigned ip=0; ip < parts.size(); ip++)
         {
-          //const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*parts[ip]);
           bool stk_auto= stk::mesh::is_auto_declared_part(*parts[ip]);
           if (stk_auto) continue;
           unsigned per = parts[ip]->primary_entity_rank();
           if (per == element_rank())
             {
+              const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*parts[ip]);
+              if (!topology || topology->dimension != per)
+                {
+                  std::cout << "Warning: PerceptMesh::get_skin_part: skipping part with dimension < element_rank, part name= " << parts[ip]->name() << std::endl;
+                  continue;
+                }
               //std::cout << "INFO::smoothing: freezing points on boundary: " << parts[ip]->name() << std::endl;
               EntityVector owned_elements;
 
@@ -4674,16 +4679,16 @@ namespace stk {
               boundary_analysis( *get_bulk_data(), elements_closure, element_rank(), boundary);
 
               if (0)
-              {
-                EntitySideVector boundary_local;
-                boundary_analysis( *get_bulk_data(), elements_closure, element_rank(), boundary_local);
+                {
+                  EntitySideVector boundary_local;
+                  boundary_analysis( *get_bulk_data(), elements_closure, element_rank(), boundary_local);
 
-                std::cout << "block name= " << parts[ip]->name() << " owned_elements.size= " << owned_elements.size() 
-                          << " elements_closure.size= " << elements_closure.size()
-                          << " boundary_local.size()= " << boundary_local.size() 
-                          << " boundary.size()= " << boundary.size() 
-                          << std::endl;
-              }
+                  std::cout << "block name= " << parts[ip]->name() << " owned_elements.size= " << owned_elements.size() 
+                            << " elements_closure.size= " << elements_closure.size()
+                            << " boundary_local.size()= " << boundary_local.size() 
+                            << " boundary.size()= " << boundary.size() 
+                            << std::endl;
+                }
 
             }
         }

@@ -1476,7 +1476,8 @@ namespace stk {
                     //if (!topology)
                     if (part_rank == stk::mesh::MetaData::NODE_RANK)
                       {
-                        m_eMesh.get_bulk_data()->change_entity_parts( c_node, add_parts, remove_parts );
+                        if (c_node.bucket().owned()) 
+                          m_eMesh.get_bulk_data()->change_entity_parts( c_node, add_parts, remove_parts );
                         if (0)
                           {
                             std::cout << "P[" << m_eMesh.get_rank() << "] adding node " << c_node.identifier() << " to   Part[" << ipart << "]= " << part.name()

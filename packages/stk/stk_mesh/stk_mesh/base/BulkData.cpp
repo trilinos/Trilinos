@@ -169,10 +169,12 @@ void BulkData::require_entity_owner( const Entity entity ,
   }
 
   const bool error_not_owner = owner != entity.owner_rank() ;
-
+  if (error_not_owner)
+    {
   ThrowRequireMsg( !error_not_owner,
       "Entity " << print_entity_key(entity) << " owner is " <<
                    entity.owner_rank() << ", expected " << owner);
+    }
 }
 
 void BulkData::require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const

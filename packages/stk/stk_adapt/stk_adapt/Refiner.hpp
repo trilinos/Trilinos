@@ -143,6 +143,8 @@ namespace stk {
       bool
       getDoProgressMeter();
 
+      void setFixAllBlockBoundaries(bool val) { m_fixAllBlockBoundaries=val; }
+      bool getFixAllBlockBoundaries() { return m_fixAllBlockBoundaries; }
 
 #if defined(STK_BUILT_IN_SIERRA) 
       void set_rbar_special_treatment(BlockNamesType& rbar_names) { m_rbar_names = rbar_names; }
@@ -386,6 +388,7 @@ namespace stk {
 
       bool m_removeGeometryBlocks;
       SidePartMap m_side_part_map;
+      bool m_fixAllBlockBoundaries;
 
 #if defined(STK_BUILT_IN_SIERRA)
       BlockNamesType m_rbar_names;

@@ -218,7 +218,10 @@ namespace stk {
                 fdata[0] = double(newElement.owner_rank());
               }
 
-            change_entity_parts(eMesh, element, newElement);
+            {
+              EXCEPTWATCH;
+              change_entity_parts(eMesh, element, newElement);
+            }
 
             {
               if (!elems[ielem][0])

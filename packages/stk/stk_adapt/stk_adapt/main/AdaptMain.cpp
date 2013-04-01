@@ -553,7 +553,7 @@ namespace stk {
       int progress_meter = 0;
       int smooth_geometry = 0;
       int smooth_use_reference_mesh = 1;
-      int fix_all_block_boundaries = 1;
+      int fix_all_block_boundaries = 0;
       int snap_geometry = 0;
       std::string internal_test = "";
       int respect_spacing = 1;
@@ -629,6 +629,7 @@ namespace stk {
       run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
       run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry projection to try to avoid bad meshes");
       run_environment.clp.setOption("smooth_use_reference_mesh", &smooth_use_reference_mesh, "for most cases, set to 1 (default) - can be used for smoothing with no reference mesh");
+      run_environment.clp.setOption("fix_all_block_boundaries" , &fix_all_block_boundaries,  "when smoothing without geometry, fix all inner and outer block boundaries");
       run_environment.clp.setOption("snap_geometry"            , &snap_geometry            , "project nodes to geometry - used for internal testing only");
       run_environment.clp.setOption("internal_test"            , &internal_test            , "run the specified internal test");
 #if !defined(__IBMCPP__) 
@@ -1277,6 +1278,7 @@ namespace stk {
                                 //breaker.setRemoveGeometryBlocks(remove_geometry_blocks == 1);
                               }
                             breaker.setRemoveOldElements(remove_original_elements);
+                            breaker.setFixAllBlockBoundaries(fix_all_block_boundaries);
                             breaker.setQueryPassOnly(query_only == 1);
                             breaker.setDoProgressMeter(progress_meter == 1 && 0 == p_rank);
                             //breaker.setIgnoreSideSets(true);

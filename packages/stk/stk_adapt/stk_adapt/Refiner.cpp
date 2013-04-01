@@ -37,7 +37,9 @@ namespace stk {
       m_progress_meter_frequency(20),
       m_doProgress(true && (0 == eMesh.get_rank()) ),
       m_alwaysInitNodeRegistry(true),
-      m_doSmoothGeometry(true)
+      m_doSmoothGeometry(true),
+      m_removeGeometryBlocks(false),
+      m_fixAllBlockBoundaries(false)
     {
       bp.setSubPatterns(m_breakPattern, eMesh);
       m_nodeRegistry = new NodeRegistry (m_eMesh);
@@ -58,7 +60,9 @@ namespace stk {
       m_progress_meter_frequency(20),
       m_doProgress(true && (0 == eMesh.get_rank()) ),
       m_alwaysInitNodeRegistry(true),
-      m_doSmoothGeometry(true)
+      m_doSmoothGeometry(true),
+      m_removeGeometryBlocks(false),
+      m_fixAllBlockBoundaries(false)
     {
       m_nodeRegistry = new NodeRegistry (m_eMesh);
       m_nodeRegistry->initialize();
@@ -1398,7 +1402,7 @@ namespace stk {
               // option to smooth without geometry
               if (geomFile == "")
                 {
-                  bool option_fix_all_internal_and_outer_boundary_nodes=true;
+                  bool option_fix_all_internal_and_outer_boundary_nodes=getFixAllBlockBoundaries();
                   stk::mesh::Selector boundarySelector;
                   if (option_fix_all_internal_and_outer_boundary_nodes)
                     {
