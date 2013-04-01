@@ -94,6 +94,8 @@ namespace MueLu {
     GO           numParts = Get<GO>(level, "number of partitions");
     LocalOrdinal  blkSize = A->GetFixedBlockSize();
 
+    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->lib() == Xpetra::UseEpetra, Exceptions::RuntimeError, "Zoltan2 does not work with Epetra at the moment. Please use Zoltan through ZoltanInterface");
+
     if (!IsAvailable(level, "Coordinates")) {
       std::cout << GetFactory("Coordinates") << std::endl;
 
@@ -120,7 +122,8 @@ namespace MueLu {
     for (size_t k = 0; k < dim; k++)
       values[k] = coords->getData(k).get();
 
-    int rowWeight = GetParameterList().get<int>("rowWeight");
+    const ParameterList& pL = GetParameterList();
+    int rowWeight = pL.get<int>("rowWeight");
     GetOStream(Runtime0,0) << "Using weights formula: nnz + " << rowWeight << std::endl;
 
     Array<SC> weightsPerRow(numElements);
