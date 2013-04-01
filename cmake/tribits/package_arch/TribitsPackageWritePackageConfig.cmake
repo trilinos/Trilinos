@@ -555,8 +555,11 @@ ENDIF()
   #
   # Configure the version file for ${PROJECT_NAME}
   #
-  IF(${CMAKE_VERSION} VERSION_GREATER 2.8.6)
-    INCLUDE(CMakePackageConfigHelpers)
+  # CMakePackageConfigHelpers should be present for CMake >= 2.8.8.
+  INCLUDE(CMakePackageConfigHelpers
+          OPTIONAL
+          RESULT_VARIABLE PACKAGE_HELPERS_FOUND)
+  IF(PACKAGE_HELPERS_FOUND)
     WRITE_BASIC_PACKAGE_VERSION_FILE(${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
                                      VERSION ${${PROJECT_NAME}_VERSION}
                                      COMPATIBILITY SameMajorVersion)
