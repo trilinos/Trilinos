@@ -1174,8 +1174,8 @@ C
 c
 c          compute some useful quantities
 c
-      MAXC = MAX0(IRED,IGRE,IBLU)
-      MINC = MIN0(IRED,IGRE,IBLU)
+      MAXC = MAX(IRED,IGRE,IBLU)
+      MINC = MIN(IRED,IGRE,IBLU)
       ISUM = MAXC + MINC
       IDIF = MAXC - MINC
       MAXLIT = 2*MAXVAL
@@ -1305,8 +1305,8 @@ c
 c          isplus is an additive to account for saturation
 c
       ISPLUS = (IRANGE-IRANG2)/2
-      IV1 = MIN0(INTEN,MAXVAL) - ISPLUS
-      IV2 = MAX0(0,INTEN-MAXVAL) + ISPLUS
+      IV1 = MIN(INTEN,MAXVAL) - ISPLUS
+      IV2 = MAX(0,INTEN-MAXVAL) + ISPLUS
       IV3 = F*IRANG2 + .5 + IV2
       IV4 = (1.-F)*IRANG2 + .5 + IV2
       GOTO (610,620,630,640,650,660),IJUMP+1
