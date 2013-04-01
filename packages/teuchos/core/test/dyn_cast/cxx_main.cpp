@@ -54,7 +54,7 @@ int main( int argc, char* argv[] )
   using Teuchos::CommandLineProcessor;
 
   bool verbose = true;
-  
+
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   try {
@@ -75,7 +75,8 @@ int main( int argc, char* argv[] )
     A &a = b;
     try {
       if(verbose) std::cout << "\nTrying: dynamic_cast<C&>(a); [Should throw a std::bad_cast std::exception with very bad error message]\n";
-      dynamic_cast<C&>(a);
+      C& c_from_an_a = dynamic_cast<C&>(a);
+      (void) c_from_an_a; // forestall "unused variable" compiler warnings
     }
     catch( const std::bad_cast &e ) {
       if(verbose) std::cout << "\nCaught std::bad_cast std::exception e where e.what() = \"" << e.what() << "\"\n";
@@ -101,5 +102,5 @@ int main( int argc, char* argv[] )
       std::cerr << "*** Caught an unknown std::exception\n";
     return 1;
   }
-	return 0;
+        return 0;
 }

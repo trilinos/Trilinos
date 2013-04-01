@@ -96,14 +96,15 @@ Teuchos::RCP<DVector> GetRandomVector(int n);
 // Compares the difference between two vectors using relative euclidean norms
 // Returns 1 if the comparison failed, the relative difference is greater than the tolerance.
 int CompareVectors(const SerialDenseVector<OTYPE,STYPE>& Vector1,
-		   const SerialDenseVector<OTYPE,STYPE>& Vector2,
-		   ScalarTraits<STYPE>::magnitudeType Tolerance );
+                   const SerialDenseVector<OTYPE,STYPE>& Vector2,
+                   ScalarTraits<STYPE>::magnitudeType Tolerance );
 
 int main(int argc, char* argv[])
 {
   typedef ScalarTraits<STYPE>::magnitudeType MagnitudeType;
 
   int n=10, m=8;
+  (void) m; // forestall "unused variable" compiler warning
   MagnitudeType tol = 1e-12*ScalarTraits<MagnitudeType>::one();
 
   bool verbose = 0;
@@ -323,12 +324,12 @@ int main(int argc, char* argv[])
   //
   if(numberFailedTests > 0)
   {
-	    if (verbose) {
-		std::cout << "Number of failed tests: " << numberFailedTests << std::endl;
-		std::cout << "End Result: TEST FAILED" << std::endl;
-		return -1;
-	    }
-	}
+            if (verbose) {
+                std::cout << "Number of failed tests: " << numberFailedTests << std::endl;
+                std::cout << "End Result: TEST FAILED" << std::endl;
+                return -1;
+            }
+        }
   if(numberFailedTests == 0)
     std::cout << "End Result: TEST PASSED" << std::endl;
 
@@ -358,28 +359,28 @@ int ReturnCodeCheck(std::string testName, int returnCode, int expectedResult, bo
   if(expectedResult == 0)
     {
       if(returnCode == 0)
-	{
-	  if(verbose) std::cout << testName << " test successful." << std::endl;
-	  result = 0;
-	}
+        {
+          if(verbose) std::cout << testName << " test successful." << std::endl;
+          result = 0;
+        }
       else
-	{
-	  if(verbose) std::cout << testName << " test unsuccessful. Return code was " << returnCode << "." << std::endl;
-	  result = 1;
-	}
+        {
+          if(verbose) std::cout << testName << " test unsuccessful. Return code was " << returnCode << "." << std::endl;
+          result = 1;
+        }
     }
   else
     {
       if(returnCode != 0)
-	{
-	  if(verbose) std::cout << testName << " test successful -- failed as expected." << std::endl;
-	  result = 0;
-	}
+        {
+          if(verbose) std::cout << testName << " test successful -- failed as expected." << std::endl;
+          result = 0;
+        }
       else
-	{
-	  if(verbose) std::cout << testName << " test unsuccessful -- did not fail as expected. Return code was " << returnCode << "." << std::endl;
-	  result = 1;
-	}
+        {
+          if(verbose) std::cout << testName << " test unsuccessful -- did not fail as expected. Return code was " << returnCode << "." << std::endl;
+          result = 1;
+        }
     }
   return result;
 }
@@ -439,8 +440,8 @@ Teuchos::RCP<DVector> GetRandomVector(int n)
     Purpose:   Compares the difference between two vectors using relative euclidean-norms, i.e. ||v_1-v_2||_2/||v_2||_2
 */
 int CompareVectors(const SerialDenseVector<OTYPE,STYPE>& Vector1,
-		   const SerialDenseVector<OTYPE,STYPE>& Vector2,
-		   ScalarTraits<STYPE>::magnitudeType Tolerance )
+                   const SerialDenseVector<OTYPE,STYPE>& Vector2,
+                   ScalarTraits<STYPE>::magnitudeType Tolerance )
 {
   typedef ScalarTraits<STYPE>::magnitudeType MagnitudeType;
 

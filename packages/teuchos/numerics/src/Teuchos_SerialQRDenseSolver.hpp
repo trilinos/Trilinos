@@ -646,12 +646,14 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::solve() {
   solved_ = true;
 
   // Unequilibrate LHS if necessary
-  int ierr1=0;
-  if (equilibrate_) ierr1 = unequilibrateLHS();
-  if (ierr != 0) return(ierr);
+  if (equilibrate_) {
+    ierr = unequilibrateLHS();
+  }
+  if (ierr != 0) {
+    return ierr;
+  }
 
-  return(INFO_);
-
+  return INFO_;
 }
 
 //=============================================================================
