@@ -61,6 +61,7 @@ namespace Galeri {
 
   namespace Xpetra {
 
+    template <typename Scalar, typename GlobalOrdinal>
     void GetPMLvalues(const GlobalOrdinal i,
 		      const GlobalOrdinal nx,          const GlobalOrdinal ny,
 		      const double h,                  const double delta,
@@ -69,6 +70,18 @@ namespace Galeri {
 		      const double LBy,                const double RBy,
 		      Scalar& sx_left,        Scalar& sx_center,        Scalar& sx_right,
 		      Scalar& sy_left,        Scalar& sy_center,        Scalar& sy_right);
+
+    template <typename Scalar, typename GlobalOrdinal>
+    void GetPMLvalues(const GlobalOrdinal i,
+                      const GlobalOrdinal nx,          const GlobalOrdinal ny,            const GlobalOrdinal nz,
+		      const double h,                  const double delta,
+		      const double Dx,                 const double Dy,                   const double Dz,
+		      const double LBx,                const double RBx,
+		      const double LBy,                const double RBy,
+		      const double LBz,                const double RBz,
+		      Scalar& sx_left,        Scalar& sx_center,        Scalar& sx_right,
+		      Scalar& sy_left,        Scalar& sy_center,        Scalar& sy_right,
+		      Scalar& sz_left,        Scalar& sz_center,        Scalar& sz_right);
 
     /* ****************************************************************************************************** *
      *    Helmholtz 1D
