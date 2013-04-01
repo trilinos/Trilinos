@@ -769,6 +769,10 @@ void Relaxation<MatrixType>::compute ()
       globalNumZeroDiagEntries_ = globalCounts[1];
       globalNumNegDiagEntries_ = globalCounts[2];
 
+      // Forestall "set but not used" compiler warnings.
+      (void) minMagDiagEntry;
+      (void) maxMagDiagEntry;
+
       // Compute and save the difference between the computed inverse
       // diagonal, and the original diagonal's inverse.
       RCP<vector_type> diff = rcp (new vector_type (A_->getRowMap ()));
