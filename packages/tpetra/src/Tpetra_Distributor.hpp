@@ -1594,6 +1594,7 @@ namespace Tpetra {
                    ArrayRCP<OrdinalType> &exportGIDs,
                    ArrayRCP<int> &exportNodeIDs)
   {
+#ifdef HAVE_TPETRA_DEBUG
     using Teuchos::outArg;
     using Teuchos::reduceAll;
 
@@ -1606,6 +1607,7 @@ namespace Tpetra {
       Teuchos::typeName (*this) << "::createFromRecvs(): lists of remote IDs "
       "and remote process IDs must have the same size on all participating "
       "processes.  Maximum process ID with error: " << maxErrProc << ".");
+#endif // HAVE_TPETRA_DEBUG
 
     computeSends (remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
     (void) createFromSends (exportNodeIDs ());
