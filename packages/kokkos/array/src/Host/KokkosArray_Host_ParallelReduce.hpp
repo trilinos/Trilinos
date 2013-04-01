@@ -102,6 +102,44 @@ public:
 
 //----------------------------------------------------------------------------
 
+template< class ReduceOper >
+inline
+void host_reduce( HostThread & this_thread ,
+                  const ReduceOper & reduce )
+{
+  // Fan-in reduction of other threads' reduction data.
+
+  for ( unsigned i = 0 ; i < this_thread.fan_count() ; ++i ) {
+
+    // Wait for source thread to complete its work and
+    // set its own state to 'Rendezvous'.
+    host_wait( & this_thread.fan(i).m_state , HostThread::ThreadActive );
+
+    // Join source thread reduce data.
+    reduce.join( this_thread.reduce_data() ,
+                 this_thread.fan(i).reduce_data() );
+
+    // Reset the source thread to 'Active' state.
+    this_thread.fan(i).m_state = HostThread::ThreadActive ;
+  }
+
+  if ( this_thread.rank() ) {
+    // If this is not the root thread then it will give its
+    // reduction data to another thread.
+    // Set the 'Rendezvous' state.
+    // Wait for the other thread to process reduction data
+    // and then reactivate this thread.
+
+    this_thread.m_state = HostThread::ThreadRendezvous ;
+    host_wait( & this_thread.m_state , HostThread::ThreadRendezvous );
+  }
+  else {
+    reduce.finalize( this_thread.reduce_data() );
+  }
+}
+
+//----------------------------------------------------------------------------
+
 template< class FunctorType , class ValueOper , class FinalizeType , class WorkSpec >
 class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host , WorkSpec > {
 public:
@@ -129,7 +167,8 @@ public:
     }
 
     // Fan-in reduction of other threads' reduction data:
-    this_thread.reduce( m_reduce );
+    host_reduce( this_thread , m_reduce );
+    // this_thread.reduce( m_reduce );
   }
 
   ParallelReduce( const size_type      work_count ,
@@ -187,7 +226,8 @@ public:
     m_reduce.template join< HostSpace::WORK_ALIGNMENT >( this_thread.reduce_data() );
 
     // Fan-in reduction of other threads' reduction data:
-    this_thread.reduce( m_reduce );
+    host_reduce( this_thread , m_reduce );
+    // this_thread.reduce( m_reduce );
   }
 
   ParallelReduce( const size_type      work_count ,
@@ -285,7 +325,8 @@ public:
     }
 
     // Fan-in reduction of other threads' reduction data:
-    this_thread.reduce( m_reduce );
+    // this_thread.reduce( m_reduce );
+    host_reduce( this_thread , m_reduce );
   }
 
 public:

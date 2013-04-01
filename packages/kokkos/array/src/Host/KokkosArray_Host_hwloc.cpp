@@ -303,7 +303,7 @@ void HostInternalHWLOC::print_configuration( std::ostream & s ) const
       << std::endl ;
 
     for ( Host::size_type i = 0 ; i < HostInternal::m_thread_count ; ++i ) {
-      const HostThread & thread = * HostInternal::m_thread[i] ;
+      const HostThread & thread = * HostThread::get_thread(i);
 
       unsigned gang_rank = 0 ;
       unsigned worker_rank = 0 ;

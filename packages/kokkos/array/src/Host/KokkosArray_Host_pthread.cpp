@@ -122,10 +122,9 @@ void HostWorkerBlock::execute_on_thread( HostThread & ) const
 //----------------------------------------------------------------------------
 // Performance critical function: thread waits while value == *state
 
-void HostThread::wait( const HostThread::State flag )
+void host_wait( volatile int * const state , const int value )
 {
-  const long value = flag ;
-  while ( value == m_state ) {
+  while ( value == *state ) {
     sched_yield();
   }
 }

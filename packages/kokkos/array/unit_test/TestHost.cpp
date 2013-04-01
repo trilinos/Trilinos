@@ -194,11 +194,11 @@ struct HostFunctor {
 
       reduce.init( thread.reduce_data() );
 
-      thread.barrier();
-      thread.barrier();
-      thread.reduce( reduce );
-      thread.reduce( reduce );
-      thread.barrier();
+      host_barrier( thread );
+      host_barrier( thread );
+      host_reduce( thread , reduce );
+      host_reduce( thread , reduce );
+      host_barrier( thread );
     }
 };
 

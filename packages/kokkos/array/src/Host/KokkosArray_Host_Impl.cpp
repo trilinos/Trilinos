@@ -72,78 +72,25 @@ void host_decrement_not_thread_safe( const void * ptr );
 
 //----------------------------------------------------------------------------
 
-HostThread::~HostThread()
-{
-  m_fan_count    = 0 ;
-  m_thread_rank  = std::numeric_limits<unsigned>::max();
-  m_thread_count = 0 ;
-  m_gang_rank    = std::numeric_limits<unsigned>::max();
-  m_gang_count   = 0 ;
-  m_worker_rank  = std::numeric_limits<unsigned>::max();
-  m_worker_count = 0 ;
-  m_reduce       = 0 ;
-
-  for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
-}
-
-HostThread::HostThread()
-{
-  m_fan_count    = 0 ;
-  m_thread_rank  = std::numeric_limits<unsigned>::max();
-  m_thread_count = 0 ;
-  m_gang_rank    = std::numeric_limits<unsigned>::max();
-  m_gang_count   = 0 ;
-  m_worker_rank  = std::numeric_limits<unsigned>::max();
-  m_worker_count = 0 ;
-  m_reduce       = 0 ;
-  m_state        = ThreadActive ;
-
-  for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
-}
-
-std::pair< Host::size_type , Host::size_type >
-HostThread::work_range( const size_type work_count ) const
-{
-  // A 'chunk' is HostSpace::WORK_ALIGNMENT atomic units of work
-
-  const size_type chunk_count =
-    ( work_count + HostSpace::WORK_ALIGNMENT - 1 ) / HostSpace::WORK_ALIGNMENT ;
-
-  // Each thread performs some number of 'chunks' of work:
-
-  const size_type work_per_thread =
-    HostSpace::WORK_ALIGNMENT * (( chunk_count + m_thread_count - 1 ) / m_thread_count );
-
-  // Range of work:
-
-  const size_type work_begin =
-    std::min( m_thread_rank * work_per_thread , work_count );
-
-  const size_type work_end =
-    std::min( work_begin + work_per_thread , work_count );
-
-  return std::pair<size_type,size_type>( work_begin , work_end );
-}
-
-void HostThread::barrier()
+void host_barrier( HostThread & thread )
 {
   // The 'wait' function repeatedly polls the 'thread' state
   // which may reside in a different NUMA region.
   // Thus the fan is intra-node followed by inter-node
   // to minimize inter-node memory access.
 
-  for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
+  for ( unsigned i = 0 ; i < thread.fan_count() ; ++i ) {
     // Wait until thread enters the 'Rendezvous' state
-    m_fan[i]->wait( HostThread::ThreadActive );
+    host_wait( & thread.fan(i).m_state , HostThread::ThreadActive );
   }
 
-  if ( m_thread_rank ) {
-    set(  HostThread::ThreadRendezvous );
-    wait( HostThread::ThreadRendezvous );
+  if ( thread.rank() ) {
+    thread.m_state = HostThread::ThreadRendezvous ;
+    host_wait( & thread.m_state , HostThread::ThreadRendezvous );
   }
 
-  for ( unsigned i = m_fan_count ; 0 < i ; ) {
-    m_fan[--i]->set( HostThread::ThreadActive );
+  for ( unsigned i = thread.fan_count() ; 0 < i ; ) {
+    thread.fan(--i).m_state = HostThread::ThreadActive ;
   }
 }
 
@@ -155,8 +102,8 @@ void HostThreadWorker::fanin_deactivation( HostThread & thread ) const
   // Thus the fan is intra-node followed by inter-node
   // to minimize inter-node memory access.
 
-  for ( unsigned i = 0 ; i < thread.m_fan_count ; ++i ) {
-    thread.m_fan[i]->wait( HostThread::ThreadActive );
+  for ( unsigned i = 0 ; i < thread.fan_count() ; ++i ) {
+    host_wait( & thread.fan(i).m_state , HostThread::ThreadActive );
   }
 }
 
@@ -164,7 +111,7 @@ void HostInternal::activate_threads()
 {
   // Activate threads to call 'm_worker.execute_on_thread'
   for ( unsigned i = m_thread_count ; 1 < i ; ) {
-    m_thread[--i]->set( HostThread::ThreadActive );
+    HostThread::get_thread(--i)->m_state = HostThread::ThreadActive ;
   }
 }
 
@@ -202,8 +149,10 @@ void HostInternal::execute_serial( const HostThreadWorker & worker )
 
   for ( unsigned i = m_thread_count ; 1 < i ; ) {
     --i ;
-    m_thread[i]->set(  HostThread::ThreadActive );
-    m_thread[i]->wait( HostThread::ThreadActive );
+    HostThread & thread = * HostThread::get_thread(i);
+
+    thread.m_state = HostThread::ThreadActive ;
+    host_wait( & thread.m_state , HostThread::ThreadActive );
   }
 
   // Execute on the master thread,
@@ -216,7 +165,10 @@ void HostInternal::execute_serial( const HostThreadWorker & worker )
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-HostInternal::~HostInternal() {}
+HostInternal::~HostInternal()
+{
+  HostThread::clear_thread(0);
+}
 
 HostInternal::HostInternal()
   : m_worker_block()
@@ -237,7 +189,7 @@ HostInternal::HostInternal()
   }
 
   // Master thread:
-  m_thread[0] = & m_master_thread ;
+  HostThread::set_thread( 0 , & m_master_thread );
 
   m_master_thread.m_fan_count    = 0 ;
   m_master_thread.m_thread_rank  = 0 ;
@@ -350,7 +302,7 @@ bool HostInternal::initialize_thread(
 
       if ( n & worker_rank ) break ;
 
-      HostThread * const th = m_thread[ thread_rank + n ];
+      HostThread * const th = HostThread::get_thread( thread_rank + n );
 
       if ( 0 == th ) return false ;
 
@@ -364,7 +316,7 @@ bool HostInternal::initialize_thread(
 
         if ( n & gang_rank ) break ;
 
-        HostThread * const th = m_thread[ thread_rank + n * m_worker_count ];
+        HostThread * const th = HostThread::get_thread( thread_rank + n * m_worker_count );
 
         if ( 0 == th ) return false ;
 
@@ -396,12 +348,15 @@ void HostInternal::finalize()
   while ( 1 < m_thread_count ) {
     --m_thread_count ;
 
-    if ( m_thread[ m_thread_count ] ) {
-      m_master_thread.set( HostThread::ThreadInactive );
+    HostThread * const thread = HostThread::get_thread( m_thread_count );
 
-      m_thread[ m_thread_count ]->set( HostThread::ThreadTerminating );
+    if ( 0 != thread ) {
 
-      m_master_thread.wait( HostThread::ThreadInactive );
+      m_master_thread.m_state = HostThread::ThreadInactive ;
+
+      thread->m_state = HostThread::ThreadTerminating ;
+
+      host_wait( & m_master_thread.m_state , HostThread::ThreadInactive );
 
       // Is in the 'ThreadTerminating" state
     }
@@ -415,7 +370,7 @@ void HostInternal::finalize()
   m_master_thread.m_gang_count   = 1 ;
   m_master_thread.m_worker_rank  = 0 ;
   m_master_thread.m_worker_count = 1 ;
-  m_master_thread.set( HostThread::ThreadActive );
+  m_master_thread.m_state = HostThread::ThreadActive ;
 
   for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
     m_master_thread.m_fan[i] = 0 ;
@@ -434,14 +389,14 @@ void HostInternal::driver( const size_t thread_rank )
 
     HostThread this_thread ;
 
-    m_thread[ thread_rank ] = & this_thread ;
+    HostThread::set_thread( thread_rank , & this_thread );
 
     // Initialize thread ranks and fan-in relationships:
 
     if ( initialize_thread( thread_rank , this_thread ) ) {
 
       // Inform master thread that binding and initialization succeeded.
-      m_master_thread.set( HostThread::ThreadActive );
+      m_master_thread.m_state = HostThread::ThreadActive ;
 
       try {
         // Work loop:
@@ -455,10 +410,10 @@ void HostInternal::driver( const size_t thread_rank )
           m_worker->fanin_deactivation( this_thread );
 
           // Deactivate this thread:
-          this_thread.set(  HostThread::ThreadInactive );
+          this_thread.m_state = HostThread::ThreadInactive ;
 
           // Wait to be activated or terminated:
-          this_thread.wait( HostThread::ThreadInactive );
+          host_wait( & this_thread.m_state , HostThread::ThreadInactive );
         }
       }
       catch( const std::exception & x ) {
@@ -482,9 +437,11 @@ void HostInternal::driver( const size_t thread_rank )
 
   // Notify master thread that this thread has terminated.
 
-  m_thread[ thread_rank ] = 0 ;
+  HostThread::clear_thread( thread_rank );
 
-  m_master_thread.set( HostThread::ThreadTerminating );
+  // m_thread[ thread_rank ] = 0 ;
+
+  m_master_thread.m_state = HostThread::ThreadTerminating ;
 }
 
 //----------------------------------------------------------------------------
@@ -528,7 +485,7 @@ bool HostInternal::spawn_threads( const unsigned gang_count ,
 
   for ( unsigned rank = m_thread_count ; ok_spawn_threads && 0 < --rank ; ) {
 
-    m_master_thread.set( HostThread::ThreadInactive );
+    m_master_thread.m_state = HostThread::ThreadInactive ;
 
     // Spawn thread executing the 'driver' function.
     ok_spawn_threads = spawn( rank );
@@ -536,15 +493,15 @@ bool HostInternal::spawn_threads( const unsigned gang_count ,
     if ( ok_spawn_threads ) {
 
       // Thread spawned, wait for thread to activate:
-      m_master_thread.wait( HostThread::ThreadInactive );
+      host_wait( & m_master_thread.m_state , HostThread::ThreadInactive );
 
       // Check if the thread initialized and bound correctly:
       ok_spawn_threads = HostThread::ThreadActive == m_master_thread.m_state ;
 
       if ( ok_spawn_threads ) { // Wait for spawned thread to deactivate
-        HostThread * volatile * const threads = m_thread ;
-        threads[ rank ]->wait( HostThread::ThreadActive );
-        // m_thread[ rank ]->wait( HostThread::ThreadActive );
+        // HostThread * volatile * const threads = m_thread ;
+        // host_wait( & threads[rank]->m_state , HostThread::ThreadActive );
+        host_wait( & HostThread::get_thread(rank)->m_state , HostThread::ThreadActive );
       }
     }
   }

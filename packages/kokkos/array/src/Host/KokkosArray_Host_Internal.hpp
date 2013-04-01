@@ -94,8 +94,11 @@ protected:
   unsigned         m_worker_count ;  // Number of threads per NUMA node
   unsigned         m_reduce_scratch_size ;   // Sizeof reduction memory
   HostThread       m_master_thread ;
+
   //! Array of all worker threads (including master); accessible to the threads.
+#if 0
   HostThread     * m_thread[ HostThread::max_thread_count ];
+#endif
 
   const HostThreadWorker * volatile m_worker ;
 

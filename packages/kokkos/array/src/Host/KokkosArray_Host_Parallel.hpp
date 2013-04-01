@@ -44,122 +44,22 @@
 #ifndef KOKKOSARRAY_HOST_PARALLEL_HPP
 #define KOKKOSARRAY_HOST_PARALLEL_HPP
 
+#include <Host/KokkosArray_Host_Thread.hpp>
+
 namespace KokkosArray {
 namespace Impl {
 
 class HostInternal ;
 
+void host_wait( volatile int * const state , const int value );
+
 //----------------------------------------------------------------------------
-/** \brief  A thread within the pool. */
-
-class HostThread {
-public:
-
-  typedef Host::size_type size_type ;
-
-  inline size_type rank() const { return m_thread_rank ; }
-
-  inline size_type gang_rank() const { return m_gang_rank ; }
-
-  inline size_type worker_rank() const { return m_worker_rank ; }
-
-  //----------------------------------------------------------------------
-  /** \brief  Compute a range of work for this thread's rank */
-
-  std::pair< size_type , size_type >
-    work_range( const size_type work_count ) const ;
-
-  //----------------------------------------------------------------------
-  /** \brief  This thread waits for each fan-in thread in the barrier.
-   *          Once all threads have fanned in then fan-out reactivation.
-   *
-   *  A parallel work function must call barrier on all threads.
-   */
-  void barrier();
-
-  //----------------------------------------------------------------------
-
-  inline
-  void * reduce_data() const
-    {
-#if defined( __INTEL_COMPILER )
-__assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
-#endif
-      return m_reduce ;
-    }
-
-  //----------------------------------------------------------------------
-  /** \brief  This thread participates in the fan-in reduction.
-   *
-   */
-  template< class ReduceOper >
-  inline
-  void reduce( const ReduceOper & reduce )
-    {
-      // Fan-in reduction of other threads' reduction data.
-
-      for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
-
-        // Wait for source thread to complete its work and
-        // set its own state to 'Rendezvous'.
-        m_fan[i]->wait( HostThread::ThreadActive );
-
-        // Join source thread reduce data.
-        reduce.join( reduce_data() , m_fan[i]->reduce_data() );
-
-        // Reset the source thread to 'Active' state.
-        m_fan[i]->set( HostThread::ThreadActive );
-      }
-
-      if ( m_thread_rank ) {
-        // If this is not the root thread then it will give its
-        // reduction data to another thread.
-        // Set the 'Rendezvous' state.
-        // Wait for the other thread to process reduction data
-        // and then reactivate this thread.
-
-        set(  HostThread::ThreadRendezvous );
-        wait( HostThread::ThreadRendezvous );
-      }
-      else {
-        reduce.finalize( reduce_data() );
-      }
-    }
-
-  //----------------------------------------------------------------------
-
-private:
-
-  ~HostThread();
-  HostThread();
-
-  /** \brief States of a worker thread */
-  enum State { ThreadTerminating ///<  Exists, termination in progress
-             , ThreadInactive    ///<  Exists, waiting for work
-             , ThreadActive      ///<  Exists, performing work
-             , ThreadRendezvous  ///<  Exists, waiting in a barrier or reduce
-             };
-
-  void set(  const State flag ) { m_state = flag ; }
-  void wait( const State flag );
-
-  static const unsigned max_fan_count = 16 ;
-  static const unsigned max_thread_count = 1 << max_fan_count ;
-
-  HostThread   *  m_fan[ max_fan_count ] ;
-  size_type       m_fan_count ;
-  size_type       m_thread_rank ;
-  size_type       m_thread_count ;
-  size_type       m_gang_rank ;
-  size_type       m_gang_count ;
-  size_type       m_worker_rank ;
-  size_type       m_worker_count ;
-  void         *  m_reduce ;    ///< Reduction memory
-  long   volatile m_state ;     ///< Thread control flag
-
-  friend class HostInternal ;
-  friend class HostThreadWorker ;
-};
+/** \brief  This thread waits for each fan-in thread in the barrier.
+ *          Once all threads have fanned in then fan-out reactivation.
+ *
+ *  A parallel work function must call barrier on all threads.
+ */
+void host_barrier( HostThread & );
 
 //----------------------------------------------------------------------------
 /** \brief  Base class for a parallel driver executing on a thread pool. */
