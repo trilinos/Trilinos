@@ -127,6 +127,48 @@ namespace panzer {
 
     virtual std::string getType() const;
 
+    /** Used to get the DOFs that have been added to the equation set. This can be used at anytime, however
+      * it returns only DOFs added using the <code>addDOF</code> method. Note that if <code>setupDOFs</code>
+      * has been called, the <code>getProvidedDOFs</code> should be used instead (it also returns more information
+      * about the basis being used).
+      *
+      * \param[out] dofNames The name of all the dofs that have been added so far. Any previous
+      *                      entries in this vector will be discarded.
+      */
+    void getAddedDOFs(std::vector<std::string> & dofNames) const;
+
+    /** \brief Modifying an existing DOF's basis function and integration rule.
+      *
+      * This imples the DOF already has been added and the <code>setupDOFs</code>
+      * method has not been called. Note that this method is public so that non-derived
+      * classes (like mixed in  interfaces can call it). Furthermore, the type of
+      * basis cannot be changed, only the order.
+      *
+      * \param[in] dofName (Required) Name of field to lookup in the unique global
+      *                        indexer. 
+      * \param[in] basisOrder (Required) Polynomial order for the basis for this DOF.
+      * \param[in] integrationOrder (Optional) Order of the integration rule associated with this
+      *                             DOF.  If set to -1 (default), it will use the default
+      *                             integration order.
+      */
+    void updateDOF(const std::string & dofName,
+		   int basisOrder,
+		   int integrationOrder = -1);
+
+    /** \brief Get the basis order for an existing degree of freedom.
+      *
+      * \param[in] dofName (Required) Name of field to lookup in the unique global
+      *                        indexer. 
+      */
+    int getBasisOrder(const std::string & dofName) const;
+
+    /** \brief Get the integration order for an existing degree of freedom.
+      *
+      * \param[in] dofName (Required) Name of field to lookup in the unique global
+      *                        indexer. 
+      */
+    int getIntegrationOrder(const std::string & dofName) const;
+
   protected:
 
     //! Builds the integration rule, basis, DOFs, and default parameter list.  This MUST be called in the constructor of all classes derived form this object.
@@ -274,6 +316,7 @@ namespace panzer {
 
       void print(std::ostream & os) const {
         os << "DOF Desc = \"" << dofName << "\": "
+           << "Basis = (" << basisType << ", \"" << basisOrder << "\"), "
            << "Res = (" << residualName.first << ", \"" << residualName.second << "\"), "
            << "Grad = (" << grad.first << ", \"" << grad.second << "\"), "
            << "Curl = (" << curl.first << ", \"" << curl.second << "\"), "
