@@ -110,6 +110,42 @@ double test_with_matvec(const Epetra_CrsMatrix &A, const Epetra_CrsMatrix &B){
   return norm;
 }
 
+// B here is the "reduced" matrix.  Square matrices w/ Row=Domain=Range only.
+double test_with_matvec_reduced_maps(const Epetra_CrsMatrix &A, const Epetra_CrsMatrix &B, const Epetra_Map & Bfullmap){
+  const Epetra_Map & Amap  = A.DomainMap();
+  Epetra_Vector Xa(Amap), Ya(Amap), Diff(Amap);
+  const Epetra_Map *Bmap  = Bfullmap.NumMyElements() > 0 ? &B.DomainMap() : 0;
+  Epetra_Vector *Xb = Bmap ? new Epetra_Vector(*Bmap) : 0;
+  Epetra_Vector *Yb = Bmap ? new Epetra_Vector(*Bmap) : 0;
+  
+  Epetra_Vector Xb_alias(View,Bfullmap, Bmap ? Xb->Values(): 0);
+  Epetra_Vector Yb_alias(View,Bfullmap, Bmap ? Yb->Values(): 0);
+
+  Epetra_Import Ximport(Bfullmap,Amap);
+
+  // Set the input vector
+  Xa.SetSeed(24601);
+  Xa.Random();
+  Xb_alias.Import(Xa,Ximport,Insert);
+  
+  // Do the multiplies
+  A.Apply(Xa,Ya);
+  if(Bmap) B.Apply(*Xb,*Yb);
+  
+  // Check solution
+  Epetra_Import Yimport(Amap,Bfullmap);
+  Diff.Import(Yb_alias,Yimport,Insert);
+
+
+  Diff.Update(-1.0,Ya,1.0);
+  double norm;
+  Diff.Norm2(&norm);
+
+  delete Xb; delete Yb;
+  return norm;
+}
+
+
 int build_matrix_unfused(const Epetra_CrsMatrix & SourceMatrix, Epetra_Import & RowImporter, Epetra_CrsMatrix *&A){
   int rv=0;
   rv=A->Import(SourceMatrix, RowImporter, Insert);
@@ -255,6 +291,7 @@ int main(int argc, char *argv[])
 #define ENABLE_TEST_3
 #define ENABLE_TEST_4
 #define ENABLE_TEST_5
+#define ENABLE_TEST_6
 
   /////////////////////////////////////////////////////////
   // Test #1: Tridiagonal Matrix; Migrate to Proc 0
@@ -464,6 +501,45 @@ int main(int argc, char *argv[])
     diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
       if(MyPID==0) cout<<"FusedExport: Test #5 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+
+    delete A; delete B; delete Map1; delete Import1; delete Export1;
+  }
+#endif
+
+
+  /////////////////////////////////////////////////////////
+  // Test 6: Tridiagonal Matrix; Migrate to Proc 0, Replace Comm
+  /////////////////////////////////////////////////////////
+#ifdef ENABLE_TEST_6
+  {
+    double diff;
+    ierr=build_test_matrix(Comm,1,A); 
+    long long num_global = A->RowMap().NumGlobalElements64();
+    
+    // New map with all on Proc1
+    if(MyPID==0) Map1=new Epetra_Map(num_global,num_global,(long long)0,Comm);
+    else         Map1=new Epetra_Map(num_global,0,(long long)0,Comm);
+
+    // Execute fused import constructor
+    Import1 = new Epetra_Import(*Map1,A->RowMap());
+    B=new Epetra_CrsMatrix(*A,*Import1,Map1,Map1,true);   
+
+    diff=test_with_matvec_reduced_maps(*A,*B,*Map1);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedImport: Test #6 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+    
+    // Execute fused export constructor
+    delete B;
+    Export1 = new Epetra_Export(A->RowMap(),*Map1);
+    B=new Epetra_CrsMatrix(*A,*Export1,Map1,Map1,true);
+    
+    diff=test_with_matvec_reduced_maps(*A,*B,*Map1);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedExport: Test #6 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
 

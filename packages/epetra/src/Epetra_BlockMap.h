@@ -852,6 +852,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   bool IsDistributedGlobal(long long NumGlobalElements, int NumMyElements) const;
   void CheckValidNGE(long long NumGlobalElements);
   void EndOfConstructorOps();
+
+ protected:
   void CleanupData();
   
   Epetra_BlockMapData * BlockMapData_;

@@ -281,8 +281,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     \param RangeMap [in] The new rangeMap for the new matrix. If not specified,
     then RowImporter.TargetMap() is used.
 
+    \param RestrictCommunicator [in] Restricts the resulting communicator to active 
+    processes only.
   */
-  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter, const Epetra_Map * DomainMap=0, const Epetra_Map * RangeMap=0);
+  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter, const Epetra_Map * DomainMap=0, const Epetra_Map * RangeMap=0, bool RestrictCommunicator = false);
 
   //! Epetra CrsMatrix constructor that also fuses Ex[prt and FillComplete().
   /*!
@@ -318,8 +320,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
 
     \param RangeMap [in] The new rangeMap for the new matrix. If not specified,
     then RowExporter.TargetMap() is used.
+
+    \param RestrictCommunicator [in] Restricts the resulting communicator to active 
+    processes only.
   */
-  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowExporter, const Epetra_Map * DomainMap=0, const Epetra_Map * RangeMap=0);
+  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowExporter, const Epetra_Map * DomainMap=0, const Epetra_Map * RangeMap=0, bool RestrictCommunicator = false);
 
   
   //! Copy constructor.
@@ -1651,7 +1656,8 @@ private:
   void FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, 
 		     const TransferType & RowTransfer, 
 		     const Epetra_Map * DomainMap, 
-		     const Epetra_Map * RangeMap);
+		     const Epetra_Map * RangeMap,
+		     bool RestrictCommunicator);
 
 
 
