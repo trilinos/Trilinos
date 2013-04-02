@@ -712,7 +712,7 @@ namespace stk {
       int err_clp = run_environment.processCommandLine();
       if (err_clp) return err_clp;
 
-      std::string histogram_basic_options = "{file_root: "+histograms_root + " mesh: [edge_length, quality_edge, quality_vol_edge_ratio, volume] }";
+      std::string histogram_basic_options = "{file_root: "+histograms_root + ", mesh: [edge_length, quality_edge, quality_vol_edge_ratio, volume] }";
       int result = 0;
       unsigned failed_proc_rank = 0u;
 
@@ -1130,7 +1130,9 @@ namespace stk {
                               {
                                 // get last step
                                 int step = eMesh.get_database_time_step_count();
-                                eMesh.read_database_at_step(step?step:1);
+                                eMesh.read_database_at_step(step);
+                                //std::cout << "step= " << step << " current_step= " << current_step << std::endl;
+                                //eMesh.read_database_at_step(step?step:1);
                               }
 
                             eMesh.mesh_field_stats(&histograms);

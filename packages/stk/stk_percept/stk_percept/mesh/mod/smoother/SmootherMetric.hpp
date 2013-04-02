@@ -114,12 +114,12 @@ namespace stk {
         for (int i=0; i < jacA.m_num_nodes; i++)
           {
             double detAi = jacA.m_detJ[i];
-            if (detAi < 0)
+            if (detAi <= 0)
               {
                 valid = false;
               }
             double shape_metric = 0.0;
-            if (std::fabs(detAi) > 1.e-10)
+            if (std::fabs(detAi) > 0) //! 1.e-10)
               {
                 DenseMatrix<3,3>& W = jacW.m_J[i];
                 DenseMatrix<3,3>& A = jacA.m_J[i];
@@ -166,7 +166,7 @@ namespace stk {
                 double detAi = jacA.m_detJ[i];
                 double detSAi = jacSA.m_detJ[i];
                 double detWi = jacW.m_detJ[i];
-                if (detAi < 0)
+                if (detAi <= 0)
                   {
                     valid = false;
                   }
@@ -216,7 +216,7 @@ namespace stk {
             //double detWi = jacW.m_detJ[i];
             double FAi = Frobenius(jacA.m_J[i]);
             double FWi = Frobenius(jacW.m_J[i]);
-            if (detAi < 0)
+            if (detAi <= 0)
               {
                 valid = false;
               }
@@ -267,7 +267,7 @@ namespace stk {
           {
             double detAi = jacA.m_detJ[i];
             double detWi = jacW.m_detJ[i];
-            if (detAi < 0)
+            if (detAi <= 0)
               {
                 valid = false;
               }
@@ -333,7 +333,7 @@ namespace stk {
           {
             double detAi = jacA.m_detJ[i];
             double detWi = jacW.m_detJ[i];
-            if (detAi < 0)
+            if (detAi <= 0)
               {
                 valid = false;
               }
@@ -350,7 +350,7 @@ namespace stk {
             // det = h*h*h
             // met = f*f*f/(3^3/2 *det) - 1 = f*f*f/(3*sqrt(3)*det) - 1
             double shape_metric = 0.0;
-            if (detAi > 1.e-15)
+            if (detAi > 0) //! 1.e-15)
               {
                 if (m_use_ref_mesh)
                   {
@@ -440,7 +440,7 @@ namespace stk {
         for (int i=0; i < jacA.m_num_nodes; i++)
           {
             double detAi = jacA.m_detJ[i];
-            if (detAi < 0)
+            if (detAi <= 0)
               {
                 valid = false;
               }
@@ -448,7 +448,7 @@ namespace stk {
             DenseMatrix<3,3>& A = jacA.m_J[i];
 
             double shape_metric = 0.0;
-            if (std::fabs(detAi) > 1.e-15)
+            if (std::fabs(detAi) > 0) //!1.e-15)
               {
                 inverse(W, WI);
                 product(A, WI, T);
@@ -506,7 +506,7 @@ namespace stk {
         for (int i=0; i < jacA.m_num_nodes; i++)
           {
             double detAi = jacA.m_detJ[i];
-            if (detAi < 0)
+            if (detAi <= 0)
               {
                 //valid = false;
               }
@@ -583,7 +583,7 @@ namespace stk {
         for (int i=0; i < jacA.m_num_nodes; i++)
           {
             double detAi = jacA.m_detJ[i];
-            if (detAi < 0)
+            if (detAi <= 0)
               {
                 valid = false;
               }
@@ -619,7 +619,7 @@ namespace stk {
         for (int i=0; i < jacA.m_num_nodes; i++)
           {
             double detAi = jacA.m_detJ[i];
-            if (detAi < 0)
+            if (detAi <= 0)
               {
                 valid = false;
               }

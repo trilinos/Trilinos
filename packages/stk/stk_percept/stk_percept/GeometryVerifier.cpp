@@ -488,7 +488,7 @@ namespace stk
 
       for (jac_data_map::iterator itMap = jac_data.begin(); itMap != jac_data.end(); itMap++)
         {
-          if (1)
+          if (0)
             {
               std::cout << "P[" << p_rank << "] nele = " << itMap->second.numEle << std::endl;
             }

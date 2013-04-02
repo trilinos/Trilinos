@@ -140,7 +140,7 @@ namespace stk {
           }
         }
         catch(YAML::ParserException& e) {
-          std::cout << e.what() << "\n";
+          std::cout << e.what() << " input= " << m_root_string << "\n";
         }
       }
 
@@ -149,10 +149,10 @@ namespace stk {
       void parse(const YAML::Node& node, Histograms<T>& histograms)
       {
         set_if_present(node, "time", histograms.m_database_time, double(-1.0));
-        std::cout << "m_database_time = " << histograms.m_database_time << std::endl;
+        //std::cout << "m_database_time = " << histograms.m_database_time << std::endl;
 
         set_if_present(node, "step", histograms.m_database_step, int(-1));
-        std::cout << "m_database_step = " << histograms.m_database_step << std::endl;
+        //std::cout << "m_database_step = " << histograms.m_database_step << std::endl;
 
         const YAML::Node *y_element_fields = node.FindValue("fields");
         if (y_element_fields)
@@ -183,7 +183,7 @@ namespace stk {
                   if (valid_values.find(mesh_field_name) == valid_values.end())
                     throw std::runtime_error("HistogramsParser:: unrecognized option: " + mesh_field_name);
                   std::string title="Mesh Field "+mesh_field_name;
-                  std::cout << "HistogramsParser::parse: adding " << mesh_field_name << std::endl;
+                  //std::cout << "HistogramsParser::parse: adding " << mesh_field_name << std::endl;
                   histograms["mesh."+mesh_field_name].set_titles(title);
                 }
             }

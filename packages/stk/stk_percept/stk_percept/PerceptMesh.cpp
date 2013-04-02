@@ -6,6 +6,8 @@
 #include <map>
 #include <stdio.h>
 
+#include <boost/unordered_set.hpp>
+
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
@@ -1918,8 +1920,9 @@ namespace stk {
 
       if ((timestep_count > 0 && step <= 0) || (step > timestep_count))
         {
-          std::cout << "step is out of range for PerceptMesh::read_database_at_step, step="+toString(step)+" timestep_count= "+toString(timestep_count) << std::endl;
-          throw std::runtime_error("step is out of range for PerceptMesh::read_database_at_step, step="+toString(step)+" timestep_count= "+toString(timestep_count));
+          std::cout << "Warning: step is out of range for PerceptMesh::read_database_at_step, step="+toString(step)+" timestep_count= "+toString(timestep_count) << std::endl;
+          if (timestep_count > 0) 
+            throw std::runtime_error("Error: step is out of range for PerceptMesh::read_database_at_step, step="+toString(step)+" timestep_count= "+toString(timestep_count));
         }
       // FIXME
       m_exodusStep = step;
@@ -4166,7 +4169,7 @@ namespace stk {
       const std::vector<GeometryEvaluator*>& geomEvals = mesh_geometry.getGeomEvaluators();
       for (unsigned i = 0; i < geomEvals.size(); i++)
         {
-          //if (!m_eMesh.get_rank()) std::cout << " tmp srk adding geomEvals[i]->mPart->name()..." << geomEvals[i]->mPart->name() << std::endl;
+          if (!get_rank()) std::cout << " tmp srk adding geomEvals[i]->mPart->name()..." << geomEvals[i]->mPart->name() << std::endl;
           newOmittedParts.push_back(geomEvals[i]->mPart);
         }
       set_io_omitted_parts(newOmittedParts);
@@ -4617,26 +4620,34 @@ namespace stk {
       stk::mesh::Part* part = get_fem_meta_data()->get_part(part_name);
       VERIFY_OP_ON(part, !=, 0, "Need to call add_inner_skin_part first - no available inner skin part");
 
+      typedef boost::unordered_set<stk::mesh::Entity> NodeSet;
       if (remove_previous_part_nodes)
         {
-          get_bulk_data()->modification_begin();
           PartVector add_parts, remove_parts(1,part);
 
           Selector on_skin_part(*part);
+          NodeSet nodes;
           const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
           for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
                 stk::mesh::Bucket & bucket = **k ;
-                if (bucket.owned() && on_skin_part(bucket))
+                if (bucket.owned()
+                    && on_skin_part(bucket))
                   {
                     const unsigned num_nodes_in_bucket = bucket.size();
                     for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
                       {
                         stk::mesh::Entity node = bucket[iNode];
                         if (node.is_valid())
-                          get_bulk_data()->change_entity_parts( node, add_parts, remove_parts );
+                          nodes.insert(node);
                       }
                   }
+            }
+
+          get_bulk_data()->modification_begin();
+          for (NodeSet::iterator iter=nodes.begin(); iter != nodes.end(); ++iter)
+            {
+              get_bulk_data()->change_entity_parts( *iter, add_parts, remove_parts );
             }
           get_bulk_data()->modification_end();
         }
@@ -4683,17 +4694,17 @@ namespace stk {
                   EntitySideVector boundary_local;
                   boundary_analysis( *get_bulk_data(), elements_closure, element_rank(), boundary_local);
 
-                  std::cout << "block name= " << parts[ip]->name() << " owned_elements.size= " << owned_elements.size() 
+                  std::cout << "block name= " << parts[ip]->name() << " owned_elements.size= " << owned_elements.size()
                             << " elements_closure.size= " << elements_closure.size()
-                            << " boundary_local.size()= " << boundary_local.size() 
-                            << " boundary.size()= " << boundary.size() 
+                            << " boundary_local.size()= " << boundary_local.size()
+                            << " boundary.size()= " << boundary.size()
                             << std::endl;
                 }
 
             }
         }
 
-      get_bulk_data()->modification_begin();
+      NodeSet node_set;
 
       PartVector add_parts(1,part), remove_parts;
       std::vector<stk::mesh::Entity> node_vector;
@@ -4701,15 +4712,20 @@ namespace stk {
         {
           EntitySide& es = boundary[iesv];
           node_vector.resize(0);
-          if (es.inside.entity.is_valid()) 
+          if (es.inside.entity.is_valid())
             get_nodes_on_side(es.inside.entity, es.inside.side_ordinal, node_vector);
           if (es.outside.entity.is_valid())
             get_nodes_on_side(es.outside.entity, es.outside.side_ordinal, node_vector);
           for (unsigned inv=0; inv < node_vector.size(); inv++)
             {
               if (node_vector[inv].bucket().owned())
-                get_bulk_data()->change_entity_parts( node_vector[inv], add_parts, remove_parts );
+                node_set.insert(node_vector[inv]);
             }
+        }
+      get_bulk_data()->modification_begin();
+      for (NodeSet::iterator iter=node_set.begin(); iter != node_set.end(); ++iter)
+        {
+          get_bulk_data()->change_entity_parts( *iter, add_parts, remove_parts );
         }
       get_bulk_data()->modification_end();
       return part;
@@ -4835,7 +4851,7 @@ namespace stk {
           if (pos == 0)
             {
               std::string fname = hname.substr(efname.length());
-              std::cout << "PerceptMesh::mesh_field_stats looking for field= " << fname << std::endl;
+              //std::cout << "PerceptMesh::mesh_field_stats looking for field= " << fname << std::endl;
               pos = fname.find("#");
               int index = -2;
               if (pos != std::string::npos)
@@ -4854,7 +4870,7 @@ namespace stk {
           if (pos == 0)
             {
               std::string name = hname.substr(mname.length());
-              std::cout << "PerceptMesh::mesh_field_stats looking for mesh option= " << name << std::endl;
+              //std::cout << "PerceptMesh::mesh_field_stats looking for mesh option= " << name << std::endl;
               if (name == "edge_length")
                 {
                   double min_max_ave[3];
