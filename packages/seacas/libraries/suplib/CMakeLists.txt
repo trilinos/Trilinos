@@ -18,7 +18,7 @@ SET(HEADERS  argparse.inc add_to_log.h SL_tokenize.h GetLongOpt.h smart_assert.h
 SET(SOURCES
 	abrstr.f    copint.f    dbpini.f    ffaddv.f    ffrrng.f    indexi.f    intadd.f    logerr.f    numeql.f    prterr.f    wrapup.f
 	addv.f      cpuifc.f    dbpqa.f     ffchar.f    ffvrng.f    indexn.f    intstr.f    lowstr.f    numstr.f    ran1.f      
-	argparse.f  cpyint.f    dbvini.f    ffexst.f    indexr.f    iowdsz.f    matstr.f    okabrt.f    scneof.f
+	argparse.F  cpyint.f    dbvini.f    ffexst.f    indexr.f    iowdsz.f    matstr.f    okabrt.f    scneof.f
 	banner.f    cpylog.f    engnot.f    ffintg.f    gslibv.f    indexx.f    ismax.f     memerr.f    opnfil.f    screrr.f
 	bannr2.f    cpyrea.f    engstr.f    ffmatc.f    heap_sort.f inigrd.f    ismin.f     minmax.f    packt.f     shocmd.f
 	batch.f     cpyrgt.f    ffaddc.f    ffneed.f    help.f      iniint.f    lenstr.f    minmxl.f    pcklab.f    sqzstr.f
