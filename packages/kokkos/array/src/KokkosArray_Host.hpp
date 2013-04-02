@@ -150,9 +150,6 @@ public:
    */
   static size_type detect_gang_worker_capacity();
 
-  //! An alignment size for arrays
-  static size_type detect_cache_line_size();
-
   //@}
 };
 

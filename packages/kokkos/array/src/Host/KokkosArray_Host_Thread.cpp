@@ -52,6 +52,18 @@
 namespace KokkosArray {
 namespace Impl {
 
+//----------------------------------------------------------------------------
+
+void * host_allocate_not_thread_safe(
+  const std::string    & label ,
+  const std::type_info & scalar_type ,
+  const size_t           scalar_size ,
+  const size_t           scalar_count );
+
+void host_decrement_not_thread_safe( const void * ptr );
+
+//----------------------------------------------------------------------------
+
 class HostThreadSentinel {
 public:
   HostThreadSentinel();
@@ -63,11 +75,16 @@ public:
   void clear_thread( const unsigned );
   void set_relationships();
 
+  static void resize_reduce( HostThread & , unsigned );
+
+  void resize_reduce( unsigned );
+
 private:
 
   void clear_relationships();
 
-  int relationships ;
+  unsigned relationships ;
+  unsigned reduce_size ;
 };
 
 //----------------------------------------------------------------------------
@@ -82,6 +99,7 @@ HostThread::HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
+  m_reduce_size  = 0 ;
   m_reduce       = 0 ;
   m_gang_tag     = 0 ;
   m_worker_tag   = 0 ;
@@ -91,6 +109,11 @@ HostThread::HostThread()
 
 HostThread::~HostThread()
 {
+  if ( m_reduce ) {
+    std::cerr << "KokkosArray::Impl::HostThread WARNING : destroyed with allocated reduction memory"
+              << std::endl ;
+  }
+
   m_state        = ThreadInactive ;
   m_fan_count    = 0 ;
   m_thread_rank  = std::numeric_limits<unsigned>::max();
@@ -99,11 +122,42 @@ HostThread::~HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
+  m_reduce_size  = 0 ;
   m_reduce       = 0 ;
   m_gang_tag     = 0 ;
   m_worker_tag   = 0 ;
 
   for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
+}
+
+void HostThread::resize_reduce( unsigned size )
+{
+  if ( ( 0 == size ) || ( m_reduce_size < size ) ) {
+
+    const unsigned rem = size % HostSpace::MEMORY_ALIGNMENT ;
+
+    if ( rem ) size += HostSpace::MEMORY_ALIGNMENT - rem ;
+
+    if ( m_reduce ) {
+      host_decrement_not_thread_safe( m_reduce );
+      m_reduce = 0 ;
+    }
+
+    m_reduce_size = size ;
+
+    if ( m_reduce_size ) {
+
+      m_reduce = host_allocate_not_thread_safe( "reduce_scratch_space" , typeid(unsigned char) , 1 , m_reduce_size );
+
+      // Guaranteed multiple of 'unsigned'
+
+      unsigned * ptr = (unsigned *)( m_reduce );
+      unsigned * const end = ptr + m_reduce_size / sizeof(unsigned );
+
+      // touch on this thread
+      while ( ptr < end ) *ptr++ = 0 ;
+    }
+  }
 }
 
 void HostThread::set_thread_relationships()
@@ -129,6 +183,7 @@ HostThreadSentinel::singleton()
 
 HostThreadSentinel::HostThreadSentinel()
 : relationships(0)
+, reduce_size(0)
 {
   for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
     HostThread::m_thread[i] = 0 ;
@@ -242,6 +297,8 @@ void HostThreadSentinel::set_relationships()
     if ( HostThread::m_thread[i] != 0 )
       threads[ thread_rank++ ] = HostThread::m_thread[i] ;
   }
+
+  if ( 0 == thread_rank ) return ;
 
   const unsigned thread_count = thread_rank ;
 

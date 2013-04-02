@@ -238,9 +238,6 @@ DeepCopy<HostSpace,HostSpace>
 
 namespace KokkosArray {
 
-size_t HostSpace::detect_cache_line_size()
-{ return Impl::HostInternal::singleton().m_cache_line_size ; }
-
 void HostSpace::assert_master_thread( const char * const name )
 {
   if ( ! Impl::HostInternal::singleton().is_master_thread() ) {

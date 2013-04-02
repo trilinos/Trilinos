@@ -51,7 +51,9 @@ namespace Impl {
 
 class HostInternal ;
 
-void host_wait( volatile int * const state , const int value );
+void host_thread_wait( volatile int * const state , const int value );
+void host_thread_lock();
+void host_thread_unlock();
 
 //----------------------------------------------------------------------------
 /** \brief  This thread waits for each fan-in thread in the barrier.
@@ -60,32 +62,6 @@ void host_wait( volatile int * const state , const int value );
  *  A parallel work function must call barrier on all threads.
  */
 void host_barrier( HostThread & );
-
-//----------------------------------------------------------------------------
-/** \brief  Base class for a parallel driver executing on a thread pool. */
-
-struct HostThreadWorker {
-public:
-
-  virtual ~HostThreadWorker() {}
-
-  void execute() const ;
-
-  /** \brief  Virtual method called on threads */
-  virtual void execute_on_thread( HostThread & ) const = 0 ;
-
-  /** \brief Wait for fanin/fanout threads to deactivate themselves. */
-  void fanin_deactivation( HostThread & thread ) const ;
-
-protected:
-
-  HostThreadWorker() {}
-
-private:
-
-  HostThreadWorker( const HostThreadWorker & );
-  HostThreadWorker & operator = ( const HostThreadWorker & );
-};
 
 //----------------------------------------------------------------------------
 

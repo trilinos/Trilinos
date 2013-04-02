@@ -113,7 +113,7 @@ void host_reduce( HostThread & this_thread ,
 
     // Wait for source thread to complete its work and
     // set its own state to 'Rendezvous'.
-    host_wait( & this_thread.fan(i).m_state , HostThread::ThreadActive );
+    host_thread_wait( & this_thread.fan(i).m_state , HostThread::ThreadActive );
 
     // Join source thread reduce data.
     reduce.join( this_thread.reduce_data() ,
@@ -131,7 +131,7 @@ void host_reduce( HostThread & this_thread ,
     // and then reactivate this thread.
 
     this_thread.m_state = HostThread::ThreadRendezvous ;
-    host_wait( & this_thread.m_state , HostThread::ThreadRendezvous );
+    host_thread_wait( & this_thread.m_state , HostThread::ThreadRendezvous );
   }
   else {
     reduce.finalize( this_thread.reduce_data() );

@@ -112,21 +112,23 @@ bool HostInternal::spawn( const size_t thread_rank )
 }
 
 //----------------------------------------------------------------------------
-
-void HostWorkerBlock::execute_on_thread( HostThread & ) const
-{
-  pthread_mutex_lock(   & host_internal_pthread_mutex );
-  pthread_mutex_unlock( & host_internal_pthread_mutex );
-}
-
-//----------------------------------------------------------------------------
 // Performance critical function: thread waits while value == *state
 
-void host_wait( volatile int * const state , const int value )
+void host_thread_wait( volatile int * const state , const int value )
 {
   while ( value == *state ) {
     sched_yield();
   }
+}
+
+void host_thread_lock()
+{
+  pthread_mutex_lock( & host_internal_pthread_mutex );
+}
+
+void host_thread_unlock()
+{
+  pthread_mutex_unlock( & host_internal_pthread_mutex );
 }
 
 } // namespace Impl
@@ -134,51 +136,4 @@ void host_wait( volatile int * const state , const int value )
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-namespace KokkosArray {
-
-bool Host::sleep()
-{
-  Impl::HostInternal & h = Impl::HostInternal::singleton();
-
-  const bool is_ready   = NULL == h.m_worker ;
-        bool is_blocked = & h.m_worker_block == h.m_worker ;
-
-  if ( is_ready ) {
-    pthread_mutex_lock( & Impl::host_internal_pthread_mutex );
-
-    h.m_worker = & h.m_worker_block ;
-
-    // Activate threads so that they will proceed from
-    // spinning state to being blocked on the mutex.
-
-    h.activate_threads();
-
-    is_blocked = true ;
-  }
-
-  return is_blocked ;
-}
-
-bool Host::wake()
-{
-  Impl::HostInternal & h = Impl::HostInternal::singleton();
-
-  const bool is_blocked = & h.m_worker_block == h.m_worker ;
-        bool is_ready   = NULL == h.m_worker ;
-
-  if ( is_blocked ) {
-    pthread_mutex_unlock( & Impl::host_internal_pthread_mutex );
-
-    h.m_worker_block.fanin_deactivation( h.m_master_thread );
-
-    h.m_worker = NULL ;
-
-    is_ready = true ;
-  }
-
-  return is_ready ;
-}
-
-} // namespace KokkosArray
 

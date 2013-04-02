@@ -138,6 +138,8 @@ __assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
   static
   void clear_thread( const unsigned entry );
 
+  void resize_reduce( unsigned size );
+
   //----------------------------------------------------------------------
 
   static const unsigned max_fan_count = 16 ;
@@ -158,6 +160,7 @@ private:
   size_type     m_gang_count ;
   size_type     m_worker_rank ;
   size_type     m_worker_count ;
+  size_type     m_reduce_size ;
   void        * m_reduce ;    ///< Reduction memory
 
 public:
@@ -175,7 +178,51 @@ public:
              };
 
   friend class HostThreadSentinel ;
-  friend class HostInternal ;
+};
+
+//----------------------------------------------------------------------------
+/** \brief  Base class for a parallel driver executing on a thread pool. */
+
+struct HostThreadWorker {
+public:
+
+  virtual ~HostThreadWorker() {}
+
+  void execute() const ;
+  void execute_serial() const ;
+
+  /** \brief  Virtual method called on threads */
+  virtual void execute_on_thread( HostThread & ) const = 0 ;
+
+  /** \brief Wait for fanin/fanout threads to deactivate themselves. */
+  void fanin_deactivation( HostThread & thread ) const ;
+
+protected:
+
+  HostThreadWorker() {}
+
+private:
+
+  HostThreadWorker( const HostThreadWorker & );
+  HostThreadWorker & operator = ( const HostThreadWorker & );
+};
+
+//----------------------------------------------------------------------------
+
+template < class Device >
+struct HostThreadResizeReduce ;
+
+template <>
+struct HostThreadResizeReduce< Host > : public HostThreadWorker {
+
+  const unsigned m_size ;
+
+  HostThreadResizeReduce( unsigned size )
+  : m_size(size)
+  { HostThreadWorker::execute_serial(); }
+
+  void execute_on_thread( HostThread & thread ) const
+  { thread.resize_reduce( m_size ); }
 };
 
 //----------------------------------------------------------------------------

@@ -61,14 +61,24 @@
 
 namespace KokkosArray {
 namespace Impl {
+namespace {
 
-void * host_allocate_not_thread_safe(
-  const std::string    & label ,
-  const std::type_info & scalar_type ,
-  const size_t           scalar_size ,
-  const size_t           scalar_count );
+class HostWorkerBlock : public HostThreadWorker {
+public:
 
-void host_decrement_not_thread_safe( const void * ptr );
+  void execute_on_thread( HostThread & ) const 
+  {
+    host_thread_lock();
+    host_thread_unlock();
+  }
+
+  HostWorkerBlock()  {}
+  ~HostWorkerBlock() {}
+};
+
+const HostWorkerBlock worker_block ;
+
+} // namespace
 
 //----------------------------------------------------------------------------
 
@@ -81,12 +91,12 @@ void host_barrier( HostThread & thread )
 
   for ( unsigned i = 0 ; i < thread.fan_count() ; ++i ) {
     // Wait until thread enters the 'Rendezvous' state
-    host_wait( & thread.fan(i).m_state , HostThread::ThreadActive );
+    host_thread_wait( & thread.fan(i).m_state , HostThread::ThreadActive );
   }
 
   if ( thread.rank() ) {
     thread.m_state = HostThread::ThreadRendezvous ;
-    host_wait( & thread.m_state , HostThread::ThreadRendezvous );
+    host_thread_wait( & thread.m_state , HostThread::ThreadRendezvous );
   }
 
   for ( unsigned i = thread.fan_count() ; 0 < i ; ) {
@@ -103,7 +113,7 @@ void HostThreadWorker::fanin_deactivation( HostThread & thread ) const
   // to minimize inter-node memory access.
 
   for ( unsigned i = 0 ; i < thread.fan_count() ; ++i ) {
-    host_wait( & thread.fan(i).m_state , HostThread::ThreadActive );
+    host_thread_wait( & thread.fan(i).m_state , HostThread::ThreadActive );
   }
 }
 
@@ -152,7 +162,7 @@ void HostInternal::execute_serial( const HostThreadWorker & worker )
     HostThread & thread = * HostThread::get_thread(i);
 
     thread.m_state = HostThread::ThreadActive ;
-    host_wait( & thread.m_state , HostThread::ThreadActive );
+    host_thread_wait( & thread.m_state , HostThread::ThreadActive );
   }
 
   // Execute on the master thread,
@@ -161,6 +171,9 @@ void HostInternal::execute_serial( const HostThreadWorker & worker )
   // Worker threads are returned to the ThreadInactive state.
   m_worker = NULL ;
 }
+
+void HostThreadWorker::execute_serial() const
+{ HostInternal::singleton().execute_serial( *this ); }
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -171,16 +184,12 @@ HostInternal::~HostInternal()
 }
 
 HostInternal::HostInternal()
-  : m_worker_block()
-
-  , m_gang_capacity( 1 )
+  : m_gang_capacity( 1 )
   , m_worker_capacity( 0 )
 
-  , m_cache_line_size( 64 /* default guess */ )
   , m_thread_count( 1 )
   , m_gang_count( 1 )
   , m_worker_count( 1 )
-  , m_reduce_scratch_size( 0 )
 {
   m_worker = NULL ;
 
@@ -205,64 +214,15 @@ void HostInternal::print_configuration( std::ostream & s ) const
 
 //----------------------------------------------------------------------------
 
-inline
-void HostInternal::resize_reduce_thread( HostThread & thread ) const
-{
-  if ( thread.m_reduce ) {
-    host_decrement_not_thread_safe( thread.m_reduce );
-    thread.m_reduce = 0 ;
-  }
-
-  if ( m_reduce_scratch_size ) {
-
-    thread.m_reduce = host_allocate_not_thread_safe( "reduce_scratch_space" , typeid(unsigned char) , 1 , m_reduce_scratch_size );
-
-    // Guaranteed multiple of 'unsigned'
-
-    unsigned * ptr = (unsigned *)( thread.m_reduce );
-    unsigned * const end = ptr + m_reduce_scratch_size / sizeof(unsigned );
-  
-    // touch on this thread
-    while ( ptr < end ) *ptr++ = 0 ;
-  }
-}
-
-struct HostWorkerResizeReduce : public HostThreadWorker
-{
-  void execute_on_thread( HostThread & ) const ;
-
-  ~HostWorkerResizeReduce() {}
-  HostWorkerResizeReduce() {}
-};
-
-void HostWorkerResizeReduce::execute_on_thread( HostThread & thread ) const
-{ HostInternal::singleton().resize_reduce_thread( thread ); }
-
-
-inline
-void HostInternal::resize_reduce_scratch( unsigned size )
-{
-  if ( 0 == size || m_reduce_scratch_size < size ) {
-    // Round up to cache line size:
-    const unsigned rem = size % m_cache_line_size ;
-
-    if ( rem ) size += m_cache_line_size - rem ;
-  
-    m_reduce_scratch_size = size ;
-
-    const HostWorkerResizeReduce work ;
-
-    execute_serial( work );
-  }
-}
-
 void * HostInternal::reduce_scratch() const
 {
   return m_master_thread.reduce_data();
 }
 
 void host_resize_scratch_reduce( unsigned size )
-{ HostInternal::singleton().resize_reduce_scratch( size ); }
+{
+  HostThreadResizeReduce<Host> tmp(size);
+}
 
 void * host_scratch_reduce()
 { return HostInternal::singleton().reduce_scratch(); }
@@ -281,7 +241,7 @@ void HostInternal::finalize()
 {
   verify_inactive("finalize()");
 
-  resize_reduce_scratch( 0 );
+  host_resize_scratch_reduce( 0 );
 
   // Release and clear worker threads:
   while ( 1 < m_thread_count ) {
@@ -295,7 +255,7 @@ void HostInternal::finalize()
 
       thread->m_state = HostThread::ThreadTerminating ;
 
-      host_wait( & m_master_thread.m_state , HostThread::ThreadInactive );
+      host_thread_wait( & m_master_thread.m_state , HostThread::ThreadInactive );
 
       // Is in the 'ThreadTerminating" state
     }
@@ -340,7 +300,7 @@ void HostInternal::driver( const size_t thread_rank )
         this_thread.m_state = HostThread::ThreadInactive ;
 
         // Wait to be activated or terminated:
-        host_wait( & this_thread.m_state , HostThread::ThreadInactive );
+        host_thread_wait( & this_thread.m_state , HostThread::ThreadInactive );
       }
     }
     catch( const std::exception & x ) {
@@ -377,7 +337,7 @@ void HostInternal::verify_inactive( const char * const method ) const
     std::ostringstream msg ;
     msg << "KokkosArray::Host::" << method << " FAILED: " ;
 
-    if ( & m_worker_block == m_worker ) {
+    if ( & worker_block == m_worker ) {
       msg << "Device is blocked" ;
     }
     else {
@@ -399,7 +359,7 @@ bool HostInternal::spawn_threads( const unsigned gang_count ,
   m_gang_count   = gang_count ;
   m_worker_count = worker_count ;
   m_thread_count = gang_count * worker_count ;
-  m_worker       = & m_worker_block ;
+  m_worker       = & worker_block ;
 
   bool ok_spawn_threads = true ;
 
@@ -413,13 +373,13 @@ bool HostInternal::spawn_threads( const unsigned gang_count ,
     if ( ok_spawn_threads ) {
 
       // Thread spawned, wait for thread to activate:
-      host_wait( & m_master_thread.m_state , HostThread::ThreadInactive );
+      host_thread_wait( & m_master_thread.m_state , HostThread::ThreadInactive );
 
       // Check if the thread initialized and bound correctly:
       ok_spawn_threads = HostThread::ThreadActive == m_master_thread.m_state ;
 
       if ( ok_spawn_threads ) { // Wait for spawned thread to deactivate
-        host_wait( & HostThread::get_thread(rank)->m_state , HostThread::ThreadActive );
+        host_thread_wait( & HostThread::get_thread(rank)->m_state , HostThread::ThreadActive );
       }
     }
   }
@@ -489,7 +449,7 @@ void HostInternal::initialize( const unsigned gang_count ,
     KokkosArray::Impl::throw_runtime_exception( msg.str() );
   }
 
-  resize_reduce_scratch( 1024 );
+  host_resize_scratch_reduce( 1024 );
 }
 
 //----------------------------------------------------------------------------
@@ -520,8 +480,50 @@ Host::size_type Host::detect_gang_capacity()
 Host::size_type Host::detect_gang_worker_capacity()
 { return Impl::HostInternal::singleton().m_worker_capacity ; }
 
-Host::size_type Host::detect_cache_line_size()
-{ return Impl::HostInternal::singleton().m_cache_line_size ; }
+//----------------------------------------------------------------------------
+
+bool Host::sleep()
+{
+  Impl::HostInternal & h = Impl::HostInternal::singleton();
+
+  const bool is_ready   = NULL == h.m_worker ;
+        bool is_blocked = & Impl::worker_block == h.m_worker ;
+
+  if ( is_ready ) {
+    Impl::host_thread_lock();
+
+    h.m_worker = & Impl::worker_block ;
+
+    // Activate threads so that they will proceed from
+    // spinning state to being blocked on the mutex.
+
+    h.activate_threads();
+
+    is_blocked = true ;
+  }
+
+  return is_blocked ;
+}
+
+bool Host::wake()
+{
+  Impl::HostInternal & h = Impl::HostInternal::singleton();
+
+  const bool is_blocked = & Impl::worker_block == h.m_worker ;
+        bool is_ready   = NULL == h.m_worker ;
+
+  if ( is_blocked ) {
+    Impl::host_thread_unlock();
+
+    Impl::worker_block.fanin_deactivation( h.m_master_thread );
+
+    h.m_worker = NULL ;
+
+    is_ready = true ;
+  }
+
+  return is_ready ;
+}
 
 /*--------------------------------------------------------------------------*/
 

@@ -458,7 +458,6 @@ HostInternalHWLOC::HostInternalHWLOC()
   // Subsequent levels of hierarchy:
 
   int node_symmetry = 1 ;
-  int cache_line_size = -1 ;
 
   int core_per_node = -1 ;
   int pu_per_core = -1 ;
@@ -498,27 +497,6 @@ HostInternalHWLOC::HostInternalHWLOC()
       if ( pu_count != pu_per_core ) { node_symmetry = 0 ; }
 
       if ( pu_count < pu_per_core ) { pu_per_core = pu_count ; }
-
-      // Use the largest cache line size
-      // assuming the largest will be a multiple of the smallest...
-
-      const hwloc_obj_t core_cache_info =
-        hwloc_get_shared_cache_covering_obj( m_host_topology , core );
-
-      if ( core_cache_info && core_cache_info->attr ) {
-
-        if ( -1 == cache_line_size ) {
-          cache_line_size = core_cache_info->attr->cache.linesize ;
-        }
-
-        if ( cache_line_size != (int) core_cache_info->attr->cache.linesize ) {
-          node_symmetry = 0 ;
-        }
-
-        if ( cache_line_size < (int) core_cache_info->attr->cache.linesize ) {
-          cache_line_size = (int) core_cache_info->attr->cache.linesize ;
-        }
-      }
     }
   }
 
@@ -527,10 +505,6 @@ HostInternalHWLOC::HostInternalHWLOC()
 
   HostInternal::m_worker_capacity = core_per_node * pu_per_core ;
   HostInternal::m_gang_capacity   = node_count ;
-
-  if ( 0 < cache_line_size ) {
-    HostInternal::m_cache_line_size = cache_line_size ;
-  }
 }
 
 HostInternalHWLOC::~HostInternalHWLOC()

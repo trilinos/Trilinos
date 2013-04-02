@@ -53,16 +53,6 @@
 namespace KokkosArray {
 namespace Impl {
 
-class HostWorkerBlock : public HostThreadWorker {
-public:
-  void execute_on_thread( HostThread & ) const ;
-
-  HostWorkerBlock()  {}
-  ~HostWorkerBlock() {}
-};
-
-//----------------------------------------------------------------------------
-
 /**
  * \class HostInternal
  * \brief Internal implementation of intraprocess parallelism on the host.
@@ -83,12 +73,9 @@ public:
 class HostInternal {
 protected:
 
-  HostWorkerBlock  m_worker_block ;
-
   unsigned         m_gang_capacity ;   // Maximum number of gangs
   unsigned         m_worker_capacity ; // Maixmum number of workers per gang
 
-  unsigned         m_cache_line_size ; //
   unsigned         m_thread_count ;  // Number of threads
   unsigned         m_gang_count ;    // Number of NUMA nodes used
   unsigned         m_worker_count ;  // Number of threads per NUMA node
@@ -130,8 +117,6 @@ private:
 
   void activate_threads();
 
-  void execute_serial( const HostThreadWorker & worker );
-
 public:
   /// \brief Assert at run time that the calling worker thread is inactive.
   ///
@@ -159,6 +144,8 @@ public:
   void finalize();
 
   virtual void print_configuration( std::ostream & ) const ;
+
+  void execute_serial( const HostThreadWorker & worker );
 
   inline void execute( const HostThreadWorker & worker );
 
