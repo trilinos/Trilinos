@@ -72,7 +72,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory of the coordinates");
     validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "(advanced) Factory computing the number of partition.");
-    validParamList->set< int >                   ("rowWeight",               7, "Default weight to rows (total weight = nnz + rowWeight");
+    validParamList->set< int >                   ("rowWeight",               0, "Default weight to rows (total weight = nnz + rowWeight");
 
     return validParamList;
   }
