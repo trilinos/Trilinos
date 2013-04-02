@@ -361,62 +361,63 @@ namespace Tpetra {
     /// return Teuchos::OrdinalTraits<GlobalOrdinal>::invalid().
     GlobalOrdinal getGlobalElement (LocalOrdinal localIndex) const;
 
-    /// \brief Return the process IDs and corresponding local IDs for the given global IDs.
+    /// \brief Return the process ranks and corresponding local
+    ///   indices for the given global indices.
     ///
-    /// This operation should always be called as a collective over
-    /// all processes in the communicator.  For a distributed
+    /// This operation must always be called as a collective over all
+    /// processes in the Map's communicator.  For a distributed
     /// noncontiguous Map, this operation requires communication.
     ///
-    /// \param GIDList [in] List of global IDs for which to find
-    ///   process IDs and local IDs.  These global IDs need not be
-    ///   owned by the calling process.  Indeed, they need not be
-    ///   owned by any process.
-    /// \param nodeIDList [out] List of process IDs corresponding to
-    ///   the given global IDs.  If a global ID does not belong to any
-    ///   process, the resulting process ID is -1.
-    /// \param LIDList [out] List of local IDs (that is, the local ID
-    ///   on the process that owns them) corresponding the given
-    ///   global IDs.  If a global ID does not have a local ID, the
-    ///   resulting local ID is
+    /// \param GIDList [in] List of global indices for which to find
+    ///   process ranks and local indices.  These global indices need
+    ///   not be owned by the calling process.  Indeed, they need not
+    ///   be owned by any process.
+    /// \param nodeIDList [out] List of process rank corresponding to
+    ///   the given global indices.  If a global index does not belong
+    ///   to any process, the resulting process rank is -1.
+    /// \param LIDList [out] List of local indices (that is, the local
+    ///   index on the process that owns them) corresponding to the
+    ///   given global indices.  If a global index does not have a
+    ///   local index, the resulting local index is
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     ///
     /// \pre nodeIDList.size() == GIDList.size()
     /// \pre LIDList.size() == GIDList.size()
     ///
     /// \return IDNotPresent indicates that for at least one global
-    ///   ID, we could not find the corresponding process ID.
+    ///   index, we could not find the corresponding process rank.
     ///   Otherwise, return AllIDsPresent.
     ///
-    /// \note This is crucial technology used in \c Export, \c Import,
-    ///   \c CrsGraph, and \c CrsMatrix.
+    /// \note This is crucial technology used in Export, Import,
+    ///   CrsGraph, and CrsMatrix.
     LookupStatus
     getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal>& GIDList,
                         const Teuchos::ArrayView<                int>& nodeIDList,
                         const Teuchos::ArrayView<       LocalOrdinal>& LIDList) const;
 
-    /// \brief Return the process IDs for the given global IDs.
+    /// \brief Return the process ranks for the given global indices.
     ///
-    /// This operation should always be called as a collective over
-    /// all processes in the communicator.  For a distributed
+    /// This method must always be called as a collective over all
+    /// processes in the Map's communicator.  For a distributed
     /// noncontiguous Map, this operation requires communication.
     ///
-    /// \param GIDList [in] List of global IDs for which to find
-    ///   process IDs and local IDs.  These global IDs need not be
-    ///   owned by the calling process.  Indeed, they need not be
-    ///   owned by any process.
-    /// \param nodeIDList [out] List of process IDs corresponding to
-    ///   the given global IDs.  If a global ID does not belong to any
-    ///   process, the resulting process ID is -1.
+    /// \param GIDList [in] List of global indices for which to find
+    ///   process ranks and local indices.  These global indices need
+    ///   not be owned by the calling process.  Indeed, they need not
+    ///   be owned by any process.
+    /// \param nodeIDList [out] List of process ranks corresponding to
+    ///   the given global indices.  If a global index does not belong
+    ///   to any process, the resulting process rank is -1.
     ///
     /// \pre nodeIDList.size() == GIDList.size()
     ///
     /// \return IDNotPresent indicates that for at least one global
-    ///   ID, we could not find the corresponding process ID.
+    ///   index, we could not find the corresponding process rank.
     ///   Otherwise, return AllIDsPresent.
     ///
     /// \note For a distributed noncontiguous Map, this operation
     ///   requires communication.  This is crucial technology used in
-    ///   \c Export, \c Import, \c CrsGraph, and \c CrsMatrix.
+    ///   Export, Import, CrsGraph, and CrsMatrix.
     LookupStatus
     getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal> & GIDList,
                         const Teuchos::ArrayView<                int> & nodeIDList) const;
@@ -661,8 +662,14 @@ namespace Tpetra {
     Map() {}
 
   private:
-    //! Create this Map's Directory, if it hasn't been created already.
-    void setupDirectory();
+    /// \brief Create this Map's Directory, if it hasn't been created already.
+    ///
+    /// This method must be called collectively over all processes in
+    /// the Map's communicator.
+    ///
+    /// This is declared "const" so that we can call it in
+    /// getRemoteIndexList() to create the Directory on demand.
+    void setupDirectory () const;
 
     /// \brief Determine whether this map is globally distributed or locally replicated.
     ///
@@ -749,7 +756,20 @@ namespace Tpetra {
     /// this mapping.
     RCP<global_to_local_table_type> glMap_;
 
-    /// Directory: finds the process rank and local ID for any given global ID.
+    /// \brief Object that can find the process rank and local index
+    ///   for any given global index.
+    ///
+    /// Creating this object is a collective operation over all
+    /// processes in the Map's communicator.  getRemoteIndexList() is
+    /// the only method that needs this object, and it also happens to
+    /// be a collective.  Thus, we create the Directory on demand in
+    /// getRemoteIndexList().  This saves the communication cost of
+    /// creating the Directory, for some Maps which are never involved
+    /// in an Import or Export operation.  For example, a nonsquare
+    /// sparse matrix (CrsMatrix) with row and range Maps the same
+    /// would never need to construct an Export object.  This is a
+    /// common case for the prolongation or restriction operators in
+    /// algebraic multigrid.
     ///
     /// \warning Never allow this pointer to escape the Map.  The
     ///   directory must hold an RCP to this Map, which must be
@@ -757,7 +777,10 @@ namespace Tpetra {
     ///   allowing the Directory to persist beyond this Map would
     ///   result in a dangling RCP. We avoid this by not sharing the
     ///   Directory.
-    Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
+    ///
+    /// \note This is declared "mutable" so that getRemoteIndexList()
+    ///   can create the Directory on demand.
+    mutable Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
 
@@ -913,6 +936,10 @@ namespace Tpetra {
     map->glMap_             = glMap_;
     // New Map gets the new Node instance.
     map->node_              = node2;
+    // mfh 02 Apr 2013: While Map only needs to create the Directory
+    // on demand in getRemoteIndexList, we have a Directory here that
+    // we can clone inexpensively, so there is no harm in creating it
+    // here.
     if (! directory_.is_null ()) {
       // The weak reference prevents circularity.
       map->directory_ = directory_->template clone<Node2> (map.create_weak ());

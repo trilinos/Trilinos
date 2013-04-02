@@ -203,7 +203,8 @@ namespace Tpetra {
     lastContiguousGID_ = maxMyGID_;
     contiguous_ = true;
 
-    setupDirectory ();
+    // Create the Directory on demand in getRemoteIndexList().
+    //setupDirectory ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -364,7 +365,8 @@ namespace Tpetra {
     }
 #endif // 0 && defined(HAVE_TPETRA_DEBUG)
 
-    setupDirectory ();
+    // Create the Directory on demand in getRemoteIndexList().
+    //setupDirectory ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -572,7 +574,8 @@ namespace Tpetra {
       "less than the given indexBase = " << indexBase_ << ".");
 #endif // HAVE_TPETRA_DEBUG
 
-    setupDirectory ();
+    // Create the Directory on demand in getRemoteIndexList().
+    //setupDirectory ();
   }
 
 
@@ -998,24 +1001,29 @@ namespace Tpetra {
       map->glMap_ = glMap_;
       map->node_ = node_;
 
-      // This is collective on all processes in the new communicator.
+      // The Directory will be created on demand in getRemoteIndexList().
       //
       // FIXME (mfh 26 Mar 2013) It should be possible to "filter" the
       // directory more efficiently than just recreating it.  If
       // directory recreation proves a bottleneck, we can always
-      // revisit this.  On the other hand, this is only collective
-      // over the new, presumably much smaller communicator, so it may
-      // not be worth the effort to optimize.
-      map->directory_ = null; // just to make sure setDirectory() works
-      map->setupDirectory ();
+      // revisit this.  On the other hand, Directory creation is only
+      // collective over the new, presumably much smaller
+      // communicator, so it may not be worth the effort to optimize.
+      map->directory_ = null;
       return map;
     }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Map<LocalOrdinal,GlobalOrdinal,Node>::setupDirectory() {
-    if (directory_ == Teuchos::null) {
-      directory_ = Teuchos::rcp( new Directory<LocalOrdinal,GlobalOrdinal,Node>(Teuchos::rcp(this,false)) );
+  void
+  Map<LocalOrdinal,GlobalOrdinal,Node>::setupDirectory () const
+  {
+    using Teuchos::rcp;
+    typedef Directory<LocalOrdinal,GlobalOrdinal,Node> directory_type;
+    // Only create the Directory if it hasn't been created yet.
+    // This is a collective operation.
+    if (directory_.is_null ()) {
+      directory_ = rcp (new directory_type (rcp (this, false)));
     }
   }
 
@@ -1024,18 +1032,30 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const GlobalOrdinal> & GIDList,
                     const Teuchos::ArrayView<int> & imageIDList,
                     const Teuchos::ArrayView<LocalOrdinal> & LIDList) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
-        Teuchos::typeName(*this) << "::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries in Map.");
-    return directory_->getDirectoryEntries(GIDList, imageIDList, LIDList);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
+      Teuchos::typeName(*this) << "::getRemoteIndexList: The Map has zero "
+      "entries (globally), so you may not call this method.");
+    // getRemoteIndexList must be called collectively, and Directory
+    // creation is collective too, so it's OK to create the Directory
+    // on demand.
+    setupDirectory ();
+    return directory_->getDirectoryEntries (GIDList, imageIDList, LIDList);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   LookupStatus Map<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(
                     const Teuchos::ArrayView<const GlobalOrdinal> & GIDList,
                     const Teuchos::ArrayView<int> & imageIDList) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
-        Teuchos::typeName(*this) << "::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries in Map.");
-    return directory_->getDirectoryEntries(GIDList, imageIDList);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
+      Teuchos::typeName(*this) << "::getRemoteIndexList: The Map has zero "
+      "entries (globally), so you may not call this method.");
+    // getRemoteIndexList must be called collectively, and Directory
+    // creation is collective too, so it's OK to create the Directory
+    // on demand.
+    setupDirectory ();
+    return directory_->getDirectoryEntries (GIDList, imageIDList);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
