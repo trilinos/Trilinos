@@ -575,13 +575,13 @@ namespace Teuchos
   void LAPACK<OrdinalType, ScalarType>::POEQU(const OrdinalType n, const ScalarType* A, const OrdinalType lda, MagnitudeType* S, MagnitudeType* scond, MagnitudeType* amax, OrdinalType* info) const
   {
     // Test the input parameters
-    info = 0;
+    *info = 0;
     if (n < 0) {
-      info = -1;
+      *info = -1;
     } else if (lda < TEUCHOS_MAX(1, n)) {
-      info = -3;
+      *info = -3;
     }
-    if (info != 0) {
+    if (*info != 0) {
       return;
     }
 
@@ -600,11 +600,11 @@ namespace Teuchos
     // Find the minimum and maximum diagonal elements
     S[0] = ScalarTraits<ScalarType>::magnitude( A[0] );
     MagnitudeType smin = S[0];
-    amax = S[0];
+    *amax = S[0];
     for (OrdinalType i=0; i<n; ++i) {
       S[i] = ScalarTraits<ScalarType>::magnitude( A[i*lda + i] );
       smin = TEUCHOS_MIN( smin, S[i] );
-      amax = TEUCHOS_MAX( amax, S[i] );
+      *amax = TEUCHOS_MAX( *amax, S[i] );
     }
 
     if (smin < mZero) {
@@ -619,7 +619,7 @@ namespace Teuchos
 	S[i] = mOne / ScalarTraits<ScalarType>::squareroot( S[i] );
       }
       // Compute scond = min(S(i)) / max(S(i))
-      *scond = ScalarTraits<ScalarType>::squareroot( smin ) / ScalarTraits<ScalarType>::squareroot( amax );
+      *scond = ScalarTraits<ScalarType>::squareroot( smin ) / ScalarTraits<ScalarType>::squareroot( *amax );
     }
   }
 
@@ -827,15 +827,15 @@ namespace Teuchos
   {
 
     // Test the input parameters
-    info = 0;
+    *info = 0;
     if (m < 0) {
-      info = -1;
+      *info = -1;
     } else if (n < 0) {
-      info = -2;
+      *info = -2;
     } else if (lda < TEUCHOS_MAX(1, m)) {
-      info = -4;
+      *info = -4;
     }
-    if (info != 0) {
+    if (*info != 0) {
       return;
     }
 
@@ -939,19 +939,19 @@ namespace Teuchos
   {
 
     // Test the input parameters
-    info = 0;
+   * info = 0;
     if (m < 0) {
-      info = -1;
+      *info = -1;
     } else if (n < 0) {
-      info = -2;
+      *info = -2;
     } else if (kl < 0) {
-      info = -3;
+      *info = -3;
     } else if (ku < 0) {
-      info = -4;
+      *info = -4;
     } else if (lda < kl+ku+1) {
-      info = -6;
+      *info = -6;
     }
-    if (info != 0) {
+    if (*info != 0) {
       return;
     }
 
