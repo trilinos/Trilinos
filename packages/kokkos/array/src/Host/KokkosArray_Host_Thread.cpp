@@ -44,6 +44,7 @@
 #include <Host/KokkosArray_Host_Thread.hpp>
 
 #include <limits>
+#include <algorithm>
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
@@ -55,48 +56,25 @@ class HostThreadSentinel {
 public:
   HostThreadSentinel();
   ~HostThreadSentinel();
-  static void singleton();
+
+  static HostThreadSentinel & singleton();
+
+  void set_thread( const unsigned , HostThread *);
+  void clear_thread( const unsigned );
+  void set_relationships();
+
+private:
+
+  void clear_relationships();
+
+  int relationships ;
 };
 
-void HostThread::set_thread( const unsigned global_rank , HostThread * t )
-{
-  HostThreadSentinel::singleton();
-
-  const bool ok_rank = global_rank < max_thread_count ;
-  const bool ok_zero = ok_rank && ( 0 == m_thread[ global_rank ] );
-
-  if ( ok_rank && ok_zero ) {
-    m_thread[ global_rank ] = t ;
-  }
-  else {
-    std::ostringstream msg ;
-    msg << "KokkosArray::Impl::HostThread::set_thread( "
-        << global_rank << " , ... ) ERROR: " ;
-    if ( ! ok_rank ) { msg << " OUT OF BOUNDS" ; }
-    else if ( ! ok_zero ) { msg << " ALREADY SET" ; }
-    throw std::runtime_error( msg.str() );
-  }
-}
-
-void HostThread::clear_thread( const unsigned global_rank )
-{
-  HostThreadSentinel::singleton();
-
-  const bool ok_rank = global_rank < max_thread_count ;
-
-  if ( ok_rank ) {
-    m_thread[ global_rank ] = 0 ;
-  }
-  else {
-    std::ostringstream msg ;
-    msg << "KokkosArray::Impl::HostThread::clear_thread( "
-        << global_rank << " , ... ) ERROR:  OUT OF BOUNDS" ;
-    throw std::runtime_error( msg.str() );
-  }
-}
+//----------------------------------------------------------------------------
 
 HostThread::HostThread()
 {
+  m_state        = ThreadInactive ;
   m_fan_count    = 0 ;
   m_thread_rank  = std::numeric_limits<unsigned>::max();
   m_thread_count = 0 ;
@@ -105,13 +83,15 @@ HostThread::HostThread()
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
   m_reduce       = 0 ;
-  m_state        = ThreadActive ;
+  m_gang_tag     = 0 ;
+  m_worker_tag   = 0 ;
 
   for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
 }
 
 HostThread::~HostThread()
 {
+  m_state        = ThreadInactive ;
   m_fan_count    = 0 ;
   m_thread_rank  = std::numeric_limits<unsigned>::max();
   m_thread_count = 0 ;
@@ -120,20 +100,35 @@ HostThread::~HostThread()
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
   m_reduce       = 0 ;
+  m_gang_tag     = 0 ;
+  m_worker_tag   = 0 ;
 
   for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
 }
 
+void HostThread::set_thread_relationships()
+{ HostThreadSentinel::singleton().set_relationships(); }
+
+void HostThread::set_thread( const unsigned entry , HostThread * t )
+{ HostThreadSentinel::singleton().set_thread( entry , t ); }
+
+void HostThread::clear_thread( const unsigned entry )
+{ HostThreadSentinel::singleton().clear_thread( entry ); }
+
 HostThread * HostThread::m_thread[ HostThread::max_thread_count ];
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-void HostThreadSentinel::singleton()
+HostThreadSentinel &
+HostThreadSentinel::singleton()
 {
   static HostThreadSentinel self ;
+  return self ;
 }
 
 HostThreadSentinel::HostThreadSentinel()
+: relationships(0)
 {
   for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
     HostThread::m_thread[i] = 0 ;
@@ -153,6 +148,225 @@ HostThreadSentinel::~HostThreadSentinel()
               << std::endl ;
   }
 }
+
+//----------------------------------------------------------------------------
+
+void HostThreadSentinel::set_thread( const unsigned entry , HostThread * t )
+{
+  clear_relationships();
+
+  const bool ok_rank = entry < HostThread::max_thread_count ;
+  const bool ok_zero = ok_rank && ( 0 == HostThread::m_thread[ entry ] );
+
+  if ( ok_rank && ok_zero ) {
+    HostThread::m_thread[ entry ] = t ;
+  }
+  else {
+    std::ostringstream msg ;
+    msg << "KokkosArray::Impl::HostThread::set_thread( "
+        << entry << " , ... ) ERROR: " ;
+    if ( ! ok_rank ) { msg << " OUT OF BOUNDS" ; }
+    else if ( ! ok_zero ) { msg << " ALREADY SET" ; }
+    throw std::runtime_error( msg.str() );
+  }
+}
+
+void HostThreadSentinel::clear_thread( const unsigned entry )
+{
+  clear_relationships();
+
+  const bool ok_rank = entry < HostThread::max_thread_count ;
+
+  if ( ok_rank ) {
+    HostThread::m_thread[ entry ] = 0 ;
+  }
+  else {
+    std::ostringstream msg ;
+    msg << "KokkosArray::Impl::HostThread::clear_thread( "
+        << entry << " , ... ) ERROR:  OUT OF BOUNDS" ;
+    throw std::runtime_error( msg.str() );
+  }
+}
+
+//----------------------------------------------------------------------------
+
+void HostThreadSentinel::clear_relationships()
+{
+  if ( relationships ) {
+    for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
+      if ( HostThread::m_thread[i] ) {
+        HostThread & thread = * HostThread::m_thread[i] ;
+
+        for ( unsigned j = 0 ; j < HostThread::max_fan_count ; ++j ) {
+          thread.m_fan[j]       = 0 ;
+          thread.m_fan_count    = 0 ;
+          thread.m_thread_rank  = std::numeric_limits<unsigned>::max();
+          thread.m_thread_count = 0 ;
+          thread.m_gang_rank    = std::numeric_limits<unsigned>::max();
+          thread.m_gang_count   = 0 ;
+          thread.m_worker_rank  = std::numeric_limits<unsigned>::max();
+          thread.m_worker_count = 0 ;
+        }
+      }
+    }
+    relationships = 0 ;
+  }
+}
+
+//----------------------------------------------------------------------------
+
+struct HostThreadCompare {
+  bool operator()( const HostThread * const lhs ,
+                   const HostThread * const rhs ) const
+  {
+    return lhs->m_gang_tag   != rhs->m_gang_tag ?
+           lhs->m_gang_tag   <  rhs->m_gang_tag : (
+           lhs->m_worker_tag != rhs->m_worker_tag ?
+           lhs->m_worker_tag <  rhs->m_worker_tag :
+           lhs               < rhs );
+  }
+};
+
+// Set the fan based upon gang and worker rank:
+
+void HostThreadSentinel::set_relationships()
+{
+  if ( relationships ) return ;
+
+  HostThread * threads[ HostThread::max_thread_count ];
+
+  unsigned thread_rank = 0 ;
+  unsigned gang_rank   = 0 ;
+
+  for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
+    if ( HostThread::m_thread[i] != 0 )
+      threads[ thread_rank++ ] = HostThread::m_thread[i] ;
+  }
+
+  const unsigned thread_count = thread_rank ;
+
+  HostThread ** const threads_end = threads + thread_count ;
+
+  std::sort( threads , threads_end , HostThreadCompare() );
+
+  { // Assign thread, gang, and worker counts and ranks:
+
+    HostThread ** gang_begin = threads ;
+    HostThread ** gang_end   = threads ;
+
+    thread_rank = 0 ;
+
+    while ( gang_end < threads_end ) {
+
+      // Span of gang:
+      while ( gang_end < threads_end &&
+              (*gang_begin)->m_gang_tag == (*gang_end)->m_gang_tag ) ++gang_end ;
+
+      // Workers within this gang:
+      const unsigned worker_count = gang_end - gang_begin ;
+
+      // Assign thread_rank, gang_rank, worker_rank
+      // Assign thread_count and worker_count
+      for ( unsigned worker_rank = 0 ;
+                     worker_rank < worker_count ;
+                     ++worker_rank , ++thread_rank ) {
+
+        HostThread & thread = * gang_begin[ worker_rank ];
+
+        // Reassign counts and ranks to be sequential:
+
+        thread.m_thread_count = thread_count ;
+        thread.m_thread_rank  = thread_rank ;
+        thread.m_gang_count   = 0 ;
+        thread.m_gang_rank    = gang_rank ;
+        thread.m_worker_count = worker_count ;
+        thread.m_worker_rank  = worker_rank ;
+      }
+
+      if ( worker_count ) ++gang_rank ;
+
+      gang_begin = gang_end ;
+    }
+
+    // Assign gang_count
+    for ( unsigned i = 0 ; i < thread_count ; ++i ) {
+      threads[i]->m_gang_count = gang_rank ;
+    }
+  }
+
+  // Assign fan in/out for each thread
+  for ( unsigned i = 0 ; i < thread_count ; ++i ) {
+
+    HostThread & thread = * threads[i] ; // i == thread.m_thread_rank
+
+    unsigned fan_count = 0 ;
+
+    // Intra-gang reduction:
+    for ( unsigned n = 1 ; thread.m_worker_rank + n < thread.m_worker_count ; n <<= 1 ) {
+
+      if ( n & thread.m_worker_rank ) break ;
+
+      thread.m_fan[ fan_count++ ] = threads[ thread.m_thread_rank + n ];
+    }
+
+    // Inter-gang reduction:
+    if ( thread.m_worker_rank == 0 ) {
+
+      for ( unsigned n = 1 ; thread.m_gang_rank + n < thread.m_gang_count ; n <<= 1 ) {
+
+        if ( n & thread.m_gang_rank ) break ;
+
+        // Find thread with:
+        //   gank_rank   == thread.m_gang_rank + n
+        //   worker_rank == 0
+        HostThread ** th = threads + i ;
+        while ( (*th)->m_gang_rank < thread.m_gang_rank + n ) {
+          th += (*th)->m_worker_count ;
+        }
+
+        thread.m_fan[ fan_count++ ] = *th ;
+      }
+    }
+
+    thread.m_fan_count = fan_count ;
+  }
+
+  relationships = 1 ;
+
+#if 0
+
+  for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
+    if ( 0 != HostThread::m_thread[i] ) {
+      HostThread & thread = * HostThread::m_thread[i] ;
+
+      std::cout << "HostThread[" << i << "] :"
+                << " rank[ " << thread.m_thread_rank
+                << " / " << thread.m_thread_count << " ]"
+                << " gang[ " << thread.m_gang_tag
+                << " : " << thread.m_gang_rank
+                << " / " << thread.m_gang_count << " ]"
+                << " worker[ " << thread.m_worker_tag
+                << " : " << thread.m_worker_rank
+                << " / " << thread.m_worker_count << " ]"
+                ;
+
+      if ( thread.m_fan_count ) {
+        std::cout << " fan_ranks[" ;
+        for ( unsigned j = 0 ; j < thread.m_fan_count ; ++j ) {
+          std::cout << " " << thread.m_fan[j]->m_thread_rank ;
+        }
+        std::cout << " ]" ;
+      }
+
+      std::cout << std::endl ;
+    }
+  }
+
+#endif
+
+}
+
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace KokkosArray

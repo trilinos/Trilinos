@@ -188,20 +188,9 @@ HostInternal::HostInternal()
     KokkosArray::Impl::throw_runtime_exception( std::string("KokkosArray::Impl::HostInternal FAILED : not initialized on the master thread") );
   }
 
-  // Master thread:
+  // Initialize thread pool with a single master thread:
   HostThread::set_thread( 0 , & m_master_thread );
-
-  m_master_thread.m_fan_count    = 0 ;
-  m_master_thread.m_thread_rank  = 0 ;
-  m_master_thread.m_thread_count = m_thread_count ;
-  m_master_thread.m_gang_rank    = 0 ;
-  m_master_thread.m_gang_count   = m_gang_count ;
-  m_master_thread.m_worker_rank  = 0 ;
-  m_master_thread.m_worker_count = m_worker_count ;
-
-  for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
-    m_master_thread.m_fan[i] = 0 ;
-  }
+  HostThread::set_thread_relationships();
 }
 
 void HostInternal::print_configuration( std::ostream & s ) const
@@ -280,56 +269,6 @@ void * host_scratch_reduce()
 
 //----------------------------------------------------------------------------
 
-bool HostInternal::initialize_thread(
-  const unsigned thread_rank ,
-  HostThread & thread )
-{
-  const unsigned gang_rank   = thread_rank / m_worker_count ;
-  const unsigned worker_rank = thread_rank % m_worker_count ;
-
-  thread.m_thread_rank  = thread_rank ;
-  thread.m_thread_count = m_thread_count ;
-  thread.m_gang_rank    = gang_rank ;
-  thread.m_gang_count   = m_gang_count ;
-  thread.m_worker_rank  = worker_rank ;
-  thread.m_worker_count = m_worker_count ;
-
-  {
-    unsigned fan_count = 0 ;
-
-    // Intranode reduction:
-    for ( unsigned n = 1 ; worker_rank + n < m_worker_count ; n <<= 1 ) {
-
-      if ( n & worker_rank ) break ;
-
-      HostThread * const th = HostThread::get_thread( thread_rank + n );
-
-      if ( 0 == th ) return false ;
-
-      thread.m_fan[ fan_count++ ] = th ;
-    }
-
-    if ( worker_rank == 0 ) {
-
-      // Internode reduction:
-      for ( unsigned n = 1 ; gang_rank + n < m_gang_count ; n <<= 1 ) {
-
-        if ( n & gang_rank ) break ;
-
-        HostThread * const th = HostThread::get_thread( thread_rank + n * m_worker_count );
-
-        if ( 0 == th ) return false ;
-
-        thread.m_fan[ fan_count++ ] = th ;
-      }
-    }
-
-    thread.m_fan_count = fan_count ;
-  }
-
-  return true ;
-}
-
 bool HostInternal::bind_thread( const unsigned thread_rank ) const
 {
   (void) thread_rank; // Prevent compiler warning for unused argument
@@ -362,19 +301,8 @@ void HostInternal::finalize()
     }
   }
 
-  // Reset master thread:
-  m_master_thread.m_fan_count    = 0 ;
-  m_master_thread.m_thread_rank  = 0 ;
-  m_master_thread.m_thread_count = 1 ;
-  m_master_thread.m_gang_rank    = 0 ;
-  m_master_thread.m_gang_count   = 1 ;
-  m_master_thread.m_worker_rank  = 0 ;
-  m_master_thread.m_worker_count = 1 ;
-  m_master_thread.m_state = HostThread::ThreadActive ;
-
-  for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
-    m_master_thread.m_fan[i] = 0 ;
-  }
+  // Reset master thread to the "only thread" condition:
+  HostThread::set_thread_relationships();
 }
 
 //----------------------------------------------------------------------------
@@ -391,55 +319,51 @@ void HostInternal::driver( const size_t thread_rank )
 
     HostThread::set_thread( thread_rank , & this_thread );
 
-    // Initialize thread ranks and fan-in relationships:
+    this_thread.m_state = HostThread::ThreadActive ;
 
-    if ( initialize_thread( thread_rank , this_thread ) ) {
+    // Inform master thread that spawning and binding succeeded.
 
-      // Inform master thread that binding and initialization succeeded.
-      m_master_thread.m_state = HostThread::ThreadActive ;
+    m_master_thread.m_state = HostThread::ThreadActive ;
 
-      try {
-        // Work loop:
+    try {
+      // Work loop:
 
-        while ( HostThread::ThreadActive == this_thread.m_state ) {
+      while ( HostThread::ThreadActive == this_thread.m_state ) {
 
-          // Perform the work:
-          m_worker->execute_on_thread( this_thread );
+        // Perform the work:
+        m_worker->execute_on_thread( this_thread );
 
-          // Wait for fanin threads to self-deactivate:
-          m_worker->fanin_deactivation( this_thread );
+        // Wait for fanin threads to self-deactivate:
+        m_worker->fanin_deactivation( this_thread );
 
-          // Deactivate this thread:
-          this_thread.m_state = HostThread::ThreadInactive ;
+        // Deactivate this thread:
+        this_thread.m_state = HostThread::ThreadInactive ;
 
-          // Wait to be activated or terminated:
-          host_wait( & this_thread.m_state , HostThread::ThreadInactive );
-        }
+        // Wait to be activated or terminated:
+        host_wait( & this_thread.m_state , HostThread::ThreadInactive );
       }
-      catch( const std::exception & x ) {
-        // mfh 29 May 2012: Doesn't calling std::terminate() seem a
-        // little violent?  On the other hand, C++ doesn't define how
-        // to transport exceptions between threads (until C++11).
-        // Since this is a worker thread, it would be hard to tell the
-        // master thread what happened.
-        std::cerr << "Thread " << thread_rank << " uncaught exception : "
-                  << x.what() << std::endl ;
-        std::terminate();
-      }
-      catch( ... ) {
-        // mfh 29 May 2012: See note above on std::terminate().
-        std::cerr << "Thread " << thread_rank << " uncaught exception"
-                  << std::endl ;
-        std::terminate();
-      }
+    }
+    catch( const std::exception & x ) {
+      // mfh 29 May 2012: Doesn't calling std::terminate() seem a
+      // little violent?  On the other hand, C++ doesn't define how
+      // to transport exceptions between threads (until C++11).
+      // Since this is a worker thread, it would be hard to tell the
+      // master thread what happened.
+      std::cerr << "Thread " << thread_rank << " uncaught exception : "
+                << x.what() << std::endl ;
+      std::terminate();
+    }
+    catch( ... ) {
+      // mfh 29 May 2012: See note above on std::terminate().
+      std::cerr << "Thread " << thread_rank << " uncaught exception"
+                << std::endl ;
+      std::terminate();
     }
   }
 
   // Notify master thread that this thread has terminated.
 
   HostThread::clear_thread( thread_rank );
-
-  // m_thread[ thread_rank ] = 0 ;
 
   m_master_thread.m_state = HostThread::ThreadTerminating ;
 }
@@ -477,13 +401,9 @@ bool HostInternal::spawn_threads( const unsigned gang_count ,
   m_thread_count = gang_count * worker_count ;
   m_worker       = & m_worker_block ;
 
-  // Bind the process thread as thread_rank == 0
-  bool ok_spawn_threads = bind_thread( 0 );
+  bool ok_spawn_threads = true ;
 
-  // Spawn threads from last-to-first so that the
-  // fan-in barrier thread relationships can be established.
-
-  for ( unsigned rank = m_thread_count ; ok_spawn_threads && 0 < --rank ; ) {
+  for ( unsigned rank = gang_count * worker_count ; ok_spawn_threads && 0 < --rank ; ) {
 
     m_master_thread.m_state = HostThread::ThreadInactive ;
 
@@ -499,22 +419,15 @@ bool HostInternal::spawn_threads( const unsigned gang_count ,
       ok_spawn_threads = HostThread::ThreadActive == m_master_thread.m_state ;
 
       if ( ok_spawn_threads ) { // Wait for spawned thread to deactivate
-        // HostThread * volatile * const threads = m_thread ;
-        // host_wait( & threads[rank]->m_state , HostThread::ThreadActive );
         host_wait( & HostThread::get_thread(rank)->m_state , HostThread::ThreadActive );
       }
     }
   }
 
+  // Bind the process thread as thread_rank == 0
+  if ( ok_spawn_threads ) { ok_spawn_threads = bind_thread( 0 ); }
+
   m_worker = NULL ;
-
-  // All threads spawned, initialize the master-thread fan-in
-  ok_spawn_threads =
-    ok_spawn_threads && initialize_thread( 0 , m_master_thread );
-
-  if ( ! ok_spawn_threads ) {
-    finalize();
-  }
 
   return ok_spawn_threads ;
 }
@@ -535,6 +448,20 @@ void HostInternal::initialize( const unsigned gang_count ,
       1 < gang_count * worker_count )
     ? spawn_threads( gang_count , worker_count )
     : true ;
+
+  if ( ok_spawn_threads ) {
+    // All threads spawned, initialize the master-thread fan-in
+
+    for ( unsigned rank = 0 ; rank < m_thread_count ; ++rank ) {
+      HostThread::get_thread(rank)->m_gang_tag   = rank / m_worker_count ;
+      HostThread::get_thread(rank)->m_worker_tag = rank % m_worker_count ;
+    }
+
+    HostThread::set_thread_relationships();
+  }
+  else {
+    finalize();
+  }
 
   if ( ! ok_inactive ||
        ! ok_gang_count ||

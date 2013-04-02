@@ -111,18 +111,32 @@ __assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
 
   //----------------------------------------------------------------------
 
-  inline static
-  HostThread * get_thread( const unsigned global_rank )
-    { return m_thread[ global_rank ]; }
-
-  static
-  void set_thread( const unsigned global_rank , HostThread * );
-
-  static
-  void clear_thread( const unsigned global_rank );
-
   ~HostThread();
   HostThread();
+
+  //----------------------------------------------------------------------
+
+  inline static
+  HostThread * get_thread( const unsigned entry )
+    { return m_thread[ entry ]; }
+
+  static
+  void set_thread( const unsigned entry , HostThread * );
+
+  /** \brief  Setup relationships between threads.
+   *
+   *  1) Order threads by group, worker, and
+   *     pointer as a last resort.
+   *  2) Assign thread_rank, gang_rank, and worker_rank
+   *     according to ordering.
+   *  3) Assign hierarchical fan in/out relationships:
+   *     intra-gang followed by inter-gang
+   */
+  static
+  void set_thread_relationships();
+
+  static
+  void clear_thread( const unsigned entry );
 
   //----------------------------------------------------------------------
 
@@ -147,6 +161,9 @@ private:
   void        * m_reduce ;    ///< Reduction memory
 
 public:
+
+  int m_gang_tag ;
+  int m_worker_tag ;
 
   int  volatile m_state ;     ///< Thread control flag
 
