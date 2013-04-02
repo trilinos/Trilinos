@@ -201,7 +201,6 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
-    typedef Superlu<MAT,MV> SOLVER;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -236,7 +235,6 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
-    typedef Superlu<MAT,MV> SOLVER;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -274,7 +272,6 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
@@ -333,7 +330,6 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
@@ -389,7 +385,6 @@ namespace {
     typedef ScalarTraits<cmplx> ST;
     typedef MultiVector<cmplx,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Comm<int> > comm = platform.getComm();
     RCP<Node>             node = platform.getNode();
@@ -459,7 +454,6 @@ namespace {
     typedef ScalarTraits<cmplx> ST;
     typedef MultiVector<cmplx,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
@@ -507,7 +501,6 @@ namespace {
     typedef ScalarTraits<cmplx> ST;
     typedef MultiVector<cmplx,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();

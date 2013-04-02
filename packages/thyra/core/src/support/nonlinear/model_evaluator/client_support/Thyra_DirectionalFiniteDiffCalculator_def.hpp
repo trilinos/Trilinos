@@ -430,7 +430,6 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   using Teuchos::as;
   typedef ModelEvaluatorBase MEB;
   namespace DFDCT = DirectionalFiniteDiffCalculatorTypes;
-  typedef VectorBase<Scalar> V;
   typedef RCP<VectorBase<Scalar> > VectorPtr;
   
   RCP<Teuchos::FancyOStream> out = this->getOStream();

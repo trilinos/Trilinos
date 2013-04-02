@@ -457,7 +457,6 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   using Teuchos::rcp;
   using Teuchos::set_extra_data;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
   typedef MultiVectorBase<Scalar> MV_t;
   typedef LinearOpBase<Scalar> LO_t;
 

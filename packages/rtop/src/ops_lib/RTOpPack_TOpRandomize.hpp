@@ -97,7 +97,6 @@ public:
     const Ptr<ReductTarget> &reduct_obj_inout
     ) const
     {
-      typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
       typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t;
 
 #ifdef TEUCHOS_DEBUG

@@ -1130,9 +1130,6 @@ namespace Teuchos
   void DefaultBLASImpl<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const
   {
 
-    typedef TypeNameTraits<OrdinalType> OTNT;
-    typedef TypeNameTraits<ScalarType> STNT;
-
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     alpha_type alpha_zero = ScalarTraits<alpha_type>::zero();
     beta_type beta_zero = ScalarTraits<beta_type>::zero();

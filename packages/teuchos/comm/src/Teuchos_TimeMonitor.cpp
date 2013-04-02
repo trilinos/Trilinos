@@ -283,7 +283,6 @@ namespace Teuchos {
                            const std::string& filter="")
     {
       using std::make_pair;
-      typedef timer_map_t::const_iterator const_iter_t;
       typedef timer_map_t::iterator iter_t;
 
       timer_map_t theLocalData;

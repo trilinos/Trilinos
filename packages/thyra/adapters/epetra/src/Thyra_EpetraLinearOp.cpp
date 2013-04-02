@@ -82,7 +82,6 @@ void EpetraLinearOp::initialize(
   
   using Teuchos::rcp_dynamic_cast;
   typedef SpmdVectorSpaceBase<double> SPMDVSB;
-  typedef ScalarProdVectorSpaceBase<double> SPVSB;
 
   // Validate input, allocate spaces, validate ...
 #ifdef TEUCHOS_DEBUG
@@ -130,7 +129,6 @@ void EpetraLinearOp::partiallyInitialize(
   
   using Teuchos::rcp_dynamic_cast;
   typedef SpmdVectorSpaceBase<double> SPMDVSB;
-  typedef ScalarProdVectorSpaceBase<double> SPVSB;
 
   // Validate input, allocate spaces, validate ...
 #ifdef TEUCHOS_DEBUG
@@ -305,7 +303,6 @@ void EpetraLinearOp::describe(
   const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
-  typedef Teuchos::ScalarTraits<double> ST;
   using Teuchos::includesVerbLevel;
   using Teuchos::as;
   using Teuchos::rcp_dynamic_cast;

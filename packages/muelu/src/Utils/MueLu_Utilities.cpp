@@ -49,7 +49,6 @@ namespace MueLu {
 
   RCP<Xpetra::Matrix<double, int, int> > Utils2<double, int, int>::Transpose(RCP<Xpetra::Matrix<double, int, int> > const &Op, bool const & optimizeTranspose)
   {
-   typedef Xpetra::Matrix<double,int,int> Matrix;
    typedef double Scalar;
    typedef int LocalOrdinal;
    typedef int GlobalOrdinal;

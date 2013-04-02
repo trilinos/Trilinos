@@ -732,7 +732,6 @@ namespace Tpetra {
 
          // Type abbreviations to make the code more concise.
          typedef global_ordinal_type GO;
-         typedef local_ordinal_type LO;
 
          // List of the global indices of my rows.  They may or may
          // not be contiguous, and the row map need not be one-to-one.
@@ -1223,7 +1222,6 @@ namespace Tpetra {
         using Teuchos::null;
         using Teuchos::RCP;
         using Teuchos::rcp;
-        typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
         typedef typename ArrayView<const GO>::size_type size_type;
 
@@ -1914,7 +1912,6 @@ namespace Tpetra {
             try {
               typedef Teuchos::MatrixMarket::Raw::Element<scalar_type,
                 global_ordinal_type> element_type;
-              typedef typename std::vector<element_type>::const_iterator iter_type;
 
               // Number of rows in the matrix.  If we are in tolerant
               // mode, we've already synchronized dims with the actual
@@ -2521,7 +2518,6 @@ namespace Tpetra {
             try {
               typedef Teuchos::MatrixMarket::Raw::Element<scalar_type,
                 global_ordinal_type> element_type;
-              typedef typename std::vector<element_type>::const_iterator iter_type;
 
               // Number of rows in the matrix.  If we are in tolerant
               // mode, we've already synchronized dims with the actual
@@ -3931,9 +3927,6 @@ namespace Tpetra {
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
         typedef typename Teuchos::ScalarTraits<ST> STS;
-        typedef typename STS::magnitudeType MT;
-        typedef typename Teuchos::ScalarTraits<MT> STM;
-        typedef typename ArrayView<ST>::size_type size_type;
         typedef typename ArrayView<const LO>::const_iterator lo_iter;
         typedef typename ArrayView<const GO>::const_iterator go_iter;
         typedef typename ArrayView<const ST>::const_iterator st_iter;
@@ -4476,9 +4469,6 @@ namespace Tpetra {
         typedef node_type NT;
 
         typedef typename Teuchos::ScalarTraits<ST> STS;
-        typedef typename STS::magnitudeType MT;
-        typedef typename Teuchos::ScalarTraits<MT> STM;
-        typedef typename ArrayView<ST>::size_type size_type;
         typedef Tpetra::MultiVector<ST, LO, GO, NT> MV;
 
         // Make the output stream write floating-point numbers in

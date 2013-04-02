@@ -61,7 +61,6 @@ build_solver(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
   using Teuchos::ParameterList;
   using Teuchos::rcpFromRef;
 
-  typedef Belos::LinearProblem<Scalar,MV,OP> BLinProb;
   Teuchos::RCP<Belos::SolverManager<Scalar,MV,OP> > solver;
 
   RCP<ParameterList> bparams = Teuchos::sublist(rcpFromRef(test_params),"Belos");

@@ -167,11 +167,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, Basic, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
-    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -192,11 +188,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, SetAndGetBlockEntry1, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
-    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -241,11 +233,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, SetAndGetBlockEntry2, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
-    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -289,11 +277,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, SetAndGetBlockEntry3, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
-    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -346,11 +330,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, putScalarAndSumInto1, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
-    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -420,11 +400,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, GlobalLocalRowView1, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
-    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -534,11 +510,8 @@ namespace {
     //Since the matrix is block-diagonal, the apply does not require any
     //communication. (No import of the X vector is required.)
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
     typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -583,11 +556,8 @@ namespace {
     //This test builds a block-diagonal, upper-triangular matrix and tests the
     //solve method.
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
     typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -634,11 +604,8 @@ namespace {
     //This test builds a block-diagonal, upper-triangular matrix and tests the
     //transpose-solve method.
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
     typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -687,11 +654,7 @@ namespace {
     //different than the row-map), and verify that the column-map is correct.
 
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
-    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -761,11 +724,8 @@ namespace {
     //vector in order to get a correct result.
 
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
     typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -848,11 +808,8 @@ namespace {
     //vector in order to get a correct result.
 
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
     typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -936,11 +893,8 @@ namespace {
     //This test uses MultiVectors that have more than 1 column.
 
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
     typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1027,10 +981,7 @@ namespace {
     //different matrix with a different row-map.
 
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1048,7 +999,6 @@ namespace {
     RCP<const BlockMap<LO,GO,Node> > rowmap_src = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks_src,blockSize,indexBase,comm,node) );
     RCP<const BlockMap<LO,GO,Node> > rowmap_dest = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks_dest,blockSize,indexBase,comm,node) );
 
-    typedef typename Array<GO>::size_type Tsize_t;
     Teuchos::ArrayView<const GO> blk_rows = rowmap_src->getNodeBlockIDs();
 
     // create the matrix
@@ -1095,10 +1045,7 @@ namespace {
     //by fillComplete.
 
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1158,10 +1105,7 @@ namespace {
     //the other procs.
 
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1217,12 +1161,9 @@ namespace {
     //vector in order to get a correct result.
 
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
     typedef BlockCrsGraph<LO,GO,Node> BGRAPH;
     typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();

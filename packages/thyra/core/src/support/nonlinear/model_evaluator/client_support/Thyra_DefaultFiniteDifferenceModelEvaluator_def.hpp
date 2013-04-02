@@ -95,7 +95,6 @@ ModelEvaluatorBase::OutArgs<Scalar>
 DefaultFiniteDifferenceModelEvaluator<Scalar>::createOutArgsImpl() const
 {
   typedef ModelEvaluatorBase MEB;
-  typedef MEB::DerivativeSupport DS;
   const RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   const MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
@@ -129,14 +128,10 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModelImpl(
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  //typedef typename ST::magnitudeType ScalarMag;
   typedef ModelEvaluatorBase MEB;
   namespace DFDCT = DirectionalFiniteDiffCalculatorTypes;
 
   typedef RCP<VectorBase<Scalar> > V_ptr;
-  typedef RCP<const VectorBase<Scalar> > CV_ptr;
-  typedef RCP<MultiVectorBase<Scalar> > MV_ptr;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
     "Thyra::DefaultFiniteDifferenceModelEvaluator",inArgs,outArgs

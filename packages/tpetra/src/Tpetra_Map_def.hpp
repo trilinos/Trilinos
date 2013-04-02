@@ -935,7 +935,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
-    typedef Teuchos::OrdinalTraits<GlobalOrdinal> OTG;
 
     // Create the new communicator.  split() returns a valid
     // communicator on all processes.  On processes where color == 0,

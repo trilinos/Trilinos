@@ -306,7 +306,6 @@ namespace Details {
       using Teuchos::ArrayView;
       using Teuchos::as;
       typedef global_ordinal_type GO;
-      typedef typename Array<GO>::iterator iter_type;
       typedef typename Array<GO>::size_type size_type;
 
       Array<GO> allInds (0); // will resize below
@@ -575,8 +574,6 @@ namespace Details {
       using Teuchos::Array;
       using Teuchos::Range1D;
       using Teuchos::RCP;
-      typedef global_ordinal_type GO;
-      typedef scalar_type ST;
 
       const size_t oldNumColumns = numCols_;
       if (newNumColumns == oldNumColumns) {
@@ -1126,7 +1123,6 @@ namespace Tpetra {
     using Teuchos::Range1D;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef global_ordinal_type GO;
 
     const size_t numVecs = X_out.getNumVectors();
 

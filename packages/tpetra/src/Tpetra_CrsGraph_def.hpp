@@ -1832,7 +1832,6 @@ namespace Tpetra {
                       const ArrayView<const LocalOrdinal> &indices)
   {
     typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "insertLocalIndices()";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(

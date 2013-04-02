@@ -1392,9 +1392,10 @@ Epetra_RowMatrix* ML_Epetra::ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
     }
     else B = const_cast<Epetra_RowMatrix *>(&A);
 
-    if (verbose && !A.Comm().MyPID()) 
+    if (verbose && !A.Comm().MyPID()) {
       if (B != &A) printf("** Transforming column map of %s matrix\n", matrixLabel);
       else printf("** Leaving column map of %s matrix unchanged\n",matrixLabel);
+    }
 
     return B;
 } //ModifyEpetraMatrixColMap()

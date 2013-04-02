@@ -15,7 +15,6 @@ int main(int argc, char *argv[]) {
   using Teuchos::Array;
   using Teuchos::rcp;
 
-  typedef double SC;
   typedef int    LO;
   typedef int    GO;
   typedef Kokkos::DefaultNode::DefaultNodeType NO;

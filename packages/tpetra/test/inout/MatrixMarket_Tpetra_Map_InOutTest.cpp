@@ -265,7 +265,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase0, Loca
   typedef GlobalOrdinalType GO;
   typedef NodeType NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
-  typedef typename Array<GO>::size_type size_type;
 
   RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
@@ -321,7 +320,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase1, Loca
   typedef GlobalOrdinalType GO;
   typedef NodeType NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
-  typedef typename Array<GO>::size_type size_type;
 
   RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();

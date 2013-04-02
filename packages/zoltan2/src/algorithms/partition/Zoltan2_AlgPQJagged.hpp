@@ -507,7 +507,6 @@ void pqJagged_getInputValues(
     scalar_t **pqJagged_values, const int &criteriaDim, scalar_t **pqJagged_weights, ArrayView<const gno_t> &pqJagged_gnos, bool &ignoreWeights,
     bool *pqJagged_uniformWeights, bool *pqJagged_uniformParts, scalar_t **pqJagged_partSizes
 ){
-  typedef typename Adapter::node_t node_t;
   typedef typename Adapter::lno_t lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 

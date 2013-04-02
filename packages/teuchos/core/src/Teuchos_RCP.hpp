@@ -645,7 +645,6 @@ Teuchos::rcpWithInvertedObjOwnership(const RCP<T> &child,
   const RCP<ParentT> &parent)
 {
   using std::make_pair;
-  typedef std::pair<RCP<T>, RCP<ParentT> > Pair_t;
   return rcpWithEmbeddedObj(child.getRawPtr(), make_pair(child, parent), false);
 }
 

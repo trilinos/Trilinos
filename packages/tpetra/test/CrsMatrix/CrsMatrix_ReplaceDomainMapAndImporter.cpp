@@ -121,7 +121,6 @@ namespace {
 
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> STS;
-    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename STS::magnitudeType MT;
     typedef ScalarTraits<MT> STM;
 

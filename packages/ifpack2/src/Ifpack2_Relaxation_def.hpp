@@ -536,7 +536,6 @@ void Relaxation<MatrixType>::compute ()
   using Teuchos::REDUCE_MIN;
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
-  typedef Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> import_type;
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
   const scalar_type zero = STS::zero ();
   const scalar_type one = STS::one ();

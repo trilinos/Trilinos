@@ -129,7 +129,6 @@ namespace TSQR {
 		      const Scalar Q[],
 		      const Ordinal ldq)
   {
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
     const Scalar ZERO (0);
     const Scalar ONE (1);
 

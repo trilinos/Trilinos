@@ -1072,7 +1072,6 @@ namespace {
     typedef typename Kokkos::DefaultNode::DefaultNodeType N1;
     typedef Map<LO,GO,N1>      Map1;
     typedef CrsGraph<LO,GO,N1> Graph1;
-    typedef Map<LO,GO,N2>      Map2;
     typedef CrsGraph<LO,GO,N2> Graph2;
     // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();

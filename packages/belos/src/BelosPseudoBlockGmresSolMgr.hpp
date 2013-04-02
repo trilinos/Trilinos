@@ -819,8 +819,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   }
   
   // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP> StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP> StatusTestResNorm_t;
 
   // Check for convergence tolerance
   if (params->isParameter ("Convergence Tolerance")) {

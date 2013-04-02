@@ -393,7 +393,6 @@ void DefaultProductVectorSpace<Scalar>::describe(
   ,const Teuchos::EVerbosityLevel      verbLevel
   ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
   using Teuchos::includesVerbLevel;
   using Teuchos::OSTab;
   RCP<FancyOStream> out = rcpFromRef(out_arg);

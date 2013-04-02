@@ -154,7 +154,6 @@ void ROpGetSubVector<Scalar>::reduct_obj_reinit_impl(
   const Ptr<ReductTarget> &reduct_obj ) const
 {
   using Teuchos::dyn_cast;
-  typedef typename ArrayRCP<Scalar>::iterator iter_t;
   typedef DefaultReductTarget<SubVectorView<Scalar> > DRTSVV;
   DRTSVV &drtsvv_inout_reduct_obj = dyn_cast<DRTSVV>(*reduct_obj);
   SubVectorView<Scalar> sub_vec = drtsvv_inout_reduct_obj.get();

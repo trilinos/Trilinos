@@ -212,8 +212,6 @@ int Ifpack_ICT::Compute()
   int diag_idx = 0;
   EPETRA_CHK_ERR(H_->InsertGlobalValues(0,1,&diag_val, &diag_idx));
 
-  int oldSize = RowNnz;
-
   // The 10 is just a small constant to limit collisons as the actual keys
   // we store are the indices and not integers
   // [0..A_.MaxNumEntries()*LevelofFill()].
@@ -372,8 +370,6 @@ int Ifpack_ICT::Compute()
     ++count;
 
     H_->InsertGlobalValues(row_i, count, &(values[0]), (int*)&(keys[0]));
-
-    oldSize = size;
   }
 
   IFPACK_CHK_ERR(H_->FillComplete());

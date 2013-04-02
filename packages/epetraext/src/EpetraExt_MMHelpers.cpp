@@ -1464,7 +1464,6 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   char* Exports_  = 0;
   char* Imports_  = 0;
   int LenExports_ = 0;
-  int LenImports_ = 0;
   int *Sizes_     = 0;
 
   int SizeOfPacket; 
@@ -1492,8 +1491,6 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
       // sanity check
       if(i>0 &&  ExportPIDs[i] < ExportPIDs[i-1]) throw "ExportPIDs not sorted";
     }
-
-    LenImports_=0; // remove compiler warning.
 
     std::vector<int> RecvSizes(MDistor->NumReceives()+1);
     int msg_tag=MpiComm->GetMpiTag();

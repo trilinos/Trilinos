@@ -1085,7 +1085,6 @@ inline
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_const_cast(const ArrayRCP<T1>& p1)
 {
-  typedef typename ArrayRCP<T1>::size_type size_type;
   T2 *ptr2 = const_cast<T2*>(p1.get());
   return ArrayRCP<T2>(
     ptr2, p1.lowerOffset(), p1.size(),
@@ -1100,7 +1099,6 @@ inline
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_implicit_cast(const ArrayRCP<T1>& p1)
 {
-  typedef typename ArrayRCP<T1>::size_type size_type;
   T2 * raw_ptr2 = p1.get();
   return ArrayRCP<T2>(
     raw_ptr2, p1.lowerOffset(), p1.size(),
