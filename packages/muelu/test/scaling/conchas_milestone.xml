@@ -71,9 +71,7 @@
     </ParameterList>
 
     <ParameterList name="myTransferCoordinatesFact">
-      <Parameter name="factory"                             type="string" value="MultiVectorTransferFactory"/>
-      <Parameter name="Vector name"                         type="string" value="Coordinates"/>
-      <Parameter name="R"                                   type="string" value="myTentativeRFact"/>
+      <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
     </ParameterList>
 
     <ParameterList name="myRAPFact">
@@ -82,7 +80,6 @@
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
       <ParameterList name="TransferFactories">
         <Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/>
-        <!-- <Parameter name="Visualization"                     type="string" value="myAggExportFact"/> -->
       </ParameterList>
     </ParameterList>
 
@@ -91,7 +88,7 @@
 <!-- -->
 
     <ParameterList name="myZoltanInterface">
-      <Parameter name="factory"                             type="string" value="ZoltanInterface"/>
+      <Parameter name="factory"                             type="string" value="Zoltan2Interface"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
       <Parameter name="Coordinates"                         type="string" value="myTransferCoordinatesFact"/>
     </ParameterList>
