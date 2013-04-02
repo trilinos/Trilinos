@@ -396,6 +396,34 @@ int main(int argc, char *argv[]) {
   if (verbose && (ierr == 0)) cout << "Checked OK\n\n" <<endl;
   // done with reference counting testing
 
+  // test subcommunicators
+  ierr=0;
+  if (verbose) 
+    cout << endl << endl
+	 << "*******************************************************************************************" << endl
+	 << "        Testing subcommunicators now......................................................." << endl
+	 << "*******************************************************************************************" << endl << endl;
+
+  // Create a map where everything is on proc 0
+  if (MyPID != 0) {
+    Map1 = new Epetra_BlockMap(-1, 0,  1, IndexBase, Comm);
+  }
+  else {
+    Map1 = new Epetra_BlockMap(-1, NumMyElements, 1, IndexBase, Comm);
+  }
+  
+  // Remove empty processes ... 
+  Map2=0; Map2 = Map1->RemoveEmptyProcesses();
+  
+  if(MyPID==0) {EPETRA_TEST_ERR(Map2 == 0,ierr);}
+  else {EPETRA_TEST_ERR(Map2 != 0,ierr);}
+
+  delete Map1; delete Map2;
+
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && (ierr == 0)) cout << "Checked OK\n\n" <<endl;
+ // done with testing subcommunicators
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
