@@ -1547,7 +1547,7 @@ Epetra_BlockMap * Epetra_BlockMap::RemoveEmptyProcesses() const
       NewMap->BlockMapData_ = new Epetra_BlockMapData(NumGlobalElements64(),0,IndexBase64(),*NewEpetraComm,true);
 
     // Now copy all of the relevent bits of BlockMapData...
-    NewMap->BlockMapData_->Comm_                    = NewEpetraComm;
+    //    NewMap->BlockMapData_->Comm_                    = NewEpetraComm;
     NewMap->BlockMapData_->LID_                     = BlockMapData_->LID_;
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     NewMap->BlockMapData_->MyGlobalElements_int_    = BlockMapData_->MyGlobalElements_int_;
@@ -1588,6 +1588,9 @@ Epetra_BlockMap * Epetra_BlockMap::RemoveEmptyProcesses() const
 
     // Delay directory construction
     NewMap->BlockMapData_->Directory_               = 0;
+
+    // Cleanup
+    delete NewEpetraComm;
 
     return NewMap;
   }

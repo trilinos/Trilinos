@@ -912,6 +912,32 @@ cout << A2;
     EPETRA_TEST_ERR(-65, ierr);
   }
 
+  // Subcommunicator test - only processor 1 has unknowns
+  {
+    int rv=0;
+    int NumMyRows = (MyPID==0) ? NumGlobalEquations : 0;
+    Epetra_Map Map1((long long) -1,NumMyRows, (long long) 0, Comm);
+
+    Epetra_CrsMatrix *A1 = new Epetra_CrsMatrix(Copy, Map1,0);
+    double value = 1.0;
+    for(int i=0; i<NumMyRows; i++) {
+      long long GID = Map1.GID64(i);
+      EPETRA_TEST_ERR(A1->InsertGlobalValues(GID, 1,&value,&GID),ierr);
+    }
+    EPETRA_TEST_ERR(A1->FillComplete(),ierr);
+
+    Epetra_BlockMap *Map2 = Map1.RemoveEmptyProcesses();
+    rv=A1->RemoveEmptyProcessesInPlace(Map2);
+    if(rv!=0) {
+      if (verbose) std::cout << "Subcommunicator test FAILED."<<std::endl;
+      EPETRA_TEST_ERR(-66, ierr);
+    }
+    
+    delete Map2;
+  }
+
+
+
   delete [] Values2;
   delete [] Indices2;
   delete [] myGlobalElements;

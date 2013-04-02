@@ -463,6 +463,17 @@ int Epetra_CrsMatrix::ReplaceDomainMapAndImporter(const Epetra_Map& NewDomainMap
 }
 
 //==============================================================================
+int Epetra_CrsMatrix::RemoveEmptyProcessesInPlace(const Epetra_BlockMap * NewMap) {
+  // Epetra_DistObject things
+  if(NewMap) {
+    Map_  = *NewMap;
+    Comm_ = &NewMap->Comm();
+  }
+
+  return Graph_.RemoveEmptyProcessesInPlace(NewMap);
+}
+
+//==============================================================================
 int Epetra_CrsMatrix::PutScalar(double ScalarConstant) 
 {
   if (StorageOptimized()) {

@@ -1114,7 +1114,19 @@ or if the number of entries in this row exceed the Length parameter.
   */
   int ReplaceDomainMapAndImporter(const Epetra_Map & NewDomainMap, const Epetra_Import * NewImporter);
 
-
+  //! Remove processes owning zero rows from the Maps and their communicator.
+  /** Remove processes owning zero rows from the Maps and their communicator.
+     \warning This method is ONLY for use by experts.
+     
+     \warning We make NO promises of backwards compatibility.
+     This method may change or disappear at any time.
+     
+     \param newMap [in] This <i>must</i> be the result of calling
+     the removeEmptyProcesses() method on the row Map.  If it
+     is not, this method's behavior is undefined.  This pointer
+     will be null on excluded processes.
+  */
+  int RemoveEmptyProcessesInPlace(const Epetra_BlockMap * NewMap);
 
   //! Returns the Epetra_Map object that describes the set of column-indices that appear in each processor's locally owned matrix rows.
   /*!Note that if the matrix was constructed with only a row-map, then until FillComplete() is called, this method returns
