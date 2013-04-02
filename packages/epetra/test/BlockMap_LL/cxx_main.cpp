@@ -414,12 +414,17 @@ int main(int argc, char *argv[]) {
   }
   
   // Remove empty processes ... 
-  Map2=0; Map2 = Map1->RemoveEmptyProcesses();
-  
+  Map2=0; Map2 = Map1->RemoveEmptyProcesses();  
   if(MyPID==0) {EPETRA_TEST_ERR(Map2 == 0,ierr);}
   else {EPETRA_TEST_ERR(Map2 != 0,ierr);}
 
-  delete Map1; delete Map2;
+  // Replace comm
+  const Epetra_Comm * TempComm = Map2 ? &Map2->Comm() : 0;
+  Map3=0; Map3 = Map1->ReplaceCommWithSubset(TempComm);
+  if(MyPID==0) {EPETRA_TEST_ERR(Map3 == 0,ierr);}
+  else {EPETRA_TEST_ERR(Map3 != 0,ierr);}
+
+  delete Map1; delete Map2; delete Map3;
 
 
 #ifdef EPETRA_MPI
