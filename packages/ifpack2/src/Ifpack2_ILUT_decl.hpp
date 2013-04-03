@@ -62,19 +62,32 @@ namespace Teuchos {
 
 namespace Ifpack2 {
 
-//! A class for constructing and using an ILUT factorization
-// of a given Tpetra::RowMatrix.
-
-/*! Ifpack2::ILUT computes an ILUT factorization with specified fill
-    and drop-tolerance, of a given Tpetra::RowMatrix.
-
-  For all valid parameters, see the method ILUT::setParameters.
-*/
+  /// \class ILUT
+  /// \brief ILUT incomplete factorization of a Tpetra sparse matrix.
+  ///
+  /// This class computes an ILUT sparse incomplete factorization with
+  /// specified fill and drop tolerance, of a given sparse matrix
+  /// represented as a Tpetra::RowMatrix.
+  ///
+  /// \warning If the matrix is distributed over multiple MPI
+  ///   processes, this class will not work correctly by itself.  You
+  ///   must use it as a subdomain solver inside of a domain
+  ///   decomposition method like AdditiveSchwarz (which see).  If you
+  ///   use Factory to create an ILUT preconditioner, the Factory will
+  ///   automatically wrap ILUT in AdditiveSchwarz for you, if the
+  ///   matrix's communicator contains multiple processes.
+  ///
+  /// See the documentation of setParameters() for a list of valid
+  /// parameters.
 template<class MatrixType>
-class ILUT: virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
-
+class ILUT :
+    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                           typename MatrixType::local_ordinal_type,
+                                           typename MatrixType::global_ordinal_type,
+                                           typename MatrixType::node_type>
+{
 public:
-  // \name Typedefs
+  //! \name Typedefs
   //@{
 
   //! The type of the entries of the input MatrixType.
@@ -112,17 +125,27 @@ public:
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   //@}
-  // \name Constructors and Destructors
+  //! \name Constructors and Destructors
   //@{
 
-  //! ILUT explicit constuctor with Tpetra::RowMatrix input.
+  /// \brief Constructor
+  ///
+  /// \param A [in] The sparse matrix to factor, as a
+  ///   Tpetra::RowMatrix.  (Tpetra::CrsMatrix inherits from this, so
+  ///   you may use a Tpetra::CrsMatrix here instead.)
+  ///
+  /// The factorization will <i>not</i> modify the input matrix.  It
+  /// stores the L and U factors in the incomplete factorization
+  /// separately.
   explicit ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &A);
 
-  //! ILUT Destructor
+  //! Destructor
   virtual ~ILUT();
 
   //@}
-  //@{ Construction methods
+  //! \name Methods for setting up and computing the incomplete factorization
+  //@{
+
   //! Set parameters for the preconditioner.
   /**
     <ul>
@@ -133,12 +156,16 @@ public:
      <li> "fact: relax value" (magnitude_type)<br>
     </ul>
   */
-  void setParameters(const Teuchos::ParameterList& params);
+  void setParameters (const Teuchos::ParameterList& params);
 
-  //! Initialize ILUT preconditioner object.
-  /*! Clear away any previously-allocated L and U objects.
-   */
-  void initialize();
+  /// \brief Clear any previously computed factors.
+  ///
+  /// You may call this before calling compute().  The compute()
+  /// method will call this automatically if it has not yet been
+  /// called.  If you call this after calling compute(), you must
+  /// recompute the factorization (by calling compute() again) before
+  /// you may call apply().
+  void initialize ();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
@@ -277,65 +304,65 @@ public:
   //@}
 
 private:
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+  typedef typename Teuchos::Array<local_ordinal_type>::size_type size_type;
 
-  // @{ Internal methods
+  //@{ Internal methods
 
-  //! Copy constructor (should never be used)
+  //! Copy constructor (declared private and undefined; may not be used)
   ILUT(const ILUT<MatrixType>& RHS);
 
-  //! operator= (should never be used)
+  //! operator= (declared private and undefined; may not be used)
   ILUT<MatrixType>& operator=(const ILUT<MatrixType>& RHS);
 
   //@}
-
-  // @{ Internal data and parameters
+  // \name Internal data
+  //@{
 
   //! reference to the matrix to be preconditioned.
   const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
-  //! Reference to the communicator object.
-  const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
   //! L factor
   Teuchos::RCP<MatrixType> L_;
   //! U factor
   Teuchos::RCP<MatrixType> U_;
-  //! Absolute threshold
-  magnitude_type Athresh_;
-  //! Relative threshold
-  magnitude_type Rthresh_;
-  magnitude_type RelaxValue_;
-  //! Level of fill
-  magnitude_type LevelOfFill_;
+
+  //@}
+  // \name Parameters (set by the input ParameterList)
+  //@{
+
+  magnitude_type Athresh_; //!< Absolute threshold
+  magnitude_type Rthresh_; //!< Relative threshold
+  magnitude_type RelaxValue_; //!< Relax value
+  magnitude_type LevelOfFill_; //!< Max fill level
   //! Discard all elements below this tolerance
   magnitude_type DropTolerance_;
   //! Condition number estimate
   magnitude_type Condest_;
+
+  //@}
+  // \name Other internal data
+  //@{
+
+  //! Total time in seconds for all successful calls to initialize().
+  double InitializeTime_;
+  //! Total time in seconds for all successful calls to compute().
+  double ComputeTime_;
+  //! Total timer in seconds for all successful calls to apply().
+  mutable double ApplyTime_;
+  //! The number of successful calls to initialize().
+  int NumInitialize_;
+  //! The number of successful call to compute().
+  int NumCompute_;
+  //! The number of successful call to apply().
+  mutable int NumApply_;
   //! \c true if \c this object has been initialized
   bool IsInitialized_;
   //! \c true if \c this object has been computed
   bool IsComputed_;
-  //! Contains the number of successful calls to Initialize().
-  int NumInitialize_;
-  //! Contains the number of successful call to Compute().
-  int NumCompute_;
-  //! Contains the number of successful call to apply().
-  mutable int NumApply_;
-  //! Contains the time for all successful calls to Initialize().
-  double InitializeTime_;
-  //! Contains the time for all successful calls to Compute().
-  double ComputeTime_;
-  //! Contains the time for all successful calls to apply().
-  mutable double ApplyTime_;
-  //! Used for timing purposes
-  mutable Teuchos::Time Time_;
-  //! Number of local rows.
-  local_ordinal_type NumMyRows_;
-  //! Global number of nonzeros in L and U factors
-  global_size_t NumGlobalNonzeros_;
-
   //@}
-
 }; // class ILUT
 
-}//namespace Ifpack2
+} // namespace Ifpack2
 
 #endif /* IFPACK2_ILUT_HPP */
