@@ -450,8 +450,8 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
    LinearOp P = Thyra::block2x2(p00,p01,p10,p11);
   
    // Kluge to get around problem with Anasazi
-   Teko::computeSpectralRad(Thyra::multiply(invMass,F),5e-2,false,3)/3.0;
-   Teko::computeSpectralRad(Thyra::multiply(invMass,F),5e-2,false,3)/3.0;
+   // Teko::computeSpectralRad(Thyra::multiply(invMass,F),5e-2,false,3)/3.0;
+   // Teko::computeSpectralRad(Thyra::multiply(invMass,F),5e-2,false,3)/3.0;
              
    // build inverse strategy
    { 
