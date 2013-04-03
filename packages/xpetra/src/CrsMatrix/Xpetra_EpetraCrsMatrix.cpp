@@ -90,7 +90,11 @@ namespace Xpetra {
     const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra(domainMap): 0;
     const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra(rangeMap) : 0;
     
-    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tImporter.getEpetra_Import(),myDomainMap,myRangeMap));
+    // Follows the Tpetra parameters
+    bool restrictComm=false;
+    if(!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
+
+    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tImporter.getEpetra_Import(),myDomainMap,myRangeMap,restrictComm));
   }
 
   EpetraCrsMatrix::EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
@@ -106,7 +110,11 @@ namespace Xpetra {
     const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra(domainMap): 0;
     const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra(rangeMap) : 0;    
 
-    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tExporter.getEpetra_Export(),myDomainMap,myRangeMap));			
+    // Follows the Tpetra parameters
+    bool restrictComm=false;
+    if(!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
+
+    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tExporter.getEpetra_Export(),myDomainMap,myRangeMap,restrictComm));
   }
 
 
