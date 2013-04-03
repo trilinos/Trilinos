@@ -78,9 +78,9 @@ isinit_(false),
 comm_(comm),                                
 interface_(interface),
 ml_(NULL),
-ag_(NULL)
+ag_(NULL),
+label_("nlnML_Preconditioner")
 {
-  label_    = "nlnML_Preconditioner";
   CheckInputParameters(mlparams);
   params_   = rcp(new Teuchos::ParameterList(mlparams));
   // we make a backup of the nullspace dimension as it might be
