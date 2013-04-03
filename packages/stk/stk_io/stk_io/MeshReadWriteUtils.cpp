@@ -220,6 +220,18 @@ void process_nodeblocks(stk::io::MeshData &mesh, INT /*dummy*/)
     nodes.push_back(node);
   }
 
+  // Temporary (2013/04/02) kluge for Salinas porting to stk-based mesh.
+  // Salinas uses the "implicit id" which is the ordering of the nodes
+  // in the "undecomposed" or "serial" mesh as user-visible ids
+  // instead of the "global" ids. If there exists a stk-field with the
+  // name "implicit_ids", then populate the field with the correct
+  // data.
+  stk::mesh::FieldBase *imp_id_field = mesh.meta_data().get_field<stk::mesh::FieldBase> ("implicit_ids");
+  if (imp_id_field) {
+    stk::io::field_data_from_ioss(imp_id_field, nodes, nb, "implicit_ids");
+  }
+  
+
   stk::mesh::FieldBase *coord_field = &mesh.get_coordinate_field();
   stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
 

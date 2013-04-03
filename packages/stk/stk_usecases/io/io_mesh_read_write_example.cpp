@@ -17,11 +17,7 @@
 #include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
@@ -45,6 +41,11 @@ namespace {
     mesh_data.open_mesh_database(file, type);
     mesh_data.create_input_mesh();
     mesh_data.define_input_fields();
+
+    stk::mesh::MetaData &meta = mesh_data.meta_data();
+    stk::mesh::Field<int> &imp_id_field = meta.declare_field<stk::mesh::Field<int> >("implicit_ids");
+    stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part());
+
     mesh_data.populate_bulk_data();
 
     //------------------------------------------------------------------
