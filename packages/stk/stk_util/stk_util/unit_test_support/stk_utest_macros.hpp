@@ -13,6 +13,8 @@
 #include <STK_config.h>
 #else
 #define HAVE_MPI
+#endif
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
