@@ -2736,7 +2736,7 @@ namespace stk {
 
       shards::CellTopology cell_topo(cell_topo_data);
 
-      unsigned spaceDim = cell_topo.getDimension();
+      int spaceDim = get_spatial_dim();
 
       const stk::mesh::Entity elem = entity;
       const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::MetaData::NODE_RANK );
@@ -2744,6 +2744,8 @@ namespace stk {
       double edge_length_ave=0.0;
       double min_edge_length = -1.0;
       double max_edge_length = -1.0;
+      int edge_count = cell_topo_data->edge_count;
+      if (edge_count == 0) edge_count = 1;
       for (unsigned iedgeOrd = 0; iedgeOrd < cell_topo_data->edge_count; iedgeOrd++)
         {
           unsigned in0 = cell_topo_data->edge[iedgeOrd].node[0];
@@ -2752,14 +2754,14 @@ namespace stk {
           double * node_coord_data_1 = (double*)stk::mesh::field_data( coord_field , elem_nodes[in1].entity());
 
           double edge_length = 0.0;
-          for (unsigned iSpaceDimOrd = 0; iSpaceDimOrd < spaceDim; iSpaceDimOrd++)
+          for (int iSpaceDimOrd = 0; iSpaceDimOrd < spaceDim; iSpaceDimOrd++)
             {
               edge_length +=
                 (node_coord_data_0[iSpaceDimOrd]-node_coord_data_1[iSpaceDimOrd])*
                 (node_coord_data_0[iSpaceDimOrd]-node_coord_data_1[iSpaceDimOrd]);
             }
           edge_length = std::sqrt(edge_length);
-          edge_length_ave += edge_length / ((double)cell_topo_data->edge_count);
+          edge_length_ave += edge_length / ((double)edge_count);
           if(iedgeOrd == 0)
             {
               min_edge_length = edge_length;
@@ -4559,7 +4561,13 @@ namespace stk {
                   min_max_ave[1] = std::max(min_max_ave[1], ele_hmesh);
                   min_max_ave[2] += ele_hmesh;
                   if (histogram) histogram->push_back(ele_hmesh);
-                  if (quality_histogram) quality_histogram->push_back(max_edge_length/min_edge_length);
+                  double denom = min_edge_length;
+                  if (min_edge_length == 0.0) 
+                    {
+                      denom = max_edge_length*1.e-10;
+                    }
+                  if (denom == 0.0) denom = 1.e-10;
+                  if (quality_histogram) quality_histogram->push_back(max_edge_length/denom);
                   nele += 1.0;
                 }
             }
