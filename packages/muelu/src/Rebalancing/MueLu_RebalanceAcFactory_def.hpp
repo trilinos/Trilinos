@@ -88,35 +88,18 @@ namespace MueLu {
       {
         SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
         RCP<const Map> targetMap = rebalanceImporter->getTargetMap();	
-        rebalancedAc = MatrixFactory::Build(targetMap, originalAc->getGlobalMaxNumRowEntries());
 
-        rebalancedAc->doImport(*originalAc, *rebalanceImporter, Xpetra::INSERT);
+	const ParameterList & pL = GetParameterList();
 
-        const ParameterList & pL = GetParameterList();
-        if (pL.get<bool>("useSubcomm") == true) {
-          // replace full communicator with a subcommunicator
-          GetOStream(Runtime0,0) << "Replacing maps with a subcommunicator" << std::endl;
+	bool useSubComm=false;
+	ParameterList XpetraList;
+       	if(pL.get<bool>("useSubcomm") == true) {useSubComm=true; XpetraList.set("Restrict Communicator",true);}
+	rebalancedAc = MatrixFactory::Build(originalAc,*rebalanceImporter,targetMap,targetMap,rcp(&XpetraList,false));
 
-          RCP<const Map> reducedMap = targetMap->removeEmptyProcesses();
-          rebalancedAc->removeEmptyProcessesInPlace(reducedMap);
-          if (!reducedMap.is_null()) {
-            // we own some part of the new matrix
-            rebalancedAc->fillComplete();
-            rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
-          } else {
-            rebalancedAc = Teuchos::null;
-          }
+	// If we're using subcomms, delete the local matrix if it is empty
+	if(useSubComm && (rebalancedAc->getRowMap().is_null() || rebalancedAc->getRowMap()->getNodeNumElements() == 0))
+	  rebalancedAc=Teuchos::null;
 
-        } else {
-          rebalancedAc->fillComplete();
-          rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
-        }
-
-#ifdef OLD_AND_BUSTED
-	rebalancedAc = MatrixFactory::Build(originalAc,*rebalanceImporter,targetMap,targetMap);
-        RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
-        rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
-#endif
         Set(coarseLevel, "A", rebalancedAc);
       }
 
