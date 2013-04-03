@@ -426,7 +426,7 @@ PyTrilinos::getEpetraVectorObjectAttr(PyObject * object, CONST char * name)
     Py_DECREF(value);
     throw PythonException();
   }
-  Teuchos::RCP< Epetra_Vector > result = 
+  Teuchos::RCP< Epetra_Vector > result =
     *reinterpret_cast< Teuchos::RCP< Epetra_Vector > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< Epetra_Vector > * >(argp);
@@ -449,7 +449,7 @@ PyTrilinos::getConstEpetraVectorObjectAttr(PyObject * object, CONST char * name)
     Py_DECREF(value);
     throw PythonException();
   }
-  Teuchos::RCP< const Epetra_Vector > result = 
+  Teuchos::RCP< const Epetra_Vector > result =
     *reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(argp);
@@ -475,7 +475,7 @@ PyTrilinos::getConstEpetraVectorItemObjectAttr(PyObject * object, CONST char * n
     Py_DECREF(item);
     throw PythonException();
   }
-  Teuchos::RCP< const Epetra_Vector > result = 
+  Teuchos::RCP< const Epetra_Vector > result =
     *reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(argp);
@@ -498,7 +498,7 @@ PyTrilinos::getEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name)
     Py_DECREF(value);
     throw PythonException();
   }
-  Teuchos::RCP<Epetra_MultiVector > result = 
+  Teuchos::RCP<Epetra_MultiVector > result =
     *reinterpret_cast< Teuchos::RCP< Epetra_MultiVector > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< Epetra_MultiVector > * >(argp);
@@ -521,7 +521,7 @@ PyTrilinos::getConstEpetraMultiVectorObjectAttr(PyObject * object, CONST char * 
     Py_DECREF(value);
     throw PythonException();
   }
-  Teuchos::RCP< const Epetra_MultiVector > result = 
+  Teuchos::RCP< const Epetra_MultiVector > result =
     *reinterpret_cast< Teuchos::RCP< const Epetra_MultiVector > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< const Epetra_MultiVector > * >(argp);
@@ -544,7 +544,7 @@ PyTrilinos::getEpetraOperatorObjectAttr(PyObject * object, CONST char * name)
     Py_DECREF(value);
     throw PythonException();
   }
-  Teuchos::RCP<Epetra_Operator > result = 
+  Teuchos::RCP<Epetra_Operator > result =
     *reinterpret_cast< Teuchos::RCP< Epetra_Operator > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< Epetra_Operator > * >(argp);
