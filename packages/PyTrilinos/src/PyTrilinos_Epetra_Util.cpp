@@ -26,6 +26,18 @@
 // ***********************************************************************
 // @HEADER
 
+// Put local includes first to make sure that Python.h is the first included
+// system header. This avoids compiler warnings about redefined variables
+// such as _POSIX_C_SOURCE.
+// Local includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_Util.h"
+#include "PyTrilinos_Epetra_Util.h"
+#include "PyTrilinos_PythonException.h"
+#include "swigpyrun.h"
+#include "Epetra_NumPyMultiVector.h"
+#include "Epetra_NumPyVector.h"
+
 // System includes
 #include <algorithm>
 
@@ -44,15 +56,6 @@
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_JadMatrix.h"
-
-// Local includes
-#include "PyTrilinos_config.h"
-#include "PyTrilinos_Util.h"
-#include "PyTrilinos_Epetra_Util.h"
-#include "PyTrilinos_PythonException.h"
-#include "swigpyrun.h"
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPyVector.h"
 
 ////////////////////////////////////////////////////////////////////////
 
