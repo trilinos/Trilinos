@@ -770,7 +770,7 @@ namespace Kokkos {
   setStructure (const Teuchos::ArrayRCP<const size_t> &ptr,
                 const Teuchos::ArrayRCP<const Ordinal> &ind)
   {
-    std::string tfecfFuncName("setStructure(ptr,ind)");
+    const char tfecfFuncName[] = "setStructure";
     const Ordinal numRows = this->getNumRows();
 
     // mfh 19 June 2012: The tests expect std::runtime_error rather
@@ -869,10 +869,10 @@ namespace Kokkos {
   AltCrsMatrix<Scalar,Ordinal,Node>::
   setValues (const Teuchos::ArrayRCP<const Scalar> &val)
   {
-    const std::string tfecfFuncName("setValues(val)");
+    const char tfecfFuncName[] = "setValues";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isInitialized_, 
-      std::runtime_error, 
+      isInitialized_,
+      std::runtime_error,
       ": The matrix is already initialized.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! graph_.is_null() && ! graph_->isInitialized (),
@@ -1398,7 +1398,7 @@ namespace Kokkos {
     ///   Gauss-Seidel.
     /// \param direction [in] Sweep direction: Forward or Backward.
     ///   If you want a symmetric sweep, call this method twice, first
-    ///   with direction = Forward then with direction = Backward.  
+    ///   with direction = Forward then with direction = Backward.
     ///
     /// \note We don't include a separate "Symmetric" direction mode
     ///   in order to avoid confusion when using this method to
@@ -1410,12 +1410,12 @@ namespace Kokkos {
     ///   and the backward sweep, so we would need to invoke the
     ///   kernel once per sweep direction anyway.
     template <class DomainScalar, class RangeScalar>
-    void 
+    void
     gaussSeidel (const MultiVector<DomainScalar,Node> &B,
-		 MultiVector< RangeScalar,Node> &X,
-		 const MultiVector<Scalar,Node> &D,
-		 const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
-		 const enum ESweepDirection direction = Forward) const;
+                 MultiVector< RangeScalar,Node> &X,
+                 const MultiVector<Scalar,Node> &D,
+                 const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+                 const enum ESweepDirection direction = Forward) const;
     //@}
 
   private:
@@ -1446,12 +1446,12 @@ namespace Kokkos {
 
     //! Implementation of gaussSeidel(); no error checking.
     template <class DomainScalar, class RangeScalar>
-    void 
+    void
     gaussSeidelPrivate (MultiVector< RangeScalar,Node> &X,
-			const MultiVector<DomainScalar,Node> &B,
-			const MultiVector<Scalar,Node> &D,
-			const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
-			const ESweepDirection direction = Forward) const;
+                        const MultiVector<DomainScalar,Node> &B,
+                        const MultiVector<Scalar,Node> &D,
+                        const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+                        const ESweepDirection direction = Forward) const;
 
     //! Fill the given ParameterList with defaults and validators.
     static void
@@ -1724,7 +1724,7 @@ namespace Kokkos {
     // using std::cerr;
     // using std::endl;
 
-    std::string tfecfFuncName("setGraphAndMatrix(uplo,diag,graph,matrix)");
+    const char tfecfFuncName[] = "setGraphAndMatrix";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isInitialized_, std::runtime_error,
       " The sparse kernels object is already initialized.");
@@ -1765,29 +1765,29 @@ namespace Kokkos {
       isEmpty_ = true;
 
       if (numRows_ == 0) {
-	// We have to go through a little trouble because ptr_ is an
-	// array of const size_t, but we need to set its first entry
-	// here.
-	ArrayRCP<size_t> myPtr = arcp<size_t> (1);
-	myPtr[0] = 0;
-	ptr_ = arcp_const_cast<const size_t> (myPtr);
+        // We have to go through a little trouble because ptr_ is an
+        // array of const size_t, but we need to set its first entry
+        // here.
+        ArrayRCP<size_t> myPtr = arcp<size_t> (1);
+        myPtr[0] = 0;
+        ptr_ = arcp_const_cast<const size_t> (myPtr);
       }
       else { // Verify that ptr_ contains only zeros.
-	bool allZeros = true;
-	size_t firstBadIndex = 0;
-	for (size_t i = 0; i < Teuchos::as<size_t> (numRows_) + 1; ++i) {
-	  if (ptr[i] != 0) {
-	    allZeros = false;
-	    firstBadIndex = i;
-	    break;
-	  }
-	}
-	TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        bool allZeros = true;
+        size_t firstBadIndex = 0;
+        for (size_t i = 0; i < Teuchos::as<size_t> (numRows_) + 1; ++i) {
+          if (ptr[i] != 0) {
+            allZeros = false;
+            firstBadIndex = i;
+            break;
+          }
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           ! allZeros,
-	  std::runtime_error,
-	  ": The matrix supposedly contains no entries, "
-	  "but ptr[" << firstBadIndex << "] is nonzero, perhaps among other entries.");
-	ptr_ = ptr;
+          std::runtime_error,
+          ": The matrix supposedly contains no entries, "
+          "but ptr[" << firstBadIndex << "] is nonzero, perhaps among other entries.");
+        ptr_ = ptr;
       }
       // The matrix is empty, so ind_ and val_ have zero entries.
       ind_ = null;
@@ -1821,13 +1821,13 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
-  void 
+  void
   AltSparseOps<Scalar,Ordinal,Node,Allocator>::
   gaussSeidel (const MultiVector<DomainScalar,Node> &B,
-	       MultiVector< RangeScalar,Node> &X,
-	       const MultiVector<Scalar,Node> &D,
-	       const RangeScalar& dampingFactor,
-	       const ESweepDirection direction) const
+               MultiVector< RangeScalar,Node> &X,
+               const MultiVector<Scalar,Node> &D,
+               const RangeScalar& dampingFactor,
+               const ESweepDirection direction) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       isInitialized_ == false,
@@ -1864,8 +1864,8 @@ namespace Kokkos {
       "matrix.  B has " << B.getNumRows() << " rows, but the (local) matrix "
       "has " << numRows_ << " rows.");
 
-    gaussSeidelPrivate<DomainScalar, RangeScalar> (X, B, D, dampingFactor, 
-						   direction);
+    gaussSeidelPrivate<DomainScalar, RangeScalar> (X, B, D, dampingFactor,
+                                                   direction);
   }
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
@@ -1993,7 +1993,7 @@ namespace Kokkos {
          MultiVector<RangeScalar, Node>& X) const
   {
     using Teuchos::as;
-    std::string tfecfFuncName("solve(trans,Y,X)");
+    const char tfecfFuncName[] = "solve";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! isInitialized_,
       std::runtime_error,
@@ -2102,7 +2102,7 @@ namespace Kokkos {
       }
       else if (trans == Teuchos::TRANS) {
         if (tri_uplo_ == Teuchos::LOWER_TRI) {
-	  // Transposed lower triangular solves are upper triangular solves.
+          // Transposed lower triangular solves are upper triangular solves.
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::upperTriSolveCscColMajorUnitDiag;
             // numRows resp. numCols come from the number of rows in Y
@@ -2124,7 +2124,7 @@ namespace Kokkos {
           }
         }
         else { // upper triangular
-	  // Transposed upper triangular solves are lower triangular solves.
+          // Transposed upper triangular solves are lower triangular solves.
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::lowerTriSolveCscColMajorUnitDiag;
             lowerTriSolveCscColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
@@ -2145,7 +2145,7 @@ namespace Kokkos {
       }
       else if (trans == Teuchos::CONJ_TRANS) {
         if (tri_uplo_ == Teuchos::LOWER_TRI) {
-	  // Transposed lower triangular solves are upper triangular solves.
+          // Transposed lower triangular solves are upper triangular solves.
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::upperTriSolveCscColMajorUnitDiagConj;
             upperTriSolveCscColMajorUnitDiagConj<OT, MST, DST, RST> (numRows, numCols,
@@ -2164,7 +2164,7 @@ namespace Kokkos {
           }
         }
         else { // upper triangular
-	  // Transposed upper triangular solves are lower triangular solves.
+          // Transposed upper triangular solves are lower triangular solves.
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
             using Kokkos::Raw::lowerTriSolveCscColMajorUnitDiagConj;
             lowerTriSolveCscColMajorUnitDiagConj<OT, MST, DST, RST> (numRows, numCols,
@@ -2214,7 +2214,7 @@ namespace Kokkos {
     using std::cerr;
     using std::endl;
 
-    std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
+    const char tfecfFuncName[] = "multiply";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! isInitialized_,
       std::runtime_error,
@@ -2233,7 +2233,7 @@ namespace Kokkos {
       trans != Teuchos::NO_TRANS && X.getNumRows() != Teuchos::as<size_t> (numRows_),
       std::runtime_error,
       ": Dimensions of the matrix and the input multivector X do not match.  "
-      "X has " << X.getNumRows () << " rows, but the transposed matrix has " 
+      "X has " << X.getNumRows () << " rows, but the transposed matrix has "
       << numRows_ << " columns.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       trans == Teuchos::NO_TRANS && Y.getNumRows() != Teuchos::as<size_t> (numRows_),
@@ -2245,7 +2245,7 @@ namespace Kokkos {
       trans != Teuchos::NO_TRANS && Y.getNumRows() != Teuchos::as<size_t> (numCols_),
       std::runtime_error,
       ": Dimensions of the matrix and the output multivector Y do not match.  "
-      "Y has " << Y.getNumRows () << " rows, but the transposed matrix has " 
+      "Y has " << Y.getNumRows () << " rows, but the transposed matrix has "
       << numCols_ << " rows.");
 
     typedef ordinal_type OT;
@@ -2698,85 +2698,85 @@ namespace Kokkos {
     } else { // vl > VERB_LOW
       out << "Kokkos::AltSparseOps: {" << endl;
       {
-	OSTab tab1 (rcpFromRef (out));
-	out << "Template parameters: {" << endl;
-	{
-	  OSTab tab2 (rcpFromRef (out));
-	  out << "Scalar: " << TypeNameTraits<Scalar>::name() << endl
-	      << "Ordinal: " << TypeNameTraits<Ordinal>::name() << endl
-	      << "Node: " << TypeNameTraits<Node>::name() << endl
-	      << "Allocator: " << TypeNameTraits<Allocator>::name() << endl;
-	}
-	out << "}" << endl << "User parameters: {" << endl;
-	{
-	  OSTab tab2 (rcpFromRef (out));
-	  out << "matVecVariant_: " << matVecVariant_ << endl
-	      << "unroll_: " << unroll_ << endl;
-	}
-	out << "}" << endl << "Matrix attributes: {" << endl;
-	{
-	  OSTab tab2 (rcpFromRef (out));
-	  out << "isInitialized_: " << isInitialized_ << endl;
-	  if (isInitialized_) {
-	    std::string triUplo ("INVALID");
-	    if (tri_uplo_ == Teuchos::UNDEF_TRI) {
-	      triUplo = "UNDEF_TRI";
-	    }
-	    else if (tri_uplo_ == Teuchos::LOWER_TRI) {
-	      triUplo = "LOWER_TRI";
-	    }
-	    else if (tri_uplo_ == Teuchos::UPPER_TRI) {
-	      triUplo = "UPPER_TRI";
-	    }
-	    std::string unitDiag ("INVALID");
-	    if (unit_diag_ == Teuchos::NON_UNIT_DIAG) {
-	      unitDiag = "NON_UNIT_DIAG";
-	    }
-	    else if (unit_diag_ == Teuchos::UNIT_DIAG) {
-	      unitDiag = "UNIT_DIAG";
-	    }
-	    out << "numRows_: " << numRows_ << endl
-		<< "numCols_: " << numCols_ << endl
-		<< "isEmpty_: " << isEmpty_ << endl
-		<< "hasEmptyRows_: " << hasEmptyRows_ << endl
-		<< "tri_uplo_: " << triUplo << endl
-		<< "unit_diag_: " << unitDiag << endl;
-	    const size_t numEntries = 
-	      (ptr_.size() == 0) ? 0 : ptr_[ptr_.size()-1];
-	    out << "numEntries: " << numEntries << endl;
-	  } // if matrix is initialized
-	} // print "Matrix attributes"
-	out << "}" << endl;
-	if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
-	  out << "Matrix data: {" << endl;
-	  {
-	    // Only print out all the sparse matrix's data in
-	    // extreme verbosity mode.
-	    out << "ptr_: [";
-	    for (size_type i = 0; i < ptr_.size (); ++i) {
-	      out << ptr_[i];
-	      if (i + 1 < ptr_.size ()) {
-		out << ", ";
-	      }
-	    }
-	    out << "]" << endl << "ind_ : [";
-	    for (size_type i = 0; i < ind_.size (); ++i) {
-	      out << ind_[i];
-	      if (i + 1 < ind_.size ()) {
-		out << ", ";
-	      }
-	    }
-	    out << "]" << endl << "val_: [";
-	    for (size_type i = 0; i < val_.size (); ++i) {
-	      out << val_[i];
-	      if (i + 1 < val_.size ()) {
-		out << ", ";
-	      }
-	    }
-	    out << "]" << endl;
-	  } // Print "Matrix data"
-	  out << "}" << endl;
-	} // vl >= VERB_EXTREME
+        OSTab tab1 (rcpFromRef (out));
+        out << "Template parameters: {" << endl;
+        {
+          OSTab tab2 (rcpFromRef (out));
+          out << "Scalar: " << TypeNameTraits<Scalar>::name() << endl
+              << "Ordinal: " << TypeNameTraits<Ordinal>::name() << endl
+              << "Node: " << TypeNameTraits<Node>::name() << endl
+              << "Allocator: " << TypeNameTraits<Allocator>::name() << endl;
+        }
+        out << "}" << endl << "User parameters: {" << endl;
+        {
+          OSTab tab2 (rcpFromRef (out));
+          out << "matVecVariant_: " << matVecVariant_ << endl
+              << "unroll_: " << unroll_ << endl;
+        }
+        out << "}" << endl << "Matrix attributes: {" << endl;
+        {
+          OSTab tab2 (rcpFromRef (out));
+          out << "isInitialized_: " << isInitialized_ << endl;
+          if (isInitialized_) {
+            std::string triUplo ("INVALID");
+            if (tri_uplo_ == Teuchos::UNDEF_TRI) {
+              triUplo = "UNDEF_TRI";
+            }
+            else if (tri_uplo_ == Teuchos::LOWER_TRI) {
+              triUplo = "LOWER_TRI";
+            }
+            else if (tri_uplo_ == Teuchos::UPPER_TRI) {
+              triUplo = "UPPER_TRI";
+            }
+            std::string unitDiag ("INVALID");
+            if (unit_diag_ == Teuchos::NON_UNIT_DIAG) {
+              unitDiag = "NON_UNIT_DIAG";
+            }
+            else if (unit_diag_ == Teuchos::UNIT_DIAG) {
+              unitDiag = "UNIT_DIAG";
+            }
+            out << "numRows_: " << numRows_ << endl
+                << "numCols_: " << numCols_ << endl
+                << "isEmpty_: " << isEmpty_ << endl
+                << "hasEmptyRows_: " << hasEmptyRows_ << endl
+                << "tri_uplo_: " << triUplo << endl
+                << "unit_diag_: " << unitDiag << endl;
+            const size_t numEntries =
+              (ptr_.size() == 0) ? 0 : ptr_[ptr_.size()-1];
+            out << "numEntries: " << numEntries << endl;
+          } // if matrix is initialized
+        } // print "Matrix attributes"
+        out << "}" << endl;
+        if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
+          out << "Matrix data: {" << endl;
+          {
+            // Only print out all the sparse matrix's data in
+            // extreme verbosity mode.
+            out << "ptr_: [";
+            for (size_type i = 0; i < ptr_.size (); ++i) {
+              out << ptr_[i];
+              if (i + 1 < ptr_.size ()) {
+                out << ", ";
+              }
+            }
+            out << "]" << endl << "ind_ : [";
+            for (size_type i = 0; i < ind_.size (); ++i) {
+              out << ind_[i];
+              if (i + 1 < ind_.size ()) {
+                out << ", ";
+              }
+            }
+            out << "]" << endl << "val_: [";
+            for (size_type i = 0; i < val_.size (); ++i) {
+              out << val_[i];
+              if (i + 1 < val_.size ()) {
+                out << ", ";
+              }
+            }
+            out << "]" << endl;
+          } // Print "Matrix data"
+          out << "}" << endl;
+        } // vl >= VERB_EXTREME
       } // Print the matrix's parameters and data
       out << "}" << endl;
     } // if vl > VERB_LOW
