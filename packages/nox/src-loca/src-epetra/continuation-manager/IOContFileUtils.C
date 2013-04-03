@@ -104,7 +104,7 @@ bool RestartContFile( const std::string & fileName, const int & idStep )
   // Copying the continuation in a backup file
   std::string fileNameBak = fileName + ".bak";
   std::string command = "cp " + fileName + " " + fileNameBak;
-  system (command.c_str());
+  TEUCHOS_ASSERT_EQUALITY(0, system(command.c_str()));
 
   // String of the line to cut from
   std::ostringstream os;
@@ -113,7 +113,7 @@ bool RestartContFile( const std::string & fileName, const int & idStep )
 
   // Cutting the file
   command =  "sed '" + lineNumber + ",$ d' " + fileNameBak + " > " + fileName;
-  system (command.c_str());
+  TEUCHOS_ASSERT_EQUALITY(0, system(command.c_str()));
 
   return true;
 }
