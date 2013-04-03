@@ -1258,7 +1258,9 @@ C
       REAL*4 HLS(3), LIT, HUE, SAT, f
       INTEGER*4 RGB(3), maxval, inten, irange, irang2, isplus
       integer*4 iv1, iv2, iv3, iv4, ib, ig, ir
-      integer*4 ijump
+      integer*4 ijump, zero
+
+      zero = 0
 C
 C          copy the inputs to locals
 C
@@ -1306,7 +1308,7 @@ c          isplus is an additive to account for saturation
 c
       ISPLUS = (IRANGE-IRANG2)/2
       IV1 = MIN(INTEN,MAXVAL) - ISPLUS
-      IV2 = MAX(0,INTEN-MAXVAL) + ISPLUS
+      IV2 = MAX(zero,INTEN-MAXVAL) + ISPLUS
       IV3 = F*IRANG2 + .5 + IV2
       IV4 = (1.-F)*IRANG2 + .5 + IV2
       GOTO (610,620,630,640,650,660),IJUMP+1
