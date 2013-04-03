@@ -1312,6 +1312,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   // Buffers & Other Relevant Info
   char* Exports_  = 0;
   char* Imports_  = 0;
+  int LenImports_ =0;
   int LenExports_ = 0;
   int *Sizes_     = 0;
 
