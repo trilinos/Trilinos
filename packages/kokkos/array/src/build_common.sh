@@ -139,11 +139,11 @@ then
 
   echo "LD_LIBRARY_PATH must include ${HAVE_HWLOC}/lib"
 
-  CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_hwloc.cpp"
+  CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_hwloc.cpp"
   LIB="${LIB} -L${HAVE_HWLOC}/lib -lhwloc"
   INC_PATH="${INC_PATH} -I${HAVE_HWLOC}/include"
 else
-  CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_hwloc_unavailable.cpp"
+  CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_hwloc_unavailable.cpp"
 fi
 
 #-----------------------------------------------------------------------------

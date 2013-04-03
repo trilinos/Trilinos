@@ -73,25 +73,17 @@ namespace Impl {
 class HostInternal {
 protected:
 
-  unsigned         m_gang_capacity ;   // Maximum number of gangs
-  unsigned         m_worker_capacity ; // Maixmum number of workers per gang
-
   unsigned         m_thread_count ;  // Number of threads
   unsigned         m_gang_count ;    // Number of NUMA nodes used
   unsigned         m_worker_count ;  // Number of threads per NUMA node
   unsigned         m_reduce_scratch_size ;   // Sizeof reduction memory
   HostThread       m_master_thread ;
 
-  //! Array of all worker threads (including master); accessible to the threads.
-#if 0
-  HostThread     * m_thread[ HostThread::max_thread_count ];
-#endif
-
   const HostThreadWorker * volatile m_worker ;
 
-  virtual ~HostInternal();
+  ~HostInternal();
 
-  virtual bool bind_thread( const unsigned thread_rank ) const ;
+  bool bind_thread( const unsigned thread_rank ) const ;
 
   HostInternal();
 
@@ -143,7 +135,7 @@ public:
 
   void finalize();
 
-  virtual void print_configuration( std::ostream & ) const ;
+  void print_configuration( std::ostream & ) const ;
 
   void execute_serial( const HostThreadWorker & worker );
 

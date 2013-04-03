@@ -46,6 +46,7 @@
 
 #include <KokkosArray_Host.hpp>
 #include <Host/KokkosArray_Host_Internal.hpp>
+#include <Host/KokkosArray_hwloc.hpp>
 #include <impl/KokkosArray_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -78,6 +79,64 @@ public:
 
 const HostWorkerBlock worker_block ;
 
+//----------------------------------------------------------------------------
+
+inline
+void thread_mapping( const unsigned gang_rank ,
+                     const unsigned gang_count,
+                     const unsigned worker_rank ,
+                     const unsigned worker_count ,
+                     unsigned coordinate[] )
+{
+  unsigned capacity[ hwloc::max_depth ];
+
+  hwloc::get_thread_capacity( capacity );
+
+  for ( unsigned i = 0 ; i < hwloc::max_depth ; ++i ) coordinate[i] = 0 ;
+
+  { // Assign gang to resource:
+    const unsigned bin  = gang_count / capacity[0] ;
+    const unsigned bin1 = bin + 1 ;
+    const unsigned k    = capacity[0] * bin1 - gang_count ;
+    const unsigned part = k * bin ;
+
+    if ( gang_rank < part ) {
+      coordinate[0] = gang_rank / bin ;
+    }
+    else {
+      coordinate[0] = k + ( gang_rank - part ) / bin1 ;
+    }
+  }
+
+  { // Assign workers to resources:
+    unsigned n = worker_count ;
+    unsigned r = worker_rank ;
+
+    for ( unsigned i = 1 ; i < hwloc::max_depth &&
+                           0 < capacity[i]  ; ++i ) {
+      // n = k * bin + ( capacity[i] - k ) * ( bin + 1 )
+      const unsigned bin  = n / capacity[i] ;
+      const unsigned bin1 = bin + 1 ;
+      const unsigned k    = capacity[i] * bin1 - n ;
+      const unsigned part = k * bin ;
+
+      if ( r < part ) {
+        coordinate[i]  = r / bin ;
+        r = r - bin * coordinate[i] ;
+        n = bin ;
+      }
+      else {
+        const unsigned r1 = r - part ;
+        const unsigned c1 = r1 / bin1 ;
+
+        coordinate[i]  = c1 + k ;
+        r = r1 - c1 * bin1 ;
+        n = bin1 ;
+      }
+    }
+  }
+}
+
 } // namespace
 
 //----------------------------------------------------------------------------
@@ -104,6 +163,8 @@ void host_barrier( HostThread & thread )
   }
 }
 
+//----------------------------------------------------------------------------
+
 /** \brief  This thread waits for each fan-in thread to deactivate.  */
 void HostThreadWorker::fanin_deactivation( HostThread & thread ) const
 {
@@ -116,6 +177,8 @@ void HostThreadWorker::fanin_deactivation( HostThread & thread ) const
     host_thread_wait( & thread.fan(i).m_state , HostThread::ThreadActive );
   }
 }
+
+//----------------------------------------------------------------------------
 
 void HostInternal::activate_threads()
 {
@@ -184,10 +247,7 @@ HostInternal::~HostInternal()
 }
 
 HostInternal::HostInternal()
-  : m_gang_capacity( 1 )
-  , m_worker_capacity( 0 )
-
-  , m_thread_count( 1 )
+  : m_thread_count( 1 )
   , m_gang_count( 1 )
   , m_worker_count( 1 )
 {
@@ -202,14 +262,33 @@ HostInternal::HostInternal()
   HostThread::set_thread_relationships();
 }
 
+HostInternal & HostInternal::singleton()
+{
+  static HostInternal self ; return self ;
+}
+
 void HostInternal::print_configuration( std::ostream & s ) const
 {
-  s << "KokkosArray::Host thread capacity( "
-    << m_gang_capacity << " x " << m_worker_capacity
-    << " ) used( "
-    << m_gang_count << " x " << m_worker_count
-    << " )"
-    << std::endl ;
+  unsigned coordinate[ hwloc::max_depth ];
+
+  hwloc::print_thread_capacity( s );
+
+  s << std::endl ;
+
+  for ( unsigned r = 0 ; r < m_thread_count ; ++r ) {
+    const unsigned gang_rank   = r / m_worker_count ;
+    const unsigned worker_rank = r % m_worker_count ;
+
+    thread_mapping( gang_rank , m_gang_count,
+                    worker_rank , m_worker_count ,
+                    coordinate );
+
+    s << "  thread[ " << r << " : (" << gang_rank << "," << worker_rank << ") ] -> bind{"
+      << " " << coordinate[0]
+      << " " << coordinate[1]
+      << " " << coordinate[2]
+      << " }" << std::endl ;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -231,8 +310,15 @@ void * host_scratch_reduce()
 
 bool HostInternal::bind_thread( const unsigned thread_rank ) const
 {
-  (void) thread_rank; // Prevent compiler warning for unused argument
-  return true ;
+  const unsigned gang_rank   = thread_rank / m_worker_count ;
+  const unsigned worker_rank = thread_rank % m_worker_count ;
+
+  unsigned coordinate[ hwloc::max_depth ];
+
+  thread_mapping( gang_rank , m_gang_count,
+                  worker_rank , m_worker_count ,
+                  coordinate );
+  return hwloc::bind_this_thread( coordinate );
 }
 
 //----------------------------------------------------------------------------
@@ -273,7 +359,8 @@ void HostInternal::driver( const size_t thread_rank )
   // Bind this thread to a unique processing unit
   // with all members of a gang in the same NUMA region.
 
-  if ( bind_thread( thread_rank ) ) {
+//  if ( bind_thread( thread_rank ) ) {
+  if ( HostInternal::bind_thread( thread_rank ) ) {
 
     HostThread this_thread ;
 
@@ -385,7 +472,7 @@ bool HostInternal::spawn_threads( const unsigned gang_count ,
   }
 
   // Bind the process thread as thread_rank == 0
-  if ( ok_spawn_threads ) { ok_spawn_threads = bind_thread( 0 ); }
+  if ( ok_spawn_threads ) { ok_spawn_threads = HostInternal::bind_thread( 0 ); }
 
   m_worker = NULL ;
 
@@ -395,17 +482,12 @@ bool HostInternal::spawn_threads( const unsigned gang_count ,
 void HostInternal::initialize( const unsigned gang_count ,
                                const unsigned worker_count )
 {
-  const bool ok_inactive     = 1 == m_thread_count ;
-  const bool ok_gang_count   = gang_count <= m_gang_capacity ;
-  const bool ok_worker_count = ( 0 == m_worker_capacity ||
-                                 worker_count <= m_worker_capacity );
+  const bool ok_inactive = 1 == m_thread_count ;
 
   // Only try to spawn threads if input is valid.
 
   const bool ok_spawn_threads =
-    ( ok_inactive &&
-      ok_gang_count && ok_worker_count &&
-      1 < gang_count * worker_count )
+    ( ok_inactive && 1 < gang_count * worker_count )
     ? spawn_threads( gang_count , worker_count )
     : true ;
 
@@ -423,10 +505,7 @@ void HostInternal::initialize( const unsigned gang_count ,
     finalize();
   }
 
-  if ( ! ok_inactive ||
-       ! ok_gang_count ||
-       ! ok_worker_count ||
-       ! ok_spawn_threads )
+  if ( ! ok_inactive || ! ok_spawn_threads )
   {
     std::ostringstream msg ;
 
@@ -434,13 +513,6 @@ void HostInternal::initialize( const unsigned gang_count ,
 
     if ( ! ok_inactive ) {
       msg << " : Device is already active" ;
-    }
-    if ( ! ok_gang_count || ! ok_worker_count ) {
-      msg << " : request for threads ( "
-          << gang_count << " x " << worker_count
-          << " ) exceeds detected capacity ( "
-          << m_gang_capacity << " x " << m_worker_capacity
-          << " )" ;
     }
     if ( ! ok_spawn_threads ) {
       msg << " : Spawning or cpu-binding the threads" ;
@@ -472,13 +544,30 @@ void Host::initialize( const Host::size_type gang_count ,
 }
 
 void Host::print_configuration( std::ostream & s )
-{ Impl::HostInternal::singleton().print_configuration(s); }
+{
+  Impl::HostInternal::singleton().Impl::HostInternal::print_configuration(s);
+}
 
 Host::size_type Host::detect_gang_capacity()
-{ return Impl::HostInternal::singleton().m_gang_capacity ; }
+{
+  unsigned capacity[ Impl::hwloc::max_depth ];
+
+  Impl::hwloc::get_thread_capacity( capacity );
+
+  return 0 == capacity[0] ? 1 : capacity[0] ;
+}
 
 Host::size_type Host::detect_gang_worker_capacity()
-{ return Impl::HostInternal::singleton().m_worker_capacity ; }
+{
+  unsigned capacity[ Impl::hwloc::max_depth ];
+
+  Impl::hwloc::get_thread_capacity( capacity );
+
+  return 0 == capacity[0] ? 1 : (
+         0 == capacity[1] ? 1 : capacity[1] * (
+         0 == capacity[2] ? 1 : capacity[2] * (
+         0 == capacity[3] ? 1 : capacity[3] ) ) );
+}
 
 //----------------------------------------------------------------------------
 
