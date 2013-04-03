@@ -122,7 +122,7 @@ namespace Xpetra {
       if (crsOp == Teuchos::null)
 	throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
       RCP<CrsMatrix> originalCrs = crsOp->getCrsMatrix();
-      return rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(originalCrs,importer,domainMap,rangeMap)));
+      return rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(originalCrs,importer,domainMap,rangeMap,params)));
     }
 
     //! Constructor to create a Matrix using a fusedExport-style construction.  The originalMatrix must be a Xpetra::CrsMatrixWrap under the hood or this will fail.
@@ -132,7 +132,7 @@ namespace Xpetra {
       if (crsOp == Teuchos::null)
 	throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
       RCP<CrsMatrix> originalCrs = crsOp->getCrsMatrix();
-      return rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(originalCrs,exporter,domainMap,rangeMap)));
+      return rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(originalCrs,exporter,domainMap,rangeMap,params)));
     }
 
 
