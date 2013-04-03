@@ -43,6 +43,7 @@
 
 /*--------------------------------------------------------------------------*/
 
+#include <sstream>
 #include <iostream>
 #include <limits>
 #include <utility>
@@ -137,8 +138,6 @@ HWLOC_Singleton::HWLOC_Singleton()
     hwloc_bitmap_t proc_cpuset = hwloc_bitmap_alloc();
 
     hwloc_get_cpubind( m_topology , proc_cpuset , HWLOC_CPUBIND_PROCESS );
-
-print_bitmap( std::cout , proc_cpuset );
 
     int node_count    = 0 ;
     int core_per_node = 0 ;
@@ -296,11 +295,17 @@ void hwloc::print_thread_capacity( std::ostream & s )
 
   s << "KokkosArray::Impl::hwloc{" ;
   if ( name_level_0 ) {
-    s << " " << name_level_0 << "[" << h.m_capacity[0] ;
+
+    s << " " << name_level_0 << "[" ;
+
     if ( h.m_capacity[0] < (unsigned) max_count ) {
-      s << "/" << max_count ;
+      s << "(" ;
+      for ( unsigned i = 0 ; i < h.m_capacity[0] ; ++i ) {
+        s << " " << h.m_root_rank[i] ;
+      }
+      s << " ) / " ;
     }
-    s << "]" ;
+    s << max_count << "]" ;
   }
   if ( name_level_1 ) s << " x " << name_level_1 << "[" << h.m_capacity[1] << "]" ;
   if ( name_level_2 ) s << " x " << name_level_2 << "[" << h.m_capacity[2] << "]" ;
@@ -462,6 +467,21 @@ bool hwloc::bind_this_thread( const unsigned coordinate[] )
 
       hwloc_bitmap_free( thread_cpuset );
     }
+
+#if 0
+  std::ostringstream msg ;
+  msg << "KokkosArray::Impl::hwloc::bind_this_thread("
+      << coordinate[0] << ","
+      << coordinate[1] << ","
+      << coordinate[2] << ","
+      << coordinate[3] << ") " ;
+  msg << "node" ;  print_bitmap(msg,node->allowed_cpuset);
+  msg << " core" ; print_bitmap(msg,core->allowed_cpuset);
+  msg << " pu" ;   print_bitmap(msg,pu->allowed_cpuset);
+  msg << std::endl ;
+  std::cout << msg.str();
+#endif
+
   }
 
   return result ;
