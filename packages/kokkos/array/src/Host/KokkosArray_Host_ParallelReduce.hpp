@@ -141,7 +141,9 @@ void host_reduce( HostThread & this_thread ,
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class ValueOper , class FinalizeType , class WorkSpec >
-class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host , WorkSpec > {
+class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host , WorkSpec >
+  : public HostThreadWorker
+{
 public:
 
   typedef ReduceOperator< ValueOper , FinalizeType >  reduce_oper ;
@@ -152,7 +154,7 @@ public:
   const reduce_oper   m_reduce ;
   const size_type     m_work_count ;
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     // Iterate this thread's work
 
@@ -179,7 +181,7 @@ public:
     , m_work_count( work_count )
     {
       host_resize_scratch_reduce( m_reduce.value_size() );
-      HostParallelLaunch< ParallelReduce >( *this );
+      HostThreadWorker::execute();
     }
 };
 
@@ -190,7 +192,9 @@ public:
 // Only try to vectorize with the Intel compiler, for now.
 
 template< class FunctorType , class ValueOper , class FinalizeType >
-class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host , VectorParallel > {
+class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host , VectorParallel >
+  : public HostThreadWorker
+{
 public:
 
   typedef ReduceOperator< ValueOper , FinalizeType >  reduce_oper ;
@@ -201,7 +205,7 @@ public:
   const reduce_oper   m_reduce ;
   const size_type     m_work_count ;
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     // Iterate this thread's work
 
@@ -238,7 +242,7 @@ public:
     , m_work_count( work_count )
     {
       host_resize_scratch_reduce( m_reduce.value_size() * HostSpace::WORK_ALIGNMENT );
-      HostParallelLaunch< ParallelReduce >( *this );
+      HostThreadWorker::execute();
     }
 };
 
@@ -299,7 +303,9 @@ public:
 } // namespace Impl
   
 template< class ValueOper , class FinalizeType >
-class MultiFunctorParallelReduce< ValueOper , FinalizeType , Host > {
+class MultiFunctorParallelReduce< ValueOper , FinalizeType , Host >
+  : public Impl::HostThreadWorker
+{
 public:
 
   typedef Impl::ReduceOperator< ValueOper , FinalizeType > reduce_oper ;
@@ -314,7 +320,7 @@ public:
   MemberContainer m_member_functors ;
   reduce_oper     m_reduce ;
 
-  void operator()( Impl::HostThread & this_thread ) const
+  void execute_on_thread( Impl::HostThread & this_thread ) const
   {
     // This thread's reduction value, initialized
     m_reduce.init( this_thread.reduce_data() );
@@ -357,7 +363,7 @@ public:
   void execute() const
   {
     Impl::host_resize_scratch_reduce( m_reduce.value_size() );
-    Impl::HostParallelLaunch< MultiFunctorParallelReduce >( *this );
+    Impl::HostThreadWorker::execute();
   }
 };
 

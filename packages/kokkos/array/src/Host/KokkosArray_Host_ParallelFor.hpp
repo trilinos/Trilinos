@@ -55,7 +55,9 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class WorkSpec >
-class ParallelFor< FunctorType , Host , WorkSpec > {
+class ParallelFor< FunctorType , Host , WorkSpec >
+  : public HostThreadWorker
+{
 public:
 
   typedef Host::size_type  size_type ;
@@ -63,10 +65,10 @@ public:
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & thread ) const
   {
     const std::pair< size_type , size_type > range =
-      this_thread.work_range( m_work_count );
+      thread.work_range( m_work_count );
 
     for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
       m_work_functor( iwork );
@@ -76,7 +78,7 @@ public:
   ParallelFor( const size_type work_count , const FunctorType & functor )
     : m_work_functor( functor )
     , m_work_count( work_count )
-    { HostParallelLaunch< ParallelFor >( *this ); }
+    { HostThreadWorker::execute(); }
 };
 
 //----------------------------------------------------------------------------
@@ -86,7 +88,9 @@ public:
 // Only try vectorization nested within parallel with the Intel compiler, for now.
 
 template< class FunctorType >
-class ParallelFor< FunctorType , Host , VectorParallel > {
+class ParallelFor< FunctorType , Host , VectorParallel > 
+  : public HostThreadWorker
+{
 public:
 
   typedef Host::size_type  size_type ;
@@ -94,7 +98,7 @@ public:
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     const std::pair< size_type , size_type > range =
       this_thread.work_range( m_work_count );
@@ -109,7 +113,7 @@ public:
   ParallelFor( const size_type work_count , const FunctorType & functor )
     : m_work_functor( functor )
     , m_work_count( work_count )
-    { HostParallelLaunch< ParallelFor >( *this ); }
+    { HostThreadWorker::execute(); }
 };
 
 #endif
@@ -173,7 +177,9 @@ public:
 } // namespace Impl
 
 template<>
-class MultiFunctorParallelFor< Host > {
+class MultiFunctorParallelFor< Host >
+  : public Impl::HostThreadWorker
+{
 public:
   typedef Host::size_type               size_type ;
   typedef Impl::HostMultiFunctorParallelForMember<void>  worker_type ;
@@ -184,7 +190,7 @@ public:
 
   MemberContainer m_member_functors ;
 
-  void operator()( Impl::HostThread & this_thread ) const
+  void execute_on_thread( Impl::HostThread & this_thread ) const
   {
     for ( MemberIterator m  = m_member_functors.begin() ;
                          m != m_member_functors.end() ; ++m ) {
@@ -212,11 +218,6 @@ public:
     worker_type * const m = new member_work_type( functor , work_count );
 
     m_member_functors.push_back( m );
-  }
-
-  void execute() const
-  {
-    Impl::HostParallelLaunch< MultiFunctorParallelFor >( *this );
   }
 };
 

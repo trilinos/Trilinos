@@ -170,28 +170,42 @@ TEST_F( host , view_remap )
 
 //----------------------------------------------------------------------------
 
-struct HostFunctor {
+struct HostFunctor
+  : public KokkosArray::Impl::HostThreadWorker
+{
+  struct Finalize {
+
+    typedef int value_type ;
+
+    volatile int & flag ;
+
+    void operator()( const value_type & value ) const
+      { flag += value + 1 ; }
+
+    Finalize( int & f ) : flag(f) {}
+  };
+
+  struct Reduce {
+
+    typedef int value_type ;
+
+    static void init( int & update ) { update = 0 ; }
+
+    static void join( volatile int & update , const volatile int & input )
+      { update += input ; }
+  };
+
+  typedef KokkosArray::Impl::ReduceOperator< Reduce , Finalize > reduce_type ;
 
   typedef int value_type ;
 
-  volatile int & flag ;
+  const reduce_type reduce ;
 
-  static void init( int & update )
-    { update = 0 ; }
+  HostFunctor( int & f ) : reduce(f)
+    { KokkosArray::Impl::HostThreadWorker::execute(); }
 
-  static void join( volatile int & update , const volatile int & input )
-    { update += input ; }
-
-  void operator()( const value_type & value ) const
-    { flag += value + 1 ; }
-
-  HostFunctor( int & f ) : flag(f) {}
-
-  void operator()( KokkosArray::Impl::HostThread & thread ) const
+  void execute_on_thread( KokkosArray::Impl::HostThread & thread ) const
     {
-      const KokkosArray::Impl::ReduceOperator< HostFunctor , HostFunctor >
-        reduce(*this);
-
       reduce.init( thread.reduce_data() );
 
       host_barrier( thread );
@@ -208,7 +222,7 @@ TEST_F( host , host_thread )
   int flag = 0 ;
 
   for ( int i = 0 ; i < N ; ++i ) {
-    KokkosArray::Impl::HostParallelLaunch< HostFunctor >( HostFunctor( flag ) );
+    HostFunctor tmp( flag );
   }
 
   ASSERT_EQ( flag , N * 2 );

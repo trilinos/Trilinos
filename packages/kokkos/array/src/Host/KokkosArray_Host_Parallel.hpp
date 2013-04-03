@@ -65,37 +65,17 @@ void host_barrier( HostThread & );
 
 //----------------------------------------------------------------------------
 
-template< class WorkerType >
-struct HostParallelLaunch {
-private:
-
-  struct ThreadWorker : public HostThreadWorker {
-    const WorkerType & m_worker ;
-
-    void execute_on_thread( HostThread & thread ) const
-      { m_worker( thread ); }
-
-    ThreadWorker( const WorkerType & worker )
-      : m_worker( worker ) {}
-  };
-
-public:
-
-  HostParallelLaunch( const WorkerType & worker )
-    { ThreadWorker( worker ).execute(); }
-};
-
-//----------------------------------------------------------------------------
-
 template< typename DstType , typename SrcType  >
-class HostParallelCopy {
+class HostParallelCopy
+  : public HostThreadWorker
+{
 public:
 
         DstType * const m_dst ;
   const SrcType * const m_src ;
   const Host::size_type m_count ;
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( m_count );
@@ -109,18 +89,20 @@ public:
   HostParallelCopy( DstType * dst , const SrcType * src ,
                     Host::size_type count )
     : m_dst( dst ), m_src( src ), m_count( count )
-    { HostParallelLaunch< HostParallelCopy >( *this ); }
+    { HostThreadWorker::execute(); }
 };
 
 template< typename DstType >
-class HostParallelFill {
+class HostParallelFill
+  : public HostThreadWorker
+{
 public:
 
   DstType * const m_dst ;
   const DstType   m_src ;
   const Host::size_type m_count ;
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( m_count );
@@ -134,7 +116,7 @@ public:
   HostParallelFill( DstType * dst , const SrcType & src ,
                     Host::size_type count )
     : m_dst( dst ), m_src( src ), m_count( count )
-    { HostParallelLaunch< HostParallelFill >( *this ); }
+    { HostThreadWorker::execute(); }
 };
 
 //----------------------------------------------------------------------------
