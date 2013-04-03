@@ -10,10 +10,13 @@
       integer which
       character*(*) optvalue
       integer length
+#if defined(__XLF__)      
       integer*4 which4
-
       which4 = which
       call getarg(which4, optvalue)
+#else
+      call getarg(which, optvalue)
+#endif
       length = lenstr(optvalue)
       return
       end
