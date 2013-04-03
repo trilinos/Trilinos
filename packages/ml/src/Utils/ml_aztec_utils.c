@@ -2696,15 +2696,15 @@ int ML_Aggregate_AztecRead(ML_Aggregate *ag) {
    {
       fp = fopen("PaRams","r");
       if (fp == NULL) { printf("woops no PaRams file\n"); exit(1);}
-      fscanf(fp,"%d", &((ag)->ordering) );
-      fscanf(fp,"%d", &((ag)->min_nodes_per_aggregate) );
-      fscanf(fp,"%d", &((ag)->max_neigh_already_selected) );
-      fscanf(fp,"%d", &((ag)->attach_scheme) );
-      fscanf(fp,"%d", &((ag)->max_levels) );
-      fscanf(fp,"%d", &((ag)->coarsen_scheme) );
-      fscanf(fp,"%lf", &((ag)->threshold) );
-      fscanf(fp,"%lf", &((ag)->smoothP_damping_factor) );
-      fscanf(fp,"%lf", &((ag)->drop_tol_for_smoothing) );
+      if (fscanf(fp,"%d", &((ag)->ordering) ) != 1) {printf("fscanf failed\n"); exit(1);}
+      if (fscanf(fp,"%d", &((ag)->min_nodes_per_aggregate) ) != 1) {printf("fscanf failed\n"); exit(1);}
+      if (fscanf(fp,"%d", &((ag)->max_neigh_already_selected) ) != 1) {printf("fscanf failed\n"); exit(1);}
+      if (fscanf(fp,"%d", &((ag)->attach_scheme) ) != 1) {printf("fscanf failed\n"); exit(1);}
+      if (fscanf(fp,"%d", &((ag)->max_levels) ) != 1) {printf("fscanf failed\n"); exit(1);}
+      if (fscanf(fp,"%d", &((ag)->coarsen_scheme) ) != 1) {printf("fscanf failed\n"); exit(1);}
+      if (fscanf(fp,"%lf", &((ag)->threshold) ) != 1) {printf("fscanf failed\n"); exit(1);}
+      if (fscanf(fp,"%lf", &((ag)->smoothP_damping_factor) ) != 1) {printf("fscanf failed\n"); exit(1);}
+      if (fscanf(fp,"%lf", &((ag)->drop_tol_for_smoothing) ) != 1) {printf("fscanf failed\n"); exit(1);}
       fclose(fp);
     }
     AZ_broadcast((char*)&((ag)->ordering),sizeof(int),proc_config,AZ_PACK);
