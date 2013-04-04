@@ -61,7 +61,7 @@ namespace MueLu {
   /*!
     @class MapTransferFactory class.
     @brief transfer factory for maps
-    
+
     Factory that transfers a map (given by a variable name and a generating factory) for building
     a coarse version of the map. The coarse map is stored on the coarse level using the same variable name
     and generating factory than the original fine level map.

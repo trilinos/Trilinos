@@ -88,7 +88,7 @@ namespace MueLu {
     virtual ~RigidBodyModeFactory();
 
     //@}
-    
+
     //! @name Input
     //@{
 

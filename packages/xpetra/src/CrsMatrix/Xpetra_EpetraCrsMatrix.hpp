@@ -146,7 +146,7 @@ namespace Xpetra {
 
     //! Expert static fill complete
     //** \warning This is an expert-only routine and should not be called from user code. */
-    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
 				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
 				  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
 				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,

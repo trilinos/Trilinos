@@ -119,9 +119,9 @@ namespace Xpetra {
       RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myDomainMap = domainMap!=Teuchos::null ? toTpetra(domainMap) : Teuchos::null;
       RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myRangeMap  = rangeMap!=Teuchos::null  ? toTpetra(rangeMap)  : Teuchos::null;
       mtx_=Tpetra::importAndFillCompleteCrsMatrix<MyTpetraCrsMatrix>(tSourceMatrix.getTpetra_CrsMatrix(),toTpetra(importer),myDomainMap,myRangeMap,params);
-      
+
     }
-      
+
     //! Constructor for a fused export
     TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
 		    const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
@@ -136,7 +136,7 @@ namespace Xpetra {
       RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myDomainMap = domainMap!=Teuchos::null ? toTpetra(domainMap) : Teuchos::null;
       RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myRangeMap  = rangeMap!=Teuchos::null  ? toTpetra(rangeMap)  : Teuchos::null;
       mtx_=Tpetra::exportAndFillCompleteCrsMatrix<MyTpetraCrsMatrix>(tSourceMatrix.getTpetra_CrsMatrix(),toTpetra(exporter),myDomainMap,myRangeMap,params);
-      
+
     }
 
     //! Destructor.
@@ -172,7 +172,7 @@ namespace Xpetra {
 
     //! Sets the matrix's structure from the Crs arrays
     //** \warning This is an expert-only routine and should not be called from user code. */
-    void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values) 
+    void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values)
     { XPETRA_MONITOR("TpetraCrsMatrix::setAllValues"); mtx_->setAllValues(rowptr,colind,values); }
 
 
@@ -190,22 +190,22 @@ namespace Xpetra {
     //! Signal that data entry is complete.
     void fillComplete(const RCP< ParameterList > &params=null) { XPETRA_MONITOR("TpetraCrsMatrix::fillComplete"); mtx_->fillComplete(params); }
 
-    
+
     //!  Replaces the current domainMap and importer with the user-specified objects.
-    void replaceDomainMapAndImporter(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter) { 
-      XPETRA_MONITOR("TpetraCrsMatrix::replaceDomainMapAndImporter"); 
+    void replaceDomainMapAndImporter(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter) {
+      XPETRA_MONITOR("TpetraCrsMatrix::replaceDomainMapAndImporter");
       XPETRA_DYNAMIC_CAST( const TpetraImportClass , *newImporter, tImporter, "Xpetra::TpetraCrsMatrix::replaceDomainMapAndImporter only accepts Xpetra::TpetraImport.");
       RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > myImport = tImporter.getTpetra_Import();
             mtx_->replaceDomainMapAndImporter( toTpetra(newDomainMap),myImport);
     }
 
     //! Expert static fill complete
-    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
 				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
 				  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
 				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
 				  const RCP<ParameterList> &params=Teuchos::null) {
-      XPETRA_MONITOR("TpetraCrsMatrix::expertStaticFillComplete"); 
+      XPETRA_MONITOR("TpetraCrsMatrix::expertStaticFillComplete");
       XPETRA_DYNAMIC_CAST( const TpetraImportClass , *importer, tImporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraImport.");
       XPETRA_DYNAMIC_CAST( const TpetraExportClass , *exporter, tExporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraExport.");
       RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > myImport = tImporter.getTpetra_Import();

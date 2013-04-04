@@ -53,7 +53,7 @@ BEGIN {
           levelSpecific=1;
         }
       }
-      #get corresponding parent timer 
+      #get corresponding parent timer
       if (match($0,"Value: ") && levelSpecific) {
         startOfValue = RSTART+RLENGTH;
         match($0,"$");
@@ -75,7 +75,7 @@ BEGIN {
         pattern = substr($0,RSTART,RLENGTH);
         after = substr($0,RSTART+RLENGTH);
 
-        # totals, not level-specific 
+        # totals, not level-specific
         if (match($0,"[(]total[)]")) {
           tlabels[before] = before;
           ttallies[before,linalg[FILENAME]] = pattern;
