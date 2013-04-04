@@ -2932,8 +2932,9 @@ namespace Tpetra {
       Array<int> RemoteImageIDs (numRemoteColGIDs);
       // Look up the remote process' ranks in the domain Map.
       {
-        LookupStatus stat =
+        const LookupStatus stat =
           domainMap_->getRemoteIndexList (RemoteColGIDs, RemoteImageIDs ());
+#ifdef HAVE_TPETRA_DEBUG
         // If any process returns IDNotPresent, then at least one of
         // the remote indices was not present in the domain Map.  This
         // means that the Import object cannot be constructed, because
@@ -2951,6 +2952,9 @@ namespace Tpetra {
           << "Either these column indices are invalid or the domain Map is "
           "invalid." << endl << "Likely cause: For a nonsquare matrix, you "
           "must give the domain and range Maps as input to fillComplete.");
+#else
+        (void) stat; // forestall compiler warning for unused variable
+#endif // HAVE_TPETRA_DEBUG
       }
       // Sort incoming remote column indices so that all columns
       // coming from a given remote process are contiguous.  This
@@ -2994,6 +2998,46 @@ namespace Tpetra {
           << numLocalColGIDs << ".  This should never happen.  Please report "
           "this bug to the Tpetra developers.");
       }
+
+      // FIXME (mfh 03 Apr 2013) Now would be a good time to use the
+      // information we collected above to construct the Import.  In
+      // particular, building an Import requires:
+      //
+      // 1. numSameIDs (length of initial contiguous sequence of GIDs
+      //    on this process that are the same in both Maps; this
+      //    equals the number of domain Map elements on this process)
+      //
+      // 2. permuteToLIDs and permuteFromLIDs (both empty in this
+      //    case, since there's no permutation going on; the column
+      //    Map starts with the domain Map's GIDs, and immediately
+      //    after them come the remote GIDs)
+      //
+      // 3. remoteGIDs (exactly those GIDs that we found out above
+      //    were not in the domain Map) and remoteLIDs (which we could
+      //    have gotten above by using the three-argument version of
+      //    getRemoteIndexList() that computes local indices as well
+      //    as process ranks, instead of the two-argument version that
+      //    was used above)
+      //
+      // 4. remotePIDs (which we have from the getRemoteIndexList()
+      //    call above)
+      //
+      // 5. Sorting remotePIDs, and applying that permutation to
+      //    remoteGIDs and remoteLIDs (by calling sort3 above instead
+      //    of sort2)
+      //
+      // 6. Everything after the sort3 call in Import::setupExport():
+      //    a. Create the Distributor via createFromRecvs(), which
+      //       computes exportGIDs and exportPIDs
+      //    b. Compute exportLIDs from exportGIDs (by asking the
+      //       source Map, in this case the domain Map, to convert
+      //       global to local)
+      //
+      // Steps 1-5 come for free, since we must do that work anyway in
+      // order to compute the column Map.  In particular, Step 3 is
+      // even more expensive than Step 6a, since it involves both
+      // creating and using a new Distributor object.
+
     } // if the graph is globally indexed
 
     const global_size_t gstInv =
