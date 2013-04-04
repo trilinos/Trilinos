@@ -64,13 +64,9 @@ namespace Intrepid
   void
   Vector<T>::set_dimension(Index const N)
   {
-    if (N == dimension) return;
+    if (N == get_dimension()) return;
 
-    if (e != NULL) {
-      delete [] e;
-    }
-
-    e = new T[N];
+    e.resize(N);
 
     dimension = N;
 
@@ -303,9 +299,6 @@ namespace Intrepid
   inline
   Vector<T>::~Vector()
   {
-    if (e != NULL) {
-      delete [] e;
-    }
     return;
   }
 

@@ -115,16 +115,12 @@ namespace Intrepid {
   void
   Tensor<T>::set_dimension(Index const N)
   {
-    if (N == dimension) return;
-
-    if (e != NULL) {
-      delete [] e;
-    }
+    if (N == get_dimension()) return;
 
     Index const
     number_components = N * N;
 
-    e = new T[number_components];
+    e.resize(number_components);
 
     dimension = N;
 
@@ -427,9 +423,6 @@ namespace Intrepid {
   inline
   Tensor<T>::~Tensor()
   {
-    if (e != NULL) {
-      delete [] e;
-    }
     return;
   }
 
