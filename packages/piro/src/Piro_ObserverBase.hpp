@@ -45,53 +45,49 @@
 
 #include "Thyra_VectorBase.hpp"
 
-#include "Teuchos_ScalarTraits.hpp"
-
 namespace Piro {
 
-template <typename Scalar, typename StampScalar = typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+template <typename Scalar>
 class ObserverBase {
 public:
-  typedef StampScalar StampType;
-
   virtual void observeSolution(
       const Thyra::VectorBase<Scalar> &solution);
 
   virtual void observeSolution(
       const Thyra::VectorBase<Scalar> &solution,
-      const StampType &stamp);
+      const Scalar &stamp);
 
   virtual void observeSolution(
       const Thyra::VectorBase<Scalar> &solution,
       const Thyra::VectorBase<Scalar> &solution_dot,
-      const StampType &stamp);
+      const Scalar &stamp);
 
   virtual ~ObserverBase() {}
 };
 
-template <typename Scalar, typename StampScalar>
+template <typename Scalar>
 void
-ObserverBase<Scalar, StampScalar>::observeSolution(
+ObserverBase<Scalar>::observeSolution(
     const Thyra::VectorBase<Scalar> &/*solution*/)
 {
   // Nothing to do by default
 }
 
-template <typename Scalar, typename StampScalar>
+template <typename Scalar>
 void
-ObserverBase<Scalar, StampScalar>::observeSolution(
+ObserverBase<Scalar>::observeSolution(
     const Thyra::VectorBase<Scalar> &/*solution*/,
-    const StampType &/*stamp*/)
+    const Scalar &/*stamp*/)
 {
   // Nothing to do by default
 }
 
-template <typename Scalar, typename StampScalar>
+template <typename Scalar>
 void
-ObserverBase<Scalar, StampScalar>::observeSolution(
+ObserverBase<Scalar>::observeSolution(
     const Thyra::VectorBase<Scalar> &/*solution*/,
     const Thyra::VectorBase<Scalar> &/*solution_dot*/,
-    const StampType &/*stamp*/)
+    const Scalar &/*stamp*/)
 {
   // Nothing to do by default
 }
