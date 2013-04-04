@@ -111,11 +111,52 @@ void Diagonal<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,G
                  Scalar alpha,
                  Scalar beta) const
 {
+  // This method will not just call applyTempl() for now to avoid doing the extra work of
+  // copying data to intermediate vectors to convert scalar types.
+
   TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
     "Ifpack2::Diagonal::apply() ERROR, compute() hasn't been called yet.");
 
   ++numApply_;
   Y.elementWiseMultiply(alpha, *inversediag_, X, beta);
+}
+
+template<class MatrixType>
+template<class DomainScalar, class RangeScalar>
+void Diagonal<MatrixType>::applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+             Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+             Teuchos::ETransp /*mode*/,
+                 RangeScalar alpha,
+                 RangeScalar beta) const
+{
+  typedef typename Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> RangeMultiVectorType;
+  typedef typename Tpetra::Vector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> RangeVectorType;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
+    "Ifpack2::Diagonal::apply() ERROR, compute() hasn't been called yet.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+     "Ifpack2::Diagonal::apply() ERROR: X.getNumVectors() != Y.getNumVectors().");
+
+  ++numApply_;
+
+  Teuchos::RCP<RangeMultiVectorType> Xtmp = rcp(new RangeMultiVectorType(X.getMap(), X.getNumVectors()));
+  Teuchos::RCP<RangeVectorType> invtmp = rcp(new RangeVectorType(inversediag_->getMap()));
+
+  for (size_t j = 0; j < X.getNumVectors(); ++j) {
+    Teuchos::ArrayRCP<const DomainScalar> xVals = X.getVector( j )->get1dView();
+    Teuchos::ArrayRCP<RangeScalar> xValsRange = Xtmp->getVectorNonConst( j )->get1dViewNonConst();
+    if( xVals.size() ) {
+      std::transform( xVals.begin(), xVals.end(), xValsRange.begin(), Teuchos::asFunc<RangeScalar>() );
+    }
+  }
+  Teuchos::ArrayRCP<const DomainScalar> invVals = inversediag_->get1dView();
+  Teuchos::ArrayRCP<RangeScalar> invValsRange = invtmp->get1dViewNonConst();
+  if( invVals.size() ) {
+    std::transform( invVals.begin(), invVals.end(), invValsRange.begin(), Teuchos::asFunc<RangeScalar>() );
+  }
+
+  Y.elementWiseMultiply(alpha, *invtmp, *Xtmp, beta);
 }
 
 template<class MatrixType>
