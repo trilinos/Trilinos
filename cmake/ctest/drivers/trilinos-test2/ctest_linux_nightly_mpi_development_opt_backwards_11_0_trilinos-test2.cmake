@@ -97,6 +97,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/include"
   "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/lib"
   "-DTrilinos_ENABLE_RBGen=OFF"
+  "-DTPL_ENABLE_SuperLU=OFF"
   )
 
 #

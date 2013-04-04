@@ -127,7 +127,6 @@ namespace Tpetra {
 	// #else
 	typedef Kokkos::SerialNode node_type;
 	// #endif // defined(HAVE_KOKKOSCLASSIC_TBB)
-	typedef Teuchos::ScalarTraits<scalar_type> STS;
 
 	const bool callFillComplete = true;
 

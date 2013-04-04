@@ -443,7 +443,6 @@ namespace Tpetra {
       )
 
       typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsMatrix2;
-      typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsGraph2;
       typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
       RCP<const Map2> clonedRowMap = getRowMap()->template clone(node2);
 
@@ -1911,11 +1910,14 @@ namespace Tpetra {
     for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
       MyNnz[i] = Teuchos::as<size_t>(targetNnzPerRow[i]);
 
+    RCP<ParameterList> matrixparams; 
+    if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
+
     RCP<CrsMatrixType> destMat =
       rcp (new CrsMatrixType (importer.getTargetMap(),
                               MyNnz,
                               StaticProfile,
-                              params));
+                              matrixparams));
     destMat->doImport (*sourceMatrix, importer, INSERT);
 
     // Use the source matrix's domain Map as the default.
@@ -1925,7 +1927,25 @@ namespace Tpetra {
     RCP<const map_type> theRangeMap =
       rangeMap.is_null () ? sourceMatrix->getRangeMap () : rangeMap;
 
-    destMat->fillComplete (theDomainMap, theRangeMap);
+    // Do we need to restrict the communicator?
+    bool restrictComm = false;
+    if (!params.is_null()) {
+      restrictComm = params->get("Restrict Communicator",restrictComm);
+    }
+
+    if(restrictComm) {
+      // Handle communicator restriction, if requested
+      RCP<const map_type> newRowMap = importer.getTargetMap()->removeEmptyProcesses();
+      RCP<const Comm<int> > newComm = newRowMap.is_null() ? Teuchos::null : newRowMap->getComm();
+
+      destMat->removeEmptyProcessesInPlace(newRowMap);
+      theDomainMap = theDomainMap->replaceCommWithSubset(newComm);
+      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);      
+      if(!newComm.is_null()) destMat->fillComplete(theDomainMap, theRangeMap);
+    }
+    else
+      destMat->fillComplete(theDomainMap, theRangeMap);
+
     return destMat;
   }
 
@@ -2005,11 +2025,14 @@ namespace Tpetra {
     for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
       MyNnz[i] = Teuchos::as<size_t>(targetNnzPerRow[i]);
 
+    RCP<ParameterList> matrixparams;
+    if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
+
     RCP<CrsMatrixType> destMat =
       rcp (new CrsMatrixType (exporter.getTargetMap (),
                               MyNnz,
                               StaticProfile,
-                              params));
+                              matrixparams));
     destMat->doExport (*sourceMatrix, exporter, INSERT);
 
     // Use the source matrix's domain Map as the default.
@@ -2019,7 +2042,25 @@ namespace Tpetra {
     RCP<const map_type> theRangeMap =
       rangeMap.is_null () ? sourceMatrix->getRangeMap () : rangeMap;
 
-    destMat->fillComplete (theDomainMap, theRangeMap);
+    // Do we need to restrict the communicator?
+    bool restrictComm = false;
+    if (!params.is_null()) {
+      restrictComm = params->get("Restrict Communicator",restrictComm);
+    }
+
+    if(restrictComm) {
+      // Handle communicator restriction, if requested
+      RCP<const map_type> newRowMap = exporter.getTargetMap()->removeEmptyProcesses();
+      RCP<const Comm<int> > newComm = newRowMap.is_null() ? Teuchos::null : newRowMap->getComm();
+
+      destMat->removeEmptyProcessesInPlace(newRowMap);
+      theDomainMap = theDomainMap->replaceCommWithSubset(newComm);
+      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);      
+      if(!newComm.is_null()) destMat->fillComplete(theDomainMap, theRangeMap);
+    }
+    else
+      destMat->fillComplete(theDomainMap, theRangeMap);
+
     return destMat;
   }
 } // namespace Tpetra

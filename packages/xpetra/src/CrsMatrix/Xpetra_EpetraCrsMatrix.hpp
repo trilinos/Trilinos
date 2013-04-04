@@ -298,6 +298,8 @@ namespace Xpetra {
     //! Export (using an Importer).
     void doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
 
+    void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) { }
+
     //@}
 
     //! @name Xpetra specific

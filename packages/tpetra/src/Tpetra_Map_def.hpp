@@ -65,7 +65,8 @@ namespace Tpetra {
        LocalGlobal lOrG,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    uniform_ (true)
   {
     using Teuchos::as;
     using Teuchos::broadcast;
@@ -203,7 +204,8 @@ namespace Tpetra {
     lastContiguousGID_ = maxMyGID_;
     contiguous_ = true;
 
-    setupDirectory ();
+    // Create the Directory on demand in getRemoteIndexList().
+    //setupDirectory ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -214,7 +216,8 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    uniform_ (false)
   {
     using Teuchos::as;
     using Teuchos::broadcast;
@@ -333,38 +336,8 @@ namespace Tpetra {
     contiguous_ = true;
     distributed_ = checkIsDist ();
 
-#if 0 && defined(HAVE_TPETRA_DEBUG)
-    using std::cerr;
-    using std::endl;
-    std::ostringstream os;
-    const int myRank = comm->getRank ();
-    const int numProcs = comm->getSize ();
-    if (myRank == 0) {
-      cerr << "Map 2nd ctor: " << endl;
-    }
-    comm->barrier ();
-    comm->barrier ();
-    comm->barrier ();
-    for (int p = 0; p < numProcs; ++p) {
-      if (p == myRank) {
-        std::ostringstream os;
-        os << "- Proc " << comm->getRank () << ": " << endl
-           << "  - numGlobalElements_: " << numGlobalElements_ << endl
-           << "  - numLocalElements_: " << numLocalElements_ << endl
-           << "  - indexBase_: " << indexBase_ << endl
-           << "  - minAllGID_: " << minAllGID_ << endl
-           << "  - maxAllGID_: " << maxAllGID_ << endl
-           << "  - minMyGID_: " << minMyGID_ << endl
-           << "  - maxMyGID_: " << maxMyGID_ << endl;
-        cerr << os.str ();
-      }
-      comm->barrier ();
-      comm->barrier ();
-      comm->barrier ();
-    }
-#endif // 0 && defined(HAVE_TPETRA_DEBUG)
-
-    setupDirectory ();
+    // Create the Directory on demand in getRemoteIndexList().
+    //setupDirectory ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -375,7 +348,8 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    uniform_ (false)
   {
     using Teuchos::arcp;
     using Teuchos::as;
@@ -530,8 +504,8 @@ namespace Tpetra {
     }
     else {
       // This insures tests for GIDs in the range
-      // [fistContiguousGID_, lastContiguousGID_] fail for processors with
-      // no local elements
+      // [firstContiguousGID_, lastContiguousGID_] fail for processes
+      // with no local elements
       firstContiguousGID_ = indexBase_+1;
       lastContiguousGID_ = indexBase_;
     }
@@ -542,26 +516,49 @@ namespace Tpetra {
     // require either a fancy sparse all-reduce, or a custom reduction
     // operator that ignores invalid values ("invalid" means
     // Teuchos::OrdinalTraits<GO>::invalid()).
+    //
+    // Also, while we're at it, use the same all-reduce to figure out
+    // if the Map is distributed.  "Distributed" means that there is
+    // at least one process with a number of local elements less than
+    // the number of global elements.
+    //
+    // We're computing the min and max of all processes' GIDs using a
+    // single MAX all-reduce, because min(x,y) = -max(-x,-y) (when x
+    // and y are signed).  (This lets us combine the min and max into
+    // a single all-reduce.)  If each process sets localDist=1 if its
+    // number of local elements is strictly less than the number of
+    // global elements, and localDist=0 otherwise, then a MAX
+    // all-reduce on localDist tells us if the Map is distributed (1
+    // if yes, 0 if no).  Thus, we can append localDist onto the end
+    // of the data and get the global result from the all-reduce.
     if (std::numeric_limits<GO>::is_signed) {
-      // When x and y are signed, min(x, y) == -max(-x, -y).
-      // That means we only need one max-reduction.
-      GO minMaxInput[2], minMaxOutput[2];
+      // Does my process NOT own all the elements?
+      const GO localDist =
+        (as<GST> (numLocalElements_) < numGlobalElements_) ? 1 : 0;
+
+      GO minMaxInput[3];
       minMaxInput[0] = -minMyGID_;
       minMaxInput[1] = maxMyGID_;
+      minMaxInput[2] = localDist;
+
+      GO minMaxOutput[3];
       minMaxOutput[0] = 0;
       minMaxOutput[1] = 0;
-      reduceAll (*comm, REDUCE_MAX, 2, minMaxInput, minMaxOutput);
+      minMaxOutput[2] = 0;
+      reduceAll<int, GO> (*comm, REDUCE_MAX, 3, minMaxInput, minMaxOutput);
       minAllGID_ = -minMaxOutput[0];
       maxAllGID_ = minMaxOutput[1];
+      const GO globalDist = minMaxOutput[2];
+      distributed_ = (comm_->getSize () > 1 && globalDist == 1);
     }
     else { // unsigned; use two reductions
       // This is always correct, no matter the signedness of GO.
-      reduceAll (*comm_, REDUCE_MIN, minMyGID_, outArg (minAllGID_));
-      reduceAll (*comm_, REDUCE_MAX, maxMyGID_, outArg (maxAllGID_));
+      reduceAll<int, GO> (*comm_, REDUCE_MIN, minMyGID_, outArg (minAllGID_));
+      reduceAll<int, GO> (*comm_, REDUCE_MAX, maxMyGID_, outArg (maxAllGID_));
+      distributed_ = checkIsDist ();
     }
 
     contiguous_  = false; // "Contiguous" is conservative.
-    distributed_ = checkIsDist ();
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -572,7 +569,8 @@ namespace Tpetra {
       "less than the given indexBase = " << indexBase_ << ".");
 #endif // HAVE_TPETRA_DEBUG
 
-    setupDirectory ();
+    // Create the Directory on demand in getRemoteIndexList().
+    //setupDirectory ();
   }
 
 
@@ -633,13 +631,13 @@ namespace Tpetra {
   bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   isNodeGlobalElement (GlobalOrdinal globalIndex) const {
-    if (isContiguous()) {
-      return (getMinGlobalIndex() <= globalIndex) && (globalIndex <= getMaxGlobalIndex());
-    }
-    else {
-      LocalOrdinal i = glMap_->get(globalIndex);
-      return (i != -1);
-    }
+    return this->getLocalElement (globalIndex) !=
+      Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isUniform() const {
+    return uniform_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -657,7 +655,7 @@ namespace Tpetra {
 
     // Do both Maps have the same number of elements, both globally
     // and on the calling process?
-    char locallyCompat = 0;
+    int locallyCompat = 0;
     if (getGlobalNumElements() != map.getGlobalNumElements() ||
           getNodeNumElements() != map.getNodeNumElements()) {
       locallyCompat = 0; // NOT compatible on this process
@@ -666,8 +664,8 @@ namespace Tpetra {
       locallyCompat = 1; // compatible on this process
     }
 
-    char globallyCompat = 0;
-    reduceAll (*comm_, REDUCE_MIN, locallyCompat, outArg (globallyCompat));
+    int globallyCompat = 0;
+    reduceAll<int, int> (*comm_, REDUCE_MIN, locallyCompat, outArg (globallyCompat));
     return (globallyCompat == 1);
   }
 
@@ -677,6 +675,9 @@ namespace Tpetra {
   isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const
   {
     using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
     if (this == &map) {
       // we assume that this is globally coherent
       // if they are the same object, then they are equivalent maps
@@ -698,7 +699,7 @@ namespace Tpetra {
     // communicate same-ness across all nodes
     // we prefer local work over communication, ergo, we will perform all
     // comparisons and conduct a single communication
-    char isSame_lcl = 1;
+    int isSame_lcl = 1;
 
     // check number of entries owned by this node
     if (getNodeNumElements() != map.getNodeNumElements()) {
@@ -731,15 +732,15 @@ namespace Tpetra {
         Teuchos::ArrayView<const GlobalOrdinal> ge1, ge2;
         ge1 =     getNodeElementList();
         ge2 = map.getNodeElementList();
-        if (!std::equal(ge1.begin(),ge1.end(),ge2.begin())) {
+        if (! std::equal (ge1.begin(), ge1.end(), ge2.begin())) {
           isSame_lcl = 0;
         }
       }
     }
 
     // now, determine if we detected not-same-ness on any node
-    char isSame_gbl;
-    Teuchos::reduceAll<int,char>(*comm_,Teuchos::REDUCE_MIN,isSame_lcl,outArg(isSame_gbl));
+    int isSame_gbl;
+    reduceAll<int, int> (*comm_, REDUCE_MIN, isSame_lcl, outArg (isSame_gbl));
     return (isSame_gbl == 1);
   }
 
@@ -932,7 +933,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
-    typedef Teuchos::OrdinalTraits<GlobalOrdinal> OTG;
 
     // Create the new communicator.  split() returns a valid
     // communicator on all processes.  On processes where color == 0,
@@ -968,8 +968,9 @@ namespace Tpetra {
       map->firstContiguousGID_= firstContiguousGID_;
       map->lastContiguousGID_ = lastContiguousGID_;
 
-      // Contiguity hasn't changed.  The directory has changed, but
-      // we've taken care of that above.
+      // Uniformity and contiguity have not changed.  The directory
+      // has changed, but we've taken care of that above.
+      map->uniform_    = uniform_;
       map->contiguous_ = contiguous_;
 
       // If the original Map was NOT distributed, then the new Map
@@ -998,24 +999,29 @@ namespace Tpetra {
       map->glMap_ = glMap_;
       map->node_ = node_;
 
-      // This is collective on all processes in the new communicator.
+      // The Directory will be created on demand in getRemoteIndexList().
       //
       // FIXME (mfh 26 Mar 2013) It should be possible to "filter" the
       // directory more efficiently than just recreating it.  If
       // directory recreation proves a bottleneck, we can always
-      // revisit this.  On the other hand, this is only collective
-      // over the new, presumably much smaller communicator, so it may
-      // not be worth the effort to optimize.
-      map->directory_ = null; // just to make sure setDirectory() works
-      map->setupDirectory ();
+      // revisit this.  On the other hand, Directory creation is only
+      // collective over the new, presumably much smaller
+      // communicator, so it may not be worth the effort to optimize.
+      map->directory_ = null;
       return map;
     }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Map<LocalOrdinal,GlobalOrdinal,Node>::setupDirectory() {
-    if (directory_ == Teuchos::null) {
-      directory_ = Teuchos::rcp( new Directory<LocalOrdinal,GlobalOrdinal,Node>(Teuchos::rcp(this,false)) );
+  void
+  Map<LocalOrdinal,GlobalOrdinal,Node>::setupDirectory () const
+  {
+    using Teuchos::rcp;
+    typedef Directory<LocalOrdinal,GlobalOrdinal,Node> directory_type;
+    // Only create the Directory if it hasn't been created yet.
+    // This is a collective operation.
+    if (directory_.is_null ()) {
+      directory_ = rcp (new directory_type (rcp (this, false)));
     }
   }
 
@@ -1024,18 +1030,30 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const GlobalOrdinal> & GIDList,
                     const Teuchos::ArrayView<int> & imageIDList,
                     const Teuchos::ArrayView<LocalOrdinal> & LIDList) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
-        Teuchos::typeName(*this) << "::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries in Map.");
-    return directory_->getDirectoryEntries(GIDList, imageIDList, LIDList);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
+      Teuchos::typeName(*this) << "::getRemoteIndexList: The Map has zero "
+      "entries (globally), so you may not call this method.");
+    // getRemoteIndexList must be called collectively, and Directory
+    // creation is collective too, so it's OK to create the Directory
+    // on demand.
+    setupDirectory ();
+    return directory_->getDirectoryEntries (GIDList, imageIDList, LIDList);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   LookupStatus Map<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(
                     const Teuchos::ArrayView<const GlobalOrdinal> & GIDList,
                     const Teuchos::ArrayView<int> & imageIDList) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
-        Teuchos::typeName(*this) << "::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries in Map.");
-    return directory_->getDirectoryEntries(GIDList, imageIDList);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
+      Teuchos::typeName(*this) << "::getRemoteIndexList: The Map has zero "
+      "entries (globally), so you may not call this method.");
+    // getRemoteIndexList must be called collectively, and Directory
+    // creation is collective too, so it's OK to create the Directory
+    // on demand.
+    setupDirectory ();
+    return directory_->getDirectoryEntries (GIDList, imageIDList);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1058,10 +1076,10 @@ namespace Tpetra {
     using Teuchos::reduceAll;
 
     bool global = false;
-    if(comm_->getSize() > 1) {
+    if (comm_->getSize () > 1) {
       // The communicator has more than one process, but that doesn't
       // necessarily mean the Map is distributed.
-      char localRep = 0;
+      int localRep = 0;
       if (numGlobalElements_ == as<global_size_t> (numLocalElements_)) {
         // The number of local elements on this process equals the
         // number of global elements.
@@ -1074,8 +1092,8 @@ namespace Tpetra {
         // the elements?
         localRep = 1;
       }
-      char allLocalRep;
-      reduceAll<int> (*comm_, REDUCE_MIN, localRep, outArg (allLocalRep));
+      int allLocalRep;
+      reduceAll<int, int> (*comm_, REDUCE_MIN, localRep, outArg (allLocalRep));
       if (allLocalRep != 1) {
         // At least one process does not own all the elements.
         // This makes the Map a distributed Map.

@@ -131,13 +131,13 @@ namespace Teuchos {
 
   float BLAS<int, float>::ASUM(const int n, const float* x, const int incx) const
   {
-    typedef ScalarTraits<float> ST;
 #if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
     return cblas_sasum(n, x, incx);
 #elif defined(HAVE_TEUCHOS_BLASFLOAT)
     float tmp = SASUM_F77(&n, x, &incx);
     return tmp;
 #else
+    typedef ScalarTraits<float> ST;
     float sum = 0.0;
     if (incx == 1) {
       for (int i = 0; i < n; ++i)

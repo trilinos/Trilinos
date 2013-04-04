@@ -154,9 +154,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MatrixMatrix, Multiply, Scalar, LO, GO, Node )
   {
     typedef typename DefaultKernels<Scalar,LO,Node>::SparseOps DSM;
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    typedef Matrix<Scalar, LO, GO, Node> Matrix;
-    typedef CrsMatrix<Scalar, LO, GO, Node> CrsMatrix;
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
 

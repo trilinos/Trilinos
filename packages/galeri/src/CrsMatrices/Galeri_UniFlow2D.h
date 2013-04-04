@@ -62,8 +62,6 @@ Epetra_CrsMatrix* UniFlow2D(const Epetra_Map* Map,
                             const double conv, const double diff,
                             const double alpha)
 {
-  Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map,  5);
-
   int NumMyElements = Map->NumMyElements();
   int* MyGlobalElements = Map->MyGlobalElements();
 
@@ -84,10 +82,6 @@ Epetra_CrsMatrix* UniFlow2D(const Epetra_Map* Map,
 
   for (int i = 0 ; i < NumMyElements ; ++i) 
   {
-    int ix, iy;
-    ix = (MyGlobalElements[i]) % nx;
-    iy = (MyGlobalElements[i] - ix) / nx;
-
     double ConvX = conv * cos(alpha) / hx;
     double ConvY = conv * sin(alpha) / hy;
 

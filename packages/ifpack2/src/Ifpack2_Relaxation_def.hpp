@@ -134,13 +134,14 @@ Relaxation (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordina
   Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::Relaxation"))),
   NumSweeps_ (1),
   PrecType_ (Ifpack2::JACOBI),
-  MinDiagonalValue_ (STS::zero ()),
   DampingFactor_ (STS::one ()),
   IsParallel_ (A->getRowMap ()->getComm ()->getSize () > 1),
   ZeroStartingSolution_ (true),
   DoBackwardGS_ (false),
   DoL1Method_ (false),
   L1Eta_ (Teuchos::as<magnitude_type> (1.5)),
+  MinDiagonalValue_ (STS::zero ()),
+  fixTinyDiagEntries_ (false),
   checkDiagEntries_ (false),
   Condest_ (-STM::one ()),
   IsInitialized_ (false),
@@ -208,9 +209,6 @@ Relaxation<MatrixType>::getValidParameters () const
     pl->set ("relaxation: sweeps", numSweeps, "Number of relaxation sweeps",
              rcp_const_cast<const PEV> (numSweepsValidator));
 
-    const scalar_type minDiagonalValue = STS::zero ();
-    pl->set ("relaxation: min diagonal value", minDiagonalValue);
-
     const scalar_type dampingFactor = STS::one ();
     pl->set ("relaxation: damping factor", dampingFactor);
 
@@ -226,6 +224,12 @@ Relaxation<MatrixType>::getValidParameters () const
     const magnitude_type l1eta = (STM::one() + STM::one() + STM::one()) /
       (STM::one() + STM::one()); // 1.5
     pl->set ("relaxation: l1 eta", l1eta);
+
+    const scalar_type minDiagonalValue = STS::zero ();
+    pl->set ("relaxation: min diagonal value", minDiagonalValue);
+
+    const bool fixTinyDiagEntries = false;
+    pl->set ("relaxation: fix tiny diagonal entries", fixTinyDiagEntries);
 
     const bool checkDiagEntries = false;
     pl->set ("relaxation: check diagonal entries", checkDiagEntries);
@@ -250,22 +254,24 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
     getIntegralValue<RelaxationType> (pl, "relaxation: type");
   const int numSweeps = pl.get<int> ("relaxation: sweeps");
   const ST dampingFactor = pl.get<ST> ("relaxation: damping factor");
-  const ST minDiagonalValue = pl.get<ST> ("relaxation: min diagonal value");
   const bool zeroStartSol = pl.get<bool> ("relaxation: zero starting solution");
   const bool doBackwardGS = pl.get<bool> ("relaxation: backward mode");
   const bool doL1Method = pl.get<bool> ("relaxation: use l1");
   const magnitude_type l1Eta = pl.get<magnitude_type> ("relaxation: l1 eta");
+  const ST minDiagonalValue = pl.get<ST> ("relaxation: min diagonal value");
+  const bool fixTinyDiagEntries = pl.get<bool> ("relaxation: fix tiny diagonal entries");
   const bool checkDiagEntries = pl.get<bool> ("relaxation: check diagonal entries");
 
   // "Commit" the changes, now that we've validated everything.
   PrecType_ = precType;
   NumSweeps_ = numSweeps;
   DampingFactor_ = dampingFactor;
-  MinDiagonalValue_ = minDiagonalValue;
   ZeroStartingSolution_ = zeroStartSol;
   DoBackwardGS_ = doBackwardGS;
   DoL1Method_ = doL1Method;
   L1Eta_ = l1Eta;
+  MinDiagonalValue_ = minDiagonalValue;
+  fixTinyDiagEntries_ = fixTinyDiagEntries;
   checkDiagEntries_ = checkDiagEntries;
 }
 
@@ -530,7 +536,6 @@ void Relaxation<MatrixType>::compute ()
   using Teuchos::REDUCE_MIN;
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
-  typedef Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> import_type;
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
   const scalar_type zero = STS::zero ();
   const scalar_type one = STS::one ();
@@ -620,12 +625,15 @@ void Relaxation<MatrixType>::compute ()
     // Invert the diagonal entries of the matrix (not in place).
     //
 
-    // Don't actually divide by zero; that's tacky.  SmallTraits
-    // covers for the lack of eps() in Teuchos::ScalarTraits<Scalar>
-    // when Scalar is not a floating-point type.  (Ifpack2 sometimes
-    // gets instantiated for integer Scalar types.)
+    // Precompute some quantities for "fixing" zero or tiny diagonal
+    // entries.  We'll only use them if this "fixing" is enabled.
+    //
+    // SmallTraits covers for the lack of eps() in
+    // Teuchos::ScalarTraits when its template parameter is not a
+    // floating-point type.  (Ifpack2 sometimes gets instantiated for
+    // integer Scalar types.)
     const scalar_type oneOverMinDiagVal = (MinDiagonalValue_ == zero) ?
-      SmallTraits<scalar_type>::eps () :
+      one / SmallTraits<scalar_type>::eps () :
       one / MinDiagonalValue_;
     // It's helpful not to have to recompute this magnitude each time.
     const magnitude_type minDiagValMag = STS::magnitude (MinDiagonalValue_);
@@ -682,14 +690,26 @@ void Relaxation<MatrixType>::compute ()
           maxMagDiagEntryMag = d_i_mag;
         }
 
-        // <= not <, in case minDiagValMag is zero.
-        if (d_i_mag <= minDiagValMag) {
-          ++numSmallDiagEntries;
-          if (d_i_mag == STM::zero ()) {
-            ++numZeroDiagEntries;
+        if (fixTinyDiagEntries_) {
+          // <= not <, in case minDiagValMag is zero.
+          if (d_i_mag <= minDiagValMag) {
+            ++numSmallDiagEntries;
+            if (d_i_mag == STM::zero ()) {
+              ++numZeroDiagEntries;
+            }
+            diag[i] = oneOverMinDiagVal;
+          } else {
+            diag[i] = one / d_i;
           }
-          diag[i] = oneOverMinDiagVal;
-        } else {
+        }
+        else { // Don't fix zero or tiny diagonal entries.
+          // <= not <, in case minDiagValMag is zero.
+          if (d_i_mag <= minDiagValMag) {
+            ++numSmallDiagEntries;
+            if (d_i_mag == STM::zero ()) {
+              ++numZeroDiagEntries;
+            }
+          }
           diag[i] = one / d_i;
         }
       }
@@ -730,7 +750,9 @@ void Relaxation<MatrixType>::compute ()
       // (- (min (- x))) is the same as (max x).
       localVals[1] = -maxMagDiagEntryMag;
       Array<magnitude_type> globalVals (2);
-      reduceAll<int, magnitude_type> (comm, REDUCE_MIN, 2, localVals.getRawPtr (), globalVals.getRawPtr ());
+      reduceAll<int, magnitude_type> (comm, REDUCE_MIN, 2,
+                                      localVals.getRawPtr (),
+                                      globalVals.getRawPtr ());
       globalMinMagDiagEntryMag_ = globalVals[0];
       globalMaxMagDiagEntryMag_ = -globalVals[1];
 
@@ -739,11 +761,16 @@ void Relaxation<MatrixType>::compute ()
       localCounts[1] = numZeroDiagEntries;
       localCounts[2] = numNegDiagEntries;
       Array<size_t> globalCounts (3);
-      reduceAll<int, size_t> (comm, REDUCE_SUM, 3, localCounts.getRawPtr (), globalCounts.getRawPtr ());
-
+      reduceAll<int, size_t> (comm, REDUCE_SUM, 3,
+                              localCounts.getRawPtr (),
+                              globalCounts.getRawPtr ());
       globalNumSmallDiagEntries_ = globalCounts[0];
       globalNumZeroDiagEntries_ = globalCounts[1];
       globalNumNegDiagEntries_ = globalCounts[2];
+
+      // Forestall "set but not used" compiler warnings.
+      (void) minMagDiagEntry;
+      (void) maxMagDiagEntry;
 
       // Compute and save the difference between the computed inverse
       // diagonal, and the original diagonal's inverse.
@@ -752,19 +779,26 @@ void Relaxation<MatrixType>::compute ()
       diff->update (-one, *Diagonal_, one);
       globalDiagNormDiff_ = diff->norm2 ();
     }
-    else {
-      // Go through all the diagonal entries.  Invert those that
-      // aren't too small in magnitude.  For those that are too small
-      // in magnitude, replace them with oneOverMinDiagVal.
-      for (size_t i = 0 ; i < numMyRows; ++i) {
-        const scalar_type d_i = diag[i];
-        const magnitude_type d_i_mag = STS::magnitude (d_i);
+    else { // don't check diagonal elements
+      if (fixTinyDiagEntries_) {
+        // Go through all the diagonal entries.  Invert those that
+        // aren't too small in magnitude.  For those that are too
+        // small in magnitude, replace them with oneOverMinDiagVal.
+        for (size_t i = 0 ; i < numMyRows; ++i) {
+          const scalar_type d_i = diag[i];
+          const magnitude_type d_i_mag = STS::magnitude (d_i);
 
-        // <= not <, in case minDiagValMag is zero.
-        if (d_i_mag <= minDiagValMag) {
-          diag[i] = oneOverMinDiagVal;
-        } else {
-          diag[i] = one / d_i;
+          // <= not <, in case minDiagValMag is zero.
+          if (d_i_mag <= minDiagValMag) {
+            diag[i] = oneOverMinDiagVal;
+          } else {
+            diag[i] = one / d_i;
+          }
+        }
+      }
+      else { // don't fix tiny or zero diagonal entries
+        for (size_t i = 0 ; i < numMyRows; ++i) {
+          diag[i] = one / diag[i];
         }
       }
       if (STS::isComplex) { // magnitude: at least 3 flops per diagonal entry

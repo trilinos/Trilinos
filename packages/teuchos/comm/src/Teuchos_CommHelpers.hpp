@@ -2295,7 +2295,6 @@ Teuchos::ireceive(
   const int sourceRank
   )
 {
-  typedef std::pair<RCP<CommRequest<Ordinal> >, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::ireceive<int, " << "," << TypeNameTraits<Packet>::name () << ">");
   ValueTypeSerializationBuffer<Ordinal,Packet>
@@ -2313,7 +2312,6 @@ Teuchos::ireceive (const Teuchos::ArrayRCP<Packet> &recvBuffer,
 		   const int tag,
 		   const Teuchos::Comm<Ordinal>& comm)
 {
-  typedef std::pair<RCP<CommRequest<int> >, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::ireceive<int, " << "," << TypeNameTraits<Packet>::name () << ">");
   ValueTypeSerializationBuffer<int, Packet>
@@ -2348,7 +2346,6 @@ Teuchos::ireceive(
   const int sourceRank
   )
 {
-  typedef std::pair<RCP<CommRequest<Ordinal> >, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: ireceive<"
     <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()

@@ -363,7 +363,7 @@ private:
   
 private:
 
-  char*                                                           label_;
+  const char*                                                     label_;
   bool                                                            isinit_; 
   int                                                             ncalls_NewPrec_;
   

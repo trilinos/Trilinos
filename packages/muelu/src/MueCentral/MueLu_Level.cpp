@@ -62,7 +62,6 @@ namespace MueLu {
     // TODO: this only concerns needs_. so a function in Needs class should be provided to do that!
     // TODO: how can i move this to Needs? maybe we need a new constructor for Level which gets a
     // Needs object...
-    typedef std::vector<std::string> KeyList;
 
     std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedFactories();
     for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {

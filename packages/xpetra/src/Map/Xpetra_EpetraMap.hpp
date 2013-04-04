@@ -169,6 +169,9 @@ namespace Xpetra {
     //! Get this Map's Node object.
     const Teuchos::RCP< Node >  getNode() const;
 
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > removeEmptyProcesses () const { return rcpFromRef(*this); }
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const { return rcpFromRef(*this); }
+
     //@}
 
     //! @name

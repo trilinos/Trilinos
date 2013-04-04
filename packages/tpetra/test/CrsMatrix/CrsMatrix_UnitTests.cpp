@@ -292,12 +292,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, EmptyFillComplete, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef CrsGraph<LO,GO,Node>  GRPH;
-    typedef Vector<Scalar,LO,GO,Node> V;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -351,8 +347,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // test that an exception is thrown when we exceed statically allocated memory
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> ST;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -416,8 +410,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // test that an exception is thrown when we exceed statically allocated memory
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1172,7 +1164,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const size_t THREE = 3;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
@@ -1270,9 +1261,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // what happens when we call CrsMatrix::insertGlobalValues() for a row that isn't on the Map?
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef MultiVector<Scalar,LO,GO,Node> MV;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1343,8 +1331,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef typename MAT::local_ordinal_type  local_ordinal_type;
     typedef typename MAT::global_ordinal_type global_ordinal_type;
     typedef typename MAT::node_type           node_type;
-    typedef typename MAT::mat_vec_type        mat_vec_type;
-    typedef typename MAT::mat_solve_type      mat_solve_type;
     TEST_EQUALITY_CONST( (is_same< scalar_type         , Scalar >::value) == true, true );
     TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , LO     >::value) == true, true );
     TEST_EQUALITY_CONST( (is_same< global_ordinal_type , GO     >::value) == true, true );

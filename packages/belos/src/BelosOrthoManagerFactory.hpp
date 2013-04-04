@@ -309,7 +309,6 @@ namespace Belos {
       using Belos::DGKSOrthoManager;
       using Belos::SimpleOrthoManager;
       using Teuchos::rcp;
-      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
       if (ortho == "DGKS") {
 	typedef DGKSOrthoManager<Scalar, MV, OP> dgks_type;

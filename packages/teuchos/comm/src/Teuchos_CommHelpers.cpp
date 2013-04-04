@@ -227,7 +227,6 @@ ireceiveGeneral(const Comm<int>& comm,
 		const ArrayRCP<Packet> &recvBuffer,
 		const int sourceRank)
 {
-  typedef std::pair<RCP<CommRequest<int> >, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::ireceive<int, " << "," << TypeNameTraits<Packet>::name () 
     << "> ( value type )"
@@ -249,7 +248,6 @@ ireceiveGeneral (const ArrayRCP<Packet> &recvBuffer,
 		 const int tag,
 		 const Comm<int>& comm)
 {
-  typedef std::pair<RCP<CommRequest<int> >, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::ireceive<int, " << "," << TypeNameTraits<Packet>::name () 
     << "> ( value type )"

@@ -136,7 +136,6 @@ namespace {
     // export with the exporter to add and reduce
     typedef ScalarTraits<Scalar> ST;
     typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -244,7 +243,6 @@ namespace {
     // export with the importer to add and reduce
     typedef ScalarTraits<Scalar> ST;
     typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize(),

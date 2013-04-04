@@ -44,8 +44,8 @@
 //
 // @HEADER
 
-#ifndef MUELU_TPETRAOPERATOR_DEF_HPP 
-#define MUELU_TPETRAOPERATOR_DEF_HPP 
+#ifndef MUELU_TPETRAOPERATOR_DEF_HPP
+#define MUELU_TPETRAOPERATOR_DEF_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -75,7 +75,7 @@ const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & Tpetra
 
   RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(A);
   if(tpbA != Teuchos::null)
-    return Xpetra::toTpetra(tpbA->getDomainMap());
+    return Xpetra::toTpetraNonZero(tpbA->getDomainMap());
 
   RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs(A);
   return tpA->getDomainMap();
@@ -93,7 +93,7 @@ const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & Tpetra
 
   RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(A);
   if(tpbA != Teuchos::null)
-    return Xpetra::toTpetra(tpbA->getRangeMap());
+    return Xpetra::toTpetraNonZero(tpbA->getRangeMap());
 
   RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs(A);
   return tpA->getRangeMap();
@@ -106,7 +106,7 @@ void TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(c
                                                                                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                                                                                Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
 
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV; 
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
   typedef Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> XTMV;
 
   try {
@@ -118,7 +118,7 @@ void TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(c
     tY.putScalar(0.0);
     Hierarchy_->Iterate(tX, 1, tY, true);
   }
-  
+
   catch(std::exception& e) {
     //FIXME add message and rethrow
     std::cerr << "Caught an exception in MueLu::TpetraOperator::ApplyInverse():" << std::endl
@@ -135,4 +135,4 @@ bool TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::hasTran
 } // namespace
 #endif //ifdef HAVE_MUELU_TPETRA
 
-#endif //ifdef MUELU_TPETRAOPERATOR_DEF_HPP 
+#endif //ifdef MUELU_TPETRAOPERATOR_DEF_HPP

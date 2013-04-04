@@ -115,16 +115,12 @@ namespace Intrepid {
   void
   Tensor<T>::set_dimension(Index const N)
   {
-    if (N == dimension) return;
-
-    if (e != NULL) {
-      delete [] e;
-    }
+    if (N == get_dimension()) return;
 
     Index const
     number_components = N * N;
 
-    e = new T[number_components];
+    e.resize(number_components);
 
     dimension = N;
 
@@ -190,7 +186,7 @@ namespace Intrepid {
   inline
   Tensor<T>::Tensor() :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     return;
   }
@@ -202,7 +198,7 @@ namespace Intrepid {
   inline
   Tensor<T>::Tensor(Index const N) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     set_dimension(N);
 
@@ -251,7 +247,7 @@ namespace Intrepid {
   inline
   Tensor<T>::Tensor(Index const N, T const & s) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     set_dimension(N);
 
@@ -304,7 +300,7 @@ namespace Intrepid {
       T const & s00, T const & s01,
       T const & s10, T const & s11) :
       dimension(0),
-      e(NULL)
+      e(Teuchos::null)
   {
     set_dimension(2);
 
@@ -329,7 +325,7 @@ namespace Intrepid {
       T const & s10, T const & s11, T const & s12,
       T const & s20, T const & s21, T const & s22) :
       dimension(0),
-      e(NULL)
+      e(Teuchos::null)
   {
     set_dimension(3);
 
@@ -356,7 +352,7 @@ namespace Intrepid {
   inline
   Tensor<T>::Tensor(Index const N, T const * data_ptr) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     assert(data_ptr != NULL);
 
@@ -375,7 +371,7 @@ namespace Intrepid {
   inline
   Tensor<T>::Tensor(Tensor<T> const & A) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     Index const
     N = A.get_dimension();
@@ -427,9 +423,6 @@ namespace Intrepid {
   inline
   Tensor<T>::~Tensor()
   {
-    if (e != NULL) {
-      delete [] e;
-    }
     return;
   }
 

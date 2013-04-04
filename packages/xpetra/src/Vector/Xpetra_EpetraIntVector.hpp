@@ -264,6 +264,10 @@ namespace Xpetra {
 
     void doExport(const DistObject<int, int, int> &dest, const Export<int, int>& exporter, CombineMode CM);
 
+    void replaceMap(const RCP<const Map<int,int> >& map) {
+      // do nothing
+    }
+
   private:
     RCP< Epetra_IntVector > vec_;
 

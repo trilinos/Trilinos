@@ -70,7 +70,6 @@ build_problem(Teuchos::ParameterList& test_params,
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                TMap;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TV;
   typedef Belos::OperatorTraits<Scalar,TMV,TOP>                       BOPT;
   typedef Belos::MultiVecTraits<Scalar,TMV>                           BMVT;
   typedef Belos::LinearProblem<Scalar,TMV,TOP>                        BLinProb;
@@ -128,7 +127,6 @@ Teuchos::RCP<
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                TMap;
   typedef Belos::LinearProblem<Scalar,TMV,TOP>                        BLinProb;
 
   Teuchos::RCP<TCRS> A;

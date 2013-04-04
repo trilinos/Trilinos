@@ -61,6 +61,28 @@ namespace Galeri {
 
   namespace Xpetra {
 
+    template <typename Scalar, typename GlobalOrdinal>
+    void GetPMLvalues(const GlobalOrdinal i,
+		      const GlobalOrdinal nx,          const GlobalOrdinal ny,
+		      const double h,                  const double delta,
+		      const double Dx,                 const double Dy,
+		      const double LBx,                const double RBx,
+		      const double LBy,                const double RBy,
+		      Scalar& sx_left,        Scalar& sx_center,        Scalar& sx_right,
+		      Scalar& sy_left,        Scalar& sy_center,        Scalar& sy_right);
+
+    template <typename Scalar, typename GlobalOrdinal>
+    void GetPMLvalues(const GlobalOrdinal i,
+                      const GlobalOrdinal nx,          const GlobalOrdinal ny,            const GlobalOrdinal nz,
+		      const double h,                  const double delta,
+		      const double Dx,                 const double Dy,                   const double Dz,
+		      const double LBx,                const double RBx,
+		      const double LBy,                const double RBy,
+		      const double LBz,                const double RBz,
+		      Scalar& sx_left,        Scalar& sx_center,        Scalar& sx_right,
+		      Scalar& sy_left,        Scalar& sy_center,        Scalar& sy_right,
+		      Scalar& sz_left,        Scalar& sz_center,        Scalar& sz_right);
+
     /* ****************************************************************************************************** *
      *    Helmholtz 1D
      * ****************************************************************************************************** */
@@ -68,7 +90,7 @@ namespace Galeri {
     Teuchos::RCP<Matrix>
     TriDiag_Helmholtz(const Teuchos::RCP<const Map> & map, const GlobalOrdinal nx,
 		      const double h, const double omega, const Scalar shift) {
-      
+
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 3);
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -119,7 +141,7 @@ namespace Galeri {
       }
       timer->stop();
       timer = rcp(new Teuchos::Time("TriDiag fillComplete"));
-      timer->start(true);      
+      timer->start(true);
       mtx->fillComplete();
       timer->stop();
       return mtx;
@@ -137,8 +159,8 @@ namespace Galeri {
 		      const int PMLgridptsx_left,  const int PMLgridptsx_right,
 		      const int PMLgridptsy_left,  const int PMLgridptsy_right,
                       const double omega,          const Scalar shift) {
-      
-      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 5);      
+
+      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 5);
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
       GlobalOrdinal left, right, lower, upper, center;
@@ -147,7 +169,7 @@ namespace Galeri {
       std::vector<GlobalOrdinal> Indices(nnz);
 
       double LBx, RBx, LBy, RBy, Dx, Dy;
-      Scalar sx_left, sx_center, sx_right; 
+      Scalar sx_left, sx_center, sx_right;
       Scalar sy_left, sy_center, sy_right;
       // Calculate some parameters
       Dx = ((double) nx-1)*h;
@@ -156,9 +178,9 @@ namespace Galeri {
       RBx = Dx-((double) PMLgridptsx_right)*h;
       LBy = ((double) PMLgridptsy_left)*h;
       RBy = Dy-((double) PMLgridptsy_right)*h;
-      
+
       for (LocalOrdinal i = 0; i < NumMyElements; ++i)  {
-	
+
         size_t numEntries = 0;
         center = MyGlobalElements[i];
         GetNeighboursCartesian2d(center, nx, ny, left, right, lower, upper);
@@ -166,7 +188,7 @@ namespace Galeri {
 		     Dx, Dy, LBx, RBx, LBy, RBy,
 		     sx_left, sx_center, sx_right,
 		     sy_left, sy_center, sy_right);
-	
+
 	if (left != -1) {
 	  Indices[numEntries] = left;
 	  Values [numEntries] = -(sy_center/sx_center + sy_center/sx_left)/2.0;
@@ -188,28 +210,28 @@ namespace Galeri {
 	  numEntries++;
 	}
 
-	// diagonal	
+	// diagonal
 	Scalar z = (Scalar) 0.0;
 	for (size_t j = 0; j < numEntries; j++)
 	  z -= Values[j];
-	
+
 	// mass matrix term
 	z -= shift*omega*omega*h*h*sx_center*sy_center;
 
 	Indices[numEntries] = center;
 	Values [numEntries] = z;
 	numEntries++;
-	
+
 	Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0], numEntries);
 	Teuchos::ArrayView<Scalar>        av(&Values[0],  numEntries);
 	mtx->insertGlobalValues(center, iv, av);
 
       }
-      
+
       mtx->fillComplete();
-      
+
       return mtx;
-      
+
     } //Cross2D_Helmholtz
 
     /* ****************************************************************************************************** *
@@ -226,16 +248,16 @@ namespace Galeri {
                       const double omega,          const Scalar shift) {
 
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 7);
-      
+
       LocalOrdinal                               NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
-      
+
       GlobalOrdinal left, right, bottom, top, front, back, center;
       std::vector<Scalar> Values(7);
       std::vector<GlobalOrdinal> Indices(7);
 
-      double LBx, RBx, LBy, RBy, LBz, RBz, Dx, Dy, Dz; 
-      Scalar sx_left, sx_center, sx_right; 
+      double LBx, RBx, LBy, RBy, LBz, RBz, Dx, Dy, Dz;
+      Scalar sx_left, sx_center, sx_right;
       Scalar sy_left, sy_center, sy_right;
       Scalar sz_left, sz_center, sz_right;
       // Calculate some parameters
@@ -251,7 +273,7 @@ namespace Galeri {
 
       for (GlobalOrdinal i = 0; i < NumMyElements; ++i) {
 
-        size_t numEntries = 0;	
+        size_t numEntries = 0;
         center = MyGlobalElements[i];
         GetNeighboursCartesian3d(center, nx, ny, nz, left, right, front, back, bottom, top);
 	GetPMLvalues(center, nx, ny, nz, h, delta, Dx, Dy, Dz,
@@ -302,7 +324,7 @@ namespace Galeri {
 	Indices[numEntries] = center;
 	Values [numEntries] = z;
 	numEntries++;
-	
+
 	Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0], numEntries);
 	Teuchos::ArrayView<Scalar>        av(&Values[0],  numEntries);
 	mtx->insertGlobalValues(center, iv, av);
@@ -349,7 +371,7 @@ namespace Galeri {
                       const GlobalOrdinal nx,          const GlobalOrdinal ny,            const GlobalOrdinal nz,
 		      const double h,                  const double delta,
 		      const double Dx,                 const double Dy,                   const double Dz,
-		      const double LBx,                const double RBx,                  
+		      const double LBx,                const double RBx,
 		      const double LBy,                const double RBy,
 		      const double LBz,                const double RBz,
 		      Scalar& sx_left,        Scalar& sx_center,        Scalar& sx_right,

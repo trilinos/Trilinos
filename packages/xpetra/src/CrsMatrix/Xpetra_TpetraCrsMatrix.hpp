@@ -381,6 +381,11 @@ namespace Xpetra {
 
     }
 
+    void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) {
+      XPETRA_MONITOR("TpetraCrsMatrix::removeEmptyProcessesInPlace");
+      mtx_->removeEmptyProcessesInPlace(toTpetra(newMap));
+    }
+
     // @}
 
     //! @name Xpetra specific

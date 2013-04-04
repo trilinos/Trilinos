@@ -52,16 +52,12 @@ namespace Intrepid {
   void
   Tensor4<T>::set_dimension(Index const N)
   {
-    if (N == dimension) return;
-
-    if (e != NULL) {
-      delete [] e;
-    }
+    if (N == get_dimension()) return;
 
     Index const
     number_components = N * N * N * N;
 
-    e = new T[number_components];
+    e.resize(number_components);
 
     dimension = N;
 
@@ -74,7 +70,7 @@ namespace Intrepid {
   template<typename T>
   Tensor4<T>::Tensor4() :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     return;
   }
@@ -85,7 +81,7 @@ namespace Intrepid {
   template<typename T>
   Tensor4<T>::Tensor4(Index const N) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     set_dimension(N);
 
@@ -106,7 +102,7 @@ namespace Intrepid {
   template<typename T>
   Tensor4<T>::Tensor4(Index const N, T const & s) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     set_dimension(N);
 
@@ -128,7 +124,7 @@ namespace Intrepid {
   template<typename T>
   Tensor4<T>::Tensor4(Tensor4<T> const & A) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     Index const
     N = A.get_dimension();
@@ -151,9 +147,6 @@ namespace Intrepid {
   template<typename T>
   Tensor4<T>::~Tensor4()
   {
-    if (e != NULL) {
-      delete [] e;
-    }
     return;
   }
 

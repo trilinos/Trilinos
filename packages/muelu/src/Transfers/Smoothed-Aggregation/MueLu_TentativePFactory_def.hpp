@@ -173,8 +173,6 @@ namespace MueLu {
     RCP<const Map > rowMapForPtent = fineA.getRowMap();
     const Map& rowMapForPtentRef = *rowMapForPtent;
 
-    Ptentative = rcp(new CrsMatrixWrap(rowMapForPtent, NSDim, Xpetra::StaticProfile));
-
     // prerequisites: rowMapForPtent, NSDim
 
     // Set up storage for the rows of the local Qs that belong to other processors.
@@ -228,12 +226,56 @@ namespace MueLu {
     ArrayRCP<GO> colPtr(maxAggSize*NSDim,0);
     ArrayRCP<SC> valPtr(maxAggSize*NSDim,0.);
 
+    //Create column map for Ptent, estimate local #nonzeros in Ptent,  and create Ptent itself.
+    const Map& coarseMapRef = *coarseMap;
+    Teuchos::Array<GO> colMapElts;
+    colMapElts.reserve(numAggs*NSDim);
+    GO nzEstimate=0;
+    for (GO agg=0; agg<numAggs; ++agg) {
+//      LO myAggSize = aggStart[agg+1]-aggStart[agg];
+//      for (GO j=0; j<myAggSize; ++j) {
+        //This loop checks whether row associated with current DOF is local, according to rowMapForPtent.
+        //If it is, increment nonzero count and add entries to column map
+        //MultiVectors that will be sent to other processors.
+//        GO globalRow = aggToRowMap[aggStart[agg]+j];
+//        if ( rowMapForPtentRef.isNodeGlobalElement(globalRow) == true ) {
+          nzEstimate += NSDim;
+          for (size_t k=0; k<NSDim; ++k)
+            colMapElts.push_back(coarseMapRef.getGlobalElement(agg * NSDim + k));
+//        }
+//      }
+    }
+//    std::sort( colMapElts.begin(), colMapElts.end() );
+//    colMapElts.erase( std::unique( colMapElts.begin(), colMapElts.end() ), colMapElts.end() );
+    RCP<const Map > colMapForPtent = MapFactory::Build(fineA.getRowMap()->lib(),
+                                                  Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                  colMapElts(),
+                                                  indexBase, fineA.getRowMap()->getComm());
+
+//    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+//    fos->setOutputToRootOnly(0);
+//    *fos << "==============\ncolMapForPtent\n=============" << std::endl;
+//    fos->setOutputToRootOnly(-1);
+
+//    colMapForPtent->describe(*fos,Teuchos::VERB_EXTREME);
+//    fos->setOutputToRootOnly(0);
+//    *fos << "==============\nthe end!\n=============" << std::endl;
+//    fos->setOutputToRootOnly(-1);
+//    sleep(1);
+//    comm->barrier();
+
+
+    if (aggregates.AggregatesCrossProcessors())
+      Ptentative = rcp(new CrsMatrixWrap(rowMapForPtent, NSDim, Xpetra::StaticProfile));
+    else
+      Ptentative = rcp(new CrsMatrixWrap(rowMapForPtent, colMapForPtent, NSDim, Xpetra::StaticProfile));
+
     //*****************************************************************
     //Loop over all aggregates and calculate local QR decompositions.
     //*****************************************************************
     GO qctr=0; //for indexing into Ptent data vectors
     const Map& nonUniqueMapRef = *nonUniqueMap;
-    const Map& coarseMapRef = *coarseMap;
+
     for (GO agg=0; agg<numAggs; ++agg)
     {
       LO myAggSize = aggStart[agg+1]-aggStart[agg];
@@ -437,59 +479,73 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
     // ************* end of aggregate-wise QR ********************
     // ***********************************************************
 
-    // Import ghost parts of Q factors and insert into Ptentative.
-    // First import just the global row numbers.
-    RCP<Xpetra::Vector<GO,LO,GO,Node> > targetQrowNums = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(rowMapForPtent);
-    targetQrowNums->putScalar(-1);
-    targetQrowNums->doImport(*ghostQrowNums,*importer,Xpetra::INSERT);
-    ArrayRCP< GO > targetQrows = targetQrowNums->getDataNonConst(0);
+    if (!aggregates.AggregatesCrossProcessors()) {
+      GetOStream(Runtime1,0) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl; 
+    } else {
+      GetOStream(Runtime1,0) << "TentativePFactory : aggregates may cross process boundaries" << std::endl; 
+      // Import ghost parts of Q factors and insert into Ptentative.
+      // First import just the global row numbers.
+      RCP<Xpetra::Vector<GO,LO,GO,Node> > targetQrowNums = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(rowMapForPtent);
+      targetQrowNums->putScalar(-1);
+      targetQrowNums->doImport(*ghostQrowNums,*importer,Xpetra::INSERT);
+      ArrayRCP< GO > targetQrows = targetQrowNums->getDataNonConst(0);
 
-    // Now create map based on just the row numbers imported.
-    Teuchos::Array<GO> gidsToImport;
-    for (typename ArrayRCP<GO>::iterator r=targetQrows.begin(); r!=targetQrows.end(); ++r) {
-      if (*r > -1) {
-        gidsToImport.push_back(*r);
-      }
-    }
-    RCP<const Map > reducedMap = MapFactory::Build( fineA.getRowMap()->lib(),
-                                                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                    gidsToImport, indexBase, fineA.getRowMap()->getComm()    );
-
-    // Import using the row numbers that this processor will receive.
-    importer = ImportFactory::Build(ghostQMap, reducedMap);
-
-    Array<RCP<Xpetra::Vector<GO,LO,GO,Node> > > targetQcolumns(NSDim);
-    for (size_t i=0; i<NSDim; ++i) {
-      targetQcolumns[i] = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(reducedMap);
-      targetQcolumns[i]->doImport(*(ghostQcolumns[i]),*importer,Xpetra::INSERT);
-    }
-    RCP<MultiVector> targetQvalues = MultiVectorFactory::Build(reducedMap,NSDim);
-    targetQvalues->doImport(*ghostQvalues,*importer,Xpetra::INSERT);
-
-    ArrayRCP< ArrayRCP<SC> > targetQvals;
-    ArrayRCP<ArrayRCP<GO> > targetQcols;
-    if (targetQvalues->getLocalLength() > 0) {
-      targetQvals.resize(NSDim);
-      targetQcols.resize(NSDim);
-      for (size_t i=0; i<NSDim; ++i) {
-        targetQvals[i] = targetQvalues->getDataNonConst(i);
-        targetQcols[i] = targetQcolumns[i]->getDataNonConst(0);
-      }
-    }
-
-    valPtr = ArrayRCP<SC>(NSDim,0.);
-    colPtr = ArrayRCP<GO>(NSDim,0);
-    for (typename Array<GO>::iterator r=gidsToImport.begin(); r!=gidsToImport.end(); ++r) {
-      if (targetQvalues->getLocalLength() > 0) {
-        for (size_t j=0; j<NSDim; ++j) {
-          valPtr[j] = targetQvals[j][reducedMap->getLocalElement(*r)];
-          colPtr[j] = targetQcols[j][reducedMap->getLocalElement(*r)];
+      // Now create map based on just the row numbers imported.
+      Array<GO> gidsToImport;
+      gidsToImport.reserve(targetQrows.size());
+      for (typename ArrayRCP<GO>::iterator r=targetQrows.begin(); r!=targetQrows.end(); ++r) {
+        if (*r > -1) {
+          gidsToImport.push_back(*r);
         }
-        Ptentative->insertGlobalValues(*r, colPtr.view(0,NSDim), valPtr.view(0,NSDim));
-      } //if (targetQvalues->getLocalLength() > 0)
-    }
+      }
+      RCP<const Map > reducedMap = MapFactory::Build( fineA.getRowMap()->lib(),
+                                                      Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                      gidsToImport, indexBase, fineA.getRowMap()->getComm()    );
+
+      // Import using the row numbers that this processor will receive.
+      importer = ImportFactory::Build(ghostQMap, reducedMap);
+
+      Array<RCP<Xpetra::Vector<GO,LO,GO,Node> > > targetQcolumns(NSDim);
+      for (size_t i=0; i<NSDim; ++i) {
+        targetQcolumns[i] = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(reducedMap);
+        targetQcolumns[i]->doImport(*(ghostQcolumns[i]),*importer,Xpetra::INSERT);
+      }
+      RCP<MultiVector> targetQvalues = MultiVectorFactory::Build(reducedMap,NSDim);
+      targetQvalues->doImport(*ghostQvalues,*importer,Xpetra::INSERT);
+
+      ArrayRCP< ArrayRCP<SC> > targetQvals;
+      ArrayRCP<ArrayRCP<GO> > targetQcols;
+      if (targetQvalues->getLocalLength() > 0) {
+        targetQvals.resize(NSDim);
+        targetQcols.resize(NSDim);
+        for (size_t i=0; i<NSDim; ++i) {
+          targetQvals[i] = targetQvalues->getDataNonConst(i);
+          targetQcols[i] = targetQcolumns[i]->getDataNonConst(0);
+        }
+      }
+
+      valPtr = ArrayRCP<SC>(NSDim,0.);
+      colPtr = ArrayRCP<GO>(NSDim,0);
+      for (typename Array<GO>::iterator r=gidsToImport.begin(); r!=gidsToImport.end(); ++r) {
+        if (targetQvalues->getLocalLength() > 0) {
+          for (size_t j=0; j<NSDim; ++j) {
+            valPtr[j] = targetQvals[j][reducedMap->getLocalElement(*r)];
+            colPtr[j] = targetQcols[j][reducedMap->getLocalElement(*r)];
+          }
+          Ptentative->insertGlobalValues(*r, colPtr.view(0,NSDim), valPtr.view(0,NSDim));
+        } //if (targetQvalues->getLocalLength() > 0)
+      }
+    } //if (!aggregatesAreLocal)
 
     Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
+
+//    RCP<const Map> realColMap = Ptentative->getColMap();
+//    sleep(1);
+//    comm->barrier();
+//    fos->setOutputToRootOnly(0);
+//    *fos << "====================\nthe real col map\n======================" << std::endl;
+//    fos->setOutputToRootOnly(-1);
+//    realColMap->describe(*fos,Teuchos::VERB_EXTREME);
 
     // if available, use striding information of fine level matrix A for range map and coarseMap as domain map
     // otherwise use plain range map of Ptent = plain range map of A for range map and coarseMap as domain map.

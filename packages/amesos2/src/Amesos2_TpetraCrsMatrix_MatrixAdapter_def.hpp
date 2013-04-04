@@ -87,7 +87,6 @@ namespace Amesos2 {
       using Teuchos::RCP;
       using Teuchos::rcp;
       using Teuchos::rcpFromPtr;
-      typedef Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> map_t;
       typedef Tpetra::Import<local_ordinal_t, global_ordinal_t, node_t> import_t;
 
       RCP<matrix_t> t_mat;

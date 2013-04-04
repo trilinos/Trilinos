@@ -1832,7 +1832,6 @@ namespace Tpetra {
                       const ArrayView<const LocalOrdinal> &indices)
   {
     typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "insertLocalIndices()";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3366,7 +3365,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
     typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
-    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
     // We'll set all the state "transactionally," so that this method
     // satisfies the strong exception guarantee.  This object's state

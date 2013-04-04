@@ -80,7 +80,6 @@ void Krylov<MatrixType,PrecType>::setParameters(const Teuchos::ParameterList& pa
   using Teuchos::as;
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
-  typedef Teuchos::ScalarTraits<magnitude_type> STM;
   // Read in parameters
   Ifpack2::getParameter(params, "krylov: iteration type",IterationType_);
   Ifpack2::getParameter(params, "krylov: number of iterations",Iterations_);

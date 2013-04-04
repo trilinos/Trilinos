@@ -64,13 +64,9 @@ namespace Intrepid
   void
   Vector<T>::set_dimension(Index const N)
   {
-    if (N == dimension) return;
+    if (N == get_dimension()) return;
 
-    if (e != NULL) {
-      delete [] e;
-    }
-
-    e = new T[N];
+    e.resize(N);
 
     dimension = N;
 
@@ -122,7 +118,7 @@ namespace Intrepid
   inline
   Vector<T>::Vector() :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     return;
   }
@@ -134,7 +130,7 @@ namespace Intrepid
   inline
   Vector<T>::Vector(Index const N) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     set_dimension(N);
 
@@ -170,7 +166,7 @@ namespace Intrepid
   inline
   Vector<T>::Vector(Index const N, T const & s) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     set_dimension(N);
 
@@ -207,7 +203,7 @@ namespace Intrepid
   inline
   Vector<T>::Vector(T const & s0, T const & s1) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     set_dimension(2);
 
@@ -226,7 +222,7 @@ namespace Intrepid
   inline
   Vector<T>::Vector(T const & s0, T const & s1, T const & s2) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     set_dimension(3);
 
@@ -246,7 +242,7 @@ namespace Intrepid
   inline
   Vector<T>::Vector(Index const N, T const * data_ptr) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     assert(data_ptr != NULL);
 
@@ -265,7 +261,7 @@ namespace Intrepid
   inline
   Vector<T>::Vector(Vector<T> const & v) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     Index const
     N = v.get_dimension();
@@ -303,9 +299,6 @@ namespace Intrepid
   inline
   Vector<T>::~Vector()
   {
-    if (e != NULL) {
-      delete [] e;
-    }
     return;
   }
 

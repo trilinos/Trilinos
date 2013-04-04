@@ -808,6 +808,20 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   */
   int ReplaceDomainMapAndImporter(const Epetra_BlockMap& NewDomainMap, const Epetra_Import * NewImporter);
 
+  //! Remove processes owning zero rows from the Maps and their communicator.
+  /** Remove processes owning zero rows from the Maps and their communicator.
+     \warning This method is ONLY for use by experts.
+     
+     \warning We make NO promises of backwards compatibility.
+     This method may change or disappear at any time.
+     
+     \param newMap [in] This <i>must</i> be the result of calling
+     the removeEmptyProcesses() method on the row BlockMap.  If it
+     is not, this method's behavior is undefined.  This pointer
+     will be null on excluded processes.
+  */
+  int RemoveEmptyProcessesInPlace(const Epetra_BlockMap * NewMap);
+
 
   //! Returns the Column Map associated with this graph.
   /*!

@@ -101,6 +101,13 @@ setupDOFs()
     TEUCHOS_ASSERT(nonnull(itr->second.basis));
     this->m_provided_dofs.push_back(std::make_pair(itr->first, itr->second.basis));
 
+    //{
+    //  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+    //  out.setOutputToRootOnly(0);
+    //  itr->second.print(out);
+    //  out << "Int Order = " << itr->second.integrationOrder << " (" << itr->second.intRule->order() << ")" << std::endl;
+    //}
+
     // Create the unique integration rule map and complete descriptor objects
     TEUCHOS_ASSERT(nonnull(itr->second.intRule));
     m_int_rules[itr->second.intRule->order()] = itr->second.intRule;
@@ -581,6 +588,71 @@ template <typename EvalT>
 bool panzer::EquationSet_DefaultImpl<EvalT>::buildTransientSupport() const
 {
   return m_build_transient_support;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+getAddedDOFs(std::vector<std::string> & dofNames) const
+{
+  dofNames.clear();
+  for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
+      itr!=m_provided_dofs_desc.end();++itr)
+    dofNames.push_back(itr->first);
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+updateDOF(const std::string & dofName,
+          int basisOrder,
+          int integrationOrder)
+{
+  typename std::map<std::string,DOFDescriptor>::const_iterator itr = m_provided_dofs_desc.find(dofName);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(itr==m_provided_dofs_desc.end(),std::runtime_error,
+                             "EquationSet_DefaultImpl::updateDOF: DOF \"" << dofName << "\" has not been specified "
+                             "by derived equation set \"" << this->getType() << "\".");
+
+  // allocate and populate a dof descriptor associated with the field "dofName"
+  DOFDescriptor & desc = m_provided_dofs_desc[dofName];
+  desc.basisOrder = basisOrder;
+  desc.basis = Teuchos::rcp(new panzer::PureBasis(desc.basisType,desc.basisOrder,m_cell_data));
+
+  if (integrationOrder == -1)
+    desc.integrationOrder = m_default_integration_order;
+  else
+    desc.integrationOrder = integrationOrder;
+
+  desc.intRule = Teuchos::rcp(new panzer::IntegrationRule(desc.integrationOrder,m_cell_data));
+}
+
+// ***********************************************************************
+template <typename EvalT>
+int panzer::EquationSet_DefaultImpl<EvalT>::
+getBasisOrder(const std::string & dofName) const
+{
+  typename std::map<std::string,DOFDescriptor>::const_iterator itr = m_provided_dofs_desc.find(dofName);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(itr==m_provided_dofs_desc.end(),std::runtime_error,
+                             "EquationSet_DefaultImpl::getBasisOrder: DOF \"" << dofName << "\" has not been specified "
+                             "by derived equation set \"" << this->getType() << "\".");
+
+  return itr->second.basisOrder;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+int panzer::EquationSet_DefaultImpl<EvalT>::
+getIntegrationOrder(const std::string & dofName) const
+{
+  typename std::map<std::string,DOFDescriptor>::const_iterator itr = m_provided_dofs_desc.find(dofName);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(itr==m_provided_dofs_desc.end(),std::runtime_error,
+                             "EquationSet_DefaultImpl::getIntegrationOrder: DOF \"" << dofName << "\" has not been specified "
+                             "by derived equation set \"" << this->getType() << "\".");
+
+  return itr->second.integrationOrder;
 }
 
 // ***********************************************************************

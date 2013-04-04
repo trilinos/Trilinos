@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -49,7 +49,7 @@
 #include "Tpetra_Distributor.hpp"
 #include <Teuchos_Array.hpp>
 
-// FINISH: test for createFromRecvs(), that negatives in remoteNodeIDs are met by negatives in exportNodeIDs, and that the placement is 
+// FINISH: test for createFromRecvs(), that negatives in remoteNodeIDs are met by negatives in exportNodeIDs, and that the placement is
 //         is preserved. need to understand the semantics of negatives in the node list.
 
 namespace {
@@ -100,7 +100,7 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
 
   ////
@@ -156,13 +156,16 @@ namespace {
   }
 
 
+// mfh 01 Apr 2013: Distributor only checks input arguments in a
+// debug build, so this test is only enabled in a debug build.
+#ifdef HAVE_TPETRA_DEBUG
   ////
   TEUCHOS_UNIT_TEST( Distributor, badArgsFromSends)
   {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // each node i sends to node i+1
-    // for the last node, this results in an invalid node id, which should throw an exception on 
+    // for the last node, this results in an invalid node id, which should throw an exception on
     // every node
     size_t numImports = 0; (void)numImports;
     // create from sends with bad node IDs
@@ -179,7 +182,7 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-
+#endif // HAVE_TPETRA_DEBUG
 
   ////
   TEUCHOS_UNIT_TEST( Distributor, createFromSendsMixedContig)
@@ -489,11 +492,11 @@ namespace {
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // send data to each image, including myself
-    const size_t numExportIDs = numImages; 
+    const size_t numExportIDs = numImages;
     size_t numRemoteIDs = 0;
     // fill exportImageIDs with {0, -1, 1, -1, 2, -1, ... numImages-1}
     // on root node only, interlace node IDs with invalid nodes, corresponding to untouched data in import/export buffers
-    Array<int> exportImageIDs; 
+    Array<int> exportImageIDs;
     if (myImageID == 0) {
       exportImageIDs.reserve(2*numExportIDs-1);
       exportImageIDs.push_back(0);
@@ -501,8 +504,8 @@ namespace {
         exportImageIDs.push_back(-1);
         exportImageIDs.push_back(i);
       }
-    } 
-    else { 
+    }
+    else {
       exportImageIDs.reserve(numExportIDs);
       for(int i=0; i < as<int>(numExportIDs); ++i) {
         exportImageIDs.push_back(i);
@@ -537,13 +540,13 @@ namespace {
     // do posts, one Packet to each image
     Array<Packet> imports(1*distributor.getTotalReceiveLength());
     distributor.doPostsAndWaits(myExports().getConst(), 1, imports());
-    // imports[i] came from image i. it was element "myImageID" in his "myExports" vector. 
+    // imports[i] came from image i. it was element "myImageID" in his "myExports" vector.
     // it corresponds to element i*numImages+myImageID in the global export vector
-    // make a copy of the corresponding entries in the global vector, then compare these against the 
+    // make a copy of the corresponding entries in the global vector, then compare these against the
     // entries that I received
     Array<Packet> expectedImports(numImages);
     {
-      typename Array<Packet>::iterator eI = expectedImports.begin(), 
+      typename Array<Packet>::iterator eI = expectedImports.begin(),
                                         E = exports.begin()+myImageID;
       int left = numImages;
       while (true) {
@@ -557,7 +560,7 @@ namespace {
         }
       }
     }
-    // check the values 
+    // check the values
     TEST_COMPARE_ARRAYS(expectedImports,imports);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -580,7 +583,7 @@ namespace {
     // on root node only, put some invalid nodes in the middle, corresponding to untouched data in import/export buffers
     // like so:
     // exportImageIDs = {0, 1, 2, ..., numImages-1, -1, -1, 0, 1, 2, ..., numImages-1}
-    Array<int> exportImageIDs; 
+    Array<int> exportImageIDs;
     if (myImageID == 0) {
       exportImageIDs.reserve(2*numImages+2);
       for(int i=0; i < numImages; ++i) {
@@ -591,8 +594,8 @@ namespace {
       for(int i=0; i < numImages; ++i) {
         exportImageIDs.push_back(i);
       }
-    } 
-    else { 
+    }
+    else {
       exportImageIDs.reserve(2*numImages);
       for(int i=0; i < numImages; ++i) {
         exportImageIDs.push_back(i);
@@ -636,13 +639,13 @@ namespace {
     // do posts, one Packet to each image
     Array<Packet> imports(1*distributor.getTotalReceiveLength());
     distributor.doPostsAndWaits(myExports().getConst(), 1, imports());
-    // imports[i] came from image i. it was element "myImageID" in his "myExports" vector. 
+    // imports[i] came from image i. it was element "myImageID" in his "myExports" vector.
     // it corresponds to element i*numImages+myImageID in the global export vector
-    // make a copy of the corresponding entries in the global vector, then compare these against the 
+    // make a copy of the corresponding entries in the global vector, then compare these against the
     // entries that I received
     Array<Packet> expectedImports(2*numImages,PT::zero());
     {
-      typename Array<Packet>::iterator eI = expectedImports.begin(), 
+      typename Array<Packet>::iterator eI = expectedImports.begin(),
                                         E = exports.begin()+myImageID;
       for (int i=0; i<numImages-1; ++i) {
         (*eI++) = *E;
@@ -654,7 +657,7 @@ namespace {
       E += numImages;
       (*eI++) = *E;
     }
-    // check the values 
+    // check the values
     TEST_COMPARE_ARRAYS(expectedImports,imports);
 #endif
     // All procs fail if any proc fails
@@ -664,13 +667,16 @@ namespace {
   }
 
 
+// mfh 01 Apr 2013: Distributor only checks input arguments in a
+// debug build, so this test is only enabled in a debug build.
+#ifdef HAVE_TPETRA_DEBUG
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, badArgsFromRecvs, Ordinal )
   {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // each node i sends to node i+1
-    // for the last node, this results in an invalid node id, which should throw an exception on 
+    // for the last node, this results in an invalid node id, which should throw an exception on
     // every node
     // create from recvs with bad node IDs
     {
@@ -703,19 +709,18 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-
+#endif // HAVE_TPETRA_DEBUG
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromRecvs, Ordinal )
   {
-    typedef Teuchos::OrdinalTraits<Ordinal> OT;
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     const int length = numImages;
     // fill remoteImageIDs with {0, 1, 2, ... length-1}
     // we'll receive one GID from every image
-    // 
+    //
     // fill remoteGIDs with row from generator
     // we'll receive generateValue(i,myImageID) from proc "i"
     // "i" sends us generateValue(i,myImageID)
@@ -737,7 +742,7 @@ namespace {
     for (int i=0; i < length; ++i) {
       expectedGIDs.push_back( as<Ordinal>(generateValue(myImageID,i)) );
     }
-    TEST_COMPARE_ARRAYS(importImageIDs, exportImageIDs);             
+    TEST_COMPARE_ARRAYS(importImageIDs, exportImageIDs);
     TEST_COMPARE_ARRAYS(expectedGIDs, exportGIDs);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -754,9 +759,14 @@ namespace {
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
+#ifdef HAVE_TPETRA_DEBUG
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromRecvs, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, badArgsFromRecvs, ORDINAL )
+#else
+#   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromRecvs, ORDINAL )
+#endif // HAVE_TPETRA_DEBUG
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 

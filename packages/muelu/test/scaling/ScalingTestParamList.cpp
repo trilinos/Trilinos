@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
   globalTimeMonitor = Teuchos::null;
 
   if (printTimings)
-    TimeMonitor::summarize();
+    TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
 
   MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
 

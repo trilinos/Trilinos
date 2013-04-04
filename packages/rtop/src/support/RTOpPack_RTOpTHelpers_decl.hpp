@@ -406,7 +406,6 @@ public:
     const Ptr<ReductTarget> &reduct_obj
     ) const
     {
-      typedef ScalarTraits<Scalar> ST;
       typedef PrimitiveTypeTraits<Scalar, ConcreteReductObj> PTT;
       ConcreteReductObj concrete_reduct_obj;
       PTT::loadPrimitiveObjs( value_data, index_data, char_data,
@@ -466,7 +465,6 @@ public:
     {
       typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
       using Teuchos::dyn_cast;
-      typedef ScalarTraits<Scalar> ST;
 
 #ifdef TEUCHOS_DEBUG
       validate_apply_op<Scalar>(*this, 1, 0, true,
@@ -616,7 +614,6 @@ public:
     {
       typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
       using Teuchos::dyn_cast;
-      typedef ScalarTraits<Scalar> ST;
 
 #ifdef TEUCHOS_DEBUG
       validate_apply_op<Scalar>(*this, 1, 0, true,
@@ -699,7 +696,6 @@ public:
     {
       typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
       using Teuchos::dyn_cast;
-      typedef ScalarTraits<Scalar> ST;
 
 #ifdef TEUCHOS_DEBUG
       validate_apply_op<Scalar>(*this, 2, 0, true,
@@ -806,7 +802,6 @@ public:
     const Ptr<ReductTarget> &reduct_obj_inout
     ) const
     {
-      typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
       typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t;
 
 #ifdef TEUCHOS_DEBUG
@@ -878,7 +873,6 @@ public:
     const Ptr<ReductTarget> &reduct_obj_inout
     ) const
     {
-      typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
       typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t;
 
 #ifdef TEUCHOS_DEBUG

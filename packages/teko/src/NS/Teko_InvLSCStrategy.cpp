@@ -84,13 +84,13 @@ namespace NS {
 InvLSCStrategy::InvLSCStrategy()
    : massMatrix_(Teuchos::null), invFactoryF_(Teuchos::null), invFactoryS_(Teuchos::null), eigSolveParam_(5)
    , rowZeroingNeeded_(false), useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
-   , isSymmetric_(true)
+   , isSymmetric_(true), assumeStable_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
-   , isSymmetric_(true)
+   , isSymmetric_(true), assumeStable_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
@@ -98,13 +98,13 @@ InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
                                bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
-   , isSymmetric_(true)
+   , isSymmetric_(true), assumeStable_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
-   , isSymmetric_(true)
+   , isSymmetric_(true), assumeStable_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
@@ -112,7 +112,7 @@ InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
                                LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
-   , isSymmetric_(true)
+   , isSymmetric_(true), assumeStable_(false)
 { }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -205,7 +205,7 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    LinearOp D = B;
    LinearOp G = isSymmetric_ ? Bt : adjoint(D);
 
-   bool isStabilized = (not isZeroOp(C));
+   bool isStabilized = assumeStable_ ? false : (not isZeroOp(C));
 
    // The logic follows like this
    //    if there is no mass matrix available --> build from F
@@ -445,6 +445,8 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       scaleType_ = getDiagonalType(pl.get<std::string>("Scaling Type"));
       TEUCHOS_TEST_FOR_EXCEPT(scaleType_==NotDiag);
    }
+   if(pl.isParameter("Assume Stable Discretization")) 
+      assumeStable_ = pl.get<bool>("Assume Stable Discretization");
 
    Teko_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
@@ -455,6 +457,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
       DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
       DEBUG_STREAM << "   use w-scaling    = " << useWScaling_ << std::endl;
+      DEBUG_STREAM << "   assume stable    = " << assumeStable_ << std::endl;
       DEBUG_STREAM << "   scale type    = " << getDiagonalName(scaleType_) << std::endl;
       DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);

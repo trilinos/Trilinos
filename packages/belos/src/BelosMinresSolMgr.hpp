@@ -401,7 +401,6 @@ namespace Belos {
     using Teuchos::EnhancedNumberValidator;
     typedef MagnitudeType MT;
     typedef Teuchos::ScalarTraits<MT> MST;
-    typedef Teuchos::ScalarTraits<int> IST;
 
     // List of parameters accepted by MINRES, and their default values.
     RCP<ParameterList> pl = parameterList ("MINRES");

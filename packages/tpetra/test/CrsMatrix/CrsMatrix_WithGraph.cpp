@@ -226,11 +226,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   {
     RCP<Node> node = getNode<Node>();
     // generate a tridiagonal matrix
-    typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef Vector<Scalar,LO,GO,Node> V;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -577,9 +573,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<Node> node = getNode<Node>();
     // test that an exception is thrown when we exceed statically allocated memory
     typedef ScalarTraits<Scalar> ST;
-    typedef typename ST::magnitudeType Mag;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();

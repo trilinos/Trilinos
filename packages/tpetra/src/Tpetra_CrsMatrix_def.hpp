@@ -4164,6 +4164,10 @@ namespace Tpetra {
       "This is because the matrix is not allowed to modify the graph in that "
       "case, but removing empty processes requires modifying the graph.");
     myGraph_->removeEmptyProcessesInPlace (newMap);
+    // Even though CrsMatrix's row Map (as returned by getRowMap())
+    // comes from its CrsGraph, CrsMatrix still implements DistObject,
+    // so we also have to change the DistObject's Map.
+    this->map_ = this->getRowMap ();
     // In the nonconst graph case, staticGraph_ is just a const
     // pointer to myGraph_.  This assignment is probably redundant,
     // but it doesn't hurt.

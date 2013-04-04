@@ -72,6 +72,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory of the coordinates");
     validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "(advanced) Factory computing the number of partition.");
+    validParamList->set< int >                   ("rowWeight",               7, "Default weight to rows (total weight = nnz + rowWeight");
 
     return validParamList;
   }
@@ -92,6 +93,8 @@ namespace MueLu {
     RCP<Matrix>         A = Get< RCP<Matrix> >(level, "A");
     GO           numParts = Get<GO>(level, "number of partitions");
     LocalOrdinal  blkSize = A->GetFixedBlockSize();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->lib() == Xpetra::UseEpetra, Exceptions::RuntimeError, "Zoltan2 does not work with Epetra at the moment. Please use Zoltan through ZoltanInterface");
 
     if (!IsAvailable(level, "Coordinates")) {
       std::cout << GetFactory("Coordinates") << std::endl;
@@ -119,11 +122,22 @@ namespace MueLu {
     for (size_t k = 0; k < dim; k++)
       values[k] = coords->getData(k).get();
 
-    Array<SC> numEntriesPerRow(numElements);
+    const ParameterList& pL = GetParameterList();
+    int rowWeight = pL.get<int>("rowWeight");
+    GetOStream(Runtime0,0) << "Using weights formula: nnz + " << rowWeight << std::endl;
+
+    Array<SC> weightsPerRow(numElements);
     for (LO i = 0; i < numElements; i++)
-      for (LO j = 0; j < blkSize; j++)
-        numEntriesPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
-    weights[0] = numEntriesPerRow.getRawPtr();
+      for (LO j = 0; j < blkSize; j++) {
+        weightsPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
+        // Zoltan2 pqJagged gets as good partitioning as Zoltan RCB in terms of nnz
+        // but Zoltan also gets a good partioning in rows, which sometimes does not
+        // happen for Zoltan2. So here is an attempt to get a better row partitioning
+        // without significantly screwing up nnz partitioning
+        // NOTE: no good heuristic here, the value was chosen almost randomly
+        weightsPerRow[i] += rowWeight;
+      }
+    weights[0] = weightsPerRow.getRawPtr();
 
     Teuchos::ParameterList params;
 

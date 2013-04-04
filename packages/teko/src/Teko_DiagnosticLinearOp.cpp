@@ -106,7 +106,7 @@ void DiagnosticLinearOp::implicitApply(const MultiVector & x, MultiVector & y,
    Teuchos::TimeMonitor monitor(timer_,false);  
 
    MultiVector z; // for temporary storage dealing with nozero beta
-   if(beta!=0.0);
+   if(beta!=0.0)
       z = deepcopy(y);
 
    wrapOpA_->apply(Thyra::NOTRANS,*x,y.ptr(),alpha,beta);

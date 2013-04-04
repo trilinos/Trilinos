@@ -84,15 +84,10 @@ namespace {
     using std::endl;
 
     typedef typename MV::scalar_type scalar_type;
-    typedef typename MV::local_ordinal_type local_ordinal_type;
-    typedef typename MV::global_ordinal_type global_ordinal_type;
-    typedef typename MV::node_type node_type;
 
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef typename STS::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> 
-      map_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION(X->getGlobalLength() != Y->getGlobalLength(),
       std::logic_error, "Y has a different number of rows than X.");
@@ -171,8 +166,6 @@ namespace {
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
 
-    typedef Teuchos::ScalarTraits<scalar_type> STS;
-    typedef typename STS::magnitudeType magnitude_type;
     typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> 
       map_type;
 
@@ -264,8 +257,6 @@ namespace {
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
 
-    typedef Teuchos::ScalarTraits<scalar_type> STS;
-    typedef typename STS::magnitudeType magnitude_type;
     typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> 
       map_type;
 
@@ -367,8 +358,6 @@ namespace {
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
 
-    typedef Teuchos::ScalarTraits<scalar_type> STS;
-    typedef typename STS::magnitudeType magnitude_type;
     typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> 
       map_type;
 

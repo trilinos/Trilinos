@@ -80,9 +80,9 @@ Piro::RythmosSolver<Scalar>::RythmosSolver() :
 
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(
-    Teuchos::RCP<Teuchos::ParameterList> appParams,
-    Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > in_model,
-    Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer) :
+    const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
+    const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer) :
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
@@ -91,9 +91,9 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
 
 template <typename Scalar>
 void Piro::RythmosSolver<Scalar>::initialize(
-    Teuchos::RCP<Teuchos::ParameterList> appParams,
-    Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > in_model,
-    Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer)
+    const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+    const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model,
+    const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer)
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
