@@ -67,6 +67,11 @@ public:
 
    //! Get vector of unique bases contained in this field library
    virtual void basisPairs(std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const = 0;
+
+   /** Print information about the basis functions and fields contained in
+     * the field library.
+     */
+   virtual void print(std::ostream & os) const = 0;
 };
 
 inline FieldLibraryBase::~FieldLibraryBase() {}
@@ -92,7 +97,7 @@ public:
    /** Print information about the basis functions and fields contained in
      * the field library.
      */
-   void print(std::ostream & os) const;
+   virtual void print(std::ostream & os) const;
 
    //! Get vector of unique bases contained in this field library
    virtual void basisPairs(std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const;
@@ -135,7 +140,7 @@ public:
    /** Print information about the basis functions and fields contained in
      * the field library.
      */
-   void print(std::ostream & os) const;
+   virtual void print(std::ostream & os) const;
 
    //! Get vector of unique bases contained in this field library
    virtual void basisPairs(std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const;
@@ -147,15 +152,9 @@ private:
    std::map<std::string,Teuchos::RCP<const panzer::PureBasis> > basisNameToPointer_; // to satisfy uniuqeBases interface
 };
 
-inline std::ostream & operator<<(std::ostream & os,const FieldLayoutLibrary & fl)
+inline std::ostream & operator<<(std::ostream & os,const FieldLibraryBase & flb)
 {
-   fl.print(os);
-   return os;
-}
-
-inline std::ostream & operator<<(std::ostream & os,const FieldLibrary & fl)
-{
-   fl.print(os);
+   flb.print(os);
    return os;
 }
 

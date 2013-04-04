@@ -43,7 +43,9 @@ APPEND_SET(HEADERS Piro_MatrixFreeDecorator.hpp
                    Piro_MatrixFreeDecorator_Def.hpp
                    Piro_MatrixFreeLinearOp.hpp
                    Piro_MatrixFreeLinearOp_Def.hpp
-                   Piro_ObserverBase.hpp)
+                   Piro_ObserverBase.hpp
+                   Piro_ObserverToRythmosIntegrationObserverAdapter.hpp
+                   Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp)
 #
 # B.2) epetra files
 #

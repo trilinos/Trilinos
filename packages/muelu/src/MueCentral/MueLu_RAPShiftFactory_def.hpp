@@ -106,8 +106,8 @@ namespace MueLu {
 
       // Optimization storage option. If not modifying matrix later (inserting local values),
       // allow optimization of storage.  This is necessary for new faster Epetra MM kernels.
-      bool doOptimizedStorage = !checkAc_; 
-      
+      bool doOptimizedStorage = !checkAc_;
+
       RCP<Matrix> Ac, Kc, Mc;
 
       // Reuse pattern if available (multiple solve)

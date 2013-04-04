@@ -50,6 +50,8 @@
 #include "Intrepid_MiniTensor_Definitions.h"
 #include "Intrepid_MiniTensor_Utilities.h"
 
+#include "Teuchos_ArrayRCP.hpp"
+
 namespace Intrepid {
 
   ///
@@ -196,7 +198,7 @@ namespace Intrepid {
     ///
     /// Vector components
     ///
-    T *
+    Teuchos::ArrayRCP<T>
     e;
 
   };

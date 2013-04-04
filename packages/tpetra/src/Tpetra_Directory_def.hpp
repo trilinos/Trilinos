@@ -64,7 +64,10 @@ namespace Tpetra {
     // contiguous or noncontiguous.
     RCP<const Details::Directory<LO, GO, NT> > dir;
     if (map->isDistributed ()) {
-      if (map->isContiguous ()) {
+      if (map->isUniform ()) {
+        dir = rcp (new Details::ContiguousUniformDirectory<LO, GO, NT> (map));
+      }
+      else if (map->isContiguous ()) {
         dir = rcp (new Details::DistributedContiguousDirectory<LO, GO, NT> (map));
       }
       else {

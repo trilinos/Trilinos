@@ -100,7 +100,7 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAG
 #    NUM_MPI_PROCS 4
 #    COMM serial mpi
 #    DEPLIBS muelu xpetra muelu-adapters
-#    )  
+#    )
 
   #Simple-Complex
   IF(HAVE_MUELU_COMPLEX)
@@ -134,7 +134,7 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAG
 #  ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Simple-Rigid_cp
-    SOURCE_FILES stiff.txt 
+    SOURCE_FILES stiff.txt
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Simple-Coupled_cp

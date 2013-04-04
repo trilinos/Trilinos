@@ -204,7 +204,7 @@ namespace MueLu {
     \f[
     mark(v) \leftarrow MUELU\_DISTONE\_VERTEX\_WEIGHT
     \f]
-    
+
     if \f$v\f$ was assigned to an aggregate prior to this phase,
 
     \f[

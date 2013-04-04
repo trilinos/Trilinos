@@ -180,7 +180,7 @@ namespace MueLuTests {
   // - MV: Epetra::MultiVector
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
   TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_EpetraMV) {
-    
+
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     if (lib == Xpetra::UseEpetra) {  // Epetra specific test: run only once.
 

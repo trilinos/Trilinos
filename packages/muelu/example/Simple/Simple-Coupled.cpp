@@ -90,7 +90,7 @@ typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
 typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
 typedef Xpetra::MultiVector<SC,LO,GO,NO>             XMV;
 typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS; 
+typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS;
 typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
 typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
 typedef Xpetra::Map<LO,GO,NO>                        Map;
@@ -291,9 +291,9 @@ int main(int argc, char *argv[]) {
   M->fillComplete();
 
   // Turn Tpetra::CrsMatrix into MueLu::Matrix
-  RCP<XCRS> mueluK_ = rcp(new XTCRS(K)); 
+  RCP<XCRS> mueluK_ = rcp(new XTCRS(K));
   RCP<XMAT> mueluK  = rcp(new XWRAP(mueluK_));
-  RCP<XCRS> mueluM_ = rcp(new XTCRS(M)); 
+  RCP<XCRS> mueluM_ = rcp(new XTCRS(M));
   RCP<XMAT> mueluM  = rcp(new XWRAP(mueluM_));
   mueluK->SetFixedBlockSize(nDOFsPerNode);
   mueluM->SetFixedBlockSize(nDOFsPerNode);
@@ -369,7 +369,7 @@ int main(int argc, char *argv[]) {
   //ifpack2List.set("schwarz: compute condest", false);
   //ifpack2List.set("schwarz: combine mode", "Add"); // use string mode for this
   //ifpack2List.set("schwarz: reordering type", "none");
-  //ifpack2List.set("schwarz: filter singletons", false);  
+  //ifpack2List.set("schwarz: filter singletons", false);
   //ifpack2List.set("schwarz: overlap level", 0);
   // ILUT smoother
   //ifpack2Type = "ILUT";
@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
   ifpack2List.set("relaxation: sweeps", (LO) 4);
   ifpack2List.set("relaxation: damping factor", (SC) 1.0); // 0.7
   ifpack2List.set("relaxation: type", "Gauss-Seidel");
-  
+
   smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type,ifpack2List) );
   RCP<SmootherFactory> SmooFact;
   LO maxLevels = 6;
@@ -438,12 +438,12 @@ int main(int argc, char *argv[]) {
   H->GetLevel(0)->Set("K",mueluK);
   H->GetLevel(0)->Set("M",mueluM);
   H->Setup(Manager, 0, H->GetNumLevels());
-  
+
   // right hand side and left hand side vectors
   RCP<TVEC> X = Tpetra::createVector<SC,LO,GO,NO>(map);
-  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(map);  
+  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(map);
   X->putScalar((SC) 0.0);
-  if(comm->getRank()==0) 
+  if(comm->getRank()==0)
     B->replaceGlobalValue(0, 1.0);
 
   // Define Operator and Preconditioner
@@ -452,7 +452,7 @@ int main(int argc, char *argv[]) {
 
   // Construct a Belos LinearProblem object
   RCP<Problem> belosProblem = rcp(new Problem(belosOp,X,B));
-  belosProblem->setRightPrec(belosPrec);    
+  belosProblem->setRightPrec(belosPrec);
   bool set = belosProblem->setProblem();
   if (set == false) {
     if(comm->getRank()==0) {
@@ -460,7 +460,7 @@ int main(int argc, char *argv[]) {
     }
     return EXIT_FAILURE;
   }
-    
+
   // Belos parameter list
   int maxIts = 100;
   double tol = 1e-6;
@@ -471,25 +471,25 @@ int main(int argc, char *argv[]) {
 
   // Create a FGMRES solver manager
   RCP<BelosSolver> solver = rcp( new BelosGMRES(belosProblem, rcp(&belosList, false)) );
-    
+
   // Perform solve
   Belos::ReturnType ret = solver->solve();
 
   // print solution entries
   //using Teuchos::VERB_EXTREME;
   //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream( Teuchos::rcpFromRef(std::cerr) );
-  //X->describe(*out,VERB_EXTREME);  
-  
+  //X->describe(*out,VERB_EXTREME);
+
   // Get the number of iterations for this solve.
   if(comm->getRank()==0) {
     std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-  }  
+  }
   // Compute actual residuals.
   int numrhs=1;
   bool badRes = false;
   std::vector<double> actual_resids(numrhs);
   std::vector<double> rhs_norm(numrhs);
-  RCP<TMV> resid = Tpetra::createMultiVector<SC,LO,GO,NO>(map, numrhs);     
+  RCP<TMV> resid = Tpetra::createMultiVector<SC,LO,GO,NO>(map, numrhs);
   OPT::Apply(*belosOp, *X, *resid);
   MVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
   MVT::MvNorm(*resid, actual_resids);

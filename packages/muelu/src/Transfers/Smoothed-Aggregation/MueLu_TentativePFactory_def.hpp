@@ -480,9 +480,9 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
     // ***********************************************************
 
     if (!aggregates.AggregatesCrossProcessors()) {
-      GetOStream(Runtime1,0) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl; 
+      GetOStream(Runtime1,0) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
     } else {
-      GetOStream(Runtime1,0) << "TentativePFactory : aggregates may cross process boundaries" << std::endl; 
+      GetOStream(Runtime1,0) << "TentativePFactory : aggregates may cross process boundaries" << std::endl;
       // Import ghost parts of Q factors and insert into Ptentative.
       // First import just the global row numbers.
       RCP<Xpetra::Vector<GO,LO,GO,Node> > targetQrowNums = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(rowMapForPtent);

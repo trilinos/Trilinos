@@ -110,6 +110,155 @@ namespace Tpetra {
       return os.str ();
     }
 
+
+    template<class LO, class GO, class NT>
+    ContiguousUniformDirectory<LO, GO, NT>::
+    ContiguousUniformDirectory (const Teuchos::RCP<const typename ContiguousUniformDirectory<LO, GO, NT>::map_type>& map) :
+      Directory<LO, GO, NT> (map)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(! map->isContiguous (), std::invalid_argument,
+        Teuchos::typeName (*this) << " constructor: Map is not contiguous.");
+      TEUCHOS_TEST_FOR_EXCEPTION(! map->isUniform (), std::invalid_argument,
+        Teuchos::typeName (*this) << " constructor: Map is not uniform.");
+    }
+
+
+    template<class LO, class GO, class NT>
+    std::string
+    ContiguousUniformDirectory<LO, GO, NT>::description () const
+    {
+      std::ostringstream os;
+      os << "ContiguousUniformDirectory"
+         << "<" << Teuchos::TypeNameTraits<LO>::name ()
+         << ", " << Teuchos::TypeNameTraits<GO>::name ()
+         << ", " << Teuchos::TypeNameTraits<NT>::name () << ">";
+      return os.str ();
+    }
+
+
+    template<class LO, class GO, class NT>
+    LookupStatus
+    ContiguousUniformDirectory<LO, GO, NT>::
+    getEntriesImpl (const Teuchos::ArrayView<const GO> &globalIDs,
+                    const Teuchos::ArrayView<int> &nodeIDs,
+                    const Teuchos::ArrayView<LO> &localIDs,
+                    const bool computeLIDs) const
+    {
+      using Teuchos::as;
+      using Teuchos::Comm;
+      using Teuchos::RCP;
+      typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
+      const LO invalidLid = Teuchos::OrdinalTraits<LO>::invalid ();
+      LookupStatus res = AllIDsPresent;
+
+      RCP<const map_type> map  = this->getMap ();
+      RCP<const Comm<int> > comm = map->getComm ();
+      const GO g_min = map->getMinAllGlobalIndex ();
+
+      // Let N_G be the global number of elements in the Map,
+      // and P be the number of processes in its communicator.
+      // Then, N_G = P * N_L + R = R*(N_L + 1) + (P - R)*N_L.
+      //
+      // The first R processes own N_L+1 elements.
+      // The remaining P-R processes own N_L elements.
+      //
+      // Let g be the current GID, g_min be the global minimum GID,
+      // and g_0 = g - g_min.  If g is a valid GID in this Map, then
+      // g_0 is in [0, N_G - 1].
+      //
+      // If g is a valid GID in this Map and g_0 < R*(N_L + 1), then
+      // the rank of the process that owns g is floor(g_0 / (N_L +
+      // 1)), and its corresponding local index on that process is g_0
+      // mod (N_L + 1).
+      //
+      // Let g_R = g_0 - R*(N_L + 1).  If g is a valid GID in this Map
+      // and g_0 >= R*(N_L + 1), then the rank of the process that
+      // owns g is then R + floor(g_R / N_L), and its corresponding
+      // local index on that process is g_R mod N_L.
+
+      const size_type N_G = as<size_type> (map->getGlobalNumElements ());
+      const size_type P = as<size_type> (comm->getSize ());
+      const size_type N_L  = N_G / P;
+      const size_type R = N_G - N_L * P; // N_G mod P
+      const size_type N_R = R * (N_L + 1);
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        N_G != P*N_L + R, std::logic_error,
+        "Tpetra::ContiguousUniformDirectory::getEntriesImpl: "
+        "N_G = " << N_G << " != P*N_L + R = " << P << "*" << N_L << " + " << R
+        << " = " << P*N_L + R << ".  "
+        "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+      const size_type numGids = globalIDs.size (); // for const loop bound
+      if (computeLIDs) {
+        for (size_type k = 0; k < numGids; ++k) {
+          const GO g_0 = globalIDs[k] - g_min;
+          // The first test is a little strange just in case GO is
+          // unsigned.  Compilers raise a warning on tests like "x <
+          // 0" if x is unsigned, but don't usually raise a warning if
+          // the expression is a bit more complicated than that.
+          if (g_0 + 1 < 1 || g_0 >= N_G) {
+            nodeIDs[k] = -1;
+            localIDs[k] = invalidLid;
+            res = IDNotPresent;
+          }
+          else if (g_0 < as<GO> (N_R)) {
+            // The GID comes from the initial sequence of R processes.
+            nodeIDs[k] = as<int> (g_0 / (N_L + 1));
+            localIDs[k] = g_0 % (N_L + 1);
+          }
+          else if (g_0 >= as<GO> (N_R)) {
+            // The GID comes from the remaining P-R processes.
+            const GO g_R = g_0 - N_R;
+            nodeIDs[k] = as<int> (R + g_R / N_L);
+            localIDs[k] = as<int> (g_R % N_L);
+          }
+#ifdef HAVE_TPETRA_DEBUG
+          else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+              "Tpetra::ContiguousUniformDirectory::getEntriesImpl: "
+              "should never get here.  "
+              "Please report this bug to the Tpetra developers.");
+          }
+#endif // HAVE_TPETRA_DEBUG
+        }
+      }
+      else { // don't compute local indices
+        for (size_type k = 0; k < numGids; ++k) {
+          const GO g_0 = globalIDs[k] - g_min;
+          // The first test is a little strange just in case GO is
+          // unsigned.  Compilers raise a warning on tests like "x <
+          // 0" if x is unsigned, but don't usually raise a warning if
+          // the expression is a bit more complicated than that.
+          if (g_0 + 1 < 1 || g_0 >= N_G) {
+            nodeIDs[k] = -1;
+            res = IDNotPresent;
+          }
+          else if (g_0 < as<GO> (N_R)) {
+            // The GID comes from the initial sequence of R processes.
+            nodeIDs[k] = as<int> (g_0 / (N_L + 1));
+          }
+          else if (g_0 >= as<GO> (N_R)) {
+            // The GID comes from the remaining P-R processes.
+            const GO g_R = g_0 - N_R;
+            nodeIDs[k] = as<int> (R + g_R / N_L);
+          }
+#ifdef HAVE_TPETRA_DEBUG
+          else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+              "Tpetra::ContiguousUniformDirectory::getEntriesImpl: "
+              "should never get here.  "
+              "Please report this bug to the Tpetra developers.");
+          }
+#endif // HAVE_TPETRA_DEBUG
+        }
+      }
+      return res;
+    }
+
+
     template<class LO, class GO, class NT>
     DistributedContiguousDirectory<LO, GO, NT>::
     DistributedContiguousDirectory (const Teuchos::RCP<const typename DistributedContiguousDirectory<LO, GO, NT>::map_type>& map) :

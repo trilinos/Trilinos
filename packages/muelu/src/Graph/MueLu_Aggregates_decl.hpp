@@ -116,7 +116,7 @@ namespace MueLu {
     LO GetNumAggregates() const           { return nAggregates_;        } ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
 
     /*! @brief Set number of local aggregates on current processor.
-    
+
         This has to be done by the aggregation routines.
     */
     void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
@@ -157,7 +157,7 @@ namespace MueLu {
     bool IsRoot(LO i) const               { return isRoot_[i];          }
 
     /*! @brief Set root node information.
-    
+
     Used by aggregation methods only.
     */
     void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         }

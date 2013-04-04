@@ -435,6 +435,14 @@ namespace Tpetra {
     //! True if the global index is found in this Map on this node, else false.
     bool isNodeGlobalElement (GlobalOrdinal globalIndex) const;
 
+    /// \brief Whether the range of global indices is uniform.
+    ///
+    /// This is a conservative quantity.  It need only be true if the
+    /// Map was constructed using the first (uniform contiguous)
+    /// constructor or a nonmember constructor that calls it.  We
+    /// reserve the right to do more work to check this in the future.
+    bool isUniform () const;
+
     /// \brief True if this Map is distributed contiguously, else false.
     ///
     /// Currently, creating this Map using the constructor for a
@@ -717,6 +725,12 @@ namespace Tpetra {
     GlobalOrdinal minAllGID_, maxAllGID_;
     //! First, last contiguous GID for use-cases of partially contiguous maps
     GlobalOrdinal firstContiguousGID_, lastContiguousGID_;
+    /// \brief Whether the range of global indices is uniform.
+    ///
+    /// This is only true if the Map was constructed using the first
+    /// (uniform contiguous) constructor or a nonmember constructor
+    /// that calls it.
+    bool uniform_;
     //! Whether the range of global indices are contiguous and ordered.
     bool contiguous_;
     //! Whether this map's global indices are non-identically distributed among different nodes.
@@ -930,6 +944,7 @@ namespace Tpetra {
     map->maxAllGID_         = maxAllGID_;
     map->firstContiguousGID_= firstContiguousGID_;
     map->lastContiguousGID_ = lastContiguousGID_;
+    map->uniform_           = uniform_;
     map->contiguous_        = contiguous_;
     map->distributed_       = distributed_;
     map->lgMap_             = lgMap_;

@@ -61,7 +61,7 @@ namespace MueLu {
   ArrayRCP<double> ReduceMaxMinAvg(double localValue, Teuchos::Comm<int> const &comm, int rootNode = 0);
 
   /*! @class TimeMonitor
-  
+
       @brief Integrates Teuchos::TimeMonitor with MueLu verbosity system.
   */
   class TimeMonitor : public BaseClass {

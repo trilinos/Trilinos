@@ -2671,6 +2671,32 @@ namespace Ioex {
               get_map(EX_NODE_BLOCK).map_implicit_data(data, field, num_to_get, 0);
             }
 
+	    // The 1..global_node_count id.  In a parallel-decomposed run,
+	    // it maps the node back to its implicit position in the serial
+	    // undecomposed mesh file.  This is ONLY provided for backward-
+	    // compatibility and should not be used unless absolutely required.
+            else if (field.get_name() == "implicit_ids") {
+	      // If not parallel, then this is just 1..node_count
+	      // If parallel, then it is the data in the ex_get_id_map created by nem_spread.
+	      if (isParallel) {
+		int error = ex_get_id_map(get_file_pointer(), EX_NODE_MAP, data);
+		if (error < 0)
+		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      } else {
+		if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+		  int64_t *idata = static_cast<int64_t*>(data);
+		  for (int64_t i=0; i < nodeCount; i++) {
+		    idata[i] = i+1;
+		  }
+		} else {
+		  int *idata = static_cast<int*>(data);
+		  for (int64_t i=0; i < nodeCount; i++) {
+		    idata[i] = i+1;
+		  }
+		}
+	      }
+            }
+
             else if (field.get_name() == "connectivity") {
               // Do nothing, just handles an idiosyncracy of the GroupingEntity
             }
@@ -4213,6 +4239,8 @@ namespace Ioex {
             } else if (field.get_name() == "connectivity_raw") {
               // Do nothing, just handles an idiosyncracy of the GroupingEntity
             } else if (field.get_name() == "node_connectivity_status") {
+              // Do nothing, input only field.
+            } else if (field.get_name() == "implicit_ids") {
               // Do nothing, input only field.
             } else {
               return Ioss::Utils::field_warning(nb, field, "mesh output");

@@ -155,7 +155,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SolutionObserver)
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
   solver->evalModel(inArgs, outArgs);
 
-  const Array<double> actual = arrayFromVector(observer->lastSolution());
+  const Array<double> actual = arrayFromVector(*observer->lastSolution());
   const Array<double> expected = tuple(1.0, 2.0, 3.0, 4.0);
   TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
 }

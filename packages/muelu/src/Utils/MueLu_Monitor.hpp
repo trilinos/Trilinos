@@ -107,7 +107,7 @@ namespace MueLu {
   public:
     /*! @brief Constructor.
 
-        @param[in] object      Reference to the class instance that is creating this Monitor. 
+        @param[in] object      Reference to the class instance that is creating this Monitor.
         @param[in] msg         String that indicates what the Monitor is monitoring, e.g., "Build"
         @param[in] msgLevel    Governs whether information should be printed.
         @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
@@ -146,7 +146,7 @@ namespace MueLu {
   public:
     /*! @brief Constructor.
 
-        @param[in] object      Reference to the class instance that is creating this SubMonitor. 
+        @param[in] object      Reference to the class instance that is creating this SubMonitor.
         @param[in] msg         String that indicates what the SubMonitor is monitoring, e.g., "Build"
         @param[in] msgLevel    Governs whether information should be printed.
         @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
@@ -192,7 +192,7 @@ namespace MueLu {
 
     /*! @brief Constructor
 
-        @param[in] object      Reference to the class instance that is creating this SubMonitor. 
+        @param[in] object      Reference to the class instance that is creating this SubMonitor.
         @param[in] msg         String that indicates what the SubMonitor is monitoring, e.g., "Build"
         @param[in] levelID     The MueLu Level number.
         @param[in] msgLevel    Governs whether information should be printed.
@@ -210,7 +210,7 @@ namespace MueLu {
 
     /*! @brief Constructor
 
-        @param[in] object      Reference to the class instance that is creating this SubMonitor. 
+        @param[in] object      Reference to the class instance that is creating this SubMonitor.
         @param[in] msg         String that indicates what the SubMonitor is monitoring, e.g., "Build".
         @param[in] level       The MueLu Level object.
         @param[in] msgLevel    Governs whether information should be printed.
@@ -258,7 +258,7 @@ namespace MueLu {
 
     /*! @brief Constructor
 
-        @param[in] object      Reference to the class instance that is creating this SubMonitor. 
+        @param[in] object      Reference to the class instance that is creating this SubMonitor.
         @param[in] msg         String that indicates what the SubMonitor is monitoring, e.g., "Build"
         @param[in] levelID     The Level number.
         @param[in] msgLevel    Governs whether information should be printed.
@@ -274,7 +274,7 @@ namespace MueLu {
 
     /*! @brief Constructor
 
-        @param[in] object      Reference to the class instance that is creating this SubMonitor. 
+        @param[in] object      Reference to the class instance that is creating this SubMonitor.
         @param[in] msg         String that indicates what the SubMonitor is monitoring, e.g., "Build"
         @param[in] level       The MueLu Level object.
         @param[in] msgLevel    Governs whether information should be printed.

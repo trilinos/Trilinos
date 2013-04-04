@@ -89,7 +89,7 @@ namespace Xpetra {
 
     const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra(domainMap): 0;
     const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra(rangeMap) : 0;
-    
+
     // Follows the Tpetra parameters
     bool restrictComm=false;
     if(!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
@@ -108,7 +108,7 @@ namespace Xpetra {
     XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraExport as an input argument.");
 
     const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra(domainMap): 0;
-    const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra(rangeMap) : 0;    
+    const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra(rangeMap) : 0;
 
     // Follows the Tpetra parameters
     bool restrictComm=false;
@@ -171,7 +171,7 @@ namespace Xpetra {
      XPETRA_MONITOR("EpetraCrsMatrix::allocateAllValues");
 
     // Grab pointers
-    Epetra_IntSerialDenseVector& myColind = mtx_->ExpertExtractIndices();  
+    Epetra_IntSerialDenseVector& myColind = mtx_->ExpertExtractIndices();
     double *& myValues = mtx_->ExpertExtractValues();
 
     // Resize
@@ -184,7 +184,7 @@ namespace Xpetra {
     values = Teuchos::arcp(myValues,numNonZeros,false);
   }
 
-  void EpetraCrsMatrix::setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<int> & colind, const ArrayRCP<double> & values) 
+  void EpetraCrsMatrix::setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<int> & colind, const ArrayRCP<double> & values)
   {
     XPETRA_MONITOR("EpetraCrsMatrix::setAllValues");
 
@@ -199,7 +199,7 @@ namespace Xpetra {
 
     myRowptr.Resize(N+1);
     for(size_t i=0; i<N; i++)
-      myRowptr[i] = Teuchos::as<int>(rowptr[i]); 
+      myRowptr[i] = Teuchos::as<int>(rowptr[i]);
   }
 
 
@@ -532,20 +532,20 @@ namespace Xpetra {
 
 
   void EpetraCrsMatrix::replaceDomainMapAndImporter(const Teuchos::RCP< const  Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter) {
-      XPETRA_MONITOR("EpetraCrsMatrix::replaceDomainMapAndImporter");       
+      XPETRA_MONITOR("EpetraCrsMatrix::replaceDomainMapAndImporter");
       XPETRA_DYNAMIC_CAST(const EpetraImport, *newImporter, eImporter, "Xpetra::EpetraCrsMatrix::replaceDomainMapAndImporter only accepts Xpetra::EpetraImport.");
- 
+
       const RCP<const Epetra_Import> & myImport = eImporter.getEpetra_Import();
       int rv=0;
       if(myImport==Teuchos::null)
 	rv=mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),0);
       else
 	rv=mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),&*myImport);
-      TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrix::replaceDomainMapAndImporter FAILED!");  
+      TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrix::replaceDomainMapAndImporter FAILED!");
   }
 
 
-  void EpetraCrsMatrix::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+  void EpetraCrsMatrix::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
 						 const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
 						 const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
 						 const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
@@ -556,13 +556,13 @@ namespace Xpetra {
     //    XPETRA_DYNAMIC_CAST(const EpetraExport, *exporter, eExporter, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::EpetraImport.");
 
     const Epetra_Import * myimport = eImporter.getEpetra_Import().getRawPtr();
-    TEUCHOS_TEST_FOR_EXCEPTION(exporter != Teuchos::null, std::runtime_error, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete can't handle a non-null exporter.");  
+    TEUCHOS_TEST_FOR_EXCEPTION(exporter != Teuchos::null, std::runtime_error, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete can't handle a non-null exporter.");
     //    const Epetra_Export * myexport = eExporter.getEpetra_Export().getRawPtr();
 
     int rv=mtx_->ExpertStaticFillComplete(toEpetra(domainMap), toEpetra(rangeMap), myimport);
-    TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete FAILED!");  
+    TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete FAILED!");
   }
-  
+
 
 
 

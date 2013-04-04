@@ -87,7 +87,7 @@ namespace MueLu {
       RCP<Matrix> rebalancedAc;
       {
         SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
-        RCP<const Map> targetMap = rebalanceImporter->getTargetMap();	
+        RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
 
 	const ParameterList & pL = GetParameterList();
 
