@@ -54,15 +54,6 @@
 #include <map>
 #include <string>
 
-/** \brief Thyra-based Model Evaluator subclass for Charon!
- *
- * This class will support a wide number of different types of abstract
- * problem types that will allow NOX, LOCA, Rythmos, Aristos, and MOOCHO to
- * solve different types of problems with Charon.
- *
- * ToDo: Finish documentation!
- */
-
 namespace Piro {
 
 template <typename Scalar>
@@ -70,7 +61,6 @@ class RythmosSolver
     : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
 {
 public:
-
   /** \name Constructors/initializers */
   //@{
 
@@ -79,9 +69,9 @@ public:
 
   /** \brief Initialize with internally built objects according to the given parameter list. */
   RythmosSolver(
-      Teuchos::RCP<Teuchos::ParameterList> appParams,
-      Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model,
-      Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer = Teuchos::null);
+      const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
   RythmosSolver(
@@ -107,9 +97,9 @@ public:
   //@}
 
   void initialize(
-      Teuchos::RCP<Teuchos::ParameterList> appParams,
-      Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model,
-      Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer = Teuchos::null);
+      const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer = Teuchos::null);
 
   Teuchos::RCP<const Rythmos::IntegratorBase<Scalar> > getRythmosIntegrator() const;
 
@@ -163,7 +153,7 @@ private:
 
   // used for adding user defined steppers externally, this gives us "the open-close principal"
   std::map<std::string,Teuchos::RCP<RythmosStepperFactory<Scalar> > > stepperFactories;
-  
+
   bool isInitialized;
 };
 
