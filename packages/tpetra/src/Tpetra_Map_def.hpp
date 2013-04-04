@@ -65,7 +65,8 @@ namespace Tpetra {
        LocalGlobal lOrG,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    uniform_ (true)
   {
     using Teuchos::as;
     using Teuchos::broadcast;
@@ -215,7 +216,8 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    uniform_ (false)
   {
     using Teuchos::as;
     using Teuchos::broadcast;
@@ -346,7 +348,8 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    uniform_ (false)
   {
     using Teuchos::arcp;
     using Teuchos::as;
@@ -630,6 +633,11 @@ namespace Tpetra {
   isNodeGlobalElement (GlobalOrdinal globalIndex) const {
     return this->getLocalElement (globalIndex) !=
       Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isUniform() const {
+    return uniform_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -960,8 +968,9 @@ namespace Tpetra {
       map->firstContiguousGID_= firstContiguousGID_;
       map->lastContiguousGID_ = lastContiguousGID_;
 
-      // Contiguity hasn't changed.  The directory has changed, but
-      // we've taken care of that above.
+      // Uniformity and contiguity have not changed.  The directory
+      // has changed, but we've taken care of that above.
+      map->uniform_    = uniform_;
       map->contiguous_ = contiguous_;
 
       // If the original Map was NOT distributed, then the new Map
