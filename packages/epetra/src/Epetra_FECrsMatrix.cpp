@@ -75,6 +75,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL),
     tempMat_(NULL)
+#ifdef HAVE_EPETRA_THREAD_SAFETY
+	, overlap_(false)
+#endif
 {
   myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
@@ -105,6 +108,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL),
     tempMat_(NULL)
+#ifdef HAVE_EPETRA_THREAD_SAFETY
+	, overlap_(false)
+#endif
 {
   myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
@@ -136,6 +142,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL),
     tempMat_(NULL)
+#ifdef HAVE_EPETRA_THREAD_SAFETY
+	, overlap_(false)
+#endif
 {
   myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
@@ -167,6 +176,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL),
     tempMat_(NULL)
+#ifdef HAVE_EPETRA_THREAD_SAFETY
+	, overlap_(false)
+#endif
 {
   myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
@@ -196,6 +208,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL),
     tempMat_(NULL)
+#ifdef HAVE_EPETRA_THREAD_SAFETY
+	, overlap_(false)
+#endif
 {
   myFirstRow_ = RowMap().MinMyGID64();
   myNumRows_ = RowMap().NumMyElements();
@@ -204,7 +219,11 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
               const Epetra_FECrsGraph& graph,
-              bool ignoreNonLocalEntries, bool overlap)
+              bool ignoreNonLocalEntries
+#ifdef HAVE_EPETRA_THREAD_SAFETY
+              , bool overlap
+#endif
+              )
   : Epetra_CrsMatrix(CV, graph),
     myFirstRow_(0),
     myNumRows_(0),
@@ -255,6 +274,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(const Epetra_FECrsMatrix& src)
    colMap_(NULL),
    exporter_(NULL),
     tempMat_(NULL)
+#ifdef HAVE_EPETRA_THREAD_SAFETY
+	, overlap_(src.overlap_)
+#endif
 {
   operator=(src);
 }
@@ -308,6 +330,10 @@ Epetra_FECrsMatrix& Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix& src)
 #endif
 
   nonlocalCoefs_= src.nonlocalCoefs_;
+
+#ifdef HAVE_EPETRA_THREAD_SAFETY
+  overlap_ = src.overlap_;
+#endif
 
   return( *this );
 }
