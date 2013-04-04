@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
   if (verbose)
     std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
-  int numberFailedTests = 0;
+  int numberFailedTests = 0, failedComparison = 0;
   int returnCode = 0;
   std::string testName = "", testType = "";
 
@@ -169,7 +169,9 @@ int main(int argc, char* argv[])
   // Non-transpose solve
   returnCode = solver1.solve();
   testName = "Simple solve: solve() random A (NO_TRANS):";
-  numberFailedTests += CompareVectors( *x1, xhat, tol );
+  failedComparison = CompareVectors( *x1, xhat, tol );
+  if(verbose && failedComparison>0) std::cout << "COMPARISON FAILED : ";
+  numberFailedTests += failedComparison;
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
   // Test2:  Solve with iterative refinement.
@@ -212,7 +214,9 @@ int main(int argc, char* argv[])
   // Non-transpose solve
   returnCode = solver2.solve();
   testName = "Solve with iterative refinement: solve() random A (NO_TRANS):";
-  numberFailedTests += CompareVectors( *x2, xhat, tol );
+  failedComparison = CompareVectors( *x2, xhat, tol );
+  if(verbose && failedComparison>0) std::cout << "COMPARISON FAILED : ";
+  numberFailedTests += failedComparison;
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
 #endif
@@ -255,7 +259,9 @@ int main(int argc, char* argv[])
   // Non-transpose solve
   returnCode = solver3.solve();
   testName = "Solve with matrix equilibration: solve() random A (NO_TRANS):";
-  numberFailedTests += CompareVectors( *x3, xhat, tol );
+  failedComparison = CompareVectors( *x3, xhat, tol );
+  if(verbose && failedComparison>0) std::cout << "COMPARISON FAILED : ";
+  numberFailedTests += failedComparison;
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
   //
@@ -367,13 +373,14 @@ Teuchos::RCP<SDMatrix> GetRandomSpdMatrix(int n)
   Teuchos::SerialQRDenseSolver<OTYPE, STYPE> solver;
   solver.setMatrix( A );
   solver.factor();
+  solver.formQ();
   Q = solver.getQ();
 
   // Get n random positive eigenvalues and put them in a diagonal matrix D
   Teuchos::RCP<DVector> E = GetRandomVector(n);
   for (int i=0; i<n; ++i) {
     (*D)(i,i) = ScalarTraits<STYPE>::magnitude(ScalarTraits<STYPE>::one()) +
-		ScalarTraits<STYPE>::magnitude( (*E)(i) ) * ScalarTraits<STYPE>::magnitude( (*E)(i) );
+                ScalarTraits<STYPE>::magnitude( (*E)(i) ) * ScalarTraits<STYPE>::magnitude( (*E)(i) );
   }
 
   // Form the spd matrix Q' D Q
