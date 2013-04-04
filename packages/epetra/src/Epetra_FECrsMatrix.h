@@ -154,8 +154,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    Epetra_FECrsMatrix(Epetra_DataAccess CV,
          const Epetra_FECrsGraph& Graph,
          bool ignoreNonLocalEntries=false
-#ifdef HAVE_EPETRA_THREAD_SAFETY
+#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
          , bool overlap=false
+#endif
 #endif
          );
 
@@ -818,9 +820,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    Epetra_Export* exporter_;
    Epetra_CrsMatrix* tempMat_;
 
-#ifdef HAVE_EPETRA_THREAD_SAFETY
+#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
    // For LifeV with overlapping mesh parts
    bool overlap_;
+#endif
 #endif
 
    template<typename int_type>
