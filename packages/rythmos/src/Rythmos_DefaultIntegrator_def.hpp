@@ -797,37 +797,39 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
       // Notify observer of a failed time step
       if (timeStepFailed) {
-        if (!is_null(integrationObserver_))
+        if (nonnull(integrationObserver_))
           integrationObserver_->observeFailedTimeStep(
             *stepper_, stepCtrlInfo, currTimeStepIndex_
             );
-      }
 
-      // Allow the IntegrationControlStrategy object to suggest another
-      // timestep when a timestep fails.
-      if (timeStepFailed && integrationControlStrategy_->handlesFailedTimeSteps())
-      {
-        // See if a new timestep can be suggested
-        if (integrationControlStrategy_->resetForFailedTimeStep(
-              *stepper_, stepCtrlInfoLast_, currTimeStepIndex_, trialStepCtrlInfo)
-          )
+        // Allow the IntegrationControlStrategy object to suggest another timestep
+        const bool handlesFailedTimeSteps =
+          nonnull(integrationControlStrategy_) &&
+          integrationControlStrategy_->handlesFailedTimeSteps();
+        if (handlesFailedTimeSteps)
         {
-          if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
-            *out << "\nThe IntegrationControlStrategy object indicated that"
-                 << " it would like to suggest another timestep!\n";
+          // See if a new timestep can be suggested
+          if (integrationControlStrategy_->resetForFailedTimeStep(
+                *stepper_, stepCtrlInfoLast_, currTimeStepIndex_, trialStepCtrlInfo)
+             )
+          {
+            if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
+              *out << "\nThe IntegrationControlStrategy object indicated that"
+                << " it would like to suggest another timestep!\n";
+            }
+            // Skip the rest of the code in the loop and back to the top to try
+            // another timestep!  Note: By doing this we skip the statement that
+            // sets
+            continue;
           }
-          // Skip the rest of the code in the loop and back to the top to try
-          // another timestep!  Note: By doing this we skip the statement that
-          // sets
-          continue;
-        }
-        else
-        {
-          if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
-            *out << "\nThe IntegrationControlStrategy object could not suggest"
-                 << " a better time step!  Allowing to fail the time step!\n";
+          else
+          {
+            if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
+              *out << "\nThe IntegrationControlStrategy object could not suggest"
+                << " a better time step!  Allowing to fail the time step!\n";
+            }
+            // Fall through to the failure checking!
           }
-          // Fall through to the failure checking!
         }
       }
 
