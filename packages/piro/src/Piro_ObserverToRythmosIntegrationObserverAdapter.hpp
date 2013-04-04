@@ -1,4 +1,3 @@
-/*
 // @HEADER
 // ************************************************************************
 //
@@ -40,96 +39,64 @@
 //
 // ************************************************************************
 // @HEADER
-*/
 
-#ifndef PIRO_TEST_MOCKOBSERVER_HPP
-#define PIRO_TEST_MOCKOBSERVER_HPP
+#ifndef PIRO_OBSERVATORTOINTEGRATIONOBSERVERSDAPTER_HPP
+#define PIRO_OBSERVATORTOINTEGRATIONOBSERVERSDAPTER_HPP
+
+#include "Rythmos_IntegrationObserverBase.hpp"
 
 #include "Piro_ObserverBase.hpp"
 
-#include "Thyra_VectorBase.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Piro {
 
-namespace Test {
-
 template <typename Scalar>
-class MockObserver : public ObserverBase<Scalar> {
+class ObserverToRythmosIntegrationObserverAdapter : public Rythmos::IntegrationObserverBase<Scalar> {
 public:
-  typedef typename ObserverBase<Scalar>::StampType StampType;
+  explicit ObserverToRythmosIntegrationObserverAdapter(
+      const Teuchos::RCP<ObserverBase<Scalar> > &wrappedObserver);
 
-  MockObserver();
+  // Overridden from Rythmos::IntegrationObserverBase
 
-  virtual void observeSolution(
-      const Thyra::VectorBase<Scalar> &solution);
+  virtual Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > cloneIntegrationObserver() const;
 
-  virtual void observeSolution(
-      const Thyra::VectorBase<Scalar> &solution,
-      const StampType &stamp);
+  virtual void resetIntegrationObserver(
+      const Rythmos::TimeRange<Scalar> &integrationTimeDomain);
 
-  virtual void observeSolution(
-      const Thyra::VectorBase<Scalar> &solution,
-      const Thyra::VectorBase<Scalar> &solution_dot,
-      const StampType &stamp);
+  virtual void observeStartTimeIntegration(
+      const Rythmos::StepperBase<Scalar> &stepper);
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > lastSolution() const {
-    return lastSolution_;
-  }
+  virtual void observeEndTimeIntegration(
+      const Rythmos::StepperBase<Scalar> &stepper);
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > lastSolution_dot() const {
-    return lastSolution_dot_;
-  }
+  virtual void observeStartTimeStep(
+    const Rythmos::StepperBase<Scalar> &stepper,
+    const Rythmos::StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter);
 
-  StampType lastStamp() const {
-    return lastStamp_;
-  }
+  virtual void observeCompletedTimeStep(
+    const Rythmos::StepperBase<Scalar> &stepper,
+    const Rythmos::StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter);
+
+  virtual void observeFailedTimeStep(
+    const Rythmos::StepperBase<Scalar> &stepper,
+    const Rythmos::StepControlInfo<Scalar> &stepCtrlInfo,
+    const int timeStepIter);
 
 private:
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > lastSolution_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > lastSolution_dot_;
-  typename ObserverBase<Scalar>::StampType lastStamp_;
+  void observeTimeStep(const Rythmos::StepperBase<Scalar> &stepper);
+
+  void observeTimeStepStatus(
+      const Rythmos::StepStatus<Scalar> &status,
+      bool hasSensitivities);
+
+  Teuchos::RCP<ObserverBase<Scalar> > wrappedObserver_;
 };
-
-
-template <typename Scalar>
-MockObserver<Scalar>::MockObserver() :
-  lastSolution_(Teuchos::null),
-  lastSolution_dot_(Teuchos::null),
-  lastStamp_(StampType())
-{}
-
-template <typename Scalar>
-void
-MockObserver<Scalar>::observeSolution(
-    const Thyra::VectorBase<Scalar> &solution)
-{
-  lastSolution_ = solution.clone_v();
-}
-
-template <typename Scalar>
-void
-MockObserver<Scalar>::observeSolution(
-    const Thyra::VectorBase<Scalar> &solution,
-    const StampType &stamp)
-{
-  lastSolution_ = solution.clone_v();
-  lastStamp_ = stamp;
-}
-
-template <typename Scalar>
-void
-MockObserver<Scalar>::observeSolution(
-    const Thyra::VectorBase<Scalar> &solution,
-    const Thyra::VectorBase<Scalar> &solution_dot,
-    const StampType &stamp)
-{
-  lastSolution_ = solution.clone_v();
-  lastSolution_dot_ = solution_dot.clone_v();
-  lastStamp_ = stamp;
-}
-
-} // namespace Test
 
 } // namespace Piro
 
-#endif /* PIRO_TEST_MOCKOBSERVER_HPP */
+#include "Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp"
+
+#endif /* PIRO_OBSERVATORTOINTEGRATIONOBSERVERSDAPTER_HPP */
