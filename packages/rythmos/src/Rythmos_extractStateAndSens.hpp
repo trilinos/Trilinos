@@ -66,12 +66,103 @@ void extractStateAndSens(
   );
 
 
+/** \brief Extract the state from x_bar and x_bar_dot.
+ */
+template<class Scalar>
+void extractState(
+  const RCP<const Thyra::VectorBase<Scalar> > &x_bar,
+  const RCP<const Thyra::VectorBase<Scalar> > &x_bar_dot,
+  RCP<const Thyra::VectorBase<Scalar> > *x,
+  RCP<const Thyra::VectorBase<Scalar> >  *x_dot
+  );
+
+
+/** \brief Extract the sensitivities from x_bar and x_bar_dot.
+ */
+template<class Scalar>
+void extractSens(
+  const RCP<const Thyra::VectorBase<Scalar> > &x_bar,
+  const RCP<const Thyra::VectorBase<Scalar> > &x_bar_dot,
+  RCP<const Thyra::MultiVectorBase<Scalar> > *S,
+  RCP<const Thyra::MultiVectorBase<Scalar> > *S_dot
+  );
+
+
 } // namespace Rythmos
+
 
 
 //
 // Implementations
 //
+
+namespace Rythmos {
+
+namespace {
+
+
+template<class Scalar>
+void downcastStateAndSens(
+  const RCP<const Thyra::VectorBase<Scalar> > &x_bar,
+  const RCP<const Thyra::VectorBase<Scalar> > &x_bar_dot,
+  RCP<const Thyra::ProductVectorBase<Scalar> > &x_bar_pv,
+  RCP<const Thyra::ProductVectorBase<Scalar> > &x_bar_dot_pv
+  )
+{
+  using Teuchos::rcp_dynamic_cast;
+
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(x_bar));
+  x_bar_pv = Thyra::productVectorBase<Scalar>(x_bar);
+
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(x_bar_dot));
+  x_bar_dot_pv = Thyra::productVectorBase<Scalar>(x_bar_dot);
+}
+
+
+template<class Scalar>
+void extractStateBlock(
+  const RCP<const Thyra::ProductVectorBase<Scalar> > &x_bar_pv,
+  const RCP<const Thyra::ProductVectorBase<Scalar> > &x_bar_dot_pv,
+  RCP<const Thyra::VectorBase<Scalar> > *x,
+  RCP<const Thyra::VectorBase<Scalar> > *x_dot
+  )
+{
+  TEUCHOS_TEST_FOR_EXCEPT(0==x);
+  *x = x_bar_pv->getVectorBlock(0);
+
+  TEUCHOS_TEST_FOR_EXCEPT(0==x_dot);
+  *x_dot = x_bar_dot_pv->getVectorBlock(0);
+}
+
+
+template<class Scalar>
+void extractSensBlock(
+  const RCP<const Thyra::ProductVectorBase<Scalar> > &x_bar_pv,
+  const RCP<const Thyra::ProductVectorBase<Scalar> > &x_bar_dot_pv,
+  RCP<const Thyra::MultiVectorBase<Scalar> > *S,
+  RCP<const Thyra::MultiVectorBase<Scalar> > *S_dot)
+{
+  using Teuchos::rcp_dynamic_cast;
+
+  TEUCHOS_TEST_FOR_EXCEPT(0==S);
+  const RCP<const Thyra::DefaultMultiVectorProductVector<Scalar> >
+    s_bar = rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<Scalar> >(
+        x_bar_pv->getVectorBlock(1).assert_not_null(), true
+        );
+  *S = s_bar->getMultiVector();
+
+  TEUCHOS_TEST_FOR_EXCEPT(0==S_dot);
+  const RCP<const Thyra::DefaultMultiVectorProductVector<Scalar> >
+    s_bar_dot = rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<Scalar> >(
+        x_bar_dot_pv->getVectorBlock(1).assert_not_null(), true
+        );
+  *S_dot = s_bar_dot->getMultiVector();
+}
+
+
+} // anonymous namespace
+
+} // namespace Rythmos
 
 
 template<class Scalar>
@@ -84,32 +175,43 @@ void Rythmos::extractStateAndSens(
   RCP<const Thyra::MultiVectorBase<Scalar> > *S_dot
   )
 {
+  RCP<const Thyra::ProductVectorBase<Scalar> > x_bar_pv, x_bar_dot_pv;
+  downcastStateAndSens(x_bar, x_bar_dot, x_bar_pv, x_bar_dot_pv);
 
-  using Teuchos::rcp_dynamic_cast;
-
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(x_bar));
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(x_bar_dot));
-  TEUCHOS_TEST_FOR_EXCEPT(0==x);
-  TEUCHOS_TEST_FOR_EXCEPT(0==S);
-  TEUCHOS_TEST_FOR_EXCEPT(0==x_dot);
-  TEUCHOS_TEST_FOR_EXCEPT(0==S_dot);
-
-  RCP<const Thyra::ProductVectorBase<Scalar> >
-    x_bar_pv = Thyra::productVectorBase<Scalar>(x_bar),
-    x_bar_dot_pv = Thyra::productVectorBase<Scalar>(x_bar_dot);
-  RCP<const Thyra::DefaultMultiVectorProductVector<Scalar> >
-    s_bar = rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<Scalar> >(
-      x_bar_pv->getVectorBlock(1).assert_not_null(), true
-      ),
-    s_bar_dot = rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<Scalar> >(
-      x_bar_dot_pv->getVectorBlock(1).assert_not_null(), true
-      );
-  *x = x_bar_pv->getVectorBlock(0);
-  *S = s_bar->getMultiVector();
-  *x_dot = x_bar_dot_pv->getVectorBlock(0);
-  *S_dot = s_bar_dot->getMultiVector();
-
+  extractStateBlock(x_bar_pv, x_bar_dot_pv, x, x_dot);
+  extractSensBlock(x_bar_pv, x_bar_dot_pv, S, S_dot);
 }
+
+
+template<class Scalar>
+void Rythmos::extractState(
+  const RCP<const Thyra::VectorBase<Scalar> > &x_bar,
+  const RCP<const Thyra::VectorBase<Scalar> > &x_bar_dot,
+  RCP<const Thyra::VectorBase<Scalar> > *x,
+  RCP<const Thyra::VectorBase<Scalar> >  *x_dot
+  )
+{
+  RCP<const Thyra::ProductVectorBase<Scalar> > x_bar_pv, x_bar_dot_pv;
+  downcastStateAndSens(x_bar, x_bar_dot, x_bar_pv, x_bar_dot_pv);
+
+  extractStateBlock(x_bar_pv, x_bar_dot_pv, x, x_dot);
+}
+
+
+template<class Scalar>
+void Rythmos::extractSens(
+  const RCP<const Thyra::VectorBase<Scalar> > &x_bar,
+  const RCP<const Thyra::VectorBase<Scalar> > &x_bar_dot,
+  RCP<const Thyra::MultiVectorBase<Scalar> > *S,
+  RCP<const Thyra::MultiVectorBase<Scalar> > *S_dot
+  )
+{
+  RCP<const Thyra::ProductVectorBase<Scalar> > x_bar_pv, x_bar_dot_pv;
+  downcastStateAndSens(x_bar, x_bar_dot, x_bar_pv, x_bar_dot_pv);
+
+  extractSensBlock(x_bar_pv, x_bar_dot_pv, S, S_dot);
+}
+
 
 
 #endif //RYTHMOS_EXTRACT_STATE_AND_SENS_HPP
