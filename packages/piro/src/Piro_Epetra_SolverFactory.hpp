@@ -87,10 +87,6 @@ public:
   template <typename T>
   void setSource(const Provider<T> &p);
 
-  //! Deprecated - Set the auxiliary object provider of type T
-  template <typename T>
-  void setDefaultProvider(const Provider<T> &p);
-
 private:
   template <typename T>
   static std::string getLabel();
@@ -121,14 +117,6 @@ void
 SolverFactory::setSource(const Piro::Provider<T> &p)
 {
   this->getSource<T>() = p;
-}
-
-template <typename T>
-inline
-void
-SolverFactory::setDefaultProvider(const Piro::Provider<T> &p)
-{
-  this->setSource(p);
 }
 
 } // namespace Epetra
