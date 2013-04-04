@@ -913,7 +913,7 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
   
 }
 
-// 
+//
 // Explicit Instantiation macro
 //
 // Must be expanded from within the Rythmos namespace!
@@ -935,8 +935,12 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
   template RCP<DefaultIntegrator< SCALAR > > \
   controlledDefaultIntegrator( \
     const RCP<IntegrationControlStrategyBase< SCALAR > > &integrationControlStrategy \
-    ); 
-
+    ); \
+  \
+  template RCP<DefaultIntegrator< SCALAR > > \
+  observedDefaultIntegrator( \
+    const RCP<IntegrationObserverBase< SCALAR > > &integrationObserver \
+    );
 
 } // namespace Rythmos
 
