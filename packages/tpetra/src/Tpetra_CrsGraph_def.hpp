@@ -2050,9 +2050,9 @@ namespace Tpetra {
       Array<int> NLRIds(NLRs.size());
       {
         LookupStatus stat = rowMap_->getRemoteIndexList(NLRs(),NLRIds());
-        char lclerror = ( stat == IDNotPresent ? 1 : 0 );
-        char gblerror;
-        reduceAll (*getComm(), REDUCE_MAX, lclerror, outArg (gblerror));
+        int lclerror = ( stat == IDNotPresent ? 1 : 0 );
+        int gblerror;
+        reduceAll<int, int> (*getComm(), REDUCE_MAX, lclerror, outArg (gblerror));
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(gblerror != 0, std::runtime_error,
           ": nonlocal entries correspond to invalid rows.");
       }
@@ -2746,13 +2746,16 @@ namespace Tpetra {
     // One would only call makeColMap() if the graph does not have a
     // column Map.  In that case, the graph must be globally indexed
     // anyway.
-    char myIndices[2] = {0,0};
+    int myIndices[2] = {0,0};
     if (indicesAreLocal_)  myIndices[0] = 1;
     if (indicesAreGlobal_) myIndices[1] = 1;
-    char allIndices[2];
-    Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,2,myIndices,allIndices);
-    indicesAreLocal_  = (allIndices[0]==1);  // If indices are local on one PE, should be local on all
-    indicesAreGlobal_ = (allIndices[1]==1);  // If indices are global on one PE should be local on all
+    int allIndices[2];
+    Teuchos::reduceAll<int, int> (* (getComm()), Teuchos::REDUCE_MAX,
+                                  2, myIndices, allIndices);
+    // If indices are (local, global) on one process, they should be
+    // (local, global) on all processes.
+    indicesAreLocal_  = (allIndices[0]==1);
+    indicesAreGlobal_ = (allIndices[1]==1);
   }
 
 
@@ -2938,9 +2941,9 @@ namespace Tpetra {
         // This has two likely causes:
         //   - The user has made a mistake in the column indices
         //   - The user has made a mistake with respect to the domain Map
-        const char missingID_lcl = (stat == IDNotPresent ? 1 : 0);
-        char missingID_gbl = 0;
-        reduceAll<int,char> (*getComm (), REDUCE_MAX, missingID_lcl,
+        const int missingID_lcl = (stat == IDNotPresent ? 1 : 0);
+        int missingID_gbl = 0;
+        reduceAll<int, int> (*getComm (), REDUCE_MAX, missingID_lcl,
                              outArg (missingID_gbl));
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           missingID_gbl == 1, std::runtime_error,
