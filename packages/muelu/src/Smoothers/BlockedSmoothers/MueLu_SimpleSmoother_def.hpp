@@ -137,6 +137,12 @@ namespace MueLu {
     D_ = Teuchos::rcp_dynamic_cast<Matrix>(Op10);
     Z_ = Teuchos::rcp_dynamic_cast<Matrix>(Op11);
 
+    // TODO move this to BlockedCrsMatrix->getMatrix routine...
+    F_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
+    G_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(1));
+    D_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
+    Z_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));
+
     // Create the inverse of the diagonal of F
     RCP<Vector> diagFVector = VectorFactory::Build(F_->getRowMap());
     if(!bSIMPLEC_) {
