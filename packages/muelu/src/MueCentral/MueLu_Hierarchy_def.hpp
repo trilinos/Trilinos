@@ -183,7 +183,7 @@ namespace MueLu {
       DumpCurrentGraph();
 
     int nextLevelID = coarseLevelID + 1;
-    if (!isLastLevel) {
+    if (isLastLevel == false) {
       // We are not at the coarsest level, so there is going to be another level ("next coarse") after this one ("coarse")
       if (nextLevelID > LastLevelID())
         AddNewLevel();
@@ -191,7 +191,6 @@ namespace MueLu {
 
       // Attach FactoryManager
       SFMNext = rcp(new SetFactoryManager(Levels_[nextLevelID], rcpnextLevelManager));
-
       Levels_[nextLevelID]->Request(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
     }
 
@@ -204,31 +203,21 @@ namespace MueLu {
       // The release is done later
     }
 
-    if (isDumpingEnabled_ && dumpLevel_ > 0 && coarseLevelID == dumpLevel_)
-      DumpCurrentGraph();
-
     RCP<Matrix> Ac = Teuchos::null;
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Matrix> >("A");
 
     // Test if we reach the end of the hierarchy
     RCP<TopSmootherFactory> smootherFact;
+    bool isOrigLastLevel = isLastLevel;
     if (isLastLevel || Ac.is_null() || (Ac->getRowMap()->getGlobalNumElements() <= maxCoarseSize_)) {
       // This is definitely the last level, but reasons for it may be different:
       //   - we have achieved numDesiredLevels
       //   - we do not belong to the next subcommunicator
       //   - the size of the coarse matrix is too small
-
-      if (isLastLevel == false) {
-        // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
-        // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to relese that.
-        Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
-        Levels_.pop_back(); // remove next level
-      }
+      isLastLevel = true;
       if (!Ac.is_null())
         smootherFact = rcp(new TopSmootherFactory(rcpcoarseLevelManager, "CoarseSolver"));
-
-      isLastLevel = true;
 
     } else {
       smootherFact = rcp(new TopSmootherFactory(rcpcoarseLevelManager, "Smoother"));
@@ -241,8 +230,21 @@ namespace MueLu {
       level.Release(*smootherFact);
     }
 
-    // Release the hierarchy data
+    if (isLastLevel == true && isOrigLastLevel == false) {
+      // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
+      // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to relese that.
+      Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
+      Levels_.pop_back(); // remove next level
+    }
+
+    // I think this is the proper place for graph so that it shows every dependence
+    if (isDumpingEnabled_ && dumpLevel_ > 0 && coarseLevelID == dumpLevel_)
+      DumpCurrentGraph();
+
     if (!isFinestLevel) {
+      // Release the hierarchy data
+      // We release so late to help blocked solvers, as the smoothers for them need A blocks
+      // which we construct in RAPFactory
       TopRAPFactory coarseRAPFactory(rcpfineLevelManager, rcpcoarseLevelManager);
       level.Release(coarseRAPFactory);
     }
