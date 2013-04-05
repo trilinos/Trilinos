@@ -203,13 +203,13 @@ namespace MueLu {
     // Here is one of the possible algorithms: try to find a closest number
     // of form 2^k*3^m which is smaller than numParts. Generally, this makes the number
     // of processors off by less than 15%
-    int i2 = -1, m2 = floor(log(numParts)/log(2));
-    int i3 = -1, m3 = floor(log(numParts)/log(3));
-    int d = 1e+9;
+    int i2 = -1, m2 = Teuchos::as<int>(floor(log(numParts)/log(2)));
+    int i3 = -1, m3 = Teuchos::as<int>(floor(log(numParts)/log(3)));
+    int d = Teuchos::as<int>(1e+9);
 
     for (int i = 0; i <= m2; i++)
       for (int j = 0; j <= m3; j++) {
-        int k = pow(2,i) * pow(3,j);
+        int k = Teuchos::as<int>(std::pow(2.,i) * std::pow(3.,j));
         if (k <= numParts && (numParts - k < d)) {
           d = numParts - k;
           i2 = i;
