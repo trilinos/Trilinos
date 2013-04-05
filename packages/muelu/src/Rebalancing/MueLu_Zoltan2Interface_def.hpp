@@ -236,10 +236,10 @@ namespace MueLu {
 
     // Step 3: try to do some further aggregation
     const int threshold_factor = 4;
-    for (int k = 0; k < 5-dim && vals.size() > dim; k++) {
+    for (size_t k = 0; dim+k < 5 && vals.size() > dim; k++) {
       int v1 = *vals.begin(), v2 = *(++vals.begin());
       rit = vals.rbegin()++;
-      if (k != dim-1)
+      if (k+1 != dim)
         rit++;
       if (v1*v2 <= threshold_factor * (*rit)) {
         vals.erase(vals.begin());
@@ -251,7 +251,7 @@ namespace MueLu {
     // Step 4: check if the aggregation is good enough
     if (vals.size() > dim && vals.size() < 2*dim) {
       rit = vals.rbegin();
-      for (int k = 0; k < dim; k++, rit++);
+      for (size_t k = 0; k < dim; k++, rit++);
       for (; rit != vals.rend() && (*rit <= 6); rit++);
       if (rit != vals.rend()) {
         // We don't like this factorization, fallback
@@ -262,9 +262,9 @@ namespace MueLu {
     // Step 5: save factors in a string
     // Tricky: first <dim> factors are printed in reverse order
     rit1 = vals.rbegin();
-    for (int k = 0; k < dim; k++) {
+    for (size_t k = 0; k < dim; k++) {
       rit = vals.rbegin();
-      for (int j = 1; j < dim-k; j++)
+      for (size_t j = 1; j+k < dim; j++)
         rit++;
       if (k)
         pqParts << ",";
