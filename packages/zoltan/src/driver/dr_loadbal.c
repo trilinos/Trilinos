@@ -672,6 +672,12 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 #undef KDDKDD_OUTPUT_PARTITION_AND_SKIP_MIGREATION_AND_END
 #ifdef KDDKDD_OUTPUT_PARTITION_AND_SKIP_MIGREATION_AND_END
 {
+/* This code dumps the part assignments to files (one per rank)
+ * and then exits before performing migration.
+ * This code assumes the initial distribution of the data to
+ * the ranks was INITIAL_LINEAR; if it isn't, one can't infer
+ * the GID associated with a part in the output.
+ */
 char filename[33];
 FILE *fp;
 if (!Export_Lists_Special) {
