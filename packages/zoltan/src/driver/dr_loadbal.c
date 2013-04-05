@@ -669,6 +669,28 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
 #endif
 
+#undef KDDKDD_OUTPUT_PARTITION_AND_SKIP_MIGREATION_AND_END
+#ifdef KDDKDD_OUTPUT_PARTITION_AND_SKIP_MIGREATION_AND_END
+{
+char filename[33];
+FILE *fp;
+if (!Export_Lists_Special) {
+  printf("ERROR:  To output partition without migration, need "
+         "RETURN_LISTS = PART\n");
+  exit(-1);
+}
+sprintf(filename, "%s.out.%04d", pio_info->pexo_fname, Proc);
+fp = fopen(filename, "w");
+for (i = 0; i < num_exported; i++)
+  fprintf(fp, "%d\n", export_to_part[i]);
+ /* fprintf(fp, "%d : %d\n", export_gids[(i+1)*Num_GID-1], export_to_part[i]); */
+fclose(fp);
+MPI_Barrier(MPI_COMM_WORLD);
+exit(-1);
+}
+#endif
+
+
     /*
      * Call another routine to perform the migration
      */
