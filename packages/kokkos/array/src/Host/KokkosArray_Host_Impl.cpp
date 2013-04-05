@@ -45,8 +45,8 @@
 /* KokkosArray interfaces */
 
 #include <KokkosArray_Host.hpp>
+#include <KokkosArray_hwloc.hpp>
 #include <Host/KokkosArray_Host_Internal.hpp>
-#include <Host/KokkosArray_hwloc.hpp>
 #include <impl/KokkosArray_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -79,20 +79,24 @@ public:
 
 const HostWorkerBlock worker_block ;
 
+unsigned host_thread_coordinates[ HostThread::max_thread_count ][ hwloc::depth ];
+
 //----------------------------------------------------------------------------
 
 inline
-void thread_mapping( const unsigned gang_rank ,
+void thread_mapping( const unsigned thread_rank ,
                      const unsigned gang_count,
-                     const unsigned worker_rank ,
                      const unsigned worker_count ,
                      unsigned coordinate[] )
 {
-  unsigned capacity[ hwloc::max_depth ];
+  const unsigned gang_rank   = thread_rank / worker_count ;
+  const unsigned worker_rank = thread_rank % worker_count ;
+
+  unsigned capacity[ hwloc::depth ];
 
   hwloc::get_thread_capacity( capacity );
 
-  for ( unsigned i = 0 ; i < hwloc::max_depth ; ++i ) coordinate[i] = 0 ;
+  for ( unsigned i = 0 ; i < hwloc::depth ; ++i ) coordinate[i] = 0 ;
 
   { // Assign gang to resource:
     const unsigned bin  = gang_count / capacity[0] ;
@@ -112,7 +116,7 @@ void thread_mapping( const unsigned gang_rank ,
     unsigned n = worker_count ;
     unsigned r = worker_rank ;
 
-    for ( unsigned i = 1 ; i < hwloc::max_depth &&
+    for ( unsigned i = 1 ; i < hwloc::depth &&
                            0 < capacity[i]  ; ++i ) {
       // n = k * bin + ( capacity[i] - k ) * ( bin + 1 )
       const unsigned bin  = n / capacity[i] ;
@@ -248,18 +252,12 @@ HostInternal::~HostInternal()
 
 HostInternal::HostInternal()
   : m_thread_count( 1 )
-  , m_gang_count( 1 )
-  , m_worker_count( 1 )
 {
   m_worker = NULL ;
 
   if ( ! is_master_thread() ) {
     KokkosArray::Impl::throw_runtime_exception( std::string("KokkosArray::Impl::HostInternal FAILED : not initialized on the master thread") );
   }
-
-  // Initialize thread pool with a single master thread:
-  HostThread::set_thread( 0 , & m_master_thread );
-  HostThread::set_thread_relationships();
 }
 
 HostInternal & HostInternal::singleton()
@@ -269,56 +267,29 @@ HostInternal & HostInternal::singleton()
 
 void HostInternal::print_configuration( std::ostream & s ) const
 {
-  unsigned coordinate[ hwloc::max_depth ];
-
   hwloc::print_thread_capacity( s );
 
   s << std::endl ;
 
   for ( unsigned r = 0 ; r < m_thread_count ; ++r ) {
-    const unsigned gang_rank   = r / m_worker_count ;
-    const unsigned worker_rank = r % m_worker_count ;
+    HostThread * const thread = HostThread::get_thread( r );
 
-    thread_mapping( gang_rank , m_gang_count,
-                    worker_rank , m_worker_count ,
-                    coordinate );
-
-    s << "  thread[ " << r << " : (" << gang_rank << "," << worker_rank << ") ] -> bind{"
-      << " " << coordinate[0]
-      << " " << coordinate[1]
-      << " " << coordinate[2]
+    s << "  thread[ " << thread->rank() << " : ("
+      << thread->gang_rank()
+      << "," << thread->worker_rank() << ") ] -> bind{"
+      << " " << host_thread_coordinates[r][0]
+      << " " << host_thread_coordinates[r][1]
+      << " " << host_thread_coordinates[r][2]
       << " }" << std::endl ;
   }
 }
 
 //----------------------------------------------------------------------------
 
+inline
 void * HostInternal::reduce_scratch() const
 {
   return m_master_thread.reduce_data();
-}
-
-void host_resize_scratch_reduce( unsigned size )
-{
-  HostThreadResizeReduce<Host> tmp(size);
-}
-
-void * host_scratch_reduce()
-{ return HostInternal::singleton().reduce_scratch(); }
-
-//----------------------------------------------------------------------------
-
-bool HostInternal::bind_thread( const unsigned thread_rank ) const
-{
-  const unsigned gang_rank   = thread_rank / m_worker_count ;
-  const unsigned worker_rank = thread_rank % m_worker_count ;
-
-  unsigned coordinate[ hwloc::max_depth ];
-
-  thread_mapping( gang_rank , m_gang_count,
-                  worker_rank , m_worker_count ,
-                  coordinate );
-  return hwloc::bind_this_thread( coordinate );
 }
 
 //----------------------------------------------------------------------------
@@ -327,28 +298,27 @@ void HostInternal::finalize()
 {
   verify_inactive("finalize()");
 
-  host_resize_scratch_reduce( 0 );
+  Host::resize_reduce_scratch(0);
 
   // Release and clear worker threads:
-  while ( 1 < m_thread_count ) {
-    --m_thread_count ;
 
-    HostThread * const thread = HostThread::get_thread( m_thread_count );
+  for ( unsigned r = HostThread::max_thread_count ; 0 < --r ; ) {
+
+    HostThread * thread = HostThread::get_thread( r );
 
     if ( 0 != thread ) {
 
       m_master_thread.m_state = HostThread::ThreadInactive ;
 
       thread->m_state = HostThread::ThreadTerminating ;
+      thread = 0 ; // The '*thread' object is now invalid
 
+      // Wait for '*thread' to terminate:
       host_thread_wait( & m_master_thread.m_state , HostThread::ThreadInactive );
-
-      // Is in the 'ThreadTerminating" state
     }
   }
 
-  // Reset master thread to the "only thread" condition:
-  HostThread::set_thread_relationships();
+  HostThread::clear_thread(0);
 }
 
 //----------------------------------------------------------------------------
@@ -359,14 +329,13 @@ void HostInternal::driver( const size_t thread_rank )
   // Bind this thread to a unique processing unit
   // with all members of a gang in the same NUMA region.
 
-//  if ( bind_thread( thread_rank ) ) {
-  if ( HostInternal::bind_thread( thread_rank ) ) {
+  if ( hwloc::bind_this_thread( host_thread_coordinates[ thread_rank ] ) ) {
 
     HostThread this_thread ;
 
-    HostThread::set_thread( thread_rank , & this_thread );
-
     this_thread.m_state = HostThread::ThreadActive ;
+
+    HostThread::set_thread( thread_rank , & this_thread );
 
     // Inform master thread that spawning and binding succeeded.
 
@@ -436,21 +405,17 @@ void HostInternal::verify_inactive( const char * const method ) const
 
 //----------------------------------------------------------------------------
 
-bool HostInternal::spawn_threads( const unsigned gang_count ,
-                                  const unsigned worker_count )
+bool HostInternal::spawn_threads( const unsigned thread_count )
 {
   // If the process is bound to a particular node
   // then only use cores belonging to that node.
   // Otherwise use all nodes and all their cores.
 
-  m_gang_count   = gang_count ;
-  m_worker_count = worker_count ;
-  m_thread_count = gang_count * worker_count ;
-  m_worker       = & worker_block ;
+  m_worker = & worker_block ;
 
   bool ok_spawn_threads = true ;
 
-  for ( unsigned rank = gang_count * worker_count ; ok_spawn_threads && 0 < --rank ; ) {
+  for ( unsigned rank = thread_count ; ok_spawn_threads && 0 < --rank ; ) {
 
     m_master_thread.m_state = HostThread::ThreadInactive ;
 
@@ -472,7 +437,10 @@ bool HostInternal::spawn_threads( const unsigned gang_count ,
   }
 
   // Bind the process thread as thread_rank == 0
-  if ( ok_spawn_threads ) { ok_spawn_threads = HostInternal::bind_thread( 0 ); }
+  if ( ok_spawn_threads ) {
+    HostThread::set_thread( 0 , & m_master_thread );
+    ok_spawn_threads = hwloc::bind_this_thread( host_thread_coordinates[0] );
+  }
 
   m_worker = NULL ;
 
@@ -482,27 +450,41 @@ bool HostInternal::spawn_threads( const unsigned gang_count ,
 void HostInternal::initialize( const unsigned gang_count ,
                                const unsigned worker_count )
 {
-  const bool ok_inactive = 1 == m_thread_count ;
+  const unsigned thread_count = gang_count * worker_count ;
+  const bool ok_inactive = 1 == m_thread_count &&
+                           0 == HostThread::get_thread_count();
+  bool ok_spawn_threads = true ;
 
-  // Only try to spawn threads if input is valid.
+  if ( ok_inactive && 1 < gang_count * worker_count ) {
 
-  const bool ok_spawn_threads =
-    ( ok_inactive && 1 < gang_count * worker_count )
-    ? spawn_threads( gang_count , worker_count )
-    : true ;
+    // Define coordinates for pinning threads:
 
-  if ( ok_spawn_threads ) {
-    // All threads spawned, initialize the master-thread fan-in
-
-    for ( unsigned rank = 0 ; rank < m_thread_count ; ++rank ) {
-      HostThread::get_thread(rank)->m_gang_tag   = rank / m_worker_count ;
-      HostThread::get_thread(rank)->m_worker_tag = rank % m_worker_count ;
+    for ( unsigned r = 0 ; r < thread_count ; ++r ) {
+      thread_mapping( r , gang_count , worker_count , host_thread_coordinates[r] );
     }
 
-    HostThread::set_thread_relationships();
-  }
-  else {
-    finalize();
+    // Only try to spawn threads if input is valid.
+
+    m_thread_count = thread_count ;
+
+    ok_spawn_threads = spawn_threads( thread_count );
+
+    if ( ok_spawn_threads ) {
+      // All threads spawned, initialize the master-thread fan-in
+
+      for ( unsigned r = 0 ; r < thread_count ; ++r ) {
+
+        HostThread & thread = * HostThread::get_thread(r);
+
+        thread.m_gang_tag    = r / worker_count ;
+        thread.m_worker_tag  = r % worker_count ;
+      }
+
+      HostThread::set_thread_relationships();
+    }
+    else {
+      finalize();
+    }
   }
 
   if ( ! ok_inactive || ! ok_spawn_threads )
@@ -521,7 +503,8 @@ void HostInternal::initialize( const unsigned gang_count ,
     KokkosArray::Impl::throw_runtime_exception( msg.str() );
   }
 
-  host_resize_scratch_reduce( 1024 );
+  // Initial reduction allocation:
+  Host::resize_reduce_scratch( 1024 );
 }
 
 //----------------------------------------------------------------------------
@@ -533,6 +516,47 @@ void HostInternal::initialize( const unsigned gang_count ,
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
+
+//----------------------------------------------------------------------------
+
+namespace Impl {
+namespace {
+
+struct HostThreadResizeReduce : public HostThreadWorker {
+
+  const unsigned reduce_size ;
+
+  HostThreadResizeReduce( unsigned size )
+    : reduce_size(size)
+    { HostThreadWorker::execute_serial(); }
+
+  void execute_on_thread( HostThread & thread ) const
+    { thread.resize_reduce( reduce_size ); }
+};
+
+}
+} // namespace Impl
+
+void Host::resize_reduce_scratch( unsigned size )
+{
+  static unsigned m_reduce_size = 0 ;
+
+  const unsigned rem = size % HostSpace::MEMORY_ALIGNMENT ;
+
+  if ( rem ) size += HostSpace::MEMORY_ALIGNMENT - rem ;
+
+  if ( ( 0 == size ) || ( m_reduce_size < size ) ) {
+
+    Impl::HostThreadResizeReduce tmp(size);
+
+    m_reduce_size = size ;
+  }
+}
+
+void * Host::root_reduce_scratch()
+{ return Impl::HostInternal::singleton().reduce_scratch(); }
+
+//----------------------------------------------------------------------------
 
 void Host::finalize()
 { Impl::HostInternal::singleton().finalize(); }
@@ -550,23 +574,20 @@ void Host::print_configuration( std::ostream & s )
 
 Host::size_type Host::detect_gang_capacity()
 {
-  unsigned capacity[ Impl::hwloc::max_depth ];
+  unsigned capacity[ hwloc::depth ];
 
-  Impl::hwloc::get_thread_capacity( capacity );
+  hwloc::get_thread_capacity( capacity );
 
-  return 0 == capacity[0] ? 1 : capacity[0] ;
+  return capacity[0] ;
 }
 
 Host::size_type Host::detect_gang_worker_capacity()
 {
-  unsigned capacity[ Impl::hwloc::max_depth ];
+  unsigned capacity[ hwloc::depth ];
 
-  Impl::hwloc::get_thread_capacity( capacity );
+  hwloc::get_thread_capacity( capacity );
 
-  return 0 == capacity[0] ? 1 : (
-         0 == capacity[1] ? 1 : capacity[1] * (
-         0 == capacity[2] ? 1 : capacity[2] * (
-         0 == capacity[3] ? 1 : capacity[3] ) ) );
+  return capacity[1] * capacity[2] * capacity[3] ;
 }
 
 //----------------------------------------------------------------------------

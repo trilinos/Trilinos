@@ -44,48 +44,25 @@
 #ifndef KOKKOSARRAY_HWLOC_HPP
 #define KOKKOSARRAY_HWLOC_HPP
 
-#include <vector>
 #include <ostream>
 
 namespace KokkosArray {
-namespace Impl {
 
 struct hwloc {
 
-  static const unsigned max_depth = 4 ;
+  /** \brief  Depth of hardware thread capacity hierarchy. */
+  static const unsigned depth = 4 ;
 
-  /** \brief  Hierarchy of hardware thread capacity.
-   *  
-   *  Total thread capacity is product of non-zero values.
-   */
+  /** \brief  Hardware thread capacity hierarchy. */
   static void get_thread_capacity( unsigned capacity[] );
 
+  /** \brief  Print hardware thread capacity hierarchy */
   static void print_thread_capacity( std::ostream & );
 
-  static unsigned get_thread_capacity_depth();
-
-  enum BindingPolicy { SPREAD , PACK };
-
-  /** \brief  Query coordinate to bind thread according to policy */
-  static void map_thread( const BindingPolicy policy ,
-                          const unsigned      rank ,
-                          const unsigned      count ,
-                                unsigned      coordinate[] );
-
-
-  static void map_thread( const BindingPolicy policy ,
-                          const unsigned      capacity_depth ,
-                          const unsigned      capacity[] ,
-                          const unsigned      rank ,
-                          const unsigned      count ,
-                                unsigned      coordinate[] );
-
-
-  /** \brief  Bind the current thread to the hierarchical coordinate */
+  /** \brief  Bind the current thread to the hardware hierarchical coordinate */
   static bool bind_this_thread( const unsigned coordinate[] );
 };
 
-} // namespace Impl
 } // namespace KokkosArray
 
 #endif /* #define KOKKOSARRAY_HWLOC_HPP */

@@ -1,13 +1,15 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//
+//                             KokkosArray
+//         Manycore Performance-Portable Multidimensional Arrays
+//
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,102 +37,80 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
-/*--------------------------------------------------------------------------*/
-/* KokkosArray interfaces */
+#ifndef KOKKOSARRAY_OPENMP_HPP
+#define KOKKOSARRAY_OPENMP_HPP
 
+#include <omp.h>
+#include <cstddef>
 #include <KokkosArray_Host.hpp>
-#include <Host/KokkosArray_Host_Internal.hpp>
-
-/*--------------------------------------------------------------------------*/
-/* Standard 'C' Linux libraries */
-#include <pthread.h>
-#include <sched.h>
-#include <errno.h>
+#include <KokkosArray_Layout.hpp>
 
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
-namespace Impl {
 
-//----------------------------------------------------------------------------
-// Driver for each created pthread
+/// \class OpenMP
+/// \brief KokkosArray device for multicore processors in the host memory space.
+class OpenMP {
+public:
+  //! \name Type declarations that all KokkosArray devices must provide.
+  //@{
 
-namespace {
+  typedef OpenMP                type ;
+  typedef OpenMP                device_type ;
+  typedef OpenMP                layout_type ;
+  typedef HostSpace::size_type  size_type ;
+  typedef HostSpace             memory_space ;
+  typedef LayoutRight           array_layout ;
 
-void * host_internal_pthread_driver( void * arg )
-{
-  HostInternal::singleton().driver( reinterpret_cast<size_t>( arg ) );
+  //@}
+  //! \name Functions that all KokkosArray devices must implement.
+  //@{
 
-  return NULL ;
-}
+  /** \brief  Set the device in a "sleep" state. A noop for OpenMP.  */
+  static bool sleep();
 
-pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
+  /** \brief Wake the device from the 'sleep' state. A noop for OpenMP. */
+  static bool wake();
 
-}
+  /** \brief Wait until all dispatched functors complete. A noop for OpenMP. */
+  static void fence() {}
 
-//----------------------------------------------------------------------------
+  /// \brief Free any resources being consumed by the device.
+  static void finalize();
 
-bool HostInternal::is_master_thread() const
-{
-  static const pthread_t master_pid = pthread_self();
+  /** \brief  Initialize the device.
+   *
+   *  1) If the hardware locality library is enabled then pin OpenMP
+   *     threads to the hardware topology according to the given policy.
+   *
+   *  2) Allocate a HostThread for each OpenMP thread to hold its
+   *     topology and fan in/out data.
+   */
+  enum BindingPolicy { SPREAD , PACK };
 
-  return pthread_equal( master_pid , pthread_self() );
-}
+  static void initialize();
 
-//----------------------------------------------------------------------------
-// Spawn this thread
+  static void resize_reduce_scratch( unsigned );
 
-bool HostInternal::spawn( const size_t thread_rank )
-{
-  bool result = false ;
+  static void * root_reduce_scratch();
 
-  pthread_attr_t attr ;
-  
-  if ( 0 == pthread_attr_init( & attr ) ||
-       0 == pthread_attr_setscope(       & attr, PTHREAD_SCOPE_SYSTEM ) ||
-       0 == pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ) {
+  static void assert_not_in_parallel( const char * const );
+};
 
-    void * const arg = reinterpret_cast<void*>( thread_rank );
+/*--------------------------------------------------------------------------*/
 
-    pthread_t pt ;
-
-    result =
-      0 == pthread_create( & pt, & attr, host_internal_pthread_driver, arg );
-  }
-
-  pthread_attr_destroy( & attr );
-
-  return result ;
-}
-
-//----------------------------------------------------------------------------
-// Performance critical function: thread waits while value == *state
-
-void host_thread_wait( volatile int * const state , const int value )
-{
-  while ( value == *state ) {
-    sched_yield();
-  }
-}
-
-void host_thread_lock()
-{
-  pthread_mutex_lock( & host_internal_pthread_mutex );
-}
-
-void host_thread_unlock()
-{
-  pthread_mutex_unlock( & host_internal_pthread_mutex );
-}
-
-} // namespace Impl
 } // namespace KokkosArray
+
+#include <OpenMP/KokkosArray_OpenMP_Parallel.hpp>
+
+#endif /* #define KOKKOSARRAY_OPENMP_HPP */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

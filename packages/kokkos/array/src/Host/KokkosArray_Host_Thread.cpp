@@ -71,8 +71,9 @@ public:
 
   static HostThreadSentinel & singleton();
 
+  unsigned get_thread_count();
   void set_thread( const unsigned , HostThread *);
-  void clear_thread( const unsigned );
+  HostThread * clear_thread( const unsigned );
   void set_relationships();
 
   static void resize_reduce( HostThread & , unsigned );
@@ -84,22 +85,21 @@ private:
   void clear_relationships();
 
   unsigned relationships ;
-  unsigned reduce_size ;
 };
 
 //----------------------------------------------------------------------------
 
 HostThread::HostThread()
 {
+  // Initialize as the only thread:
   m_state        = ThreadInactive ;
   m_fan_count    = 0 ;
-  m_thread_rank  = std::numeric_limits<unsigned>::max();
-  m_thread_count = 0 ;
-  m_gang_rank    = std::numeric_limits<unsigned>::max();
-  m_gang_count   = 0 ;
-  m_worker_rank  = std::numeric_limits<unsigned>::max();
-  m_worker_count = 0 ;
-  m_reduce_size  = 0 ;
+  m_thread_rank  = 0 ;
+  m_thread_count = 1 ;
+  m_gang_rank    = 0 ;
+  m_gang_count   = 1 ;
+  m_worker_rank  = 0 ;
+  m_worker_count = 1 ;
   m_reduce       = 0 ;
   m_gang_tag     = 0 ;
   m_worker_tag   = 0 ;
@@ -122,7 +122,6 @@ HostThread::~HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
-  m_reduce_size  = 0 ;
   m_reduce       = 0 ;
   m_gang_tag     = 0 ;
   m_worker_tag   = 0 ;
@@ -132,33 +131,27 @@ HostThread::~HostThread()
 
 void HostThread::resize_reduce( unsigned size )
 {
-  if ( ( 0 == size ) || ( m_reduce_size < size ) ) {
+  if ( m_reduce ) {
+    host_decrement_not_thread_safe( m_reduce );
+    m_reduce = 0 ;
+  }
 
-    const unsigned rem = size % HostSpace::MEMORY_ALIGNMENT ;
+  if ( size ) {
 
-    if ( rem ) size += HostSpace::MEMORY_ALIGNMENT - rem ;
+    m_reduce = host_allocate_not_thread_safe( "reduce_scratch_space" , typeid(unsigned char) , 1 , size );
 
-    if ( m_reduce ) {
-      host_decrement_not_thread_safe( m_reduce );
-      m_reduce = 0 ;
-    }
+    // Guaranteed multiple of 'unsigned'
 
-    m_reduce_size = size ;
+    unsigned * ptr = (unsigned *)( m_reduce );
+    unsigned * const end = ptr + size / sizeof(unsigned);
 
-    if ( m_reduce_size ) {
-
-      m_reduce = host_allocate_not_thread_safe( "reduce_scratch_space" , typeid(unsigned char) , 1 , m_reduce_size );
-
-      // Guaranteed multiple of 'unsigned'
-
-      unsigned * ptr = (unsigned *)( m_reduce );
-      unsigned * const end = ptr + m_reduce_size / sizeof(unsigned );
-
-      // touch on this thread
-      while ( ptr < end ) *ptr++ = 0 ;
-    }
+    // touch on this thread
+    while ( ptr < end ) *ptr++ = 0 ;
   }
 }
+
+unsigned HostThread::get_thread_count()
+{ return HostThreadSentinel::singleton().get_thread_count(); }
 
 void HostThread::set_thread_relationships()
 { HostThreadSentinel::singleton().set_relationships(); }
@@ -166,8 +159,11 @@ void HostThread::set_thread_relationships()
 void HostThread::set_thread( const unsigned entry , HostThread * t )
 { HostThreadSentinel::singleton().set_thread( entry , t ); }
 
-void HostThread::clear_thread( const unsigned entry )
-{ HostThreadSentinel::singleton().clear_thread( entry ); }
+HostThread * HostThread::clear_thread( const unsigned entry )
+{ return HostThreadSentinel::singleton().clear_thread( entry ); }
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 HostThread * HostThread::m_thread[ HostThread::max_thread_count ];
 
@@ -183,7 +179,6 @@ HostThreadSentinel::singleton()
 
 HostThreadSentinel::HostThreadSentinel()
 : relationships(0)
-, reduce_size(0)
 {
   for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
     HostThread::m_thread[i] = 0 ;
@@ -226,13 +221,14 @@ void HostThreadSentinel::set_thread( const unsigned entry , HostThread * t )
   }
 }
 
-void HostThreadSentinel::clear_thread( const unsigned entry )
+HostThread * HostThreadSentinel::clear_thread( const unsigned entry )
 {
   clear_relationships();
 
-  const bool ok_rank = entry < HostThread::max_thread_count ;
+  HostThread * th = 0 ;
 
-  if ( ok_rank ) {
+  if ( entry < HostThread::max_thread_count ) {
+    th = HostThread::m_thread[ entry ] ;
     HostThread::m_thread[ entry ] = 0 ;
   }
   else {
@@ -241,26 +237,42 @@ void HostThreadSentinel::clear_thread( const unsigned entry )
         << entry << " , ... ) ERROR:  OUT OF BOUNDS" ;
     throw std::runtime_error( msg.str() );
   }
+
+  return th ;
 }
 
 //----------------------------------------------------------------------------
+
+unsigned HostThreadSentinel::get_thread_count()
+{
+  unsigned count = 0 ;
+
+  for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
+    if ( HostThread::m_thread[i] ) ++count ;
+  }
+  return count ;
+}
 
 void HostThreadSentinel::clear_relationships()
 {
   if ( relationships ) {
     for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
       if ( HostThread::m_thread[i] ) {
+
         HostThread & thread = * HostThread::m_thread[i] ;
 
+        // Reset to view self as the only thread:
+
+        thread.m_fan_count    = 0 ;
+        thread.m_thread_rank  = 0 ;
+        thread.m_thread_count = 1 ;
+        thread.m_gang_rank    = 0 ;
+        thread.m_gang_count   = 1 ;
+        thread.m_worker_rank  = 0 ;
+        thread.m_worker_count = 1 ;
+
         for ( unsigned j = 0 ; j < HostThread::max_fan_count ; ++j ) {
-          thread.m_fan[j]       = 0 ;
-          thread.m_fan_count    = 0 ;
-          thread.m_thread_rank  = std::numeric_limits<unsigned>::max();
-          thread.m_thread_count = 0 ;
-          thread.m_gang_rank    = std::numeric_limits<unsigned>::max();
-          thread.m_gang_count   = 0 ;
-          thread.m_worker_rank  = std::numeric_limits<unsigned>::max();
-          thread.m_worker_count = 0 ;
+          thread.m_fan[j] = 0 ;
         }
       }
     }

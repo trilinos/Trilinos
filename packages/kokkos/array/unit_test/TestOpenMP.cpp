@@ -43,7 +43,7 @@
 
 #include <gtest/gtest.h>
 
-#include <KokkosArray_Host.hpp>
+#include <KokkosArray_OpenMP.hpp>
 #include <KokkosArray_hwloc.hpp>
 
 #include <KokkosArray_View.hpp>
@@ -63,7 +63,9 @@
 
 namespace Test {
 
-class host : public ::testing::Test {
+#if 0
+
+class openmp : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
@@ -83,72 +85,75 @@ protected:
       gang_worker_count = ( gang_worker_count + 1 ) / 2 ;
     }
 
-    KokkosArray::Host::initialize( gang_count , gang_worker_count );
-    KokkosArray::Host::print_configuration( std::cout );
+    omp_set_max_active_levels(1);
+    omp_set_num_threads( gang_count * gang_worker_count );
+
+    KokkosArray::OpenMP::initialize();
   }
 
   static void TearDownTestCase()
   {
-    KokkosArray::Host::finalize();
+    KokkosArray::OpenMP::finalize();
+
+    omp_set_num_threads(0);
+
+    ASSERT_EQ( 1 , omp_get_max_threads() );
   }
 };
 
-TEST_F( host, memory_tracking) {
-  TestMemoryTracking();
+
+TEST_F( openmp, view_impl) {
+  test_view_impl< KokkosArray::OpenMP >();
 }
 
-TEST_F( host, view_impl) {
-  test_view_impl< KokkosArray::Host >();
-}
-
-TEST_F( host, view_api) {
-  TestViewAPI< double , KokkosArray::Host >();
+TEST_F( openmp, view_api) {
+  TestViewAPI< double , KokkosArray::OpenMP >();
 }
 
 
-TEST_F( host, crsarray) {
-  TestCrsArray< KokkosArray::Host >();
+TEST_F( openmp, crsarray) {
+  TestCrsArray< KokkosArray::OpenMP >();
 }
 
-TEST_F( host, long_reduce) {
-  TestReduce< long ,   KokkosArray::Host >( 1000000 );
+TEST_F( openmp, long_reduce) {
+  TestReduce< long ,   KokkosArray::OpenMP >( 1000000 );
 }
 
-TEST_F( host, double_reduce) {
-  TestReduce< double ,   KokkosArray::Host >( 1000000 );
+TEST_F( openmp, double_reduce) {
+  TestReduce< double ,   KokkosArray::OpenMP >( 1000000 );
 }
 
-TEST_F( host, long_reduce_dynamic ) {
-  TestReduceDynamic< long ,   KokkosArray::Host >( 1000000 );
+TEST_F( openmp, long_reduce_dynamic ) {
+  TestReduceDynamic< long ,   KokkosArray::OpenMP >( 1000000 );
 }
 
-TEST_F( host, double_reduce_dynamic ) {
-  TestReduceDynamic< double ,   KokkosArray::Host >( 1000000 );
+TEST_F( openmp, double_reduce_dynamic ) {
+  TestReduceDynamic< double ,   KokkosArray::OpenMP >( 1000000 );
 }
 
-TEST_F( host, long_reduce_dynamic_view ) {
-  TestReduceDynamicView< long ,   KokkosArray::Host >( 1000000 );
+TEST_F( openmp, long_reduce_dynamic_view ) {
+  TestReduceDynamicView< long ,   KokkosArray::OpenMP >( 1000000 );
 }
 
-TEST_F( host, long_multi_reduce) {
-  TestReduceMulti< long , KokkosArray::Host >( 1000000 , 7 );
-}
+#endif
 
-TEST_F( host , view_remap )
+#if 0
+
+TEST_F( openmp , view_remap )
 {
   enum { N0 = 3 , N1 = 2 , N2 = 8 , N3 = 9 };
 
   typedef KokkosArray::View< double*[N1][N2][N3] ,
                              KokkosArray::LayoutRight ,
-                             KokkosArray::Host > output_type ;
+                             KokkosArray::OpenMP > output_type ;
 
   typedef KokkosArray::View< int**[N2][N3] ,
                              KokkosArray::LayoutLeft ,
-                             KokkosArray::Host > input_type ;
+                             KokkosArray::OpenMP > input_type ;
 
   typedef KokkosArray::View< int*[N0][N2][N3] ,
                              KokkosArray::LayoutLeft ,
-                             KokkosArray::Host > diff_type ;
+                             KokkosArray::OpenMP > diff_type ;
 
   output_type output( "output" , N0 );
   input_type  input ( "input" , N0 , N1 );
@@ -175,10 +180,14 @@ TEST_F( host , view_remap )
   }}}}
 }
 
+TEST_F( openmp, long_multi_reduce) {
+  TestReduceMulti< long , KokkosArray::OpenMP >( 1000000 , 7 );
+}
+
 //----------------------------------------------------------------------------
 
-struct HostFunctor
-  : public KokkosArray::Impl::HostThreadWorker
+struct OpenMPFunctor
+  : public KokkosArray::Impl::OpenMPThreadWorker
 {
   struct Finalize {
 
@@ -208,10 +217,10 @@ struct HostFunctor
 
   const reduce_type reduce ;
 
-  HostFunctor( int & f ) : reduce(f)
-    { KokkosArray::Impl::HostThreadWorker::execute(); }
+  OpenMPFunctor( int & f ) : reduce(f)
+    { KokkosArray::Impl::OpenMPThreadWorker::execute(); }
 
-  void execute_on_thread( KokkosArray::Impl::HostThread & thread ) const
+  void execute_on_thread( KokkosArray::Impl::OpenMPThread & thread ) const
     {
       reduce.init( thread.reduce_data() );
 
@@ -223,23 +232,25 @@ struct HostFunctor
     }
 };
 
-TEST_F( host , host_thread )
+TEST_F( openmp , openmp_thread )
 {
   const int N = 1000 ;
   int flag = 0 ;
 
   for ( int i = 0 ; i < N ; ++i ) {
-    HostFunctor tmp( flag );
+    OpenMPFunctor tmp( flag );
   }
 
   ASSERT_EQ( flag , N * 2 );
 
   for ( int i = 0 ; i < 10 ; ++i ) {
-    KokkosArray::Host::sleep();
-    KokkosArray::Host::wake();
+    KokkosArray::OpenMP::sleep();
+    KokkosArray::OpenMP::wake();
   }
 
 }
+
+#endif
 
 //----------------------------------------------------------------------------
 

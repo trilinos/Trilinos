@@ -56,9 +56,6 @@
 namespace KokkosArray {
 namespace Impl {
 
-void host_resize_scratch_reduce( unsigned );
-void * host_scratch_reduce();
-
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
@@ -73,7 +70,7 @@ public:
 
   value_type result() const
   {
-    value_type * const ptr = (value_type*) host_scratch_reduce();
+    value_type * const ptr = (value_type*) Host::root_reduce_scratch();
     return *ptr ;
   }
 };
@@ -83,20 +80,20 @@ class ParallelReduceFunctorValue< MemberType[] , Host >
 {
 public:
   typedef MemberType    value_type[] ;
-  const Host::size_type value_count ;
+  const HostSpace::size_type value_count ;
 
   inline void operator()( const MemberType [] ) const {}
 
   explicit
-  ParallelReduceFunctorValue( Host::size_type n )
+  ParallelReduceFunctorValue( HostSpace::size_type n )
     : value_count(n)
     {}
 
   void result( value_type result ) const
   {
-    MemberType * const ptr = (MemberType *) host_scratch_reduce();
+    MemberType * const ptr = (MemberType *) Host::root_reduce_scratch();
 
-    for ( Host::size_type i = 0 ; i < value_count ; ++i ) result[i] = ptr[i] ;
+    for ( HostSpace::size_type i = 0 ; i < value_count ; ++i ) result[i] = ptr[i] ;
   }
 };
 
@@ -180,7 +177,7 @@ public:
     , m_reduce( finalize )
     , m_work_count( work_count )
     {
-      host_resize_scratch_reduce( m_reduce.value_size() );
+      Host::resize_reduce_scratch( m_reduce.value_size() );
       HostThreadWorker::execute();
     }
 };
@@ -241,7 +238,7 @@ public:
     , m_reduce( finalize )
     , m_work_count( work_count )
     {
-      host_resize_scratch_reduce( m_reduce.value_size() * HostSpace::WORK_ALIGNMENT );
+      Host::resize_reduce_scratch( m_reduce.value_size() * HostSpace::WORK_ALIGNMENT );
       HostThreadWorker::execute();
     }
 };
@@ -362,7 +359,7 @@ public:
 
   void execute() const
   {
-    Impl::host_resize_scratch_reduce( m_reduce.value_size() );
+    Host::resize_reduce_scratch( m_reduce.value_size() );
     Impl::HostThreadWorker::execute();
   }
 };

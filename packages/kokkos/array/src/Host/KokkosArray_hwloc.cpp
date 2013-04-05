@@ -50,7 +50,7 @@
 
 /* KokkosArray interfaces */
 
-#include <Host/KokkosArray_hwloc.hpp>
+#include <KokkosArray_hwloc.hpp>
 
 /*--------------------------------------------------------------------------*/
 /* Third Party Libraries */
@@ -67,7 +67,6 @@
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
-namespace Impl {
 namespace {
 
 void print_bitmap( std::ostream & s , const hwloc_bitmap_t bitmap )
@@ -87,7 +86,7 @@ struct HWLOC_Singleton {
   hwloc_obj_type_t m_root_type ;
 
   unsigned m_root_rank[ MAX_ROOT_NODE ];
-  unsigned m_capacity[ hwloc::max_depth ];
+  unsigned m_capacity[ hwloc::depth ];
   unsigned m_capacity_depth ;
 
   static HWLOC_Singleton & singleton();
@@ -107,40 +106,45 @@ HWLOC_Singleton::HWLOC_Singleton()
   m_root_type = HWLOC_OBJ_TYPE_MAX ;
   m_capacity_depth = 0 ;
 
-  for ( unsigned i = 0 ; i < hwloc::max_depth ; ++i ) {
-    m_capacity[i] = 0 ;
+  for ( unsigned i = 0 ; i < hwloc::depth ; ++i ) {
+    m_capacity[i] = 1 ;
   }
 
   hwloc_topology_init( & m_topology );
   hwloc_topology_load( m_topology );
 
-  { // Choose a hwloc type for a 'node' from, in search order, the following:
-    static const hwloc_obj_type_t candidate_node_type[] =
+  { // Choose a hwloc object for the 'root' from, in search order, the following.
+    static const hwloc_obj_type_t candidate_root_type[] =
       { HWLOC_OBJ_NODE   /* NUMA region     */
       , HWLOC_OBJ_SOCKET /* hardware socket */
       , HWLOC_OBJ_CORE   /* hardware core   */
       };
 
+    // Choose the level at which there is more than one hardware object.
+    // The process may be restricted to only one of those objects.
+    // Assume that the process is allowed to use all hardware objects
+    // which are hierarchically children of this object.
+
     enum { CANDIDATE_NODE_TYPE_COUNT =
-             sizeof(candidate_node_type) / sizeof(hwloc_obj_type_t) };
+             sizeof(candidate_root_type) / sizeof(hwloc_obj_type_t) };
 
     for ( int k = 0 ; k < CANDIDATE_NODE_TYPE_COUNT && HWLOC_OBJ_TYPE_MAX == m_root_type ; ++k ) {
-      if ( 1 < hwloc_get_nbobjs_by_type( m_topology , candidate_node_type[k] ) ) {
-        m_root_type = candidate_node_type[k] ;
+      if ( 1 < hwloc_get_nbobjs_by_type( m_topology , candidate_root_type[k] ) ) {
+        m_root_type = candidate_root_type[k] ;
       }
     }
   }
 
   {
-    // Determine which of these 'node' types are available to this process.
-    // The process may have been bound (e.g., by MPI) to a subset of these node types.
+    // Determine which of these 'root' types are available to this process.
+    // The process may have been bound (e.g., by MPI) to a subset of these root types.
 
     hwloc_bitmap_t proc_cpuset = hwloc_bitmap_alloc();
 
     hwloc_get_cpubind( m_topology , proc_cpuset , HWLOC_CPUBIND_PROCESS );
 
-    int node_count    = 0 ;
-    int core_per_node = 0 ;
+    int root_count    = 0 ;
+    int core_per_root = 0 ;
     int pu_per_core   = 0 ;
     bool symmetry     = true ;
 
@@ -148,26 +152,26 @@ HWLOC_Singleton::HWLOC_Singleton()
 
     for ( int i = 0 ; i < max_count ; ++i ) {
 
-      // Candidate node:
-      const hwloc_obj_t node = hwloc_get_obj_by_type( m_topology , m_root_type , i );
+      // Candidate root:
+      const hwloc_obj_t root = hwloc_get_obj_by_type( m_topology , m_root_type , i );
 
-      // Cores within this node:
+      // Cores within this root:
       const int core_count =
         hwloc_get_nbobjs_inside_cpuset_by_type( m_topology ,
-                                                node->allowed_cpuset ,
+                                                root->allowed_cpuset ,
                                                 HWLOC_OBJ_CORE );
 
       int core_available = 0 ;
       int pu_available   = 0 ;
 
-      // All cores within this 'node' must be available
-      // to add this node to the list.
+      // All cores within this 'root' must be available
+      // to add this root to the list.
 
       for ( int j = 0 ; j < core_count ; ++j ) {
 
         const hwloc_obj_t core =
           hwloc_get_obj_inside_cpuset_by_type( m_topology ,
-                                               node->allowed_cpuset ,
+                                               root->allowed_cpuset ,
                                                HWLOC_OBJ_CORE , j );
 
         // If process' cpuset intersects core's cpuset
@@ -197,12 +201,12 @@ HWLOC_Singleton::HWLOC_Singleton()
 
       if ( core_count && core_count == core_available ) {
 
-        if ( 0 == core_per_node ) core_per_node = core_count ;
+        if ( 0 == core_per_root ) core_per_root = core_count ;
         if ( 0 == pu_per_core )   pu_per_core   = pu_available ;
 
-        if ( core_count != core_per_node ) {
+        if ( core_count != core_per_root ) {
           symmetry      = false ;
-          core_per_node = std::min( core_count , core_per_node );
+          core_per_root = std::min( core_count , core_per_root );
         }
         if ( pu_available != pu_per_core ) {
 
@@ -210,16 +214,16 @@ HWLOC_Singleton::HWLOC_Singleton()
           pu_per_core = std::min( pu_available , pu_per_core );
         }
 
-        m_root_rank[ node_count++ ] = i ;
+        m_root_rank[ root_count++ ] = i ;
       }
     }
 
-    if ( node_count ) {
-      m_capacity[0] = node_count ;
+    if ( root_count ) {
+      m_capacity[0] = root_count ;
       m_capacity_depth = 1 ;
 
-      if ( 1 < core_per_node ) {
-        m_capacity[1] = core_per_node ;
+      if ( 1 < core_per_root ) {
+        m_capacity[1] = core_per_root ;
         m_capacity_depth = 2 ;
       }
 
@@ -243,14 +247,12 @@ HWLOC_Singleton::~HWLOC_Singleton()
 }
 
 } // namespace
-} /* namespace Impl */
 } /* namespace KokkosArray */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
-namespace Impl {
 
 void hwloc::print_thread_capacity( std::ostream & s )
 {
@@ -312,47 +314,29 @@ void hwloc::print_thread_capacity( std::ostream & s )
   s << " }" ;
 }
 
-unsigned hwloc::get_thread_capacity_depth()
-{
-  HWLOC_Singleton & h = HWLOC_Singleton::singleton();
-
-  return h.m_capacity_depth ;
-}
-
 void hwloc::get_thread_capacity( unsigned capacity[] )
 {
   HWLOC_Singleton & h = HWLOC_Singleton::singleton();
 
-  for ( unsigned i = 0 ; i < hwloc::max_depth ; ++i ) {
+  for ( unsigned i = 0 ; i < hwloc::depth ; ++i ) {
     capacity[i] = h.m_capacity[i] ;
   }
 }
 
 //----------------------------------------------------------------------------
 
-void hwloc::map_thread( const hwloc::BindingPolicy policy ,
-                        const unsigned rank ,
-                        const unsigned count ,
-                        unsigned coordinate[] )
-{
-  HWLOC_Singleton & h = HWLOC_Singleton::singleton();
+enum BindingPolicy { SPREAD , PACK };
 
-  hwloc::map_thread( policy , h.m_capacity_depth , h.m_capacity ,
-                     rank , count , coordinate );
-}
-
-//----------------------------------------------------------------------------
-
-void hwloc::map_thread( const hwloc::BindingPolicy policy ,
-                        const unsigned capacity_depth ,
-                        const unsigned capacity[] ,
-                        const unsigned rank ,
-                        const unsigned count ,
-                        unsigned coordinate[] )
+void map_thread( const BindingPolicy policy ,
+                 const unsigned capacity_depth ,
+                 const unsigned capacity[] ,
+                 const unsigned rank ,
+                 const unsigned count ,
+                 unsigned coordinate[] )
 {
   unsigned capacity_count = 1 ;
 
-  for ( unsigned i = 0 ; i < hwloc::max_depth ; ++i ) {
+  for ( unsigned i = 0 ; i < hwloc::depth ; ++i ) {
     capacity_count *= capacity[i] ;
     coordinate[i] = 0 ;
   }
@@ -409,7 +393,7 @@ bool hwloc::bind_this_thread( const unsigned coordinate[] )
 
   bool result = true ;
 
-  for ( unsigned i = 0 ; i < h.m_capacity_depth ; ++i ) {
+  for ( unsigned i = 0 ; i < depth ; ++i ) {
     if ( h.m_capacity[i] <= coordinate[i] ) {
       result = false ;
     }
@@ -417,7 +401,7 @@ bool hwloc::bind_this_thread( const unsigned coordinate[] )
 
   if ( result ) {
 
-    const int node_rank = h.m_root_rank[ coordinate[0] ] ;
+    const int root_rank = h.m_root_rank[ coordinate[0] ] ;
     int core_rank = 0 ;
     int pu_rank = 0 ;
 
@@ -436,14 +420,14 @@ bool hwloc::bind_this_thread( const unsigned coordinate[] )
       break ;
     }
 
-    const hwloc_obj_t node =
+    const hwloc_obj_t root =
       hwloc_get_obj_by_type( h.m_topology ,
                              h.m_root_type ,
-                             node_rank );
+                             root_rank );
 
     const hwloc_obj_t core =
       hwloc_get_obj_inside_cpuset_by_type( h.m_topology ,
-                                           node->allowed_cpuset ,
+                                           root->allowed_cpuset ,
                                            HWLOC_OBJ_CORE ,
                                            core_rank );
 
@@ -475,7 +459,7 @@ bool hwloc::bind_this_thread( const unsigned coordinate[] )
       << coordinate[1] << ","
       << coordinate[2] << ","
       << coordinate[3] << ") " ;
-  msg << "node" ;  print_bitmap(msg,node->allowed_cpuset);
+  msg << "root" ;  print_bitmap(msg,root->allowed_cpuset);
   msg << " core" ; print_bitmap(msg,core->allowed_cpuset);
   msg << " pu" ;   print_bitmap(msg,pu->allowed_cpuset);
   msg << std::endl ;
@@ -489,6 +473,5 @@ bool hwloc::bind_this_thread( const unsigned coordinate[] )
 
 //----------------------------------------------------------------------------
 
-} /* namespace Impl */
 } /* namespace KokkosArray */
 

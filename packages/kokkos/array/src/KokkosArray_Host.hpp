@@ -150,6 +150,10 @@ public:
    */
   static size_type detect_gang_worker_capacity();
 
+
+  static void resize_reduce_scratch( unsigned );
+
+  static void * root_reduce_scratch();
   //@}
 };
 

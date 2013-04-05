@@ -74,16 +74,11 @@ class HostInternal {
 protected:
 
   unsigned         m_thread_count ;  // Number of threads
-  unsigned         m_gang_count ;    // Number of NUMA nodes used
-  unsigned         m_worker_count ;  // Number of threads per NUMA node
-  unsigned         m_reduce_scratch_size ;   // Sizeof reduction memory
   HostThread       m_master_thread ;
 
   const HostThreadWorker * volatile m_worker ;
 
   ~HostInternal();
-
-  bool bind_thread( const unsigned thread_rank ) const ;
 
   HostInternal();
 
@@ -100,12 +95,9 @@ private:
   /// The calling thread also gets bound as a worker thread.  This has
   /// implications for parallel kernels: in particular, they are not
   /// asynchronous.
-  bool spawn_threads( const unsigned use_node_count ,
-                      const unsigned use_node_thread_count );
+  bool spawn_threads( const unsigned thread_count );
 
   bool spawn( const size_t );
-
-  bool initialize_thread( const unsigned thread_rank, HostThread & thread );
 
   void activate_threads();
 
@@ -145,8 +137,6 @@ public:
 
   bool is_master_thread() const ;
 
-  void resize_reduce_scratch( unsigned size );
-  void resize_reduce_thread( HostThread & thread ) const ;
   void * reduce_scratch() const ;
 
   //! Access the one HostInternal instance.

@@ -116,6 +116,9 @@ __assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
 
   //----------------------------------------------------------------------
 
+  static
+  unsigned get_thread_count();
+
   inline static
   HostThread * get_thread( const unsigned entry )
     { return m_thread[ entry ]; }
@@ -136,8 +139,13 @@ __assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
   void set_thread_relationships();
 
   static
-  void clear_thread( const unsigned entry );
+  HostThread * clear_thread( const unsigned entry );
 
+  /** \brief  Resize the reduction scratch space.
+   *
+   *  1) Must be called by the proper thread for proper first-touch.
+   *  2) Must be called while thread is exclusively executing.
+   */
   void resize_reduce( unsigned size );
 
   //----------------------------------------------------------------------
@@ -160,7 +168,6 @@ private:
   size_type     m_gang_count ;
   size_type     m_worker_rank ;
   size_type     m_worker_count ;
-  size_type     m_reduce_size ;
   void        * m_reduce ;    ///< Reduction memory
 
 public:
@@ -205,24 +212,6 @@ private:
 
   HostThreadWorker( const HostThreadWorker & );
   HostThreadWorker & operator = ( const HostThreadWorker & );
-};
-
-//----------------------------------------------------------------------------
-
-template < class Device >
-struct HostThreadResizeReduce ;
-
-template <>
-struct HostThreadResizeReduce< Host > : public HostThreadWorker {
-
-  const unsigned m_size ;
-
-  HostThreadResizeReduce( unsigned size )
-  : m_size(size)
-  { HostThreadWorker::execute_serial(); }
-
-  void execute_on_thread( HostThread & thread ) const
-  { thread.resize_reduce( m_size ); }
 };
 
 //----------------------------------------------------------------------------

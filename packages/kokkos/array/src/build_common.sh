@@ -63,7 +63,7 @@ GNU | gnu | g++ )
   # Turn on lots of warnings and ansi compliance.
   # The Trilinos build system requires '-pedantic'
   # 
-  CXX="g++ -Wall -Wextra -ansi -pedantic"
+  CXX="g++ -fopenmp -Wall -Wextra -ansi -pedantic"
   CXX="${CXX} -rdynamic -DENABLE_TRACEBACK"
   LIB="${LIB} -ldl"
   ;;
@@ -125,6 +125,7 @@ CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_Impl.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_Thread.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_HostSpace.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/OpenMP/KokkosArray_OpenMP_Parallel.cpp"
 
 #-----------------------------------------------------------------------------
 

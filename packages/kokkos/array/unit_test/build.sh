@@ -26,6 +26,7 @@ INC_PATH="${INC_PATH} -I. -I${TPL_PATH}"
 
 CXX_SOURCES="${CXX_SOURCES} ${TPL_PATH}/gtest/gtest-all.cc"
 CXX_SOURCES="${CXX_SOURCES} UnitTestMain.cpp TestHost.cpp TestTileHost.cpp"
+CXX_SOURCES="${CXX_SOURCES} TestOpenMP.cpp"
 CXX_SOURCES="${CXX_SOURCES} TestHWLOC.cpp"
 
 #-----------------------------------------------------------------------------
