@@ -49,6 +49,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Comm.h"
+#include "Epetra_SerialComm.h"
 #include "Epetra_Distributor.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_BLAS_wrappers.h"
@@ -4660,7 +4661,7 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
 template<class TransferType>
   void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, const TransferType & RowTransfer,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap,bool RestrictCommunicator)
 {
-   // Fused constructor, import & FillComplete
+  // Fused constructor, import & FillComplete
   int rv;
   int N = NumMyRows();
 
@@ -4810,7 +4811,23 @@ template<class TransferType>
     // Dangerous: If we're not in the new communicator, call it quits here.  The user is then responsible
     // for not breaking anything on the return.  Thankfully, the dummy RowMap should report no local unknowns,
     // so the user can at least test for this particular case.
-    if(!NewComm) return;
+    if(NewComm) {
+      // Replace the RowMap
+      Graph_.CrsGraphData_->RowMap_ = *ReducedRowMap;
+      Comm_ = &Graph_.CrsGraphData_->RowMap_.Comm();
+    }
+    else {
+      // Replace all the maps with dummy maps with SerialComm, then quit
+      Epetra_SerialComm SComm;
+      Epetra_Map DummyMap(0,0,SComm);
+      Graph_.CrsGraphData_->RowMap_    = DummyMap;
+      Graph_.CrsGraphData_->ColMap_    = DummyMap;
+      Graph_.CrsGraphData_->RangeMap_  = DummyMap;
+      Graph_.CrsGraphData_->DomainMap_ = DummyMap;
+      Comm_ = &Graph_.CrsGraphData_->RowMap_.Comm();
+      return;
+    }
+
 
     // Reset the "my" maps
     MyDomainMap = ReducedDomainMap;
@@ -4856,7 +4873,6 @@ template<class TransferType>
 
   // Note: At the moment, the RemotePIDs_ptr won't work with the restricted communicator.
   // This should be fixed.
-
   ExpertStaticFillComplete(*MyDomainMap,*MyRangeMap,MyImport);
 
   // Note: ExpertStaticFillComplete assumes ownership of the importer, if we made one...
@@ -4866,7 +4882,6 @@ template<class TransferType>
   if(ReducedDomainMap!=ReducedRowMap) delete ReducedDomainMap;
   if(ReducedRangeMap !=ReducedRowMap) delete ReducedRangeMap;
   delete ReducedRowMap;
-
 }// end FusedTransfer
 
  
