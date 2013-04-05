@@ -305,6 +305,9 @@ namespace Xpetra {
     //! @name Xpetra specific
     //@{
 
+    //! Does this have an underlying matrix
+    bool hasMatrix() const { return !mtx_.is_null();}
+
     //! EpetraCrsMatrix constructor to wrap a Epetra_CrsMatrix object
     EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) : mtx_(mtx), isFillResumed_(false) {  }
 

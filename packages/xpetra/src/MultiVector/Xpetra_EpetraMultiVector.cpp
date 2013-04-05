@@ -51,6 +51,8 @@
 
 #include "Xpetra_EpetraVector.hpp"
 
+#include "Epetra_SerialComm.h"
+
 namespace Xpetra {
 
   EpetraMultiVector::EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
@@ -197,6 +199,21 @@ namespace Xpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
+  void EpetraMultiVector::replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
+    int err=0;
+    if(!map.is_null()) {
+      err=this->getEpetra_MultiVector()->ReplaceMap(toEpetra(map));
+    }
+    else {
+      // Replace map with a dummy map to avoid potential hangs later
+      Epetra_SerialComm SComm;
+      Epetra_Map NewMap(vec_->MyLength(),vec_->Map().IndexBase(),SComm);
+      err=this->getEpetra_MultiVector()->ReplaceMap(NewMap);
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");      
+  }
+
+
   // TODO: move that elsewhere
   const Epetra_MultiVector & toEpetra(const MultiVector<double, int, int> & x) {
     XPETRA_DYNAMIC_CAST(const EpetraMultiVector, x, tX, "toEpetra");
@@ -208,6 +225,7 @@ namespace Xpetra {
     return *tX.getEpetra_MultiVector();
   }
   //
+
 
 
 } // namespace Xpetra

@@ -119,6 +119,9 @@ namespace Xpetra {
       RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myDomainMap = domainMap!=Teuchos::null ? toTpetra(domainMap) : Teuchos::null;
       RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myRangeMap  = rangeMap!=Teuchos::null  ? toTpetra(rangeMap)  : Teuchos::null;
       mtx_=Tpetra::importAndFillCompleteCrsMatrix<MyTpetraCrsMatrix>(tSourceMatrix.getTpetra_CrsMatrix(),toTpetra(importer),myDomainMap,myRangeMap,params);
+      bool restrictComm=false;
+      if(!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
+      if(restrictComm && mtx_->getRowMap().is_null()) mtx_=Teuchos::null;
 
     }
 
@@ -397,6 +400,9 @@ namespace Xpetra {
 
     //! @name Xpetra specific
     //@{
+
+    //! Does this have an underlying matrix
+    bool hasMatrix() const { return !mtx_.is_null();}
 
     //! TpetraCrsMatrix constructor to wrap a Tpetra::CrsMatrix object
     TpetraCrsMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) {  }

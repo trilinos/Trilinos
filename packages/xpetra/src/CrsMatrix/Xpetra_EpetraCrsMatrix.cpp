@@ -46,6 +46,8 @@
 #include <Teuchos_Array.hpp>
 #include "Xpetra_EpetraCrsMatrix.hpp"
 
+#include "Epetra_MpiComm.h"//CMS
+
 namespace Xpetra {
 
   EpetraCrsMatrix::EpetraCrsMatrix(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
@@ -93,8 +95,9 @@ namespace Xpetra {
     // Follows the Tpetra parameters
     bool restrictComm=false;
     if(!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
-
     mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tImporter.getEpetra_Import(),myDomainMap,myRangeMap,restrictComm));
+    if(restrictComm && mtx_->NumMyRows()==0)
+      mtx_=Teuchos::null;
   }
 
   EpetraCrsMatrix::EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
