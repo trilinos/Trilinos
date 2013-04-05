@@ -4535,8 +4535,9 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
   // Cleanup existing data
   for(int i=0;i<m;i++){
     if(Values_)            delete [] Values_[i];
-    D.data->SortedEntries_[i].entries_.resize(0);
   }
+  D.data->SortedEntries_.clear();
+
   delete [] Values_;                 Values_=0;
   delete [] Values_alloc_lengths_;   Values_alloc_lengths_=0;
   delete [] D.data->Indices_;        D.data->Indices_=0; 
