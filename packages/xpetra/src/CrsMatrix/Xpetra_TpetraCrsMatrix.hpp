@@ -168,7 +168,7 @@ namespace Xpetra {
     //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
     //** \warning This is an expert-only routine and should not be called from user code. */
     void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values)
-    { XPETRA_MONITOR("TpetraCrsMatrix::allocateAllValues"); rowptr.resize(getNodeNumRows()+1), colind.resize(numNonZeros), values.resize(numNonZeros);}
+    { XPETRA_MONITOR("TpetraCrsMatrix::allocateAllValues"); rowptr.resize(getNodeNumRows()+1); colind.resize(numNonZeros); values.resize(numNonZeros);}
 
     //! Sets the matrix's structure from the Crs arrays
     //** \warning This is an expert-only routine and should not be called from user code. */
