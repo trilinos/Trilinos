@@ -157,6 +157,14 @@ public:
 		     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
   
   //@}
+
+  //! Applies the effect of the preconditioner.
+  template <class DomainScalar, class RangeScalar>
+  void applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+		  Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+		  Teuchos::ETransp mode = Teuchos::NO_TRANS,
+		  RangeScalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+		  RangeScalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
   
   //! Sets all parameters for the preconditioner.
   virtual void setParameters(const Teuchos::ParameterList& List);

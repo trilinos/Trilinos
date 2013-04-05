@@ -82,6 +82,8 @@ namespace Galeri {
 		      Scalar& sx_left,        Scalar& sx_center,        Scalar& sx_right,
 		      Scalar& sy_left,        Scalar& sy_center,        Scalar& sy_right,
 		      Scalar& sz_left,        Scalar& sz_center,        Scalar& sz_right);
+    template <typename Scalar>
+    void GetStretch(double x, const double& delta, const double& LB, const double& RB, double& L, Scalar& stretch);
 
     /* ****************************************************************************************************** *
      *    Helmholtz 1D

@@ -544,13 +544,34 @@ void OverlappingRowMatrix<MatrixType>::apply(const Tpetra::MultiVector<Scalar,Lo
 					     Scalar alpha,
 					     Scalar beta) const
 {
+  this->template applyTempl<Scalar,Scalar>(X, Y, mode, alpha, beta);
+}
+
+
+//==========================================================================
+  // \brief Computes the operator-multivector application.
+  /* Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
+    vary according to the values of \c alpha and \c beta. Specifically
+    - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
+    - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
+
+    This is analagous to the *Multiply* function in Ifpack, not the *Apply*
+  */
+template<class MatrixType>
+template<class DomainScalar, class RangeScalar>
+void OverlappingRowMatrix<MatrixType>::applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+						  Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+						  Teuchos::ETransp mode, 
+						  RangeScalar alpha,
+						  RangeScalar beta) const
+{
   // Note: This isn't AztecOO compliant.  But neither was Ifpack's version.
   TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
 			     "Ifpack2::OverlappingRowMatrix::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
 
-  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr = X.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr = Y.get2dViewNonConst();
+  RangeScalar zero = Teuchos::ScalarTraits<RangeScalar>::zero();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = X.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = Y.get2dViewNonConst();
   Y.putScalar(zero);
   size_t NumVectors = Y.getNumVectors();
 
@@ -561,17 +582,17 @@ void OverlappingRowMatrix<MatrixType>::apply(const Tpetra::MultiVector<Scalar,Lo
     if (mode==Teuchos::NO_TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];      
+	  y_ptr[k][i] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][Indices_[j]];      
     }
     else if (mode==Teuchos::TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][Indices_[j]] += Values_[j] * x_ptr[k][i];
+	  y_ptr[k][Indices_[j]] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][i];
     }
     else { //mode==Teuchos::CONJ_TRANS
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<Scalar>::conjugate(Values_[j]) * x_ptr[k][i];
+	  y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<RangeScalar>::conjugate((RangeScalar)Values_[j]) * (RangeScalar)x_ptr[k][i];
     }
   }
 
@@ -582,17 +603,17 @@ void OverlappingRowMatrix<MatrixType>::apply(const Tpetra::MultiVector<Scalar,Lo
     if (mode==Teuchos::NO_TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][NumMyRowsA_+i] += Values_[j] * x_ptr[k][Indices_[j]];      
+	  y_ptr[k][NumMyRowsA_+i] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][Indices_[j]];      
     }
     else if (mode==Teuchos::TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][NumMyRowsA_+Indices_[j]] += Values_[j] * x_ptr[k][i];
+	  y_ptr[k][NumMyRowsA_+Indices_[j]] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][i];
     }
     else { //mode==Teuchos::CONJ_TRANS
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][NumMyRowsA_+Indices_[j]] += Teuchos::ScalarTraits<Scalar>::conjugate(Values_[j]) * x_ptr[k][i];
+	  y_ptr[k][NumMyRowsA_+Indices_[j]] += Teuchos::ScalarTraits<RangeScalar>::conjugate((RangeScalar)Values_[j]) * (RangeScalar)x_ptr[k][i];
     }
   }
 }
@@ -605,6 +626,16 @@ void OverlappingRowMatrix<MatrixType>::importMultiVector(const Tpetra::MultiVect
 							 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &OvX, 
 							 Tpetra::CombineMode CM)
 {
+  this->template importMultiVectorTempl<Scalar>(X, OvX, CM);
+}
+
+// ======================================================================
+template<class MatrixType>
+template<class OpScalar>
+void OverlappingRowMatrix<MatrixType>::importMultiVectorTempl(const Tpetra::MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+							      Tpetra::MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &OvX, 
+							      Tpetra::CombineMode CM)
+{
   OvX.doImport(X,*Importer_,CM);
 }
 
@@ -614,6 +645,16 @@ template<class MatrixType>
 void OverlappingRowMatrix<MatrixType>::exportMultiVector(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &OvX, 
 							 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
 							 Tpetra::CombineMode CM)
+{
+  this->template exportMultiVectorTempl<Scalar>(OvX, X, CM);
+}
+
+// ======================================================================
+template<class MatrixType>
+template<class OpScalar>
+void OverlappingRowMatrix<MatrixType>::exportMultiVectorTempl(const Tpetra::MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &OvX, 
+							      Tpetra::MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+							      Tpetra::CombineMode CM)
 {
   X.doExport(OvX,*Importer_,CM);
 }

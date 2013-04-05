@@ -1499,38 +1499,47 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dvec) const
   {
-    const char tfecfFuncName[] = "getLocalDiagCopy()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillComplete() == false, std::runtime_error, " until fillComplete() has been called.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(dvec.getMap()->isSameAs(*getRowMap()) == false, std::runtime_error, ": dvec must have the same map as the CrsMatrix.");
-    const size_t STINV = OrdinalTraits<size_t>::invalid();
+    using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
+    const char tfecfFuncName[] = "getLocalDiagCopy";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! hasColMap (), std::runtime_error,
+      ": This method requires that the matrix have a column Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      staticGraph_.is_null (), std::runtime_error,
+      ": This method requires that the matrix have a graph.");
+
+    const map_type& rowMap = * (this->getRowMap ());
+    const map_type& colMap = * (this->getColMap ());
+
 #ifdef HAVE_TPETRA_DEBUG
-    size_t numDiagFound = 0;
-#endif
-    const size_t nlrs = getNodeNumRows();
-    ArrayRCP<Scalar> vecView = dvec.get1dViewNonConst();
-    RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = getColMap();
-    for (size_t r=0; r < nlrs; ++r) {
-      vecView[r] = STS::zero();
-      GlobalOrdinal rgid = getRowMap()->getGlobalElement(r);
-      if (colMap->isNodeGlobalElement(rgid)) {
-        LocalOrdinal rlid = colMap->getLocalElement(rgid);
-        RowInfo rowinfo = staticGraph_->getRowInfo(r);
+    // isCompatible() requires an all-reduce, and thus this check
+    // should only be done in debug mode.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! dvec.getMap ()->isCompatible (rowMap), std::runtime_error,
+      ": The input Vector's Map must be compatible with (in the sense of Map::"
+      "isCompatible) the CrsMatrix's row Map.");
+#endif // HAVE_TPETRA_DEBUG
+
+    const size_t myNumRows = getNodeNumRows ();
+    ArrayRCP<Scalar> vecView = dvec.get1dViewNonConst ();
+
+    for (size_t r = 0; r < myNumRows; ++r) {
+      vecView[r] = STS::zero ();
+      const GlobalOrdinal rgid = rowMap.getGlobalElement (r);
+      const LocalOrdinal rlid = colMap.getLocalElement (rgid);
+
+      if (rlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+        RowInfo rowinfo = staticGraph_->getRowInfo (r);
         if (rowinfo.numEntries > 0) {
-          const size_t j = staticGraph_->findLocalIndex(rowinfo, rlid);
-          ArrayView<const Scalar> view = this->getView(rowinfo);
-          if (j != STINV) {
+          const size_t j = staticGraph_->findLocalIndex (rowinfo, rlid);
+          if (j != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+            ArrayView<const Scalar> view = this->getView (rowinfo);
             vecView[r] = view[j];
-#ifdef HAVE_TPETRA_DEBUG
-            ++numDiagFound;
-#endif
           }
         }
       }
     }
-    vecView = null;
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numDiagFound != getNodeNumDiags(), std::logic_error, ": logic error. Please contact Tpetra team.");
-#endif
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
