@@ -320,7 +320,7 @@ namespace MueLu {
     RCP<Matrix>   A = Fine->Get< RCP<Matrix> >("A");
 
     if (A == Teuchos::null) {
-      // We don't have any data for this processors on coarser levels
+      // We don't have any data for this process on coarser levels
       return;
     }
 
@@ -331,7 +331,7 @@ namespace MueLu {
       rn = Utils::ResidualNorm(*A, X, B);
       GetOStream(Statistics1, 0) << "iter:    "
                                  << std::setiosflags(std::ios::left)
-                                 << std::setprecision(3) << 0 /* iter 0 */
+                                 << std::setprecision(3) << 0 // iter 0
                                  << "           residual = "
                                  << std::setprecision(10) << rn
                                  << std::endl;
@@ -340,6 +340,7 @@ namespace MueLu {
     SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
     for (LO i = 1; i <= nIts; i++) {
 
+#ifdef HAVE_MUELU_DEBUG
       if (A->getDomainMap()->isCompatible(*(X.getMap())) == false) {
         std::ostringstream ss;
         ss << "Level " << startLevel << ": level A's domain map is not compatible with X";
@@ -351,6 +352,7 @@ namespace MueLu {
         ss << "Level " << startLevel << ": level A's range map is not compatible with B";
         throw Exceptions::Incompatible(ss.str());
       }
+#endif
 
       // on the coarsest level we do either smoothing (if defined) or a direct solve.
       if (startLevel == ((LO)Levels_.size())-1) { //FIXME is this right?
@@ -388,15 +390,15 @@ namespace MueLu {
         RCP<const Map> origMap;
         if (implicitTranspose_) {
           origMap   = P->getDomainMap();
-          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors());
-          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());
+          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(),false); //no need to initialize
+          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());       //should be initialized to zero
           P->apply(*residual, *coarseRhs, Teuchos::TRANS,    one, zero);
 
         } else {
           RCP<Matrix> R = Coarse->Get< RCP<Matrix> >("R");
           origMap   = R->getRangeMap();
-          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors());
-          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());
+          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(),false); //no need to initialize
+          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());       //should be initialized to zero
           R->apply(*residual, *coarseRhs, Teuchos::NO_TRANS, one, zero);
         }
 
@@ -407,7 +409,7 @@ namespace MueLu {
           coarseX  ->replaceMap(Ac->getDomainMap());
 
           if (coarseX != Teuchos::null) {
-            coarseX->putScalar(0.);
+            //coarseX has been initialized to zero already by MultiVectorFactory::Build
 
             hl = Teuchos::null; // stop timing this level
             Iterate(*coarseRhs, 1, *coarseX, true, Cycle, startLevel+1);
@@ -421,10 +423,7 @@ namespace MueLu {
         }
 
         // update X += P * coarseX
-        // P->apply(*coarseX, X, Teuchos::NO_TRANS, 1.0, 1.0);  //Xpetra throws an error if linAlgebra==Epetra
-        RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(), X.getNumVectors());
-        P->apply(*coarseX, *correction, Teuchos::NO_TRANS, one, zero);
-        X.update(one, *correction, one);
+        P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
 
         if (Fine->IsAvailable("PostSmoother")) {
           RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
