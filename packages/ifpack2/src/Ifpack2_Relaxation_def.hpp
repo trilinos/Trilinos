@@ -158,7 +158,8 @@ Relaxation (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordina
   globalMaxMagDiagEntryMag_ (STM::zero ()),
   globalNumSmallDiagEntries_ (0),
   globalNumZeroDiagEntries_ (0),
-  globalNumNegDiagEntries_ (0)
+  globalNumNegDiagEntries_ (0),
+  savedDiagOffsets_ (false)
 {
   this->setObjectLabel ("Ifpack2::Relaxation");
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -535,6 +536,7 @@ void Relaxation<MatrixType>::compute ()
   using Teuchos::REDUCE_MAX;
   using Teuchos::REDUCE_MIN;
   using Teuchos::REDUCE_SUM;
+  using Teuchos::rcp_dynamic_cast;
   using Teuchos::reduceAll;
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
   const scalar_type zero = STS::zero ();
@@ -566,7 +568,44 @@ void Relaxation<MatrixType>::compute ()
       "Ifpack2::Relaxation::compute: Vector of diagonal entries has not been "
       "created yet.  Please report this bug to the Ifpack2 developers.");
 
-    A_->getLocalDiagCopy (*Diagonal_);
+    // Extract the diagonal entries.  The CrsMatrix static graph
+    // version is faster for subsequent calls to compute(), since it
+    // caches the diagonal offsets.
+    //
+    // isStaticGraph() == true means that the matrix was created with
+    // a const graph.  The only requirement is that the structure of
+    // the matrix never changes, so isStaticGraph() == true is a bit
+    // more conservative than we need.  However, Tpetra doesn't (as of
+    // 05 Apr 2013) have a way to tell if the graph hasn't changed
+    // since the last time we used it.
+    {
+      RCP<const MatrixType> crsMat = rcp_dynamic_cast<const MatrixType> (A_);
+      if (crsMat.is_null () || ! crsMat->isStaticGraph ()) {
+        A_->getLocalDiagCopy (*Diagonal_); // slow path
+      } else {
+#ifdef HAVE_IFPACK2_DEBUG
+        std::cerr << "Ifpack2::Relaxation fast path " << std::endl;
+#endif // HAVE_IFPACK2_DEBUG
+        if (! savedDiagOffsets_) { // we haven't precomputed offsets
+          crsMat->getLocalDiagOffsets (diagOffsets_);
+          savedDiagOffsets_ = true;
+        }
+        crsMat->getLocalDiagCopy (*Diagonal_, diagOffsets_ ());
+#ifdef HAVE_IFPACK2_DEBUG
+        // Validate the fast-path diagonal against the slow-path diagonal.
+        vector_type D_copy (A_->getRowMap ());
+        A_->getLocalDiagCopy (D_copy);
+        D_copy.update (STS::one (), *Diagonal_, -STS::one ());
+        const magnitude_type err = D_copy.normInf ();
+        // The two diagonals should be exactly the same, so their
+        // difference should be exactly zero.
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          err != STM::zero(), std::logic_error, "Ifpack2::Relaxation::compute: "
+          "\"fast-path\" diagonal computation failed.  \\|D1 - D2\\|_inf = "
+          << err << ".");
+#endif // HAVE_IFPACK2_DEBUG
+      }
+    }
 
     // If we're checking the computed inverse diagonal, then keep a
     // copy of the original diagonal entries for later comparison.

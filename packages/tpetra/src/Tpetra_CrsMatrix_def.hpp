@@ -647,7 +647,7 @@ namespace Tpetra {
     // (isStorageOptimized()).
     if (requestOptimizedStorage) {
       // Free the old, unpacked, unoptimized allocations.
-      // Change the graph from dynamic to static allocaiton profile
+      // Change the graph from dynamic to static allocation profile
       //
       // delete old data
       lclInds2D_ = null;
@@ -869,10 +869,23 @@ namespace Tpetra {
       lclparams = sublist (params, "Local Matrix");
     }
 
-    // The local matrix should be null at this point Just in case it isn't
-    // (future-proofing), delete it first in order to free memory before we allocate a new
-    // one.  Otherwise, we risk storing two matrices temporarily, since the destructor
-    // of the old matrix won't be called until the new matrix's constructor finishes.
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      staticGraph_->getLocalGraph ().is_null (), std::runtime_error,
+      "Tpetra::CrsMatrix::fillLocalMatrix (called by fillComplete with a const "
+      "graph): the local graph is null.  This can happen if you constructed "
+      "this CrsMatrix B using a const CrsGraph that belongs to another "
+      "CrsMatrix A, and A is fill complete.  You can prevent this error by "
+      "setting the bool parameter \"Preserve Local Graph\" to true when "
+      "calling fillComplete on the original CrsMatrix A.");
+#endif // HAVE_TPETRA_DEBUG
+
+    // The local matrix should be null at this point.  Just in case it
+    // isn't (future-proofing), delete it first in order to free
+    // memory before we allocate a new one.  Otherwise, we risk
+    // storing two matrices temporarily, since the destructor of the
+    // old matrix won't be called until the new matrix's constructor
+    // finishes.
     lclMatrix_ = null;
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
     lclMatrix_->setValues (vals);
