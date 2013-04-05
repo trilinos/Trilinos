@@ -77,4 +77,32 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+# Tpetra bug 5882
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_ExportTest_Bug5882
+  SOURCES
+    Map_ExportTest_Bug5882
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "passed!"
+  NUM_MPI_PROCS 2
+  )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_removeEmptyProcesses
+  SOURCES
+    Map_removeEmptyProcesses
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 1-10
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_replaceCommWithSubset
+  SOURCES
+    Map_replaceCommWithSubset
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 1-10
+  STANDARD_PASS_OUTPUT
+  )

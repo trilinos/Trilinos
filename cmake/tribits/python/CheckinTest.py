@@ -320,11 +320,15 @@ def executePull(gitRepo, inOptions, baseTestDir, outFile, pullFromRepo=None,
     outFile=outFileFullPath,
     timeCmnd=True, returnTimeCmnd=True, throwExcept=False
     )
-  pullGotChanges = didSinglePullBringChanges(outFileFullPath)
-  if pullGotChanges:
-    print "\n  Pulled changes from this repo!"
+  if updateRtn == 0:
+    pullGotChanges = didSinglePullBringChanges(outFileFullPath)
+    if pullGotChanges:
+      print "\n  ==> '"+gitRepo.repoName+"': Pulled changes from this repo!"
+    else:
+      print "\n  ==> '"+gitRepo.repoName+"': Did not pull any changes from this repo!"
   else:
-    print "\n  Did not pull any changes from this repo!"
+    print "\n  ==> '"+gitRepo.repoName+"': Pull failed!"
+    pullGotChanges = False
   return (updateRtn, updateTimings, pullGotChanges)
 
 

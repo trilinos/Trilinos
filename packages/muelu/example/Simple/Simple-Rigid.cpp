@@ -191,12 +191,12 @@ int main(int argc, char *argv[]) {
   RCP<SmootherPrototype> smooProto;
   std::string ifpack2Type;
   Teuchos::ParameterList ifpack2List;
-  ifpack2Type = "KRYLOV";
+  /*ifpack2Type = "KRYLOV";
   ifpack2List.set("krylov: number of iterations",4);
   ifpack2List.set("krylov: residual tolerance",1e-6);
   ifpack2List.set("krylov: block size",1);
   ifpack2List.set("krylov: zero starting solution",true);
-  ifpack2List.set("krylov: preconditioner type",1);
+  ifpack2List.set("krylov: preconditioner type",1);*/
   // ILUT smoother
   //ifpack2Type = "ILUT";
   //ifpack2List.set("fact: ilut level-of-fill", (double)1.0);
@@ -204,10 +204,10 @@ int main(int argc, char *argv[]) {
   //ifpack2List.set("fact: relative threshold", (double)1.0);
   //ifpack2List.set("fact: relax value", (double)0.0);
   // Gauss-Seidel smoother
-  //ifpack2Type = "RELAXATION";
-  //ifpack2List.set("relaxation: sweeps", (LO) 1);
-  //ifpack2List.set("relaxation: damping factor", (SC) 1.0); // 0.7
-  //ifpack2List.set("relaxation: type", "Gauss-Seidel");
+  ifpack2Type = "RELAXATION";
+  ifpack2List.set("relaxation: sweeps", (LO) 1);
+  ifpack2List.set("relaxation: damping factor", (SC) 1.0); // 0.7
+  ifpack2List.set("relaxation: type", "Gauss-Seidel");
   smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type,ifpack2List) );
   RCP<SmootherFactory> SmooFact;
   LO maxLevels = 6;
@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
 
   // right hand side and left hand side vectors
   RCP<TVEC> X = Tpetra::createVector<SC,LO,GO,NO>(map);
-  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(map);  
+  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(map);
   X->putScalar((SC) 0.0);
   B->randomize();
   //B->replaceGlobalValue(nTotalDOFs/2, 1.0);
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
 
   // Construct a Belos LinearProblem object
   RCP<Problem> belosProblem = rcp(new Problem(belosOp,X,B));
-  belosProblem->setRightPrec(belosPrec);    
+  belosProblem->setRightPrec(belosPrec);
   bool set = belosProblem->setProblem();
   if (set == false) {
     if(comm->getRank()==0) {
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
     }
     return EXIT_FAILURE;
   }
-    
+
   // Belos parameter list
   int maxIts = 100;
   double tol = 1e-6;
@@ -269,20 +269,20 @@ int main(int argc, char *argv[]) {
 
   // Create a FGMRES solver manager
   RCP<BelosSolver> solver = rcp( new BelosGMRES(belosProblem, rcp(&belosList, false)) );
-    
+
   // Perform solve
   Belos::ReturnType ret = solver->solve();
-  
+
   // Get the number of iterations for this solve.
   if(comm->getRank()==0) {
     std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-  }  
+  }
   // Compute actual residuals.
   int numrhs=1;
   bool badRes = false;
   std::vector<double> actual_resids(numrhs);
   std::vector<double> rhs_norm(numrhs);
-  RCP<MV> resid = Tpetra::createMultiVector<SC,LO,GO,NO>(map, numrhs);     
+  RCP<MV> resid = Tpetra::createMultiVector<SC,LO,GO,NO>(map, numrhs);
   OPT::Apply(*belosOp, *X, *resid);
   MVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
   MVT::MvNorm(*resid, actual_resids);

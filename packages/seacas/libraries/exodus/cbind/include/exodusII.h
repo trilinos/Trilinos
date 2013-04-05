@@ -58,8 +58,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 5.24f
-#define EX_API_VERS_NODOT 524
+#define EX_API_VERS 5.26f
+#define EX_API_VERS_NODOT 526
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -345,20 +345,20 @@ extern "C" {
     int  num_glob;
     int  num_node;
     int  num_edge;
-    int* edge_var_tab;
     int  num_face;
-    int* face_var_tab;
     int  num_elem;
-    int* elem_var_tab;
     int  num_nset;
-    int* nset_var_tab;
     int  num_eset;
-    int* eset_var_tab;
     int  num_fset;
-    int* fset_var_tab;
     int  num_sset;
-    int* sset_var_tab;
     int  num_elset;
+    int* edge_var_tab;
+    int* face_var_tab;
+    int* elem_var_tab;
+    int* nset_var_tab;
+    int* eset_var_tab;
+    int* fset_var_tab;
+    int* sset_var_tab;
     int* elset_var_tab;
   } ex_var_params;
   /* @} */

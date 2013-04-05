@@ -45,6 +45,8 @@
 
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
+#include "Piro_ObserverBase.hpp"
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 

@@ -56,18 +56,22 @@
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
+#include <MueLu_BaseClass.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_Utilities.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
+#include <MueLu_MutuallyExclusiveTime.hpp>
 
+#ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+#endif
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
@@ -161,8 +165,10 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0) {
     GO mx = galeriList.get("mx", -1);
     GO my = galeriList.get("my", -1);
+    GO mz = galeriList.get("mz", -1);
     std::cout << "Processor subdomains in x direction: " << mx << std::endl
               << "Processor subdomains in y direction: " << my << std::endl
+              << "Processor subdomains in z direction: " << mz << std::endl
               << "========================================================" << std::endl;
   }
 
@@ -182,20 +188,6 @@ int main(int argc, char *argv[]) {
       Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParams);
   RCP<Matrix> A = Pr->BuildMatrix();
 
-  tm = Teuchos::null;
-
-  //
-  // Construct a multigrid preconditioner
-  //
-
-  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
-  // Multigrid Hierarchy
-  ParameterListInterpreter mueLuFactory(xmlFileName);
-  RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
-
-  H->SetDefaultVerbLevel(MueLu::High);
-
-
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
   if (matrixParameters.GetMatrixType() == "Elasticity2D" ||
       matrixParameters.GetMatrixType() == "Elasticity3D") {
@@ -205,46 +197,31 @@ int main(int argc, char *argv[]) {
     nullspace->putScalar( (SC) 1.0);
   }
 
+  comm->barrier();
+
+  tm = Teuchos::null;
+
+  //
+  // Construct a multigrid preconditioner
+  //
+
+  // Multigrid Hierarchy
+  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
+  ParameterListInterpreter mueLuFactory(xmlFileName,*comm);
+
+  comm->barrier();
+
+  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
+
+  RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+
+  H->SetDefaultVerbLevel(MueLu::Extreme);
+
+
   H->GetLevel(0)->Set("A", A);
 
   H->GetLevel(0)->Set("Nullspace", nullspace);
   H->GetLevel(0)->Set("Coordinates", coordinates);
-
-  /*
-  {
-    // coordinates->getVector(0)->get1dCopy(xcoords); TODO: this method is not available in Xpetra
-
-    // making a copy because I don't want to keep 'open' the Xpetra_MultiVector
-    if (coordinates->getNumVectors() >= 1) {
-      Teuchos::ArrayRCP<const SC> coord = coordinates->getData(0);
-      Teuchos::ArrayRCP<SC> coordCpy(coord.size());
-      for(int i=0; i<coord.size(); i++) {
-        coordCpy[i] = coord[i];
-      }
-      H->GetLevel(0)->Set("XCoordinates", coordCpy);
-      //std::cout << coordCpy << std::endl;
-    }
-
-    if (coordinates->getNumVectors() >= 2) {
-      Teuchos::ArrayRCP<const SC> coord = coordinates->getData(1);
-      Teuchos::ArrayRCP<SC> coordCpy(coord.size());
-      for(int i=0; i<coord.size(); i++) {
-        coordCpy[i] = coord[i];
-      }
-      H->GetLevel(0)->Set("YCoordinates", coordCpy);
-    }
-
-    if (coordinates->getNumVectors() >= 3) {
-      Teuchos::ArrayRCP<const SC> coord = coordinates->getData(2);
-      Teuchos::ArrayRCP<SC> coordCpy(coord.size());
-      for(int i=0; i<coord.size(); i++) {
-        coordCpy[i] = coord[i];
-      }
-      H->GetLevel(0)->Set("ZCoordinates", coordCpy);
-    }
-
-  }
-  */
 
   mueLuFactory.SetupHierarchy(*H);
 
@@ -286,6 +263,7 @@ int main(int argc, char *argv[]) {
     H->Write(writeMatricesOPT,writeMatricesOPT);
   }
 
+#ifdef HAVE_MUELU_BELOS
   if (amgAsPrecond) {
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
     // Operator and Multivector type that will be used with Belos
@@ -310,7 +288,7 @@ int main(int argc, char *argv[]) {
 
     // Belos parameter list
     int maxIts = 100;
-    double tol = 1e-8; // FIXME: use command line option
+    double tol = 1e-12; // FIXME: use command line option
     Teuchos::ParameterList belosList;
     belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
     belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
@@ -346,10 +324,14 @@ int main(int argc, char *argv[]) {
     }
     tm = Teuchos::null;
   } //if (amgAsPrecond)
+#endif //ifdef HAVE_MUELU_BELOS
 
   globalTimeMonitor = Teuchos::null;
 
   if (printTimings)
-    TimeMonitor::summarize();
+    TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
+
+  MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
+
 
 } //main

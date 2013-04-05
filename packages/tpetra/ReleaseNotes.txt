@@ -2,10 +2,31 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Current (11.3)
+--------------
+
+* Non-backwards compatible change: Default Kokkos/Tpetra Node type is now Kokkos::SerialNode
+  User expectation seems to be that the default behavior of Tpetra is
+  MPI-only. These users are therefore experiencing unexpected performance when
+  the default node is threaded, as is currently the case if any of the
+  threading libraries (pthreads, TBB, OpenMP) are enabled. Therefore, after
+  some discussion among Kokkos/Tpetra developers, it was decided to change the 
+  default Kokkos node (and therefore, the default node used by Tpetra
+  objects) to Kokkos::SerialNode. This can be over-ridden at configure time by
+  specifying the following option to CMake when configuring Trilinos: 
+    -D KokkosClassic_DefaultNode:STRING="node_type"
+  where node_type is one of the official Kokkos nodes:
+    Kokkos::SerialNode    (current default)
+    Kokkos::TBBNode
+    Kokkos::TPINode  
+    Kokkos::OpenMPNode
+
+
 Trilinos 11.0: 
 --------------
 * Significant performance improvements to local sparse matrix-vector multiply on CPU nodes. 
 * Removed all deprecated methods.
+
 
 Trilinos 10.12:
 --------------

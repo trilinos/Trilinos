@@ -49,12 +49,13 @@ namespace MueLu {
 
   RCP<Xpetra::Matrix<double, int, int> > Utils2<double, int, int>::Transpose(RCP<Xpetra::Matrix<double, int, int> > const &Op, bool const & optimizeTranspose)
   {
-   typedef Xpetra::Matrix<double,int,int> Matrix;
    typedef double Scalar;
    typedef int LocalOrdinal;
    typedef int GlobalOrdinal;
    typedef Kokkos::DefaultNode::DefaultNodeType Node;
    typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LocalMatOps;
+
+   Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("ZZ Entire Transpose"));
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     std::string TorE = "epetra";
@@ -87,17 +88,21 @@ namespace MueLu {
 
     if (TorE == "tpetra") {
 #ifdef HAVE_MUELU_TPETRA
-      //     Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer(*tpetraOp); //more than meets the eye
-      //     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A = Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
+      // Compute the transpose A of the Tpetra matrix tpetraOp.
+      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A;
+      {
+        Teuchos::TimeMonitor tmm (*Teuchos::TimeMonitor::getNewCounter ("ZZ Tpetra Transpose Only"));
+        Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node,
+          LocalMatOps> transposer (tpetraOp);
+        A = transposer.createTranspose();
+      }
       RCP<Xpetra::TpetraCrsMatrix<SC> > AA = rcp(new Xpetra::TpetraCrsMatrix<SC>(A) );
       RCP<Xpetra::CrsMatrix<SC> > AAA = rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
       RCP<Xpetra::CrsMatrixWrap<SC> > AAAA = rcp( new Xpetra::CrsMatrixWrap<SC> (AAA) );
-      AAAA->fillComplete(Op->getRangeMap(),Op->getDomainMap());
       return AAAA;
 #else
       throw(Exceptions::RuntimeError("Tpetra"));
-#endif
+#endif // HAVE_MUELU_TPETRA
     } else {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
       //epetra case
@@ -206,14 +211,82 @@ namespace MueLu {
 
   void Utils2<double,int,int>::TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
                            RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
-                           RCP<Matrix> &C)
+                           RCP<Matrix> &C, bool const &AHasFixedNnzPerRow)
   {
     if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
       throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
     }
-    if (C==Teuchos::null)
-      //FIXME 5 is a complete guess as to the #nonzeros per row
-      C = rcp( new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A->getRowMap(), 5) );
+///////////////////////////////
+    if (C==Teuchos::null) {
+      if (!A->isFillComplete() || !B->isFillComplete())
+        TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"Global statistics are not available for estimates.");
+
+      size_t maxNzInA = A->getGlobalMaxNumRowEntries();
+      size_t maxNzInB = B->getGlobalMaxNumRowEntries();
+      size_t numLocalRows = A->getNodeNumRows();
+
+      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      fos->setOutputToRootOnly(0);
+
+      if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
+        //first check if either A or B has at most 1 nonzero per row
+        //the case of both having at most 1 nz per row is handled by the ``else''
+        Teuchos::ArrayRCP<size_t> exactNnzPerRow(numLocalRows);
+        if ( (maxNzInA == 1 && maxNzInB > 1) || AHasFixedNnzPerRow) {
+          for (size_t i=0; i<numLocalRows; ++i)
+            exactNnzPerRow[i] = B->getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInA;
+        } else {
+          for (size_t i=0; i<numLocalRows; ++i)
+            exactNnzPerRow[i] = A->getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
+        }
+        *fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
+             << ", using static profiling" << std::endl;
+        C = rcp( new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A->getRowMap(), exactNnzPerRow, Xpetra::StaticProfile) );
+      }
+      else {
+        //general case
+        double nnzPerRowInA = Teuchos::as<double>(A->getGlobalNumEntries()) / A->getGlobalNumRows();
+        double nnzPerRowInB = Teuchos::as<double>(B->getGlobalNumEntries()) / B->getGlobalNumRows();
+        LO nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
+
+        LO maxPossible = A->getGlobalMaxNumRowEntries() + B->getGlobalMaxNumRowEntries();
+        //Use static profiling (more efficient) if the estimate is at least as big as the max
+        //possible nnz's in any single row of the result.
+        Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
+
+        *fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+        *fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+             << ", max possible nnz per row in sum = " << maxPossible
+             << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
+             << std::endl;
+        C = rcp( new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A->getRowMap(), nnzToAllocate, pft) );
+      }
+      if (transposeB)
+        *fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+    }
+///////////////////////////////
+    if (C==Teuchos::null) {
+      if (!A->isFillComplete() || !B->isFillComplete())
+        TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"Global statistics are not available for estimates.");
+
+      double nnzPerRowInA = Teuchos::as<double>(A->getGlobalNumEntries()) / A->getGlobalNumRows();
+      double nnzPerRowInB = Teuchos::as<double>(B->getGlobalNumEntries()) / B->getGlobalNumRows();
+      LO nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
+
+      LO maxPossible = A->getGlobalMaxNumRowEntries() + B->getGlobalMaxNumRowEntries();
+      //Use static profiling (more efficient) if the estimate is at least as big as the max possible nnz's in any single row of the result.
+      Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
+
+      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); fos->setOutputToRootOnly(0);
+      *fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+      *fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+           << ", max possible nnz per row in sum = " << maxPossible
+           << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
+           << std::endl;
+      C = rcp( new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A->getRowMap(), nnzToAllocate, pft) );
+      if (transposeB)
+        *fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+    }
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)

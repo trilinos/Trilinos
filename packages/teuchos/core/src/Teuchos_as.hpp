@@ -709,7 +709,16 @@ public:
   /// <tt>std::range_error</tt>.  If it does not contain an integer,
   /// this throws <tt>std::invalid_argument</tt>.
   static long long safeConvert (const std::string& t) {
+#if defined(_MSC_VER)
+    // Windows does not implement strtoull, so we resort to a
+    // fallback.  Thanks to Ross Bartlett for pointing out _strtoi64.
+    // See the MSDN reference [last accessed 21 Mar 2013]:
+    //
+    // http://msdn.microsoft.com/en-us/library/h80404d3%28v=vs.80%29.aspx
+    return intToString<long long> (t, &_strtoi64, "long long");
+#else
     return intToString<long long> (t, &strtoll, "long long");
+#endif // defined(_MSC_VER)
   }
 
   //! Convert the given \c std::string to a <tt>long long</tt>.
@@ -731,7 +740,26 @@ public:
   /// <tt>std::range_error</tt>.  If it does not contain an integer,
   /// this throws <tt>std::invalid_argument</tt>.
   static unsigned long long safeConvert (const std::string& t) {
+#if defined(_MSC_VER)
+    // Windows does not implement strtoull, so we resort to a
+    // fallback.  The fallback does not know how to check for under-
+    // or overflow.  Alas, Windows does not seem to have an equivalent
+    // of _strtoi64 for unsigned long long.
+    const char intTypeName[] = "unsigned long long";
+    std::istringstream istr (t);
+    unsigned long long i = 0;
+    i >> istr;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! istr, std::invalid_argument,
+      "Teuchos::ValueTypeConversionTraits<" << intTypeName << ", std::string>::"
+      "convert: Unable to convert the given string \"" << t << "\" to " <<
+      intTypeName << ".  Windows lacks strtoull(), so we had to resort to a "
+      "fall-back conversion.  The fall-back method does not know how to test "
+      "for overflow.");
+    return i;
+#else
     return intToString<unsigned long long> (t, &strtoull, "unsigned long long");
+#endif // defined(_MSC_VER)
   }
 
   //! Convert the given \c std::string to an <tt>unsigned long long</tt>.
@@ -917,7 +945,7 @@ public:
 
   //! Convert the given \c std::string to a \c short.
   static short convert (const std::string& t) {
-    return as<int> (safeConvertToLong (t));
+    return as<short> (safeConvertToLong (t));
   }
 };
 
@@ -2041,7 +2069,7 @@ public:
     // We protect the test with an #ifdef ... #endif to avoid compiler
     // warnings like the following: "warning: comparison is always
     // false due to limited range of data type".
-#if UINT_MIN == LONG_MIN && UINT_MAX == LONG_MAX
+#if UINT_MAX == LONG_MAX
     const long minLong = std::numeric_limits<long>::min ();
     const long maxLong = std::numeric_limits<long>::max ();
 
@@ -2181,10 +2209,10 @@ public:
 template<>
 class ValueTypeConversionTraits<unsigned int, long long> {
 public:
-  /// \brief Convert the given <tt>long long</tt> to an </tt>unsigned int</tt>.
+  /// \brief Convert the given <tt>long long</tt> to an <tt>unsigned int</tt>.
   ///
   /// \warning <tt>long long</tt> integer values may overflow
-  ///   </tt>unsigned int</tt>.  You should use safeConvert() if you
+  ///   <tt>unsigned int</tt>.  You should use safeConvert() if you
   ///   aren't sure that the given value fits in an <tt>unsigned
   ///   int</tt>.
   static unsigned int convert (const long long t) {
@@ -2247,7 +2275,7 @@ public:
 };
 
 
-//! Convert from <tt>unsigned long long</tt> to </tt>unsigned int</tt>.
+//! Convert from <tt>unsigned long long</tt> to <tt>unsigned int</tt>.
 template<>
 class ValueTypeConversionTraits<unsigned int, unsigned long long> {
 public:

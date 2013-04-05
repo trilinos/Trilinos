@@ -74,12 +74,12 @@ const char *prod_basis_type_names[] = {
   "complete", "tensor", "total", "smolyak" };
 
 // Ordering types
-enum OrderingType { TOTAL_ORDERING, LEXICOGRAPHIC_ORDERING };
-const int num_ordering_types = 2;
+enum OrderingType { TOTAL_ORDERING, LEXICOGRAPHIC_ORDERING, MORTON_Z_ORDERING };
+const int num_ordering_types = 3;
 const OrderingType ordering_type_values[] = { 
-  TOTAL_ORDERING, LEXICOGRAPHIC_ORDERING };
+  TOTAL_ORDERING, LEXICOGRAPHIC_ORDERING, MORTON_Z_ORDERING };
 const char *ordering_type_names[] = { 
-  "total", "lexicographic" };
+  "total", "lexicographic", "morton-z" };
 
 int main(int argc, char **argv)
 {
@@ -170,6 +170,7 @@ int main(int argc, char **argv)
     Teuchos::RCP<const Stokhos::ProductBasis<int,double> > basis;
     typedef Stokhos::TotalOrderLess< Stokhos::MultiIndex<int> > total_less;
     typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > lexo_less;
+    typedef Stokhos::MortonZLess< Stokhos::MultiIndex<int> > z_less;
     if (prod_basis_type == COMPLETE)
       basis = 
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(
@@ -183,6 +184,10 @@ int main(int argc, char **argv)
 	basis = 
 	  Teuchos::rcp(new Stokhos::TensorProductBasis<int,double,lexo_less>(
 			 bases, drop));
+      else if (ordering_type == MORTON_Z_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TensorProductBasis<int,double,z_less>(
+			 bases, drop));
     }
     else if (prod_basis_type == TOTAL) {
       if (ordering_type == TOTAL_ORDERING)
@@ -192,6 +197,10 @@ int main(int argc, char **argv)
       else if (ordering_type == LEXICOGRAPHIC_ORDERING)
 	basis = 
 	  Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double,lexo_less>(
+			 bases, drop));
+      else if (ordering_type == MORTON_Z_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double,z_less>(
 			 bases, drop));
     }
     else if (prod_basis_type == SMOLYAK) {
@@ -203,6 +212,10 @@ int main(int argc, char **argv)
        else if (ordering_type == LEXICOGRAPHIC_ORDERING)
 	 basis = 
 	   Teuchos::rcp(new Stokhos::SmolyakBasis<int,double,lexo_less>(
+			  bases, index_set, drop));
+       else if (ordering_type == MORTON_Z_ORDERING)
+	 basis = 
+	   Teuchos::rcp(new Stokhos::SmolyakBasis<int,double,z_less>(
 			  bases, index_set, drop));
     }
 
@@ -236,7 +249,6 @@ int main(int argc, char **argv)
       std::ofstream cijk_file(file_3tensor.c_str());
       cijk_file.precision(14);
       cijk_file.setf(std::ios::scientific);
-      int sz = basis->size();
       cijk_file << "i, j, k, cijk" << std::endl;
       Cijk_type::k_iterator k_begin = Cijk->k_begin();
       Cijk_type::k_iterator k_end = Cijk->k_end();

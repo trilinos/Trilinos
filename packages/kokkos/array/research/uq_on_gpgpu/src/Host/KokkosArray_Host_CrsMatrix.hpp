@@ -95,7 +95,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_t row_count = A.graph.row_map.dimension(0) - 1 ;
+    const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
     parallel_for( row_count , Multiply(A,x,y) );
   }
 };
@@ -140,7 +140,7 @@ public:
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
     const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
-    const size_t n = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_t n = m_A.graph.row_map.dimension_0() - 1 ;
 
     for (size_t j=0; j<num_vecs; j++) {
       Ordinal col = m_col_indices[j];
@@ -162,7 +162,7 @@ public:
                      const multi_vector_type & y ,
 		     const std::vector<Ordinal> & col)
   {
-    const size_t n = A.graph.row_map.dimension(0) - 1 ;
+    const size_t n = A.graph.row_map.dimension_0() - 1 ;
     const size_t block_size = 20;
     const size_t num_vecs = col.size();
     const size_t num_blocks = num_vecs / block_size;
@@ -216,7 +216,7 @@ public:
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
     const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
-    //const size_t n = m_A.graph.row_map.dimension(0) - 1 ;
+    //const size_t n = m_A.graph.row_map.dimension_0() - 1 ;
     const size_t num_vecs = m_x.size();
 
     for (size_t j=0; j<num_vecs; j++) {
@@ -237,7 +237,7 @@ public:
                      const std::vector<vector_type> & x ,
                      const std::vector<vector_type> & y )
   {
-    const size_t n = A.graph.row_map.dimension(0) - 1 ;
+    const size_t n = A.graph.row_map.dimension_0() - 1 ;
     parallel_for( n , MMultiply(A,x,y) );
   }
 };

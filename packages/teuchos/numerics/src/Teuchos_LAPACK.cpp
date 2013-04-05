@@ -341,6 +341,18 @@ namespace Teuchos
   { SGGEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, WORK, &lwork, info); }
 
 
+  void LAPACK<int, float>::TRSEN(const char JOB, const char COMPQ, const int *SELECT, const int n, float *T, const int ldt, float *Q, const int ldq, float *WR, float *WI, int *M, float *S, float *SEP, float *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const
+  { STRSEN_F77(CHAR_MACRO(JOB), CHAR_MACRO(COMPQ), SELECT, &n, T, &ldt, Q, &ldq, WR, WI, M, S, SEP, WORK, &lwork, IWORK, &liwork, info); }
+
+
+  void LAPACK<int, float>::TGSEN(const int ijob, const int wantq, const int wantz, const int *SELECT, const int n, float *A, const int lda, float *B, const int ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *Q, const int ldq, float *Z, const int ldz, int *M, float *PL, float *PR, float *DIF, float *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const
+  { STGSEN_F77(&ijob, &wantq, &wantz, SELECT, &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, Q, &ldq, Z, &ldz, M, PL, PR, DIF, WORK, &lwork, IWORK, &liwork, info); }
+
+
+  void LAPACK<int, float>::GGES(const char JOBVL, const char JOBVR, const char SORT, int (*ptr2func)(float *, float *, float *), const int n, float *A, const int lda, float *B, const int ldb, int *sdim, float *ALPHAR, float *ALPHAI, float *BETA, float *VL, const int ldvl, float *VR, const int ldvr, float *WORK, const int lwork, int *BWORK, int *info ) const
+  { SGGES_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SORT), ptr2func, &n, A, &lda, B, &ldb, sdim, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, WORK, &lwork, BWORK, info); }
+
+
   void LAPACK<int, float>::ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const
   { SORMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info); }
 
@@ -382,6 +394,10 @@ namespace Teuchos
 
   void LAPACK<int, float>::TREXC(const char COMPQ, const int n, float* T, const int ldt, float* Q, const int ldq, int ifst, int ilst, float* WORK, int* info) const
   { STREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, WORK, info); }
+
+
+  void LAPACK<int, float>::TGEVC(const char SIDE, const char HOWMNY, const int *SELECT, const int n, float *S, const int lds, float *P, const int ldp, float *VL, const int ldvl, float *VR, const int ldvr, const int mm, int *M, float *WORK, int *info) const
+  { STGEVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), SELECT, &n, S, &lds, P, &ldp, VL, &ldvl, VR, &ldvr, &mm, M, WORK, info); }
 
 
   void LAPACK<int, float>::LARTG( const float f, const float g, float* c, float* s, float* r ) const
@@ -716,6 +732,17 @@ namespace Teuchos
     DGGEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, WORK, &lwork, info);
   }
 
+  void LAPACK<int, double>::TRSEN(const char JOB, const char COMPQ, const int *SELECT, const int n, double *T, const int ldt, double *Q, const int ldq, double *WR, double *WI, int *M, double *S, double *SEP, double *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const
+  { DTRSEN_F77(CHAR_MACRO(JOB), CHAR_MACRO(COMPQ), SELECT, &n, T, &ldt, Q, &ldq, WR, WI, M, S, SEP, WORK, &lwork, IWORK, &liwork, info); }
+
+
+  void LAPACK<int, double>::TGSEN(const int ijob, const int wantq, const int wantz, const int *SELECT, const int n, double *A, const int lda, double *B, const int ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *Q, const int ldq, double *Z, const int ldz, int *M, double *PL, double *PR, double *DIF, double *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const
+  { DTGSEN_F77(&ijob, &wantq, &wantz, SELECT, &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, Q, &ldq, Z, &ldz, M, PL, PR, DIF, WORK, &lwork, IWORK, &liwork, info); }
+
+
+  void LAPACK<int, double>::GGES(const char JOBVL, const char JOBVR, const char SORT, int (*ptr2func)(double *, double *, double *), const int n, double *A, const int lda, double *B, const int ldb, int *sdim, double *ALPHAR, double *ALPHAI, double *BETA, double *VL, const int ldvl, double *VR, const int ldvr, double *WORK, const int lwork, int *BWORK, int *info ) const
+  { DGGES_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SORT), ptr2func, &n, A, &lda, B, &ldb, sdim, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, WORK, &lwork, BWORK, info); }
+
 
   void LAPACK<int, double>::ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* C, const int ldc, double* WORK, const int lwork, int* info) const
   {
@@ -772,6 +799,10 @@ namespace Teuchos
   {
     DTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, WORK, info);
   }
+
+
+  void LAPACK<int, double>::TGEVC(const char SIDE, const char HOWMNY, const int *SELECT, const int n, double *S, const int lds, double *P, const int ldp, double *VL, const int ldvl, double *VR, const int ldvr, const int mm, int *M, double *WORK, int *info) const
+  { DTGEVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), SELECT, &n, S, &lds, P, &ldp, VL, &ldvl, VR, &ldvr, &mm, M, WORK, info); }
 
 
   void LAPACK<int, double>::LARTG( const double f, const double g, double* c, double* s, double* r ) const

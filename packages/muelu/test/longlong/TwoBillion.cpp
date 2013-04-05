@@ -129,12 +129,12 @@ int main(int argc, char *argv[]) {
 
   const long long FIRST_GID  = 3000000000L;
   //  const long long FIRST_GID  = 0L;
-  
+
   const long long IndexBase  = 0L;
   //  const long long IndexBase  = 3000000000L;
 
   int num_per_proc = 10;
-  
+
   global_size_t NumGlobalElements = NumProcs*num_per_proc;
 
   // Create Map w/ GIDs starting at > 2 billion
@@ -164,24 +164,24 @@ int main(int argc, char *argv[]) {
 
   Acrs = CrsMatrixFactory::Build(map,3);
   for(int i=0; i<num_per_proc; i++) {
-    if(mygids[i]==FIRST_GID ) { 
+    if(mygids[i]==FIRST_GID ) {
       mycols[0] = mygids[i];     myvals[0] = 2;
-      mycols[1] = mygids[i]+1;   myvals[1] = -1;     
+      mycols[1] = mygids[i]+1;   myvals[1] = -1;
       ValView=myvals.view(0,2);
       ColView=mycols.view(0,2);
       //      printf("[%d %lld] cols %lld %lld\n",MyPID,mygids[i],mycols[0],mycols[1]);
     }
     else if(mygids[i] == FIRST_GID + (long long) NumGlobalElements - 1){
       mycols[0] = mygids[i]-1;   myvals[0] = -1;
-      mycols[1] = mygids[i];     myvals[1] = 2;     
+      mycols[1] = mygids[i];     myvals[1] = 2;
       ValView=myvals.view(0,2);
       ColView=mycols.view(0,2);
       //      printf("[%d %lld] cols %lld %lld\n",MyPID,mygids[i],mycols[0],mycols[1]);
     }
     else {
       mycols[0] = mygids[i]-1;   myvals[0] = -1;
-      mycols[1] = mygids[i];     myvals[1] = -2;     
-      mycols[2] = mygids[i]+1;   myvals[1] = -1;     
+      mycols[1] = mygids[i];     myvals[1] = -2;
+      mycols[2] = mygids[i]+1;   myvals[1] = -1;
       ValView=myvals();
       ColView=mycols();
       //      printf("[%d %lld] cols %lld %lld %lld\n",MyPID,mygids[i],mycols[0],mycols[1],mycols[2]);
@@ -204,14 +204,14 @@ int main(int argc, char *argv[]) {
   //
   // Hierarchy
   //
-  
+
   H = rcp(new Hierarchy());
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  
+
   //
   // Finest level
   //
-  
+
   RCP<Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   Finest->Set("A",           A);
@@ -219,9 +219,9 @@ int main(int argc, char *argv[]) {
   //
   // FactoryManager
   //
-  
+
   FactoryManager M;
-  
+
   //
   //
   // Aggregation
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
   RCP<Factory>    RFact = rcp(new TransPFactory());
   RCP<RAPFactory> AFact = rcp(new RAPFactory());
   AFact->setVerbLevel(Teuchos::VERB_HIGH);
-  
+
   M.SetFactory("P", PFact);
   M.SetFactory("R", RFact);
   M.SetFactory("A", AFact);
@@ -298,18 +298,18 @@ int main(int argc, char *argv[]) {
   // Define Operator and Preconditioner
   Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Operator object into a Belos operator
   Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
-  
+
   // Construct a Belos LinearProblem object
   RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
   belosProblem->setLeftPrec(belosPrec);
-  
+
   bool set = belosProblem->setProblem();
   if (set == false) {
     if (comm->getRank() == 0)
       std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return EXIT_FAILURE;
   }
-  
+
   // Belos parameter list
   int maxIts = 100;
   double optTol = 1e-8;
@@ -320,28 +320,28 @@ int main(int argc, char *argv[]) {
   belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
   belosList.set("Output Frequency", 1);
   belosList.set("Output Style", Belos::Brief);
-  
+
   // Create an iterative solver manager
   RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-  
+
   // Perform solve
   Belos::ReturnType ret = Belos::Unconverged;
   try {
     ret = solver->solve();
-    
+
     // Get the number of iterations for this solve.
     if (comm->getRank() == 0)
       std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-    
+
     // Compute actual residuals.
     int numrhs = 1;
     std::vector<double> actual_resids( numrhs ); //TODO: double?
     std::vector<double> rhs_norm( numrhs );
     RCP<MultiVector> resid = MultiVectorFactory::Build(map, numrhs);
-    
+
     typedef Belos::OperatorTraits<SC, MV, OP>  OPT;
     typedef Belos::MultiVecTraits<SC, MV>     MVT;
-    
+
     OPT::Apply( *belosOp, *X, *resid );
     MVT::MvAddMv( -1.0, *resid, 1.0, *B, *resid );
     MVT::MvNorm( *resid, actual_resids );
@@ -352,14 +352,14 @@ int main(int argc, char *argv[]) {
       *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
       //if (actRes > tol) { badRes = true; }
     }
-    
+
   } //try
-  
+
   catch(...) {
     if (comm->getRank() == 0)
       std::cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
   }
-  
+
   // Check convergence
   if (ret != Belos::Converged) {
     if (comm->getRank() == 0) std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
 #else
 // if we don't have long longs...
 int main(int argc, char *argv[]) {
-  
+
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 

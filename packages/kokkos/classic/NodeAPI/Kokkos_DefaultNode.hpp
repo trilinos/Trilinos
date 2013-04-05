@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -68,6 +68,12 @@ namespace Details {
   /// \brief Create a Kokkos Node instance with default parameters.
   /// \tparam NodeType The Kokkos Node type.
   ///
+  /// \warning This function is <i>not</i> safe to be called by
+  ///   multiple threads simultaneously.  The first call to this
+  ///   function must be serialized.  Also, RCP is not currently
+  ///   thread safe.
+  ///
+  //
   /// Every Kokkos Node's constructor takes a Teuchos::ParameterList.
   /// We presume that for every Kokkos Node, if that list of
   /// parameters is empty, then the Node will use default parameters.

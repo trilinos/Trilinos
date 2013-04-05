@@ -247,7 +247,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Square.exo");
+      mesh->writeToExodus("SquareQuad.exo");
 
    // minimal requirements
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -442,7 +442,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, multi_xblock)
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    if(mesh->isWritable());
-      mesh->writeToExodus("Square_Blocked.exo");
+      mesh->writeToExodus("SquareQuad_Blocked.exo");
 
    TEST_EQUALITY(mesh->getNumElementBlocks(),6);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(12+1)*(12+1));

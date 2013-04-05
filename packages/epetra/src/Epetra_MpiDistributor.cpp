@@ -121,13 +121,16 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
   send_array_size_(0),
   comm_plan_reverse_(0)
 {
+  //CMS
   int i;
   if (nsends_>0) {
     lengths_to_ = new int[nsends_];
-    procs_to_ = new int[nsends_];
+    procs_to_   = new int[nsends_];
+    starts_to_  = new int[nsends_];
     for (i=0; i<nsends_; i++) {
       lengths_to_[i] = Distributor.lengths_to_[i];
-      procs_to_[i] = Distributor.procs_to_[i];
+      procs_to_[i]   = Distributor.procs_to_[i];
+      starts_to_[i]  = Distributor.starts_to_[i];
     }
   }
   if (size_indices_to_>0) {
@@ -135,24 +138,52 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
     for (i=0; i<size_indices_to_; i++) {
       indices_to_[i] = Distributor.indices_to_[i];
     }
+    indices_to_ptr_ = new int[nexports_]; 
+    for (i=0; i<nexports_; i++) {
+      indices_to_ptr_[i] = Distributor.indices_to_ptr_[i];
+    }
+  }
+
+  if( nsends_+self_msg_ > 0 )  {
+    if(Distributor.sizes_to_)      sizes_to_      = new int[nsends_+self_msg_];
+    if(Distributor.starts_to_ptr_) starts_to_ptr_ = new int[nsends_+self_msg_];
+    for(i=0;i<nsends_+self_msg_; i++)  {
+      if(Distributor.sizes_to_)       sizes_to_[i]      = Distributor.sizes_to_[i];
+       if(Distributor.starts_to_ptr_) starts_to_ptr_[i] = Distributor.starts_to_ptr_[i];
+    }
   }
 
   if (nrecvs_>0) {
     lengths_from_ = new int[nrecvs_];
-    procs_from_ = new int[nrecvs_];
+    procs_from_   = new int[nrecvs_];
+    starts_from_  = new int[nrecvs_];
     request_ = new MPI_Request[ nrecvs_ ];
     status_ = new MPI_Status[ nrecvs_ ];
     for (i=0; i<nrecvs_; i++) {
-      lengths_from_[i] = Distributor.lengths_from_[i];
-      procs_from_[i] = Distributor.procs_from_[i];
+      lengths_from_[i]  = Distributor.lengths_from_[i];
+      procs_from_[i]    = Distributor.procs_from_[i];
+      starts_from_[i]   = Distributor.starts_from_[i];
     }
   }
+
   if (size_indices_from_>0) {
     indices_from_ = new int[size_indices_from_];
     for (i=0; i<size_indices_from_; i++) {
       indices_from_[i] = Distributor.indices_from_[i];
     }
   }
+
+  if( nrecvs_+self_msg_ > 0 ) {
+    if(Distributor.sizes_from_)      sizes_from_      = new int [nrecvs_+self_msg_];
+    if(Distributor.starts_from_ptr_) starts_from_ptr_ = new int [nrecvs_+self_msg_];
+    for(i=0;i<nrecvs_+self_msg_; i++)  {
+      if(Distributor.sizes_from_)      sizes_from_[i]      = Distributor.sizes_from_[i];
+      if(Distributor.starts_from_ptr_) starts_from_ptr_[i] = Distributor.starts_from_ptr_[i];
+    }
+  }
+
+  // Note: indices_from_ptr_ is always length zero...
+
 }
 
 //==============================================================================

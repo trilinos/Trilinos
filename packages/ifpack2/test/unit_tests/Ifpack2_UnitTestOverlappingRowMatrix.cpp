@@ -74,7 +74,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, Lo
   // Typedefs
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>       CrsType;
   typedef Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XCrsType;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                    MapType;
   typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                    XMapType;
   typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>     XMVectorType;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>          VectorType;

@@ -219,8 +219,6 @@ void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, Globa
 
   typedef std::map<GlobalOrdinal,std::set<GlobalOrdinal>*> Graph;
   typedef typename Graph::iterator    GraphIter;
-  typedef std::set<GlobalOrdinal>     Set;
-  typedef typename Set::iterator      SetIter;
   Graph& graph = graphbuilder.get_graph();
 
   const GraphIter iter_end = graph.end();

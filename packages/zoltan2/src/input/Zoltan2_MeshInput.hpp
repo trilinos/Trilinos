@@ -232,6 +232,15 @@ public:
   virtual bool availAdjs(entityType source, entityType target);
 
 
+  /*! \brief Returns the global number of edges across all processes
+             Need to define whether an undirected edge A<->B is counted as one
+	      edge or as two edges A->B and B->A.
+	     TODO:  Do we need this function?
+  */
+  virtual size_t getGlobalNumAdjs(entityType source,
+				  entityType target) const = 0;
+
+
   /*! \brief Returns the number of first adjacencies on this process.
    */
   virtual size_t getLocalNumAdjs(entityType source,

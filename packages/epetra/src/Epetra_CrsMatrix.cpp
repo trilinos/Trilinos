@@ -56,6 +56,9 @@
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_CrsGraphData.h"
 #include "Epetra_HashTable.h"
+#include "Epetra_Util.h"
+#include "Epetra_Import_Util.h"
+#include "Epetra_IntVector.h"
 
 #include <cstdlib>
 
@@ -452,6 +455,22 @@ int Epetra_CrsMatrix::ReplaceColMap(const Epetra_BlockMap& newmap)
     ImportVector_ = new Epetra_MultiVector(ColMap(),1);
   }
   return(err);
+}
+
+//==============================================================================
+int Epetra_CrsMatrix::ReplaceDomainMapAndImporter(const Epetra_Map& NewDomainMap, const Epetra_Import * NewImporter) {
+  return Graph_.ReplaceDomainMapAndImporter(NewDomainMap,NewImporter);
+}
+
+//==============================================================================
+int Epetra_CrsMatrix::RemoveEmptyProcessesInPlace(const Epetra_BlockMap * NewMap) {
+  // Epetra_DistObject things
+  if(NewMap) {
+    Map_  = *NewMap;
+    Comm_ = &NewMap->Comm();
+  }
+
+  return Graph_.RemoveEmptyProcessesInPlace(NewMap);
 }
 
 //==============================================================================
@@ -4575,18 +4594,22 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
 	// on the LIDs directly.
 	int insertPoint = -1;
 	if(UseLL)  {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 	  long long jg = D.RowMap_.GID64(i);
 	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements64(), NumIndices, insertPoint)>-1) {
 	    D.NumMyBlockDiagonals_++;
 	    D.NumMyDiagonals_ ++; 
 	  }
+#endif
 	}
 	else {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 	  int jg = D.RowMap_.GID(i);
 	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements(), NumIndices, insertPoint)>-1) {
 	    D.NumMyBlockDiagonals_++;
 	    D.NumMyDiagonals_ ++; 
 	  }
+#endif
 	}
       }
     }
@@ -4632,4 +4655,254 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
   return 0;
 }
 
+// ===================================================================
+template<class TransferType>
+  void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, const TransferType & RowTransfer,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap,bool RestrictCommunicator)
+{
+   // Fused constructor, import & FillComplete
+  int rv;
+  int N = NumMyRows();
 
+  bool communication_needed = RowTransfer.SourceMap().DistributedGlobal();
+
+  bool UseLL=false;
+  if(SourceMatrix.RowMap().GlobalIndicesInt()) {
+    UseLL=false;
+  }
+  else if(SourceMatrix.RowMap().GlobalIndicesLongLong()) {
+    UseLL=true;
+  }
+  else
+    throw ReportError("Epetra_CrsMatrix: Fused import/export constructor unable to determine source global index type",-1);
+
+
+  // The basic algorithm here is:
+  // 1) Call Distor.Do to handle the import.
+  // 2) Copy all the Imported and Copy/Permuted data into the raw Epetra_CrsMatrix / Epetra_CrsGraphData pointers, still using GIDs.
+  // 3) Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids) AND
+  //    reindexes to LIDs.
+  // 4) Call ExpertStaticFillComplete()
+
+  // Sanity Check
+  if (!SourceMatrix.RowMap().SameAs(RowTransfer.SourceMap())) 
+    throw ReportError("Epetra_CrsMatrix: Fused import/export constructor requires RowTransfer.SourceMap() to match SourceMatrix.RowMap()",-2);
+  
+  // Get information from the Importer
+  int NumSameIDs             = RowTransfer.NumSameIDs();
+  int NumPermuteIDs          = RowTransfer.NumPermuteIDs();
+  int NumRemoteIDs           = RowTransfer.NumRemoteIDs();
+  int NumExportIDs           = RowTransfer.NumExportIDs();
+  int* ExportLIDs            = RowTransfer.ExportLIDs();
+  int* RemoteLIDs            = RowTransfer.RemoteLIDs();
+  int* PermuteToLIDs         = RowTransfer.PermuteToLIDs();
+  int* PermuteFromLIDs       = RowTransfer.PermuteFromLIDs();
+  Epetra_Distributor& Distor = RowTransfer.Distributor();
+
+  // Pull and pointers & allocate memory (rowptr should be the right size already)
+  Epetra_IntSerialDenseVector & CSR_rowptr = ExpertExtractIndexOffset();
+  Epetra_IntSerialDenseVector & CSR_colind = ExpertExtractIndices();  
+  double *&                     CSR_vals   = ExpertExtractValues();  
+  CSR_rowptr.Resize(N+1);
+
+  // Unused if we're not in LL mode
+  std::vector<long long> CSR_colind_LL;
+
+  // Owning PIDs
+  std::vector<int> SourcePids;
+  std::vector<int> TargetPids;
+  int MyPID = Comm().MyPID();
+
+  // The new Domain & Range maps
+  const Epetra_Map* MyDomainMap = DomainMap ? DomainMap : &SourceMatrix.DomainMap();
+  const Epetra_Map* MyRangeMap  = RangeMap  ? RangeMap  : &RowMap();
+
+  // Temp variables for sub-communicators
+  Epetra_Map *ReducedRowMap=0, *ReducedDomainMap=0, *ReducedRangeMap=0;
+
+  /***************************************************/
+  /***** 1) From Epetra_DistObject::DoTransfer() *****/
+  /***************************************************/
+  rv=CheckSizes(SourceMatrix);
+  if(rv) throw ReportError("Epetra_CrsMatrix: Fused import/export constructor failed in CheckSizes()",-3);
+
+  int SizeOfPacket; 
+  bool VarSizes = false;
+  if( NumExportIDs > 0) {
+    delete [] Sizes_;
+    Sizes_ = new int[NumExportIDs];
+  }
+
+  // Get the owning PIDs
+  const Epetra_Import *MyImporter= SourceMatrix.Importer();
+
+  if(!DomainMap || DomainMap->SameAs(SourceMatrix.DomainMap())) {
+    // Same DomainMap as the Source Matrix
+    if(MyImporter) Epetra_Util::GetPids(*MyImporter,SourcePids,false);
+    else {
+      SourcePids.resize(SourceMatrix.ColMap().NumMyElements());
+      SourcePids.assign(SourceMatrix.ColMap().NumMyElements(),MyPID);
+    }
+  }
+  else if(DomainMap->SameAs(RowTransfer.TargetMap()) && SourceMatrix.DomainMap().SameAs(SourceMatrix.RowMap())){
+    // We can use the RowTransfer + SourceMatrix' importer to find out who owns what.
+    Epetra_IntVector TargetRow_pids(*DomainMap,true);
+    Epetra_IntVector SourceRow_pids(SourceMatrix.RowMap());
+    SourcePids.resize(SourceMatrix.ColMap().NumMyElements(),0);
+    Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(),&SourcePids[0]);
+
+    TargetRow_pids.PutValue(MyPID);
+    SourceRow_pids.Export(TargetRow_pids,RowTransfer,Insert); 
+    SourceCol_pids.Import(SourceRow_pids,*MyImporter,Insert);
+  }
+  else
+    throw ReportError("Epetra_CrsMatrix: Fused import/export constructor only supports *DomainMap==SourceMatrix.DomainMap() || *DomainMap==RowTransfer.TargetMap() && SourceMatrix.DomainMap() == SourceMatrix.RowMap().",-4);
+
+
+  // Pack & Prepare w/ owning PIDs
+  rv=Epetra_Import_Util::PackAndPrepareWithOwningPIDs(SourceMatrix,
+						      NumExportIDs,ExportLIDs,
+						      LenExports_,Exports_,SizeOfPacket,
+						      Sizes_,VarSizes,SourcePids);
+  if(rv) throw ReportError("Epetra_CrsMatrix: Fused import/export constructor failed in PackAndPrepareWithOwningPIDs()",-5);
+
+  if (communication_needed) {
+    // Do the exchange of remote data
+    if( VarSizes ) 
+      rv=Distor.Do(Exports_, SizeOfPacket, Sizes_, LenImports_, Imports_);
+    else
+      rv=Distor.Do(Exports_, SizeOfPacket, LenImports_, Imports_);
+  }
+  if(rv) throw ReportError("Epetra_CrsMatrix: Fused import/export constructor failed in Distor.Do",-6);
+
+
+  /*********************************************************************/
+  /**** 2) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
+  /*********************************************************************/
+  // Count nnz
+  int mynnz = Epetra_Import_Util::UnpackWithOwningPIDsCount(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_);
+  // Presume the RowPtr is the right size
+  // Allocate CSR_colind & CSR_values arrays
+  CSR_colind.Resize(mynnz);
+  if(UseLL) CSR_colind_LL.resize(mynnz);
+  delete [] CSR_vals; // should be a noop.
+  CSR_vals = new double[mynnz];
+
+  // Unpack into arrays
+  if(UseLL)
+    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,NumMyRows(),mynnz,CSR_rowptr.Values(),CSR_colind_LL.size()?&CSR_colind_LL[0]:0,CSR_vals,SourcePids,TargetPids);
+  else
+    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,NumMyRows(),mynnz,CSR_rowptr.Values(),CSR_colind.Values(),CSR_vals,SourcePids,TargetPids);
+
+
+  /***************************************************/
+  /**** 3) Restrict Communicator (if needed)      ****/
+  /***************************************************/
+  if(RestrictCommunicator) {
+    ReducedRowMap = RowMap().RemoveEmptyProcesses();
+    const Epetra_Comm * NewComm = ReducedRowMap ? &ReducedRowMap->Comm() : 0;
+    RemoveEmptyProcessesInPlace(ReducedRowMap);
+
+    // Now we have to strip down the communicators for the Domain & Range Maps.  Check first if we're lucky
+    ReducedDomainMap = RowMap().DataPtr() == MyDomainMap->DataPtr() ? ReducedRowMap : MyDomainMap->ReplaceCommWithSubset(NewComm);
+    ReducedRangeMap  = RowMap().DataPtr() == MyRangeMap->DataPtr()  ? ReducedRowMap : MyRangeMap->ReplaceCommWithSubset(NewComm);
+       
+    // Dangerous: If we're not in the new communicator, call it quits here.  The user is then responsible
+    // for not breaking anything on the return.  Thankfully, the dummy RowMap should report no local unknowns,
+    // so the user can at least test for this particular case.
+    if(!NewComm) return;
+
+    // Reset the "my" maps
+    MyDomainMap = ReducedDomainMap;
+    MyRangeMap  = ReducedRangeMap;
+  }
+
+  /**************************************************************/
+  /**** 3) Call Optimized MakeColMap w/ no Directory Lookups ****/
+  /**************************************************************/
+  //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
+  std::vector<int> RemotePIDs;
+  int * pids_ptr = TargetPids.size() ? &TargetPids[0] : 0;
+  if(UseLL) {
+   long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;  
+   Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),CSR_colind_LL_ptr,
+							    *MyDomainMap,pids_ptr,
+							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
+							    Graph_.CrsGraphData_->ColMap_);
+   Graph_.CrsGraphData_->HaveColMap_ = true;
+  }
+  else {
+   Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),*MyDomainMap,pids_ptr,
+							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
+							    Graph_.CrsGraphData_->ColMap_);   
+   Graph_.CrsGraphData_->HaveColMap_ = true;
+  }
+
+  /***************************************************/
+  /**** 5) Sort                                  ****/
+  /***************************************************/
+  // Sort the entries
+  Epetra_Util::SortCrsEntries(N, CSR_rowptr.Values(), CSR_colind.Values(), CSR_vals);
+
+  /***************************************************/
+  /**** 6) Build Importer & Call ESFC             ****/
+  /***************************************************/
+  // Pre-build the importer using the existing PIDs
+  Epetra_Import * MyImport=0;
+  int NumRemotePIDs = RemotePIDs.size();
+  int *RemotePIDs_ptr = RemotePIDs.size() ? &RemotePIDs[0] : 0;
+  if(!RestrictCommunicator && !MyDomainMap->SameAs(ColMap()))
+    MyImport = new Epetra_Import(ColMap(),*MyDomainMap,NumRemotePIDs,RemotePIDs_ptr);
+
+  // Note: At the moment, the RemotePIDs_ptr won't work with the restricted communicator.
+  // This should be fixed.
+
+  ExpertStaticFillComplete(*MyDomainMap,*MyRangeMap,MyImport);
+
+  // Note: ExpertStaticFillComplete assumes ownership of the importer, if we made one...
+  // We are not to deallocate that here.
+
+  // Cleanup
+  if(ReducedDomainMap!=ReducedRowMap) delete ReducedDomainMap;
+  if(ReducedRangeMap !=ReducedRowMap) delete ReducedRangeMap;
+  delete ReducedRowMap;
+
+}// end FusedTransfer
+
+ 
+
+// ===================================================================
+Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap, bool RestrictCommunicator) 
+  : Epetra_DistObject(RowImporter.TargetMap(), "Epetra::CrsMatrix"),
+  Epetra_CompObject(),
+  Epetra_BLAS(),
+  Graph_(Copy, RowImporter.TargetMap(), 0, false),
+  Values_(0),
+  Values_alloc_lengths_(0),
+  All_Values_(0),
+  NumMyRows_(RowImporter.TargetMap().NumMyPoints()),
+  ImportVector_(0),
+  ExportVector_(0),
+  CV_(Copy)
+{
+  FusedTransfer<Epetra_Import>(SourceMatrix,RowImporter,DomainMap,RangeMap,RestrictCommunicator);
+}// end fused import constructor
+  
+
+// ===================================================================
+Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowExporter,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap, bool RestrictCommunicator)
+   : Epetra_DistObject(RowExporter.TargetMap(), "Epetra::CrsMatrix"),
+   Epetra_CompObject(),
+   Epetra_BLAS(),
+   Graph_(Copy, RowExporter.TargetMap(), 0, false),
+   Values_(0),
+   Values_alloc_lengths_(0),
+   All_Values_(0),
+   NumMyRows_(RowExporter.TargetMap().NumMyPoints()),
+   ImportVector_(0),
+   ExportVector_(0),
+   CV_(Copy)
+{
+  FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,DomainMap,RangeMap,RestrictCommunicator); 
+} // end fused export constructor
+
+ 

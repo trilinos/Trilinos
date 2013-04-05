@@ -37,7 +37,7 @@
 namespace Stokhos {
 
 template< typename ValueType >
-class Multiply< FlatSparse3Tensor_kji< ValueType , KokkosArray::Host > , void , void >
+class Multiply< FlatSparse3Tensor_kji< ValueType , KokkosArray::Host > , void , void , DefaultSparseMatOps >
 {
 public:
   

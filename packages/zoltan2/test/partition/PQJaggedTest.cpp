@@ -310,7 +310,7 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
 
     problem->printMetrics(cout);
 
-    cout << "GeometricGen is done " << endl;
+    //cout << "GeometricGen is done " << endl;
   }
   problem->printTimers();
   if(weight_dim){

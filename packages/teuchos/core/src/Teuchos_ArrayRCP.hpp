@@ -97,7 +97,7 @@ public:
       return *this;
     }
 private:
-  ArrayRCP<T1> arcp_pod_; 
+  ArrayRCP<T1> arcp_pod_;
   void freeMemory()
     {
       typedef typename ArrayRCP<T2>::iterator itr_t;
@@ -112,7 +112,7 @@ private:
 };
 
 
-// Constructors/Destructors/Initializers 
+// Constructors/Destructors/Initializers
 
 template<class T> inline
 ArrayRCP<T>::ArrayRCP( ENull )
@@ -162,6 +162,8 @@ ArrayRCP<T>::ArrayRCP(
       nodeDeleter.release();
     }
   }
+#else // NOT TEUCHOS_DEBUG
+  (void) rcpNodeLookup; // Silence "unused variable" compiler warning.
 #endif // TEUCHOS_DEBUG
 }
 
@@ -389,7 +391,7 @@ typename ArrayRCP<T>::iterator ArrayRCP<T>::end() const
 }
 
 
-// ArrayRCP Views 
+// ArrayRCP Views
 
 
 template<class T> inline
@@ -451,7 +453,7 @@ ArrayRCP<T>::size() const
 }
 
 
-// ArrayView views 
+// ArrayView views
 
 
 template<class T> inline
@@ -932,7 +934,7 @@ Teuchos::arcpFromArrayView(const ArrayView<T> &av)
   return av.access_private_arcp();
 #else
   return arcp(av.getRawPtr(), 0, av.size(), false);
-#endif  
+#endif
 }
 
 
@@ -1083,7 +1085,6 @@ inline
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_const_cast(const ArrayRCP<T1>& p1)
 {
-  typedef typename ArrayRCP<T1>::size_type size_type;
   T2 *ptr2 = const_cast<T2*>(p1.get());
   return ArrayRCP<T2>(
     ptr2, p1.lowerOffset(), p1.size(),
@@ -1098,7 +1099,6 @@ inline
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_implicit_cast(const ArrayRCP<T1>& p1)
 {
-  typedef typename ArrayRCP<T1>::size_type size_type;
   T2 * raw_ptr2 = p1.get();
   return ArrayRCP<T2>(
     raw_ptr2, p1.lowerOffset(), p1.size(),
@@ -1183,7 +1183,7 @@ Teuchos::get_dealloc( const ArrayRCP<T>& p )
 
 template<class Dealloc_T, class T>
 inline
-Dealloc_T& 
+Dealloc_T&
 Teuchos::get_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
 {
   typedef RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;

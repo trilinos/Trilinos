@@ -64,8 +64,20 @@ import sys
 import traceback
 from optparse import OptionParser
 
-_THIS_REAL_PATH = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-sys.path.append(os.path.join(_THIS_REAL_PATH, 'python'))
+if os.environ.get("TRIBITS_CHECKIN_TEST_DEBUG_DUMP", "") == "ON":
+  debugDump = True
+else:
+  debugDump = False
+
+thisFilePath = __file__
+if debugDump: print "thisFilePath =", thisFilePath
+
+thisFileRealAbsBasePath = os.path.dirname(os.path.abspath(os.path.realpath(thisFilePath)))
+if debugDump: print "thisFileRealAbsBasePath = '"+thisFileRealAbsBasePath+"'"
+
+sys.path.append(os.path.join(thisFileRealAbsBasePath, 'python'))
+if debugDump: print "sys.path =", sys.path
+
 from CheckinTest import *
 from GeneralScriptSupport import *
 
@@ -1149,6 +1161,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   else:
     return True
 
+
 def getConfigurationSearchPaths():
   """
   Gets a list of paths to search for the configuration. If this file
@@ -1161,11 +1174,12 @@ def getConfigurationSearchPaths():
     result.append(os.path.dirname(os.path.abspath(__file__)))
   # Always append the default tribits directory structure where this file lives in
   # <project-root>/cmake/tribits
-  result.append(os.path.join(_THIS_REAL_PATH, '..', '..'))
+  result.append(os.path.join(thisFileRealAbsBasePath, '..', '..'))
   return result
 
+
 def loadConfigurationFile(filepath):
-  print "Loading project configuration from %s..." % filepath
+  if debugDump: print "Loading project configuration from %s..." % filepath
   if os.path.exists(filepath):
     try:
       modulePath = os.path.dirname(filepath)
@@ -1181,6 +1195,7 @@ def loadConfigurationFile(filepath):
       sys.path.pop()
   else:
     raise Exception('The file %s does not exist.' % filepath)
+
 
 def locateAndLoadConfiguration(path_hints = []):
   """

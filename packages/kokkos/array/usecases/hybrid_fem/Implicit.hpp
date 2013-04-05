@@ -109,7 +109,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
   const comm::Machine machine = mesh.parallel_data_map.machine ;
 
-  const size_t element_count = mesh.elem_node_ids.dimension(0);
+  const size_t element_count = mesh.elem_node_ids.dimension_0();
 
   const size_t iteration_limit = 200 ;
   const double residual_tolerance = 1e-14 ;
@@ -168,10 +168,10 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   // Allocate linear system coefficients and rhs:
 
   const size_t local_owned_length =
-    linsys_matrix.graph.row_map.dimension(0) - 1 ;
+    linsys_matrix.graph.row_map.dimension_0() - 1 ;
 
   linsys_matrix.coefficients =
-    matrix_coefficients_type( "coeff" , linsys_matrix.graph.entries.dimension(0) );
+    matrix_coefficients_type( "coeff" , linsys_matrix.graph.entries.dimension_0() );
 
   linsys_rhs      = vector_type( "rhs" , local_owned_length );
   linsys_solution = vector_type( "solution" , local_owned_length );

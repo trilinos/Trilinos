@@ -53,6 +53,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_SerialComm.h"
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 #include "Epetra_LongLongSerialDenseVector.h"
@@ -2211,6 +2212,100 @@ int Epetra_CrsGraph::ReplaceColMap(const Epetra_BlockMap& newmap)
   }
   
   return(-1);
+}
+
+
+//==============================================================================
+int Epetra_CrsGraph::ReplaceDomainMapAndImporter(const Epetra_BlockMap& NewDomainMap, const Epetra_Import * NewImporter) {
+  int rv=0;
+  if( !NewImporter && ColMap().SameAs(NewDomainMap)) {
+    CrsGraphData_->DomainMap_ = NewDomainMap;    
+    delete CrsGraphData_->Importer_;
+    CrsGraphData_->Importer_ = 0;
+  }
+  else if(NewImporter && ColMap().SameAs(NewImporter->TargetMap()) && NewDomainMap.SameAs(NewImporter->SourceMap())) {
+    CrsGraphData_->DomainMap_ = NewDomainMap;
+    delete CrsGraphData_->Importer_;
+    CrsGraphData_->Importer_  = new Epetra_Import(*NewImporter);
+  }
+  else 
+    rv=-1;
+  return rv;
+}
+
+//==============================================================================
+int Epetra_CrsGraph::RemoveEmptyProcessesInPlace(const Epetra_BlockMap * newMap) {
+  const Epetra_BlockMap *newDomainMap=0, *newRangeMap=0, *newColMap=0;
+  Epetra_Import * newImport=0;
+  Epetra_Export * newExport=0;
+
+  const Epetra_Comm *newComm = newMap ? &newMap->Comm() : 0;
+
+  if(DomainMap().SameAs(RowMap())) {
+    // Common case: original domain and row Maps are identical.
+    // In that case, we need only replace the original domain Map
+    // with the new Map.  This ensures that the new domain and row
+    // Maps _stay_ identical.
+    newDomainMap = newMap;
+  }
+  else
+    newDomainMap = DomainMap().ReplaceCommWithSubset(newComm);
+
+  if(RangeMap().SameAs(RowMap())){
+    // Common case: original range and row Maps are identical.  In
+    // that case, we need only replace the original range Map with
+    // the new Map.  This ensures that the new range and row Maps
+    // _stay_ identical.
+    newRangeMap = newMap;
+  }
+  else
+    newRangeMap = RangeMap().ReplaceCommWithSubset(newComm);
+  
+  newColMap=ColMap().ReplaceCommWithSubset(newComm);
+
+  if(newComm) {
+    // (Re)create the Export and / or Import if necessary.
+    //
+    // The operations below are collective on the new communicator.
+    //
+    if(RangeMap().DataPtr() != RowMap().DataPtr()) 
+      newExport = new Epetra_Export(*newMap,*newRangeMap);
+
+    if(DomainMap().DataPtr() != ColMap().DataPtr()) 
+      newImport = new Epetra_Import(*newColMap,*newDomainMap);
+  }
+
+  // CrsGraphData things
+  if(CrsGraphData_->ReferenceCount() !=1)
+    throw ReportError("Epetra_CrsGraph::RemoveEmptyProcessesInPlace does not work for shared CrsGraphData_",-2);
+  
+  // Dummy map for the non-active procs
+  Epetra_SerialComm SComm;
+  Epetra_Map dummy(0,0,SComm);
+
+  delete CrsGraphData_->Importer_;
+  delete CrsGraphData_->Exporter_;
+
+
+  CrsGraphData_->RowMap_    = newMap       ? *newMap      : dummy;
+  CrsGraphData_->ColMap_    = newColMap    ? *newColMap    : dummy;
+  CrsGraphData_->DomainMap_ = newDomainMap ? *newDomainMap : dummy;
+  CrsGraphData_->RangeMap_  = newRangeMap  ? *newRangeMap : dummy;
+  CrsGraphData_->Importer_  = newImport;
+  CrsGraphData_->Exporter_  = newExport;
+
+  // Epetra_DistObject things
+  if(newMap) {
+    Map_  = *newMap;
+    Comm_ = &newMap->Comm();
+  }
+
+  // Cleanup (newRowMap is always newMap, so don't delete that)
+  if(newColMap != newMap)    delete newColMap;
+  if(newDomainMap != newMap) delete newDomainMap;
+  if(newRangeMap != newMap)  delete newRangeMap;
+
+  return(0);
 }
 
 // private =====================================================================

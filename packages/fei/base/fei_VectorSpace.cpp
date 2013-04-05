@@ -745,22 +745,14 @@ int fei::VectorSpace::getGlobalIndex(int idType,
     fieldSize = getFieldSize(fieldID);
   }
 
-  try {
-    globalIndex = recordCollections_[idindex]->getGlobalIndex(ID,
+  globalIndex = recordCollections_[idindex]->getGlobalIndex(ID,
                                                          fieldID,
                                                          fieldSize,
                                                          fieldOffset,
                                                          whichComponentOfField,
                                                          &eqnNumbers_[0]);
-  }
-  catch (std::runtime_error& exc) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "VectorSpace::getGlobalIndex caught exception: " << exc.what();
-    fei::console_out() << osstr.str()<<FEI_ENDL;
-    ERReturn(-1);
-  }
-
-  return(0);
+  int return_value = globalIndex >= 0 ? 0 : -1;
+  return return_value;
 }
 
 //----------------------------------------------------------------------------
@@ -799,23 +791,20 @@ int fei::VectorSpace::getGlobalIndices(int numIDs,
   int offset = 0;
 
   for(int i=0; i<numIDs; ++i) {
-    try {
-      globalIndices[offset] =
-        recordCollections_[idindex]->getGlobalIndex(IDs[i],
-                                                    fieldID,
-                                                    fieldSize,
-                                                    0, 0,
-                                                    &eqnNumbers_[0]);
-      if (fieldSize>1) {
+    globalIndices[offset] = recordCollections_[idindex]->getGlobalIndex(IDs[i],
+                                                    fieldID, fieldSize,
+                                                    0, 0, &eqnNumbers_[0]);
+    if (fieldSize>1) {
+      if (globalIndices[offset] >= 0) {
         int eqn = globalIndices[offset];
         for(unsigned j=1; j<fieldSize; ++j) {
           globalIndices[offset+j] = eqn+j;
         }
       }
-    }
-    catch (...) {
-      for(unsigned j=0; j<fieldSize; ++j) {
-        globalIndices[offset+j] = -1;
+      else {
+        for(unsigned j=0; j<fieldSize; ++j) {
+          globalIndices[offset+j] = -1;
+        }
       }
     }
 
@@ -839,13 +828,10 @@ int fei::VectorSpace::getGlobalIndicesLocalIDs(int numIDs,
   int offset = 0;
 
   for(int i=0; i<numIDs; ++i) {
-    try {
-      globalIndices[offset] =
-        recordCollections_[idindex]->getGlobalIndexLocalID(localIDs[i],
-                                                    fieldID,
-                                                    fieldSize,
-                                                    0, 0,
-                                                    &eqnNumbers_[0]);
+    globalIndices[offset] = recordCollections_[idindex]->getGlobalIndexLocalID(localIDs[i],
+                                                    fieldID, fieldSize,
+                                                    0, 0, &eqnNumbers_[0]);
+    if (globalIndices[offset] >= 0) {
       if (fieldSize>1) {
         int eqn = globalIndices[offset];
         for(unsigned j=1; j<fieldSize; ++j) {
@@ -853,7 +839,7 @@ int fei::VectorSpace::getGlobalIndicesLocalIDs(int numIDs,
         }
       }
     }
-    catch (...) {
+    else {
       for(unsigned j=0; j<fieldSize; ++j) {
         globalIndices[offset+j] = -1;
       }
@@ -1053,8 +1039,8 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
       int* eqnNumbers = eqnPtr+record->getOffsetIntoEqnNumbers();
 
       const fei::FieldMask* fieldMask = record->getFieldMask();
-      fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
-      indices[numIndices++] = eqnNumbers[eqnOffset];
+      int err = fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+      indices[numIndices++] = err == 0 ? eqnNumbers[eqnOffset] : -1;
     }
   }
   else {
@@ -1066,7 +1052,13 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
       int eqnOffset = 0;
       if (!simpleProblem_) {
         const fei::FieldMask* fieldMask = record->getFieldMask();
-        fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+        int err = fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+        if (err != 0) {
+          for(int fs=0; fs<fieldSize; ++fs) {
+            indices[numIndices++] = -1;
+          }
+          continue;
+        }
       }
 
       for(int fs=0; fs<fieldSize; ++fs) {
@@ -1110,8 +1102,8 @@ void fei::VectorSpace::getGlobalIndicesL(int numRecords,
       int* eqnNumbers = eqnPtr+record->getOffsetIntoEqnNumbers();
 
       const fei::FieldMask* fieldMask = record->getFieldMask();
-      fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
-      indices[numIndices++] = eqnNumbers[eqnOffset];
+      int err = fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+      indices[numIndices++] = err == 0 ? eqnNumbers[eqnOffset] : -1;
     }
   }
   else {
@@ -1123,7 +1115,13 @@ void fei::VectorSpace::getGlobalIndicesL(int numRecords,
       int eqnOffset = 0;
       if (!simpleProblem_) {
         const fei::FieldMask* fieldMask = record->getFieldMask();
-        fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+        int err = fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+        if (err != 0) {
+          for(int fs=0; fs<fieldSize; ++fs) {
+            indices[numIndices++] = -1;
+          }
+          continue;
+        }
       }
 
       for(int fs=0; fs<fieldSize; ++fs) {
@@ -1156,7 +1154,13 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
     for(int nf=0; nf<numFieldsPerID[i]; ++nf) {
       int eqnOffset = 0;
       if (!simpleProblem_) {
-        fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset);
+        int err = fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset);
+        if (err != 0) {
+          for(int fs=0; fs<fieldSizes[fld_offset]; ++fs) {
+            indices[numIndices++] = -1;
+          }
+          continue;
+        }
       }
 
       for(int fs=0; fs<fieldSizes[fld_offset]; ++fs) {
@@ -1192,7 +1196,13 @@ void fei::VectorSpace::getGlobalIndicesL(int numRecords,
     for(int nf=0; nf<numFieldsPerID[i]; ++nf) {
       int eqnOffset = 0;
       if (!simpleProblem_) {
-        fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset);
+        int err = fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset);
+        if (err != 0) {
+          for(int fs=0; fs<fieldSizes[fld_offset]; ++fs) {
+            indices[numIndices++] = -1;
+          }
+          continue;
+        }
       }
 
       for(int fs=0; fs<fieldSizes[fld_offset]; ++fs) {

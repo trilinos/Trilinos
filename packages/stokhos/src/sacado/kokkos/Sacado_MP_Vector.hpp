@@ -1,28 +1,28 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -33,10 +33,11 @@
 
 #ifdef HAVE_STOKHOS_SACADO
 
-#include <ostream>	// for std::ostream
+#include <ostream>      // for std::ostream
 
 #include "KokkosArray_Macros.hpp"
 
+#include "Sacado_MP_ExpressionTraits.hpp"
 #include "Sacado_MP_VectorTraits.hpp"
 #include "Sacado_Traits.hpp"
 #include "Sacado_mpl_apply.hpp"
@@ -50,7 +51,7 @@ namespace Sacado {
 
     //! Wrapper for a generic expression template
     /*!
-     * This class is used to limit the overload set for building up 
+     * This class is used to limit the overload set for building up
      * expressions.  Each expression object should derive from this
      * using CRTP:
      *
@@ -62,7 +63,7 @@ namespace Sacado {
      * any expression class.  If not, an expression class is free to change
      * the implementation through partial specialization.
      */
-    template <typename T, typename node> 
+    template <typename T, typename node>
     class Expr {
     public:
 
@@ -83,13 +84,13 @@ namespace Sacado {
        */
       KOKKOSARRAY_INLINE_FUNCTION
       const derived_type& derived() const {
-	return static_cast<const derived_type&>(*this);
+        return static_cast<const derived_type&>(*this);
       }
 
     };
 
     //! Vectorized evaluation class
-    template <typename Storage, typename Node> 
+    template <typename Storage, typename Node>
     class Vector : public Expr< Vector<Storage,Node>, Node > {
     public:
 
@@ -110,10 +111,10 @@ namespace Sacado {
       typedef typename ScalarType<value_type>::type scalar_type;
 
       //! Turn Vector into a meta-function class usable with mpl::apply
-      template <typename S> 
+      template <typename S>
       struct apply {
-	typedef typename Sacado::mpl::apply<Storage,ordinal_type,S>::type new_storage_type;
-	typedef Vector<new_storage_type,node_type> type;
+        typedef typename Sacado::mpl::apply<Storage,ordinal_type,S>::type new_storage_type;
+        typedef Vector<new_storage_type,node_type> type;
       };
 
       //! Number of arguments
@@ -145,27 +146,27 @@ namespace Sacado {
       Vector(const Vector& x) : s(x.s) {}
 
       //! Copy constructor from any Expression object
-      template <typename S> 
+      template <typename S>
       KOKKOSARRAY_INLINE_FUNCTION
-      Vector(const Expr<S,node_type>& xx) : 
-	s(xx.derived().size()) {
-	typedef typename Expr<S,node_type>::derived_type expr_type;
-	const expr_type& x = xx.derived();
-	
-	if (storage_type::is_static) {
-	  typedef Sacado::mpl::range_c< int, 0, 
-					storage_type::static_size > range_type;
-	  StaticOp<expr_type> op(s,x);
-	  Stokhos::mpl::for_each< range_type, node_type > f(op);
-	}
-	else if (x.hasFastAccess(s.size())) {
-	  for (ordinal_type i=0; i<s.size(); i++)
-	    s[i] = x.fastAccessCoeff(i);
-	}
-	else {
-	  for (ordinal_type i=0; i<s.size(); i++)
-	    s[i] = x.coeff(i);
-	}
+      Vector(const Expr<S,node_type>& xx) :
+        s(xx.derived().size()) {
+        typedef typename Expr<S,node_type>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (storage_type::is_static) {
+          typedef Sacado::mpl::range_c< int, 0,
+                                        storage_type::static_size > range_type;
+          StaticOp<expr_type> op(s,x);
+          Stokhos::mpl::for_each< range_type, node_type > f(op);
+        }
+        else if (x.hasFastAccess(s.size())) {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] = x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] = x.coeff(i);
+        }
       }
 
       //! Destructor
@@ -183,8 +184,8 @@ namespace Sacado {
       //! Initialize coefficients from an Vector with different storage
       template <typename S, typename N>
       KOKKOSARRAY_INLINE_FUNCTION
-      void init(const Vector<S,N>& v) { 
-	s.init(v.s.coeff(), v.s.size()); 
+      void init(const Vector<S,N>& v) {
+        s.init(v.s.coeff(), v.s.size());
       }
 
       //! Load coefficients to an array of values
@@ -198,24 +199,24 @@ namespace Sacado {
 
       //! Reset size
       /*!
-       * Coefficients are preserved.  
+       * Coefficients are preserved.
        */
       KOKKOSARRAY_INLINE_FUNCTION
       void reset(ordinal_type sz_new) {
-	ordinal_type sz = this->size();
-	s.resize(sz_new);
-	if (sz == 1 && sz_new > sz)
-	  for (ordinal_type i=1; i<sz_new; i++)
-	    s[i] = s[0];
+        ordinal_type sz = this->size();
+        s.resize(sz_new);
+        if (sz == 1 && sz_new > sz)
+          for (ordinal_type i=1; i<sz_new; i++)
+            s[i] = s[0];
       }
 
-      //! Prepare vector for writing 
+      //! Prepare vector for writing
       /*!
-       * This method prepares the vector for writing through coeff() and 
+       * This method prepares the vector for writing through coeff() and
        * fastAccessCoeff() member functions.  It ensures the handle for the
-       * coefficients is not shared among any other vector.  
+       * coefficients is not shared among any other vector.
        * If the handle is not shared it does nothing, so there
-       * is no cost in calling this method in this case.  If the handle is 
+       * is no cost in calling this method in this case.  If the handle is
        * shared and this method is not called, any changes to the coefficients
        * by coeff() or fastAccessCoeff() may change other vector objects.
        */
@@ -226,13 +227,13 @@ namespace Sacado {
       template <typename S>
       KOKKOSARRAY_INLINE_FUNCTION
       bool isEqualTo(const Expr<S,node_type>& xx) const {
-	const typename Expr<S,node_type>::derived_type& x = xx.derived();
-	typedef IsEqual<value_type> IE;
-	if (x.size() != this->size()) return false;
-	bool eq = true;
-	for (ordinal_type i=0; i<this->size(); i++)
-	  eq = eq && IE::eval(x.coeff(i), this->coeff(i));
-	return eq;
+        const typename Expr<S,node_type>::derived_type& x = xx.derived();
+        typedef IsEqual<value_type> IE;
+        if (x.size() != this->size()) return false;
+        bool eq = true;
+        for (ordinal_type i=0; i<this->size(); i++)
+          eq = eq && IE::eval(x.coeff(i), this->coeff(i));
+        return eq;
       }
 
       /*!
@@ -243,40 +244,40 @@ namespace Sacado {
       //! Assignment operator with constant right-hand-side
       KOKKOSARRAY_INLINE_FUNCTION
       Vector& operator=(const value_type& x) {
-	s.init(x);
-	return *this;
+        s.init(x);
+        return *this;
       }
 
       //! Assignment with Vector right-hand-side
       KOKKOSARRAY_INLINE_FUNCTION
       Vector& operator=(const Vector& x) {
-	s = x.s;
-	return *this;
+        s = x.s;
+        return *this;
       }
 
       //! Assignment with any expression right-hand-side
-      template <typename S> 
+      template <typename S>
       KOKKOSARRAY_INLINE_FUNCTION
       Vector& operator=(const Expr<S,node_type>& xx) {
-	typedef typename Expr<S,node_type>::derived_type expr_type;
-	const expr_type& x = xx.derived();
-	
-	this->reset(x.size());
-	if (storage_type::is_static) {
-	  typedef Sacado::mpl::range_c< int, 0, 
-					storage_type::static_size > range_type;
-	  StaticOp<expr_type > op(s,x);
-	  Stokhos::mpl::for_each< range_type, node_type > f(op);
-	}
-	else if (x.hasFastAccess(s.size())) {
-	  for (ordinal_type i=0; i<s.size(); i++)
-	    s[i] = x.fastAccessCoeff(i);
-	}
-	else {
-	  for (ordinal_type i=0; i<s.size(); i++)
-	    s[i] = x.coeff(i);
-	}
-	return *this;
+        typedef typename Expr<S,node_type>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        this->reset(x.size());
+        if (storage_type::is_static) {
+          typedef Sacado::mpl::range_c< int, 0,
+                                        storage_type::static_size > range_type;
+          StaticOp<expr_type > op(s,x);
+          Stokhos::mpl::for_each< range_type, node_type > f(op);
+        }
+        else if (x.hasFastAccess(s.size())) {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] = x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] = x.coeff(i);
+        }
+        return *this;
       }
 
       //@}
@@ -331,9 +332,9 @@ namespace Sacado {
 
       //! Returns degree \c i term with bounds checking
       KOKKOSARRAY_INLINE_FUNCTION
-      value_type coeff(ordinal_type i) const { 
-	return i<s.size() ? s[i] : s[0]; }
-    
+      value_type coeff(ordinal_type i) const {
+        return i<s.size() ? s[i] : s[0]; }
+
       //! Returns degree \c i term without bounds checking
       KOKKOSARRAY_INLINE_FUNCTION
       reference fastAccessCoeff(ordinal_type i) { return s[i];}
@@ -349,7 +350,7 @@ namespace Sacado {
       template <int i>
       KOKKOSARRAY_INLINE_FUNCTION
       reference getCoeff() { return s.template getCoeff<i>(); }
-    
+
       //@}
 
       /*!
@@ -360,65 +361,65 @@ namespace Sacado {
       //! Addition-assignment operator with constant right-hand-side
       KOKKOSARRAY_INLINE_FUNCTION
       Vector& operator += (const value_type& x) {
-	for (ordinal_type i=0; i<s.size(); i++)
-	  s[i] += x;
-	return *this;
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] += x;
+        return *this;
       }
 
       //! Subtraction-assignment operator with constant right-hand-side
       KOKKOSARRAY_INLINE_FUNCTION
       Vector& operator -= (const value_type& x) {
-	for (ordinal_type i=0; i<s.size(); i++)
-	  s[i] -= x;
-	return *this;
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] -= x;
+        return *this;
       }
 
       //! Multiplication-assignment operator with constant right-hand-side
       KOKKOSARRAY_INLINE_FUNCTION
       Vector& operator *= (const value_type& x) {
-	for (ordinal_type i=0; i<s.size(); i++)
-	  s[i] *= x;
-	return *this;
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] *= x;
+        return *this;
       }
 
       //! Division-assignment operator with constant right-hand-side
       KOKKOSARRAY_INLINE_FUNCTION
       Vector& operator /= (const value_type& x) {
-	for (ordinal_type i=0; i<s.size(); i++)
-	  s[i] /= x;
-	return *this;
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] /= x;
+        return *this;
       }
 
       //! Addition-assignment operator with Expr right-hand-side
-      template <typename S> 
+      template <typename S>
       KOKKOSARRAY_INLINE_FUNCTION
       Vector& operator += (const Expr<S,node_type>& x) {
-	*this = *this + x;
-	return *this;
+        *this = *this + x;
+        return *this;
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
-      template <typename S> 
+      template <typename S>
       KOKKOSARRAY_INLINE_FUNCTION
       Vector& operator -= (const Expr<S,node_type>& x) {
-	*this = *this - x;
-	return *this;
+        *this = *this - x;
+        return *this;
       }
-  
+
       //! Multiplication-assignment operator with Expr right-hand-side
-      template <typename S> 
+      template <typename S>
       KOKKOSARRAY_INLINE_FUNCTION
       Vector& operator *= (const Expr<S,node_type>& x) {
-	*this = *this * x;
-	return *this;
+        *this = *this * x;
+        return *this;
       }
 
       //! Division-assignment operator with Expr right-hand-side
-      template <typename S> 
+      template <typename S>
       KOKKOSARRAY_INLINE_FUNCTION
       Vector& operator /= (const Expr<S,node_type>& x) {
-	*this = *this / x;
-	return *this;
+        *this = *this / x;
+        return *this;
       }
 
       //@}
@@ -432,18 +433,18 @@ namespace Sacado {
 
       template <typename expr_type>
       struct StaticOp {
-	storage_type& s;
-	const expr_type& x;
+        storage_type& s;
+        const expr_type& x;
 
-	KOKKOSARRAY_INLINE_FUNCTION
-	StaticOp(storage_type& s_, const expr_type& x_) : s(s_), x(x_) {}
+        KOKKOSARRAY_INLINE_FUNCTION
+        StaticOp(storage_type& s_, const expr_type& x_) : s(s_), x(x_) {}
 
-	template <typename ArgT>
-	KOKKOSARRAY_INLINE_FUNCTION
-	void operator() (ArgT arg) const {
-	  const int Arg = ArgT::value;
-	  s.template getCoeff<Arg>() = x.template getCoeff<Arg>();
-	}
+        template <typename ArgT>
+        KOKKOSARRAY_INLINE_FUNCTION
+        void operator() (ArgT arg) const {
+          const int Arg = ArgT::value;
+          s.template getCoeff<Arg>() = x.template getCoeff<Arg>();
+        }
 
       };
 
@@ -469,16 +470,16 @@ namespace Sacado {
 
     template <typename Storage, typename Node>
     KOKKOSARRAY_INLINE_FUNCTION
-    std::ostream& 
-    operator << (std::ostream& os, 
-		 const Vector<Storage,Node>& a)
+    std::ostream&
+    operator << (std::ostream& os,
+                 const Vector<Storage,Node>& a)
     {
       typedef typename Vector<Storage,Node>::ordinal_type ordinal_type;
-      
+
       os << "[ ";
-      
+
       for (ordinal_type i=0; i<a.size(); i++) {
-	os << a.coeff(i) << " ";
+        os << a.coeff(i) << " ";
       }
 
       os << "]\n";

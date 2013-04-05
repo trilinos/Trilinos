@@ -383,6 +383,22 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
+  // default parameters
+  LO BGS_nSweeps = 3;
+  Scalar BGS_omega = 0.5;
+
+  // Note: use --help to list available options.
+  Teuchos::CommandLineProcessor clp(false);
+  clp.setOption("BGS_sweeps",&BGS_nSweeps,"number of sweeps with BGS smoother");
+  clp.setOption("BGS_omega", &BGS_omega,  "scaling factor for BGS smoother");
+
+  switch (clp.parse(argc,argv)) {
+  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_ERROR:
+  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  }
+
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
@@ -661,7 +677,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   /////////////////////////////////////////// define blocked transfer ops
-  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory(Teuchos::null)); // use row map index base from bOp
+  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory()); // use row map index base from bOp
   PFact->AddFactoryManager(M11);
   PFact->AddFactoryManager(M22);
 
@@ -674,13 +690,13 @@ int main(int argc, char *argv[]) {
 
   //////////////////////////////////////////////////////////////////////
   // Smoothers
-  RCP<BlockedGaussSeidelSmoother> smootherPrototype     = rcp( new BlockedGaussSeidelSmoother(3,0.5) );
+  RCP<BlockedGaussSeidelSmoother> smootherPrototype     = rcp( new BlockedGaussSeidelSmoother(BGS_nSweeps,BGS_omega) );
   smootherPrototype->AddFactoryManager(M11);
   smootherPrototype->AddFactoryManager(M22);
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
   // Coarse grid correction
-  RCP<BlockedGaussSeidelSmoother> coarseSolverPrototype = rcp( new BlockedGaussSeidelSmoother(3,0.5) );
+  RCP<BlockedGaussSeidelSmoother> coarseSolverPrototype = rcp( new BlockedGaussSeidelSmoother(BGS_nSweeps,BGS_omega) );
   coarseSolverPrototype->AddFactoryManager(M11);
   coarseSolverPrototype->AddFactoryManager(M22);
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
@@ -720,7 +736,7 @@ int main(int argc, char *argv[]) {
     bOp->apply(*xLsg,*xTmp,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     xRhs->update((SC)-1.0,*xTmp,(SC)1.0);
     xRhs->norm2(norms);
-    *out << "||x|| = " << norms[0] << std::endl;
+    *out << "||r|| = " << norms[0] << std::endl;
 
   }
 

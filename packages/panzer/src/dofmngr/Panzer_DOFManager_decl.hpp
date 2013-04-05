@@ -160,19 +160,24 @@ public:
   void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
   { connMngr_->getElementBlockIds(elementBlockIds); }
   
-  /** Because we only have one element block, if the field is present, and
-    * the block is valid. It works
-    */
   bool fieldInBlock(const std::string & field, const std::string & block) const;
 
-  /** Because we only have one element block, we are guarenteed 
-    * that all fields are going to be in the one block we have
-    */
   const std::vector<int> & getBlockFieldNumbers(const std::string & blockId) const;
 
 //************************************************************************
 
-  //TODO:this.
+  /** \brief Use the field pattern so that you can find a particular
+    *        field in the GIDs array. This version lets you specify the sub
+    *        cell you are interested in and gets the closure. Meaning all the
+    *        IDs of equal or lesser sub cell dimension that are contained within
+    *        the specified sub cell. For instance for an edge, this function would
+    *        return offsets for the edge and the nodes on that edge.
+    *
+    * \param[in] blockId
+    * \param[in] fieldNum
+    * \param[in] subcellDim
+    * \param[in] subcellId
+    */
   const std::pair<std::vector<int>,std::vector<int> > & 
   getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const;
 
@@ -196,7 +201,8 @@ public:
   void setOrientationsRequired(bool ro)
   { requireOrientations_ = ro; }
 
-  //TODO:this
+   /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
+     */
   void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const;
 
   const std::string & getFieldString(int num) const;

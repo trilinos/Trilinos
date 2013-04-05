@@ -84,6 +84,16 @@ namespace Xpetra {
       // TEUCHOS_TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"?");
     }
 
+    //! Constructor specifying the max number of non-zeros per row and providing column map
+    static RCP<Matrix> Build(const RCP<const Map>& rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
+      return rcp(new CrsMatrixWrap(rowMap, colMap, maxNumEntriesPerRow, pftype));
+    }
+
+    //! Constructor specifying the (possibly different) number of entries per row and providing column map
+    static RCP<Matrix> Build(const RCP<const Map>& rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
+      return rcp(new CrsMatrixWrap(rowMap, colMap, NumEntriesPerRowToAlloc, pftype));
+    }
+
     //! Constructor specifying (possibly different) number of entries in each row.
     static RCP<Matrix> Build(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile) {
       return rcp( new CrsMatrixWrap(rowMap, NumEntriesPerRowToAlloc, pftype) );
@@ -103,6 +113,28 @@ namespace Xpetra {
       mtx->fillComplete();
       return mtx;
     }
+
+
+    //! Constructor to create a Matrix using a fusedImport-style construction.  The originalMatrix must be a Xpetra::CrsMatrixWrap under the hood or this will fail.
+    static RCP<Matrix> Build(const RCP<const Matrix> & sourceMatrix, const Import &importer, const RCP<const Map> & domainMap = Teuchos::null, const RCP<const Map> & rangeMap = Teuchos::null,const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+
+      RCP<const CrsMatrixWrap> crsOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(sourceMatrix);
+      if (crsOp == Teuchos::null)
+	throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
+      RCP<CrsMatrix> originalCrs = crsOp->getCrsMatrix();
+      return rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(originalCrs,importer,domainMap,rangeMap,params)));
+    }
+
+    //! Constructor to create a Matrix using a fusedExport-style construction.  The originalMatrix must be a Xpetra::CrsMatrixWrap under the hood or this will fail.
+    static RCP<Matrix> Build(const RCP<const Matrix> & sourceMatrix, const Export &exporter, const RCP<const Map> & domainMap = Teuchos::null, const RCP<const Map> & rangeMap = Teuchos::null,const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+
+      RCP<const CrsMatrixWrap> crsOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(sourceMatrix);
+      if (crsOp == Teuchos::null)
+	throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
+      RCP<CrsMatrix> originalCrs = crsOp->getCrsMatrix();
+      return rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(originalCrs,exporter,domainMap,rangeMap,params)));
+    }
+
 
 #ifdef HAVE_XPETRA_EXPERIMENTAL
     static RCP<Matrix> BuildCopy(const RCP<const Matrix> A) {

@@ -173,62 +173,57 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeUnamalgamatedAggregateSizes(const Aggregates & aggregates, const AmalgamationInfo & amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) {
-    // we expect the aggSizes array to be initialized as follows
-    // aggSizes = Teuchos::ArrayRCP<LO>(nAggregates_,0);
-    // furthermore we suppose the (un)amalgamation info to be set (even for 1 dof per node examples)
-
+  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UnamalgamateAggregates(const Aggregates& aggregates,
+const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggStart, Teuchos::ArrayRCP<GlobalOrdinal> & aggToRowMap) {
     int myPid = aggregates.GetMap()->getComm()->getRank();
+    //const Map& map = *(aggregates.GetMap());
     Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
     Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
     LO size = procWinner.size();
 
-    //for (LO i = 0; i< aggregates.GetNumAggregates(); ++i) aggSizes[i] = 0;
+    GO total=0;
+    std::vector<LO> sizes(aggregates.GetNumAggregates());
     for (LO lnode = 0; lnode < size; ++lnode) {
       LO myAgg = vertex2AggId[lnode];
       if (procWinner[lnode] == myPid) {
-        GO gnodeid = aggregates.GetMap()->getGlobalElement(lnode);
-
+        //GO gnodeid = map.getGlobalElement(lnode);
+        GO gnodeid = (aggregates.GetMap())->getGlobalElement(lnode);
         std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
-        aggSizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
+        total += Teuchos::as<LO>(gDofIds.size());
+        sizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
       }
     }
-  }
+    aggToRowMap = ArrayRCP<GO>(total,0);
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UnamalgamateAggregates(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes, Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > & aggToRowMap) {
-    int myPid = aggregates.GetMap()->getComm()->getRank();
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    LO size = procWinner.size();
-
-    // initialize array aggToRowMap with empty arrays for each aggregate (with correct aggSize)
-    LO t = 0;
-    for (typename ArrayRCP<ArrayRCP<GO> >::iterator a2r = aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r) {
-      *a2r = ArrayRCP<GO>(aggSizes[t++]);
+    aggStart = ArrayRCP<LO>(aggregates.GetNumAggregates()+1,0);
+    aggStart[0]=0;
+    for (GO i=0; i<aggregates.GetNumAggregates(); ++i) {
+      aggStart[i+1] = aggStart[i] + sizes[i];
     }
 
-    // count, how many dofs have been recorded for each aggregate
-    ArrayRCP<LO> numDofs(aggregates.GetNumAggregates(),0); // empty array with number of Dofs for each aggregate
+    // count, how many dofs have been recorded for each aggregate so far
+    Array<LO> numDofs(aggregates.GetNumAggregates(),0); // empty array with number of Dofs for each aggregate
 
     for (LO lnode = 0; lnode < size; ++lnode) {
       LO myAgg = vertex2AggId[lnode];
       if (procWinner[lnode] == myPid) {
-        GO gnodeid = aggregates.GetMap()->getGlobalElement(lnode);
+        //GO gnodeid = map.getGlobalElement(lnode);
+        GO gnodeid = (aggregates.GetMap())->getGlobalElement(lnode);
         std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
         LO gDofIds_size = Teuchos::as<LO>(gDofIds.size());
-        for (LO gDofId=0; gDofId < gDofIds_size; gDofId++) {
-          aggToRowMap[ myAgg ][ numDofs[myAgg] ] = gDofIds[gDofId]; // fill aggToRowMap structure
+        for (LO gDofId=0; gDofId < gDofIds_size; ++gDofId) {
+          //aggToRowMap[ aggStart[myAgg] + gDofId ] = gDofIds[gDofId]; // fill aggToRowMap structure
+          aggToRowMap[ aggStart[myAgg] + numDofs[myAgg] ] = gDofIds[gDofId]; // fill aggToRowMap structure
           ++(numDofs[myAgg]);
         }
       }
     }
     // todo plausibility check: entry numDofs[k] == aggToRowMap[k].size()
 
-  }
+  } //UnamalgamateAggregates
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) {
+  RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo) {
     Teuchos::RCP<const Map> nodeMap = aggregates.GetMap(); //aggregates.GetVertex2AggId();
 
     Teuchos::RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);

@@ -100,6 +100,8 @@ namespace Galeri {
       GlobalOrdinal                  nx_, ny_, nz_;
       size_t                         nDim;
       std::vector<GO>                dims;
+      // NOTE: nodes correspond to a local subdomain nodes. I have to construct overlapped subdomains because
+      // InsertGlobalValues in Epetra does not support inserting into rows owned by other processor
       std::vector<Point>             nodes;
       std::vector<std::vector<LO> >  elements;
       std::vector<GO>                local2Global_;
@@ -260,20 +262,15 @@ namespace Galeri {
               if (dirichlet_[elemNodes[j]]) {
                 LO j0 = numDofPerNode*j, j1 = j0+1;
 
-                size_t numDirGeomNeigh = 0;
-                for (LO offset = 1; offset <= 3; offset += 2) {
-                  LO k = (j+offset) % 4;
-                  // Check geometric neighbors
-                  // Works because of the order of nodes in the cells
-                  if (dirichlet_[elemNodes[k]]) {
+                for (size_t k = 0; k < numNodesPerElem; k++)
+                  if ((j == k) || ((j+k) & 0x1)) {
+                    // Nodes j and k are connected by an edge, or j == k
                     LO k0 = numDofPerNode*k, k1 = k0+1;
-                    KE(j0,k0) *= 2; KE(j0,k1) *= 2; KE(j1,k0) *= 2; KE(j1,k1) *= 2;
-                    numDirGeomNeigh++;
-                  }
-                }
+                    SC f = pow(2*Teuchos::ScalarTraits<SC>::one(), Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]])));
 
-                SC factor = pow(2*Teuchos::ScalarTraits<SC>::one(), (int)numDirGeomNeigh);
-                KE(j0,j0) *= factor; KE(j0,j1) *= factor; KE(j1,j0) *= factor; KE(j1,j1) *= factor;
+                    KE(j0,k0) *= f; KE(j0,k1) *= f;
+                    KE(j1,k0) *= f; KE(j1,k1) *= f;
+                }
               }
           }
         }
@@ -281,7 +278,8 @@ namespace Galeri {
         // Insert KE into the global matrix
         // NOTE: KE is symmetric, therefore it does not matter that it is in the CSC format
         for (size_t j = 0; j < numDofPerElem; j++)
-          this->A_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
+          if (this->Map_->isNodeGlobalElement(elemDofs[j]))
+            this->A_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
       }
       this->A_->fillComplete();
 
@@ -361,6 +359,12 @@ namespace Galeri {
       Utils::getSubdomainData(dims[0], mx, myPID % mx, nx, shiftx);
       Utils::getSubdomainData(dims[1], my, myPID / mx, ny, shifty);
 
+      // Expand subdomain to do overlap
+      if (shiftx    > 0)        { nx++; shiftx--; }
+      if (shifty    > 0)        { ny++; shifty--; }
+      if (shiftx+nx < dims[0])  { nx++;        }
+      if (shifty+ny < dims[1])  { ny++;        }
+
       nodes        .resize((nx+1)*(ny+1));
       local2Global_.resize((nx+1)*(ny+1));
       dirichlet_   .resize((nx+1)*(ny+1));
@@ -371,14 +375,14 @@ namespace Galeri {
       for (int j = 0; j <= ny; j++)
         for (int i = 0; i <= nx; i++) {
           int ii = shiftx + i, jj = shifty + j;
-          nodes[NODE(i,j)] = Point((ii+1)*hx, (jj+1)*hy);
-          local2Global_[NODE(i,j)] = jj*nx_ + ii;
+          int nodeID = NODE(i,j);
+          nodes[nodeID] = Point((ii+1)*hx, (jj+1)*hy);
+          local2Global_[nodeID] = jj*nx_ + ii;
 
-          if ((ii == 0   && (this->DirichletBC_ & DIR_LEFT))   ||
-              (ii == nx  && (this->DirichletBC_ & DIR_RIGHT))  ||
-              (jj == 0   && (this->DirichletBC_ & DIR_BOTTOM)) ||
-              (jj == ny  && (this->DirichletBC_ & DIR_TOP)))
-            dirichlet_[NODE(i,j)] = 1;
+          if (ii == 0   && (this->DirichletBC_ & DIR_LEFT))   dirichlet_[nodeID]++;
+          if (ii == nx_ && (this->DirichletBC_ & DIR_RIGHT))  dirichlet_[nodeID]++;
+          if (jj == 0   && (this->DirichletBC_ & DIR_BOTTOM)) dirichlet_[nodeID]++;
+          if (jj == ny_ && (this->DirichletBC_ & DIR_TOP))    dirichlet_[nodeID]++;
         }
 
       for (int j = 0; j < ny; j++)

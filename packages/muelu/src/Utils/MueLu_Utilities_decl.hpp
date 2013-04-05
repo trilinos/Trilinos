@@ -280,6 +280,14 @@ namespace MueLu {
     */
     static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(const Matrix &A);
 
+    /*! @brief Extract Matrix Diagonal of lumped matrix
+
+    Returns Matrix diagonal of lumped matrix in ArrayRCP.
+
+    Note -- it's assumed that A has been fillComplete'd.
+    */
+    static Teuchos::ArrayRCP<SC> GetLumpedMatrixDiagonal(const Matrix &A);
+
     /*! @brief Extract Overlapped Matrix Diagonal
 
     Returns overlapped Matrix diagonal in ArrayRCP.
@@ -451,7 +459,7 @@ namespace MueLu {
     //! Add two .
     static void TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
                              RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
-                             RCP<Matrix> &C);
+                             RCP<Matrix> &C, bool const &AHasFixedNnzPerRow=false);
   }; // class Utils2
 
   // specialization Utils2 for SC=double, LO=GO=int
@@ -473,7 +481,7 @@ namespace MueLu {
     static void TwoMatrixAdd(RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta);
     static void TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
                              RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
-                             RCP<Matrix> &C);
+                             RCP<Matrix> &C, bool const &AHasFixedNnzPerRow=false);
   }; //specialization to Scalar=double
 
 

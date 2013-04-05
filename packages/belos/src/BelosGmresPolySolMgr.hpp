@@ -586,12 +586,15 @@ void GmresPolySolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teucho
       params_->set("Timer Label", label_);
       std::string solveLabel = label_ + ": GmresPolySolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+      timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
       std::string polyLabel = label_ + ": GmresPolySolMgr polynomial creation time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerPoly_ = Teuchos::TimeMonitor::getNewTimer(polyLabel);
+      timerPoly_ = Teuchos::TimeMonitor::getNewCounter(polyLabel);
 #endif
+      if (ortho_ != Teuchos::null) {
+        ortho_->setLabel( label_ );
+      }
     }
   }
 
@@ -807,14 +810,14 @@ void GmresPolySolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teucho
   if (timerSolve_ == Teuchos::null) {
     std::string solveLabel = label_ + ": GmresPolySolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+    timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
   }
   
   if (timerPoly_ == Teuchos::null) {
     std::string polyLabel = label_ + ": GmresPolySolMgr polynomial creation time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    timerPoly_ = Teuchos::TimeMonitor::getNewTimer(polyLabel);
+    timerPoly_ = Teuchos::TimeMonitor::getNewCounter(polyLabel);
 #endif
   }
 

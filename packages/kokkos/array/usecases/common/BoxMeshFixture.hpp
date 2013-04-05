@@ -152,8 +152,8 @@ struct BoxMeshFixture {
     typedef typename FEMeshType::size_type          size_type ;
     typedef typename node_coords_type::scalar_type  coords_type ;
 
-    const size_type node_count_total = node_coords.dimension(0);
-    const size_type elem_count_total = elem_node_ids.dimension(0);
+    const size_type node_count_total = node_coords.dimension_0();
+    const size_type elem_count_total = elem_node_ids.dimension_0();
 
     const ElementSpec element ;
 

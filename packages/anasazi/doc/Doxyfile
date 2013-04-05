@@ -60,6 +60,7 @@ EXAMPLE_PATH           = ../epetra/example/LOBPCG/LOBPCGEpetraEx.cpp            
                          ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenAztecOO.cpp     \
                          ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenBelos.cpp       \
                          ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraExSVD.cpp            \
+                         ../epetra/example/GeneralizedDavidson/GeneralizedDavidsonEpetraExFileIfpack.cpp  \
                          ../epetra/example/MVOPTester/MVOPTesterEx.cpp              
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = ./images

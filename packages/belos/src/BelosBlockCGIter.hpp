@@ -61,6 +61,8 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_SerialSymDenseMatrix.hpp"
+#include "Teuchos_SerialSpdDenseSolver.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -421,6 +423,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
     // Allocate data needed for LAPACK work.
     int info = 0;
     char UPLO = 'U';
+    bool uplo = true;
     Teuchos::LAPACK<int,ScalarType> lapack;
 
     // Allocate memory for scalars.
@@ -428,6 +431,10 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
     Teuchos::SerialDenseMatrix<int,ScalarType> beta( blockSize_, blockSize_ );
     Teuchos::SerialDenseMatrix<int,ScalarType> rHz( blockSize_, blockSize_ ), 
       rHz_old( blockSize_, blockSize_ ), pAp( blockSize_, blockSize_ );
+    Teuchos::SerialSymDenseMatrix<int,ScalarType> pApHerm(Teuchos::View, uplo, pAp.values(), blockSize_, blockSize_);
+
+    // Create dense spd solver.
+    Teuchos::SerialSpdDenseSolver<int,ScalarType> lltSolver;
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -463,13 +470,15 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
       MVT::MvTransMv( one, *P_, *AP_, pAp );      
      
       // Compute Cholesky factorization of pAp
-      lapack.POTRF(UPLO, blockSize_, pAp.values(), blockSize_, &info);
+      lltSolver.setMatrix( Teuchos::rcp(&pApHerm, false) );
+      lltSolver.factorWithEquilibration( true );
+      info = lltSolver.factor();
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute Cholesky factorization using LAPACK routine POTRF.");
 
       // Compute alpha by performing a back and forward solve with the Cholesky factorization in pAp.
-      lapack.POTRS(UPLO, blockSize_, blockSize_, pAp.values(), blockSize_, 
-		   alpha.values(), blockSize_, &info);
+      lltSolver.setVectors( Teuchos::rcp( &alpha, false ), Teuchos::rcp( &alpha, false ) );
+      info = lltSolver.solve();
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute alpha using Cholesky factorization (POTRS).");
       
@@ -507,8 +516,8 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
       // Compute <AP_,Z>
       MVT::MvTransMv( -one, *AP_, *Z_, beta );
       //
-      lapack.POTRS(UPLO, blockSize_, blockSize_, pAp.values(), blockSize_, 
-		   beta.values(), blockSize_, &info);
+      lltSolver.setVectors( Teuchos::rcp( &beta, false ), Teuchos::rcp( &beta, false ) );
+      info = lltSolver.solve();
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute beta using Cholesky factorization (POTRS).");
       //

@@ -411,7 +411,7 @@ test_product_flat_commuted_matrix(
 
   matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entries.dimension(0);
+  const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
   matrix.values = vector_type( "matrix" , flat_graph_length );
   {
@@ -601,7 +601,7 @@ test_product_flat_original_matrix(
 
   matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entries.dimension(0);
+  const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
   matrix.values = vector_type( "matrix" , flat_graph_length );
   {
@@ -737,7 +737,7 @@ test_original_matrix_free_block(
 
   for (size_t block=0; block<outer_length; ++block) {
     matrix[block].graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
-    const size_t graph_length = matrix[block].graph.entries.dimension(0);
+    const size_t graph_length = matrix[block].graph.entries.dimension_0();
     matrix[block].values = vec_type( "matrix" , graph_length );
 
     typename vec_type::HostMirror hM =
@@ -800,7 +800,7 @@ test_original_matrix_free_block(
   Device::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
-  const double flops = 2.0*1.0e-9*n_apply*matrix[0].graph.entries.dimension(0);
+  const double flops = 2.0*1.0e-9*n_apply*matrix[0].graph.entries.dimension_0();
 
   //------------------------------
 
@@ -883,7 +883,7 @@ test_original_matrix_free_vec(
   for (size_t block=0; block<outer_length; ++block) {
     matrix[block].graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
 
-    const size_t graph_length = matrix[block].graph.entries.dimension(0);
+    const size_t graph_length = matrix[block].graph.entries.dimension_0();
 
     matrix[block].values = vec_type( "matrix" , graph_length );
 
@@ -956,7 +956,7 @@ test_original_matrix_free_vec(
   Device::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
-  const double flops = 2.0*1.0e-9*n_apply*matrix[0].graph.entries.dimension(0);
+  const double flops = 2.0*1.0e-9*n_apply*matrix[0].graph.entries.dimension_0();
 
   //------------------------------
 

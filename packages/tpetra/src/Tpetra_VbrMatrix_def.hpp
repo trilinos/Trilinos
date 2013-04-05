@@ -42,11 +42,14 @@
 #ifndef TPETRA_VBRMATRIX_DEF_HPP
 #define TPETRA_VBRMATRIX_DEF_HPP
 
+#include <Tpetra_BlockMap.hpp>
+#include <Tpetra_BlockCrsGraph.hpp>
+#include <Tpetra_Vector.hpp>
+#include <Kokkos_NodeHelpers.hpp>
+#include <Kokkos_VbrMatrix.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 #include <algorithm>
 #include <sstream>
-
-#include <Kokkos_NodeHelpers.hpp>
-#include <Tpetra_Vector.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
 #include "Tpetra_VbrMatrix_decl.hpp"
@@ -72,7 +75,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const T
  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node>(convertBlockMapToPointMap(*blkRowMap)),
    blkGraph_(Teuchos::rcp(new BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(blkRowMap, maxNumEntriesPerRow, pftype))),
    constBlkGraph_(blkGraph_),
-   lclMatrix_(blkRowMap->getNodeNumBlocks(), blkRowMap->getPointMap()->getNode()),
+   lclMatrix_ (Teuchos::rcp (new Kokkos::VbrMatrix<Scalar, LocalOrdinal, Node> (blkRowMap->getNodeNumBlocks (), blkRowMap->getPointMap()->getNode ()))),
    pbuf_values1D_(),
    pbuf_indx_(),
    lclMatOps_(blkRowMap->getPointMap()->getNode()),
@@ -97,8 +100,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const T
  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node>(convertBlockMapToPointMap(*blkGraph->getBlockRowMap())),
    blkGraph_(),
    constBlkGraph_(blkGraph),
-   lclMatrix_(blkGraph->getBlockRowMap()->getNodeNumBlocks(),
-              blkGraph->getBlockRowMap()->getPointMap()->getNode()),
+   lclMatrix_ (Teuchos::rcp (new Kokkos::VbrMatrix<Scalar, LocalOrdinal, Node> (blkGraph->getBlockRowMap()->getNodeNumBlocks(),
+										blkGraph->getBlockRowMap()->getPointMap()->getNode()))),
    pbuf_values1D_(),
    pbuf_indx_(),
    lclMatOps_(blkGraph->getBlockRowMap()->getPointMap()->getNode()),
@@ -1217,12 +1220,12 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMat
     node->copyToBuffer(nodePackedInds.size(), nodePackedInds(), dev_nodePackedInds);
     nodePackedInds = dev_nodePackedInds;
   }
-  lclMatrix_.setPackedValues(pbuf_values1D_,
-                             getBlockRowMap()->getNodeFirstPointInBlocks_Device(),
-                             getBlockColMap()->getNodeFirstPointInBlocks_Device(),
-                             nodeRowOffsets,
-                             nodePackedInds,
-                             pbuf_indx_);
+  lclMatrix_->setPackedValues (pbuf_values1D_,
+			       getBlockRowMap()->getNodeFirstPointInBlocks_Device(),
+			       getBlockColMap()->getNodeFirstPointInBlocks_Device(),
+			       nodeRowOffsets,
+			       nodePackedInds,
+			       pbuf_indx_);
 }
 
 //-------------------------------------------------------------------
@@ -1235,7 +1238,7 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMat
   TEUCHOS_TEST_FOR_EXCEPTION(is_storage_optimized_ != true, std::runtime_error,
     "Tpetra::VbrMatrix::fillLocalMatrix ERROR, optimizeStorage is required to have already been called.");
 
-  lclMatOps_.initializeValues(lclMatrix_);
+  lclMatOps_.initializeValues (*lclMatrix_);
 }
 
 //-------------------------------------------------------------------

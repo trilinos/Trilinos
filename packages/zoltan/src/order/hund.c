@@ -62,6 +62,8 @@ extern "C" {
 
 /* #define SIMPLE_HUND */
 
+#define SIMPLE_HUND
+
 #ifndef SIMPLE_HUND
 /* Removed CCOLAMD from BSD version. 
 int Zoltan_CColAMD(
@@ -166,10 +168,10 @@ int Zoltan_HUND(
     fprintf (stderr, "\n");
   }
 
-#ifdef SIMPLE_HUND
   ierr = Zoltan_DD_GetLocalKeys(data->ddHedge, &local_gid, &num_local_gid);
   CHECK_IERR;
 
+#ifdef SIMPLE_HUND
   part = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(num_local_gid*sizeof(ZOLTAN_ID_TYPE));
   if (num_local_gid && part == NULL) MEMORY_ERROR;
 
@@ -188,9 +190,6 @@ int Zoltan_HUND(
 #endif /* SIMPLE_HUND */
 
   Zoltan_DD_Update (data->ddHedge, local_gid, (ZOLTAN_ID_PTR)dperm, NULL,  NULL /* part */, num_local_gid);
-  ZOLTAN_FREE(&dperm);
-  ZOLTAN_FREE(&part);
-  ZOLTAN_FREE(&local_gid);
   Zoltan_DD_Find (data->ddHedge, gids, rank, NULL, NULL, num_obj, NULL);
 
   Zoltan_DD_Destroy(&data->ddHedge);

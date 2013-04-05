@@ -65,7 +65,7 @@
 #include "Thyra_DetachedVectorView.hpp"
 #endif
 #endif
-#include "Piro_Epetra_Factory.hpp"
+#include "Piro_Epetra_SolverFactory.hpp"
 
 
 namespace {
@@ -423,8 +423,9 @@ TEUCHOS_UNIT_TEST( Piro, Coupled )
   coupledModel->setOStream(rcp(&out,false));
 
   // Setup solver
+  Piro::Epetra::SolverFactory solverFactory;
   RCP<EpetraExt::ModelEvaluator> coupledSolver =
-    Piro::Epetra::Factory::createSolver(coupledParams, coupledModel);
+    solverFactory.createSolver(coupledParams, coupledModel);
     
   // Solve coupled system
   EpetraExt::ModelEvaluator::InArgs inArgs = coupledSolver->createInArgs();

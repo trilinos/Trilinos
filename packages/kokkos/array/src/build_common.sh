@@ -54,8 +54,6 @@ CUDA | Cuda | cuda )
     NVCC="${NVCC} -gencode arch=compute_30,code=sm_30"
   fi
   NVCC="${NVCC} -Xcompiler -Wall,-ansi"
-  NVCC="${NVCC} -DCUDA_VERSION_MAJOR=${CUDA_VERSION_MAJOR}"
-  NVCC="${NVCC} -DCUDA_VERSION_MINOR=${CUDA_VERSION_MINOR}"
   NVCC="${NVCC} -lib -o libCuda.a -x cu"
 
   LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcuda -lcusparse"

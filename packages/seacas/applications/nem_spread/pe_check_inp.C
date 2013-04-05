@@ -101,10 +101,6 @@ int NemSpread<T,INT>::check_inp(void)
   if (Restart_Info.Flag > 0) {
     if (strlen(Exo_Res_File) <= 0)
       strcpy(Exo_Res_File, ExoFile);   /* if not use the input FEM file */
-
-    /* default block size is 1 */
-    if (Restart_Info.Block_Size <= 0)
-      Restart_Info.Block_Size = 1;
   }
 
   /* check if space is to be reserved for variables in the parallel files */

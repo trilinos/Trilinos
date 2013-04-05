@@ -111,17 +111,17 @@ namespace MueLu {
     /*! @brief ComputeUnamalgamatedAggregateSizes
      * computes the size of the aggregates (in DOFs)
      */
-    static void ComputeUnamalgamatedAggregateSizes(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggSizes);
 
     /*! @brief UnamalgamateAggregates
-     * puts all dofs for aggregate \c i in aggToRowMap[\c i]
-     */
-    static void UnamalgamateAggregates(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes, Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > & aggToRowMap);
+
+       Puts all dofs for aggregate \c i in aggToRowMap[\c i].  Also calculate aggregate sizes.
+    */
+    static void UnamalgamateAggregates(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggStart, Teuchos::ArrayRCP<GlobalOrdinal> & aggToRowMap);
 
     /*! @brief ComputeUnamalgamatedImportDofMap
      * build overlapping dof row map from aggregates needed for overlapping null space
      */
-    static Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes);
+    static Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo);
 
 
   private:

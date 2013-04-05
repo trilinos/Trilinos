@@ -50,8 +50,8 @@ class Multiply<
     StochasticProductTensor<TensorScalar, TensorType, KokkosArray::Cuda>,
     MatrixScalar, KokkosArray::Cuda> ,
   KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>
-  >
+  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
+  DefaultSparseMatOps >
 {
 public:
 

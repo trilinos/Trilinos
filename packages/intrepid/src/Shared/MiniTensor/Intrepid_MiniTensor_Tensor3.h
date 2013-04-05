@@ -43,6 +43,7 @@
 #define Intrepid_MiniTensor_Tensor3_h
 
 #include "Intrepid_MiniTensor_Tensor.h"
+#include "Teuchos_ArrayRCP.hpp"
 
 namespace Intrepid {
 
@@ -53,6 +54,11 @@ namespace Intrepid {
   class Tensor3
   {
   public:
+
+    ///
+    /// Component type
+    ///
+    typedef T type;
 
     ///
     /// Default constructor
@@ -139,6 +145,13 @@ namespace Intrepid {
     void
     clear();
 
+    ///
+    /// Tensor order
+    ///
+    static
+    Index
+    order() {return 3U;};
+
   private:
 
     ///
@@ -150,7 +163,7 @@ namespace Intrepid {
     ///
     /// Tensor components
     ///
-    T *
+    Teuchos::ArrayRCP<T>
     e;
 
   };
@@ -161,9 +174,9 @@ namespace Intrepid {
   /// \param B 3rd-order tensor
   /// \return \f$ A + B \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  operator+(Tensor3<T> const & A, Tensor3<T> const & B);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  operator+(Tensor3<S> const & A, Tensor3<T> const & B);
 
   ///
   /// 3rd-order tensor substraction
@@ -171,9 +184,9 @@ namespace Intrepid {
   /// \param B 3rd-order tensor
   /// \return \f$ A - B \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  operator-(Tensor3<T> const & A, Tensor3<T> const & B);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  operator-(Tensor3<S> const & A, Tensor3<T> const & B);
 
   ///
   /// 3rd-order tensor minus
@@ -205,8 +218,8 @@ namespace Intrepid {
   /// \param A 3rd-order tensor
   /// \return \f$ s A \f$
   ///
-  template<typename T, typename S>
-  Tensor3<T>
+  template<typename S, typename T>
+  typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
   operator*(S const & s, Tensor3<T> const & A);
 
   ///
@@ -215,8 +228,8 @@ namespace Intrepid {
   /// \param s scalar
   /// \return \f$ s A \f$
   ///
-  template<typename T, typename S>
-  Tensor3<T>
+  template<typename S, typename T>
+  typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
   operator*(Tensor3<T> const & A, S const & s);
 
   ///
@@ -225,8 +238,8 @@ namespace Intrepid {
   /// \param s scalar
   /// \return \f$ A / s \f$
   ///
-  template<typename T, typename S>
-  Tensor3<T>
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
   operator/(Tensor3<T> const & A, S const & s);
 
   ///
@@ -235,9 +248,9 @@ namespace Intrepid {
   /// \param u vector
   /// \return \f$ C = A \cdot u := C_{ij} = A_{ijp} u_p \f$
   ///
-  template<typename T>
-  Tensor<T>
-  dot(Tensor3<T> const & A, Vector<T> const & u);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dot(Tensor3<T> const & A, Vector<S> const & u);
 
   ///
   /// vector 3rd-order tensor product
@@ -245,9 +258,9 @@ namespace Intrepid {
   /// \param u vector
   /// \return \f$ C = u \cdot A := C_{ij} = u_p A{pij} \f$
   ///
-  template<typename T>
-  Tensor<T>
-  dot(Vector<T> const & u, Tensor3<T> const & A);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dot(Vector<S> const & u, Tensor3<T> const & A);
 
   ///
   /// 3rd-order tensor vector product
@@ -255,9 +268,9 @@ namespace Intrepid {
   /// \param u vector
   /// \return \f$ C = A \cdot u := C_{ij} = A_{ipj} u_p \f$
   ///
-  template<typename T>
-  Tensor<T>
-  dot2(Tensor3<T> const & A, Vector<T> const & u);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dot2(Tensor3<T> const & A, Vector<S> const & u);
 
   ///
   /// vector 3rd-order tensor product
@@ -265,9 +278,9 @@ namespace Intrepid {
   /// \param A 3rd-order tensor
   /// \return \f$ C = u \cdot A := C_{ij} = u_p A_{ipj} \f$
   ///
-  template<typename T>
-  Tensor<T>
-  dot2(Vector<T> const & u, Tensor3<T> const & A);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dot2(Vector<S> const & u, Tensor3<T> const & A);
 
   ///
   /// 3rd-order tensor 2nd-order tensor product
@@ -275,9 +288,9 @@ namespace Intrepid {
   /// \param B 2nd-order tensor
   /// \return \f$ C = A \cdot B := C_{ijk} = A_{ijp} B_{pk} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot(Tensor3<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot(Tensor3<T> const & A, Tensor<S> const & B);
 
   ///
   /// 2nd-order tensor 3rd-order tensor product
@@ -285,9 +298,9 @@ namespace Intrepid {
   /// \param B 3rd-order tensor
   /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{pjk} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot(Tensor<T> const & A, Tensor3<T> const & B);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot(Tensor<S> const & A, Tensor3<T> const & B);
 
   ///
   /// 3rd-order tensor 2nd-order tensor product
@@ -295,9 +308,9 @@ namespace Intrepid {
   /// \param B 2nd-order tensor
   /// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot2(Tensor3<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot2(Tensor3<T> const & A, Tensor<S> const & B);
 
   ///
   /// 2nd-order tensor 3rd-order tensor product
@@ -305,9 +318,9 @@ namespace Intrepid {
   /// \param B 3rd-order tensor
   /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot2(Tensor<T> const & A, Tensor3<T> const & B);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot2(Tensor<S> const & A, Tensor3<T> const & B);
 
   ///
   /// 3rd-order tensor input

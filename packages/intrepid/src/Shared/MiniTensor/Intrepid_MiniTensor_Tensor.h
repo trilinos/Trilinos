@@ -50,6 +50,7 @@
 #include <boost/tuple/tuple.hpp>
 
 #include "Intrepid_MiniTensor_Vector.h"
+#include "Teuchos_ArrayRCP.hpp"
 
 namespace Intrepid {
 
@@ -60,6 +61,11 @@ namespace Intrepid {
   class Tensor
   {
   public:
+
+    ///
+    /// Component type
+    ///
+    typedef T type;
 
     ///
     /// Default constructor
@@ -176,6 +182,13 @@ namespace Intrepid {
     void
     clear();
 
+    ///
+    /// Tensor order
+    ///
+    static
+    Index
+    order() {return 2U;};
+
   private:
 
     ///
@@ -187,7 +200,7 @@ namespace Intrepid {
     ///
     /// Tensor components
     ///
-    T *
+    Teuchos::ArrayRCP<T>
     e;
 
   };
@@ -196,17 +209,17 @@ namespace Intrepid {
   /// Tensor addition
   /// \return \f$ A + B \f$
   ///
-  template<typename T>
-  Tensor<T>
-  operator+(Tensor<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  operator+(Tensor<S> const & A, Tensor<T> const & B);
 
   ///
   /// Tensor substraction
   /// \return \f$ A - B \f$
   ///
-  template<typename T>
-  Tensor<T>
-  operator-(Tensor<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  operator-(Tensor<S> const & A, Tensor<T> const & B);
 
   ///
   /// Tensor minus
@@ -235,13 +248,41 @@ namespace Intrepid {
   operator!=(Tensor<T> const & A, Tensor<T> const & B);
 
   ///
+  /// Tensor vector product v = A u
+  /// \param A tensor
+  /// \param u vector
+  /// \return \f$ A u \f$
+  ///
+  template<typename S, typename T>
+  Vector<typename Promote<S, T>::type>
+  operator*(Tensor<T> const & A, Vector<S> const & u);
+
+  ///
+  /// Vector tensor product v = u A
+  /// \param A tensor
+  /// \param u vector
+  /// \return \f$ u A = A^T u \f$
+  ///
+  template<typename S, typename T>
+  Vector<typename Promote<S, T>::type>
+  operator*(Vector<S> const & u, Tensor<T> const & A);
+
+  ///
+  /// Tensor dot product C = A B
+  /// \return \f$ A \cdot B \f$
+  ///
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  operator*(Tensor<S> const & A, Tensor<T> const & B);
+
+  ///
   /// Scalar tensor product
   /// \param s scalar
   /// \param A tensor
   /// \return \f$ s A \f$
   ///
-  template<typename T, typename S>
-  Tensor<T>
+  template<typename S, typename T>
+  typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
   operator*(S const & s, Tensor<T> const & A);
 
   ///
@@ -250,8 +291,8 @@ namespace Intrepid {
   /// \param s scalar
   /// \return \f$ s A \f$
   ///
-  template<typename T, typename S>
-  Tensor<T>
+  template<typename S, typename T>
+  typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
   operator*(Tensor<T> const & A, S const & s);
 
   ///
@@ -260,19 +301,39 @@ namespace Intrepid {
   /// \param s scalar
   /// \return \f$ A / s \f$
   ///
-  template<typename T, typename S>
-  Tensor<T>
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
   operator/(Tensor<T> const & A, S const & s);
 
   ///
+  /// Tensor input
+  /// \param A tensor
+  /// \param is input stream
+  /// \return is input stream
+  ///
+  template<typename T>
+  std::istream &
+  operator>>(std::istream & is, Tensor<T> & A);
+
+  ///
+  /// Tensor output
+  /// \param A tensor
+  /// \param os output stream
+  /// \return os output stream
+  ///
+  template<typename T>
+  std::ostream &
+  operator<<(std::ostream & os, Tensor<T> const & A);
+
+  ///
   /// Tensor vector product v = A u
   /// \param A tensor
   /// \param u vector
   /// \return \f$ A u \f$
   ///
-  template<typename T>
-  Vector<T>
-  dot(Tensor<T> const & A, Vector<T> const & u);
+  template<typename S, typename T>
+  Vector<typename Promote<S, T>::type>
+  dot(Tensor<T> const & A, Vector<S> const & u);
 
   ///
   /// Vector tensor product v = u A
@@ -280,37 +341,9 @@ namespace Intrepid {
   /// \param u vector
   /// \return \f$ u A = A^T u \f$
   ///
-  template<typename T>
-  Vector<T>
-  dot(Vector<T> const & u, Tensor<T> const & A);
-
-  ///
-  /// Tensor vector product v = A u
-  /// \param A tensor
-  /// \param u vector
-  /// \return \f$ A u \f$
-  ///
-  template<typename T>
-  Vector<T>
-  operator*(Tensor<T> const & A, Vector<T> const & u);
-
-  ///
-  /// Vector tensor product v = u A
-  /// \param A tensor
-  /// \param u vector
-  /// \return \f$ u A = A^T u \f$
-  ///
-  template<typename T>
-  Vector<T>
-  operator*(Vector<T> const & u, Tensor<T> const & A);
-
-  ///
-  /// Tensor dot product C = A B
-  /// \return \f$ A \cdot B \f$
-  ///
-  template<typename T>
-  Tensor<T>
-  operator*(Tensor<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Vector<typename Promote<S, T>::type>
+  dot(Vector<S> const & u, Tensor<T> const & A);
 
   ///
   /// Tensor tensor product C = A B
@@ -318,9 +351,9 @@ namespace Intrepid {
   /// \param B tensor
   /// \return a tensor \f$ A \cdot B \f$
   ///
-  template<typename T>
-  Tensor<T>
-  dot(Tensor<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dot(Tensor<S> const & A, Tensor<T> const & B);
 
   ///
   /// Tensor tensor product C = A^T B
@@ -328,9 +361,9 @@ namespace Intrepid {
   /// \param B tensor
   /// \return a tensor \f$ A^T \cdot B \f$
   ///
-  template<typename T>
-  Tensor<T>
-  t_dot(Tensor<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  t_dot(Tensor<S> const & A, Tensor<T> const & B);
 
   ///
   /// Tensor tensor product C = A B^T
@@ -338,9 +371,9 @@ namespace Intrepid {
   /// \param B tensor
   /// \return a tensor \f$ A \cdot B^T \f$
   ///
-  template<typename T>
-  Tensor<T>
-  dot_t(Tensor<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dot_t(Tensor<S> const & A, Tensor<T> const & B);
 
   ///
   /// Tensor tensor product C = A^T B^T
@@ -348,9 +381,9 @@ namespace Intrepid {
   /// \param B tensor
   /// \return a tensor \f$ A^T \cdot B^T \f$
   ///
-  template<typename T>
-  Tensor<T>
-  t_dot_t(Tensor<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  t_dot_t(Tensor<S> const & A, Tensor<T> const & B);
 
   ///
   /// Tensor tensor double dot product (contraction)
@@ -358,9 +391,9 @@ namespace Intrepid {
   /// \param B tensor
   /// \return a scalar \f$ A : B \f$
   ///
-  template<typename T>
-  T
-  dotdot(Tensor<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  typename Promote<S, T>::type
+  dotdot(Tensor<S> const & A, Tensor<T> const & B);
 
   ///
   /// Dyad
@@ -368,9 +401,9 @@ namespace Intrepid {
   /// \param v vector
   /// \return \f$ u \otimes v \f$
   ///
-  template<typename T>
-  Tensor<T>
-  dyad(Vector<T> const & u, Vector<T> const & v);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dyad(Vector<S> const & u, Vector<T> const & v);
 
   ///
   /// Bun operator, just for Jay
@@ -378,9 +411,9 @@ namespace Intrepid {
   /// \param v vector
   /// \return \f$ u \otimes v \f$
   ///
-  template<typename T>
-  Tensor<T>
-  bun(Vector<T> const & u, Vector<T> const & v);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  bun(Vector<S> const & u, Vector<T> const & v);
 
   ///
   /// Tensor product
@@ -388,9 +421,9 @@ namespace Intrepid {
   /// \param v vector
   /// \return \f$ u \otimes v \f$
   ///
-  template<typename T>
-  Tensor<T>
-  tensor(Vector<T> const & u, Vector<T> const & v);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  tensor(Vector<S> const & u, Vector<T> const & v);
 
   ///
   /// Diagonal tensor from vector
@@ -471,26 +504,6 @@ namespace Intrepid {
   template<typename T>
   Tensor<T>
   skew(Vector<T> const & u);
-
-  ///
-  /// Tensor input
-  /// \param A tensor
-  /// \param is input stream
-  /// \return is input stream
-  ///
-  template<typename T>
-  std::istream &
-  operator>>(std::istream & is, Tensor<T> & A);
-
-  ///
-  /// Tensor output
-  /// \param A tensor
-  /// \param os output stream
-  /// \return os output stream
-  ///
-  template<typename T>
-  std::ostream &
-  operator<<(std::ostream & os, Tensor<T> const & A);
 
 } // namespace Intrepid
 

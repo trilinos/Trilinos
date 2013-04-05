@@ -45,8 +45,8 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <iterator>
 
-namespace {
-
+namespace Tpetra {
+namespace Details {
   // \fn sortAndMergeIn
   // \brief Sort and merge newEntries into allEntries, and make unique.
   //
@@ -306,7 +306,6 @@ namespace {
       using Teuchos::ArrayView;
       using Teuchos::as;
       typedef global_ordinal_type GO;
-      typedef typename Array<GO>::iterator iter_type;
       typedef typename Array<GO>::size_type size_type;
 
       Array<GO> allInds (0); // will resize below
@@ -433,7 +432,8 @@ namespace {
 
     void
     describe (Teuchos::FancyOStream& out,
-              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const
     {
       using std::endl;
       using Teuchos::Array;
@@ -574,8 +574,6 @@ namespace {
       using Teuchos::Array;
       using Teuchos::Range1D;
       using Teuchos::RCP;
-      typedef global_ordinal_type GO;
-      typedef scalar_type ST;
 
       const size_t oldNumColumns = numCols_;
       if (newNumColumns == oldNumColumns) {
@@ -879,7 +877,8 @@ namespace {
       return allNonlocals;
     }
   };
-} // namespace (anonymous)
+} // namespace Details
+} // namespace Tpetra
 
 namespace Tpetra {
 
@@ -1051,7 +1050,7 @@ namespace Tpetra {
     ///
     /// We separate this to facilitate experimentation with different
     /// storage formats.
-    MultiVectorFillerData2<MV> data_;
+    Tpetra::Details::MultiVectorFillerData2<MV> data_;
 
     typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
     Teuchos::RCP<export_type> exporter_;
@@ -1124,7 +1123,6 @@ namespace Tpetra {
     using Teuchos::Range1D;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef global_ordinal_type GO;
 
     const size_t numVecs = X_out.getNumVectors();
 

@@ -25,7 +25,6 @@
         <Parameter name="Operator" type="string" value="Shift-Invert"/>
         <Parameter name="Num Blocks" type="int" value="3"/>
         <Parameter name="Num Eigenvalues" type="int" value="1"/>
-        <Parameter name="Save Eigenvectors" type="int" value="1"/>
         <Parameter name="Block Size" type="int" value="1"/>
         <Parameter name="Maximum Restarts" type="int" value="0"/>
         <Parameter name="Shift" type="double" value="8.0001"/>
@@ -149,6 +148,9 @@
         <Parameter name="Verbosity Level" type="string" value="medium"/>
       </ParameterList>
     </ParameterList>
+  </ParameterList>
+  <ParameterList name="Save Eigen Data Strategy">
+    <Parameter name="Save Eigenvectors" type="int" value="1"/>
   </ParameterList>
 </ParameterList>
 

@@ -262,15 +262,15 @@ namespace Teuchos
     class MagValue {
     public:
       void
-      blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const; 
+      blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const;
     };
 
-    // Complex-arithmetic specialization. 
+    // Complex-arithmetic specialization.
     template<typename ScalarType>
     class MagValue<ScalarType, true> {
     public:
       void
-      blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const; 
+      blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const;
     };
 
     // Real-arithmetic specialization.
@@ -280,7 +280,7 @@ namespace Teuchos
       void
       blas_dabs1(const ScalarType* a, ScalarType* ret) const;
     };
- 
+
     template<typename ScalarType, bool isComplex>
     class GivensRotator {
     public:
@@ -480,18 +480,18 @@ namespace Teuchos
 
     // Real-valued implementation of MagValue
     template<typename ScalarType>
-    void 
+    void
     MagValue<ScalarType, false>::
-    blas_dabs1(const ScalarType* a, ScalarType* ret) const 
+    blas_dabs1(const ScalarType* a, ScalarType* ret) const
     {
-      *ret = Teuchos::ScalarTraits<ScalarType>::magnitude( *a );  
+      *ret = Teuchos::ScalarTraits<ScalarType>::magnitude( *a );
     }
 
     // Complex-valued implementation of MagValue
     template<typename ScalarType>
-    void 
+    void
     MagValue<ScalarType, true>::
-    blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const 
+    blas_dabs1(const ScalarType* a, typename ScalarTraits<ScalarType>::magnitudeType* ret) const
     {
       *ret = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(a->real());
       *ret += ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::magnitude(a->imag());
@@ -618,7 +618,7 @@ namespace Teuchos
         result += temp;
         ix += incx;
       }
-   
+
     return result;
   } /* end ASUM */
 
@@ -680,7 +680,7 @@ namespace Teuchos
 
     if ( n < ione || incx < ione )
       return result;
-  
+
     details::MagValue<ScalarType, ScalarTraits<ScalarType>::isComplex> mval;
 
     mval.blas_dabs1( &x[ix], &maxval );
@@ -1129,9 +1129,6 @@ namespace Teuchos
   template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
   void DefaultBLASImpl<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const
   {
-
-    typedef TypeNameTraits<OrdinalType> OTNT;
-    typedef TypeNameTraits<ScalarType> STNT;
 
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     alpha_type alpha_zero = ScalarTraits<alpha_type>::zero();

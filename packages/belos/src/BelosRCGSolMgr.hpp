@@ -565,7 +565,7 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
       params_->set("Timer Label", label_);
       std::string solveLabel = label_ + ": RCGSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+      timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
     }
   }
@@ -676,7 +676,7 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
   if (timerSolve_ == Teuchos::null) {
     std::string solveLabel = label_ + ": RCGSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+    timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
   }
 

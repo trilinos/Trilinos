@@ -50,7 +50,7 @@
 /*!   \class Belos::ICGSOrthoManager
       \brief An implementation of the Belos::MatOrthoManager that performs orthogonalization
       using multiple steps of classical Gram-Schmidt.
-      
+
       \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
@@ -85,19 +85,19 @@ namespace Belos {
     // Documentation will be embedded in the parameter list.
     const int defaultMaxNumOrthogPasses = 2;
     const magnitude_type eps = STM::eps();
-    const magnitude_type defaultBlkTol = 
+    const magnitude_type defaultBlkTol =
       as<magnitude_type> (10) * STM::squareroot (eps);
     const magnitude_type defaultSingTol = as<magnitude_type> (10) * eps;
 
-    Teuchos::RCP<Teuchos::ParameterList> params = 
+    Teuchos::RCP<Teuchos::ParameterList> params =
       Teuchos::parameterList ("ICGS");
     params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
                  "Maximum number of orthogonalization passes "
                  "(includes the first).  Default is 2, since "
                  "\"twice is enough\" for Krylov methods.");
-    params->set ("blkTol", defaultBlkTol, 
+    params->set ("blkTol", defaultBlkTol,
                  "Block reorthogonalization threshhold.");
-    params->set ("singTol", defaultSingTol, 
+    params->set ("singTol", defaultSingTol,
                  "Singular block detection threshold.");
     return params;
   }
@@ -175,17 +175,17 @@ namespace Belos {
       }
 
       try {
-	_blkTol = params->get<magnitude_type> ("blkTol");
-	if (_blkTol < zero)
-	  _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+        _blkTol = params->get<magnitude_type> ("blkTol");
+        if (_blkTol < zero)
+          _blkTol = defaultParams->get<magnitude_type> ("blkTol");
       } catch (Teuchos::Exceptions::InvalidParameter&) {
-	try {
-	  // People may have used depTol instead of blkTol for this
-	  // parameter's name, by analogy with DGKS.
-	  _blkTol = params->get<magnitude_type> ("depTol");
-	} catch (Teuchos::Exceptions::InvalidParameter&) {
-	  _blkTol = defaultParams->get<magnitude_type> ("blkTol");
-	}
+        try {
+          // People may have used depTol instead of blkTol for this
+          // parameter's name, by analogy with DGKS.
+          _blkTol = params->get<magnitude_type> ("depTol");
+        } catch (Teuchos::Exceptions::InvalidParameter&) {
+          _blkTol = defaultParams->get<magnitude_type> ("blkTol");
+        }
       }
 
       try {
@@ -203,8 +203,8 @@ namespace Belos {
 
 
   template<class ScalarType, class MV, class OP>
-  class ICGSOrthoManager : 
-    public MatOrthoManager<ScalarType,MV,OP>, 
+  class ICGSOrthoManager :
+    public MatOrthoManager<ScalarType,MV,OP>,
     public Teuchos::ParameterListAcceptorDefaultBase
   {
   private:
@@ -217,7 +217,7 @@ namespace Belos {
 
   public:
     //! @name Constructor/Destructor
-    //@{ 
+    //@{
 
     //! Constructor specifying re-orthogonalization tolerance.
     ICGSOrthoManager( const std::string& label = "Belos",
@@ -225,7 +225,7 @@ namespace Belos {
                       const int max_ortho_steps = 2,
                       const MagnitudeType blk_tol = 10*MGT::squareroot( MGT::eps() ),
                       const MagnitudeType sing_tol = 10*MGT::eps() )
-      : MatOrthoManager<ScalarType,MV,OP>(Op), 
+      : MatOrthoManager<ScalarType,MV,OP>(Op),
       max_ortho_steps_( max_ortho_steps ),
       blk_tol_( blk_tol ),
       sing_tol_( sing_tol ),
@@ -233,24 +233,24 @@ namespace Belos {
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       std::string orthoLabel = label_ + ": Orthogonalization";
-      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
 
       std::string updateLabel = label_ + ": Ortho (Update)";
-      timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
 
       std::string normLabel = label_ + ": Ortho (Norm)";
-      timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
 
       std::string ipLabel = label_ + ": Ortho (Inner Product)";
-      timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
 #endif
     }
 
     //! Constructor that takes a list of parameters.
     ICGSOrthoManager (const Teuchos::RCP<Teuchos::ParameterList>& plist,
-		      const std::string& label = "Belos",
+                      const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null) :
-      MatOrthoManager<ScalarType,MV,OP>(Op), 
+      MatOrthoManager<ScalarType,MV,OP>(Op),
       max_ortho_steps_ (2),
       blk_tol_ (10 * MGT::squareroot (MGT::eps())),
       sing_tol_ (10 * MGT::eps()),
@@ -260,16 +260,16 @@ namespace Belos {
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       std::string orthoLabel = label_ + ": Orthogonalization";
-      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
 
       std::string updateLabel = label_ + ": Ortho (Update)";
-      timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
 
       std::string normLabel = label_ + ": Ortho (Norm)";
-      timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
 
       std::string ipLabel = label_ + ": Ortho (Inner Product)";
-      timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
 #endif
     }
 
@@ -278,9 +278,9 @@ namespace Belos {
     //@}
 
     //! @name Implementation of Teuchos::ParameterListAcceptorDefaultBase interface
-    //@{ 
+    //@{
 
-    void 
+    void
     setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
       using Teuchos::Exceptions::InvalidParameterName;
@@ -291,16 +291,16 @@ namespace Belos {
       RCP<const ParameterList> defaultParams = getValidParameters();
       RCP<ParameterList> params;
       if (plist.is_null()) {
-	params = parameterList (*defaultParams);
+        params = parameterList (*defaultParams);
       } else {
-	params = plist;
-	// Some users might want to specify "blkTol" as "depTol".  Due
-	// to this case, we don't invoke
-	// validateParametersAndSetDefaults on params.  Instead, we go
-	// through the parameter list one parameter at a time and look
-	// for alternatives.
+        params = plist;
+        // Some users might want to specify "blkTol" as "depTol".  Due
+        // to this case, we don't invoke
+        // validateParametersAndSetDefaults on params.  Instead, we go
+        // through the parameter list one parameter at a time and look
+        // for alternatives.
       }
-	
+
       // Using temporary variables and fetching all values before
       // setting the output arguments ensures the strong exception
       // guarantee for this function: if an exception is thrown, no
@@ -311,10 +311,10 @@ namespace Belos {
       MagnitudeType singTol;
 
       try {
-	maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
+        maxNumOrthogPasses = params->get<int> ("maxNumOrthogPasses");
       } catch (InvalidParameterName&) {
-	maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
-	params->set ("maxNumOrthogPasses", maxNumOrthogPasses);
+        maxNumOrthogPasses = defaultParams->get<int> ("maxNumOrthogPasses");
+        params->set ("maxNumOrthogPasses", maxNumOrthogPasses);
       }
 
       // Handling of the "blkTol" parameter is a special case.  This
@@ -325,24 +325,24 @@ namespace Belos {
       // first check the user's parameter list for both names, and
       // only then access the default parameter list.
       try {
-	blkTol = params->get<MagnitudeType> ("blkTol");
+        blkTol = params->get<MagnitudeType> ("blkTol");
       } catch (InvalidParameterName&) {
-	try {
-	  blkTol = params->get<MagnitudeType> ("depTol");
-	  // "depTol" is the wrong name, so remove it and replace with
-	  // "blkTol".  We'll set "blkTol" below.
-	  params->remove ("depTol");
-	} catch (InvalidParameterName&) {
-	  blkTol = defaultParams->get<MagnitudeType> ("blkTol");
-	}
-	params->set ("blkTol", blkTol);
+        try {
+          blkTol = params->get<MagnitudeType> ("depTol");
+          // "depTol" is the wrong name, so remove it and replace with
+          // "blkTol".  We'll set "blkTol" below.
+          params->remove ("depTol");
+        } catch (InvalidParameterName&) {
+          blkTol = defaultParams->get<MagnitudeType> ("blkTol");
+        }
+        params->set ("blkTol", blkTol);
       }
 
       try {
-	singTol = params->get<MagnitudeType> ("singTol");
+        singTol = params->get<MagnitudeType> ("singTol");
       } catch (InvalidParameterName&) {
-	singTol = defaultParams->get<MagnitudeType> ("singTol");
-	params->set ("singTol", singTol);
+        singTol = defaultParams->get<MagnitudeType> ("singTol");
+        params->set ("singTol", singTol);
       }
 
       max_ortho_steps_ = maxNumOrthogPasses;
@@ -352,7 +352,7 @@ namespace Belos {
       setMyParamList (params);
     }
 
-    Teuchos::RCP<const Teuchos::ParameterList> 
+    Teuchos::RCP<const Teuchos::ParameterList>
     getValidParameters () const
     {
       using Teuchos::as;
@@ -361,25 +361,25 @@ namespace Belos {
       using Teuchos::RCP;
 
       if (defaultParams_.is_null()) {
-	RCP<ParameterList> params = parameterList ("ICGS");
+        RCP<ParameterList> params = parameterList ("ICGS");
 
-	// Default parameter values for ICGS orthogonalization.
-	// Documentation will be embedded in the parameter list.
-	const int defaultMaxNumOrthogPasses = 2;
-	const MagnitudeType eps = MGT::eps();
-	const MagnitudeType defaultBlkTol = 
-	  as<MagnitudeType> (10) * MGT::squareroot (eps);
-	const MagnitudeType defaultSingTol = as<MagnitudeType> (10) * eps;
+        // Default parameter values for ICGS orthogonalization.
+        // Documentation will be embedded in the parameter list.
+        const int defaultMaxNumOrthogPasses = 2;
+        const MagnitudeType eps = MGT::eps();
+        const MagnitudeType defaultBlkTol =
+          as<MagnitudeType> (10) * MGT::squareroot (eps);
+        const MagnitudeType defaultSingTol = as<MagnitudeType> (10) * eps;
 
-	params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
-		     "Maximum number of orthogonalization passes (includes the "
-		     "first).  Default is 2, since \"twice is enough\" for Krylov "
-		     "methods.");
-	params->set ("blkTol", defaultBlkTol, "Block reorthogonalization "
-		     "threshhold.");
-	params->set ("singTol", defaultSingTol, "Singular block detection "
-		     "threshold.");
-	defaultParams_ = params;
+        params->set ("maxNumOrthogPasses", defaultMaxNumOrthogPasses,
+                     "Maximum number of orthogonalization passes (includes the "
+                     "first).  Default is 2, since \"twice is enough\" for Krylov "
+                     "methods.");
+        params->set ("blkTol", defaultBlkTol, "Block reorthogonalization "
+                     "threshhold.");
+        params->set ("singTol", defaultSingTol, "Singular block detection "
+                     "threshold.");
+        defaultParams_ = params;
       }
       return defaultParams_;
     }
@@ -389,8 +389,8 @@ namespace Belos {
     ///
     /// Use this parameter list when you care more about speed than
     /// accuracy of the orthogonalization.
-    Teuchos::RCP<const Teuchos::ParameterList> 
-    getFastParameters () const 
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getFastParameters () const
     {
       using Teuchos::as;
       using Teuchos::ParameterList;
@@ -413,106 +413,106 @@ namespace Belos {
     }
 
     //! @name Accessor routines
-    //@{ 
+    //@{
 
     //! Set parameter for block re-orthogonalization threshhold.
-    void setBlkTol( const MagnitudeType blk_tol ) { 
+    void setBlkTol( const MagnitudeType blk_tol ) {
       // Update the parameter list as well.
       Teuchos::RCP<Teuchos::ParameterList> params = getNonconstParameterList();
       if (! params.is_null()) {
-	// If it's null, then we haven't called setParameterList()
-	// yet.  It's entirely possible to construct the parameter
-	// list on demand, so we don't try to create the parameter
-	// list here.
-	params->set ("blkTol", blk_tol);
+        // If it's null, then we haven't called setParameterList()
+        // yet.  It's entirely possible to construct the parameter
+        // list on demand, so we don't try to create the parameter
+        // list here.
+        params->set ("blkTol", blk_tol);
       }
-      blk_tol_ = blk_tol; 
+      blk_tol_ = blk_tol;
     }
 
     //! Set parameter for singular block detection.
-    void setSingTol( const MagnitudeType sing_tol ) { 
+    void setSingTol( const MagnitudeType sing_tol ) {
       // Update the parameter list as well.
       Teuchos::RCP<Teuchos::ParameterList> params = getNonconstParameterList();
       if (! params.is_null()) {
-	// If it's null, then we haven't called setParameterList()
-	// yet.  It's entirely possible to construct the parameter
-	// list on demand, so we don't try to create the parameter
-	// list here.
-	params->set ("singTol", sing_tol);
+        // If it's null, then we haven't called setParameterList()
+        // yet.  It's entirely possible to construct the parameter
+        // list on demand, so we don't try to create the parameter
+        // list here.
+        params->set ("singTol", sing_tol);
       }
-      sing_tol_ = sing_tol; 
+      sing_tol_ = sing_tol;
     }
 
     //! Return parameter for block re-orthogonalization threshhold.
-    MagnitudeType getBlkTol() const { return blk_tol_; } 
+    MagnitudeType getBlkTol() const { return blk_tol_; }
 
     //! Return parameter for singular block detection.
-    MagnitudeType getSingTol() const { return sing_tol_; } 
+    MagnitudeType getSingTol() const { return sing_tol_; }
 
-    //@} 
+    //@}
 
 
     //! @name Orthogonalization methods
-    //@{ 
+    //@{
 
     /*! \brief Given a list of (mutually and internally) orthonormal bases \c Q, this method
-     * takes a multivector \c X and projects it onto the space orthogonal to the individual <tt>Q[i]</tt>, 
+     * takes a multivector \c X and projects it onto the space orthogonal to the individual <tt>Q[i]</tt>,
      * optionally returning the coefficients of \c X for the individual <tt>Q[i]</tt>. All of this is done with respect
      * to the inner product innerProd().
      *
      * After calling this routine, \c X will be orthogonal to each of the \c <tt>Q[i]</tt>.
      *
-     * The method uses either one or two steps of classical Gram-Schmidt. The algebraically 
+     * The method uses either one or two steps of classical Gram-Schmidt. The algebraically
      * equivalent projection matrix is \f$P_Q = I - Q Q^H Op\f$, if \c Op is the matrix specified for
      * use in the inner product. Note, this is not an orthogonal projector.
      *
      @param X [in/out] The multivector to be modified.
        On output, \c X will be orthogonal to <tt>Q[i]</tt> with respect to innerProd().
 
-     @param MX [in/out] The image of \c X under the operator \c Op. 
+     @param MX [in/out] The image of \c X under the operator \c Op.
        If \f$ MX != 0\f$: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
 
-     @param C [out] The coefficients of \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
+     @param C [out] The coefficients of \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer
        and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
+       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of
        \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
        pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
 
      @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
      orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
     */
-    void project ( MV &X, Teuchos::RCP<MV> MX, 
-                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+    void project ( MV &X, Teuchos::RCP<MV> MX,
+                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
 
     /*! \brief This method calls project(X,Teuchos::null,C,Q); see documentation for that function.
     */
-    void project ( MV &X, 
-                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+    void project ( MV &X,
+                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
       project(X,Teuchos::null,C,Q);
     }
 
 
- 
+
     /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
      *
      * The method uses classical Gram-Schmidt, so that the coefficient matrix \c B is upper triangular.
      *
-     * This routine returns an integer \c rank stating the rank of the computed basis. If \c X does not have full rank and the normalize() routine does 
-     * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of 
+     * This routine returns an integer \c rank stating the rank of the computed basis. If \c X does not have full rank and the normalize() routine does
+     * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of
      * output \c X and first \c rank rows of \c B will be valid.
-     *  
-     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependant 
-     * vectors in \c X with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the 
+     *
+     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependant
+     * vectors in \c X with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the
      * computed basis is less than the number of vectors in \c X.
      *
-     @param X [in/out] The multivector to the modified. 
+     @param X [in/out] The multivector to the modified.
        On output, \c X will have some number of orthonormal columns (with respect to innerProd()).
 
-     @param MX [in/out] The image of \c X under the operator \c Op. 
+     @param MX [in/out] The image of \c X under the operator \c Op.
        If \f$ MX != 0\f$: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
 
@@ -521,7 +521,7 @@ namespace Belos {
 
      @return Rank of the basis computed by this method.
     */
-    int normalize ( MV &X, Teuchos::RCP<MV> MX, 
+    int normalize ( MV &X, Teuchos::RCP<MV> MX,
                     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B) const;
 
 
@@ -534,19 +534,19 @@ namespace Belos {
 
     /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
      *
-     *  This routine returns an integer \c rank stating the rank of the computed basis. If the subspace \f$colspan(X) - \sum_i colspan(Q[i])\f$ does not 
-     *  have dimension as large as the number of columns of \c X and the orthogonalization manager doe not attempt to augment the subspace, then \c rank 
-     *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will 
+     *  This routine returns an integer \c rank stating the rank of the computed basis. If the subspace \f$colspan(X) - \sum_i colspan(Q[i])\f$ does not
+     *  have dimension as large as the number of columns of \c X and the orthogonalization manager doe not attempt to augment the subspace, then \c rank
+     *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will
      *  be valid.
      *
-     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependant 
-     * vectors with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the 
+     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependant
+     * vectors with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the
      * computed basis is less than the number of vectors in \c X.
      *
-     @param X [in/out] The multivector to the modified. 
+     @param X [in/out] The multivector to the modified.
        On output, the relevant rows of \c X will be orthogonal to the <tt>Q[i]</tt> and will have orthonormal columns (with respect to innerProd()).
 
-     @param MX [in/out] The image of \c X under the operator \c Op. 
+     @param MX [in/out] The image of \c X under the operator \c Op.
        If \f$ MX != 0\f$: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
 
@@ -573,16 +573,16 @@ namespace Belos {
 
      @return Rank of the basis computed by this method.
     */
-    int projectAndNormalize ( MV &X, Teuchos::RCP<MV> MX, 
-                              Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                              Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
+    int projectAndNormalize ( MV &X, Teuchos::RCP<MV> MX,
+                              Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                              Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
                               Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
     /*! \brief This method calls projectAndNormalize(X,Teuchos::null,C,B,Q); see documentation for that function.
     */
-    int projectAndNormalize ( MV &X, 
-                              Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                              Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
+    int projectAndNormalize ( MV &X,
+                              Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                              Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
                               Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const {
       return projectAndNormalize(X,Teuchos::null,C,B,Q);
     }
@@ -590,12 +590,12 @@ namespace Belos {
     //@}
 
     //! @name Error methods
-    //@{ 
+    //@{
 
     /*! \brief This method computes the error in orthonormality of a multivector, measured
      * as the Frobenius norm of the difference <tt>innerProd(X,Y) - I</tt>.
      */
-    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     orthonormError(const MV &X) const {
       return orthonormError(X,Teuchos::null);
     }
@@ -604,13 +604,13 @@ namespace Belos {
      * as the Frobenius norm of the difference <tt>innerProd(X,Y) - I</tt>.
      *  The method has the option of exploiting a caller-provided \c MX.
      */
-    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     orthonormError(const MV &X, Teuchos::RCP<const MV> MX) const;
 
     /*! \brief This method computes the error in orthogonality of two multivectors, measured
      * as the Frobenius norm of <tt>innerProd(X,Y)</tt>.
      */
-    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     orthogError(const MV &X1, const MV &X2) const {
       return orthogError(X1,Teuchos::null,X2);
     }
@@ -619,7 +619,7 @@ namespace Belos {
      * as the Frobenius norm of <tt>innerProd(X,Y)</tt>.
      *  The method has the option of exploiting a caller-provided \c MX.
      */
-    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     orthogError(const MV &X1, Teuchos::RCP<const MV> MX1, const MV &X2) const;
 
     //@}
@@ -638,7 +638,7 @@ namespace Belos {
     //@}
 
   private:
-    //! Max number of (re)orthogonalization steps, including the first.    
+    //! Max number of (re)orthogonalization steps, including the first.
     int max_ortho_steps_;
     //! Block reorthogonalization threshold.
     MagnitudeType blk_tol_;
@@ -648,26 +648,26 @@ namespace Belos {
     //! Label for timers.
     std::string label_;
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::RCP<Teuchos::Time> timerOrtho_, timerUpdate_, 
+    Teuchos::RCP<Teuchos::Time> timerOrtho_, timerUpdate_,
       timerNorm_, timerScale_, timerInnerProd_;
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
     //! Default parameter list.
     mutable Teuchos::RCP<Teuchos::ParameterList> defaultParams_;
-  
+
     //! Routine to find an orthonormal basis for X
-    int findBasis(MV &X, Teuchos::RCP<MV> MX, 
-                  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
+    int findBasis(MV &X, Teuchos::RCP<MV> MX,
+                  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > C,
                   bool completeBasis, int howMany = -1 ) const;
-    
+
     //! Routine to compute the block orthogonalization
-    bool blkOrtho1 ( MV &X, Teuchos::RCP<MV> MX, 
-                     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+    bool blkOrtho1 ( MV &X, Teuchos::RCP<MV> MX,
+                     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
                      Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
     //! Routine to compute the block orthogonalization
-    bool blkOrtho ( MV &X, Teuchos::RCP<MV> MX, 
-                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+    bool blkOrtho ( MV &X, Teuchos::RCP<MV> MX,
+                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
                     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
     /// Project X against QQ and normalize X, one vector at a time
@@ -683,45 +683,45 @@ namespace Belos {
     ///   like std::vector objects, so this routine can add whatever
     ///   it likes to the Q array without changing it from the
     ///   caller's perspective.
-    int blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX, 
-                       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                       Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const;    
+    int blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX,
+                       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                       Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const;
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the label for this orthogonalization manager and create new timers if it's changed
   template<class ScalarType, class MV, class OP>
   void ICGSOrthoManager<ScalarType,MV,OP>::setLabel(const std::string& label)
-  { 
+  {
     if (label != label_) {
       label_ = label;
       std::string orthoLabel = label_ + ": Orthogonalization";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
 #endif
 
       std::string updateLabel = label_ + ": Ortho (Update)";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+      timerUpdate_ = Teuchos::TimeMonitor::getNewCounter(updateLabel);
 #endif
 
       std::string normLabel = label_ + ": Ortho (Norm)";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+      timerNorm_ = Teuchos::TimeMonitor::getNewCounter(normLabel);
 #endif
 
       std::string ipLabel = label_ + ": Ortho (Inner Product)";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel);
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewCounter(ipLabel);
 #endif
     }
-  } 
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute the distance from orthonormality
   template<class ScalarType, class MV, class OP>
-  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
   ICGSOrthoManager<ScalarType,MV,OP>::orthonormError(const MV &X, Teuchos::RCP<const MV> MX) const {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
@@ -736,7 +736,7 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute the distance from orthogonality
   template<class ScalarType, class MV, class OP>
-  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
   ICGSOrthoManager<ScalarType,MV,OP>::orthogError(const MV &X1, Teuchos::RCP<const MV> MX1, const MV &X2) const {
     int r1 = MVT::GetNumberVecs(X1);
     int r2  = MVT::GetNumberVecs(X2);
@@ -749,10 +749,10 @@ namespace Belos {
   // Find an Op-orthonormal basis for span(X) - span(W)
   template<class ScalarType, class MV, class OP>
   int ICGSOrthoManager<ScalarType, MV, OP>::projectAndNormalize(
-                                    MV &X, Teuchos::RCP<MV> MX, 
-                                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const 
+                                    MV &X, Teuchos::RCP<MV> MX,
+                                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                                    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const
   {
     using Teuchos::Array;
     using Teuchos::null;
@@ -799,7 +799,7 @@ namespace Belos {
         else if (C[k]->numRows() != numRows || C[k]->numCols() != numCols)
         {
           int err = C[k]->reshape (numRows, numCols);
-          TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, 
+          TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
               "IMGS orthogonalization: failed to reshape "
               "C[" << k << "] (the array of block "
               "coefficients resulting from projecting X "
@@ -832,16 +832,16 @@ namespace Belos {
     }
 
     // check size of B
-    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
                         "Belos::ICGSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of B" );
     // check size of X and MX
-    TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument,
                         "Belos::ICGSOrthoManager::projectAndNormalize(): MVT returned negative dimensions for X,MX" );
-    // check size of X w.r.t. MX 
-    TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, std::invalid_argument, 
+    // check size of X w.r.t. MX
+    TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, std::invalid_argument,
                         "Belos::ICGSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of MX" );
     // check feasibility
-    //TEUCHOS_TEST_FOR_EXCEPTION( numbas+xc > xr, std::invalid_argument, 
+    //TEUCHOS_TEST_FOR_EXCEPTION( numbas+xc > xr, std::invalid_argument,
     //                    "Belos::ICGSOrthoManager::projectAndNormalize(): Orthogonality constraints not feasible" );
 
     // Some flags for checking dependency returns from the internal orthogonalization methods
@@ -871,7 +871,7 @@ namespace Belos {
         std::vector<ScalarType> diag(xc);
         MVT::MvDot( X, *MX, diag );
         (*B)(0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
-        rank = 1; 
+        rank = 1;
         MVT::MvAddMv( ONE/(*B)(0,0), X, ZERO, X, X );
         if (this->_hasOp) {
           // Update MXj.
@@ -879,7 +879,7 @@ namespace Belos {
         }
       }
 
-    } 
+    }
     else {
 
       // Use the cheaper block orthogonalization.
@@ -896,7 +896,7 @@ namespace Belos {
         if (this->_hasOp) {
           MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
         }
-      } 
+      }
       else {
         // There is no dependency, so orthonormalize new block X
         rank = findBasis( X, MX, B, false );
@@ -911,12 +911,12 @@ namespace Belos {
           if (this->_hasOp) {
             MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
           }
-        }    
+        }
       }
     } // if (xc == 1) {
 
     // this should not raise an std::exception; but our post-conditions oblige us to check
-    TEUCHOS_TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error,
                         "Belos::ICGSOrthoManager::projectAndNormalize(): Debug error in rank variable." );
 
     // Return the rank of X.
@@ -929,7 +929,7 @@ namespace Belos {
   // Find an Op-orthonormal basis for span(X), with rank numvectors(X)
   template<class ScalarType, class MV, class OP>
   int ICGSOrthoManager<ScalarType, MV, OP>::normalize(
-                                MV &X, Teuchos::RCP<MV> MX, 
+                                MV &X, Teuchos::RCP<MV> MX,
                                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -945,8 +945,8 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   template<class ScalarType, class MV, class OP>
   void ICGSOrthoManager<ScalarType, MV, OP>::project(
-                          MV &X, Teuchos::RCP<MV> MX, 
-                          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                          MV &X, Teuchos::RCP<MV> MX,
+                          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
                           Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
     // For the inner product defined by the operator Op or the identity (Op == 0)
     //   -> Orthogonalize X against each Q[i]
@@ -962,11 +962,11 @@ namespace Belos {
     //
     // Q  : Bases to orthogonalize against. These are assumed orthonormal, mutually and independently.
     //
-    
+
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor orthotimer(*timerOrtho_);
 #endif
-    
+
     int xc = MVT::GetNumberVecs( X );
     ptrdiff_t xr = MVText::GetGlobalLength( X );
     int nq = Q.size();
@@ -998,19 +998,19 @@ namespace Belos {
     ptrdiff_t mxr = MVText::GetGlobalLength( *MX );
 
     // check size of X and Q w.r.t. common sense
-    TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument,
                         "Belos::ICGSOrthoManager::project(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX and Q
-    TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, std::invalid_argument,
                         "Belos::ICGSOrthoManager::project(): Size of X not consistant with MX,Q" );
 
     // tally up size of all Q and check/allocate C
     int baslen = 0;
     for (int i=0; i<nq; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument,
                           "Belos::ICGSOrthoManager::project(): Q lengths not mutually consistant" );
       qcs[i] = MVT::GetNumberVecs( *Q[i] );
-      TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument,
                           "Belos::ICGSOrthoManager::project(): Q has less rows than columns" );
       baslen += qcs[i];
 
@@ -1019,7 +1019,7 @@ namespace Belos {
         C[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(qcs[i],xc) );
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument, 
+        TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument,
                            "Belos::ICGSOrthoManager::project(): Size of Q not consistant with size of C" );
       }
     }
@@ -1027,18 +1027,22 @@ namespace Belos {
     // Use the cheaper block orthogonalization, don't check for rank deficiency.
     blkOrtho( X, MX, C, Q );
 
-  }  
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Find an Op-orthonormal basis for span(X), with the option of extending the subspace so that 
+  // Find an Op-orthonormal basis for span(X), with the option of extending the subspace so that
   // the rank is numvectors(X)
   template<class ScalarType, class MV, class OP>
-  int ICGSOrthoManager<ScalarType, MV, OP>::findBasis(
-                MV &X, Teuchos::RCP<MV> MX, 
-                Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
-                bool completeBasis, int howMany ) const {
+  int
+  ICGSOrthoManager<ScalarType, MV, OP>::
+  findBasis (MV &X,
+             Teuchos::RCP<MV> MX,
+             Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+             bool completeBasis,
+             int howMany) const
+  {
     // For the inner product defined by the operator Op or the identity (Op == 0)
-    //   -> Orthonormalize X 
+    //   -> Orthonormalize X
     // Modify MX accordingly
     //
     // Note that when Op is 0, MX is not referenced
@@ -1046,22 +1050,19 @@ namespace Belos {
     // Parameter variables
     //
     // X  : Vectors to be orthonormalized
-    //
     // MX : Image of the multivector X under the operator Op
-    //
     // Op  : Pointer to the operator for the inner product
     //
-    //
-
+    using Teuchos::as;
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor normTimer( *timerNorm_ );
-#endif
+    Teuchos::TimeMonitor normTimer (*timerNorm_);
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
-    const ScalarType ONE  = SCT::one();
-    const MagnitudeType ZERO = SCT::magnitude(SCT::zero());
+    const ScalarType ONE = SCT::one ();
+    const MagnitudeType ZERO = SCT::magnitude (SCT::zero ());
 
-    int xc = MVT::GetNumberVecs( X );
-    ptrdiff_t xr = MVText::GetGlobalLength( X );
+    const int xc = MVT::GetNumberVecs (X);
+    const ptrdiff_t xr = MVText::GetGlobalLength (X);
 
     if (howMany == -1) {
       howMany = xc;
@@ -1081,26 +1082,26 @@ namespace Belos {
       }
     }
 
-    /* if the user doesn't want to store the coefficienets, 
-     * allocate some local memory for them 
+    /* if the user doesn't want to store the coefficienets,
+     * allocate some local memory for them
      */
     if ( B == Teuchos::null ) {
       B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
     }
 
-    int mxc = (this->_hasOp) ? MVT::GetNumberVecs( *MX ) : xc;
-    ptrdiff_t mxr = (this->_hasOp) ? MVText::GetGlobalLength( *MX ) : xr;
+    const int mxc = (this->_hasOp) ? MVT::GetNumberVecs( *MX ) : xc;
+    const ptrdiff_t mxr = (this->_hasOp) ? MVText::GetGlobalLength( *MX ) : xr;
 
     // check size of C, B
-    TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument,
                         "Belos::ICGSOrthoManager::findBasis(): X must be non-empty" );
-    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
                         "Belos::ICGSOrthoManager::findBasis(): Size of X not consistant with size of B" );
-    TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument,
                         "Belos::ICGSOrthoManager::findBasis(): Size of X not consistant with size of MX" );
-    TEUCHOS_TEST_FOR_EXCEPTION( static_cast<ptrdiff_t>(xc) > xr, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( as<ptrdiff_t> (xc) > xr, std::invalid_argument,
                         "Belos::ICGSOrthoManager::findBasis(): Size of X not feasible for normalization" );
-    TEUCHOS_TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, std::invalid_argument,
                         "Belos::ICGSOrthoManager::findBasis(): Invalid howMany parameter" );
 
     /* xstart is which column we are starting the process with, based on howMany
@@ -1110,7 +1111,7 @@ namespace Belos {
 
     for (int j = xstart; j < xc; j++) {
 
-      // numX is 
+      // numX is
       // * number of currently orthonormal columns of X
       // * the index of the current column of X
       int numX = j;
@@ -1121,7 +1122,7 @@ namespace Belos {
       index[0] = numX;
       Teuchos::RCP<MV> Xj = MVT::CloneViewNonConst( X, index );
       Teuchos::RCP<MV> MXj;
-      if ((this->_hasOp)) {
+      if (this->_hasOp) {
         // MXj is a view of the current vector in MX
         MXj = MVT::CloneViewNonConst( *MX, index );
       }
@@ -1142,7 +1143,7 @@ namespace Belos {
         if (this->_hasOp) {
           prevMX = MVT::CloneView( *MX, prev_idx );
         }
-      } 
+      }
 
       // Make storage for these Gram-Schmidt iterations.
       Teuchos::SerialDenseMatrix<int,ScalarType> product(numX, 1);
@@ -1150,10 +1151,10 @@ namespace Belos {
       //
       // Save old MXj vector and compute Op-norm
       //
-      Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj ); 
+      Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj );
       MVT::MvDot( *Xj, *MXj, oldDot );
       // Xj^H Op Xj should be real and positive, by the hermitian positive definiteness of Op
-      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(oldDot[0]) < ZERO, OrthoError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(oldDot[0]) < ZERO, OrthoError,
           "Belos::ICGSOrthoManager::findBasis(): Negative definiteness discovered in inner product" );
 
       if (numX > 0) {
@@ -1170,7 +1171,7 @@ namespace Belos {
             MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*Xj,MXj,P2);
           }
 
-          // Xj <- Xj - prevX prevX^T MXj   
+          // Xj <- Xj - prevX prevX^T MXj
           //     = Xj - prevX product
           {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -1221,7 +1222,7 @@ namespace Belos {
           if (this->_hasOp) {
             tempMXj = MVT::Clone( X, 1 );
             OPT::Apply( *(this->_Op), *tempXj, *tempMXj );
-          } 
+          }
           else {
             tempMXj = tempXj;
           }
@@ -1259,7 +1260,7 @@ namespace Belos {
           }
           else {
             return numX;
-          } 
+          }
         }
       }
       else {
@@ -1306,9 +1307,9 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Routine to compute the block orthogonalization
   template<class ScalarType, class MV, class OP>
-  bool 
-  ICGSOrthoManager<ScalarType, MV, OP>::blkOrtho1 ( MV &X, Teuchos::RCP<MV> MX, 
-                                                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+  bool
+  ICGSOrthoManager<ScalarType, MV, OP>::blkOrtho1 ( MV &X, Teuchos::RCP<MV> MX,
+                                                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
                                                     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
     int nq = Q.size();
@@ -1356,7 +1357,7 @@ namespace Belos {
 
     // Do as many steps of classical Gram-Schmidt as required by max_ortho_steps_
     for (int j = 1; j < max_ortho_steps_; ++j) {
-      
+
       for (int i=0; i<nq; i++) {
         Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
 
@@ -1395,9 +1396,9 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Routine to compute the block orthogonalization
   template<class ScalarType, class MV, class OP>
-  bool 
-  ICGSOrthoManager<ScalarType, MV, OP>::blkOrtho ( MV &X, Teuchos::RCP<MV> MX, 
-                                                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+  bool
+  ICGSOrthoManager<ScalarType, MV, OP>::blkOrtho ( MV &X, Teuchos::RCP<MV> MX,
+                                                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
                                                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
     int nq = Q.size();
@@ -1411,7 +1412,7 @@ namespace Belos {
     }
 
     // Perform the Gram-Schmidt transformation for a block of vectors
-    
+
     // Compute the initial Op-norms
     std::vector<ScalarType> oldDot( xc );
     MVT::MvDot( X, *MX, oldDot );
@@ -1449,7 +1450,7 @@ namespace Belos {
 
     // Do as many steps of classical Gram-Schmidt as required by max_ortho_steps_
     for (int j = 1; j < max_ortho_steps_; ++j) {
-      
+
       for (int i=0; i<nq; i++) {
         Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
 
@@ -1496,19 +1497,19 @@ namespace Belos {
 
     return dep_flg;
   }
-  
+
   template<class ScalarType, class MV, class OP>
   int
-  ICGSOrthoManager<ScalarType, MV, OP>::blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX, 
-                                                       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                                       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
+  ICGSOrthoManager<ScalarType, MV, OP>::blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX,
+                                                       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                                                       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
                                                        Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const
   {
     Teuchos::Array<Teuchos::RCP<const MV> > Q (QQ);
 
     const ScalarType ONE  = SCT::one();
     const ScalarType ZERO  = SCT::zero();
-    
+
     int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
     std::vector<int> indX( 1 );
@@ -1526,9 +1527,9 @@ namespace Belos {
 
     // Perform the Gram-Schmidt transformation for each vector in the block of vectors.
     for (int j=0; j<xc; j++) {
-      
+
       bool dep_flg = false;
-      
+
       // Get a view of the previously orthogonalized vectors and B, add it to the arrays.
       if (j > 0) {
         std::vector<int> index( j );
@@ -1582,7 +1583,7 @@ namespace Belos {
         }
       }
 
-      // Do any additional steps of classical Gram-Schmidt orthogonalization 
+      // Do any additional steps of classical Gram-Schmidt orthogonalization
       for (int num_ortho_steps=1; num_ortho_steps < max_ortho_steps_; ++num_ortho_steps) {
 
         for (int i=0; i<Q.size(); i++) {
@@ -1635,7 +1636,7 @@ namespace Belos {
         if (this->_hasOp) {
           tempMXj = MVT::Clone( X, 1 );
           OPT::Apply( *(this->_Op), *tempXj, *tempMXj );
-        } 
+        }
         else {
           tempMXj = tempXj;
         }
@@ -1683,7 +1684,7 @@ namespace Belos {
         }
         else {
           return j;
-        } 
+        }
       } // if (!dep_flg)
 
       // Remove the vectors from array

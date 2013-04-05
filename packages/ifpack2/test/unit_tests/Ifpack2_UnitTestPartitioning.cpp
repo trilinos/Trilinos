@@ -62,8 +62,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Partitioning, Test0, Scalar, LocalOrdin
 {  
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
   
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> CRSG;
 

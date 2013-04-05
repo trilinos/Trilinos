@@ -52,16 +52,12 @@ namespace Intrepid {
   void
   Tensor3<T>::set_dimension(Index const N)
   {
-    if (N == dimension) return;
-
-    if (e != NULL) {
-      delete [] e;
-    }
+    if (N == get_dimension()) return;
 
     Index const
     number_components = N * N * N;
 
-    e = new T[number_components];
+    e.resize(number_components);
 
     dimension = N;
 
@@ -74,7 +70,7 @@ namespace Intrepid {
   template<typename T>
   Tensor3<T>::Tensor3() :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     return;
   }
@@ -85,7 +81,7 @@ namespace Intrepid {
   template<typename T>
   Tensor3<T>::Tensor3(Index const N) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     set_dimension(N);
 
@@ -106,7 +102,7 @@ namespace Intrepid {
   template<typename T>
   Tensor3<T>::Tensor3(Index const N, T const & s) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     set_dimension(N);
 
@@ -128,7 +124,7 @@ namespace Intrepid {
   template<typename T>
   Tensor3<T>::Tensor3(Tensor3<T> const & A) :
     dimension(0),
-    e(NULL)
+    e(Teuchos::null)
   {
     Index const
     N = A.get_dimension();
@@ -151,9 +147,6 @@ namespace Intrepid {
   template<typename T>
   Tensor3<T>::~Tensor3()
   {
-    if (e != NULL) {
-      delete [] e;
-    }
     return;
   }
 
@@ -253,27 +246,27 @@ namespace Intrepid {
   // \param B 3rd-order tensor
   // \return \f$ A + B \f$
   //
-  template<typename T>
-  Tensor3<T>
-  operator+(Tensor3<T> const & A, Tensor3<T> const & B)
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  operator+(Tensor3<S> const & A, Tensor3<T> const & B)
   {
     Index const
     N = A.get_dimension();
 
     assert(B.get_dimension() == N);
 
-    Tensor3<T>
-    S(N);
+    Tensor3<typename Promote<S, T>::type>
+    C(N);
 
     for (Index i = 0; i < N; ++i) {
       for (Index j = 0; j < N; ++j) {
         for (Index k = 0; k < N; ++k) {
-          S(i,j,k) = A(i,j,k) + B(i,j,k);
+          C(i,j,k) = A(i,j,k) + B(i,j,k);
         }
       }
     }
 
-    return S;
+    return C;
   }
 
   //
@@ -282,27 +275,27 @@ namespace Intrepid {
   // \param B 3rd-order tensor
   // \return \f$ A - B \f$
   //
-  template<typename T>
-  Tensor3<T>
-  operator-(Tensor3<T> const & A, Tensor3<T> const & B)
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  operator-(Tensor3<S> const & A, Tensor3<T> const & B)
   {
     Index const
     N = A.get_dimension();
 
     assert(B.get_dimension() == N);
 
-    Tensor3<T>
-    S(N);
+    Tensor3<typename Promote<S, T>::type>
+    C(N);
 
     for (Index i = 0; i < N; ++i) {
       for (Index j = 0; j < N; ++j) {
         for (Index k = 0; k < N; ++k) {
-          S(i,j,k) = A(i,j,k) - B(i,j,k);
+          C(i,j,k) = A(i,j,k) - B(i,j,k);
         }
       }
     }
 
-    return S;
+    return C;
   }
 
   //
@@ -373,14 +366,14 @@ namespace Intrepid {
   // \param A 3rd-order tensor
   // \return \f$ s A \f$
   //
-  template<typename T, typename S>
-  Tensor3<T>
+  template<typename S, typename T>
+  typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
   operator*(S const & s, Tensor3<T> const & A)
   {
     Index const
     N = A.get_dimension();
 
-    Tensor3<T>
+    Tensor3<typename Promote<S, T>::type>
     B(N);
 
     for (Index i = 0; i < N; ++i) {
@@ -400,8 +393,8 @@ namespace Intrepid {
   // \param s scalar
   // \return \f$ s A \f$
   //
-  template<typename T, typename S>
-  Tensor3<T>
+  template<typename S, typename T>
+  typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
   operator*(Tensor3<T> const & A, S const & s)
   {
     return s * A;
@@ -413,14 +406,14 @@ namespace Intrepid {
   // \param s scalar
   // \return \f$ s A \f$
   //
-  template<typename T, typename S>
-  Tensor3<T>
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
   operator/(Tensor3<T> const & A, S const & s)
   {
     Index const
     N = A.get_dimension();
 
-    Tensor3<T>
+    Tensor3<typename Promote<S, T>::type>
     B(N);
 
     for (Index i = 0; i < N; ++i) {
@@ -440,21 +433,24 @@ namespace Intrepid {
   // \param u vector
   // \return \f$ A u \f$
   //
-  template<typename T>
-  Tensor<T>
-  dot(Tensor3<T> const & A, Vector<T> const & u)
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dot(Tensor3<T> const & A, Vector<S> const & u)
   {
     Index const
     N = A.get_dimension();
 
     assert(u.get_dimension() == N);
 
-    Tensor<T>
+    Tensor<typename Promote<S, T>::type>
     B(N);
 
     for (Index j = 0; j < N; ++j) {
       for (Index k = 0; k < N; ++k) {
-        T s = 0.0;
+
+        typename Promote<S, T>::type
+        s = 0.0;
+
         for (Index i = 0; i < N; ++i) {
           s += A(i,j,k) * u(i);
         }
@@ -471,21 +467,24 @@ namespace Intrepid {
   // \param u vector
   // \return \f$ u A \f$
   //
-  template<typename T>
-  Tensor<T>
-  dot(Vector<T> const & u, Tensor3<T> const & A)
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dot(Vector<S> const & u, Tensor3<T> const & A)
   {
     Index const
     N = A.get_dimension();
 
     assert(u.get_dimension() == N);
 
-    Tensor<T>
+    Tensor<typename Promote<S, T>::type>
     B(N);
 
     for (Index i = 0; i < N; ++i) {
       for (Index j = 0; j < N; ++j) {
-        T s = 0.0;
+
+        typename Promote<S, T>::type
+        s = 0.0;
+
         for (Index k = 0; k < N; ++k) {
           s += A(i,j,k) * u(k);
         }
@@ -503,21 +502,24 @@ namespace Intrepid {
   // \param u vector
   // \return \f$ A u \f$
   //
-  template<typename T>
-  Tensor<T>
-  dot2(Tensor3<T> const & A, Vector<T> const & u)
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dot2(Tensor3<T> const & A, Vector<S> const & u)
   {
     Index const
     N = A.get_dimension();
 
     assert(u.get_dimension() == N);
 
-    Tensor<T>
+    Tensor<typename Promote<S, T>::type>
     B(N);
 
     for (Index i = 0; i < N; ++i) {
       for (Index k = 0; k < N; ++k) {
-        T s = 0.0;
+
+        typename Promote<S, T>::type
+        s = 0.0;
+
         for (Index j = 0; j < N; ++j) {
           s += A(i,j,k) * u(j);
         }
@@ -534,9 +536,9 @@ namespace Intrepid {
   // \param u vector
   // \return \f$ u A \f$
   //
-  template<typename T>
-  Tensor<T>
-  dot2(Vector<T> const & u, Tensor3<T> const & A)
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dot2(Vector<S> const & u, Tensor3<T> const & A)
   {
     return dot2(A, u);
   }
@@ -544,22 +546,25 @@ namespace Intrepid {
   ///
   /// \return \f$ C = A \cdot B := C_{ijk} = A_{ijp} B_{pk} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot(Tensor3<T> const & A, Tensor<T> const & B)
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot(Tensor3<T> const & A, Tensor<S> const & B)
   {
     Index const
     N = A.get_dimension();
 
     assert(B.get_dimension() == N);
 
-    Tensor3<T>
+    Tensor3<typename Promote<S, T>::type>
     C(N);
 
     for (Index i = 0; i < N; ++i) {
       for (Index k = 0; k < N; ++k) {
         for (Index j = 0; j < N; ++j) {
-          T s = 0.0;
+
+          typename Promote<S, T>::type
+          s = 0.0;
+
           for (Index p = 0; p < N; ++p) {
             s += A(i,j,p) * B(p,k);
           }
@@ -574,23 +579,23 @@ namespace Intrepid {
   ///
   /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{pjk} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot(Tensor<T> const & A, Tensor3<T> const & B);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot(Tensor<S> const & A, Tensor3<T> const & B);
 
   ///
   /// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot2(Tensor3<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot2(Tensor3<T> const & A, Tensor<S> const & B);
 
   ///
   /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot2(Tensor<T> const & A, Tensor3<T> const & B);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot2(Tensor<S> const & A, Tensor3<T> const & B);
 
   //
   // 3rd-order tensor input

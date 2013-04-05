@@ -181,7 +181,7 @@ namespace Kokkos {
     }
 
     //! \begin No-op for TPINode.
-    inline void sync() const {};
+    inline void sync() const {}
 
   private:
     int curNumThreads_;

@@ -34,7 +34,7 @@ public:
      */
    std::string getLookupName() const { return buildLookupName(responseName_); }
 
-   /** Static member to build consisitent look up names
+   /** Static member to build consistent look up names
      * based on a response name.
      */
    static std::string buildLookupName(const std::string & responseName)

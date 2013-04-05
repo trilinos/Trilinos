@@ -777,14 +777,6 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
 	globals.Proc_Nodes_Per_Elem[iproc][iblk]  = 0;
 	globals.Proc_Num_Attr[iproc][iblk]        = 0;
 	cnt++;
-	
-	/*
-	 * if there are elemental variables in the restart data,
-	 * take care of the truth table for this processor here
-	 */
-	if (Restart_Info.Flag > 0)
-	  for (int i2=0; i2<Restart_Info.NVar_Elem; i2++)
-	    Restart_Info.Elem_TT[iproc][i1*Restart_Info.NVar_Elem+i2] = 0;
       }
     }
 
@@ -1262,25 +1254,12 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
   if (Restart_Info.Flag > 0) {
 
     tt1 = second();
-
-    int *local_tt = NULL;
-    if (Restart_Info.NVar_Elem > 0)
-      local_tt = Restart_Info.Elem_TT[iproc];
-
-    int *local_nstt = NULL;
-    if (Restart_Info.NVar_Nset > 0)
-      local_nstt = Restart_Info.Nset_TT[iproc];
-
-    int *local_sstt = NULL;
-    if (Restart_Info.NVar_Sset > 0)
-      local_sstt = Restart_Info.Sset_TT[iproc];
-
     bytes_out += write_var_param(mesh_exoid, max_name_length,
 				 Restart_Info.NVar_Glob, Restart_Info.GV_Name,
 				 Restart_Info.NVar_Node, Restart_Info.NV_Name, 
-				 Restart_Info.NVar_Elem, Restart_Info.EV_Name,  local_tt,
-				 Restart_Info.NVar_Nset, Restart_Info.NSV_Name, local_nstt,
-				 Restart_Info.NVar_Sset, Restart_Info.SSV_Name, local_sstt);
+				 Restart_Info.NVar_Elem, Restart_Info.EV_Name,  TOPTR(Restart_Info.GElem_TT),
+				 Restart_Info.NVar_Nset, Restart_Info.NSV_Name, TOPTR(Restart_Info.GNset_TT),
+				 Restart_Info.NVar_Sset, Restart_Info.SSV_Name, TOPTR(Restart_Info.GSset_TT));
 
     PIO_Time_Array[21] = (second() - tt1);
     total_out_time    += PIO_Time_Array[21];
@@ -1350,25 +1329,25 @@ int NemSpread<T,INT>::write_var_param(int mesh_exoid, int max_name_length,
   return (bytes_out);
 }
 
-template void NemSpread<double,int>::write_var_timestep(int exoid, int proc, int time_step, int blk_cnt,
+template void NemSpread<double,int>::write_var_timestep(int exoid, int proc, int time_step, 
 							int *eb_ids_global, int *ss_ids_global, int *ns_ids_global);
-template void NemSpread<float,int>::write_var_timestep(int exoid, int proc, int time_step, int blk_cnt,
+template void NemSpread<float,int>::write_var_timestep(int exoid, int proc, int time_step, 
 						       int *eb_ids_global, int *ss_ids_global, int *ns_ids_global);
-template void NemSpread<double,int64_t>::write_var_timestep(int exoid, int proc, int time_step, int blk_cnt,
+template void NemSpread<double,int64_t>::write_var_timestep(int exoid, int proc, int time_step, 
 							    int64_t *eb_ids_global, int64_t *ss_ids_global, int64_t *ns_ids_global);
-template void NemSpread<float,int64_t>::write_var_timestep(int exoid, int proc, int time_step, int blk_cnt,
+template void NemSpread<float,int64_t>::write_var_timestep(int exoid, int proc, int time_step, 
 							   int64_t *eb_ids_global, int64_t *ss_ids_global, int64_t *ns_ids_global);
   
 
 template <typename T, typename INT>
-void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, int blk_cnt,
+void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, 
 					  INT *eb_ids_global, INT *ss_ids_global, INT *ns_ids_global)
 {
   int error;
 
   /* output the time */
   {
-    T *var_ptr = (T *) &(Restart_Info.Time[blk_cnt]);
+    T *var_ptr = (T *) &(Restart_Info.Time);
     error = ex_put_time(exoid, time_step, var_ptr);
     check_exodus_error(error, "ex_put_time");
   }
@@ -1376,7 +1355,7 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
   /* start by outputting the global variables */
   if (Restart_Info.NVar_Glob > 0) {
 
-    T *var_ptr = Restart_Info.Glob_Vals[blk_cnt];
+    T *var_ptr = &Restart_Info.Glob_Vals[0];
 
     error = ex_put_glob_vars(exoid, time_step, Restart_Info.NVar_Glob,
                              var_ptr);
@@ -1393,7 +1372,7 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
       size_t var_offset = var_num * num_nodes;
 
 
-      T *var_ptr = &(Restart_Info.Node_Vals[proc][blk_cnt][var_offset]);
+      T *var_ptr = &(Restart_Info.Node_Vals[proc][var_offset]);
 
       error = ex_put_nodal_var(exoid, time_step, (var_num+1), num_nodes,
                                var_ptr);
@@ -1410,7 +1389,7 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
       int eb_num_g = 0;
 
       size_t var_offset = var_num * num_elem;
-      T *var_ptr = &(Restart_Info.Elem_Vals[proc][blk_cnt][var_offset]);
+      T *var_ptr = &(Restart_Info.Elem_Vals[proc][var_offset]);
 
       for (int eb_num=0; eb_num < globals.Proc_Num_Elem_Blk[proc]; eb_num++) {
 
@@ -1423,8 +1402,7 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
 	  }
 	}
 
-        if (Restart_Info.Elem_TT[proc]
-	    [eb_num_g*Restart_Info.NVar_Elem+var_num]) {
+        if (Restart_Info.GElem_TT[eb_num_g*Restart_Info.NVar_Elem+var_num]) {
 	  
           error = ex_put_var(exoid, time_step, EX_ELEM_BLOCK, (var_num+1),
                                   globals.Proc_Elem_Blk_Ids[proc][eb_num],
@@ -1450,7 +1428,7 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
     for (int var_num=0; var_num < Restart_Info.NVar_Sset; var_num++) {
 
       size_t var_offset = var_num * num_elem;
-      T *var_ptr = &(Restart_Info.Sset_Vals[proc][blk_cnt][var_offset]);
+      T *var_ptr = &(Restart_Info.Sset_Vals[proc][var_offset]);
 
       for (int ss_num=0; ss_num < globals.Proc_Num_Side_Sets[proc]; ss_num++) {
 
@@ -1463,7 +1441,7 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
 	}
 	assert(globals.Proc_SS_Ids[proc][ss_num] == ss_ids_global[ss_num_g]);
 
-        if (Restart_Info.Sset_TT[proc][ss_num_g*Restart_Info.NVar_Sset+var_num]) {
+        if (Restart_Info.GSset_TT[ss_num_g*Restart_Info.NVar_Sset+var_num]) {
 	  
           error = ex_put_var(exoid, time_step, EX_SIDE_SET, (var_num+1),
                                   globals.Proc_SS_Ids[proc][ss_num],
@@ -1489,7 +1467,7 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
     for (int var_num=0; var_num < Restart_Info.NVar_Nset; var_num++) {
 
       size_t var_offset = var_num * num_elem;
-      T *var_ptr = &(Restart_Info.Nset_Vals[proc][blk_cnt][var_offset]);
+      T *var_ptr = &(Restart_Info.Nset_Vals[proc][var_offset]);
 
       for (int ns_num=0; ns_num < globals.Proc_Num_Node_Sets[proc]; ns_num++) {
 
@@ -1502,7 +1480,7 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
 	}
 	assert(globals.Proc_NS_Ids[proc][ns_num] == ns_ids_global[ns_num_g]);
 
-        if (Restart_Info.Nset_TT[proc][ns_num_g*Restart_Info.NVar_Nset+var_num]) {
+        if (Restart_Info.GNset_TT[ns_num_g*Restart_Info.NVar_Nset+var_num]) {
 	  
           error = ex_put_var(exoid, time_step, EX_NODE_SET, (var_num+1),
                                   globals.Proc_NS_Ids[proc][ns_num],

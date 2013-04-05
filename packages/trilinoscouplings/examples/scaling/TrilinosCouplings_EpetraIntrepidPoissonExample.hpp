@@ -150,6 +150,9 @@ exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
 ///   iterative method should perform, regardless of whether it
 ///   converged.
 ///
+/// \param num_steps [in] Number of "time steps", i.e., the number of
+//    times the solver is called in a fake time-step loop.
+///
 /// \param X [in/out] On input: the initial guess(es) for the iterative
 ///   method.  On output: the computed approximate solution.
 ///
@@ -169,6 +172,7 @@ solveWithBelos (bool& converged,
                 int& numItersPerformed,
                 const Teuchos::ScalarTraits<ST>::magnitudeType& tol,
                 const int maxNumIters,
+		const int num_steps,
                 const Teuchos::RCP<multivector_type>& X,
                 const Teuchos::RCP<const sparse_matrix_type>& A,
                 const Teuchos::RCP<const multivector_type>& B,

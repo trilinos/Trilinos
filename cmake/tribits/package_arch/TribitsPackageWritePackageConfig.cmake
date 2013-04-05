@@ -57,11 +57,11 @@ INCLUDE(TribitsGeneralMacros)
 
 #
 #  This function will take a list and turn it into a space separated string
-#  adding the prefix to the front of every entry. 
+#  adding the prefix to the front of every entry.
 #
 FUNCTION(TRIBITS_LIST_TO_STRING LIST PREFIX OUTPUT_STRING)
   SET(LIST_STRING "")
-  
+
   FOREACH(ITEM ${LIST})
     SET(LIST_STRING "${LIST_STRING} ${PREFIX}${ITEM}")
   ENDFOREACH()
@@ -79,7 +79,7 @@ ENDFUNCTION()
 #
 FUNCTION(TRIBITS_LIBRARY_LIST_TO_STRING LIST PREFIX OUTPUT_STRING)
   SET(LIST_STRING "")
-  
+
   FOREACH(ITEM ${LIST})
     IF(EXISTS ${ITEM})
       SET(LIST_STRING "${LIST_STRING} ${ITEM}")
@@ -99,7 +99,7 @@ ENDFUNCTION()
 # being evaluated until they are actually in the install tree. This is
 # done to handle movable install trees.
 #
-# This function defines the variable 
+# This function defines the variable
 # DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_CODE_SNIPPET in the caller's scope
 # as a string that can be referenced from CONFIGURE_FILE input files
 # to ensure that the CMAKE_CURRENT_LIST_DIR will be defined on the installation
@@ -116,7 +116,7 @@ ENDIF()
 ENDFUNCTION()
 
 FUNCTION(TRIBITS_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
-  
+
   TRIBITS_SET_DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET()
 
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -159,21 +159,21 @@ FUNCTION(TRIBITS_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
     # order of most dependent to least dependent.
     SET(TPL_LIST ${${PROJECT_NAME}_TPLS})
     LIST(REVERSE TPL_LIST)
-    
+
     SET(ORDERED_FULL_TPL_SET "")
     FOREACH(TPL ${TPL_LIST})
       LIST(FIND FULL_TPL_SET ${TPL} FOUND)
-      
+
       IF(FOUND GREATER -1)
         LIST(APPEND ORDERED_FULL_TPL_SET ${TPL})
       ENDIF()
     ENDFOREACH()
   ENDIF()
-  
+
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("ORDERED_FULL_TPL_SET after all tpls = ${ORDERED_FULL_TPL_SET}")
   ENDIF()
-  
+
   SET(${PACKAGE_NAME}_TPL_LIBRARIES "")
   SET(${PACKAGE_NAME}_TPL_INCLUDE_DIRS "")
   SET(${PACKAGE_NAME}_TPL_LIBRARY_DIRS "")
@@ -182,10 +182,10 @@ FUNCTION(TRIBITS_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
     LIST(APPEND ${PACKAGE_NAME}_TPL_INCLUDE_DIRS ${TPL_${TPL}_INCLUDE_DIRS})
     LIST(APPEND ${PACKAGE_NAME}_TPL_LIBRARY_DIRS ${TPL_${TPL}_LIBRARY_DIRS})
   ENDFOREACH()
-  
+
   # Generate a note discouraging editing of the <package>Config.cmake file
   SET(DISCOURAGE_EDITING "Do not edit: This file was generated automatically by CMake.")
-  
+
   ######
   # Create a configure file for the build tree. Creating this file in the base dir
   # of the package since it is possible that the cmake returned path where the file
@@ -210,14 +210,14 @@ ENDIF()
 ")
   ENDIF()
 
-  # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries. 
+  # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries.
   IF(BUILD_SHARED_LIBS)
     STRING(REPLACE ";" ":" SHARED_LIB_RPATH_COMMAND "${LIBRARY_DIRS}")
     SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${SHARED_LIB_RPATH_COMMAND})
   ENDIF()
 
   CONFIGURE_FILE(
-    ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.cmake.in 
+    ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake
     )
 
@@ -239,7 +239,7 @@ ENDIF()
     TRIBITS_LIBRARY_LIST_TO_STRING("${${TPL_MPI_LIBRARIES}}" ${CMAKE_LINK_LIBRARY_FLAG} "MAKEFILE_TPL_MPI_LIBRARIES")
     TRIBITS_LIST_TO_STRING("${${TPL_MPI_LIBRARY_DIRS}}" ${CMAKE_LIBRARY_PATH_FLAG} "MAKEFILE_TPL_MPI_LIBRARY_DIRS")
     TRIBITS_LIST_TO_STRING("${${TPL_MPI_INCLUDE_DIRS}}" "-I" "MAKEFILE_TPL_MPI_INCLUDE_DIRS")
-    
+
     TRIBITS_LIST_TO_STRING("${FULL_PACKAGE_SET}" "" MAKEFILE_FULL_PACKAGE_SET)
     TRIBITS_LIST_TO_STRING("${ORDERED_FULL_TPL_SET}" "" MAKEFILE_ORDERED_FULL_TPL_SET)
 
@@ -248,14 +248,14 @@ ENDIF()
     STRING(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UPPER)
 
     CONFIGURE_FILE(
-      ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.export.in 
+      ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.export.in
       ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PACKAGE_NAME}
       )
   ENDIF()
 
   ######
   # Create a configure file for the install tree and set the install target for it. This
-  # file isn't generally useful inside the build tree so it is being "hidden" in the 
+  # file isn't generally useful inside the build tree so it is being "hidden" in the
   # CMakeFiles directory. It will be placed in the base install directory for ${PROJECT_NAME}
   # when installed.
   ######
@@ -285,13 +285,13 @@ ENDIF()
 ")
   ENDIF()
 
-  # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries. 
+  # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries.
   IF(BUILD_SHARED_LIBS)
     SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
   ENDIF()
 
   CONFIGURE_FILE(
-    ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.cmake.in 
+    ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${PACKAGE_NAME}Config_install.cmake
     )
 
@@ -320,7 +320,7 @@ ENDIF()
     TRIBITS_LIST_TO_STRING("${INCLUDE_DIRS}" "-I" MAKEFILE_INCLUDE_DIRS)
 
     CONFIGURE_FILE(
-      ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.export.in 
+      ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.export.in
       ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Makefile.export.${PACKAGE_NAME}_install
       )
 
@@ -340,7 +340,7 @@ FUNCTION(TRIBITS_WRITE_CONFIG_FILE)
   # most dependent to least dependent.
   SET(PACKAGE_LIST ${${PROJECT_NAME}_SE_PACKAGES})
   LIST(REVERSE PACKAGE_LIST)
-  
+
 
   # Loop over all packages to determine which were enabled. Then build a list
   # of all their libraries/includes in the proper order for linking
@@ -356,14 +356,14 @@ FUNCTION(TRIBITS_WRITE_CONFIG_FILE)
       LIST(APPEND FULL_LIBRARY_DIRS_SET ${${TRIBITS_PACKAGE}_LIBRARY_DIRS})
     ENDIF()
   ENDFOREACH()
-  
+
   SET(${PROJECT_NAME}_CONFIG_LIBRARIES ${FULL_LIBRARY_SET})
-  
+
   # Reversing the tpl list so that the list of tpls will be produced in
   # order of most dependent to least dependent.
   SET(TPL_LIST ${${PROJECT_NAME}_TPLS})
   LIST(REVERSE TPL_LIST)
-  
+
   # Loop over all TPLs to determine which were enabled. Then build a list
   # of all their libraries/includes in the proper order for linking
   SET(FULL_TPL_SET "")
@@ -378,31 +378,31 @@ FUNCTION(TRIBITS_WRITE_CONFIG_FILE)
       LIST(APPEND FULL_TPL_LIBRARY_DIRS_SET ${TPL_${TPL}_LIBRARY_DIRS})
     ENDIF()
   ENDFOREACH()
-  
-  # it is possible that tpls are in the same directory, to keep from 
+
+  # it is possible that tpls are in the same directory, to keep from
   # having a very long include path or library path we will strip out
   # any duplicates. This shouldn't affect which include or library is
   # found since the first instance of any path will be the one that is
   # kept.
   LIST(REMOVE_DUPLICATES FULL_TPL_INCLUDE_DIRS_SET)
   LIST(REMOVE_DUPLICATES FULL_TPL_LIBRARY_DIRS_SET)
-  
+
   SET(${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS ${FULL_TPL_INCLUDE_DIRS_SET})
   SET(${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS ${FULL_TPL_LIBRARY_DIRS_SET})
   SET(${PROJECT_NAME}_CONFIG_TPL_LIBRARIES ${FULL_TPL_LIBRARY_SET})
-  
+
   #
   # Configure two files for finding ${PROJECT_NAME}. One for the build tree and one for installing
   #
 
   # Generate a note discouraging editing of the <package>Config.cmake file
   SET(DISCOURAGE_EDITING "Do not edit: This file was generated automatically by CMake.")
-  
+
   #Config file for setting variables and finding include/library paths from the build directory
   SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${FULL_INCLUDE_DIRS_SET})
   SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${FULL_LIBRARY_DIRS_SET})
 
-  # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries. 
+  # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries.
   IF(BUILD_SHARED_LIBS)
     STRING(REPLACE ";" ":" SHARED_LIB_RPATH_COMMAND "${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}")
     SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${SHARED_LIB_RPATH_COMMAND})
@@ -433,7 +433,7 @@ ENDIF()
   ENDFOREACH()
   SET(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}\n${LOAD_CODE}")
 
-  CONFIGURE_FILE( 
+  CONFIGURE_FILE(
     ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake )
 
@@ -455,21 +455,21 @@ ENDIF()
     TRIBITS_LIBRARY_LIST_TO_STRING("${${TPL_MPI_LIBRARIES}}" ${CMAKE_LINK_LIBRARY_FLAG} "MAKEFILE_TPL_MPI_LIBRARIES")
     TRIBITS_LIST_TO_STRING("${${TPL_MPI_LIBRARY_DIRS}}" ${CMAKE_LIBRARY_PATH_FLAG} "MAKEFILE_TPL_MPI_LIBRARY_DIRS")
     TRIBITS_LIST_TO_STRING("${${TPL_MPI_INCLUDE_DIRS}}" "-I" "MAKEFILE_TPL_MPI_INCLUDE_DIRS")
-    
+
     TRIBITS_LIST_TO_STRING("${FULL_PACKAGE_SET}" "" MAKEFILE_FULL_PACKAGE_SET)
     TRIBITS_LIST_TO_STRING("${FULL_TPL_SET}" "" MAKEFILE_FULL_TPL_SET)
 
-    CONFIGURE_FILE( 
+    CONFIGURE_FILE(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.export.in
       ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PROJECT_NAME})
-  ENDIF()  
+  ENDIF()
 
   ######
   # Create a configure file for the install tree and set the install target for it. This
   # file isn't generally useful inside the build tree. It will be placed in the base
   # install directory for ${PROJECT_NAME} when installed.
   ######
-  
+
   # Set the include and library directories relative to the location
   # at which the ${PROJECT_NAME}Config.cmake file is going to be
   # installed. Note the variable reference below is escaped so it
@@ -480,7 +480,7 @@ ENDIF()
   SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
   SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../${${PROJECT_NAME}_INSTALL_LIB_DIR}")
 
-  # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries. 
+  # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries.
   IF(BUILD_SHARED_LIBS)
     SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
   ENDIF()
@@ -513,7 +513,7 @@ ENDIF()
   ENDFOREACH()
   SET(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}\n${LOAD_CODE}")
 
-  CONFIGURE_FILE( 
+  CONFIGURE_FILE(
     ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake )
 
@@ -522,7 +522,7 @@ ENDIF()
     DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PROJECT_NAME}"
     RENAME ${PROJECT_NAME}Config.cmake
   )
-  
+
   IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
     ######
     # Create a Makefile.export.<project_name> for the install tree. This is the equivalent
@@ -541,7 +541,7 @@ ENDIF()
     TRIBITS_LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_LIBRARY_DIRS)
     TRIBITS_LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}" "-I" MAKEFILE_${PROJECT_NAME}_CONFIG_INCLUDE_DIRS)
 
-    CONFIGURE_FILE( 
+    CONFIGURE_FILE(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.export.in
       ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PROJECT_NAME}_install )
 
@@ -551,11 +551,11 @@ ENDIF()
       RENAME Makefile.export.${PROJECT_NAME}
     )
   ENDIF()
-  
+
   #
   # Configure the version file for ${PROJECT_NAME}
   #
-  
+
   CONFIGURE_FILE(
     ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsConfigVersionTemplate.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake @ONLY)

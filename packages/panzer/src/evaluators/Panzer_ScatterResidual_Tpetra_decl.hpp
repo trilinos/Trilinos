@@ -53,6 +53,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
+#include "Panzer_TpetraLinearObjContainer.hpp"
 
 #include "Kokkos_DefaultNode.hpp"
 
@@ -97,6 +98,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -122,6 +125,11 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
+
+  ScatterResidual_Tpetra();
 };
 
 // **************************************************************
@@ -143,6 +151,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -169,6 +179,9 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 
   ScatterResidual_Tpetra();
 };

@@ -113,7 +113,7 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const float alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension(0) - 1 ;
+    const int n = A.graph.row_map.dimension_0() - 1 ;
     // const int nz = A.graph.entry_count();
 
     cusparseStatus_t status =
@@ -155,7 +155,7 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension(0) - 1 ;
+    const int n = A.graph.row_map.dimension_0() - 1 ;
     // const int nz = A.graph.entry_count();
 
     cusparseStatus_t status =
@@ -200,7 +200,7 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const float alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension(0) - 1 ;
+    const int n = A.graph.row_map.dimension_0() - 1 ;
     // const int nz = A.graph.entry_count();
     const size_t ncol = col_indices.size();
 
@@ -210,8 +210,8 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      const vector_type xx_view( xx , span );
-      const vector_type x_col( x, col_indices[col] );
+      const vector_type xx_view = KokkosArray::subview< vector_type >( xx , span );
+      const vector_type x_col = KokkosArray::subview< vector_type >( x, col_indices[col] );
       KokkosArray::deep_copy(xx_view, x_col);
     }
 
@@ -238,8 +238,8 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      const vector_type yy_view( yy , span );
-      const vector_type y_col( y, col_indices[col] );
+      const vector_type yy_view = KokkosArray::subview< vector_type>( yy , span );
+      const vector_type y_col = KokkosArray::subview< vector_type>( y, col_indices[col] );
       KokkosArray::deep_copy(y_col, yy_view );
     }
   }
@@ -268,7 +268,7 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension(0) - 1 ;
+    const int n = A.graph.row_map.dimension_0() - 1 ;
     // const int nz = A.graph.entry_count();
     const size_t ncol = col_indices.size();
 
@@ -278,8 +278,8 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      const vector_type xx_view( xx , span );
-      const vector_type x_col( x, col_indices[col] );
+      const vector_type xx_view = KokkosArray::subview< vector_type>( xx , span );
+      const vector_type x_col = KokkosArray::subview< vector_type>( x, col_indices[col] );
       KokkosArray::deep_copy(xx_view, x_col);
     }
 
@@ -306,8 +306,8 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      const vector_type yy_view( yy , span );
-      const vector_type y_col( y, col_indices[col] );
+      const vector_type yy_view = KokkosArray::subview< vector_type>( yy , span );
+      const vector_type y_col = KokkosArray::subview< vector_type>( y, col_indices[col] );
       KokkosArray::deep_copy(y_col, yy_view );
     }
   }
@@ -333,7 +333,7 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const float alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension(0) - 1 ;
+    const int n = A.graph.row_map.dimension_0() - 1 ;
     // const int nz = A.graph.entry_count();
     const size_t ncol = x.size();
 
@@ -343,7 +343,7 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      const vector_type xx_view( xx , span );
+      const vector_type xx_view = KokkosArray::subview< vector_type>( xx , span );
       KokkosArray::deep_copy(xx_view, x[col]);
     }
 
@@ -370,7 +370,7 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      const vector_type yy_view( yy , span );
+      const vector_type yy_view = KokkosArray::subview< vector_type>( yy , span );
       KokkosArray::deep_copy(y[col], yy_view );
     }
   }
@@ -396,7 +396,7 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension(0) - 1 ;
+    const int n = A.graph.row_map.dimension_0() - 1 ;
     // const int nz = A.graph.entry_count();
     const size_t ncol = x.size();
 
@@ -406,7 +406,7 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      const vector_type xx_view( xx , span );
+      const vector_type xx_view = KokkosArray::subview< vector_type>( xx , span );
       KokkosArray::deep_copy(xx_view, x[col]);
     }
 
@@ -433,7 +433,7 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      const vector_type yy_view( yy , span );
+      const vector_type yy_view = KokkosArray::subview< vector_type>( yy , span );
       KokkosArray::deep_copy(y[col], yy_view );
     }
   }

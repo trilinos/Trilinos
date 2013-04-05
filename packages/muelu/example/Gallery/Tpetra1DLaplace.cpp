@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
   typedef double                                                  Scalar;
-  typedef Teuchos::ScalarTraits<Scalar>::magnitudeType            Magnitude;
   typedef int                                                     Ordinal;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;

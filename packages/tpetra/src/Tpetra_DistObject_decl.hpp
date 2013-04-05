@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -48,10 +48,17 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Distributor.hpp"
 
+// #ifndef HAVE_TPETRA_TRANSFER_TIMERS
+// #  define HAVE_TPETRA_TRANSFER_TIMERS 1
+// #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+#  undef HAVE_TPETRA_TRANSFER_TIMERS
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+
 
 namespace Tpetra {
-
-  /// \class DistObject 
+  /// \class DistObject
   /// \brief Base class for distributed Tpetra objects that support data redistribution.
   ///
   /// DistObject is a base class for all Tpetra distributed global
@@ -59,11 +66,11 @@ namespace Tpetra {
   /// basic mechanisms and interface specifications for importing and
   /// exporting operations using Import and Export objects.
   ///
-  /// \tparam LocalOrdinal The type of local IDs.  Same as Map's 
+  /// \tparam LocalOrdinal The type of local IDs.  Same as Map's
   ///   \c LocalOrdinal template parameter.  This should be an integer
   ///   type, preferably signed.
   ///
-  /// \tparam GlobalOrdinal The type of global IDs.  Same as Map's 
+  /// \tparam GlobalOrdinal The type of global IDs.  Same as Map's
   ///   \c GlobalOrdinal template parameter.  Defaults to the same type
   ///   as \c LocalOrdinal.  This should also be an integer type,
   ///   preferably signed.
@@ -121,7 +128,7 @@ namespace Tpetra {
   /// After the linear solve, you may want to bring the resulting
   /// nonoverlapping distribution vector back to the overlapping
   /// distribution for another update phase.  This would be a reverse
-  /// mode Import, using the precomputed Export object.  
+  /// mode Import, using the precomputed Export object.
   ///
   /// Another use case for reverse mode is in CrsMatrix, for the
   /// transpose version of distributed sparse matrix-vector multiply
@@ -154,14 +161,30 @@ namespace Tpetra {
   /// default implementation of these hooks does nothing.  The
   /// documentation of these methods explains different ways you might
   /// choose to implement them.
-  template <class Packet, 
-            class LocalOrdinal = int, 
-            class GlobalOrdinal = LocalOrdinal, 
+  template <class Packet,
+            class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
             class Node = Kokkos::DefaultNode::DefaultNodeType>
   class DistObject : virtual public Teuchos::Describable {
   public:
+    //! @name Typedefs
+    //@{
+
+    /// \brief The type of each datum being sent or received in an Import or Export.
+    ///
+    /// Note that this type does not always correspond to the
+    /// <tt>Scalar</tt> template parameter of subclasses.
+    typedef Packet packet_type;
+    //! The type of local indices.
+    typedef LocalOrdinal local_ordinal_type;
+    //! The type of global indices.
+    typedef GlobalOrdinal global_ordinal_type;
+    //! The Kokkos Node type.
+    typedef Node node_type;
+
+    //@}
     //! @name Constructors and destructor
-    //@{ 
+    //@{
 
     //! Constructor.
     explicit DistObject (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
@@ -174,7 +197,7 @@ namespace Tpetra {
 
     //@}
     //! @name Public methods for redistributing data
-    //@{ 
+    //@{
 
     /// \brief Import data into this object using an Import object ("forward mode").
     ///
@@ -193,9 +216,9 @@ namespace Tpetra {
     ///   and its target Map must be the same as <tt>this->getMap()</tt>.
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
-    void 
-    doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source, 
-              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, 
+    void
+    doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
+              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
               CombineMode CM);
 
     /// \brief Export data into this object using an Export object ("forward mode").
@@ -215,9 +238,9 @@ namespace Tpetra {
     ///   and its target Map must be the same as <tt>this->getMap()</tt>.
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
-    void 
-    doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source, 
-              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, 
+    void
+    doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source,
+              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
               CombineMode CM);
 
     /// \brief Import data into this object using an Export object ("reverse mode").
@@ -238,9 +261,9 @@ namespace Tpetra {
     ///   (Note the difference from forward mode.)
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
-    void 
+    void
     doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
-              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, 
+              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
               CombineMode CM);
 
     /// \brief Export data into this object using an Import object ("reverse mode").
@@ -261,21 +284,21 @@ namespace Tpetra {
     ///   (Note the difference from forward mode.)
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
-    void 
+    void
     doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
-              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, 
+              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
               CombineMode CM);
 
     //@}
     //! @name Attribute accessor methods
-    //@{ 
+    //@{
 
     /// \brief Whether this is a globally distributed object.
     ///
     /// For a definition of "globally distributed" (and its opposite,
     /// "locally replicated"), see the documentation of Map's
     /// isDistributed() method.
-    inline bool isDistributed () const;
+    bool isDistributed () const;
 
     /// \brief The Map describing the parallel distribution of this object.
     ///
@@ -284,12 +307,12 @@ namespace Tpetra {
     /// Map and a column Map.  It is up to the subclass to decide
     /// which Map to use when invoking the DistObject constructor.
     /// (CrsMatrix uses the row Map.)
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& 
+    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >&
     getMap() const { return map_; }
 
     //@}
     //! @name I/O methods
-    //@{ 
+    //@{
 
     /// \brief Print this object to the given output stream.
     ///
@@ -299,7 +322,7 @@ namespace Tpetra {
 
     //@}
     //! @name Implementation of Teuchos::Describable
-    //@{ 
+    //@{
 
     /// \brief One-line descriptiion of this object.
     ///
@@ -311,14 +334,74 @@ namespace Tpetra {
     /// \brief Print a descriptiion of this object to the given output stream.
     ///
     /// We declare this method virtual so that subclasses of
-    /// DistObject may override it.
-    virtual void 
-    describe (Teuchos::FancyOStream &out, 
+    /// Distobject may override it.
+    virtual void
+    describe (Teuchos::FancyOStream &out,
               const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-    //@} 
+    //@}
+    //! @name Methods for use only by experts
+    //@{
+
+    /// \brief Remove processes which contain no elements in this object's Map.
+    ///
+    /// \warning This method is ONLY for use by experts.  We highly
+    ///   recommend using the nonmember function of the same name
+    ///   defined in this file.
+    ///
+    /// \warning We make NO promises of backwards compatibility.
+    ///   This method may change or disappear at any time.
+    ///
+    /// On input, this object is distributed over the Map returned by
+    /// getMap() (the "original Map," with its communicator, the
+    /// "original communicator").  The input \c newMap of this method
+    /// <i>must</i> be the same as the result of calling
+    /// <tt>getMap()->removeEmptyProcesses()</tt>.  On processes in
+    /// the original communicator which contain zero elements
+    /// ("excluded processes," as opposed to "included processes"),
+    /// the input \c newMap must be \c Teuchos::null (which is what
+    /// <tt>getMap()->removeEmptyProcesses()</tt> returns anyway).
+    ///
+    /// On included processes, reassign this object's Map (that would
+    /// be returned by getMap()) to the input \c newMap, and do any
+    /// work that needs to be done to restore correct semantics.  On
+    /// excluded processes, free any data that needs freeing, and do
+    /// any other work that needs to be done to restore correct
+    /// semantics.
+    ///
+    /// This method has collective semantics over the original
+    /// communicator.  On exit, the only method of this object which
+    /// is safe to call on excluded processes is the destructor.  This
+    /// implies that subclasses' destructors must not contain
+    /// communication operations.
+    ///
+    /// \return The object's new Map.  Its communicator is a new
+    ///   communicator, distinct from the old Map's communicator,
+    ///   which contains a subset of the processes in the old
+    ///   communicator.
+    ///
+    /// \note The name differs from Map's method
+    ///   removeEmptyProcesses(), in order to emphasize that the
+    ///   operation on DistObject happens in place, modifying the
+    ///   input, whereas the operation removeEmptyProcess() on Map
+    ///   does not modify the input.
+    ///
+    /// \note To implementers of DistObject subclasses: The default
+    ///   implementation of this class throws std::logic_error.
+    virtual void
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
+
+    // Forward declaration of nonmember function.
+    template<class PT, class LO, class GO, class NT>
+    friend void
+    removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input,
+                                 const Teuchos::RCP<const Map<LO, GO, NT> >& newMap);
+    // Forward declaration of nonmember function.
+    template<class PT, class LO, class GO, class NT>
+    friend void
+    removeEmptyProcessesInPlace (Teuchos::RCP<Tpetra::DistObject<PT, LO, GO, NT> >& input);
+    //@}
 
   protected:
-
     /// \enum ReverseOption
     /// \brief Whether the data transfer should be performed in forward or reverse mode.
     ///
@@ -353,7 +436,7 @@ namespace Tpetra {
     ///
     /// \param revOp [in] Whether to do a forward or reverse mode
     ///   redistribution.
-    virtual void 
+    virtual void
     doTransfer (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source,
                 CombineMode CM,
                 size_t numSameIDs,
@@ -365,7 +448,7 @@ namespace Tpetra {
                 ReverseOption revOp);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
-    /// 
+    ///
     /// The doTransfer() method uses the subclass' implementations of
     /// these methods to implement data transfer.  Subclasses of
     /// DistObject must implement these methods.  This is an instance
@@ -374,12 +457,12 @@ namespace Tpetra {
     /// Method Pattern</a>.  ("Template" here doesn't mean "C++
     /// template"; it means "pattern with holes that are filled in by
     /// the subclass' method implementations.")
-    //@{ 
+    //@{
 
     /// \brief Compare the source and target (\e this) objects for compatibility.
     ///
     /// \return True if they are compatible, else false.
-    virtual bool 
+    virtual bool
     checkSizes (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source) = 0;
 
     /// \brief Perform copies and permutations that are local to this process.
@@ -399,7 +482,7 @@ namespace Tpetra {
     /// \param permuteFromLIDs [in] List of the elements that are
     ///   permuted.  They are listed by their LID in the source
     ///   object.
-    virtual void 
+    virtual void
     copyAndPermute (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
                     size_t numSameIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
@@ -426,7 +509,7 @@ namespace Tpetra {
     ///   constant, and constantNumPackets holds that value.
     ///
     /// \param distor [in] The Distributor object we are using.
-    virtual void 
+    virtual void
     packAndPrepare (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
                     const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
                     Teuchos::Array<Packet>& exports,
@@ -453,15 +536,15 @@ namespace Tpetra {
     ///
     /// \param CM [in] The combine mode to use when combining the
     ///   imported entries with existing entries.
-    virtual void 
+    virtual void
     unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
                       const Teuchos::ArrayView<const Packet> &imports,
                       const Teuchos::ArrayView<size_t> &numPacketsPerLID,
                       size_t constantNumPackets,
                       Distributor &distor,
                       CombineMode CM) = 0;
-    //@} 
-    
+    //@}
+
     /// \brief Hook for creating a const view.
     ///
     /// doTransfer() calls this on the source object.  By default,
@@ -507,7 +590,7 @@ namespace Tpetra {
     Teuchos::Array<Packet> imports_;
 
     /// \brief Number of packets to receive for each receive operation.
-    /// 
+    ///
     /// This array is used in Distributor::doPosts() (and
     /// doReversePosts()) when starting the ireceive operation.
     ///
@@ -532,7 +615,146 @@ namespace Tpetra {
     /// argument of packAndPrepare() to the number of columns in the
     /// multivector.)
     Teuchos::Array<size_t> numExportPacketsPerLID_;
+
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+    Teuchos::RCP<Teuchos::Time> doXferTimer_;
+    Teuchos::RCP<Teuchos::Time> copyAndPermuteTimer_;
+    Teuchos::RCP<Teuchos::Time> packAndPrepareTimer_;
+    Teuchos::RCP<Teuchos::Time> doPostsAndWaitsTimer_;
+    Teuchos::RCP<Teuchos::Time> unpackAndCombineTimer_;
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
   }; // class DistObject
+
+
+  /// \brief Remove processes which contain no elements in this object's Map.
+  ///
+  /// \tparam DistObjectType A specialization of DistObject.
+  ///
+  /// \warning This method is ONLY for use by experts.  The fact that
+  ///   the documentation of this method starts with a "Vocabulary"
+  ///   section should give you proper respect for the complicated
+  ///   semantics of this method in a parallel MPI run.
+  /// \warning We make NO promises of backwards compatibility.
+  ///   This method may change or disappear at any time.
+  ///
+  /// Vocabulary:
+  /// - The Map returned by <tt>input->getMap() on input to this
+  ///   method is the "original Map."
+  /// - The communicator returned by <tt>input->getComm() on
+  ///   input to this method is the "original communicator."
+  /// - All processes in the original communicator which contain zero
+  ///   elements in the original Map are "excluded processes."
+  /// - All other processes in the original communicator are "included
+  ///   processes."
+  ///
+  /// Preconditions:
+  /// - The nonnull object \c input is distributed over the
+  ///   original Map.
+  /// - The input Map <tt>newMap</tt> <i>must</i> be the same as the
+  ///   result of calling removeEmptyProcesses() on the original Map.
+  /// - On excluded processes, <tt>newMap</tt> must be
+  ///   <tt>Teuchos::null</tt>.  (This is what
+  ///   <tt>getMap()->removeEmptyProcesses()</tt> returns anyway on
+  ///   excluded processes.)
+  ///
+  /// This method has collective semantics over the original
+  /// communicator.  On included processes, reassign this object's Map
+  /// (that would be returned by getMap()) to the input \c newMap, and
+  /// do any work that needs to be done to restore correct semantics.
+  /// The input DistObject \c input will be nonnull on return.  On
+  /// excluded processes, free any data in \c input that need freeing,
+  /// do any other work that needs to be done to restore correct
+  /// semantics, and set \c input to null before returning.
+  ///
+  /// The two-argument version of this function is useful if you have
+  /// already precomputed the new Map that excludes processes with
+  /// zero elements.  For example, you might want to apply this Map to
+  /// several different MultiVector instances.  The one-argument
+  /// version of this function is useful if you want the DistObject to
+  /// compute the new Map itself, because you only plan to use it for
+  /// that one DistObject instance.
+  ///
+  /// Here is a sample use case.  Suppose that \c input is some
+  /// subclass of DistObject, like MultiVector, CrsGraph, or
+  /// CrsMatrix.  Suppose also that \c map_type is the corresponding
+  /// specialization of Map.
+  /// \code
+  /// RCP<const map_type> origRowMap = input->getMap ();
+  /// RCP<const map_type> newRowMap = origRowMap->removeEmptyProcesses ();
+  /// removeEmptyProcessesInPlace (input, newRowMap);
+  /// // Either (both the new Map and input are null), or
+  /// // (both the new Map and input are not null).
+  /// assert ((newRowMap.is_null () && input.is_null ()) ||
+  ///         (! newRowMap.is_null () && ! input.is_null ()));
+  /// \endcode
+  ///
+  /// \warning On excluded processes, calling this function
+  ///   invalidates any other references to the input DistObject
+  ///   <tt>input</tt>.  Calling any methods (other than the
+  ///   destructor) on the input on excluded processes has undefined
+  ///   behavior in that case, and may result in deadlock.
+  ///
+  /// \note The name differs from Map's method
+  ///   removeEmptyProcesses(), in order to emphasize that the
+  ///   operation on DistObject happens in place, modifying the
+  ///   input, whereas the operation removeEmptyProcess() on Map
+  ///   does not modify the input.
+  ///
+  /// \note To implementers of DistObject subclasses: The default
+  ///   implementation of this class throws std::logic_error.
+  ///
+  /// \note To implementers of DistObject subclasses: On exit, the
+  ///   only method of this object which is safe to call on excluded
+  ///   processes is the destructor, or this method with the original
+  ///   Map.  This implies that subclasses' destructors must not
+  ///   contain communication operations.
+  template<class DistObjectType>
+  void
+  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input,
+                               const Teuchos::RCP<const Map<typename DistObjectType::local_ordinal_type,
+                                                            typename DistObjectType::global_ordinal_type,
+                                                            typename DistObjectType::node_type> >& newMap);
+
+  /// \brief Remove processes which contain no elements in this object's Map.
+  ///
+  /// \tparam DistObjectType A specialization of DistObject.
+  ///
+  /// \warning This method is ONLY for use by experts.
+  /// \warning We make NO promises of backwards compatibility.
+  ///   This method may change or disappear at any time.
+  ///
+  /// This method behaves just like the two-argument version of
+  /// removeEmptyProcessesInPlace(), except that it first calls
+  /// removeEmptyProcesses() on the input DistObject's Map to compute
+  /// the new Map.
+  ///
+  /// The two-argument version of this function is useful if you have
+  /// already precomputed the new Map that excludes processes with
+  /// zero elements.  For example, you might want to apply this Map to
+  /// several different MultiVector instances.  The one-argument
+  /// version of this function is useful if you want the DistObject to
+  /// compute the new Map itself, because you only plan to use it for
+  /// that one DistObject instance.
+  ///
+  /// Here is a sample use case.  Suppose that \c input is some
+  /// subclass of DistObject, like MultiVector, CrsGraph, or
+  /// CrsMatrix.  Suppose also that \c map_type is the corresponding
+  /// specialization of Map.
+  /// \code
+  /// removeEmptyProcessesInPlace (input);
+  /// RCP<const map_type> newRowMap;
+  /// if (! input.is_null ()) {
+  ///   newRowMap = input->getMap ();
+  /// }
+  /// // Either (both the new Map and input are null), or
+  /// // (both the new Map and input are not null).
+  /// assert ((newRowMap.is_null () && input.is_null ()) ||
+  ///         (! newRowMap.is_null () && ! input.is_null ()));
+  /// \endcode
+  template<class DistObjectType>
+  void
+  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input);
+
 } // namespace Tpetra
 
 #endif /* TPETRA_DISTOBJECT_DECL_HPP */

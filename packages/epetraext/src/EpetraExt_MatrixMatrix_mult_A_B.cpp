@@ -75,10 +75,10 @@ namespace EpetraExt {
 /*****************************************************************************/
 static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
-  int Aest=(A.NumMyRows()>0)? A.MaxNumEntries()/A.NumMyRows():100;
-  int Best=(B.NumMyRows()>0)? B.MaxNumEntries()/B.NumMyRows():100;
+  int Aest=(A.NumMyRows()>0)? A.NumMyNonzeros()/A.NumMyRows():100;
+  int Best=(B.NumMyRows()>0)? B.NumMyNonzeros()/B.NumMyRows():100;
 
-  int nnzperrow=(int)(sqrt(Aest) + sqrt(Best) - 1);
+  int nnzperrow=(int)(sqrt((double)Aest) + sqrt((double)Best) - 1);
   nnzperrow*=nnzperrow;
  
   return (int)(A.NumMyRows()*nnzperrow*0.75 + 100);
@@ -525,7 +525,7 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 #endif
 
   // Sort the entries
-  sort_crs_entries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
+  Epetra_Util::SortCrsEntries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
@@ -669,7 +669,7 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
   }
 
   // Sort the entries
-  sort_crs_entries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
+  Epetra_Util::SortCrsEntries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
 
   return 0;
 }

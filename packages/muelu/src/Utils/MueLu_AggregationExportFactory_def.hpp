@@ -71,11 +71,11 @@ namespace MueLu {
   RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("Aggregates",          Teuchos::null, "Generating factory for aggregates");
-    validParamList->set< RCP<const FactoryBase> >("DofsPerNode",         Teuchos::null, "Generating factory for number of dofs per node");
-    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",  Teuchos::null, "Generating factory for amalgamation");
+    validParamList->set< RCP<const FactoryBase> >("Aggregates",          Teuchos::null,                        "Generating factory for aggregates");
+    validParamList->set< RCP<const FactoryBase> >("DofsPerNode",         Teuchos::null,                        "Generating factory for number of dofs per node");
+    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",  Teuchos::null,                        "Generating factory for amalgamation");
 
-    validParamList->set< std::string >           ("Output filename", "", "Output filename template. default = aggs_level%LEVELID_proc%PROCID.out. %LEVELID will be replaced by the multigrid level id. %PROCID will be replaced by the processor id.");
+    validParamList->set< std::string >           ("Output filename",     "aggs_level%LEVELID_proc%PROCID.out", "Output filename template (%LEVELID is replaced level id, %PROCID is replaced by processor id)");
 
     return validParamList;
   }
@@ -115,11 +115,9 @@ namespace MueLu {
       minGlobalAggId[i] = numAggsGlobal[i-1];
     }
 
-    GO numAggs = aggregates->GetNumAggregates();
-    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs,0);
-    AmalgamationFactory::ComputeUnamalgamatedAggregateSizes(*aggregates, *amalgInfo, aggSizes);
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > aggToRowMap(aggSizes.size());
-    AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggSizes, aggToRowMap);
+    ArrayRCP<LO> aggStart;
+    ArrayRCP<GlobalOrdinal> aggToRowMap;
+    AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggStart, aggToRowMap);
 
     // write to file
     //std::string outFile = outputFileName_;
@@ -133,16 +131,17 @@ namespace MueLu {
     GetOStream(Runtime0, 0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
     std::ofstream fout(outFile.c_str());
 
+    GO numAggs = aggregates->GetNumAggregates();
     std::vector<GlobalOrdinal> nodeIds;
-    for (int i=0; i< aggToRowMap.size(); ++i) {
+    for (int i=0; i< numAggs; ++i) {
       fout << "Agg " << minGlobalAggId[comm->getRank()] + i << " Proc " << comm->getRank() << ":";
-      for (int k=0; k< aggToRowMap[i].size(); ++k) {
+      for (int k=aggStart[i]; k< aggStart[i+1]; ++k) {
         /*std::cout << "proc: " << comm->getRank() << "\t aggToRowMap[" << i << "][" << k << "]=" <<aggToRowMap[i][k] << "\t node GID: " << aggToRowMap[i][k]/DofsPerNode << "\t GID in colMap=" << aggToRowMap[i][k];
           if(colMap->isNodeGlobalElement(aggToRowMap[i][k])==false)
           std::cout << " NOT ON CUR PROC!";
           std::cout << std::endl;*/
 
-        nodeIds.push_back(aggToRowMap[i][k]/DofsPerNode);
+        nodeIds.push_back(aggToRowMap[k]/DofsPerNode);
       }
 
       // remove duplicate entries from nodeids

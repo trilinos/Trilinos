@@ -61,22 +61,15 @@ struct LayoutRight { typedef LayoutRight array_layout ; };
 
 /** \brief  Left-to-right striding of multi-indices (Fortran scheme) by tiles.
  */
-template < unsigned M , unsigned N,
-           bool IsPowerOfTwo = (Impl::is_power_of_2<M>::value && Impl::is_power_of_2<N>::value)
+template < unsigned ArgN0 , unsigned ArgN1 ,
+           bool IsPowerOfTwo = ( Impl::is_power_of_two<ArgN0>::value &&
+                                 Impl::is_power_of_two<ArgN1>::value )
          >
-struct LayoutTileLeft { typedef LayoutTileLeft<M,N,IsPowerOfTwo> array_layout ; };
-
-#if 0
-template < typename Outer, typename Inner >
-struct LayoutTile;
-
-
-struct Left {};
-struct Right {};
-
-template < typename Outer, typename Inner, unsigned M, unsigned N >
-struct LayoutTile< Outer, Inner[M][N] >;
-#endif
+struct LayoutTileLeft {
+  typedef LayoutTileLeft<ArgN0,ArgN1,IsPowerOfTwo> array_layout ;
+  enum { N0 = ArgN0 };
+  enum { N1 = ArgN1 };
+};
 
 } /* namespace KokkosArray */
 

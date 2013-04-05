@@ -74,8 +74,12 @@ int fei::Lookup_Impl::getEqnNumber(int nodeNumber, int fieldID)
   }
   eqnNumbers += node->getOffsetIntoEqnNumbers();
   int offset = -1;
-  node->getFieldMask()->getFieldEqnOffset(fieldID, offset);
-  return(eqnNumbers[offset]);
+  int err = node->getFieldMask()->getFieldEqnOffset(fieldID, offset);
+  if (err == 0) {
+    return(eqnNumbers[offset]);
+  }
+
+  return -1;
 }
 
 //----------------------------------------------------------------------------

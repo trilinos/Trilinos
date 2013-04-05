@@ -105,52 +105,52 @@ int ex_put_qa (int   exoid,
     /* See if the number of qa records has already been defined.
        Assume that if the DIM_NUM_QA dimension exists, then the
        VAR_QA_TITLE variable also exists...
-    */
+     */
     status =  nc_inq_dimid(exoid, DIM_NUM_QA, &num_qa_dim);
     if (status != NC_NOERR) {
 
       /*   inquire previously defined dimensions  */
       if ((status =  nc_inq_dimid(exoid, DIM_STR, &strdim)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"Error: failed to locate string length in file id %d", exoid);
-	ex_err("ex_put_qa",errmsg,exerrval);
-	return (EX_FATAL);
+        exerrval = status;
+        sprintf(errmsg,
+                "Error: failed to locate string length in file id %d", exoid);
+        ex_err("ex_put_qa",errmsg,exerrval);
+        return (EX_FATAL);
       }
 
       if ((status = nc_inq_dimid(exoid, DIM_N4, &n4dim)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"Error: failed to locate record length in file id %d", exoid);
-	ex_err("ex_put_qa",errmsg,exerrval);
-	return (EX_FATAL);
+        exerrval = status;
+        sprintf(errmsg,
+                "Error: failed to locate record length in file id %d", exoid);
+        ex_err("ex_put_qa",errmsg,exerrval);
+        return (EX_FATAL);
       }
 
       /*   put file into define mode  */
       if ((status = nc_redef(exoid)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"Error: failed to put file id %d into define mode", exoid);
-	ex_err("ex_put_qa",errmsg,exerrval);
-	return (EX_FATAL);
+        exerrval = status;
+        sprintf(errmsg,
+                "Error: failed to put file id %d into define mode", exoid);
+        ex_err("ex_put_qa",errmsg,exerrval);
+        return (EX_FATAL);
       }
 
 
       /*   define dimensions */
       if ((status = nc_def_dim(exoid,DIM_NUM_QA,num_qa_records, &num_qa_dim)) != NC_NOERR) {
-	if (status == NC_ENAMEINUSE) {     /* duplicate entry? */
-	  exerrval = status;
-	  sprintf(errmsg,
-		  "Error: qa records already exist in file id %d", exoid);
-	  ex_err("ex_put_qa",errmsg,exerrval);
-	} else {
-	  exerrval = status;
-	  sprintf(errmsg,
-		  "Error: failed to define qa record array size in file id %d", exoid);
-	  ex_err("ex_put_qa",errmsg,exerrval);
-	}
+        if (status == NC_ENAMEINUSE) {     /* duplicate entry? */
+          exerrval = status;
+          sprintf(errmsg,
+                  "Error: qa records already exist in file id %d", exoid);
+          ex_err("ex_put_qa",errmsg,exerrval);
+        } else {
+          exerrval = status;
+          sprintf(errmsg,
+                  "Error: failed to define qa record array size in file id %d", exoid);
+          ex_err("ex_put_qa",errmsg,exerrval);
+        }
 
-	goto error_ret;         /* exit define mode and return */
+        goto error_ret;         /* exit define mode and return */
       }
 
       /*   define variable  */
@@ -159,28 +159,28 @@ int ex_put_qa (int   exoid,
       dims[2] = strdim;
 
       if ((status = nc_def_var(exoid, VAR_QA_TITLE, NC_CHAR, 3, dims, &varid)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"Error: failed to define qa record array in file id %d", exoid);
-	ex_err("ex_put_qa",errmsg,exerrval);
-	goto error_ret;         /* exit define mode and return */
+        exerrval = status;
+        sprintf(errmsg,
+                "Error: failed to define qa record array in file id %d", exoid);
+        ex_err("ex_put_qa",errmsg,exerrval);
+        goto error_ret;         /* exit define mode and return */
       }
 
       /*   leave define mode  */
       if ((status = nc_enddef (exoid)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"Error: failed to complete definition in file id %d", exoid);
-	ex_err("ex_put_qa",errmsg,exerrval);
-	return (EX_FATAL);
+        exerrval = status;
+        sprintf(errmsg,
+                "Error: failed to complete definition in file id %d", exoid);
+        ex_err("ex_put_qa",errmsg,exerrval);
+        return (EX_FATAL);
       }
     } else {
       if ((status = nc_inq_varid(exoid, VAR_QA_TITLE, &varid)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"Error: failed to find qa records variable in file id %d", exoid);
-	ex_err("ex_put_qa",errmsg,exerrval);
-	return (EX_FATAL);
+        exerrval = status;
+        sprintf(errmsg,
+                "Error: failed to find qa records variable in file id %d", exoid);
+        ex_err("ex_put_qa",errmsg,exerrval);
+        return (EX_FATAL);
       }
     }
 
@@ -188,34 +188,44 @@ int ex_put_qa (int   exoid,
       /*   write out QA records */
 
       for (i=0; i<num_qa_records; i++) {
-	for (j=0; j<4; j++) {
-	  start[0] = i;
-	  start[1] = j;
-	  start[2] = 0;
+        for (j=0; j<4; j++) {
+          start[0] = i;
+          start[1] = j;
+          start[2] = 0;
 
-	  count[0] = 1;
-	  count[1] = 1;
-	  count[2] = strlen(qa_record[i][j]) + 1;
+          count[0] = 1;
+          count[1] = 1;
+          count[2] = strlen(qa_record[i][j]) + 1;
 
-	  if ((status = nc_put_vara_text(exoid, varid, start, count, qa_record[i][j])) != NC_NOERR) {
-	    exerrval = status;
-	    sprintf(errmsg,
-		    "Error: failed to store qa record in file id %d", exoid);
-	    ex_err("ex_put_qa",errmsg,exerrval);
-	    return (EX_FATAL);
-	  }
-	}
+          if ((status = nc_put_vara_text(exoid, varid, start, count, qa_record[i][j])) != NC_NOERR) {
+            exerrval = status;
+            sprintf(errmsg,
+                    "Error: failed to store qa record in file id %d", exoid);
+            ex_err("ex_put_qa",errmsg,exerrval);
+            return (EX_FATAL);
+          }
+        }
+      }
+    } else if (ex_is_parallel(exoid)) {
+      /* In case we are in a collective mode, all processors need to call */
+      const char dummy[] = " ";
+      for (i=0; i<num_qa_records; i++) {
+        for (j=0; j<4; j++) {
+          start[0] = start[1] = start[2] = 0;
+          count[0] = count[1] = count[2] = 0;
+          nc_put_vara_text(exoid, varid, start, count, dummy);
+        }
       }
     }
   }
   return (EX_NOERR);
 
   /* Fatal error: exit definition mode and return */
- error_ret:
+  error_ret:
   if (nc_enddef (exoid) != NC_NOERR) {    /* exit define mode */
     sprintf(errmsg,
-	    "Error: failed to complete definition for file id %d",
-	    exoid);
+        "Error: failed to complete definition for file id %d",
+        exoid);
     ex_err("ex_put_qa",errmsg,exerrval);
   }
   return (EX_FATAL);

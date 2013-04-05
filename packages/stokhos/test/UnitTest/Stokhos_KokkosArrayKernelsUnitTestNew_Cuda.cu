@@ -48,9 +48,11 @@ extern UnitTestSetup setup;
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsMatrixFree_Cuda ) {
   typedef double Scalar;
   typedef KokkosArray::Cuda Device;
+  typedef Stokhos::DefaultSparseMatOps SparseMatOps;
   bool test_block = true;
   
-  success = test_crs_matrix_free<Scalar,Device>(setup, test_block, out);
+  success = test_crs_matrix_free<Scalar,Device,SparseMatOps>(
+    setup, test_block, out);
 }
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductTensor_Cuda ) {

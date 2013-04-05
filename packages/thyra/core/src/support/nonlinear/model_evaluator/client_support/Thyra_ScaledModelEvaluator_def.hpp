@@ -99,8 +99,6 @@ void ScaledModelEvaluator<Scalar>::evalModelImpl(
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
-  typedef ScalarTraits<Scalar> ST;
-  typedef ModelEvaluatorBase MEB;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
     "Thyra::ScaledModelEvaluator",inArgs,outArgs

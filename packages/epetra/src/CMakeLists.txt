@@ -72,6 +72,7 @@ SET(HEADERS ${HEADERS}
   Epetra_GIDTypeVector.h
   Epetra_HashTable.h
   Epetra_Import.h
+  Epetra_Import_Util.h
   Epetra_IntSerialDenseMatrix.h
   Epetra_IntSerialDenseVector.h
   Epetra_IntVector.h
@@ -141,6 +142,7 @@ SET(SOURCES ${SOURCES}
   Epetra_Flops.cpp
   Epetra_Fortran_wrappers.cpp
   Epetra_Import.cpp
+  Epetra_Import_Util.cpp
   Epetra_IntSerialDenseMatrix.cpp
   Epetra_IntSerialDenseVector.cpp
   Epetra_IntVector.cpp

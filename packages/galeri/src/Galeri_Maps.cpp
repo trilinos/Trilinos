@@ -45,12 +45,12 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Maps/Galeri_Linear.h"
-#include "Maps/Galeri_NodeCartesian2D.h"
-#include "Maps/Galeri_Cartesian2D.h"
-#include "Maps/Galeri_Cartesian3D.h"
-#include "Maps/Galeri_Random.h"
-#include "Maps/Galeri_Interlaced.h"
+#include "Galeri_Linear.h"
+#include "Galeri_NodeCartesian2D.h"
+#include "Galeri_Cartesian2D.h"
+#include "Galeri_Cartesian3D.h"
+#include "Galeri_Random.h"
+#include "Galeri_Interlaced.h"
 
 namespace Galeri {
 

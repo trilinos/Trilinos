@@ -124,8 +124,8 @@ struct ModifiedGramSchmidt
     for ( size_type j = 0 ; j < count ; ++j ) {
       // Reduction   : tmp = dot( Q(:,j) , Q(:,j) );
       // PostProcess : tmp = sqrt( tmp ); R(j,j) = tmp ; tmp = 1 / tmp ;
-      const vector_type Qj( Q , j );
-      const value_view  Rjj( R , j , j );
+      const vector_type Qj = KokkosArray::subview< vector_type >( Q , j );
+      const value_view  Rjj = KokkosArray::subview< value_view >( R , j , j );
 
       KokkosArray::dot( Qj , InvNorm2( Rjj , tmp  ) );
 
@@ -133,8 +133,8 @@ struct ModifiedGramSchmidt
       KokkosArray::scale( tmp , Qj );
 
       for ( size_t k = j + 1 ; k < count ; ++k ) {
-        const vector_type Qk( Q , k );
-        const value_view  Rjk( R , j , k );
+        const vector_type Qk = KokkosArray::subview< vector_type >( Q , k );
+        const value_view  Rjk = KokkosArray::subview< value_view >( R , j , k );
 
         // Reduction   : R(j,k) = dot( Q(:,j) , Q(:,k) );
         // PostProcess : tmp = - R(j,k);

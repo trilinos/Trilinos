@@ -38,6 +38,7 @@
 #include <vector>
 #include <stdint.h>
 #include <iostream>
+#include <Ioss_EntityType.h>
 
 namespace Iogn {
   typedef std::vector<int64_t> MapVector;
@@ -187,7 +188,7 @@ namespace Iogn {
     */
     explicit GeneratedMesh(const std::string &parameters, int proc_count = 1, int my_proc = 0);
     GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z, int proc_count = 1, int my_proc = 0);
-    GeneratedMesh() { };
+    GeneratedMesh();
     virtual ~GeneratedMesh();
 
     /**
@@ -331,6 +332,7 @@ namespace Iogn {
      */
     int64_t shell_element_count_proc(ShellLocation) const;
 
+    int64_t timestep_count() const {return timestepCount;}
     /**
      * Return number of elements in the element block with id
      * 'block_number'. The 'block_number' ranges from '1' to
@@ -456,11 +458,15 @@ namespace Iogn {
     int64_t get_num_y() const {return numY;}
     int64_t get_num_z() const {return numZ;}
 
+    size_t get_variable_count(Ioss::EntityType type) const
+    { return variableCount.find(type) != variableCount.end() ? variableCount.find(type)->second : 0; }
+
   private:
     
     GeneratedMesh( const GeneratedMesh & );
     GeneratedMesh & operator = ( const GeneratedMesh & );
 
+    void set_variable_count(const std::string &type, size_t count);
     void parse_options(const std::vector<std::string> &groups);
     void show_parameters() const;
     void initialize();
@@ -474,6 +480,9 @@ namespace Iogn {
 
     size_t processorCount;
     size_t myProcessor;
+
+    size_t timestepCount;
+    std::map<Ioss::EntityType, size_t> variableCount;
 
     double offX, offY, offZ; /** Offsets in X, Y, and Z directions */
     double sclX, sclY, sclZ; /** Scale in X, Y, and Z directions

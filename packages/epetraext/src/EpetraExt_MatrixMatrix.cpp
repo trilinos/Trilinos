@@ -1220,7 +1220,7 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   }
 
   //Now import any needed remote rows and populate the Aview struct.
-  if(scenario==1) {
+  if(scenario==1 && call_FillComplete_on_result) {
     EPETRA_CHK_ERR(import_only(A,*targetMap_A,Aview));
   }
   else  {
@@ -1257,7 +1257,7 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   }
 
   //Now import any needed remote rows and populate the Bview struct.  
-  if(scenario==1) {
+  if(scenario==1 && call_FillComplete_on_result) {
     EPETRA_CHK_ERR(import_only(B,*targetMap_B,Bview,A.Importer()));
   }
   else {

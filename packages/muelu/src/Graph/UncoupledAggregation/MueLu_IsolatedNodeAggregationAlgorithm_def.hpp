@@ -84,8 +84,6 @@ LocalOrdinal IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node,
   Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
-  LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates(); // return number of local aggregates on current proc
-  const int myRank = graph.GetComm()->getRank();
 
   // loop over all local rows
   for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {

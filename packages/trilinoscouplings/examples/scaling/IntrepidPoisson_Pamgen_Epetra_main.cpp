@@ -265,10 +265,11 @@ main (int argc, char *argv[])
   int numItersPerformed = 0;
   const MT tol = inputList.get("Convergence Tolerance",
 			       STM::squareroot (STM::eps ()));
-  const int maxNumIters = inputList.get("Maximum Iterations", 100);
+  const int maxNumIters = inputList.get("Maximum Iterations", 200);
+  const int num_steps = inputList.get("Number of Time Steps", 1);
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
-    solveWithBelos (converged, numItersPerformed, tol, maxNumIters,
+    solveWithBelos (converged, numItersPerformed, tol, maxNumIters, num_steps,
 		    X, A, B, Teuchos::null, M);
   }
 

@@ -121,6 +121,28 @@ public:
     CreateDefaultView();
   }
 
+  //! Constructor specifying fixed number of entries for each row and column map
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, maxNumEntriesPerRow, pftype);
+
+    // Default view
+    CreateDefaultView();
+  }
+
+  //! Constructor specifying fixed number of entries for each row and column map
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, NumEntriesPerRowToAlloc, pftype);
+
+    // Default view
+    CreateDefaultView();
+  }
+
   CrsMatrixWrap(RCP<CrsMatrix> matrix)
     : finalDefaultView_(matrix->isFillComplete())
   {
@@ -446,6 +468,12 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(Matrix::operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.GetColMap(): view '" + viewLabel + "' does not exist.");
     updateDefaultView(); // If CrsMatrix::fillComplete() have been used instead of CrsMatrixWrap::fillComplete(), the default view is updated.
     return Matrix::operatorViewTable_.get(viewLabel)->GetColMap();
+  }
+
+  void removeEmptyProcessesInPlace(const Teuchos::RCP<const Map>& newMap) {
+    matrixData_->removeEmptyProcessesInPlace(newMap);
+    this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetRowMap(matrixData_->getRowMap());
+    this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetColMap(matrixData_->getColMap());
   }
 
   //@}

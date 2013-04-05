@@ -120,7 +120,7 @@ public:
   , element_vectors( arg_element_vectors )
   , coeff_K( arg_coeff_K )
   {
-    const size_t elem_count = arg_mesh.elem_node_ids.dimension(0);
+    const size_t elem_count = arg_mesh.elem_node_ids.dimension_0();
 
     parallel_for( elem_count , *this );
   }
@@ -461,7 +461,7 @@ struct DirichletResidual<
                      const ScalarCoordType  bc_lower_z ,
                      const ScalarCoordType  bc_upper_z)
   {
-    const size_t row_count = linsys_matrix.graph.row_map.dimension(0) - 1 ;
+    const size_t row_count = linsys_matrix.graph.row_map.dimension_0() - 1 ;
 
     DirichletResidual op ;
     op.node_coords    = mesh.node_coords ;

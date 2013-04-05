@@ -62,10 +62,12 @@
 
 template <typename Scalar>
 Piro::NOXSolver<Scalar>::
-NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
-	  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_) :
+NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
+	  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model_,
+          const Teuchos::RCP<ObserverBase<Scalar> > &observer_) :
   appParams(appParams_),
   model(model_),
+  observer(observer_),
   num_p(model->Np()),
   num_g(model->Ng()),
   solver(new Thyra::NOXNonlinearSolver),
@@ -543,6 +545,10 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
         }
       }
     }
+  }
+
+  if (Teuchos::nonnull(this->observer)) {
+    this->observer->observeSolution(*convergedSolution);
   }
 }
 

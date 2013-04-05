@@ -73,20 +73,15 @@ namespace MueLu {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  DeclareInput(Level & currentLevel) const
-  {
-    Input(currentLevel, "number of partitions");
-
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
+    Input(currentLevel, "number of partitions");
 
   } //DeclareInput()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  Build(Level &level) const
-  {
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) const {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix> A = Get< RCP<Matrix> >(level, "A");
@@ -149,11 +144,10 @@ namespace MueLu {
     if (IsAvailable(level, "Coordinates")) {
 
       RCP<Matrix> Aloc = Get<RCP<Matrix> >(level, "A");
-      LocalOrdinal blksize = Aloc->GetFixedBlockSize();
 
       RCP<MultiVector> multiVectorXYZ = Get< RCP<MultiVector> >(level, "Coordinates");
       for (int i=0; i< (int)multiVectorXYZ->getNumVectors(); i++) { //FIXME cast
-        XYZ.push_back(Utils::CoalesceCoordinates(multiVectorXYZ->getDataNonConst(i), blksize)); // If blksize == 1, not copy but it's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
+        XYZ.push_back(Utils::CoalesceCoordinates(multiVectorXYZ->getDataNonConst(i), 1)); // If blksize == 1, not copy but it's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
       }
 
       // TODO: level.Set(XCoordinates / YCoordinates / ZCoordinates as it is computed and might be needed somewhere else. But can wait for now. This code have to be moved anyway.
@@ -231,9 +225,7 @@ namespace MueLu {
   //-------------------------------------------------------------------------------------------------------------
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  GetLocalNumberOfRows(void *data, int *ierr)
-  {
+  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetLocalNumberOfRows(void *data, int *ierr) {
     if (data == NULL) {
       *ierr = ZOLTAN_FATAL;
       return -1;

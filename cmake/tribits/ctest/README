@@ -151,16 +151,20 @@ you can avoid pulling commits by creating a symbolic link and running as:
   $ env  CTEST_DASHBOARD_ROOT=$PWD  <Project>_PACKAGES=Teuchos \
      CTEST_TEST_TYPE=Experimental \
      <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
-     CTEST_DO_UPDATES=OFF  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+     <Project>_IGNORE_MISSING_EXTRA_REPOSITORIES=ON CTEST_DO_UPDATES=OFF \
+     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
      ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 Note that above it is critical that you set CTEST_DO_UPDATES=OFF so that it
 will not try to reset your repos and wipe out your changes or have merge
-conflicts for extra repos.  Also, it is crticial that you make sure that the
-version of the project in in <somedir> has all of the extra repos cloned that
-would be cloned if CTEST_DO_UPDATES=ON or the script will fail with a
-configure failure.
+conflicts for extra repos.  The option
+<Project>_IGNORE_MISSING_EXTRA_REPOSITORIES=ON allows you to be missing some
+extra repos so that you can test with just the extra repos that you have
+cloned.  Note that this will not test the exact state of the project that
+would be in automated testing.  If you want to assert that the exact list of
+repos is cloned already, then set
+<Project>_IGNORE_MISSING_EXTRA_REPOSITORIES=OFF or leave off that argument.
 
 After the local CTest processes are working, just to make sure the
 submit works, you can run a final trial build with:

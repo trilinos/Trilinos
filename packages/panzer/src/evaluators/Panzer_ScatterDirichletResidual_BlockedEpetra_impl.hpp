@@ -108,6 +108,7 @@ panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual, Traits,
 ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
+   , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -138,6 +139,9 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
 
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
 
   this->setName(scatterName+" Scatter Residual");
 }
@@ -176,6 +180,10 @@ preEvaluate(typename Traits::PreEvalData d)
 
    dirichletCounter_ = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_x(),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
+
+   // extract linear object container
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+   TEUCHOS_ASSERT(!Teuchos::is_null(blockedContainer_));
 }
 
 // **********************************************************************
@@ -205,7 +213,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
+   RCP<const BLOC> blockedContainer = blockedContainer_;
    RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f(),true);
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -277,6 +285,7 @@ panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian, Traits,
 ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
+   , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -307,6 +316,9 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName(scatterName+" Scatter Residual (Jacobian)");
 }
 
@@ -316,8 +328,6 @@ void panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian, Tr
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
-  // globalIndexer_ = d.globalIndexer_;
-
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
@@ -347,6 +357,10 @@ preEvaluate(typename Traits::PreEvalData d)
 
    dirichletCounter_ = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_x(),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
+
+   // extract linear object container
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+   TEUCHOS_ASSERT(!Teuchos::is_null(blockedContainer_));
 }
 
 // **********************************************************************
@@ -373,7 +387,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
+   RCP<const BLOC> blockedContainer = blockedContainer_;
    RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f());
    Teuchos::RCP<BlockedLinearOpBase<double> > Jac = rcp_dynamic_cast<BlockedLinearOpBase<double> >(blockedContainer->get_A());
 

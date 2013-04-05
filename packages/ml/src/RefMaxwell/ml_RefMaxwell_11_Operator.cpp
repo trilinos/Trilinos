@@ -42,7 +42,7 @@ ML_Epetra::ML_RefMaxwell_11_Operator::ML_RefMaxwell_11_Operator(const Epetra_Crs
 
   /* Transpose D0 */
 #ifdef MANUALLY_TRANSPOSE_D0
-  D0_Matrix_Transposer_= new EpetraExt::RowMatrix_Transpose(true,(Epetra_Map*)&M0inv_Matrix.OperatorRangeMap());
+  D0_Matrix_Transposer_= new EpetraExt::RowMatrix_Transpose((Epetra_Map*)&M0inv_Matrix.OperatorRangeMap());
   D0T_Matrix_= dynamic_cast<Epetra_CrsMatrix*>( & ((*D0_Matrix_Transposer_)((Epetra_CrsMatrix&)D0_Matrix)));
   D0T_Matrix_= dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0T_Matrix_,D0T_Matrix_Trans_,"D0T",false));
 #endif

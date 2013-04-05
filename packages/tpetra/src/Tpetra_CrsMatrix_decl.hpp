@@ -376,6 +376,37 @@ namespace Tpetra {
     explicit CrsMatrix (const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& graph,
                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+    /// \brief Constructor specifying column Map and arrays containing the matrix in sorted, local ids.
+    ///
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param colMap [in] Distribution of columns of the matrix.
+    ///
+    /// \param rowPointers [in] The beginning of each row in the matrix,
+    ///   as in a CSR "rowptr" array.  The length of this vector should be
+    ///   equal to the number of rows in the graph, plus one.  This last
+    ///   entry should store the nunber of nonzeros in the matrix.
+    ///
+    /// \param columnIndices [in] The local indices of the columns,
+    ///   as in a CSR "colind" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the matrix.
+    ///
+    /// \param values [in] The local entries in the matrix,
+    ///   as in a CSR "vals" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the matrix.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+              const ArrayRCP<size_t> & rowPointers,
+              const ArrayRCP<LocalOrdinal> & columnIndices,
+              const ArrayRCP<Scalar> & values,
+              const RCP<ParameterList>& params = null);
+
+
     /// \brief Create a cloned CrsMatrix for a different node type.
     ///
     /// This method creates a new CrsMatrix on a specified node type,
@@ -412,7 +443,6 @@ namespace Tpetra {
       )
 
       typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsMatrix2;
-      typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsGraph2;
       typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
       RCP<const Map2> clonedRowMap = getRowMap()->template clone(node2);
 
@@ -649,6 +679,18 @@ namespace Tpetra {
     //! Scale the current values of a matrix, this = alpha*this.
     void scale(const Scalar &alpha);
 
+    //! Sets the 1D pointer arrays of the graph.
+    /**
+       \pre <tt>hasColMap() == true</tt>
+       \pre <tt>getGraph() != Teuchos::null</tt>
+       \pre No insert/sum routines have been called
+
+       \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    void setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values);
+
+
+
     //@}
     //! @name Transformational Methods
     //@{
@@ -708,6 +750,56 @@ namespace Tpetra {
       \post <tt>isFillComplete() == true<tt>
     */
     void fillComplete(const RCP<ParameterList> &params = null);
+
+    /// \brief Perform a fillComplete on a matrix that already has data.
+    ///
+    /// The matrux must already have filled local 1-D storage
+    /// (lclInds1D_ and rowPtrs_ for the graph, and values1D_ in the
+    /// matrix).  If the matrix has been constructed in any other way,
+    /// this method will throw an exception.  This routine is needed
+    /// to support other Trilinos packages and should not be called by
+    /// ordinary users.
+    ///
+    /// \warning This method is intended for expert developer use
+    ///   only, and should never be called by user code.
+    void
+    expertStaticFillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+                              const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+                              const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+                              const RCP<ParameterList> &params=Teuchos::null);
+
+    /// \brief Replace the current domain Map and Import with the given objects.
+    ///
+    /// \param newDomainMap [in] New domain Map.  Must be nonnull.
+    /// \param newImporter [in] Optional Import object.  If null, we
+    ///   will compute it.
+    ///
+    /// \pre The matrix must be fill complete:
+    ///   <tt>isFillComplete() == true</tt>.
+    /// \pre If the Import is provided, its target Map must be the
+    ///   same as the column Map of the matrix.
+    /// \pre If the Import is provided, its source Map must be the
+    ///   same as the provided new domain Map.
+    void
+    replaceDomainMapAndImporter (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newDomainMap,
+                                 Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >& newImporter);
+
+    /// \brief Remove processes owning zero rows from the Maps and their communicator.
+    ///
+    /// \warning This method is ONLY for use by experts.  We highly
+    ///   recommend using the nonmember function of the same name
+    ///   defined in Tpetra_DistObject_decl.hpp.
+    ///
+    /// \warning We make NO promises of backwards compatibility.
+    ///   This method may change or disappear at any time.
+    ///
+    /// \param newMap [in] This <i>must</i> be the result of calling
+    ///   the removeEmptyProcesses() method on the row Map.  If it
+    ///   is not, this method's behavior is undefined.  This pointer
+    ///   will be null on excluded processes.
+    virtual void
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
 
     //@}
     //! @name Methods implementing RowMatrix
@@ -944,7 +1036,7 @@ namespace Tpetra {
     /// communication between processes, even if this is necessary for
     /// correctness of the matrix-vector multiply.  Use the apply()
     /// method if you want to compute the mathematical sparse
-    /// matrix-vector multiply.  
+    /// matrix-vector multiply.
     ///
     /// This method is mainly of use to Tpetra developers, though some
     /// users may find it helpful if they plan to reuse the result of
@@ -1063,12 +1155,12 @@ namespace Tpetra {
     /// semantics: Y's entries will be ignored, and Y will be
     /// overwritten with the result of the multiplication, even if it
     /// contains <tt>NaN</tt> (not-a-number) floating-point entries.
-    void 
-    apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-	   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&Y,
-	   Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	   Scalar alpha = ScalarTraits<Scalar>::one(),
-	   Scalar beta = ScalarTraits<Scalar>::zero()) const;
+    void
+    apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+           MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&Y,
+           Teuchos::ETransp mode = Teuchos::NO_TRANS,
+           Scalar alpha = ScalarTraits<Scalar>::one(),
+           Scalar beta = ScalarTraits<Scalar>::zero()) const;
 
     /// \brief "Hybrid" Jacobi + (Gauss-Seidel or SOR) on \f$B = A X\f$.
     ///
@@ -1162,6 +1254,11 @@ namespace Tpetra {
     /// \param numSweeps [in] Number of sweeps.  We count each
     ///   Symmetric sweep (including both its Forward and its
     ///   Backward sweep) as one.
+    /// \param zeroInitialGuess [in] If true, this method will fill X
+    ///   with zeros initially.  If false, this method will assume
+    ///   that X contains a possibly nonzero initial guess on input.
+    ///   Note that a nonzero initial guess may impose an additional
+    ///   nontrivial communication cost (an additional Import).
     ///
     /// \pre Domain, range, and row Maps of the sparse matrix are all the same.
     /// \pre No other argument aliases X.
@@ -1171,7 +1268,8 @@ namespace Tpetra {
                      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
                      const Scalar& dampingFactor,
                      const ESweepDirection direction,
-                     const int numSweeps) const;
+                     const int numSweeps,
+                     const bool zeroInitialGuess) const;
 
     //! Whether apply() allows applying the transpose or conjugate transpose.
     bool hasTransposeApply() const;
@@ -1444,8 +1542,9 @@ namespace Tpetra {
     // useful typedefs
     typedef OrdinalTraits<LocalOrdinal>                     LOT;
     typedef OrdinalTraits<GlobalOrdinal>                    GOT;
-    typedef ScalarTraits<Scalar>                             ST;
-    typedef typename ST::magnitudeType                Magnitude;
+    typedef ScalarTraits<Scalar>                            STS;
+    typedef typename STS::magnitudeType               Magnitude;
+    typedef ScalarTraits<Magnitude>                         STM;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       MV;
     typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>             V;
     typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>  Graph;
@@ -1586,19 +1685,19 @@ namespace Tpetra {
                           const bool force = false) const;
 
     //! Special case of apply() for <tt>mode == Teuchos::NO_TRANS</tt>.
-    void 
+    void
     applyNonTranspose (const MV& X_in,
-		       MV& Y_in,
-		       Scalar alpha,
-		       Scalar beta) const;
+                       MV& Y_in,
+                       Scalar alpha,
+                       Scalar beta) const;
 
     //! Special case of apply() for <tt>mode != Teuchos::NO_TRANS</tt>.
     void
     applyTranspose (const MV& X_in,
-		    MV& Y_in,
-		    const Teuchos::ETransp mode, 
-		    Scalar alpha, 
-		    Scalar beta) const;
+                    MV& Y_in,
+                    const Teuchos::ETransp mode,
+                    Scalar alpha,
+                    Scalar beta) const;
 
     // matrix data accessors
     ArrayView<const Scalar>    getView(RowInfo rowinfo) const;
@@ -1662,8 +1761,8 @@ namespace Tpetra {
     /// always matches that of graph_, as the graph does the
     /// allocation for the matrix.
     //@{
-    ArrayRCP<Scalar>                       values1D_;
-    ArrayRCP<ArrayRCP<Scalar> >            values2D_;
+    ArrayRCP<Scalar> values1D_;
+    ArrayRCP<Array<Scalar> > values2D_;
     //@}
 
     // TODO: these could be allocated at resumeFill() and de-allocated at fillComplete() to make for very fast getView()/getViewNonConst()
@@ -1689,7 +1788,8 @@ namespace Tpetra {
 
     /// \brief Cached Frobenius norm of the (global) matrix.
     ///
-    /// The value -Teuchos::ScalarTraits<Magnitude>::one() means that
+    /// The value -1 (in general,
+    /// <tt>-Teuchos::ScalarTraits<Magnitude>::one()</tt>) means that
     /// the norm has not yet been computed, or that the values in the
     /// matrix may have changed and the norm must be recomputed.
     mutable Magnitude frobNorm_;
@@ -1783,6 +1883,9 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    typedef typename CrsMatrixType::local_ordinal_type LocalOrdinal;
+    typedef typename CrsMatrixType::global_ordinal_type GlobalOrdinal;
+    typedef typename CrsMatrixType::node_type Node;
     typedef Map<typename CrsMatrixType::local_ordinal_type,
       typename CrsMatrixType::global_ordinal_type,
       typename CrsMatrixType::node_type> map_type;
@@ -1790,11 +1893,31 @@ namespace Tpetra {
     // FIXME (mfh 11 Apr 2012) The current implementation of this
     // method doesn't actually fuse the Import with fillComplete().
     // This will change in the future.
+
+    // Pre-count the nonzeros to allow a build w/ Static Profile
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(importer.getSourceMap());
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(importer.getTargetMap());
+    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
+    for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
+      nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
+
+    targetNnzPerRowVec.doImport(sourceNnzPerRowVec,importer,Tpetra::INSERT);
+
+
+    ArrayRCP<size_t> MyNnz(importer.getTargetMap()->getNodeNumElements());
+
+    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData(0);
+    for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
+      MyNnz[i] = Teuchos::as<size_t>(targetNnzPerRow[i]);
+
+    RCP<ParameterList> matrixparams; 
+    if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
+
     RCP<CrsMatrixType> destMat =
-      rcp (new CrsMatrixType (importer.getTargetMap (),
-                              as<size_t> (0),
-                              DynamicProfile,
-                              params));
+      rcp (new CrsMatrixType (importer.getTargetMap(),
+                              MyNnz,
+                              StaticProfile,
+                              matrixparams));
     destMat->doImport (*sourceMatrix, importer, INSERT);
 
     // Use the source matrix's domain Map as the default.
@@ -1804,7 +1927,25 @@ namespace Tpetra {
     RCP<const map_type> theRangeMap =
       rangeMap.is_null () ? sourceMatrix->getRangeMap () : rangeMap;
 
-    destMat->fillComplete (theDomainMap, theRangeMap);
+    // Do we need to restrict the communicator?
+    bool restrictComm = false;
+    if (!params.is_null()) {
+      restrictComm = params->get("Restrict Communicator",restrictComm);
+    }
+
+    if(restrictComm) {
+      // Handle communicator restriction, if requested
+      RCP<const map_type> newRowMap = importer.getTargetMap()->removeEmptyProcesses();
+      RCP<const Comm<int> > newComm = newRowMap.is_null() ? Teuchos::null : newRowMap->getComm();
+
+      destMat->removeEmptyProcessesInPlace(newRowMap);
+      theDomainMap = theDomainMap->replaceCommWithSubset(newComm);
+      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);      
+      if(!newComm.is_null()) destMat->fillComplete(theDomainMap, theRangeMap);
+    }
+    else
+      destMat->fillComplete(theDomainMap, theRangeMap);
+
     return destMat;
   }
 
@@ -1858,6 +1999,9 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    typedef typename CrsMatrixType::local_ordinal_type LocalOrdinal;
+    typedef typename CrsMatrixType::global_ordinal_type GlobalOrdinal;
+    typedef typename CrsMatrixType::node_type Node;
     typedef Map<typename CrsMatrixType::local_ordinal_type,
       typename CrsMatrixType::global_ordinal_type,
       typename CrsMatrixType::node_type> map_type;
@@ -1865,11 +2009,30 @@ namespace Tpetra {
     // FIXME (mfh 11 Apr 2012) The current implementation of this
     // method doesn't actually fuse the Export with fillComplete().
     // This will change in the future.
+
+    // Pre-count the nonzeros to allow a build w/ Static Profile
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(exporter.getSourceMap());
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(exporter.getTargetMap(),true);
+    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
+    for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
+      nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
+
+    targetNnzPerRowVec.doExport(sourceNnzPerRowVec,exporter,Tpetra::ADD);
+
+    ArrayRCP<size_t> MyNnz(exporter.getTargetMap()->getNodeNumElements());
+
+    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData(0);
+    for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
+      MyNnz[i] = Teuchos::as<size_t>(targetNnzPerRow[i]);
+
+    RCP<ParameterList> matrixparams;
+    if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
+
     RCP<CrsMatrixType> destMat =
       rcp (new CrsMatrixType (exporter.getTargetMap (),
-                              as<size_t> (0),
-                              DynamicProfile,
-                              params));
+                              MyNnz,
+                              StaticProfile,
+                              matrixparams));
     destMat->doExport (*sourceMatrix, exporter, INSERT);
 
     // Use the source matrix's domain Map as the default.
@@ -1879,7 +2042,25 @@ namespace Tpetra {
     RCP<const map_type> theRangeMap =
       rangeMap.is_null () ? sourceMatrix->getRangeMap () : rangeMap;
 
-    destMat->fillComplete (theDomainMap, theRangeMap);
+    // Do we need to restrict the communicator?
+    bool restrictComm = false;
+    if (!params.is_null()) {
+      restrictComm = params->get("Restrict Communicator",restrictComm);
+    }
+
+    if(restrictComm) {
+      // Handle communicator restriction, if requested
+      RCP<const map_type> newRowMap = exporter.getTargetMap()->removeEmptyProcesses();
+      RCP<const Comm<int> > newComm = newRowMap.is_null() ? Teuchos::null : newRowMap->getComm();
+
+      destMat->removeEmptyProcessesInPlace(newRowMap);
+      theDomainMap = theDomainMap->replaceCommWithSubset(newComm);
+      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);      
+      if(!newComm.is_null()) destMat->fillComplete(theDomainMap, theRangeMap);
+    }
+    else
+      destMat->fillComplete(theDomainMap, theRangeMap);
+
     return destMat;
   }
 } // namespace Tpetra

@@ -16,6 +16,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultFiniteDifferenceModelEvaluator
   SOURCES
     DefaultFiniteDifferenceModelEvaluator_UnitTests.cpp
+    DirectionalFiniteDiffCalculator_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1

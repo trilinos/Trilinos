@@ -115,6 +115,7 @@ IF (Piro_ENABLE_NOX)
     MockModelEval_A.hpp
     Piro_Test_ThyraSupport.hpp
     Piro_Test_WeakenedModelEvaluator.hpp
+    Piro_Test_MockObserver.hpp
     NUM_MPI_PROCS 1-4
     STANDARD_PASS_OUTPUT
   )

@@ -1,5 +1,8 @@
 <ParameterList>
   <Parameter name="Preconditioner" type="string" value="None"/>
+  <Parameter name="Maximum Iterations" type="int" value="10"/>
+  <Parameter name="Convergence Tolerance" type="double" value="1e-8"/>
+  <Parameter name="Number of Time Steps" type="int" value="100"/>
 
   <ParameterList name="ML">
     <Parameter name="ML output" type="int" value="10"/>
@@ -151,7 +154,6 @@
         <ParameterList name="ParameterList">
           <Parameter name="chebyshev: degree"                 type="int"     value="3"/>>
           <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="20"/>  <!-- 7 for 2D, 20 for 3D -->
-          <Parameter name="chebyshev: max eigenvalue"         type="double"  value="-1.0"/>
           <Parameter name="chebyshev: min eigenvalue"         type="double"  value="1.0"/>
           <Parameter name="chebyshev: zero starting solution" type="bool"    value="true"/>
         </ParameterList>

@@ -50,6 +50,11 @@
 
 namespace Kokkos {
 
+  namespace Details {
+    template <class NodeType>
+    Teuchos::RCP<NodeType> getNode() { return Teuchos::null; }
+  } //namespace Details
+
   class DefaultNode {
     public:
 

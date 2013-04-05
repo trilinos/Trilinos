@@ -120,7 +120,7 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   TypeRHS operator[]( const iType & i ) const
     {
-      array_check_bounds(i,N);
+      array_check_bounds(i,rhs.size());
       return KOKKOSARRAY_ARRAY_UNARY_OPERATOR rhs[i] ;
     }
 
@@ -844,7 +844,7 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   T operator[]( const iType & i ) const
     { 
-      array_check_bounds(i,N);
+      array_check_bounds(i,lhs.size());
       return KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER( lhs[i] );
     }
 
@@ -879,7 +879,7 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   T operator[]( const iType & i ) const
     { 
-      array_check_bounds(i,N);
+      array_check_bounds(i,lhs.size());
       return KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER( lhs[i] );
     }
 

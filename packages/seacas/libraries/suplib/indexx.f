@@ -54,13 +54,13 @@ C
       end if
 
       do start = (n-2)/2, 0, -1
-        call my_siftdown(a, indx, start, n);
+        call my_siftdown(a, indx, start, n)
       end do
  
       do bottom = n-1, 1, -1
         temp = indx(0)
         indx(0) = indx(bottom)
-        indx(bottom) = temp;
+        indx(bottom) = temp
         call my_siftdown(a, indx, 0, bottom)
       end do
       end
@@ -75,15 +75,15 @@ C
       integer temp
  
       root = start
-      do while(root*2 + 1 < bottom)
+      do while(root*2 + 1 .lt. bottom)
         child = root * 2 + 1
  
-        if ((child + 1 < bottom) .and.
-     *    (a(indx(child)) < a(indx(child+1)))) then
+        if ((child + 1 .lt. bottom) .and.
+     *    (a(indx(child)) .lt. a(indx(child+1)))) then
           child = child + 1
         end if
  
-        if (a(indx(root)) < a(indx(child))) then
+        if (a(indx(root)) .lt. a(indx(child))) then
           temp = indx(child)
           indx(child) = indx(root)
           indx(root) = temp

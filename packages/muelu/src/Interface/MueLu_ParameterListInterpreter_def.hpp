@@ -46,12 +46,14 @@
 #ifndef MUELU_PARAMETERLISTINTERPRETER_DEF_HPP
 #define MUELU_PARAMETERLISTINTERPRETER_DEF_HPP
 
+#include <Teuchos_PtrDecl.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_ParameterListInterpreter_decl.hpp"
 #include "MueLu_FactoryFactory.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
@@ -61,13 +63,17 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ParameterListInterpreter(const std::string & xmlFileName) {
-    Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
-    SetParameterList(*paramList);
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ParameterListInterpreter(const std::string & xmlFileName, const Teuchos::Comm<int> &comm) {
+    Monitor m(*this,"Read parameters from xml");
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), comm);
+    SetParameterList(paramList);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList & paramList) {
+
+    Monitor mon(*this,"SetParameterList");
 
     /*
     std::cout << "Parameter List:" << std::endl
@@ -156,6 +162,9 @@ namespace MueLu {
         else
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid verbosity level");
       }
+
+      if (hieraList.isParameter("dependencyOutputLevel"))
+        this->graphOutputLevel_ = hieraList.get<int>("dependencyOutputLevel");
 
 
       // Get level configuration

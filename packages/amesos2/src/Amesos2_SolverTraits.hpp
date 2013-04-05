@@ -83,26 +83,25 @@ namespace Amesos2 {
    * A meta-function for checking a solver's support for a scalar.
    * The special-case is a Meta::nil_t list, which we are going to
    * interpret as the solver supporting any and all types.
-   */
-  template <template <class,class> class ConcreteSolver,
-	    typename Scalar>
-  struct solver_supports_scalar {
-    static const bool value;
-  };
-
-  /*
    * If a solver's supported_scalars type-list is nil, this
    * meta-function returns true always.  Otherwise, it checks whether
    * the given type is in the solver's supported_scalars list.
    */
-  template <template <class,class> class ConcreteSolver, typename Scalar>
-  const bool solver_supports_scalar<ConcreteSolver,Scalar>::value
-  = Meta::if_then_else<Meta::is_same<typename solver_traits<ConcreteSolver>::supported_scalars, Meta::nil_t>::value,
+
+    /* SR: We will not use external initialization for the static const types.
+     * Combined with template meta programming this fails in Intel compilers
+     * 11-13. Moving all the initializations inside the declarations.
+     */
+  template <template <class,class> class ConcreteSolver,
+	    typename Scalar>
+  struct solver_supports_scalar {
+    static const bool value =
+              Meta::if_then_else<Meta::is_same<typename solver_traits<ConcreteSolver>::supported_scalars, Meta::nil_t>::value,
 		       Meta::true_type,
 		       Meta::type_list_contains<
 			 typename solver_traits<ConcreteSolver>::supported_scalars,
 			 Scalar> >::type::value;
-
+  };
 
 } // end namespace Amesos2
 

@@ -81,6 +81,7 @@ namespace MueLu {
     validParamList->set<int>                     ("startLevel",             1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
     validParamList->set<LO>                      ("minRowsPerProcessor", 1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
     validParamList->set<double>                  ("nonzeroImbalance",     1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
+    validParamList->set<bool>                    ("fixedOrder",         false, "Use sorting of recv PIDs to force reproducibility");
     // validParamList->set<GO>                   ("minNnzPerProcessor",    -1, "Minimum number of nonzeros over all processes. If any process falls below this, repartitioning is initiated."); // FIXME: Unused; LO instead of GO?
 
     {
@@ -153,6 +154,7 @@ namespace MueLu {
       // Test 2: check whether A is spread over more than one process.
       // Note: using type 'int' as it is enough (comm->getSize() is an int). Test can also be done with 'bool' but numActiveProcesses is printed later
       // TODO: this global communication can be avoided if we store the information with the matrix (it is known when matrix is created)
+      // TODO: further improvements could be achieved when we use subcommunicator for the active set. Then we only need to check its size
       int numActiveProcesses = 0;
       sumAll(comm, (int)((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
       std::ostringstream msg2; msg2 << std::endl << "    # processes with rows = " << numActiveProcesses;
@@ -167,6 +169,9 @@ namespace MueLu {
 
       // Test3: check whether any node has too few rows
       // Note: (!Test2) ensures that repartitionning is not done when only 1 proc and globalNumRow < minRowsPerProcessor
+      // TODO: change it to repartition if only the number of processors with numRows < threshold is larger than some percentage
+      // of the total number. This way, we won't repartition if 2 out of 1000 processors don't have enough elements. I'm thinking
+      // maybe 20% threshold.
       if (minRowsPerProcessor > 0) { // skip test if criteria not used
         LO     minNumRows;
         size_t numMyRows = A->getNodeNumRows();
@@ -210,11 +215,19 @@ namespace MueLu {
     GO numPartitions;
     if (IsAvailable(currentLevel, "number of partitions")) {
       numPartitions = Get<GO>(currentLevel, "number of partitions");
+
     } else {
-      if ((GO)A->getGlobalNumRows() < minRowsPerProcessor) numPartitions = 1;
-      else                                                 numPartitions = A->getGlobalNumRows() / minRowsPerProcessor;
+      if ((GO)A->getGlobalNumRows() < minRowsPerProcessor) {
+        // System is too small, migrate it to a single processor
+        numPartitions = 1;
+
+      } else {
+        // Make sure that each processor has approximately minRowsPerProcessor
+        numPartitions = A->getGlobalNumRows() / minRowsPerProcessor;
+      }
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
+
       Set(currentLevel, "number of partitions", numPartitions);
     }
     GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
@@ -231,8 +244,22 @@ namespace MueLu {
       // TODO: can we skip more work (ie: building the hashtable, etc.)?
       GetOStream(Warnings0, 0) << "Only one partition: Skip call to the repartitioner." << std::endl;
       decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
-    } else{
+    } else {
       decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
+
+      // Zoltan2 changes the number of partitions. There is no good mechanism to propagate that new number
+      // to this factory, but we can do that by finding out the max number of partition across all processors
+      GO maxPartLocal = 0;
+      if (decomposition->getLocalLength()) {
+        // NOTE: this is a stupid check. We would not be here if we didn't have any data.
+        // But one of the unit tests (Repartition_Build) constructs a stupid map in which processor
+        // 2 does not have any data. I'll add this check here.
+        maxPartLocal = *std::max_element(decomposition->getData(0).begin(), decomposition->getData(0).end());
+      }
+      maxAll(decomposition->getMap()->getComm(), maxPartLocal, numPartitions);
+      numPartitions++;
+
+      Set(currentLevel, "number of partitions", numPartitions);
 
       if (decomposition == Teuchos::null) {
         GetOStream(Warnings0, 0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
@@ -244,18 +271,19 @@ namespace MueLu {
     // Use a hashtable to record how many local rows belong to each partition.
     RCP<Teuchos::Hashtable<GO, GO> > hashTable;
     hashTable = rcp(new Teuchos::Hashtable<GO, GO>(numPartitions + numPartitions/2));
+    Teuchos::Hashtable<GO,GO>& htref = *hashTable;
     ArrayRCP<const GO> decompEntries;
     if (decomposition->getLocalLength() > 0)
       decompEntries = decomposition->getData(0);
     bool flag=false;
     for (int i=0; i<decompEntries.size(); ++i) {
       if (decompEntries[i] >= numPartitions) flag = true;
-      if (hashTable->containsKey(decompEntries[i])) {
-        GO count = hashTable->get(decompEntries[i]);
+      if (htref.containsKey(decompEntries[i])) {
+        GO count = htref.get(decompEntries[i]);
         ++count;
-        hashTable->put(decompEntries[i], count);
+        htref.put(decompEntries[i], count);
       } else {
-        hashTable->put(decompEntries[i], 1);
+        htref.put(decompEntries[i], 1);
       }
     }
     int problemPid;
@@ -267,7 +295,7 @@ namespace MueLu {
 
     Teuchos::Array<GO> allPartitionsIContributeTo;
     Teuchos::Array<GO> allLocalPartSize;
-    hashTable->arrayify(allPartitionsIContributeTo, allLocalPartSize);
+    htref.arrayify(allPartitionsIContributeTo, allLocalPartSize);
 
     GO indexBase = decomposition->getMap()->getIndexBase();
 
@@ -283,13 +311,14 @@ namespace MueLu {
     ArrayRCP<GO> data;
     if (localPartSizeVec->getLocalLength() > 0)
       data = localPartSizeVec->getDataNonConst(0);
-    for (int i=0; i<hashTable->size(); ++i)
+    for (int i=0; i<htref.size(); ++i)
       data[i] = allLocalPartSize[i];
     data = Teuchos::null;
 
     // Target map is nonoverlapping.  Pid k has GID N if and only if k owns partition N.
     GO myPartitionNumber;
     Array<int> partitionOwners;
+    partitionOwners.reserve(numPartitions);
     DeterminePartitionPlacement(currentLevel, myPartitionNumber, partitionOwners);
 
 /*
@@ -310,7 +339,9 @@ namespace MueLu {
 
     GO numDofsThatStayWithMe=0;
     Teuchos::Array<GO> partitionsIContributeTo;
+    partitionsIContributeTo.reserve(allPartitionsIContributeTo.size());
     Teuchos::Array<GO> localPartSize;
+    localPartSize.reserve(allPartitionsIContributeTo.size());
     for (int i=0; i<allPartitionsIContributeTo.size(); ++i)
     {
       if (allPartitionsIContributeTo[i] != myPartitionNumber) {
@@ -322,12 +353,13 @@ namespace MueLu {
     }
 
     // Note: "numPartitionsISendTo" does not include this PID
-    GO numPartitionsISendTo = hashTable->size();
+    GO numPartitionsISendTo = htref.size();
     // I'm a partition owner, so don't count my own.
     if (myPartitionNumber >= 0 && numPartitionsISendTo>0 && numDofsThatStayWithMe>0) numPartitionsISendTo--;
     assert(numPartitionsISendTo == partitionsIContributeTo.size());
 
     Array<int> partitionOwnersISendTo;
+    partitionOwnersISendTo.reserve(allPartitionsIContributeTo.size());
     for (int i=0; i<partitionsIContributeTo.size(); ++i) {
       partitionOwnersISendTo.push_back(partitionOwners[partitionsIContributeTo[i]]);
     }
@@ -362,9 +394,10 @@ namespace MueLu {
     RCP<GOVector> partitionsISendTo = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(sourceMap, false);
     if (partitionsISendTo->getLocalLength() > 0)
       data = partitionsISendTo->getDataNonConst(0);
+    const Map& sourceMapRef = *sourceMap;
     for (int i=0; i<data.size(); ++i) {
       // don't count myself as someone I send to... (sourceMap is based on allPartitionsIContributeTo)
-      if (sourceMap->getGlobalElement(i) != myPartitionNumber)
+      if (sourceMapRef.getGlobalElement(i) != myPartitionNumber)
         data[i] = 1;
       else
         data[i] = 0;
@@ -415,6 +448,24 @@ namespace MueLu {
 
     for (int i=0; i<pidsIReceiveFrom.size(); ++i)
       pidsIReceiveFrom[i] = status[i].MPI_SOURCE;
+
+    if (pL.get<bool>("fixedOrder")) {
+      // Sort pids for reproducibility (and numDofsIReceiveFromOnePid for consistency)
+      GetOStream(Runtime0,0) << "Sorting recv PIDs for results reproducibility" << std::endl;
+
+      // For simplicity, do insertion sort of pidsIReceiveFrom and use that permutation for numDofsIReceiveFrom
+      // NOTE: if insertion sort becomes slow for some use cases, we may replace it with the quicksort Tpetra::sort2
+      for (int i = 1; i < howManyPidsSendToThisPartition; i++) {
+        GO d = pidsIReceiveFrom[i], v = numDofsIReceiveFromOnePid[i];
+        int j;
+        for (j = i-1; j >= 0 && pidsIReceiveFrom[j] > d; j--) {
+          pidsIReceiveFrom         [j+1] = pidsIReceiveFrom[j];
+          numDofsIReceiveFromOnePid[j+1] = numDofsIReceiveFromOnePid[j];
+        }
+        pidsIReceiveFrom         [j+1] = d;
+        numDofsIReceiveFromOnePid[j+1] = v;
+      }
+    }
 
     comm->barrier();
 
@@ -472,32 +523,35 @@ namespace MueLu {
 
     // store offsets for easy random access
     hashTable = rcp(new Teuchos::Hashtable<GO, GO>(partitionsIContributeTo.size() + partitionsIContributeTo.size()/2));
+    Teuchos::Hashtable<GO,GO>& htref1 = *hashTable;
     for (int i=0; i<partitionsIContributeTo.size(); ++i) {
-      hashTable->put(partitionsIContributeTo[i], (GO)gidOffsetsForPartitionsIContributeTo[i]);
+      htref1.put(partitionsIContributeTo[i], (GO)gidOffsetsForPartitionsIContributeTo[i]);
     }
     //store gid offset for those dofs that will remain with me
     if (myPartitionNumber > -1)
-      hashTable->put(myPartitionNumber, ((GO)partitionSizeOffset) + myPartitionSize - numDofsThatStayWithMe);
+      htref1.put(myPartitionNumber, ((GO)partitionSizeOffset) + myPartitionSize - numDofsThatStayWithMe);
     if (decomposition->getLocalLength() > 0)
       decompEntries = decomposition->getData(0);
     Array<GO> uniqueGIDsBeforePermute;
+    uniqueGIDsBeforePermute.reserve(decompEntries.size());
     for (int i=0; i<decompEntries.size(); ++i) {
-      GO gid = hashTable->get(decompEntries[i]);
+      GO gid = htref1.get(decompEntries[i]);
       uniqueGIDsBeforePermute.push_back(gid);
       gid++;
-      hashTable->put(decompEntries[i], gid);
+      htref1.put(decompEntries[i], gid);
     }
     decompEntries = Teuchos::null;
 
     // Synthetic GIDS for permuted system.
 
     Array<GO> uniqueGIDsAfterPermute;
+    uniqueGIDsAfterPermute.reserve(myPartitionSize);
     for (int i=0; i<myPartitionSize; ++i) {
         uniqueGIDsAfterPermute.push_back((GO)partitionSizeOffset+i);
     }
 
     // =================================================================================================
-    // Create and apply an importer to communicate column GIDs for the permutation matrix.
+    // Create and apply an importer to communicate row GIDs that will make up the permuted row map
     // =================================================================================================
 
     //TODO we should really supply the global size as another sanity check
@@ -522,14 +576,15 @@ namespace MueLu {
     }
 
     //load source vector with unpermuted GIDs.
-    RCP<const Map> originalRowMap = A->getRowMap();
+    //RCP<const Map> originalRowMap = A->getRowMap();
+    const Map& originalRowMap = *(A->getRowMap());
 
     //sanity check
-    assert(vectorData.size() == (GO) originalRowMap->getNodeNumElements());
+    assert(vectorData.size() == (GO) originalRowMap.getNodeNumElements());
 
 
     for (LO i=0; i<vectorData.size(); ++i) {
-      GO gid = originalRowMap->getGlobalElement(i);
+      GO gid = originalRowMap.getGlobalElement(i);
       if (gid == (GO) Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid())
         throw(Exceptions::RuntimeError("Encountered an unexpected error with A's rowmap."));
       vectorData[i] = gid;
@@ -610,6 +665,8 @@ namespace MueLu {
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: hashing", currentLevel));
     RCP<Teuchos::Hashtable<GO, GO> > hashTable;
     hashTable = rcp(new Teuchos::Hashtable<GO, GO>(numPartitions + numPartitions/2));
+    Teuchos::Hashtable<GO, GO>& htref = *hashTable;
+
     ArrayRCP<const GO> decompEntries;
     if (decomposition->getLocalLength() > 0)
       decompEntries = decomposition->getData(0);
@@ -617,12 +674,12 @@ namespace MueLu {
     assert(decompEntries.size() == nnzPerRow.size());
     for (int i=0; i<decompEntries.size(); ++i) {
       if (decompEntries[i] >= numPartitions) flag = true;
-      if (hashTable->containsKey(decompEntries[i])) {
-        GO count = hashTable->get(decompEntries[i]);
+      if (htref.containsKey(decompEntries[i])) {
+        GO count = htref.get(decompEntries[i]);
         count += nnzPerRow[i];
-        hashTable->put(decompEntries[i], count);
+        htref.put(decompEntries[i], count);
       } else {
-        hashTable->put(decompEntries[i], nnzPerRow[i]);
+        htref.put(decompEntries[i], nnzPerRow[i]);
       }
     }
 
@@ -635,11 +692,12 @@ namespace MueLu {
 
     Teuchos::Array<GO> allPartitionsIContributeTo;
     Teuchos::Array<GO> localNnzPerPartition;
-    hashTable->arrayify(allPartitionsIContributeTo, localNnzPerPartition);
+    htref.arrayify(allPartitionsIContributeTo, localNnzPerPartition);
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build target map", currentLevel));
     //map in which all pids have all partition numbers as GIDs.
     //FIXME this next map ctor can be a real time hog in parallel
     Array<GO> allPartitions;
+    allPartitions.reserve(numPartitions);
     for (int i=0; i<numPartitions; ++i) allPartitions.push_back(i);
     RCP<Map> targetMap = MapFactory::Build(decomposition->getMap()->lib(),
                                            numPartitions*comm->getSize(),
@@ -738,7 +796,7 @@ namespace MueLu {
         if (procWinner[i] == mypid) {
           GO partitionSize;
           //prefer partitions for which this pid has DOFs over partitions for which it doesn't.
-          if (hashTable->containsKey(i)) partitionSize = hashTable->get(i);
+          if (htref.containsKey(i)) partitionSize = htref.get(i);
           else                           partitionSize = 1;
           if (partitionSize > largestPartitionSize) {
             myPartitionNumber = i;
@@ -751,7 +809,7 @@ namespace MueLu {
       //Check to see if my newly assigned partition is one for which I have no DOFs.
       bool gotALeftoverPartitionThisRound=false;
       if (myPartitionNumber > -1 && (myPartitionNumber != myPartitionNumberLastRound)) {
-        if (hashTable->containsKey(myPartitionNumber)) gotALeftoverPartitionThisRound = false;
+        if (htref.containsKey(myPartitionNumber)) gotALeftoverPartitionThisRound = false;
         else                                           gotALeftoverPartitionThisRound = true;
       }
 

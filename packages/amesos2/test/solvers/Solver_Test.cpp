@@ -654,9 +654,6 @@ bool do_epetra_test(const string& mm_file,
 
   typedef Epetra_CrsMatrix MAT;
   typedef Epetra_MultiVector MV;
-  typedef ScalarTraits<double> ST;
-  typedef ST::magnitudeType Mag;
-  typedef ScalarTraits<Mag> MT;
   const size_t numVecs = 5;     // arbitrary number
   const size_t numRHS  = 5;	// also quite arbitrary
 
@@ -833,9 +830,6 @@ bool do_tpetra_test_with_types(const string& mm_file,
 
   typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MAT;
   typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-  typedef ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType Mag;
-  typedef ScalarTraits<Mag> MT;
   const size_t numVecs = 5;     // arbitrary number
   const size_t numRHS = 5;	  // also arbitrary
 

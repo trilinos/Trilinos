@@ -227,7 +227,6 @@ ireceiveGeneral(const Comm<int>& comm,
 		const ArrayRCP<Packet> &recvBuffer,
 		const int sourceRank)
 {
-  typedef std::pair<RCP<CommRequest<int> >, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::ireceive<int, " << "," << TypeNameTraits<Packet>::name () 
     << "> ( value type )"
@@ -236,6 +235,27 @@ ireceiveGeneral(const Comm<int>& comm,
     charRecvBuffer (recvBuffer.size (), recvBuffer.getRawPtr ());
   RCP<CommRequest<int> > commRequest = 
     comm.ireceive (charRecvBuffer.getCharBufferView (), sourceRank);
+  set_extra_data (recvBuffer, "buffer", inOutArg (commRequest));
+  return commRequest;
+}
+
+/// \brief Variant of ireceiveGeneral that takes a tag.
+/// It also restores the correct order of arguments.
+template<typename Packet>
+RCP<Teuchos::CommRequest<int> >
+ireceiveGeneral (const ArrayRCP<Packet> &recvBuffer,
+		 const int sourceRank,
+		 const int tag,
+		 const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::ireceive<int, " << "," << TypeNameTraits<Packet>::name () 
+    << "> ( value type )"
+    );
+  ValueTypeSerializationBuffer<int, Packet>
+    charRecvBuffer (recvBuffer.size (), recvBuffer.getRawPtr ());
+  RCP<CommRequest<int> > commRequest = 
+    comm.ireceive (charRecvBuffer.getCharBufferView (), sourceRank, tag);
   set_extra_data (recvBuffer, "buffer", inOutArg (commRequest));
   return commRequest;
 }
@@ -312,6 +332,68 @@ ireceiveImpl (const Comm<int>& comm,
 #endif // HAVE_MPI
 }
 
+/// \brief Variant of ireceiveImpl that takes a tag.
+/// It also restores the correct order of arguments.
+template<class T>
+RCP<CommRequest<int> >
+ireceiveImpl (const ArrayRCP<T>& recvBuffer,
+	      const int sourceRank,
+	      const int tag,
+	      const Comm<int>& comm)
+{
+#ifdef HAVE_MPI
+  // Even in an MPI build, Comm might be either a SerialComm or an
+  // MpiComm.  If it's something else, we fall back to the most
+  // general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) { 
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      return ireceiveGeneral<T> (recvBuffer, sourceRank, tag, comm);
+    } 
+    else { // SerialComm doesn't implement ireceive anyway.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+	std::logic_error,
+	"ireceiveImpl: Not implemented for a serial communicator.");
+    }
+  } 
+  else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Comm rawComm = * (mpiComm->getRawMpiComm ());
+    T t;
+    MPI_Datatype rawType = MpiTypeTraits<T>::getType (t);
+    T* rawRecvBuf = recvBuffer.getRawPtr ();
+    const int count = as<int> (recvBuffer.size ());
+    MPI_Request rawRequest = MPI_REQUEST_NULL;
+    const int err = MPI_Irecv (rawRecvBuf, count, rawType, sourceRank, tag, 
+			       rawComm, &rawRequest);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      err != MPI_SUCCESS, 
+      std::runtime_error,
+      "MPI_Irecv failed with the following error: " 
+      << getMpiErrorString (err));
+    // The number of bytes is only valid if sizeof(T) says how much
+    // data lives in an T instance.
+    RCP<MpiCommRequest<int> > req (new MpiCommRequest<int> (rawRequest, count * sizeof(T)));
+    // mfh 13 Jan 2013: This ensures survival of the buffer until the
+    // request is waited on, by tying the request to the buffer (so
+    // that the buffer will survive at least as long as the request).
+    set_extra_data (recvBuffer, "buffer", inOutArg (req));
+    return rcp_implicit_cast<CommRequest<int> > (req);
+  }
+#else 
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true,
+    std::logic_error,
+    "ireceiveImpl: Not implemented for a serial communicator.");
+
+  return null; // Guard to avoid compiler warning about not returning a value.
+#endif // HAVE_MPI
+}
+
 /// \brief Generic implementation of send() for any Comm subclass.
 /// \tparam T The type of data to send.
 /// 
@@ -330,6 +412,24 @@ sendGeneral (const Comm<int>& comm,
   comm.send (charSendBuffer.getBytes (),
 	     charSendBuffer.getCharBuffer (),
 	     destRank);
+}
+
+/// \brief Variant of sendGeneral that takes a tag.
+/// It also restores the correct order of arguments.
+template<class T>
+void
+sendGeneral (const T sendBuffer[],
+	     const int count,
+	     const int destRank,
+	     const int tag,
+	     const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::send<int, " << TypeNameTraits<T>::name () << ">");
+  ConstValueTypeSerializationBuffer<int,T> charSendBuffer (count, sendBuffer);
+  comm.send (charSendBuffer.getBytes (),
+	     charSendBuffer.getCharBuffer (),
+	     destRank, tag);
 }
 
 /// \brief Generic implementation of send() for MpiComm.
@@ -392,6 +492,56 @@ sendImpl (const Comm<int>& comm,
 #endif // HAVE_MPI
 }
 
+/// \brief Variant of sendImpl that takes a tag.
+/// It also restores the correct order of arguments.
+template<class T>
+void
+sendImpl (const T sendBuffer[],
+	  const int count,
+	  const int destRank,
+	  const int tag,
+	  const Comm<int>& comm)
+{
+#ifdef HAVE_MPI
+  // Even in an MPI build, Comm might be either a SerialComm or an
+  // MpiComm.  If it's something else, we fall back to the most
+  // general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) { 
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      sendGeneral<T> (sendBuffer, count, destRank, tag, comm);
+    } 
+    else { // SerialComm doesn't implement send correctly anyway.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+	std::logic_error,
+	"sendImpl: Not implemented for a serial communicator.");
+    }
+  } 
+  else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Comm rawComm = * (mpiComm->getRawMpiComm ());
+    T t;
+    MPI_Datatype rawType = MpiTypeTraits<T>::getType (t);
+    T* rawBuf = const_cast<T*> (sendBuffer);
+    const int err = MPI_Send (rawBuf, count, rawType, destRank, tag, rawComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      err != MPI_SUCCESS, 
+      std::runtime_error,
+      "MPI_Send failed with the following error: " 
+      << getMpiErrorString (err));
+  }
+#else 
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true,
+    std::logic_error,
+    "sendImpl: Not implemented for a serial communicator.");
+#endif // HAVE_MPI
+}
+
 /// \brief Generic implementation of isend() for any Comm subclass.
 /// \tparam T The type of data to send.
 /// 
@@ -400,18 +550,103 @@ sendImpl (const Comm<int>& comm,
 template<class T>
 RCP<CommRequest<int> >
 isendGeneral (const Comm<int>& comm, 
-	      const int count,
 	      const ArrayRCP<const T>& sendBuffer,
 	      const int destRank)
 {
   TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::isend<int, " << TypeNameTraits<T>::name () << ">");
+    "Teuchos::isend<int," << TypeNameTraits<T>::name () << ">");
   ConstValueTypeSerializationBuffer<int, T>
     charSendBuffer (sendBuffer.size (), sendBuffer.getRawPtr ());
   RCP<CommRequest<int> > commRequest = 
     comm.isend (charSendBuffer.getCharBufferView (), destRank);
   set_extra_data (sendBuffer, "buffer", inOutArg (commRequest));
   return commRequest;
+}
+
+/// \brief Generic implementation of isend() (with tag) for any Comm subclass.
+/// \tparam T The type of data to send.
+/// 
+/// The version of isendImpl() that takes a tag falls back to this
+/// function if the given Comm is neither an MpiComm, nor a
+/// SerialComm.
+template<class T>
+RCP<CommRequest<int> >
+isendGeneral (const ArrayRCP<const T>& sendBuffer,
+	      const int destRank,
+	      const int tag,
+	      const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::isend<int," << TypeNameTraits<T>::name () << ">");
+  ConstValueTypeSerializationBuffer<int, T>
+    charSendBuffer (sendBuffer.size (), sendBuffer.getRawPtr ());
+  RCP<CommRequest<int> > commRequest = 
+    comm.isend (charSendBuffer.getCharBufferView (), destRank, tag);
+  set_extra_data (sendBuffer, "buffer", inOutArg (commRequest));
+  return commRequest;
+}
+
+/// \brief Variant of isendImpl() that takes a tag.
+/// It also restores the correct order of arguments.
+template<class T>
+RCP<Teuchos::CommRequest<int> >
+isendImpl (const ArrayRCP<const T>& sendBuffer,
+	   const int destRank,
+	   const int tag,
+	   const Comm<int>& comm)
+{
+#ifdef HAVE_MPI
+  // Even in an MPI build, Comm might be either a SerialComm or an
+  // MpiComm.  If it's something else, we fall back to the most
+  // general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) { 
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      return isendGeneral<T> (sendBuffer, destRank, tag, comm);
+    } 
+    else { // SerialComm doesn't implement send correctly anyway.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error,
+	"isendImpl: Not implemented for a serial communicator.");
+    }
+  } 
+  else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Comm rawComm = * (mpiComm->getRawMpiComm ());
+    T t;
+    MPI_Datatype rawType = MpiTypeTraits<T>::getType (t);
+    // MPI promises not to modify the send buffer; the const_cast
+    // merely ensures compatibilty with C89, which does not have a
+    // "const" keyword.
+    T* rawSendBuf = const_cast<T*> (sendBuffer.getRawPtr ());
+    const int count = as<int> (sendBuffer.size ());
+    MPI_Request rawRequest = MPI_REQUEST_NULL;
+    const int err = MPI_Isend (rawSendBuf, count, rawType, destRank, tag, 
+			       rawComm, &rawRequest);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      err != MPI_SUCCESS, 
+      std::runtime_error,
+      "MPI_Isend failed with the following error: " 
+      << getMpiErrorString (err));
+
+    // The number of bytes is only valid if sizeof(T) says how much
+    // data lives in an T instance.
+    RCP<MpiCommRequest<int> > req (new MpiCommRequest<int> (rawRequest, count * sizeof(T)));
+    // mfh 13 Jan 2013: This ensures survival of the buffer until the
+    // request is waited on, by tying the request to the buffer (so
+    // that the buffer will survive at least as long as the request).
+    set_extra_data (sendBuffer, "buffer", inOutArg (req));
+    return rcp_implicit_cast<CommRequest<int> > (req);
+  }
+#else 
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true,
+    std::logic_error,
+    "isendImpl: Not implemented for a serial communicator.");
+#endif // HAVE_MPI
 }
 
 } // namespace (anonymous)
@@ -452,23 +687,55 @@ ireceive<int, std::complex<double> > (const Comm<int>& comm,
 }
 
 template<>
+RCP<Teuchos::CommRequest<int> >
+ireceive<int, std::complex<double> > (const ArrayRCP<std::complex<double> >& recvBuffer,
+				      const int sourceRank,
+				      const int tag,
+				      const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR("ireceive<int, std::complex<double> >");
+  return ireceiveImpl<std::complex<double> > (recvBuffer, sourceRank, tag, comm);
+}
+
+template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, std::complex<double> > (const Comm<int>& comm, 
 				  const int count,
 				  const std::complex<double> sendBuffer[],
 				  const int destRank)
 {
-  return sendImpl<std::complex<double> > (comm, count, sendBuffer, destRank);
+  sendImpl<std::complex<double> > (comm, count, sendBuffer, destRank);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, std::complex<double> > (const std::complex<double> sendBuffer[],
+				  const int count,
+				  const int destRank,
+				  const int tag,
+				  const Comm<int>& comm)
+{
+  sendImpl<std::complex<double> > (sendBuffer, count, destRank, tag, comm);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<Teuchos::CommRequest<int> >
+isend (const ArrayRCP<const std::complex<double> >& sendBuffer,
+       const int destRank,
+       const int tag,
+       const Comm<int>& comm)
+{
+  return isendImpl<std::complex<double> > (sendBuffer, destRank, tag, comm);
 }
 
 // Specialization for Ordinal=int and Packet=std::complex<float>.
 template<>
 void 
 reduceAll<int, std::complex<float> > (const Comm<int>& comm, 
-				       const EReductionType reductType,
-				       const int count, 
-				       const std::complex<float> sendBuffer[], 
-				       std::complex<float> globalReducts[])
+				      const EReductionType reductType,
+				      const int count, 
+				      const std::complex<float> sendBuffer[], 
+				      std::complex<float> globalReducts[])
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::reduceAll<int, std::complex<float> > (" << count << ", " 
@@ -488,6 +755,17 @@ ireceive<int, std::complex<float> > (const Comm<int>& comm,
 }
 
 template<>
+RCP<Teuchos::CommRequest<int> >
+ireceive<int, std::complex<float> > (const ArrayRCP<std::complex<float> >& recvBuffer,
+				     const int sourceRank,
+				     const int tag,
+				     const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR("ireceive<int, std::complex<float> >");
+  return ireceiveImpl<std::complex<float> > (recvBuffer, sourceRank, tag, comm);
+}
+
+template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, std::complex<float> > (const Comm<int>& comm, 
 				 const int count,
@@ -495,6 +773,27 @@ send<int, std::complex<float> > (const Comm<int>& comm,
 				 const int destRank)
 {
   return sendImpl<std::complex<float> > (comm, count, sendBuffer, destRank);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, std::complex<float> > (const std::complex<float> sendBuffer[],
+				 const int count,
+				 const int destRank,
+				 const int tag,
+				 const Comm<int>& comm)
+{
+  return sendImpl<std::complex<float> > (sendBuffer, count, destRank, tag, comm);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<Teuchos::CommRequest<int> >
+isend (const ArrayRCP<const std::complex<float> >& sendBuffer,
+       const int destRank,
+       const int tag,
+       const Comm<int>& comm)
+{
+  return isendImpl<std::complex<float> > (sendBuffer, destRank, tag, comm);
 }
 #endif // TEUCHOS_HAVE_COMPLEX
 
@@ -526,6 +825,17 @@ ireceive<int, double> (const Comm<int>& comm,
 }
 
 template<>
+RCP<Teuchos::CommRequest<int> >
+ireceive<int, double> (const ArrayRCP<double>& recvBuffer,
+		       const int sourceRank,
+		       const int tag,
+		       const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR("ireceive<int, double>");
+  return ireceiveImpl<double> (recvBuffer, sourceRank, tag, comm);
+}
+
+template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, double> (const Comm<int>& comm, 
 		   const int count,
@@ -533,6 +843,27 @@ send<int, double> (const Comm<int>& comm,
 		   const int destRank)
 {
   return sendImpl<double> (comm, count, sendBuffer, destRank);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, double> (const double sendBuffer[],
+		   const int count,
+		   const int destRank,
+		   const int tag,
+		   const Comm<int>& comm)
+{
+  return sendImpl<double> (sendBuffer, count, destRank, tag, comm);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<Teuchos::CommRequest<int> >
+isend (const ArrayRCP<const double>& sendBuffer,
+	const int destRank,
+	const int tag,
+	const Comm<int>& comm)
+{
+  return isendImpl<double> (sendBuffer, destRank, tag, comm);
 }
 
 // Specialization for Ordinal=int and Packet=float.
@@ -562,6 +893,17 @@ ireceive<int, float> (const Comm<int>& comm,
 }
 
 template<>
+RCP<Teuchos::CommRequest<int> >
+ireceive<int, float> (const ArrayRCP<float>& recvBuffer,
+		      const int sourceRank,
+		      const int tag,
+		      const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR("ireceive<int, float>");
+  return ireceiveImpl<float> (recvBuffer, sourceRank, tag, comm);
+}
+
+template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, float> (const Comm<int>& comm, 
 		  const int count,
@@ -570,6 +912,28 @@ send<int, float> (const Comm<int>& comm,
 {
   return sendImpl<float> (comm, count, sendBuffer, destRank);
 }
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, float> (const float sendBuffer[],
+		  const int count,
+		  const int destRank,
+		  const int tag,
+		  const Comm<int>& comm)
+{
+  return sendImpl<float> (sendBuffer, count, destRank, tag, comm);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<Teuchos::CommRequest<int> >
+isend (const ArrayRCP<const float>& sendBuffer,
+       const int destRank,
+       const int tag,
+       const Comm<int>& comm)
+{
+  return isendImpl<float> (sendBuffer, destRank, tag, comm);
+}
+
 
 #ifdef TEUCHOS_HAVE_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
@@ -599,6 +963,17 @@ ireceive<int, long long> (const Comm<int>& comm,
 }
 
 template<>
+RCP<Teuchos::CommRequest<int> >
+ireceive<int, long long> (const ArrayRCP<long long>& recvBuffer,
+			  const int sourceRank,
+			  const int tag,
+			  const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR("ireceive<int, long long>");
+  return ireceiveImpl<long long> (recvBuffer, sourceRank, tag, comm);
+}
+
+template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, long long> (const Comm<int>& comm, 
 		      const int count,
@@ -606,6 +981,27 @@ send<int, long long> (const Comm<int>& comm,
 		      const int destRank)
 {
   return sendImpl<long long> (comm, count, sendBuffer, destRank);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, long long> (const long long sendBuffer[],
+		      const int count,
+		      const int destRank,
+		      const int tag,
+		      const Comm<int>& comm)
+{
+  return sendImpl<long long> (sendBuffer, count, destRank, tag, comm);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<Teuchos::CommRequest<int> >
+isend (const ArrayRCP<const long long>& sendBuffer,
+       const int destRank,
+       const int tag,
+       const Comm<int>& comm)
+{
+  return isendImpl<long long> (sendBuffer, destRank, tag, comm);
 }
 #endif // TEUCHOS_HAVE_LONG_LONG_INT
 
@@ -637,6 +1033,17 @@ ireceive<int, long> (const Comm<int>& comm,
 }
 
 template<>
+RCP<Teuchos::CommRequest<int> >
+ireceive<int, long> (const ArrayRCP<long>& recvBuffer,
+		     const int sourceRank,
+		     const int tag,
+		     const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR("ireceive<int, long>");
+  return ireceiveImpl<long> (recvBuffer, sourceRank, tag, comm);
+}
+
+template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, long> (const Comm<int>& comm, 
 		 const int count,
@@ -644,6 +1051,27 @@ send<int, long> (const Comm<int>& comm,
 		 const int destRank)
 {
   return sendImpl<long> (comm, count, sendBuffer, destRank);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, long> (const long sendBuffer[],
+		 const int count,
+		 const int destRank,
+		 const int tag,
+		 const Comm<int>& comm)
+{
+  return sendImpl<long> (sendBuffer, count, destRank, tag, comm);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<Teuchos::CommRequest<int> >
+isend (const ArrayRCP<const long>& sendBuffer,
+       const int destRank,
+       const int tag,
+       const Comm<int>& comm)
+{
+  return isendImpl<long> (sendBuffer, destRank, tag, comm);
 }
 
 // Specialization for Ordinal=int and Packet=int.
@@ -673,6 +1101,17 @@ ireceive<int, int> (const Comm<int>& comm,
 }
 
 template<>
+RCP<Teuchos::CommRequest<int> >
+ireceive<int, int> (const ArrayRCP<int>& recvBuffer,
+		    const int sourceRank,
+		    const int tag,
+		    const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR("ireceive<int, int>");
+  return ireceiveImpl<int> (recvBuffer, sourceRank, tag, comm);
+}
+
+template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, int> (const Comm<int>& comm, 
 		const int count,
@@ -680,6 +1119,27 @@ send<int, int> (const Comm<int>& comm,
 		const int destRank)
 {
   return sendImpl<int> (comm, count, sendBuffer, destRank);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, int> (const int sendBuffer[],
+		const int count,
+		const int destRank,
+		const int tag,
+		const Comm<int>& comm)
+{
+  return sendImpl<int> (sendBuffer, count, destRank, tag, comm);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<Teuchos::CommRequest<int> >
+isend (const ArrayRCP<const int>& sendBuffer,
+       const int destRank,
+       const int tag,
+       const Comm<int>& comm)
+{
+  return isendImpl<int> (sendBuffer, destRank, tag, comm);
 }
 
 // Specialization for Ordinal=int and Packet=short.
@@ -709,6 +1169,17 @@ ireceive<int, short> (const Comm<int>& comm,
 }
 
 template<>
+RCP<Teuchos::CommRequest<int> >
+ireceive<int, short> (const ArrayRCP<short>& recvBuffer,
+		      const int sourceRank,
+		      const int tag,
+		      const Comm<int>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR("ireceive<int, short>");
+  return ireceiveImpl<short> (recvBuffer, sourceRank, tag, comm);
+}
+
+template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, short> (const Comm<int>& comm, 
 		  const int count,
@@ -716,6 +1187,27 @@ send<int, short> (const Comm<int>& comm,
 		  const int destRank)
 {
   return sendImpl<short> (comm, count, sendBuffer, destRank);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, short> (const short sendBuffer[],
+		  const int count,
+		  const int destRank,
+		  const int tag,
+		  const Comm<int>& comm)
+{
+  return sendImpl<short> (sendBuffer, count, destRank, tag, comm);
+}
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<Teuchos::CommRequest<int> >
+isend (const ArrayRCP<const short>& sendBuffer,
+       const int destRank,
+       const int tag,
+       const Comm<int>& comm)
+{
+  return isendImpl<short> (sendBuffer, destRank, tag, comm);
 }
 
 // mfh 18 Oct 2012: The specialization for Packet=char seems to be

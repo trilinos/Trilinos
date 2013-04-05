@@ -328,8 +328,8 @@ public:
   , dev_recv_buffer()
   , recv_request()
   {
-    const size_t send_msg_count = arg_data_map.host_send.dimension(0);
-    const size_t recv_msg_count = arg_data_map.host_recv.dimension(0);
+    const size_t send_msg_count = arg_data_map.host_send.dimension_0();
+    const size_t recv_msg_count = arg_data_map.host_recv.dimension_0();
 
     const size_t send_msg_length = arg_chunk * arg_data_map.count_send ;
     const size_t recv_msg_length = arg_chunk * arg_data_map.count_receive ;
@@ -347,13 +347,11 @@ public:
 
     // Total send subview of the device buffer
     dev_send_buffer =
-      buffer_dev_type( dev_buffer ,
-                       std::pair<size_t,size_t>( 0 , send_msg_length ) );
+      KokkosArray::subview< buffer_dev_type >( dev_buffer , std::pair<size_t,size_t>( 0 , send_msg_length ) );
 
     // Total receive subview of the device buffer
     dev_recv_buffer =
-      buffer_dev_type( dev_buffer ,
-                       std::pair<size_t,size_t>( 0 , recv_msg_length ) );
+      KokkosArray::subview< buffer_dev_type >( dev_buffer , std::pair<size_t,size_t>( 0 , recv_msg_length ) );
 
     // Total receive message buffer on the host:
     host_recv_buffer = buffer_host_type(
@@ -379,7 +377,7 @@ public:
   void setup()
   {
     { // Post receives:
-      const size_t recv_msg_count = data_map.host_recv.dimension(0);
+      const size_t recv_msg_count = data_map.host_recv.dimension_0();
 
       ValueType * ptr = host_recv_buffer.ptr_on_device();
 
@@ -408,8 +406,8 @@ public:
 
   void send_receive()
   {
-    const size_t recv_msg_count = data_map.host_recv.dimension(0);
-    const size_t send_msg_count = data_map.host_send.dimension(0);
+    const size_t recv_msg_count = data_map.host_recv.dimension_0();
+    const size_t send_msg_count = data_map.host_send.dimension_0();
 
     // Pack and send:
 

@@ -8,6 +8,7 @@ namespace Tpetra {
     {
       using Teuchos::Array;
       using Teuchos::ArrayView;
+      using Tpetra::Details::sortAndMergeIn;
 
       Array<int> allEntries (5);
       for (Array<int>::size_type k = 0; k < 5; ++k) {
@@ -19,15 +20,16 @@ namespace Tpetra {
       newEntries[2] = 3;
       newEntries[3] = 11;
 
-      ArrayView<int> result = 
+      ArrayView<int> result =
         sortAndMergeIn<int> (allEntries, allEntries.view (0, 5), newEntries());
-      TEUCHOS_TEST_FOR_EXCEPTION(result.size() != 8, std::logic_error,
-                                 "Returned ArrayView should have size 8, but instead has size " 
-                                 << result.size() << ".");
-    
-      TEUCHOS_TEST_FOR_EXCEPTION(allEntries.size() < 8, std::logic_error,
-                                 "Input/output Array argument should have size at least 8, but instead has "
-                                 "size " << allEntries.size() << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        result.size() != 8, std::logic_error,
+        "Returned ArrayView should have size 8, but instead has size "
+        << result.size() << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        allEntries.size() < 8, std::logic_error,
+        "Input/output Array argument should have size at least 8, but instead has "
+        "size " << allEntries.size() << ".");
 
       bool success = true;
       ArrayView<int>::size_type firstBadIndex = -1; // size_type is signed
@@ -38,10 +40,11 @@ namespace Tpetra {
           break;
         }
       }
-      TEUCHOS_TEST_FOR_EXCEPTION(success, std::logic_error, "Returned ArrayView "
-                                 "and the input/output Array argument don't match.  First nonmatching "
-                                 "array index is " << firstBadIndex << ".");
-    
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        success, std::logic_error, "Returned ArrayView and the input/output "
+        "Array argument don't match.  First nonmatching array index is "
+        << firstBadIndex << ".");
+
       Array<int> expectedEntries (8);
       expectedEntries[0] = -1;
       expectedEntries[1] = 0;

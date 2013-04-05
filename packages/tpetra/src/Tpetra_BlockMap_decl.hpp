@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -64,7 +64,7 @@ namespace Tpetra {
   Example usage: If a solution-space consists of multiple degrees-of-freedom
   at each finite-element node in a mesh, such as a displacement vector, it
   might be described as having a block of size 3 (in 3D) at each mesh node.
-  Thus for a mesh with N nodes, the point-entry map will have N*3 entries, 
+  Thus for a mesh with N nodes, the point-entry map will have N*3 entries,
   whereas the block-map will have N blocks, each of size 3.
 */
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
@@ -192,7 +192,10 @@ class BlockMap : public Teuchos::Describable {
   Teuchos::ArrayRCP<const LocalOrdinal> view_firstPointInBlock_;
   bool blockIDsAreContiguous_;
   LocalOrdinal constantBlockSize_;
-  std::map<GlobalOrdinal,LocalOrdinal> map_global_to_local_; //need to use a hash (unordered_map) here instead of a map...
+  /// \brief Global-to-local index lookup table.
+  ///
+  /// TODO: Use Tpetra::Details::HashTable here instead.
+  std::map<GlobalOrdinal,LocalOrdinal> map_global_to_local_;
 };//class BlockMap
 
 //-----------------------------------------------------------------

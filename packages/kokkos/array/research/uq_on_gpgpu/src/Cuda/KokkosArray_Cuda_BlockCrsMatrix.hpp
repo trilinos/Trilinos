@@ -89,7 +89,7 @@ public:
   __device__
   void operator()(void) const
   {
-    const size_type blockCount = m_A.graph.row_map.dimension(0) - 1 ;
+    const size_type blockCount = m_A.graph.row_map.dimension_0() - 1 ;
 
     for ( size_type iBlock = blockIdx.x ;
                     iBlock < blockCount ; iBlock += gridDim.x ) {
@@ -118,7 +118,7 @@ public:
     const size_type thread_max =
       cuda_internal_maximum_warp_count() * Impl::CudaTraits::WarpSize ;
 
-    const size_type row_count =A.graph.row_map.dimension(0) - 1 ;
+    const size_type row_count =A.graph.row_map.dimension_0() - 1 ;
 
     const dim3 grid(
       std::min( row_count , cuda_internal_maximum_grid_count() ) , 1 , 1 );

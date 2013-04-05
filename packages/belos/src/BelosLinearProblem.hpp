@@ -191,10 +191,10 @@ namespace Belos {
     /// \brief Set the label prefix used by the timers in this object.  
     ///
     /// The default label prefix is "Belos".  The timers are created
-    /// during the first call to \c setProblem().  Any calls to this
-    /// method to change the label after that will not change the
-    /// label used in the timer.
-    void setLabel (const std::string& label) { label_ = label; }
+    /// during the call to \c setProblem().  If they have already been
+    /// created and this label is different than the current one, then
+    /// this method will generate a new timer.
+    void setLabel (const std::string& label);
 
     /// \brief Compute the new solution to the linear system using the
     ///   given update vector.
@@ -796,6 +796,26 @@ namespace Belos {
     return newSoln;
   }
   
+  template <class ScalarType, class MV, class OP>
+  void LinearProblem<ScalarType,MV,OP>::setLabel(const std::string& label)
+  {
+    if (label != label_) {
+      label_ = label;
+      // Create new timers if they have already been created.
+      if (timerOp_ != Teuchos::null) {
+        std::string opLabel = label_ + ": Operation Op*x";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        timerOp_ = Teuchos::TimeMonitor::getNewCounter( opLabel );
+#endif
+      }
+      if (timerPrec_ != Teuchos::null) {
+        std::string precLabel = label_ + ": Operation Prec*x";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+        timerPrec_ = Teuchos::TimeMonitor::getNewCounter( precLabel );
+#endif
+      }
+    }
+  }
 
   template <class ScalarType, class MV, class OP>
   bool 
@@ -807,13 +827,13 @@ namespace Belos {
     if (timerOp_ == Teuchos::null) {
       std::string opLabel = label_ + ": Operation Op*x";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerOp_ = Teuchos::TimeMonitor::getNewTimer( opLabel );
+      timerOp_ = Teuchos::TimeMonitor::getNewCounter( opLabel );
 #endif
     }
     if (timerPrec_ == Teuchos::null) {
       std::string precLabel = label_ + ": Operation Prec*x";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerPrec_ = Teuchos::TimeMonitor::getNewTimer( precLabel );
+      timerPrec_ = Teuchos::TimeMonitor::getNewCounter( precLabel );
 #endif
     }
 

@@ -146,29 +146,50 @@ namespace Tpetra {
     //! Destructor.
     ~Directory ();
 
-    /* Provide a shallow copy of this Directory for a different Node type, using a cloned Map.
-       This is an advanced method that will not be called by end users. */
+    /// \brief Clone the Directory for a different Node type, using a cloned Map.
+    /// \warning This is an advanced method for use by experts only.
+    ///
+    /// \tparam Node2 Kokkos Node type, possibly different from
+    ///   <tt>Node</tt> (the third template parameter of this class).
+    ///
+    /// \param clone_map [in] The result of calling the clone() method
+    ///   on the original Map given to this instance's constructor.
+    ///
+    /// "Clone" in this case means make a shallow copy of the data,
+    /// except for the Kokkos Node instance, which is distinct (and
+    /// may even have a different type).  Both Map and Directory
+    /// provide clone().  Cloning is much faster than creating a Map
+    /// or Directory with exactly the same data but a different Node
+    /// instance.  It is useful for creating a copy of a Tpetra object
+    /// such as a MultiVector or CrsMatrix (distributed over a given
+    /// Map) for a different Kokkos Node type, for example if creating
+    /// a host (CPU) copy of a device (GPU) object.
     template <class Node2>
     RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
-    clone(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> > &clone_map) const
+    clone (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> > &clone_map) const
     {
-      RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> > dir = rcp(new Directory<LocalOrdinal,GlobalOrdinal,Node2>());
+      typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
+      using Teuchos::rcp_dynamic_cast;
+
+      RCP<Directory<LO, GO, Node2> > dir (new Directory<LO, GO, Node2> ());
       if (clone_map->isDistributed ()) {
-        if (clone_map->isContiguous ()) {
-          dir->impl_ = Teuchos::rcp_dynamic_cast<
-                          const Details::DistributedContiguousDirectory<LocalOrdinal, GlobalOrdinal, Node> >
-                              (impl_)->template clone<Node2>(clone_map);
+        if (clone_map->isUniform ()) {
+          typedef Details::ContiguousUniformDirectory<LO, GO, Node> impl_type;
+          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
         }
-        else {
-          dir->impl_ = Teuchos::rcp_dynamic_cast<
-                          const Details::DistributedNoncontiguousDirectory<LocalOrdinal, GlobalOrdinal, Node> >
-                              (impl_)->template clone<Node2>(clone_map);
+        else if (clone_map->isContiguous ()) {
+          typedef Details::DistributedContiguousDirectory<LO, GO, Node> impl_type;
+          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+        }
+        else { // not contiguous
+          typedef Details::DistributedNoncontiguousDirectory<LO, GO, Node> impl_type;
+          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
         }
       }
-      else {
-        dir->impl_ = Teuchos::rcp_dynamic_cast<
-                        const Details::ReplicatedDirectory<LocalOrdinal, GlobalOrdinal, Node> >
-                            (impl_)->template clone<Node2>(clone_map);
+      else { // locally replicated (not distributed)
+        typedef Details::ReplicatedDirectory<LO, GO, Node> impl_type;
+        dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
       }
       return dir;
     }
@@ -208,7 +229,7 @@ namespace Tpetra {
     ///   this method throws a \c std::runtime_error exception.
     LookupStatus
     getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
-			 const Teuchos::ArrayView<int>& nodeIDs) const;
+                         const Teuchos::ArrayView<int>& nodeIDs) const;
 
     /// \brief Given a global ID list, return a list of their owning
     ///   process IDs and their corresponding local IDs.
@@ -244,8 +265,8 @@ namespace Tpetra {
     ///   this method throws a \c std::runtime_error exception.
     LookupStatus
     getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
-			 const Teuchos::ArrayView<int>& nodeIDs,
-			 const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
+                         const Teuchos::ArrayView<int>& nodeIDs,
+                         const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
     //@}
 
   private:

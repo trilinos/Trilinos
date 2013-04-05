@@ -52,18 +52,28 @@
 namespace KokkosArray {
 namespace Impl {
 
+void assert_counts_are_equal_throw(
+  const unsigned x_count ,
+  const unsigned y_count )
+{
+  std::ostringstream msg ;
+
+  msg << "KokkosArray::Impl::assert_counts_are_equal_throw( "
+      << x_count << " != " << y_count << " )" ;
+
+  throw_runtime_exception( msg.str() );
+}
+
 void assert_shapes_are_equal_throw(
-  const std::type_info & x_layout ,
   const unsigned x_scalar_size ,
-  const unsigned x_rank , const unsigned x_stride ,
+  const unsigned x_rank ,
   const unsigned x_N0 , const unsigned x_N1 ,
   const unsigned x_N2 , const unsigned x_N3 ,
   const unsigned x_N4 , const unsigned x_N5 ,
   const unsigned x_N6 , const unsigned x_N7 ,
 
-  const std::type_info & y_layout ,
   const unsigned y_scalar_size ,
-  const unsigned y_rank , const unsigned y_stride ,
+  const unsigned y_rank ,
   const unsigned y_N0 , const unsigned y_N1 ,
   const unsigned y_N2 , const unsigned y_N3 ,
   const unsigned y_N4 , const unsigned y_N5 ,
@@ -72,10 +82,8 @@ void assert_shapes_are_equal_throw(
   std::ostringstream msg ;
 
   msg << "KokkosArray::Impl::assert_shape_are_equal_throw( {"
-      << " layout(" << x_layout.name()
-      << ") scalar_size(" << x_scalar_size
+      << " scalar_size(" << x_scalar_size
       << ") rank(" << x_rank
-      << ") stride(" << x_stride
       << ") dimension(" ;
   if ( 0 < x_rank ) { msg << " " << x_N0 ; }
   if ( 1 < x_rank ) { msg << " " << x_N1 ; }
@@ -86,10 +94,8 @@ void assert_shapes_are_equal_throw(
   if ( 6 < x_rank ) { msg << " " << x_N6 ; }
   if ( 7 < x_rank ) { msg << " " << x_N7 ; }
   msg << " ) } != { "
-      << " layout(" << y_layout.name()
-      << ") scalar_size(" << y_scalar_size
+      << " scalar_size(" << y_scalar_size
       << ") rank(" << y_rank
-      << ") stride(" << y_stride
       << ") dimension(" ;
   if ( 0 < y_rank ) { msg << " " << y_N0 ; }
   if ( 1 < y_rank ) { msg << " " << y_N1 ; }

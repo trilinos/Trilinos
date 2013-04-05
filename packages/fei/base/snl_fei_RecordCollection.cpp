@@ -295,22 +295,14 @@ int snl_fei::RecordCollection::getGlobalIndex(int ID,
 {
   fei::Record<int>* record = getRecordWithID(ID);
   if (record == NULL) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "snl_fei::RecordCollection::getGlobalIndex ERROR, no record with "
-       << "ID=" << ID;
-    throw std::runtime_error(osstr.str());
+    return -1;
   }
 
   fei::FieldMask* mask = record->getFieldMask();
   int offset = 0;
-  try {
-    mask->getFieldEqnOffset(fieldID, offset);
-  }
-  catch (...) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "failed to get eqn-offset for fieldID " << fieldID
-          << " on record with ID " << ID << ".";
-    throw std::runtime_error(osstr.str());
+  int err = mask->getFieldEqnOffset(fieldID, offset);
+  if (err != 0) {
+    return -1;
   }
 
   const int* eqnNums = eqnNumbers + record->getOffsetIntoEqnNumbers();
@@ -350,14 +342,9 @@ int snl_fei::RecordCollection::getGlobalIndexLocalID(int localID,
 
   fei::FieldMask* mask = record->getFieldMask();
   int offset = 0;
-  try {
-    mask->getFieldEqnOffset(fieldID, offset);
-  }
-  catch (...) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "failed to get eqn-offset for fieldID " << fieldID
-          << " on record with localID " << localID << ".";
-    throw std::runtime_error(osstr.str());
+  int err = mask->getFieldEqnOffset(fieldID, offset);
+  if (err != 0) {
+    return -1;
   }
 
   const int* eqnNums = eqnNumbers + record->getOffsetIntoEqnNumbers();

@@ -1553,6 +1553,25 @@ class test_checkin_test(unittest.TestCase):
       False)
 
 
+  def test_help_debug_dump(self):
+    testName = "help_debug_dump"
+    checkin_test_run_case(
+      self,
+      testName,
+      "--help",
+      "", # No shell commands!
+      True,
+      "checkin-test.py \[OPTIONS\]\n" \
+      +"thisFilePath\n" \
+      +"thisFileRealAbsBasePath\n" \
+      +"sys.path\n" \
+      +"Loading project configuration from\n" \
+      ,
+      mustHaveCheckinTestOut=False,
+      envVars=["TRIBITS_CHECKIN_TEST_DEBUG_DUMP=ON"]
+      )
+
+
   def test_show_defaults(self):
     testName = "show_defaults"
     checkin_test_run_case(
@@ -1596,7 +1615,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "Pulled changes from this repo!\n" \
+      "'': Pulled changes from this repo!\n" \
       +"There where at least some changes pulled!\n" \
       +g_expectedRegexUpdateWithBuildCasePasses \
       +g_expectedRegexConfigPasses \
@@ -2090,6 +2109,8 @@ class test_checkin_test(unittest.TestCase):
       +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
       +"Enabling .Teko..\n" \
       +"Teko of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
+      +"'': Pulled changes from this repo!\n" \
+      +".preCopyrightTrilinos.: Pulled changes from this repo!\n" \
       +"pullInitial.preCopyrightTrilinos.out\n" \
       +"Update passed!\n"\
       +"All of the tests ran passed!\n" \
@@ -4073,6 +4094,7 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexTestPasses \
       +g_expectedCommonOptionsSummary \
       +"A PUSH IS READY TO BE PERFORMED!\n" \
+      +"'': Pull failed!\n" \
       +"Final update failed!\n" \
       +"Skippng appending test results due to prior errors!\n" \
       +"Not performing push due to prior errors!\n" \
@@ -4535,6 +4557,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "pullFinal.out\n" \
       "pullFinal.preCopyrightTrilinos.out\n" \
+      ".preCopyrightTrilinos.: Pull failed!\n" \
       "Final update failed!\n" \
       "FINAL PULL FAILED: Trilinos:\n" \
       "REQUESTED ACTIONS: FAILED\n" \

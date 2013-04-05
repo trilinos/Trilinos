@@ -111,14 +111,14 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, basic)
    // panzer::pauseToAttach();
 
    RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(3,5);
-   RCP<panzer::UniqueGlobalIndexer<short,int> > indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer<short>(myRank,numProc));
+   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
+         = rcp(new unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
  
    // setup factory
-   RCP<panzer::EpetraLinearObjFactory<panzer::Traits,short> > epetraFactory
-         = rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
-   RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,short> > la_factory
-         = rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,short>(epetraFactory,sgExpansion,Teuchos::null));
+   RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > epetraFactory
+         = rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),indexer));
+   RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > la_factory
+         = rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,int>(epetraFactory,sgExpansion,Teuchos::null));
    
    RCP<panzer::LinearObjContainer> ghostedContainer = la_factory->buildGhostedLinearObjContainer(); 
    RCP<panzer::LinearObjContainer> container = la_factory->buildLinearObjContainer(); 
@@ -167,18 +167,18 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, initializeContainer)
    // panzer::pauseToAttach();
 
    RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(3,5);
-   RCP<panzer::UniqueGlobalIndexer<short,int> > indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer<short>(myRank,numProc));
+   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
+         = rcp(new unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
 
    std::vector<int> ownedIndices, ownedAndSharedIndices;
    indexer->getOwnedIndices(ownedIndices);
    indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
  
    // setup factory
-   RCP<panzer::EpetraLinearObjFactory<panzer::Traits,short> > epetraFactory
-         = rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
-   RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,short> > la_factory
-         = rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,short>(epetraFactory,sgExpansion,Teuchos::null));
+   RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > epetraFactory
+         = rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),indexer));
+   RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > la_factory
+         = rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,int>(epetraFactory,sgExpansion,Teuchos::null));
    
    RCP<panzer::LinearObjContainer> ghostedContainer = la_factory->buildGhostedLinearObjContainer(); 
    RCP<panzer::LinearObjContainer> container = la_factory->buildLinearObjContainer(); 

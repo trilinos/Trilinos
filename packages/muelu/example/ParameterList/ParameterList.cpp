@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
   //
 
   // Multigrid Hierarchy
-  ParameterListInterpreter mueLuFactory(xmlFileName);
+  ParameterListInterpreter mueLuFactory(xmlFileName,*comm);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
   H->GetLevel(0)->Set("A", A);
 

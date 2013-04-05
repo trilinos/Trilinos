@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -89,7 +89,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
   //can there be an inconsistency here???
   TEUCHOS_TEST_FOR_EXCEPTION(numLocalBlocks != checkLocalBlocks, std::runtime_error,
        "Tpetra::BlockMap::BlockMap ERROR: internal failure, numLocalBlocks not consistent with point-map.");
-  
+
   myGlobalBlockIDs_.resize(numLocalBlocks);
   pbuf_firstPointInBlock_ = node->template allocBuffer<LocalOrdinal>(numLocalBlocks+1);
   Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
@@ -346,10 +346,10 @@ template<class LocalOrdinal,class GlobalOrdinal,class Node>
 void
 BlockMap<LocalOrdinal,GlobalOrdinal,Node>::setup_noncontig_mapping()
 {
-  //possibly need to use a hash (unordered_map) here...
   typedef typename Teuchos::Array<GlobalOrdinal>::size_type Tsize_t;
   for(Tsize_t i=0; i<myGlobalBlockIDs_.size(); ++i) {
     LocalOrdinal li = i;
+    // TODO: Use Tpetra::Details::HashTable here instead of std::map.
     map_global_to_local_.insert(std::make_pair(myGlobalBlockIDs_[i],li));
   }
 }
@@ -416,7 +416,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getLocalBlockID(GlobalOrdinal globalB
   }
 
   if (blockIDsAreContiguous_ == false) {
-    //need to use a hash (unordered_map) here instead of a map...
+    // TODO: Use Tpetra::Details::HashTable instead of std::map.
     typename std::map<GlobalOrdinal,LocalOrdinal>::const_iterator iter =
       map_global_to_local_.find(globalBlockID);
     if (iter == map_global_to_local_.end()) return invalid;

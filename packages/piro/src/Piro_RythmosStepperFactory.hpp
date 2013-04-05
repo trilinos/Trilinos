@@ -14,6 +14,8 @@ template <typename Scalar>
 class RythmosStepperFactory {
 public:
 
+  virtual ~RythmosStepperFactory() {}
+
   virtual Teuchos::RCP<Rythmos::StepperBase<Scalar> > buildStepper(
                         const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & model,
                         const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > & solver,

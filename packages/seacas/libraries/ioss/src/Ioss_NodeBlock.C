@@ -89,6 +89,14 @@ Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database,
 			 Ioss::Field::CHARACTER, SCALAR(),
 			 Ioss::Field::MESH, node_count));
 
+  // The 1..global_node_count id.  In a parallel-decomposed run,
+  // if maps the node back to its implicit position in the serial
+  // undecomposed mesh file.  This is ONLY provided for backward-
+  // compatibility and should not be used unless absolutely required.
+  fields.add(Ioss::Field("implicit_ids",
+			 field_int_type(), SCALAR(),
+			 Ioss::Field::MESH, node_count));
+
   fields.add(Ioss::Field("owning_processor",
 			 field_int_type(), SCALAR(),
 			 Ioss::Field::MESH, node_count));

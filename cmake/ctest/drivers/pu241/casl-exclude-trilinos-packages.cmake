@@ -4,6 +4,7 @@
 
 IF (NOT ${PROJECT_NAME}_EXCLUDE_PACKAGES)
   SET(${PROJECT_NAME}_EXCLUDE_PACKAGES
+    ThreadPool
     GlobiPack
     OptiPack
     Pliris

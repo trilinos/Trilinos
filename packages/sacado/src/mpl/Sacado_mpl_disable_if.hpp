@@ -36,17 +36,29 @@ namespace Sacado {
 
   namespace mpl {
 
-    template <bool, typename T = void> 
+    template <bool, typename T = void>
     struct disable_if_c {};
-    
-    template <typename T> 
-    struct disable_if_c<false, T> { 
-      typedef T type; 
+
+    template <typename T>
+    struct disable_if_c<false, T> {
+      typedef T type;
     };
-    
-    template <class Cond, typename T = void> 
-    struct disable_if 
+
+    template <class Cond, typename T = void>
+    struct disable_if
       : disable_if_c<Cond::value, T> {};
+
+    template <bool, typename T = void>
+    struct lazy_disable_if_c {};
+
+    template <typename T>
+    struct lazy_disable_if_c<false, T> {
+      typedef typename T::type type;
+    };
+
+    template <class Cond, typename T = void>
+    struct lazy_disable_if
+      : lazy_disable_if_c<Cond::value, T> {};
 
   }
 

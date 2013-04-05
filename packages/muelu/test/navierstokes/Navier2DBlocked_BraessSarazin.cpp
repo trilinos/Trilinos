@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   // custom parameters
-  LocalOrdinal maxLevels = 3;
+  LocalOrdinal maxLevels = 2;
 
   GlobalOrdinal maxCoarseSize=1; //FIXME clp doesn't like long long int
 
@@ -638,14 +638,14 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("R", R22Fact);
   M22->SetFactory("Aggregates", CoupledAggFact11);
   M22->SetFactory("Nullspace", nspFact22);
-  M11->SetFactory("UnAmalgamationInfo", amalgFact22);
+  M22->SetFactory("UnAmalgamationInfo", amalgFact22); // TODO oops what about that? it was M11 before?
   M22->SetFactory("Ptent", P22Fact);
   M22->SetFactory("CoarseMap", coarseMapFact22);
   M22->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
 #endif
 
   /////////////////////////////////////////// define blocked transfer ops
-  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory(Teuchos::null)); // use row map index base from bOp
+  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory()); // use row map index base from bOp
   PFact->AddFactoryManager(M11);
   PFact->AddFactoryManager(M22);
 
@@ -674,7 +674,8 @@ int main(int argc, char *argv[]) {
   //Another factory manager for braes sarazin smoother
   //Schur Complement Factory, using the factory to generate AcFact
   SC omega = 1.3;
-    RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory(omega));
+    RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
+    SFact->SetParameter("omega", Teuchos::ParameterEntry(omega));
     SFact->SetFactory("A", MueLu::NoFactory::getRCP());
 
     //Smoother Factory, using SFact as a factory for A
@@ -723,8 +724,8 @@ int main(int argc, char *argv[]) {
   RCP<Level> coarseLevel = H->GetLevel(1);
   coarseLevel->print(*out);
 
-  RCP<Level> coarseLevel2 = H->GetLevel(2);
-  coarseLevel2->print(*out);
+  //RCP<Level> coarseLevel2 = H->GetLevel(2);
+  //coarseLevel2->print(*out);
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap,1);
 

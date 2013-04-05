@@ -266,6 +266,7 @@ evaluateBCs(const panzer::BCType bc_type,
 	  workset.alpha = in.alpha;
 	  workset.beta = in.beta;
 	  workset.time = in.time;
+          workset.evaluate_transient_terms = in.evaluate_transient_terms;
 	  
 	  local_side_fm.template evaluateFields<EvalT>(workset);
 

@@ -205,6 +205,24 @@ IF(Trilinos_ENABLE_Belos AND
     )
 ENDIF()
 
+IF(Trilinos_ENABLE_AztecOO AND
+   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_Pamgen AND
+   Trilinos_ENABLE_Epetra AND
+   Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_MueLu)
+  TRIBITS_ADD_EXECUTABLE(
+    IntrepidPoisson_Pamgen_EpetraAztecOO
+    SOURCES IntrepidPoisson_Pamgen_EpetraAztecOO_main.cpp
+      TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+      TrilinosCouplings_EpetraIntrepidPoissonExample.cpp
+      TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithAztecOO.cpp
+    COMM serial mpi
+    DEPLIBS aztecoo intrepid pamgen epetra
+    ADD_DIR_TO_NAME
+    )
+ENDIF()
+
 # Copy over example xml file for [E|T]petraIntrepidPoisson example
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
   DEST_FILES   intrepid_poisson.xml

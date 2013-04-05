@@ -95,6 +95,21 @@ namespace Xpetra {
     //! Constructor specifying a previously constructed graph.
     EpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
+
+    //! Constructor for a fused import
+    EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+		    const Import<LocalOrdinal,GlobalOrdinal,Node> &importer,
+		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
+		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
+		    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    //! Constructor for a fused export
+    EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+		    const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter,
+		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
+		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
+		    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
     //! Destructor.
     virtual ~EpetraCrsMatrix() { }
 
@@ -121,6 +136,21 @@ namespace Xpetra {
     //! Scale the current values of a matrix, this = alpha*this.
     void scale(const Scalar &alpha) { XPETRA_MONITOR("EpetraCrsMatrix::scale"); mtx_->Scale(alpha); }
 
+    //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values);
+
+    //! Sets the matrix's structure from the Crs arrays
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values);
+
+    //! Expert static fill complete
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+				  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+				  const RCP<ParameterList> &params=Teuchos::null);
     //@}
 
     //! @name Transformational Methods
@@ -135,6 +165,9 @@ namespace Xpetra {
     //! Signal that data entry is complete.
     void fillComplete(const RCP< ParameterList > &params=null);
 
+
+    //!  Replaces the current domainMap and importer with the user-specified objects.
+    void replaceDomainMapAndImporter(const Teuchos::RCP< const  Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter);
     //@}
 
     //! @name Methods implementing RowMatrix
@@ -264,6 +297,8 @@ namespace Xpetra {
 
     //! Export (using an Importer).
     void doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
+
+    void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) { }
 
     //@}
 

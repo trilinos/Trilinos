@@ -75,7 +75,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, defaults)
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube.exo");
+      mesh->writeToExodus("CubeHex.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -134,7 +134,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, element_counts)
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube_oddelmt.exo");
+      mesh->writeToExodus("CubeHex_oddelmt.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -175,7 +175,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube_allblock.exo");
+      mesh->writeToExodus("CubeHex_allblock.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -231,7 +231,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, two_block)
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube_2block.exo");
+      mesh->writeToExodus("CubeHex_2block.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -276,7 +276,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, sub_two_block)
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());
-      mesh->writeToExodus("Cube_sub_2block.exo");
+      mesh->writeToExodus("CubeHex_sub_2block.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());

@@ -146,6 +146,24 @@ public:
   //@{
   //! \name Mathematical functions.
 
+  //! Applies the preconditioner to X, returns the result in Y.
+  /*! 
+    \param
+    X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
+    \param
+    Y - (InOut) A Tpetra::MultiVector of dimension NumVectors containing result.
+
+    \return Integer error code, set to 0 if successful.
+
+    \warning This routine is NOT AztecOO compliant.
+  */
+  template <class DomainScalar, class RangeScalar>
+  void applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+             Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+             Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                 RangeScalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                 RangeScalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+
   //! Computes the estimated condition number and returns the value.
   magnitudeType computeCondEst(CondestType CT = Cheap,
                                LocalOrdinal MaxIters = 1550,

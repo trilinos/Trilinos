@@ -1020,7 +1020,10 @@ namespace Iopg {
 	  }
 	}
 
-	else if (field.get_name() == "ids") {
+	// NOTE: The implicit_ids field is ONLY provided for backward-
+	// compatibility and should not be used unless absolutely
+	// required. For generated mesh, the implicit_ids and ids are the same.
+	else if (field.get_name() == "ids" || field.get_name() == "implicit_ids") {
 	  // Map the local ids in this node block
 	  // (1...node_count) to global node ids.
 	  get_node_map().map_implicit_data(data, field, num_to_get, 0);

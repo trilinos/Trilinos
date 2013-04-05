@@ -31,13 +31,17 @@
 
 namespace Stokhos {
 
-template< class MatrixType ,
-          class InputVectorType  = void ,
-          class OutputVectorType = InputVectorType > class Multiply ;
+class DefaultSparseMatOps {};
 
 template< class MatrixType ,
           class InputVectorType  = void ,
-          class OutputVectorType = InputVectorType > class MMultiply ;
+          class OutputVectorType = InputVectorType ,
+	  class SparseMatOps = DefaultSparseMatOps > class Multiply ;
+
+template< class MatrixType ,
+          class InputVectorType  = void ,
+          class OutputVectorType = InputVectorType ,
+	  class SparseMatOps = DefaultSparseMatOps > class MMultiply ;
 
 template < class ValueType, class Device > class MatrixMarketWriter ;
 
@@ -79,7 +83,7 @@ public:
 		     const value_type &  beta ,
                      const vector_type & y )
   {
-    const size_t row_count = x.dimension(0) ;
+    const size_t row_count = x.dimension_0() ;
     KokkosArray::parallel_for( row_count , Update(alpha,x,beta,y) );
   }
 };

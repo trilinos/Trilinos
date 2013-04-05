@@ -36,13 +36,13 @@ namespace MueLu {
 
     // loop over local nodes
     // TODO what about nOffset?
-    for ( LocalOrdinal node = 0; node < A->getRowMap()->getNodeNumElements()/nDofsPerNode; node++) {
+    for (LocalOrdinal node = 0; node < Teuchos::as<LocalOrdinal> (A->getRowMap()->getNodeNumElements()/nDofsPerNode); ++node) {
 
       Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar> subBlockMatrix(nDofsPerNode, nDofsPerNode, true);
 
       std::vector<GlobalOrdinal> growIds(nDofsPerNode);
 
-      for ( LocalOrdinal lrdof = 0; lrdof < nDofsPerNode; lrdof++) { // TODO more complicated for variable dofs per node
+      for (LocalOrdinal lrdof = 0; lrdof < Teuchos::as<LocalOrdinal> (nDofsPerNode); ++lrdof) { // TODO more complicated for variable dofs per node
         GlobalOrdinal grow = getGlobalDofId(A, node, lrdof);
         growIds[lrdof] = grow;
 

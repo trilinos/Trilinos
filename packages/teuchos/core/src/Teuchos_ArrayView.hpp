@@ -69,8 +69,11 @@ ArrayView<T>::ArrayView( T* p, size_type size_in, const ERCPNodeLookup rcpNodeLo
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
   TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 );
+  // This only does something if HAVE_TEUCHOS_ARRAY_BOUNDSCHECK is defined.
   setUpIterators(rcpNodeLookup);
-#endif
+#else
+  (void) rcpNodeLookup; // Silence "unused variable" compiler warning.
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 }
 
 
@@ -382,7 +385,9 @@ void ArrayView<T>::setUpIterators(const ERCPNodeLookup rcpNodeLookup)
   if (ptr_ && arcp_.is_null()) {
     arcp_ = ArrayRCP<T>(ptr_, 0, size_, false, rcpNodeLookup);
   }
-#endif
+#else
+  (void) rcpNodeLookup; // Silence "unused variable" compiler warning.
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 }
 
 

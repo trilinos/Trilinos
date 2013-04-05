@@ -83,7 +83,6 @@ GeneralSolveCriteriaBelosStatusTest<Scalar>::checkStatus(
 {
 
   using Teuchos::null;
-  typedef ScalarTraits<ScalarMag> SMT;
   
 #ifdef THYRA_DEBUG
   TEUCHOS_ASSERT(iSolver);

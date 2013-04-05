@@ -36,6 +36,7 @@
 #include "Stokhos_Cuda_CrsProductTensor.hpp"
 #include "Stokhos_Cuda_FlatSparse3Tensor.hpp"
 #include "Stokhos_Cuda_FlatSparse3Tensor_kji.hpp"
+#include "Stokhos_Cuda_LexicographicBlockSparse3Tensor.hpp"
 
 namespace unit_test {
 
@@ -62,9 +63,9 @@ struct performance_test_driver<Scalar,KokkosArray::Cuda> {
     if (test_orig) {
       nGrid = 32 ;
       nIter = 1 ; 
-      performance_test_driver_poly<Scalar,Device>( 
+      performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>( 
 	3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
-      performance_test_driver_poly<Scalar,Device>( 
+      performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>( 
 	5 , 1 ,  6 , nGrid , nIter , test_block , symmetric );
     }
     

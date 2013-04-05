@@ -89,7 +89,7 @@ namespace Kokkos {
     }
 
     //! \begin No-op for SerialNode.
-    inline void sync() const {};
+    inline void sync() const {}
   };
 
   template <> class ArrayOfViewsHelper<SerialNode> : 

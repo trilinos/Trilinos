@@ -43,6 +43,7 @@
 #define Intrepid_MiniTensor_Tensor4_h
 
 #include "Intrepid_MiniTensor_Tensor3.h"
+#include "Teuchos_ArrayRCP.hpp"
 
 namespace Intrepid {
 
@@ -53,6 +54,11 @@ namespace Intrepid {
   class Tensor4
   {
   public:
+
+    ///
+    /// Component type
+    ///
+    typedef T type;
 
     ///
     /// Default constructor
@@ -149,6 +155,13 @@ namespace Intrepid {
     void
     clear();
 
+    ///
+    /// Tensor order
+    ///
+    static
+    Index
+    order() {return 4U;};
+
   private:
 
     ///
@@ -160,7 +173,7 @@ namespace Intrepid {
     ///
     /// Tensor components
     ///
-    T *
+    Teuchos::ArrayRCP<T>
     e;
 
   };
@@ -171,9 +184,9 @@ namespace Intrepid {
   /// \param B 4th-order tensor
   /// \return \f$ A + B \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  operator+(Tensor4<T> const & A, Tensor4<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  operator+(Tensor4<S> const & A, Tensor4<T> const & B);
 
   ///
   /// 4th-order tensor substraction
@@ -181,9 +194,9 @@ namespace Intrepid {
   /// \param B 4th-order tensor
   /// \return \f$ A - B \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  operator-(Tensor4<T> const & A, Tensor4<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  operator-(Tensor4<S> const & A, Tensor4<T> const & B);
 
   ///
   /// 4th-order tensor minus
@@ -215,8 +228,8 @@ namespace Intrepid {
   /// \param A 4th-order tensor
   /// \return \f$ s A \f$
   ///
-  template<typename T, typename S>
-  Tensor4<T>
+  template<typename S, typename T>
+  typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T> > >::type
   operator*(S const & s, Tensor4<T> const & A);
 
   ///
@@ -225,10 +238,9 @@ namespace Intrepid {
   /// \param s scalar
   /// \return \f$ s A \f$
   ///
-  template<typename T, typename S>
-  Tensor4<T>
+  template<typename S, typename T>
+  typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T> > >::type
   operator*(Tensor4<T> const & A, S const & s);
-
 
   ///
   /// 4th-order tensor scalar division
@@ -236,20 +248,9 @@ namespace Intrepid {
   /// \param s scalar
   /// \return \f$ A / s \f$
   ///
-  template<typename T, typename S>
-  Tensor4<T>
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
   operator/(Tensor4<T> const & A, S const & s);
-
-
-  ///
-  /// 4th-order tensor 4th-order tensor double dot product
-  /// \param A 4th-order tensor
-  /// \param B 4th-order tensor
-  /// \return \f$ C = A : B := C_{ijkl} = A_{ijmn} B{mnkl} \f$
-  ///
-  template<typename T>
-  Tensor4<T>
-  dotdot(Tensor4<T> const & A, Tensor4<T> const & B);
 
   ///
   /// 4th-order tensor transpose
@@ -288,9 +289,9 @@ namespace Intrepid {
   /// \param u vector
   /// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijk}=A_{ijkl}u_{l} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot(Tensor4<T> const & A, Vector<T> const & u);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot(Tensor4<T> const & A, Vector<S> const & u);
 
   ///
   /// vector 4th-order tensor dot product
@@ -298,9 +299,9 @@ namespace Intrepid {
   /// \param u vector
   /// \return 3rd-order tensor \f$ B = u \cdot A := B_{jkl}=u_{i} A_{ijkl} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot(Vector<T> const & u, Tensor4<T> const & A);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot(Vector<S> const & u, Tensor4<T> const & A);
 
   ///
   /// 4th-order tensor vector dot2 product
@@ -308,9 +309,9 @@ namespace Intrepid {
   /// \param u vector
   /// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijl}=A_{ijkl}u_{k} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot2(Tensor4<T> const & A, Vector<T> const & u);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot2(Tensor4<T> const & A, Vector<S> const & u);
 
   ///
   /// vector 4th-order tensor dot2 product
@@ -318,9 +319,9 @@ namespace Intrepid {
   /// \param u vector
   /// \return 3rd-order tensor \f$ B = u \cdot A := B_{ikl}=u_{j}A_{ijkl} \f$
   ///
-  template<typename T>
-  Tensor3<T>
-  dot2(Vector<T> const & u, Tensor4<T> const & A);
+  template<typename S, typename T>
+  Tensor3<typename Promote<S, T>::type>
+  dot2(Vector<S> const & u, Tensor4<T> const & A);
 
   ///
   /// 4th-order tensor 2nd-order tensor double dot product
@@ -328,9 +329,9 @@ namespace Intrepid {
   /// \param B 2nd-order tensor
   /// \return 2nd-order tensor \f$ C = A : B := C_{ij}=A_{ijkl}B_{kl} \f$
   ///
-  template<typename T>
-  Tensor<T>
-  dotdot(Tensor4<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dotdot(Tensor4<T> const & A, Tensor<S> const & B);
 
   ///
   /// 2nd-order tensor 4th-order tensor double dot product
@@ -338,9 +339,19 @@ namespace Intrepid {
   /// \param A 4th-order tensor
   /// \return 2nd-order tensor \f$ C = B : A := C_{kl}=A_{ijkl}B_{ij} \f$
   ///
-  template<typename T>
-  Tensor<T>
-  dotdot(Tensor<T> const & B, Tensor4<T> const & A);
+  template<typename S, typename T>
+  Tensor<typename Promote<S, T>::type>
+  dotdot(Tensor<S> const & B, Tensor4<T> const & A);
+
+  ///
+  /// 4th-order tensor 4th-order tensor double dot product
+  /// \param A 4th-order tensor
+  /// \param B 4th-order tensor
+  /// \return \f$ C = A : B := C_{ijkl} = A_{ijmn} B{mnkl} \f$
+  ///
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  dotdot(Tensor4<S> const & A, Tensor4<T> const & B);
 
   ///
   /// 2nd-order tensor 2nd-order tensor tensor product
@@ -348,9 +359,9 @@ namespace Intrepid {
   /// \param B 2nd-order tensor
   /// \return \f$ C = A \otimes B := C_{ijkl} = A_{ij} B_{kl} \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  tensor(Tensor<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  tensor(Tensor<S> const & A, Tensor<T> const & B);
 
   ///
   /// 4th-order tensor 2nd-order tensor dot product
@@ -358,9 +369,9 @@ namespace Intrepid {
   /// \param B 2nd-order tensor
   /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ijkp} B_{pl} \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  dot(Tensor4<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  dot(Tensor4<T> const & A, Tensor<S> const & B);
 
   ///
   /// 4th-order tensor 2nd-order tensor transpose dot product
@@ -368,9 +379,9 @@ namespace Intrepid {
   /// \param B 2nd-order tensor
   /// \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijkp} B_{lp} \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  dot_t(Tensor4<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  dot_t(Tensor4<T> const & A, Tensor<S> const & B);
 
   ///
   /// 2nd-order tensor 4th-order tensor dot product
@@ -378,9 +389,9 @@ namespace Intrepid {
   /// \param B 4th-order tensor
   /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ip} B_{pjkl} \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  dot(Tensor<T> const & A, Tensor4<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  dot(Tensor<S> const & A, Tensor4<T> const & B);
 
   ///
   /// 2nd-order tensor transpose 4th-order tensor dot product
@@ -388,9 +399,9 @@ namespace Intrepid {
   /// \param B 4th-order tensor
   /// \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pi} B_{pjkl} \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  t_dot(Tensor<T> const & A, Tensor4<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  t_dot(Tensor<S> const & A, Tensor4<T> const & B);
 
   ///
   /// 4th-order tensor 2nd-order tensor dot product
@@ -398,9 +409,9 @@ namespace Intrepid {
   /// \param B 2nd-order tensor
   /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ijpk} B_{pl} \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  dot2(Tensor4<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  dot2(Tensor4<T> const & A, Tensor<S> const & B);
 
   ///
   /// 4th-order tensor 2nd-order tensor transpose dot product
@@ -408,9 +419,9 @@ namespace Intrepid {
   /// \param B 2nd-order tensor
   /// \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijpk} B_{lp} \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  dot2_t(Tensor4<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  dot2_t(Tensor4<T> const & A, Tensor<S> const & B);
 
   ///
   /// 2nd-order tensor 4th-order tensor dot product
@@ -418,9 +429,9 @@ namespace Intrepid {
   /// \param B 4th-order tensor
   /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ip} B_{jpkl} \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  dot2(Tensor<T> const & A, Tensor4<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  dot2(Tensor<S> const & A, Tensor4<T> const & B);
 
   ///
   /// 2nd-order tensor transpose 4th-order tensor dot product
@@ -428,9 +439,9 @@ namespace Intrepid {
   /// \param B 4th-order tensor
   /// \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pi} B_{jpkl} \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  t_dot2(Tensor<T> const & A, Tensor4<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  t_dot2(Tensor<S> const & A, Tensor4<T> const & B);
 
   ///
   /// odot operator useful for \f$ \frac{\partial A^{-1}}{\partial A} \f$
@@ -440,9 +451,9 @@ namespace Intrepid {
   /// \return \f$ A \odot B \f$ which is
   /// \f$ C_{ijkl} = \frac{1}{2}(A_{ik} B_{jl} + A_{il} B_{jk}) \f$
   ///
-  template<typename T>
-  Tensor4<T>
-  odot(Tensor<T> const & A, Tensor<T> const & B);
+  template<typename S, typename T>
+  Tensor4<typename Promote<S, T>::type>
+  odot(Tensor<S> const & A, Tensor<T> const & B);
 
   ///
   /// 4th-order input

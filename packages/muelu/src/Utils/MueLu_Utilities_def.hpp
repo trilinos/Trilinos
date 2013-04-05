@@ -68,6 +68,7 @@
 
 #ifdef HAVE_MUELU_TPETRA
 #include <TpetraExt_MatrixMatrix.hpp>
+#include <Tpetra_RowMatrixTransposer.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
@@ -305,8 +306,26 @@ namespace MueLu {
     C = C_in;
 
     if (C == Teuchos::null) {
-      if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), 0);
-      else            C = MatrixFactory::Build(A.getRowMap(),    0);
+      double nnzPerRow=Teuchos::as<double>(0);
+      if (A.getDomainMap()->lib() == Xpetra::UseTpetra) {
+        // for now, follow what ML and Epetra do.
+        GO numRowsA = A.getGlobalNumRows();
+        GO numRowsB = B.getGlobalNumRows();
+        nnzPerRow = sqrt(Teuchos::as<double>(A.getGlobalNumEntries())/numRowsA) +
+                    sqrt(Teuchos::as<double>(B.getGlobalNumEntries())/numRowsB) - 1;
+        nnzPerRow *=  nnzPerRow;
+        double totalNnz = nnzPerRow * A.getGlobalNumRows() * 0.75 + 100;
+        double minNnz = Teuchos::as<double>(1.2 * A.getGlobalNumEntries());
+        if (totalNnz < minNnz)
+          totalNnz = minNnz;
+        nnzPerRow = totalNnz / A.getGlobalNumRows();
+        RCP<Teuchos::FancyOStream> fos = MakeFancy(std::cout);
+        fos->setOutputToRootOnly(0);
+        *fos << "Utils::Multiply : Estimate for nnz per row of product matrix = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
+      }
+
+      if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), Teuchos::as<LO>(nnzPerRow));
+      else            C = MatrixFactory::Build(A.getRowMap(),    Teuchos::as<LO>(nnzPerRow));
     } else {
       C->resumeFill(); // why this is not done inside of Tpetra MxM?
       std::cout << "Reuse C pattern" << std::endl;
@@ -613,6 +632,26 @@ namespace MueLu {
   } //GetMatrixDiagonal
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetLumpedMatrixDiagonal(const Matrix &A)
+  {
+    const RCP<const Map> rowmap = A.getRowMap();
+    size_t locSize = rowmap->getNodeNumElements();
+    Teuchos::ArrayRCP<SC> diag(locSize);
+    Teuchos::ArrayView<const LO> cols;
+    Teuchos::ArrayView<const SC> vals;
+    for (size_t i=0; i<locSize; ++i) { // loop over rows
+      A.getLocalRowView(i,cols,vals);
+      Scalar absRowSum = Teuchos::ScalarTraits<Scalar>::zero();
+      for (LO j=0; j<cols.size(); ++j) { // loop over cols
+        absRowSum += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+      }
+      diag[i] = absRowSum;
+    }
+    //for (int i=0; i<locSize; ++i) std::cout << "diag[" << i << "] = " << diag[i] << std::endl;
+    return diag;
+  } //GetMatrixDiagonal
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixOverlappedDiagonal(const Matrix &A)
   {
     Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);  //FIXME should this return a Vector instead?
@@ -770,7 +809,7 @@ namespace MueLu {
     if (lib == Xpetra::UseEpetra) {
 
 #     if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-      
+
       Epetra_CrsMatrix *A;
       const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(comm);
       int rv = EpetraExt::MatrixMarketFileToCrsMatrix( fileName.c_str(), *epcomm, A);
@@ -1095,7 +1134,8 @@ namespace MueLu {
         if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
           throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
         RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-        params->set("Optimize Storage",doOptimizeStorage);
+        params->set("Optimize Storage",    doOptimizeStorage);
+        params->set("No Nonlocal Changes", true);
         Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
       }
 #else
@@ -1201,6 +1241,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Transpose(RCP<Matrix> const &Op, bool const & optimizeTranspose)
   {
+   Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("YY Entire Transpose"));
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     std::string TorE = "epetra";
 #else
@@ -1231,13 +1272,19 @@ namespace MueLu {
 
     if (TorE == "tpetra") {
 #ifdef HAVE_MUELU_TPETRA
-      //     Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer(*tpetraOp); //more than meets the eye
-      //     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A=Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::simple_Transpose(tpetraOp);
+      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A;
+      {
+      Teuchos::TimeMonitor tmm(*Teuchos::TimeMonitor::getNewTimer("YY Tpetra Transpose Only"));
+      Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer (tpetraOp); //more than meets the eye
+      A = transposer.createTranspose();
+      }
+
+      //RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A=Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::simple_Transpose(tpetraOp);
       RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
       RCP<CrsMatrix> AAA = rcp_implicit_cast<CrsMatrix>(AA);
       RCP<Matrix> AAAA = rcp( new CrsMatrixWrap(AAA) );
-      AAAA->fillComplete(Op->getRangeMap(),Op->getDomainMap());
+      if (!AAAA->isFillComplete())
+        AAAA->fillComplete(Op->getRangeMap(),Op->getDomainMap());
       return AAAA;
 #else
       throw(Exceptions::RuntimeError("Tpetra"));
@@ -1284,14 +1331,58 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
                            RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
-                           RCP<Matrix> &C)
+                           RCP<Matrix> &C, bool const &AHasFixedNnzPerRow)
   {
     if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
       throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
     }
-    if (C==Teuchos::null)
-      //FIXME 5 is a complete guess as to the #nonzeros per row
-      C = rcp( new CrsMatrixWrap(A->getRowMap(), 5) );
+    if (C==Teuchos::null) {
+      if (!A->isFillComplete() || !B->isFillComplete())
+        TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"Global statistics are not available for estimates.");
+
+      size_t maxNzInA = A->getGlobalMaxNumRowEntries();
+      size_t maxNzInB = B->getGlobalMaxNumRowEntries();
+      size_t numLocalRows = A->getNodeNumRows();
+
+      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      fos->setOutputToRootOnly(0);
+
+      if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
+        //first check if either A or B has at most 1 nonzero per row
+        //the case of both having at most 1 nz per row is handled by the ``else''
+        Teuchos::ArrayRCP<size_t> exactNnzPerRow(numLocalRows);
+        if ( (maxNzInA == 1 && maxNzInB > 1) || AHasFixedNnzPerRow) {
+          for (size_t i=0; i<numLocalRows; ++i)
+            exactNnzPerRow[i] = B->getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInA;
+        } else {
+          for (size_t i=0; i<numLocalRows; ++i)
+            exactNnzPerRow[i] = A->getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
+        }
+        *fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
+             << ", using static profiling" << std::endl;
+        C = rcp( new CrsMatrixWrap(A->getRowMap(), exactNnzPerRow, Xpetra::StaticProfile) );
+      }
+      else {
+        //general case
+        double nnzPerRowInA = Teuchos::as<double>(A->getGlobalNumEntries()) / A->getGlobalNumRows();
+        double nnzPerRowInB = Teuchos::as<double>(B->getGlobalNumEntries()) / B->getGlobalNumRows();
+        LO nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
+
+        LO maxPossible = A->getGlobalMaxNumRowEntries() + B->getGlobalMaxNumRowEntries();
+        //Use static profiling (more efficient) if the estimate is at least as big as the max
+        //possible nnz's in any single row of the result.
+        Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
+
+        *fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+        *fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+             << ", max possible nnz per row in sum = " << maxPossible
+             << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
+             << std::endl;
+        C = rcp( new CrsMatrixWrap(A->getRowMap(), nnzToAllocate, pft) );
+      }
+      if (transposeB)
+        *fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+    }
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
       throw(Exceptions::RuntimeError("You cannot use Epetra::MatrixMatrix::Add with Scalar!=double or Ordinal!=int"));

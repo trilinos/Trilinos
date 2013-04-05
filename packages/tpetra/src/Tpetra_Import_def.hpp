@@ -56,7 +56,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,
-	  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target) 
+          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target)
   {
     using Teuchos::rcp;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
@@ -176,7 +176,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Import<LocalOrdinal,GlobalOrdinal,Node>::
-  print (std::ostream& os) const 
+  print (std::ostream& os) const
   {
     using Teuchos::Comm;
     using Teuchos::getFancyOStream;
@@ -243,9 +243,9 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void 
+  void
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  setupSamePermuteRemote() 
+  setupSamePermuteRemote()
   {
     const Map<LocalOrdinal,GlobalOrdinal,Node> & source = *getSourceMap();
     const Map<LocalOrdinal,GlobalOrdinal,Node> & target = *getTargetMap();
@@ -263,11 +263,11 @@ namespace Tpetra {
       const size_type numTgtGids = targetGIDs.size ();
       const size_type numGids = std::min (numSrcGids, numTgtGids);
 
-      size_type numSameGids = 0; 
-      for ( ; numSameGids < numGids && rawSrcGids[numSameGids] == rawTgtGids[numSameGids]; ++numSameGids) 
-	{} // third clause of 'for' does everything
+      size_type numSameGids = 0;
+      for ( ; numSameGids < numGids && rawSrcGids[numSameGids] == rawTgtGids[numSameGids]; ++numSameGids)
+        {} // third clause of 'for' does everything
       ImportData_->numSameIDs_ = numSameGids;
-      
+
       remoteGIDs_ = rcp (new Array<GlobalOrdinal> ());
       Array<GlobalOrdinal>& remoteGids = *remoteGIDs_;
       Array<LocalOrdinal>& permuteToLIDs = ImportData_->permuteToLIDs_;
@@ -275,19 +275,19 @@ namespace Tpetra {
       Array<LocalOrdinal>& remoteLIDs = ImportData_->remoteLIDs_;
 
       for (size_type targetIndex = numSameGids; targetIndex < numTgtGids; ++targetIndex) {
-	const GlobalOrdinal curTargetGid = rawTgtGids[targetIndex];
-	// getLocalElement() returns LINVALID if the GID isn't in the source Map.
-	// This saves us a lookup (which isNodeGlobalElement() would do).
-	const LocalOrdinal srcLid = source.getLocalElement (curTargetGid);
-	const LocalOrdinal tgtLid = target.getLocalElement (curTargetGid);
+        const GlobalOrdinal curTargetGid = rawTgtGids[targetIndex];
+        // getLocalElement() returns LINVALID if the GID isn't in the source Map.
+        // This saves us a lookup (which isNodeGlobalElement() would do).
+        const LocalOrdinal srcLid = source.getLocalElement (curTargetGid);
+        const LocalOrdinal tgtLid = target.getLocalElement (curTargetGid);
 
-	if (srcLid != LINVALID) { // if source.isNodeGlobalElement (curTargetGid)
-	  permuteToLIDs.push_back (tgtLid);
-	  permuteFromLIDs.push_back (srcLid);
-	} else {
-	  remoteGids.push_back (curTargetGid);
-	  remoteLIDs.push_back (tgtLid);
-	}
+        if (srcLid != LINVALID) { // if source.isNodeGlobalElement (curTargetGid)
+          permuteToLIDs.push_back (tgtLid);
+          permuteFromLIDs.push_back (srcLid);
+        } else {
+          remoteGids.push_back (curTargetGid);
+          remoteLIDs.push_back (tgtLid);
+        }
       }
     } else {
       // Compute numSameIDs_:
@@ -301,13 +301,13 @@ namespace Tpetra {
       // Map, but otherwise the source and target Maps are the same.
       // This allows a fast contiguous copy for the initial "same IDs."
       typename ArrayView<const GlobalOrdinal>::iterator sourceIter = sourceGIDs.begin(),
-	targetIter = targetGIDs.begin();
-      while (sourceIter != sourceGIDs.end() && 
-	     targetIter != targetGIDs.end() && 
-	     *sourceIter == *targetIter) {
-	++ImportData_->numSameIDs_;
-	++sourceIter;
-	++targetIter;
+        targetIter = targetGIDs.begin();
+      while (sourceIter != sourceGIDs.end() &&
+             targetIter != targetGIDs.end() &&
+             *sourceIter == *targetIter) {
+        ++ImportData_->numSameIDs_;
+        ++sourceIter;
+        ++targetIter;
       }
       // targetIter should now point either to the GID of the first
       // non-same entry in targetGIDs, or to the end of targetGIDs (if
@@ -333,28 +333,28 @@ namespace Tpetra {
       //    ImportExportData object.
       remoteGIDs_ = rcp( new Array<GlobalOrdinal>() );
       for (; targetIter != targetGIDs.end(); ++targetIter) {
-	const GlobalOrdinal curTargetGID = *targetIter;
-	if (source.isNodeGlobalElement (curTargetGID)) {
-	  // The current process owns this GID, for both the source and
-	  // the target Maps.  Determine the LIDs for this GID on both
-	  // Maps and add them to the permutation lists.
-	  ImportData_->permuteToLIDs_.push_back (target.getLocalElement (curTargetGID));
-	  ImportData_->permuteFromLIDs_.push_back (source.getLocalElement (curTargetGID));
-	}
-	else {
-	  // The current GID is owned by this process in the target Map,
-	  // but is not owned by this process in the source Map.  That
-	  // means the Import operation has to receive it from another
-	  // process.  Store it in the "remote" (incoming) list, along
-	  // with its destination LID on this process.
-	  //
-	  // remoteLIDs_ is the list of this process' LIDs that it has
-	  // to receive from other processes.  Since this is an Import,
-	  // and therefore the source Map is nonoverlapping, we know
-	  // that each remote LID can receive from only one process.
-	  remoteGIDs_->push_back (curTargetGID);
-	  ImportData_->remoteLIDs_.push_back (target.getLocalElement (curTargetGID));
-	}
+        const GlobalOrdinal curTargetGID = *targetIter;
+        if (source.isNodeGlobalElement (curTargetGID)) {
+          // The current process owns this GID, for both the source and
+          // the target Maps.  Determine the LIDs for this GID on both
+          // Maps and add them to the permutation lists.
+          ImportData_->permuteToLIDs_.push_back (target.getLocalElement (curTargetGID));
+          ImportData_->permuteFromLIDs_.push_back (source.getLocalElement (curTargetGID));
+        }
+        else {
+          // The current GID is owned by this process in the target Map,
+          // but is not owned by this process in the source Map.  That
+          // means the Import operation has to receive it from another
+          // process.  Store it in the "remote" (incoming) list, along
+          // with its destination LID on this process.
+          //
+          // remoteLIDs_ is the list of this process' LIDs that it has
+          // to receive from other processes.  Since this is an Import,
+          // and therefore the source Map is nonoverlapping, we know
+          // that each remote LID can receive from only one process.
+          remoteGIDs_->push_back (curTargetGID);
+          ImportData_->remoteLIDs_.push_back (target.getLocalElement (curTargetGID));
+        }
       }
     } // if using the hopefully faster implementation
 
@@ -402,7 +402,7 @@ namespace Tpetra {
     // processes).  That is, there is at least one GID owned by some
     // process in the target Map, which is not owned by _any_ process
     // in the source Map.
-    const LookupStatus lookup = 
+    const LookupStatus lookup =
       source.getRemoteIndexList (remoteGIDs, remoteProcIDs ());
     TPETRA_ABUSE_WARNING( lookup == IDNotPresent, std::runtime_error,
       "::setupExport(): the source Map wasn't able to figure out which process "
@@ -415,9 +415,9 @@ namespace Tpetra {
     // source Map.  getRemoteIndexList() gives each of these a process
     // ID of -1.
     if (lookup == IDNotPresent) {
-      const size_type numInvalidRemote = 
-	std::count_if (remoteProcIDs.begin (), remoteProcIDs.end (), 
-		       std::bind1st (std::equal_to<int> (), -1));
+      const size_type numInvalidRemote =
+        std::count_if (remoteProcIDs.begin (), remoteProcIDs.end (),
+                       std::bind1st (std::equal_to<int> (), -1));
       // If all of them are invalid, we can delete the whole array.
       const size_type totalNumRemote = getNumRemoteIDs ();
       if (numInvalidRemote == totalNumRemote) {
@@ -432,12 +432,12 @@ namespace Tpetra {
         // remoteLIDs_.
         size_type numValidRemote = 0;
 #ifdef HAVE_TPETRA_DEBUG
-	ArrayView<GlobalOrdinal> remoteGIDsPtr = remoteGIDs;
+        ArrayView<GlobalOrdinal> remoteGIDsPtr = remoteGIDs;
 #else
-	GlobalOrdinal* const remoteGIDsPtr = remoteGIDs.getRawPtr ();
+        GlobalOrdinal* const remoteGIDsPtr = remoteGIDs.getRawPtr ();
 #endif // HAVE_TPETRA_DEBUG
         for (size_type r = 0; r < totalNumRemote; ++r) {
-	  // Pack in all the valid remote PIDs and GIDs.
+          // Pack in all the valid remote PIDs and GIDs.
           if (remoteProcIDs[r] != -1) {
             remoteProcIDs[numValidRemote] = remoteProcIDs[r];
             remoteGIDsPtr[numValidRemote] = remoteGIDsPtr[r];
@@ -458,7 +458,7 @@ namespace Tpetra {
         ImportData_->remoteLIDs_.resize (numValidRemote);
       }
       // Revalidate the view after clear or resize.
-      remoteGIDs = (*remoteGIDs_)(); 
+      remoteGIDs = (*remoteGIDs_)();
     }
 
     // Sort remoteProcIDs in ascending order, and apply the resulting
@@ -476,20 +476,22 @@ namespace Tpetra {
     // exportGIDs and exportProcIDs_ are output arrays which are
     // allocated by createFromRecvs().
     ArrayRCP<GO> exportGIDs;
-    ImportData_->distributor_.createFromRecvs (remoteGIDs ().getConst (), 
-					       remoteProcIDs, exportGIDs, 
-					       ImportData_->exportImageIDs_);
+    ImportData_->distributor_.createFromRecvs (remoteGIDs ().getConst (),
+                                               remoteProcIDs, exportGIDs,
+                                               ImportData_->exportImageIDs_);
     // Find the LIDs corresponding to the (outgoing) GIDs in
     // exportGIDs.  For sparse matrix-vector multiply, this tells the
     // calling process how to index into the source vector to get the
     // elements which it needs to send.
-    if (exportGIDs != null) {
-      ImportData_->exportLIDs_ = arcp<LO> (exportGIDs.size ());
-    }
-    typename ArrayRCP<LO>::iterator dst = ImportData_->exportLIDs_.begin ();
-    typename ArrayRCP<GO>::const_iterator src = exportGIDs.begin ();
-    while (src != exportGIDs.end ()) {
-      (*dst++) = source.getLocalElement (*src++);
+    const size_type numExportIDs = exportGIDs.size ();
+    if (numExportIDs > 0) {
+      ImportData_->exportLIDs_ = arcp<LO> (numExportIDs);
+
+      ArrayView<const GO> expGIDs = exportGIDs ();
+      ArrayView<LO> expLIDs = ImportData_->exportLIDs_ ();
+      for (size_type k = 0; k < numExportIDs; ++k) {
+        expLIDs[k] = source.getLocalElement (expGIDs[k]);
+      }
     }
   }
 } // namespace Tpetra

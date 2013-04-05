@@ -62,7 +62,7 @@
 
     <ParameterList name="Assembly">
         <Parameter name="Field Order" type="string" value="blocked: TEMPERATURE TEST_TEMPERATURE"/>
-        <Parameter name="Workset Size" type="unsigned long" value="1"/>
+        <Parameter name="Workset Size" type="int" value="1"/>
     </ParameterList>
 
     <ParameterList name="Physics Blocks">

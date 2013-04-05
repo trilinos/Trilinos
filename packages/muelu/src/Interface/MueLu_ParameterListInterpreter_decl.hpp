@@ -85,7 +85,7 @@ namespace MueLu {
 
         XML options are converted to ParameterList entries by Teuchos.
     */
-    ParameterListInterpreter(const std::string & xmlFileName);
+    ParameterListInterpreter(const std::string & xmlFileName, const Teuchos::Comm<int> &comm);
 
     //! Destructor.
     virtual ~ParameterListInterpreter() { }

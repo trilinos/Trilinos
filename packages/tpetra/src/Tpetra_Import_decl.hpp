@@ -79,22 +79,34 @@ namespace Tpetra {
   /// is for redistributing data from a possibly multiply-owned
   /// distribution to a uniquely-owned distribution.
   ///
-  /// One use case of Import is bringing in remote source vector data
-  /// for a distributed sparse matrix-vector multiply.  The source
-  /// vector itself is uniquely owned, but must be brought in into an
-  /// overlapping distribution so that each process can compute its
-  /// part of the target vector without further communication.
+  /// The names "Import" and "Export" have nothing to do with the
+  /// direction in which data moves relative to the calling process;
+  /// any process may do both receives and sends in an Import or
+  /// Export.  Rather, the names suggest what happens in their most
+  /// common use case, the communication pattern for sparse
+  /// matrix-vector multiply.  Import "brings in" remote source vector
+  /// data (from the domain Map to the column Map) for local
+  /// computation, and Export "pushes" the result back (from the row
+  /// Map to the range Map).  Import and Export have other uses as
+  /// well.
+  ///
+  /// As mentioned above, one use case of Import is bringing in remote
+  /// source vector data for a distributed sparse matrix-vector
+  /// multiply.  The source vector itself is uniquely owned, but must
+  /// be brought in into an overlapping distribution so that each
+  /// process can compute its part of the target vector without
+  /// further communication.
   ///
   /// Epetra separated Import and Export for performance reasons.  The
   /// implementation is different, depending on which direction is the
   /// uniquely-owned Map.  Tpetra retains this convention.
   ///
   /// This class is templated on the same template arguments as Map:
-  /// the local ordinal type (\c LocalOrdinal), the global ordinal
-  /// type (\c GlobalOrdinal), and the Kokkos Node type (\c Node).
-  template <class LocalOrdinal, 
-	    class GlobalOrdinal = LocalOrdinal, 
-	    class Node = Kokkos::DefaultNode::DefaultNodeType>
+  /// the local ordinal type <tt>LocalOrdinal</tt>, the global ordinal
+  /// type <tt>GlobalOrdinal</tt>, and the Kokkos <tt>Node</tt> type.
+  template <class LocalOrdinal,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Import: public Teuchos::Describable {
   public:
     //! The specialization of Map used by this class.
@@ -146,7 +158,7 @@ namespace Tpetra {
     ///
     /// The number of IDs that are identical between the source and
     /// target Maps, up to the first different ID.
-    inline size_t getNumSameIDs() const;
+    size_t getNumSameIDs() const;
 
     /// \brief Number of IDs to permute but not to communicate.
     ///
@@ -154,40 +166,40 @@ namespace Tpetra {
     /// not part of the first getNumSameIDs() entries.  The Import
     /// will permute these entries locally (without distributed-memory
     /// communication).
-    inline size_t getNumPermuteIDs() const;
+    size_t getNumPermuteIDs() const;
 
     //! List of local IDs in the source Map that are permuted.
-    inline ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
+    ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
 
     //! List of local IDs in the target Map that are permuted.
-    inline ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
+    ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
 
     //! Number of entries not on the calling process.
-    inline size_t getNumRemoteIDs() const;
+    size_t getNumRemoteIDs() const;
 
     //! List of entries in the target Map to receive from other processes.
-    inline ArrayView<const LocalOrdinal> getRemoteLIDs() const;
+    ArrayView<const LocalOrdinal> getRemoteLIDs() const;
 
     //! Number of entries that must be sent by the calling process to other processes.
-    inline size_t getNumExportIDs() const;
+    size_t getNumExportIDs() const;
 
     //! List of entries in the source Map that will be sent to other processes.
-    inline ArrayView<const LocalOrdinal> getExportLIDs() const;
+    ArrayView<const LocalOrdinal> getExportLIDs() const;
 
     /// \brief List of processes to which entries will be sent.
     ///
     /// The entry with Local ID <tt>getExportLIDs()[i]</tt> will be
     /// sent to process <tt>getExportImageIDs()[i]</tt>.
-    inline ArrayView<const int> getExportImageIDs() const;
+    ArrayView<const int> getExportImageIDs() const;
 
     //! The Source Map used to construct this Import object.
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getSourceMap() const;
+    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getSourceMap() const;
 
     //! The Target Map used to construct this Import object.
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getTargetMap() const;
+    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getTargetMap() const;
 
     //! The Distributor that this Import object uses to move data.
-    inline Distributor & getDistributor() const;
+    Distributor & getDistributor() const;
 
     //! Assignment operator.
     Import<LocalOrdinal,GlobalOrdinal,Node>&
@@ -294,7 +306,7 @@ namespace Tpetra {
       Create a Import object from the given source and target Maps.
       \pre <tt>src != null</tt>
       \pre <tt>tgt != null</tt>
-      \return The Import object. If <tt>src == tgt</tt>, returns \c null. 
+      \return The Import object. If <tt>src == tgt</tt>, returns \c null.
         (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
 
       \relatesalso Import
@@ -302,7 +314,7 @@ namespace Tpetra {
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
   createImport (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& src,
-		const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& tgt)
+                const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& tgt)
   {
     if (src == tgt) {
       return Teuchos::null;
@@ -310,8 +322,8 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       src == null || tgt == null, std::runtime_error,
-      "Tpetra::createImport(): neither source nor target map may be null:" 
-      << std::endl << "source: " << src << std::endl << "target: " << tgt 
+      "Tpetra::createImport(): neither source nor target map may be null:"
+      << std::endl << "source: " << src << std::endl << "target: " << tgt
       << std::endl);
 #endif // HAVE_TPETRA_DEBUG
     return Teuchos::rcp (new Import<LocalOrdinal, GlobalOrdinal, Node> (src, tgt));

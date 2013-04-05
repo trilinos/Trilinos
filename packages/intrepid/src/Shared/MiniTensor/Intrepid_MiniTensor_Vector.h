@@ -50,6 +50,8 @@
 #include "Intrepid_MiniTensor_Definitions.h"
 #include "Intrepid_MiniTensor_Utilities.h"
 
+#include "Teuchos_ArrayRCP.hpp"
+
 namespace Intrepid {
 
   ///
@@ -59,6 +61,11 @@ namespace Intrepid {
   class Vector
   {
   public:
+
+    ///
+    /// Component type
+    ///
+    typedef T type;
 
     ///
     /// Default constructor
@@ -173,6 +180,13 @@ namespace Intrepid {
     void
     clear();
 
+    ///
+    /// Vector order
+    ///
+    static
+    Index
+    order() {return 1U;};
+
   private:
 
     ///
@@ -184,7 +198,7 @@ namespace Intrepid {
     ///
     /// Vector components
     ///
-    T *
+    Teuchos::ArrayRCP<T>
     e;
 
   };
@@ -199,9 +213,9 @@ namespace Intrepid {
   /// \param v the operands
   /// \return \f$ u + v \f$
   ///
-  template<typename T>
-  Vector<T>
-  operator+(Vector<T> const & u, Vector<T> const & v);
+  template<typename S, typename T>
+  Vector<typename Promote<S, T>::type>
+  operator+(Vector<S> const & u, Vector<T> const & v);
 
   ///
   /// Vector substraction
@@ -209,9 +223,9 @@ namespace Intrepid {
   /// \param v the operands
   /// \return \f$ u - v \f$
   ///
-  template<typename T>
-  Vector<T>
-  operator-(Vector<T> const & u, Vector<T> const & v);
+  template<typename S, typename T>
+  Vector<typename Promote<S, T>::type>
+  operator-(Vector<S> const & u, Vector<T> const & v);
 
   ///
   /// Vector minus
@@ -228,9 +242,9 @@ namespace Intrepid {
   /// \param v the operands
   /// \return \f$ u \cdot v \f$
   ///
-  template<typename T>
-  T
-  operator*(Vector<T> const & u, Vector<T> const & v);
+  template<typename S, typename T>
+  typename Promote<S, T>::type
+  operator*(Vector<S> const & u, Vector<T> const & v);
 
   ///
   /// Vector equality tested by components
@@ -258,8 +272,8 @@ namespace Intrepid {
   /// \param u vector factor
   /// \return \f$ s u \f$
   ///
-  template<typename T, typename S>
-  Vector<T>
+  template<typename S, typename T>
+  typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
   operator*(S const & s, Vector<T> const & u);
 
   ///
@@ -268,8 +282,8 @@ namespace Intrepid {
   /// \param s scalar factor
   /// \return \f$ s u \f$
   ///
-  template<typename T, typename S>
-  Vector<T>
+  template<typename S, typename T>
+  typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
   operator*(Vector<T> const & u, S const & s);
 
   ///
@@ -278,8 +292,8 @@ namespace Intrepid {
   /// \param s scalar that divides each component of vector
   /// \return \f$ u / s \f$
   ///
-  template<typename T, typename S>
-  Vector<T>
+  template<typename S, typename T>
+  Vector<typename Promote<S, T>::type>
   operator/(Vector<T> const & u, S const & s);
 
   ///
@@ -288,9 +302,9 @@ namespace Intrepid {
   /// \param v operands
   /// \return \f$ u \cdot v \f$
   ///
-  template<typename T>
-  T
-  dot(Vector<T> const & u, Vector<T> const & v);
+  template<typename S, typename T>
+  typename Promote<S, T>::type
+  dot(Vector<S> const & u, Vector<T> const & v);
 
   ///
   /// Cross product only valid for R^3.
@@ -299,9 +313,9 @@ namespace Intrepid {
   /// \param v operands
   /// \return \f$ u \times v \f$
   ///
-  template<typename T>
-  Vector<T>
-  cross(Vector<T> const & u, Vector<T> const & v);
+  template<typename S, typename T>
+  Vector<typename Promote<S, T>::type>
+  cross(Vector<S> const & u, Vector<T> const & v);
 
   ///
   /// Vector 2-norm

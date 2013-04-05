@@ -271,7 +271,7 @@ private:
 #endif
 
 template< typename ValueType >
-class Multiply< CrsProductTensor< ValueType , KokkosArray::Host > , void , void >
+class Multiply< CrsProductTensor< ValueType , KokkosArray::Host > , void , void , DefaultSparseMatOps >
 {
 public:
   

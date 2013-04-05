@@ -2,6 +2,7 @@
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos
   ${PACKAGE_NAME}_ENABLE_Amesos2
+  ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_Epetra
   ${PACKAGE_NAME}_ENABLE_Tpetra
   )
@@ -77,7 +78,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ScalingTestParamList_cp
-    SOURCE_FILES scalingTest.xml coupled.xml uncoupled.xml emin.xml milestone.xml
+    SOURCE_FILES scalingTest.xml coupled.xml uncoupled.xml emin.xml isotropicPoisson.xml conchas_milestone.xml
     )
 
 ENDIF()
@@ -100,6 +101,22 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
       ScalingTestParamList
       NAME "ScalingTestParamListEpetra"
       ARGS "--linAlgebra=Epetra"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
+
+    TRIBITS_ADD_TEST(
+      ScalingTestParamList
+      NAME "ScalingTestParamListEpetra"
+      ARGS "--linAlgebra=Epetra --xml=isotropicPoisson.xml"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
+
+    TRIBITS_ADD_TEST(
+      ScalingTestParamList
+      NAME "ScalingTestParamListEpetra"
+      ARGS "--linAlgebra=Epetra --xml=conchas_milestone.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )
@@ -151,6 +168,13 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
+    TRIBITS_ADD_TEST(
+      ScalingTestParamList
+      NAME "ScalingTestParamListTpetra"
+      ARGS "--linAlgebra=Tpetra"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
 
 ENDIF()
 

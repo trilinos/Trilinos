@@ -122,6 +122,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::apply(const Tpetra::MultiVect
 			    Scalar alpha,
 			    Scalar beta) const
 {
+  // This method will not just call applyTempl() for now because that method relies on the underlying
+  // LocalInverseType having a templated applyTempl() method implemented. Currently applyTempl() methods
+  // are only implemented for ILUT and Diagonal.
+
   typedef typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorType;
 
   TEUCHOS_TEST_FOR_EXCEPTION(IsComputed_ == false, std::runtime_error,
@@ -190,6 +194,91 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::apply(const Tpetra::MultiVect
 
   if(IsOverlapping_)
     OverlappingMatrix_->exportMultiVector(*OverlappingY,Y,CombineMode_);
+
+  NumApply_++;
+  ApplyTime_ += Time_->stop();
+}
+
+//==============================================================================
+// Applies the effect of the preconditione.
+template<class MatrixType,class LocalInverseType>
+template<class DomainScalar, class RangeScalar>
+void AdditiveSchwarz<MatrixType,LocalInverseType>::applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+			    Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+			    Teuchos::ETransp mode,
+			    RangeScalar alpha,
+			    RangeScalar beta) const
+{
+  typedef typename Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> DomainMultiVectorType;
+  typedef typename Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> RangeMultiVectorType;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(IsComputed_ == false, std::runtime_error,
+     "Ifpack2::AdditiveSchwarz::apply ERROR: isComputed() must be true prior to calling apply.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+     "Ifpack2::AdditiveSchwarz::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
+
+  size_t NumVectors = X.getNumVectors();
+
+  Time_->start();
+
+  Teuchos::RCP<DomainMultiVectorType> OverlappingX,Xtmp;
+  Teuchos::RCP<RangeMultiVectorType> OverlappingY;
+
+  if(IsOverlapping_){
+    // Setup if we're overlapping
+    OverlappingX = Teuchos::rcp( new DomainMultiVectorType(OverlappingMatrix_->getRowMap(), X.getNumVectors()) );
+    OverlappingY = Teuchos::rcp( new RangeMultiVectorType(OverlappingMatrix_->getRowMap(), X.getNumVectors()) );
+    OverlappingY->putScalar(0.0);
+    OverlappingX->putScalar(0.0);    
+    OverlappingMatrix_->template importMultiVectorTempl<DomainScalar>(X,*OverlappingX,Tpetra::INSERT);
+    // FIXME from Ifpack1: Will not work with non-zero starting solutions.
+  }
+  else{
+    Xtmp=Teuchos::rcp(new DomainMultiVectorType(X));
+    OverlappingX=Xtmp;
+    OverlappingY=Teuchos::rcp(&Y,false);		      
+  }
+
+  if (FilterSingletons_) {
+    // process singleton filter
+    DomainMultiVectorType ReducedX(SingletonMatrix_->getRowMap(),NumVectors);
+    RangeMultiVectorType ReducedY(SingletonMatrix_->getRowMap(),NumVectors);
+    SingletonMatrix_->template SolveSingletonsTempl<DomainScalar,RangeScalar>(*OverlappingX,*OverlappingY);
+    SingletonMatrix_->template CreateReducedRHSTempl<RangeScalar,DomainScalar>(*OverlappingY,*OverlappingX,ReducedX);
+
+    // process reordering
+    if (!UseReordering_) {
+      Inverse_->template applyTempl<DomainScalar,RangeScalar>(ReducedX,ReducedY);
+    }
+    else {
+      DomainMultiVectorType ReorderedX(ReducedX);
+      RangeMultiVectorType ReorderedY(ReducedY);
+      ReorderedLocalizedMatrix_->template permuteOriginalToReorderedTempl<DomainScalar,DomainScalar>(ReducedX,ReorderedX);
+      Inverse_->template applyTempl<DomainScalar,RangeScalar>(ReorderedX,ReorderedY);
+      ReorderedLocalizedMatrix_->template permuteReorderedToOriginalTempl<RangeScalar,RangeScalar>(ReorderedY,ReducedY);
+    }
+
+    // finish up with singletons
+    SingletonMatrix_->template UpdateLHSTempl<RangeScalar,RangeScalar>(ReducedY,*OverlappingY);
+  }
+  else {
+
+    // process reordering
+    if (!UseReordering_) {
+      Inverse_->template applyTempl<DomainScalar,RangeScalar>(*OverlappingX,*OverlappingY);
+    }
+    else {
+      DomainMultiVectorType ReorderedX(*OverlappingX);
+      RangeMultiVectorType ReorderedY(*OverlappingY);
+      ReorderedLocalizedMatrix_->template permuteOriginalToReorderedTempl<DomainScalar,DomainScalar>(*OverlappingX,ReorderedX);
+      Inverse_->template applyTempl<DomainScalar,RangeScalar>(ReorderedX,ReorderedY);
+      ReorderedLocalizedMatrix_->template permuteReorderedToOriginalTempl<RangeScalar,RangeScalar>(ReorderedY,*OverlappingY);
+    }
+  }
+
+  if(IsOverlapping_)
+    OverlappingMatrix_->template exportMultiVectorTempl<RangeScalar>(*OverlappingY,Y,CombineMode_);
 
   NumApply_++;
   ApplyTime_ += Time_->stop();

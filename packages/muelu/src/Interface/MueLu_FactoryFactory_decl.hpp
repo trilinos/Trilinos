@@ -64,6 +64,8 @@
 #include "MueLu_FactoryManager_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 
+#include "MueLu_Monitor.hpp"
+
 #include "MueLu_AmalgamationFactory.hpp" //TMP
 #include "MueLu_CoalesceDropFactory.hpp" //TMP
 #include "MueLu_RAPFactory.hpp" //TMP
@@ -80,10 +82,13 @@
 #include "MueLu_DirectSolver.hpp" //TMP
 #include "MueLu_Exceptions.hpp" //TMP
 #include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
+#include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
+#include "MueLu_FilteredAFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
@@ -100,7 +105,7 @@ namespace MueLu {
 
   */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
-  class FactoryFactory {
+  class FactoryFactory : public BaseClass {
 #undef MUELU_FACTORYFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -179,12 +184,25 @@ namespace MueLu {
       if (factoryName == "MultiVectorTransferFactory") {
         return Build2<MultiVectorTransferFactory>(paramList, factoryMapIn);
       }
+      if (factoryName == "CoordinatesTransferFactory") {
+        return Build2<CoordinatesTransferFactory>(paramList, factoryMapIn);
+      }
+      if (factoryName == "FilteredAFactory") {
+        return Build2<FilteredAFactory>(paramList, factoryMapIn);
+      }
       if (factoryName == "ZoltanInterface") {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
         return Build2<ZoltanInterface>(paramList, factoryMapIn);
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a ZoltanInterface object: Zoltan is disabled: HAVE_MUELU_ZOLTAN && HAVE_MPI == false.");
 #endif // HAVE_MUELU_ZOLTAN && HAVE_MPI
+      }
+      if (factoryName == "Zoltan2Interface") {
+#if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
+        return Build2<Zoltan2Interface>(paramList, factoryMapIn);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a Zoltan2Interface object: Zoltan2 is disabled: HAVE_MUELU_ZOLTAN2 && HAVE_MPI == false.");
+#endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
       }
 
       if (factoryName == "RepartitionFactory") {

@@ -288,11 +288,11 @@ public:
   }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type dimension() const { return m_row_map.dimension(0) - 1 ; }
+  size_type dimension() const { return m_row_map.dimension_0() - 1 ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_count() const
-  { return m_coord.dimension(0); }
+  { return m_coord.dimension_0(); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_maximum() const

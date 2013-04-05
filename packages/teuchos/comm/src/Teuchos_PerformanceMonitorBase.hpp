@@ -110,8 +110,8 @@ namespace Teuchos
   /// starts its timer on construction and stops it on destruction.
   ///
   /// This class keeps a static list of all counters created using the
-  /// \c getNewCounter() method during the course of a run. Counts
-  /// from this list can then be printed out at the end of the run.
+  /// getNewCounter() method during the course of a run. Counts from
+  /// this list can then be printed out at the end of the run.
   /// Subclasses of PerformanceMonitorBase, such as TimeMonitor, may
   /// use this list to do things like compute global timer statistics
   /// over all the MPI processes.
@@ -145,8 +145,8 @@ namespace Teuchos
     PerformanceMonitorBase(T& counter_in, bool reset=false)
       : counter_(counter_in), isRecursiveCall_(counter_.isRunning())
     {
-      (void)reset;  // get rid of "unused parameter" warning
-      counter_.incrementNumCalls();
+      (void) reset;  // get rid of "unused parameter" warning
+      counter_.incrementNumCalls ();
     }
 
     /// \brief Destructor.
@@ -155,22 +155,21 @@ namespace Teuchos
     /// virtual destructor for memory safety of derived classes.
     virtual ~PerformanceMonitorBase() {}
 
-    /** \brief Create a new counter with the specified name and append it to a
-     * global list of counters of this type.
+    /** \brief Create a new counter with the specified name and add it
+     *   to a global set of counters of this type.
+     *
+     * If the counter already exists, just return the existing
+     * counter.  If the counter doesn't already exist, create a new
+     * counter with that name and return it.
      *
      * New counters should usually be created in this way rather than
      * through a direct constructor call.  This lets
-     * PerformanceMonitorBase keep track of them, for example, so that
-     * you can access the list of timers by calling \c counters().
-     * Timers created in other ways are not included in the list
-     * returned by \c counters().
+     * PerformanceMonitorBase keep track of them, so that methods like
+     * summarize() and report() know about them.  Timers created in
+     * other ways are not included in the reports printed by these
+     * methods.
      */
-    static RCP<T> getNewCounter(const std::string& name)
-    {
-      RCP<T> rtn = rcp(new T(name), true);
-      counters().append(rtn);
-      return rtn;
-    }
+    static RCP<T> getNewCounter (const std::string& name);
 
     //! Table format that will be used to print a summary of timer results.
     static TableFormat& format()
@@ -189,64 +188,51 @@ namespace Teuchos
     /// the given name exist, this method simply returns the first in
     /// the list.  Do not rely on the ability to create multiple
     /// counters with the same name; this may go away in the future.
-    ///
-    /// If you want to create a counter with a given name if it doesn't
-    /// yet exist, do the following:
-    /// \code
-    /// RCP<T> counter = PerformanceMonitorBase<T>::lookupCounter (name);
-    /// if (counter.is_null())
-    ///   counter = PerformanceMonitorBase<T>::getNewCounter (name);
-    /// \endcode
-    /// We do not offer this functionality as a single class method
-    /// ("lookupOrCreateCounter()"), because it is easy to misspell a
-    /// timer name.  If timers that don't exist yet are created
-    /// silently, misspelled timer names can cause hard-to-find bugs.
-    /// (Analogies: Fortran's "implicit none" or Perl's "use strict.")
     static RCP<T>
     lookupCounter (const std::string& name);
 
-    /// \brief "Forget" about all counters created with \c getNewCounter().
+    /// \brief "Forget" about all counters created with getNewCounter().
     ///
-    /// This removes all counters from the current list of counters
-    /// (as would be returned by \c counters()).
+    /// This removes all counters from the current set of counters (as
+    /// would be returned by counters()).
     static void clearCounters ();
 
-    /// \brief "Forget" about all counters created with \c getNewCounter().
+    /// \brief "Forget" about all counters created with getNewCounter().
     ///
     /// This removes all counters from the current list of counters
-    /// (as would be returned by \c counters()).
+    /// (as would be returned by counters()).
     ///
     /// \warning This method is DEPRECATED, because the name is
     ///   inaccurate (the template parameter of PerformanceMonitorBase
     ///   may be any kind of performance counter, not just a timer).
-    ///   Use \c clearCounters() instead.
+    ///   Use clearCounters() instead.
     static TEUCHOS_DEPRECATED void clearTimers ();
 
     /// \brief "Forget" about any counters with the given name.
     ///
     /// If one or more counters with the given name was created using
-    /// \c getNewCounter(), calling this method with that name will
+    /// getNewCounter(), calling this method with that name will
     /// remove them from the global list of counters.
     static void clearCounter (const std::string& name);
 
     /// \brief "Forget" about any counters with the given name.
     ///
     /// If one or more counters with the given name was created using
-    /// \c getNewCounter(), calling this method with that name will
+    /// getNewCounter(), calling this method with that name will
     /// remove them from the global list of counters.
     ///
     /// \warning This method is DEPRECATED, because the name is
     ///   inaccurate (the template parameter of PerformanceMonitorBase
     ///   may be any kind of performance counter, not just a timer).
-    ///   Use \c clearCounter() instead.
+    ///   Use clearCounter() instead.
     static TEUCHOS_DEPRECATED void clearTimer (const std::string& name);
 
   protected:
 
-    //! Constant access to the counter reference.
+    //! Constant access to the instance's counter reference.
     const T& counter() const { return counter_; }
 
-    //! Nonconstant access to the counter reference.
+    //! Nonconstant access to the instance's counter reference.
     T& counter() { return counter_; }
 
     /// \brief Whether we are currently in a recursive call of the counter.
@@ -257,16 +243,21 @@ namespace Teuchos
     /// and stop timers multiple times within a single call stack.
     bool isRecursiveCall() const { return isRecursiveCall_; }
 
-    //! The array of all counters created using \c getNewCounter().
-    static Array<RCP<T> >& counters()
+    //! The class' array of all counters that were created with getNewCounter().
+    static std::map<std::string, RCP<T> >& counters()
     {
       // Use the "Meyers Trick" to create static data safely.
       //
       // WARNING This is not thread safe!  In particular, if multiple
       // threads call counters() for the "first time" at the same
       // time, the array may be initialized incorrectly.
-      static Array<RCP<T> > rtn;
-      return rtn;
+      static std::map<std::string, RCP<T> > theCounters;
+      static int initialized;
+      if (! initialized) {
+        theCounters.clear ();
+        initialized = 1;
+      }
+      return theCounters;
     }
 
   private:
@@ -278,40 +269,77 @@ namespace Teuchos
     bool isRecursiveCall_;
   };
 
+  template<class T>
+  RCP<T>
+  PerformanceMonitorBase<T>::getNewCounter (const std::string& name)
+  {
+    typedef std::map<std::string, RCP<T> > map_type;
+    typedef typename map_type::iterator iter_type;
+
+    map_type& ctrs = counters ();
+    iter_type it = ctrs.find (name);
+    RCP<T> newCounter = null;
+    if (it == ctrs.end ()) {
+      newCounter = rcp (new T (name));
+#ifdef HAVE_TEUCHOS_DEBUG
+      const bool wasNotThere = ctrs.insert (std::make_pair (name, newCounter)).second;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! wasNotThere, std::logic_error,
+        "getNewCounter: insert() claims that timer \"" << name << "\" was "
+        "already there in the map, even though find() claims that it was not.  "
+        "Please report this bug to the Teuchos developers.");
+#else
+      // Use the returned iterator to optimize insertion.
+      ctrs.insert (it, std::make_pair (name, newCounter));
+#endif // HAVE_TEUCHOS_DEBUG
+    } else {
+      newCounter = it->second;
+#ifdef HAVE_TEUCHOS_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        it->second.is_null (), std::logic_error,
+        "getNewCounter: Timer \"" << name << "\" was already there in the map, "
+        "but looking it up by name resulted in a null timer.  "
+        "Please report this bug to the Teuchos developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        name != it->second->name (), std::logic_error,
+        "getNewCounter: Timer \"" << name << "\" was already there in the map, "
+        "but looking it up by name resulted in a timer with a different name \""
+        << it->second->name () << "\".  Please report this bug to the Teuchos "
+        "developers.");
+#endif // HAVE_TEUCHOS_DEBUG
+    }
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      newCounter.is_null (), std::logic_error,
+      "getNewCounter: At end of method, when creating timer \"" << name
+      << "\", newCounter is null.  Please report this bug to the Teuchos "
+      "developers.");
+#endif // HAVE_TEUCHOS_DEBUG
+    return newCounter;
+  }
 
   template<class T>
   RCP<T>
   PerformanceMonitorBase<T>::lookupCounter (const std::string& name)
   {
-    Array<RCP<T> >& ctrs = counters();
+    typedef std::map<std::string, RCP<T> > map_type;
+    typedef typename map_type::iterator iter_type;
 
-    // This will have to change if we change how we store the
-    // counters.
-    for (typename Array<RCP<T> >::const_iterator it = ctrs.begin();
-         it != ctrs.end(); ++it)
-      if ((*it)->name() == name)
-        return *it;
-
-    return null;
+    map_type& ctrs = counters ();
+    iter_type it = ctrs.find (name);
+    if (it == ctrs.end ()) {
+      return null;
+    } else {
+      return it->second;
+    }
   }
 
   template<class T>
   void
   PerformanceMonitorBase<T>::clearCounter (const std::string& name)
   {
-    Array<RCP<T> > newCounters;
-    // Only fill newCounters with counters whose name is not the given
-    // name to clear.  Then, swap newCounters with the old list of
-    // counters.
-    typedef typename Array<RCP<T> >::const_iterator iter_t;
-    for (iter_t it = counters().begin(); it != counters().end(); ++it)
-      {
-        // The variable 'it' is an Array iterator; '*it' is a 'const
-        // RCP<T>&'.  We want the latter.
-        if ((*it)->name() != name)
-          newCounters.push_back (*it);
-      }
-    counters().swap (newCounters);
+    counters ().erase (name);
   }
 
   template<class T>
@@ -332,11 +360,7 @@ namespace Teuchos
   void
   PerformanceMonitorBase<T>::clearCounters ()
   {
-    // Just resizing an Array to have length zero may not necessarily
-    // free its storage.  The standard idiom is to swap with an empty
-    // array.
-    Array<RCP<T> > newCounters;
-    counters().swap (newCounters);
+    counters ().clear ();
   }
 
 } // namespace Teuchos

@@ -514,7 +514,14 @@ compute () {
       eigRatioForApply_ = one; // Ifpack doesn't include this line.
     }
   }
-} //compute()
+} //compute() 
+
+template<class ScalarType, class MV, class MAT>
+ScalarType
+Chebyshev<ScalarType, MV, MAT>::
+getLambdaMaxForApply() const {
+  return lambdaMaxForApply_;
+}
 
 template<class ScalarType, class MV, class MAT>
 typename Chebyshev<ScalarType, MV, MAT>::MT

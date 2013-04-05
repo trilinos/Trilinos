@@ -271,6 +271,13 @@ public:
 		     Teuchos::ETransp mode = Teuchos::NO_TRANS, 
 		     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
 		     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+
+  template<class DomainScalar, class RangeScalar>
+  void applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+		  Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+		  Teuchos::ETransp mode = Teuchos::NO_TRANS, 
+		  RangeScalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+		  RangeScalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
   
   //! Indicates whether this operator supports applying the adjoint operator.
   virtual bool hasTransposeApply() const;
@@ -279,9 +286,19 @@ public:
 				 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &OvX, 
 				 Tpetra::CombineMode CM = Tpetra::INSERT);
 
+  template <class OpScalar>
+  void importMultiVectorTempl(const Tpetra::MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+			      Tpetra::MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &OvX, 
+			      Tpetra::CombineMode CM = Tpetra::INSERT);
+
   virtual void exportMultiVector(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &OvX, 
 				 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
 				 Tpetra::CombineMode CM = Tpetra::ADD);
+
+  template <class OpScalar>
+  void exportMultiVectorTempl(const Tpetra::MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &OvX, 
+			      Tpetra::MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+			      Tpetra::CombineMode CM = Tpetra::ADD);
   //@}
 
 

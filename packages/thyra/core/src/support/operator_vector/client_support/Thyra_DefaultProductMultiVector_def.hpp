@@ -131,7 +131,6 @@ void DefaultProductMultiVector<Scalar>::describe(
   const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
   using Teuchos::OSTab;
   using Teuchos::describe;
   if (verbLevel == Teuchos::VERB_NONE)

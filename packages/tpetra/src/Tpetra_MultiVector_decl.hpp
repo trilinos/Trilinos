@@ -192,7 +192,7 @@ namespace Tpetra {
   /// Nodes.)  If the Kokkos Node is a GPU Node type, then views
   /// always reside in host (CPU) memory, rather than device (GPU)
   /// memory.  When you ask for a view, it copies data from the device
-  /// to the host.  
+  /// to the host.
   ///
   /// What happens next to your view depends on whether the view is
   /// const (read-only) or nonconst (read and write).  Const views
@@ -459,32 +459,72 @@ namespace Tpetra {
     ///   pseudorandom number generator within each process.
     void randomize();
 
-    /// \brief Replace the underlying Map with a compatible one.
+    /// \brief Replace the underlying Map in place.
     ///
-    /// This method relabels the rows of the multivector using the
-    /// global IDs in the input Map.  Thus, it implicitly applies a
-    /// permutation, without actually moving data.  This only works if
-    /// the input Map is compatible (in the sense of \c
-    /// Map::isCompatible()) with the multivector's current Map, so
-    /// that the number of rows per process does not change.
+    /// \warning The normal use case of this method, with an input Map
+    ///   that is compatible with the object's current Map and has the
+    ///   same communicator, is safe.  However, if the input Map has a
+    ///   different communicator (with a different number of
+    ///   processes, in particular) than this object's current Map,
+    ///   the semantics of this method are tricky.  We recommend that
+    ///   only experts try the latter use case.
     ///
-    /// We only check for compatibility in debug mode (when Trilinos
-    /// was built with the Trilinos_ENABLE_DEBUG option set).  In that
-    /// case, if the input Map is <i>not</i> compatible, then this
-    /// method throws \c std::invalid_argument.  We only check in
-    /// debug mode because the check requires communication
-    /// (\f$O(1)\f$ all-reduces).
+    /// \pre If the new Map's communicator is similar to the original
+    ///   Map's communicator, then the original Map and new Map must
+    ///   be compatible: <tt>map->isCompatible (this->getMap ())</tt>.
+    ///   "Similar" means that the communicators have the same number
+    ///   of processes, though these need not be in the same order
+    ///   (have the same assignments of ranks) or represent the same
+    ///   communication contexts.  It means the same thing as the
+    ///   MPI_SIMILAR return value of MPI_COMM_COMPARE.  See MPI 3.0
+    ///   Standard, Section 6.4.1.
     ///
-    /// \note This method is <i>not</i> for arbitrary data
-    ///   redistribution.  If you need to move data around, use \c
-    ///   Import or \c Export.
+    /// \pre If the new Map's communicator contains more processes
+    ///   than the original Map's communicator, then the projection of
+    ///   the original Map onto the new communicator must be
+    ///   compatible with the new Map.
     ///
-    /// \note This method must always be called as a collective
-    ///   operation on all processes over which the multivector is
-    ///   distributed.  This is because the method reserves the right
-    ///   to check for compatibility of the two Maps, at least in
-    ///   debug mode.
-    void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
+    /// \pre If the new Map's communicator contains fewer processes
+    ///   than the original Map's communicator, then the projection of
+    ///   the new Map onto the original communicator must be
+    ///   compatible with the original Map.
+    ///
+    /// This method replaces this object's Map with the given Map.
+    /// This relabels the rows of the multivector using the global IDs
+    /// in the input Map.  Thus, it implicitly applies a permutation,
+    /// without actually moving data.  If the new Map's communicator
+    /// has more processes than the original Map's communicator, it
+    /// "projects" the MultiVector onto the new Map by filling in
+    /// missing rows with zeros.  If the new Map's communicator has
+    /// fewer processes than the original Map's communicator, the
+    /// method "forgets about" any rows that do not exist in the new
+    /// Map.  (It mathematical terms, if one considers a MultiVector
+    /// as a function from one vector space to another, this operation
+    /// <i>restricts</i> the range.)
+    ///
+    /// This method must always be called collectively on the
+    /// communicator with the largest number of processes: either this
+    /// object's current communicator
+    /// (<tt>this->getMap()->getComm()</tt>), or the new Map's
+    /// communicator (<tt>map->getComm()</tt>).  If the new Map's
+    /// communicator has fewer processes, then the new Map must be
+    /// null on processes excluded from the original communicator, and
+    /// the current Map must be nonnull on all processes.  If the new
+    /// Map has more processes, then it must be nonnull on all those
+    /// processes, and the original Map must be null on those
+    /// processes which are not in the new Map's communicator.  (The
+    /// latter case can only happen to a MultiVector to which a
+    /// replaceMap() operation has happened before.)
+    ///
+    /// \warning This method must always be called as a collective
+    ///   operation on all processes in the original communicator
+    ///   (<tt>this->getMap ()->getComm ()</tt>).  We reserve the
+    ///   right to do checking in debug mode that requires this method
+    ///   to be called collectively in order not to deadlock.
+    ///
+    /// \note This method does <i>not</i> do data redistribution.  If
+    ///   you need to move data around, use Import or Export.
+    void replaceMap (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
 
     /// \brief Sum values of a locally replicated multivector across all processes.
     ///
@@ -648,19 +688,33 @@ namespace Tpetra {
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
     void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
-    //! Scale the current values of a multi-vector, this = alpha*this.
+    /// \brief Scale the current values of a multi-vector, this = alpha*this.
+    ///
+    /// This method will always multiply, even if alpha is zero.  That
+    /// means, for example, that if \c *this contains NaN entries
+    /// before calling this method, the NaN entries will remain after
+    /// this method finishes.
     void scale(const Scalar &alpha);
 
-    //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+    /// \brief Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+    ///
+    /// This method will always multiply, even if all the entries of
+    /// alpha are zero.  That means, for example, that if \c *this
+    /// contains NaN entries before calling this method, the NaN
+    /// entries will remain after this method finishes.
     void scale(Teuchos::ArrayView<const Scalar> alpha);
 
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
     void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
-    //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
+    /// \brief Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
+    ///
+    /// If beta is zero, overwrite \c *this unconditionally, even if it contains NaN entries.
     void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta);
 
-    //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
+    /// \brief Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
+    ///
+    /// If gamma is zero, overwrite \c *this unconditionally, even if it contains NaN entries.
     void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma);
 
     //! Compute 1-norm of each vector in multi-vector.
@@ -681,7 +735,11 @@ namespace Tpetra {
     //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     void meanValue(const Teuchos::ArrayView<Scalar> &means) const;
 
-    //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
+    /// \brief Matrix-matrix multiplication: <tt>this = beta*this + alpha*op(A)*op(B)</tt>.
+    ///
+    /// If beta is zero, overwrite \c *this unconditionally, even if
+    /// it contains NaN entries.  This imitates the semantics of
+    /// analogous BLAS routines like DGEMM.
     void
     multiply (Teuchos::ETransp transA,
               Teuchos::ETransp transB,
@@ -690,22 +748,24 @@ namespace Tpetra {
               const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
               const Scalar& beta);
 
-    //! Element-wise multiply of a Vector A with a MultiVector B.
-    /** Forms this = scalarThis * this + scalarAB * B @ A
-     *  where @ denotes element-wise multiplication.
-     *  B must be the same shape (size and num-vectors) as this, while
-     *  A is the same size but a single vector (column).
-     *
-     *  this = scalarThis * this(i,j) + scalarAB * B(i,j) * A(i,1) (A has only 1 column)
-     *
-     */
+    /// \brief Multiply a Vector A elementwise by a MultiVector B.
+    ///
+    /// Compute <tt>this = scalarThis * this + scalarAB * B @ A</tt>
+    /// where <tt>@</tt> denotes element-wise multiplication.  In
+    /// pseudocode, if C denotes <tt>*this</tt> MultiVector:
+    /// \code
+    /// C(i,j) = scalarThis * C(i,j) + scalarAB * B(i,j) * A(i,1);
+    /// \endcode
+    /// for all rows i and columns j of C.
+    ///
+    /// B must have the same dimensions as <tt>*this</tt>, while A
+    /// must have the same number of rows but a single column.
     void
     elementWiseMultiply (Scalar scalarAB,
                          const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
                          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
                          Scalar scalarThis);
     //@}
-
     //! @name Attribute access functions
     //@{
 
@@ -771,6 +831,22 @@ namespace Tpetra {
               const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
+
+    /// \brief Remove processes owning zero rows from the Map and their communicator.
+    ///
+    /// \warning This method is ONLY for use by experts.  We highly
+    ///   recommend using the nonmember function of the same name
+    ///   defined in Tpetra_DistObject_decl.hpp.
+    ///
+    /// \warning We make NO promises of backwards compatibility.
+    ///   This method may change or disappear at any time.
+    ///
+    /// \param newMap [in] This <i>must</i> be the result of calling
+    ///   the removeEmptyProcesses() method on the row Map.  If it
+    ///   is not, this method's behavior is undefined.  This pointer
+    ///   will be null on excluded processes.
+    virtual void
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
 
   protected:
 
@@ -848,7 +924,7 @@ namespace Tpetra {
     /// have been made using the appropriate offsetView* method of
     /// Kokkos::MultiVector.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-		 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
+                 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
                  EPrivateComputeViewConstructor /* dummy */);
 
     /// \brief Advanced constructor for noncontiguous views.
@@ -859,7 +935,7 @@ namespace Tpetra {
     /// have been made using the appropriate offsetView* method of
     /// Kokkos::MultiVector.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-		 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
+                 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
                  Teuchos::ArrayView<const size_t> whichVectors,
                  EPrivateComputeViewConstructor /* dummy */);
 

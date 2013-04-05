@@ -49,6 +49,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #include "createEpetraProblem.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -75,14 +76,15 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  bool badRes = false;
   bool verbose = false, proc_verbose = false;
   bool pseudo = false;   // use pseudo block CG to solve this linear system.
   int frequency = -1;
   int blocksize = 1;
   int numrhs = 1;
-  int maxrestarts = 15; // number of restarts allowed 
   int maxiters = -1;    // maximum number of iterations allowed per linear system
   std::string filename("bcsstk14.hb");
+  std::string ortho("DGKS");
   MT tol = 1.0e-5;  // relative residual tolerance
 
   Teuchos::CommandLineProcessor cmdp(false,true);
@@ -90,8 +92,8 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block CG to solve the linear systems.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("ortho",&ortho,"Orthogonalization routine used by CG solver.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
-  cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for CG solver.");
   cmdp.setOption("blocksize",&blocksize,"Block size used by CG.");
   cmdp.setOption("maxiters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -121,11 +123,11 @@ int main(int argc, char *argv[]) {
   belosList.set( "Num Blocks", maxiters );               // Maximum number of blocks in Krylov factorization
   belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
-  belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  belosList.set( "Orthogonalization", ortho );           // Orthogonalization routine
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
-		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
+		   Belos::TimingDetails + Belos::StatusTestDetails );
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
   }
@@ -148,16 +150,14 @@ int main(int argc, char *argv[]) {
   // *******************************************************************
   //
   Teuchos::RCP< Belos::SolverManager<double,MV,OP> > solver;
-  solver = Teuchos::rcp( new Belos::BlockCGSolMgr<double,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
+  if (pseudo)
+    solver = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
+  else 
+    solver = Teuchos::rcp( new Belos::BlockCGSolMgr<double,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
   //
   // Perform solve
   //
   Belos::ReturnType ret = solver->solve();
-  //
-  // Get the number of iterations for this solve.
-  //
-  int numIters = solver->getNumIters();
-  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
 
   if (ret!=Belos::Converged) {
     if (proc_verbose)
@@ -165,6 +165,11 @@ int main(int argc, char *argv[]) {
     return -1;
   }
   //
+  //
+  // Get the number of iterations for this solve.
+  //
+  int numIters = solver->getNumIters();
+  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
   //
   // Compute actual residuals.
   //
@@ -185,7 +190,7 @@ int main(int argc, char *argv[]) {
   // -----------------------------------------------------------------
   // Resolve the first problem by just resetting the solver manager.
   // -----------------------------------------------------------------
-  X->PutScalar( 0.0 );  
+  X->PutScalar( 0.0 );
   solver->reset( Belos::Problem );
   //
   // Perform solve (again)
@@ -199,26 +204,73 @@ int main(int argc, char *argv[]) {
 
   if (ret!=Belos::Converged) {
     if (proc_verbose)
-      std::cout << "End Result: TEST FAILED" << std::endl;	
+      std::cout << "End Result: TEST FAILED" << std::endl;
+    return -1;
+  }
+  //
+  // Compute actual residuals.
+  //
+  std::vector<double> actual_resids2( numrhs );
+  OPT::Apply( *A, *X, resid );
+  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
+  MVT::MvNorm( resid, actual_resids2 );
+  MVT::MvNorm( *B, rhs_norm );
+  if (proc_verbose) {
+    std::cout<< "---------- Actual Residuals (manager reset) ----------"<<std::endl<<std::endl;
+    for ( int i=0; i<numrhs; i++) {
+      std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
+      if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) { 
+        badRes = true;
+      }
+    }
+  }
+  //
+  // ----------------------------------------------------------------------------------
+  // Resolve the first problem by resetting the solver manager and changing the labels.
+  // ----------------------------------------------------------------------------------
+  ParameterList belosList2;
+  belosList2.set( "Timer Label", "Belos Resolve w/ New Label" );   // Change timer labels. 
+  solver->setParameters( Teuchos::rcp( &belosList2, false ) );
+  
+  problem.setLabel( "Belos Resolve w/ New Label" );
+  X->PutScalar( 0.0 );
+  solver->reset( Belos::Problem );
+  //
+  // Perform solve (again)
+  //
+  ret = solver->solve();
+  //
+  // Get the number of iterations for this solve.
+  //
+  numIters = solver->getNumIters();
+  std::cout << "Number of iterations performed for this solve (label reset): " << numIters << std::endl;
+
+  if (ret!=Belos::Converged) {
+    if (proc_verbose)
+      std::cout << "End Result: TEST FAILED" << std::endl;
     return -1;
   }
   //
   // Compute actual residuals.
   //
   OPT::Apply( *A, *X, resid );
-  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
-  MVT::MvNorm( resid, actual_resids );
+  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
+  MVT::MvNorm( resid, actual_resids2 );
   MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
-    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+    std::cout<< "---------- Actual Residuals (label reset) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {
-      std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
+      std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
+      if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) { 
+        badRes = true;
+      }
     }
   }
   //
   // -------------------------------------------------------------
   // Construct a second unpreconditioned linear problem instance.
   // -------------------------------------------------------------
+  //
   RCP<Epetra_MultiVector> X2 = MVT::Clone(*X, numrhs); 
   MVT::MvInit( *X2, 0.0 );
   Belos::LinearProblem<double,MV,OP> problem2( A, X2, B );
@@ -235,17 +287,24 @@ int main(int argc, char *argv[]) {
   // *******************************************************************
   //
   // Create the solver without either the problem or parameter list.
-  solver = Teuchos::rcp( new Belos::BlockCGSolMgr<double,MV,OP>() );
+  if (pseudo)
+    solver = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>() );
+  else
+    solver = Teuchos::rcp( new Belos::BlockCGSolMgr<double,MV,OP>() );
+  //
+  // Set the problem after the solver construction.
+  solver->setProblem( rcp( &problem2, false ) );
 
   // Get the valid list of parameters from the solver and print it.
   RCP<const Teuchos::ParameterList> validList = solver->getValidParameters();
   if (proc_verbose) {
-    std::cout << std::endl << "Valid parameters from the block CG solver manager:" << std::endl;
+    if (pseudo) 
+      std::cout << std::endl << "Valid parameters from the pseudo-block CG solver manager:" << std::endl;
+    else 
+      std::cout << std::endl << "Valid parameters from the block CG solver manager:" << std::endl;
+
     std::cout << *validList << std::endl;
   }
-  //
-  // Set the problem after the solver construction.
-  solver->setProblem( rcp( &problem2, false ) );
 
   // Set the parameter list after the solver construction.
   belosList.set( "Timer Label", "Belos Resolve" );         // Set timer label to discern between the two solvers.
@@ -259,19 +318,16 @@ int main(int argc, char *argv[]) {
   //
   numIters = solver->getNumIters();
   std::cout << "Number of iterations performed for this solve (new solver): " << numIters << std::endl;
-
   //
   // Compute actual residuals.
   //
-  bool badRes = false;
-  std::vector<double> actual_resids2( numrhs );
   Epetra_MultiVector resid2(Map, numrhs);
   OPT::Apply( *A, *X2, resid2 );
   MVT::MvAddMv( -1.0, resid2, 1.0, *B, resid2 ); 
   MVT::MvNorm( resid2, actual_resids2 );
   MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
-    std::cout<< "---------- Actual Residuals 2 (normalized) ----------"<<std::endl<<std::endl;
+    std::cout<< "---------- Actual Residuals (new solver) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {
       std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
       if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) { 
@@ -287,6 +343,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
     std::cout << "Block size used by solver: " << blocksize << std::endl;
+    std::cout << "Max number of CG iterations: " << maxiters << std::endl; 
     std::cout << "Relative residual tolerance: " << tol << std::endl;
     std::cout << std::endl;
   }

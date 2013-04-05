@@ -188,7 +188,7 @@ int ex_put_partial_num_map (int exoid,
   }
 
   /* Check input parameters for a valid range of numbers */
-  if (ent_start <= 0 || ent_start > (int)num_mobj) {
+  if (ent_start <= 0 || ent_start > num_mobj) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: start count is invalid in file id %d",
@@ -204,7 +204,7 @@ int ex_put_partial_num_map (int exoid,
     ex_err("ex_put_partial_num_map",errmsg,exerrval);
     return (EX_FATAL);
   }
-  if (ent_start+ent_count-1 > (int)num_mobj) {
+  if (ent_start+ent_count-1 > num_mobj) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: start+count-1 is larger than mesh object count in file id %d",

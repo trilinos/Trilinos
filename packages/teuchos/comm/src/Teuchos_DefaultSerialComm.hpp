@@ -62,6 +62,9 @@ public:
 
   //! The source rank that sent the message (must be zero).
   OrdinalType getSourceRank () { return 0; }
+
+  //! The tag of the received message.
+  OrdinalType getTag () { return 0; }
 };
 
 
@@ -72,6 +75,12 @@ public:
 template<typename Ordinal>
 class SerialComm : public Comm<Ordinal> {
 public:
+  /// \brief The current tag.
+  ///
+  /// \warning This method is ONLY for use by Teuchos developers.
+  ///   Users should not depend on the interface of this method.
+  ///   It may change or disappear at any time without warning.
+  int getTag () const { return 0; }
 
   //! @name Constructors 
   //@{
@@ -123,6 +132,12 @@ public:
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
   /** \brief . */
+  virtual void 
+  send (const Ordinal bytes, 
+	const char sendBuffer[], 
+	const int destRank, 
+	const int tag) const;
+  /** \brief . */
   virtual void ssend(
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
@@ -140,11 +155,21 @@ public:
     const ArrayView<const char> &sendBuffer,
     const int destRank
     ) const;
+  //! Variant of isend() that takes a tag.
+  virtual RCP<CommRequest<Ordinal> > 
+  isend (const ArrayView<const char> &sendBuffer,
+	 const int destRank,
+	 const int tag) const;
   /** \brief . */
   virtual RCP<CommRequest<Ordinal> > ireceive(
     const ArrayView<char> &Buffer,
     const int sourceRank
     ) const;
+  /** \brief . */
+  virtual RCP<CommRequest<Ordinal> > 
+  ireceive (const ArrayView<char> &Buffer,
+	    const int sourceRank,
+	    const int tag) const;
   /** \brief . */
   virtual void waitAll(
     const ArrayView<RCP<CommRequest<Ordinal> > > &requests
@@ -309,6 +334,19 @@ void SerialComm<Ordinal>::send(
     );
 }
 
+template<typename Ordinal>
+void SerialComm<Ordinal>::
+send (const Ordinal /*bytes*/, 
+      const char []/*sendBuffer*/, 
+      const int /*destRank*/, 
+      const int /*tag*/) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true, std::logic_error
+    ,"SerialComm<Ordinal>::send(...): Error, you can not call send(...) when you"
+    " only have one process!"
+    );
+}
 
 template<typename Ordinal>
 void SerialComm<Ordinal>::ssend(
@@ -364,10 +402,34 @@ RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::isend(
 
 
 template<typename Ordinal>
+RCP<CommRequest<Ordinal> > 
+SerialComm<Ordinal>::
+isend (const ArrayView<const char> &/*sendBuffer*/,
+       const int /*destRank*/,
+       const int /*tag*/) const
+{
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+  return null;
+}
+
+
+template<typename Ordinal>
 RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::ireceive(
   const ArrayView<char> &/*Buffer*/,
   const int /*sourceRank*/
   ) const
+{
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+  return null;
+}
+
+
+template<typename Ordinal>
+RCP<CommRequest<Ordinal> > 
+SerialComm<Ordinal>::
+ireceive (const ArrayView<char> &/*Buffer*/,
+	  const int /*sourceRank*/,
+	  const int /*tag*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
   return null;

@@ -97,8 +97,8 @@ Teuchos::RCP<DVector> GetRandomVector(int n);
 // Compares the difference between two vectors using relative euclidean norms
 // Returns 1 if the comparison failed, the relative difference is greater than the tolerance.
 int CompareVectors(const SerialDenseVector<OTYPE,STYPE>& Vector1,
-		   const SerialDenseVector<OTYPE,STYPE>& Vector2,
-		   ScalarTraits<STYPE>::magnitudeType Tolerance );
+                   const SerialDenseVector<OTYPE,STYPE>& Vector2,
+                   ScalarTraits<STYPE>::magnitudeType Tolerance );
 
 int main(int argc, char* argv[])
 {
@@ -311,7 +311,9 @@ int main(int argc, char* argv[])
   STYPE sOne  = ScalarTraits<STYPE>::one();
   MagnitudeType smlnum = ScalarTraits<STYPE>::magnitude(safeMin/prec);
   MagnitudeType bignum = ScalarTraits<STYPE>::magnitude(sOne/smlnum);
+  (void) bignum; // Silence "unused variable" compiler warning.
   MagnitudeType smlnum2 = smlnum/2;
+  (void) smlnum2; // Silence "unused variable" compiler warning.
   MagnitudeType anorm = ScalarTraits<STYPE>::magnitude(ScalarTraits<STYPE>::zero());
   for (OTYPE j = 0; j < A2->numCols(); j++) {
     for (OTYPE i = 0; i < A2->numRows(); i++) {
@@ -319,7 +321,9 @@ int main(int argc, char* argv[])
     }
   }
   OTYPE BW = 0;
+  (void) BW; // Silence "unused variable" compiler warning.
   OTYPE info = 0;
+  (void) info; // Silence "unused variable" compiler warning.
   // TODO: fix scaling test
   //  L.LASCL(Teuchos::ETypeChar[Teuchos::FULL], BW, BW, anorm, smlnum2, A2->numRows(), A2->numCols(), A2->values(), A2->stride(), &info);
   solver2.setMatrix( A2 );
@@ -364,12 +368,12 @@ int main(int argc, char* argv[])
   //
   if(numberFailedTests > 0)
   {
-	    if (verbose) {
-		std::cout << "Number of failed tests: " << numberFailedTests << std::endl;
-		std::cout << "End Result: TEST FAILED" << std::endl;
-		return -1;
-	    }
-	}
+            if (verbose) {
+                std::cout << "Number of failed tests: " << numberFailedTests << std::endl;
+                std::cout << "End Result: TEST FAILED" << std::endl;
+                return -1;
+            }
+        }
   if(numberFailedTests == 0)
     std::cout << "End Result: TEST PASSED" << std::endl;
 
@@ -399,28 +403,28 @@ int ReturnCodeCheck(std::string testName, int returnCode, int expectedResult, bo
   if(expectedResult == 0)
     {
       if(returnCode == 0)
-	{
-	  if(verbose) std::cout << testName << " test successful." << std::endl;
-	  result = 0;
-	}
+        {
+          if(verbose) std::cout << testName << " test successful." << std::endl;
+          result = 0;
+        }
       else
-	{
-	  if(verbose) std::cout << testName << " test unsuccessful. Return code was " << returnCode << "." << std::endl;
-	  result = 1;
-	}
+        {
+          if(verbose) std::cout << testName << " test unsuccessful. Return code was " << returnCode << "." << std::endl;
+          result = 1;
+        }
     }
   else
     {
       if(returnCode != 0)
-	{
-	  if(verbose) std::cout << testName << " test successful -- failed as expected." << std::endl;
-	  result = 0;
-	}
+        {
+          if(verbose) std::cout << testName << " test successful -- failed as expected." << std::endl;
+          result = 0;
+        }
       else
-	{
-	  if(verbose) std::cout << testName << " test unsuccessful -- did not fail as expected. Return code was " << returnCode << "." << std::endl;
-	  result = 1;
-	}
+        {
+          if(verbose) std::cout << testName << " test unsuccessful -- did not fail as expected. Return code was " << returnCode << "." << std::endl;
+          result = 1;
+        }
     }
   return result;
 }
@@ -481,8 +485,8 @@ Teuchos::RCP<DVector> GetRandomVector(int n)
     Purpose:   Compares the difference between two vectors using relative euclidean-norms, i.e. ||v_1-v_2||_2/||v_2||_2
 */
 int CompareVectors(const SerialDenseVector<OTYPE,STYPE>& Vector1,
-		   const SerialDenseVector<OTYPE,STYPE>& Vector2,
-		   ScalarTraits<STYPE>::magnitudeType Tolerance )
+                   const SerialDenseVector<OTYPE,STYPE>& Vector2,
+                   ScalarTraits<STYPE>::magnitudeType Tolerance )
 {
   typedef ScalarTraits<STYPE>::magnitudeType MagnitudeType;
 

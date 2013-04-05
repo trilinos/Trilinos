@@ -57,8 +57,25 @@ class CudaSpace ;
 #if defined( __CUDACC__ )
 
 /*  Compiling with a CUDA compiler for host and device code.
+ *
+ *  Include <cuda.h> to pick up the CUDA_VERSION macro defined as:
+ *    CUDA_VERSION = ( MAJOR_VERSION * 100 ) | ( MINOR_VERSION )
+ *
+ *  When generating device code the __CUDA_ARCH__ macro is defined as:
+ *    __CUDA_ARCH__ = ( MAJOR_CAPABILITY * 100 ) | ( MINOR_CAPABILITY )
+ *
  *  Declare functions available on host and device, or device only.
  */
+
+#include <cuda.h>
+
+#if ! defined( CUDA_VERSION )
+#error "#include <cuda.h> did not define CUDA_VERSION"
+#endif
+
+#if ( CUDA_VERSION < 401 )
+#error "Cuda version 4.1 or greater required"
+#endif
 
 #if defined( __CUDA_ARCH__ )
 
@@ -87,7 +104,7 @@ namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 
 #endif /* ! #if defined( __CUDA_ARCH__ ) */
 
-/* END defined( __CUDACC__ ) */
+/* END: #if defined( __CUDACC__ ) */
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 #elif defined( __INTEL_COMPILER ) && defined( __MIC__ )

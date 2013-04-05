@@ -115,7 +115,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   // Typedefs derived from the above canonical typedefs.
   typedef ScalarTraits<scalar_type> STS;
   typedef typename STS::magnitudeType magnitude_type;
-  typedef ScalarTraits<magnitude_type> STM;
   typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
   // Abbreviation typedefs.

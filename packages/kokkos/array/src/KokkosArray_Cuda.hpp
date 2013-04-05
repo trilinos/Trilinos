@@ -50,7 +50,7 @@
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Layout.hpp>
 #include <KokkosArray_CudaSpace.hpp>
-#include <KokkosArray_MemoryManagement.hpp>
+#include <KokkosArray_MemoryTraits.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -68,7 +68,6 @@ public:
   typedef Cuda                  device_type ;
   typedef CudaSpace             memory_space ;
   typedef CudaSpace::size_type  size_type ;
-  typedef MemoryManaged         memory_management ;
   typedef LayoutLeft            array_layout ;
 
   //--------------------------------------------------------------------------
@@ -125,6 +124,11 @@ public:
   static void initialize( const SelectDevice = SelectDevice() );
 
   static size_type detect_device_count();
+
+  /** \brief  Cuda device architecture of the selected device.
+   *          Matches the __CUDA_ARCH__ specification.
+   */
+  static size_type device_arch();
 
   //@}
 };

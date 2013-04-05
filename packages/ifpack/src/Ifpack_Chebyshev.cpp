@@ -85,7 +85,7 @@ Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   EigRatio_(30.0),
   Label_(),
   LambdaMin_(0.0),
-  LambdaMax_(100.0),
+  LambdaMax_(-1.0),
   MinDiagonalValue_(0.0),
   NumMyRows_(0),
   NumMyNonzeros_(0),
@@ -128,7 +128,7 @@ Ifpack_Chebyshev(const Epetra_RowMatrix* Operator) :
   EigMaxIters_(10),
   Label_(),
   LambdaMin_(0.0),
-  LambdaMax_(100.0),
+  LambdaMax_(-1.0),
   MinDiagonalValue_(0.0),
   NumMyRows_(0),
   NumMyNonzeros_(0),
@@ -328,8 +328,17 @@ int Ifpack_Chebyshev::Compute()
       else
         (*InvDiagonal_)[i] = 1.0 / diag;
     }
+    // Automatically compute maximum eigenvalue estimate of D^{-1}A if user hasn't provided one 
+    double lambda_max=0;
+    if (LambdaMax_ == -1) {
+      PowerMethod(Matrix(), *InvDiagonal_, EigMaxIters_, lambda_max);
+      LambdaMax_=lambda_max;
+      // Test for Exact Preconditioned case
+      if (ABS(LambdaMax_-1) < 1e-6) LambdaMax_=LambdaMin_=1.0;
+      else                          LambdaMin_=LambdaMax_/EigRatio_;
+    }
+    // otherwise the inverse of the diagonal has been given by the user
   }
-  // otherwise the inverse of the diagonal has been given by the user
 #ifdef IFPACK_FLOPCOUNTERS
   ComputeFlops_ += NumMyRows_;
 #endif

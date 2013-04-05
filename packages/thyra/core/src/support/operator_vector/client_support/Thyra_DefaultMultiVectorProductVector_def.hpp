@@ -159,7 +159,6 @@ void DefaultMultiVectorProductVector<Scalar>::describe(
   const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
   using Teuchos::OSTab;
   using Teuchos::describe;
   RCP<FancyOStream> out = rcp(&out_arg,false);

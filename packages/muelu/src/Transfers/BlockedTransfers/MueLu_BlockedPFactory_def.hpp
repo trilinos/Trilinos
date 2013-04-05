@@ -76,14 +76,23 @@
 namespace MueLu {
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedPFactory(RCP<FactoryBase> AFact)
-: AFact_(AFact),
+BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedPFactory(/*RCP<FactoryBase> AFact*/)
+: /*AFact_(AFact),*//* AFact_(Teuchos::null),*/
   diagonalView_("current") {
 
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~BlockedPFactory() {}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+RCP<const ParameterList> BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+  validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A (block matrix)");
+
+  return validParamList;
+}
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDiagonalView(std::string const& diagView) {
@@ -102,7 +111,8 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ad
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-  fineLevel.DeclareInput("A",AFact_.get(),this);
+  Input(fineLevel, "A");
+  //fineLevel.DeclareInput("A",AFact_.get(),this);
 
   //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
@@ -135,7 +145,8 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
   //std::ostringstream buf; buf << coarseLevel.GetLevelID();
 
   // Level Get
-  RCP<Matrix> A     = fineLevel.  Get< RCP<Matrix> >("A", AFact_.get()); // IMPORTANT: use main factory manager for getting A
+  //RCP<Matrix> A     = fineLevel.  Get< RCP<Matrix> >("A", AFact_.get()); // IMPORTANT: use main factory manager for getting A
+  RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
   RCP<BlockedCrsOMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOMatrix>(A);
   TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: input matrix A is not of type BlockedCrsMatrix! error.");
 

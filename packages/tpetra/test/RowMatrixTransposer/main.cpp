@@ -47,7 +47,7 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include <cmath>
 
-
+#include <Teuchos_FancyOStream.hpp>
 
 template<class CrsMatrix_t> double getNorm(CrsMatrix_t& matrix){
   double mySum = 0;
@@ -74,7 +74,6 @@ int main(int argc, char* argv[]){
 	Teuchos::oblackholestream blackhole;
 	Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 	typedef double Scalar;
-	typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
 	typedef int Ordinal;
 	using Tpetra::global_size_t;
 	
@@ -187,8 +186,8 @@ int main(int argc, char* argv[]){
 
 	
 	Tpetra::RowMatrixTransposer<Scalar, Ordinal> transposer (Teuchos::rcpFromRef (A));
-	TestMatrix = transposer.createTranspose(Tpetra::DoOptimizeStorage); //, TestMatrix/*, tMap*/);
-
+	TestMatrix = transposer.createTranspose(); //, TestMatrix/*, tMap*/);
+	
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar, Ordinal> > diffMatrix = Tpetra::createCrsMatrix<Scalar, Ordinal>(TestMatrix->getRowMap());
   //Apparently there is a problem with ADD because while these two matricies are 
   //identical when I add them together I don't get 0 like I should. Infact

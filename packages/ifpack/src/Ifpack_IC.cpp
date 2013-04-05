@@ -134,7 +134,7 @@ int Ifpack_IC::ComputeSetup()
 
   int ierr = 0;
   int i, j;
-  int NumIn, NumL, NumU;
+  int NumIn, NumU;
   bool DiagFound;
   int NumNonzeroDiags = 0;
 
@@ -158,7 +158,6 @@ int Ifpack_IC::ComputeSetup()
     Matrix().ExtractMyRowCopy(i, MaxNumEntries, NumIn, &InV[0], &InI[0]); // Get Values and Indices
     
     // Split into L and U (we don't assume that indices are ordered).
-    NumL = 0; 
     NumU = 0; 
     DiagFound = false;
     

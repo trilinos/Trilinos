@@ -245,6 +245,87 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
   */
   
   Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& Graph);
+
+//! Epetra CrsMatrix constructor that also fuses Import and FillComplete().
+  /*!
+    A common use case is to create an empty destination Epetra_CrsMatrix,
+    redistribute from a source CrsMatrix (by an Import or Export
+    operation), then call FillComplete() on the destination
+    CrsMatrix.  This constructor fuses these three cases, for an
+    Import redistribution.
+    
+    Fusing redistribution and FillComplete() exposes potential
+    optimizations.  For example, it may make constructing the column
+    map faster, and it may avoid intermediate unoptimized storage in
+    the destination Epetra_CrsMatrix.  These optimizations may improve
+    performance for specialized kernels like sparse matrix-matrix
+    multiply, as well as for redistributing data after doing load
+    balancing.
+  
+    The resulting matrix is fill complete (in the sense of
+    Filled()) and has optimized storage (in the sense of
+    StorageOptimized()).  It the DomainMap is taken from the SourceMatrix,
+    the RangeMap is presumed to be RowImporter.TargetMap() if not specified
+    
+    \param SourceMatrix [in] The source matrix from which to
+    import.  The source of an Import must have a nonoverlapping
+    distribution.
+    
+    \param RowImporter [in] The Import instance containing a
+    precomputed redistribution plan.  The source Map of the
+    Import must be the same as the row Map of sourceMatrix.
+
+    \param DomainMap [in] The new domainMap for the new matrix. If not specified,
+    then the DomainMap of the SourceMatrix is used.
+
+    \param RangeMap [in] The new rangeMap for the new matrix. If not specified,
+    then RowImporter.TargetMap() is used.
+
+    \param RestrictCommunicator [in] Restricts the resulting communicator to active 
+    processes only.
+  */
+  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter, const Epetra_Map * DomainMap=0, const Epetra_Map * RangeMap=0, bool RestrictCommunicator = false);
+
+  //! Epetra CrsMatrix constructor that also fuses Ex[prt and FillComplete().
+  /*!
+    A common use case is to create an empty destination Epetra_CrsMatrix,
+    redistribute from a source CrsMatrix (by an Import or Export
+    operation), then call FillComplete() on the destination
+    CrsMatrix.  This constructor fuses these three cases, for an
+    Import redistribution.
+    
+    Fusing redistribution and FillComplete() exposes potential
+    optimizations.  For example, it may make constructing the column
+    map faster, and it may avoid intermediate unoptimized storage in
+    the destination Epetra_CrsMatrix.  These optimizations may improve
+    performance for specialized kernels like sparse matrix-matrix
+    multiply, as well as for redistributing data after doing load
+    balancing.
+  
+    The resulting matrix is fill complete (in the sense of
+    Filled()) and has optimized storage (in the sense of
+    StorageOptimized()).  It the DomainMap is taken from the SourceMatrix,
+    the RangeMap is presumed to be RowImporter.TargetMap() if not specified
+    
+    \param SourceMatrix [in] The source matrix from which to
+    import.  The source of an Import must have a nonoverlapping
+    distribution.
+    
+    \param RowExporter [in] The Export instance containing a
+    precomputed redistribution plan.  The source Map of the
+    Import must be the same as the row Map of sourceMatrix.
+
+    \param DomainMap [in] The new domainMap for the new matrix. If not specified,
+    then the DomainMap of the SourceMatrix is used.
+
+    \param RangeMap [in] The new rangeMap for the new matrix. If not specified,
+    then RowExporter.TargetMap() is used.
+
+    \param RestrictCommunicator [in] Restricts the resulting communicator to active 
+    processes only.
+  */
+  Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowExporter, const Epetra_Map * DomainMap=0, const Epetra_Map * RangeMap=0, bool RestrictCommunicator = false);
+
   
   //! Copy constructor.
   Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix);
@@ -1025,6 +1106,32 @@ or if the number of entries in this row exceed the Length parameter.
   */
   int ReplaceColMap(const Epetra_BlockMap& newmap);
 
+  //! Replaces the current DomainMap & Importer with the user-specified map object.
+  /** Replaces the current DomainMap and Importer with the user-specified map object, but only
+      if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap 
+      and Importer's SourceMap matches the DomainMap (assuming the importer isn't null).  If an Importer
+      is passed in, Epetra_CrsMatrix will copy it.
+
+      Returns 0 if map/importer is replaced, -1 if not.
+      
+      \pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
+
+  */
+  int ReplaceDomainMapAndImporter(const Epetra_Map & NewDomainMap, const Epetra_Import * NewImporter);
+
+  //! Remove processes owning zero rows from the Maps and their communicator.
+  /** Remove processes owning zero rows from the Maps and their communicator.
+     \warning This method is ONLY for use by experts.
+     
+     \warning We make NO promises of backwards compatibility.
+     This method may change or disappear at any time.
+     
+     \param newMap [in] This <i>must</i> be the result of calling
+     the removeEmptyProcesses() method on the row Map.  If it
+     is not, this method's behavior is undefined.  This pointer
+     will be null on excluded processes.
+  */
+  int RemoveEmptyProcessesInPlace(const Epetra_BlockMap * NewMap);
 
   //! Returns the Epetra_Map object that describes the set of column-indices that appear in each processor's locally owned matrix rows.
   /*!Note that if the matrix was constructed with only a row-map, then until FillComplete() is called, this method returns
@@ -1543,5 +1650,16 @@ private:
                        Epetra_Distributor& Distor,
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);
+
+  // Used for fused[import|export] constructors
+  template<class TransferType>
+  void FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, 
+		     const TransferType & RowTransfer, 
+		     const Epetra_Map * DomainMap, 
+		     const Epetra_Map * RangeMap,
+		     bool RestrictCommunicator);
+
+
+
 };
 #endif /* EPETRA_CRSMATRIX_H */

@@ -135,7 +135,7 @@ namespace Galeri {
           iz = (MyGlobalElements[i] - ixy) / (nx * ny);
 
           ix = ixy % nx;
-          iy = (ixy - ix) / ny;
+          iy = (ixy - ix) / nx;
 
           Coord[0][i] = delta_x * ix;
           Coord[1][i] = delta_y * iy;

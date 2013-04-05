@@ -86,11 +86,14 @@ namespace panzer {
 
   template <typename,typename> class BlockedDOFManager;
   template <typename,typename> class DOFManagerFEI;
+  template <typename,typename> class DOFManager;
 }
 
 namespace panzer_stk {
 
   class STKConnManager;
+  class NOXObserverFactory;
+  class RythmosObserverFactory;
   
   template<typename ScalarT>
   class ModelEvaluatorFactory_Epetra : public Teuchos::ParameterListAcceptorDefaultBase {
@@ -105,12 +108,12 @@ namespace panzer_stk {
 
     /** \brief Builds the model evaluators for a panzer assembly
         
-	\param comm [in] (Required) Teuchos communicator.  Must be non-null.
-	\param global_data [in] (Required) A fully constructed (all members allocated) global data object used to control parameter library and output support. Must be non-null.
-	\param eqset_factory [in] (Required) Equation set factory to provide user defined equation sets.
-	\param bc_factory [in] (Required) Boundary condition factory to provide user defined boundary conditions.
-	\param cm_factory [in] (Required) Closure model factory to provide user defined closure models.
-	\param ra_factory [in] (Optional) Response aggregator factory to provide user defined response aggregator types.
+	\param[in] comm (Required) Teuchos communicator.  Must be non-null.
+	\param[in] global_data (Required) A fully constructed (all members allocated) global data object used to control parameter library and output support. Must be non-null.
+	\param[in] eqset_factory (Required) Equation set factory to provide user defined equation sets.
+	\param[in] bc_factory (Required) Boundary condition factory to provide user defined boundary conditions.
+	\param[in] cm_factory (Required) Closure model factory to provide user defined closure models.
+	\param[in] ra_factory (Optional) Response aggregator factory to provide user defined response aggregator types.
     */
     void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
 		      const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -121,11 +124,21 @@ namespace panzer_stk {
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getPhysicsModelEvaluator();
     
+    /** @name Methods for building the solver */
+    //@{
+
+    void setNOXObserverFactory(const Teuchos::RCP<const panzer_stk::NOXObserverFactory>& nox_observer_factory);
+
+    void setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk::RythmosObserverFactory>& rythmos_observer_factory);
+
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getResponseOnlyModelEvaluator();
-    Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > buildResponseOnlyModelEvaluator(
-                                  const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
- 		                  const Teuchos::RCP<panzer::GlobalData>& global_data,
-                                  const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > & rythmosSolver=Teuchos::null);
+
+    Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > 
+    buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
+				    const Teuchos::RCP<panzer::GlobalData>& global_data,
+				    const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null);
+
+    //@}
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary();
 
@@ -169,7 +182,16 @@ namespace panzer_stk {
       *
       * \returns False if no unique field is found. Otherwise True is returned.
       */
-    bool determineCoordinateField(const panzer::DOFManagerFEI<int,int> & globalIndexer,std::string & fieldName) const;
+    bool determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName) const;
+
+    /** Fill a STL map with the the block ids associated with the pattern for a specific field.
+      *
+      * \param[in] fieldName Field to fill associative container with
+      * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
+      *                           argument
+      */
+    void fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer, const std::string & fieldName, 
+                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
 
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
       *
@@ -178,6 +200,15 @@ namespace panzer_stk {
       *                           argument
       */
     void fillFieldPatternMap(const panzer::DOFManagerFEI<int,int> & globalIndexer, const std::string & fieldName, 
+                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
+
+    /** Fill a STL map with the the block ids associated with the pattern for a specific field.
+      *
+      * \param[in] fieldName Field to fill associative container with
+      * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
+      *                           argument
+      */
+    void fillFieldPatternMap(const panzer::DOFManager<int,int> & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
 
     /** \brief Gets the initial time from either the input parameter list or an exodus file
@@ -232,6 +263,9 @@ namespace panzer_stk {
     #endif
     bool useDiscreteAdjoint;
     bool m_is_transient;
+
+    Teuchos::RCP<const panzer_stk::NOXObserverFactory> m_nox_observer_factory;
+    Teuchos::RCP<const panzer_stk::RythmosObserverFactory> m_rythmos_observer_factory;
   };
 
 }

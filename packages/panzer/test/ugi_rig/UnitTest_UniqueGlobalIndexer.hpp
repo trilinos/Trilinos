@@ -67,7 +67,7 @@ namespace unit_test {
   * There is one element block called "block_0" with two elements. Each element
   * resides on a different processor.
   */
-class UniqueGlobalIndexer : public virtual panzer::UniqueGlobalIndexer<short,int> {
+class UniqueGlobalIndexer : public virtual panzer::UniqueGlobalIndexer<int,int> {
 public:
    UniqueGlobalIndexer(int rank,int procCount);
 
@@ -119,7 +119,7 @@ public:
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<short> & getElementBlock(const std::string & blockId) const;
+   virtual const std::vector<int> & getElementBlock(const std::string & blockId) const;
 
    /** Get field numbers associated with a particular element block.
      */
@@ -128,9 +128,9 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(short localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
+   virtual void getElementGIDs(int localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
 
-   virtual void getElementOrientation(short localElmtId,std::vector<double> & gidsOrientation) const
+   virtual void getElementOrientation(int localElmtId,std::vector<double> & gidsOrientation) const
    { TEUCHOS_ASSERT(false); }
 
    /** \brief Use the field pattern so that you can find a particular
@@ -168,11 +168,14 @@ public:
      */
    virtual void ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const;
 
-   void getCoordinates(short localElementId,Intrepid::FieldContainer<double> & points);
+   void getCoordinates(int localElementId,Intrepid::FieldContainer<double> & points);
+
+   void buildGlobalUnknowns()
+   { buildLocalIds(); }
 
 private:
    int procRank_;
-   mutable Teuchos::RCP<std::vector<short> > elements_; // local element IDs
+   mutable Teuchos::RCP<std::vector<int> > elements_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field0Offset_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field1Offset_; // local element IDs
 

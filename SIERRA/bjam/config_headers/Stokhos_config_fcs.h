@@ -77,3 +77,9 @@
 
 /* Define if MATLAB is enabled */
 /* #undef HAVE_STOKHOS_MATLABLIB */
+
+/* Define if MKL is enabled */
+/* #undef HAVE_STOKHOS_MKL */
+
+/* Define if OpenMP is enabled */
+/* #undef HAVE_STOKHOS_OPENMP */

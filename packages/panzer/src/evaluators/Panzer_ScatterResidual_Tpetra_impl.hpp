@@ -51,6 +51,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -69,6 +70,7 @@ panzer::ScatterResidual_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
 ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
+  , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -96,6 +98,9 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName(scatterName+" Scatter Residual");
 }
 
@@ -120,6 +125,23 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+
+  // extract linear object container
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+ 
+  if(tpetraContainer_==Teuchos::null) {
+    // extract linear object container
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
+  }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
@@ -131,8 +153,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<LOC> tpetraContainer 
-         = Teuchos::rcp_dynamic_cast<LOC>(workset.ghostedLinContainer);
+   Teuchos::RCP<const LOC> tpetraContainer = tpetraContainer_;
    Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer->get_f(); 
    Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
 
@@ -176,6 +197,7 @@ panzer::ScatterResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
 ScatterResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
+   , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -203,6 +225,9 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName(scatterName+" Scatter Residual (Jacobian)");
 }
 
@@ -223,6 +248,23 @@ postRegistrationSetup(typename Traits::SetupData d,
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
+  }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+
+  // extract linear object container
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+ 
+  if(tpetraContainer_==Teuchos::null) {
+    // extract linear object container
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
   }
 }
 

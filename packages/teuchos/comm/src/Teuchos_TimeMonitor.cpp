@@ -217,33 +217,51 @@ namespace Teuchos {
   }
 
   void
+  TimeMonitor::disableTimer (const std::string& name)
+  {
+    RCP<Time> timer = lookupCounter (name);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      timer == null, std::invalid_argument,
+      "TimeMonitor::disableTimer: Invalid timer \"" << name << "\"");
+    timer->disable ();
+  }
+
+  void
+  TimeMonitor::enableTimer (const std::string& name)
+  {
+    RCP<Time> timer = lookupCounter (name);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      timer == null, std::invalid_argument,
+      "TimeMonitor::enableTimer: Invalid timer \"" << name << "\"");
+    timer->enable ();
+  }
+
+  void
   TimeMonitor::zeroOutTimers()
   {
-    const Array<RCP<Time> > timers = counters();
+    typedef std::map<std::string, RCP<Time> > map_type;
+    typedef map_type::iterator iter_type;
+    map_type& ctrs = counters ();
 
     // In debug mode, loop first to check whether any of the timers
     // are running, before resetting them.  This ensures that this
     // method satisfies the strong exception guarantee (either it
     // completes normally, or there are no side effects).
 #ifdef TEUCHOS_DEBUG
-    typedef Array<RCP<Time> >::size_type size_type;
-    const size_type numTimers = timers.size();
-    for (size_type i = 0; i < numTimers; ++i) {
-      Time &timer = *timers[i];
+    for (iter_type it = ctrs.begin(); it != ctrs.end(); ++it) {
       // We throw a runtime_error rather than a logic_error, because
       // logic_error suggests a bug in the implementation of
-      // TimeMonitor.  Calling zeroOutTimers() when a timer is
-      // running is not TimeMonitor's fault.
-      TEUCHOS_TEST_FOR_EXCEPTION(timer.isRunning(), std::runtime_error,
-                                 "The timer i = " << i << " with name \""
-                                 << timer.name() << "\" is currently running and may not "
-                                 "be reset.");
+      // TimeMonitor.  Calling zeroOutTimers() when a timer is running
+      // is not TimeMonitor's fault.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        it->second->isRunning (), std::runtime_error,
+        "Timer \"" << it->second->name () << "\" is currently running.  "
+        "You are not allowed to reset running timers.");
     }
 #endif // TEUCHOS_DEBUG
 
-    for (Array<RCP<Time> >::const_iterator it = timers.begin();
-         it != timers.end(); ++it) {
-      (*it)->reset ();
+    for (iter_type it = ctrs.begin(); it != ctrs.end(); ++it) {
+      it->second->reset ();
     }
   }
 
@@ -281,24 +299,23 @@ namespace Teuchos {
     // pairwise.
     void
     collectLocalTimerData (timer_map_t& localData,
-                           ArrayView<const RCP<Time> > localCounters,
+                           const std::map<std::string, RCP<Time> >& localCounters,
                            const std::string& filter="")
     {
       using std::make_pair;
-      typedef timer_map_t::const_iterator const_iter_t;
       typedef timer_map_t::iterator iter_t;
 
       timer_map_t theLocalData;
-      for (ArrayView<const RCP<Time> >::const_iterator it = localCounters.begin();
+      for (std::map<std::string, RCP<Time> >::const_iterator it = localCounters.begin();
            it != localCounters.end(); ++it) {
-        const std::string& name = (*it)->name();
+        const std::string& name = it->second->name ();
 
         // Filter current timer name, if provided filter is nonempty.
         // Filter string must _start_ the timer label, not just be in it.
         const bool skipThisOne = (filter != "" && name.find (filter) != 0);
         if (! skipThisOne) {
-          const double timing = (*it)->totalElapsedTime();
-          const int numCalls = (*it)->numCalls();
+          const double timing = it->second->totalElapsedTime ();
+          const int numCalls = it->second->numCalls ();
 
           // Merge timers with duplicate labels, by summing their
           // total elapsed times and call counts.
@@ -324,6 +341,8 @@ namespace Teuchos {
     void
     filterZeroData (timer_map_t& timerData)
     {
+      // FIXME (mfh 15 Mar 2013) Should use std::map::erase with
+      // iterator hint, instead of rebuilding the map completely.
       timer_map_t newTimerData;
       for (timer_map_t::const_iterator it = timerData.begin();
            it != timerData.end(); ++it) {
@@ -358,7 +377,7 @@ namespace Teuchos {
     void
     collectLocalTimerDataAndNames (timer_map_t& localTimerData,
                                    Array<std::string>& localTimerNames,
-                                   ArrayView<const RCP<Time> > localTimers,
+                                   const std::map<std::string, RCP<Time> >& localTimers,
                                    const bool writeZeroTimers,
                                    const std::string& filter="")
     {
@@ -672,11 +691,11 @@ namespace Teuchos {
         // We don't have to undo the scaling for the mean timings;
         // just divide by the scaled call count.
         for (int k = 0; k < numTimers; ++k) {
-          if ( meanCallCounts[k] > ScalarTraits<double>::zero() ) {
+          if (meanCallCounts[k] > ScalarTraits<double>::zero ()) {
             meanOverCallCountsTimings[k] = meanOverProcsTimings[k] / meanCallCounts[k];
           }
           else {
-            meanOverCallCountsTimings[k] = ScalarTraits<double>::zero();
+            meanOverCallCountsTimings[k] = ScalarTraits<double>::zero ();
           }
         }
       }

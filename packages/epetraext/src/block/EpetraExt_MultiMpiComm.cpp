@@ -39,17 +39,17 @@
 // ***********************************************************************
 //@HEADER
 
-#include "EpetraExt_MultiMpiComm.h" 
+#include "EpetraExt_MultiMpiComm.h"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 
 namespace EpetraExt {
 
 MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTimeSteps_,
-			   const Teuchos::EVerbosityLevel verbLevel) :
-	Epetra_MpiComm(globalMpiComm),
-	Teuchos::VerboseObject<MultiMpiComm>(verbLevel),
-	myComm(Teuchos::rcp(new Epetra_MpiComm(globalMpiComm))),
+                           const Teuchos::EVerbosityLevel verbLevel) :
+        Epetra_MpiComm(globalMpiComm),
+        Teuchos::VerboseObject<MultiMpiComm>(verbLevel),
+        myComm(Teuchos::rcp(new Epetra_MpiComm(globalMpiComm))),
         subComm(0)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -64,7 +64,7 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
 
   //Need to construct subComm for each sub domain, compute subDomainRank,
   //and check that all integer arithmatic works out correctly.
- 
+
   int ierrmpi, size, rank;
   ierrmpi = MPI_Comm_size(globalMpiComm, &size);
   ierrmpi = MPI_Comm_rank(globalMpiComm, &rank);
@@ -72,7 +72,7 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
   TEUCHOS_TEST_FOR_EXCEPTION(
     size % subDomainProcs != 0,
     std::logic_error,
-    "ERROR: num subDomainProcs "<< subDomainProcs << 
+    "ERROR: num subDomainProcs "<< subDomainProcs <<
     " does not divide into num total procs " << size << std::endl);
 
   numSubDomains = size / subDomainProcs;
@@ -83,10 +83,10 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
   MPI_Comm time_split_MPI_Comm;
   subDomainRank = rank / subDomainProcs;
   timeDomainRank = rank % subDomainProcs;
-  ierrmpi =  MPI_Comm_split(globalMpiComm, subDomainRank, rank, 
-			    &split_MPI_Comm);
-  ierrmpi =  MPI_Comm_split(globalMpiComm, timeDomainRank, rank, 
-			    &time_split_MPI_Comm);
+  ierrmpi =  MPI_Comm_split(globalMpiComm, subDomainRank, rank,
+                            &split_MPI_Comm);
+  ierrmpi =  MPI_Comm_split(globalMpiComm, timeDomainRank, rank,
+                            &time_split_MPI_Comm);
 
   // Construct second epetra communicators
   subComm = new Epetra_MpiComm(split_MPI_Comm);
@@ -97,13 +97,13 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
 
   if (verbLevel != Teuchos::VERB_NONE) {
     if (numTimeSteps_ > 0)
-      *out << "Processor " << rank << " is on subdomain " << subDomainRank 
-	   << " and owns " << numTimeStepsOnDomain 
-	   << " time steps, starting with " 
-	   <<  firstTimeStepOnDomain << std::endl;
+      *out << "Processor " << rank << " is on subdomain " << subDomainRank
+           << " and owns " << numTimeStepsOnDomain
+           << " time steps, starting with "
+           <<  firstTimeStepOnDomain << std::endl;
     else
-      *out << "Processor " << rank << " is on subdomain " << subDomainRank 
-	   << std::endl;
+      *out << "Processor " << rank << " is on subdomain " << subDomainRank
+           << std::endl;
   }
 
   // Reset output flag if we changed it
@@ -115,10 +115,10 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
 // This constructor is for just one subdomain, so only adds the info
 // for multiple time steps on the domain. No two-level parallelism.
 MultiMpiComm::MultiMpiComm(const Epetra_MpiComm& EpetraMpiComm_, int numTimeSteps_,
-			   const Teuchos::EVerbosityLevel verbLevel) :
-	Epetra_MpiComm(EpetraMpiComm_),
-	Teuchos::VerboseObject<MultiMpiComm>(verbLevel),
-	myComm(Teuchos::rcp(new Epetra_MpiComm(EpetraMpiComm_))),
+                           const Teuchos::EVerbosityLevel verbLevel) :
+        Epetra_MpiComm(EpetraMpiComm_),
+        Teuchos::VerboseObject<MultiMpiComm>(verbLevel),
+        myComm(Teuchos::rcp(new Epetra_MpiComm(EpetraMpiComm_))),
         subComm(0)
 {
 
@@ -127,25 +127,26 @@ MultiMpiComm::MultiMpiComm(const Epetra_MpiComm& EpetraMpiComm_, int numTimeStep
   numTimeSteps = numTimeSteps_;
   numTimeStepsOnDomain = numTimeSteps_;
   firstTimeStepOnDomain = 0;
- 
+
   subComm = new Epetra_MpiComm(EpetraMpiComm_);
 
   // Create split communicators for time domain
   MPI_Comm time_split_MPI_Comm;
   int rank = EpetraMpiComm_.MyPID();
-  int ierrmpi =  MPI_Comm_split(EpetraMpiComm_.Comm(), rank, rank, 
-				&time_split_MPI_Comm);
+  int ierrmpi =  MPI_Comm_split(EpetraMpiComm_.Comm(), rank, rank,
+                                &time_split_MPI_Comm);
+  (void) ierrmpi; // Silence "unused variable" compiler warning.
   timeComm = new Epetra_MpiComm(time_split_MPI_Comm);
   numTimeDomains = EpetraMpiComm_.NumProc();
   timeDomainRank = rank;
 }
-  
+
 //Copy Constructor
 MultiMpiComm::MultiMpiComm(const MultiMpiComm &MMC ) :
-	Epetra_MpiComm(MMC),
-	myComm(Teuchos::rcp(new Epetra_MpiComm(dynamic_cast<const Epetra_MpiComm&>(MMC)))),
+        Epetra_MpiComm(MMC),
+        myComm(Teuchos::rcp(new Epetra_MpiComm(dynamic_cast<const Epetra_MpiComm&>(MMC)))),
         subComm(new Epetra_MpiComm(*MMC.subComm)),
-	timeComm(new Epetra_MpiComm(*MMC.timeComm))
+        timeComm(new Epetra_MpiComm(*MMC.timeComm))
 {
   numSubDomains = MMC.numSubDomains;
   numTimeDomains = MMC.numTimeDomains;
@@ -170,16 +171,16 @@ void MultiMpiComm::ResetNumTimeSteps(int numTimeSteps_)
   // Compute number of time steps on this sub domain
   if (numTimeSteps > 0) {
     // Compute part for number of domains dividing evenly into number of steps
-    numTimeStepsOnDomain = numTimeSteps / numSubDomains; 
+    numTimeStepsOnDomain = numTimeSteps / numSubDomains;
     firstTimeStepOnDomain = numTimeStepsOnDomain * subDomainRank;
 
     // Dole out remainder
     int remainder = numTimeSteps % numSubDomains;
     if (subDomainRank < remainder) {
-      numTimeStepsOnDomain++; 
-      firstTimeStepOnDomain += subDomainRank; 
+      numTimeStepsOnDomain++;
+      firstTimeStepOnDomain += subDomainRank;
     }
-    else firstTimeStepOnDomain += remainder; 
+    else firstTimeStepOnDomain += remainder;
   }
   else {
     numTimeStepsOnDomain = -1;

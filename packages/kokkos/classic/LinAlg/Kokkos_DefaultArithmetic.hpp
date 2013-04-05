@@ -94,7 +94,12 @@ namespace Kokkos {
                   lda = Teuchos::as<int>(A.getStride()),
                   ldb = Teuchos::as<int>(B.getStride()),
                   ldc = Teuchos::as<int>(C.getStride());
-        blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
+        // For some BLAS implementations (i.e. MKL), GEMM when B has one column
+        // is signficantly less efficient 
+        if (n == 1 && transB == Teuchos::NO_TRANS)
+          blas.GEMV(transA, A.getNumRows(), A.getNumCols(), alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), Teuchos::as<int>(1), beta, C.getValuesNonConst().getRawPtr(), Teuchos::as<int>(1));
+        else
+          blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
       }
   };
 
@@ -342,18 +347,21 @@ namespace Kokkos {
     /// For each element A(i,j) of A, set A(i,j) = 1/A(i,j) if the
     /// magnitude of A(i,j) is greater than or equal to the magnitude
     /// of minDiagVal.  Otherwise, set A(i,j) to minDiagVal.
-    static void 
+    static void
     ReciprocalThreshold (MV& A, typename MV::ScalarType& minDiagVal);
 
     /// \brief Set C to the scaled element-wise multiple of A and B.
     ///
     /// <tt>C(i,j) = scalarC * C(i,j) + scalarAB * B(i,j) * A(i,1)</tt>,
-    /// where the input multivector A has only 1 column.
-    static void ElemMult (MV& C,
-                          typename MV::ScalarType scalarC,
-                          typename MV::ScalarType scalarAB,
-                          const MV& A,
-                          const MV& B);
+    /// where the input multivector A has only 1 column.  If scalarC
+    /// is zero, this method ignores the initial contents of C, even
+    /// if there are NaN entries.
+    static void
+    ElemMult (MV& C,
+              typename MV::ScalarType scalarC,
+              typename MV::ScalarType scalarAB,
+              const MV& A,
+              const MV& B);
 
     /// \brief Assign B to A: <tt>A(i,j) = B(i,j)</tt>.
     ///
@@ -378,11 +386,15 @@ namespace Kokkos {
     //! Compute the inner product of A and B (assuming each has only one column).
     static typename MV::ScalarType Dot (const MV& A, const MV& B);
 
-    //! Compute <tt>B = alpha * A + beta * B</tt>.
+    /// \brief Compute <tt>B = alpha * A + beta * B</tt>.
+    ///
+    /// If beta is zero, overwrite B, even if it contains NaN entries.
     static void
     GESUM (MV& B, typename MV::ScalarType alpha, const MV& A, typename MV::ScalarType beta);
 
-    //! Compute <tt>C = alpha * A + beta * B + gamma * C</tt>.
+    /// \brief Compute <tt>C = alpha * A + beta * B + gamma * C</tt>.
+    ///
+    /// If gamma is zero, overwrite C, even if it contains NaN entries.
     static void
     GESUM (MV &C, typename MV::ScalarType alpha, const MV &A,
            typename MV::ScalarType beta, const MV &B, typename MV::ScalarType gamma);
@@ -542,7 +554,7 @@ namespace Kokkos {
   /// \tparam Scalar The type of entries of the multivector.
   /// \tparam The Kokkos Node type.
   template <class Scalar, class Node>
-  class DefaultArithmetic<MultiVector<Scalar, Node> > : 
+  class DefaultArithmetic<MultiVector<Scalar, Node> > :
     public DefaultArithmeticBase<MultiVector<Scalar, Node> > {
   public:
     static void Init (MultiVector<Scalar,Node> &A, Scalar alpha) {
@@ -618,8 +630,8 @@ namespace Kokkos {
     }
 
     static void
-    ReciprocalThreshold (MultiVector<Scalar,Node>& A, 
-			 const Scalar& minDiagVal)
+    ReciprocalThreshold (MultiVector<Scalar,Node>& A,
+                         const Scalar& minDiagVal)
     {
       const size_t numRows = A.getNumRows ();
       const size_t numCols = A.getNumCols ();
@@ -633,20 +645,20 @@ namespace Kokkos {
       rbh.template addNonConstBuffer<Scalar> (A_data);
       rbh.end();
 
-      if (stride == numRows) { 
-	// One kernel invocation for all columns of the multivector.
-	typedef ReciprocalThresholdOp<Scalar> op_type;
-	op_type wdp (A_ptr, minDiagVal);
-	node->template parallel_for<op_type> (0, numRows*numCols, wdp);
+      if (stride == numRows) {
+        // One kernel invocation for all columns of the multivector.
+        typedef ReciprocalThresholdOp<Scalar> op_type;
+        op_type wdp (A_ptr, minDiagVal);
+        node->template parallel_for<op_type> (0, numRows*numCols, wdp);
       }
       else {
-	// One kernel invocation for each column of the multivector.
-	for (size_t j = 0; j < numCols; ++j) {
-	  typedef ReciprocalThresholdOp<Scalar> op_type;
-	  Scalar* const A_j = A_ptr + j * stride;
-	  op_type wdp (A_j, minDiagVal);
-	  node->template parallel_for<op_type> (0, numRows, wdp);
-	}
+        // One kernel invocation for each column of the multivector.
+        for (size_t j = 0; j < numCols; ++j) {
+          typedef ReciprocalThresholdOp<Scalar> op_type;
+          Scalar* const A_j = A_ptr + j * stride;
+          op_type wdp (A_j, minDiagVal);
+          node->template parallel_for<op_type> (0, numRows, wdp);
+        }
       }
     }
 
@@ -678,7 +690,7 @@ namespace Kokkos {
       RCP<Node> node = B.getNode();
       ArrayRCP<Scalar> Cdata = C.getValuesNonConst();
       ArrayRCP<const Scalar> Bdata = B.getValues();
-      ArrayRCP<const Scalar>       Adata = A.getValues();
+      ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -686,17 +698,33 @@ namespace Kokkos {
       rbh.template addConstBuffer<Scalar>(Bdata);
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.end();
-      MVElemMultOp<Scalar> wdp;
-      wdp.scalarX = scalarC;
-      wdp.scalarYZ = scalarAB;
-      // one kernel invocation for each column
-      for (size_t j=0; j<nC_C; ++j) {
-        wdp.x = Cdata(0,nR_C).getRawPtr();
-        wdp.y = Adata(0,nR_C).getRawPtr();
-        wdp.z = Bdata(0,nR_C).getRawPtr();
-        node->template parallel_for<MVElemMultOp<Scalar> >(0,nR_C,wdp);
-        Cdata += Cstride;
-        Bdata += Bstride;
+
+      if (scalarC == Teuchos::ScalarTraits<Scalar>::zero ()) {
+        MVElemMultOverwriteOp<Scalar> wdp;
+        wdp.scalarYZ = scalarAB;
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC_C; ++j) {
+          wdp.x = Cdata(0,nR_C).getRawPtr();
+          wdp.y = Adata(0,nR_C).getRawPtr();
+          wdp.z = Bdata(0,nR_C).getRawPtr();
+          node->template parallel_for<MVElemMultOverwriteOp<Scalar> >(0,nR_C,wdp);
+          Cdata += Cstride;
+          Bdata += Bstride;
+        }
+      }
+      else {
+        MVElemMultOp<Scalar> wdp;
+        wdp.scalarX = scalarC;
+        wdp.scalarYZ = scalarAB;
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC_C; ++j) {
+          wdp.x = Cdata(0,nR_C).getRawPtr();
+          wdp.y = Adata(0,nR_C).getRawPtr();
+          wdp.z = Bdata(0,nR_C).getRawPtr();
+          node->template parallel_for<MVElemMultOp<Scalar> >(0,nR_C,wdp);
+          Cdata += Cstride;
+          Bdata += Bstride;
+        }
       }
     }
 
@@ -870,8 +898,10 @@ namespace Kokkos {
       const size_t nC = A.getNumCols();
       const size_t Astride = A.getStride();
       const size_t Bstride = B.getStride();
-      TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
-                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM(B,alpha,A,beta): A and B must have the same dimensions.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM(B,alpha,A,beta): "
+        "A and B must have the same dimensions.");
       RCP<Node> node = B.getNode();
       ArrayRCP<const Scalar> Adata = A.getValues();
       ArrayRCP<Scalar>       Bdata = B.getValuesNonConst();
@@ -881,23 +911,48 @@ namespace Kokkos {
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.template addNonConstBuffer<Scalar>(Bdata);
       rbh.end();
-      GESUMOp<Scalar> wdp;
-      wdp.alpha = alpha;
-      wdp.beta  = beta;
-      if (Astride == nR && Bstride == nR) {
-        // one kernel invocation for whole multivector
-        wdp.y = Bdata(0,nR*nC).getRawPtr();
-        wdp.x = Adata(0,nR*nC).getRawPtr();
-        node->template parallel_for<GESUMOp<Scalar> >(0,nR*nC,wdp);
+
+      // mfh 07 Mar 2013: Special case for beta == 0, to overwrite B
+      // unconditionally, regardless of NaN entries.
+      if (beta == Teuchos::ScalarTraits<Scalar>::zero ()) {
+        GESUMZeroBetaOp<Scalar> wdp;
+        wdp.alpha = alpha;
+        if (Astride == nR && Bstride == nR) {
+          // one kernel invocation for whole multivector
+          wdp.y = Bdata(0,nR*nC).getRawPtr();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
+          node->template parallel_for<GESUMZeroBetaOp<Scalar> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (size_t j=0; j<nC; ++j) {
+            wdp.y = Bdata(0,nR).getRawPtr();
+            wdp.x = Adata(0,nR).getRawPtr();
+            node->template parallel_for<GESUMZeroBetaOp<Scalar> >(0,nR,wdp);
+            Adata += Astride;
+            Bdata += Bstride;
+          }
+        }
       }
       else {
-        // one kernel invocation for each column
-        for (size_t j=0; j<nC; ++j) {
-          wdp.y = Bdata(0,nR).getRawPtr();
-          wdp.x = Adata(0,nR).getRawPtr();
-          node->template parallel_for<GESUMOp<Scalar> >(0,nR,wdp);
-          Adata += Astride;
-          Bdata += Bstride;
+        GESUMOp<Scalar> wdp;
+        wdp.alpha = alpha;
+        wdp.beta  = beta;
+        if (Astride == nR && Bstride == nR) {
+          // one kernel invocation for whole multivector
+          wdp.y = Bdata(0,nR*nC).getRawPtr();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
+          node->template parallel_for<GESUMOp<Scalar> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (size_t j=0; j<nC; ++j) {
+            wdp.y = Bdata(0,nR).getRawPtr();
+            wdp.x = Adata(0,nR).getRawPtr();
+            node->template parallel_for<GESUMOp<Scalar> >(0,nR,wdp);
+            Adata += Astride;
+            Bdata += Bstride;
+          }
         }
       }
     }
@@ -932,27 +987,56 @@ namespace Kokkos {
       rbh.template addConstBuffer<Scalar>(Bdata);
       rbh.template addNonConstBuffer<Scalar>(Cdata);
       rbh.end();
-      GESUMOp3<Scalar> wdp;
-      wdp.alpha = alpha;
-      wdp.beta  = beta;
-      wdp.gamma = gamma;
-      if (Astride == nR && Bstride == nR && Cstride == nR) {
-        // one kernel invocation for whole multivector
-        wdp.z = Cdata(0,nR*nC).getRawPtr();
-        wdp.y = Bdata(0,nR*nC).getRawPtr();
-        wdp.x = Adata(0,nR*nC).getRawPtr();
-        node->template parallel_for<GESUMOp3<Scalar> >(0,nR*nC,wdp);
+
+      // mfh 07 Mar 2013: Special case for gamma == 0, to overwrite C
+      // unconditionally, regardless of NaN entries.
+      if (gamma == Teuchos::ScalarTraits<Scalar>::zero ()) {
+        GESUMZeroGammaOp3<Scalar> wdp;
+        wdp.alpha = alpha;
+        wdp.beta  = beta;
+        if (Astride == nR && Bstride == nR && Cstride == nR) {
+          // one kernel invocation for whole multivector
+          wdp.z = Cdata(0,nR*nC).getRawPtr();
+          wdp.y = Bdata(0,nR*nC).getRawPtr();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
+          node->template parallel_for<GESUMZeroGammaOp3<Scalar> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (size_t j=0; j<nC; ++j) {
+            wdp.z = Cdata(0,nR).getRawPtr();
+            wdp.y = Bdata(0,nR).getRawPtr();
+            wdp.x = Adata(0,nR).getRawPtr();
+            node->template parallel_for<GESUMZeroGammaOp3<Scalar> >(0,nR,wdp);
+            Adata += Astride;
+            Bdata += Bstride;
+            Cdata += Cstride;
+          }
+        }
       }
       else {
-        // one kernel invocation for each column
-        for (size_t j=0; j<nC; ++j) {
-          wdp.z = Cdata(0,nR).getRawPtr();
-          wdp.y = Bdata(0,nR).getRawPtr();
-          wdp.x = Adata(0,nR).getRawPtr();
-          node->template parallel_for<GESUMOp3<Scalar> >(0,nR,wdp);
-          Adata += Astride;
-          Bdata += Bstride;
-          Cdata += Cstride;
+        GESUMOp3<Scalar> wdp;
+        wdp.alpha = alpha;
+        wdp.beta  = beta;
+        wdp.gamma = gamma;
+        if (Astride == nR && Bstride == nR && Cstride == nR) {
+          // one kernel invocation for whole multivector
+          wdp.z = Cdata(0,nR*nC).getRawPtr();
+          wdp.y = Bdata(0,nR*nC).getRawPtr();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
+          node->template parallel_for<GESUMOp3<Scalar> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (size_t j=0; j<nC; ++j) {
+            wdp.z = Cdata(0,nR).getRawPtr();
+            wdp.y = Bdata(0,nR).getRawPtr();
+            wdp.x = Adata(0,nR).getRawPtr();
+            node->template parallel_for<GESUMOp3<Scalar> >(0,nR,wdp);
+            Adata += Astride;
+            Bdata += Bstride;
+            Cdata += Cstride;
+          }
         }
       }
     }
@@ -1322,7 +1406,7 @@ namespace Kokkos {
   // Partial specialization for Node=Kokkos::SerialNode.
 
   template <class Scalar>
-  class DefaultArithmetic<MultiVector<Scalar, SerialNode> > : 
+  class DefaultArithmetic<MultiVector<Scalar, SerialNode> > :
     public DefaultArithmeticBase<MultiVector<Scalar, SerialNode> > {
   public:
     static void Init (MultiVector<Scalar, SerialNode> &A, Scalar alpha) {
@@ -1331,19 +1415,19 @@ namespace Kokkos {
       Scalar* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValuesNonConst ().getRawPtr ();
       const size_t stride = A.getStride ();
       if (stride == numRows) {
-	const size_t numElts = numRows * numCols;
-	for (size_t i = 0; i < numElts; ++i) {
-	  A_raw[i] = alpha;
-	}
+        const size_t numElts = numRows * numCols;
+        for (size_t i = 0; i < numElts; ++i) {
+          A_raw[i] = alpha;
+        }
       }
       else {
-	// one kernel invocation for each column
-	for (size_t j = 0; j < numCols; ++j) {
-	  Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j*stride];
-	  for (size_t i = 0; i < numRows; ++i) {
-	    A_j[i] = alpha;
-	  }
-	}
+        // one kernel invocation for each column
+        for (size_t j = 0; j < numCols; ++j) {
+          Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j*stride];
+          for (size_t i = 0; i < numRows; ++i) {
+            A_j[i] = alpha;
+          }
+        }
       }
     }
 
@@ -1389,8 +1473,8 @@ namespace Kokkos {
     }
 
     static void
-    ReciprocalThreshold (MultiVector<Scalar,SerialNode>& A, 
-			 const Scalar& minDiagVal)
+    ReciprocalThreshold (MultiVector<Scalar,SerialNode>& A,
+                         const Scalar& minDiagVal)
     {
       const size_t numRows = A.getNumRows ();
       const size_t numCols = A.getNumCols ();
@@ -1404,20 +1488,20 @@ namespace Kokkos {
       rbh.template addNonConstBuffer<Scalar> (A_data);
       rbh.end();
 
-      if (stride == numRows) { 
-	// One kernel invocation for all columns of the multivector.
-	typedef ReciprocalThresholdOp<Scalar> op_type;
-	op_type wdp (A_ptr, minDiagVal);
-	node->template parallel_for<op_type> (0, numRows*numCols, wdp);
+      if (stride == numRows) {
+        // One kernel invocation for all columns of the multivector.
+        typedef ReciprocalThresholdOp<Scalar> op_type;
+        op_type wdp (A_ptr, minDiagVal);
+        node->template parallel_for<op_type> (0, numRows*numCols, wdp);
       }
       else {
-	// One kernel invocation for each column of the multivector.
-	for (size_t j = 0; j < numCols; ++j) {
-	  typedef ReciprocalThresholdOp<Scalar> op_type;
-	  Scalar* const A_j = A_ptr + j * stride;
-	  op_type wdp (A_j, minDiagVal);
-	  node->template parallel_for<op_type> (0, numRows, wdp);
-	}
+        // One kernel invocation for each column of the multivector.
+        for (size_t j = 0; j < numCols; ++j) {
+          typedef ReciprocalThresholdOp<Scalar> op_type;
+          Scalar* const A_j = A_ptr + j * stride;
+          op_type wdp (A_j, minDiagVal);
+          node->template parallel_for<op_type> (0, numRows, wdp);
+        }
       }
     }
 
@@ -1449,25 +1533,34 @@ namespace Kokkos {
       RCP<SerialNode> node = B.getNode();
       ArrayRCP<Scalar> Cdata = C.getValuesNonConst();
       ArrayRCP<const Scalar> Bdata = B.getValues();
-      ArrayRCP<const Scalar>       Adata = A.getValues();
-      // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
-      rbh.begin();
-      rbh.template addNonConstBuffer<Scalar>(Cdata);
-      rbh.template addConstBuffer<Scalar>(Bdata);
-      rbh.template addConstBuffer<Scalar>(Adata);
-      rbh.end();
-      MVElemMultOp<Scalar> wdp;
-      wdp.scalarX = scalarC;
-      wdp.scalarYZ = scalarAB;
-      // one kernel invocation for each column
-      for (size_t j=0; j<nC_C; ++j) {
-        wdp.x = Cdata(0,nR_C).getRawPtr();
-        wdp.y = Adata(0,nR_C).getRawPtr();
-        wdp.z = Bdata(0,nR_C).getRawPtr();
-        node->template parallel_for<MVElemMultOp<Scalar> >(0,nR_C,wdp);
-        Cdata += Cstride;
-        Bdata += Bstride;
+      ArrayRCP<const Scalar> Adata = A.getValues();
+
+      if (scalarC == Teuchos::ScalarTraits<Scalar>::zero ()) {
+        MVElemMultOverwriteOp<Scalar> wdp;
+        wdp.scalarYZ = scalarAB;
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC_C; ++j) {
+          wdp.x = Cdata(0,nR_C).getRawPtr();
+          wdp.y = Adata(0,nR_C).getRawPtr();
+          wdp.z = Bdata(0,nR_C).getRawPtr();
+          node->template parallel_for<MVElemMultOverwriteOp<Scalar> >(0,nR_C,wdp);
+          Cdata += Cstride;
+          Bdata += Bstride;
+        }
+      }
+      else {
+        MVElemMultOp<Scalar> wdp;
+        wdp.scalarX = scalarC;
+        wdp.scalarYZ = scalarAB;
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC_C; ++j) {
+          wdp.x = Cdata(0,nR_C).getRawPtr();
+          wdp.y = Adata(0,nR_C).getRawPtr();
+          wdp.z = Bdata(0,nR_C).getRawPtr();
+          node->template parallel_for<MVElemMultOp<Scalar> >(0,nR_C,wdp);
+          Cdata += Cstride;
+          Bdata += Bstride;
+        }
       }
     }
 
@@ -1498,17 +1591,17 @@ namespace Kokkos {
       // If both strides are the same as the number of rows,
       // we can just loop over all the data in one loop.
       if (A_stride == numRows && B_stride == numRows) {
-	const size_t numElts = numRows * numCols;
-	for (size_t i = 0; i < numElts; ++i) {
-	  A_raw[i] = B_raw[i];
-	}
+        const size_t numElts = numRows * numCols;
+        for (size_t i = 0; i < numElts; ++i) {
+          A_raw[i] = B_raw[i];
+        }
       } else {
         for (size_t j = 0; j < numCols; ++j) {
-	  Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j*A_stride];
-	  const Scalar* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j*B_stride];
-	  for (size_t i = 0; i < numRows; ++i) {
-	    A_j[i] = B_j[i];
-	  }
+          Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j*A_stride];
+          const Scalar* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j*B_stride];
+          for (size_t i = 0; i < numRows; ++i) {
+            A_j[i] = B_j[i];
+          }
         }
       }
     }
@@ -1528,20 +1621,20 @@ namespace Kokkos {
         std::runtime_error,
         "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Assign(A,B,"
         "whichVectors): The MultiVectors A and B(whichVectors) do not have "
-        "compatible dimensions.  A is " << numRows << " x " << numCols 
-	<< ", but B has " << B.getNumRows() << ", and there are " 
-	<< numColsToCopy << " columns of B to copy into A.");
+        "compatible dimensions.  A is " << numRows << " x " << numCols
+        << ", but B has " << B.getNumRows() << ", and there are "
+        << numColsToCopy << " columns of B to copy into A.");
       Scalar* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValuesNonConst ().getRawPtr ();
       const Scalar* const KOKKOSCLASSIC_RESTRICT B_raw = B.getValues ().getRawPtr ();
 
       for (size_t j = 0; j < numColsToCopy; ++j) {
-	Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
-	const Scalar* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[whichVectors[j] * B_stride];
+        Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
+        const Scalar* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[whichVectors[j] * B_stride];
         // Skip columns that alias one another.
-	if (A_j != B_j) {
-	  for (size_t i = 0; i < numRows; ++i) {
-	    A_j[i] = B_j[i];
-	  }
+        if (A_j != B_j) {
+          for (size_t i = 0; i < numRows; ++i) {
+            A_j[i] = B_j[i];
+          }
         }
       }
     }
@@ -1556,21 +1649,21 @@ namespace Kokkos {
       const size_t nR = A.getNumRows ();
       const size_t nC = A.getNumCols ();
       TEUCHOS_TEST_FOR_EXCEPTION(
-        nC != B.getNumCols() || nR != B.getNumRows(), 
-	std::runtime_error,
+        nC != B.getNumCols() || nR != B.getNumRows(),
+        std::runtime_error,
         "DefaultArithmetic<" << Teuchos::typeName (A) << ">::Dot(A,B,dots): "
-	"A and B must have the same dimensions.");
+        "A and B must have the same dimensions.");
       TEUCHOS_TEST_FOR_EXCEPTION(
-        nC > Teuchos::as<size_t> (dots.size ()), 
-	std::runtime_error,
-	"DefaultArithmetic<" << Teuchos::typeName (A) << ">::Dot(A,B,dots): "
-	"dots must have length as large as number of columns of A and B.");
-      if (nR == 0) { 
-	// "Trivial" (no rows) dot product is zero, since trivial sum
-	// (sum of no terms) is zero.
-	for (size_t j = 0; j < nC; ++j) {
-	  dots[j] = STS::zero ();
-	}
+        nC > Teuchos::as<size_t> (dots.size ()),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A) << ">::Dot(A,B,dots): "
+        "dots must have length as large as number of columns of A and B.");
+      if (nR == 0) {
+        // "Trivial" (no rows) dot product is zero, since trivial sum
+        // (sum of no terms) is zero.
+        for (size_t j = 0; j < nC; ++j) {
+          dots[j] = STS::zero ();
+        }
         return;
       }
       const Scalar* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
@@ -1580,31 +1673,31 @@ namespace Kokkos {
 
       // BLAS' ZDOTC(x,y) is x^* y, so we have to conjugate x if complex.
       if (STS::isComplex) {
-	for (size_t j = 0; j < nC; ++j) {
-	  const Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
-	  const Scalar* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
-	  Scalar dot_j = STS::zero ();
-	  for (size_t i = 0; i < nR; ++i) {
-	    dot_j += STS::conjugate (A_j[i]) * B_j[i];
-	  }
-	  dots[j] = dot_j;
-	}
+        for (size_t j = 0; j < nC; ++j) {
+          const Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
+          const Scalar* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
+          Scalar dot_j = STS::zero ();
+          for (size_t i = 0; i < nR; ++i) {
+            dot_j += STS::conjugate (A_j[i]) * B_j[i];
+          }
+          dots[j] = dot_j;
+        }
       } else { // not complex
-	for (size_t j = 0; j < nC; ++j) {
-	  const Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
-	  const Scalar* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
-	  Scalar dot_j = STS::zero ();
-	  for (size_t i = 0; i < nR; ++i) {
-	    dot_j += A_j[i] * B_j[i];
-	  }
-	  dots[j] = dot_j;
-	}
+        for (size_t j = 0; j < nC; ++j) {
+          const Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
+          const Scalar* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
+          Scalar dot_j = STS::zero ();
+          for (size_t i = 0; i < nR; ++i) {
+            dot_j += A_j[i] * B_j[i];
+          }
+          dots[j] = dot_j;
+        }
       }
     }
 
-    static Scalar 
+    static Scalar
     Dot (const MultiVector<Scalar,SerialNode> &A,
-	 const MultiVector<Scalar,SerialNode> &B)
+         const MultiVector<Scalar,SerialNode> &B)
     {
       typedef Teuchos::ScalarTraits<Scalar> STS;
 
@@ -1612,29 +1705,29 @@ namespace Kokkos {
       const size_t nC = A.getNumCols ();
       TEUCHOS_TEST_FOR_EXCEPTION(
         nC != 1,
-	std::runtime_error,
-	"DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B): "
-	"A must have exactly one column.");
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B): "
+        "A must have exactly one column.");
       TEUCHOS_TEST_FOR_EXCEPTION(
-        B.getNumCols () != 1, 
-	std::runtime_error,
-	"DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B): "
-	"B must have exactly one column.");
-      // "Trivial" (no rows) dot product result is zero, 
+        B.getNumCols () != 1,
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B): "
+        "B must have exactly one column.");
+      // "Trivial" (no rows) dot product result is zero,
       // since trivial sum (sum of no terms) is zero.
       Scalar result = STS::zero ();
       if (nR > 0) {
-	const Scalar* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
-	const Scalar* const KOKKOSCLASSIC_RESTRICT B_raw = B.getValues ().getRawPtr ();
-	if (STS::isComplex) {
-	  for (size_t i = 0; i < nR; ++i) {
-	    result += STS::conjugate (A_raw[i]) * B_raw[i];
-	  }
-	} else { // not complex
-	  for (size_t i = 0; i < nR; ++i) {
-	    result += A_raw[i] * B_raw[i];
-	  }
-	}
+        const Scalar* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
+        const Scalar* const KOKKOSCLASSIC_RESTRICT B_raw = B.getValues ().getRawPtr ();
+        if (STS::isComplex) {
+          for (size_t i = 0; i < nR; ++i) {
+            result += STS::conjugate (A_raw[i]) * B_raw[i];
+          }
+        } else { // not complex
+          for (size_t i = 0; i < nR; ++i) {
+            result += A_raw[i] * B_raw[i];
+          }
+        }
       }
       return result;
     }
@@ -1650,20 +1743,33 @@ namespace Kokkos {
       const size_t A_stride = A.getStride ();
       const size_t B_stride = B.getStride ();
       TEUCHOS_TEST_FOR_EXCEPTION(
-        nC != B.getNumCols() || nR != B.getNumRows(), 
-	std::runtime_error,
-	"DefaultArithmetic<" << Teuchos::typeName (A) 
-	<< ">::GESUM(B,alpha,A,beta): "
-	"A and B must have the same dimensions.");
+        nC != B.getNumCols() || nR != B.getNumRows(),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A)
+        << ">::GESUM(B,alpha,A,beta): "
+        "A and B must have the same dimensions.");
       const Scalar* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
       Scalar* const KOKKOSCLASSIC_RESTRICT B_raw = B.getValuesNonConst ().getRawPtr ();
 
-      for (size_t j = 0; j < nC; ++j) {
-	const Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
-	Scalar* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
-	for (size_t i = 0; i < nR; ++i) {
-	  B_j[i] = alpha * A_j[i] + beta * B_j[i];
-	}	
+      // mfh 07 Mar 2013: Special case for beta = 0, that overwrites
+      // any NaN entries in B.
+      if (beta == Teuchos::ScalarTraits<Scalar>::zero ()) {
+        for (size_t j = 0; j < nC; ++j) {
+          const Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
+          Scalar* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
+          for (size_t i = 0; i < nR; ++i) {
+            B_j[i] = alpha * A_j[i];
+          }
+        }
+      }
+      else {
+        for (size_t j = 0; j < nC; ++j) {
+          const Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
+          Scalar* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
+          for (size_t i = 0; i < nR; ++i) {
+            B_j[i] = alpha * A_j[i] + beta * B_j[i];
+          }
+        }
       }
     }
 
@@ -1697,27 +1803,56 @@ namespace Kokkos {
       rbh.template addConstBuffer<Scalar>(Bdata);
       rbh.template addNonConstBuffer<Scalar>(Cdata);
       rbh.end();
-      GESUMOp3<Scalar> wdp;
-      wdp.alpha = alpha;
-      wdp.beta  = beta;
-      wdp.gamma = gamma;
-      if (Astride == nR && Bstride == nR && Cstride == nR) {
-        // one kernel invocation for whole multivector
-        wdp.z = Cdata(0,nR*nC).getRawPtr();
-        wdp.y = Bdata(0,nR*nC).getRawPtr();
-        wdp.x = Adata(0,nR*nC).getRawPtr();
-        node->template parallel_for<GESUMOp3<Scalar> >(0,nR*nC,wdp);
+
+      // mfh 07 Mar 2013: Special case for gamma = 0, that overwrites
+      // any NaN entries in C.
+      if (gamma == Teuchos::ScalarTraits<Scalar>::zero ()) {
+        GESUMZeroGammaOp3<Scalar> wdp;
+        wdp.alpha = alpha;
+        wdp.beta  = beta;
+        if (Astride == nR && Bstride == nR && Cstride == nR) {
+          // one kernel invocation for whole multivector
+          wdp.z = Cdata(0,nR*nC).getRawPtr();
+          wdp.y = Bdata(0,nR*nC).getRawPtr();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
+          node->template parallel_for<GESUMZeroGammaOp3<Scalar> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (size_t j=0; j<nC; ++j) {
+            wdp.z = Cdata(0,nR).getRawPtr();
+            wdp.y = Bdata(0,nR).getRawPtr();
+            wdp.x = Adata(0,nR).getRawPtr();
+            node->template parallel_for<GESUMZeroGammaOp3<Scalar> >(0,nR,wdp);
+            Adata += Astride;
+            Bdata += Bstride;
+            Cdata += Cstride;
+          }
+        }
       }
       else {
-        // one kernel invocation for each column
-        for (size_t j=0; j<nC; ++j) {
-          wdp.z = Cdata(0,nR).getRawPtr();
-          wdp.y = Bdata(0,nR).getRawPtr();
-          wdp.x = Adata(0,nR).getRawPtr();
-          node->template parallel_for<GESUMOp3<Scalar> >(0,nR,wdp);
-          Adata += Astride;
-          Bdata += Bstride;
-          Cdata += Cstride;
+        GESUMOp3<Scalar> wdp;
+        wdp.alpha = alpha;
+        wdp.beta  = beta;
+        wdp.gamma = gamma;
+        if (Astride == nR && Bstride == nR && Cstride == nR) {
+          // one kernel invocation for whole multivector
+          wdp.z = Cdata(0,nR*nC).getRawPtr();
+          wdp.y = Bdata(0,nR*nC).getRawPtr();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
+          node->template parallel_for<GESUMOp3<Scalar> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (size_t j=0; j<nC; ++j) {
+            wdp.z = Cdata(0,nR).getRawPtr();
+            wdp.y = Bdata(0,nR).getRawPtr();
+            wdp.x = Adata(0,nR).getRawPtr();
+            node->template parallel_for<GESUMOp3<Scalar> >(0,nR,wdp);
+            Adata += Astride;
+            Bdata += Bstride;
+            Cdata += Cstride;
+          }
         }
       }
     }
@@ -1875,9 +2010,9 @@ namespace Kokkos {
       }
     }
 
-    static void 
-    Norm2Squared (const MultiVector<Scalar,SerialNode> &A, 
-		  const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) 
+    static void
+    Norm2Squared (const MultiVector<Scalar,SerialNode> &A,
+                  const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms)
     {
       typedef Teuchos::ScalarTraits<Scalar> STS;
       typedef typename STS::magnitudeType magnitude_type;
@@ -1886,41 +2021,41 @@ namespace Kokkos {
       const size_t nR = A.getNumRows ();
       const size_t nC = A.getNumCols ();
       TEUCHOS_TEST_FOR_EXCEPTION(
-        nC > Teuchos::as<size_t> (norms.size ()), 
-	std::runtime_error,
-	"DefaultArithmetic<" << Teuchos::typeName (A) << ">::Norm2Squared(A, "
-	"norms): norms must be at least as long as number of columns of A.");
-      if (nR == 0) { 
-	// "Trivial" (no rows) norm is zero, since trivial sum (sum of
-	// no terms) is zero.
-	for (size_t j = 0; j < nC; ++j) {
-	  norms[j] = STM::zero ();
-	}
+        nC > Teuchos::as<size_t> (norms.size ()),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A) << ">::Norm2Squared(A, "
+        "norms): norms must be at least as long as number of columns of A.");
+      if (nR == 0) {
+        // "Trivial" (no rows) norm is zero, since trivial sum (sum of
+        // no terms) is zero.
+        for (size_t j = 0; j < nC; ++j) {
+          norms[j] = STM::zero ();
+        }
         return;
       }
       const Scalar* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
       const size_t A_stride = A.getStride ();
 
       if (STS::isComplex) {
-	for (size_t j = 0; j < nC; ++j) {
-	  const Scalar* const A_j = &A_raw[j * A_stride];
-	  magnitude_type norm_j = STM::zero ();
-	  for (size_t i = 0; i < nR; ++i) {
-	    const Scalar A_ij = A_j[i];
-	    norm_j += STS::real (A_ij) * STS::real (A_ij) + 
-	      STS::imag (A_ij) * STS::imag (A_ij);
-	  }
-	  norms[j] = norm_j;
-	}
+        for (size_t j = 0; j < nC; ++j) {
+          const Scalar* const A_j = &A_raw[j * A_stride];
+          magnitude_type norm_j = STM::zero ();
+          for (size_t i = 0; i < nR; ++i) {
+            const Scalar A_ij = A_j[i];
+            norm_j += STS::real (A_ij) * STS::real (A_ij) +
+              STS::imag (A_ij) * STS::imag (A_ij);
+          }
+          norms[j] = norm_j;
+        }
       } else { // not complex
-	for (size_t j = 0; j < nC; ++j) {
-	  const Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
-	  magnitude_type norm_j = STM::zero ();
-	  for (size_t i = 0; i < nR; ++i) {
-	    norm_j += STS::real (A_j[i]) * STS::real (A_j[i]);
-	  }
-	  norms[j] = norm_j;
-	}
+        for (size_t j = 0; j < nC; ++j) {
+          const Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
+          magnitude_type norm_j = STM::zero ();
+          for (size_t i = 0; i < nR; ++i) {
+            norm_j += STS::real (A_j[i]) * STS::real (A_j[i]);
+          }
+          norms[j] = norm_j;
+        }
       }
     }
 
@@ -1934,26 +2069,26 @@ namespace Kokkos {
       const size_t nC = A.getNumCols ();
       TEUCHOS_TEST_FOR_EXCEPTION(
         nC != 1,
-	std::runtime_error,
-	"DefaultArithmetic<" << Teuchos::typeName (A) << ">::Norm2Squared(A): "
-	"A must have exactly one column.");
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A) << ">::Norm2Squared(A): "
+        "A must have exactly one column.");
 
       // "Trivial" (no rows) norm is zero, since trivial sum (sum of
       // no terms) is zero.
       magnitude_type result = STM::zero ();
       if (nR > 0) {
-	const Scalar* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
-	if (STS::isComplex) {
-	  for (size_t i = 0; i < nR; ++i) {
-	    const Scalar A_i = A_raw[i];
-	    result += STS::real (A_i) * STS::real (A_i) + 
-	      STS::imag (A_i) * STS::imag (A_i);
-	  }
-	} else { // not complex
-	  for (size_t i = 0; i < nR; ++i) {
-	    result += STS::real (A_raw[i]) * STS::real (A_raw[i]);
-	  }
-	}
+        const Scalar* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
+        if (STS::isComplex) {
+          for (size_t i = 0; i < nR; ++i) {
+            const Scalar A_i = A_raw[i];
+            result += STS::real (A_i) * STS::real (A_i) +
+              STS::imag (A_i) * STS::imag (A_i);
+          }
+        } else { // not complex
+          for (size_t i = 0; i < nR; ++i) {
+            result += STS::real (A_raw[i]) * STS::real (A_raw[i]);
+          }
+        }
       }
       return result;
     }
@@ -2101,10 +2236,10 @@ namespace Kokkos {
 
       Scalar* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValuesNonConst ().getRawPtr ();
       for (size_t j = 0; j < nC; ++j) {
-	Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
-	for (size_t i = 0; i < nR; ++i) {
-	  A_j[i] *= alpha;
-	}
+        Scalar* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
+        for (size_t i = 0; i < nR; ++i) {
+          A_j[i] *= alpha;
+        }
       }
     }
   };

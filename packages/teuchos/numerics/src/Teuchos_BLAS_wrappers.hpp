@@ -237,16 +237,17 @@ float PREFIX SCNRM2_F77(const int* n, const std::complex<float> x[], const int* 
 #  endif // Whether or not we have the veclib bugfix
 #endif // defined(HAVE_TEUCHOS_BLASFLOAT)
 
-#if defined(HAVE_COMPLEX_BLAS_PROBLEM)
-#if defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
-void PREFIX CDOT_F77(std::complex<float> *ret, const int* n, const std::complex<float> x[], const int* incx, const std::complex<float> y[], const int* incy);
-#elif defined(HAVE_VECLIB_COMPLEX_BLAS)
+#if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
 // no declarations; they're in cblas.h
 #include <vecLib/cblas.h>
-#endif // HAVE_COMPLEX_BLAS_PROBLEM
-#else // no problem
+#elif defined(HAVE_COMPLEX_BLAS_PROBLEM) && defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
+void PREFIX CDOT_F77(std::complex<float> *ret, const int* n, const std::complex<float> x[], const int* incx, const std::complex<float> y[], const int* incy);
+#elif defined(HAVE_TEUCHOS_BLASFLOAT)
 std::complex<float> PREFIX CDOT_F77(const int* n, const std::complex<float> x[], const int* incx, const std::complex<float> y[], const int* incy);
+#else
+// the code is literally in Teuchos_BLAS.cpp
 #endif
+
 void PREFIX CROTG_F77(std::complex<float>* da, std::complex<float>* db, float* c, std::complex<float>* s);
 void PREFIX CROT_F77(const int* n, std::complex<float>* dx, const int* incx, std::complex<float>* dy, const int* incy, float* c, std::complex<float>* s);
 void PREFIX CAXPY_F77(const int* n, const std::complex<float>* alpha, const std::complex<float> x[], const int* incx, std::complex<float> y[], const int* incy);

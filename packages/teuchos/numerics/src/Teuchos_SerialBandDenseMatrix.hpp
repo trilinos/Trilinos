@@ -307,7 +307,7 @@ public:
     A[j][i] will return the same element as A(i,j).
 
     \return Pointer to the ScalarType array at the \c colIndex column ( \c values_+colIndex*stride_ ).
-    \warning The validity of \c colIndex will only be checked if Teuchos is	configured with
+    \warning The validity of \c colIndex will only be checked if Teuchos is     configured with
     --enable-teuchos-abc.
   */
   ScalarType* operator [] (OrdinalType colIndex);
@@ -317,7 +317,7 @@ public:
     A[j][i] will return the same element as A(i,j).
 
     \return Pointer to the ScalarType array at the \c colIndex column ( \c values_+colIndex*stride_ ).
-    \warning The validity of \c colIndex will only be checked if Teuchos is	configured with
+    \warning The validity of \c colIndex will only be checked if Teuchos is     configured with
     --enable-teuchos-abc.
   */
   const ScalarType* operator [] (OrdinalType colIndex) const;
@@ -446,94 +446,144 @@ protected:
 //----------------------------------------------------------------------------------------------------
 
 template<typename OrdinalType, typename ScalarType>
-SerialBandDenseMatrix<OrdinalType, ScalarType>::SerialBandDenseMatrix()
-  : CompObject(), Object("Teuchos::SerialBandDenseMatrix"), numRows_(0), numCols_(0), kl_(0), ku_(0), stride_(0), valuesCopied_(false), values_(0)
+SerialBandDenseMatrix<OrdinalType, ScalarType>::SerialBandDenseMatrix ()
+  : CompObject (),
+    Object ("Teuchos::SerialBandDenseMatrix"),
+    numRows_ (0),
+    numCols_ (0),
+    stride_ (0),
+    kl_ (0),
+    ku_ (0),
+    valuesCopied_ (false),
+    values_ (0)
 {}
 
 template<typename OrdinalType, typename ScalarType>
-SerialBandDenseMatrix<OrdinalType, ScalarType>::SerialBandDenseMatrix(
-  OrdinalType numRows_in, OrdinalType numCols_in, OrdinalType kl_in, OrdinalType ku_in, bool zeroOut
-  )
-  : CompObject(), Object("Teuchos::SerialBandDenseMatrix"), numRows_(numRows_in), numCols_(numCols_in), kl_(kl_in), ku_(ku_in), stride_(kl_in+ku_in+1)
+SerialBandDenseMatrix<OrdinalType, ScalarType>::
+SerialBandDenseMatrix (OrdinalType numRows_in,
+                       OrdinalType numCols_in,
+                       OrdinalType kl_in,
+                       OrdinalType ku_in,
+                       bool zeroOut)
+  : CompObject (),
+    Object ("Teuchos::SerialBandDenseMatrix"),
+    numRows_ (numRows_in),
+    numCols_ (numCols_in),
+    stride_ (kl_in+ku_in+1),
+    kl_ (kl_in),
+    ku_ (ku_in),
+    valuesCopied_ (true),
+    values_ (NULL) // for safety, in case allocation fails below
 {
-  values_ = new ScalarType[stride_*numCols_];
-  if (zeroOut == true)
-    putScalar();
-  valuesCopied_ = true;
+  values_ = new ScalarType[stride_ * numCols_];
+  if (zeroOut) {
+    putScalar ();
+  }
 }
 
 template<typename OrdinalType, typename ScalarType>
-SerialBandDenseMatrix<OrdinalType, ScalarType>::SerialBandDenseMatrix(
-  DataAccess CV, ScalarType* values_in, OrdinalType stride_in, OrdinalType numRows_in,
-  OrdinalType numCols_in, OrdinalType kl_in, OrdinalType ku_in
-  )
-  : CompObject(), Object("Teuchos::SerialBandDenseMatrix"), numRows_(numRows_in), numCols_(numCols_in), kl_(kl_in), ku_(ku_in), stride_(stride_in), valuesCopied_(false), values_(values_in)
+SerialBandDenseMatrix<OrdinalType, ScalarType>::
+SerialBandDenseMatrix (DataAccess CV,
+                       ScalarType* values_in,
+                       OrdinalType stride_in,
+                       OrdinalType numRows_in,
+                       OrdinalType numCols_in,
+                       OrdinalType kl_in,
+                       OrdinalType ku_in)
+  : CompObject (),
+    Object ("Teuchos::SerialBandDenseMatrix"),
+    numRows_ (numRows_in),
+    numCols_ (numCols_in),
+    stride_ (stride_in),
+    kl_ (kl_in),
+    ku_ (ku_in),
+    valuesCopied_ (false),
+    values_ (values_in)
 {
-  if(CV == Copy) {
+  if (CV == Copy) {
     stride_ = kl_+ku_+1;
     values_ = new ScalarType[stride_*numCols_];
-    copyMat(values_in, stride_in, numRows_, numCols_, values_, stride_, 0 );
+    copyMat (values_in, stride_in, numRows_, numCols_, values_, stride_, 0);
     valuesCopied_ = true;
   }
 }
 
 template<typename OrdinalType, typename ScalarType>
-SerialBandDenseMatrix<OrdinalType, ScalarType>::SerialBandDenseMatrix(const SerialBandDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans) : CompObject(), Object("Teuchos::SerialBandDenseMatrix"), numRows_(0), numCols_(0), kl_(0), ku_(0), stride_(0), valuesCopied_(true), values_(0)
+SerialBandDenseMatrix<OrdinalType, ScalarType>::
+SerialBandDenseMatrix (const SerialBandDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans)
+  : CompObject (),
+    Object ("Teuchos::SerialBandDenseMatrix"),
+    numRows_ (0),
+    numCols_ (0),
+    stride_ (0),
+    kl_ (0),
+    ku_ (0),
+    valuesCopied_ (true),
+    values_ (NULL)
 {
-
-  if ( trans == Teuchos::NO_TRANS ) {
-
+  if (trans == NO_TRANS) {
     numRows_ = Source.numRows_;
     numCols_ = Source.numCols_;
     kl_ = Source.kl_;
     ku_ = Source.ku_;
     stride_ = kl_+ku_+1;
     values_ = new ScalarType[stride_*numCols_];
-    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0);
-
-  } else if ( trans == Teuchos::CONJ_TRANS && ScalarTraits<ScalarType>::isComplex ) {
-
-    numRows_ = Source.numCols_;
-    numCols_ = Source.numRows_;
-    kl_ = Source.ku_;
-    ku_ = Source.kl_;
-    stride_ = kl_+ku_+1;
-    values_ = new ScalarType[stride_*numCols_];
-    for (OrdinalType j=0; j<numCols_; j++) {
-      for (OrdinalType i=TEUCHOS_MAX(0,j-ku_); i<=TEUCHOS_MIN(numRows_-1,j+kl_); i++) {
-	values_[j*stride_ + (ku_+i-j)] =
-	  Teuchos::ScalarTraits<ScalarType>::conjugate(Source.values_[i*Source.stride_ + (Source.ku_+j-i)]);
-      }
-    }
-
-  } else {
-
-    numRows_ = Source.numCols_;
-    numCols_ = Source.numRows_;
-    kl_ = Source.ku_;
-    ku_ = Source.kl_;
-    stride_ = kl_+ku_+1;
-    values_ = new ScalarType[stride_*numCols_];
-    for (OrdinalType j=0; j<numCols_; j++) {
-      for (OrdinalType i=TEUCHOS_MAX(0,j-ku_); i<=TEUCHOS_MIN(numRows_-1,j+kl_); i++) {
-	values_[j*stride_ + (ku_+i-j)] = Source.values_[i*Source.stride_ + (Source.ku_+j-i)];
-      }
-    }
-
+    copyMat (Source.values_, Source.stride_, numRows_, numCols_,
+             values_, stride_, 0);
   }
-
+  else if (trans == CONJ_TRANS && ScalarTraits<ScalarType>::isComplex) {
+    numRows_ = Source.numCols_;
+    numCols_ = Source.numRows_;
+    kl_ = Source.ku_;
+    ku_ = Source.kl_;
+    stride_ = kl_+ku_+1;
+    values_ = new ScalarType[stride_*numCols_];
+    for (OrdinalType j = 0; j < numCols_; ++j) {
+      for (OrdinalType i = TEUCHOS_MAX(0,j-ku_);
+           i <= TEUCHOS_MIN(numRows_-1,j+kl_); ++i) {
+        values_[j*stride_ + (ku_+i-j)] =
+          ScalarTraits<ScalarType>::conjugate (Source.values_[i*Source.stride_ + (Source.ku_+j-i)]);
+      }
+    }
+  }
+  else {
+    numRows_ = Source.numCols_;
+    numCols_ = Source.numRows_;
+    kl_ = Source.ku_;
+    ku_ = Source.kl_;
+    stride_ = kl_+ku_+1;
+    values_ = new ScalarType[stride_*numCols_];
+    for (OrdinalType j=0; j<numCols_; j++) {
+      for (OrdinalType i = TEUCHOS_MAX(0,j-ku_);
+           i <= TEUCHOS_MIN(numRows_-1,j+kl_); ++i) {
+        values_[j*stride_ + (ku_+i-j)] = Source.values_[i*Source.stride_ + (Source.ku_+j-i)];
+      }
+    }
+  }
 }
 
 template<typename OrdinalType, typename ScalarType>
-SerialBandDenseMatrix<OrdinalType, ScalarType>::SerialBandDenseMatrix(
-  DataAccess CV, const SerialBandDenseMatrix<OrdinalType, ScalarType> &Source,
-  OrdinalType numRows_in, OrdinalType numCols_in, OrdinalType startCol )
-  : CompObject(), Object("Teuchos::SerialBandDenseMatrix"), numRows_(numRows_in), numCols_(numCols_in), kl_(Source.kl_), ku_(Source.ku_), stride_(Source.stride_), valuesCopied_(false), values_(Source.values_)
+SerialBandDenseMatrix<OrdinalType, ScalarType>::
+SerialBandDenseMatrix (DataAccess CV,
+                       const SerialBandDenseMatrix<OrdinalType, ScalarType> &Source,
+                       OrdinalType numRows_in,
+                       OrdinalType numCols_in,
+                       OrdinalType startCol)
+  : CompObject (),
+    Object ("Teuchos::SerialBandDenseMatrix"),
+    numRows_ (numRows_in),
+    numCols_ (numCols_in),
+    stride_ (Source.stride_),
+    kl_ (Source.kl_),
+    ku_ (Source.ku_),
+    valuesCopied_ (false),
+    values_ (Source.values_)
 {
-  if(CV == Copy) {
-      values_ = new ScalarType[stride_ * numCols_in];
-      copyMat(Source.values_, Source.stride_, numRows_in, numCols_in, values_, stride_, startCol);
-      valuesCopied_ = true;
+  if (CV == Copy) {
+    values_ = new ScalarType[stride_ * numCols_in];
+    copyMat (Source.values_, Source.stride_, numRows_in, numCols_in,
+             values_, stride_, startCol);
+    valuesCopied_ = true;
   } else { // CV = View
     values_ = values_ + (stride_ * startCol);
   }
@@ -600,7 +650,7 @@ int SerialBandDenseMatrix<OrdinalType, ScalarType>::reshape(
   OrdinalType numCols_tmp = TEUCHOS_MIN(numCols_, numCols_in);
   if(values_ != 0) {
     copyMat(values_, stride_, numRows_tmp, numCols_tmp, values_tmp,
-	    kl_in+ku_in+1, 0); // Copy principal submatrix of A to new A
+            kl_in+ku_in+1, 0); // Copy principal submatrix of A to new A
   }
   deleteArrays(); // Get rid of anything that might be already allocated
   numRows_ = numRows_in;
@@ -680,31 +730,31 @@ SerialBandDenseMatrix<OrdinalType, ScalarType>::operator=(
       stride_ = kl_+ku_+1;
       const OrdinalType newsize = stride_ * numCols_;
       if(newsize > 0) {
-	values_ = new ScalarType[newsize];
-	valuesCopied_ = true;
+        values_ = new ScalarType[newsize];
+        valuesCopied_ = true;
       } else {
-	values_ = 0;
+        values_ = 0;
       }
     } else {
       // If we were a copy, we will stay a copy.
       if((Source.numRows_ <= stride_) && (Source.numCols_ == numCols_)) { // we don't need to reallocate
-	numRows_ = Source.numRows_;
-	numCols_ = Source.numCols_;
-	kl_ = Source.kl_;
-	ku_ = Source.ku_;
+        numRows_ = Source.numRows_;
+        numCols_ = Source.numCols_;
+        kl_ = Source.kl_;
+        ku_ = Source.ku_;
       } else {
-	// we need to allocate more space (or less space)
-	deleteArrays();
-	numRows_ = Source.numRows_;
-	numCols_ = Source.numCols_;
-	kl_ = Source.kl_;
-	ku_ = Source.ku_;
-	stride_ = kl_+ku_+1;
-	const OrdinalType newsize = stride_ * numCols_;
-	if(newsize > 0) {
-	  values_ = new ScalarType[newsize];
-	  valuesCopied_ = true;
-	}
+        // we need to allocate more space (or less space)
+        deleteArrays();
+        numRows_ = Source.numRows_;
+        numCols_ = Source.numCols_;
+        kl_ = Source.kl_;
+        ku_ = Source.ku_;
+        stride_ = kl_+ku_+1;
+        const OrdinalType newsize = stride_ * numCols_;
+        if(newsize > 0) {
+          values_ = new ScalarType[newsize];
+          valuesCopied_ = true;
+        }
       }
     }
     copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0);
@@ -874,9 +924,9 @@ bool SerialBandDenseMatrix<OrdinalType, ScalarType>::operator== (const SerialBan
     OrdinalType i, j;
     for(j = 0; j < numCols_; j++) {
       for (i=TEUCHOS_MAX(0,j-ku_); i<=TEUCHOS_MIN(numRows_-1,j+kl_); i++) {
-	if((*this)(i, j) != Operand(i, j)) {
-	  return 0;
-	}
+        if((*this)(i, j) != Operand(i, j)) {
+          return 0;
+        }
       }
     }
   }
@@ -960,7 +1010,7 @@ void SerialBandDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) con
 
     for(OrdinalType i = 0; i < numRows_; i++) {
       for (OrdinalType j=TEUCHOS_MAX(0,i-kl_); j<=TEUCHOS_MIN(numCols_-1,i+ku_); j++) {
-	os << (*this)(i,j) << " ";
+        os << (*this)(i,j) << " ";
       }
       os << std::endl;
     }
@@ -975,13 +1025,13 @@ template<typename OrdinalType, typename ScalarType>
 inline void SerialBandDenseMatrix<OrdinalType, ScalarType>::checkIndex( OrdinalType rowIndex, OrdinalType colIndex ) const {
 
   TEUCHOS_TEST_FOR_EXCEPTION(rowIndex < 0 || rowIndex >= numRows_ ||
-			     rowIndex < TEUCHOS_MAX(0,colIndex-ku_) || rowIndex > TEUCHOS_MIN(numRows_-1,colIndex+kl_),
-			     std::out_of_range,
-			     "SerialBandDenseMatrix<T>::checkIndex: "
-			     "Row index " << rowIndex << " out of range [0, "<< numRows_ << ")");
+                             rowIndex < TEUCHOS_MAX(0,colIndex-ku_) || rowIndex > TEUCHOS_MIN(numRows_-1,colIndex+kl_),
+                             std::out_of_range,
+                             "SerialBandDenseMatrix<T>::checkIndex: "
+                             "Row index " << rowIndex << " out of range [0, "<< numRows_ << ")");
   TEUCHOS_TEST_FOR_EXCEPTION(colIndex < 0 || colIndex >= numCols_, std::out_of_range,
-			     "SerialBandDenseMatrix<T>::checkIndex: "
-			     "Col index " << colIndex << " out of range [0, "<< numCols_ << ")");
+                             "SerialBandDenseMatrix<T>::checkIndex: "
+                             "Col index " << colIndex << " out of range [0, "<< numCols_ << ")");
 
 }
 
@@ -1010,11 +1060,11 @@ void SerialBandDenseMatrix<OrdinalType, ScalarType>::copyMat(
     ptr2 = inputMatrix + (j + startCol) * strideInput + TEUCHOS_MAX(0, ku_-j);
     if (alpha != Teuchos::ScalarTraits<ScalarType>::zero() ) {
       for (i=TEUCHOS_MAX(0,j-ku_); i<=TEUCHOS_MIN(numRows_in-1,j+kl_); i++) {
-	*ptr1++ += alpha*(*ptr2++);
+        *ptr1++ += alpha*(*ptr2++);
       }
     } else {
       for (i=TEUCHOS_MAX(0,j-ku_); i<=TEUCHOS_MIN(numRows_in-1,j+kl_); i++) {
-	*ptr1++ = *ptr2++;
+        *ptr1++ = *ptr2++;
       }
     }
   }

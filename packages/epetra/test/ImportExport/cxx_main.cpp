@@ -518,6 +518,75 @@ int main(int argc, char *argv[])
   }
 
 
+  // Now let's test Importer replacement:  Coalesce to 1 proc...
+  Epetra_CrsMatrix FunMatrix(StandardMatrix);
+  if(Comm.NumProc()!=1) {
+    forierr=0;
+    long long num_global_elements1 = FunMatrix.DomainMap().NumGlobalElements64();
+    long long num_global_elements2 = FunMatrix.DomainMap().MaxAllGID64()- FunMatrix.DomainMap().MinAllGID64()+1;
+    if(num_global_elements1 == num_global_elements2) {
+      // The original domain map is linear.  Let's have fun
+      int NumMyElements = Comm.MyPID()==0 ? num_global_elements1 : 0;
+      if(FunMatrix.DomainMap().GlobalIndicesLongLong()) {
+	Epetra_Map NewMap((long long)-1,NumMyElements,(long long)0,Comm);
+	Epetra_Import NewImport(FunMatrix.ColMap(),NewMap);
+	FunMatrix.ReplaceDomainMapAndImporter(NewMap,&NewImport);
+      }
+      else {
+	Epetra_Map NewMap(-1,NumMyElements,0,Comm);
+	Epetra_Import NewImport(FunMatrix.ColMap(),NewMap);
+	FunMatrix.ReplaceDomainMapAndImporter(NewMap,&NewImport);       
+      }
+
+      // Now let's test the new importer...
+
+      // Fill a random vector on the original map
+      Epetra_Vector OriginalVec(StandardMatrix.DomainMap());
+      Epetra_Vector OriginalY(FunMatrix.RangeMap(),true);
+      OriginalVec.SetSeed(24601);
+      OriginalVec.Random();
+      
+      // Move said random vector to a single proc
+      Epetra_Vector NewVec(FunMatrix.DomainMap(),true);
+      Epetra_Vector NewY(FunMatrix.RangeMap(),true);
+      Epetra_Import ImportOld2New(FunMatrix.DomainMap(),StandardMatrix.DomainMap());
+      NewVec.Import(OriginalVec,ImportOld2New,Add);
+
+      // Test the Importer Copy Constructor
+      Epetra_Vector ColVec1(FunMatrix.ColMap(),true);
+      Epetra_Import ColImport(FunMatrix.ColMap(),FunMatrix.DomainMap());
+      ColVec1.Import(NewVec,ColImport,Add);
+
+      Epetra_Vector ColVec2(FunMatrix.ColMap(),true);
+      Epetra_Import ColImport2(ColImport);
+      ColVec2.Import(NewVec,ColImport2,Add);
+
+      double norm;
+      ColVec1.Update(-1.0,ColVec2,1.0);
+      NewY.Norm2(&norm);
+      if(norm > 1e-12) forierr=-1;
+      if (verbose) {
+	if (forierr==0) cout << "Import Copy Constructor Check OK" << endl << endl;
+	else cout << "Import Copy Constructor Check Failed" << endl << endl;
+      }
+
+      // Test replaceDomainMapAndImporter
+      // Now do two multiplies and compare
+      StandardMatrix.Apply(OriginalVec,OriginalY);
+      FunMatrix.Apply(NewVec,NewY);
+      NewY.Update(-1.0,OriginalY,1.0);
+      NewY.Norm2(&norm);
+      if(norm > 1e-12) forierr=-1;
+      if (verbose) {
+	if (forierr==0) cout << "ReplaceDomainMapAndImporter Check OK" << endl << endl;
+	else cout << "ReplaceDomainMapAndImporter Check Failed" << endl << endl;
+      }
+    }
+  }
+
+
+
+
   // Release all objects
 
   delete [] SourceMyGlobalElements;

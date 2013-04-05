@@ -83,9 +83,10 @@ template < class DataType ,
            class LayoutType ,
            class DeviceType ,
            class ManageType ,
+           class Specialize ,
            class ScalarType >
 struct ReduceOperatorFinalize<
-  View< DataType , LayoutType , DeviceType , ManageType > ,
+  View< DataType , LayoutType , DeviceType , ManageType , Specialize > ,
   ScalarType >
 {
   typedef View< DataType , LayoutType , DeviceType , ManageType > view_type ;

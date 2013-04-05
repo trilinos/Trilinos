@@ -26,13 +26,14 @@
 // ***********************************************************************
 // @HEADER
 
-// System includes
-#include <algorithm>
-
-// Local includes
+// Do the local includes first to make sure that Python.h is included before
+// any other standard headers, cf. <http://docs.python.org/2/c-api/intro.html#includes>.
 #include "PyTrilinos_Util.h"
 #include "PyTrilinos_PythonException.h"
 #include "swigpyrun.h"
+
+// System includes
+#include <algorithm>
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -75,7 +76,7 @@ PyObject * getClassFromModule(char * modName, CONST char * clsName)
     goto fail;
   }
   return cls;
-  
+
   fail:
   Py_XDECREF(cls);
   return NULL;

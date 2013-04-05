@@ -50,8 +50,6 @@
 
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 
-#include <zoltan_cpp.h>
-
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -69,7 +67,7 @@ namespace MueLu {
     @brief Interface to Zoltan2 library.
 
     This interface provides access to partitioning methods in Zoltan2.
-    Currently, it supports the RCB algorithm only.
+    Currently, it supports the MultiJagged algorithm only.
   */
 
   //FIXME: this class should not be templated
@@ -105,6 +103,9 @@ namespace MueLu {
     void Build(Level &level) const;
 
     //@}
+  private:
+
+    std::string getPQParts(GO numProcs, size_t dim) const;
 
   };  //class Zoltan2Interface
 

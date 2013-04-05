@@ -15,13 +15,6 @@ SET(KokkosClassic_VERSION "1.3d")
 
 TRIBITS_ADD_DEBUG_OPTION()
 
-# TRIBITS_ADD_OPTION_AND_DEFINE( 
-#   KokkosClassic_ENABLE_DEFAULT_NODE
-#   HAVE_KOKKOSCLASSIC_DEFAULT_NODE
-#   "Kokkos default node: SerialNode, OpenMPNode, TBBNode, TPINode, ThrustGPUNode"
-#   "SerialNode"
-#   )
-
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   KokkosClassic_ENABLE_OpenMP
   HAVE_KOKKOSCLASSIC_OPENMP

@@ -25,11 +25,11 @@ INC_PATH="${INC_PATH} -I. -I../src"
 if [ -n "${NVCC}" ] ;
 then
 
-  echo ${NVCC} ${INC_PATH} ${NVCC_SOURCES}
+  NVCC_SOURCES="${NVCC_SOURCES} TestArrayExp.cpp"
+
   echo ${NVCC} ${INC_PATH} -DTEST_KOKKOSARRAY_SPACE=KokkosArray::CudaSpace TestArrayExp.cpp
 
-  ${NVCC} ${INC_PATH} ${NVCC_SOURCES}
-  ${NVCC} ${INC_PATH} -DTEST_KOKKOSARRAY_SPACE=KokkosArray::CudaSpace TestArrayExp.cpp
+  ${NVCC} ${INC_PATH} -DTEST_KOKKOSARRAY_SPACE=KokkosArray::CudaSpace ${NVCC_SOURCES}
 
 else
 

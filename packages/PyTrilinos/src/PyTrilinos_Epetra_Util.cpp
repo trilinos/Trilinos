@@ -26,6 +26,18 @@
 // ***********************************************************************
 // @HEADER
 
+// Put local includes first to make sure that Python.h is the first included
+// system header. This avoids compiler warnings about redefined variables
+// such as _POSIX_C_SOURCE.
+// Local includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_Util.h"
+#include "PyTrilinos_Epetra_Util.h"
+#include "PyTrilinos_PythonException.h"
+#include "swigpyrun.h"
+#include "Epetra_NumPyMultiVector.h"
+#include "Epetra_NumPyVector.h"
+
 // System includes
 #include <algorithm>
 
@@ -44,15 +56,6 @@
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_JadMatrix.h"
-
-// Local includes
-#include "PyTrilinos_config.h"
-#include "PyTrilinos_Util.h"
-#include "PyTrilinos_Epetra_Util.h"
-#include "PyTrilinos_PythonException.h"
-#include "swigpyrun.h"
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPyVector.h"
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -426,7 +429,7 @@ PyTrilinos::getEpetraVectorObjectAttr(PyObject * object, CONST char * name)
     Py_DECREF(value);
     throw PythonException();
   }
-  Teuchos::RCP< Epetra_Vector > result = 
+  Teuchos::RCP< Epetra_Vector > result =
     *reinterpret_cast< Teuchos::RCP< Epetra_Vector > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< Epetra_Vector > * >(argp);
@@ -449,7 +452,7 @@ PyTrilinos::getConstEpetraVectorObjectAttr(PyObject * object, CONST char * name)
     Py_DECREF(value);
     throw PythonException();
   }
-  Teuchos::RCP< const Epetra_Vector > result = 
+  Teuchos::RCP< const Epetra_Vector > result =
     *reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(argp);
@@ -475,7 +478,7 @@ PyTrilinos::getConstEpetraVectorItemObjectAttr(PyObject * object, CONST char * n
     Py_DECREF(item);
     throw PythonException();
   }
-  Teuchos::RCP< const Epetra_Vector > result = 
+  Teuchos::RCP< const Epetra_Vector > result =
     *reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(argp);
@@ -498,7 +501,7 @@ PyTrilinos::getEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name)
     Py_DECREF(value);
     throw PythonException();
   }
-  Teuchos::RCP<Epetra_MultiVector > result = 
+  Teuchos::RCP<Epetra_MultiVector > result =
     *reinterpret_cast< Teuchos::RCP< Epetra_MultiVector > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< Epetra_MultiVector > * >(argp);
@@ -521,7 +524,7 @@ PyTrilinos::getConstEpetraMultiVectorObjectAttr(PyObject * object, CONST char * 
     Py_DECREF(value);
     throw PythonException();
   }
-  Teuchos::RCP< const Epetra_MultiVector > result = 
+  Teuchos::RCP< const Epetra_MultiVector > result =
     *reinterpret_cast< Teuchos::RCP< const Epetra_MultiVector > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< const Epetra_MultiVector > * >(argp);
@@ -544,7 +547,7 @@ PyTrilinos::getEpetraOperatorObjectAttr(PyObject * object, CONST char * name)
     Py_DECREF(value);
     throw PythonException();
   }
-  Teuchos::RCP<Epetra_Operator > result = 
+  Teuchos::RCP<Epetra_Operator > result =
     *reinterpret_cast< Teuchos::RCP< Epetra_Operator > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< Epetra_Operator > * >(argp);

@@ -50,8 +50,7 @@
 #include <KokkosArray_Array.hpp>
 
 #include <impl/KokkosArray_ArrayAnalyzeShape.hpp>
-#include <impl/KokkosArray_ArrayViewOperRight.hpp>
-#include <impl/KokkosArray_ArrayViewOperLeft.hpp>
+#include <impl/KokkosArray_ArrayViewDefault.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -203,6 +202,7 @@ int testdyn< TEST_KOKKOSARRAY_SPACE >()
 
   for ( unsigned i = 0 ; i < 10 ; ++i ) a[i] = i + 1 ;
 
+  std::cout << a << std::endl ;
   std::cout << -a << std::endl ;
   std::cout << a + b << std::endl ;
   std::cout << b - a << std::endl ;
@@ -340,10 +340,10 @@ int test_functor< TEST_KOKKOSARRAY_SPACE >()
   std::cout << "  distance( x(0)[0] , x(0)[last] ) = "
             << (int)( & x(0)[Count-1] - & x(0)[0] )
             << std::endl
-            << "  x.shape() = { " << x.shape().Stride
-            << " : " << x.shape().N0 
+            << "  x.shape() ="
+            << " { " << x.shape().N0
             << " , " << x.shape().N1
-            << std::endl ;
+            << " }" <<" }" <<  std::endl ;
 
   if ( & x(0)[0] != & x(0,0) ) {
     std::cout << "  FAILED & x(0)[0] != & x(0,0) : "

@@ -9,8 +9,7 @@
 #include <KokkosArray_Cuda.hpp>
 #include <KokkosArray_Array.hpp>
 #include <impl/KokkosArray_ArrayAnalyzeShape.hpp>
-#include <impl/KokkosArray_ArrayViewOperLeft.hpp>
-#include <impl/KokkosArray_ArrayViewOperRight.hpp>
+#include <impl/KokkosArray_ArrayViewDefault.hpp>
 #include <impl/KokkosArray_Timer.hpp>
 
 #include <TestHexGrad.hpp>

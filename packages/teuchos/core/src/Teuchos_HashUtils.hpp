@@ -113,6 +113,14 @@ namespace Teuchos
       return (int) x;
     }
 
+  /** \relates HashUtils  
+      \brief Get the hash code of a long 
+  */
+  template <> inline int hashCode(const long& x)
+    {
+      return (int) x;
+    }
+
   /** \relates HashUtils 
       \brief Get the hash code of a std::string 
   */

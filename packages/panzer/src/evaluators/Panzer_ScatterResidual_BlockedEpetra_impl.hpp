@@ -193,8 +193,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   // RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
-   RCP<const BLOC> blockedContainer = blockedContainer_; // rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
+   RCP<const BLOC> blockedContainer = blockedContainer_;
 
    RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f(),true);
 
@@ -346,7 +345,6 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   // RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
    RCP<const BLOC> blockedContainer = blockedContainer_;
 
    RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f());

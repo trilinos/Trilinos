@@ -1,42 +1,34 @@
 include(Join)
 
 # Tpetra ETI type fields
-SET(Tpetra_ETI_FIELDS "SIN|SOUT|CS|DS|S|LO|GO|N")
+SET(Tpetra_ETI_FIELDS "SIN|SOUT|S|LO|GO|N|CS|DS")
 
 # Exclude all of the types that CUDA/Thrust doesn't support
 ASSERT_DEFINED(Tpetra_ENABLE_Thrust)
 IF(Tpetra_ENABLE_Thrust)
-  # no cross scalar support for CUDA
-  FOREACH(ds ${Tpetra_ETI_SCALARS})
-    FOREACH(cs ${Tpetra_ETI_SCALARS})
-      IF(NOT "${cs}" STREQUAL "${ds}")
-        TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "CS=${cs}" "DS=${ds}" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-      ENDIF()
-    ENDFOREACH()
-  ENDFOREACH()
   # no dd_real/qd_real support for CUDA, nor int/complex even via Cusp :( 
-  SET(CUDA_UNSUPPORTED_SCALARS "long|int|dd_real|qd_real|std::complex<double>|std::complex<float>")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "CS=${CUDA_UNSUPPORTED_SCALARS}" "DS=.*"    "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "CS=.*" "DS=${CUDA_UNSUPPORTED_SCALARS}"    "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "S=${CUDA_UNSUPPORTED_SCALARS}"             "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "SIN=.*" "SOUT=${CUDA_UNSUPPORTED_SCALARS}" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "SIN=${CUDA_UNSUPPORTED_SCALARS}" "SOUT=.*" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
+  SET(CUDA_UNSUPPORTED_SCALARS "long|unsigned int|dd_real|qd_real|std::complex<double>|std::complex<float>")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "S=${CUDA_UNSUPPORTED_SCALARS}"                 "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "SIN=.*" "SOUT=${CUDA_UNSUPPORTED_SCALARS}|int" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "SIN=${CUDA_UNSUPPORTED_SCALARS}|int" "SOUT=.*" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
+  # do int separately, because we will instantiate vector in it
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET_INT "S=int"                                         "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
   #
   ASSERT_DEFINED(KokkosClassic_ENABLE_CUDA_DOUBLE)
   IF(NOT KokkosClassic_ENABLE_CUDA_DOUBLE)
-    APPEND_SET(Tpetra_ETI_EXCLUDE_SET "CS=double DS=double S=double SIN=double SOUT=double LO=.* GO=.* N=Kokkos::ThrustGPUNode")
+    APPEND_SET(Tpetra_ETI_EXCLUDE_SET "S=double SIN=double SOUT=double LO=.* GO=.* N=Kokkos::ThrustGPUNode")
   ENDIF()
   #
   ASSERT_DEFINED(KokkosClassic_ENABLE_CUDA_FLOAT)
   IF(NOT KokkosClassic_ENABLE_CUDA_FLOAT)
-    APPEND_SET(Tpetra_ETI_EXCLUDE_SET "CS=float DS=float S=float SIN=float SOUT=float LO=.* GO=.* N=Kokkos::ThrustGPUNode")
+    APPEND_SET(Tpetra_ETI_EXCLUDE_SET "S=float SIN=float SOUT=float LO=.* GO=.* N=Kokkos::ThrustGPUNode")
   ENDIF()
 ENDIF()
 
 ASSERT_DEFINED(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
 IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
   MESSAGE(STATUS "User/Downstream ETI set: ${Tpetra_ETI_LIBRARYSET}")
-  MESSAGE(STATUS "Excluded instantiations: ${Tpetra_ETI_EXCLUDE_SET}")
+  MESSAGE(STATUS "Excluded instantiations: ${Tpetra_ETI_EXCLUDE_SET}:${Tpetra_ETI_EXCLUDE_SET_INT}")
   MESSAGE(STATUS "Full coverage explicit instantiation for scalars:         ${Tpetra_ETI_SCALARS}")
   MESSAGE(STATUS "Full coverage explicit instantiation for global ordinals: ${Tpetra_ETI_GORDS}")
   MESSAGE(STATUS "Full coverage explicit instantiation for local ordinals:  ${Tpetra_ETI_LORDS}")
@@ -51,18 +43,7 @@ IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
   JOIN(Tpetra_ETI_LORDS   "|" FALSE ${Tpetra_ETI_LORDS}  )
   JOIN(Tpetra_ETI_GORDS   "|" FALSE ${Tpetra_ETI_GORDS}  )
   JOIN(Tpetra_ETI_NODES   "|" FALSE ${Tpetra_ETI_NODES}  )
-  FOREACH(ds ${Tpetra_ETI_SCALARS})
-    FOREACH(cs ${Tpetra_ETI_SCALARS})
-      IF(NOT "${cs}" STREQUAL "${ds}")
-        TRIBITS_ETI_TYPE_EXPANSION(DualScalarInsts   "CS=${cs}" "DS=${ds}" 
-                                                     "LO=${Tpetra_ETI_LORDS}" "GO=${Tpetra_ETI_GORDS}" 
-                                                     "N=${Tpetra_ETI_NODES}")
-      ENDIF()
-    ENDFOREACH()
-  ENDFOREACH()
   JOIN(Tpetra_ETI_SCALARS "|" FALSE ${Tpetra_ETI_SCALARS})
-  # ogb: no default support for dual scalar instantiations at this time
-  #TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra ${DualScalarInsts})
   # assemble single scalar instantiations
   TRIBITS_ETI_TYPE_EXPANSION(SingleScalarInsts   "S=${Tpetra_ETI_SCALARS}" "N=${Tpetra_ETI_NODES}"
                                                  "LO=${Tpetra_ETI_LORDS}" "GO=${Tpetra_ETI_GORDS}")
@@ -86,7 +67,12 @@ ENDIF()
 
 TRIBITS_ETI_GENERATE_MACROS(
     "${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" 
-    "${Tpetra_ETI_EXCLUDE_SET}"  
+    "${Tpetra_ETI_EXCLUDE_SET}"
+    list_of_manglings eti_typedefs
+    "TPETRA_INSTANTIATE_VECTOR(S,LO,GO,N)"            TPETRA_ETIMACRO_VECTOR)
+TRIBITS_ETI_GENERATE_MACROS(
+    "${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" 
+    "${Tpetra_ETI_EXCLUDE_SET};${Tpetra_ETI_EXCLUDE_SET_INT}"  
     list_of_manglings eti_typedefs
     "TPETRA_INSTANTIATE_SLGN(S,LO,GO,N)"            TPETRA_ETIMACRO_SLGN 
     "TPETRA_INSTANTIATE_LGN(LO,GO,N)"               TPETRA_ETIMACRO_LGN
@@ -108,6 +94,14 @@ TRIBITS_ETI_GENERATE_MACROS(
     "TPETRA_INSTANTIATE_TSLGN_NOGPU(CS,DS,LO,GO,N)"       TPETRA_ETIMACRO_TSLGN_NOGPU
     "TPETRA_INSTANTIATE_TSLG_NOGPU(CS,DS,LO,GO)"          TPETRA_ETIMACRO_TSLG_NOGPU
     "TPETRA_INSTANTIATE_CONVERT_NOGPU(SOUT,SIN,LO,GO,N)"  TPETRA_ETIMACRO_CONVERT_NOGPU)
+STRING(REPLACE "S="  "P=" ScalarToPacketSet "${Tpetra_ETI_LIBRARYSET}")
+STRING(REGEX REPLACE "GO=([^{ ]+)" "GO=\\1 P=\\1" GlobalToPacketSet1 "${Tpetra_ETI_LIBRARYSET}")
+STRING(REGEX REPLACE "GO={([^}]+)}" "GO={\\1} P={\\1}" GlobalToPacketSet2 "${Tpetra_ETI_LIBRARYSET}")
+TRIBITS_ETI_GENERATE_MACROS(
+    "${Tpetra_ETI_FIELDS}|P" "${ScalarToPacketSet};${GlobalToPacketSet1};${GlobalToPacketSet2}" 
+    "${Tpetra_ETI_EXCLUDE_SET}"  
+    list_of_manglings eti_typedefs
+    "TPETRA_INSTANTIATE_PLGN(P,LO,GO,N)"            TPETRA_ETIMACRO_PLGN)
 
 # testing macros
 TRIBITS_ETI_GENERATE_MACROS(

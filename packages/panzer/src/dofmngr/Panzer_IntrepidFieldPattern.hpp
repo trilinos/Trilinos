@@ -109,6 +109,15 @@ public:
    static void getSubcellNodes(const shards::CellTopology & cellTopo,unsigned dim,unsigned subCell,
                                std::vector<unsigned> & nodes);
 
+   /** \brief Does this field pattern support interpolatory coordinates? 
+     *
+     * If this method returns true then <code>getInterpolatoryCoordinates</code> will
+     * succeed, otherwise it will throw.
+     *
+     * \returns True if this pattern supports interpolatory coordinates.
+     */
+   bool supportsInterpolatoryCoordinates() const;
+
    /** Get the local coordinates for this field. This is independent of element
      * locations.
      *

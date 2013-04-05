@@ -46,6 +46,7 @@
 #include <map>
 #include <vector>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Tuple.hpp>
 #include "Tpetra_ConfigDefs.hpp"
@@ -410,12 +411,13 @@ namespace {
       // Test the all-in-one import and fill complete nonmember
       // constructor.  The returned matrix should also be diagonal and
       // should equal tgt_mat.
+      Teuchos::ParameterList dummy;
       typedef CrsMatrix<Scalar, Ordinal> crs_type;
       RCP<crs_type> A_tgt2 = 
         Tpetra::importAndFillCompleteCrsMatrix<crs_type> (src_mat, importer, 
                                                           Teuchos::null, 
                                                           Teuchos::null,
-                                                          crsMatPlist);
+                                                          rcp(&dummy,false));
 
       // Make sure that A_tgt2's row Map is the same as tgt_map, and
       // is also the same as the Import's targetMap.  They should have
@@ -552,6 +554,369 @@ namespace {
 
 
 
+// All the fused Import/export test stuff
+// ===============================================================================
+template <class MatrixType, class ImportType>
+void build_matrix_unfused_import(const MatrixType & SourceMatrix, ImportType & RowImporter, RCP<MatrixType> & A){
+  A->doImport(SourceMatrix, RowImporter, Tpetra::INSERT);
+  A->fillComplete(SourceMatrix.getDomainMap(), SourceMatrix.getRangeMap()); 
+}
+
+// ===============================================================================
+template <class CrsMatrixType>
+double test_with_matvec(const CrsMatrixType &A, const CrsMatrixType &B){
+  typedef typename CrsMatrixType::local_ordinal_type LO;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
+  typedef typename CrsMatrixType::scalar_type Scalar;
+  typedef typename CrsMatrixType::node_type Node;
+
+  typedef Tpetra::Map<LO,GO, Node> map_type;
+  typedef Tpetra::Vector<Scalar, LO, GO, Node> vector_type;
+  typedef Tpetra::Import<LO, GO, Node> import_type;
+
+  RCP<const map_type>  Xamap  = A.getDomainMap();
+  RCP<const map_type>  Yamap  = A.getRangeMap();
+  RCP<const map_type>  Xbmap  = B.getDomainMap();
+  RCP<const map_type>  Ybmap  = B.getRangeMap();
+
+  vector_type Xa(Xamap), Xb(Xbmap), Ya(Yamap), Yb(Ybmap), Diff(Yamap);
+
+  Teuchos::ScalarTraits< Scalar >::seedrandom(24601);
+  Xa.randomize();
+
+  // Handle domain map change
+  if(!Xamap->isSameAs(*Xbmap)) {
+    import_type Ximport(Xamap,Xbmap);
+    Xb.doImport(Xa,Ximport,Tpetra::INSERT);
+  }
+  else {
+    Xb=Xa;
+  }
+  
+  // Do the multiplies
+  A.apply(Xa,Ya);
+  B.apply(Xb,Yb);
+
+  // Handle Rangemap change
+  if(!Yamap->isSameAs(*Ybmap)) {
+    import_type Yimport(Ybmap,Yamap);
+    Diff.doImport(Yb,Yimport,Tpetra::INSERT);
+  }
+  else {
+    Diff=Yb;
+  }
+
+  // Check solution
+  Diff.update(-1.0,Ya,1.0);
+  Teuchos::Array< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > norms(1);
+  Diff.norm2(norms);
+
+  return Teuchos::as<double>(norms[0]);
+}
+
+
+// ===============================================================================
+template <class CrsMatrixType, class map_type>
+double test_with_matvec_reduced_maps(const CrsMatrixType &A, const CrsMatrixType &B, const map_type & Bfullmap){
+  typedef typename CrsMatrixType::local_ordinal_type LO;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
+  typedef typename CrsMatrixType::scalar_type Scalar;
+  typedef typename CrsMatrixType::node_type Node;
+  typedef Tpetra::Vector<Scalar, LO, GO, Node> vector_type;
+  typedef Tpetra::Import<LO, GO, Node> import_type;
+
+
+  RCP<const map_type>  Amap  = A.getDomainMap();
+  vector_type Xa(Amap), Ya(Amap), Diff(Amap);
+
+  RCP<const map_type> Bmap  = Bfullmap.getNodeNumElements() > 0 ? B.getDomainMap() : Teuchos::null;
+  RCP<const vector_type> Xb = !Bmap.is_null() ? rcp(new vector_type(Bmap)) : Teuchos::null;
+  RCP<vector_type> Yb       = !Bmap.is_null() ? rcp(new vector_type(Bmap)) : Teuchos::null;
+
+  Teuchos::ArrayView<const Scalar> Xbview, Ybview;
+  if(!Xb.is_null() && Xb->getLocalLength()) Xbview = Xb->get1dView()(); // ain't that a little freaky?
+  if(!Yb.is_null() && Yb->getLocalLength()) Ybview = Yb->get1dView()();
+
+  vector_type Xb_alias(rcp(&Bfullmap,false), Xbview);  
+  vector_type Yb_alias(rcp(&Bfullmap,false), Ybview);
+
+  import_type Ximport(Amap,rcp(&Bfullmap,false));
+
+  // Set the input vector
+  Teuchos::ScalarTraits< Scalar >::seedrandom(24601);
+  Xa.randomize();
+  Xb_alias.doImport(Xa,Ximport,Tpetra::INSERT);
+  
+  // Do the multiplies
+  A.apply(Xa,Ya);
+  if(!Bmap.is_null()) B.apply(*Xb,*Yb);
+  
+  // Check solution
+  import_type Yimport(rcp(&Bfullmap,false),Amap);
+  Diff.doImport(Yb_alias,Yimport,Tpetra::INSERT);
+  Diff.update(-1.0,Ya,1.0);
+  Teuchos::Array< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > norms(1);
+  Diff.norm2(norms);
+
+  return Teuchos::as<double>(norms[0]);
+}
+
+
+// ===============================================================================
+template<class CrsMatrixType>
+void build_test_matrix(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType> & A){
+  typedef typename CrsMatrixType::local_ordinal_type LO;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
+  typedef typename CrsMatrixType::scalar_type Scalar;
+  typedef typename CrsMatrixType::node_type Node;
+  
+  typedef Tpetra::Map<LO,GO, Node> map_type;
+  int NumProc = Comm->getSize();
+  int MyPID   = Comm->getRank();
+
+  // Case 1: Tridiagonal
+  LO NumMyEquations = 100;
+
+  GO NumGlobalEquations = (NumMyEquations * NumProc) + (NumProc < 3 ? NumProc : 3);
+  if(MyPID < 3)  NumMyEquations++;
+    
+  // Construct a Map that puts approximately the same Number of equations on each processor
+  RCP<const map_type > MyMap = rcp(new map_type(NumGlobalEquations, NumMyEquations, 0, Comm));
+    
+  // Create the matrix
+  A = rcp(new CrsMatrixType(MyMap,0));
+    
+  // Add  rows one-at-a-time
+  // Need some vectors to help
+  // Off diagonal Values will always be -1
+  Teuchos::Array<Scalar> Values(3);
+  Values[0] = -1.0; Values[1] = -1.0;
+
+  Teuchos::Array<GO> Indices(2);
+  size_t NumEntries=1;
+
+  for (LO i = 0; i < NumMyEquations; i++) {
+    GO GID = MyMap->getGlobalElement(i);
+    if(GID == 0){
+      Indices[0] = 1;
+      NumEntries = 1;
+    }
+    else if (GID == NumGlobalEquations-1) {
+      Indices[0] = NumGlobalEquations-2;
+      NumEntries = 1;
+    }
+    else {
+      Indices[0] = GID-1;
+      Indices[1] = GID+1;
+      NumEntries = 2;
+    }
+    A->insertGlobalValues(GID,Indices.view(0,NumEntries),Values.view(0,NumEntries));
+    
+    Indices[0]=GID; Values[0]=2.0;
+    A->insertGlobalValues(GID,Indices.view(0,1), Values.view(0,1));
+  }
+    
+  A->fillComplete();
+}
+
+
+
+ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar )  {
+   RCP<const Comm<int> > Comm = getDefaultComm();
+   typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal> CrsMatrixType;
+   typedef Tpetra::Map<Ordinal,Ordinal> MapType;
+   typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
+   typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
+   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MagType;
+
+   RCP<CrsMatrixType> A, B, C;
+   RCP<MapType> Map1, Map2;
+   RCP<ImportType> Import1;
+   RCP<ExportType> Export1;
+   int MyPID = Comm->getRank();
+   double diff;
+   int total_err=0;
+   MagType diff_tol = 1e4*Teuchos::ScalarTraits<Scalar>::eps();
+
+   Ordinal INVALID = Teuchos::OrdinalTraits<Ordinal>::invalid();
+   build_test_matrix<CrsMatrixType>(Comm,A); 
+   /////////////////////////////////////////////////////////
+   // Test #1: Tridiagonal Matrix; Migrate to Proc 0
+   /////////////////////////////////////////////////////////
+   {
+     global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+
+     // New map with all on Proc1    
+     if(MyPID==0) Map1 = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
+     else Map1 = rcp(new MapType(num_global,(size_t)0,0,Comm));
+     
+     // Execute fused import
+     Import1 = rcp(new ImportType(A->getRowMap(),Map1));
+     B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1);
+     diff=test_with_matvec<CrsMatrixType>(*A,*B);
+     if(diff > diff_tol) {
+       if(MyPID==0) cout<<"FusedImport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
+       total_err--;
+     }
+       
+     // Execute fused export
+     Export1 = rcp(new ExportType(A->getRowMap(),Map1));
+     B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1);
+     diff=test_with_matvec<CrsMatrixType>(*A,*B);
+     if(diff > diff_tol) {
+       if(MyPID==0) cout<<"FusedExport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
+       total_err--;
+     }
+   }
+
+   /////////////////////////////////////////////////////////
+   // Test #2: Tridiagonal Matrix; Locally Reversed Map
+   /////////////////////////////////////////////////////////
+   {
+     size_t num_local = A->getRowMap()->getNodeNumElements();
+
+     Teuchos::Array<Ordinal> MyGIDs(num_local);    
+     for(size_t i=0; i<num_local; i++)
+       MyGIDs[i] = A->getRowMap()->getGlobalElement(num_local-i-1);
+     
+     Map1 = rcp(new MapType(INVALID,MyGIDs(),0,Comm));
+
+     // Execute fused import
+     Import1 = rcp(new ImportType(A->getRowMap(),Map1));
+     B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1);
+     diff=test_with_matvec<CrsMatrixType>(*A,*B);
+     if(diff > diff_tol) {
+       if(MyPID==0) cout<<"FusedImport: Test #2 FAILED with norm diff = "<<diff<<"."<<endl;
+       total_err--;
+     }
+       
+     // Execute fused export
+     Export1 = rcp(new ExportType(A->getRowMap(),Map1));
+     B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1);
+     diff=test_with_matvec<CrsMatrixType>(*A,*B);
+     if(diff > diff_tol) {
+       if(MyPID==0) cout<<"FusedExport: Test #2 FAILED with norm diff = "<<diff<<"."<<endl;
+       total_err--;
+     }
+   }
+
+   /////////////////////////////////////////////////////////
+   // Test #3: Tridiagonal Matrix; Globally Reversed Map
+   /////////////////////////////////////////////////////////
+
+   // Skipped.
+
+
+   /////////////////////////////////////////////////////////
+   // Test #4: Tridiagonal Matrix; MMM style halo import
+   /////////////////////////////////////////////////////////
+   {
+     // Assume we always own the diagonal
+     size_t num_local = A->getNodeNumCols()-A->getNodeNumRows();
+     Teuchos::Array<Ordinal> MyGIDs(num_local);
+     
+     size_t idx=0;
+     for(Ordinal i=0; (size_t)i<A->getNodeNumCols(); i++)
+       if(A->getRowMap()->getLocalElement(A->getColMap()->getGlobalElement(i)) == INVALID){
+	 MyGIDs[idx] = A->getColMap()->getGlobalElement(i);
+	 idx++;
+       }
+     
+     // New map & importer
+     Map1=rcp(new MapType(INVALID,MyGIDs.view(0,idx),0,Comm));
+     Import1 = rcp(new ImportType(A->getRowMap(),Map1));
+     
+     // Build unfused matrix to compare
+     C = rcp(new CrsMatrixType(Map1,0));
+     build_matrix_unfused_import<CrsMatrixType,ImportType>(*A,*Import1,C);
+     
+     // Execute fused import
+     B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1);
+     diff=test_with_matvec<CrsMatrixType>(*B,*C);
+     if(diff > diff_tol) {
+       if(MyPID==0) cout<<"FusedImport: Test #4 FAILED with norm diff = "<<diff<<"."<<endl;
+       total_err--;
+     }
+     
+     // Execute fused export
+     Export1 = rcp(new ExportType(A->getRowMap(),Map1));
+     B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1);
+     diff=test_with_matvec<CrsMatrixType>(*B,*C);
+     if(diff > diff_tol) {
+       if(MyPID==0) cout<<"FusedExport: Test #4 FAILED with norm diff = "<<diff<<"."<<endl;
+       total_err--;
+     }
+   }
+   
+  /////////////////////////////////////////////////////////
+  // Test 5: Tridiagonal Matrix; Migrate to Proc 0, Replace Maps
+  /////////////////////////////////////////////////////////
+  {
+    global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+
+    // New map with all on Proc1    
+    if(MyPID==0) Map1 = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
+    else Map1 = rcp(new MapType(num_global,(size_t)0,0,Comm));
+    
+    // Execute fused import
+    Import1 = rcp(new ImportType(A->getRowMap(),Map1));
+    B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1,Map1,Map1);
+    diff=test_with_matvec<CrsMatrixType>(*A,*B);
+    if(diff > diff_tol) {
+      if(MyPID==0) cout<<"FusedImport: Test #5 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+    
+    // Execute fused export
+    Export1 = rcp(new ExportType(A->getRowMap(),Map1));
+    B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1,Map1,Map1);
+    diff=test_with_matvec<CrsMatrixType>(*A,*B);
+    if(diff > diff_tol) {
+      if(MyPID==0) cout<<"FusedExport: Test #5 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+  }
+
+  /////////////////////////////////////////////////////////
+  // Test 6: Tridiagonal Matrix; Migrate to Proc 0, Replace Comm
+  /////////////////////////////////////////////////////////
+  {
+    global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+    
+    // New map with all on Proc1    
+    if(MyPID==0) Map1 = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
+    else Map1 = rcp(new MapType(num_global,(size_t)0,0,Comm));
+
+    // Parameters
+    Teuchos::ParameterList params;
+    params.set("Restrict Communicator",true);
+
+    // Execute fused import constructor
+    Import1 = rcp(new ImportType(A->getRowMap(),Map1));
+    B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1,Map1,Map1,rcp(&params,false));
+
+    diff=test_with_matvec_reduced_maps<CrsMatrixType,MapType>(*A,*B,*Map1);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedImport: Test #6 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+
+    // Execute fused export constructor
+    Export1 = rcp(new ExportType(A->getRowMap(),Map1));
+    B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1,Map1,Map1,rcp(&params,false));
+
+    diff=test_with_matvec_reduced_maps<CrsMatrixType,MapType>(*A,*B,*Map1);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedImport: Test #6 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+
+  }
+
+
+}
+
+
   //
   // INSTANTIATIONS
   //
@@ -560,7 +925,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsGraphImportExport, doImport, ORDINAL )
 
 #   define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrixImportExport, doImport, ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrixImportExport, doImport, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( FusedImportExport, doImport, ORDINAL, SCALAR )
 
   // test CrsGraph for <int,int,DefaultNode>
   // if explicit instantiation is enabled, this configuration is always built

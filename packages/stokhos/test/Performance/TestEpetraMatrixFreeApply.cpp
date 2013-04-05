@@ -112,10 +112,17 @@ test_original_matrix_free_epetra(
    // Create a communicator for Epetra objects
   RCP<const Epetra_Comm> globalComm;
 #ifdef HAVE_MPI
-  globalComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+  RCP<const Epetra_MpiComm> globalMpiComm = 
+    rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+  //globalMpiComm->Print(std::cout);
+  globalComm = globalMpiComm;
 #else
-  globalComm = rcp(new Epetra_SerialComm);
+   RCP<const Epetra_SerialComm> globalSerialComm =
+     rcp(new Epetra_SerialComm);
+   //globalSerialComm->Print(std::cout);
+   globalComm = globalSerialComm;
 #endif
+
   //int MyPID = globalComm->MyPID();
 
   // Create Stochastic Galerkin basis and expansion
@@ -152,7 +159,7 @@ test_original_matrix_free_epetra(
   //------------------------------
 
   // Generate Epetra objects
-  RCP<const Epetra_Map> x_map = rcp(new Epetra_Map(fem_length, 0, *app_comm));
+  RCP<const Epetra_Map> x_map = rcp(new Epetra_Map(static_cast<int>(fem_length), 0, *app_comm));
   RCP<const Epetra_Map> sg_x_map = 
     rcp(EpetraExt::BlockUtility::GenerateBlockMap(
 	  *x_map, *stoch_row_map, *sg_comm));
@@ -176,7 +183,7 @@ test_original_matrix_free_epetra(
 					sg_op_params));
   RCP<Epetra_BlockMap> sg_A_overlap_map =
     rcp(new Epetra_LocalMap(
-	  stoch_length, 0, *(sg_parallel_data->getStochasticComm())));
+	  static_cast<int>(stoch_length), 0, *(sg_parallel_data->getStochasticComm())));
   RCP< Stokhos::EpetraOperatorOrthogPoly > A_sg_blocks = 
     rcp(new Stokhos::EpetraOperatorOrthogPoly(
 	  basis, sg_A_overlap_map, x_map, x_map, sg_x_map, sg_comm));

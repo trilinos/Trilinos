@@ -77,7 +77,7 @@ namespace EpetraExt {
     Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> underlyingME_,
     const Teuchos::RefCountPtr<EpetraExt::MultiComm> &globalComm_,
     const std::vector<Epetra_Vector*> initGuessVec,
-    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  q_vec,
+    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  qvec,
     Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  matching_vec = Teuchos::null
     );
 

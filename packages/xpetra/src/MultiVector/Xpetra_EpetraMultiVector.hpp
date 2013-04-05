@@ -248,6 +248,10 @@ namespace Xpetra {
     //! Get the underlying Epetra multivector
     RCP<Epetra_MultiVector> getEpetra_MultiVector() const { return vec_; }
 
+    void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
+      // do nothing
+    }
+
     //! Set seed for Random function.
     void setSeed(unsigned int seed) {
       XPETRA_MONITOR("EpetraMultiVector::seedrandom");

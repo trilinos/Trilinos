@@ -56,7 +56,9 @@
 #include "BelosDGKSOrthoManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
 #include "BelosIMGSOrthoManager.hpp"
-#include "BelosTsqrOrthoManager.hpp"
+#ifdef HAVE_BELOS_TSQR
+#  include "BelosTsqrOrthoManager.hpp"
+#endif // HAVE_BELOS_TSQR
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestImpResNorm.hpp"
@@ -686,6 +688,9 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerSolve_ = Teuchos::TimeMonitor::getNewCounter (solveLabel);
 #endif // BELOS_TEUCHOS_TIME_MONITOR
+      if (ortho_ != Teuchos::null) {
+        ortho_->setLabel( label_ );
+      }
     }
   }
 
@@ -814,8 +819,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   }
   
   // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP> StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP> StatusTestResNorm_t;
 
   // Check for convergence tolerance
   if (params->isParameter ("Convergence Tolerance")) {

@@ -460,6 +460,8 @@ namespace Xpetra {
     //! This will be <tt>null</tt> until fillComplete() is called.
     virtual const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const =0;
 
+    virtual void removeEmptyProcessesInPlace(const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> >& newMap) = 0;
+
     //@}
 
     //! Implements DistObject interface

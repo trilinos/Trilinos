@@ -52,6 +52,7 @@
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
 #include "Ioss_State.h"
+#include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
 
 namespace Ioss {
@@ -178,7 +179,7 @@ namespace Iohb {
 
       if (properties.exists("FILE_FORMAT")) {
 	std::string format = properties.get("FILE_FORMAT").get_string();
-	if (format == "spyhis")
+	if (Ioss::Utils::case_strcmp(format, "spyhis") == 0)
 	  new_this->fileFormat = SPYHIS;
       }
 
@@ -218,7 +219,7 @@ namespace Iohb {
       
       if (showLegend) {
 	new_this->legend_ = new Layout(false, precision_);
-	if (tsFormat != "") {
+	if (!tsFormat.empty()) {
 	  new_this->legend_->add_literal("+");
 	  new_this->legend_->add_literal(time_stamp(tsFormat));
 	  new_this->legend_->add_literal(" ");
@@ -226,7 +227,12 @@ namespace Iohb {
 	if (!fileFormat == SPYHIS)
 	  new_this->legend_->add_literal("Legend: ");
 
-	new_this->legend_->add_literal("TIME, ");
+	if (!tsFormat.empty()) {
+	  new_this->legend_->add_literal("WallTime, ");
+	}
+
+	if (fileFormat == SPYHIS)
+	  new_this->legend_->add_literal("Time, ");
       }
       new_this->initialized_ = true;
     }
@@ -267,10 +273,6 @@ namespace Iohb {
       if (fileFormat == SPYHIS) {
 	time_t calendar_time = time(NULL);
 	*logStream << "% Sierra SPYHIS Output " << ctime(&calendar_time);
-	// This should be the comma-separated long names for the variables and the units.
-	// For example Density (g/cc)
-	// I think it will work with for now to label the plots with the "short name"
-	*logStream << *legend_ << std::endl;
       }
 
       *logStream << *legend_ << std::endl;

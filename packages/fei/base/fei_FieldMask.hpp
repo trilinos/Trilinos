@@ -92,8 +92,9 @@ namespace fei {
 
     /** Given a field-id, return the offset of the corresponding equation-
         number in a record's list of equation-numbers.
+       Return 0 if successful, -1 if the fieldID is not found.
     */
-    void getFieldEqnOffset(int fieldID, int& offset) const;
+    int getFieldEqnOffset(int fieldID, int& offset) const;
 
     /** Test equality of field-masks. */
     bool operator==(const FieldMask& fm) const

@@ -52,9 +52,9 @@ namespace Tpetra {
 
  TPETRA_ETI_MANGLING_TYPEDEFS()
 
- TPETRA_INSTANTIATE_SLGN(TPETRA_DISTOBJECT_INSTANT)
+ TPETRA_INSTANTIATE_PLGN(TPETRA_DISTOBJECT_INSTANT)
 
- // The "SLGN" stuff above doesn't work for Packet=char.
+ // The "SLGN" stuff above doesn't work for Packet=char, which is the base class for Tpetra::CrsMatrix
  TPETRA_INSTANTIATE_LGN(TPETRA_DISTOBJECT_INSTANT_CHAR)
 
 } // namespace Tpetra

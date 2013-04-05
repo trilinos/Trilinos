@@ -45,7 +45,9 @@
 #include <iostream>
 #include <sstream>
 
+#include <KokkosArray_Cuda.hpp>
 #include <KokkosArray_CudaSpace.hpp>
+
 #include <Cuda/KokkosArray_Cuda_Internal.hpp>
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
 #include <impl/KokkosArray_MemoryTracking.hpp>
@@ -55,6 +57,44 @@
 
 namespace KokkosArray {
 namespace {
+
+class CudaMemoryTrackingEntry : public Impl::MemoryTrackingEntry
+{
+public:
+
+  void * const                    ptr_alloc ;
+  const unsigned                  size ;
+  const unsigned                  count ;
+  Impl::cuda_texture_object_type  tex_obj ;
+
+  CudaMemoryTrackingEntry( const std::string & arg_label ,
+                           const std::type_info & arg_info ,
+                           void * const           arg_ptr ,
+                           const unsigned         arg_size ,
+                           const unsigned         arg_count )
+    : Impl::MemoryTrackingEntry( arg_label , arg_info , arg_ptr , arg_size * arg_count )
+    , ptr_alloc( arg_ptr )
+    , size( arg_size )
+    , count( arg_count )
+    , tex_obj( 0 )
+    {}
+
+  ~CudaMemoryTrackingEntry();
+};
+
+CudaMemoryTrackingEntry::~CudaMemoryTrackingEntry()
+{
+  cudaDeviceSynchronize();
+
+  if ( tex_obj ) {
+
+  }
+
+  if ( cudaSuccess != cudaFree( ptr_alloc ) ) {
+    std::cerr << "cudaFree( " << ptr_alloc << " ) FAILED for " ;
+    Impl::MemoryTrackingEntry::print( std::cerr );
+  }
+}
 
 Impl::MemoryTracking & cuda_space_singleton()
 {
@@ -119,53 +159,33 @@ void * CudaSpace::allocate(
       KokkosArray::Impl::throw_runtime_exception( msg.str() );
     }
 
-    cuda_space_singleton()
-      .track( ptr, & scalar_type, scalar_size, scalar_count, label );
+    cuda_space_singleton().insert(
+      new CudaMemoryTrackingEntry( label , scalar_type , ptr , scalar_size , scalar_count ) );
   }
 
   return ptr ;
 }
 
-#if ! defined( __CUDA_ARCH__ )
-
 void CudaSpace::increment( const void * ptr )
 {
   HostSpace::assert_master_thread( "KokkosArray::CudaSpace::increment" );
 
-  if ( 0 != ptr ) {
-    cuda_space_singleton().increment( ptr );
-  }
+  cuda_space_singleton().increment( ptr );
 }
 
 void CudaSpace::decrement( const void * ptr )
 {
   HostSpace::assert_master_thread( "KokkosArray::CudaSpace::decrement" );
 
-  if ( 0 != ptr ) {
-
-    void * ptr_alloc = cuda_space_singleton().decrement( ptr );
-
-    if ( 0 != ptr_alloc ) {
-
-      cudaDeviceSynchronize();
-
-      const bool failed = cudaSuccess != cudaFree( ptr_alloc );
-
-      if ( failed ) {
-        std::string msg("KokkosArray::Impl::CudaSpace::decrement() failed cudaFree");
-        KokkosArray::Impl::throw_runtime_exception( msg );
-      }
-    }
-  }
+  cuda_space_singleton().decrement( ptr );
 }
-
-#endif
 
 void CudaSpace::print_memory_view( std::ostream & o )
 {
   cuda_space_singleton().print( o , std::string("  ") );
 }
 
+//----------------------------------------------------------------------------
 
 size_t CudaSpace::preferred_alignment(
   size_t scalar_size , size_t scalar_count )
@@ -183,10 +203,10 @@ size_t CudaSpace::preferred_alignment(
 
 std::string CudaSpace::query_label( const void * p )
 {
-  const Impl::MemoryTracking::Info info =
+  const Impl::MemoryTrackingEntry * entry =
     cuda_space_singleton().query( p );
 
-  return info.label ;
+  return entry ? entry->label : std::string("ERROR NOT FOUND");
 }
 
 void CudaSpace::access_error()
@@ -209,4 +229,71 @@ void CudaSpace::access_error( const void * const ptr )
 /*--------------------------------------------------------------------------*/
 
 } // namespace KokkosArray
+
+#if defined( CUDA_VERSION ) && ( 500 <= CUDA_VERSION )
+
+namespace KokkosArray {
+namespace Impl {
+
+::cudaTextureObject_t
+cuda_texture_object_attach(
+  const cudaChannelFormatDesc & desc ,
+  const void * const            ptr )
+{
+  if ( 0 == ptr ) return 0 ;
+
+  const unsigned max_count = 1 << 28 ;
+
+  CudaMemoryTrackingEntry * entry =
+    dynamic_cast<CudaMemoryTrackingEntry *>( cuda_space_singleton().query( ptr ) );
+
+  const bool ok_found  = 0 != entry ;
+  const bool ok_ptr    = ok_found && ptr == entry->ptr_alloc ;
+  const bool ok_count  = ok_found && entry->count < max_count ;
+
+  if ( ok_found && ok_ptr && ok_count ) {
+
+    // Can only create texture object on device architure 3.0 or better
+
+    if ( 0 == entry->tex_obj && 300 <= Cuda::device_arch() ) {
+
+      struct cudaResourceDesc resDesc ;
+      struct cudaTextureDesc  texDesc ;
+
+      memset( & resDesc , 0 , sizeof(resDesc) );
+      memset( & texDesc , 0 , sizeof(texDesc) );
+
+      resDesc.resType                = cudaResourceTypeLinear ;
+      resDesc.res.linear.desc        = desc ;
+      resDesc.res.linear.sizeInBytes = entry->size * entry->count ;
+      resDesc.res.linear.devPtr      = entry->ptr_alloc ;
+
+      cudaCreateTextureObject( & entry->tex_obj, & resDesc, & texDesc, NULL);
+    }
+  }
+  else {
+    std::ostringstream msg ;
+    msg << "CudaSpace::texture_object_attach( " << ptr << " ) FAILED: " ;
+
+    if ( ! ok_found ) {
+      msg << "Not View allocated" ;
+    }
+    else if ( ! ok_ptr ) {
+      msg << "Not the originally allocated View \"" << entry->label << "\"" ;
+    }
+    else if ( ! ok_count ) {
+      msg << "Cuda texture object limit exceeded "
+          << max_count << " <= " << entry->count ;
+    }
+    KokkosArray::Impl::throw_runtime_exception( msg.str() );
+  }
+
+  return entry->tex_obj ;
+}
+
+} // namespace Impl
+} // namespace KokkosArray
+
+#endif
+
 
