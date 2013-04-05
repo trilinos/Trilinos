@@ -244,12 +244,18 @@ namespace MueLu {
       // TODO: can we skip more work (ie: building the hashtable, etc.)?
       GetOStream(Warnings0, 0) << "Only one partition: Skip call to the repartitioner." << std::endl;
       decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
-    } else{
+    } else {
       decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
 
       // Zoltan2 changes the number of partitions. There is no good mechanism to propagate that new number
       // to this factory, but we can do that by finding out the max number of partition across all processors
-      GO maxPartLocal = *std::max_element(decomposition->getData(0).begin(), decomposition->getData(0).end());
+      GO maxPartLocal = -1;
+      if (decomposition->getLocalLength()) {
+        // NOTE: this is a stupid check. We would not be here if we didn't have any data.
+        // But one of the unit tests (Repartition_Build) constructs a stupid map in which processor
+        // 2 does not have any data. I'll add this check here.
+        maxPartLocal = *std::max_element(decomposition->getData(0).begin(), decomposition->getData(0).end());
+      }
       maxAll(decomposition->getMap()->getComm(), maxPartLocal, numPartitions);
       numPartitions++;
 
