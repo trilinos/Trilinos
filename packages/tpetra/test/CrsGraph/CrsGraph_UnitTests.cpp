@@ -163,6 +163,9 @@ namespace {
   }
 
 
+// mfh 05 Apr 2013: CrsGraph only tests for bad nonowned GIDs in a
+// debug build.  The BadGIDs test fails in a release build.
+#ifdef HAVE_TPETRA_DEBUG
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, BadGIDs, LO, GO , Node )
   {
@@ -205,7 +208,7 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-
+#endif // HAVE_TPETRA_DEBUG
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, BadLIDs, LO, GO , Node )
@@ -1167,11 +1170,11 @@ namespace {
       const size_t numLocal = 2;
       const RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
       ArrayRCP<size_t> rowptr(numLocal+1);
-      ArrayRCP<LO>     colind(numLocal); // one unknown per row      
-      rowptr[0] = 0; rowptr[1] = 1; rowptr[2] = 2; 
+      ArrayRCP<LO>     colind(numLocal); // one unknown per row
+      rowptr[0] = 0; rowptr[1] = 1; rowptr[2] = 2;
       colind[0] = Teuchos::as<LO>(0);
       colind[1] = Teuchos::as<LO>(1);
-      
+
       RCP<GRAPH> G = rcp(new GRAPH(rmap,rmap,rowptr,colind) );
       TEST_EQUALITY_CONST( G->hasColMap(), true );
 
@@ -1200,11 +1203,11 @@ namespace {
       const size_t numLocal = 2;
       const RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
       ArrayRCP<size_t> rowptr(numLocal+1);
-      ArrayRCP<LO>     colind(numLocal); // one unknown per row      
-      rowptr[0] = 0; rowptr[1] = 1; rowptr[2] = 2; 
+      ArrayRCP<LO>     colind(numLocal); // one unknown per row
+      rowptr[0] = 0; rowptr[1] = 1; rowptr[2] = 2;
       colind[0] = Teuchos::as<LO>(0);
       colind[1] = Teuchos::as<LO>(1);
-      
+
       RCP<GRAPH> G = rcp(new GRAPH(rmap,rmap,0,StaticProfile) );
       TEST_NOTHROW( G->setAllIndices(rowptr,colind) );
       TEST_EQUALITY_CONST( G->hasColMap(), true );
@@ -1223,6 +1226,10 @@ namespace {
 //
 // INSTANTIATIONS
 //
+
+// mfh 05 Apr 2013: CrsGraph only tests for bad nonowned GIDs in a
+// debug build.  The BadGIDs test fails in a release build.
+#ifdef HAVE_TPETRA_DEBUG
 
 #define UNIT_TEST_GROUP( LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO, NODE ) \
@@ -1244,7 +1251,32 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices , LO, GO, NODE ) 
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices , LO, GO, NODE )
+
+#else // NOT HAVE_TPETRA_DEBUG
+
+#define UNIT_TEST_GROUP( LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadLIDs   , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs   , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithColMap,     LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Describable   , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyFillComplete, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs      , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices , LO, GO, NODE )
+
+#endif // HAVE_TPETRA_DEBUG
 
 #define NC_TESTS(N2) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NodeConversion, int, int, N2 )
