@@ -252,6 +252,10 @@ namespace MueLu {
 
           // [*1*]: see [*0*]
 
+          // Check that the number of local coordinates is consistent with the #rows in A
+          std::string msg = "MueLu::CoalesceDropFactory::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
+          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(),Exceptions::Incompatible,msg);
+
           RCP<const Map> uniqueMap, nonUniqueMap;
           if (blkSize == 1) {
             uniqueMap    = A->getRowMap();

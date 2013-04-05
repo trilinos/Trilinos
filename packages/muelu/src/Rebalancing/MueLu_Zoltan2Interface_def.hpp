@@ -107,6 +107,10 @@ namespace MueLu {
     RCP<MultiVector> coords = Get< RCP<MultiVector> >(level, "Coordinates");
     size_t              dim = coords->getNumVectors();
 
+    // Check that the number of local coordinates is consistent with the #rows in A
+    std::string msg = "MueLu::Zoltan2Interface::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
+    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != coords->getLocalLength(),Exceptions::Incompatible,msg);
+
     RCP<const Map> map = coords->getMap();
 
     if (numParts == 1) {
