@@ -33,6 +33,7 @@
 #include "Ifpack2_Relaxation_decl.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include <Teuchos_TimeMonitor.hpp>
+#include <Tpetra_ConfigDefs.hpp>
 
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
 // statistics on diagonal entries in compute().
@@ -583,15 +584,12 @@ void Relaxation<MatrixType>::compute ()
       if (crsMat.is_null () || ! crsMat->isStaticGraph ()) {
         A_->getLocalDiagCopy (*Diagonal_); // slow path
       } else {
-#ifdef HAVE_IFPACK2_DEBUG
-        std::cerr << "Ifpack2::Relaxation fast path " << std::endl;
-#endif // HAVE_IFPACK2_DEBUG
         if (! savedDiagOffsets_) { // we haven't precomputed offsets
           crsMat->getLocalDiagOffsets (diagOffsets_);
           savedDiagOffsets_ = true;
         }
         crsMat->getLocalDiagCopy (*Diagonal_, diagOffsets_ ());
-#ifdef HAVE_IFPACK2_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
         // Validate the fast-path diagonal against the slow-path diagonal.
         vector_type D_copy (A_->getRowMap ());
         A_->getLocalDiagCopy (D_copy);
@@ -603,7 +601,7 @@ void Relaxation<MatrixType>::compute ()
           err != STM::zero(), std::logic_error, "Ifpack2::Relaxation::compute: "
           "\"fast-path\" diagonal computation failed.  \\|D1 - D2\\|_inf = "
           << err << ".");
-#endif // HAVE_IFPACK2_DEBUG
+#endif // HAVE_TPETRA_DEBUG
       }
     }
 
@@ -1404,6 +1402,10 @@ describe (Teuchos::FancyOStream &out,
             << "Abs 2-norm diff between computed and actual inverse "
             << "diagonal: " << globalDiagNormDiff_ << endl;
       }
+    }
+    if (isComputed ()) {
+      out << "Saved diagonal offsets: "
+          << (savedDiagOffsets_ ? "true" : "false") << endl;
     }
     out << "Call counts and total times (in seconds): " << endl;
     {
