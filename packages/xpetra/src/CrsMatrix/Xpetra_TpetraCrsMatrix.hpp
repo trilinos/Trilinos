@@ -206,10 +206,17 @@ namespace Xpetra {
 				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
 				  const RCP<ParameterList> &params=Teuchos::null) {
       XPETRA_MONITOR("TpetraCrsMatrix::expertStaticFillComplete");
-      XPETRA_DYNAMIC_CAST( const TpetraImportClass , *importer, tImporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraImport.");
-      XPETRA_DYNAMIC_CAST( const TpetraExportClass , *exporter, tExporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraExport.");
-      RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > myImport = tImporter.getTpetra_Import();
-      RCP<const Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > myExport = tExporter.getTpetra_Export();
+      RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > myImport;
+      RCP<const Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > myExport; 
+
+      if(importer!=Teuchos::null) {
+	XPETRA_DYNAMIC_CAST( const TpetraImportClass , *importer, tImporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraImport.");
+	myImport = tImporter.getTpetra_Import();
+      }
+      if(exporter!=Teuchos::null) {
+	XPETRA_DYNAMIC_CAST( const TpetraExportClass , *exporter, tExporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraExport.");
+	myExport = tExporter.getTpetra_Export();
+      }
 
       mtx_->expertStaticFillComplete(toTpetra(domainMap),toTpetra(rangeMap),myImport,myExport,params);
     }
