@@ -193,10 +193,34 @@ public:
     return getNewCounter (name);
   }
 
+  /// \brief Disable the timer with the given name.
+  ///
+  /// "Disable" means that the timer (Time instance) will ignore all
+  /// calls to start(), stop(), and incrementNumCalls().  The effect
+  /// will be as if the TimeMonitor had never touched the timer.
+  ///
+  /// If the timer with the given name does not exist (was never
+  /// created using getNewCounter() or getNewTimer()), then this
+  /// method throws std::invalid_argument.  Otherwise, it disables the
+  /// timer.  This effect lasts until the timer is cleared or until
+  /// the timer is enabled, either by calling enableTimer() (see
+  /// below) or by calling the Time instance's enable() method.
+  static void disableTimer (const std::string& name);
+
+  /// \brief Enable the timer with the given name.
+  ///
+  /// If the timer with the given name does not exist (was never
+  /// created using getNewCounter() or getNewTimer()), then this
+  /// method throws std::invalid_argument.  Otherwise, it undoes the
+  /// effect of disableTimer() on the timer with the given name.  If
+  /// the timer with the given name was not disabled, then this method
+  /// does nothing.
+  static void enableTimer (const std::string& name);
+
   /// \brief Reset all global timers to zero.
   ///
-  /// This method only affects \c Time objects created by \c
-  /// getNewCounter() or \c getNewTimer().
+  /// This method only affects Time objects created by getNewCounter()
+  /// or getNewTimer().
   ///
   /// \pre None of the timers must currently be running.
   static void zeroOutTimers();
