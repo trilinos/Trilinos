@@ -1017,6 +1017,67 @@ namespace Tpetra {
       the zero and non-zero diagonals owned by this node. */
     void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
 
+    /// \brief Get offsets of the diagonal entries in the matrix.
+    ///
+    /// \warning This method is only for expert users.
+    /// \warning We make no promises about backwards compatibility
+    ///   for this method.  It may disappear or change at any time.
+    /// \warning This method must be called collectively.  We reserve
+    ///   the right to do extra checking in a debug build that will
+    ///   require collectives.
+    ///
+    /// \pre The matrix must be locally indexed (which means that it
+    ///   has a column Map).
+    /// \pre All diagonal entries of the matrix's graph must be
+    ///   populated on this process.  Results are undefined otherwise.
+    /// \post <tt>offsets.size() == getNodeNumRows()</tt>
+    ///
+    /// This method creates an array of offsets of the local diagonal
+    /// entries in the matrix.  This array is suitable for use in the
+    /// two-argument version of getLocalDiagCopy().  However, its
+    /// contents are not defined in any other context.  For example,
+    /// you should not rely on offsets[i] being the index of the
+    /// diagonal entry in the views returned by getLocalRowView().
+    /// This may be the case, but it need not be.  (For example, we
+    /// may choose to optimize the lookups down to the optimized
+    /// storage level, in which case the offsets will be computed with
+    /// respect to the underlying storage format, rather than with
+    /// respect to the views.)
+    ///
+    /// Calling any of the following invalidates the output array:
+    /// - insertGlobalValues()
+    /// - insertLocalValues()
+    /// - fillComplete() (with a dynamic graph)
+    /// - resumeFill() (with a dynamic graph)
+    ///
+    /// If the matrix has a const ("static") graph, and if that graph
+    /// is fill complete, then the offsets array remains valid through
+    /// calls to fillComplete() and resumeFill().  "Invalidates" means
+    /// that you must call this method again to recompute the offsets.
+    void getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
+
+    /// \brief Variant of getLocalDiagCopy() that uses precomputed offsets.
+    ///
+    /// \warning This method is only for expert users.
+    /// \warning We make no promises about backwards compatibility
+    ///   for this method.  It may disappear or change at any time.
+    ///
+    /// This method uses the offsets of the diagonal entries, as
+    /// precomputed by getLocalDiagOffsets(), to speed up copying the
+    /// diagonal of the matrix.  The offsets must be recomputed if any
+    /// of the following methods are called:
+    /// - insertGlobalValues()
+    /// - insertLocalValues()
+    /// - fillComplete() (with a dynamic graph)
+    /// - resumeFill() (with a dynamic graph)
+    ///
+    /// If the matrix has a const ("static") graph, and if that graph
+    /// is fill complete, then the offsets array remains valid through
+    /// calls to fillComplete() and resumeFill().
+    void
+    getLocalDiagCopy (Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag,
+                      const Teuchos::ArrayView<const size_t>& offsets) const;
+
     /** \brief . */
     void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
 
@@ -1342,11 +1403,11 @@ namespace Tpetra {
 
     /// \brief Combine in the data using the given combine mode.
     ///
-    /// The \c copyAndPermute() and \c unpackAndCombine() methods
-    /// use this function to combine incoming entries from the
-    /// source matrix with the target matrix's current data.  This
-    /// method's behavior depends on whether the target matrix (that
-    /// is, this matrix) has a static graph.
+    /// The copyAndPermute() and unpackAndCombine() methods use this
+    /// function to combine incoming entries from the source matrix
+    /// with the target matrix's current data.  This method's behavior
+    /// depends on whether the target matrix (that is, this matrix)
+    /// has a static graph.
     void
     combineGlobalValues (const GlobalOrdinal globalRowIndex,
                          const Teuchos::ArrayView<const GlobalOrdinal> columnIndices,
@@ -1910,7 +1971,7 @@ namespace Tpetra {
     for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
       MyNnz[i] = Teuchos::as<size_t>(targetNnzPerRow[i]);
 
-    RCP<ParameterList> matrixparams; 
+    RCP<ParameterList> matrixparams;
     if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
 
     RCP<CrsMatrixType> destMat =
@@ -1940,7 +2001,7 @@ namespace Tpetra {
 
       destMat->removeEmptyProcessesInPlace(newRowMap);
       theDomainMap = theDomainMap->replaceCommWithSubset(newComm);
-      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);      
+      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);
       if(!newComm.is_null()) destMat->fillComplete(theDomainMap, theRangeMap);
     }
     else
@@ -2055,7 +2116,7 @@ namespace Tpetra {
 
       destMat->removeEmptyProcessesInPlace(newRowMap);
       theDomainMap = theDomainMap->replaceCommWithSubset(newComm);
-      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);      
+      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);
       if(!newComm.is_null()) destMat->fillComplete(theDomainMap, theRangeMap);
     }
     else
