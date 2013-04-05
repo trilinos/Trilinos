@@ -205,6 +205,9 @@ public:
   /// timer.  This effect lasts until the timer is cleared or until
   /// the timer is enabled, either by calling enableTimer() (see
   /// below) or by calling the Time instance's enable() method.
+  ///
+  /// Disabling a timer does <i>not</i> exclude it from the list of
+  /// timers printed by summarize() or report().
   static void disableTimer (const std::string& name);
 
   /// \brief Enable the timer with the given name.
