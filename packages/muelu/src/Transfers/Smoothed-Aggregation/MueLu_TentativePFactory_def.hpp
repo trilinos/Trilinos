@@ -260,13 +260,14 @@ namespace MueLu {
 	// With NSDim==1 we can avoid the data copying since the QR will have no zeros.      
 	PtentCrs->allocateAllValues(nzEstimate,ptent_rowptr,ptent_colind,ptent_values);
 
-	// Seed colind w/ invalid (in case).  Note: Due to some peculiarity with ArrayRCP, this has to be done BEFORE we get the view.  I have no idea why.
-	ptent_colind.assign(nzEstimate,INVALID);
-
 	// Get the three arrays & views
 	rowptr_v = ptent_rowptr();
 	colind_v = ptent_colind();
 	values_v = ptent_values();
+
+	// Seed colind w/ invalid (in case).  
+	for(size_t i=0; i< nzEstimate; i++) 
+	  colind_v[i]=INVALID;
 	
 	// Perform initial seeding of the rowptr
 	// This is not an overestimate since NSDim==1;
