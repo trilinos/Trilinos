@@ -41,6 +41,8 @@
 // @HEADER
 
 #include "Piro_RythmosSolver.hpp"
+
+#include "Piro_ObserverToRythmosIntegrationObserverAdapter.hpp"
 #include "Piro_ValidPiroParameters.hpp"
 
 #include "Rythmos_BackwardEulerStepper.hpp"
@@ -77,6 +79,7 @@ Piro::RythmosSolver<Scalar>::RythmosSolver() :
   isInitialized(false)
 {
 }
+
 
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(
@@ -793,4 +796,21 @@ void Piro::RythmosSolver<Scalar>::
 addStepperFactory(const std::string & stepperName,const Teuchos::RCP<RythmosStepperFactory<Scalar> > & factory)
 {
   stepperFactories[stepperName] = factory;
+}
+
+
+template <typename Scalar>
+Teuchos::RCP<Piro::RythmosSolver<Scalar> >
+Piro::rythmosSolver(
+    const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver)
+{
+  Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer;
+  if (Teuchos::nonnull(piroObserver)) {
+    observer = Teuchos::rcp(
+        new ObserverToRythmosIntegrationObserverAdapter<Scalar>(piroObserver));
+  }
+
+  return Teuchos::rcp(new RythmosSolver<Scalar>(appParams, in_model, observer));
 }
