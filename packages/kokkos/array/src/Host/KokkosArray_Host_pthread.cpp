@@ -110,13 +110,10 @@ bool HostInternal::spawn( const size_t thread_rank )
 }
 
 //----------------------------------------------------------------------------
-// Performance critical function: thread waits while value == *state
 
-void host_thread_wait( volatile int * const state , const int value )
+void host_thread_wait( volatile int * const flag , const int value )
 {
-  while ( value == *state ) {
-    sched_yield();
-  }
+  while ( value == *flag ) sched_yield();
 }
 
 void host_thread_lock()

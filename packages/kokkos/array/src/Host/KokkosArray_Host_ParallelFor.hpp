@@ -67,47 +67,31 @@ public:
 
   void execute_on_thread( HostThread & thread ) const
   {
+#if defined( __INTEL_COMPILER )
+    enum { vectorize = is_same<WorkSpec,VectorParallel>::value && 1 < HostSpace::WORK_ALIGN };
+#else
+    enum { vectorize = 0 };
+#endif
     const std::pair< size_type , size_type > range =
       thread.work_range( m_work_count );
 
-    for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-      m_work_functor( iwork );
+    if ( ! vectorize ) {
+      for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
+        m_work_functor( iwork );
+      }
     }
-  }
-
-  ParallelFor( const size_type work_count , const FunctorType & functor )
-    : m_work_functor( functor )
-    , m_work_count( work_count )
-    { HostThreadWorker::execute(); }
-};
-
-//----------------------------------------------------------------------------
-
 #if defined( __INTEL_COMPILER )
-
-// Only try vectorization nested within parallel with the Intel compiler, for now.
-
-template< class FunctorType >
-class ParallelFor< FunctorType , Host , VectorParallel > 
-  : public HostThreadWorker
-{
-public:
-
-  typedef Host::size_type  size_type ;
-
-  const FunctorType m_work_functor ;
-  const size_type   m_work_count ;
-
-  void execute_on_thread( HostThread & this_thread ) const
-  {
-    const std::pair< size_type , size_type > range =
-      this_thread.work_range( m_work_count );
-
+    else {
 #pragma simd
 #pragma ivdep
-    for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-      m_work_functor( iwork );
+      for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
+        m_work_functor( iwork );
+      }
     }
+#endif
+
+    // Required end-of-function barrier
+    end_barrier( thread );
   }
 
   ParallelFor( const size_type work_count , const FunctorType & functor )
@@ -115,8 +99,6 @@ public:
     , m_work_count( work_count )
     { HostThreadWorker::execute(); }
 };
-
-#endif
 
 //----------------------------------------------------------------------------
 
@@ -164,10 +146,6 @@ public:
     const std::pair< size_type , size_type > range =
       this_thread.work_range( m_work_count );
 
-#if defined( __INTEL_COMPILER )
-#pragma simd
-#pragma ivdep
-#endif
     for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
       m_work_functor( iwork );
     }
@@ -196,6 +174,8 @@ public:
                          m != m_member_functors.end() ; ++m ) {
       (*m)->apply( this_thread );
     }
+
+    end_barrier( this_thread );
   }
   
 public: 

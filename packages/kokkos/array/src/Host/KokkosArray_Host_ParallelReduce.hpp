@@ -99,44 +99,6 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class ReduceOper >
-inline
-void host_reduce( HostThread & this_thread ,
-                  const ReduceOper & reduce )
-{
-  // Fan-in reduction of other threads' reduction data.
-
-  for ( unsigned i = 0 ; i < this_thread.fan_count() ; ++i ) {
-
-    // Wait for source thread to complete its work and
-    // set its own state to 'Rendezvous'.
-    host_thread_wait( & this_thread.fan(i).m_state , HostThread::ThreadActive );
-
-    // Join source thread reduce data.
-    reduce.join( this_thread.reduce_data() ,
-                 this_thread.fan(i).reduce_data() );
-
-    // Reset the source thread to 'Active' state.
-    this_thread.fan(i).m_state = HostThread::ThreadActive ;
-  }
-
-  if ( this_thread.rank() ) {
-    // If this is not the root thread then it will give its
-    // reduction data to another thread.
-    // Set the 'Rendezvous' state.
-    // Wait for the other thread to process reduction data
-    // and then reactivate this thread.
-
-    this_thread.m_state = HostThread::ThreadRendezvous ;
-    host_thread_wait( & this_thread.m_state , HostThread::ThreadRendezvous );
-  }
-  else {
-    reduce.finalize( this_thread.reduce_data() );
-  }
-}
-
-//----------------------------------------------------------------------------
-
 template< class FunctorType , class ValueOper , class FinalizeType , class WorkSpec >
 class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host , WorkSpec >
   : public HostThreadWorker
@@ -153,21 +115,50 @@ public:
 
   void execute_on_thread( HostThread & this_thread ) const
   {
+#if defined( __INTEL_COMPILER )
+    enum { work_align = is_same<WorkSpec,VectorParallel>::value && 
+                        power_of_two<HostSpace::WORK_ALIGNMENT>::value
+                      ? HostSpace::WORK_ALIGNMENT : 1 };
+    enum { work_mask  = work_align - 1 };
+#else
+    enum { work_align = 1 };
+    enum { work_mask  = 0 };
+#endif
+
     // Iterate this thread's work
 
     const std::pair<size_type,size_type> range =
       this_thread.work_range( m_work_count );
 
-    // This thread's reduction value, initialized
-    m_reduce.init( this_thread.reduce_data() );
+    if ( ! work_mask ) {
+      // This thread's reduction value, initialized
+      m_reduce.init( this_thread.reduce_data() );
 
-    for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-      m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() ) );
+      for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
+        m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() ) );
+      }
     }
+#if defined( __INTEL_COMPILER )
+    else {
 
-    // Fan-in reduction of other threads' reduction data:
-    host_reduce( this_thread , m_reduce );
-    // this_thread.reduce( m_reduce );
+#pragma simd
+#pragma ivdep
+      for ( size_type j = 0 ; j < HostSpace::WORK_ALIGNMENT ; ++j ) {
+        m_reduce.init( this_thread.reduce_data() , j );
+      }
+
+#pragma simd vectorlength(work_align)
+#pragma ivdep
+      for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
+        m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() , iwork & mask_align ) );
+      }
+
+      m_reduce.template join< HostSpace::WORK_ALIGNMENT >( this_thread.reduce_data() );
+    }
+#endif
+
+    // End the routine with a reduction.
+    end_reduce( this_thread , m_reduce );
   }
 
   ParallelReduce( const size_type      work_count ,
@@ -179,71 +170,11 @@ public:
     {
       Host::resize_reduce_scratch( m_reduce.value_size() );
       HostThreadWorker::execute();
+      m_reduce.finalize( Host::root_reduce_scratch() );
     }
 };
 
 //----------------------------------------------------------------------------
-
-#if defined( __INTEL_COMPILER )
-
-// Only try to vectorize with the Intel compiler, for now.
-
-template< class FunctorType , class ValueOper , class FinalizeType >
-class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host , VectorParallel >
-  : public HostThreadWorker
-{
-public:
-
-  typedef ReduceOperator< ValueOper , FinalizeType >  reduce_oper ;
-  typedef          Host::size_type         size_type ;
-  typedef typename ValueOper::value_type  value_type ;
-
-  const FunctorType   m_work_functor ;
-  const reduce_oper   m_reduce ;
-  const size_type     m_work_count ;
-
-  void execute_on_thread( HostThread & this_thread ) const
-  {
-    // Iterate this thread's work
-
-    const std::pair<size_type,size_type> range =
-      this_thread.work_range( m_work_count );
-
-    enum { mask_align = HostSpace::WORK_ALIGNMENT - 1 };
-    enum { ok = Impl::StaticAssert< 0 == ( HostSpace::WORK_ALIGNMENT & mask_align ) >::value };
-
-#pragma simd
-#pragma ivdep
-    for ( size_type j = 0 ; j < HostSpace::WORK_ALIGNMENT ; ++j ) {
-      m_reduce.init( this_thread.reduce_data() , j );
-    }
-
-#pragma simd vectorlength(HostSpace::WORK_ALIGNMENT)
-#pragma ivdep
-    for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-      m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() , iwork & mask_align ) );
-    }
-
-    m_reduce.template join< HostSpace::WORK_ALIGNMENT >( this_thread.reduce_data() );
-
-    // Fan-in reduction of other threads' reduction data:
-    host_reduce( this_thread , m_reduce );
-    // this_thread.reduce( m_reduce );
-  }
-
-  ParallelReduce( const size_type      work_count ,
-                  const FunctorType  & functor ,
-                  const FinalizeType & finalize )
-    : m_work_functor( functor )
-    , m_reduce( finalize )
-    , m_work_count( work_count )
-    {
-      Host::resize_reduce_scratch( m_reduce.value_size() * HostSpace::WORK_ALIGNMENT );
-      HostThreadWorker::execute();
-    }
-};
-
-#endif
 
 } // namespace Impl
 } // namespace KokkosArray
@@ -327,9 +258,8 @@ public:
       (*m)->apply( this_thread , m_reduce );
     }
 
-    // Fan-in reduction of other threads' reduction data:
-    // this_thread.reduce( m_reduce );
-    host_reduce( this_thread , m_reduce );
+    // End the routine with a reduction
+    end_reduce( this_thread , m_reduce );
   }
 
 public:
@@ -361,6 +291,7 @@ public:
   {
     Host::resize_reduce_scratch( m_reduce.value_size() );
     Impl::HostThreadWorker::execute();
+    m_reduce.finalize( Host::root_reduce_scratch() );
   }
 };
 

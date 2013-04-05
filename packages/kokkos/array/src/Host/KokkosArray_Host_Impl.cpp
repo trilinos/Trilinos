@@ -67,10 +67,11 @@ namespace {
 class HostWorkerBlock : public HostThreadWorker {
 public:
 
-  void execute_on_thread( HostThread & ) const 
+  void execute_on_thread( HostThread & thread ) const 
   {
     host_thread_lock();
     host_thread_unlock();
+    end_barrier( thread );
   }
 
   HostWorkerBlock()  {}
@@ -145,45 +146,6 @@ void thread_mapping( const unsigned thread_rank ,
 
 //----------------------------------------------------------------------------
 
-void host_barrier( HostThread & thread )
-{
-  // The 'wait' function repeatedly polls the 'thread' state
-  // which may reside in a different NUMA region.
-  // Thus the fan is intra-node followed by inter-node
-  // to minimize inter-node memory access.
-
-  for ( unsigned i = 0 ; i < thread.fan_count() ; ++i ) {
-    // Wait until thread enters the 'Rendezvous' state
-    host_thread_wait( & thread.fan(i).m_state , HostThread::ThreadActive );
-  }
-
-  if ( thread.rank() ) {
-    thread.m_state = HostThread::ThreadRendezvous ;
-    host_thread_wait( & thread.m_state , HostThread::ThreadRendezvous );
-  }
-
-  for ( unsigned i = thread.fan_count() ; 0 < i ; ) {
-    thread.fan(--i).m_state = HostThread::ThreadActive ;
-  }
-}
-
-//----------------------------------------------------------------------------
-
-/** \brief  This thread waits for each fan-in thread to deactivate.  */
-void HostThreadWorker::fanin_deactivation( HostThread & thread ) const
-{
-  // The 'wait' function repeatedly polls the 'thread' state
-  // which may reside in a different NUMA region.
-  // Thus the fan is intra-node followed by inter-node
-  // to minimize inter-node memory access.
-
-  for ( unsigned i = 0 ; i < thread.fan_count() ; ++i ) {
-    host_thread_wait( & thread.fan(i).m_state , HostThread::ThreadActive );
-  }
-}
-
-//----------------------------------------------------------------------------
-
 void HostInternal::activate_threads()
 {
   // Activate threads to call 'm_worker.execute_on_thread'
@@ -206,8 +168,8 @@ void HostInternal::execute( const HostThreadWorker & worker )
   // Execute on the master thread,
   worker.execute_on_thread( m_master_thread );
 
-  // Wait for fanin/fanout threads to self-deactivate.
-  worker.fanin_deactivation( m_master_thread );
+  // Wait for threads to complete:
+  worker.end_barrier( m_master_thread );
 
   // Worker threads are returned to the ThreadInactive state.
   m_worker = NULL ;
@@ -348,9 +310,6 @@ void HostInternal::driver( const size_t thread_rank )
 
         // Perform the work:
         m_worker->execute_on_thread( this_thread );
-
-        // Wait for fanin threads to self-deactivate:
-        m_worker->fanin_deactivation( this_thread );
 
         // Deactivate this thread:
         this_thread.m_state = HostThread::ThreadInactive ;
@@ -531,7 +490,10 @@ struct HostThreadResizeReduce : public HostThreadWorker {
     { HostThreadWorker::execute_serial(); }
 
   void execute_on_thread( HostThread & thread ) const
-    { thread.resize_reduce( reduce_size ); }
+    {
+      thread.resize_reduce( reduce_size );
+      end_barrier( thread );
+    }
 };
 
 }
@@ -625,7 +587,7 @@ bool Host::wake()
   if ( is_blocked ) {
     Impl::host_thread_unlock();
 
-    Impl::worker_block.fanin_deactivation( h.m_master_thread );
+    Impl::worker_block.end_barrier( h.m_master_thread );
 
     h.m_worker = NULL ;
 

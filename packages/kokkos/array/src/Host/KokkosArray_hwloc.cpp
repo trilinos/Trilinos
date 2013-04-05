@@ -138,10 +138,14 @@ HWLOC_Singleton::HWLOC_Singleton()
   {
     // Determine which of these 'root' types are available to this process.
     // The process may have been bound (e.g., by MPI) to a subset of these root types.
+    // Determine current location of the master (calling) process>
 
-    hwloc_bitmap_t proc_cpuset = hwloc_bitmap_alloc();
+    hwloc_bitmap_t proc_cpuset_binding  = hwloc_bitmap_alloc();
+    hwloc_bitmap_t proc_cpuset_location = hwloc_bitmap_alloc();
 
-    hwloc_get_cpubind( m_topology , proc_cpuset , HWLOC_CPUBIND_PROCESS );
+
+    hwloc_get_cpubind( m_topology , proc_cpuset_binding , HWLOC_CPUBIND_PROCESS );
+    hwloc_get_last_cpu_location( m_topology , proc_cpuset_location , HWLOC_CPUBIND_THREAD );
 
     int root_count    = 0 ;
     int core_per_root = 0 ;
@@ -163,6 +167,7 @@ HWLOC_Singleton::HWLOC_Singleton()
 
       int core_available = 0 ;
       int pu_available   = 0 ;
+      int located_here   = 0 ;
 
       // All cores within this 'root' must be available
       // to add this root to the list.
@@ -174,17 +179,19 @@ HWLOC_Singleton::HWLOC_Singleton()
                                                root->allowed_cpuset ,
                                                HWLOC_OBJ_CORE , j );
 
-        // If process' cpuset intersects core's cpuset
-        // then process can access this core.
-        // Must use intersection instead of inclusion because the Intel-Phi
-        // MPI may bind the process to only one of the core's hyperthreads.
-        //
-        // Assumption: if the process can access any hyperthread of the core
-        // then it has ownership of the entire core.
-        // This assumes that it would be performance-detrimental
-        // to spawn more than one MPI process per core and use nested threading.
+        if ( hwloc_bitmap_intersects( proc_cpuset_location, core->allowed_cpuset ) ) {
+          located_here = 1 ;
+        }
 
-        if ( hwloc_bitmap_intersects( proc_cpuset , core->allowed_cpuset ) ) {
+        if ( hwloc_bitmap_intersects( proc_cpuset_binding , core->allowed_cpuset ) ) {
+          // If process' cpuset intersects core's cpuset then process can access this core.
+          // Must use intersection instead of inclusion because the Intel-Phi
+          // MPI may bind the process to only one of the core's hyperthreads.
+          //
+          // Assumption: if the process can access any hyperthread of the core
+          // then it has ownership of the entire core.
+          // This assumes that it would be performance-detrimental
+          // to spawn more than one MPI process per core and use nested threading.
 
           ++core_available ;
 
@@ -214,7 +221,16 @@ HWLOC_Singleton::HWLOC_Singleton()
           pu_per_core = std::min( pu_available , pu_per_core );
         }
 
-        m_root_rank[ root_count++ ] = i ;
+        if ( m_root_type == HWLOC_OBJ_NODE && root_count && located_here ) {
+          // The master thread is currently running in this NUMA region
+          // so make this NUMA region the first root rank so that the 
+          // master thread does not migrate off this NUMA region.
+          m_root_rank[ root_count++ ] = m_root_rank[0] ;
+          m_root_rank[ 0 ] = i ;
+        }
+        else {
+          m_root_rank[ root_count++ ] = i ;
+        }
       }
     }
 
@@ -233,11 +249,12 @@ HWLOC_Singleton::HWLOC_Singleton()
       }
     }
 
-    hwloc_bitmap_free( proc_cpuset );
-
     if ( ! symmetry ) {
       std::cerr << "KokkosArray::Impl::hwloc WARNING Asymmetric hardware core hierarchy" << std::endl ;
     }
+
+    hwloc_bitmap_free( proc_cpuset_binding );
+    hwloc_bitmap_free( proc_cpuset_location );
   }
 }
 
@@ -402,23 +419,10 @@ bool hwloc::bind_this_thread( const unsigned coordinate[] )
   if ( result ) {
 
     const int root_rank = h.m_root_rank[ coordinate[0] ] ;
-    int core_rank = 0 ;
-    int pu_rank = 0 ;
-
-    switch( h.m_root_type ) {
-    case HWLOC_OBJ_NODE :
-    case HWLOC_OBJ_SOCKET :
-      if ( 1 < h.m_capacity_depth ) core_rank = coordinate[1] ;
-      if ( 2 < h.m_capacity_depth ) pu_rank   = coordinate[2] ;
-      break ;
-
-    case HWLOC_OBJ_CORE :
-      if ( 1 < h.m_capacity_depth ) pu_rank   = coordinate[1] ;
-      break ;
-
-    default:
-      break ;
-    }
+    const int core_rank =
+      ( ( HWLOC_OBJ_NODE   == h.m_root_type ||
+          HWLOC_OBJ_SOCKET == h.m_root_type ) &&
+        ( 1 < h.m_capacity_depth ) ) ? coordinate[1] : 0 ;
 
     const hwloc_obj_t root =
       hwloc_get_obj_by_type( h.m_topology ,
@@ -431,14 +435,8 @@ bool hwloc::bind_this_thread( const unsigned coordinate[] )
                                            HWLOC_OBJ_CORE ,
                                            core_rank );
 
-    const hwloc_obj_t pu =
-      hwloc_get_obj_inside_cpuset_by_type( h.m_topology ,
-                                           core->allowed_cpuset ,
-                                           HWLOC_OBJ_PU ,
-                                           pu_rank );
-
     result = 0 == hwloc_set_cpubind( h.m_topology ,
-                                     pu->allowed_cpuset ,
+                                     core->allowed_cpuset ,
                                      HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
 
     if ( result ) {
@@ -447,7 +445,7 @@ bool hwloc::bind_this_thread( const unsigned coordinate[] )
 
       hwloc_get_cpubind( h.m_topology, thread_cpuset, HWLOC_CPUBIND_THREAD );
 
-      result = hwloc_bitmap_isequal( thread_cpuset , pu->allowed_cpuset );
+      result = hwloc_bitmap_isequal( thread_cpuset , core->allowed_cpuset );
 
       hwloc_bitmap_free( thread_cpuset );
     }
@@ -459,9 +457,7 @@ bool hwloc::bind_this_thread( const unsigned coordinate[] )
       << coordinate[1] << ","
       << coordinate[2] << ","
       << coordinate[3] << ") " ;
-  msg << "root" ;  print_bitmap(msg,root->allowed_cpuset);
-  msg << " core" ; print_bitmap(msg,core->allowed_cpuset);
-  msg << " pu" ;   print_bitmap(msg,pu->allowed_cpuset);
+  msg << " to core" ; print_bitmap(msg,core->allowed_cpuset);
   msg << std::endl ;
   std::cout << msg.str();
 #endif

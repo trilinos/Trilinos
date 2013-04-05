@@ -51,17 +51,123 @@ namespace Impl {
 
 class HostInternal ;
 
-void host_thread_wait( volatile int * const state , const int value );
+void host_thread_wait( volatile int * const , const int );
 void host_thread_lock();
 void host_thread_unlock();
 
 //----------------------------------------------------------------------------
-/** \brief  This thread waits for each fan-in thread in the barrier.
- *          Once all threads have fanned in then fan-out reactivation.
- *
- *  A parallel work function must call barrier on all threads.
- */
-void host_barrier( HostThread & );
+/** \brief  Base class for a parallel driver executing on a thread pool. */
+
+struct HostThreadWorker {
+public:
+
+  virtual ~HostThreadWorker() {}
+
+  void execute() const ;
+  void execute_serial() const ;
+
+  /** \brief  Virtual method called on threads.
+   *
+   *  The function must call either 'end_barrier'
+   *  or 'end_reduce' as the ending statement.
+   */
+  virtual void execute_on_thread( HostThread & ) const = 0 ;
+
+  /** \brief End-of-function barrier */
+  inline
+  void end_barrier( HostThread & thread ) const
+  {
+    const unsigned n = thread.fan_count();
+
+    for ( unsigned i = 0 ; i < n ; ++i ) {
+      host_thread_wait( & thread.fan(i).m_state , HostThread::ThreadActive );
+    }
+  }
+
+  /** \brief  End-of-function reduction */
+  template< class ReduceOper >
+  void end_reduce( HostThread & thread , const ReduceOper & reduce ) const
+  {
+    const unsigned n = thread.fan_count();
+
+    for ( unsigned i = 0 ; i < n ; ++i ) {
+      HostThread & th = thread.fan(i);
+      host_thread_wait( & th.m_state , HostThread::ThreadActive );
+      reduce.join( thread.reduce_data() , th.reduce_data() );
+    }
+  }
+
+  //-----------------------------------
+
+  inline
+  void barrier( HostThread & thread ) const
+  {
+    const unsigned n = thread.fan_count();
+
+    // Wait until fan-in thread enters the 'Rendezvous' state
+    for ( unsigned i = 0 ; i < n ; ++i ) {
+      host_thread_wait( & thread.fan(i).m_state , HostThread::ThreadActive );
+    }
+
+    // If not the root thread then enter 'Rendezvous' state
+    if ( thread.rank() ) {
+      thread.m_state = HostThread::ThreadRendezvous ;
+      host_thread_wait( & thread.m_state , HostThread::ThreadRendezvous );
+    }
+
+    // Reset threads to the active state via fan-out.
+    for ( unsigned i = n ; 0 < i ; ) {
+      thread.fan(--i).m_state = HostThread::ThreadActive ;
+    }
+  }
+
+  //-----------------------------------
+
+  template< class ReduceOper >
+  inline
+  void reduce( HostThread & thread , const ReduceOper & reduce_op ) const
+  {
+    const unsigned n = thread.fan_count();
+
+    // Fan-in reduction of other threads' reduction data.
+
+    for ( unsigned i = 0 ; i < n ; ++i ) {
+      HostThread & th = thread.fan(i);
+
+      // Wait for source thread to complete its work and
+      // set its own state to 'Rendezvous'.
+      host_thread_wait( & th.m_state , HostThread::ThreadActive );
+
+      // Join source thread reduce data.
+      reduce_op.join( thread.reduce_data() , th.reduce_data() );
+    }
+
+    if ( thread.rank() ) {
+      // If this is not the root thread then it will give its
+      // reduction data to another thread.
+      // Set the 'Rendezvous' state.
+      // Wait for the other thread to process reduction data
+      // and then reactivate this thread.
+
+      thread.m_state = HostThread::ThreadRendezvous ;
+      host_thread_wait( & thread.m_state , HostThread::ThreadRendezvous );
+    }
+
+    // Reset threads to the active state via fan-out.
+    for ( unsigned i = n ; 0 < i ; ) {
+      thread.fan(--i).m_state = HostThread::ThreadActive ;
+    }
+  }
+
+protected:
+
+  HostThreadWorker() {}
+
+private:
+
+  HostThreadWorker( const HostThreadWorker & );
+  HostThreadWorker & operator = ( const HostThreadWorker & );
+};
 
 //----------------------------------------------------------------------------
 
@@ -84,6 +190,8 @@ public:
     const SrcType * y     = m_src + range.first ;
 
     for ( ; x_end != x ; ++x , ++y ) { *x = (DstType) *y ; }
+
+    end_barrier( this_thread );
   }
 
   HostParallelCopy( DstType * dst , const SrcType * src ,
@@ -110,6 +218,8 @@ public:
     DstType *       x     = m_dst + range.first ;
 
     for ( ; x_end != x ; ++x ) { *x = m_src ; }
+
+    end_barrier( this_thread );
   }
 
   template< typename SrcType >

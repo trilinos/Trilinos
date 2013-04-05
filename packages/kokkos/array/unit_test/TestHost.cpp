@@ -206,20 +206,27 @@ struct HostFunctor
 
   typedef int value_type ;
 
-  const reduce_type reduce ;
+  const reduce_type m_reduce ;
 
-  HostFunctor( int & f ) : reduce(f)
+  HostFunctor( int & f ) : m_reduce(f)
     { KokkosArray::Impl::HostThreadWorker::execute(); }
 
   void execute_on_thread( KokkosArray::Impl::HostThread & thread ) const
     {
-      reduce.init( thread.reduce_data() );
+      m_reduce.init( thread.reduce_data() );
 
-      host_barrier( thread );
-      host_barrier( thread );
-      host_reduce( thread , reduce );
-      host_reduce( thread , reduce );
-      host_barrier( thread );
+      barrier( thread );
+      barrier( thread );
+
+      // Reduce to master thread:
+      reduce( thread , m_reduce );
+      if ( 0 == thread.rank() ) m_reduce.finalize( thread.reduce_data() );
+
+      // Reduce to master thread:
+      reduce( thread , m_reduce );
+      if ( 0 == thread.rank() ) m_reduce.finalize( thread.reduce_data() );
+
+      end_barrier( thread );
     }
 };
 

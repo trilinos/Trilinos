@@ -188,33 +188,6 @@ public:
 };
 
 //----------------------------------------------------------------------------
-/** \brief  Base class for a parallel driver executing on a thread pool. */
-
-struct HostThreadWorker {
-public:
-
-  virtual ~HostThreadWorker() {}
-
-  void execute() const ;
-  void execute_serial() const ;
-
-  /** \brief  Virtual method called on threads */
-  virtual void execute_on_thread( HostThread & ) const = 0 ;
-
-  /** \brief Wait for fanin/fanout threads to deactivate themselves. */
-  void fanin_deactivation( HostThread & thread ) const ;
-
-protected:
-
-  HostThreadWorker() {}
-
-private:
-
-  HostThreadWorker( const HostThreadWorker & );
-  HostThreadWorker & operator = ( const HostThreadWorker & );
-};
-
-//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace KokkosArray

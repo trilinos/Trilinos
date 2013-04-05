@@ -154,7 +154,9 @@ public:
                   const FinalizeType & finalize )
   {
 #if defined( __INTEL_COMPILER )
-    enum { work_align = is_same<WorkSpec,VectorParallel>::value ? HostSpace::WORK_ALIGNMENT : 1 };
+    enum { work_align = is_same<WorkSpec,VectorParallel>::value &&
+                        power_of_two<HostSpace::WORK_ALIGNMENT>::value 
+                      ? HostSpace::WORK_ALIGNMENT : 1 };
     enum { work_mask  = work_align - 1 };
 #else
     enum { work_align = 1 };
