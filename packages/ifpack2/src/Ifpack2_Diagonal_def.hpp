@@ -150,7 +150,7 @@ void Diagonal<MatrixType>::applyTempl(const Tpetra::MultiVector<DomainScalar,Loc
       std::transform( xVals.begin(), xVals.end(), xValsRange.begin(), Teuchos::asFunc<RangeScalar>() );
     }
   }
-  Teuchos::ArrayRCP<const DomainScalar> invVals = inversediag_->get1dView();
+  Teuchos::ArrayRCP<const Scalar> invVals = inversediag_->get1dView();
   Teuchos::ArrayRCP<RangeScalar> invValsRange = invtmp->get1dViewNonConst();
   if( invVals.size() ) {
     std::transform( invVals.begin(), invVals.end(), invValsRange.begin(), Teuchos::asFunc<RangeScalar>() );
