@@ -82,7 +82,7 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
-#include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 
@@ -365,10 +365,7 @@ int main(int argc, char *argv[]) {
         AFact->SetFactory("R", RFact);
 
         // Transfer coordinates
-        RCP<MultiVectorTransferFactory> TransferCoordinatesFact = rcp(new MultiVectorTransferFactory());
-        RCP<Factory> TentativeRFact = rcp(new TransPFactory()); TentativeRFact->SetFactory("P", M.GetFactory("Ptent")); // Use Ptent for coordinate projection
-        TransferCoordinatesFact->SetParameter("Vector name", Teuchos::ParameterEntry(std::string("Coordinates")));
-        TransferCoordinatesFact->SetFactory("R", TentativeRFact);
+        RCP<CoordinatesTransferFactory> TransferCoordinatesFact = rcp(new CoordinatesTransferFactory());
         AFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
 
         // Compute partition (creates "Partition" object)
