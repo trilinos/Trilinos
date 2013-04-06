@@ -33,6 +33,8 @@
 #include <unit_tests/TestLocalRefinerTri_N_3_IEdgeAdapter.hpp>
 #include <unit_tests/TestLocalRefinerTri_N_3_IElementAdapter.hpp>
 
+#include <unit_tests/TestLocalRefinerTri_N_4_IEdgeAdapter.hpp>
+
 #include <unit_tests/TestLocalRefinerTri_N_3_MeshSizeRatio.hpp>
 #include <unit_tests/TestLocalRefinerTri_N_3_EdgeBasedAnisotropic.hpp>
 
@@ -1526,6 +1528,63 @@ namespace stk {
             // end_demo
           }
 
+      }
+#endif
+#if 1
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N_4_IEdgeAdapter)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 3)
+        {
+          const unsigned n = 2;
+          const unsigned nx = n , ny = n;
+
+          bool createEdgeSets = true;
+          percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
+
+          bool isCommitted = false;
+          percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
+
+          Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
+          int scalarDimension = 0; // a scalar
+          stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+          eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+          eMesh.commit();
+
+          fixture.generate_mesh();
+
+          //eMesh.print_info("local tri mesh",2);
+          save_or_diff(eMesh, output_files_loc+"local_tri_N_4_IEdgeAdapter_"+post_fix[p_size]+".e");
+
+          TestLocalRefinerTri_N_4_IEdgeAdapter breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
+          breaker.setRemoveOldElements(false);
+          breaker.setAlwaysInitializeNodeRegistry(false);
+          breaker.set_threshold(0.125);
+          breaker.set_max_length(0.125);
+          for (int ipass=0; ipass < 8; ipass++)
+          {
+            breaker.set_location(0.25 + 0.25*ipass);
+            std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << std::endl;
+            breaker.doBreak();
+            for (int iunref_pass=0; iunref_pass < 4; iunref_pass++)
+            {
+              std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << std::endl;
+              ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+              breaker.unrefineTheseElements(elements_to_unref);
+            }
+            std::stringstream fileid_ss;
+            fileid_ss << std::setfill('0') << std::setw(4) << ipass+1;
+            eMesh.save_as(output_files_loc+"local_tri_N_4_IEdgeAdapter_"+post_fix[p_size]+".e-s"+fileid_ss.str());
+          }
+        }
       }
 #endif
 
