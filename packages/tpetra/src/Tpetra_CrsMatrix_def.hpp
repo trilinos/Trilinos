@@ -1586,7 +1586,7 @@ namespace Tpetra {
       std::ostringstream os; // build error message
       const bool both =
         globalResults[0] == 0 && globalResults[1] == 0;
-      os << ": At least one process (including Process " << globalResults[3]
+      os << ": At least one process (including Process " << globalResults[2]
          << ") had the following issue" << (both ? "s" : "") << ":" << endl;
       if (globalResults[0] == 0) {
         os << "  - The column Map does not contain at least one diagonal entry "
