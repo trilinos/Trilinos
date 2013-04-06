@@ -533,7 +533,7 @@ typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType 
       size_t numEntries = 0;
       this->getLocalRowCopy (i, ind, val, numEntries);
       for (size_t k = 0; k < numEntries; ++k) {
-        sumSquared += val[k] * val[k];
+        sumSquared += STS::magnitude(val[k]) * STS::magnitude(val[k]);
       }
     }
   }
