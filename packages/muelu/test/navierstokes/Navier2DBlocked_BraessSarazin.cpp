@@ -86,6 +86,7 @@
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -529,12 +530,13 @@ int main(int argc, char *argv[]) {
   dropFact11->SetFactory("A", A11Fact);
   dropFact11->SetFactory("UnAmalgamationInfo", amalgFact11);
   dropFact11->setDefaultVerbLevel(Teuchos::VERB_EXTREME);
-  RCP<CoupledAggregationFactory> CoupledAggFact11 = rcp(new CoupledAggregationFactory());
+  //RCP<CoupledAggregationFactory> CoupledAggFact11 = rcp(new CoupledAggregationFactory());
+  RCP<UncoupledAggregationFactory> CoupledAggFact11 = rcp(new UncoupledAggregationFactory());
   CoupledAggFact11->SetFactory("Graph", dropFact11);
   CoupledAggFact11->SetMinNodesPerAggregate(9);
   CoupledAggFact11->SetMaxNeighAlreadySelected(2);
   CoupledAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
-  CoupledAggFact11->SetPhase3AggCreation(0.5);
+  //CoupledAggFact11->SetPhase3AggCreation(0.5);
 
   ///////////////////////////////////////// define transfer ops for A11
 #if 0
