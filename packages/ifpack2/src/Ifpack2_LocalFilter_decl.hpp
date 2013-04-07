@@ -139,7 +139,7 @@ public:
   ///   from this, so you may use a Tpetra::CrsMatrix here instead.)
   ///
   /// This class will <i>not</i> modify the input matrix.
-  explicit LocalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix);
+  explicit LocalFilter (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> >& Matrix);
 
   //! Destructor
   virtual ~LocalFilter();
@@ -152,22 +152,22 @@ public:
   virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
 
   //! Returns the underlying Kokkos Node object.
-  virtual Teuchos::RCP<Node> getNode() const;
+  virtual Teuchos::RCP<node_type> getNode() const;
 
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const;
+  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getRowMap() const;
 
   //! Returns the Map that describes the column distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const;
+  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getDomainMap() const;
 
   //! Returns the Map that describes the range distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getRangeMap() const;
 
   //! The (locally filtered) matrix's graph.
-  virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;
+  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > getGraph() const;
 
   //! The number of global rows in this matrix.
   virtual global_size_t getGlobalNumRows() const;
@@ -379,9 +379,9 @@ public:
 
     \pre isLocallyIndexed()==false
   */
-  TPETRA_DEPRECATED virtual void getGlobalRowView(GlobalOrdinal GlobalRow,
-                                                  Teuchos::ArrayRCP<const GlobalOrdinal> &indices,
-                                                  Teuchos::ArrayRCP<const Scalar>        &values) const;
+  TPETRA_DEPRECATED virtual void getGlobalRowView(global_ordinal_type GlobalRow,
+                                                  Teuchos::ArrayRCP<const global_ordinal_type> &indices,
+                                                  Teuchos::ArrayRCP<const scalar_type>        &values) const;
 
   //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
   /*!
@@ -393,18 +393,18 @@ public:
 
     \pre isGloballyIndexed()==false
   */
-  TPETRA_DEPRECATED virtual void getLocalRowView(LocalOrdinal LocalRow,
-                                                 Teuchos::ArrayRCP<const LocalOrdinal> &indices,
-                                                 Teuchos::ArrayRCP<const Scalar>       &values) const;
+  TPETRA_DEPRECATED virtual void getLocalRowView(local_ordinal_type LocalRow,
+                                                 Teuchos::ArrayRCP<const local_ordinal_type> &indices,
+                                                 Teuchos::ArrayRCP<const scalar_type>       &values) const;
   //@}
 
 
 private:
 
   //! Pointer to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
+  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> > A_;
   //! Map based on SerialComm_, containing the local rows only.
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > LocalMap_;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > LocalMap_;
   //! Number of rows in the local matrix.
   size_t NumRows_;
   //! Number of nonzeros in the local matrix.
@@ -416,9 +416,9 @@ private:
   //! NumEntries_[i] contains the nonzero entries in row `i'.
   std::vector<size_t> NumEntries_;
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable Teuchos::Array<LocalOrdinal> Indices_;
+  mutable Teuchos::Array<local_ordinal_type> Indices_;
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable Teuchos::Array<Scalar> Values_;
+  mutable Teuchos::Array<scalar_type> Values_;
 
 };// class LocalFilter
 
