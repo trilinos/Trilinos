@@ -112,7 +112,8 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    this->Input(currentLevel, "A");
+    //this->Input(currentLevel, "A");
+    currentLevel.DeclareInput("A",this->GetFactory("A").get());
     TEUCHOS_TEST_FOR_EXCEPTION(FactManager_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::BraessSarazinSmoother::DeclareInput: FactManager_ must not be Teuchos::null! error.");
     currentLevel.DeclareInput("PreSmoother",FactManager_->GetFactory("PreSmoother").get());
   }

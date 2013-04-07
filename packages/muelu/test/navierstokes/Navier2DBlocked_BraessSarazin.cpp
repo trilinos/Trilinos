@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   // custom parameters
-  LocalOrdinal maxLevels = 2;
+  LocalOrdinal maxLevels = 3;
 
   GlobalOrdinal maxCoarseSize=1; //FIXME clp doesn't like long long int
 
@@ -442,6 +442,9 @@ int main(int argc, char *argv[]) {
 
   EpetraExt::MatrixMarketFileToCrsMatrix("A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
   EpetraExt::MatrixMarketFileToVector("b5932_re1000.txt",*fullmap,ptrf);
+  //EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/promotion/trilinos/fc17-dyn/packages/muelu/test/navierstokes/A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
+  //EpetraExt::MatrixMarketFileToVector("/home/tobias/promotion/trilinos/fc17-dyn/packages/muelu/test/navierstokes/b5932_re1000.txt",*fullmap,ptrf);
+
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
@@ -688,11 +691,11 @@ int main(int argc, char *argv[]) {
     RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0, SFact) );
     RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
-    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother(3,omega/*,MueLu::NoFactory::getRCP()*//*,SmooSCFact*/) );
+    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother(3,omega) );
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
-  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother(3,omega/*,MueLu::NoFactory::getRCP()*//*,SmooSCFact*/) );
+  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother(3,omega) );
 
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
 
@@ -719,13 +722,16 @@ int main(int argc, char *argv[]) {
 
   H->Setup(M,0,maxLevels);
 
+  *out << std::endl;
+  *out << "print content of multigrid levels:" << std::endl;
+
   Finest->print(*out);
 
   RCP<Level> coarseLevel = H->GetLevel(1);
   coarseLevel->print(*out);
 
-  //RCP<Level> coarseLevel2 = H->GetLevel(2);
-  //coarseLevel2->print(*out);
+  RCP<Level> coarseLevel2 = H->GetLevel(2);
+  coarseLevel2->print(*out);
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap,1);
 

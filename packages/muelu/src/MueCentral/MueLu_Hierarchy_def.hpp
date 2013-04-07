@@ -203,9 +203,14 @@ namespace MueLu {
       // The release is done later
     }
 
+    //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    //level.print(*out,Teuchos::VERB_EXTREME);
+
     RCP<Matrix> Ac = Teuchos::null;
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Matrix> >("A");
+
+    //level.print(*out,Teuchos::VERB_EXTREME);
 
     // Test if we reach the end of the hierarchy
     RCP<TopSmootherFactory> smootherFact;
@@ -225,15 +230,21 @@ namespace MueLu {
 
     // Build smoother/solver
     if (!smootherFact.is_null()) {
+      //level.print(*out,Teuchos::VERB_EXTREME);
       level.Request(*smootherFact);
+      //level.print(*out,Teuchos::VERB_EXTREME);
       smootherFact->Build(level);
+      //level.print(*out,Teuchos::VERB_EXTREME);
       level.Release(*smootherFact);
+      //level.print(*out,Teuchos::VERB_EXTREME);
     }
 
     if (isLastLevel == true && isOrigLastLevel == false) {
       // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
       // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to relese that.
+      //Levels_[nextLevelID]->print(*out,Teuchos::VERB_EXTREME);
       Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
+      //Levels_[nextLevelID]->print(*out,Teuchos::VERB_EXTREME);
       Levels_.pop_back(); // remove next level
     }
 
@@ -245,8 +256,10 @@ namespace MueLu {
       // Release the hierarchy data
       // We release so late to help blocked solvers, as the smoothers for them need A blocks
       // which we construct in RAPFactory
+      //level.print(*out,Teuchos::VERB_EXTREME);
       TopRAPFactory coarseRAPFactory(rcpfineLevelManager, rcpcoarseLevelManager);
       level.Release(coarseRAPFactory);
+      //level.print(*out,Teuchos::VERB_EXTREME);
     }
 
     return isLastLevel;
