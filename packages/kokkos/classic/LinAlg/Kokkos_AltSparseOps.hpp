@@ -2797,6 +2797,287 @@ namespace Kokkos {
     return rcp_const_cast<const ParameterList> (plist);
   }
 
+
+  // Partial specialization of AltSparseOps for Scalar=void.
+  //
+  // This quiets build errors with Microsoft Visual Studio, which is
+  // pickier than other C++ compilers about actually trying to compile
+  // specializations that don't get used.
+  template <class Ordinal, class Node, class Allocator>
+  class AltSparseOps<void, Ordinal, Node, Allocator> :
+    public Teuchos::Describable {
+  public:
+    //! \name Typedefs and structs
+    //@{
+
+    typedef void scalar_type;
+    typedef Ordinal ordinal_type;
+    typedef Node node_type;
+    typedef Allocator allocator_type;
+    typedef AltSparseOps<void, Ordinal, Node, Allocator> sparse_ops_type;
+
+    template <class O, class N>
+    struct graph {
+      typedef AltCrsGraph<O,N> graph_type;
+    };
+
+    template <class S, class O, class N>
+    struct matrix {
+      typedef AltCrsMatrix<S,O,N> matrix_type;
+    };
+
+    /// \brief Local sparse operations type for a different scalar type.
+    ///
+    /// The bind_scalar struct defines the type responsible for local
+    /// sparse operations for a scalar type S2, which may be different
+    /// from \c Scalar.
+    ///
+    /// This class' typedef is used by Tpetra::CrsMatrix to bind a
+    /// potentially "void" scalar type to the appropriate scalar.  The
+    /// other_type typedef tells Tpetra::CrsMatrix which local sparse
+    /// ops type to use, as a function of Tpetra's Scalar template
+    /// parameter.
+    ///
+    /// Other local sparse ops implementations (especially those that
+    /// wrap third-party libraries implementing sparse kernels) might
+    /// use this to provide a "fall-back" sparse ops implementation of
+    /// a possibly different type, if the third-party library does not
+    /// support scalar type S2.
+    ///
+    /// In the case of AltSparseOps, the other_type typedef always
+    /// specifies a specialization of AltSparseOps, regardless of the
+    /// scalar type S2.  This is not necessarily true for other
+    /// implementations of local sparse ops, so Tpetra developers
+    /// should always get their local sparse ops type from the
+    /// other_type typedef.
+    ///
+    /// \tparam S2 A scalar type possibly different from \c Scalar.
+    template <class S2>
+    struct bind_scalar {
+      typedef AltSparseOps<S2, Ordinal, Node, Allocator> other_type;
+    };
+
+    /// \brief Local sparse operations type for a different ordinal type.
+    ///
+    /// The bind_ordinal struct defines the type responsible for
+    /// sparse operations for an ordinal type O2, which may be
+    /// different from \c Ordinal.
+    ///
+    /// This is used by Tpetra::CrsMatrix to bind the local sparse ops
+    /// type to use its own (Local)Ordinal type.  In the case of
+    /// AltSparseOps, the other_type typedef always specifies a
+    /// specialization of AltSparseOps, regardless of the ordinal type
+    /// O2.  This is not necessarily true for other implementations of
+    /// local sparse ops, so Tpetra developers should always get their
+    /// local sparse ops type from the other_type typedef.
+    ///
+    /// Other local sparse ops implementations (especially those that
+    /// wrap third-party libraries implementing sparse kernels) might
+    /// use this to provide a "fall-back" sparse ops implementation of
+    /// a possibly different type, if the third-party library does not
+    /// support ordinal type O2.
+    ///
+    /// \tparam O2 An ordinal type possibly different from \c Ordinal.
+    template <class O2>
+    struct bind_ordinal {
+      typedef AltSparseOps<void, O2, Node, Allocator> other_type;
+    };
+
+    //@}
+    //! \name Constructors and destructor
+    //@{
+
+    //! Constructor (Kokkos Node): DO NOT CALL (Scalar=void specialization).
+    AltSparseOps (const Teuchos::RCP<Node>& node) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "It is not allowed to "
+        "instantiate Kokkos::AltSparseOps with Scalar=void.  The Scalar=void "
+        "specialization exists only for its typedefs.  "
+        "Please report this bug to the Kokkos and Tpetra developers.");
+    }
+
+    //! Constructor (Node and parameters): DO NOT CALL (Scalar=void specialization)
+    AltSparseOps (const Teuchos::RCP<Node>& node,
+                  Teuchos::ParameterList& plist) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "It is not allowed to "
+        "instantiate Kokkos::AltSparseOps with Scalar=void.  The Scalar=void "
+        "specialization exists only for its typedefs.  "
+        "Please report this bug to the Kokkos and Tpetra developers.");
+    }
+
+    //! Destructor
+    ~AltSparseOps() {
+      // We don't throw an exception here, because throwing exceptions
+      // in a destructor may cause the application to terminate [1].
+      // However, it's impossible that execution will reach this
+      // point, since all the constructors throw exceptions.
+      //
+      // [1] http://www.parashift.com/c++-faq/dtors-shouldnt-throw.html
+    }
+
+    /// \brief Get a default ParameterList for the constructor.
+    ///
+    /// The returned ParameterList has all accepted parameters, their
+    /// default values, documentation, and validators (if applicable).
+    ///
+    /// This is a class (static) method so that you can get the
+    /// default ParameterList (with built-in documentation) before
+    /// constructing a AltSparseOps instance.
+    static Teuchos::RCP<const Teuchos::ParameterList> getDefaultParameters () {
+      // This specialization has no parameters, but
+      // getDefaultParameters() always should return a valid (nonnull)
+      // ParameterList, so that validation makes sense.
+      return Teuchos::parameterList ("AltSparseOps");
+    }
+
+    //@}
+    //! \name Implementation of Teuchos::Describable
+    //@{
+
+    //! One-line description of this instance.
+    std::string description () const {
+      using Teuchos::TypeNameTraits;
+      std::ostringstream os;
+      os <<  "Kokkos::AltSparseOps<"
+         << "Scalar=void"
+         << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
+         << ", Node=" << TypeNameTraits<Node>::name()
+         << ">";
+      return os.str();
+    }
+
+    /// Write a more verbose description of this instance to out.
+    ///
+    /// At verbosity levels greater than Teuchos::VERB_LOW, this
+    /// method will print the matrix's attributes in YAML 1.2 format.
+    /// Teuchos::VERB_MEDIUM (the default) will print a constant
+    /// amount of data, independent of the matrix's dimensions or
+    /// number of entries.  Teuchos::VERB_EXTREME will print all of
+    /// the matrix's entries as well.
+    void
+    describe (Teuchos::FancyOStream& out,
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const
+    {
+      using Teuchos::includesVerbLevel;
+      using Teuchos::VERB_DEFAULT;
+      using Teuchos::VERB_NONE;
+      using Teuchos::VERB_LOW;
+      using Teuchos::VERB_MEDIUM;
+      using Teuchos::VERB_HIGH;
+      using Teuchos::VERB_EXTREME;
+
+      // Interpret the default verbosity level as VERB_MEDIUM.
+      const Teuchos::EVerbosityLevel vl =
+        (verbLevel == VERB_DEFAULT) ? VERB_MEDIUM : verbLevel;
+
+      if (vl == VERB_NONE) {
+        return;
+      }
+      else if (includesVerbLevel (vl, VERB_LOW)) { // vl >= VERB_LOW
+        out << this->description() << std::endl;
+      }
+    }
+
+    //@}
+    //! \name Accessor routines
+    //@{
+
+    //! The Kokkos Node with which this object was instantiated.
+    RCP<Node> getNode () const {
+      // You're not supposed to instantiate this object, so we always
+      // return null here.
+      return Teuchos::null;
+    }
+
+    //@}
+    //! @name Initialization of graph and matrix
+    //@{
+
+    /// \brief Allocate and initialize the storage for the row offsets.
+    ///
+    /// \note This is still implemented in the Scalar=void
+    ///   specialization, since Tpetra::CrsGraph may use it for
+    ///   allocating its row offsets.  Since it's a class method, we
+    ///   may call it without needing to instantiate an AltSparseOps
+    ///   instance.
+    static Teuchos::ArrayRCP<size_t>
+    allocRowPtrs (const Teuchos::RCP<Node>& node,
+                  const ArrayView<const size_t>& numEntriesPerRow)
+    {
+      return allocator_type::allocRowPtrs (node, numEntriesPerRow);
+    }
+
+    /// \brief Copy the storage for the row pointers.
+    ///
+    /// \param node [in/out] Kokkos Node instance.
+    /// \param rowPtrs [in] The array of row offsets to copy.
+    ///
+    /// You might like to call this method if the Allocator promises a
+    /// special allocation method (like first-touch allocation), but
+    /// the input array was not allocated by the Allocator.
+    static Teuchos::ArrayRCP<size_t>
+    copyRowPtrs (const Teuchos::RCP<Node>& node,
+                 const Teuchos::ArrayView<const size_t>& rowPtrs)
+    {
+      return allocator_type::copyRowPtrs (node, rowPtrs);
+    }
+
+    /// \brief Allocate and initialize the storage for graph or matrix storage.
+    ///
+    /// \note This is still implemented in the Scalar=void
+    ///   specialization, since Tpetra::CrsGraph may use it for
+    ///   allocating the column indices (T=Ordinal).  Since it's a
+    ///   class method, we may call it without needing to instantiate
+    ///   an AltSparseOps instance.
+    template <class T>
+    static Teuchos::ArrayRCP<T>
+    allocStorage (const Teuchos::RCP<Node>& node,
+                  const Teuchos::ArrayView<const size_t>& rowPtrs)
+    {
+      return allocator_type::template allocStorage<T> (node, rowPtrs);
+    }
+
+    /// \brief Copy the storage for a sparse graph or matrix.
+    ///
+    /// \param node [in/out] Kokkos Node instance.
+    /// \param rowPtrs [in] The array of row offsets; the 'ptr' array
+    ///   in the compressed sparse row storage format.  rowPtrs.size()
+    ///   is one plus the number of rows in the local sparse matrix.
+    /// \param inputVals [in] The array of input values (or column
+    ///   indices) to copy.
+    ///
+    /// You might like to call this method if the Allocator promises a
+    /// special allocation method (like first-touch allocation), but
+    /// inputVals was not allocated by the Allocator.
+    template <class T>
+    static Teuchos::ArrayRCP<T>
+    copyStorage (const Teuchos::RCP<Node>& node,
+                 const Teuchos::ArrayView<const size_t>& rowPtrs,
+                 const Teuchos::ArrayView<const T>& inputVals)
+    {
+      return allocator_type::template allocStorage<T> (node, rowPtrs, inputVals);
+    }
+
+    /// \brief Finalize the graph.
+    ///
+    /// \note This is still implemented in the Scalar=void
+    ///   specialization, since Tpetra::CrsGraph may use it for
+    ///   finalizing the graph structure.  Since it's a class method,
+    ///   we may call it without needing to instantiate an
+    ///   AltSparseOps instance.
+    static void
+    finalizeGraph (Teuchos::EUplo uplo,
+                   Teuchos::EDiag diag,
+                   AltCrsGraph<Ordinal, Node>& graph,
+                   const Teuchos::RCP<Teuchos::ParameterList> &params)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! graph.isInitialized(), std::runtime_error,
+        "Kokkos::AltSparseOps::finalizeGraph: "
+        "Graph has not yet been initialized.");
+      graph.setMatDesc (uplo, diag);
+    }
+  };
 } // namespace Kokkos
 
 #endif // #ifndef __Kokkos_AltSparseOps_hpp
