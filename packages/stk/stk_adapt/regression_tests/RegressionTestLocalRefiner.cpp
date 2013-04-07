@@ -578,7 +578,7 @@ namespace stk
             fixture.generate_mesh();
             eMesh.save_as(input_files_loc+"square_tri3_0.e");
             eMesh.print_info("test1",2);
-            eMesh.dump_vtk("sqtri3.vtk",false);
+            //eMesh.dump_vtk("sqtri3.vtk",false);
         }
         //if (1) return;
 
@@ -641,7 +641,7 @@ namespace stk
                 eMesh.save_as(output_files_loc+"tmp_square_sidesets_moving_shock_ref_"+post_fix[p_size]+"_"+toString(istep+1)+".e");
                 //eMesh.save_as("square_anim."+toString(istep+1)+".e");
                 //eMesh.save_as("square_anim.e."+toString(istep+1));
-                eMesh.dump_vtk("square_anim."+toString(istep+1)+".vtk", false);
+                //eMesh.dump_vtk("square_anim."+toString(istep+1)+".vtk", false);
 
                 //exit(123);
 
