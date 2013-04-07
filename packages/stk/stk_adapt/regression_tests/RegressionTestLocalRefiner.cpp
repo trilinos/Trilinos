@@ -446,6 +446,7 @@ namespace stk
             stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
+            //eMesh.delete_side_sets();
 
             std::cout << "moving_shock initial number elements= " << eMesh.get_number_elements() << std::endl;
 
@@ -518,7 +519,9 @@ namespace stk
             eMesh.save_as(output_files_loc+"cyl_sidesets_final_moving_shock_"+post_fix[p_size]+".e."+toString(num_time_steps) );
             for (int iunref=0; iunref < 10; iunref++)
               {
+                std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_pass= " << iunref <<  std::endl;
                 breaker.unrefineAll();
+                std::cout << "P[" << eMesh.get_rank() << "] done... iunrefAll_pass= " << iunref << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
                 eMesh.save_as(output_files_loc+"cyl_sidesets_final_moving_shock_"+post_fix[p_size]+"_unrefAll_pass_"+toString(iunref)+".e."+toString(num_time_steps) );
               }
 
@@ -550,6 +553,148 @@ namespace stk
           }
       }
 
+
+      static void do_moving_shock_test_square_sidesets(int num_time_steps, bool save_intermediate=false, bool delete_parents=false)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        shock_width = 1./25.0;
+        double shock_diff_criterion = 0.04;
+
+        {
+            const unsigned n = 5;
+            const unsigned nx = n , ny = n;
+
+            bool createEdgeSets = true;
+            percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
+            fixture.set_bounding_box(-1,1, -1, 1);
+
+            bool isCommitted = false;
+            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
+
+            eMesh.commit();
+
+            fixture.generate_mesh();
+            eMesh.save_as(input_files_loc+"square_tri3_0.e");
+            eMesh.print_info("test1",2);
+            eMesh.dump_vtk("sqtri3.vtk",false);
+        }
+        //if (1) return;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size==1 || p_size == 3)
+          {
+            percept::PerceptMesh eMesh;
+            eMesh.open(input_files_loc+"square_tri3_0.e");
+
+            Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
+            eMesh.commit();
+            //eMesh.delete_side_sets();
+
+            std::cout << "moving_shock initial number elements= " << eMesh.get_number_elements() << std::endl;
+
+            eMesh.save_as( output_files_loc+"square_sidesets_moving_shock_"+post_fix[p_size]+".e.0");
+
+            PlaneShock shock;
+            shock.plane_point_init[0] = 0.0;
+            shock.plane_point_init[1] = 0.0;
+            shock.plane_point_init[2] = 0.0;
+            shock.plane_normal[0] = 1;
+            shock.plane_normal[1] = 0;
+            shock.plane_normal[2] = 0;
+
+            ShockBasedRefinePredicate srp(nodal_refine_field, eMesh, 0, refine_field, 0.0, shock, 0.0, shock_diff_criterion);
+
+            PredicateBasedEdgeAdapter<ShockBasedRefinePredicate>
+              breaker(srp,
+                      eMesh, break_tri_to_tri_N, proc_rank_field);
+
+            breaker.setRemoveOldElements(false);
+            breaker.setAlwaysInitializeNodeRegistry(false);
+
+            // x,y,z: [-.08,.08],[-.08,.08],[-.5,-.2]
+            double delta_shock_displacement = 0.2;
+            double shock_displacement = 0.0;
+            int num_ref_passes = 3;
+            int num_unref_passes = 3;
+
+            for (int istep = 0; istep < num_time_steps; istep++)
+              {
+                std::cout << "P[" << eMesh.get_rank() << "] istep= " << istep << std::endl;
+
+                breaker.getRefinePredicate().m_shock_displacement = shock_displacement;
+
+                for (int ipass=0; ipass < num_ref_passes; ipass++)
+                  {
+                    std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass <<  std::endl;
+                    breaker.doBreak();
+                    std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
+                  }
+
+                //breaker.deleteParentElements();
+                eMesh.save_as(output_files_loc+"tmp_square_sidesets_moving_shock_ref_"+post_fix[p_size]+"_"+toString(istep+1)+".e");
+                //eMesh.save_as("square_anim."+toString(istep+1)+".e");
+                //eMesh.save_as("square_anim.e."+toString(istep+1));
+                eMesh.dump_vtk("square_anim."+toString(istep+1)+".vtk", false);
+
+                //exit(123);
+
+                //breaker.getNodeRegistry().init_entity_repo();
+                for (int iunref_pass=0; iunref_pass < num_unref_passes; iunref_pass++)
+                  {
+                    std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass <<  std::endl;
+                    ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+                    breaker.unrefineTheseElements(elements_to_unref);
+                    std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
+                  }
+
+//                 breaker.deleteParentElements();
+                 eMesh.save_as(output_files_loc+"tmp_square_sidesets_moving_shock_unref_"+post_fix[p_size]+".e");
+                 //exit(123);
+
+                if (delete_parents && istep == num_time_steps-1)
+                  {
+                    breaker.deleteParentElements();
+                  }
+                if (istep == num_time_steps-1 || save_intermediate)
+                  eMesh.save_as(output_files_loc+"square_sidesets_moving_shock_"+post_fix[p_size]+".e."+toString(istep+1) );
+
+                shock_displacement += delta_shock_displacement;
+
+              }
+
+            eMesh.save_as(output_files_loc+"square_sidesets_final_moving_shock_"+post_fix[p_size]+".e."+toString(num_time_steps) );
+            for (int iunref=0; iunref < 10; iunref++)
+              {
+                std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_pass= " << iunref <<  std::endl;
+                breaker.unrefineAll();
+                std::cout << "P[" << eMesh.get_rank() << "] done... iunrefAll_pass= " << iunref << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
+                eMesh.save_as(output_files_loc+"square_sidesets_final_moving_shock_"+post_fix[p_size]+"_unrefAll_pass_"+toString(iunref)+".e."+toString(num_time_steps) );
+              }
+
+            if (1)
+              breaker.deleteParentElements();
+            std::cout << "moving_shock final number elements= " << eMesh.get_number_elements() << std::endl;
+            eMesh.save_as(output_files_loc+"square_sidesets_final_unrefed_moving_shock_"+post_fix[p_size]+".e."+toString(num_time_steps) );
+            //exit(123);
+
+            // end_demo
+          }
+      }
+
+      STKUNIT_UNIT_TEST(regr_localRefiner, break_tri_to_tri_N_5_EdgeBased_moving_shock_square_sidesets)
+      {
+        if (1) return;
+        //int num_time_steps = 10;  // 10 for stress testing
+        //for (int istep=1; istep <= num_time_steps; istep++)
+              do_moving_shock_test_square_sidesets(10, false, true);
+      }
 
     }
   }
