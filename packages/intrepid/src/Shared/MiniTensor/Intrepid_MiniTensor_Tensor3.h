@@ -47,300 +47,300 @@
 
 namespace Intrepid {
 
-  ///
-  /// Third order tensor in R^N.
-  ///
-  template<typename T>
-  class Tensor3
-  {
-  public:
-
-    ///
-    /// Component type
-    ///
-    typedef T type;
-
-    ///
-    /// Default constructor
-    ///
-    Tensor3();
-
-    ///
-    /// 3rd-order tensor constructor with NaNs
-    ///
-    explicit
-    Tensor3(Index const N);
-
-    ///
-    /// 3rd-order tensor constructor with a scalar
-    /// \param s all components set to this scalar
-    ///
-    Tensor3(Index const N, T const & s);
-
-    ///
-    /// Copy constructor
-    /// 3rd-order tensor constructor from 3rd-order tensor
-    /// \param A from which components are copied
-    ///
-    Tensor3(Tensor3<T> const & A);
-
-    ///
-    /// 3rd-order tensor simple destructor
-    ///
-    ~Tensor3();
-
-    ///
-    /// Indexing for constant 3rd-order tensor
-    /// \param i index
-    /// \param j index
-    /// \param k index
-    ///
-    T const &
-    operator()(Index const i, Index const j, Index const k) const;
-
-    ///
-    /// 3rd-order tensor indexing
-    /// \param i index
-    /// \param j index
-    /// \param k index
-    ///
-    T &
-    operator()(Index const i, Index const j, Index const k);
-
-    ///
-    /// \return dimension
-    ///
-    Index
-    get_dimension() const;
-
-    ///
-    /// \param N dimension of 3rd-order tensor
-    ///
-    void
-    set_dimension(Index const N);
-
-    ///
-    /// 3rd-order tensor copy assignment
-    ///
-    Tensor3<T> &
-    operator=(Tensor3<T> const & A);
-
-    ///
-    /// 3rd-order tensor increment
-    /// \param A added to this tensor
-    ///
-    Tensor3<T> &
-    operator+=(Tensor3<T> const & A);
-
-    ///
-    /// 3rd-order tensor decrement
-    /// \param A substracted from this tensor
-    ///
-    Tensor3<T> &
-    operator-=(Tensor3<T> const & A);
-
-    ///
-    /// Fill 3rd-order tensor with zeros
-    ///
-    void
-    clear();
-
-    ///
-    /// Tensor order
-    ///
-    static
-    Index
-    order() {return 3U;};
-
-  private:
-
-    ///
-    /// Tensor dimension
-    ///
-    Index
-    dimension;
-
-    ///
-    /// Tensor components
-    ///
-    Teuchos::ArrayRCP<T>
-    e;
-
-  };
+///
+/// Third order tensor in R^N.
+///
+template<typename T>
+class Tensor3
+{
+public:
 
   ///
-  /// 3rd-order tensor addition
-  /// \param A 3rd-order tensor
-  /// \param B 3rd-order tensor
-  /// \return \f$ A + B \f$
+  /// Component type
   ///
-  template<typename S, typename T>
-  Tensor3<typename Promote<S, T>::type>
-  operator+(Tensor3<S> const & A, Tensor3<T> const & B);
+  typedef T type;
 
   ///
-  /// 3rd-order tensor substraction
-  /// \param A 3rd-order tensor
-  /// \param B 3rd-order tensor
-  /// \return \f$ A - B \f$
+  /// Default constructor
   ///
-  template<typename S, typename T>
-  Tensor3<typename Promote<S, T>::type>
-  operator-(Tensor3<S> const & A, Tensor3<T> const & B);
+  Tensor3();
 
   ///
-  /// 3rd-order tensor minus
-  /// \return \f$ -A \f$
+  /// 3rd-order tensor constructor with NaNs
   ///
-  template<typename T>
-  Tensor3<T>
-  operator-(Tensor3<T> const & A);
+  explicit
+  Tensor3(Index const N);
 
   ///
-  /// 3rd-order tensor equality
-  /// Tested by components
+  /// 3rd-order tensor constructor with a scalar
+  /// \param s all components set to this scalar
   ///
-  template<typename T>
-  bool
-  operator==(Tensor3<T> const & A, Tensor3<T> const & B);
+  Tensor3(Index const N, T const & s);
 
   ///
-  /// 3rd-order tensor inequality
-  /// Tested by components
+  /// Copy constructor
+  /// 3rd-order tensor constructor from 3rd-order tensor
+  /// \param A from which components are copied
   ///
-  template<typename T>
-  bool
-  operator!=(Tensor3<T> const & A, Tensor3<T> const & B);
+  Tensor3(Tensor3<T> const & A);
 
   ///
-  /// Scalar 3rd-order tensor product
-  /// \param s scalar
-  /// \param A 3rd-order tensor
-  /// \return \f$ s A \f$
+  /// 3rd-order tensor simple destructor
   ///
-  template<typename S, typename T>
-  typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
-  operator*(S const & s, Tensor3<T> const & A);
+  ~Tensor3();
 
   ///
-  /// 3rd-order tensor scalar product
-  /// \param A 3rd-order tensor
-  /// \param s scalar
-  /// \return \f$ s A \f$
+  /// Indexing for constant 3rd-order tensor
+  /// \param i index
+  /// \param j index
+  /// \param k index
   ///
-  template<typename S, typename T>
-  typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
-  operator*(Tensor3<T> const & A, S const & s);
+  T const &
+  operator()(Index const i, Index const j, Index const k) const;
 
   ///
-  /// 3rd-order tensor scalar division
-  /// \param A 3rd-order tensor
-  /// \param s scalar
-  /// \return \f$ A / s \f$
+  /// 3rd-order tensor indexing
+  /// \param i index
+  /// \param j index
+  /// \param k index
   ///
-  template<typename S, typename T>
-  Tensor3<typename Promote<S, T>::type>
-  operator/(Tensor3<T> const & A, S const & s);
+  T &
+  operator()(Index const i, Index const j, Index const k);
 
   ///
-  /// 3rd-order tensor vector product
-  /// \param A 3rd-order tensor
-  /// \param u vector
-  /// \return \f$ C = A \cdot u := C_{ij} = A_{ijp} u_p \f$
+  /// \return dimension
   ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  dot(Tensor3<T> const & A, Vector<S> const & u);
+  Index
+  get_dimension() const;
 
   ///
-  /// vector 3rd-order tensor product
-  /// \param A 3rd-order tensor
-  /// \param u vector
-  /// \return \f$ C = u \cdot A := C_{ij} = u_p A{pij} \f$
+  /// \param N dimension of 3rd-order tensor
   ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  dot(Vector<S> const & u, Tensor3<T> const & A);
+  void
+  set_dimension(Index const N);
 
   ///
-  /// 3rd-order tensor vector product
-  /// \param A 3rd-order tensor
-  /// \param u vector
-  /// \return \f$ C = A \cdot u := C_{ij} = A_{ipj} u_p \f$
+  /// 3rd-order tensor copy assignment
   ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  dot2(Tensor3<T> const & A, Vector<S> const & u);
+  Tensor3<T> &
+  operator=(Tensor3<T> const & A);
 
   ///
-  /// vector 3rd-order tensor product
-  /// \param u vector
-  /// \param A 3rd-order tensor
-  /// \return \f$ C = u \cdot A := C_{ij} = u_p A_{ipj} \f$
+  /// 3rd-order tensor increment
+  /// \param A added to this tensor
   ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  dot2(Vector<S> const & u, Tensor3<T> const & A);
+  Tensor3<T> &
+  operator+=(Tensor3<T> const & A);
 
   ///
-  /// 3rd-order tensor 2nd-order tensor product
-  /// \param A 3rd-order tensor
-  /// \param B 2nd-order tensor
-  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ijp} B_{pk} \f$
+  /// 3rd-order tensor decrement
+  /// \param A substracted from this tensor
   ///
-  template<typename S, typename T>
-  Tensor3<typename Promote<S, T>::type>
-  dot(Tensor3<T> const & A, Tensor<S> const & B);
+  Tensor3<T> &
+  operator-=(Tensor3<T> const & A);
 
   ///
-  /// 2nd-order tensor 3rd-order tensor product
-  /// \param A 2nd-order tensor
-  /// \param B 3rd-order tensor
-  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{pjk} \f$
+  /// Fill 3rd-order tensor with zeros
   ///
-  template<typename S, typename T>
-  Tensor3<typename Promote<S, T>::type>
-  dot(Tensor<S> const & A, Tensor3<T> const & B);
+  void
+  clear();
 
   ///
-  /// 3rd-order tensor 2nd-order tensor product
-  /// \param A 3rd-order tensor
-  /// \param B 2nd-order tensor
-  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
+  /// Tensor order
   ///
-  template<typename S, typename T>
-  Tensor3<typename Promote<S, T>::type>
-  dot2(Tensor3<T> const & A, Tensor<S> const & B);
+  static
+  Index
+  order() {return 3U;};
+
+private:
 
   ///
-  /// 2nd-order tensor 3rd-order tensor product
-  /// \param A 2nd-order tensor
-  /// \param B 3rd-order tensor
-  /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
+  /// Tensor dimension
   ///
-  template<typename S, typename T>
-  Tensor3<typename Promote<S, T>::type>
-  dot2(Tensor<S> const & A, Tensor3<T> const & B);
+  Index
+  dimension;
 
   ///
-  /// 3rd-order tensor input
-  /// \param A 3rd-order tensor
-  /// \param is input stream
-  /// \return is input stream
+  /// Tensor components
   ///
-  template<typename T>
-  std::istream &
-  operator>>(std::istream & is, Tensor3<T> & A);
+  Teuchos::ArrayRCP<T>
+  e;
 
-  ///
-  /// 3rd-order tensor output
-  /// \param A 3rd-order tensor
-  /// \param os output stream
-  /// \return os output stream
-  ///
-  template<typename T>
-  std::ostream &
-  operator<<(std::ostream & os, Tensor3<T> const & A);
+};
+
+///
+/// 3rd-order tensor addition
+/// \param A 3rd-order tensor
+/// \param B 3rd-order tensor
+/// \return \f$ A + B \f$
+///
+template<typename S, typename T>
+Tensor3<typename Promote<S, T>::type>
+operator+(Tensor3<S> const & A, Tensor3<T> const & B);
+
+///
+/// 3rd-order tensor substraction
+/// \param A 3rd-order tensor
+/// \param B 3rd-order tensor
+/// \return \f$ A - B \f$
+///
+template<typename S, typename T>
+Tensor3<typename Promote<S, T>::type>
+operator-(Tensor3<S> const & A, Tensor3<T> const & B);
+
+///
+/// 3rd-order tensor minus
+/// \return \f$ -A \f$
+///
+template<typename T>
+Tensor3<T>
+operator-(Tensor3<T> const & A);
+
+///
+/// 3rd-order tensor equality
+/// Tested by components
+///
+template<typename T>
+bool
+operator==(Tensor3<T> const & A, Tensor3<T> const & B);
+
+///
+/// 3rd-order tensor inequality
+/// Tested by components
+///
+template<typename T>
+bool
+operator!=(Tensor3<T> const & A, Tensor3<T> const & B);
+
+///
+/// Scalar 3rd-order tensor product
+/// \param s scalar
+/// \param A 3rd-order tensor
+/// \return \f$ s A \f$
+///
+template<typename S, typename T>
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
+operator*(S const & s, Tensor3<T> const & A);
+
+///
+/// 3rd-order tensor scalar product
+/// \param A 3rd-order tensor
+/// \param s scalar
+/// \return \f$ s A \f$
+///
+template<typename S, typename T>
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
+operator*(Tensor3<T> const & A, S const & s);
+
+///
+/// 3rd-order tensor scalar division
+/// \param A 3rd-order tensor
+/// \param s scalar
+/// \return \f$ A / s \f$
+///
+template<typename S, typename T>
+Tensor3<typename Promote<S, T>::type>
+operator/(Tensor3<T> const & A, S const & s);
+
+///
+/// 3rd-order tensor vector product
+/// \param A 3rd-order tensor
+/// \param u vector
+/// \return \f$ C = A \cdot u := C_{ij} = A_{ijp} u_p \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+dot(Tensor3<T> const & A, Vector<S> const & u);
+
+///
+/// vector 3rd-order tensor product
+/// \param A 3rd-order tensor
+/// \param u vector
+/// \return \f$ C = u \cdot A := C_{ij} = u_p A{pij} \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+dot(Vector<S> const & u, Tensor3<T> const & A);
+
+///
+/// 3rd-order tensor vector product
+/// \param A 3rd-order tensor
+/// \param u vector
+/// \return \f$ C = A \cdot u := C_{ij} = A_{ipj} u_p \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+dot2(Tensor3<T> const & A, Vector<S> const & u);
+
+///
+/// vector 3rd-order tensor product
+/// \param u vector
+/// \param A 3rd-order tensor
+/// \return \f$ C = u \cdot A := C_{ij} = u_p A_{ipj} \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+dot2(Vector<S> const & u, Tensor3<T> const & A);
+
+///
+/// 3rd-order tensor 2nd-order tensor product
+/// \param A 3rd-order tensor
+/// \param B 2nd-order tensor
+/// \return \f$ C = A \cdot B := C_{ijk} = A_{ijp} B_{pk} \f$
+///
+template<typename S, typename T>
+Tensor3<typename Promote<S, T>::type>
+dot(Tensor3<T> const & A, Tensor<S> const & B);
+
+///
+/// 2nd-order tensor 3rd-order tensor product
+/// \param A 2nd-order tensor
+/// \param B 3rd-order tensor
+/// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{pjk} \f$
+///
+template<typename S, typename T>
+Tensor3<typename Promote<S, T>::type>
+dot(Tensor<S> const & A, Tensor3<T> const & B);
+
+///
+/// 3rd-order tensor 2nd-order tensor product
+/// \param A 3rd-order tensor
+/// \param B 2nd-order tensor
+/// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
+///
+template<typename S, typename T>
+Tensor3<typename Promote<S, T>::type>
+dot2(Tensor3<T> const & A, Tensor<S> const & B);
+
+///
+/// 2nd-order tensor 3rd-order tensor product
+/// \param A 2nd-order tensor
+/// \param B 3rd-order tensor
+/// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
+///
+template<typename S, typename T>
+Tensor3<typename Promote<S, T>::type>
+dot2(Tensor<S> const & A, Tensor3<T> const & B);
+
+///
+/// 3rd-order tensor input
+/// \param A 3rd-order tensor
+/// \param is input stream
+/// \return is input stream
+///
+template<typename T>
+std::istream &
+operator>>(std::istream & is, Tensor3<T> & A);
+
+///
+/// 3rd-order tensor output
+/// \param A 3rd-order tensor
+/// \param os output stream
+/// \return os output stream
+///
+template<typename T>
+std::ostream &
+operator<<(std::ostream & os, Tensor3<T> const & A);
 
 } // namespace Intrepid
 

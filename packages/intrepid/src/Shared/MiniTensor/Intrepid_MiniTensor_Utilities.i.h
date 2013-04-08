@@ -47,57 +47,57 @@
 
 namespace Intrepid {
 
-  //
-  // Sign function
-  //
-  template <typename T>
-  inline
-  int
-  sgn(T const & s)
-  {
-    return (T(0) < s) - (s < T(0));
-  }
+//
+// Sign function
+//
+template <typename T>
+inline
+int
+sgn(T const & s)
+{
+  return (T(0) < s) - (s < T(0));
+}
 
-  //
-  // Copysign function
-  //
-  template<typename T>
-  inline
-  T
-  copysign(T const & a, T const & b)
-  {
-    return b >= 0 ? std::abs(a) : -std::abs(a);
-  }
+//
+// Copysign function
+//
+template<typename T>
+inline
+T
+copysign(T const & a, T const & b)
+{
+  return b >= 0 ? std::abs(a) : -std::abs(a);
+}
 
-  //
-  // NaN function. Necessary to choose the proper underlying NaN
-  // for non-floating-point types.
-  // Assumption: non-floating-point types have a typedef that
-  // determines the underlying floating-point type.
-  //
-  template<typename T>
-  inline
-  typename Sacado::ScalarType<T>::type
-  not_a_number()
-  {
-    return
-        std::numeric_limits<typename Sacado::ScalarType<T>::type>::quiet_NaN();
-  }
+//
+// NaN function. Necessary to choose the proper underlying NaN
+// for non-floating-point types.
+// Assumption: non-floating-point types have a typedef that
+// determines the underlying floating-point type.
+//
+template<typename T>
+inline
+typename Sacado::ScalarType<T>::type
+not_a_number()
+{
+  return
+      std::numeric_limits<typename Sacado::ScalarType<T>::type>::quiet_NaN();
+}
 
-  //
-  // Machine epsilon function. Necessary to choose the proper underlying
-  // machine epsilon for non-floating-point types.
-  // Assumption: non-floating-point types have a typedef that
-  // determines the underlying floating-point type.
-  //
-  template<typename T>
-  inline
-  typename Sacado::ScalarType<T>::type
-  machine_epsilon()
-  {
-    return
-        std::numeric_limits<typename Sacado::ScalarType<T>::type>::epsilon();
-  }
+//
+// Machine epsilon function. Necessary to choose the proper underlying
+// machine epsilon for non-floating-point types.
+// Assumption: non-floating-point types have a typedef that
+// determines the underlying floating-point type.
+//
+template<typename T>
+inline
+typename Sacado::ScalarType<T>::type
+machine_epsilon()
+{
+  return
+      std::numeric_limits<typename Sacado::ScalarType<T>::type>::epsilon();
+}
 
 } // namespace Intrepid
 
