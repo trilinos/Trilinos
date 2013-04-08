@@ -64,6 +64,13 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   TRIBITS_ADD_EXECUTABLE(
+    TransposeTest
+    SOURCES TransposeTest.cpp
+    COMM serial mpi
+    DEPLIBS muelu xpetra muelu-adapters
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
     SmootherScalingTest
     SOURCES SmootherScalingTest.cpp
     COMM serial mpi
@@ -131,6 +138,14 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
     )
 
   TRIBITS_ADD_TEST(
+    TransposeTest
+    NAME "TransposeTestEpetra"
+    ARGS "--linAlgebra=Epetra --nraps=2"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
     SmootherScalingTest
     NAME "SmootherScalingTestEpetra"
     ARGS "--linAlgebra=Epetra --nx=10 --ny=10 --sweeps=30"
@@ -156,6 +171,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
   TRIBITS_ADD_TEST(
     RAPScalingTest
     NAME "RAPScalingTestTpetra"
+    ARGS "--linAlgebra=Tpetra --nraps=2"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    TransposeTest
+    NAME "TransposeTestTpetra"
     ARGS "--linAlgebra=Tpetra --nraps=2"
     NUM_MPI_PROCS 4
     COMM serial mpi
