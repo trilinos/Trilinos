@@ -6493,40 +6493,60 @@ namespace Ioex {
         // Get the attribute names. May not exist or may be blank...
         char **names = get_exodus_names(attribute_count, maximumNameLength);
         int64_t id = block->get_property("id").get_int();
-        {
-          Ioss::SerializeIO	serializeIO__(this);
-          if (block->get_property("entity_count").get_int() != 0) {
-            int ierr = ex_get_attr_names(get_file_pointer(), entity_type, id, &names[0]);
-            if (ierr < 0)
-              exodus_error(get_file_pointer(), __LINE__, myProcessor);
-          }
-        }
-
-        // Sync names across processors...
-        if (isParallel) {
-          std::vector<char> cname(attribute_count * (maximumNameLength+1));
-          if (block->get_property("entity_count").get_int() != 0) {
-            for (int i=0; i < attribute_count; i++) {
-              std::memcpy(&cname[i*(maximumNameLength+1)], names[i], maximumNameLength+1);
-            }
-          }
-          util().attribute_reduction(attribute_count * (maximumNameLength+1), TOPTR(cname));
-          for (int i=0; i < attribute_count; i++) {
-            std::memcpy(names[i], &cname[i*(maximumNameLength+1)], maximumNameLength+1);
-          }
-        }
-
-        // Convert to lowercase.
-	bool attributes_named = true;
-        for (int i=0; i < attribute_count; i++) {
-          fix_bad_name(names[i]);
-          Ioss::Utils::fixup_name(names[i]);
-	  if (names[i][0] == '\0' || names[i][0] == ' ' || !std::isalnum(names[i][0])) {
-	    attributes_named = false;
-	  }
-        }
-
+	
+	// Some older applications do not want to used named
+	// attributes; in this case, just create a field for each
+	// attribute named "attribute_1", "attribute_2", ..., "attribute_#"
+	// This is controlled by the database property
+	// "IGNORE_ATTRIBUTE_NAMES"
         char field_suffix_separator = get_field_separator();
+	bool attributes_named = true; // Possibly reset below; note that even if ignoring
+				      // attribute names, they are still 'named'
+
+	if (properties.exists("IGNORE_ATTRIBUTE_NAMES")) {
+	  field_suffix_separator = ' '; // Do not combine into a
+					 // higher-order storage type.
+	  
+	  for (int i=0; i < attribute_count; i++) {
+	    sprintf(names[i], "attribute_%d", i+1);
+	  }
+	}
+	else {
+	  // Use attribute names if they exist.
+	  {
+	    Ioss::SerializeIO	serializeIO__(this);
+	    if (block->get_property("entity_count").get_int() != 0) {
+	      int ierr = ex_get_attr_names(get_file_pointer(), entity_type, id, &names[0]);
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	    }
+	  }
+
+	  // Sync names across processors...
+	  if (isParallel) {
+	    std::vector<char> cname(attribute_count * (maximumNameLength+1));
+	    if (block->get_property("entity_count").get_int() != 0) {
+	      for (int i=0; i < attribute_count; i++) {
+		std::memcpy(&cname[i*(maximumNameLength+1)], names[i], maximumNameLength+1);
+	      }
+	    }
+	    util().attribute_reduction(attribute_count * (maximumNameLength+1), TOPTR(cname));
+	    for (int i=0; i < attribute_count; i++) {
+	      std::memcpy(names[i], &cname[i*(maximumNameLength+1)], maximumNameLength+1);
+	    }
+	  }
+	  
+	  // Convert to lowercase.
+	  attributes_named = true;
+	  for (int i=0; i < attribute_count; i++) {
+	    fix_bad_name(names[i]);
+	    Ioss::Utils::fixup_name(names[i]);
+	    if (names[i][0] == '\0' || names[i][0] == ' ' || !std::isalnum(names[i][0])) {
+	      attributes_named = false;
+	    }
+	  }
+	}
+
         if (attributes_named) {
           std::vector<Ioss::Field> attributes;
           get_fields(my_element_count, names, attribute_count,
