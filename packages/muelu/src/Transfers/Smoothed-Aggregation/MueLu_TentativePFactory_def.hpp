@@ -256,43 +256,22 @@ namespace MueLu {
       RCP<CrsMatrixWrap> PtentCrsWrap = rcp(new CrsMatrixWrap(rowMapForPtent, coarseMap, 0, Xpetra::StaticProfile));
       PtentCrs   = PtentCrsWrap->getCrsMatrix();
       Ptentative = PtentCrsWrap;
-      if(NSDim ==1) {
-	// With NSDim==1 we can avoid the data copying since the QR will have no zeros.      
-	PtentCrs->allocateAllValues(nzEstimate,ptent_rowptr,ptent_colind,ptent_values);
-
-	// Get the three arrays & views
-	rowptr_v = ptent_rowptr();
-	colind_v = ptent_colind();
-	values_v = ptent_values();
-
-	// Seed colind w/ invalid (in case).  
-	for(size_t i=0; i< nzEstimate; i++) 
-	  colind_v[i]=INVALID;
-	
-	// Perform initial seeding of the rowptr
-	// This is not an overestimate since NSDim==1;
-	rowptr_v[0]=0;
-	for(size_t i=1; i < numRowsForPtent+1; ++i) 
-	  rowptr_v[i] = rowptr_v[i-1] + NSDim;       
-      }
-      else {
-	// Since the QR will almost certainly have zeros, we'll use our own temp storage for the colind/values
-	// arrays, since we will need to shrink the arrays down later.
-	// Perform initial seeding of the rowptr
-	// This is an overestimate since NSDim > 1
-	rowptr_temp.resize(numRowsForPtent+1,0);
-	rowptr_temp[0]=0;
-	for(size_t i=1; i < numRowsForPtent+1; ++i) 
-	  rowptr_temp[i] = rowptr_temp[i-1] + NSDim;
-	
-	colind_temp.resize(nzEstimate,INVALID);
-	values_temp.resize(nzEstimate,Teuchos::ScalarTraits<Scalar>::zero());
-	
-	// Alias the ArrayViews for these guys
-	rowptr_v = rowptr_temp();
-	colind_v = colind_temp();
-	values_v = values_temp();
-      }
+      // Since the QR will almost certainly have zeros (NSDim>1) or we might have boundary conditions (NSDim==1), 
+      // we'll use our own temp storage for the colind/values
+      // arrays, since we will need to shrink the arrays down later.
+      // Perform initial seeding of the rowptr
+      rowptr_temp.resize(numRowsForPtent+1,0);
+      rowptr_temp[0]=0;
+      for(size_t i=1; i < numRowsForPtent+1; ++i) 
+	rowptr_temp[i] = rowptr_temp[i-1] + NSDim;
+      
+      colind_temp.resize(nzEstimate,INVALID);
+      values_temp.resize(nzEstimate,Teuchos::ScalarTraits<Scalar>::zero());
+      
+      // Alias the ArrayViews for these guys
+      rowptr_v = rowptr_temp();
+      colind_v = colind_temp();
+      values_v = values_temp();
     }
 
     //*****************************************************************
@@ -521,33 +500,30 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
 
     if (!aggregates.AggregatesCrossProcessors()) {
       GetOStream(Runtime1,0) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
+      // The QR will have plenty of zeros if we're NSDim > 1.  If NSDim==1, we still might have a handful of BCs.
+      // We need to shrink down the CRS arrays and copy them over the the "real" CrsArrays.
 
-      if(NSDim!=1){
-	// Since NSDim !=1, the QR will have plenty of zeros, we need to shrink down the CRS arrays and copy them over the the "real" CrsArrays.
-
-	// Now allocate the final arrays
-	PtentCrs->allocateAllValues(total_nnz_count,ptent_rowptr,ptent_colind,ptent_values);
-	
-	// Because ArrayRCPs are slow...
-	ArrayView<size_t> rowptr_new = ptent_rowptr();
-	ArrayView<LO>     colind_new = ptent_colind();
-	ArrayView<Scalar> values_new = ptent_values();
-	size_t count=0;
-	// Collapse and copy
-	for(size_t i=0; i<numRowsForPtent; i++) {	  
-	  rowptr_new[i]=count;
-	  for(size_t j=rowptr_v[i]; j<rowptr_v[i+1] && colind_v[j]!=INVALID; j++){
-	    colind_new[count] = colind_v[j];
-	    values_new[count] = values_v[j];
+      // Now allocate the final arrays
+      PtentCrs->allocateAllValues(total_nnz_count,ptent_rowptr,ptent_colind,ptent_values);
+      
+      // Because ArrayRCPs are slow...
+      ArrayView<size_t> rowptr_new = ptent_rowptr();
+      ArrayView<LO>     colind_new = ptent_colind();
+      ArrayView<Scalar> values_new = ptent_values();
+      size_t count=0;
+      // Collapse and copy
+      for(size_t i=0; i<numRowsForPtent; i++) {	  
+	rowptr_new[i]=count;
+	for(size_t j=rowptr_v[i]; j<rowptr_v[i+1] && colind_v[j]!=INVALID; j++){
+	  colind_new[count] = colind_v[j];
+	  values_new[count] = values_v[j];
 	    count++;
-	  }	 
-	}
-	rowptr_new[numRowsForPtent]=count;
-
-	if(count!=total_nnz_count) throw std::runtime_error("MueLu error in data copy!");	
+	}	 
       }
-      // If NSDim==1, our original vectors suffice.
-
+      rowptr_new[numRowsForPtent]=count;
+      
+      if(count!=total_nnz_count) throw std::runtime_error("MueLu error in data copy!");	
+      
       // Regardless, it is time to call setAllValues & ESFC
       PtentCrs->setAllValues(ptent_rowptr,ptent_colind,ptent_values);
       PtentCrs->expertStaticFillComplete(coarseMap,fineA.getDomainMap());
