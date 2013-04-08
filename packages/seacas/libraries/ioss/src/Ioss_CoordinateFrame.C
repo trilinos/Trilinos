@@ -30,36 +30,33 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_SubSystem_h
-#define IOSS_Ioss_SubSystem_h
-
-#include <Ioss_IOFactory.h>
-#include <Ioss_GroupingEntity.h>
-#include <Ioss_Region.h>
-#include <Ioss_EntityBlock.h>
-#include <Ioss_NodeBlock.h>
-#include <Ioss_EdgeBlock.h>
-#include <Ioss_FaceBlock.h>
-#include <Ioss_ElementBlock.h>
-
-#include <Ioss_EntitySet.h>
-#include <Ioss_NodeSet.h>
-#include <Ioss_EdgeSet.h>
-#include <Ioss_FaceSet.h>
-#include <Ioss_ElementSet.h>
-
-#include <Ioss_SideBlock.h>
-#include <Ioss_SideSet.h>
-
-#include <Ioss_CommSet.h>
-#include <Ioss_CoordinateFrame.h>
 #include <Ioss_DatabaseIO.h>
-#include <Ioss_Property.h>
-#include <Ioss_Field.h>
-#include <Ioss_VariableType.h>
-#include <Ioss_DBUsage.h>
-#include <Ioss_SerializeIO.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_SurfaceSplit.h>
-#include <Ioss_Utils.h>
-#endif
+#include <Ioss_CoordinateFrame.h>
+#include <assert.h>
+#include <stddef.h>
+#include <string>
+
+#include "Ioss_EntityBlock.h"
+#include "Ioss_FieldManager.h"
+#include "Ioss_PropertyManager.h"
+
+namespace Ioss {
+  CoordinateFrame::CoordinateFrame(int64_t id,
+		  char tag,
+		  const double *point_list)
+    : id_(id), tag_(tag)
+  {
+    pointList_.reserve(9);
+    for (int i=0; i < 9; i++) {
+      pointList_.push_back(point_list[i]);
+    }
+  }
+
+  int64_t CoordinateFrame::id() const {return id_;}
+  char CoordinateFrame::tag() const   {return tag_;}
+
+  const double *CoordinateFrame::coordinates() const      {return &pointList_[0];}
+  const double *CoordinateFrame::origin() const           {return &pointList_[0];}
+  const double *CoordinateFrame::axis_3_point() const     {return &pointList_[3];}
+  const double *CoordinateFrame::plane_1_3_point() const  {return &pointList_[6];}
+}

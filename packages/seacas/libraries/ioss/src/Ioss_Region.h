@@ -52,6 +52,7 @@ namespace Ioss {
   class SideBlock;
   class NodeSet;
   class CommSet;
+  class CoordinateFrame;
 
   typedef std::vector<NodeBlock*>    NodeBlockContainer;
   typedef std::vector<EdgeBlock*>    EdgeBlockContainer;
@@ -67,6 +68,8 @@ namespace Ioss {
   typedef std::vector<CommSet*>      CommSetContainer;
   typedef std::vector<double>        StateTimeContainer;
 
+  typedef std::vector<CoordinateFrame> CoordinateFrameContainer;
+  
   typedef std::map<std::string, std::string, std::less<std::string> > AliasMap;
   typedef AliasMap::value_type IOAliasValuePair;
 
@@ -127,6 +130,7 @@ namespace Ioss {
     bool add(FaceSet      *set);
     bool add(ElementSet   *set);
     bool add(CommSet      *set);
+    bool add(const CoordinateFrame &set);
 
     const NodeBlockContainer&    get_node_blocks() const;
     const EdgeBlockContainer&    get_edge_blocks() const;
@@ -138,6 +142,7 @@ namespace Ioss {
     const FaceSetContainer&      get_facesets() const;
     const ElementSetContainer&   get_elementsets() const;
     const CommSetContainer&      get_commsets() const;
+    const CoordinateFrameContainer&  get_coordinate_frames() const;
 
     // Retrieve the Grouping Entity with the specified name.
     // Returns NULL if the entity does not exist
@@ -154,6 +159,8 @@ namespace Ioss {
     FaceSet*        get_faceset(const std::string& name) const;
     ElementSet*     get_elementset(const std::string& name) const;
     CommSet*        get_commset(const std::string& name) const;
+
+    const CoordinateFrame& get_coordinate_frame(int64_t id) const;
 
     // Add the name 'alias' as an alias for the databae entity with the
     // name 'db_name'. Returns true if alias added; false if problems
@@ -225,6 +232,8 @@ namespace Ioss {
     
     SideSetContainer      sideSets;
     CommSetContainer      commSets;
+    CoordinateFrameContainer coordinateFrames;
+    
     mutable StateTimeContainer stateTimes;
 
     int currentState;

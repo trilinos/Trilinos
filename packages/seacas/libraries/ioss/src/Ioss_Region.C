@@ -47,6 +47,7 @@
 #include <vector>
 
 #include "Ioss_CommSet.h"
+#include "Ioss_CoordinateFrame.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_EdgeBlock.h"
 #include "Ioss_EdgeSet.h"
@@ -149,6 +150,8 @@ namespace Ioss {
 			    "face_count",          Property::INTEGER));
     properties.add(Property(this,
 			    "element_count",       Property::INTEGER));
+    properties.add(Property(this,
+			    "coordinate_frame_count", Property::INTEGER));
     properties.add(Property(this,
 			    "state_count",         Property::INTEGER));
     properties.add(Property(this,
@@ -658,6 +661,17 @@ namespace Ioss {
     }
   }
 
+  bool Region::add(const CoordinateFrame &frame)
+  {
+    // Check that region is in correct state for adding entities
+    if (get_state() == STATE_DEFINE_MODEL) {
+      coordinateFrames.push_back(frame);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   bool Region::add(ElementBlock *element_block)
   {
     check_for_duplicate_names(this, element_block->name());
@@ -910,6 +924,9 @@ namespace Ioss {
 
   const CommSetContainer&  Region::get_commsets() const
   { return commSets; }
+
+  const CoordinateFrameContainer&  Region::get_coordinate_frames() const
+  { return coordinateFrames; }
 
   bool Region::add_alias(const GroupingEntity *ge)
   {
@@ -1218,6 +1235,18 @@ namespace Ioss {
     return ge;
   }
 
+  const CoordinateFrame& Region::get_coordinate_frame(int64_t id) const
+  {
+    for (size_t i=0; i < coordinateFrames.size(); i++) {
+      if (coordinateFrames[i].id() == id) {
+	return coordinateFrames[i];
+      }
+    }
+    std::ostringstream errmsg;
+    errmsg << "Error: Invalid id " << id << " specified for coordinate frame.";
+    IOSS_ERROR(errmsg);
+  }
+
   bool Region::is_valid_io_entity(const std::string& my_name, unsigned int io_type,
 				  std::string *my_type) const
   {
@@ -1310,6 +1339,9 @@ namespace Ioss {
 
     if (my_name == "comm_set_count")
       return Property(my_name, (int)commSets.size());
+
+    if (my_name == "coordinate_frame_count")
+      return Property(my_name, (int)coordinateFrames.size());
 
     if (my_name == "state_count") {
       return Property(my_name, stateCount);

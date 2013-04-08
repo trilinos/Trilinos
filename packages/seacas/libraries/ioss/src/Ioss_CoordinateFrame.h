@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010
+// Copyright(C) 2013
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
@@ -30,36 +30,33 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_SubSystem_h
-#define IOSS_Ioss_SubSystem_h
+#ifndef IOSS_Ioss_CoordinateFrame_h
+#define IOSS_Ioss_CoordinateFrame_h
 
-#include <Ioss_IOFactory.h>
-#include <Ioss_GroupingEntity.h>
-#include <Ioss_Region.h>
+#include <Ioss_CodeTypes.h>
 #include <Ioss_EntityBlock.h>
-#include <Ioss_NodeBlock.h>
-#include <Ioss_EdgeBlock.h>
-#include <Ioss_FaceBlock.h>
-#include <Ioss_ElementBlock.h>
+#include <vector>
 
-#include <Ioss_EntitySet.h>
-#include <Ioss_NodeSet.h>
-#include <Ioss_EdgeSet.h>
-#include <Ioss_FaceSet.h>
-#include <Ioss_ElementSet.h>
+namespace Ioss {
+  class DatabaseIO;
 
-#include <Ioss_SideBlock.h>
-#include <Ioss_SideSet.h>
+  class CoordinateFrame {
+  public:
+    CoordinateFrame(int64_t id,
+		    char tag,
+		    const double *coordinates);
 
-#include <Ioss_CommSet.h>
-#include <Ioss_CoordinateFrame.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_Property.h>
-#include <Ioss_Field.h>
-#include <Ioss_VariableType.h>
-#include <Ioss_DBUsage.h>
-#include <Ioss_SerializeIO.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_SurfaceSplit.h>
-#include <Ioss_Utils.h>
+    int64_t id() const;
+    char tag() const;
+    const double *coordinates() const;
+    const double *origin() const;
+    const double *axis_3_point() const;
+    const double *plane_1_3_point() const;
+    
+  private:
+    int64_t id_;
+    std::vector<double> pointList_;
+    char tag_;
+  };
+}
 #endif

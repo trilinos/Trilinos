@@ -58,6 +58,7 @@
 #include <utility>
 #include <vector>
 
+#include "Ioss_CoordinateFrame.h"
 #include "Ioss_CommSet.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
@@ -305,6 +306,9 @@ namespace {
     delete [] names;
   }
 
+  void add_coordinate_frames(int exoid, Ioss::Region *region);
+  void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames);
+  
   std::string get_entity_name(int exoid, ex_entity_type type, int64_t id,
                               const std::string &basename, int length)
   {
@@ -819,8 +823,6 @@ namespace Ioex {
 
     m_groupCount[EX_SIDE_SET] = info.num_side_sets;
 
-
-
     if (nodeCount == 0) {
       std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
       IOSS_WARNING << "No nodes were found in the model, file '" << decoded_filename << "'";
@@ -856,6 +858,10 @@ namespace Ioex {
     }
 
     Ioss::Region *this_region = get_region();
+
+    // See if any coordinate frames exist on mesh.  If so, define them on region.
+    add_coordinate_frames(get_file_pointer(), this_region);
+    
     this_region->property_add(Ioss::Property(std::string("title"), info.title));
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
                                              spatialDimension));
@@ -5868,6 +5874,8 @@ namespace Ioex {
         if (ierr < 0)
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
+	// Write coordinate frame data...
+	write_coordinate_frames(get_file_pointer(), get_region()->get_coordinate_frames());
       }
     }
 
@@ -7620,6 +7628,67 @@ namespace Ioex {
             side_map[name_topo] = 999;
           }
         }
+      }
+    }
+
+    template <typename INT>
+    void internal_add_coordinate_frames(int exoid, Ioss::Region *region, INT /*dummy*/)
+    {
+      // Query number of coordinate frames...
+      int nframes = 0;
+      ex_get_coordinate_frames(exoid, &nframes, NULL, NULL, NULL);
+
+      if (nframes > 0) {
+	std::vector<char> tags(nframes);
+	std::vector<double> coord(nframes*9);
+	std::vector<INT>  ids(nframes);
+	ex_get_coordinate_frames(exoid, &nframes, TOPTR(ids), TOPTR(coord), TOPTR(tags));
+
+	for (int i=0; i<nframes; i++) {
+	  Ioss::CoordinateFrame cf(ids[i], tags[i], &coord[9*i]);
+	  region->add(cf);
+	}
+      }
+    }
+
+    void add_coordinate_frames(int exoid, Ioss::Region *region)
+    {
+      if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+	internal_add_coordinate_frames(exoid, region, (int64_t)0);
+      }
+      else {
+	internal_add_coordinate_frames(exoid, region, (int)0);
+      }
+    }
+
+    template <typename INT>
+    void internal_write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames, INT /*dummy*/)
+    {
+      // Query number of coordinate frames...
+      int nframes = (int)frames.size();
+      if (nframes > 0) {
+	std::vector<char> tags(nframes);
+	std::vector<double> coordinates(nframes*9);
+	std::vector<INT>  ids(nframes);
+
+	for (size_t i=0; i < frames.size(); i++) {
+	  ids[i]  = frames[i].id();
+	  tags[i] = frames[i].tag();
+	  const double *coord = frames[i].coordinates();
+	  for (size_t j=0; j < 9; j++) {
+	    coordinates[9*i+j] = coord[j];
+	  }
+	}
+	ex_put_coordinate_frames(exoid, nframes, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
+      }
+    }
+
+    void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames) {
+      if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+	internal_write_coordinate_frames(exoid, frames, (int64_t)0);
+      }
+      else {
+	internal_write_coordinate_frames(exoid, frames, (int)0);
       }
     }
 
