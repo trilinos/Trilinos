@@ -554,7 +554,7 @@ namespace stk
       }
 
 
-      static void do_moving_shock_test_square_sidesets(int num_time_steps, bool save_intermediate=false, bool delete_parents=false)
+      static void do_moving_shock_test_square_sidesets(PerceptMesh& eMesh, int num_time_steps, bool save_intermediate=false, bool delete_parents=false)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -562,33 +562,10 @@ namespace stk
         shock_width = 1./25.0;
         double shock_diff_criterion = 0.04;
 
-        {
-            const unsigned n = 5;
-            const unsigned nx = n , ny = n;
-
-            bool createEdgeSets = true;
-            percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
-            fixture.set_bounding_box(-1,1, -1, 1);
-
-            bool isCommitted = false;
-            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
-
-            eMesh.commit();
-
-            fixture.generate_mesh();
-            eMesh.save_as(input_files_loc+"square_tri3_0.e");
-            eMesh.print_info("test1",2);
-            //eMesh.dump_vtk("sqtri3.vtk",false);
-        }
-        //if (1) return;
-
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size==1 || p_size == 3)
           {
-            percept::PerceptMesh eMesh;
-            eMesh.open(input_files_loc+"square_tri3_0.e");
-
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
             stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
@@ -638,9 +615,15 @@ namespace stk
                   }
 
                 //breaker.deleteParentElements();
-                eMesh.save_as(output_files_loc+"tmp_square_sidesets_moving_shock_ref_"+post_fix[p_size]+"_"+toString(istep+1)+".e");
+                eMesh.save_as(output_files_loc+"tmp_square_sidesets_moving_shock_ref_"+post_fix[p_size]+".e.s-"+toString(istep+1));
                 //eMesh.save_as("square_anim."+toString(istep+1)+".e");
-                //eMesh.save_as("square_anim.e."+toString(istep+1));
+                char buf[1000];
+                sprintf(buf, "%04d", istep);
+                if (istep==0)
+                  eMesh.save_as("square_anim.e");
+                else
+                  eMesh.save_as("square_anim.e-s"+std::string(buf));
+                //eMesh.save_as("square_anim.e-s"+toString(istep));
                 //eMesh.dump_vtk("square_anim."+toString(istep+1)+".vtk", false);
 
                 //exit(123);
@@ -654,22 +637,21 @@ namespace stk
                     std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
                   }
 
-//                 breaker.deleteParentElements();
-                 eMesh.save_as(output_files_loc+"tmp_square_sidesets_moving_shock_unref_"+post_fix[p_size]+".e");
-                 //exit(123);
+                //                 breaker.deleteParentElements();
+                eMesh.save_as(output_files_loc+"tmp_square_sidesets_moving_shock_unref_"+post_fix[p_size]+".e");
 
                 if (delete_parents && istep == num_time_steps-1)
                   {
                     breaker.deleteParentElements();
                   }
                 if (istep == num_time_steps-1 || save_intermediate)
-                  eMesh.save_as(output_files_loc+"square_sidesets_moving_shock_"+post_fix[p_size]+".e."+toString(istep+1) );
+                  eMesh.save_as(output_files_loc+"square_sidesets_moving_shock_"+post_fix[p_size]+".e.s-"+toString(istep+1) );
 
                 shock_displacement += delta_shock_displacement;
 
               }
 
-            eMesh.save_as(output_files_loc+"square_sidesets_final_moving_shock_"+post_fix[p_size]+".e."+toString(num_time_steps) );
+            eMesh.save_as(output_files_loc+"square_sidesets_final_moving_shock_"+post_fix[p_size]+".e.s-"+toString(num_time_steps) );
             for (int iunref=0; iunref < 10; iunref++)
               {
                 std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_pass= " << iunref <<  std::endl;
@@ -691,11 +673,65 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tri_to_tri_N_5_EdgeBased_moving_shock_square_sidesets)
       {
         bool do_test=false;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
         if (do_test) {
-          //int num_time_steps = 10;  // 10 for stress testing
-          //for (int istep=1; istep <= num_time_steps; istep++)
-          do_moving_shock_test_square_sidesets(10, false, true);
+
+          // if this is a fresh installation, set to true to generate the initial meshes needed for this test (once only)
+          bool do_bootstrap_mesh = false;
+          if (do_bootstrap_mesh)
+          {
+            const unsigned n = 5;
+            const unsigned nx = n , ny = n;
+
+            bool createEdgeSets = true;
+            percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
+            fixture.set_bounding_box(-1,1, -1, 1);
+
+            bool isCommitted = false;
+            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
+
+            eMesh.commit();
+
+            fixture.generate_mesh();
+            eMesh.save_as(input_files_loc+"square_tri3_0.e");
+            //eMesh.print_info("test1",2);
+            //eMesh.dump_vtk("sqtri3.vtk",false);
+          }
+          //if (1) return;
+
+          {
+            PerceptMesh eMesh;
+            eMesh.open(input_files_loc+"square_tri3_0.e");
+
+            //int num_time_steps = 10;  // 10 for stress testing
+            //for (int istep=1; istep <= num_time_steps; istep++)
+            do_moving_shock_test_square_sidesets(eMesh, 10, false, true);
+          }
+
+          if (do_bootstrap_mesh)
+          {
+            PerceptMesh eMesh1;
+            eMesh1.open(input_files_loc+"square_tri3_uns.e");
+            eMesh1.commit();
+            MDArray xform(3,3);
+            xform(0,0) = 1./5.;
+            xform(1,1) = 1./5.;
+            xform(2,2) = 1.0;
+            eMesh1.transform_mesh(xform);
+            eMesh1.save_as(input_files_loc+"square_tri3_uns_xformed.e");
+          }
+
+          {
+            PerceptMesh eMesh2;
+            eMesh2.open(input_files_loc+"square_tri3_uns_xformed.e");
+            //int num_time_steps = 10;  // 10 for stress testing
+            //for (int istep=1; istep <= num_time_steps; istep++)
+            do_moving_shock_test_square_sidesets(eMesh2, 10, false, true);
+          }
         }
+
+
       }
 
     }
