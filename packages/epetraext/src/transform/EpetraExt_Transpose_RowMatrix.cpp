@@ -46,9 +46,10 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Map.h>
 
-#include <Epetra_Comm.h>    //DEBUG
-
+#include <Teuchos_TimeMonitor.hpp>
 #include <vector>
+
+//#define ENABLE_TRANSPOSE_TIMINGS
 
 namespace EpetraExt {
 
@@ -79,6 +80,14 @@ RowMatrix_Transpose::
 //=========================================================================
   Epetra_CrsMatrix* EpetraExt::RowMatrix_Transpose::BuildTempTrans() 
 {
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor MM(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=MM.getNewTimer("Transpose: BuildTempTrans 1");
+  mtime->start();
+#endif
+
   int i,j,err;
   const Epetra_RowMatrix & orig    = *origObj_;
   const Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<const Epetra_CrsMatrix*>(&orig);
@@ -153,10 +162,20 @@ RowMatrix_Transpose::
     }
   }
 
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  mtime->stop();
+  mtime=MM.getNewTimer("Transpose: BuildTempTrans 2");
+  mtime->start();
+#endif
+
   err = TempTransA1->ExpertStaticFillComplete(orig.OperatorRangeMap(),*TransposeRowMap_);
   if (err != 0) {
     throw TempTransA1->ReportError("ExpertStaticFillComplete failed.",err);
   }
+
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  mtime->stop();
+#endif
  
   return TempTransA1;
 }
@@ -193,9 +212,21 @@ operator()( OriginalTypeRef orig )
     return *newObj_;    
   }
 
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor MM(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=MM.getNewTimer("Transpose: Final FusedExport");
+  mtime->start();
+#endif
+
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
   TransposeMatrix_ = new Epetra_CrsMatrix(*TempTransA1,*TempTransA1->Exporter(),0,TransposeRowMap_);
+
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  mtime->stop();
+#endif
 
   newObj_ = TransposeMatrix_;
   delete TempTransA1;
