@@ -125,7 +125,7 @@ createTranspose()
   // Scansum the TransRowptr; reset CurrentStart
   TransRowptr[0]=0;
   for (size_t i=1; i<numLocalCols+1; ++i) TransRowptr[i]  = CurrentStart[i-1] + TransRowptr[i-1];
-  for (size_t i=0; i<numLocalCols+1; ++i) CurrentStart[i] = TransRowptr[i];
+  for (size_t i=0; i<numLocalCols;   ++i) CurrentStart[i] = TransRowptr[i];
 
   //populate the row-major storage so that the data for the transposed matrix is easy to access
   for (size_t i=0; i<numLocalRows; ++i) {
