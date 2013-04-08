@@ -67,6 +67,13 @@ class Epetra_Distributor {
   virtual Epetra_Distributor * Clone() = 0;
   //! Epetra_Distributor Destructor.
   virtual ~Epetra_Distributor(){};
+
+  //! Create and extract the reverse version of the distributor
+  /*! This is not a const method since a reverse distributor might need to be created.
+   */
+  virtual Epetra_Distributor * GetReverseDistributor() = 0;
+
+
   //@}
 
   
@@ -188,7 +195,6 @@ class Epetra_Distributor {
                               int *& sizes,
                               int & len_import_objs,
                               char *& import_objs) = 0;
-
   //@}
 
   //! @name Print object to an output stream

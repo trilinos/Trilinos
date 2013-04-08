@@ -74,6 +74,11 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 
   //! Destructor (declared virtual for memory safety).
   virtual ~Epetra_MpiDistributor();
+
+  //! Create and extract the reverse version of the distributor
+  /*! This is not a const method since a reverse distributor might need to be created.
+   */
+  Epetra_Distributor * GetReverseDistributor() {return comm_plan_reverse_;}
   //@}
 
   
@@ -320,6 +325,8 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 
   private:
     Epetra_MpiDistributor& operator=(const Epetra_MpiDistributor& src);
+
+    void CreateReverseDistributor();
 
     int * lengths_to_;
     int * procs_to_;

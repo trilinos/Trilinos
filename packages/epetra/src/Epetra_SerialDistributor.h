@@ -73,6 +73,12 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
 
   //! Epetra_Comm Destructor.
   virtual ~Epetra_SerialDistributor();
+
+  //! Create and extract the reverse version of the distributor
+  /*! \warning This is not implemented for Epetra_SerialDistributor.   
+   */
+  Epetra_Distributor * GetReverseDistributor() {return 0;}
+
   //@}
 
   
@@ -143,7 +149,6 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
                      int *& sizes,
                      int & len_import_objs,
                      char *& import_objs);
-
 
   virtual void Print(ostream & os) const;
 
