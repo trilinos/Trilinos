@@ -1353,8 +1353,14 @@ namespace stk {
 
                             if (number_refines == 0 && (smooth_geometry == 1 || snap_geometry == 1))
                               {
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
                                 breaker.setSmoothGeometry((smooth_geometry == 1));
                                 breaker.snapAndSmooth((snap_geometry == 1), input_geometry, (smooth_use_reference_mesh == 1) );
+#elif defined(__IBMCPP__)
+      				std::ostringstream oss;
+      				oss << "\nERROR: Geometry and/or smoothing is not currently supported on this platform. Try running with geometry turned off.";
+      				throw std::runtime_error(oss.str());
+#endif
                               }
 
                             if (streaming_size)

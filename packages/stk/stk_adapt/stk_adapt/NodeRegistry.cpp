@@ -601,6 +601,9 @@ namespace stk {
               // FIXME for quadratic elements
               if (do_respect_spacing && (nsz <= 8 && spacing_field && (spacing_field != field) ) )
                 {
+#if defined(__IBMCPP__)
+          	  throw std::runtime_error("\nERROR: respect spacing and smoothing is not supported on IBM CPP platforms.");
+#else
                   EXCEPTWATCH;
                   unsigned ipts=0;
                   SpacingFieldUtil sfu(m_eMesh);
@@ -688,7 +691,7 @@ namespace stk {
                             }
                         }
                     }
-
+#endif // !defined(__IBMCPP__)
                 }
               else
                 {
@@ -724,7 +727,6 @@ namespace stk {
                     }
                 }
             }
-
             // set coords
             {
               EXCEPTWATCH;
