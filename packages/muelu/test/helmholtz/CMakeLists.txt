@@ -42,6 +42,20 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       DEPLIBS muelu xpetra muelu-adapters
     )
 
+    TRIBITS_ADD_EXECUTABLE(
+      HelmholtzFEM2D
+      SOURCES HelmholtzFEM2D.cpp
+      COMM serial mpi
+      DEPLIBS muelu xpetra muelu-adapters
+    )
+
+    TRIBITS_ADD_EXECUTABLE(
+      HelmholtzFEM3D
+      SOURCES HelmholtzFEM3D.cpp
+      COMM serial mpi
+      DEPLIBS muelu xpetra muelu-adapters
+    )
+
   ENDIF()
 
 ENDIF() # Galeri

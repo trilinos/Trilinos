@@ -101,19 +101,19 @@ int main(int argc, char *argv[]) {
   GO nx,ny,nz;
   nx=100; ny=100; nz=100;
   double stretchx, stretchy, stretchz, h, delta;
-  stretchx=1.0; stretchy=1.0; stretchz=1.0;
   h=0.01; delta=2.0;
+  stretchx=h; stretchy=h; stretchz=h;
   int PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR;
   PMLXL=10; PMLXR=10; PMLYL=10; PMLYR=10; PMLZL=10; PMLZR=10;
   double omega, shift;
   omega=20.0*M_PI;
   shift=0.5;
 
-  Galeri::Xpetra::Parameters<GO> matrixParameters_laplace  (clp, nx, ny, nz, "Laplace2D",   0, stretchx, stretchy, stretchz,
+  Galeri::Xpetra::Parameters<GO> matrixParameters_laplace  (clp, nx, ny, nz, "HelmholtzFEM2D", 0, stretchx, stretchy, stretchz,
+							    h, delta, 0,     0,     0,     0,     0,     0,     0.0,   shift);
+  Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "HelmholtzFEM2D", 0, stretchx, stretchy, stretchz,
 							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
-  Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
-							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0  );
-  Galeri::Xpetra::Parameters<GO> matrixParameters_shift    (clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
+  Galeri::Xpetra::Parameters<GO> matrixParameters_shift    (clp, nx, ny, nz, "HelmholtzFEM2D", 0, stretchx, stretchy, stretchz,
 							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
   Xpetra::Parameters             xpetraParameters(clp);
 
@@ -137,11 +137,11 @@ int main(int argc, char *argv[]) {
     map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters_helmholtz.GetNumGlobalElements(), 0, comm);
     coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters_helmholtz.GetParameterList());
   }
-  else if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz2D") {
+  else if (matrixParameters_helmholtz.GetMatrixType() == "HelmholtzFEM2D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
     coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters_helmholtz.GetParameterList());
   }
-  else if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz3D") {
+  else if (matrixParameters_helmholtz.GetMatrixType() == "HelmholtzFEM3D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
     coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters_helmholtz.GetParameterList());
   }
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList belosList;
   belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
   belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-  belosList.set("Flexible Gmres", true);         // set flexible GMRES on/off
+  belosList.set("Flexible Gmres", true);          // set flexible GMRES on/off
   belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
   belosList.set("Output Frequency",1);
   belosList.set("Output Style",Belos::Brief);
@@ -301,6 +301,27 @@ int main(int argc, char *argv[]) {
     if (comm->getRank() == 0) std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
   } else {
     if (comm->getRank() == 0) std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+  }
+
+  // Compute actual residuals.
+  int numrhs=1;
+  bool badRes = false;
+  std::vector<double> actual_resids(numrhs);
+  std::vector<double> rhs_norm(numrhs);
+  RCP<TMV> resid = Tpetra::createMultiVector<SC,LO,GO,NO>(tmap, numrhs);     
+  TOPT::Apply(*belosOp, *X, *resid);
+  TMVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
+  TMVT::MvNorm(*resid, actual_resids);
+  TMVT::MvNorm(*B, rhs_norm);
+  if(comm->getRank()==0) {
+    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+  }
+  for (int i = 0; i < numrhs; i++) {
+    double actRes = abs(actual_resids[i])/rhs_norm[i];
+    if(comm->getRank()==0) {
+      std::cout <<"Problem " << i << " : \t" << actRes <<std::endl;
+    }
+    if (actRes > tol) { badRes = true; }
   }
 
   // Get the number of iterations for this solve.

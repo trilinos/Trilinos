@@ -50,6 +50,8 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory_Helmholtz.hpp>
+#include <Galeri_XpetraUtils.hpp>
+#include <Galeri_XpetraMaps.hpp>
 
 // MueLu
 #include "MueLu.hpp"
@@ -71,7 +73,7 @@ typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
 typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
 typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
 typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS;
+typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS; 
 typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
 typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
 
@@ -110,10 +112,28 @@ int main(int argc, char *argv[]) {
   RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
   RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
-  // Construct a Map that puts approximately the same number of mesh nodes per processor
-  RCP<const Tpetra::Map<LO, GO, NO> > tmap = Tpetra::createUniformContigMap<LO, GO>(nx, comm);
-  // Tpetra map into Xpetra map
-  RCP<const Map> map = Xpetra::toXpetra(tmap);
+  Teuchos::ParameterList pl = matrixParameters.GetParameterList();
+  RCP<MultiVector> coordinates;
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", pl.get("nx", nx));
+  galeriList.set("ny", pl.get("ny", ny));
+  galeriList.set("nz", pl.get("nz", nz));
+  RCP<const Map> map;
+
+  if (matrixParameters.GetMatrixType() == "Helmholtz1D") {
+    map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters.GetParameterList());
+  }
+  else if (matrixParameters.GetMatrixType() == "Helmholtz2D") {
+    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters.GetParameterList());
+  }
+  else if (matrixParameters.GetMatrixType() == "Helmholtz3D") {
+    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters.GetParameterList());
+  }
+
+  RCP<const Tpetra::Map<LO, GO, NO> > tmap = Xpetra::toTpetra(map);
 
   Teuchos::ParameterList matrixParams = matrixParameters.GetParameterList();
 
@@ -124,7 +144,7 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
   nullspace->putScalar( (SC) 1.0);
-
+ 
   comm->barrier();
 
   tm = Teuchos::null;
@@ -137,18 +157,18 @@ int main(int argc, char *argv[]) {
   H->GetLevel(0)->Set("Nullspace",nullspace);
   FactoryManager Manager;
   H->Setup(Manager, 0, 5);
-  H->Write(-1,-1);
+  //H->Write(-1,-1);
 
   tm = Teuchos::null;
 
   // Solve Ax = b
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
   RCP<TVEC> X = Tpetra::createVector<SC,LO,GO,NO>(tmap);
-  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(tmap);
+  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(tmap);  
   X->putScalar((SC) 0.0);
   B->putScalar((SC) 0.0);
   if(comm->getRank()==0) {
-    B->replaceGlobalValue(0, 1.0);
+    B->replaceGlobalValue(0, (SC) 1.0);
   }
 
   tm = Teuchos::null;
@@ -161,14 +181,14 @@ int main(int argc, char *argv[]) {
 
   // Construct a Belos LinearProblem object
   RCP<TProblem> belosProblem = rcp(new TProblem(belosOp,X,B));
-  belosProblem->setRightPrec(belosPrec);
+  belosProblem->setRightPrec(belosPrec); 
   bool set = belosProblem->setProblem();
   if (set == false) {
     if(comm->getRank()==0)
-      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;    
     return EXIT_FAILURE;
   }
-
+    
   // Belos parameter list
   int maxIts = 100;
   double tol = 1e-6;
@@ -195,7 +215,7 @@ int main(int argc, char *argv[]) {
     if (comm->getRank() == 0)
       std::cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
   }
-
+  
   // Check convergence
   if (ret != Belos::Converged) {
     if (comm->getRank() == 0) std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
@@ -206,7 +226,7 @@ int main(int argc, char *argv[]) {
   // Get the number of iterations for this solve.
   if(comm->getRank()==0)
     std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-
+ 
   tm = Teuchos::null;
 
   globalTimeMonitor = Teuchos::null;
