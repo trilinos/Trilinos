@@ -363,8 +363,10 @@ namespace stk {
           s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key,
           s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key,
 
-          centroid_node       = (toTopoKey == topo_key_quad9 ? 8 :
-                            (toTopoKey == topo_key_hex27 ? 20 : 0)
+          // Cast the keys to int to avoid warning messages about comparisons
+          // between incompatible enums.
+          centroid_node       = ((int)toTopoKey == (int)topo_key_quad9 ? 8 :
+                            ((int)toTopoKey == (int)topo_key_hex27 ? 20 : 0)
                             )
         };
 
