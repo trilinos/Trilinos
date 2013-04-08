@@ -46,8 +46,6 @@
 #include <Teuchos_Array.hpp>
 #include "Xpetra_EpetraCrsMatrix.hpp"
 
-#include "Epetra_MpiComm.h"//CMS
-
 namespace Xpetra {
 
   EpetraCrsMatrix::EpetraCrsMatrix(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
