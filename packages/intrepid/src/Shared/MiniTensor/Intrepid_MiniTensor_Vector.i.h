@@ -117,8 +117,7 @@ Vector<T>::fill(T const * data_ptr)
 template<typename T>
 inline
 Vector<T>::Vector() :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   return;
 }
@@ -129,8 +128,7 @@ e(Teuchos::null)
 template<typename T>
 inline
 Vector<T>::Vector(Index const N) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   set_dimension(N);
 
@@ -165,8 +163,7 @@ e(Teuchos::null)
 template<typename T>
 inline
 Vector<T>::Vector(Index const N, T const & s) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   set_dimension(N);
 
@@ -202,8 +199,7 @@ e(Teuchos::null)
 template<typename T>
 inline
 Vector<T>::Vector(T const & s0, T const & s1) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   set_dimension(2);
 
@@ -221,8 +217,7 @@ e(Teuchos::null)
 template<typename T>
 inline
 Vector<T>::Vector(T const & s0, T const & s1, T const & s2) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   set_dimension(3);
 
@@ -241,8 +236,7 @@ e(Teuchos::null)
 template<typename T>
 inline
 Vector<T>::Vector(Index const N, T const * data_ptr) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   assert(data_ptr != NULL);
 
@@ -260,8 +254,7 @@ e(Teuchos::null)
 template<typename T>
 inline
 Vector<T>::Vector(Vector<T> const & v) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   Index const
   N = v.get_dimension();

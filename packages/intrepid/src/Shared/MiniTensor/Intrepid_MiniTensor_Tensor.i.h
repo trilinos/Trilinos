@@ -185,8 +185,7 @@ Tensor<T>::fill(T const * data_ptr)
 template<typename T>
 inline
 Tensor<T>::Tensor() :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   return;
 }
@@ -197,8 +196,7 @@ e(Teuchos::null)
 template<typename T>
 inline
 Tensor<T>::Tensor(Index const N) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   set_dimension(N);
 
@@ -246,8 +244,7 @@ e(Teuchos::null)
 template<typename T>
 inline
 Tensor<T>::Tensor(Index const N, T const & s) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   set_dimension(N);
 
@@ -299,9 +296,8 @@ inline
 Tensor<T>::Tensor(
     T const & s00, T const & s01,
     T const & s10, T const & s11) :
-    dimension(0),
-    e(Teuchos::null)
-    {
+dimension(0)
+{
   set_dimension(2);
 
   e[0] = s00;
@@ -311,7 +307,7 @@ Tensor<T>::Tensor(
   e[3] = s11;
 
   return;
-    }
+}
 
 //
 // Create tensor specifying components
@@ -324,9 +320,8 @@ Tensor<T>::Tensor(
     T const & s00, T const & s01, T const & s02,
     T const & s10, T const & s11, T const & s12,
     T const & s20, T const & s21, T const & s22) :
-    dimension(0),
-    e(Teuchos::null)
-    {
+    dimension(0)
+{
   set_dimension(3);
 
   e[0] = s00;
@@ -342,7 +337,7 @@ Tensor<T>::Tensor(
   e[8] = s22;
 
   return;
-    }
+}
 
 //
 // R^N create tensor from array - const version
@@ -351,8 +346,7 @@ Tensor<T>::Tensor(
 template<typename T>
 inline
 Tensor<T>::Tensor(Index const N, T const * data_ptr) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   assert(data_ptr != NULL);
 
@@ -370,8 +364,7 @@ e(Teuchos::null)
 template<typename T>
 inline
 Tensor<T>::Tensor(Tensor<T> const & A) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   Index const
   N = A.get_dimension();

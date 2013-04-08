@@ -106,7 +106,7 @@ inline
 void
 StorageRaw<T>::resize(Index const number_entries)
 {
-  if (number_entries == size_) {
+  if (number_entries == size()) {
     return;
   }
 
@@ -128,6 +128,88 @@ StorageRaw<T>::clear()
     delete [] pointer_;
     pointer_ = NULL;
     size_ = 0;
+  }
+  return;
+}
+
+//
+// Teuchos RCP array storage
+//
+template<typename T>
+inline
+StorageRCPArray<T>::StorageRCPArray() :
+  storage_(Teuchos::null)
+{
+  return;
+}
+
+template<typename T>
+inline
+StorageRCPArray<T>::StorageRCPArray(Index const number_entries) :
+  storage_(Teuchos::null)
+{
+  resize(number_entries);
+  return;
+}
+
+template<typename T>
+inline
+StorageRCPArray<T>::~StorageRCPArray()
+{
+  clear();
+  return;
+}
+
+template<typename T>
+inline
+T const &
+StorageRCPArray<T>::operator[](Index const i) const
+{
+  assert(i < size());
+  return storage_[i];
+}
+
+template<typename T>
+inline
+T &
+StorageRCPArray<T>::operator[](Index const i)
+{
+  assert(i < size());
+  return storage_[i];
+}
+
+template<typename T>
+inline
+Index
+StorageRCPArray<T>::size() const
+{
+  return storage_.size();
+}
+
+template<typename T>
+inline
+void
+StorageRCPArray<T>::resize(Index const number_entries)
+{
+  if (number_entries == size()) {
+    return;
+  }
+
+  clear();
+
+  storage_.resize(number_entries);
+
+  return;
+}
+
+template<typename T>
+inline
+void
+StorageRCPArray<T>::clear()
+{
+  if (storage_ != Teuchos::null) {
+    storage_.clear();
+    storage_ = Teuchos::null;
   }
   return;
 }

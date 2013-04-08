@@ -43,7 +43,6 @@
 #define Intrepid_MiniTensor_Tensor4_h
 
 #include "Intrepid_MiniTensor_Tensor3.h"
-#include "Teuchos_ArrayRCP.hpp"
 
 namespace Intrepid {
 
@@ -173,7 +172,7 @@ private:
   ///
   /// Tensor components
   ///
-  Teuchos::ArrayRCP<T>
+  MiniTensor::StorageRCPArray<T>
   e;
 
 };

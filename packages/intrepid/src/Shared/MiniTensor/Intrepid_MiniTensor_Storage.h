@@ -43,6 +43,7 @@
 #define Intrepid_MiniTensor_Storage_h
 
 #include "Intrepid_MiniTensor_Definitions.h"
+#include "Teuchos_ArrayRCP.hpp"
 
 namespace Intrepid {
 namespace MiniTensor {
@@ -62,20 +63,20 @@ public:
   ///
   /// Default constructor
   ///
-  Storage() = 0;
+  Storage() {};
 
   ///
   /// Constructor that initializes to NaNs
   /// \param N dimension
   ///
   explicit
-  Storage(Index const number_entries) = 0;
+  Storage(Index const number_entries) {};
 
   ///
   /// Simple destructor
   ///
   virtual
-  ~Storage() = 0;
+  ~Storage() {};
 
   ///
   /// Entry access
@@ -113,7 +114,7 @@ public:
   ///
   virtual
   void
-  clear();
+  clear() = 0;
 
 private:
 
@@ -211,6 +212,84 @@ private:
   ///
   T *
   pointer_;
+
+};
+
+///
+/// Storage with Teuchos RCP Array
+///
+template<typename T>
+class StorageRCPArray: public Storage<T>
+{
+public:
+  ///
+  /// Default constructor
+  ///
+  StorageRCPArray();
+
+  ///
+  /// Constructor that initializes to NaNs
+  /// \param N dimension
+  ///
+  explicit
+  StorageRCPArray(Index const number_entries);
+
+  ///
+  /// Simple destructor
+  ///
+  ~StorageRCPArray();
+
+  ///
+  /// Entry access
+  /// \param i the index
+  ///
+  T const &
+  operator[](Index const i) const;
+
+  ///
+  /// Entry access
+  /// \param i the index
+  ///
+  T &
+  operator[](Index const i);
+
+  ///
+  /// \return number of entries
+  ///
+  Index
+  size() const;
+
+  ///
+  /// Resize the storage (assume destructive)
+  /// \param number_entries
+  ///
+  void
+  resize(Index const number_entries);
+
+  ///
+  /// Clear the storage
+  ///
+  void
+  clear();
+
+private:
+
+  ///
+  /// No copy constructor
+  ///
+  StorageRCPArray(StorageRCPArray<T> const & s);
+
+  ///
+  /// No copy assignment
+  ///
+  StorageRCPArray<T> &
+  operator=(StorageRCPArray<T> const & s);
+
+  ///
+  /// Teuchos RCP array
+  ///
+  Teuchos::ArrayRCP<T>
+  storage_;
 
 };
 

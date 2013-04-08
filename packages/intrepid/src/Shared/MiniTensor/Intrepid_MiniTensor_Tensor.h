@@ -50,7 +50,6 @@
 #include <boost/tuple/tuple.hpp>
 
 #include "Intrepid_MiniTensor_Vector.h"
-#include "Teuchos_ArrayRCP.hpp"
 
 namespace Intrepid {
 
@@ -200,7 +199,7 @@ namespace Intrepid {
     ///
     /// Tensor components
     ///
-    Teuchos::ArrayRCP<T>
+    MiniTensor::StorageRCPArray<T>
     e;
 
   };

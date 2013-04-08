@@ -51,8 +51,6 @@
 #include "Intrepid_MiniTensor_Storage.h"
 #include "Intrepid_MiniTensor_Utilities.h"
 
-#include "Teuchos_ArrayRCP.hpp"
-
 namespace Intrepid {
 
 ///
@@ -199,7 +197,7 @@ private:
   ///
   /// Vector components
   ///
-  Teuchos::ArrayRCP<T>
+  MiniTensor::StorageRCPArray<T>
   e;
 
 };

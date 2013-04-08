@@ -69,8 +69,7 @@ Tensor4<T>::set_dimension(Index const N)
 //
 template<typename T>
 Tensor4<T>::Tensor4() :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   return;
 }
@@ -80,8 +79,7 @@ e(Teuchos::null)
 //
 template<typename T>
 Tensor4<T>::Tensor4(Index const N) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   set_dimension(N);
 
@@ -101,8 +99,7 @@ e(Teuchos::null)
 //
 template<typename T>
 Tensor4<T>::Tensor4(Index const N, T const & s) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   set_dimension(N);
 
@@ -123,8 +120,7 @@ e(Teuchos::null)
 //
 template<typename T>
 Tensor4<T>::Tensor4(Tensor4<T> const & A) :
-dimension(0),
-e(Teuchos::null)
+dimension(0)
 {
   Index const
   N = A.get_dimension();
