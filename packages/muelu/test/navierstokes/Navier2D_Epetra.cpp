@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
 
   FactoryManager M;
   M.SetFactory("Graph", dropFact);
-  M.SetFactory("UnAmalgamationInfo", amalgFact);
+  //M.SetFactory("UnAmalgamationInfo", amalgFact);
   M.SetFactory("Aggregates", CoupledAggFact);
   M.SetFactory("P", Pfact);
   M.SetFactory("R", Rfact);
