@@ -72,6 +72,36 @@ namespace stk {
         } // ineed_ent
     }
 
+    int IEdgeAdapter::markCountRefinedEdges(const stk::mesh::Entity element)
+    {
+      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+
+      CellTopology cell_topo(cell_topo_data);
+      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+
+      VectorFieldType* coordField = m_eMesh.get_coordinates_field();
+
+      unsigned numSubDimNeededEntities = 0;
+      numSubDimNeededEntities = cell_topo_data->edge_count;
+
+      int ref_count=0;
+      for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
+        {
+          stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
+          stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
+          double * const coord0 = stk::mesh::field_data( *coordField , node0 );
+          double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+
+          int markInfo = mark(element, iSubDimOrd, node0, node1, coord0, coord1, 0);
+          bool do_ref = markInfo & DO_REFINE;
+          if (do_ref)
+            {
+              ++ref_count;
+            }
+        }
+      return ref_count;
+    }
+
     int IEdgeAdapter::markUnrefine(const stk::mesh::Entity element)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);

@@ -4631,9 +4631,9 @@ namespace stk {
       typedef boost::unordered_set<stk::mesh::Entity> NodeSet;
       if (remove_previous_part_nodes)
         {
-          PartVector add_parts, remove_parts(1,part);
+          stk::mesh::PartVector add_parts, remove_parts(1,part);
 
-          Selector on_skin_part(*part);
+          stk::mesh::Selector on_skin_part(*part);
           NodeSet nodes;
           const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
           for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -4664,7 +4664,7 @@ namespace stk {
       EntitySideVector boundary;
 
       // select owned
-      Selector owned = MetaData::get(*get_bulk_data()).locally_owned_part();
+      stk::mesh::Selector owned = MetaData::get(*get_bulk_data()).locally_owned_part();
 
       const stk::mesh::PartVector parts = get_fem_meta_data()->get_parts();
       for (unsigned ip=0; ip < parts.size(); ip++)
@@ -4683,7 +4683,7 @@ namespace stk {
               //std::cout << "INFO::smoothing: freezing points on boundary: " << parts[ip]->name() << std::endl;
               EntityVector owned_elements;
 
-              Selector block(*parts[ip]);
+              stk::mesh::Selector block(*parts[ip]);
               block = block & owned;
               get_selected_entities( block,
                                      get_bulk_data()->buckets(element_rank()),
@@ -4714,7 +4714,7 @@ namespace stk {
 
       NodeSet node_set;
 
-      PartVector add_parts(1,part), remove_parts;
+      stk::mesh::PartVector add_parts(1,part), remove_parts;
       std::vector<stk::mesh::Entity> node_vector;
       for (unsigned iesv=0; iesv < boundary.size(); ++iesv)
         {

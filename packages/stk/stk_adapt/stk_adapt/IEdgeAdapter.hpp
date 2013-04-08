@@ -23,7 +23,7 @@ namespace stk {
       /// can be overriden
       virtual ElementUnrefineCollection  buildUnrefineList();
 
-    protected:
+    public:
 
       /// Client supplies these methods - given an element, which edge, and the nodes on the edge, return instruction on what to do to the edge,
       ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
@@ -34,6 +34,9 @@ namespace stk {
       /// This convenience method calls mark and if all edges are marked for unrefine, it returns -1 to unrefine the element.
       /// This method can be overriden to allow for an "element-based" determination that doesn't need to visit edges.
       virtual int markUnrefine(const stk::mesh::Entity element);
+
+      /// This convenience method calls mark and and returns how many edges are marked for refine
+      int markCountRefinedEdges(const stk::mesh::Entity element);
 
       virtual void
       refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element,
