@@ -5845,12 +5845,16 @@ namespace Iopx {
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
         // Convert to lowercase.
+	bool attributes_named = true;
         for (int i=0; i < attribute_count; i++) {
           fix_bad_name(names[i]);
           Ioss::Utils::fixup_name(names[i]);
+	  if (names[i][0] == '\0' || names[i][0] == ' ' || !std::isalnum(names[i][0])) {
+	    attributes_named = false;
+	  }
         }
 
-        if (names[0][0] != '\0' && names[0][0] != ' ' && std::isalnum(names[0][0])) {
+        if (attributes_named) {
           std::vector<Ioss::Field> attributes;
           get_fields(my_element_count, names, attribute_count,
                      Ioss::Field::ATTRIBUTE, get_field_separator(), NULL,
