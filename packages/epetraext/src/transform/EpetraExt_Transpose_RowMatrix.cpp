@@ -103,7 +103,7 @@ RowMatrix_Transpose::
   TransRowptr.Resize(NumMyCols_+1);
   TransColind.Resize(TransNnz);
   resize_doubles(0,TransNnz,TransVals);
-  std::vector<int> CurrentStart(NumMyCols_+1,0);
+  std::vector<int> CurrentStart(NumMyCols_,0);
 
   // Count up nnz using the Rowptr to count the number of non-nonzeros.
   if (OrigMatrixIsCrsMatrix_)
@@ -139,7 +139,7 @@ RowMatrix_Transpose::
   // Scansum the rowptr; reset currentstart
   TransRowptr[0] = 0;
   for (i=1;i<NumMyCols_+1; i++)  TransRowptr[i]   = CurrentStart[i-1] + TransRowptr[i-1];
-  for (i=0;i<NumMyCols_+1; i++)  CurrentStart[i]  = TransRowptr[i];
+  for (i=0;i<NumMyCols_;   i++)  CurrentStart[i]  = TransRowptr[i];
 
   // Now copy values and global indices into newly create transpose storage
   for (i=0; i<NumMyRows_; i++)
