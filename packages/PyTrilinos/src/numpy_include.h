@@ -43,11 +43,22 @@
 
 #include <Python.h>
 #define PY_ARRAY_UNIQUE_SYMBOL PyTrilinos_NumPy
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 
 #ifdef NUMPY_NOPREFIX
 #include <numpy/noprefix.h>
 #define PyArray_SBYTE PyArray_BYTE
+#endif
+
+#if NPY_API_VERSION < 0x00000007
+#define NPY_ANYORDER      PyArray_ANYORDER
+#define NPY_DOUBLE        PyArray_DOUBLE
+#define NPY_INT           PyArray_INT
+#define NPY_ARRAY_FARRAY  NPY_FARRAY
+#define PyArray_NDIM(arr) (arr->nd)
+#define PyArray_DIMS(arr) (arr->dimensions)
+#define PyArray_DATA(arr) (arr->data)
 #endif
 
 #endif // NUMPY_INCLUDE_H

@@ -380,7 +380,7 @@ Space.GetMyGlobalElements = Space_GetMyGlobalElements
 %typemap(out) double* GetValues
 {
   npy_intp dims = (arg1)->GetMyLength();
-  $result = PyArray_SimpleNewFromData(1, &dims, PyArray_DOUBLE, (void*) $1);
+  $result = PyArray_SimpleNewFromData(1, &dims, NPY_DOUBLE, (void*) $1);
 }
 namespace MLAPI
 {
@@ -459,7 +459,7 @@ MultiVector::Delete;
     int is_new_object = 0;
     // Convert pyValues argument to a numpy array
     PyObject * array = (PyObject*)
-      obj_to_array_contiguous_allow_conversion(pyValues, PyArray_DOUBLE,
+      obj_to_array_contiguous_allow_conversion(pyValues, NPY_DOUBLE,
 					       &is_new_object);
     // Error checking
     if (!array) throw PyTrilinos::PythonException();
