@@ -244,7 +244,7 @@ namespace MueLu {
     outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
     outputter.pushFieldSpec("req",                Teuchos::TabularOutputter::INT,    Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 3);
     outputter.pushFieldSpec("keep",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 5);
-    outputter.pushFieldSpec("type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 10);
+    outputter.pushFieldSpec("type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 15);
     outputter.pushFieldSpec("data",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
     outputter.outputHeader();
 
@@ -287,8 +287,20 @@ namespace MueLu {
           } else if (strType.find("Xpetra::MultiVector") != std::string::npos) {
             outputter.outputField("Vector");
             outputter.outputField("available");
+          } else if (strType.find("Xpetra::Map") != std::string::npos) {
+            outputter.outputField("Map");
+            outputter.outputField("available");
           } else if (strType.find("MueLu::SmootherBase") != std::string::npos) {
             outputter.outputField("SmootherBase");
+            outputter.outputField("available");
+          } else if (strType.find("MueLu::Aggregates") != std::string::npos) {
+            outputter.outputField("Aggregates");
+            outputter.outputField("available");
+          } else if (strType.find("MueLu::AmalgamationInfo") != std::string::npos) {
+            outputter.outputField("AmalgamationInfo");
+            outputter.outputField("available");
+          } else if (strType.find("MueLu::Graph") != std::string::npos) {
+            outputter.outputField("Graph");
             outputter.outputField("available");
           } else if (strType == "int") {
             outputter.outputField(strType);
