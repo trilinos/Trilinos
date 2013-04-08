@@ -96,31 +96,32 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos AND (NOT Teuchos_ENABLE_LONG_LONG_INT))
   XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} 4)
 
-  IF (${PACKAGE_NAME}_ENABLE_Zoltan)
-    TRIBITS_ADD_TEST(
-      ScalingTestParamList
-      NAME "ScalingTestParamListEpetra"
-      ARGS "--linAlgebra=Epetra"
-      NUM_MPI_PROCS 4
-      COMM mpi # HAVE_MPI required
-      )
-
-    TRIBITS_ADD_TEST(
-      ScalingTestParamList
-      NAME "ScalingTestParamListEpetra"
-      ARGS "--linAlgebra=Epetra --xml=isotropicPoisson.xml"
-      NUM_MPI_PROCS 4
-      COMM mpi # HAVE_MPI required
-      )
-
-    TRIBITS_ADD_TEST(
-      ScalingTestParamList
-      NAME "ScalingTestParamListEpetra"
-      ARGS "--linAlgebra=Epetra --xml=conchas_milestone.xml"
-      NUM_MPI_PROCS 4
-      COMM mpi # HAVE_MPI required
-      )
-  ENDIF()
+# TODO 4/7/2013 JJH : re-enable these once CMS's Epetra stuff is working
+#  IF (${PACKAGE_NAME}_ENABLE_Zoltan)
+#    TRIBITS_ADD_TEST(
+#      ScalingTestParamList
+#      NAME "ScalingTestParamListEpetra_Defaults"
+#      ARGS "--linAlgebra=Epetra"
+#      NUM_MPI_PROCS 4
+#      COMM mpi # HAVE_MPI required
+#      )
+#
+#    TRIBITS_ADD_TEST(
+#      ScalingTestParamList
+#      NAME "ScalingTestParamListEpetra_IsotropicPoisson"
+#      ARGS "--linAlgebra=Epetra --xml=isotropicPoisson.xml"
+#      NUM_MPI_PROCS 4
+#      COMM mpi # HAVE_MPI required
+#      )
+#
+#    TRIBITS_ADD_TEST(
+#      ScalingTestParamList
+#      NAME "ScalingTestParamListEpetra_Milestone"
+#      ARGS "--linAlgebra=Epetra --xml=conchas_milestone.xml"
+#      NUM_MPI_PROCS 4
+#      COMM mpi # HAVE_MPI required
+#      )
+#  ENDIF()
 
   TRIBITS_ADD_TEST(
     RAPScalingTest
