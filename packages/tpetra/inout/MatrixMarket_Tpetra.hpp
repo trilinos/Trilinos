@@ -4973,7 +4973,7 @@ namespace Tpetra {
 
       //! Print the Map to the given output stream.
       static void
-      writeMap (std::ostream& out, const map_type& map)
+      writeMap (std::ostream& out, const map_type& map, const bool debug=false)
       {
         using Teuchos::ArrayRCP;
         using Teuchos::ArrayView;
@@ -5004,7 +5004,6 @@ namespace Tpetra {
           << " > sizeof(ptrdiff_t) = " << sizeof (ptrdiff_t) << ".");
 
         const int myRank = map.getComm ()->getRank ();
-        const bool debug = false;
 
         // We pack the Map into a 2-column MultiVector.  Column 0
         // holds the GIDs, and Column 1 holds the PIDs.
@@ -5068,7 +5067,7 @@ namespace Tpetra {
              << "It is stored as a dense matrix with 2 columns:" << endl
              << "  - Column 1: GID (global index)" << endl
              << "  - Column 2: PID (rank) of process owning that GID" << endl;
-        writeDenseImpl<int_type> (out, data, map.getObjectLabel (), desc.str ());
+        writeDenseImpl<int_type> (out, data, map.getObjectLabel (), desc.str (), debug);
       }
 
       //! Write the Map to the given file.
@@ -5118,7 +5117,8 @@ namespace Tpetra {
       writeDenseImpl (std::ostream& out,
                       const Tpetra::MultiVector<MultiVectorScalarType, local_ordinal_type, global_ordinal_type, node_type>& X,
                       const std::string& matrixName,
-                      const std::string& matrixDescription)
+                      const std::string& matrixDescription,
+                      const bool debug=false)
       {
         using Tpetra::createOneToOne;
         using Tpetra::createNonContigMapWithNode;
@@ -5126,6 +5126,7 @@ namespace Tpetra {
         using Teuchos::rcp;
         using Teuchos::rcp_const_cast;
         using Teuchos::rcp_dynamic_cast;
+        using std::cerr;
         using std::endl;
 
         typedef MultiVectorScalarType ST;
@@ -5149,8 +5150,6 @@ namespace Tpetra {
         // Promote to global_size_t.
         const global_size_t numCols = X.getNumVectors ();
 
-        const bool debug = false;
-        using std::cerr;
         if (debug && myRank == 0) {
           cerr << "  writeDenseImpl:" << endl
                << "  - Computing gather Map" << endl;
