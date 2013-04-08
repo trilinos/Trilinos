@@ -690,10 +690,12 @@ namespace stk
 
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tri_to_tri_N_5_EdgeBased_moving_shock_square_sidesets)
       {
-        if (1) return;
-        //int num_time_steps = 10;  // 10 for stress testing
-        //for (int istep=1; istep <= num_time_steps; istep++)
-              do_moving_shock_test_square_sidesets(10, false, true);
+        bool do_test=false;
+        if (do_test) {
+          //int num_time_steps = 10;  // 10 for stress testing
+          //for (int istep=1; istep <= num_time_steps; istep++)
+          do_moving_shock_test_square_sidesets(10, false, true);
+        }
       }
 
     }
