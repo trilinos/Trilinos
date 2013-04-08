@@ -48,7 +48,7 @@
 #include "Epetra_BlockMap.h"
 
 class Epetra_Distributor;
-
+class Epetra_Import;
 //! Epetra_Export: This class builds an export object for efficient exporting of off-processor elements.
 
 /*! Epetra_Export is used to construct a communication plan that can be called repeatedly by computational
@@ -60,7 +60,7 @@ class Epetra_Distributor;
 */
 
 class EPETRA_LIB_DLL_EXPORT Epetra_Export: public Epetra_Object {
-    
+  friend class Epetra_Import;
   public:
 
   //! Constructs a Epetra_Export object from the source and target maps.
@@ -232,10 +232,13 @@ and entries 5 and 6 on PEs 1 and 2.
   
   //! Epetra_Export copy constructor. 
   Epetra_Export(const Epetra_Export& Exporter);
+
+  //! Epetra_Export pseudo-copy constructor.  Creates an Epetra_Export in the reverse direction of the Epetra_Import argument.
+  Epetra_Export(const Epetra_Import& Exporter);
   
-  //! Epetra_Export destructor.
-  
+  //! Epetra_Export destructor. 
   virtual ~Epetra_Export(void);
+
   //! Returns the number of elements that are identical between the source and target maps, up to the first different ID
   int NumSameIDs() const {return(NumSameIDs_);};
 

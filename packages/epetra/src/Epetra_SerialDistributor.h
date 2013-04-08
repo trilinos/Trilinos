@@ -70,14 +70,14 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
 
   //! Clone method
   Epetra_Distributor * Clone(){return(dynamic_cast<Epetra_Distributor *>(new Epetra_SerialDistributor(*this)));};
+  
+  //! Create and extract the reverse version of the distributor.  
+  /*! This is not implemented for SeriaDistributor.
+   */
+  Epetra_Distributor * ReverseClone() {return 0;}
 
   //! Epetra_Comm Destructor.
   virtual ~Epetra_SerialDistributor();
-
-  //! Create and extract the reverse version of the distributor
-  /*! \warning This is not implemented for Epetra_SerialDistributor.   
-   */
-  Epetra_Distributor * GetReverseDistributor() {return 0;}
 
   //@}
 

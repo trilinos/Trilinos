@@ -1570,3 +1570,11 @@ void Epetra_MpiDistributor::CreateReverseDistributor() {
   }
   
 }
+
+//-------------------------------------------------------------------------
+Epetra_Distributor * Epetra_MpiDistributor::ReverseClone() {
+  if(comm_plan_reverse_==0)
+    CreateReverseDistributor();
+
+  return(dynamic_cast<Epetra_Distributor *>(new Epetra_MpiDistributor(*comm_plan_reverse_)));
+}

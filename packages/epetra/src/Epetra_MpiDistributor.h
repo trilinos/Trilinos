@@ -72,13 +72,14 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   //! Clone method
   Epetra_Distributor * Clone(){return(dynamic_cast<Epetra_Distributor *>(new Epetra_MpiDistributor(*this)));};
 
+  //! Create and extract the reverse version of the distributor.  
+  /*! This is not a const method since a reverse distributor might need to be created.
+    This works like Clone, returning a new object the user must deallocate.
+   */
+  Epetra_Distributor * ReverseClone();
+
   //! Destructor (declared virtual for memory safety).
   virtual ~Epetra_MpiDistributor();
-
-  //! Create and extract the reverse version of the distributor
-  /*! This is not a const method since a reverse distributor might need to be created.
-   */
-  Epetra_Distributor * GetReverseDistributor() {return comm_plan_reverse_;}
   //@}
 
   
