@@ -76,7 +76,7 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
     //
 
     {
-      RCP<CoupledAggregationFactory> AggregationFact = rcp(new CoupledAggregationFactory());
+      RCP<UncoupledAggregationFactory> AggregationFact = rcp(new UncoupledAggregationFactory());
       *out << "========================= Aggregate option summary =========================" << std::endl;
       *out << "min DOFs per aggregate :                " << optMinPerAgg << std::endl;
       *out << "min # of root nbrs already aggregated : " << optMaxNbrSel << std::endl;
@@ -313,7 +313,7 @@ int main(int argc, char *argv[]) {
         std::string msg = "main: bad aggregation option """ + optAggOrdering + """.";
         throw(MueLu::Exceptions::RuntimeError(msg));
       }
-      AggregationFact->SetPhase3AggCreation(0.5);
+      //AggregationFact->SetPhase3AggCreation(0.5);
       M.SetFactory("Aggregates", AggregationFact);
 
     *out << "=============================================================================" << std::endl;
