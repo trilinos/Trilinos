@@ -1985,7 +1985,7 @@ namespace Tpetra {
     if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
 
     RCP<CrsMatrixType> destMat =
-      rcp (new CrsMatrixType (importer.getTargetMap(),
+      rcp (new CrsMatrixType (targetMap,
                               MyNnz,
                               StaticProfile,
                               matrixparams));
@@ -2108,7 +2108,7 @@ namespace Tpetra {
     if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
 
     RCP<CrsMatrixType> destMat =
-      rcp (new CrsMatrixType (exporter.getTargetMap (),
+      rcp (new CrsMatrixType (targetMap,
                               MyNnz,
                               StaticProfile,
                               matrixparams));
