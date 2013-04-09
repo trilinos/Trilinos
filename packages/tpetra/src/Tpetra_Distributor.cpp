@@ -745,11 +745,12 @@ namespace Tpetra {
     }
 
     // toNodesFromMe[i] == the number of messages sent by this process
-    // to process i.  The data in numSends_, imagesTo_, lengthsTo_
+    // to process i.  The data in numSends_, imagesTo_, and lengthsTo_
     // concern the contiguous sends.  Therefore, each process will be
-    // listed in imagesTo_ at most once.
+    // listed in imagesTo_ at most once, and so toNodesFromMe[i] will
+    // either be 0 or 1.
     {
-      Array<size_t> toNodesFromMe (numProcs,0);
+      Array<int> toNodesFromMe (numProcs, 0);
 #ifdef HAVE_TEUCHOS_DEBUG
       bool counting_error = false;
 #endif // HAVE_TEUCHOS_DEBUG
@@ -816,9 +817,12 @@ namespace Tpetra {
       // can't be more than twice as fast as the all-reduce, even if
       // the scatter is free).
       Array<int> counts (numProcs, 1);
-      reduceAllAndScatter (*comm_, REDUCE_SUM, numProcs,
-                           toNodesFromMe.getRawPtr (),
-                           counts.getRawPtr (), &numReceives_);
+      int numReceivesAsInt = 0; // output
+      reduceAllAndScatter<int, int> (*comm_, REDUCE_SUM, numProcs,
+                                     toNodesFromMe.getRawPtr (),
+                                     counts.getRawPtr (),
+                                     &numReceivesAsInt);
+      numReceives_ = Teuchos::as<size_t> (numReceivesAsInt);
     }
 
     // Now we know numReceives_, which is this process' number of
