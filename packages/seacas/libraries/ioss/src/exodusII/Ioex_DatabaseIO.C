@@ -48,6 +48,7 @@
 #include <tokenize.h>
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <functional>
@@ -6508,7 +6509,9 @@ namespace Ioex {
 					 // higher-order storage type.
 	  
 	  for (int i=0; i < attribute_count; i++) {
-	    sprintf(names[i], "attribute_%d", i+1);
+	    int writ = std::snprintf(names[i], maximumNameLength+1, "attribute_%d", i+1);
+	    if (writ > maximumNameLength)
+	      names[i][maximumNameLength] = '\0';
 	  }
 	}
 	else {
