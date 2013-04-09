@@ -47,8 +47,8 @@ KOKKOSARRAY_INLINE_FUNCTION
 typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,int>::value, int  >::type
 atomic_exchange(volatile T* dest, T val) {
   #if defined(GNU_ATOMICS_GCC) || defined(GNU_ATOMICS_INTEL)
-     int old = *dest;
-	 int assumed;
+     T old = *dest;
+	 T assumed;
 	 do {
 	    assumed = old;
 	    old = __sync_val_compare_and_swap(dest, assumed, val);
@@ -76,8 +76,8 @@ KOKKOSARRAY_INLINE_FUNCTION
 typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,long long int>::value, long long int >::type
 atomic_exchange(volatile T* dest, T val) {
   #if defined(GNU_ATOMICS_GCC) || defined(GNU_ATOMICS_INTEL)
-     long long int old = *dest;
-	 long long int assumed;
+     T old = *dest;
+	 T assumed;
 	 do {
 	    assumed = old;
 	    old = __sync_val_compare_and_swap(dest, assumed, val);

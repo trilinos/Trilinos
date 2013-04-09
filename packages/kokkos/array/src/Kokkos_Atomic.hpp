@@ -116,7 +116,9 @@ const char* atomic_query_version() {
 #ifdef OMP31_ATOMICS
 	return "OMP31_ATOMICS";
 #endif
-
+#ifdef CUDA_ATOMICS
+	return "CUDA_ATOMICS";
+#endif
 }
 
 //template<class T>

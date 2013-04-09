@@ -490,11 +490,13 @@ int main(int argc, char* argv[])
 #if DEVICE==1
   KokkosArray::Host::initialize(numa,threads);
 #endif
+
 #if DEVICE==2
   KokkosArray::Cuda::SelectDevice select_device(device);
   KokkosArray::Cuda::initialize(select_device);
 #endif
 
+  printf("Using %i numa regions with %i threads\n",numa,threads);
   printf("Using %s\n",KokkosArray::atomic_query_version());
   bool all_tests = false;
   if(type==-1) all_tests = true;
