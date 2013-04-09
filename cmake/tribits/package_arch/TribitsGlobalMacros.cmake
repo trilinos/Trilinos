@@ -121,8 +121,13 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES OFF CACHE BOOL
     "Recursively enable all packages that have required or optional dependencies for set of enabled packages." )
   
-  SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES OFF CACHE BOOL
-    "Disable (and printing warning) for enabled packages that have hard-disabled upstream dependencies.  Otherwise, (the default) is to raises a fatal configure failure." )
+  IF (${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT STREQUAL "")
+    SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT OFF)
+  ENDIF()
+  SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES
+    ${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT}
+    CACHE BOOL
+    "Disable (and printing warning) for enabled packages that have hard-disabled upstream dependencies.  Otherwise, is to raises a fatal configure failure." )
   
   SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_TESTS ""
     "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
