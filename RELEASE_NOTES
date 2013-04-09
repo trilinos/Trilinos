@@ -20,7 +20,15 @@ Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards,
 ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra,
 Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra, Zoltan, Zoltan2.
 
+AztecOO
+
+  - Added support for 64-bit global indices.  They can be used if 64-bit based
+    Epetra maps are used.
+
 Epetra
+
+  - IndexBase argument for 64-bit maps is now a "long long". No change to
+    32-bit maps, where it remains an "int".
 
 NOX
 
@@ -76,6 +84,11 @@ PyTrilinos
     - Added EpetraMultiVecAccessor base class.  Anasazi added this base
       class, and now the PyTrilinos version supports it as well.
 
+TriUtils
+
+  - Added support for 64-bit global indices.  They can be used if 64-bit based
+    Epetra maps are used or equivalent TriUtils functions with suffix "64" are
+    called.
 
 ###############################################################################
 #                                                                             #
