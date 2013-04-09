@@ -4850,18 +4850,22 @@ template<class TransferType>
   std::vector<int> RemotePIDs;
   int * pids_ptr = TargetPids.size() ? &TargetPids[0] : 0;
   if(UseLL) {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
    long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;  
    Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),CSR_colind_LL_ptr,
 							    *MyDomainMap,pids_ptr,
 							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
 							    Graph_.CrsGraphData_->ColMap_);
    Graph_.CrsGraphData_->HaveColMap_ = true;
+#endif
   }
   else {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
    Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),*MyDomainMap,pids_ptr,
 							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
 							    Graph_.CrsGraphData_->ColMap_);   
    Graph_.CrsGraphData_->HaveColMap_ = true;
+#endif
   }
 
   /***************************************************/
