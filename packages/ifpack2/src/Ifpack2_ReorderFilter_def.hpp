@@ -351,14 +351,27 @@ void ReorderFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdi
 				       Scalar alpha,
 				       Scalar beta) const
 {  
+  this->template applyTempl<Scalar,Scalar>(X, Y, mode, alpha, beta);
+}
+
+
+//==========================================================================  
+template<class MatrixType> 
+template<class DomainScalar, class RangeScalar>
+void ReorderFilter<MatrixType>::applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+					   Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+					   Teuchos::ETransp mode, 
+					   RangeScalar alpha,
+					   RangeScalar beta) const
+{  
   // Note: This isn't AztecOO compliant.  But neither was Ifpack's version.
   // Note: The localized maps mean the matvec is trivial (and has no import)
   TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
      "Ifpack2::ReorderFilter::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
  
-  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr = X.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr = Y.get2dViewNonConst();
+  RangeScalar zero = Teuchos::ScalarTraits<RangeScalar>::zero();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = X.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = Y.get2dViewNonConst();
 
   Y.putScalar(zero);
   size_t NumVectors = Y.getNumVectors();
@@ -370,20 +383,21 @@ void ReorderFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdi
     if (mode==Teuchos::NO_TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];      
+	  y_ptr[k][i] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][Indices_[j]];      
     }
     else if (mode==Teuchos::TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][Indices_[j]] += Values_[j] * x_ptr[k][i];
+	  y_ptr[k][Indices_[j]] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][i];
     }
     else { //mode==Teuchos::CONJ_TRANS
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<Scalar>::conjugate(Values_[j]) * x_ptr[k][i];
+	  y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<RangeScalar>::conjugate((RangeScalar)Values_[j]) * (RangeScalar)x_ptr[k][i];
     }
   }
 }
+
   
 //==========================================================================  
 template<class MatrixType> 
@@ -412,15 +426,25 @@ template<class MatrixType>
 void ReorderFilter<MatrixType>::permuteOriginalToReordered(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalX, 
 							   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedY) const
 {
+  this->template permuteOriginalToReorderedTempl<Scalar,Scalar>(originalX, reorderedY);
+}							  
+
+//==========================================================================  
+//! Permute multivector: original-to-reordered
+template<class MatrixType> 
+template<class DomainScalar, class RangeScalar>
+void ReorderFilter<MatrixType>::permuteOriginalToReorderedTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &originalX, 
+								Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedY) const
+{
   TEUCHOS_TEST_FOR_EXCEPTION(originalX.getNumVectors() != reorderedY.getNumVectors(), std::runtime_error,
 			     "Ifpack2::ReorderFilter::permuteOriginalToReordered ERROR: X.getNumVectors() != Y.getNumVectors().");
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr = originalX.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr = reorderedY.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = originalX.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = reorderedY.get2dViewNonConst();
 
   for(size_t k=0; k < originalX.getNumVectors(); k++)
     for(LocalOrdinal i=0; (size_t)i< originalX.getLocalLength(); i++)
-      y_ptr[k][perm_[i]] = x_ptr[k][i];
+      y_ptr[k][perm_[i]] = (RangeScalar)x_ptr[k][i];
 }							  
   
 //==========================================================================  
@@ -429,15 +453,25 @@ template<class MatrixType>
 void ReorderFilter<MatrixType>::permuteReorderedToOriginal(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedX, 
 							   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalY) const
 {
+  this->template permuteReorderedToOriginalTempl<Scalar,Scalar>(reorderedX, originalY);
+}
+
+//==========================================================================  
+//! Permute multivector: reordered-to-original
+template<class MatrixType> 
+template<class DomainScalar, class RangeScalar>
+void ReorderFilter<MatrixType>::permuteReorderedToOriginalTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedX, 
+								Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &originalY) const
+{
   TEUCHOS_TEST_FOR_EXCEPTION(reorderedX.getNumVectors() != originalY.getNumVectors(), std::runtime_error,
 			     "Ifpack2::ReorderFilter::permuteReorderedToOriginal ERROR: X.getNumVectors() != Y.getNumVectors().");
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr = reorderedX.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr = originalY.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = reorderedX.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = originalY.get2dViewNonConst();
 
   for(size_t k=0; k < reorderedX.getNumVectors(); k++)
     for(LocalOrdinal i=0; (size_t)i< reorderedX.getLocalLength(); i++)
-      y_ptr[k][reverseperm_[i]] = x_ptr[k][i];
+      y_ptr[k][reverseperm_[i]] = (RangeScalar)x_ptr[k][i];
 }
 
 //==========================================================================  

@@ -1017,6 +1017,67 @@ namespace Tpetra {
       the zero and non-zero diagonals owned by this node. */
     void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
 
+    /// \brief Get offsets of the diagonal entries in the matrix.
+    ///
+    /// \warning This method is only for expert users.
+    /// \warning We make no promises about backwards compatibility
+    ///   for this method.  It may disappear or change at any time.
+    /// \warning This method must be called collectively.  We reserve
+    ///   the right to do extra checking in a debug build that will
+    ///   require collectives.
+    ///
+    /// \pre The matrix must be locally indexed (which means that it
+    ///   has a column Map).
+    /// \pre All diagonal entries of the matrix's graph must be
+    ///   populated on this process.  Results are undefined otherwise.
+    /// \post <tt>offsets.size() == getNodeNumRows()</tt>
+    ///
+    /// This method creates an array of offsets of the local diagonal
+    /// entries in the matrix.  This array is suitable for use in the
+    /// two-argument version of getLocalDiagCopy().  However, its
+    /// contents are not defined in any other context.  For example,
+    /// you should not rely on offsets[i] being the index of the
+    /// diagonal entry in the views returned by getLocalRowView().
+    /// This may be the case, but it need not be.  (For example, we
+    /// may choose to optimize the lookups down to the optimized
+    /// storage level, in which case the offsets will be computed with
+    /// respect to the underlying storage format, rather than with
+    /// respect to the views.)
+    ///
+    /// Calling any of the following invalidates the output array:
+    /// - insertGlobalValues()
+    /// - insertLocalValues()
+    /// - fillComplete() (with a dynamic graph)
+    /// - resumeFill() (with a dynamic graph)
+    ///
+    /// If the matrix has a const ("static") graph, and if that graph
+    /// is fill complete, then the offsets array remains valid through
+    /// calls to fillComplete() and resumeFill().  "Invalidates" means
+    /// that you must call this method again to recompute the offsets.
+    void getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
+
+    /// \brief Variant of getLocalDiagCopy() that uses precomputed offsets.
+    ///
+    /// \warning This method is only for expert users.
+    /// \warning We make no promises about backwards compatibility
+    ///   for this method.  It may disappear or change at any time.
+    ///
+    /// This method uses the offsets of the diagonal entries, as
+    /// precomputed by getLocalDiagOffsets(), to speed up copying the
+    /// diagonal of the matrix.  The offsets must be recomputed if any
+    /// of the following methods are called:
+    /// - insertGlobalValues()
+    /// - insertLocalValues()
+    /// - fillComplete() (with a dynamic graph)
+    /// - resumeFill() (with a dynamic graph)
+    ///
+    /// If the matrix has a const ("static") graph, and if that graph
+    /// is fill complete, then the offsets array remains valid through
+    /// calls to fillComplete() and resumeFill().
+    void
+    getLocalDiagCopy (Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag,
+                      const Teuchos::ArrayView<const size_t>& offsets) const;
+
     /** \brief . */
     void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
 
@@ -1342,11 +1403,11 @@ namespace Tpetra {
 
     /// \brief Combine in the data using the given combine mode.
     ///
-    /// The \c copyAndPermute() and \c unpackAndCombine() methods
-    /// use this function to combine incoming entries from the
-    /// source matrix with the target matrix's current data.  This
-    /// method's behavior depends on whether the target matrix (that
-    /// is, this matrix) has a static graph.
+    /// The copyAndPermute() and unpackAndCombine() methods use this
+    /// function to combine incoming entries from the source matrix
+    /// with the target matrix's current data.  This method's behavior
+    /// depends on whether the target matrix (that is, this matrix)
+    /// has a static graph.
     void
     combineGlobalValues (const GlobalOrdinal globalRowIndex,
                          const Teuchos::ArrayView<const GlobalOrdinal> columnIndices,
@@ -1853,7 +1914,9 @@ namespace Tpetra {
   ///
   /// \param importer [in] The Import instance containing a
   ///   precomputed redistribution plan.  The source Map of the
-  ///   Import must be the same as the row Map of sourceMatrix.
+  ///   Import must be the same as the rowMap of sourceMatrix unless
+  ///   the "Reverse Mode" option on the params list, in which case
+  ///   the targetMap of Import must match the rowMap of the sourceMatrix
   ///
   /// \param domainMap [in] Domain Map of the returned matrix.  If
   ///   null, we use the default, which is the domain Map of the
@@ -1894,31 +1957,40 @@ namespace Tpetra {
     // method doesn't actually fuse the Import with fillComplete().
     // This will change in the future.
 
+    // Are we in reverse mode?
+    bool reverseMode = false;
+    if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
+
+    // Cache the maps 
+    Teuchos::RCP<const map_type> sourceMap = reverseMode? importer.getTargetMap() : importer.getSourceMap();
+    Teuchos::RCP<const map_type> targetMap = reverseMode? importer.getSourceMap() : importer.getTargetMap();
+
     // Pre-count the nonzeros to allow a build w/ Static Profile
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(importer.getSourceMap());
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(importer.getTargetMap());
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(sourceMap);
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(targetMap);
     ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
     for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
       nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
+    if(reverseMode) targetNnzPerRowVec.doExport(sourceNnzPerRowVec,importer,Tpetra::ADD);
+    else targetNnzPerRowVec.doImport(sourceNnzPerRowVec,importer,Tpetra::INSERT);
 
-    targetNnzPerRowVec.doImport(sourceNnzPerRowVec,importer,Tpetra::INSERT);
 
-
-    ArrayRCP<size_t> MyNnz(importer.getTargetMap()->getNodeNumElements());
+    ArrayRCP<size_t> MyNnz(targetMap->getNodeNumElements());
 
     ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData(0);
     for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
       MyNnz[i] = Teuchos::as<size_t>(targetNnzPerRow[i]);
 
-    RCP<ParameterList> matrixparams; 
+    RCP<ParameterList> matrixparams;
     if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
 
     RCP<CrsMatrixType> destMat =
-      rcp (new CrsMatrixType (importer.getTargetMap(),
+      rcp (new CrsMatrixType (targetMap,
                               MyNnz,
                               StaticProfile,
                               matrixparams));
-    destMat->doImport (*sourceMatrix, importer, INSERT);
+    if(reverseMode) destMat->doExport(*sourceMatrix, importer, Tpetra::ADD);
+    else destMat->doImport(*sourceMatrix, importer, Tpetra::INSERT);
 
     // Use the source matrix's domain Map as the default.
     RCP<const map_type> theDomainMap =
@@ -1929,18 +2001,16 @@ namespace Tpetra {
 
     // Do we need to restrict the communicator?
     bool restrictComm = false;
-    if (!params.is_null()) {
-      restrictComm = params->get("Restrict Communicator",restrictComm);
-    }
+    if (!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
 
     if(restrictComm) {
       // Handle communicator restriction, if requested
-      RCP<const map_type> newRowMap = importer.getTargetMap()->removeEmptyProcesses();
+      RCP<const map_type> newRowMap = targetMap->removeEmptyProcesses();
       RCP<const Comm<int> > newComm = newRowMap.is_null() ? Teuchos::null : newRowMap->getComm();
 
       destMat->removeEmptyProcessesInPlace(newRowMap);
       theDomainMap = theDomainMap->replaceCommWithSubset(newComm);
-      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);      
+      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);
       if(!newComm.is_null()) destMat->fillComplete(theDomainMap, theRangeMap);
     }
     else
@@ -2010,16 +2080,25 @@ namespace Tpetra {
     // method doesn't actually fuse the Export with fillComplete().
     // This will change in the future.
 
+    // Are we in reverse mode?
+    bool reverseMode = false;
+    if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
+
+    // Cache the maps 
+    Teuchos::RCP<const map_type> sourceMap = reverseMode? exporter.getTargetMap() : exporter.getSourceMap();
+    Teuchos::RCP<const map_type> targetMap = reverseMode? exporter.getSourceMap() : exporter.getTargetMap();
+    
     // Pre-count the nonzeros to allow a build w/ Static Profile
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(exporter.getSourceMap());
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(exporter.getTargetMap(),true);
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(sourceMap);
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(targetMap);
     ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
     for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
       nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
 
-    targetNnzPerRowVec.doExport(sourceNnzPerRowVec,exporter,Tpetra::ADD);
+    if(reverseMode) targetNnzPerRowVec.doImport(sourceNnzPerRowVec,exporter,Tpetra::INSERT);
+    else targetNnzPerRowVec.doExport(sourceNnzPerRowVec,exporter,Tpetra::ADD);
 
-    ArrayRCP<size_t> MyNnz(exporter.getTargetMap()->getNodeNumElements());
+    ArrayRCP<size_t> MyNnz(targetMap->getNodeNumElements());
 
     ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData(0);
     for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
@@ -2029,11 +2108,12 @@ namespace Tpetra {
     if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
 
     RCP<CrsMatrixType> destMat =
-      rcp (new CrsMatrixType (exporter.getTargetMap (),
+      rcp (new CrsMatrixType (targetMap,
                               MyNnz,
                               StaticProfile,
                               matrixparams));
-    destMat->doExport (*sourceMatrix, exporter, INSERT);
+    if(reverseMode) destMat->doImport(*sourceMatrix, exporter, Tpetra::ADD);
+    else destMat->doExport (*sourceMatrix, exporter, Tpetra::INSERT);
 
     // Use the source matrix's domain Map as the default.
     RCP<const map_type> theDomainMap =
@@ -2044,18 +2124,16 @@ namespace Tpetra {
 
     // Do we need to restrict the communicator?
     bool restrictComm = false;
-    if (!params.is_null()) {
-      restrictComm = params->get("Restrict Communicator",restrictComm);
-    }
+    if (!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
 
     if(restrictComm) {
       // Handle communicator restriction, if requested
-      RCP<const map_type> newRowMap = exporter.getTargetMap()->removeEmptyProcesses();
+      RCP<const map_type> newRowMap = targetMap->removeEmptyProcesses();
       RCP<const Comm<int> > newComm = newRowMap.is_null() ? Teuchos::null : newRowMap->getComm();
 
       destMat->removeEmptyProcessesInPlace(newRowMap);
       theDomainMap = theDomainMap->replaceCommWithSubset(newComm);
-      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);      
+      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);
       if(!newComm.is_null()) destMat->fillComplete(theDomainMap, theRangeMap);
     }
     else

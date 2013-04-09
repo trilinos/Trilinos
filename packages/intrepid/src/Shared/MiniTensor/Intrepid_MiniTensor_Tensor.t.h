@@ -44,59 +44,59 @@
 
 namespace Intrepid {
 
-  //
-  // R^N tensor input
-  // \param A tensor
-  // \param is input stream
-  // \return is input stream
-  //
-  template<typename T>
-  std::istream &
-  operator>>(std::istream & is, Tensor<T> & A)
-  {
+//
+// R^N tensor input
+// \param A tensor
+// \param is input stream
+// \return is input stream
+//
+template<typename T>
+std::istream &
+operator>>(std::istream & is, Tensor<T> & A)
+{
 
-    Index const
-    N = A.get_dimension();
+  Index const
+  N = A.get_dimension();
 
-    for (Index i = 0; i < N; ++i) {
-      for (Index j = 0; j < N; ++j) {
-        is >> A(i,j);
-      }
+  for (Index i = 0; i < N; ++i) {
+    for (Index j = 0; j < N; ++j) {
+      is >> A(i,j);
     }
-
-    return is;
   }
 
-  //
-  // R^N tensor output
-  // \param A tensor
-  // \param os output stream
-  // \return os output stream
-  //
-  template<typename T>
-  std::ostream &
-  operator<<(std::ostream & os, Tensor<T> const & A)
-  {
-    Index const
-    N = A.get_dimension();
+  return is;
+}
 
-    if (N == 0) {
-      return os;
-    }
+//
+// R^N tensor output
+// \param A tensor
+// \param os output stream
+// \return os output stream
+//
+template<typename T>
+std::ostream &
+operator<<(std::ostream & os, Tensor<T> const & A)
+{
+  Index const
+  N = A.get_dimension();
 
-    for (Index i = 0; i < N; ++i) {
-
-      os << std::scientific << A(i,0);
-
-      for (Index j = 1; j < N; ++j) {
-        os << std::scientific << "," << A(i,j);
-      }
-
-      os << std::endl;
-    }
-
+  if (N == 0) {
     return os;
   }
+
+  for (Index i = 0; i < N; ++i) {
+
+    os << std::scientific << A(i,0);
+
+    for (Index j = 1; j < N; ++j) {
+      os << std::scientific << "," << A(i,j);
+    }
+
+    os << std::endl;
+  }
+
+  return os;
+}
 
 } // namespace Intrepid
 

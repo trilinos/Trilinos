@@ -132,6 +132,16 @@ $ git clone url4.gov:/git/ExtraRepo2
 where, SYNC_BASE_DIR=~/sync_base_dir for example, which must already be
 created.
 
+An .egdist file can be created to aid in multi-repo git commands using the
+tool egdist.  It is contained in the BaseProj directory and contains:
+
+$ cd $SYNC_BASE_DIR/BaseProj
+$ echo ExtraRepo1 > .egdist
+$ echo ExtraRepo2 >> .egdist
+$ cat .egdist
+ExtraRepo1
+ExtraRepo2
+
 Next, the remotes that define the integration pattern are created as follows:
 
 $ cd $SYNC_BASE_DIR/BaseProj
@@ -142,6 +152,20 @@ $ cd ..
 $ cd ExtraRepo2
 $ git remote add integrate-from url4.gov:/git/ExtraRepo2
 $ cd ..
+
+This gives the remotes:
+
+$ $SYNC_BASE_DIR/BaseProj
+$ egdist remote -v | grep -v push | grep -v "^$"
+*** Base Git Repo: BaseProj
+origin	url4.gov:/git/BaseProj (fetch)
+integrate-from	url4.gov:/git/BaseProj (fetch)
+*** Git Repo: ExtraRepo1
+origin	url4.gov:/git/ExtraRepo1 (fetch)
+integrate-from	url2.gov:/git/ExtraRepo1 (fetch)
+*** Git Repo: ExtraRepo2
+origin	url4.gov:/git/ExtraRepo2 (fetch)
+integrate-from	url4.gov:/git/ExtraRepo2 (fetch)
 
 Above, the remote 'integrate-from' is used by the checkin-test.py wrapper
 script (see below) to pull and merge in additional changes that will be tested

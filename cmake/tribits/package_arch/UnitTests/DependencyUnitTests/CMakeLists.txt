@@ -259,6 +259,22 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableStratimikos_DisableThyra_DisableEnabledDownstreamPackages
+  ARGS -DTrilinos_ENABLE_Stratimikos=ON -DTrilinos_ENABLE_Thyra=OFF
+    -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Setting subpackage enable Trilinos_ENABLE_ThyraCoreLibs=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "Setting subpackage enable Trilinos_ENABLE_ThyraGoodStuff=OFF because parent package Trilinos_ENABLE_Thyra=OFF" 
+    "Setting subpackage enable Trilinos_ENABLE_ThyraEpetra=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "Setting subpackage enable Trilinos_ENABLE_ThyraEpetraExt=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "Setting subpackage enable Trilinos_ENABLE_ThyraTpetra=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "WARNING: Setting Trilinos_ENABLE_Stratimikos=OFF which was 'ON' because Stratimikos has a required library dependence on disabled package ThyraCoreLibs but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON"
+    "Final set of enabled packages:  0"
+    "Final set of non-enabled packages:  .+ Teuchos .+ Thyra .+ Stratimikos .+"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   EnableEpetra_DisableThyraCoreLibs_EnableAllForwardPackages
   ARGS -DTrilinos_ENABLE_Epetra:BOOL=ON -DTrilinos_ENABLE_ThyraCoreLibs:BOOL=OFF
     -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON
@@ -347,6 +363,19 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   PASS_REGULAR_EXPRESSION_ALL
     "ERROR: Setting Trilinos_ENABLE_Panzer=OFF which was 'ON' because Panzer has a required library dependence on disabled TPL MPI!"
     "Configuring incomplete, errors occurred!"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  EnablePanzer_DisableMPI_DisableEnabledDownstreamPackages
+  ARGS  -DTrilinos_ENABLE_Panzer=ON
+    -DTPL_ENABLE_MPI:BOOL=OFF
+    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
+    -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "WARNING: Setting Trilinos_ENABLE_Panzer=OFF which was 'ON' because Panzer has a required library dependence on disabled TPL MPI but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON"
+    "Final set of enabled packages:  0"
+    "Final set of non-enabled packages:  .+ Panzer .+"
   )
 
 

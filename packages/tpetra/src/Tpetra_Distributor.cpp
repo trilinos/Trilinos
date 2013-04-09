@@ -43,6 +43,7 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
+
 namespace Tpetra {
   namespace Details {
     std::string
@@ -78,11 +79,18 @@ namespace Tpetra {
     return sendTypes;
   }
 
-  #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
   namespace {
-    const bool useDistinctTags_default = false;
+    const bool barrierBetween_default = true;
+
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    const bool useDistinctTags_default = true;
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   } // namespace (anonymous)
 
+  // Initialize the instance counter.
+  int Distributor::instanceCounter_ = 0;
+
+#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
   // Initialize the tag counter, used to assign each Distributor instance its own tag.
   int Distributor::tagCounter_ = 0;
 
@@ -94,25 +102,72 @@ namespace Tpetra {
     // case.  We don't expect an application to create a large number
     // of Distributor objects, and the tag counter is really only for
     // debugging.
-    if (tagCounter_ >= 32764) {
+    if (tagCounter_ > 32764) {
       tagCounter_ = 0;
     } else {
-      // First four are for doPosts() (two paths in each of two
-      // versions of doPosts()).  We reserve the remaining four for
-      // initialization.
-      tagCounter_ += 8;
+      // The "base" of the tag is always divisible by 4.  We add an
+      // "offset" (0, 1, 2, or 3) to the base to create a unique tag
+      // for each code path in that instance of Distributor.  Offsets
+      // 0 and 1 are for the two versions (three-argument and
+      // four-argument) of doPosts().  Offset 2 is for
+      // computeReceives() (which also posts receives and sends).  We
+      // reserve Offset 3 for future use.  Given the above upper bound
+      // for tags and the resulting tag range [0, 2^{15}-1], this lets
+      // us distinguish 2^{13} instances of Distributor.
+      tagCounter_ += 4;
     }
   }
 
   int Distributor::getTag (const int pathTag) const {
     return useDistinctTags_ ? (instanceTag_ + pathTag) : comm_->getTag ();
   }
-  #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+  void Distributor::makeTimers () {
+#  ifdef TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
+    // Give timers a unique name based on the instance count.
+    std::ostringstream os;
+    os << "Tpetra::Distributor(" << instanceCount_ << "): ";
+    const std::string prefix = os.str ();
+    const std::string name_doPosts3 = prefix + "doPosts(3)";
+    const std::string name_doPosts4 = prefix + "doPosts(4)";
+    const std::string name_doWaits = prefix + "doWaits";
+    const std::string name_doPosts3_recvs = prefix + "doPosts(3): recvs";
+    const std::string name_doPosts4_recvs = prefix + "doPosts(4): recvs";
+    const std::string name_doPosts3_barrier = prefix + "doPosts(3): barrier";
+    const std::string name_doPosts4_barrier = prefix + "doPosts(4): barrier";
+    const std::string name_doPosts3_sends = prefix + "doPosts(3): sends";
+    const std::string name_doPosts4_sends = prefix + "doPosts(4): sends";
+#  else
+    const std::string name_doPosts3 = "Tpetra::Distributor: doPosts(3)";
+    const std::string name_doPosts4 = "Tpetra::Distributor: doPosts(4)";
+    const std::string name_doWaits = "Tpetra::Distributor: doWaits";
+    const std::string name_doPosts3_recvs = "Tpetra::Distributor: doPosts(3): recvs";
+    const std::string name_doPosts4_recvs = "Tpetra::Distributor: doPosts(4): recvs";
+    const std::string name_doPosts3_barrier = "Tpetra::Distributor: doPosts(3): barrier";
+    const std::string name_doPosts4_barrier = "Tpetra::Distributor: doPosts(4): barrier";
+    const std::string name_doPosts3_sends = "Tpetra::Distributor: doPosts(3): sends";
+    const std::string name_doPosts4_sends = "Tpetra::Distributor: doPosts(4): sends";
+#  endif // TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
+    timer_doPosts3_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3);
+    timer_doPosts4_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4);
+    timer_doWaits_ = Teuchos::TimeMonitor::getNewTimer (name_doWaits);
+    timer_doPosts3_recvs_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3_recvs);
+    timer_doPosts4_recvs_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4_recvs);
+    timer_doPosts3_barrier_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3_barrier);
+    timer_doPosts4_barrier_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4_barrier);
+    timer_doPosts3_sends_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3_sends);
+    timer_doPosts4_sends_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4_sends);
+  }
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     : comm_(comm)
     , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (true)
+    , barrierBetween_ (barrierBetween_default)
     , debug_ (false)
     , numExports_(0)
     , selfMessage_(false)
@@ -120,6 +175,7 @@ namespace Tpetra {
     , maxSendLength_(0)
     , numReceives_(0)
     , totalReceiveLength_(0)
+    , instanceCount_ (instanceCounter_)
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
     , useDistinctTags_ (useDistinctTags_default)
@@ -136,13 +192,25 @@ namespace Tpetra {
     // This is not thread safe: tagCounter_ is global.
     incrementTagCounter ();
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+    ++instanceCounter_;
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    makeTimers ();
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+    if (debug_) {
+      std::ostringstream os;
+      os << comm_->getRank () << "," << instanceCount_
+         << ": Distributor ctor done" << std::endl;
+      std::cerr << os.str ();
+    }
   }
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_(comm)
     , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (true)
+    , barrierBetween_ (barrierBetween_default)
     , debug_ (false)
     , numExports_(0)
     , selfMessage_(false)
@@ -150,6 +218,7 @@ namespace Tpetra {
     , maxSendLength_(0)
     , numReceives_(0)
     , totalReceiveLength_(0)
+    , instanceCount_ (instanceCounter_)
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
     , useDistinctTags_ (useDistinctTags_default)
@@ -175,6 +244,18 @@ namespace Tpetra {
     // This is not thread safe: tagCounter_ is global.
     incrementTagCounter ();
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+    ++instanceCounter_;
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    makeTimers ();
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+    if (debug_) {
+      std::ostringstream os;
+      os << comm_->getRank () << "," << instanceCount_
+         << ": Distributor ctor done" << std::endl;
+      std::cerr << os.str ();
+    }
   }
 
   Distributor::Distributor (const Distributor & distributor)
@@ -189,6 +270,7 @@ namespace Tpetra {
     , numReceives_(distributor.numReceives_)
     , totalReceiveLength_(distributor.totalReceiveLength_)
     , reverseDistributor_(distributor.reverseDistributor_)
+    , instanceCount_ (instanceCounter_)
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
     , useDistinctTags_ (distributor.useDistinctTags_)
@@ -219,6 +301,18 @@ namespace Tpetra {
     // This is not thread safe: tagCounter_ is global.
     incrementTagCounter ();
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+    ++instanceCounter_;
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    makeTimers ();
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+    if (debug_) {
+      std::ostringstream os;
+      os << comm_->getRank () << "," << instanceCount_
+         << ": Distributor copy ctor done" << std::endl;
+      std::cerr << os.str ();
+    }
   }
 
   Distributor::~Distributor()
@@ -323,11 +417,12 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::setStringToIntegralParameter;
 
-    const bool barrierBetween = true;
+    const bool barrierBetween = barrierBetween_default;
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     const bool useDistinctTags = useDistinctTags_default;
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
     const bool debug = false;
+    //const bool debug = true;
 
     Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Send");
@@ -452,21 +547,33 @@ namespace Tpetra {
     using Teuchos::OSTab;
     using Teuchos::RCP;
     using Teuchos::waitAll;
+    using std::cerr;
     using std::endl;
 
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor timeMon (*timer_doWaits_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+    const int myRank = comm_->getRank ();
 #ifdef HAVE_TEUCHOS_DEBUG
     // Prepare for verbose output, if applicable.
     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
     RCP<FancyOStream> out = this->getOStream ();
     const bool doPrint = out.get () &&
       includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
-    const int myRank = comm_->getRank ();
 
     if (doPrint) {
       *out << "Distributor::doWaits (Proc " << myRank << "):" << endl;
     }
     OSTab tab = this->getOSTab(); // Add one tab level
 #endif // HAVE_TEUCHOS_DEBUG
+
+    if (debug_) {
+      std::ostringstream os;
+      os << myRank << "," << instanceCount_ << ": doWaits: # reqs = "
+         << requests_.size () << endl;
+      cerr << os.str ();
+    }
 
     if (requests_.size() > 0) {
       waitAll (*comm_, requests_());
@@ -490,6 +597,12 @@ namespace Tpetra {
       // Restore the invariant that requests_.size() is the number of
       // outstanding nonblocking communication requests.
       requests_.resize (0);
+    }
+
+    if (debug_) {
+      std::ostringstream os;
+      os << myRank << "," << instanceCount_ << ": doWaits done" << endl;
+      cerr << os.str ();
     }
   }
 
@@ -618,7 +731,7 @@ namespace Tpetra {
 
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // MPI tag for nonblocking receives and blocking sends in this method.
-    const int pathTag = 4;
+    const int pathTag = 2;
     const int tag = this->getTag (pathTag);
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 
@@ -626,8 +739,8 @@ namespace Tpetra {
     const int numProcs = comm_->getSize();
     if (debug_) {
       std::ostringstream os;
-      os << "  Proc " << myRank << ": in computeReceives (selfMessage_ = "
-         << (selfMessage_ ? "true" : "false") << ")" << endl;
+      os << myRank << "," << instanceCount_ << ": computeReceives "
+        "(selfMessage_ = " << (selfMessage_ ? "true" : "false") << ")" << endl;
       cerr << os.str ();
     }
 
@@ -658,7 +771,8 @@ namespace Tpetra {
 
       if (debug_) {
         std::ostringstream os;
-        os << "  - Proc " << myRank << ": calling reduceAllAndScatter" << endl;
+        os << myRank << "," << instanceCount_ << ": computeReceives: "
+          "Calling reduceAllAndScatter" << endl;
         cerr << os.str ();
       }
 
@@ -747,10 +861,11 @@ namespace Tpetra {
 
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": Posting "
-         << actualNumReceives << " ireceives" << endl;
+      os << myRank << "," << instanceCount_ << ": computeReceives: Posting "
+         << actualNumReceives << " irecvs" << endl;
       cerr << os.str ();
     }
+
     // Post the (nonblocking) receives.
     for (size_t i = 0; i < actualNumReceives; ++i) {
       // Once the receive completes, we can ask the corresponding
@@ -763,7 +878,8 @@ namespace Tpetra {
       requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc, tag, *comm_);
       if (debug_) {
         std::ostringstream os;
-        os << "  - Proc " << myRank << ": Posted ireceive with tag " << tag << endl;
+        os << myRank << "," << instanceCount_ << ": computeReceives: "
+          "Posted any-proc irecv w/ specified tag " << tag << endl;
         cerr << os.str ();
       }
 #else
@@ -771,8 +887,8 @@ namespace Tpetra {
       requests[i] = ireceive<int, size_t> (*comm_, lengthsFromBuffers[i], anySourceProc);
       if (debug_) {
         std::ostringstream os;
-        os << "  - Proc " << myRank << ": Posted ireceive with tag "
-           << comm_->getTag () << endl;
+        os << myRank << "," << instanceCount_ << ": computeReceives: "
+          "Posted any-proc irecv w/ comm tag " << comm_->getTag () << endl;
         cerr << os.str ();
       }
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
@@ -780,8 +896,8 @@ namespace Tpetra {
 
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": Posting " << numSends_
-         << " sends" << endl;
+      os << myRank << "," << instanceCount_ << ": computeReceives: "
+        "posting " << numSends_ << " sends" << endl;
       cerr << os.str ();
     }
     // Post the sends: Tell each process to which we are sending how
@@ -802,16 +918,18 @@ namespace Tpetra {
         send<int, size_t> (lengthsTo_i, 1, as<int> (imagesTo_[i]), tag, *comm_);
         if (debug_) {
           std::ostringstream os;
-          os << "  - Proc " << myRank << ": Posted send to Proc "
-             << imagesTo_[i] << " with tag " << tag << endl;
+          os << myRank << "," << instanceCount_ << ": computeReceives: "
+            "Posted send to Proc " << imagesTo_[i] << " w/ specified tag "
+             << tag << endl;
           cerr << os.str ();
         }
 #else
         send<int, size_t> (*comm_, lengthsTo_[i], imagesTo_[i]);
         if (debug_) {
           std::ostringstream os;
-          os << "  - Proc " << myRank << ": Posted send to Proc "
-             << imagesTo_[i] << " with tag " << comm_->getTag () << endl;
+          os << myRank << "," << instanceCount_ << ": computeReceives: "
+            "Posted send to Proc " << imagesTo_[i] << " w/ comm tag "
+             << comm_->getTag () << endl;
           cerr << os.str ();
         }
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
@@ -830,11 +948,10 @@ namespace Tpetra {
 
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": Calling waitAll on "
+      os << myRank << "," << instanceCount_ << ": computeReceives: waitAll on "
          << requests.size () << " requests" << endl;
       cerr << os.str ();
     }
-
     //
     // Wait on all the receives.  When they arrive, check the status
     // output of wait() for the receiving process ID, unpack the
@@ -854,13 +971,15 @@ namespace Tpetra {
 #ifdef HAVE_TEUCHOS_DEBUG
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": Calling barrier" << endl;
+      os << myRank << "," << instanceCount_
+         << ": computeReceives: Calling barrier" << endl;
       cerr << os.str ();
     }
     comm_->barrier();
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": Past barrier" << endl;
+      os << myRank << "," << instanceCount_
+         << ": computeReceives: Past barrier" << endl;
       cerr << os.str ();
     }
 #endif // HAVE_TEUCHOS_DEBUG
@@ -892,16 +1011,18 @@ namespace Tpetra {
 #ifdef HAVE_TEUCHOS_DEBUG
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": Calling last barrier" << endl;
+      os << myRank << "," << instanceCount_ << ": computeReceives: "
+        "Calling last barrier" << endl;
       cerr << os.str ();
     }
     comm_->barrier();
+#endif // HAVE_TEUCHOS_DEBUG
+
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": Past last barrier" << endl;
+      os << myRank << "," << instanceCount_ << ": computeReceives: done" << endl;
       cerr << os.str ();
     }
-#endif // HAVE_TEUCHOS_DEBUG
   }
 
   size_t
@@ -918,15 +1039,17 @@ namespace Tpetra {
     const int numImages = comm_->getSize();
     if (debug_) {
       std::ostringstream os;
-      os << "  Proc " << myImageID << ": createFromSends" << endl;
+      os << myImageID << "," << instanceCount_ << ": createFromSends" << endl;
       cerr << os.str ();
     }
+
     // exportNodeIDs tells us the communication pattern for this
     // distributor.  It dictates the way that the export data will be
     // interpreted in doPosts().  We want to perform at most one
-    // communication per node; this is for two reasons:
-    //   * minimize latency/overhead in the comm routines (nice)
-    //   * match the number of receives and sends between nodes (necessary)
+    // send per process in doPosts; this is for two reasons:
+    //   * minimize latency / overhead in the comm routines (nice)
+    //   * match the number of receives and sends between processes
+    //     (necessary)
     //
     // Teuchos::Comm requires that the data for a send are contiguous
     // in a send buffer.  Therefore, if the data in the send buffer
@@ -951,7 +1074,7 @@ namespace Tpetra {
     //
     // Both of these tests require O(n), where n is the number of
     // exports. However, the latter will positively identify a greater
-    // portion of contiguous patterns. We will use the latter method.
+    // portion of contiguous patterns.  We use the latter method.
     //
     // Check to see if values are grouped by images without gaps
     // If so, indices_to -> 0.
@@ -1031,13 +1154,15 @@ namespace Tpetra {
     bool index_neq_numActive = false;
     bool send_neq_numSends = false;
 #endif
-    if (!needSendBuff) {
+    if (! needSendBuff) {
       // grouped by image, no send buffer or indicesTo_ needed
       numSends_ = 0;
       // Count total number of sends, i.e., total number of images to
       // which we are sending.  This includes myself, if applicable.
-      for (int i=0; i < numImages; ++i) {
-        if (starts[i]) ++numSends_;
+      for (int i = 0; i < numImages; ++i) {
+        if (starts[i]) {
+          ++numSends_;
+        }
       }
 
       // Not only do we not need these, but we must clear them, as
@@ -1186,15 +1311,15 @@ namespace Tpetra {
 
     if (selfMessage_) --numSends_;
 
-    if (debug_) {
-      std::ostringstream os;
-      os << "  - Proc " << myImageID << ": computeReceives" << endl;
-      cerr << os.str ();
-    }
-
     // Invert map to see what msgs are received and what length
     computeReceives();
 
+    if (debug_) {
+      std::ostringstream os;
+      os << myImageID << "," << instanceCount_
+         << ": createFromSends: done" << endl;
+      cerr << os.str ();
+    }
     return totalReceiveLength_;
   }
 

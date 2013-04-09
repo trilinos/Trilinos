@@ -87,34 +87,28 @@ namespace MueLu {
       RCP<Matrix> rebalancedAc;
       {
         SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
-        RCP<const Map> targetMap = rebalanceImporter->getTargetMap();	
+        RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
 
 	const ParameterList & pL = GetParameterList();
 
-	bool useSubComm=false;
 	ParameterList XpetraList;
-       	if(pL.get<bool>("useSubcomm") == true) {useSubComm=true; XpetraList.set("Restrict Communicator",true);}
+       	if(pL.get<bool>("useSubcomm") == true) XpetraList.set("Restrict Communicator",true);
 	rebalancedAc = MatrixFactory::Build(originalAc,*rebalanceImporter,targetMap,targetMap,rcp(&XpetraList,false));
-
-	// If we're using subcomms, delete the local matrix if it is empty
-	if(useSubComm && (rebalancedAc->getRowMap().is_null() || rebalancedAc->getRowMap()->getNodeNumElements() == 0))
-	  rebalancedAc=Teuchos::null;
-
+	// Note: If the communicator is restricted away, Build returns Teuchos::null.
+	if(!rebalancedAc.is_null()) rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
         Set(coarseLevel, "A", rebalancedAc);
       }
-
+      
       if (!rebalancedAc.is_null()) {
         GetOStream(Statistics0, 0) << RAPFactory::PrintMatrixInfo       (*rebalancedAc, "Ac (rebalanced)");
         GetOStream(Statistics0, 0) << RAPFactory::PrintLoadBalancingInfo(*rebalancedAc, "Ac (rebalanced)");
       }
 
     } else {
-
       // Ac already built by the load balancing process and no load balancing needed
       GetOStream(Warnings0, 0) << "No rebalancing" << std::endl;
       GetOStream(Warnings0, 0) << "Jamming A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
                                << this << std::endl;
-
       Set(coarseLevel, "A", originalAc);
     }
 

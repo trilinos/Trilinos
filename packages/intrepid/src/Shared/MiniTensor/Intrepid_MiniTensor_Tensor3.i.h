@@ -44,62 +44,62 @@
 
 namespace Intrepid {
 
-  //
-  // Dimension
-  // get dimension
-  //
-  template<typename T>
-  inline
-  Index
-  Tensor3<T>::get_dimension() const
-  {
-    return dimension;
-  }
+//
+// Dimension
+// get dimension
+//
+template<typename T>
+inline
+Index
+Tensor3<T>::get_dimension() const
+{
+  return dimension;
+}
 
-  //
-  // R^N Indexing for constant 3rd order tensor
-  // \param i index
-  // \param j index
-  // \param k index
-  //
-  template<typename T>
-  inline
-  T const &
-  Tensor3<T>::operator()(
+//
+// R^N Indexing for constant 3rd order tensor
+// \param i index
+// \param j index
+// \param k index
+//
+template<typename T>
+inline
+T const &
+Tensor3<T>::operator()(
     Index const i,
     Index const j,
     Index const k) const
-  {
-    Index const
-    N = get_dimension();
+{
+  Index const
+  N = get_dimension();
 
-    assert(i < N);
-    assert(j < N);
-    assert(k < N);
+  assert(i < N);
+  assert(j < N);
+  assert(k < N);
 
-    return e[(i * N + j) * N + k];
-  }
+  return e[(i * N + j) * N + k];
+}
 
-  //
-  // R^N 3rd-order tensor indexing
-  // \param i index
-  // \param j index
-  // \param k index
-  //
-  template<typename T>
-  inline
-  T &
-  Tensor3<T>::operator()(Index const i, Index const j, Index const k)
-  {
-    Index const
-    N = get_dimension();
+//
+// R^N 3rd-order tensor indexing
+// \param i index
+// \param j index
+// \param k index
+//
+template<typename T>
+inline
+T &
+Tensor3<T>::operator()(Index const i, Index const j, Index const k)
+{
+  Index const
+  N = get_dimension();
 
-    assert(i < N);
-    assert(j < N);
-    assert(k < N);
+  assert(i < N);
+  assert(j < N);
+  assert(k < N);
 
-    return e[i * N * N + j * N + k];
-  }
+  return e[i * N * N + j * N + k];
+}
 
 } // namespace Intrepid
 

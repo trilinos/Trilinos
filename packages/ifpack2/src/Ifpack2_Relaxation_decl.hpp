@@ -696,6 +696,19 @@ private:
   /// "Actual inverse diagonal" means the result of 1/diagonal,
   /// without any protection against zero or small diagonal entries.
   magnitude_type globalDiagNormDiff_;
+
+  /// \brief Precomputed offsets of local diagonal entries of the matrix.
+  ///
+  /// These are only used if the matrix has a const ("static") graph.
+  /// In that case, the offsets of the diagonal entries will never
+  /// change, even if the values of the diagonal entries change.
+  Teuchos::ArrayRCP<size_t> diagOffsets_;
+  /// \brief Whether we have precomputed offsets of diagonal entries.
+  ///
+  /// We need this flag because it is not enough just to test if
+  /// diagOffsets_ has size zero.  It is perfectly legitimate for the
+  /// matrix to have zero rows on the calling process.
+  bool savedDiagOffsets_;
   //@}
 
 }; //class Relaxation

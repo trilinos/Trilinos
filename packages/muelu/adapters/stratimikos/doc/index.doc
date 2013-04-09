@@ -1,7 +1,7 @@
 /*! \mainpage MueLu to %Thyra Preconditioner Adapters
 
 This doxygen collection documents a small amount of code that wraps MueLu
-objects to create adapter objects which implement the 
+objects to create adapter objects which implement the
 Thrya PreconditionerFactoryBase interface.
 
 

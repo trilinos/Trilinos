@@ -79,22 +79,34 @@ namespace Tpetra {
   /// is for redistributing data from a possibly multiply-owned
   /// distribution to a uniquely-owned distribution.
   ///
-  /// One use case of Import is bringing in remote source vector data
-  /// for a distributed sparse matrix-vector multiply.  The source
-  /// vector itself is uniquely owned, but must be brought in into an
-  /// overlapping distribution so that each process can compute its
-  /// part of the target vector without further communication.
+  /// The names "Import" and "Export" have nothing to do with the
+  /// direction in which data moves relative to the calling process;
+  /// any process may do both receives and sends in an Import or
+  /// Export.  Rather, the names suggest what happens in their most
+  /// common use case, the communication pattern for sparse
+  /// matrix-vector multiply.  Import "brings in" remote source vector
+  /// data (from the domain Map to the column Map) for local
+  /// computation, and Export "pushes" the result back (from the row
+  /// Map to the range Map).  Import and Export have other uses as
+  /// well.
+  ///
+  /// As mentioned above, one use case of Import is bringing in remote
+  /// source vector data for a distributed sparse matrix-vector
+  /// multiply.  The source vector itself is uniquely owned, but must
+  /// be brought in into an overlapping distribution so that each
+  /// process can compute its part of the target vector without
+  /// further communication.
   ///
   /// Epetra separated Import and Export for performance reasons.  The
   /// implementation is different, depending on which direction is the
   /// uniquely-owned Map.  Tpetra retains this convention.
   ///
   /// This class is templated on the same template arguments as Map:
-  /// the local ordinal type (\c LocalOrdinal), the global ordinal
-  /// type (\c GlobalOrdinal), and the Kokkos Node type (\c Node).
-  template <class LocalOrdinal, 
-	    class GlobalOrdinal = LocalOrdinal, 
-	    class Node = Kokkos::DefaultNode::DefaultNodeType>
+  /// the local ordinal type <tt>LocalOrdinal</tt>, the global ordinal
+  /// type <tt>GlobalOrdinal</tt>, and the Kokkos <tt>Node</tt> type.
+  template <class LocalOrdinal,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Import: public Teuchos::Describable {
   public:
     //! The specialization of Map used by this class.
@@ -294,7 +306,7 @@ namespace Tpetra {
       Create a Import object from the given source and target Maps.
       \pre <tt>src != null</tt>
       \pre <tt>tgt != null</tt>
-      \return The Import object. If <tt>src == tgt</tt>, returns \c null. 
+      \return The Import object. If <tt>src == tgt</tt>, returns \c null.
         (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
 
       \relatesalso Import
@@ -302,7 +314,7 @@ namespace Tpetra {
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
   createImport (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& src,
-		const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& tgt)
+                const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& tgt)
   {
     if (src == tgt) {
       return Teuchos::null;
@@ -310,8 +322,8 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       src == null || tgt == null, std::runtime_error,
-      "Tpetra::createImport(): neither source nor target map may be null:" 
-      << std::endl << "source: " << src << std::endl << "target: " << tgt 
+      "Tpetra::createImport(): neither source nor target map may be null:"
+      << std::endl << "source: " << src << std::endl << "target: " << tgt
       << std::endl);
 #endif // HAVE_TPETRA_DEBUG
     return Teuchos::rcp (new Import<LocalOrdinal, GlobalOrdinal, Node> (src, tgt));

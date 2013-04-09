@@ -48,13 +48,51 @@
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
+// If TPETRA_DISTRIBUTOR_TAG_COUNTER is defined, Distributor will use
+// message tags for all of its receives and sends.  This may help
+// prevent messages from getting crossed between different paths or
+// Distributor instances.  Defining this is generally a good idea, as
+// it probably introduces no performance penalty.
+//
+// FIXME (mfh 09 Apr 2013) Enabling this causes the Matrix Market test
+// for Map output to hang.  Thus, I'm disabling it for now until I can
+// figure out what's wrong.
+
 // #ifndef TPETRA_DISTRIBUTOR_TAG_COUNTER
 // #  define TPETRA_DISTRIBUTOR_TAG_COUNTER 1
-// #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+// #endif TPETRA_DISTRIBUTOR_TAG_COUNTER
 
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
 #  undef TPETRA_DISTRIBUTOR_TAG_COUNTER
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+
+// If TPETRA_DISTRIBUTOR_TIMERS is defined, Distributor will time
+// doPosts (both versions) and doWaits, and register those timers with
+// Teuchos::TimeMonitor so that summarize() or report() will show
+// results.
+
+// #ifndef TPETRA_DISTRIBUTOR_TIMERS
+// #  define TPETRA_DISTRIBUTOR_TIMERS 1
+// #endif // TPETRA_DISTRIBUTOR_TIMERS
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#  undef TPETRA_DISTRIBUTOR_TIMERS
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+// If defined, Distributor's timers will have a unique name for each
+// Distributor instance.  Be careful if you enable this, because it
+// will make Teuchos::TimeMonitor::{summarize, report}() show a long
+// list of timers.  Defining this only has an effect if
+// TPETRA_DISTRIBUTOR_TIMERS is defined.
+
+// #ifndef TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
+// #  define TPETRA_DISTRIBUTOR_UNIQUE_TIMERS 1
+// #endif // TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
+
+#ifdef TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
+#  undef TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
+#endif // TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
+
 
 namespace Tpetra {
 
@@ -647,6 +685,27 @@ namespace Tpetra {
     /// later reuse.  This is why it is declared "mutable".
     mutable RCP<Distributor> reverseDistributor_;
 
+    //! Count to distinguish Distributor instances.
+    static int instanceCounter_;
+
+    //! Per-instance count to distinguish Distributor instances.
+    int instanceCount_;
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::RCP<Teuchos::Time> timer_doPosts3_;
+    Teuchos::RCP<Teuchos::Time> timer_doPosts4_;
+    Teuchos::RCP<Teuchos::Time> timer_doWaits_;
+    Teuchos::RCP<Teuchos::Time> timer_doPosts3_recvs_;
+    Teuchos::RCP<Teuchos::Time> timer_doPosts4_recvs_;
+    Teuchos::RCP<Teuchos::Time> timer_doPosts3_barrier_;
+    Teuchos::RCP<Teuchos::Time> timer_doPosts4_barrier_;
+    Teuchos::RCP<Teuchos::Time> timer_doPosts3_sends_;
+    Teuchos::RCP<Teuchos::Time> timer_doPosts4_sends_;
+
+    //! Make the instance's timers.  (Call only in constructor.)
+    void makeTimers ();
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     /// \brief Global "next tag" count for MPI_Irecv and MPI_Send.
     ///
@@ -832,8 +891,13 @@ namespace Tpetra {
     using Teuchos::ssend;
     using Teuchos::TypeNameTraits;
     using Teuchos::typeName;
+    using std::cerr;
     using std::endl;
     typedef Array<size_t>::size_type size_type;
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor timeMon (*timer_doPosts3_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
 
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
@@ -889,10 +953,25 @@ namespace Tpetra {
 #endif // HAVE_TEUCHOS_DEBUG
 
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-    // MPI tag for nonblocking receives and blocking sends in this method.
-    const int pathTag = indicesTo_.empty () ? 0 : 1;
+    // MPI tag for nonblocking receives and blocking sends in this
+    // method.  Some processes might take the "fast" path
+    // (indicesTo_.empty()) and others might take the "slow" path for
+    // the same doPosts() call, so the path tag must be the same for
+    // both.
+    const int pathTag = 0;
     const int tag = this->getTag (pathTag);
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+
+    if (debug_) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        requests_.size () != 0, std::logic_error, "doPosts(3): Process "
+        << myImageID << ": requests_.size() = " << requests_.size ()
+        << " != 0.");
+      std::ostringstream os;
+      os << myImageID << "," << instanceCount_  << ": doPosts(3,"
+         << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
+      cerr << os.str ();
+    }
 
     // Distributor uses requests_.size() as the number of outstanding
     // nonblocking message requests, so we resize to zero to maintain
@@ -917,6 +996,10 @@ namespace Tpetra {
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
     {
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3_recvs_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
       size_t curBufferOffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
         if (imagesFrom_[i] != myImageID) {
@@ -932,9 +1015,25 @@ namespace Tpetra {
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
           requests_.push_back (ireceive<int, Packet> (recvBuf, imagesFrom_[i],
                                                       tag, *comm_));
+          if (debug_) {
+            std::ostringstream os;
+            os << myImageID << "," << instanceCount_  << ": doPosts(3,"
+               << (indicesTo_.empty () ? "fast" : "slow") << "): "
+               << "Posted irecv from Proc " << imagesFrom_[i] << " with "
+              "specified tag " << tag << endl;
+            cerr << os.str ();
+          }
 #else
           requests_.push_back (ireceive<int, Packet> (*comm_, recvBuf,
                                                       imagesFrom_[i]));
+          if (debug_) {
+            std::ostringstream os;
+            os << myImageID << "," << instanceCount_  << ": doPosts(3,"
+               << (indicesTo_.empty () ? "fast" : "slow") << "): "
+               << "Posted irecv from Proc " << imagesFrom_[i] << " with "
+              "comm tag " << comm_->getTag () << endl;
+            cerr << os.str ();
+          }
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
         }
         else { // Receiving from myself
@@ -945,13 +1044,20 @@ namespace Tpetra {
     }
 
     if (doBarrier) {
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3_barrier_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
       // If we are using ready sends (MPI_Rsend) below, we need to do
       // a barrier before we post the ready sends.  This is because a
       // ready send requires that its matching receive has already
       // been posted before the send has been posted.  The only way to
       // guarantee that in this case is to use a barrier.
-      Teuchos::barrier (*comm_);
+      comm_->barrier ();
     }
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor timeMonSends (*timer_doPosts3_sends_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
 
     // setup scan through imagesTo_ list starting with higher numbered images
     // (should help balance message traffic)
@@ -971,6 +1077,13 @@ namespace Tpetra {
     size_t selfIndex = 0;
 
     if (indicesTo_.empty()) {
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << "," << instanceCount_
+           << ": doPosts(3,fast): posting sends" << endl;
+        cerr << os.str ();
+      }
+
       // Data are already blocked (laid out) by process, so we don't
       // need a separate send buffer (besides the exports array).
       for (size_t i = 0; i < numBlocks; ++i) {
@@ -986,12 +1099,28 @@ namespace Tpetra {
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
             send<int, Packet> (tmpSend.getRawPtr (), as<int> (tmpSend.size ()),
                                imagesTo_[p], tag, *comm_);
+            if (debug_) {
+              std::ostringstream os;
+              os << myImageID << "," << instanceCount_  << ": doPosts(3,"
+                 << (indicesTo_.empty () ? "fast" : "slow") << "): "
+                 << "Posted send to Proc " << imagesTo_[i]
+                 << " w/ specified tag " << tag << endl;
+              cerr << os.str ();
+            }
 #else
             // FIXME (mfh 23 Mar 2012) Implement a three-argument
             // version of send() that takes an ArrayView instead of a
             // raw array.
             send<int, Packet> (*comm_, as<int> (tmpSend.size ()),
                                tmpSend.getRawPtr (), imagesTo_[p]);
+            if (debug_) {
+              std::ostringstream os;
+              os << myImageID << "," << instanceCount_  << ": doPosts(3,"
+                 << (indicesTo_.empty () ? "fast" : "slow") << "): "
+                 << "Posted send to Proc " << imagesTo_[i]
+                 << " w/ comm tag " << comm_->getTag () << endl;
+              cerr << os.str ();
+            }
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
@@ -1030,8 +1159,21 @@ namespace Tpetra {
                    exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets,
                    imports.begin()+selfReceiveOffset);
       }
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << "," << instanceCount_
+           << ": doPosts(3,fast) done" << endl;
+        cerr << os.str ();
+      }
     }
     else { // data are not blocked by image, use send buffer
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << "," << instanceCount_
+           << ": doPosts(3,slow): posting sends" << endl;
+        cerr << os.str ();
+      }
+
       // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
       // sends), because the buffer is only long enough for one send.
       ArrayRCP<Packet> sendArray (maxSendLength_ * numPackets); // send buffer
@@ -1100,6 +1242,12 @@ namespace Tpetra {
           selfReceiveOffset += numPackets;
         }
       }
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << "," << instanceCount_
+           << ": doPosts(3,slow) done" << endl;
+        cerr << os.str ();
+      }
     }
   }
 
@@ -1121,8 +1269,13 @@ namespace Tpetra {
 #ifdef HAVE_TEUCHOS_DEBUG
     using Teuchos::OSTab;
 #endif // HAVE_TEUCHOS_DEBUG
+    using std::cerr;
     using std::endl;
     typedef Array<size_t>::size_type size_type;
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor timeMon (*timer_doPosts4_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
 
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
@@ -1178,10 +1331,25 @@ namespace Tpetra {
 #endif // HAVE_TEUCHOS_DEBUG
 
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-    // MPI tag for nonblocking receives and blocking sends in this method.
-    const int pathTag = indicesTo_.empty () ? 2 : 3;
+    // MPI tag for nonblocking receives and blocking sends in this
+    // method.  Some processes might take the "fast" path
+    // (indicesTo_.empty()) and others might take the "slow" path for
+    // the same doPosts() call, so the path tag must be the same for
+    // both.
+    const int pathTag = 1;
     const int tag = this->getTag (pathTag);
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+
+    if (debug_) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        requests_.size () != 0, std::logic_error, "doPosts(4): Process "
+        << myImageID << ": requests_.size() = " << requests_.size ()
+        << " != 0.");
+      std::ostringstream os;
+      os << myImageID << "," << instanceCount_  << ": doPosts(4,"
+         << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
+      cerr << os.str ();
+    }
 
     // Distributor uses requests_.size() as the number of outstanding
     // nonblocking message requests, so we resize to zero to maintain
@@ -1206,6 +1374,10 @@ namespace Tpetra {
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
     {
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4_recvs_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
       size_t curBufferOffset = 0;
       size_t curLIDoffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
@@ -1241,13 +1413,20 @@ namespace Tpetra {
     }
 
     if (doBarrier) {
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts4_barrier_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
       // If we are using ready sends (MPI_Rsend) below, we need to do
       // a barrier before we post the ready sends.  This is because a
       // ready send requires that its matching receive has already
       // been posted before the send has been posted.  The only way to
       // guarantee that in this case is to use a barrier.
-      Teuchos::barrier (*comm_);
+      comm_->barrier ();
     }
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor timeMonSends (*timer_doPosts4_sends_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
 
     // setup arrays containing starting-offsets into exports for each send,
     // and num-packets-to-send for each send.
@@ -1280,6 +1459,13 @@ namespace Tpetra {
     size_t selfIndex = 0;
 
     if (indicesTo_.empty()) {
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << "," << instanceCount_
+           << ": doPosts(4,fast): posting sends" << endl;
+        cerr << os.str ();
+      }
+
       // Data are already blocked (laid out) by process, so we don't
       // need a separate send buffer (besides the exports array).
       for (size_t i = 0; i < numBlocks; ++i) {
@@ -1329,8 +1515,21 @@ namespace Tpetra {
                    exports.begin()+sendPacketOffsets[selfNum]+packetsPerSend[selfNum],
                    imports.begin()+selfReceiveOffset);
       }
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << "," << instanceCount_
+           << ": doPosts(4,fast) done" << endl;
+        cerr << os.str ();
+      }
     }
     else { // data are not blocked by image, use send buffer
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << "," << instanceCount_
+           << ": doPosts(4,slow): posting sends" << endl;
+        cerr << os.str ();
+      }
+
       // FIXME (mfh 05 Mar 2013) This may be broken for Isend.
       ArrayRCP<Packet> sendArray (maxNumPackets); // send buffer
 
@@ -1408,6 +1607,12 @@ namespace Tpetra {
           selfReceiveOffset += numExportPacketsPerLID[selfIndex];
           ++selfIndex;
         }
+      }
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << "," << instanceCount_
+           << ": doPosts(4,slow) done" << endl;
+        cerr << os.str ();
       }
     }
   }
@@ -1535,7 +1740,7 @@ namespace Tpetra {
     const int myRank = comm_->getRank();
     if (debug_) {
       std::ostringstream os;
-      os << "  Proc " << myRank << ": computeSends" << endl;
+      os << myRank << "," << instanceCount_ << ": computeSends" << endl;
       cerr << os.str ();
     }
 
@@ -1559,7 +1764,7 @@ namespace Tpetra {
     Distributor tempPlan (comm_);
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": tempPlan.createFromSends" << endl;
+      os << myRank << "," << instanceCount_ << ": computeSends: tempPlan.createFromSends" << endl;
       cerr << os.str ();
     }
     numExports = tempPlan.createFromSends (importNodeIDs);
@@ -1570,7 +1775,7 @@ namespace Tpetra {
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": tempPlan.doPostsAndWaits" << endl;
+      os << myRank << "," << instanceCount_ << ": computeSends: tempPlan.doPostsAndWaits" << endl;
       cerr << os.str ();
     }
     tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
@@ -1580,9 +1785,10 @@ namespace Tpetra {
       exportIDs[i]     = as<OrdinalType>(exportObjs[2*i]);
       exportNodeIDs[i] = exportObjs[2*i+1];
     }
+
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": done with computeSends" << endl;
+      os << myRank << "," << instanceCount_ << ": computeSends done" << endl;
       cerr << os.str ();
     }
   }
@@ -1594,11 +1800,17 @@ namespace Tpetra {
                    ArrayRCP<OrdinalType> &exportGIDs,
                    ArrayRCP<int> &exportNodeIDs)
   {
+    using std::cerr;
+    using std::endl;
+    const int myRank = comm_->getRank();
+    if (debug_) {
+      cerr << myRank << "," << instanceCount_ << ": createFromRecvs" << endl;
+    }
+
 #ifdef HAVE_TPETRA_DEBUG
     using Teuchos::outArg;
     using Teuchos::reduceAll;
 
-    const int myRank = comm_->getRank();
     const int errProc =
       (remoteIDs.size () != remoteImageIDs.size ()) ? myRank : -1;
     int maxErrProc = -1;
@@ -1611,6 +1823,10 @@ namespace Tpetra {
 
     computeSends (remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
     (void) createFromSends (exportNodeIDs ());
+
+    if (debug_) {
+      cerr << myRank << "," << instanceCount_ << ": createFromRecvs done" << endl;
+    }
   }
 
 } // namespace Tpetra

@@ -564,6 +564,20 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     } else {
       TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec_view, MT::zero() );
     }
+
+    // Test the precomputed offsets version of getLocalDiagCopy().
+    V dvec2 (map, false);
+    dvec2.randomize ();
+    ArrayRCP<size_t> offsets;
+    matrix.getLocalDiagOffsets (offsets);
+    TEST_EQUALITY( matrix.getNodeNumRows(), Teuchos::as<size_t>(offsets.size()) );
+    matrix.getLocalDiagCopy (dvec2, offsets ());
+    ArrayRCP<const Scalar> dvec2_view = dvec2.get1dView ();
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS( expectedDiags(), dvec2_view );
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec2_view, MT::zero() );
+    }
   }
 
 

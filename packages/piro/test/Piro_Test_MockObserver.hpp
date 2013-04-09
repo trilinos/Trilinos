@@ -56,8 +56,6 @@ namespace Test {
 template <typename Scalar>
 class MockObserver : public ObserverBase<Scalar> {
 public:
-  typedef typename ObserverBase<Scalar>::StampType StampType;
-
   MockObserver();
 
   virtual void observeSolution(
@@ -65,12 +63,12 @@ public:
 
   virtual void observeSolution(
       const Thyra::VectorBase<Scalar> &solution,
-      const StampType &stamp);
+      const Scalar &stamp);
 
   virtual void observeSolution(
       const Thyra::VectorBase<Scalar> &solution,
       const Thyra::VectorBase<Scalar> &solution_dot,
-      const StampType &stamp);
+      const Scalar &stamp);
 
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > lastSolution() const {
     return lastSolution_;
@@ -80,14 +78,14 @@ public:
     return lastSolution_dot_;
   }
 
-  StampType lastStamp() const {
+  Scalar lastStamp() const {
     return lastStamp_;
   }
 
 private:
   Teuchos::RCP<Thyra::VectorBase<Scalar> > lastSolution_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > lastSolution_dot_;
-  typename ObserverBase<Scalar>::StampType lastStamp_;
+  Scalar lastStamp_;
 };
 
 
@@ -95,7 +93,7 @@ template <typename Scalar>
 MockObserver<Scalar>::MockObserver() :
   lastSolution_(Teuchos::null),
   lastSolution_dot_(Teuchos::null),
-  lastStamp_(StampType())
+  lastStamp_(Scalar())
 {}
 
 template <typename Scalar>
@@ -110,7 +108,7 @@ template <typename Scalar>
 void
 MockObserver<Scalar>::observeSolution(
     const Thyra::VectorBase<Scalar> &solution,
-    const StampType &stamp)
+    const Scalar &stamp)
 {
   lastSolution_ = solution.clone_v();
   lastStamp_ = stamp;
@@ -121,7 +119,7 @@ void
 MockObserver<Scalar>::observeSolution(
     const Thyra::VectorBase<Scalar> &solution,
     const Thyra::VectorBase<Scalar> &solution_dot,
-    const StampType &stamp)
+    const Scalar &stamp)
 {
   lastSolution_ = solution.clone_v();
   lastSolution_dot_ = solution_dot.clone_v();

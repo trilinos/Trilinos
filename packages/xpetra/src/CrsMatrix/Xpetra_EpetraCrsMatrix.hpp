@@ -146,7 +146,7 @@ namespace Xpetra {
 
     //! Expert static fill complete
     //** \warning This is an expert-only routine and should not be called from user code. */
-    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
 				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
 				  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
 				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
@@ -304,6 +304,9 @@ namespace Xpetra {
 
     //! @name Xpetra specific
     //@{
+
+    //! Does this have an underlying matrix
+    bool hasMatrix() const { return !mtx_.is_null();}
 
     //! EpetraCrsMatrix constructor to wrap a Epetra_CrsMatrix object
     EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) : mtx_(mtx), isFillResumed_(false) {  }

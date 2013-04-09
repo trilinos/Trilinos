@@ -217,6 +217,41 @@ int main(int argc, char *argv[])
 
   if (verbose) cout << "Vector Export using Importer Check OK" << endl << endl;
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Now use Importer to create a reverse exporter
+  TargetVector.PutScalar(0.0);
+  Epetra_Export ReversedImport(Importer);
+
+  EPETRA_TEST_ERR(!(TargetVector.Export(SourceVector, ReversedImport, Add)==0),ierr);
+
+  forierr = 0;
+  for (i=0; i < NumMyElements; i++) {
+    if (TargetVector[i]!= ExpectedTarget[i])
+      cout <<  "     TargetVector["<<i<<"] = " << TargetVector[i] 
+	   <<  "   ExpectedTarget["<<i<<"] = " <<  ExpectedTarget[i] << " on PE " << MyPID << endl;
+    forierr += !(TargetVector[i]== ExpectedTarget[i]);
+  }
+  EPETRA_TEST_ERR(forierr,ierr);
+
+  if (verbose) cout << "Vector Export using Reversed Importer Check OK" << endl << endl;
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Now use Exporter to create a reverse importer
+  TargetVector.PutScalar(0.0);
+  Epetra_Import ReversedExport(ReversedImport);
+
+  EPETRA_TEST_ERR(!(TargetVector.Export(SourceVector, ReversedExport, Add)==0),ierr);
+
+  forierr = 0;
+  for (i=0; i < NumMyElements; i++) {
+    if (TargetVector[i]!= ExpectedTarget[i])
+      cout <<  "     TargetVector["<<i<<"] = " << TargetVector[i] 
+	   <<  "   ExpectedTarget["<<i<<"] = " <<  ExpectedTarget[i] << " on PE " << MyPID << endl;
+    forierr += !(TargetVector[i]== ExpectedTarget[i]);
+  }
+  EPETRA_TEST_ERR(forierr,ierr);
+
+  if (verbose) cout << "Vector Export using Reversed Exporter Check OK" << endl << endl;
 
 
   //////////////////////////////////////////////////////////////////////////////////////////

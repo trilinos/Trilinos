@@ -220,6 +220,21 @@ public:
   //@{
   //! \name Mathematical functions.
 
+  //! Returns the result of a ILUT forward/back solve on a Tpetra::MultiVector X in Y.
+  /*!
+    \param
+    X - (In) A Tpetra::MultiVector of dimension NumVectors to solve for.
+    \param
+    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing result.
+  */
+  template<class DomainScalar, class RangeScalar>
+  void applyTempl(
+      const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type>& X,
+            Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type>& Y,
+            Teuchos::ETransp mode = Teuchos::NO_TRANS,
+               RangeScalar alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+               RangeScalar beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+
   //! Computes the estimated condition number and returns the value.
   magnitude_type computeCondEst(CondestType CT = Cheap,
                                local_ordinal_type MaxIters = 1550,

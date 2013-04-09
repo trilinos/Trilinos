@@ -79,7 +79,7 @@
 //#define mpi_communication
 
 #define KCUTOFF 0.80
-#define defaultK 16
+#define Z2_DEFAULT_CON_PART_COUNT 16
 
 namespace Teuchos{
 template <typename Ordinal, typename T>
@@ -413,7 +413,7 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
     //aa = pe->getValue(&aa);
     concurrentPartCount = pe->getValue(&concurrentPartCount);
   }else {
-    concurrentPartCount = 1;
+    concurrentPartCount = 0; // Set to invalid value
   //concurrentPartCount = partId_t(aa);
   }
   int val = 0;
@@ -2763,7 +2763,7 @@ void AlgPQJagged(
   bool ignoreWeights=false;
 
   bool allowNonRectelinearPart = false;
-  int concurrentPartCount = 1;
+  int concurrentPartCount = 0; // Set to invalid value
   bool force_binary = false, force_linear = false;
   pqJagged_getParameters<scalar_t>(pl, imbalanceTolerance, mcnorm, params, numTestCuts, ignoreWeights,allowNonRectelinearPart,  concurrentPartCount,
       force_binary, force_linear);
@@ -2818,6 +2818,24 @@ void AlgPQJagged(
   partId_t maxTotalCumulativePartCount = totalPartCount / partNo[partArraySize - 1];
   size_t maxTotalPartCount = maxPartNo + size_t(maxCutNo);
   //maxPartNo is P, maxCutNo = P-1, matTotalPartcount = 2P-1
+  if (concurrentPartCount == 0)
+  {
+      // User did not specify concurrentPartCount parameter, Pick a default.
+      // Still a conservative default. We could go as big as
+      // maxTotalCumulativePartCount, but trying not to use too much memory.
+      // Another assumption the total #parts will be large-very large
+      if (coordDim == partArraySize)
+      {
+          // partitioning each dimension only once, pick the default as
+          // maxPartNo >> default
+          concurrentPartCount = min(Z2_DEFAULT_CON_PART_COUNT, maxPartNo);
+      }
+      else
+      {
+          // partitioning each dimension more than once, pick the max
+          concurrentPartCount = max(Z2_DEFAULT_CON_PART_COUNT, maxPartNo);
+      }
+  }
 
   if(concurrentPartCount > maxTotalCumulativePartCount){
     if(comm->getRank() == 0){

@@ -170,6 +170,107 @@ namespace Teuchos {
   }
 
   //
+  // Test for TimeMonitor's enableTimer and disableTimer methods.
+  //
+  TEUCHOS_UNIT_TEST( TimeMonitor, enableTimer )
+  {
+    using Teuchos::Array;
+    using Teuchos::OSTab;
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcpFromRef;
+    using Teuchos::Time;
+    using Teuchos::TimeMonitor;
+    using std::endl;
+    typedef Teuchos::Array<RCP<Time> >::size_type size_type;
+
+    out << "Testing TimeMonitor's disableTimer() and enableTimer() methods"
+        << endl;
+    OSTab (rcpFromRef (out));
+
+    out << "Creating timers" << endl;
+    const int numTrials = 5;
+    const int numTimers = 3;
+    Array<RCP<Time> > timers (numTimers);
+    for (size_type i = 0; i < numTimers; ++i) {
+      std::ostringstream os; // construct timer name
+      os << "Timer " << i;
+      timers[i] = TimeMonitor::getNewTimer (os.str ());
+    }
+
+    out << "Running all timers without disabling any" << endl;
+    // The actual number of operations in slowloop is proportional to
+    // the cube of the loop length.  Adjust loopLength as necessary to
+    // ensure the timer reports a nonzero elapsed time for each of the
+    // invocations.
+    const size_t loopLength = 25;
+    for (int k = 0; k < numTrials; ++k) {
+      for (size_type i = 0; i < numTimers; ++i) {
+        TimeMonitor timeMon (* timers[i]);
+        slowLoop (loopLength);
+      }
+    }
+    for (size_type i = 0; i < numTimers; ++i) {
+      TEST_EQUALITY( timers[i]->numCalls(), numTrials );
+    }
+
+    out << "Disabling one timer and trying again" << endl;
+    // Disable timers[0] only, and repeat the above loops.
+    TEST_NOTHROW( TimeMonitor::disableTimer ("Timer 0") );
+    for (int k = 0; k < numTrials; ++k) {
+      for (size_type i = 0; i < numTimers; ++i) {
+        TimeMonitor timeMon (* timers[i]);
+        slowLoop (loopLength);
+      }
+    }
+    TEST_EQUALITY( timers[0]->numCalls(), numTrials );
+    for (size_type i = 1; i < numTimers; ++i) {
+      TEST_EQUALITY( timers[i]->numCalls(), 2*numTrials );
+    }
+
+    out << "Reenabling the timer and trying again" << endl;
+    // Enable timers[0] and repeat the above loops.
+    TEST_NOTHROW( TimeMonitor::enableTimer ("Timer 0") );
+    for (int k = 0; k < numTrials; ++k) {
+      for (size_type i = 0; i < numTimers; ++i) {
+        TimeMonitor timeMon (* timers[i]);
+        slowLoop (loopLength);
+      }
+    }
+    TEST_EQUALITY( timers[0]->numCalls(), 2*numTrials );
+    for (size_type i = 1; i < numTimers; ++i) {
+      TEST_EQUALITY( timers[i]->numCalls(), 3*numTrials );
+    }
+
+    out << "Test that summarize() reports enabled and disabled timers" << endl;
+    // Make sure that summarize() reports all timers.  Disabling a
+    // timer must _not_ exclude it from the list of timers printed by
+    // summarize().  Disable a different timer this time just for fun.
+    TEST_NOTHROW( TimeMonitor::disableTimer ("Timer 1") );
+    {
+      std::ostringstream oss;
+      TimeMonitor::summarize (oss);
+
+      // Echo summarize() output to the FancyOStream out (which is a
+      // standard unit test argument).  Output should only appear in
+      // show-all-test-details mode.
+      out << oss.str () << std::endl;
+
+      // Make sure that each timer's name shows up in the output.
+      for (size_type i = 0; i < numTimers; ++i) {
+        const std::string name = timers[i]->name ();
+        const size_t substr_i = oss.str ().find (name);
+        TEST_INEQUALITY(substr_i, std::string::npos);
+      }
+    }
+
+    // This sets up for the next unit test.
+    TimeMonitor::clearCounters ();
+  }
+
+
+  //
   // Test correct quoting of labels for TimeMonitor's YAML output.
   //
   TEUCHOS_UNIT_TEST( TimeMonitor, YamlLabelQuoting )

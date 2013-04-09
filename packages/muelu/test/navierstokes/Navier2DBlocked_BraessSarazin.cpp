@@ -86,6 +86,7 @@
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -403,7 +404,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   // custom parameters
-  LocalOrdinal maxLevels = 2;
+  LocalOrdinal maxLevels = 3;
 
   GlobalOrdinal maxCoarseSize=1; //FIXME clp doesn't like long long int
 
@@ -442,6 +443,9 @@ int main(int argc, char *argv[]) {
 
   EpetraExt::MatrixMarketFileToCrsMatrix("A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
   EpetraExt::MatrixMarketFileToVector("b5932_re1000.txt",*fullmap,ptrf);
+  //EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/promotion/trilinos/fc17-dyn/packages/muelu/test/navierstokes/A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
+  //EpetraExt::MatrixMarketFileToVector("/home/tobias/promotion/trilinos/fc17-dyn/packages/muelu/test/navierstokes/b5932_re1000.txt",*fullmap,ptrf);
+
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
@@ -526,12 +530,13 @@ int main(int argc, char *argv[]) {
   dropFact11->SetFactory("A", A11Fact);
   dropFact11->SetFactory("UnAmalgamationInfo", amalgFact11);
   dropFact11->setDefaultVerbLevel(Teuchos::VERB_EXTREME);
-  RCP<CoupledAggregationFactory> CoupledAggFact11 = rcp(new CoupledAggregationFactory());
+  //RCP<CoupledAggregationFactory> CoupledAggFact11 = rcp(new CoupledAggregationFactory());
+  RCP<UncoupledAggregationFactory> CoupledAggFact11 = rcp(new UncoupledAggregationFactory());
   CoupledAggFact11->SetFactory("Graph", dropFact11);
   CoupledAggFact11->SetMinNodesPerAggregate(9);
   CoupledAggFact11->SetMaxNeighAlreadySelected(2);
   CoupledAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
-  CoupledAggFact11->SetPhase3AggCreation(0.5);
+  //CoupledAggFact11->SetPhase3AggCreation(0.5);
 
   ///////////////////////////////////////// define transfer ops for A11
 #if 0
@@ -688,11 +693,11 @@ int main(int argc, char *argv[]) {
     RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0, SFact) );
     RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
-    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother(3,omega/*,MueLu::NoFactory::getRCP()*//*,SmooSCFact*/) );
+    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother(3,omega) );
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
-  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother(3,omega/*,MueLu::NoFactory::getRCP()*//*,SmooSCFact*/) );
+  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother(3,omega) );
 
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
 
@@ -719,13 +724,16 @@ int main(int argc, char *argv[]) {
 
   H->Setup(M,0,maxLevels);
 
+  *out << std::endl;
+  *out << "print content of multigrid levels:" << std::endl;
+
   Finest->print(*out);
 
   RCP<Level> coarseLevel = H->GetLevel(1);
   coarseLevel->print(*out);
 
-  //RCP<Level> coarseLevel2 = H->GetLevel(2);
-  //coarseLevel2->print(*out);
+  RCP<Level> coarseLevel2 = H->GetLevel(2);
+  coarseLevel2->print(*out);
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap,1);
 

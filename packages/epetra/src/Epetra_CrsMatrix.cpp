@@ -49,6 +49,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Comm.h"
+#include "Epetra_SerialComm.h"
 #include "Epetra_Distributor.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_BLAS_wrappers.h"
@@ -4482,7 +4483,7 @@ int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData(){
  }
 
 //=============================================================================    
-int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer,int NumMyDiagonals){
+int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer, const Epetra_Export * Exporter, int NumMyDiagonals){
 
   Epetra_CrsGraphData& D=*Graph_.CrsGraphData_;
   int m=D.RowMap_.NumMyElements();
@@ -4495,10 +4496,11 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
      !D.ColMap_.ConstantElementSize() || D.ColMap_.ElementSize()!=1)
     EPETRA_CHK_ERR(-1);
 
-  // Maps, import export
+  // Maps
   D.DomainMap_ = DomainMap;
   D.RangeMap_  = RangeMap;
 
+  // Create import, if needed
   if (!D.ColMap_.SameAs(D.DomainMap_)) {
     if (D.Importer_ != 0) {
       delete D.Importer_;
@@ -4509,17 +4511,25 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
     }
     else {
       delete Importer;
-      D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_,0,0);
+      D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_);
     }
   }
-  
+
+  // Create export, if needed
   if (!D.RowMap_.SameAs(D.RangeMap_)) {
     if (D.Exporter_ != 0) {
       delete D.Exporter_;
       D.Exporter_ = 0;
     }
-    D.Exporter_ = new Epetra_Export(D.RowMap_, D.RangeMap_); // Create Export object. 
+    if(Exporter && Exporter->SourceMap().SameAs(D.RowMap_) && Exporter->TargetMap().SameAs(D.RangeMap_)){
+      D.Exporter_=Exporter;
+    }
+    else {
+      delete Exporter;
+      D.Exporter_ = new Epetra_Export(D.RowMap_,D.RangeMap_);				      
+    }
   }
+
 
   // Matrix constants
   Allocated_                  = true;
@@ -4535,8 +4545,9 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
   // Cleanup existing data
   for(int i=0;i<m;i++){
     if(Values_)            delete [] Values_[i];
-    D.data->SortedEntries_[i].entries_.resize(0);
   }
+  D.data->SortedEntries_.clear();
+
   delete [] Values_;                 Values_=0;
   delete [] Values_alloc_lengths_;   Values_alloc_lengths_=0;
   delete [] D.data->Indices_;        D.data->Indices_=0; 
@@ -4659,7 +4670,7 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
 template<class TransferType>
   void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, const TransferType & RowTransfer,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap,bool RestrictCommunicator)
 {
-   // Fused constructor, import & FillComplete
+  // Fused constructor, import & FillComplete
   int rv;
   int N = NumMyRows();
 
@@ -4809,7 +4820,23 @@ template<class TransferType>
     // Dangerous: If we're not in the new communicator, call it quits here.  The user is then responsible
     // for not breaking anything on the return.  Thankfully, the dummy RowMap should report no local unknowns,
     // so the user can at least test for this particular case.
-    if(!NewComm) return;
+    if(NewComm) {
+      // Replace the RowMap
+      Graph_.CrsGraphData_->RowMap_ = *ReducedRowMap;
+      Comm_ = &Graph_.CrsGraphData_->RowMap_.Comm();
+    }
+    else {
+      // Replace all the maps with dummy maps with SerialComm, then quit
+      Epetra_SerialComm SComm;
+      Epetra_Map DummyMap(0,0,SComm);
+      Graph_.CrsGraphData_->RowMap_    = DummyMap;
+      Graph_.CrsGraphData_->ColMap_    = DummyMap;
+      Graph_.CrsGraphData_->RangeMap_  = DummyMap;
+      Graph_.CrsGraphData_->DomainMap_ = DummyMap;
+      Comm_ = &Graph_.CrsGraphData_->RowMap_.Comm();
+      return;
+    }
+
 
     // Reset the "my" maps
     MyDomainMap = ReducedDomainMap;
@@ -4823,18 +4850,22 @@ template<class TransferType>
   std::vector<int> RemotePIDs;
   int * pids_ptr = TargetPids.size() ? &TargetPids[0] : 0;
   if(UseLL) {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
    long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;  
    Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),CSR_colind_LL_ptr,
 							    *MyDomainMap,pids_ptr,
 							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
 							    Graph_.CrsGraphData_->ColMap_);
    Graph_.CrsGraphData_->HaveColMap_ = true;
+#endif
   }
   else {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
    Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),*MyDomainMap,pids_ptr,
 							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
 							    Graph_.CrsGraphData_->ColMap_);   
    Graph_.CrsGraphData_->HaveColMap_ = true;
+#endif
   }
 
   /***************************************************/
@@ -4855,7 +4886,6 @@ template<class TransferType>
 
   // Note: At the moment, the RemotePIDs_ptr won't work with the restricted communicator.
   // This should be fixed.
-
   ExpertStaticFillComplete(*MyDomainMap,*MyRangeMap,MyImport);
 
   // Note: ExpertStaticFillComplete assumes ownership of the importer, if we made one...
@@ -4865,7 +4895,6 @@ template<class TransferType>
   if(ReducedDomainMap!=ReducedRowMap) delete ReducedDomainMap;
   if(ReducedRangeMap !=ReducedRowMap) delete ReducedRangeMap;
   delete ReducedRowMap;
-
 }// end FusedTransfer
 
  

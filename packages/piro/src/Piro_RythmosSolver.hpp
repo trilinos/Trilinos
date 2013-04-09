@@ -49,6 +49,8 @@
 #include "Rythmos_IntegrationObserverBase.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
+#include "Piro_ObserverBase.hpp"
+
 #include "Piro_RythmosStepperFactory.hpp"
 
 #include <map>
@@ -156,6 +158,14 @@ private:
 
   bool isInitialized;
 };
+
+/** \brief Non-member constructor function */
+template <typename Scalar>
+Teuchos::RCP<RythmosSolver<Scalar> >
+rythmosSolver(
+    const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+    const Teuchos::RCP<ObserverBase<Scalar> > &piroObserver);
 
 }
 

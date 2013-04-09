@@ -80,7 +80,7 @@ typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
 typedef Tpetra::MultiVector<SC,LO,GO,NO>             MV;
 typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
 typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS; 
+typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS;
 typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
 typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
 
@@ -141,18 +141,18 @@ int main(int argc, char *argv[]) {
   // Laplacian
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
-      L->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i], myGlobalElements[i] +1), 
+      L->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GO>(myGlobalElements[i], myGlobalElements[i] +1),
                             Teuchos::tuple<SC> (two, -one));
     }
     else if (myGlobalElements[i] == numGlobalElements - 1) {
-      L->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i]), 
+      L->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i]),
                             Teuchos::tuple<SC> (-one, two));
     }
     else {
-      L->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
+      L->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1),
                             Teuchos::tuple<SC> (-one, two, -one));
     }
   }
@@ -166,13 +166,13 @@ int main(int argc, char *argv[]) {
 			    Teuchos::tuple<SC> (one));
     }
     else if (myGlobalElements[i] == numGlobalElements - 1) {
-      S->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i]), 
+      S->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i]),
                             Teuchos::tuple<SC> (-one, one-complexone*kh));
     }
     else {
-      S->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
+      S->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1),
                             Teuchos::tuple<SC> (-one, two-shift*kh2, -one));
     }
   }
@@ -187,24 +187,24 @@ int main(int argc, char *argv[]) {
 
     }
     else if (myGlobalElements[i] == numGlobalElements - 1) {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i]), 
+      A->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i]),
                             Teuchos::tuple<SC> (-one,one-complexone*kh) );
     }
     else {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
+      A->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GO>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1),
                             Teuchos::tuple<SC> (-one, two-kh2, -one));
     }
   }
   A->fillComplete();
 
   // Turn Tpetra::CrsMatrix into MueLu::Matrix
-  RCP<XCRS> mueluL_ = rcp(new XTCRS(L)); 
+  RCP<XCRS> mueluL_ = rcp(new XTCRS(L));
   RCP<XMAT> mueluL  = rcp(new XWRAP(mueluL_));
-  RCP<XCRS> mueluS_ = rcp(new XTCRS(S)); 
+  RCP<XCRS> mueluS_ = rcp(new XTCRS(S));
   RCP<XMAT> mueluS  = rcp(new XWRAP(mueluS_));
-  RCP<XCRS> mueluA_ = rcp(new XTCRS(A)); 
+  RCP<XCRS> mueluA_ = rcp(new XTCRS(A));
   RCP<XMAT> mueluA  = rcp(new XWRAP(mueluA_));
 
   // Multigrid Hierarchy
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
 
   // right hand side and left hand side vectors
   RCP<TVEC> X = Tpetra::createVector<SC,LO,GO,NO>(map);
-  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(map);  
+  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(map);
   X->putScalar((SC) 0.0);
   B->putScalar((SC) 0.0);
   if(comm->getRank()==0) {
@@ -296,15 +296,15 @@ int main(int argc, char *argv[]) {
 
   // Construct a Belos LinearProblem object
   RCP<Problem> belosProblem = rcp(new Problem(belosOp,X,B));
-  belosProblem->setRightPrec(belosPrec);    
+  belosProblem->setRightPrec(belosPrec);
   bool set = belosProblem->setProblem();
   if (set == false) {
     if(comm->getRank()==0)
       std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-    
+
     return EXIT_FAILURE;
   }
-    
+
   // Belos parameter list
   int maxIts = 100;
   double tol = 1e-6;
@@ -315,20 +315,20 @@ int main(int argc, char *argv[]) {
 
   // Create a FGMRES solver manager
   RCP<BelosSolver> solver = rcp( new BelosGMRES(belosProblem, rcp(&belosList, false)) );
-    
+
   // Perform solve
   Belos::ReturnType ret = solver->solve();
-  
+
   // Get the number of iterations for this solve.
   if(comm->getRank()==0)
     std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-  
+
   // Compute actual residuals.
   int numrhs=1;
   bool badRes = false;
   std::vector<double> actual_resids(numrhs);
   std::vector<double> rhs_norm(numrhs);
-  RCP<MV> resid = Tpetra::createMultiVector<SC,LO,GO,NO>(map, numrhs);     
+  RCP<MV> resid = Tpetra::createMultiVector<SC,LO,GO,NO>(map, numrhs);
   OPT::Apply(*belosOp, *X, *resid);
   MVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
   MVT::MvNorm(*resid, actual_resids);
@@ -357,7 +357,7 @@ int main(int argc, char *argv[]) {
   // print solution entries
   // using Teuchos::VERB_EXTREME;
   // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream( Teuchos::rcpFromRef(std::cerr) );
-  // X->describe(*out,VERB_EXTREME);  
+  // X->describe(*out,VERB_EXTREME);
 
   return EXIT_SUCCESS;
 }

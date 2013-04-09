@@ -758,7 +758,7 @@ namespace MueLu {
 
     SC one    = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
 
-    RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRangeMap(), numVecs);
+    RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRangeMap(), numVecs,false); //no need to initialize to zero
     Op.apply(X, *RES, Teuchos::NO_TRANS, one, zero);
     RES->update(one, RHS, negone);
 

@@ -237,6 +237,9 @@ namespace Xpetra {
     //! Export (using an Importer).
     void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
 
+    //! Replace the map
+    void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
+
     //@}
 
     //! @name Xpetra specific
@@ -247,10 +250,6 @@ namespace Xpetra {
 
     //! Get the underlying Epetra multivector
     RCP<Epetra_MultiVector> getEpetra_MultiVector() const { return vec_; }
-
-    void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
-      // do nothing
-    }
 
     //! Set seed for Random function.
     void setSeed(unsigned int seed) {

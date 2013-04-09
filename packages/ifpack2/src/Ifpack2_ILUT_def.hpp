@@ -709,9 +709,22 @@ void ILUT<MatrixType>::apply(
                typename MatrixType::scalar_type alpha,
                typename MatrixType::scalar_type beta) const
 {
+  this->template applyTempl<scalar_type,scalar_type>(X, Y, mode, alpha, beta);
+}
+
+//==========================================================================
+template <class MatrixType>
+template <class DomainScalar, class RangeScalar>
+void ILUT<MatrixType>::applyTempl(
+           const Tpetra::MultiVector<DomainScalar, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
+                 Tpetra::MultiVector<RangeScalar, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
+                 Teuchos::ETransp mode,
+               RangeScalar alpha,
+               RangeScalar beta) const
+{
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
+  typedef Tpetra::MultiVector<DomainScalar, local_ordinal_type, global_ordinal_type, node_type> MV;
 
   Teuchos::Time timer ("ILUT::apply");
   { // Timer scope for timing apply()
@@ -743,12 +756,12 @@ void ILUT<MatrixType>::apply(
     }
 
     if (mode == Teuchos::NO_TRANS) { // Solve L U Y = X
-      L_->localSolve (*Xcopy, Y, Teuchos::NO_TRANS);
-      U_->localSolve (Y, Y, Teuchos::NO_TRANS);
+      L_->template localSolve<RangeScalar,DomainScalar> (*Xcopy, Y, Teuchos::NO_TRANS);
+      U_->template localSolve<RangeScalar,RangeScalar> (Y, Y, Teuchos::NO_TRANS);
     }
     else { // Solve U^* L^* Y = X
-      U_->localSolve (*Xcopy, Y, mode);
-      L_->localSolve (Y, Y, mode);
+      U_->template localSolve<RangeScalar,DomainScalar> (*Xcopy, Y, mode);
+      L_->template localSolve<RangeScalar,RangeScalar> (Y, Y, mode);
     }
 
     if (alpha != STS::one ()) {

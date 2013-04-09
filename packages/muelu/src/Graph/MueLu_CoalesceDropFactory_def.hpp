@@ -100,7 +100,7 @@ namespace MueLu {
     Input(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList  & pL = GetParameterList();
-    if (pL.get<std::string>("algorithm") == "laplacian")
+    if (pL.get<bool>("lightweight wrap") == true && pL.get<std::string>("algorithm") == "laplacian")
       Input(currentLevel, "Coordinates");
   }
 
@@ -251,6 +251,10 @@ namespace MueLu {
           // but as I totally don't understand that code, here is my solution
 
           // [*1*]: see [*0*]
+
+          // Check that the number of local coordinates is consistent with the #rows in A
+          std::string msg = "MueLu::CoalesceDropFactory::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
+          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(),Exceptions::Incompatible,msg);
 
           RCP<const Map> uniqueMap, nonUniqueMap;
           if (blkSize == 1) {

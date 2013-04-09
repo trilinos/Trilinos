@@ -791,14 +791,26 @@ FUNCTION(TRIBITS_PRIVATE_PRINT_DISABLE
   DEP_TYPE_STR  THING_DISALBED_TYPE  THING_DISABLED_NAME
   )
   IF (${ENABLE_BEING_DISABLED_VAR_NAME})
-    MESSAGE(FATAL_ERROR
-      " ***\n"
-      " *** ERROR: Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
-      " which was 'ON' because ${PACKAGE_WITH_SOMETHING_BEING_DISABLED} has"
-      " a required ${DEP_TYPE_STR} dependence on disabled"
-      " ${THING_DISALBED_TYPE} ${THING_DISABLED_NAME}!\n"
-      " ***\n"
-      )
+    IF (${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES)
+      MESSAGE(
+        " ***\n"
+        " *** WARNING: Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
+        " which was 'ON' because ${PACKAGE_WITH_SOMETHING_BEING_DISABLED} has"
+        " a required ${DEP_TYPE_STR} dependence on disabled"
+        " ${THING_DISALBED_TYPE} ${THING_DISABLED_NAME}"
+        " but ${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON!\n"
+        " ***\n"
+        )
+    ELSE()
+      MESSAGE(FATAL_ERROR
+        " ***\n"
+        " *** ERROR: Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
+        " which was 'ON' because ${PACKAGE_WITH_SOMETHING_BEING_DISABLED} has"
+        " a required ${DEP_TYPE_STR} dependence on disabled"
+        " ${THING_DISALBED_TYPE} ${THING_DISABLED_NAME}!\n"
+        " ***\n"
+        )
+    ENDIF()
   ELSE()
     MESSAGE("-- "
       "Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
@@ -813,7 +825,7 @@ MACRO(TRIBITS_PRIVATE_DISABLE_TPL_REQUIRED_PACKAGE_ENABLE
   )
 
   #MESSAGE("TRIBITS_PRIVATE_DISABLE_TPL_REQUIRED_PACKAGE_ENABLE"
-  #  " ${FORWARD_DEP_PACKAGE_NAME} ${LIBRARY_DEP}")  
+  #  " ${TPL_NAME} ${PACKAGE_NAME} ${LIBRARY_DEP}")  
 
   # Only turn off PACKAGE_NAME libraries and test/eamples if it
   # is currently enabled or could be enabled.

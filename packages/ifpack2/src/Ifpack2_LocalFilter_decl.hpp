@@ -139,7 +139,7 @@ public:
   ///   from this, so you may use a Tpetra::CrsMatrix here instead.)
   ///
   /// This class will <i>not</i> modify the input matrix.
-  explicit LocalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix);
+  explicit LocalFilter (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> >& Matrix);
 
   //! Destructor
   virtual ~LocalFilter();
@@ -152,22 +152,22 @@ public:
   virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
 
   //! Returns the underlying Kokkos Node object.
-  virtual Teuchos::RCP<Node> getNode() const;
+  virtual Teuchos::RCP<node_type> getNode() const;
 
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const;
+  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getRowMap() const;
 
   //! Returns the Map that describes the column distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const;
+  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getDomainMap() const;
 
   //! Returns the Map that describes the range distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getRangeMap() const;
 
   //! The (locally filtered) matrix's graph.
-  virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;
+  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > getGraph() const;
 
   //! The number of global rows in this matrix.
   virtual global_size_t getGlobalNumRows() const;
@@ -182,7 +182,7 @@ public:
   virtual size_t getNodeNumCols() const;
 
   //! Returns the index base for global indices for this matrix.
-  virtual GlobalOrdinal getIndexBase() const;
+  virtual global_ordinal_type getIndexBase() const;
 
   //! Returns the global number of entries in this matrix.
   virtual global_size_t getGlobalNumEntries() const;
@@ -195,14 +195,14 @@ public:
   /// \return <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt> if
   ///   the specified row is not owned by this process, otherwise the
   ///   number of entries in that row on this process.
-  virtual size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
+  virtual size_t getNumEntriesInGlobalRow (global_ordinal_type globalRow) const;
 
   /// \brief The current number of entries on this node in the specified local row.
   ///
   /// \return <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt> if
   ///   the specified local row is not valid on this process,
   ///   otherwise the number of entries in that row on this process.
-  virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
+  virtual size_t getNumEntriesInLocalRow (local_ordinal_type localRow) const;
 
   //! The number of global diagonal entries, based on global row/column index comparisons.
   virtual global_size_t getGlobalNumDiags() const;
@@ -253,10 +253,11 @@ public:
     with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
-  virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow,
-                                const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-                                const Teuchos::ArrayView<Scalar> &Values,
-                                size_t &NumEntries) const;
+  virtual void
+  getGlobalRowCopy (global_ordinal_type GlobalRow,
+                    const Teuchos::ArrayView<global_ordinal_type> &Indices,
+                    const Teuchos::ArrayView<scalar_type> &Values,
+                    size_t &NumEntries) const;
 
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
@@ -269,10 +270,11 @@ public:
     with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
-  virtual void getLocalRowCopy(LocalOrdinal LocalRow,
-                               const Teuchos::ArrayView<LocalOrdinal> &Indices,
-                               const Teuchos::ArrayView<Scalar> &Values,
-                               size_t &NumEntries) const ;
+  virtual void
+  getLocalRowCopy (local_ordinal_type LocalRow,
+                   const Teuchos::ArrayView<local_ordinal_type> &Indices,
+                   const Teuchos::ArrayView<scalar_type> &Values,
+                   size_t &NumEntries) const ;
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -284,9 +286,10 @@ public:
 
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
-  virtual void getGlobalRowView(GlobalOrdinal GlobalRow,
-                                Teuchos::ArrayView<const GlobalOrdinal> &indices,
-                                Teuchos::ArrayView<const Scalar> &values) const;
+  virtual void
+  getGlobalRowView (global_ordinal_type GlobalRow,
+                    Teuchos::ArrayView<const global_ordinal_type> &indices,
+                    Teuchos::ArrayView<const scalar_type> &values) const;
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
@@ -298,17 +301,18 @@ public:
 
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
-  virtual void getLocalRowView(LocalOrdinal LocalRow,
-                               Teuchos::ArrayView<const LocalOrdinal> &indices,
-                               Teuchos::ArrayView<const Scalar> &values) const;
+  virtual void
+  getLocalRowView (local_ordinal_type LocalRow,
+                   Teuchos::ArrayView<const local_ordinal_type> &indices,
+                   Teuchos::ArrayView<const scalar_type> &values) const;
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
-  virtual void getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
+  virtual void
+  getLocalDiagCopy (Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &diag) const;
 
   //@}
-
   //! \name Mathematical Methods
   //@{
 
@@ -321,7 +325,7 @@ public:
    *
    * \param x A vector to left scale this matrix.
    */
-  virtual void leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+  virtual void leftScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x);
 
   /**
    * \brief Scales the RowMatrix on the right with the Vector x.
@@ -332,8 +336,7 @@ public:
    *
    * \param x A vector to right scale this matrix.
    */
-  virtual void rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
-
+  virtual void rightScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x);
 
   /// \brief The Frobenius norm of the (locally filtered) matrix.
   ///
@@ -343,7 +346,7 @@ public:
   ///
   /// The Frobenius norm of a matrix \f$A\f$ is defined as
   /// \f$\|A\|_F = \sqrt{\sum_{i,j} \|A_{ij}\|^2}\f$.
-  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
+  virtual magnitude_type getFrobeniusNorm() const;
 
   //! \brief Computes the operator-multivector application.
   /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
@@ -351,11 +354,12 @@ public:
     - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
     - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
   */
-  virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-                     Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+  virtual void
+  apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &X,
+         Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Indicates whether this operator supports applying the adjoint operator.
   virtual bool hasTransposeApply() const;
@@ -375,9 +379,9 @@ public:
 
     \pre isLocallyIndexed()==false
   */
-  TPETRA_DEPRECATED virtual void getGlobalRowView(GlobalOrdinal GlobalRow,
-                                                  Teuchos::ArrayRCP<const GlobalOrdinal> &indices,
-                                                  Teuchos::ArrayRCP<const Scalar>        &values) const;
+  TPETRA_DEPRECATED virtual void getGlobalRowView(global_ordinal_type GlobalRow,
+                                                  Teuchos::ArrayRCP<const global_ordinal_type> &indices,
+                                                  Teuchos::ArrayRCP<const scalar_type>        &values) const;
 
   //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
   /*!
@@ -389,18 +393,18 @@ public:
 
     \pre isGloballyIndexed()==false
   */
-  TPETRA_DEPRECATED virtual void getLocalRowView(LocalOrdinal LocalRow,
-                                                 Teuchos::ArrayRCP<const LocalOrdinal> &indices,
-                                                 Teuchos::ArrayRCP<const Scalar>       &values) const;
+  TPETRA_DEPRECATED virtual void getLocalRowView(local_ordinal_type LocalRow,
+                                                 Teuchos::ArrayRCP<const local_ordinal_type> &indices,
+                                                 Teuchos::ArrayRCP<const scalar_type>       &values) const;
   //@}
 
 
 private:
 
   //! Pointer to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
+  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> > A_;
   //! Map based on SerialComm_, containing the local rows only.
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > LocalMap_;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > LocalMap_;
   //! Number of rows in the local matrix.
   size_t NumRows_;
   //! Number of nonzeros in the local matrix.
@@ -412,9 +416,9 @@ private:
   //! NumEntries_[i] contains the nonzero entries in row `i'.
   std::vector<size_t> NumEntries_;
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable Teuchos::Array<LocalOrdinal> Indices_;
+  mutable Teuchos::Array<local_ordinal_type> Indices_;
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable Teuchos::Array<Scalar> Values_;
+  mutable Teuchos::Array<scalar_type> Values_;
 
 };// class LocalFilter
 

@@ -2050,9 +2050,9 @@ namespace Tpetra {
       Array<int> NLRIds(NLRs.size());
       {
         LookupStatus stat = rowMap_->getRemoteIndexList(NLRs(),NLRIds());
-        char lclerror = ( stat == IDNotPresent ? 1 : 0 );
-        char gblerror;
-        reduceAll (*getComm(), REDUCE_MAX, lclerror, outArg (gblerror));
+        int lclerror = ( stat == IDNotPresent ? 1 : 0 );
+        int gblerror;
+        reduceAll<int, int> (*getComm(), REDUCE_MAX, lclerror, outArg (gblerror));
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(gblerror != 0, std::runtime_error,
           ": nonlocal entries correspond to invalid rows.");
       }
@@ -2292,22 +2292,35 @@ namespace Tpetra {
       std::runtime_error, ": Graph fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
 
+    const int numProcs = getComm ()->getSize ();
+
     // allocate if unallocated
     if (! indicesAreAllocated()) {
       // allocate global, in case we do not have a column map
       allocateIndices( GlobalIndices );
     }
-    // Global assemble, if we need to (we certainly don't need to if
-    // there's only one process).  This call only costs a single
-    // all-reduce if we don't need global assembly.
-    if (getComm()->getSize() > 1) {
+
+    // If true, the caller promises that no process did nonlocal
+    // changes since the last call to fillComplete.
+    bool assertNoNonlocalInserts = false;
+    if (! params.is_null ()) {
+      assertNoNonlocalInserts =
+        params->get<bool> ("No Nonlocal Changes", assertNoNonlocalInserts);
+    }
+    // We also don't need to do global assembly if there is only one
+    // process in the communicator.
+    const bool mayNeedGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
+    if (mayNeedGlobalAssemble) {
+      // This first checks if we need to do global assembly.
+      // The check costs a single all-reduce.
       globalAssemble();
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        nonlocals_.size() > 0, std::runtime_error,
-        ": cannot have non-local entries on a serial run. Invalid entries were "
-        "submitted to the CrsGraph (or CrsMatrix).");
+        numProcs > 1 && nonlocals_.size() > 0, std::runtime_error,
+        ":" << std::endl << "The graph's communicator contains only one "
+        "process, but there are nonlocal entries.  " << std::endl <<
+        "This probably means that invalid entries were added to the graph.");
     }
     // set domain/range map: may clear the import/export objects
     setDomainRangeMaps(domainMap,rangeMap);
@@ -2746,13 +2759,16 @@ namespace Tpetra {
     // One would only call makeColMap() if the graph does not have a
     // column Map.  In that case, the graph must be globally indexed
     // anyway.
-    char myIndices[2] = {0,0};
+    int myIndices[2] = {0,0};
     if (indicesAreLocal_)  myIndices[0] = 1;
     if (indicesAreGlobal_) myIndices[1] = 1;
-    char allIndices[2];
-    Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,2,myIndices,allIndices);
-    indicesAreLocal_  = (allIndices[0]==1);  // If indices are local on one PE, should be local on all
-    indicesAreGlobal_ = (allIndices[1]==1);  // If indices are global on one PE should be local on all
+    int allIndices[2];
+    Teuchos::reduceAll<int, int> (* (getComm()), Teuchos::REDUCE_MAX,
+                                  2, myIndices, allIndices);
+    // If indices are (local, global) on one process, they should be
+    // (local, global) on all processes.
+    indicesAreLocal_  = (allIndices[0]==1);
+    indicesAreGlobal_ = (allIndices[1]==1);
   }
 
 
@@ -2929,8 +2945,9 @@ namespace Tpetra {
       Array<int> RemoteImageIDs (numRemoteColGIDs);
       // Look up the remote process' ranks in the domain Map.
       {
-        LookupStatus stat =
+        const LookupStatus stat =
           domainMap_->getRemoteIndexList (RemoteColGIDs, RemoteImageIDs ());
+#ifdef HAVE_TPETRA_DEBUG
         // If any process returns IDNotPresent, then at least one of
         // the remote indices was not present in the domain Map.  This
         // means that the Import object cannot be constructed, because
@@ -2938,9 +2955,9 @@ namespace Tpetra {
         // This has two likely causes:
         //   - The user has made a mistake in the column indices
         //   - The user has made a mistake with respect to the domain Map
-        const char missingID_lcl = (stat == IDNotPresent ? 1 : 0);
-        char missingID_gbl = 0;
-        reduceAll<int,char> (*getComm (), REDUCE_MAX, missingID_lcl,
+        const int missingID_lcl = (stat == IDNotPresent ? 1 : 0);
+        int missingID_gbl = 0;
+        reduceAll<int, int> (*getComm (), REDUCE_MAX, missingID_lcl,
                              outArg (missingID_gbl));
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           missingID_gbl == 1, std::runtime_error,
@@ -2948,6 +2965,9 @@ namespace Tpetra {
           << "Either these column indices are invalid or the domain Map is "
           "invalid." << endl << "Likely cause: For a nonsquare matrix, you "
           "must give the domain and range Maps as input to fillComplete.");
+#else
+        (void) stat; // forestall compiler warning for unused variable
+#endif // HAVE_TPETRA_DEBUG
       }
       // Sort incoming remote column indices so that all columns
       // coming from a given remote process are contiguous.  This
@@ -2991,6 +3011,46 @@ namespace Tpetra {
           << numLocalColGIDs << ".  This should never happen.  Please report "
           "this bug to the Tpetra developers.");
       }
+
+      // FIXME (mfh 03 Apr 2013) Now would be a good time to use the
+      // information we collected above to construct the Import.  In
+      // particular, building an Import requires:
+      //
+      // 1. numSameIDs (length of initial contiguous sequence of GIDs
+      //    on this process that are the same in both Maps; this
+      //    equals the number of domain Map elements on this process)
+      //
+      // 2. permuteToLIDs and permuteFromLIDs (both empty in this
+      //    case, since there's no permutation going on; the column
+      //    Map starts with the domain Map's GIDs, and immediately
+      //    after them come the remote GIDs)
+      //
+      // 3. remoteGIDs (exactly those GIDs that we found out above
+      //    were not in the domain Map) and remoteLIDs (which we could
+      //    have gotten above by using the three-argument version of
+      //    getRemoteIndexList() that computes local indices as well
+      //    as process ranks, instead of the two-argument version that
+      //    was used above)
+      //
+      // 4. remotePIDs (which we have from the getRemoteIndexList()
+      //    call above)
+      //
+      // 5. Sorting remotePIDs, and applying that permutation to
+      //    remoteGIDs and remoteLIDs (by calling sort3 above instead
+      //    of sort2)
+      //
+      // 6. Everything after the sort3 call in Import::setupExport():
+      //    a. Create the Distributor via createFromRecvs(), which
+      //       computes exportGIDs and exportPIDs
+      //    b. Compute exportLIDs from exportGIDs (by asking the
+      //       source Map, in this case the domain Map, to convert
+      //       global to local)
+      //
+      // Steps 1-5 come for free, since we must do that work anyway in
+      // order to compute the column Map.  In particular, Step 3 is
+      // even more expensive than Step 6a, since it involves both
+      // creating and using a new Distributor object.
+
     } // if the graph is globally indexed
 
     const global_size_t gstInv =

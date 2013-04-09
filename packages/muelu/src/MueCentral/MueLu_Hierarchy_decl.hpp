@@ -239,7 +239,7 @@ namespace MueLu {
     std::string description() const;
 
     /*! @brief Print the Hierarchy with some verbosity level to a FancyOStream object.
-    
+
         @param[in] out The Teuchos::FancyOstream.
         @param[in] verbLevel Controls amount of output.
     */

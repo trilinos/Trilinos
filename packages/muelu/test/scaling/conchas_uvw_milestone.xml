@@ -46,7 +46,7 @@
     <ParameterList name="myFilteredAFact">
       <Parameter name="factory"                             type="string" value="FilteredAFactory"/>
       <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
-      <Parameter name="lumping"                             type="bool"   value="true"/>
+      <Parameter name="lumping"                             type="bool"   value="false"/>
     </ParameterList>
 
     <ParameterList name="myTentativePFact">
@@ -70,9 +70,7 @@
     </ParameterList>
 
     <ParameterList name="myTransferCoordinatesFact">
-      <Parameter name="factory"                             type="string" value="MultiVectorTransferFactory"/>
-      <Parameter name="Vector name"                         type="string" value="Coordinates"/>
-      <Parameter name="R"                                   type="string" value="myTentativeRFact"/>
+      <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
     </ParameterList>
 
     <ParameterList name="myRAPFact">
@@ -136,7 +134,7 @@
       <Parameter name="type"                                type="string" value="CHEBYSHEV"/>
 
       <ParameterList name="ParameterList">
-        <Parameter name="chebyshev: degree"                 type="int"     value="2"/>>
+        <Parameter name="chebyshev: degree"                 type="int"     value="2"/>
         <!-- 7 in 2D, 20 in 3D -->
         <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="20"/>
         <Parameter name="chebyshev: min eigenvalue"         type="double"  value="1.0"/>

@@ -120,7 +120,7 @@ namespace Xpetra {
     virtual void replaceDomainMapAndImporter(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter)=0;
 
     //! Expert static fill complete
-    virtual void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap, 
+    virtual void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
 					  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
 					  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
 					  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
@@ -231,6 +231,9 @@ namespace Xpetra {
 
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
         virtual void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const = 0;
+
+    //! Does this have an underlying matrix
+    virtual bool hasMatrix() const = 0;
 
 
   }; // CrsMatrix class

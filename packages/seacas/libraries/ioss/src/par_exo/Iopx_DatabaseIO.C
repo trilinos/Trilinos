@@ -2286,6 +2286,28 @@ namespace Iopx {
           get_map(EX_NODE_BLOCK).map_implicit_data(data, field, num_to_get, 0);
         }
 
+	// The 1..global_node_count id.  In a parallel-decomposed run,
+	// it maps the node back to its implicit position in the serial
+	// undecomposed mesh file.  This is ONLY provided for backward-
+	// compatibility and should not be used unless absolutely required.
+	else if (field.get_name() == "implicit_ids") {
+	  size_t offset = decomp->nodeOffset;
+	  size_t count = decomp->nodeCount;
+          if (int_byte_size_api() == 4) {
+	    std::vector<int> file_ids; file_ids.reserve(count);
+	    for (size_t i=0; i<count; i++) {
+	      file_ids.push_back(offset+i+1);
+	    }
+            decomp->communicate_node_data(TOPTR(file_ids), (int*)data, 1);
+          } else {
+	    std::vector<int64_t> file_ids; file_ids.reserve(count);
+	    for (size_t i=0; i<count; i++) {
+	      file_ids.push_back(offset+i+1);
+	    }
+            decomp->communicate_node_data(TOPTR(file_ids), (int64_t*)data, 1);
+          }
+	}
+
         else if (field.get_name() == "connectivity") {
           // Do nothing, just handles an idiosyncracy of the GroupingEntity
         }
@@ -3711,6 +3733,8 @@ namespace Iopx {
             // Do nothing, just handles an idiosyncracy of the GroupingEntity
           } else if (field.get_name() == "node_connectivity_status") {
             // Do nothing, input only field.
+	  } else if (field.get_name() == "implicit_ids") {
+	    // Do nothing, input only field.
           } else {
             return Ioss::Utils::field_warning(nb, field, "mesh output");
           }
@@ -5821,12 +5845,16 @@ namespace Iopx {
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
         // Convert to lowercase.
+	bool attributes_named = true;
         for (int i=0; i < attribute_count; i++) {
           fix_bad_name(names[i]);
           Ioss::Utils::fixup_name(names[i]);
+	  if (names[i][0] == '\0' || names[i][0] == ' ' || !std::isalnum(names[i][0])) {
+	    attributes_named = false;
+	  }
         }
 
-        if (names[0][0] != '\0' && names[0][0] != ' ' && std::isalnum(names[0][0])) {
+        if (attributes_named) {
           std::vector<Ioss::Field> attributes;
           get_fields(my_element_count, names, attribute_count,
                      Ioss::Field::ATTRIBUTE, get_field_separator(), NULL,

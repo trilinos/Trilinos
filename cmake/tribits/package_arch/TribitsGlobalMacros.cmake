@@ -121,6 +121,9 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES OFF CACHE BOOL
     "Recursively enable all packages that have required or optional dependencies for set of enabled packages." )
   
+  SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES OFF CACHE BOOL
+    "Disable (and printing warning) for enabled packages that have hard-disabled upstream dependencies.  Otherwise, (the default) is to raises a fatal configure failure." )
+  
   SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_TESTS ""
     "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
   
@@ -1916,7 +1919,11 @@ FUNCTION(TRIBITS_REMIND_ABOUT_UNCOMMITTED_DEPENDENCY_FILES)
       MESSAGE("GIT_EXE=${GIT_EXE}")
     ENDIF()
 
-    IF (GIT_EXE)
+    IF (GIT_EXE AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        MESSAGE("\nChecking for uncommitted changes to generated dependency files ...\n")
+      ENDIF()
 
       EXECUTE_PROCESS(COMMAND ${GIT_EXE} status
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
