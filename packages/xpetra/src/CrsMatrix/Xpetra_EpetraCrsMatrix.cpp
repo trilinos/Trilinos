@@ -553,18 +553,19 @@ namespace Xpetra {
 						 const RCP<ParameterList> & params) {
     XPETRA_MONITOR("EpetraCrsMatrix::expertStaticFillComplete");
     int rv=0;
-    TEUCHOS_TEST_FOR_EXCEPTION(exporter != Teuchos::null, std::runtime_error, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete can't handle a non-null exporter.");  
+    const Epetra_Import * myimport =0;
+    const Epetra_Export * myexport =0;
     
     if(!importer.is_null()) {
       XPETRA_DYNAMIC_CAST(const EpetraImport, *importer, eImporter, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::EpetraImport.");
-      //    XPETRA_DYNAMIC_CAST(const EpetraExport, *exporter, eExporter, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::EpetraImport.");
-      const Epetra_Import * myimport = eImporter.getEpetra_Import().getRawPtr();
-      //    const Epetra_Export * myexport = eExporter.getEpetra_Export().getRawPtr();
-      rv=mtx_->ExpertStaticFillComplete(toEpetra(domainMap), toEpetra(rangeMap), myimport);
+      myimport = eImporter.getEpetra_Import().getRawPtr();
     }
-    else {
-      rv=mtx_->ExpertStaticFillComplete(toEpetra(domainMap), toEpetra(rangeMap));
+    if(!exporter.is_null()) {
+      XPETRA_DYNAMIC_CAST(const EpetraExport, *exporter, eExporter, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::EpetraImport.");
+      myexport = eExporter.getEpetra_Export().getRawPtr();
     }
+
+    rv=mtx_->ExpertStaticFillComplete(toEpetra(domainMap), toEpetra(rangeMap), myimport, myexport);
 
     TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete FAILED!");  
   }
