@@ -207,6 +207,7 @@ int test_crs_matrix_type(test_data &test_sum, int numrows, int numcols, int nnz,
   int maxtype = type<1?4:type;
   int mintype = type<1?1:type;
   int total_errors = 0;
+  type = mintype;
   while(type<=maxtype) {
     if(type == 1) total_errors += test_crs_matrix_test<int>(test_sum,numrows,numcols,nnz,numVecs,test,"int          ");
     if(type == 2) total_errors += test_crs_matrix_test<long long int>(test_sum,numrows,numcols,nnz,numVecs,test,"long long int");

@@ -404,7 +404,7 @@ struct ViewAssignment< CudaTexture , LayoutDefault , void >
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
-  KOKKOSARRAY_INLINE_FUNCTION
+  inline
   ViewAssignment(       View<DT,DL,DD,DM,CudaTexture> & dst ,
                   const View<ST,SL,SD,SM,LayoutDefault> & src ,
                   const typename enable_if<(
@@ -445,16 +445,14 @@ template< class T , class L, class D , class M >
 class View< T , L , D , M , Impl::CudaTexture >
   : public ViewTraits< T , L , D , M >
 {
-public:
-  typedef ViewTraits< T , L , D , M > traits ;
-
-  typedef typename traits::scalar_type scalar_type ;
 private:
 
   template< class , class , class > friend class Impl::ViewAssignment ;
 
+  typedef ViewTraits< T , L , D , M > traits ;
 
-  Impl::CudaTextureFetch< scalar_type > m_texture ;
+
+  Impl::CudaTextureFetch<typename traits::scalar_type > m_texture ;
   unsigned                              m_stride ;
   typename traits::shape_type           m_shape ;
 
