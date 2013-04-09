@@ -8,7 +8,7 @@
 #include <KokkosArray_ParallelReduce.hpp>
 #include <ctime>
 
-//namespace KokkosArray {
+namespace KokkosArray {
 
 
 template<typename Scalar, class device>
@@ -33,21 +33,19 @@ struct MultiVectorStatic{
 };
 
 
+
 /*------------------------------------------------------------------------------------------
- * --------------------------Multiply with scalar: y = a * x -------------------------------
- */
-template<class MV>
+ *-------------------------- Multiply with scalar: y = a * x -------------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class RVector, class aVector, class XVector>
 struct MV_MulScalarFunctor
 {
-  typedef typename MV::device_type        device_type;
-  typedef typename MV::size_type            size_type;
-  typedef typename MV::value_type          value_type;
-  typedef typename MV::const_type   domain_const_type;
-  typedef KokkosArray::View<typename MV::value_type* ,KokkosArray::LayoutLeft,typename MV::device_type >  vector_type;
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
 
-  MV m_r;
-  domain_const_type  m_x ;
-  vector_type   m_a ;
+  RVector m_r;
+  typename RVector::const_type m_x ;
+  typename aVector::const_type m_a ;
   size_type n;
   MV_MulScalarFunctor() {n=1;}
   //--------------------------------------------------------------------------
@@ -61,16 +59,14 @@ struct MV_MulScalarFunctor
   }
 };
 
-template<class MV>
+template<class aVector, class XVector>
 struct MV_MulScalarFunctorSelf
 {
-  typedef typename MV::device_type        device_type;
-  typedef typename MV::size_type            size_type;
-  typedef typename MV::value_type          value_type;
-  typedef KokkosArray::View<value_type* ,device_type >  vector_type;
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
 
-  MV m_x;
-  vector_type   m_a ;
+  XVector m_x;
+  typename aVector::const_type   m_a ;
   size_type n;
   //--------------------------------------------------------------------------
 
@@ -83,11 +79,12 @@ struct MV_MulScalarFunctorSelf
   }
 };
 
-template<class MV>
-MV MV_MulScalar( const MV & r, KokkosArray::View<typename MV::value_type* ,KokkosArray::LayoutLeft,typename MV::device_type > a, const MV & x)
+template<class RVector, class DataType,class Layout,class Device, class MemoryManagement,class Specialisation, class XVector>
+RVector MV_MulScalar( const RVector & r, const typename KokkosArray::View<DataType,Layout,Device,MemoryManagement,Specialisation> & a, const XVector & x)
 {
+  typedef	typename KokkosArray::View<DataType,Layout,Device,MemoryManagement> aVector;
   if(r==x) {
-    MV_MulScalarFunctorSelf<MV> op ;
+    MV_MulScalarFunctorSelf<aVector,XVector> op ;
 	op.m_x = x ;
 	op.m_a = a ;
 	op.n = x.dimension(1);
@@ -95,7 +92,7 @@ MV MV_MulScalar( const MV & r, KokkosArray::View<typename MV::value_type* ,Kokko
 	return r;
   }
 
-  MV_MulScalarFunctor<MV> op ;
+  MV_MulScalarFunctor<RVector,aVector,XVector> op ;
   op.m_r = r ;
   op.m_x = x ;
   op.m_a = a ;
@@ -104,7 +101,73 @@ MV MV_MulScalar( const MV & r, KokkosArray::View<typename MV::value_type* ,Kokko
   return r;
 }
 
-//Unroll for n<=8
+template<class RVector, class XVector>
+struct MV_MulScalarFunctor<RVector,typename XVector::scalar_type,XVector>
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  RVector m_r;
+  typename RVector::const_type m_x ;
+  typename XVector::scalar_type m_a ;
+  size_type n;
+  MV_MulScalarFunctor() {n=1;}
+  //--------------------------------------------------------------------------
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+    #pragma ivdep
+	for(size_type k=0;k<n;k++)
+	   m_r(i,k) = m_a*m_x(i,k);
+  }
+};
+
+template<class XVector>
+struct MV_MulScalarFunctorSelf<typename XVector::scalar_type,XVector>
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  XVector m_x;
+  typename XVector::scalar_type   m_a ;
+  size_type n;
+  //--------------------------------------------------------------------------
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+    #pragma ivdep
+	for(size_type k=0;k<n;k++)
+	   m_x(i,k) *= m_a;
+  }
+};
+
+template<class RVector, class XVector>
+RVector MV_MulScalar( const RVector & r, const typename XVector::scalar_type &a, const XVector & x)
+{
+  if(r==x) {
+    MV_MulScalarFunctorSelf<typename XVector::scalar_type,XVector> op ;
+	op.m_x = x ;
+	op.m_a = a ;
+	op.n = x.dimension(1);
+	KokkosArray::parallel_for( x.dimension(0) , op );
+	return r;
+  }
+
+  MV_MulScalarFunctor<RVector,typename XVector::scalar_type,XVector> op ;
+  op.m_r = r ;
+  op.m_x = x ;
+  op.m_a = a ;
+  op.n = x.dimension(1);
+  KokkosArray::parallel_for( x.dimension(0) , op );
+  return r;
+}
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Vector Add: r = a*x + b*y -------------------------------------
+ *------------------------------------------------------------------------------------------*/
+
+//Unroll for n<=16
 template<class RVector,class aVector, class XVector, class bVector, class YVector, int scalar_x, int scalar_y,int UNROLL>
 struct MV_AddUnrollFunctor
 {
@@ -521,13 +584,6 @@ RVector MV_Add( const RVector & r, const XVector & x, const bVector & bv, const 
   return MV_AddUnroll(r,bv,x,bv,y,1,2);
 }
 
-template<class RVector,class XVector,class bVector, class YVector>
-RVector MV_Add( const RVector & r, const bVector & av,const XVector & x, const bVector & bv, const YVector & y )
-{
-  if(x.dimension(1)>16)
-    return MV_AddVector(r,av,x,bv,y,2,2);
-  return MV_AddUnroll(r,av,x,bv,y,2,2);
-}
 
 template<class XVector,class YVector>
 struct MV_DotProduct_Right_FunctorVector
@@ -613,8 +669,8 @@ struct MV_DotProduct_Right_FunctorUnroll
   }
 };
 
-template<class XVector, class YVector, class return_device>
-KokkosArray::View<typename XVector::value_type*,KokkosArray::LayoutLeft,return_device> MV_Dot(const KokkosArray::View<typename XVector::value_type*,KokkosArray::LayoutLeft,return_device> &r, const XVector & x, const YVector & y)
+template<class rVector, class XVector, class YVector>
+rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
 {
     typedef typename XVector::size_type            size_type;
 	const size_type numVecs = x.dimension(1);
@@ -764,5 +820,6 @@ KokkosArray::View<typename XVector::value_type*,KokkosArray::LayoutLeft,return_d
 
     return r;
 }
-//}
+
+}//end namespace KokkosArray
 #endif /* KOKKOSARRAY_MULTIVECTOR_H_ */
