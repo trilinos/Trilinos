@@ -12,14 +12,14 @@
 
 /**********************************************************************/
 
-/* %fragment("NumPy_Backward_Compatibility", "header") */
-/* { */
-/* %#if NPY_API_VERSION < 0x00000007 */
-/* %#define NPY_ARRAY_DEFAULT NPY_DEFAULT */
-/* %#define NPY_ARRAY_FARRAY  NPY_FARRAY */
-/* %#define NPY_FORTRANORDER  NPY_FORTRAN */
-/* %#endif */
-/* } */
+%fragment("NumPy_Backward_Compatibility", "header")
+{
+%#if NPY_API_VERSION < 0x00000007
+%#define NPY_ARRAY_DEFAULT NPY_DEFAULT
+%#define NPY_ARRAY_FARRAY  NPY_FARRAY
+%#define NPY_FORTRANORDER  NPY_FORTRAN
+%#endif
+}
 
 /**********************************************************************/
 
