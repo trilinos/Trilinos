@@ -82,7 +82,7 @@ namespace KokkosArray {
 //template<typename T>
 //KOKKOSARRAY_INLINE_FUNCTION T atomic_exchange(volatile T* dest, T val);
 
-#include "Kokkos_Atomic_Exchange.h"
+#include "Kokkos_Atomic_Exchange.hpp"
 
 
 
@@ -121,7 +121,7 @@ const char* atomic_query_version() {
 
 //template<class T>
 //bool atomic_compare_exchange_strong(volatile T* dest, T compare, T val);
-#include "Kokkos_Atomic_Compare_Exchange_Strong.h"
+#include "Kokkos_Atomic_Compare_Exchange_Strong.hpp"
 
 #ifndef EXTERNAL_ATOMICS_CHOICE
 #undef GNU_ATOMICS_GCC
@@ -145,7 +145,7 @@ const char* atomic_query_version() {
 
 //template<class T>
 //T atomic_fetch_add(volatile T* dest, T val);
-#include "Kokkos_Atomic_Fetch_Add.h"
+#include "Kokkos_Atomic_Fetch_Add.hpp"
 
 }
 

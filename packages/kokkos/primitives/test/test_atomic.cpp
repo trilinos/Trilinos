@@ -58,7 +58,7 @@ typedef KokkosArray::Host device_type;
 typedef KokkosArray::Cuda device_type;
 #endif
 
-#include "Kokkos_Atomic.h"
+#include "Kokkos_Atomic.hpp"
 #include "KokkosArray_ParallelFor.hpp"
 #include "KokkosArray_Macros.hpp"
 

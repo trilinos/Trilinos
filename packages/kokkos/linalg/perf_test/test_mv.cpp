@@ -9,7 +9,7 @@
 
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
-#include "KokkosArray_MultiVector.h"
+#include "KokkosArray_MultiVector.hpp"
 #ifndef DEVICE
 #define DEVICE 1
 #endif

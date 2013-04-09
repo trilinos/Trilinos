@@ -445,13 +445,14 @@ template< class T , class L, class D , class M >
 class View< T , L , D , M , Impl::CudaTexture >
   : public ViewTraits< T , L , D , M >
 {
+public:
+  typedef ViewTraits< T , L , D , M > traits ;
+
+  typedef typename traits::scalar_type scalar_type ;
 private:
 
   template< class , class , class > friend class Impl::ViewAssignment ;
 
-  typedef ViewTraits< T , L , D , M > traits ;
-
-  typedef typename traits::scalar_type scalar_type ;
 
   Impl::CudaTextureFetch< scalar_type > m_texture ;
   unsigned                              m_stride ;
