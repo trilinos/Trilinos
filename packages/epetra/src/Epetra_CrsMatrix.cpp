@@ -4483,7 +4483,7 @@ int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData(){
  }
 
 //=============================================================================    
-int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer,int NumMyDiagonals){
+int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer, const Epetra_Export * Exporter, int NumMyDiagonals){
 
   Epetra_CrsGraphData& D=*Graph_.CrsGraphData_;
   int m=D.RowMap_.NumMyElements();
@@ -4496,10 +4496,11 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
      !D.ColMap_.ConstantElementSize() || D.ColMap_.ElementSize()!=1)
     EPETRA_CHK_ERR(-1);
 
-  // Maps, import export
+  // Maps
   D.DomainMap_ = DomainMap;
   D.RangeMap_  = RangeMap;
 
+  // Create import, if needed
   if (!D.ColMap_.SameAs(D.DomainMap_)) {
     if (D.Importer_ != 0) {
       delete D.Importer_;
@@ -4510,17 +4511,25 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
     }
     else {
       delete Importer;
-      D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_,0,0);
+      D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_);
     }
   }
-  
+
+  // Create export, if needed
   if (!D.RowMap_.SameAs(D.RangeMap_)) {
     if (D.Exporter_ != 0) {
       delete D.Exporter_;
       D.Exporter_ = 0;
     }
-    D.Exporter_ = new Epetra_Export(D.RowMap_, D.RangeMap_); // Create Export object. 
+    if(Exporter && Exporter->SourceMap().SameAs(D.RowMap_) && Exporter->TargetMap().SameAs(D.RangeMap_)){
+      D.Exporter_=Exporter;
+    }
+    else {
+      delete Exporter;
+      D.Exporter_ = new Epetra_Export(D.RowMap_,D.RangeMap_);				      
+    }
   }
+
 
   // Matrix constants
   Allocated_                  = true;
