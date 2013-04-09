@@ -439,17 +439,6 @@ bool hwloc::bind_this_thread( const unsigned coordinate[] )
                                      core->allowed_cpuset ,
                                      HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
 
-    if ( result ) {
-
-      hwloc_cpuset_t thread_cpuset = hwloc_bitmap_alloc();
-
-      hwloc_get_cpubind( h.m_topology, thread_cpuset, HWLOC_CPUBIND_THREAD );
-
-      result = hwloc_bitmap_isequal( thread_cpuset , core->allowed_cpuset );
-
-      hwloc_bitmap_free( thread_cpuset );
-    }
-
 #if 0
   std::ostringstream msg ;
   msg << "KokkosArray::Impl::hwloc::bind_this_thread("

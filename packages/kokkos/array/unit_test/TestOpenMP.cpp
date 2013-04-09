@@ -63,8 +63,6 @@
 
 namespace Test {
 
-#if 0
-
 class openmp : public ::testing::Test {
 protected:
   static void SetUpTestCase()
@@ -101,6 +99,8 @@ protected:
   }
 };
 
+
+#if 0
 
 TEST_F( openmp, view_impl) {
   test_view_impl< KokkosArray::OpenMP >();

@@ -91,6 +91,8 @@ void OpenMP::initialize()
         Impl::HostThread::set_thread( rank , new Impl::HostThread() );
       }
     }
+// END #pragma omp parallel
+
     Impl::HostThread::set_thread_relationships();
   }
   else {

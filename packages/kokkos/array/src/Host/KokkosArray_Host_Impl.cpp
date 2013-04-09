@@ -395,9 +395,12 @@ bool HostInternal::spawn_threads( const unsigned thread_count )
     }
   }
 
-  // Bind the process thread as thread_rank == 0
   if ( ok_spawn_threads ) {
+
+    // Bind the process thread as thread_rank == 0
+
     HostThread::set_thread( 0 , & m_master_thread );
+
     ok_spawn_threads = hwloc::bind_this_thread( host_thread_coordinates[0] );
   }
 
@@ -463,7 +466,7 @@ void HostInternal::initialize( const unsigned gang_count ,
   }
 
   // Initial reduction allocation:
-  Host::resize_reduce_scratch( 1024 );
+  Host::resize_reduce_scratch( 4096 );
 }
 
 //----------------------------------------------------------------------------
