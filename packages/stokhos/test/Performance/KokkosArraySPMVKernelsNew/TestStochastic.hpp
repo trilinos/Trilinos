@@ -587,6 +587,86 @@ void performance_test_driver_poly( const int pdeg ,
   //------------------------------
 }
 
+template< class Scalar, class Device , class SparseMatOps >
+void performance_test_driver_poly_deg( const int nvar ,
+                                       const int minp ,
+                                       const int maxp ,
+                                       const int nGrid ,
+                                       const int nIter ,
+                                       const bool test_block ,
+                                       const bool symmetric )
+{
+  bool do_flat_sparse =
+    KokkosArray::Impl::is_same<Device,KokkosArray::Host>::value ;
+
+  std::cout.precision(8);
+
+  //------------------------------
+
+  std::vector< std::vector<size_t> > fem_graph ;
+  const size_t graph_length =
+    unit_test::generate_fem_graph( nGrid , fem_graph );
+  std::cout << std::endl << "\"FEM NNZ = " << graph_length << "\"" << std::endl;
+
+  std::cout << std::endl
+            << "\"#nGrid\" , "
+            << "\"#Variable\" , "
+            << "\"PolyDegree\" , "
+            << "\"#Bases\" , "
+            << "\"#TensorEntry\" , "
+            << "\"VectorSize\" , "
+            << "\"Original-Matrix-Free-Block-MXV-Time\" , "
+            << "\"Original-Matrix-Free-Block-MXV-Speedup\" , "
+            << "\"Original-Matrix-Free-Block-MXV-GFLOPS\" , "
+            << "\"Block-Crs-Tensor MXV-Speedup\" , "
+            << "\"Block-Crs-Tensor MXV-GFLOPS\" , ";
+  if (do_flat_sparse)
+    std::cout << "\"Block-Lexicographic-Sparse-3-Tensor MXV-Speedup\" , "
+              << "\"Block-Lexicographic-Sparse-3-Tensor MXV-GFLOPS\" , "
+              << "\"Lexicographic FLOPS / Crs FLOPS\" , ";
+  std::cout << std::endl ;
+
+  for ( int p = minp ; p <= maxp ; ++p ) {
+    std::vector<int> var_degree( nvar , p );
+
+    const std::vector<double> perf_crs_tensor =
+      test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(
+        var_degree , nGrid , nIter , symmetric );
+
+    std::vector<double> perf_lexo_sparse_3_tensor;
+    if (do_flat_sparse) {
+      perf_lexo_sparse_3_tensor =
+        test_lexo_block_tensor<Scalar,Device>( var_degree , nGrid , nIter , symmetric );
+    }
+
+    const std::vector<double> perf_original_mat_free_block =
+      test_original_matrix_free_vec<Scalar,Device,SparseMatOps>(
+        var_degree , nGrid , nIter , test_block , symmetric );
+
+    std::cout << nGrid << " , "
+              << nvar << " , "
+              << p << " , "
+              << perf_crs_tensor[4] << " , "
+              << perf_crs_tensor[3] << " , "
+              << perf_original_mat_free_block[0] << " , "
+              << perf_original_mat_free_block[1] << " , "
+              << perf_original_mat_free_block[1] / perf_original_mat_free_block[1] << " , "
+              << perf_original_mat_free_block[2] << " , "
+              << perf_original_mat_free_block[1] / perf_crs_tensor[1] << " , "
+              << perf_crs_tensor[2] << " , ";
+    if (do_flat_sparse) {
+      std::cout << perf_original_mat_free_block[1] / perf_lexo_sparse_3_tensor[1] << " , "
+                << perf_lexo_sparse_3_tensor[2] << " , "
+                << perf_lexo_sparse_3_tensor[5] / perf_crs_tensor[5];
+    }
+
+
+    std::cout << std::endl ;
+  }
+
+  //------------------------------
+}
+
 template< class Scalar, class Device >
 struct performance_test_driver {
   static void run(bool test_flat, bool test_orig, bool test_block, bool symmetric) {}

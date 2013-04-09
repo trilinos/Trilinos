@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -44,12 +44,12 @@
 #include <cstdlib>
 
 template <typename scalar>
-int mainHost(bool test_flat, bool test_orig, bool test_block, bool symmetric,
-	     bool mkl);
+int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_block,
+             bool symmetric, bool mkl);
 
 template <typename scalar>
 int mainCuda(bool test_flat, bool test_orig, bool test_block, bool symmetric,
-	     int device_id);
+             int device_id);
 
 int main(int argc, char *argv[])
 {
@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
   bool test_block = true;
   bool test_flat = true;
   bool test_orig = true;
+  bool test_deg = false;
   bool symmetric = true;
   bool single = false;
   bool mkl = false;
@@ -89,6 +90,10 @@ int main(int argc, char *argv[])
       test_orig = true;
     else if (s == "no-orig")
       test_orig = false;
+    else if (s == "deg")
+      test_deg = true;
+    else if (s == "no-deg")
+      test_deg = false;
     else if (s == "symmetric")
       symmetric = true;
     else if (s == "no-symmetric")
@@ -115,17 +120,17 @@ int main(int argc, char *argv[])
   }
   if (print_usage) {
     std::cout << "Usage:" << std::endl
-	      << "\t" << argv[0] 
-	      << " [no-][cuda|host|block|flat|orig|symmetric] [single|double] [device device_id]" 
-	      << std::endl << "Defaults are all enabled." << std::endl;
+              << "\t" << argv[0]
+              << " [no-][cuda|host|block|flat|orig|deg|symmetric] [single|double] [device device_id]"
+              << std::endl << "Defaults are all enabled." << std::endl;
     return -1;
   }
 
   if (test_host) {
     if (single)
-      mainHost<float>(test_flat, test_orig, test_block, symmetric, mkl);
+      mainHost<float>(test_flat, test_orig, test_deg, test_block, symmetric, mkl);
     else
-      mainHost<double>(test_flat, test_orig, test_block, symmetric, mkl);
+      mainHost<double>(test_flat, test_orig, test_deg, test_block, symmetric, mkl);
   }
   if (test_cuda) {
     if (single)
@@ -136,4 +141,3 @@ int main(int argc, char *argv[])
 
   return 0 ;
 }
-
