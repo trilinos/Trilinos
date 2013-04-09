@@ -12,7 +12,7 @@
 #include <KokkosArray_Cuda.hpp>
 #include <KokkosArray_Macros.hpp>
 #include <KokkosArray_CrsArray.hpp>
-#include <KokkosArray_MultiVector.h>
+#include <KokkosArray_MultiVector.hpp>
 #ifdef KOKKOS_USE_CUSPARSE
 #include <cusparse_v2.h>
 #endif
