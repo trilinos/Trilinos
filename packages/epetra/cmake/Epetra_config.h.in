@@ -136,6 +136,8 @@
 
 #cmakedefine Epetra_ENABLE_CASK
 
+#cmakedefine Epetra_ENABLE_MKL_SPARSE
+
 /* Define if you want to have long long (64 bit) global indices only. */
 #cmakedefine EPETRA_NO_32BIT_GLOBAL_INDICES
 
