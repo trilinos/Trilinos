@@ -229,7 +229,7 @@ namespace Tpetra {
     //@}
 
   private:
-
+    //! All the data needed for executing the Export communication plan.
     RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ExportData_;
 
     //! @name Initialization helper functions (called by the constructor)

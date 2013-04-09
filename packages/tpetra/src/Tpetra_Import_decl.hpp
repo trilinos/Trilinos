@@ -229,9 +229,12 @@ namespace Tpetra {
     //@}
 
   private:
-
+    //! All the data needed for executing the Import communication plan.
     RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ImportData_;
+    //! Temporary array used for initialization.
     RCP<Array<GlobalOrdinal> > remoteGIDs_;
+    //! Whether to print copious debug output on each process.
+    bool debug_;
 
     //! @name Initialization helper functions (called by the constructor)
     //@{
@@ -301,7 +304,7 @@ namespace Tpetra {
     //@}
   }; // class Import
 
-  /** \brief Non-member constructor for Import objects.
+  /** \brief Nonmember constructor for Import.
 
       Create a Import object from the given source and target Maps.
       \pre <tt>src != null</tt>
@@ -327,6 +330,37 @@ namespace Tpetra {
       << std::endl);
 #endif // HAVE_TPETRA_DEBUG
     return Teuchos::rcp (new Import<LocalOrdinal, GlobalOrdinal, Node> (src, tgt));
+  }
+
+  /** \brief Nonmember constructor for Import that takes a ParameterList.
+
+      Create a Import object from the given source and target Maps,
+      using the given list of parameters.
+      \pre <tt>src != null</tt>
+      \pre <tt>tgt != null</tt>
+      \return The Import object. If <tt>src == tgt</tt>, returns \c null.
+        (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
+
+      \relatesalso Import
+    */
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+  createImport (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& src,
+                const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& tgt,
+                const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  {
+    if (src == tgt) {
+      return Teuchos::null;
+    }
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      src == null || tgt == null, std::runtime_error,
+      "Tpetra::createImport(): neither source nor target map may be null:"
+      << std::endl << "source: " << src << std::endl << "target: " << tgt
+      << std::endl);
+#endif // HAVE_TPETRA_DEBUG
+    typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+    return Teuchos::rcp (new import_type (src, tgt, plist));
   }
 } // namespace Tpetra
 
