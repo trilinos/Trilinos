@@ -1654,6 +1654,17 @@ reduceAll<int, int> (const Comm<int>& comm,
                      const int count,
                      const int sendBuffer[],
                      int globalReducts[]);
+// mfh 09 Apr 2013: We provide a full specialization of
+// reduceAllAndScatter, because it is an important part of
+// Tpetra::Distributor initialization.
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduceAllAndScatter<int, int> (const Comm<int>& comm,
+                               const EReductionType reductType,
+                               const int sendCount,
+                               const int sendBuffer[],
+                               const int recvCounts[],
+                               int myGlobalReducts[]);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 ireceive<int, int> (const Comm<int>& comm,
