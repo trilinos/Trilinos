@@ -10,10 +10,10 @@ SOURCE_DIR=../$PROJECT_NAME
 
 NETCDF_DIR=/home/trilinos/tpl/gcc4.1.2/netcdf_4.2
 BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost_1_49_0
-MPI4PY_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.2.2
+MPI4PY_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.3
 
 #this is also needed to build pytrilinos not just configure
-export PYTHONPATH="$MPI4PY_DIR:/home/trilinos/tpl/gcc4.1.2/numpy1.4.0/lib64/python2.4/site-packages"
+export PYTHONPATH="$MPI4PY_DIR/lib64/python:/home/trilinos/tpl/gcc4.1.2/numpy1.4.0/lib64/python2.4/site-packages"
 
 export PATH=/home/trilinos/tpl/gcc4.1.2/swig-2.0.0/bin:/home/trilinos/tpl/gcc4.1.2/qt-4.5.2/bin:$PATH
 which cmake
@@ -94,7 +94,6 @@ cmake \
  \
 -D Netcdf_INCLUDE_DIRS=$NETCDF_DIR/include \
 -D Netcdf_LIBRARY_DIRS=$NETCDF_DIR/lib \
--D MPI4PY_INCLUDE_DIR=$MPI4PY_DIR/mpi4py/include \
 -D Boost_INCLUDE_DIRS=$BOOST_DIR/include \
 -D BoostLib_INCLUDE_DIRS=$BOOST_DIR/include \
 -D BoostLib_LIBRARY_DIRS=$BOOST_DIR/lib \
