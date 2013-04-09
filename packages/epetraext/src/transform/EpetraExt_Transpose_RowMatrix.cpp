@@ -45,6 +45,8 @@
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Map.h>
+#include <Epetra_Import.h>
+#include <Epetra_Export.h>
 
 #include <Teuchos_TimeMonitor.hpp>
 #include <vector>
@@ -168,7 +170,23 @@ RowMatrix_Transpose::
   mtime->start();
 #endif
 
-  err = TempTransA1->ExpertStaticFillComplete(orig.OperatorRangeMap(),*TransposeRowMap_);
+  // Prebuild the importers and exporters the no-communication way, flipping the importers
+  // and exporters around.
+  Epetra_Import * myimport = 0;
+  Epetra_Export * myexport = 0;
+  if(OrigMatrixIsCrsMatrix_ && OrigCrsMatrix->Importer())
+    myexport = new Epetra_Export(*OrigCrsMatrix->Importer());
+  if(OrigMatrixIsCrsMatrix_ && OrigCrsMatrix->Exporter())
+    myimport = new Epetra_Import(*OrigCrsMatrix->Exporter());
+
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  mtime->stop();
+  mtime=MM.getNewTimer("Transpose: BuildTempTrans 3");
+  mtime->start();
+#endif
+
+  // Call ExpertStaticFillComplete
+  err = TempTransA1->ExpertStaticFillComplete(orig.OperatorRangeMap(),*TransposeRowMap_,myimport,myexport);
   if (err != 0) {
     throw TempTransA1->ReportError("ExpertStaticFillComplete failed.",err);
   }
