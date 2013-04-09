@@ -238,14 +238,16 @@ namespace MueLu {
 
     *out0 << "LevelID = " << GetLevelID() << std::endl;
 
-    Teuchos::TabularOutputter outputter(out0);
-    outputter.pushFieldSpec("data name",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
-    // outputter.pushFieldSpec("generating factory type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 30);
-    outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
-    outputter.pushFieldSpec("req",                Teuchos::TabularOutputter::INT,    Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 3);
-    outputter.pushFieldSpec("keep",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 5);
-    outputter.pushFieldSpec("type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 15);
-    outputter.pushFieldSpec("data",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
+    typedef Teuchos::TabularOutputter TTO;
+    TTO outputter(out0);
+    outputter.pushFieldSpec("data name",                TTO::STRING, TTO::LEFT, TTO::GENERAL, 20);
+    // outputter.pushFieldSpec("generating factory type",  TTO::STRING, TTO::LEFT, TTO::GENERAL, 30);
+    outputter.pushFieldSpec("gen. factory addr.",       TTO::STRING, TTO::LEFT, TTO::GENERAL, 18);
+    outputter.pushFieldSpec("req",                      TTO::INT,    TTO::LEFT, TTO::GENERAL, 3);
+    outputter.pushFieldSpec("keep",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 5);
+    outputter.pushFieldSpec("type",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 15);
+    outputter.pushFieldSpec("data",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 14);
+    outputter.pushFieldSpec("req'd by",                 TTO::STRING, TTO::LEFT, TTO::GENERAL, 20);
     outputter.outputHeader();
 
     out0->setOutputToRootOnly(-1);
@@ -255,8 +257,9 @@ namespace MueLu {
       for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
         outputter.outputField(*it);   // variable name
 
-        // NOTE: we cannot dereference the factory pointer and call factory->description() as we do not know if the factory still exist (the factory pointer is a raw pointer by design)
-        // Instead, the level should store the factory description internally as a string for debugging purpose (and in debug mode only).
+        // NOTE: We cannot dereference the factory pointer and call factory->description() as we do not know
+        // if the factory still exist (the factory pointer is a raw pointer by design). Instead, the level
+        // should store the factory description internally as a string for debugging purpose (and in debug mode only).
         //         // factory name
         //         std::stringstream ss1;
         //         ss1 << (*kt)->description();
@@ -322,6 +325,16 @@ namespace MueLu {
           outputter.outputField("unknown");
           outputter.outputField("not available");
         }
+
+        typedef VariableContainer::request_container container_type;
+        const container_type& requestedBy = needs_.GetRequests(*it, *kt);
+        std::ostringstream ss;
+        for (container_type::const_iterator ct = requestedBy.begin(); ct != requestedBy.end(); ct++) {
+          if (ct != requestedBy.begin())    ss << ",";
+                                            ss << ct->first;
+          if (ct->second > 1)               ss << "(" << ct->second << ")";
+        }
+        outputter.outputField(ss.str());
 
         outputter.nextRow();
       }
