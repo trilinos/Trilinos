@@ -1916,7 +1916,11 @@ FUNCTION(TRIBITS_REMIND_ABOUT_UNCOMMITTED_DEPENDENCY_FILES)
       MESSAGE("GIT_EXE=${GIT_EXE}")
     ENDIF()
 
-    IF (GIT_EXE)
+    IF (GIT_EXE AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        MESSAGE("\nChecking for uncommitted changes to generated dependency files ...\n")
+      ENDIF()
 
       EXECUTE_PROCESS(COMMAND ${GIT_EXE} status
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
