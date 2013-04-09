@@ -95,68 +95,57 @@ createTranspose()
   //
   // This transpose is based upon the approach in EpetraExt.
   //
-  global_size_t numLocalCols = origMatrix_->getNodeNumCols();
-  global_size_t numLocalRows = origMatrix_->getNodeNumRows();
+  size_t numLocalCols = origMatrix_->getNodeNumCols();
+  size_t numLocalRows = origMatrix_->getNodeNumRows();
+  size_t numLocalNnz  = origMatrix_->getNodeNumEntries();
+
+  ArrayRCP<size_t> rowptr_rcp(numLocalCols+1);
+  ArrayRCP<LO>     colind_rcp(numLocalNnz);
+  ArrayRCP<Scalar> values_rcp(numLocalNnz);
+
+  // Since ArrayRCP's are slow...
+  ArrayView<size_t> TransRowptr = rowptr_rcp();
+  ArrayView<LO>     TransColind = colind_rcp();
+  ArrayView<Scalar> TransValues = values_rcp();
+
+  // Determine how many nonzeros there are per row in the transpose.
+  Array<size_t> CurrentStart(numLocalCols,0);
   ArrayView<const LO> localIndices;
   ArrayView<const Scalar> localValues;
-  // Determine how many nonzeros there are per row in the transpose.
-  ArrayRCP<size_t> TransNumNz(numLocalCols,0);
   for (size_t i=0; i<numLocalRows; ++i) {
     const size_t numEntriesInRow = origMatrix_->getNumEntriesInLocalRow(i);
     origMatrix_->getLocalRowView(i, localIndices, localValues);
     for (size_t j=0; j<numEntriesInRow; ++j) {
-      ++TransNumNz[ localIndices[j] ];
+      ++CurrentStart[ localIndices[j] ];
     }
   }
 
   //create temporary row-major storage for the transposed matrix
-  size_t numLocalNnz  = origMatrix_->getNodeNumEntries();
-  ArrayRCP<GO> TransIndices(numLocalNnz);
-  ArrayRCP<Scalar> TransValues(numLocalNnz);
 
-  //ptr is an vector of indices into TransIndices and TransValues
-  //ptr[i]..ptr[i+1]-1 correspond to nonzero rows/values in the original matrix's local column i 
-  std::vector<size_t> ptr(numLocalCols+1);
-  ptr[0]=0;
-  for (size_t i=1; i<numLocalCols+1; ++i) {
-    ptr[i] = ptr[i-1] + TransNumNz[i-1];
-  }
-
-  //TransNumNz will now be used to track how many entries have been placed thus far in each
-  //row of the row-major storage.
-  for (size_t i=0; i<numLocalCols; ++i) TransNumNz[i] = 0;
+  // Scansum the TransRowptr; reset CurrentStart
+  TransRowptr[0]=0;
+  for (size_t i=1; i<numLocalCols+1; ++i) TransRowptr[i]  = CurrentStart[i-1] + TransRowptr[i-1];
+  for (size_t i=0; i<numLocalCols;   ++i) CurrentStart[i] = TransRowptr[i];
 
   //populate the row-major storage so that the data for the transposed matrix is easy to access
-  const map_type& origRowMap = *(origMatrix_->getRowMap());
   for (size_t i=0; i<numLocalRows; ++i) {
-
     const size_t numEntriesInRow = origMatrix_->getNumEntriesInLocalRow(i);
     origMatrix_->getLocalRowView(i, localIndices, localValues);
 
-    const GO transCol = origRowMap.getGlobalElement(i);
     for (size_t j=0; j<numEntriesInRow; ++j) {
-      const LO transRow = localIndices[j];
-      const LO offset = TransNumNz[transRow];
-      TransIndices[ptr[transRow]+offset] = transCol;
-      TransValues [ptr[transRow]+offset] = localValues[j];
-      ++TransNumNz[transRow];
-    }
-    
+      size_t idx = CurrentStart[localIndices[j]];
+      TransColind[idx] = Teuchos::as<LO>(i);
+      TransValues[idx] = localValues[j];
+      ++CurrentStart[localIndices[j]];
+    }    
   } //for (size_t i=0; i<numLocalRows; ++i)
 
+
   //Allocate and populate temporary matrix with rows not uniquely owned
-  RCP<const map_type> transMap = origMatrix_->getColMap();
-  RCP<crs_matrix_type> transMatrixWithSharedRows(new crs_matrix_type (transMap, TransNumNz, StaticProfile));
+  RCP<crs_matrix_type> transMatrixWithSharedRows(new crs_matrix_type(origMatrix_->getColMap(),origMatrix_->getRowMap(),0));  
+  transMatrixWithSharedRows->setAllValues(rowptr_rcp,colind_rcp,values_rcp);
+  transMatrixWithSharedRows->expertStaticFillComplete(origMatrix_->getRangeMap(),origMatrix_->getDomainMap());
 
-  const map_type& transMapRef = *transMap;
-  for (size_t i=0; i<numLocalCols; ++i) {
-     const size_t leng=ptr[i+1]-ptr[i];
-     transMatrixWithSharedRows->insertGlobalValues(transMapRef.getGlobalElement(i),
-                                                   TransIndices.view(ptr[i],leng),
-                                                   TransValues.view(ptr[i],leng) );
-  }
-
-  transMatrixWithSharedRows->fillComplete(origMatrix_->getRangeMap(), origMatrix_->getDomainMap());
 
   // If transMatrixWithSharedRows has an exporter, that's what we want.  If it doesn't, the rows aren't actually shared,
   // and we're done!

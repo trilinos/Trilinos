@@ -1914,7 +1914,9 @@ namespace Tpetra {
   ///
   /// \param importer [in] The Import instance containing a
   ///   precomputed redistribution plan.  The source Map of the
-  ///   Import must be the same as the row Map of sourceMatrix.
+  ///   Import must be the same as the rowMap of sourceMatrix unless
+  ///   the "Reverse Mode" option on the params list, in which case
+  ///   the targetMap of Import must match the rowMap of the sourceMatrix
   ///
   /// \param domainMap [in] Domain Map of the returned matrix.  If
   ///   null, we use the default, which is the domain Map of the
@@ -1955,17 +1957,25 @@ namespace Tpetra {
     // method doesn't actually fuse the Import with fillComplete().
     // This will change in the future.
 
+    // Are we in reverse mode?
+    bool reverseMode = false;
+    if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
+
+    // Cache the maps 
+    Teuchos::RCP<const map_type> sourceMap = reverseMode? importer.getTargetMap() : importer.getSourceMap();
+    Teuchos::RCP<const map_type> targetMap = reverseMode? importer.getSourceMap() : importer.getTargetMap();
+
     // Pre-count the nonzeros to allow a build w/ Static Profile
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(importer.getSourceMap());
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(importer.getTargetMap());
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(sourceMap);
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(targetMap);
     ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
     for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
       nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
+    if(reverseMode) targetNnzPerRowVec.doExport(sourceNnzPerRowVec,importer,Tpetra::ADD);
+    else targetNnzPerRowVec.doImport(sourceNnzPerRowVec,importer,Tpetra::INSERT);
 
-    targetNnzPerRowVec.doImport(sourceNnzPerRowVec,importer,Tpetra::INSERT);
 
-
-    ArrayRCP<size_t> MyNnz(importer.getTargetMap()->getNodeNumElements());
+    ArrayRCP<size_t> MyNnz(targetMap->getNodeNumElements());
 
     ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData(0);
     for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
@@ -1975,11 +1985,12 @@ namespace Tpetra {
     if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
 
     RCP<CrsMatrixType> destMat =
-      rcp (new CrsMatrixType (importer.getTargetMap(),
+      rcp (new CrsMatrixType (targetMap,
                               MyNnz,
                               StaticProfile,
                               matrixparams));
-    destMat->doImport (*sourceMatrix, importer, INSERT);
+    if(reverseMode) destMat->doExport(*sourceMatrix, importer, Tpetra::ADD);
+    else destMat->doImport(*sourceMatrix, importer, Tpetra::INSERT);
 
     // Use the source matrix's domain Map as the default.
     RCP<const map_type> theDomainMap =
@@ -1990,13 +2001,11 @@ namespace Tpetra {
 
     // Do we need to restrict the communicator?
     bool restrictComm = false;
-    if (!params.is_null()) {
-      restrictComm = params->get("Restrict Communicator",restrictComm);
-    }
+    if (!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
 
     if(restrictComm) {
       // Handle communicator restriction, if requested
-      RCP<const map_type> newRowMap = importer.getTargetMap()->removeEmptyProcesses();
+      RCP<const map_type> newRowMap = targetMap->removeEmptyProcesses();
       RCP<const Comm<int> > newComm = newRowMap.is_null() ? Teuchos::null : newRowMap->getComm();
 
       destMat->removeEmptyProcessesInPlace(newRowMap);
@@ -2071,16 +2080,25 @@ namespace Tpetra {
     // method doesn't actually fuse the Export with fillComplete().
     // This will change in the future.
 
+    // Are we in reverse mode?
+    bool reverseMode = false;
+    if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
+
+    // Cache the maps 
+    Teuchos::RCP<const map_type> sourceMap = reverseMode? exporter.getTargetMap() : exporter.getSourceMap();
+    Teuchos::RCP<const map_type> targetMap = reverseMode? exporter.getSourceMap() : exporter.getTargetMap();
+    
     // Pre-count the nonzeros to allow a build w/ Static Profile
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(exporter.getSourceMap());
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(exporter.getTargetMap(),true);
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(sourceMap);
+    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(targetMap);
     ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
     for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
       nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
 
-    targetNnzPerRowVec.doExport(sourceNnzPerRowVec,exporter,Tpetra::ADD);
+    if(reverseMode) targetNnzPerRowVec.doImport(sourceNnzPerRowVec,exporter,Tpetra::INSERT);
+    else targetNnzPerRowVec.doExport(sourceNnzPerRowVec,exporter,Tpetra::ADD);
 
-    ArrayRCP<size_t> MyNnz(exporter.getTargetMap()->getNodeNumElements());
+    ArrayRCP<size_t> MyNnz(targetMap->getNodeNumElements());
 
     ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData(0);
     for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
@@ -2090,11 +2108,12 @@ namespace Tpetra {
     if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
 
     RCP<CrsMatrixType> destMat =
-      rcp (new CrsMatrixType (exporter.getTargetMap (),
+      rcp (new CrsMatrixType (targetMap,
                               MyNnz,
                               StaticProfile,
                               matrixparams));
-    destMat->doExport (*sourceMatrix, exporter, INSERT);
+    if(reverseMode) destMat->doImport(*sourceMatrix, exporter, Tpetra::ADD);
+    else destMat->doExport (*sourceMatrix, exporter, Tpetra::INSERT);
 
     // Use the source matrix's domain Map as the default.
     RCP<const map_type> theDomainMap =
@@ -2105,13 +2124,11 @@ namespace Tpetra {
 
     // Do we need to restrict the communicator?
     bool restrictComm = false;
-    if (!params.is_null()) {
-      restrictComm = params->get("Restrict Communicator",restrictComm);
-    }
+    if (!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
 
     if(restrictComm) {
       // Handle communicator restriction, if requested
-      RCP<const map_type> newRowMap = exporter.getTargetMap()->removeEmptyProcesses();
+      RCP<const map_type> newRowMap = targetMap->removeEmptyProcesses();
       RCP<const Comm<int> > newComm = newRowMap.is_null() ? Teuchos::null : newRowMap->getComm();
 
       destMat->removeEmptyProcessesInPlace(newRowMap);

@@ -1541,11 +1541,16 @@ Epetra_BlockMap * Epetra_BlockMap::RemoveEmptyProcesses() const
 
     // Get rid of the old BlockMapData, now make a new one from scratch...
     NewMap->CleanupData();
-    if(GlobalIndicesInt()) 
+    if(GlobalIndicesInt()) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
       NewMap->BlockMapData_ = new Epetra_BlockMapData(NumGlobalElements(),0,IndexBase(),*NewEpetraComm,false);
-    else
+#endif
+    }
+    else {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
       NewMap->BlockMapData_ = new Epetra_BlockMapData(NumGlobalElements64(),0,IndexBase64(),*NewEpetraComm,true);
-
+#endif
+    }
     // Now copy all of the relevent bits of BlockMapData...
     //    NewMap->BlockMapData_->Comm_                    = NewEpetraComm;
     NewMap->BlockMapData_->LID_                     = BlockMapData_->LID_;

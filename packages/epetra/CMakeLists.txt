@@ -59,6 +59,21 @@ TRIBITS_ADD_OPTION_AND_DEFINE(Trilinos_NO_64BIT_GLOBAL_INDICES
   "If option is enabled, 64 bit global indices are disabled.  One must use int global indices only for maps."
   OFF )
 
+IF(TPL_ENABLE_MKL)
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MKL_SPARSE
+    Epetra_ENABLE_MKL_SPARSE
+    "If option is enabled, MKL functions will be used for sparse operations in Epetra."
+    OFF )
+
+  IF(Epetra_ENABLE_MKL_SPARSE)
+    INCLUDE_DIRECTORIES(${TPL_MKL_INCLUDE_DIRS})
+  ENDIF()
+ELSE()
+  IF(Epetra_ENABLE_MKL_SPARSE)
+    MESSAGE(FATAL_ERROR "Epetra_ENABLE_MKL_SPARSE requires that MKL TPL be enabled.  Either enable the TPL or do not enable Epetra_ENABLE_MKL_SPARSE.")
+  ENDIF()
+ENDIF()
+
 ADD_SUBDIRECTORY(src)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)

@@ -89,6 +89,9 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
   //! Reverse Data Migration
   bool rvs();
 
+  //! Release the pointer to TransposeMatrix_ (so you can take the matrix out w/o worring about deallocation)
+  void ReleaseTranspose() {TransposeMatrix_=0;}
+
  private:
   Epetra_CrsMatrix * BuildTempTrans();
 

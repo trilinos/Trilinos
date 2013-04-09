@@ -44,34 +44,34 @@
 
 namespace Intrepid {
 
-  //
-  // R^N volumetric part of 2nd-order tensor
-  // \return \f$ \frac{1}{N} \mathrm{tr}\:(A) I \f$
-  //
-  template<typename T>
-  inline
-  Tensor<T>
-  vol(Tensor<T> const & A)
-  {
-    const Index
-    N = A.get_dimension();
+//
+// R^N volumetric part of 2nd-order tensor
+// \return \f$ \frac{1}{N} \mathrm{tr}\:(A) I \f$
+//
+template<typename T>
+inline
+Tensor<T>
+vol(Tensor<T> const & A)
+{
+  const Index
+  N = A.get_dimension();
 
-    const T theta = (1.0/T(N)) * trace(A);
+  const T theta = (1.0/T(N)) * trace(A);
 
-    return theta * eye<T>(N);
-  }
+  return theta * eye<T>(N);
+}
 
-  //
-  // R^N deviatoric part of 2nd-order tensor
-  // \return \f$ A - vol(A) \f$
-  //
-  template<typename T>
-  inline
-  Tensor<T>
-  dev(Tensor<T> const & A)
-  {
-    return A - vol(A);
-  }
+//
+// R^N deviatoric part of 2nd-order tensor
+// \return \f$ A - vol(A) \f$
+//
+template<typename T>
+inline
+Tensor<T>
+dev(Tensor<T> const & A)
+{
+  return A - vol(A);
+}
 
 } // namespace Intrepid
 

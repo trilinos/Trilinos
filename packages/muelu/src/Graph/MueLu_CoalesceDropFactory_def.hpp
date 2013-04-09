@@ -100,7 +100,7 @@ namespace MueLu {
     Input(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList  & pL = GetParameterList();
-    if (pL.get<std::string>("algorithm") == "laplacian")
+    if (pL.get<bool>("lightweight wrap") == true && pL.get<std::string>("algorithm") == "laplacian")
       Input(currentLevel, "Coordinates");
   }
 

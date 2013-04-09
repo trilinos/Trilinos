@@ -77,6 +77,8 @@ IF (TPL_ENABLE_Boost)
     Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.h
     Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.i.h
     Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.t.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Storage.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Storage.i.h
     Shared/MiniTensor/Intrepid_MiniTensor_Tensor.h
     Shared/MiniTensor/Intrepid_MiniTensor_Tensor.i.h
     Shared/MiniTensor/Intrepid_MiniTensor_Tensor.t.h

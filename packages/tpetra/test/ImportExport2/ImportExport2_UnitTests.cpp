@@ -914,6 +914,43 @@ void build_test_matrix(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType>
   }
 
 
+  /////////////////////////////////////////////////////////
+  // Test 7: Tridiagonal Matrix; Migrate to Proc 0, Reverse Mode
+  /////////////////////////////////////////////////////////
+  {
+    global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+    
+    // New map with all on Proc1    
+    if(MyPID==0) Map1 = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
+    else Map1 = rcp(new MapType(num_global,(size_t)0,0,Comm));
+
+    // Parameters
+    Teuchos::ParameterList params;
+    params.set("Reverse Mode",true);
+
+    // Execute fused import constructor
+    Import1 = rcp(new ImportType(Map1,A->getRowMap()));
+    B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1,Map1,Map1,rcp(&params,false));
+
+    diff=test_with_matvec<CrsMatrixType>(*A,*B);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedImport: Test #7 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+
+    // Execute fused export constructor
+    Export1 = rcp(new ExportType(Map1,A->getRowMap()));
+    B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1,Map1,Map1,rcp(&params,false));
+
+    diff=test_with_matvec<CrsMatrixType>(*A,*B);
+    if(diff > diff_tol){
+      if(MyPID==0) cout<<"FusedImport: Test #6 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+
+  }
+
+
 }
 
 

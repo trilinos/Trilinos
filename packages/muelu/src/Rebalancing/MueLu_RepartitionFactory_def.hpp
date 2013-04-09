@@ -433,7 +433,7 @@ namespace MueLu {
     // First post non-blocking receives.
     Array<MPI_Request> requests(howManyPidsSendToThisPartition);
     for (int i=0; i<howManyPidsSendToThisPartition; ++i) {
-      MPI_Irecv((void*)&(numDofsIReceiveFromOnePid[i]), 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, *rawMpiComm, &requests[i]);
+      MPI_Irecv((void*)&(numDofsIReceiveFromOnePid[i]), sizeof(GO), MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, *rawMpiComm, &requests[i]);
     }
 
     // Next post sends.

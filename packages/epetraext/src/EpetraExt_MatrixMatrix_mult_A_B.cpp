@@ -555,7 +555,7 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 #endif
 
   // Update the CrsGraphData
-  C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap(),Cimport,NumMyDiagonals);
+  C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap(),Cimport,0,NumMyDiagonals);
 
 
 #ifdef ENABLE_MMM_TIMINGS

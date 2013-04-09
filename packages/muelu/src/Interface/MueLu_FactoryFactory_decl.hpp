@@ -304,18 +304,22 @@ namespace MueLu {
       return factory;
     }
 
-
-#define MUELU_FACTORY_PARAM2(name)                                      \
-    if (paramList.isParameter(name)) { factory->SetFactory(name, BuildFactory(paramList.getEntry(name), factoryMapIn)); }
-
     //! RAPFactory
     RCP<FactoryBase> BuildRAPFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      RCP<RAPFactory> factory = Build<RAPFactory>(paramList, factoryMapIn);
+      RCP<RAPFactory> factory;
+      if (paramList.isSublist("TransferFactories") == false) {
+        factory = Build2<RAPFactory>(paramList, factoryMapIn);
 
-      if (paramList.isSublist("TransferFactories")) {
-        Teuchos::ParameterList transferList = paramList.sublist("TransferFactories");
-        for (Teuchos::ParameterList::ConstIterator param = transferList.begin(); param != transferList.end(); ++param) {
-          RCP<const FactoryBase> p = BuildFactory(transferList.entry(param), factoryMapIn);
+      } else {
+        RCP<Teuchos::ParameterList>       paramListNonConst = rcp(new Teuchos::ParameterList(paramList));
+        RCP<const Teuchos::ParameterList> transferFactories = rcp(new Teuchos::ParameterList(*sublist(paramListNonConst, "TransferFactories")));
+
+        paramListNonConst->remove("TransferFactories");
+
+        factory = Build2<RAPFactory>(*paramListNonConst, factoryMapIn);
+
+        for (Teuchos::ParameterList::ConstIterator param = transferFactories->begin(); param != transferFactories->end(); ++param) {
+          RCP<const FactoryBase> p = BuildFactory(transferFactories->entry(param), factoryMapIn);
           factory->AddTransferFactory(p);
         }
       }
