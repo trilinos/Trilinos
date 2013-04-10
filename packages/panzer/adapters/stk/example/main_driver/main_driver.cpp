@@ -155,6 +155,10 @@ int main(int argc, char *argv[])
     // A GlobalStatistics closure model requires the comm to be set in the user data.
     input_params->sublist("User Data").set("Comm", comm);
 
+    // extract and then remove the volume responses
+    Teuchos::ParameterList responses = input_params->sublist("Volume Responses");
+    input_params->remove("Volume Responses");
+
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
        = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>());
 
@@ -163,6 +167,7 @@ int main(int argc, char *argv[])
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
+    std::map<int,std::string> responseIndexToName;
     {
       panzer_stk::ModelEvaluatorFactory_Epetra<double> me_factory;
       
@@ -194,6 +199,35 @@ int main(int argc, char *argv[])
 	Teuchos::rcp(new user_app::MyResponseAggregatorFactory<panzer::Traits>);
       me_factory.setParameterList(input_params);
       me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory,ra_factory.ptr()); 
+
+      // add a volume response functional for each field 
+      for(Teuchos::ParameterList::ConstIterator itr=responses.begin();itr!=responses.end();++itr) {
+        const std::string name = responses.name(itr);
+        TEUCHOS_ASSERT(responses.entry(itr).isList());
+        Teuchos::ParameterList & lst = Teuchos::getValue<Teuchos::ParameterList>(responses.entry(itr));
+
+
+        // parameterize the builder
+        panzer::FunctionalResponse_Builder builder;
+        builder.comm = MPI_COMM_WORLD; // good enough
+        builder.cubatureDegree = 2;
+        builder.requiresCellIntegral = lst.isType<bool>("Requires Cell Integral") ? lst.get<bool>("Requires Cell Integral"): false;
+        builder.quadPointField = lst.get<std::string>("Field Name");
+
+        // add the respone
+        std::vector<std::string> eblocks;
+        panzer::StringTokenizer(eblocks,lst.get<std::string>("Element Blocks"),",",true);
+        
+        std::vector<panzer::WorksetDescriptor> wkst_descs;
+        for(std::size_t i=0;i<eblocks.size();i++) 
+          wkst_descs.push_back(panzer::blockDescriptor(eblocks[i]));
+
+        int respIndex = me_factory.addResponse(name,wkst_descs,builder);
+        responseIndexToName[respIndex] = name;
+      }
+ 
+      // enusre all the responses are built
+      me_factory.buildResponses(cm_factory);
 
       physics = me_factory.getPhysicsModelEvaluator();
       solver = me_factory.getResponseOnlyModelEvaluator();
@@ -283,20 +317,14 @@ int main(int argc, char *argv[])
       // Now, solve the problem and return the responses
       solver->evalModel(inArgs, outArgs);
 
-      // number of responses, minus the solution vector
-      TEUCHOS_ASSERT(rLibrary->getLabeledResponseCount()==Teuchos::as<std::size_t>(outArgs.Ng()-1));
-      
       // get responses if there are any
       //////////////////////////////////////////////
-      if(rLibrary->getLabeledResponseCount()>0) {
-
-         std::vector<std::string> labels;
-         rLibrary->getVolumeResponseLabels(labels);
+      if(physics->Ng()>0) {
 
          Thyra::ModelEvaluatorBase::InArgs<double> respInArgs = physics->createInArgs();
          Thyra::ModelEvaluatorBase::OutArgs<double> respOutArgs = physics->createOutArgs();
 
-         TEUCHOS_ASSERT(rLibrary->getLabeledResponseCount()==Teuchos::as<std::size_t>(respOutArgs.Ng()));
+         TEUCHOS_ASSERT(physics->Ng()==Teuchos::as<std::size_t>(respOutArgs.Ng()));
    
          respInArgs.set_x(gx);
    
@@ -305,8 +333,6 @@ int main(int argc, char *argv[])
 	   Teuchos::RCP<Thyra::VectorBase<double> > response = Thyra::createMember(*physics->get_g_space(i));
            respOutArgs.set_g(i,response);
          }
-   
-         rLibrary->printVolumeContainers(*out);
    
          // Now, solve the problem and return the responses
          physics->evalModel(respInArgs, respOutArgs);
@@ -317,7 +343,7 @@ int main(int argc, char *argv[])
 
             TEUCHOS_ASSERT(response!=Teuchos::null); // should not be null!
 
-            *out << "Response Value \"" << labels[i] << "\": " << *response << std::endl;
+            *out << "Response Value \"" << responseIndexToName[i] << "\": " << *response << std::endl;
          }
       }
 

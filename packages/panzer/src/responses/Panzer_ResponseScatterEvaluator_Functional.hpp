@@ -66,6 +66,7 @@ public:
 
   //! A constructor with concrete arguments instead of a parameter list.
   ResponseScatterEvaluator_Functional(const std::string & name,const CellData & cd);
+  ResponseScatterEvaluator_Functional(const std::string & integrandName,const std::string & responseName,const CellData & cd);
 
   void postRegistrationSetup(typename Traits::SetupData d,
                              PHX::FieldManager<Traits>& fm);

@@ -156,7 +156,6 @@ namespace panzer_stk {
 
       pl->sublist("Block ID to Physics ID Mapping").disableRecursiveValidation();
       pl->sublist("Options").disableRecursiveValidation();
-      pl->sublist("Volume Responses").disableRecursiveValidation();
       pl->sublist("Active Parameters").disableRecursiveValidation();
       pl->sublist("User Data").disableRecursiveValidation();
       pl->sublist("User Data").sublist("Panzer Data").disableRecursiveValidation();
@@ -198,7 +197,6 @@ namespace panzer_stk {
     Teuchos::ParameterList & mesh_params     = p.sublist("Mesh");
     Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
     Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
-    Teuchos::ParameterList & volume_responses = p.sublist("Volume Responses");
     Teuchos::ParameterList & output_list = p.sublist("Output");
 
     Teuchos::ParameterList & user_data_params = p.sublist("User Data");
@@ -208,6 +206,8 @@ namespace panzer_stk {
     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory = this->buildSTKMeshFactory(mesh_params);
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(*(mpi_comm->getRawMpiComm()));
     m_mesh = mesh;
+
+    m_eqset_factory = eqset_factory;
     
     // setup physical mappings and boundary conditions
     std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -418,10 +418,6 @@ namespace panzer_stk {
     /////////////////////////////////////////////////////////////
 
     m_response_library = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,globalIndexer,linObjFactory));
-    m_response_library->defineDefaultAggregators();
-    if (nonnull(ra_factory))
-      ra_factory->addResponseTypes(m_response_library->getAggregatorManager());
-    addVolumeResponses(*m_response_library,*mesh,volume_responses);
 
     {
        bool write_dot_files = false;
@@ -1214,6 +1210,45 @@ namespace panzer_stk {
         os << ", " << gids[g];      
       os << " ]" << std::endl;
     }
+  }
+
+  template<typename ScalarT>
+  template <typename BuilderT>
+  int ModelEvaluatorFactory_Epetra<ScalarT>::
+  addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder)
+  {
+    // I don't need no const-ness!
+    Teuchos::RCP<const EpetraExt::ModelEvaluator> const_ep_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me)->getEpetraModel();
+    Teuchos::RCP<EpetraExt::ModelEvaluator> ep_me = Teuchos::rcp_const_cast<EpetraExt::ModelEvaluator>(const_ep_me);
+    Teuchos::RCP<panzer::ModelEvaluator_Epetra> panzer_me = Teuchos::rcp_dynamic_cast<panzer::ModelEvaluator_Epetra>(ep_me);
+
+    return panzer_me->addResponse(responseName,wkstDesc,builder);
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory_Epetra<ScalarT>::
+  buildResponses(const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory, 
+                 const bool write_graphviz_file,
+                 const std::string& graphviz_file_prefix)
+  {
+    Teuchos::ParameterList & p = *this->getNonconstParameterList();
+    Teuchos::ParameterList & user_data = p.sublist("User Data");
+    Teuchos::ParameterList & closure_models = p.sublist("Closure Models");
+
+    // uninitialize the thyra model evaluator, its respone counts are wrong!
+    Teuchos::RCP<Thyra::EpetraModelEvaluator> thyra_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me);
+    Teuchos::RCP<const EpetraExt::ModelEvaluator> const_ep_me;
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > solveFactory;
+    thyra_me->uninitialize(&const_ep_me,&solveFactory); // this seems dangerous!
+
+    // I don't need no const-ness!
+    Teuchos::RCP<EpetraExt::ModelEvaluator> ep_me = Teuchos::rcp_const_cast<EpetraExt::ModelEvaluator>(const_ep_me);
+    Teuchos::RCP<panzer::ModelEvaluator_Epetra> panzer_me = Teuchos::rcp_dynamic_cast<panzer::ModelEvaluator_Epetra>(ep_me);
+
+    panzer_me->buildResponses(m_physics_blocks,*m_eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
+
+    // reinitialize the thyra model evaluator, now with the correct responses
+    thyra_me->initialize(ep_me,solveFactory);
   }
 }
 
