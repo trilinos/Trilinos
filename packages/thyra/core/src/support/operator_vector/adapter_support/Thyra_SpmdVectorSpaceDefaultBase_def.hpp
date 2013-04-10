@@ -161,41 +161,42 @@ bool SpmdVectorSpaceDefaultBase<Scalar>::isCompatible(
 template<class Scalar>
 void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
 {
+  namespace SVSU = SpmdVectorSpaceUtilities;
+
   localSubDim_ = this->localSubDim(); 
   const Teuchos::RCP<const Teuchos::Comm<Ordinal> >
     comm = this->getComm();
-  if( localSubDim_ >= 0 ) {
-    int numProc = 1;
-    if( comm.get() ) {
-      numProc = comm->getSize();
-    }
-    if( numProc > 1 && (localSubDim_ < globalDim || globalDim < 0) ) {
-      mapCode_ = SpmdVectorSpaceUtilities::computeMapCode(*comm,localSubDim_);
-      defaultLocalOffset_
-        = SpmdVectorSpaceUtilities::computeLocalOffset(*comm,localSubDim_);
-      if( globalDim < 1 ) {
-        defaultGlobalDim_
-          = SpmdVectorSpaceUtilities::computeGlobalDim(*comm,localSubDim_);
-      }
-      else {
-        defaultGlobalDim_ = globalDim;
-        // ToDo: Perform global reduction to check that this is correct in
-        // debug build
-      }
+
+  int numProc = 1;
+  if (nonnull(comm)) {
+    numProc = comm->getSize();
+  }
+  if (numProc > 1 && (localSubDim_ < globalDim || globalDim < 0)) {
+    mapCode_ = SVSU::computeMapCode(*comm, localSubDim_);
+    defaultLocalOffset_ = SVSU::computeLocalOffset(*comm, localSubDim_);
+    if (globalDim < 1) {
+      defaultGlobalDim_ = SVSU::computeGlobalDim(*comm, localSubDim_);
     }
     else {
-      // This is a serial or a locally-replicated parallel
-      // vector space.
-      mapCode_ = localSubDim_;
-      defaultLocalOffset_ = 0;
-      defaultGlobalDim_ = localSubDim_;
+      defaultGlobalDim_ = globalDim;
+      // ToDo: Perform global reduction to check that this is correct in
+      // debug build
     }
   }
   else {
+    // This is a serial or a locally-replicated parallel
+    // vector space.
+    mapCode_ = localSubDim_;
+    defaultLocalOffset_ = 0;
+    defaultGlobalDim_ = localSubDim_;
+  }
+
+  if (defaultGlobalDim_ == 0) {
     mapCode_  = -1;     // Uninitialized!
     defaultLocalOffset_ = -1;
     defaultGlobalDim_ = -1;
   }
+
   smallVecSpcFcty_ = defaultSpmdVectorSpaceFactory<Scalar>(comm);
 }
 

@@ -92,7 +92,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, empty_proc,
 
   Thyra::Ordinal localSize = comm->getRank()==0 ? 0 : 5;
   RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    Thyra::defaultSpmdVectorSpace<Scalar>(comm,localSize,5);
+    Thyra::defaultSpmdVectorSpace<Scalar>(comm, localSize, 5);
+
+  TEST_EQUALITY_CONST(vs->dim(), 5);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
