@@ -374,13 +374,13 @@ pade_polynomial_terms(Tensor<T> const & A, Index const order)
 }
 
 //
-// Compute an integer power of a tensor by binary manipulation.
+// Compute a non-negative integer power of a tensor by binary manipulation.
 //
 template<typename T>
 Tensor<T>
 binary_powering(Tensor<T> const & A, Index const exponent)
 {
-  if (exponent == 0) return A;
+  if (exponent == 0) return eye<T>(A.get_dimension());
 
   Index const
   rightmost_bit = 1;

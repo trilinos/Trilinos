@@ -99,6 +99,88 @@ machine_epsilon()
       std::numeric_limits<typename Sacado::ScalarType<T>::type>::epsilon();
 }
 
+//
+// Compute a non-negative integer power by binary manipulation.
+//
+template<typename T>
+T
+integer_power(T const & X, Index const exponent)
+{
+  switch (exponent) {
+    default:
+      break;
+    case 0:
+      return 1;
+      break;
+    case 1:
+      return X;
+      break;
+    case 2:
+      return X * X;
+      break;
+    case 3:
+      return X * X * X;
+      break;
+    case 4:
+    {
+      T const Y = X * X;
+      return Y * Y;
+    }
+    break;
+  }
+
+  Index const
+  rightmost_bit = 1;
+
+  Index const
+  number_digits = std::numeric_limits<Index>::digits;
+
+  Index const
+  leftmost_bit = rightmost_bit << (number_digits - 1);
+
+  Index
+  t = 0;
+
+  for (Index j = 0; j < number_digits; ++j) {
+
+    if (((exponent << j) & leftmost_bit) != 0) {
+
+      t = number_digits - j - 1;
+      break;
+
+    }
+
+  }
+
+  T
+  P = X;
+
+  Index
+  i = 0;
+
+  Index
+  m = exponent;
+
+  while ((m & rightmost_bit) == 0) {
+    P = P * P;
+    ++i;
+    m = m >> 1;
+  }
+
+  T
+  Y = P;
+
+  for (Index j = i + 1; j <= t; ++j) {
+    P = P * P;
+
+    if (((exponent >> j) & rightmost_bit) != 0) {
+      Y = Y * P;
+    }
+  }
+
+  return Y;
+}
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Utilities_i_h

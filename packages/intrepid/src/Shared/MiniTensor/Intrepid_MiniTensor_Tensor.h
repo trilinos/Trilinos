@@ -103,10 +103,19 @@ namespace Intrepid {
         T const & s20, T const & s21, T const & s22);
 
     ///
-    /// Create tensor from array - const version
-    /// \param data_ptr pointer into the array
+    /// Component ordering convention
     ///
-    Tensor(Index const N, T const * data_ptr);
+    enum ComponentOrder {CANONICAL, SIERRA_FULL, SIERRA_SYMMETRIC};
+
+    ///
+    /// Create tensor from array
+    /// \param data_ptr pointer into the array
+    /// \param order component convention (3D only)
+    ///
+    Tensor(
+        Index const N,
+        T const * data_ptr,
+        ComponentOrder const order = CANONICAL);
 
     ///
     /// Copy constructor
@@ -136,6 +145,20 @@ namespace Intrepid {
     operator()(Index const i, Index const j);
 
     ///
+    /// Linear access to components
+    /// \param i the index
+    ///
+    T const &
+    operator[](Index const i) const;
+
+    ///
+    /// Linear access to components
+    /// \param i the index
+    ///
+    T &
+    operator[](Index const i);
+
+    ///
     /// \return dimension
     ///
     Index
@@ -150,9 +173,10 @@ namespace Intrepid {
     ///
     /// Fill components from array defined by pointer.
     /// \param data_ptr pointer into array for filling components
+    /// \param order component convention (3D only)
     ///
     void
-    fill(T const * data_ptr);
+    fill(T const * data_ptr, ComponentOrder const order = CANONICAL);
 
     ///
     /// Copy assignment
