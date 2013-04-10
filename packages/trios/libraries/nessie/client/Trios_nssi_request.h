@@ -125,7 +125,7 @@ extern "C" {
                 void *data;
 
                 /** @brief The max size of the memory used for bulk transfers. */
-                int data_size;
+                uint32_t data_size;
 
                 /** @brief The error code of request. This value will be \ref NSSI_OK unless the
                  *          request status=\ref NSSI_REQUEST_ERROR . */
