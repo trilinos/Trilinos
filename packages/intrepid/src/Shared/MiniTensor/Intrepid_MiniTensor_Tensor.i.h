@@ -182,19 +182,19 @@ Tensor<T>::fill(T const * data_ptr, ComponentOrder const order)
         case SIERRA_FULL:
 
           //  0  1  2  3  4  5  6  7  8
-          // XX YY ZZ XY YZ XZ YX ZY ZX
-          //  0  4  8  1  5  2  3  7  6
+          // XX YY ZZ XY YZ ZX YX ZY XZ
+          //  0  4  8  1  5  6  3  7  2
           e[0] = data_ptr[0];
           e[4] = data_ptr[1];
           e[8] = data_ptr[2];
 
           e[1] = data_ptr[3];
           e[5] = data_ptr[4];
-          e[2] = data_ptr[5];
+          e[6] = data_ptr[5];
 
           e[3] = data_ptr[6];
           e[7] = data_ptr[7];
-          e[6] = data_ptr[8];
+          e[2] = data_ptr[8];
           break;
 
         case SIERRA_SYMMETRIC:
@@ -204,11 +204,11 @@ Tensor<T>::fill(T const * data_ptr, ComponentOrder const order)
 
           e[1] = data_ptr[3];
           e[5] = data_ptr[4];
-          e[2] = data_ptr[5];
+          e[6] = data_ptr[5];
 
           e[3] = data_ptr[3];
           e[7] = data_ptr[4];
-          e[6] = data_ptr[5];
+          e[2] = data_ptr[5];
           break;
       }
 
