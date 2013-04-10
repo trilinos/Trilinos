@@ -146,7 +146,7 @@ namespace stk {
       void setFixAllBlockBoundaries(bool val) { m_fixAllBlockBoundaries=val; }
       bool getFixAllBlockBoundaries() { return m_fixAllBlockBoundaries; }
 
-#if defined(STK_BUILT_IN_SIERRA) 
+#if defined(STK_BUILT_IN_SIERRA)
       void set_rbar_special_treatment(BlockNamesType& rbar_names) { m_rbar_names = rbar_names; }
 #endif
 
@@ -167,6 +167,15 @@ namespace stk {
 
       bool
       getAlwaysInitializeNodeRegistry() { return m_alwaysInitNodeRegistry; }
+
+      /// for quad/hex hangin node topology, we don't need to remesh during unrefinement
+      ///   default is on (for tri/tet local refinement)
+      void
+      setNeedsRemesh(bool needsRemesh) { m_needsRemesh = needsRemesh; }
+
+      bool
+      getNeedsRemesh() { return m_needsRemesh; }
+
 
 #if  defined(STK_PERCEPT_HAS_GEOMETRY)
 
@@ -393,6 +402,7 @@ namespace stk {
 #if defined(STK_BUILT_IN_SIERRA)
       BlockNamesType m_rbar_names;
 #endif
+      bool m_needsRemesh;
     };
 
 

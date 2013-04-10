@@ -742,9 +742,12 @@ namespace stk {
       // remove sideset elements
       removeSideElements(side_elem_set_to_be_removed, children_to_be_removed);
 
-      // remesh the holes left by removing child elems
-      remesh(parent_elements);
-      remesh(parent_side_elements);
+      // remesh the holes left by removing child elems (quad/hex hanging node doesn't need this)
+      if (m_needsRemesh)
+        {
+          remesh(parent_elements);
+          remesh(parent_side_elements);
+        }
 
 #if CHECK_DEBUG
       check_db("after unrefineTheseElements, b4 mod end");

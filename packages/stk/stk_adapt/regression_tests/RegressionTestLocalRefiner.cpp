@@ -782,9 +782,192 @@ namespace stk
             do_moving_shock_test_square_sidesets(eMesh2, 10, false, false);
           }
         }
-
-
       }
+
+      //  ====================================================================================================================================
+      //  ====================================================================================================================================
+      //  Local quad refinement
+      //  ====================================================================================================================================
+      //  ====================================================================================================================================
+
+      class SetElementFieldQuadCorner : public percept::ElementOp
+      {
+        percept::PerceptMesh& m_eMesh;
+      public:
+        SetElementFieldQuadCorner(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {
+        }
+
+        virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        {
+          double *f_data = PerceptMesh::field_data_entity(field, element);
+          stk::mesh::FieldBase* coord_field = m_eMesh.get_coordinates_field();
+
+          const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+          unsigned num_node = elem_nodes.size();
+          double c[2] = {0,0};
+          for (unsigned inode=0; inode < num_node; inode++)
+            {
+              mesh::Entity node = elem_nodes[ inode ].entity();
+              double *c_data = PerceptMesh::field_data(coord_field, node);
+              c[0] += c_data[0]/double(num_node);
+              c[1] += c_data[1]/double(num_node);
+            }
+          if ((-0.1 < c[0] && c[0] < 0.1) &&
+              (-0.1 < c[1] && c[1] < 0.1) )
+            {
+              f_data[0] = 1.0;
+            }
+          else
+            {
+              f_data[0] = -1.0;
+            }
+          // FIXME tmp
+          f_data[0] = 1.0;
+
+          return false;  // don't terminate the loop
+        }
+        virtual void init_elementOp() {}
+        virtual void fini_elementOp() {}
+
+      };
+
+
+      static void do_quad_local_corner_refine_sidesets(PerceptMesh& eMesh, int num_time_steps, bool save_intermediate=false, bool delete_parents=false)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size==1 || p_size == 3)
+          {
+            Quad4_Quad4_4 break_quad_to_quad_N(eMesh);
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            //stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
+
+            eMesh.add_field("refine_level", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            eMesh.add_field("normal_kept_deleted", eMesh.node_rank(), scalarDimension);
+
+            eMesh.commit();
+
+            std::cout << "qual_local initial number elements= " << eMesh.get_number_elements() << std::endl;
+
+            eMesh.save_as( output_files_loc+"quad_local_"+post_fix[p_size]+".e.0");
+
+            stk::mesh::Selector univ_selector(eMesh.get_fem_meta_data()->universal_part());
+
+            ElementRefinePredicate erp(&univ_selector, refine_field, 0.0);
+            PredicateBasedElementAdapter<ElementRefinePredicate>
+              breaker(erp, eMesh, break_quad_to_quad_N, proc_rank_field);
+
+            // special for local adaptivity
+            breaker.setRemoveOldElements(false);
+            breaker.setAlwaysInitializeNodeRegistry(false);
+            breaker.setNeedsRemesh(false); // special for quad/hex hanging node
+
+            SetElementFieldQuadCorner set_ref_field(eMesh);
+
+            int num_ref_passes = 3;
+            int num_unref_passes = 10;
+
+            for (int ipass=0; ipass < num_ref_passes; ipass++)
+              {
+
+                eMesh.elementOpLoop(set_ref_field, refine_field);
+                eMesh.save_as(output_files_loc+"quad_tmp_square_sidesets_quad_local_ref_"+post_fix[p_size]+".e.s-"+toString(ipass+1));
+
+                std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass <<  std::endl;
+                breaker.doBreak();
+                std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << " quad_local number elements= " << eMesh.get_number_elements() << std::endl;
+
+                //breaker.deleteParentElements();
+                //eMesh.save_as("square_anim."+toString(ipass+1)+".e");
+                char buf[1000];
+                sprintf(buf, "%04d", ipass);
+                if (ipass == 0)
+                  eMesh.save_as("quad_square_anim.e");
+                else
+                  eMesh.save_as("quad_square_anim.e-s"+std::string(buf));
+
+              }
+
+            for (int iunref_pass=0; iunref_pass < num_unref_passes; iunref_pass++)
+              {
+                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass <<  std::endl;
+                ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+                breaker.unrefineTheseElements(elements_to_unref);
+                std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " quad_local number elements= " << eMesh.get_number_elements() << std::endl;
+              }
+
+            eMesh.save_as(output_files_loc+"quad_tmp_square_sidesets_quad_local_unref_"+post_fix[p_size]+".e");
+
+            eMesh.save_as(output_files_loc+"quad_square_sidesets_final_quad_local_"+post_fix[p_size]+".e.s-"+toString(num_time_steps) );
+            for (int iunref=0; iunref < 10; iunref++)
+              {
+                std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_pass= " << iunref <<  std::endl;
+                //eMesh.save_as(output_files_loc+"quad_square_sidesets_final_quad_local_"+post_fix[p_size]+"_unrefAll_pass_"+toString(iunref)+".e."+toString(num_time_steps) );
+                {
+                  char buf[1000];
+                  sprintf(buf, "%04d", iunref+num_ref_passes);
+                  eMesh.save_as("quad_square_anim.e-s"+std::string(buf));
+                }
+
+                breaker.unrefineAll();
+                std::cout << "P[" << eMesh.get_rank() << "] done... iunrefAll_pass= " << iunref << " quad_local number elements= " << eMesh.get_number_elements() << std::endl;
+              }
+
+            if (delete_parents)
+              breaker.deleteParentElements();
+            std::cout << "quad_local final number elements= " << eMesh.get_number_elements() << std::endl;
+            eMesh.save_as(output_files_loc+"quad_square_sidesets_final_unrefed_quad_local_"+post_fix[p_size]+".e."+toString(num_time_steps) );
+            //exit(123);
+
+            // end_demo
+          }
+      }
+
+      STKUNIT_UNIT_TEST(regr_localRefiner, break_quad_to_quad_N_5_EdgeBased_quad_local_square_sidesets)
+      {
+        bool do_test=true;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        if (do_test) {
+
+          // if this is a fresh installation, set to true to generate the initial meshes needed for this test (once only)
+          bool do_bootstrap_mesh = true;
+          if (do_bootstrap_mesh)
+          {
+            const unsigned n = 5;
+            const unsigned nx = n , ny = n;
+
+            bool createEdgeSets = true;
+            percept::QuadFixture<double> fixture( pm , nx , ny, createEdgeSets);
+            fixture.set_bounding_box(-1,1, -1, 1);
+
+            bool isCommitted = false;
+            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
+
+            eMesh.commit();
+
+            fixture.generate_mesh();
+            eMesh.save_as(input_files_loc+"quad_square_quad4_0.e");
+            //eMesh.print_info("test1",2);
+            //eMesh.dump_vtk("sqquad3.vtk",false);
+          }
+          //if (1) return;
+
+          {
+            PerceptMesh eMesh;
+            eMesh.open(input_files_loc+"quad_square_quad4_0.e");
+
+            //int num_time_steps = 10;  // 10 for stress testing
+            //for (int istep=1; istep <= num_time_steps; istep++)
+            do_quad_local_corner_refine_sidesets(eMesh, 10, false, true);
+          }
+        }
+      }
+
 
     }
   }

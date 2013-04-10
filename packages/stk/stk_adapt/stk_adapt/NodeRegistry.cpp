@@ -534,8 +534,17 @@ namespace stk {
                     }
                 }
 
-                if (!oldPartSelector(element_p))
-                  continue;
+                // replaced with a check for parent/child 04/09/13 srk
+                //if (!oldPartSelector(element_p))
+                //  continue;
+//                 if (m_eMesh.isLeafElement(element_p))
+//                   {
+//                     continue;
+//                   }
+                if (!m_eMesh.isParentElement(element_p, false))
+                  {
+                    continue;
+                  }
 
                 stk::mesh::Entity element = element_p;
                 bool element_is_ghost = m_eMesh.isGhostElement(element);

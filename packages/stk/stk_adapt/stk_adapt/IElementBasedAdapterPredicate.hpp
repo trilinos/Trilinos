@@ -24,7 +24,7 @@ namespace stk {
      * Following these examples we show the prototype for the operations that are performed on these predicates.
      */
 
-    // Example 
+    // Example
     struct IElementBasedAdapterPredicate : public std::unary_function<const stk::mesh::Entity , bool> {
       stk::mesh::Selector * m_selector;
       stk::mesh::FieldBase *m_field;
@@ -36,14 +36,14 @@ namespace stk {
 
     // Can be instantiated by the user, or used to define your own
     struct ElementRefinePredicate : public IElementBasedAdapterPredicate {
-      
+
       ElementRefinePredicate(stk::mesh::Selector* selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
         IElementBasedAdapterPredicate(selector, field, tolerance) {}
 
       /// Return true for refine, false for ignore
       int operator()(const stk::mesh::Entity entity) {
         double *fdata = 0;
-        if (m_field) 
+        if (m_field)
           fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
         bool selected = (m_selector==0 || (*m_selector)(entity));
         bool ref_field_criterion = (fdata  && fdata[0] > 0);

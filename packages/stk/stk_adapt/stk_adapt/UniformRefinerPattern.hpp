@@ -106,8 +106,8 @@ namespace stk {
 #  define NN_Q(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity) \
        new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][k_ordinal_of_node_on_entity]
 
-#define NN_Q_P(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity, perm) \
-    new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][perm[k_ordinal_of_node_on_entity]]
+#  define NN_Q_P(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity, perm) \
+       new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][perm[k_ordinal_of_node_on_entity]]
 
 #else
 
@@ -116,18 +116,21 @@ namespace stk {
        && new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity].size() ) ? new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity][0] : 0u )
 
 #  define NN_Q(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity) \
-    new_sub_entity_nodes_check(new_sub_entity_nodes, i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity)
+        new_sub_entity_nodes_check(new_sub_entity_nodes, i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity)
 
-#define NN_Q_P(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity, perm) \
-    new_sub_entity_nodes_check_perm(new_sub_entity_nodes, i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity, perm)
+#  define NN_Q_P(i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity, perm) \
+        new_sub_entity_nodes_check_perm(new_sub_entity_nodes, i_entity_rank, j_ordinal_of_entity, k_ordinal_of_node_on_entity, perm)
 
 #endif
 
 #define EDGE_N(i) NN(m_eMesh.edge_rank(), i)
 #define FACE_N(i) NN(m_eMesh.face_rank(), i)
 
-#define EDGE_N_Q(iedge, inode_on_edge) new_sub_entity_nodes[m_eMesh.edge_rank()][iedge][inode_on_edge]
-#define FACE_N_Q(iface, inode_on_face) new_sub_entity_nodes[m_eMesh.face_rank()][iface][inode_on_face]
+    //#define EDGE_N_Q(iedge, inode_on_edge) new_sub_entity_nodes[m_eMesh.edge_rank()][iedge][inode_on_edge]
+    //#define FACE_N_Q(iface, inode_on_face) new_sub_entity_nodes[m_eMesh.face_rank()][iface][inode_on_face]
+
+#define EDGE_N_Q(iedge, inode_on_edge) NN_Q(m_eMesh.edge_rank(), iedge, inode_on_edge)
+#define FACE_N_Q(iface, inode_on_face) NN_Q(m_eMesh.fade_rank(), iface, inode_on_face)
 
 
     struct SierraPort {};
@@ -138,10 +141,16 @@ namespace stk {
 
     inline int new_sub_entity_nodes_check( NewSubEntityNodesType& new_sub_entity_nodes, int i_entity_rank, int j_ordinal_of_entity, int k_ordinal_of_node_on_entity)
     {
-      VERIFY_OP_ON((unsigned)i_entity_rank, <, new_sub_entity_nodes.size(), "new_sub_entity_nodes_check 1");
-      VERIFY_OP_ON((unsigned)j_ordinal_of_entity, < , new_sub_entity_nodes[i_entity_rank].size(), "new_sub_entity_nodes_check 2");
-      VERIFY_OP_ON((unsigned)k_ordinal_of_node_on_entity,  < , new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity].size(), "new_sub_entity_nodes_check 3");
-
+      try {
+        VERIFY_OP_ON((unsigned)i_entity_rank, <, new_sub_entity_nodes.size(), "new_sub_entity_nodes_check 1");
+        VERIFY_OP_ON((unsigned)j_ordinal_of_entity, < , new_sub_entity_nodes[i_entity_rank].size(), "new_sub_entity_nodes_check 2");
+        VERIFY_OP_ON((unsigned)k_ordinal_of_node_on_entity,  < , new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity].size(), "new_sub_entity_nodes_check 3");
+      }
+      catch (const std::exception& exc)
+        {
+          std::cout << "i_entity_rank= " << i_entity_rank << " j_ordinal_of_entity= " << j_ordinal_of_entity << " k_ordinal_of_node_on_entity= " << k_ordinal_of_node_on_entity << std::endl;
+          throw exc;
+        }
       return new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][k_ordinal_of_node_on_entity];
     }
 
