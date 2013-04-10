@@ -331,8 +331,14 @@ int error = 0;  /* flag to indicate status */
 
       for (k=0; k<gnz; k++){
         ZOLTAN_FILE_gets(line, 128, f);
-        sscanf(line, "%d %d %f", &(myIJV[k].i), &(myIJV[k].j),
-               &(myIJV[k].v));
+        if (mm_is_pattern(matcode)) {
+          sscanf(line, "%d %d", &(myIJV[k].i), &(myIJV[k].j));
+          myIJV[k].v = 1.;
+        }
+        else {
+          sscanf(line, "%d %d %f", &(myIJV[k].i), &(myIJV[k].j),
+                 &(myIJV[k].v));
+        }
 
         if (pio_info->matrix_obj==ROWS){
           tmp = myIJV[k].i;
