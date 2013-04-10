@@ -124,6 +124,11 @@ namespace Intrepid {
     Tensor(Tensor<T> const & A);
 
     ///
+    /// 2nd-order tensor from 4th-order tensor
+    ///
+    Tensor(Tensor4<T> const & A);
+
+    ///
     /// Simple destructor
     ///
     ~Tensor();

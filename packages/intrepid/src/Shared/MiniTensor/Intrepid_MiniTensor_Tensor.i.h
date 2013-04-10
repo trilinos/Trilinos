@@ -462,6 +462,32 @@ dimension(0)
 }
 
 //
+// 2nd-order tensor from 4th-order tensor
+//
+template<typename T>
+inline
+Tensor<T>::Tensor(Tensor4<T> const & A) :
+dimension(0)
+{
+  Index const
+  N = A.get_dimension();
+
+  Index const
+  N2 = N * N;
+
+  set_dimension(N2);
+
+  Index const
+  number_components = N2 * N2;
+
+  for (Index i = 0; i < number_components; ++i) {
+    e[i] = A[i];
+  }
+
+  return;
+}
+
+//
 // R^N simple destructor
 //
 template<typename T>
