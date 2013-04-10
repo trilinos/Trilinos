@@ -87,11 +87,14 @@ int Trilinos_Util_ReadMatrixMarket2Epetra_internal( char *data_file,
 
     iptrs = ptrs ; //  Current pointers into inds and vals for each row
 
-    fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
+    // Pick symmetry info off of this string
+    if (fgets( buffer, BUFSIZE, in_file) == NULL)
+        assert(false);
     bool symmetric = false ; 
     string headerline1 = buffer;
     if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
-    fgets( buffer, BUFSIZE, in_file ) ;
+    if (fgets( buffer, BUFSIZE, in_file) == NULL)
+        assert(false);
 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int_type i, j; 
