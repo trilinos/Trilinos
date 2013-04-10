@@ -144,7 +144,6 @@ unsigned long max_mem_allowed=0;
 static int trace_counter_gid;
 static int trace_interval_gid;
 
-#undef GNI_PERF
 
 #ifdef GNI_PERF
 #include <gemini.h>

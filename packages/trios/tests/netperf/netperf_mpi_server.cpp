@@ -81,6 +81,7 @@
 
 log_level netperf_debug_level = LOG_UNDEFINED;
 
+
 #ifdef GNI_PERF
 #include <gemini.h>
 extern gemini_state_t gni_state;
