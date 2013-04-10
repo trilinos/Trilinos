@@ -1129,6 +1129,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
       if (nEdge && (!edgeBuf || !procBuf)) MEMORY_ERROR;
 
+
       wgts = (float *)ZOLTAN_MALLOC(sizeof(float) * nEdge * ew_dim);  /* edge weight */
       if (nEdge && ew_dim && !wgts) MEMORY_ERROR;
 
@@ -1182,7 +1183,6 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
           zhg->Ewgt = (float *)ZOLTAN_MALLOC(sizeof(float) * cnt * ew_dim);
           if (!zhg->Ewgt) MEMORY_ERROR;
           memcpy(zhg->Ewgt, wgts, ew_dim * cnt * sizeof(float));
-          ZOLTAN_FREE(&wgts);
         }
   
         zhg->edgeGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * cnt);
@@ -1202,6 +1202,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
           zhg->Esize[i] = 2;
         }
       }
+      ZOLTAN_FREE(&wgts);
       ZOLTAN_FREE(&edgeBuf);
       ZOLTAN_FREE(&procBuf);
     }
