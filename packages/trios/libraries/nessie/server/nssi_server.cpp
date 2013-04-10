@@ -1212,8 +1212,11 @@ int nssi_get_data(
     if (len == 0)
         return rc;
 
+    if (len < 0)
+        return NSSI_EINVAL;
+
     if ((nssi_config.use_buffer_queue) &&
-        (nssi_config.rdma_buffer_queue_buffer_size >= len)) {
+        (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)len)) {
         log_debug(rpc_debug_level, "using buffer queue for GET buffer");
         rpc_msg_hdl=trios_buffer_queue_pop(&rdma_get_bq);
         assert(rpc_msg_hdl);
@@ -1271,7 +1274,7 @@ int nssi_get_data(
                 nnti_err_str(rc));
     }
     if ((nssi_config.use_buffer_queue) &&
-        (nssi_config.rdma_buffer_queue_buffer_size >= len)) {
+        (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)len)) {
         /* copy the RDMA buffer contents into the user buffer */
         memcpy(buf, NNTI_BUFFER_C_POINTER(rpc_msg_hdl), len);
         trios_buffer_queue_push(&rdma_get_bq, rpc_msg_hdl);
@@ -1314,8 +1317,11 @@ extern int nssi_put_data(
     if (len == 0)
         return rc;
 
+    if (len < 0)
+        return NSSI_EINVAL;
+
     if ((nssi_config.use_buffer_queue) &&
-        (nssi_config.rdma_buffer_queue_buffer_size >= len)) {
+        (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)len)) {
         log_debug(rpc_debug_level, "using buffer queue for PUT buffer");
         rpc_msg_hdl=trios_buffer_queue_pop(&rdma_put_bq);
         assert(rpc_msg_hdl);
@@ -1372,7 +1378,7 @@ extern int nssi_put_data(
                 nnti_err_str(rc));
     }
     if ((nssi_config.use_buffer_queue) &&
-        (nssi_config.rdma_buffer_queue_buffer_size >= len)) {
+        (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)len)) {
         trios_buffer_queue_push(&rdma_put_bq, rpc_msg_hdl);
     } else {
         rc=NNTI_unregister_memory(rpc_msg_hdl);
