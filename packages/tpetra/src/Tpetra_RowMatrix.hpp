@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -46,29 +46,39 @@
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Map.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_RowGraph.hpp"
-#include "Tpetra_Vector.hpp"
 
 namespace Tpetra {
+  //
+  // Forward declarations.  The "doxygen" bit simply tells Doxygen
+  // (our automatic documentation generation system) to skip forward
+  // declarations.
+  //
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Map;
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Vector;
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   //! \brief A pure virtual interface for row-partitioned matrices.
   /*!
      This class is templated on \c Scalar, \c LocalOrdinal, \c GlobalOrdinal and \c Node.
-     The \c LocalOrdinal type, if omitted, defaults to \c int. 
+     The \c LocalOrdinal type, if omitted, defaults to \c int.
      The \c GlobalOrdinal type defaults to the \c LocalOrdinal type.
      The \c Node type defaults to the default node in Kokkos.
    */
-  template <class Scalar, 
-	    class LocalOrdinal = int, 
-	    class GlobalOrdinal = LocalOrdinal, 
-	    class Node = Kokkos::DefaultNode::DefaultNodeType>
-  class RowMatrix : 
+  template <class Scalar,
+            class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = Kokkos::DefaultNode::DefaultNodeType>
+  class RowMatrix :
     virtual public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   public:
     //! @name Typedefs
-    //@{ 
+    //@{
 
     //! Same as the \c Scalar typedef of Operator.
     typedef Scalar        scalar_type;
@@ -81,14 +91,14 @@ namespace Tpetra {
 
     //@}
     //! @name Destructor
-    //@{ 
+    //@{
 
     //! Destructor.
     virtual ~RowMatrix();
 
     //@}
     //! @name Matrix query methods
-    //@{ 
+    //@{
 
     //! The communicator over which this matrix is distributed.
     virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const = 0;
@@ -102,7 +112,7 @@ namespace Tpetra {
     //! The Map that describes the distribution of columns over processes.
     virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const = 0;
 
-    //! The RowGraph associated with this matrix. 
+    //! The RowGraph associated with this matrix.
     virtual Teuchos::RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const = 0;
 
     //! The global number of rows of this matrix.
@@ -121,7 +131,7 @@ namespace Tpetra {
     /// number of domain Map elements owned by the calling process.
     virtual size_t getNodeNumCols() const = 0;
 
-    //! The index base for global indices in this matrix. 
+    //! The index base for global indices in this matrix.
     virtual GlobalOrdinal getIndexBase() const = 0;
 
     //! The global number of stored (structurally nonzero) entries.
@@ -152,10 +162,10 @@ namespace Tpetra {
     ///   the number of entries.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! The number of global diagonal entries, based on global row/column index comparisons. 
+    //! The number of global diagonal entries, based on global row/column index comparisons.
     virtual global_size_t getGlobalNumDiags() const = 0;
 
-    //! The number of local diagonal entries, based on global row/column index comparisons. 
+    //! The number of local diagonal entries, based on global row/column index comparisons.
     virtual size_t getNodeNumDiags() const = 0;
 
     //! The maximum number of entries across all rows/columns on all nodes.
@@ -164,7 +174,7 @@ namespace Tpetra {
     //! The maximum number of entries across all rows/columns on this node.
     virtual size_t getNodeMaxNumRowEntries() const = 0;
 
-    //! Whether this matrix has a well-defined column map. 
+    //! Whether this matrix has a well-defined column map.
     virtual bool hasColMap() const = 0;
 
     //! Whether this matrix is lower triangular.
@@ -199,11 +209,11 @@ namespace Tpetra {
     virtual bool isFillComplete() const = 0;
 
     //! Whether this object implements getLocalRowView() and getGlobalRowView().
-    virtual bool supportsRowViews() const = 0; 
+    virtual bool supportsRowViews() const = 0;
 
     //@}
     //! @name Extraction Methods
-    //@{ 
+    //@{
 
     /// \brief Get a copy of the given global row's entries.
     ///
@@ -225,11 +235,11 @@ namespace Tpetra {
     /// the calling process, then the method sets NumIndices to
     /// <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>, and does
     /// not modify Indices or Values.
-    virtual void 
+    virtual void
     getGlobalRowCopy (GlobalOrdinal GlobalRow,
-		      const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-		      const Teuchos::ArrayView<Scalar> &Values,
-		      size_t &NumEntries) const = 0;
+                      const Teuchos::ArrayView<GlobalOrdinal> &Indices,
+                      const Teuchos::ArrayView<Scalar> &Values,
+                      size_t &NumEntries) const = 0;
 
     /// \brief Get a copy of the given local row's entries.
     ///
@@ -251,11 +261,11 @@ namespace Tpetra {
     /// the calling process, then the method sets NumIndices to
     /// <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>, and does
     /// not modify Indices or Values.
-    virtual void 
-    getLocalRowCopy (LocalOrdinal LocalRow, 
-		     const Teuchos::ArrayView<LocalOrdinal> &Indices, 
-		     const Teuchos::ArrayView<Scalar> &Values,
-		     size_t &NumEntries) const = 0;
+    virtual void
+    getLocalRowCopy (LocalOrdinal LocalRow,
+                     const Teuchos::ArrayView<LocalOrdinal> &Indices,
+                     const Teuchos::ArrayView<Scalar> &Values,
+                     size_t &NumEntries) const = 0;
 
     /// \brief Get a constant, nonpersisting, globally indexed view of
     ///   the given row of the matrix.
@@ -273,7 +283,7 @@ namespace Tpetra {
     ///
     /// \pre <tt>isGloballyIndexed () && supportsRowViews ()</tt>
     /// \post <tt>indices.size () == getNumEntriesInGlobalRow (GlobalRow)</tt>
-    /// 
+    ///
     /// \param GlobalRow [in] Global index of the row.
     /// \param Indices [out] Global indices of the columns
     ///   corresponding to values.
@@ -281,10 +291,10 @@ namespace Tpetra {
     ///
     /// If \c GlobalRow does not belong to this node, then \c indices
     /// is set to \c null.
-    virtual void 
-    getGlobalRowView (GlobalOrdinal GlobalRow, 
-		      ArrayView<const GlobalOrdinal> &indices, 
-		      ArrayView<const Scalar> &values) const = 0;
+    virtual void
+    getGlobalRowView (GlobalOrdinal GlobalRow,
+                      ArrayView<const GlobalOrdinal> &indices,
+                      ArrayView<const Scalar> &values) const = 0;
 
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the matrix.
@@ -302,7 +312,7 @@ namespace Tpetra {
     ///
     /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
     /// \post <tt>indices.size () == getNumEntriesInGlobalRow (LocalRow)</tt>
-    /// 
+    ///
     /// \param LocalRow [in] Local index of the row.
     /// \param Indices [out] Local indices of the columns
     ///   corresponding to values.
@@ -310,10 +320,10 @@ namespace Tpetra {
     ///
     /// If \c LocalRow does not belong to this node, then \c indices
     /// is set to \c null.
-    virtual void 
-    getLocalRowView (LocalOrdinal LocalRow, 
-		     ArrayView<const LocalOrdinal> &indices, 
-		     ArrayView<const Scalar> &values) const = 0;
+    virtual void
+    getLocalRowView (LocalOrdinal LocalRow,
+                     ArrayView<const LocalOrdinal> &indices,
+                     ArrayView<const Scalar> &values) const = 0;
 
     /// \brief Get a copy of the diagonal entries, distributed by the row Map.
     ///

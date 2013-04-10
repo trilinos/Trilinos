@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -44,19 +44,31 @@
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
+#include <Teuchos_BLAS_types.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 namespace Tpetra {
+  //
+  // Forward declarations.  The "doxygen" bit simply tells Doxygen
+  // (our automatic documentation generation system) to skip forward
+  // declarations.
+  //
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Map;
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class MultiVector;
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   //! \brief Abstract interface for linear operators accepting Tpetra MultiVector objects.
-  /*!  This class is templated on \c Scalar, \c LocalOrdinal, \c GlobalOrdinal and \c Node. 
-     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
+  /*!  This class is templated on \c Scalar, \c LocalOrdinal, \c GlobalOrdinal and \c Node.
+     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal
      type, if omitted, defaults to the \c LocalOrdinal type. Node is by default of type Kokkos::DefaultNode::DefaultNodeType.
 
-     A Operator object applies a linear operator to a MultiVector, storing the result in another MultiVector. The scalar type \c Scalar 
-     of the Operator specifies the scalar field of the input and output MultiVector objects, not that of the underlying linear operator. Operator is an 
-     abstract base class, and interfaces exist for this interface from numerous other classes, including sparse matrices, direct solvers, iterative solvers, 
+     A Operator object applies a linear operator to a MultiVector, storing the result in another MultiVector. The scalar type \c Scalar
+     of the Operator specifies the scalar field of the input and output MultiVector objects, not that of the underlying linear operator. Operator is an
+     abstract base class, and interfaces exist for this interface from numerous other classes, including sparse matrices, direct solvers, iterative solvers,
      and preconditioners.
    */
   template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
@@ -99,9 +111,9 @@ namespace Tpetra {
         - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
         - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
      */
-    virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-               MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-               Teuchos::ETransp mode = Teuchos::NO_TRANS, 
+    virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+               MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+               Teuchos::ETransp mode = Teuchos::NO_TRANS,
                Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
                Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
 
