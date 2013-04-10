@@ -81,12 +81,6 @@
 
 log_level xfer_debug_level = LOG_UNDEFINED;
 
-#ifdef GNI_PERF
-#include <gemini.h>
-extern gemini_state_t gni_state;
-#endif
-
-
 /**
  * @brief Send the data through the MPI_Send function
  *
@@ -121,32 +115,17 @@ int process_mpi_send(
             rank, len, nbytes, XFER_MPI_SEND_DATA_TAG);
 
     // Post a receive for the buffer of ''len'' elements
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-#endif
     MPI_Irecv(array.data_array_t_val, nbytes, MPI_BYTE, source, XFER_MPI_SEND_DATA_TAG, MPI_COMM_WORLD, &req);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_send - MPI_Irecv data buf");
-#endif
 
     log_debug(debug_level, "%d: Server Sending \"READY ACK\" to %d", rank, source);
 
     // Send an ack to the client that the server is ready
     rc = MPI_Send(&rc, 0, MPI_INT, source, XFER_MPI_SEND_ACK_TAG, MPI_COMM_WORLD);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_send - MPI_send rtr");
-#endif
 
     log_debug(debug_level, "%d: Server is waiting for data from %d, rc=%d", rank, source, rc);
 
     // Wait for the data to arrive
     rc = MPI_Wait(&req, &status);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_send - MPI_wait data buf recv");
-#endif
     log_debug(debug_level, "%d: MPI_Wait complete: rc=%d, status.MPI_ERROR=%d, status.MPI_SOURCE=%d",
             rank, rc, status.MPI_ERROR, status.MPI_SOURCE);
 
@@ -195,32 +174,17 @@ int process_mpi_isend(
     log_debug(debug_level, "Posting IRECV");
 
     // Post a receive for the buffer of ''len'' elements
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-#endif
     MPI_Irecv(array.data_array_t_val, nbytes, MPI_BYTE, source, XFER_MPI_ISEND_DATA_TAG, MPI_COMM_WORLD, &req);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_isend - MPI_Irecv data buf");
-#endif
 
     log_debug(debug_level, "Sending \"READY ACK\"");
 
     // Send an ack to the client that the server is ready
     MPI_Send(&rc, 0, MPI_INT, source, XFER_MPI_ISEND_ACK_TAG, MPI_COMM_WORLD);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_isend - MPI_send rtr");
-#endif
 
     log_debug(debug_level, "Waiting for data");
 
     // Wait for the data to arrive
     MPI_Wait(&req, &status);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_isend - MPI_wait data buf recv");
-#endif
 
     if (validate) {
         rc = xfer_validate_array(seed, &array);
@@ -265,27 +229,14 @@ int process_mpi_put(
 
 
     // Collective call to create a window for the data being transferred (like registering the memory)
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-#endif
     MPI_Win_create(array.data_array_t_val, sizeof(data_t)*len,
             1, MPI_INFO_NULL, MPI_COMM_WORLD, &win);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_put - MPI_Win_create data win");
-#endif
+
 
     MPI_Win_fence(0, win);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_put - MPI_Win_fence1 data win");
-#endif
     log_debug(debug_level, "Waiting for data");
     MPI_Win_fence(0, win);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_put - MPI_Win_fence2 data win");
-#endif
+
 
     log_debug(debug_level, "Data should be here... validate if necessary, val[0]=%d",array.data_array_t_val[0].int_val);
 
@@ -304,10 +255,7 @@ int process_mpi_put(
 
     // clean up
     MPI_Win_free(&win);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_put - MPI_Win_free data win");
-#endif
+
 
     delete [] array.data_array_t_val;
 
@@ -350,37 +298,21 @@ int process_mpi_get(
     }
 
     // Collective call to create a window for the data being transferred (like registering the memory)
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-#endif
     MPI_Win_create(array.data_array_t_val, sizeof(data_t)*len,
             1, MPI_INFO_NULL, MPI_COMM_WORLD, &win);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_get - MPI_Win_create data win");
-#endif
+
 
     MPI_Win_fence(0, win);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_get - MPI_Win_fence1 data win");
-#endif
     log_debug(debug_level, "Waiting for client to get data");
     MPI_Win_fence(0, win);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_get - MPI_Win_fence2 data win");
-#endif
+
 
     log_debug(debug_level, "Data should be transferred");
 
 
     // clean up
     MPI_Win_free(&win);
-#ifdef GNI_PERF
-    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
-    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "process_mpi_get - MPI_Win_free data win");
-#endif
+
 
     delete [] array.data_array_t_val;
 
@@ -421,11 +353,6 @@ int xfer_mpi_server_main(MPI_Comm server_comm)
 
     bool done=false;
     MPI_Status status;
-
-
-#ifdef GNI_PERF
-    gemini_init_state(server_comm, &gni_state);
-#endif
 
     // Server loop just waits for requests from any of the clients.  The
     // server isn't expecting any particular type of request.
