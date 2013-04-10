@@ -190,6 +190,7 @@ namespace MueLu {
             //FIXME but the threshold doesn't take into account the rows' diagonal entries
             //FIXME For now, hardwiring the dropping in here
 
+            LocalOrdinal rownnz = 0;
             for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
               LocalOrdinal col = indices[colID];
 
@@ -197,12 +198,21 @@ namespace MueLu {
               typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
               typename STS::magnitudeType aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
 
-              if (aij > aiiajj || row == col)
+              if (aij > aiiajj || row == col) {
                 columns[realnnz++] = col;
-              else
+                rownnz++;
+              } else
                 numDropped++;
             }
-            if (realnnz == 1) boundaryNodes[row] = true;
+            if (rownnz == 1) {
+              // If the only element remaining after filtering is diagonal, mark node as bounday
+              // FIXME: this should really be replaced by the following
+              //    if (indices.size() == 1 && indices[0] == row)
+              //        boundaryNodes[row] = true;
+              // We do not do it this way now because there is no framework for distinguishing isolated
+              // and boundary nodes in the aggregation algorithms
+              boundaryNodes[row] = true;
+            }
             rows[row+1] = realnnz;
           }
           columns.resize(realnnz);
