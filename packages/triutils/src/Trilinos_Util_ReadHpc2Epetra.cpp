@@ -54,7 +54,8 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
 				 Epetra_CrsMatrix *& A, 
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
-				 Epetra_Vector *&xexact) {
+				 Epetra_Vector *&xexact,
+         const char * fmt) {
 
 
   FILE *in_file ;
@@ -81,20 +82,10 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
     }
   int_type numGlobalEquations, total_nnz;
   int cnt;
-  if(sizeof(int) == sizeof(int_type)) {
-    cnt = fscanf(in_file,"%d",&numGlobalEquations);
-    assert(cnt > 0);
-    cnt = fscanf(in_file,"%d",&total_nnz);
-    assert(cnt > 0);
-  }
-  else if(sizeof(long long) == sizeof(int_type)) {
-    cnt = fscanf(in_file,"%lld",&numGlobalEquations);
-    assert(cnt > 0);
-    cnt = fscanf(in_file,"%lld",&total_nnz);
-    assert(cnt > 0);
-  }
-  else
-    assert(false);
+  cnt = fscanf(in_file,fmt,&numGlobalEquations);
+  assert(cnt > 0);
+  cnt = fscanf(in_file,fmt,&total_nnz);
+  assert(cnt > 0);
 
   map = new Epetra_Map(numGlobalEquations, (int_type) 0, comm); // Create map with uniform distribution
   
@@ -212,7 +203,7 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact) {
-  Trilinos_Util_ReadHpc2Epetra_internal<int>(data_file, comm, map, A, x, b, xexact);
+  Trilinos_Util_ReadHpc2Epetra_internal<int>(data_file, comm, map, A, x, b, xexact, "%d");
 }
 
 #endif
@@ -226,7 +217,7 @@ void Trilinos_Util_ReadHpc2Epetra64(char *data_file,
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact) {
-  Trilinos_Util_ReadHpc2Epetra_internal<long long>(data_file, comm, map, A, x, b, xexact);
+  Trilinos_Util_ReadHpc2Epetra_internal<long long>(data_file, comm, map, A, x, b, xexact, "%lld");
 }
 
 #endif

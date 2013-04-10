@@ -60,8 +60,9 @@ void Trilinos_Util_CountTriples_internal( const char *data_file,
 				 std::vector<int> &non_zeros,
 				 int_type &N_rows, int_type &nnz, 
 				 const Epetra_Comm  &comm, 
+         const char * fmt,
 				 bool TimDavisHeader=false,
-				 bool ZeroBased=false 
+				 bool ZeroBased=false
 ) { 
 
   FILE *in_file ;
@@ -92,13 +93,14 @@ void Trilinos_Util_CountTriples_internal( const char *data_file,
       }
     
     if ( TimDavisHeader ) { 
-      fgets( buffer, BUFSIZE, in_file );
-      if(sizeof(int) == sizeof(int_type))
-        sscanf( buffer, "%d %d %d %d", &num_rows, &num_cols, &num_nz, &hdr_type ) ; 
-      else if(sizeof(long long) == sizeof(int_type))
-        sscanf( buffer, "%lld %lld %lld %d", &num_rows, &num_cols, &num_nz, &hdr_type ) ; 
-      else
-        assert(false);
+      if (fgets( buffer, BUFSIZE, in_file ) == NULL)
+          assert(false);
+
+      // Build the format line.
+      char formatline[4*strlen(fmt) + 3];
+      snprintf( formatline, sizeof formatline, "%s %s %s %s", fmt, fmt, fmt, fmt);
+      sscanf( buffer, formatline, &num_rows, &num_cols, &num_nz, &hdr_type ) ; 
+
       if( hdr_type != 0 ) {
 	if ( hdr_type == -131313 ) 
 	  printf("Bad Tim Davis header line.  Should have four  values and the fourth must be zero.\n"); 
@@ -186,7 +188,7 @@ void Trilinos_Util_CountTriples( const char *data_file,
 				 bool TimDavisHeader=false, 
 				 bool ZeroBased=false ) {
   Trilinos_Util_CountTriples_internal<int>(data_file, symmetric, non_zeros,
-    N_rows, nnz, comm, TimDavisHeader, ZeroBased);
+    N_rows, nnz, comm, "%d", TimDavisHeader, ZeroBased);
 }
 
 #endif
@@ -201,7 +203,7 @@ void Trilinos_Util_CountTriples( const char *data_file,
 				 bool TimDavisHeader=false, 
 				 bool ZeroBased=false ) {
   Trilinos_Util_CountTriples_internal<long long>(data_file, symmetric, non_zeros,
-    N_rows, nnz, comm, TimDavisHeader, ZeroBased);
+    N_rows, nnz, comm, "%lld", TimDavisHeader, ZeroBased);
 }
 
 #endif
