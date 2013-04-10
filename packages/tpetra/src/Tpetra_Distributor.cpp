@@ -913,7 +913,7 @@ namespace Tpetra {
     // set.  The value of numSends_ (my process' number of sends) does
     // not include any message that it might send to itself.
     for (size_t i = 0; i < numSends_ + (selfMessage_ ? 1 : 0); ++i) {
-      if (imagesTo_[i] != myRank ) {
+      if (imagesTo_[i] != myRank) {
         // Send a message to imagesTo_[i], telling that process that
         // this communication pattern will send that process
         // lengthsTo_[i] blocks of packets.
@@ -1089,7 +1089,7 @@ namespace Tpetra {
 
     // numActive is the number of sends that are not Null
     size_t numActive = 0;
-    char needSendBuff = 0;
+    int needSendBuff = 0; // Boolean
 
     int badID = -1;
     for (size_t i = 0; i < numExports_; ++i) {
@@ -1133,16 +1133,17 @@ namespace Tpetra {
     }
 #endif // HAVE_TPETRA_DEBUG
 
-#   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
+#if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
     {
-      char global_needSendBuff;
-      reduceAll<int, char> (*comm_, REDUCE_MAX, needSendBuff,
+      int global_needSendBuff;
+      reduceAll<int, int> (*comm_, REDUCE_MAX, needSendBuff,
                             outArg (global_needSendBuff));
-      TPETRA_EFFICIENCY_WARNING(global_needSendBuff,std::runtime_error,
-        "::createFromSends: Grouping export IDs together by process rank leads "
-        "to improved performance.");
+      TPETRA_EFFICIENCY_WARNING(
+        global_needSendBuff != 0, std::runtime_error,
+        "::createFromSends: Grouping export IDs together by process rank often "
+        "improves performance.");
     }
-#   endif
+#endif
 
     // Determine from the caller's data whether or not the current
     // process should send (a) message(s) to itself.

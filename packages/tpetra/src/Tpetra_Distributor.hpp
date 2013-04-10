@@ -659,16 +659,33 @@ namespace Tpetra {
     /// communicator.
     size_t totalReceiveLength_;
 
-    // imagesFrom_, startsFrom_ and lengthsFrom_ each have size
-    //   numReceives_ + selfMessage_
+    /// \brief Array of lengths of incoming messages.
+    ///
+    /// This array has length numReceives_ + selfMessage_.  Incoming
+    /// message i from process imagesFrom_[i] has length
+    /// lengthsFrom_[i].
     Array<size_t> lengthsFrom_;
+
+    /// \brief Array of ranks of the process from which the calling
+    ///   process will receive a message.
+    ///
+    /// This array has length numReceives_ + selfMessage_.  Incoming
+    /// message i was sent by process imagesFrom_[i].
     Array<int> imagesFrom_;
+
+    /// \brief Array of offsets of incoming messages.
+    ///
+    /// This array has length numReceives_ + selfMessage_.  It is an
+    /// exclusive prefix sum of lengthsFrom_.  It is only used for
+    /// constructing the reverse Distributor.
     Array<size_t> startsFrom_;
 
     /// \brief List that becomes the reverse communicator's indicesTo_.
     ///
     /// Array of length totalReceiveLength_.  Allocated and filled in
-    /// computeReceives().
+    /// computeReceives() as [0, 1, ..., totalReceiveLength_-1].  When
+    /// creating the reverse Distributor, this is assigned to the
+    /// reverse Distributor's indicesTo_.
     Array<size_t> indicesFrom_;
 
     /// \brief Communication requests associated with nonblocking receives and sends.
