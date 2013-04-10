@@ -130,7 +130,7 @@ namespace MueLu {
       GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << std::endl;
       Set(currentLevel, "Filtering", (threshold != STS::zero()));
 
-      LocalOrdinal numDropped = 0, numTotal = 0;
+      GlobalOrdinal numDropped = 0, numTotal = 0;
       if (algo == "original") {
         if (predrop_ == null) {
           // ap: this is a hack: had to declare predrop_ as mutable
@@ -392,7 +392,13 @@ namespace MueLu {
         }
       }
 
-      GetOStream(Statistics0, -1) << "number of dropped " << numDropped << " (" << 100*Teuchos::as<double>(numDropped)/Teuchos::as<double>(numTotal) << "%)" << std::endl;
+      if (GetVerbLevel() & Statistics0) {
+          RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+          GlobalOrdinal numGlobalTotal, numGlobalDropped;
+          sumAll(comm, numTotal,   numGlobalTotal);
+          sumAll(comm, numDropped, numGlobalDropped);
+          GetOStream(Statistics0, -1) << "number of dropped " << numGlobalDropped << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
+      }
 
     } else {
 
