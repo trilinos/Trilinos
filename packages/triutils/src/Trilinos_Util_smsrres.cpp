@@ -47,7 +47,7 @@ double Trilinos_Util_smsrres (int m, int n,
 {
     int i, j, jbgn, jend;
     double sum, norm_tmp = 0.0, norm_b = 0.0;
-    double scaled_res_norm, res_norm, *tmp, max_norm = 0.0;
+    double scaled_res_norm=0.0, res_norm, *tmp, max_norm = 0.0;
 
 
 /*     Computes the residual

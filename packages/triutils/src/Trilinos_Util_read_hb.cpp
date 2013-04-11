@@ -255,7 +255,6 @@ void Trilinos_Util_read_hb(char *data_file, int MyPID,
   int Ptrcrd, Indcrd, Valcrd, Rhscrd;
 
   int i, n_entries=0, N_columns=0, Nrhs=0;
-  int isym;
   int *pntr, *indx1, *pntr1;
   double *val1;
 
@@ -298,12 +297,10 @@ void Trilinos_Util_read_hb(char *data_file, int MyPID,
       //printf("%d right-hand-side(s) available.\n",Nrhs);
 
       if (Type[0] != 'R') perror("Can only handle real valued matrices");
-      isym = 0;
       if (Type[1] == 'S') 
 	{
 	  printf("%s", "Converting symmetric matrix to nonsymmetric storage\n");
 	  n_entries = 2*n_entries - N_columns;
-	  isym = 1;
 	}
       if (Type[2] != 'A') perror("Can only handle assembled matrices");
       if (N_columns != *N_global) perror("Matrix dimensions must be the same");
