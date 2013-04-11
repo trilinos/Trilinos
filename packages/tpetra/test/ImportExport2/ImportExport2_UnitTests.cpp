@@ -622,23 +622,19 @@ double test_with_matvec_reduced_maps(const CrsMatrixType &A, const CrsMatrixType
   typedef typename CrsMatrixType::global_ordinal_type GO;
   typedef typename CrsMatrixType::scalar_type Scalar;
   typedef typename CrsMatrixType::node_type Node;
-  typedef Tpetra::Vector<Scalar, LO, GO, Node> vector_type;
+  typedef Tpetra::MultiVector<Scalar, LO, GO, Node> vector_type;
   typedef Tpetra::Import<LO, GO, Node> import_type;
 
 
   RCP<const map_type>  Amap  = A.getDomainMap();
-  vector_type Xa(Amap), Ya(Amap), Diff(Amap);
-
+  vector_type Xa(Amap,1), Ya(Amap,1), Diff(Amap,1);
   RCP<const map_type> Bmap  = Bfullmap.getNodeNumElements() > 0 ? B.getDomainMap() : Teuchos::null;
-  RCP<const vector_type> Xb = !Bmap.is_null() ? rcp(new vector_type(Bmap)) : Teuchos::null;
-  RCP<vector_type> Yb       = !Bmap.is_null() ? rcp(new vector_type(Bmap)) : Teuchos::null;
 
-  Teuchos::ArrayView<const Scalar> Xbview, Ybview;
-  if(!Xb.is_null() && Xb->getLocalLength()) Xbview = Xb->get1dView()(); // ain't that a little freaky?
-  if(!Yb.is_null() && Yb->getLocalLength()) Ybview = Yb->get1dView()();
+  vector_type Xb_alias(rcp(&Bfullmap,false),1);  
+  vector_type Yb_alias(rcp(&Bfullmap,false),1);
 
-  vector_type Xb_alias(rcp(&Bfullmap,false), Xbview);  
-  vector_type Yb_alias(rcp(&Bfullmap,false), Ybview);
+  RCP<vector_type> Xb       = !Bmap.is_null() ? Xb_alias.offsetViewNonConst(Bmap,0) : Teuchos::null;
+  RCP<vector_type> Yb       = !Bmap.is_null() ? Yb_alias.offsetViewNonConst(Bmap,0) : Teuchos::null;
 
   import_type Ximport(Amap,rcp(&Bfullmap,false));
 
@@ -907,7 +903,7 @@ void build_test_matrix(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType>
 
     diff=test_with_matvec_reduced_maps<CrsMatrixType,MapType>(*A,*B,*Map1);
     if(diff > diff_tol){
-      if(MyPID==0) cout<<"FusedImport: Test #6 FAILED with norm diff = "<<diff<<"."<<endl;
+      if(MyPID==0) cout<<"FusedExport: Test #6 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
 
@@ -944,7 +940,7 @@ void build_test_matrix(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType>
 
     diff=test_with_matvec<CrsMatrixType>(*A,*B);
     if(diff > diff_tol){
-      if(MyPID==0) cout<<"FusedImport: Test #6 FAILED with norm diff = "<<diff<<"."<<endl;
+      if(MyPID==0) cout<<"FusedExport: Test #7 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
 
