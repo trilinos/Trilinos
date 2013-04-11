@@ -8,6 +8,7 @@
 #include <sstream>
 #include <iostream>
 #include <KokkosArray_Host.hpp>
+#include <KokkosArray_hwloc.hpp>
 
 //----------------------------------------------------------------------------
 

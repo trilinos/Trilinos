@@ -33,6 +33,10 @@ MPI | mpi )
   OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
   ;;
 #-------------------------------
+OMP | omp | OpenMP )
+  HAVE_OMP="-DHAVE_OMP"
+  ;;
+#-------------------------------
 CUDA | Cuda | cuda )
   HAVE_CUDA="-DHAVE_CUDA"
   OPTFLAGS="${OPTFLAGS} ${HAVE_CUDA}"
@@ -63,7 +67,7 @@ GNU | gnu | g++ )
   # Turn on lots of warnings and ansi compliance.
   # The Trilinos build system requires '-pedantic'
   # 
-  CXX="g++ -fopenmp -Wall -Wextra -ansi -pedantic"
+  CXX="g++ -Wall -Wextra -ansi -pedantic"
   CXX="${CXX} -rdynamic -DENABLE_TRACEBACK"
   LIB="${LIB} -ldl"
   ;;
@@ -110,6 +114,14 @@ then
   exit -1
 fi
 
+if [ -n "${HAVE_OMP}" ]
+then
+CXX="${CXX} -fopenmp"
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/OpenMP/KokkosArray_OpenMP_Parallel.cpp"
+fi
+
+#-----------------------------------------------------------------------------
+
 CXX="${CXX} ${OPTFLAGS}"
 
 if [ -n "${NVCC}" ] ;
@@ -125,9 +137,9 @@ CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_Impl.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_Thread.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_HostSpace.cpp"
-CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/OpenMP/KokkosArray_OpenMP_Parallel.cpp"
 
 #-----------------------------------------------------------------------------
+#
 
 if [ -n "${HAVE_HWLOC}" ] ;
 then
