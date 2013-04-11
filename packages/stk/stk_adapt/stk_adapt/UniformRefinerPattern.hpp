@@ -2939,11 +2939,12 @@ namespace stk {
 #include "UniformRefinerPattern_Wedge6_Hex8_6.hpp"
 #include "URP_Tet4_Wedge6_Hex8.hpp"
 
-// local refinement - for testing only right now
+// local refinement
 #include "RefinerPattern_Tri3_Tri3_2.hpp"
 #include "RefinerPattern_Tri3_Tri3_N.hpp"
 #include "RefinerPattern_Tet4_Tet4_N.hpp"
 
+#include "RefinerPattern_Quad4_Quad4_HangingNode.hpp"
 
 namespace stk {
   namespace adapt {
@@ -3012,61 +3013,64 @@ namespace stk {
     typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      2  >            Local_Tri3_Tri3_2;
     typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,     -1  >            Local_Tri3_Tri3_N;
 
-//DPM adding enum for use in initializing empty UniformRefiner objects
-enum Pattern
-	{
-	 LINE2_LINE2_2,
-	 BEAM2_BEAM2_2,
-	 SHELLLINE2_SHELLLINE2_2,
-	 SHELLLINE3_SHELLLINE3_2,
-	 QUAD4_QUAD4_4_OLD,
-	 QUAD4_QUAD4_4,
-	 QUAD4_QUAD4_4_SIERRA,
-	 TRI3_TRI3_4,
-	 SHELLTRI3_SHELLTRI3_4,
-	 SHELLTRI6_SHELLTRI6_4,
-	 SHELLQUAD4_SHELLQUAD4_4,
-	 SHELLQUAD8_SHELLQUAD8_4,
-	 TET4_TET4_8,
-	 HEX8_HEX8_8,
-	 WEDGE6_WEDGE6_8,
-	 PYRAMID5_PYRAMID5_10,
-	 LINE3_LINE3_2,
-	 BEAM3_BEAM3_2,
-	 TRI6_TRI6_4,
-	 QUAD9_QUAD9_4,
-	 QUAD8_QUAD8_4,
-	 HEX27_HEX27_8,
-	 HEX20_HEX20_8,
-	 TET10_TET10_8,
-	 WEDGE15_WEDGE15_8,
-	 WEDGE18_WEDGE18_8,
-   PYRAMID13_PYRAMID13_10,
-	 QUAD4_QUAD9_1,
-	 QUAD4_QUAD8_1,
-	 BEAM2_BEAM3_1,
-	 SHELLQUAD4_SHELLQUAD8_1,
-	 TRI3_TRI6_1,
-	 TET4_TET10_1,
-	 HEX8_HEX27_1,
-	 HEX8_HEX20_1,
-	 WEDGE6_WEDGE15_1,
-	 WEDGE6_WEDGE18_1,
-	 PYRAMID5_PYRAMID13_1,
-
-	 QUAD4_TRI3_2,
-	 QUAD4_TRI3_4,
-	 QUAD4_TRI3_6,
-	 HEX8_TET4_24,
-	 HEX8_TET4_6_12,
-
-	 TRI3_QUAD4_3,
-   TET4_HEX8_4,
-   WEDGE6_HEX8_6,
-
-   NUM_REF_PATTERNS
-	};
     typedef  RefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,  -1  >            Local_Tet4_Tet4_N;
+
+    typedef  RefinerPattern<shards::Quadrilateral<4>,   shards::Quadrilateral<4>,  -1  >        Local_Quad4_Quad4_N;
+
+    //DPM adding enum for use in initializing empty UniformRefiner objects
+    enum Pattern
+      {
+        LINE2_LINE2_2,
+        BEAM2_BEAM2_2,
+        SHELLLINE2_SHELLLINE2_2,
+        SHELLLINE3_SHELLLINE3_2,
+        QUAD4_QUAD4_4_OLD,
+        QUAD4_QUAD4_4,
+        QUAD4_QUAD4_4_SIERRA,
+        TRI3_TRI3_4,
+        SHELLTRI3_SHELLTRI3_4,
+        SHELLTRI6_SHELLTRI6_4,
+        SHELLQUAD4_SHELLQUAD4_4,
+        SHELLQUAD8_SHELLQUAD8_4,
+        TET4_TET4_8,
+        HEX8_HEX8_8,
+        WEDGE6_WEDGE6_8,
+        PYRAMID5_PYRAMID5_10,
+        LINE3_LINE3_2,
+        BEAM3_BEAM3_2,
+        TRI6_TRI6_4,
+        QUAD9_QUAD9_4,
+        QUAD8_QUAD8_4,
+        HEX27_HEX27_8,
+        HEX20_HEX20_8,
+        TET10_TET10_8,
+        WEDGE15_WEDGE15_8,
+        WEDGE18_WEDGE18_8,
+        PYRAMID13_PYRAMID13_10,
+        QUAD4_QUAD9_1,
+        QUAD4_QUAD8_1,
+        BEAM2_BEAM3_1,
+        SHELLQUAD4_SHELLQUAD8_1,
+        TRI3_TRI6_1,
+        TET4_TET10_1,
+        HEX8_HEX27_1,
+        HEX8_HEX20_1,
+        WEDGE6_WEDGE15_1,
+        WEDGE6_WEDGE18_1,
+        PYRAMID5_PYRAMID13_1,
+
+        QUAD4_TRI3_2,
+        QUAD4_TRI3_4,
+        QUAD4_TRI3_6,
+        HEX8_TET4_24,
+        HEX8_TET4_6_12,
+
+        TRI3_QUAD4_3,
+        TET4_HEX8_4,
+        WEDGE6_HEX8_6,
+
+        NUM_REF_PATTERNS
+      };
 
   }
 }

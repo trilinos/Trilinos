@@ -63,7 +63,7 @@
 
 #include <stk_percept/Intrepid_HGRAD_HEX_C2_Serendipity_FEM.hpp>
 
-#define ALLOW_IOSS_PROPERTIES_SETTING_FOR_LARGE_RUNS 0
+#define ALLOW_IOSS_PROPERTIES_SETTING_FOR_LARGE_RUNS 1
 
 namespace stk {
   namespace percept {
@@ -106,6 +106,8 @@ namespace stk {
       ,m_do_smooth_surfaces(false)
       ,m_geometry_parts(0)
       ,m_save_internal_fields(true)
+      ,m_ioss_read_options("")
+      ,m_ioss_write_options("")
     {
       init( m_comm);
       s_static_singleton_instance = this;
@@ -180,6 +182,60 @@ namespace stk {
 
       //const unsigned p_rank = parallel_machine_rank( get_bulk_data()->parallel() );
       const unsigned p_rank = parallel_machine_rank( m_comm );
+
+      if (ALLOW_IOSS_PROPERTIES_SETTING_FOR_LARGE_RUNS && m_ioss_read_options.length())
+        {
+          //export IOSS_PROPERTIES="INTEGER_SIZE_API=8:INTEGER_SIZE_DB=8:PARALLEL_IO_MODE=mpiposix:DECOMPOSITION_METHOD=RIB:COMPOSE_RESULTS=NO:COMPOSE_RESTART=NO"
+
+#define ADD(prop,val)                                                   \
+          do { if (m_iossMeshData->m_property_manager.exists(prop)) m_iossMeshData->m_property_manager.erase(prop); \
+            m_iossMeshData->m_property_manager.add(Ioss::Property(prop, val)); } while (0)
+#define ERASE0(prop)                                                    \
+          do { if (m_iossMeshData->m_property_manager.exists(prop)) m_iossMeshData->m_property_manager.erase(prop);  } while (0)
+
+          ERASE0("INTEGER_SIZE_DB");
+          ERASE0("INTEGER_SIZE_API");
+          ERASE0("PARALLEL_IO_MODE");
+          ERASE0("DECOMPOSITION_METHOD");
+          ERASE0("COMPOSE_RESULTS");
+          ERASE0("COMPOSE_RESTART");
+
+          if (!get_rank())
+            {
+              std::cout << "Info: IOSS read options found and will be used: " << m_ioss_read_options << std::endl;
+            }
+          if (m_ioss_read_options.find("large") != std::string::npos)
+            {
+              ADD("INTEGER_SIZE_DB", 8);
+              ADD("INTEGER_SIZE_API", 8);
+            }
+
+          if (m_ioss_read_options.find("auto-decomp:yes") != std::string::npos)
+            {
+              ADD("PARALLEL_IO_MODE", "mpiposix");
+              ADD("DECOMPOSITION_METHOD", "RIB");
+            }
+          if (m_ioss_read_options.find("auto-decomp:no") != std::string::npos)
+            {
+              ERASE0("PARALLEL_IO_MODE");
+              ERASE0("DECOMPOSITION_METHOD");
+            }
+
+          if (m_ioss_read_options.find("auto-join:yes") != std::string::npos)
+            {
+              ADD("COMPOSE_RESTART", "YES");
+              ADD("COMPOSE_RESULTS", "YES");
+            }
+
+          if (m_ioss_read_options.find("auto-join:no") != std::string::npos)
+            {
+              ERASE0("COMPOSE_RESTART");
+              ERASE0("COMPOSE_RESULTS");
+            }
+
+#undef ERASE0
+#undef ADD
+        }
 
       if (p_rank == 0)  std::cout << "PerceptMesh:: opening "<< in_filename << std::endl;
       read_metaDataNoCommit(in_filename, type);
@@ -1160,6 +1216,8 @@ namespace stk {
       ,m_do_smooth_surfaces(false)
       ,m_geometry_parts(0)
       ,m_save_internal_fields(true)
+      ,m_ioss_read_options("")
+      ,m_ioss_write_options("")
     {
       if (!bulkData)
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
@@ -1191,22 +1249,6 @@ namespace stk {
           m_iossMeshData->m_property_manager.erase("MAXIMUM_NAME_LENGTH");
         }
       m_iossMeshData->m_property_manager.add(Ioss::Property("MAXIMUM_NAME_LENGTH", 100));
-
-      if (ALLOW_IOSS_PROPERTIES_SETTING_FOR_LARGE_RUNS)
-        {
-          //export IOSS_PROPERTIES="INTEGER_SIZE_API=8:INTEGER_SIZE_DB=8:PARALLEL_IO_MODE=mpiposix:DECOMPOSITION_METHOD=RIB:COMPOSE_RESULTS=NO:COMPOSE_RESTART=NO"
-
-#define ADD(prop,val) \
-          do { if (m_iossMeshData->m_property_manager.exists(prop)) m_iossMeshData->m_property_manager.erase(prop); \
-            m_iossMeshData->m_property_manager.add(Ioss::Property(prop, val)); } while (0)
-
-          ADD("INTEGER_SIZE_DB", 8);
-          ADD("INTEGER_SIZE_API", 8);
-          ADD("PARALLEL_IO_MODE", "mpiposix");
-          ADD("DECOMPOSITION_METHOD", "RIB");
-          ADD("COMPOSE_RESTART", "NO");
-          ADD("COMPOSE_RESULTS", "NO");
-        }
 
       std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
 #if PERCEPT_USE_FAMILY_TREE
@@ -2281,20 +2323,47 @@ namespace stk {
           mesh_data.set_bulk_data(bulk_data);
       }
 
+      if (ALLOW_IOSS_PROPERTIES_SETTING_FOR_LARGE_RUNS && m_ioss_write_options.length() )
+        {
+
 #define ERASE(prop) \
           do { if (mesh_data.m_property_manager.exists(prop)) mesh_data.m_property_manager.erase(prop); } while(0)
-      if (ALLOW_IOSS_PROPERTIES_SETTING_FOR_LARGE_RUNS)
-        {
 #define ADD1(prop,val) \
           do { if (mesh_data.m_property_manager.exists(prop)) mesh_data.m_property_manager.erase(prop); \
             mesh_data.m_property_manager.add(Ioss::Property(prop, val)); } while (0)
 
-          ADD1("INTEGER_SIZE_DB", 8);
-          ADD1("INTEGER_SIZE_API", 8);
+          ERASE("INTEGER_SIZE_DB");
+          ERASE("INTEGER_SIZE_API");
           ERASE("PARALLEL_IO_MODE");
           ERASE("DECOMPOSITION_METHOD");
           ERASE("COMPOSE_RESULTS");
           ERASE("COMPOSE_RESTART");
+
+          if (!get_rank())
+            {
+              std::cout << "Info: IOSS write options found and will be used: " << m_ioss_write_options << std::endl;
+            }
+          if (m_ioss_write_options.find("large") != std::string::npos)
+            {
+              ADD1("INTEGER_SIZE_DB", 8);
+              ADD1("INTEGER_SIZE_API", 8);
+            }
+
+          if (m_ioss_write_options.find("auto-join:yes") != std::string::npos)
+            {
+              ADD1("PARALLEL_IO_MODE", "mpiposix");
+              ADD1("COMPOSE_RESTART", "YES");
+              ADD1("COMPOSE_RESULTS", "YES");
+            }
+
+          if (m_ioss_write_options.find("auto-join:no") != std::string::npos)
+            {
+              ERASE("COMPOSE_RESTART");
+              ERASE("COMPOSE_RESULTS");
+            }
+
+#undef ERASE
+#undef ADD1
         }
 
       //std::cout << "tmp srk out_filename= " << out_filename << " m_streaming_size= " << m_streaming_size << std::endl;

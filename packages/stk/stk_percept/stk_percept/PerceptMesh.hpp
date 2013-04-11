@@ -155,6 +155,16 @@ namespace stk {
       bool get_save_internal_fields() { return m_save_internal_fields; }
       void set_save_internal_fields(bool sv) { m_save_internal_fields = sv; }
 
+      /// options to IOSS/Exodus for e.g. large files | auto-decomp | auto-join
+      /// to use, set the string to a combination of {"large", "auto-decomp:yes",  "auto-decomp:no",  "auto-join:yes", "auto-join:no" },
+      ///  e.g. "large,auto-decomp:yes"
+      /// set options for read and/or write
+      std::string get_ioss_read_options() { return m_ioss_read_options; }
+      void set_ioss_read_options(const std::string& opt) { m_ioss_read_options = opt; }
+
+      std::string get_ioss_write_options() { return m_ioss_write_options; }
+      void set_ioss_write_options(const std::string& opt) { m_ioss_write_options = opt; }
+
       stk::mesh::FieldBase *
       get_field(const std::string& name);
 
@@ -794,6 +804,9 @@ namespace stk {
       static PerceptMesh* s_static_singleton_instance;
       stk::mesh::PartVector                 * m_geometry_parts;
       bool                                  m_save_internal_fields;
+
+      std::string                           m_ioss_read_options;
+      std::string                           m_ioss_write_options;
     private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 

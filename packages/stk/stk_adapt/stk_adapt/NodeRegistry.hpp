@@ -1224,7 +1224,9 @@ namespace stk {
           }
         NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
         if (nodeIds_onSE.size() != 1)
-          throw std::runtime_error("makeCentroidField not ready for multiple nodes");
+          {
+            throw std::logic_error("logic error: makeCentroidField not ready for multiple nodes, or there are 0 nodes on the marked quantity");
+          }
         //stk::mesh::Entity c_node = m_eMesh.get_bulk_data()->get_entity(Node, nodeIds_onSE[0]);
         //stk::mesh::Entity c_node = get_entity_node(*m_eMesh.get_bulk_data(), stk::mesh::MetaData::NODE_RANK, nodeIds_onSE[0]);
         //stk::mesh::Entity c_node = get_entity_node_Ia(*m_eMesh.get_bulk_data(), stk::mesh::MetaData::NODE_RANK, nodeIds_onSE, 0u);

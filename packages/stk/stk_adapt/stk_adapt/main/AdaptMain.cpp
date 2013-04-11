@@ -554,6 +554,8 @@ namespace stk {
       int smooth_geometry = 0;
       int smooth_use_reference_mesh = 1;
       int fix_all_block_boundaries = 0;
+      std::string ioss_write_options = "";
+      std::string ioss_read_options = "";
       int snap_geometry = 0;
       std::string internal_test = "";
       int respect_spacing = 1;
@@ -629,7 +631,13 @@ namespace stk {
       run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
       run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry projection to try to avoid bad meshes");
       run_environment.clp.setOption("smooth_use_reference_mesh", &smooth_use_reference_mesh, "for most cases, set to 1 (default) - can be used for smoothing with no reference mesh");
-      run_environment.clp.setOption("fix_all_block_boundaries" , &fix_all_block_boundaries,  "when smoothing without geometry, fix all inner and outer block boundaries");
+      run_environment.clp.setOption("ioss_read_options"        , &ioss_read_options        , 
+                                    "options to IOSS/Exodus for e.g. large files | auto-decomp | auto-join\n"
+                                    "to use, set the string to a combination of {\"large\", \"auto-decomp:yes\",  \"auto-decomp:no\",  \"auto-join:yes\", \"auto-join:no\" }\n"
+                                    "   e.g. \"large,auto-decomp:yes\" \n"
+                                    " Note: set options for read and/or write (ioss_write_options)");
+      run_environment.clp.setOption("ioss_write_options"       , &ioss_write_options       , "see ioss_read_options");
+      run_environment.clp.setOption("fix_all_block_boundaries" , &fix_all_block_boundaries , "when smoothing without geometry, fix all inner and outer block boundaries");
       run_environment.clp.setOption("snap_geometry"            , &snap_geometry            , "project nodes to geometry - used for internal testing only");
       run_environment.clp.setOption("internal_test"            , &internal_test            , "run the specified internal test");
 #if !defined(__IBMCPP__) 
@@ -973,6 +981,18 @@ namespace stk {
 
                     if (do_normal_pass)
                       {
+                        if (ioss_read_options.length() || ioss_write_options.length()) 
+                          {
+                            if (!eMesh.get_rank())
+                              {
+                                std::cout << "INFO: ioss_read_options= " << ioss_read_options << " ioss_write_options= " << ioss_write_options << std::endl;
+                                stk::percept::pout() << "INFO: ioss_read_options= " << ioss_read_options << " ioss_write_options= " << ioss_write_options << std::endl;
+                              }
+                          }
+
+                        if (ioss_read_options.length())  eMesh.set_ioss_read_options(ioss_read_options);
+                        if (ioss_write_options.length()) eMesh.set_ioss_write_options(ioss_write_options);
+
                         eMesh.open(input_mesh);
                         eMesh.set_save_internal_fields(save_internal_fields);
                         if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();

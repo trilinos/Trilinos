@@ -1,30 +1,25 @@
-#ifndef stk_adapt_UniformRefinerPattern_Quad4_Quad4_4_sierra_hpp
-#define stk_adapt_UniformRefinerPattern_Quad4_Quad4_4_sierra_hpp
+#ifndef stk_adapt_RefinerPattern_Quad4_Quad4_HangingNode_hpp
+#define stk_adapt_RefinerPattern_Quad4_Quad4_HangingNode_hpp
 
 
 //#include "UniformRefinerPattern.hpp"
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
-#include "UniformRefinerPattern_Line2_Line2_2_sierra.hpp"
+#include "RefinerPattern_Line2_Line2_N.hpp"
 
 namespace stk {
   namespace adapt {
 
     template <>
-    class UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > : public URP<shards::Quadrilateral<4>,shards::Quadrilateral<4>  >
+    class RefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, -1 > : public URP<shards::Quadrilateral<4>,shards::Quadrilateral<4>  >
     {
 
-      //Teuchos::RCP< UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort >  > m_edge_breaker;
-      //UniformRefinerPatternBase * m_edge_breaker;
-#define EDGE_BREAKER_Q4_Q4_4_S 1
-#if EDGE_BREAKER_Q4_Q4_4_S
-      UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > * m_edge_breaker;
-#endif
+      RefinerPattern<shards::Line<2>, shards::Line<2>, -1 > * m_edge_breaker;
 
     public:
 
-      UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Quadrilateral<4>, shards::Quadrilateral<4>  >(eMesh)
+      RefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Quadrilateral<4>, shards::Quadrilateral<4>  >(eMesh)
       {
         m_primaryEntityRank = eMesh.face_rank();
         if (m_eMesh.get_spatial_dim() == 2)
@@ -33,15 +28,13 @@ namespace stk {
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
 
-#if EDGE_BREAKER_Q4_Q4_4_S
         if (m_eMesh.get_spatial_dim() == 2)
-          m_edge_breaker =  new UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > (eMesh, block_names) ;
+          m_edge_breaker =  new RefinerPattern<shards::Line<2>, shards::Line<2>, -1 > (eMesh, block_names) ;
         else
           m_edge_breaker = 0;
-#endif
 
       }
-      ~UniformRefinerPattern()
+      ~RefinerPattern()
       {
         if (m_edge_breaker) delete m_edge_breaker;
       }
@@ -54,9 +47,7 @@ namespace stk {
         if (eMesh.get_spatial_dim() == 2)
           {
             bp[0] = this;
-#if EDGE_BREAKER_Q4_Q4_4_S
             bp[1] = m_edge_breaker;
-#endif
           }
         else if (eMesh.get_spatial_dim() == 3)
           {

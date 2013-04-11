@@ -822,7 +822,7 @@ namespace stk
               f_data[0] = -1.0;
             }
           // FIXME tmp
-          f_data[0] = 1.0;
+          //f_data[0] = 1.0;
 
           return false;  // don't terminate the loop
         }
@@ -840,7 +840,7 @@ namespace stk
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size==1 || p_size == 3)
           {
-            Quad4_Quad4_4 break_quad_to_quad_N(eMesh);
+            Local_Quad4_Quad4_N break_quad_to_quad_N(eMesh);
             int scalarDimension = 0; // a scalar
             stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
@@ -927,7 +927,7 @@ namespace stk
           }
       }
 
-      STKUNIT_UNIT_TEST(regr_localRefiner, break_quad_to_quad_N_5_EdgeBased_quad_local_square_sidesets)
+      STKUNIT_UNIT_TEST(regr_localRefiner, break_quad_to_quad_N_5_ElementBased_quad_local_square_sidesets)
       {
         bool do_test=true;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
