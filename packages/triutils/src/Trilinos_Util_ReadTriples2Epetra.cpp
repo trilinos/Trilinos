@@ -130,9 +130,10 @@ int Trilinos_Util_ReadTriples2Epetra_internal( char *data_file,
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int_type i, j; 
       double val ;
-      char formatline[2*strlen(fmt) + 2 + 3];
+      char *formatline = new char[2*strlen(fmt) + 2 + 3];
       snprintf( formatline, sizeof formatline, "%s %s %s", fmt, fmt, "%lg" );
       sscanf( buffer, formatline, &i, &j, &val );
+      delete[] formatline;
 
       const int_type i_index = ( ZeroBased?i:i-1 );
       const int_type j_index = ( ZeroBased?j:j-1 );
