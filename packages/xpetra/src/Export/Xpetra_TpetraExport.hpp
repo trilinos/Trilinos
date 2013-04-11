@@ -123,7 +123,7 @@ namespace Xpetra {
     ArrayView< const LocalOrdinal > getExportLIDs() const { XPETRA_MONITOR("TpetraExport::getExportLIDs"); return export_->getExportLIDs(); }
 
     //! List of processes to which entries will be sent.
-    ArrayView< const int > getExportImageIDs() const { XPETRA_MONITOR("TpetraExport::getExportImageIDs"); return export_->getExportImageIDs(); }
+    ArrayView< const int > getExportPIDs() const { XPETRA_MONITOR("TpetraExport::getExportImageIDs"); return export_->getExportPIDs(); }
 
     //! The source Map used to construct this Export.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { XPETRA_MONITOR("TpetraExport::getSourceMap"); return toXpetra(export_->getSourceMap()); }
