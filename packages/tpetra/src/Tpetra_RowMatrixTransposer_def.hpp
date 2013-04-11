@@ -43,6 +43,7 @@
 #define TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
 
 #include "Tpetra_Export.hpp"
+#include "Tpetra_Import.hpp"
 #include "Tpetra_Map.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef DOXYGEN_USE_ONLY
@@ -89,6 +90,8 @@ createTranspose()
   using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Tpetra::Import;
+  using Tpetra::Export;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
 
@@ -144,12 +147,23 @@ createTranspose()
   //Allocate and populate temporary matrix with rows not uniquely owned
   RCP<crs_matrix_type> transMatrixWithSharedRows(new crs_matrix_type(origMatrix_->getColMap(),origMatrix_->getRowMap(),0));  
   transMatrixWithSharedRows->setAllValues(rowptr_rcp,colind_rcp,values_rcp);
-  transMatrixWithSharedRows->expertStaticFillComplete(origMatrix_->getRangeMap(),origMatrix_->getDomainMap());
 
+
+  // Prebuild the importers and exporters the no-communication way, flipping the importers
+  // and exporters around.
+  RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > myImport;
+  RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > myExport;
+  if(!origMatrix_->getGraph()->getImporter().is_null()) 
+    myExport = rcp(new Export<LocalOrdinal,GlobalOrdinal,Node>(*origMatrix_->getGraph()->getImporter()));
+  if(!origMatrix_->getGraph()->getExporter().is_null()) 
+    myImport = rcp(new Import<LocalOrdinal,GlobalOrdinal,Node>(*origMatrix_->getGraph()->getExporter()));
+
+  // Call ESFC
+  transMatrixWithSharedRows->expertStaticFillComplete(origMatrix_->getRangeMap(),origMatrix_->getDomainMap(),myImport,myExport);
 
   // If transMatrixWithSharedRows has an exporter, that's what we want.  If it doesn't, the rows aren't actually shared,
   // and we're done!
-  RCP<const Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = transMatrixWithSharedRows->getGraph()->getExporter();
+  RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = transMatrixWithSharedRows->getGraph()->getExporter();
   if(exporter == Teuchos::null) {
     return transMatrixWithSharedRows;
   }
