@@ -85,52 +85,46 @@ public:
   void resize_reduce( unsigned );
 
 private:
-
-
   unsigned relationships ;
 };
 
 //----------------------------------------------------------------------------
 
-HostThread::HostThread()
+void HostThread::warn_destroy_with_reduce()
 {
-  // Initialize as the only thread:
-  m_state        = ThreadInactive ;
-  m_fan_count    = 0 ;
-  m_thread_rank  = 0 ;
-  m_thread_count = 1 ;
-  m_gang_rank    = 0 ;
-  m_gang_count   = 1 ;
-  m_worker_rank  = 0 ;
-  m_worker_count = 1 ;
-  m_reduce       = 0 ;
-  m_gang_tag     = 0 ;
-  m_worker_tag   = 0 ;
-
-  for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
+  std::cerr << "KokkosArray::Impl::HostThread WARNING : destroyed with allocated reduction memory"
+            << std::endl ;
 }
 
-HostThread::~HostThread()
+void HostThread::set_gang_worker( const unsigned gang_rank ,   const unsigned gang_count ,
+                                  const unsigned worker_rank , const unsigned worker_count )
 {
-  if ( m_reduce ) {
-    std::cerr << "KokkosArray::Impl::HostThread WARNING : destroyed with allocated reduction memory"
-              << std::endl ;
+  m_gang_rank    = gang_rank ;
+  m_gang_count   = gang_count ;
+
+  m_worker_rank  = worker_rank ;
+  m_worker_count = worker_count ;
+
+  m_thread_rank  = worker_rank + worker_count * gang_rank ;
+  m_thread_count = gang_count * worker_count ;
+
+  if ( m_thread[ m_thread_rank ] != this ) {
+    std::ostringstream msg ;
+    msg << "KokkosArray::Impl::HostThread::set_gang_worker("
+        << gang_rank << "," << gang_count << ","
+        << worker_rank << "," << worker_count << ")"
+        << " ERROR : Does not match previously set thread rank" ;
+    if ( m_thread[ m_thread_rank ] ) {
+     msg << " : ("
+         << m_thread[ m_thread_rank ]->m_gang_rank << ","
+         << m_thread[ m_thread_rank ]->m_gang_count << ","
+         << m_thread[ m_thread_rank ]->m_worker_rank << ","
+         << m_thread[ m_thread_rank ]->m_worker_count << ")" ;
+    }
+    throw std::runtime_error( msg.str() );
   }
-
-  m_state        = ThreadInactive ;
-  m_fan_count    = 0 ;
-  m_thread_rank  = std::numeric_limits<unsigned>::max();
-  m_thread_count = 0 ;
-  m_gang_rank    = std::numeric_limits<unsigned>::max();
-  m_gang_count   = 0 ;
-  m_worker_rank  = std::numeric_limits<unsigned>::max();
-  m_worker_count = 0 ;
-  m_reduce       = 0 ;
-  m_gang_tag     = 0 ;
-  m_worker_tag   = 0 ;
-
-  for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
 }
+
 
 void HostThread::resize_reduce( unsigned size )
 {
@@ -287,92 +281,80 @@ void HostThreadSentinel::clear_relationships()
 }
 
 //----------------------------------------------------------------------------
-
-struct HostThreadCompare {
-  bool operator()( const HostThread * const lhs ,
-                   const HostThread * const rhs ) const
-  {
-    return lhs->m_gang_tag   != rhs->m_gang_tag ?
-           lhs->m_gang_tag   <  rhs->m_gang_tag : (
-           lhs->m_worker_tag != rhs->m_worker_tag ?
-           lhs->m_worker_tag <  rhs->m_worker_tag :
-           lhs               < rhs );
-  }
-};
-
 // Set the fan based upon gang and worker rank:
 
 void HostThreadSentinel::set_relationships()
 {
   if ( relationships ) return ;
 
-  HostThread * threads[ HostThread::max_thread_count ];
+  bool error_gaps   = false ;
+  bool error_topo   = false ;
+  bool error_thread = false ;
 
-  unsigned thread_rank = 0 ;
-  unsigned gang_rank   = 0 ;
+  {
+    unsigned i = 0 ;
+    unsigned j = 0 ;
 
-  for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
-    if ( HostThread::m_thread[i] != 0 )
-      threads[ thread_rank++ ] = HostThread::m_thread[i] ;
+    // Non-zero entries:
+    for ( i = 0 ; i < HostThread::max_thread_count && 0 != HostThread::m_thread[i]; ++i );
+
+    // Followed by zero entries:
+    for ( j = i ; j < HostThread::max_thread_count && 0 == HostThread::m_thread[j] ; ++j );
+
+    if ( 0 == i && HostThread::max_thread_count == j ) return ;
+
+    error_gaps = j < HostThread::max_thread_count ;
   }
 
-  if ( 0 == thread_rank ) return ;
+  unsigned thread_count = 0 ;
+  unsigned gang_count   = 0 ;
+  unsigned worker_count = 0 ;
 
-  const unsigned thread_count = thread_rank ;
+  if ( ! error_gaps ) {
 
-  HostThread ** const threads_end = threads + thread_count ;
+    thread_count = HostThread::m_thread[0]->m_thread_count ;
+    gang_count   = HostThread::m_thread[0]->m_gang_count ;
+    worker_count = HostThread::m_thread[0]->m_worker_count ;
 
-  std::sort( threads , threads_end , HostThreadCompare() );
+    error_topo = thread_count != gang_count * worker_count ;
 
-  { // Assign thread, gang, and worker counts and ranks:
+    if ( ! error_topo ) {
 
-    HostThread ** gang_begin = threads ;
-    HostThread ** gang_end   = threads ;
-
-    thread_rank = 0 ;
-
-    while ( gang_end < threads_end ) {
-
-      // Span of gang:
-      while ( gang_end < threads_end &&
-              (*gang_begin)->m_gang_tag == (*gang_end)->m_gang_tag ) ++gang_end ;
-
-      // Workers within this gang:
-      const unsigned worker_count = gang_end - gang_begin ;
-
-      // Assign thread_rank, gang_rank, worker_rank
-      // Assign thread_count and worker_count
-      for ( unsigned worker_rank = 0 ;
-                     worker_rank < worker_count ;
-                     ++worker_rank , ++thread_rank ) {
-
-        HostThread & thread = * gang_begin[ worker_rank ];
-
-        // Reassign counts and ranks to be sequential:
-
-        thread.m_thread_count = thread_count ;
-        thread.m_thread_rank  = thread_rank ;
-        thread.m_gang_count   = 0 ;
-        thread.m_gang_rank    = gang_rank ;
-        thread.m_worker_count = worker_count ;
-        thread.m_worker_rank  = worker_rank ;
-      }
-
-      if ( worker_count ) ++gang_rank ;
-
-      gang_begin = gang_end ;
+      for ( unsigned g = 0 , r = 0 ; g < gang_count ; ++g ) {
+      for ( unsigned w = 0 ; w < worker_count ; ++w , ++r ) {
+        if ( 0 == HostThread::m_thread[r] ||
+             r != HostThread::m_thread[r]->m_thread_rank ||
+             g != HostThread::m_thread[r]->m_gang_rank ||
+             w != HostThread::m_thread[r]->m_worker_rank ||
+             thread_count != HostThread::m_thread[r]->m_thread_count ||
+             gang_count   != HostThread::m_thread[r]->m_gang_count ||
+             worker_count != HostThread::m_thread[r]->m_worker_count ) {
+          error_thread = true ;
+        }
+      }}
     }
+  }
 
-    // Assign gang_count
-    for ( unsigned i = 0 ; i < thread_count ; ++i ) {
-      threads[i]->m_gang_count = gang_rank ;
+  if ( error_gaps || error_topo || error_thread ) {
+    std::ostringstream msg ;
+    msg << "KokkosArray::Impl::HostThread::set_thread_ralationships ERROR :" ;
+    if ( error_gaps ) {
+      msg << " Gaps in thread array" ;
     }
+    else if ( error_topo ) {
+      msg << " Inconsistent gang*worker topology "
+          << thread_count << " != " << gang_count << " * " << worker_count ;
+    }
+    else {
+      msg << " Inconsistent thread topology coordinate" ;
+    }
+    throw std::runtime_error( msg.str() );
   }
 
   // Assign fan in/out for each thread
   for ( unsigned i = 0 ; i < thread_count ; ++i ) {
 
-    HostThread & thread = * threads[i] ; // i == thread.m_thread_rank
+    HostThread & thread = * HostThread::m_thread[i] ; // i == thread.m_thread_rank
 
     unsigned fan_count = 0 ;
 
@@ -381,7 +363,7 @@ void HostThreadSentinel::set_relationships()
 
       if ( n & thread.m_worker_rank ) break ;
 
-      thread.m_fan[ fan_count++ ] = threads[ thread.m_thread_rank + n ];
+      thread.m_fan[ fan_count++ ] = HostThread::m_thread[ thread.m_thread_rank + n ];
     }
 
     // Inter-gang reduction:
@@ -394,7 +376,7 @@ void HostThreadSentinel::set_relationships()
         // Find thread with:
         //   gank_rank   == thread.m_gang_rank + n
         //   worker_rank == 0
-        HostThread ** th = threads + i ;
+        HostThread ** th = HostThread::m_thread + i ;
         while ( (*th)->m_gang_rank < thread.m_gang_rank + n ) {
           th += (*th)->m_worker_count ;
         }

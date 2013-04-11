@@ -43,10 +43,7 @@
 
 /*--------------------------------------------------------------------------*/
 
-#include <sstream>
 #include <iostream>
-#include <limits>
-#include <utility>
 
 /* KokkosArray interfaces */
 
@@ -74,9 +71,9 @@ enum { MAX_CORE = 1024 };
 std::pair<unsigned,unsigned> s_core_topology(0,0);
 unsigned                     s_core_capacity(0);
 hwloc_topology_t             s_hwloc_topology(0);
-hwloc_bitmap_t               s_core[ MAX_CORE ];
 hwloc_bitmap_t               s_hwloc_location(0);
 hwloc_bitmap_t               s_process_binding(0);
+hwloc_bitmap_t               s_core[ MAX_CORE ];
 
 }
 
@@ -95,6 +92,8 @@ void print_bitmap( std::ostream & s , const hwloc_const_bitmap_t bitmap )
 
 bool hwloc::bind_this_thread( const std::pair<unsigned,unsigned> coord )
 {
+  // As safe and fast as possible.
+  // Fast-lookup by caching the coordinate -> hwloc cpuset mapping in 's_core'.
   return coord.first  < s_core_topology.first &&
          coord.second < s_core_topology.second &&
          0 == hwloc_set_cpubind( s_hwloc_topology ,
@@ -111,8 +110,10 @@ bool hwloc::unbind_this_thread()
 
 //----------------------------------------------------------------------------
 
-std::pair<unsigned,unsigned> hwloc::get_thread_coordinate()
+std::pair<unsigned,unsigned> hwloc::get_this_thread_coordinate()
 {
+  // Using the pre-allocated 's_hwloc_location' to avoid memory
+  // allocation by this thread.  This call is NOT thread-safe.
   hwloc_get_last_cpu_location( s_hwloc_topology ,
                                s_hwloc_location , HWLOC_CPUBIND_THREAD );
 
@@ -150,234 +151,179 @@ hwloc::~hwloc()
 
 hwloc::hwloc()
 {
-  hwloc_obj_type_t root_type = HWLOC_OBJ_TYPE_MAX ;
-  hwloc_topology_t topology  = 0 ;
+  s_core_topology   = std::pair<unsigned,unsigned>(0,0);
+  s_core_capacity   = 0 ;
+  s_hwloc_topology  = 0 ;
+  s_hwloc_location  = 0 ;
+  s_process_binding = 0 ;
 
   for ( unsigned i = 0 ; i < MAX_CORE ; ++i ) s_core[i] = 0 ;
 
-  hwloc_topology_init( & topology );
-  hwloc_topology_load( topology );
 
-  s_hwloc_topology  = topology ;
+  hwloc_topology_init( & s_hwloc_topology );
+  hwloc_topology_load( s_hwloc_topology );
+
   s_hwloc_location  = hwloc_bitmap_alloc();
   s_process_binding = hwloc_bitmap_alloc();
 
-  hwloc_get_cpubind( topology , s_process_binding ,  HWLOC_CPUBIND_PROCESS );
+  hwloc_get_cpubind( s_hwloc_topology , s_process_binding ,  HWLOC_CPUBIND_PROCESS );
 
-  { // Choose a hwloc object for the 'root' from, in search order, the following.
+  // Choose a hwloc object type for the NUMA level, which may not exist.
+
+  hwloc_obj_type_t root_type = HWLOC_OBJ_TYPE_MAX ;
+
+  {
+    // Object types to search, in order.
     static const hwloc_obj_type_t candidate_root_type[] =
       { HWLOC_OBJ_NODE     /* NUMA region     */
       , HWLOC_OBJ_SOCKET   /* hardware socket */
       , HWLOC_OBJ_MACHINE  /* local machine   */
       };
 
-    // Choose the level at which there is more than one hardware object.
-    // The process may be restricted to only one of those objects.
-    // Assume that the process is allowed to use all hardware objects
-    // which are hierarchically children of this object.
-
     enum { CANDIDATE_ROOT_TYPE_COUNT =
              sizeof(candidate_root_type) / sizeof(hwloc_obj_type_t) };
 
     for ( int k = 0 ; k < CANDIDATE_ROOT_TYPE_COUNT && HWLOC_OBJ_TYPE_MAX == root_type ; ++k ) {
-      const unsigned max_root = hwloc_get_nbobjs_by_type( topology , candidate_root_type[k] );
-      if ( 0 < max_root ) { root_type = candidate_root_type[k] ; }
+      if ( 0 < hwloc_get_nbobjs_by_type( s_hwloc_topology , candidate_root_type[k] ) ) {
+        root_type = candidate_root_type[k] ;
+      }
     }
   }
 
-  {
-    // Determine which of these 'root' types are available to this process.
-    // The process may have been bound (e.g., by MPI) to a subset of these root types.
-    // Determine current location of the master (calling) process>
+  // Determine which of these 'root' types are available to this process.
+  // The process may have been bound (e.g., by MPI) to a subset of these root types.
+  // Determine current location of the master (calling) process>
 
-    hwloc_bitmap_t proc_cpuset_location = hwloc_bitmap_alloc();
+  hwloc_bitmap_t proc_cpuset_location = hwloc_bitmap_alloc();
 
-    hwloc_get_last_cpu_location( topology , proc_cpuset_location , HWLOC_CPUBIND_THREAD );
+  hwloc_get_last_cpu_location( s_hwloc_topology , proc_cpuset_location , HWLOC_CPUBIND_THREAD );
 
-    const unsigned max_root = hwloc_get_nbobjs_by_type( topology , root_type );
+  const unsigned max_root = hwloc_get_nbobjs_by_type( s_hwloc_topology , root_type );
 
-    unsigned root_base = max_root ;
-    unsigned root_count    = 0 ;
-    unsigned core_per_root = 0 ;
-    unsigned pu_per_core   = 0 ;
+  unsigned root_base     = max_root ;
+  unsigned root_count    = 0 ;
+  unsigned core_per_root = 0 ;
+  unsigned pu_per_core   = 0 ;
+  bool     symmetric     = true ;
 
-    for ( unsigned i = 0 ; i < max_root ; ++i ) {
+  for ( unsigned i = 0 ; i < max_root ; ++i ) {
 
-      const hwloc_obj_t root = hwloc_get_obj_by_type( topology , root_type , i );
+    const hwloc_obj_t root = hwloc_get_obj_by_type( s_hwloc_topology , root_type , i );
 
-      if ( hwloc_bitmap_intersects( s_process_binding , root->allowed_cpuset ) ) {
+    if ( hwloc_bitmap_intersects( s_process_binding , root->allowed_cpuset ) ) {
 
-        ++root_count ;
+      ++root_count ;
 
-        // Is this master thread running on this root object:
+      // Remember which root (NUMA) object the master thread is running on.
+      // This will be logical NUMA rank #0 for this process.
 
-        if ( hwloc_bitmap_intersects( proc_cpuset_location, root->allowed_cpuset ) ) {
-          root_base = i ;
-        }
-
-        // Count available cores:
-
-        const unsigned max_core =
-          hwloc_get_nbobjs_inside_cpuset_by_type( topology ,
-                                                  root->allowed_cpuset ,
-                                                  HWLOC_OBJ_CORE );
-
-        unsigned core_cout = 0 ;
-
-        for ( unsigned j = 0 ; j < max_core ; ++j ) {
-
-          const hwloc_obj_t core =
-            hwloc_get_obj_inside_cpuset_by_type( topology ,
-                                                 root->allowed_cpuset ,
-                                                 HWLOC_OBJ_CORE , j );
-
-          if ( hwloc_bitmap_intersects( s_process_binding , core->allowed_cpuset ) ) {
-
-            // If process' cpuset intersects core's cpuset then process can access this core.
-            // Must use intersection instead of inclusion because the Intel-Phi
-            // MPI may bind the process to only one of the core's hyperthreads.
-            //
-            // Assumption: if the process can access any hyperthread of the core
-            // then it has ownership of the entire core.
-            // This assumes that it would be performance-detrimental
-            // to spawn more than one MPI process per core and use nested threading.
-
-            ++core_cout ;
-
-            const unsigned pu_count =
-              hwloc_get_nbobjs_inside_cpuset_by_type( topology ,
-                                                      core->allowed_cpuset ,
-                                                      HWLOC_OBJ_PU );
-
-            if ( pu_per_core == 0 ) pu_per_core = pu_count ;
-
-            pu_per_core = std::min( pu_per_core , pu_count );
-          }
-        }
-
-        if ( 0 == core_per_root ) core_per_root = core_cout ;
-
-        // Enforce symmetry by taking the minimum:
-
-        core_per_root = std::min( core_per_root , core_cout );
+      if ( hwloc_bitmap_intersects( proc_cpuset_location, root->allowed_cpuset ) ) {
+        root_base = i ;
       }
-    }
 
-    s_core_topology.first  = root_count ;
-    s_core_topology.second = core_per_root ;
-    s_core_capacity        = pu_per_core ;
+      // Count available cores:
 
-    for ( unsigned i = 0 ; i < max_root ; ++i ) {
+      const unsigned max_core =
+        hwloc_get_nbobjs_inside_cpuset_by_type( s_hwloc_topology ,
+                                                root->allowed_cpuset ,
+                                                HWLOC_OBJ_CORE );
 
-      const unsigned root_rank = ( i + root_base ) % max_root ;
+      unsigned core_count = 0 ;
 
-      const hwloc_obj_t root = hwloc_get_obj_by_type( topology , root_type , root_rank );
+      for ( unsigned j = 0 ; j < max_core ; ++j ) {
 
-      if ( hwloc_bitmap_intersects( s_process_binding , root->allowed_cpuset ) ) {
+        const hwloc_obj_t core =
+          hwloc_get_obj_inside_cpuset_by_type( s_hwloc_topology ,
+                                               root->allowed_cpuset ,
+                                               HWLOC_OBJ_CORE , j );
 
-        const unsigned max_core =
-          hwloc_get_nbobjs_inside_cpuset_by_type( topology ,
-                                                  root->allowed_cpuset ,
-                                                  HWLOC_OBJ_CORE );
+        // If process' cpuset intersects core's cpuset then process can access this core.
+        // Must use intersection instead of inclusion because the Intel-Phi
+        // MPI may bind the process to only one of the core's hyperthreads.
+        //
+        // Assumption: if the process can access any hyperthread of the core
+        // then it has ownership of the entire core.
+        // This assumes that it would be performance-detrimental
+        // to spawn more than one MPI process per core and use nested threading.
 
-        unsigned core_count = 0 ;
+        if ( hwloc_bitmap_intersects( s_process_binding , core->allowed_cpuset ) ) {
 
-        for ( unsigned j = 0 ; j < max_core && core_count < core_per_root ; ++j ) {
+          ++core_count ;
 
-          const hwloc_obj_t core =
-            hwloc_get_obj_inside_cpuset_by_type( topology ,
-                                                 root->allowed_cpuset ,
-                                                 HWLOC_OBJ_CORE , j );
+          const unsigned pu_count =
+            hwloc_get_nbobjs_inside_cpuset_by_type( s_hwloc_topology ,
+                                                    core->allowed_cpuset ,
+                                                    HWLOC_OBJ_PU );
 
-          if ( hwloc_bitmap_intersects( s_process_binding , core->allowed_cpuset ) ) {
+          if ( pu_per_core == 0 ) pu_per_core = pu_count ;
 
-            s_core[ core_count + core_per_root * i ] = core->allowed_cpuset ;
+          // Enforce symmetry by taking the minimum:
 
-            ++core_count ;
-          }
+          pu_per_core = std::min( pu_per_core , pu_count );
+
+          if ( pu_count != pu_per_core ) symmetric = false ;
         }
       }
-    }
 
-    hwloc_bitmap_free( proc_cpuset_location );
+      if ( 0 == core_per_root ) core_per_root = core_count ;
+
+      // Enforce symmetry by taking the minimum:
+
+      core_per_root = std::min( core_per_root , core_count );
+
+      if ( core_count != core_per_root ) symmetric = false ;
+    }
   }
 
-  const std::pair<unsigned,unsigned> coord = get_thread_coordinate();
-  std::cout << "hwloc master thread at ("
-            << coord.first << "," << coord.second << ")"
-            << std::endl ;
+  s_core_topology.first  = root_count ;
+  s_core_topology.second = core_per_root ;
+  s_core_capacity        = pu_per_core ;
+
+  // Fill the 's_core' array for fast mapping from a core coordinate to the
+  // hwloc cpuset object required for thread location querying and binding.
+
+  for ( unsigned i = 0 ; i < max_root ; ++i ) {
+
+    const unsigned root_rank = ( i + root_base ) % max_root ;
+
+    const hwloc_obj_t root = hwloc_get_obj_by_type( s_hwloc_topology , root_type , root_rank );
+
+    if ( hwloc_bitmap_intersects( s_process_binding , root->allowed_cpuset ) ) {
+
+      const unsigned max_core =
+        hwloc_get_nbobjs_inside_cpuset_by_type( s_hwloc_topology ,
+                                                root->allowed_cpuset ,
+                                                HWLOC_OBJ_CORE );
+
+      unsigned core_count = 0 ;
+
+      for ( unsigned j = 0 ; j < max_core && core_count < core_per_root ; ++j ) {
+
+        const hwloc_obj_t core =
+          hwloc_get_obj_inside_cpuset_by_type( s_hwloc_topology ,
+                                               root->allowed_cpuset ,
+                                               HWLOC_OBJ_CORE , j );
+
+        if ( hwloc_bitmap_intersects( s_process_binding , core->allowed_cpuset ) ) {
+
+          s_core[ core_count + core_per_root * i ] = core->allowed_cpuset ;
+
+          ++core_count ;
+        }
+      }
+    }
+  }
+
+  hwloc_bitmap_free( proc_cpuset_location );
+
+  if ( ! symmetric ) {
+    std::cout << "KokkosArray::hwloc WARNING: Using a symmetric subset of a non-symmetric core topology."
+              << std::endl ;
+  }
 }
 
 //----------------------------------------------------------------------------
 
 } /* namespace KokkosArray */
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace KokkosArray {
-
-enum BindingPolicy { SPREAD , PACK };
-
-void map_thread( const BindingPolicy policy ,
-                 const unsigned capacity_depth ,
-                 const unsigned capacity[] ,
-                 const unsigned rank ,
-                 const unsigned count ,
-                 unsigned coordinate[] )
-{
-  unsigned capacity_count = 1 ;
-
-  for ( unsigned i = 0 ; i < capacity_depth ; ++i ) {
-    capacity_count *= capacity[i] ;
-    coordinate[i] = 0 ;
-  }
-
-  if ( SPREAD == policy || capacity_count <= count ) {
-    // Spread threads across higher levels of the topology
-    // and use higher ranking hardware resource.
-
-    unsigned n = count ;
-    unsigned r = rank ;
-    for ( unsigned i = 0 ; i < capacity_depth ; ++i ) {
-      // n = k * bin + ( capacity[i] - k ) * ( bin + 1 )
-      const unsigned bin  = n / capacity[i] ;
-      const unsigned bin1 = bin + 1 ;
-      const unsigned k    = capacity[i] * bin1 - n ;
-      const unsigned part = k * bin ;
-
-      if ( r < part ) {
-        coordinate[i]  = r / bin ;
-        r = r - bin * coordinate[i] ;
-        n = bin ;
-      }
-      else {
-        const unsigned r1 = r - part ;
-        const unsigned c1 = r1 / bin1 ;
-
-        coordinate[i]  = c1 + k ;
-        r = r1 - c1 * bin1 ;
-        n = bin1 ;
-      }
-    }
-  }
-  else if ( PACK == policy ) {
-    unsigned r0 = capacity_count - count ;
-    unsigned r = rank + r0 ;
-
-    for ( unsigned i = 0 ; i < capacity_depth ; ++i ) {
-      capacity_count /= capacity[i] ;
-
-      const unsigned c0 = r0 / capacity_count ;
-      coordinate[i]  = r / capacity_count ;
-
-      r  = r  % capacity_count ;
-      r0 = ( c0 < coordinate[i] ) ? 0 : r0 % capacity_count ;
-    }
-  }
-}
-
-//----------------------------------------------------------------------------
-
-} /* namespace KokkosArray */
 

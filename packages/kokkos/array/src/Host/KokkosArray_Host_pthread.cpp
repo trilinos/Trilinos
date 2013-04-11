@@ -45,7 +45,6 @@
 /* KokkosArray interfaces */
 
 #include <iostream>
-#include <KokkosArray_Host.hpp>
 #include <Host/KokkosArray_Host_Internal.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -64,10 +63,12 @@ namespace Impl {
 
 namespace {
 
+pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
+
 void * host_internal_pthread_driver( void * )
 {
   try {
-    HostInternal::driver();
+    host_thread_driver();
   }
   catch( const std::exception & x ) {
     // mfh 29 May 2012: Doesn't calling std::terminate() seem a
@@ -87,13 +88,11 @@ void * host_internal_pthread_driver( void * )
   return NULL ;
 }
 
-pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
-
 }
 
 //----------------------------------------------------------------------------
 
-bool HostInternal::is_master_thread() const
+bool host_thread_is_master()
 {
   static const pthread_t master_pid = pthread_self();
 
@@ -103,7 +102,7 @@ bool HostInternal::is_master_thread() const
 //----------------------------------------------------------------------------
 // Spawn this thread
 
-bool HostInternal::spawn()
+bool host_thread_spawn()
 {
   bool result = false ;
 
@@ -126,9 +125,11 @@ bool HostInternal::spawn()
 
 //----------------------------------------------------------------------------
 
-void host_thread_wait( volatile int * const flag , const int value )
+int host_thread_wait( volatile int * const flag , const int value )
 {
-  while ( value == *flag ) sched_yield();
+  int result ;
+  while ( value == ( result = *flag ) ) sched_yield();
+  return result ;
 }
 
 void host_thread_lock()

@@ -45,15 +45,10 @@
 #define KOKKOSARRAY_HOST_PARALLEL_HPP
 
 #include <Host/KokkosArray_Host_Thread.hpp>
+#include <Host/KokkosArray_Host_Internal.hpp>
 
 namespace KokkosArray {
 namespace Impl {
-
-class HostInternal ;
-
-void host_thread_wait( volatile int * const , const int );
-void host_thread_lock();
-void host_thread_unlock();
 
 //----------------------------------------------------------------------------
 /** \brief  Base class for a parallel driver executing on a thread pool. */
@@ -179,11 +174,11 @@ public:
 
         DstType * const m_dst ;
   const SrcType * const m_src ;
-  const Host::size_type m_count ;
+  const HostSpace::size_type m_count ;
 
   void execute_on_thread( HostThread & this_thread ) const
   {
-    std::pair<Host::size_type,Host::size_type> range =
+    const HostThread::work_range_type range =
       this_thread.work_range( m_count );
     DstType * const x_end = m_dst + range.second ;
     DstType *       x     = m_dst + range.first ;
@@ -195,7 +190,7 @@ public:
   }
 
   HostParallelCopy( DstType * dst , const SrcType * src ,
-                    Host::size_type count )
+                    HostSpace::size_type count )
     : m_dst( dst ), m_src( src ), m_count( count )
     { HostThreadWorker::execute(); }
 };
@@ -208,11 +203,11 @@ public:
 
   DstType * const m_dst ;
   const DstType   m_src ;
-  const Host::size_type m_count ;
+  const HostSpace::size_type m_count ;
 
   void execute_on_thread( HostThread & this_thread ) const
   {
-    std::pair<Host::size_type,Host::size_type> range =
+    const HostThread::work_range_type range =
       this_thread.work_range( m_count );
     DstType * const x_end = m_dst + range.second ;
     DstType *       x     = m_dst + range.first ;
@@ -224,7 +219,7 @@ public:
 
   template< typename SrcType >
   HostParallelFill( DstType * dst , const SrcType & src ,
-                    Host::size_type count )
+                    HostSpace::size_type count )
     : m_dst( dst ), m_src( src ), m_count( count )
     { HostThreadWorker::execute(); }
 };

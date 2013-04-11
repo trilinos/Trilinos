@@ -15,8 +15,6 @@ void test_box_partition( bool print );
 
 //----------------------------------------------------------------------------
 
-void test_host_query( comm::Machine );
-
 void test_host_fixture( comm::Machine machine ,
                         size_t gang_count ,
                         size_t gang_worker_count ,
@@ -203,6 +201,9 @@ bool run_cuda( std::istream & input , comm::Machine machine )
 
 void run( const std::string & argline , comm::Machine machine )
 {
+  const std::pair<unsigned,unsigned> core_topo = KokkosArray::hwloc::get_core_topology();
+  const unsigned                     core_cap  = KokkosArray::hwloc::get_core_capacity();
+
   std::istringstream input( argline );
 
   bool cmd_error = false ;
@@ -210,7 +211,11 @@ void run( const std::string & argline , comm::Machine machine )
   std::string which ; input >> which ;
 
   if ( which == std::string("query") ) {
-    test_host_query( machine );
+    std::cout << "P" << comm::rank( machine )
+              << ": hwloc { NUMA[" << core_topo.first << "]"
+              << " CORE[" << core_topo.second << "]"
+              << " PU[" << core_cap << "] }"
+              << std::endl ;
 #if HAVE_CUDA
     test_cuda_query( machine );
 #endif
@@ -231,17 +236,14 @@ void run( const std::string & argline , comm::Machine machine )
       cmd_error = run_host( input , machine , host_gang_count , host_gang_worker_count );
     }
     else if ( which == std::string("host-all") ) {
-      size_t host_gang_count        = KokkosArray::Host::detect_gang_capacity();
-      size_t host_gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity() ;
+      size_t host_gang_count        = core_topo.first ;
+      size_t host_gang_worker_count = core_topo.second * core_cap ;
 
       cmd_error = run_host( input , machine , host_gang_count , host_gang_worker_count );
     }
     else if ( which == std::string("host-most") ) {
-      size_t host_gang_count        = KokkosArray::Host::detect_gang_capacity();
-      size_t host_gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity() ;
-
-      if ( 1 < host_gang_count ) { --host_gang_count ; }
-      else if ( 1 < host_gang_worker_count ) { --host_gang_worker_count ; }
+      size_t host_gang_count        = core_topo.first ;
+      size_t host_gang_worker_count = ( core_topo.second - 1 ) * core_cap ;
 
       cmd_error = run_host( input , machine , host_gang_count , host_gang_worker_count );
     }

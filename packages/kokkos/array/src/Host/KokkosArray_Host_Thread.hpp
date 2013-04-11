@@ -61,6 +61,7 @@ public:
   typedef HostSpace::size_type size_type ;
 
   inline size_type rank() const { return m_thread_rank ; }
+  inline size_type count() const { return m_thread_count ; }
 
   inline size_type gang_rank()    const { return m_gang_rank ; }
   inline size_type gang_count()   const { return m_gang_count ; }
@@ -70,9 +71,10 @@ public:
   //----------------------------------------------------------------------
   /** \brief  Compute a range of work for this thread's rank */
 
-  std::pair< size_type , size_type >
+  typedef std::pair< size_type , size_type > work_range_type ;
+
   inline
-  work_range( const size_type work_count ) const
+  work_range_type work_range( const size_type work_count ) const
     {
       enum { work_align = HostSpace::WORK_ALIGNMENT };
       enum { work_shift = power_of_two< work_align >::value };
@@ -88,7 +90,7 @@ public:
       const size_type work_begin = std::min( m_thread_rank * work_per_thread , work_count );
       const size_type work_end   = std::min( work_begin + work_per_thread , work_count );
 
-      return std::pair<size_type,size_type>( work_begin , work_end );
+      return work_range_type( work_begin , work_end );
     }
 
   //----------------------------------------------------------------------
@@ -112,8 +114,8 @@ __assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
 
   //----------------------------------------------------------------------
 
-  ~HostThread();
-  HostThread();
+  inline ~HostThread();
+  inline HostThread();
 
   //----------------------------------------------------------------------
 
@@ -125,7 +127,12 @@ __assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
     { return m_thread[ entry ]; }
 
   static
-  void set_thread( const unsigned entry , HostThread * );
+  void set_thread( const unsigned rank , HostThread * );
+
+  /**  */
+  void set_gang_worker( const unsigned gang_rank ,   const unsigned gang_count ,
+                        const unsigned worker_rank , const unsigned worker_count );
+
 
   /** \brief  Setup relationships between threads.
    *
@@ -157,14 +164,17 @@ __assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
   static const unsigned max_fan_count = 16 ;
   static const unsigned max_thread_count = 1 << max_fan_count ;
 
+  /** \brief States of a worker thread */
+  enum State { ThreadTerminating ///<  Exists, termination in progress
+             , ThreadInactive    ///<  Exists, waiting for work
+             , ThreadActive      ///<  Exists, performing work
+             , ThreadRendezvous  ///<  Exists, waiting in a barrier or reduce
+             };
+
+  int  volatile m_state ;     ///< Thread control flag
+
 private:
 
-  HostThread( const HostThread & );
-  HostThread & operator = ( const HostThread & );
-
-  static HostThread * m_thread[ max_thread_count ];
-
-  HostThread  * m_fan[ max_fan_count ] ;
   size_type     m_fan_count ;
   size_type     m_thread_rank ;
   size_type     m_thread_count ;
@@ -173,23 +183,36 @@ private:
   size_type     m_worker_rank ;
   size_type     m_worker_count ;
   void        * m_reduce ;    ///< Reduction memory
+  HostThread  * m_fan[ max_fan_count ] ;
 
-public:
+  static HostThread * m_thread[ max_thread_count ];
 
-  int m_gang_tag ;
-  int m_worker_tag ;
+  HostThread( const HostThread & );
+  HostThread & operator = ( const HostThread & );
 
-  int  volatile m_state ;     ///< Thread control flag
-
-  /** \brief States of a worker thread */
-  enum State { ThreadTerminating ///<  Exists, termination in progress
-             , ThreadInactive    ///<  Exists, waiting for work
-             , ThreadActive      ///<  Exists, performing work
-             , ThreadRendezvous  ///<  Exists, waiting in a barrier or reduce
-             };
+  static void warn_destroy_with_reduce();
 
   friend class HostThreadSentinel ;
 };
+
+inline
+HostThread::HostThread()
+  : m_state( HostThread::ThreadInactive )
+  , m_fan_count(0)
+  , m_thread_rank(0)
+  , m_thread_count(1)
+  , m_gang_rank(0)
+  , m_gang_count(1)
+  , m_worker_rank(0)
+  , m_worker_count(1)
+  , m_reduce(0)
+{}
+
+inline
+HostThread::~HostThread()
+{
+  if ( m_reduce ) warn_destroy_with_reduce();
+}
 
 //----------------------------------------------------------------------------
 

@@ -136,8 +136,10 @@ struct performance_test_driver<Scalar,KokkosArray::Host> {
 template <typename Scalar>
 int mainHost(bool test_flat, bool test_orig, bool test_block, bool check)
 {
-  const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
-  const size_t gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity() / 2 ;
+  const std::pair<unsigned,unsigned> core_topo = KokkosArray::hwloc::get_core_topology();
+
+  const size_t gang_count = core_topo.first ;
+  const size_t gang_worker_count = ( core_topo.second + 1 ) / 2 ;
 
   KokkosArray::Host::initialize( gang_count , gang_worker_count );
 

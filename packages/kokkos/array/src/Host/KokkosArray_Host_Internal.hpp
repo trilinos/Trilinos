@@ -44,110 +44,32 @@
 #ifndef KOKKOSARRAY_HOST_INTERNAL_HPP
 #define KOKKOSARRAY_HOST_INTERNAL_HPP
 
-#include <KokkosArray_Host.hpp>
-#include <KokkosArray_HostSpace.hpp>
-#include <Host/KokkosArray_Host_Parallel.hpp>
-
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
 namespace Impl {
 
-/**
- * \class HostInternal
- * \brief Internal implementation of intraprocess parallelism on the host.
- *
- * Hardware model
- * ==============
- *
- * - The Host process is running within a NUMA multiprocessor environment.
- * - The hardware locality (hwloc) library defines a 'node' as a collection
- *   of processing units associated with a NUMA region.
- * - If the Host process is pinned to a particular NUMA node we assume
- *   that the threads of the Host process are also restricted to that node.
- *
- * Be aware that "node" here means "CPU processing units associated
- * with a NUMA affinity region," and does not have its traditional
- * high-performance computing hardware meaning.
- */
-class HostInternal {
-protected:
+/** \brief  The driver subprogram to be run by a spawned thread. */
+void host_thread_driver();
 
-  unsigned         m_thread_count ;  // Number of threads
-  HostThread       m_master_thread ;
+/** \name  Internal interface to threading runtime. */
+/**@{ */
 
-  const HostThreadWorker * volatile m_worker ;
+/** \brief  Span a thread and call 'host_thread_driver()' */
+bool host_thread_spawn();
 
-  ~HostInternal();
+/** \brief  Query if called on the master thread */
+bool host_thread_is_master();
 
-  HostInternal();
+/** \brief  Wait for *flag != value */
+int  host_thread_wait( volatile int * const flag , const int value );
 
-private:
-  /// \brief Spawn the worker threads, and set up interthread communication.
-  ///
-  /// \param use_node_count [in] The number of NUMA regions ("nodes")
-  ///   to use.
-  /// \param use_node_thread_count [in] The number of worker threads
-  ///   to use per NUMA region.
-  ///
-  /// \return Whether the threads successfully spawned.
-  ///
-  /// The calling thread also gets bound as a worker thread.  This has
-  /// implications for parallel kernels: in particular, they are not
-  /// asynchronous.
-  bool spawn_threads( const unsigned gang_count ,
-                      const unsigned worker_count);
+/** \brief  Hard lock the current thread (e.g., via pthread_mutex */
+void host_thread_lock();
 
-  bool spawn();
-
-  unsigned bind_host_thread();
-
-  void activate_threads();
-
-public:
-  /// \brief Assert at run time that the calling worker thread is inactive.
-  ///
-  /// \param method [in] Name of the method invoking the assertion.
-  ///   Used only for constructing the exception message in case the
-  ///   assertion fails.
-  void verify_inactive( const char * const method ) const ;
-
-  /// \brief Initialize the worker threads for parallel kernels.
-  ///
-  /// \param use_node_count [in] The number of NUMA regions ("nodes")
-  ///   to use.
-  /// \param use_node_thread_count [in] The number of worker threads
-  ///   to use per NUMA region.
-  ///
-  /// \exception std::runtime_error if initialization failed.
-  ///
-  /// The calling thread, which is the master thread, also gets bound
-  /// as a worker thread.  This has implications for parallel kernels:
-  /// in particular, they are not asynchronous.  Tasks get assigned to
-  /// the master thread as well as to the other worker threads.
-  void initialize( const unsigned use_node_count ,
-                   const unsigned use_node_thread_count );
-
-  void finalize();
-
-  void print_configuration( std::ostream & ) const ;
-
-  void execute_serial( const HostThreadWorker & worker );
-
-  inline void execute( const HostThreadWorker & worker );
-
-  static void driver();
-
-  bool is_master_thread() const ;
-
-  void * reduce_scratch() const ;
-
-  //! Access the one HostInternal instance.
-  static HostInternal & singleton();
-
-  friend class KokkosArray::Host ;
-  friend class KokkosArray::HostSpace ;
-};
+/** \brief  Unlock the current thread */
+void host_thread_unlock();
+/**@} */
 
 } /* namespace Impl */
 } /* namespace KokkosArray */

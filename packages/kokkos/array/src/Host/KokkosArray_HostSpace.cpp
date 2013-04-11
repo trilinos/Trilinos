@@ -48,7 +48,7 @@
 #include <sstream>
 
 #include <KokkosArray_HostSpace.hpp>
-#include <Host/KokkosArray_Host_Internal.hpp>
+#include <Host/KokkosArray_Host_Parallel.hpp>
 #include <impl/KokkosArray_Error.hpp>
 #include <impl/KokkosArray_MemoryTracking.hpp>
 
@@ -180,14 +180,14 @@ void * HostSpace::allocate(
 
 void HostSpace::increment( const void * ptr )
 {
-  if ( Impl::HostInternal::singleton().is_master_thread() ) {
+  if ( Impl::host_thread_is_master() ) {
     host_space_singleton().increment( ptr );
   }
 }
 
 void HostSpace::decrement( const void * ptr )
 {
-  if ( Impl::HostInternal::singleton().is_master_thread() ) {
+  if ( Impl::host_thread_is_master() ) {
     Impl::host_decrement_not_thread_safe( ptr );
   }
 }
@@ -240,7 +240,7 @@ namespace KokkosArray {
 
 void HostSpace::assert_master_thread( const char * const name )
 {
-  if ( ! Impl::HostInternal::singleton().is_master_thread() ) {
+  if ( ! Impl::host_thread_is_master() ) {
     std::string msg ;
     msg.append( "KokkosArray::HostSpace::assert_master_thread( " );
     msg.append( name );
