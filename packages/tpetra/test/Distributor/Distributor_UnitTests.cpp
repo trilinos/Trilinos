@@ -681,27 +681,27 @@ namespace {
     // create from recvs with bad node IDs
     {
       Distributor distributor(comm);
-      ArrayRCP<Ordinal> exportIDs;
-      ArrayRCP<int> exportNodeIDs;
+      Array<Ordinal> exportIDs;
+      Array<int> exportNodeIDs;
       TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0), tuple<int>(myImageID+1), exportIDs, exportNodeIDs), std::runtime_error );
     }
     {
       Distributor distributor(comm);
-      ArrayRCP<Ordinal> exportIDs;
-      ArrayRCP<int> exportNodeIDs;
+      Array<Ordinal> exportIDs;
+      Array<int> exportNodeIDs;
       TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0,0,0), tuple<int>(0,myImageID+1,0), exportIDs, exportNodeIDs), std::runtime_error );
     }
     // create from recvs with conflicting sizes, but otherwise valid entries
     {
       Distributor distributor(comm);
-      ArrayRCP<Ordinal> exportIDs;
-      ArrayRCP<int> exportNodeIDs;
+      Array<Ordinal> exportIDs;
+      Array<int> exportNodeIDs;
       TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0), tuple<int>(0,0), exportIDs, exportNodeIDs), std::runtime_error );
     }
     {
       Distributor distributor(comm);
-      ArrayRCP<Ordinal> exportIDs;
-      ArrayRCP<int> exportNodeIDs;
+      Array<Ordinal> exportIDs;
+      Array<int> exportNodeIDs;
       TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0,0), tuple<int>(0), exportIDs, exportNodeIDs), std::runtime_error );
     }
     // All procs fail if any proc fails
