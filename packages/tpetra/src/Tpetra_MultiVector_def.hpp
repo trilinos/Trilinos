@@ -42,12 +42,11 @@
 #ifndef TPETRA_MULTIVECTOR_DEF_HPP
 #define TPETRA_MULTIVECTOR_DEF_HPP
 
+#include <Kokkos_DefaultArithmetic.hpp>
 #include <Kokkos_NodeTrace.hpp>
-
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_as.hpp>
-
-#include "Tpetra_Vector.hpp"
+#include <Tpetra_Vector.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_MultiVector_decl.hpp"

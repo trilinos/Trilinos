@@ -44,11 +44,19 @@
 
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Range1D.hpp>
-#include <Kokkos_DefaultArithmetic.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_ViewAccepter.hpp"
+#include <Kokkos_MultiVector.hpp>
+#include <Teuchos_BLAS_types.hpp>
 
+namespace Kokkos {
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  // forward declaration of DefaultArithmetic
+  template<class KokkosMultiVectorType>
+  class DefaultArithmetic;
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+} // namespace Kokkos
 
 namespace Tpetra {
 
