@@ -72,9 +72,13 @@ public:
   static HostThreadSentinel & singleton();
 
   unsigned get_thread_count();
+
   void set_thread( const unsigned , HostThread *);
+
   HostThread * clear_thread( const unsigned );
+
   void set_relationships();
+  void clear_relationships();
 
   static void resize_reduce( HostThread & , unsigned );
 
@@ -82,7 +86,6 @@ public:
 
 private:
 
-  void clear_relationships();
 
   unsigned relationships ;
 };
@@ -155,6 +158,9 @@ unsigned HostThread::get_thread_count()
 
 void HostThread::set_thread_relationships()
 { HostThreadSentinel::singleton().set_relationships(); }
+
+void HostThread::clear_thread_relationships()
+{ HostThreadSentinel::singleton().clear_relationships(); }
 
 void HostThread::set_thread( const unsigned entry , HostThread * t )
 { HostThreadSentinel::singleton().set_thread( entry , t ); }

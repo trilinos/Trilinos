@@ -51,7 +51,7 @@ namespace KokkosArray {
 
 namespace {
 
-unsigned coordinates[ Impl::HostThread::max_thread_count ][ hwloc::depth ];
+std::pair<unsigned,unsigned> coordinates[ Impl::HostThread::max_thread_count ] ;
 
 }
 

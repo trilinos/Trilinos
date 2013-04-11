@@ -44,6 +44,7 @@
 /*--------------------------------------------------------------------------*/
 /* KokkosArray interfaces */
 
+#include <iostream>
 #include <KokkosArray_Host.hpp>
 #include <Host/KokkosArray_Host_Internal.hpp>
 
@@ -63,9 +64,25 @@ namespace Impl {
 
 namespace {
 
-void * host_internal_pthread_driver( void * arg )
+void * host_internal_pthread_driver( void * )
 {
-  HostInternal::singleton().driver( reinterpret_cast<size_t>( arg ) );
+  try {
+    HostInternal::driver();
+  }
+  catch( const std::exception & x ) {
+    // mfh 29 May 2012: Doesn't calling std::terminate() seem a
+    // little violent?  On the other hand, C++ doesn't define how
+    // to transport exceptions between threads (until C++11).
+    // Since this is a worker thread, it would be hard to tell the
+    // master thread what happened.
+    std::cerr << "Worker thread uncaught exception : " << x.what() << std::endl ;
+    std::terminate();
+  }
+  catch( ... ) {
+    // mfh 29 May 2012: See note above on std::terminate().
+    std::cerr << "Worker thread uncaught exception" << std::endl ;
+    std::terminate();
+  }
 
   return NULL ;
 }
@@ -86,7 +103,7 @@ bool HostInternal::is_master_thread() const
 //----------------------------------------------------------------------------
 // Spawn this thread
 
-bool HostInternal::spawn( const size_t thread_rank )
+bool HostInternal::spawn()
 {
   bool result = false ;
 
@@ -96,12 +113,10 @@ bool HostInternal::spawn( const size_t thread_rank )
        0 == pthread_attr_setscope(       & attr, PTHREAD_SCOPE_SYSTEM ) ||
        0 == pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ) {
 
-    void * const arg = reinterpret_cast<void*>( thread_rank );
-
     pthread_t pt ;
 
     result =
-      0 == pthread_create( & pt, & attr, host_internal_pthread_driver, arg );
+      0 == pthread_create( & pt, & attr, host_internal_pthread_driver, 0 );
   }
 
   pthread_attr_destroy( & attr );

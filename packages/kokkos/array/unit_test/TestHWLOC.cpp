@@ -57,10 +57,18 @@ protected:
   {}
 };
 
-TEST_F( hwloc, query) {
+TEST_F( hwloc, query)
+{
+  const std::pair<unsigned,unsigned> core_topo =
+    KokkosArray::hwloc::get_core_topology();
 
-  KokkosArray::hwloc::print_thread_capacity( std::cout );
-  std::cout << std::endl ;
+  const unsigned core_size =
+    KokkosArray::hwloc::get_core_capacity();
+
+  std::cout << " NUMA[" << core_topo.first << "]"
+            << " CORE[" << core_topo.second << "]"
+            << " PU[" << core_size << "]"
+            << std::endl ;
 }
 
 }

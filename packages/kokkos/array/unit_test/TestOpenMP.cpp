@@ -67,21 +67,14 @@ class openmp : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    unsigned capacity[ KokkosArray::hwloc::depth ];
+    const std::pair<unsigned,unsigned> core_top =
+      KokkosArray::hwloc::get_core_topology();
 
-    KokkosArray::hwloc::get_thread_capacity( capacity );
+    const unsigned core_size =
+      KokkosArray::hwloc::get_core_capacity();
 
-    unsigned gang_count        = capacity[0] ;
-    unsigned gang_worker_count = capacity[1] *
-                                 capacity[2] *
-                                 capacity[3] ;
-
-    if ( gang_worker_count < gang_count ) {
-      gang_count = ( gang_count + 1 ) / 2 ;
-    }
-    else {
-      gang_worker_count = ( gang_worker_count + 1 ) / 2 ;
-    }
+    const unsigned gang_count        = core_top.first ;
+    const unsigned gang_worker_count = ( core_top.second * core_size ) / 2 ;
 
     omp_set_max_active_levels(1);
     omp_set_num_threads( gang_count * gang_worker_count );

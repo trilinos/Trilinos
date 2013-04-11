@@ -44,23 +44,34 @@
 #ifndef KOKKOSARRAY_HWLOC_HPP
 #define KOKKOSARRAY_HWLOC_HPP
 
-#include <ostream>
+#include <utility>
 
 namespace KokkosArray {
 
 struct hwloc {
 
-  /** \brief  Depth of hardware thread capacity hierarchy. */
-  static const unsigned depth = 4 ;
+  /** \brief  NUMA x Core/NUMA */
+  static std::pair<unsigned,unsigned> get_core_topology();
 
-  /** \brief  Hardware thread capacity hierarchy. */
-  static void get_thread_capacity( unsigned capacity[] );
+  /** \brief  Number of concurrent threads per core */
+  static unsigned get_core_capacity();
 
-  /** \brief  Print hardware thread capacity hierarchy */
-  static void print_thread_capacity( std::ostream & );
+  /** \brief  Query core-coordinate of the current thread */
+  static std::pair<unsigned,unsigned> get_thread_coordinate();
 
-  /** \brief  Bind the current thread to the hardware hierarchical coordinate */
-  static bool bind_this_thread( const unsigned coordinate[] );
+  /** \brief  Bind thread to core. */
+  static bool bind_this_thread( const std::pair<unsigned,unsigned> );
+
+  /** \brief  Unbind this thread back to the original process binding */
+  static bool unbind_this_thread();
+
+
+private:
+
+  hwloc();
+  ~hwloc();
+
+  static void sentinel();
 };
 
 } // namespace KokkosArray

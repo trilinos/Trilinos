@@ -95,9 +95,12 @@ private:
   /// The calling thread also gets bound as a worker thread.  This has
   /// implications for parallel kernels: in particular, they are not
   /// asynchronous.
-  bool spawn_threads( const unsigned thread_count );
+  bool spawn_threads( const unsigned gang_count ,
+                      const unsigned worker_count);
 
-  bool spawn( const size_t );
+  bool spawn();
+
+  unsigned bind_host_thread();
 
   void activate_threads();
 
@@ -133,7 +136,7 @@ public:
 
   inline void execute( const HostThreadWorker & worker );
 
-  void driver( const size_t );
+  static void driver();
 
   bool is_master_thread() const ;
 

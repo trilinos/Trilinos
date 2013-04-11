@@ -62,9 +62,10 @@ public:
 
   inline size_type rank() const { return m_thread_rank ; }
 
-  inline size_type gang_rank() const { return m_gang_rank ; }
-
-  inline size_type worker_rank() const { return m_worker_rank ; }
+  inline size_type gang_rank()    const { return m_gang_rank ; }
+  inline size_type gang_count()   const { return m_gang_count ; }
+  inline size_type worker_rank()  const { return m_worker_rank ; }
+  inline size_type worker_count() const { return m_worker_count ; }
 
   //----------------------------------------------------------------------
   /** \brief  Compute a range of work for this thread's rank */
@@ -137,6 +138,9 @@ __assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
    */
   static
   void set_thread_relationships();
+
+  static
+  void clear_thread_relationships();
 
   static
   HostThread * clear_thread( const unsigned entry );

@@ -80,7 +80,7 @@ public:
 
 const HostWorkerBlock worker_block ;
 
-unsigned host_thread_coordinates[ HostThread::max_thread_count ][ hwloc::depth ];
+std::pair<unsigned,unsigned> host_thread_coordinates[ HostThread::max_thread_count ] ;
 
 //----------------------------------------------------------------------------
 
@@ -88,57 +88,35 @@ inline
 void thread_mapping( const unsigned thread_rank ,
                      const unsigned gang_count,
                      const unsigned worker_count ,
-                     unsigned coordinate[] )
+                     std::pair<unsigned,unsigned> & coordinate )
 {
   const unsigned gang_rank   = thread_rank / worker_count ;
   const unsigned worker_rank = thread_rank % worker_count ;
 
-  unsigned capacity[ hwloc::depth ];
+  const std::pair<unsigned,unsigned> core_topo = hwloc::get_core_topology();
 
-  hwloc::get_thread_capacity( capacity );
-
-  for ( unsigned i = 0 ; i < hwloc::depth ; ++i ) coordinate[i] = 0 ;
-
-  { // Assign gang to resource:
-    const unsigned bin  = gang_count / capacity[0] ;
+  { // Distribute gangs amont NUMA regions:
+    // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
+    const unsigned bin  = gang_count / core_topo.first ;
     const unsigned bin1 = bin + 1 ;
-    const unsigned k    = capacity[0] * bin1 - gang_count ;
+    const unsigned k    = core_topo.first * bin1 - gang_count ;
     const unsigned part = k * bin ;
 
-    if ( gang_rank < part ) {
-      coordinate[0] = gang_rank / bin ;
-    }
-    else {
-      coordinate[0] = k + ( gang_rank - part ) / bin1 ;
-    }
+    coordinate.first = ( gang_rank < part )
+                     ? ( gang_rank / bin )
+                     : ( k + ( gang_rank - part ) / bin1 );
   }
 
-  { // Assign workers to resources:
-    unsigned n = worker_count ;
-    unsigned r = worker_rank ;
+  { // Distribute workers to cores:
+    // worker_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
+    const unsigned bin  = worker_count / core_topo.second ;
+    const unsigned bin1 = bin + 1 ;
+    const unsigned k    = core_topo.second * bin1 - worker_count ;
+    const unsigned part = k * bin ;
 
-    for ( unsigned i = 1 ; i < hwloc::depth &&
-                           0 < capacity[i]  ; ++i ) {
-      // n = k * bin + ( capacity[i] - k ) * ( bin + 1 )
-      const unsigned bin  = n / capacity[i] ;
-      const unsigned bin1 = bin + 1 ;
-      const unsigned k    = capacity[i] * bin1 - n ;
-      const unsigned part = k * bin ;
-
-      if ( r < part ) {
-        coordinate[i]  = r / bin ;
-        r = r - bin * coordinate[i] ;
-        n = bin ;
-      }
-      else {
-        const unsigned r1 = r - part ;
-        const unsigned c1 = r1 / bin1 ;
-
-        coordinate[i]  = c1 + k ;
-        r = r1 - c1 * bin1 ;
-        n = bin1 ;
-      }
-    }
+    coordinate.second = ( worker_rank < part )
+                      ? ( worker_rank / bin )
+                      : ( k + ( worker_rank - part ) / bin1 );
   }
 }
 
@@ -148,9 +126,11 @@ void thread_mapping( const unsigned thread_rank ,
 
 void HostInternal::activate_threads()
 {
-  // Activate threads to call 'm_worker.execute_on_thread'
-  for ( unsigned i = m_thread_count ; 1 < i ; ) {
-    HostThread::get_thread(--i)->m_state = HostThread::ThreadActive ;
+  if ( 1 < m_thread_count ) {
+    // Activate threads to call 'm_worker.execute_on_thread'
+    for ( unsigned i = m_thread_count ; 0 < i ; ) {
+      HostThread::get_thread(--i)->m_state = HostThread::ThreadActive ;
+    }
   }
 }
 
@@ -186,12 +166,19 @@ void HostInternal::execute_serial( const HostThreadWorker & worker )
 
   m_worker = & worker ;
 
-  for ( unsigned i = m_thread_count ; 1 < i ; ) {
-    --i ;
-    HostThread & thread = * HostThread::get_thread(i);
+  for ( unsigned rank = m_thread_count ; 1 < rank ; ) {
+    --rank ;
 
-    thread.m_state = HostThread::ThreadActive ;
-    host_thread_wait( & thread.m_state , HostThread::ThreadActive );
+    for ( unsigned j = 0 ; j < m_thread_count ; ++j ) {
+
+      HostThread & thread = * HostThread::get_thread(j);
+
+      if ( thread.rank() == rank ) {
+        thread.m_state = HostThread::ThreadActive ;
+        host_thread_wait( & thread.m_state , HostThread::ThreadActive );
+        break ;
+      }
+    }
   }
 
   // Execute on the master thread,
@@ -229,20 +216,28 @@ HostInternal & HostInternal::singleton()
 
 void HostInternal::print_configuration( std::ostream & s ) const
 {
-  hwloc::print_thread_capacity( s );
+  const std::pair<unsigned,unsigned> core_topo = hwloc::get_core_topology();
+  const unsigned core_size = hwloc::get_core_capacity();
 
-  s << std::endl ;
+  s << "NUMA[" << core_topo.first << "]"
+    << " CORE[" << core_topo.second << "]"
+    << " PU[" << core_size << "]"
+    << std::endl ;
 
   for ( unsigned r = 0 ; r < m_thread_count ; ++r ) {
     HostThread * const thread = HostThread::get_thread( r );
 
+    std::pair<unsigned,unsigned> coord ;
+
+    thread_mapping( r , thread->gang_count() ,
+                        thread->worker_count() ,
+                        coord );
+
     s << "  thread[ " << thread->rank() << " : ("
       << thread->gang_rank()
-      << "," << thread->worker_rank() << ") ] -> bind{"
-      << " " << host_thread_coordinates[r][0]
-      << " " << host_thread_coordinates[r][1]
-      << " " << host_thread_coordinates[r][2]
-      << " }" << std::endl ;
+      << "," << thread->worker_rank() << ") ] bound to core("
+      << coord.first << "," << coord.second << ")"
+      << std::endl ;
   }
 }
 
@@ -264,83 +259,108 @@ void HostInternal::finalize()
 
   // Release and clear worker threads:
 
-  for ( unsigned r = HostThread::max_thread_count ; 0 < --r ; ) {
+  HostThread::clear_thread_relationships();
+
+  for ( unsigned r = 0 ; r < HostThread::max_thread_count ; ++r ) {
 
     HostThread * thread = HostThread::get_thread( r );
 
-    if ( 0 != thread ) {
+    if ( & m_master_thread != thread && 0 != thread ) {
 
       m_master_thread.m_state = HostThread::ThreadInactive ;
 
       thread->m_state = HostThread::ThreadTerminating ;
+
       thread = 0 ; // The '*thread' object is now invalid
 
       // Wait for '*thread' to terminate:
       host_thread_wait( & m_master_thread.m_state , HostThread::ThreadInactive );
     }
+
+    HostThread::clear_thread(r);
   }
 
-  HostThread::clear_thread(0);
+  m_thread_count = 1 ;
+
+  hwloc::unbind_this_thread();
 }
 
 //----------------------------------------------------------------------------
+// Bind this thread to one of the requested cores and remove that request.
+
+unsigned HostInternal::bind_host_thread()
+{
+  const std::pair<unsigned,unsigned> current = hwloc::get_thread_coordinate();
+
+  unsigned i = m_thread_count ;
+
+  if ( m_thread_count ) {
+
+    // Match one of the requests:
+    for ( i = 0 ; i < m_thread_count && current != host_thread_coordinates[i] ; ++i );
+
+    if ( m_thread_count == i ) {
+      // Match the NUMA request:
+      for ( i = 0 ; i < m_thread_count && current.first != host_thread_coordinates[i].first ; ++i );
+    }
+
+    if ( m_thread_count == i ) {
+      // Match any unclaimed request:
+      for ( i = 0 ; i < m_thread_count && ~0u == host_thread_coordinates[i].first  ; ++i );
+    }
+
+    if ( i < m_thread_count ) {
+      if ( ! hwloc::bind_this_thread( host_thread_coordinates[i] ) ) i = m_thread_count ;
+    }
+
+    if ( i < m_thread_count ) {
+      host_thread_coordinates[i].first  = ~0u ;
+      host_thread_coordinates[i].second = ~0u ;
+    }
+  }
+
+  return i ;
+}
+
 // Driver for each created thread
 
-void HostInternal::driver( const size_t thread_rank )
+void HostInternal::driver()
 {
-  // Bind this thread to a unique processing unit
-  // with all members of a gang in the same NUMA region.
+  HostInternal & host = Impl::HostInternal::singleton();
 
-  if ( hwloc::bind_this_thread( host_thread_coordinates[ thread_rank ] ) ) {
+  // Bind this thread to a unique processing unit.
+
+  const unsigned thread_entry = host.bind_host_thread();
+
+  if ( thread_entry < host.m_thread_count ) {
 
     HostThread this_thread ;
 
     this_thread.m_state = HostThread::ThreadActive ;
 
-    HostThread::set_thread( thread_rank , & this_thread );
+    HostThread::set_thread( thread_entry , & this_thread );
 
     // Inform master thread that spawning and binding succeeded.
+    host.m_master_thread.m_state = HostThread::ThreadActive ;
 
-    m_master_thread.m_state = HostThread::ThreadActive ;
+    // Work loop:
 
-    try {
-      // Work loop:
+    while ( HostThread::ThreadActive == this_thread.m_state ) {
 
-      while ( HostThread::ThreadActive == this_thread.m_state ) {
+      // Perform the work:
+      host.m_worker->execute_on_thread( this_thread );
 
-        // Perform the work:
-        m_worker->execute_on_thread( this_thread );
+      // Deactivate this thread:
+      this_thread.m_state = HostThread::ThreadInactive ;
 
-        // Deactivate this thread:
-        this_thread.m_state = HostThread::ThreadInactive ;
-
-        // Wait to be activated or terminated:
-        host_thread_wait( & this_thread.m_state , HostThread::ThreadInactive );
-      }
-    }
-    catch( const std::exception & x ) {
-      // mfh 29 May 2012: Doesn't calling std::terminate() seem a
-      // little violent?  On the other hand, C++ doesn't define how
-      // to transport exceptions between threads (until C++11).
-      // Since this is a worker thread, it would be hard to tell the
-      // master thread what happened.
-      std::cerr << "Thread " << thread_rank << " uncaught exception : "
-                << x.what() << std::endl ;
-      std::terminate();
-    }
-    catch( ... ) {
-      // mfh 29 May 2012: See note above on std::terminate().
-      std::cerr << "Thread " << thread_rank << " uncaught exception"
-                << std::endl ;
-      std::terminate();
+      // Wait to be activated or terminated:
+      host_thread_wait( & this_thread.m_state , HostThread::ThreadInactive );
     }
   }
 
   // Notify master thread that this thread has terminated.
 
-  HostThread::clear_thread( thread_rank );
-
-  m_master_thread.m_state = HostThread::ThreadTerminating ;
+  host.m_master_thread.m_state = HostThread::ThreadTerminating ;
 }
 
 //----------------------------------------------------------------------------
@@ -364,22 +384,49 @@ void HostInternal::verify_inactive( const char * const method ) const
 
 //----------------------------------------------------------------------------
 
-bool HostInternal::spawn_threads( const unsigned thread_count )
+bool HostInternal::spawn_threads( const unsigned gang_count ,
+                                  const unsigned worker_count )
 {
   // If the process is bound to a particular node
   // then only use cores belonging to that node.
   // Otherwise use all nodes and all their cores.
 
-  m_worker = & worker_block ;
+  const unsigned thread_count = gang_count * worker_count ;
+
+  // Reserve master thread's coordinates:
+  std::pair<unsigned,unsigned> master_core = hwloc::get_thread_coordinate();
+
+  // Define coordinates for pinning threads:
+
+  for ( unsigned r = 0 ; r < thread_count ; ++r ) {
+    thread_mapping( r , gang_count , worker_count , host_thread_coordinates[r] );
+  }
+
+  {
+    unsigned i = 0 ;
+    for ( ; i < m_thread_count && master_core != host_thread_coordinates[i] ; ++i );
+
+    if ( i == m_thread_count ) {
+      for ( i = 0 ; i < m_thread_count &&
+                    master_core.first != host_thread_coordinates[i].first ; ++i );
+    }
+
+    if ( i == m_thread_count ) i = 0 ;
+
+    host_thread_coordinates[i] = host_thread_coordinates[0] ;
+    host_thread_coordinates[0] = std::pair<unsigned,unsigned>(~0u,~0u);
+  }
 
   bool ok_spawn_threads = true ;
 
-  for ( unsigned rank = thread_count ; ok_spawn_threads && 0 < --rank ; ) {
+  m_worker = & worker_block ;
+
+  for ( unsigned i = 1 ; i < thread_count && ok_spawn_threads ; ++i ) {
 
     m_master_thread.m_state = HostThread::ThreadInactive ;
 
     // Spawn thread executing the 'driver' function.
-    ok_spawn_threads = spawn( rank );
+    ok_spawn_threads = spawn();
 
     if ( ok_spawn_threads ) {
 
@@ -388,20 +435,27 @@ bool HostInternal::spawn_threads( const unsigned thread_count )
 
       // Check if the thread initialized and bound correctly:
       ok_spawn_threads = HostThread::ThreadActive == m_master_thread.m_state ;
-
-      if ( ok_spawn_threads ) { // Wait for spawned thread to deactivate
-        host_thread_wait( & HostThread::get_thread(rank)->m_state , HostThread::ThreadActive );
-      }
     }
   }
 
+  // All successfully spawned threads are in the list...
+
+  unsigned count_verify = 0 ;
+
+  for ( unsigned entry = 0 ; entry < thread_count ; ++entry ) {
+    HostThread * const thread = HostThread::get_thread(entry);
+
+    if ( thread ) {
+      host_thread_wait( & thread->m_state , HostThread::ThreadActive );
+      ++count_verify ;
+    }
+  }
+
+  ok_spawn_threads = thread_count == 1 + count_verify ;
+
   if ( ok_spawn_threads ) {
-
-    // Bind the process thread as thread_rank == 0
-
+    hwloc::bind_this_thread( master_core );
     HostThread::set_thread( 0 , & m_master_thread );
-
-    ok_spawn_threads = hwloc::bind_this_thread( host_thread_coordinates[0] );
   }
 
   m_worker = NULL ;
@@ -412,40 +466,49 @@ bool HostInternal::spawn_threads( const unsigned thread_count )
 void HostInternal::initialize( const unsigned gang_count ,
                                const unsigned worker_count )
 {
-  const unsigned thread_count = gang_count * worker_count ;
   const bool ok_inactive = 1 == m_thread_count &&
                            0 == HostThread::get_thread_count();
   bool ok_spawn_threads = true ;
 
+  // Only try to spawn threads if input is valid.
+
   if ( ok_inactive && 1 < gang_count * worker_count ) {
 
-    // Define coordinates for pinning threads:
-
-    for ( unsigned r = 0 ; r < thread_count ; ++r ) {
-      thread_mapping( r , gang_count , worker_count , host_thread_coordinates[r] );
-    }
-
-    // Only try to spawn threads if input is valid.
-
-    m_thread_count = thread_count ;
-
-    ok_spawn_threads = spawn_threads( thread_count );
-
     if ( ok_spawn_threads ) {
-      // All threads spawned, initialize the master-thread fan-in
 
-      for ( unsigned r = 0 ; r < thread_count ; ++r ) {
+      m_thread_count = gang_count * worker_count ;
 
-        HostThread & thread = * HostThread::get_thread(r);
+      ok_spawn_threads = spawn_threads( gang_count , worker_count );
 
-        thread.m_gang_tag    = r / worker_count ;
-        thread.m_worker_tag  = r % worker_count ;
+      if ( ok_spawn_threads ) {
+        // All threads spawned, initialize the master-thread fan-in
+
+        for ( unsigned g = 0 , r = 0 ; g < gang_count ; ++g ) {
+        for ( unsigned w = 0 ;         w < worker_count ; ++w , ++r ) {
+
+          HostThread & thread = * HostThread::get_thread(r);
+
+          thread.m_gang_tag    = g ;
+          thread.m_worker_tag  = w ;
+        }}
+
+        if ( 0 != m_master_thread.m_gang_tag ) {
+          ok_spawn_threads = false ;
+        }
+        else if ( 0 != m_master_thread.m_worker_tag ) {
+          // The master thread must be (0,0)
+          // Swap whatever thread happened to land there.
+          HostThread & thread = * HostThread::get_thread(0);
+
+          thread.m_worker_tag = m_master_thread.m_worker_tag ;
+          m_master_thread.m_worker_tag = 0 ;
+        }
+
+        HostThread::set_thread_relationships();
       }
-
-      HostThread::set_thread_relationships();
-    }
-    else {
-      finalize();
+      else {
+        finalize();
+      }
     }
   }
 
@@ -539,20 +602,17 @@ void Host::print_configuration( std::ostream & s )
 
 Host::size_type Host::detect_gang_capacity()
 {
-  unsigned capacity[ hwloc::depth ];
+  const std::pair<unsigned,unsigned> core_topo = hwloc::get_core_topology();
 
-  hwloc::get_thread_capacity( capacity );
-
-  return capacity[0] ;
+  return core_topo.first ;
 }
 
 Host::size_type Host::detect_gang_worker_capacity()
 {
-  unsigned capacity[ hwloc::depth ];
+  const std::pair<unsigned,unsigned> core_topo = hwloc::get_core_topology();
+  const unsigned core_size = hwloc::get_core_capacity();
 
-  hwloc::get_thread_capacity( capacity );
-
-  return capacity[1] * capacity[2] * capacity[3] ;
+  return core_topo.second * core_size ;
 }
 
 //----------------------------------------------------------------------------
