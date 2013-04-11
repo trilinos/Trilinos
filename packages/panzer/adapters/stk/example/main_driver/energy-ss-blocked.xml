@@ -35,7 +35,7 @@
         </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Volume Responses">
+    <ParameterList name="Responses">
       <ParameterList name="Volume Integral">
          <Parameter name="Type" type="string" value="Functional"/>
          <Parameter name="Field Name" type="string" value="Volume_Integral"/>
@@ -45,12 +45,6 @@
       <ParameterList name="Volume Integral2">
          <Parameter name="Type" type="string" value="Functional"/>
          <Parameter name="Field Name" type="string" value="Volume_Integral"/>
-         <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
-         <Parameter name="Evaluation Types" type="string" value="Residual"/>
-      </ParameterList>
-      <ParameterList name="Integration Point Coordinates">
-         <Parameter name="Type" type="string" value="IP Coordinates"/>
-         <Parameter name="Field Name" type="string" value="My IP Coordinates"/>
          <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
          <Parameter name="Evaluation Types" type="string" value="Residual"/>
       </ParameterList>

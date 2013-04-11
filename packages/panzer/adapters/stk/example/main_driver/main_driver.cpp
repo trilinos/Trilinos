@@ -156,8 +156,8 @@ int main(int argc, char *argv[])
     input_params->sublist("User Data").set("Comm", comm);
 
     // extract and then remove the volume responses
-    Teuchos::ParameterList responses = input_params->sublist("Volume Responses");
-    input_params->remove("Volume Responses");
+    Teuchos::ParameterList responses = input_params->sublist("Responses");
+    input_params->remove("Responses");
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
        = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>());
@@ -310,9 +310,9 @@ int main(int argc, char *argv[])
 
       // Solution vector is returned as extra respons vector
       Teuchos::RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*physics->get_x_space());
-      for(std::size_t i=0;i<rLibrary->getLabeledResponseCount();i++)
+      for(int i=0;i<outArgs.Ng()-1;i++)
          outArgs.set_g(i,Teuchos::null);
-      outArgs.set_g(rLibrary->getLabeledResponseCount(),gx);
+      outArgs.set_g(outArgs.Ng()-1,gx);
 
       // Now, solve the problem and return the responses
       solver->evalModel(inArgs, outArgs);
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
          Thyra::ModelEvaluatorBase::InArgs<double> respInArgs = physics->createInArgs();
          Thyra::ModelEvaluatorBase::OutArgs<double> respOutArgs = physics->createOutArgs();
 
-         TEUCHOS_ASSERT(physics->Ng()==Teuchos::as<std::size_t>(respOutArgs.Ng()));
+         TEUCHOS_ASSERT(physics->Ng()==respOutArgs.Ng());
    
          respInArgs.set_x(gx);
    
