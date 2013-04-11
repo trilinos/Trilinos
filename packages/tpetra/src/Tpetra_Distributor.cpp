@@ -87,7 +87,7 @@ namespace Tpetra {
     // Default value of the "Debug" parameter.
     const bool tpetraDistributorDebugDefault = false;
     // Default value of the "Barrier between receives and sends" parameter.
-    const bool barrierBetween_default = true;
+    const bool barrierBetween_default = false;
     // Default value of the "Use distinct tags" parameter.
     const bool useDistinctTags_default = true;
   } // namespace (anonymous)
