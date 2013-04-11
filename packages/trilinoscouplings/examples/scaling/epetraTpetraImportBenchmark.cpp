@@ -65,7 +65,7 @@ typedef Kokkos::SerialNode NT;
 // Create a new timer with the given name if it hasn't already been
 // created, else get the previously created timer with that name.
 RCP<Time> getTimer (const std::string& timerName) {
-  RCP<Time> timer = 
+  RCP<Time> timer =
     TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {
     timer = TimeMonitor::getNewCounter (timerName);
@@ -73,16 +73,16 @@ RCP<Time> getTimer (const std::string& timerName) {
   return timer;
 }
 
-void 
+void
 benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
-		       ArrayView<const GO> destGlobalElts,
-		       const GO indexBase,
-		       RCP<const Comm<int> > comm,
-		       RCP<NT> node,
-		       const int numMapCreateTrials,
-		       const int numImportCreateTrials,
-		       const int numVectorCreateTrials,
-		       const int numImportExecTrials)
+                       ArrayView<const GO> destGlobalElts,
+                       const GO indexBase,
+                       RCP<const Comm<int> > comm,
+                       RCP<NT> node,
+                       const int numMapCreateTrials,
+                       const int numImportCreateTrials,
+                       const int numVectorCreateTrials,
+                       const int numImportExecTrials)
 {
   typedef Tpetra::Import<LO, GO, NT> import_type;
   typedef Tpetra::Map<LO, GO, NT> map_type;
@@ -93,13 +93,13 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
     numMapCreateTrials < 1 && numImportCreateTrials > 0, std::invalid_argument,
     "numMapCreateTrials must be > 0 if numImportCreateTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numImportCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument, 
+    numImportCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument,
     "numImportCreateTrials must be > 0 if numImportExecTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numVectorCreateTrials < 1 && numMapCreateTrials > 0, std::invalid_argument, 
+    numVectorCreateTrials < 1 && numMapCreateTrials > 0, std::invalid_argument,
     "numVectorCreateTrials must be > 0 if numMapCreateTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numVectorCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument, 
+    numVectorCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument,
     "numVectorCreateTrials must be > 0 if numImportExecTrials > 0.");
 
   RCP<Time> mapCreateTimer = getTimer ("Tpetra: Map: Create");
@@ -125,6 +125,7 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
   RCP<vector_type> srcVec, destVec;
   {
     TimeMonitor timeMon (*vectorCreateTimer);
+    // This benchmarks both vector creation and vector destruction.
     for (int k = 0; k < numVectorCreateTrials; ++k) {
       srcVec = rcp (new vector_type (srcMap));
       destVec = rcp (new vector_type (destMap));
@@ -138,15 +139,15 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
   }
 }
 
-void 
+void
 benchmarkEpetraImport (ArrayView<const int> srcGlobalElts,
-		       ArrayView<const int> destGlobalElts,
-		       const int indexBase,
-		       const Epetra_Comm& comm,
-		       const int numMapCreateTrials,
-		       const int numImportCreateTrials,
-		       const int numVectorCreateTrials,
-		       const int numImportExecTrials)
+                       ArrayView<const int> destGlobalElts,
+                       const int indexBase,
+                       const Epetra_Comm& comm,
+                       const int numMapCreateTrials,
+                       const int numImportCreateTrials,
+                       const int numVectorCreateTrials,
+                       const int numImportExecTrials)
 {
   const int INVALID = -1;
 
@@ -154,13 +155,13 @@ benchmarkEpetraImport (ArrayView<const int> srcGlobalElts,
     numMapCreateTrials < 1 && numImportCreateTrials > 0, std::invalid_argument,
     "numMapCreateTrials must be > 0 if numImportCreateTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numImportCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument, 
+    numImportCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument,
     "numImportCreateTrials must be > 0 if numImportExecTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numVectorCreateTrials < 1 && numMapCreateTrials > 0, std::invalid_argument, 
+    numVectorCreateTrials < 1 && numMapCreateTrials > 0, std::invalid_argument,
     "numVectorCreateTrials must be > 0 if numMapCreateTrials > 0.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numVectorCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument, 
+    numVectorCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument,
     "numVectorCreateTrials must be > 0 if numImportExecTrials > 0.");
 
   RCP<Time> mapCreateTimer = getTimer ("Epetra: Map: Create");
@@ -191,6 +192,7 @@ benchmarkEpetraImport (ArrayView<const int> srcGlobalElts,
   RCP<Epetra_Vector> srcVec, destVec;
   {
     TimeMonitor timeMon (*vectorCreateTimer);
+    // This benchmarks both vector creation and vector destruction.
     for (int k = 0; k < numVectorCreateTrials; ++k) {
       srcVec = rcp (new Epetra_Vector (*srcMap));
       destVec = rcp (new Epetra_Vector (*destMap));
@@ -204,13 +206,13 @@ benchmarkEpetraImport (ArrayView<const int> srcGlobalElts,
   }
 }
 
-void 
+void
 createGidLists (Array<GO>& srcGlobalElts,
-		Array<GO>& destGlobalElts,
-		const int numProcs,
-		const int myRank,
-		const int numEltsPerProc,
-		const GO indexBase)
+                Array<GO>& destGlobalElts,
+                const int numProcs,
+                const int myRank,
+                const int numEltsPerProc,
+                const GO indexBase)
 {
   const int overlap = (myRank == 0 || myRank == numProcs-1) ? 1 : 2;
 
@@ -225,7 +227,7 @@ createGidLists (Array<GO>& srcGlobalElts,
   for (int k = 0; k < numEltsPerProc; ++k) {
     const GO curGid = myStartSrcGid + as<GO> (k);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      curGid < indexBase, std::logic_error, 
+      curGid < indexBase, std::logic_error,
       "curGid = " << curGid << " < indexBase = " << indexBase << ".");
     srcGlobalElts[numEltsPerProc - k - 1] = curGid;
     destGlobalElts[numEltsPerProc - k - 1] = curGid;
@@ -235,29 +237,29 @@ createGidLists (Array<GO>& srcGlobalElts,
   if (myRank == 0) {
     const GO rightGid = myEndSrcGid + 1;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      rightGid < indexBase, std::logic_error, 
-      "At left proc, right boundary GID = " << rightGid 
+      rightGid < indexBase, std::logic_error,
+      "At left proc, right boundary GID = " << rightGid
       << " < indexBase = " << indexBase << ".");
     destGlobalElts[numEltsPerProc] = rightGid;
   } else if (myRank == numProcs-1) {
     const GO leftGid = myStartSrcGid - 1;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      leftGid < indexBase, std::logic_error, 
-      "At right proc, left boundary GID = " << leftGid 
+      leftGid < indexBase, std::logic_error,
+      "At right proc, left boundary GID = " << leftGid
       << " < indexBase = " << indexBase << ".");
     destGlobalElts[numEltsPerProc] = leftGid;
   } else {
     const GO leftGid = myStartSrcGid - 1;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      leftGid < indexBase, std::logic_error, 
-      "At middle proc, left boundary GID = " << leftGid 
+      leftGid < indexBase, std::logic_error,
+      "At middle proc, left boundary GID = " << leftGid
       << " < indexBase = " << indexBase << ".");
     destGlobalElts[numEltsPerProc] = leftGid;
 
     const GO rightGid = myEndSrcGid + 1;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      rightGid < indexBase, std::logic_error, 
-      "At middle proc, right boundary GID = " << rightGid 
+      rightGid < indexBase, std::logic_error,
+      "At middle proc, right boundary GID = " << rightGid
       << " < indexBase = " << indexBase << ".");
     destGlobalElts[numEltsPerProc+1] = rightGid;
   }
@@ -290,13 +292,13 @@ int main (int argc, char* argv[]) {
 
   CommandLineProcessor cmdp;
   cmdp.setOption ("numEltsPerProc", &numEltsPerProc, "Number of global indices "
-		  "owned by each process");
+                  "owned by each process");
   cmdp.setOption ("numTrials", &numTrials, "Number of times to repeat each "
-		  "operation in a timing loop");
-  cmdp.setOption ("runEpetra", "noEpetra", &runEpetra, 
-		  "Whether to run the Epetra benchmark");
-  cmdp.setOption ("runTpetra", "noTpetra", &runTpetra, 
-		  "Whether to run the Tpetra benchmark");
+                  "operation in a timing loop");
+  cmdp.setOption ("runEpetra", "noEpetra", &runEpetra,
+                  "Whether to run the Epetra benchmark");
+  cmdp.setOption ("runTpetra", "noTpetra", &runTpetra,
+                  "Whether to run the Tpetra benchmark");
   const CommandLineProcessor::EParseCommandLineReturn parseResult =
     cmdp.parse (argc, argv);
   if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
@@ -311,29 +313,29 @@ int main (int argc, char* argv[]) {
     TEUCHOS_TEST_FOR_EXCEPTION(
       numTrials < 0, std::invalid_argument, "numTrials must be nonnegative.");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      numEltsPerProc < 0, std::invalid_argument, 
+      numEltsPerProc < 0, std::invalid_argument,
       "numEltsPerProc must be nonnegative.");
   }
 
   // Derived benchmark parameters
   const int numMapCreateTrials = numTrials;
   const int numImportCreateTrials = numTrials;
-  const int numVectorCreateTrials = 1; // numTrials;
+  const int numVectorCreateTrials = numTrials;
   const int numImportExecTrials = numTrials;
 
   // Run the benchmark
   Array<GO> srcGlobalElts, destGlobalElts;
-  createGidLists (srcGlobalElts, destGlobalElts, numProcs, myRank, 
-		  numEltsPerProc, indexBase);
+  createGidLists (srcGlobalElts, destGlobalElts, numProcs, myRank,
+                  numEltsPerProc, indexBase);
   if (runEpetra) {
     benchmarkEpetraImport (srcGlobalElts, destGlobalElts, indexBase, epetraComm,
-			   numMapCreateTrials, numImportCreateTrials,
-			   numVectorCreateTrials, numImportExecTrials);
+                           numMapCreateTrials, numImportCreateTrials,
+                           numVectorCreateTrials, numImportExecTrials);
   }
   if (runTpetra) {
     benchmarkTpetraImport (srcGlobalElts, destGlobalElts, indexBase, tpetraComm,
-			   node, numMapCreateTrials, numImportCreateTrials,
-			   numVectorCreateTrials, numImportExecTrials);
+                           node, numMapCreateTrials, numImportCreateTrials,
+                           numVectorCreateTrials, numImportExecTrials);
   }
   TimeMonitor::report (tpetraComm.ptr (), std::cout);
   return EXIT_SUCCESS;

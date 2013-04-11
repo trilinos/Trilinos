@@ -55,11 +55,23 @@
 
 INCLUDE(TribitsTplDeclareLibraries)
 
-# First use CMake's Thread finder. They are a bit smarter in determining
-# whether threading is already built into the compiler and thus avoid adding
-# superfluous libraries on the command line.
-FIND_PACKAGE(Threads)
-IF(Threads_FOUND)
+SET(USE_THREADS FALSE)
+
+IF(NOT TPL_Pthread_INCLUDE_DIRS AND NOT TPL_Pthread_LIBRARY_DIRS AND NOT TPL_Pthread_LIBRARIES)
+  # Use CMake's Thread finder since it is a bit smarter in determining
+  # whether pthreads is already built into the compiler and doesn't need
+  # a library to link.
+  FIND_PACKAGE(Threads)
+  #If Threads found a copy of pthreads make sure it is one of the cases the tribits
+  #tpl system cannot handle.
+  IF(Threads_FOUND AND CMAKE_USE_PTHREADS_INIT)
+    IF(CMAKE_THREAD_LIBS_INIT STREQUAL "" OR CMAKE_THREAD_LIBS_INIT STREQUAL "-pthread")
+      SET(USE_THREADS TRUE)
+    ENDIF()
+  ENDIF()
+ENDIF()
+
+IF(USE_THREADS)
   SET(TPL_Pthread_INCLUDE_DIRS "")
   SET(TPL_Pthread_LIBRARIES "${CMAKE_THREAD_LIBS_INIT}")
   SET(TPL_Pthread_LIBRARY_DIRS "")

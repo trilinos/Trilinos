@@ -2292,22 +2292,35 @@ namespace Tpetra {
       std::runtime_error, ": Graph fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
 
+    const int numProcs = getComm ()->getSize ();
+
     // allocate if unallocated
     if (! indicesAreAllocated()) {
       // allocate global, in case we do not have a column map
       allocateIndices( GlobalIndices );
     }
-    // Global assemble, if we need to (we certainly don't need to if
-    // there's only one process).  This call only costs a single
-    // all-reduce if we don't need global assembly.
-    if (getComm()->getSize() > 1) {
+
+    // If true, the caller promises that no process did nonlocal
+    // changes since the last call to fillComplete.
+    bool assertNoNonlocalInserts = false;
+    if (! params.is_null ()) {
+      assertNoNonlocalInserts =
+        params->get<bool> ("No Nonlocal Changes", assertNoNonlocalInserts);
+    }
+    // We also don't need to do global assembly if there is only one
+    // process in the communicator.
+    const bool mayNeedGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
+    if (mayNeedGlobalAssemble) {
+      // This first checks if we need to do global assembly.
+      // The check costs a single all-reduce.
       globalAssemble();
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        nonlocals_.size() > 0, std::runtime_error,
-        ": cannot have non-local entries on a serial run. Invalid entries were "
-        "submitted to the CrsGraph (or CrsMatrix).");
+        numProcs > 1 && nonlocals_.size() > 0, std::runtime_error,
+        ":" << std::endl << "The graph's communicator contains only one "
+        "process, but there are nonlocal entries.  " << std::endl <<
+        "This probably means that invalid entries were added to the graph.");
     }
     // set domain/range map: may clear the import/export objects
     setDomainRangeMaps(domainMap,rangeMap);

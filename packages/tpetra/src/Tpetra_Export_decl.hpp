@@ -125,7 +125,21 @@ namespace Tpetra {
     Export (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target);
 
-    /// \brief Constructor (with list of parameters).
+    /// \brief Construct an Export from the source and target Maps,
+    ///   with an output stream for debugging output.
+    ///
+    /// \param source [in] The source distribution.  This may be a
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    ///
+    /// \param out [in/out] Output stream for debugging output.
+    Export (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+            const RCP<Teuchos::FancyOStream>& out);
+
+    /// \brief Constructor (with list of parameters)
     ///
     /// \param source [in] The source distribution.  This may be a
     ///   multiply owned (overlapping) distribution.
@@ -139,6 +153,26 @@ namespace Tpetra {
     ///   two-argument constructor, listed above.
     Export (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+    /// \brief Constructor (with list of parameters and debugging
+    ///   output stream)
+    ///
+    /// \param source [in] The source distribution.  This may be a
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    ///
+    /// \param out [in/out] Output stream for debugging output.
+    ///
+    /// \param plist [in/out] List of parameters.  Currently passed
+    ///   directly to the Distributor that implements communication.
+    ///   If you don't know what this should be, you should use the
+    ///   two-argument constructor, listed above.
+    Export (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+            const RCP<Teuchos::FancyOStream>& out,
             const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Copy constructor.
@@ -229,8 +263,12 @@ namespace Tpetra {
     //@}
 
   private:
-
+    //! All the data needed for executing the Export communication plan.
     RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ExportData_;
+    //! Output stream for debugging output.
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
+    //! Whether to print copious debugging output on all processes.
+    bool debug_;
 
     //! @name Initialization helper functions (called by the constructor)
     //@{

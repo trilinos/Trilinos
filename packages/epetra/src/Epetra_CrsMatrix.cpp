@@ -49,6 +49,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Comm.h"
+#include "Epetra_SerialComm.h"
 #include "Epetra_Distributor.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_BLAS_wrappers.h"
@@ -74,6 +75,14 @@ bool Epetra_CrsMatrixTraceDumpMultiply = false;
 
 #ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
 #  include "Teuchos_TimeMonitor.hpp"
+#endif
+
+#if defined(Epetra_ENABLE_MKL_SPARSE) && defined(Epetra_ENABLE_CASK)
+#error Error: Epetra_ENABLE_MKL_SPARSE and Epetra_ENABLE_CASK both defined.
+#endif
+
+#ifdef Epetra_ENABLE_MKL_SPARSE
+#include "mkl_spblas.h"
 #endif
 
 //==============================================================================
@@ -3259,7 +3268,15 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
   double * values = All_Values();
   int * Indices = Graph().All_Indices();
   int * IndexOffset = Graph().IndexOffset();
-#ifdef EPETRA_HAVE_OMP
+#if defined(Epetra_ENABLE_MKL_SPARSE)
+    char transa = 'n';
+    int m = NumMyRows_;
+    int NumCols = NumMyCols();
+    double alpha = 1, beta = 0;
+    // MKL should ignore '/'. G = General, C = 0-based indexing.
+    char matdescra[6] = "G//C/";
+    mkl_dcsrmv(&transa, &m, &NumCols, &alpha, matdescra, values, Indices, IndexOffset, IndexOffset + 1, x, &beta, y);
+#elif defined(EPETRA_HAVE_OMP)
   const int numMyRows = NumMyRows_;
 #pragma omp parallel for default(none) shared(IndexOffset,values,Indices,y,x)
      for (int row=0; row<numMyRows; ++row)
@@ -3273,8 +3290,10 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
        s += *val_ptr++ * x[*colnum_ptr++];
      y[row] = s;
   }
+#elif defined(Epetra_ENABLE_CASK)
+       cask_csr_dax_new(NumMyRows_, IndexOffset, Indices,
+                        values, x, y, cask);
 #else
-#ifndef Epetra_ENABLE_CASK
        const double *val_ptr    = values;
        const int    *colnum_ptr = Indices;
        double       * dst_ptr = y;
@@ -3286,11 +3305,7 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
        s += *val_ptr++ * x[*colnum_ptr++];
      *dst_ptr++ = s;
    }
-#else
-       cask_csr_dax_new(NumMyRows_, IndexOffset, Indices,
-                        values, x, y, cask);
-#endif // Epetra_ENABLE_CASK
-#endif // EPETRA_HAVE_OMP
+#endif // Epetra_ENABLE_CASK or EPETRA_HAVE_OMP or Epetra_ENABLE_MKL_SPARSE
 
     return;
   }
@@ -3343,22 +3358,30 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 
-  int NumCols = NumMyCols();
-#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK) || defined(Epetra_ENABLE_MKL_SPARSE)
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
-#ifndef Epetra_ENABLE_CASK
+    int NumCols = NumMyCols();
+#if defined(Epetra_ENABLE_MKL_SPARSE)
+    char transa = 't';
+    int m = NumMyRows_;
+    double alpha = 1, beta = 0;
+    // MKL should ignore '/'. G = General, C = 0-based indexing.
+    char matdescra[6] = "G//C/";
+    mkl_dcsrmv(&transa, &m, &NumCols, &alpha, matdescra, values, Indices, IndexOffset, IndexOffset + 1, x, &beta, y);
+#elif defined(Epetra_ENABLE_CASK)
+   cask_csr_datx( NumMyRows_, NumCols, IndexOffset,  Indices,  values,x ,y );
+#else
    int ione = 1;
    EPETRA_DCRSMV_F77(&ione, &NumMyRows_, &NumCols, values, Indices, IndexOffset, x, y);
-#else
-   cask_csr_datx( NumMyRows_, NumCols, IndexOffset,  Indices,  values,x ,y );
 #endif
 
     return;
   }
 #endif // FORTRAN_DISABLED
+  int NumCols = NumMyCols();
   for(int i = 0; i < NumCols; i++) 
     y[i] = 0.0; // Initialize y for transpose multiply
 
@@ -3578,23 +3601,32 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 
   int i, j, j0;
 
-#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK) || defined(Epetra_ENABLE_MKL_SPARSE)
   if (StorageOptimized() && Graph().StorageOptimized() && ((UnitDiagonal && NoDiagonal())|| (!UnitDiagonal && !NoDiagonal()))) {
     double * values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
 
+#if !defined(Epetra_ENABLE_MKL_SPARSE)
     int iupper = Upper ? 1:0;
     int itrans = Trans ? 1:0;
     int udiag =  UnitDiagonal ? 1:0;
     int nodiag = NoDiagonal() ? 1:0;
     int xysame = (xp==yp) ? 1:0;
+#endif
 
-#ifndef Epetra_ENABLE_CASK
-    EPETRA_DCRSSV_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, values, Indices, IndexOffset, xp, yp, &xysame);
-#else
+#if defined(Epetra_ENABLE_MKL_SPARSE)
+    char transa = Trans ? 't' : 'n';
+    int m = NumMyRows_;
+    double alpha = 1;
+    // G = General, C = 0-based indexing. '/' should be ignored by MKL
+    char matdescra[6] = {'T', Upper ? 'U' : 'L', UnitDiagonal ? 'U' : 'N', 'C', '/', '\0'};
+	mkl_dcsrsv(&transa, &m, &alpha, matdescra, values, Indices, IndexOffset, IndexOffset + 1, xp, yp);
+#elif defined(Epetra_ENABLE_CASK)
     cask_csr_dtrsv_new( iupper, itrans, udiag, nodiag, 0, xysame, NumMyRows_,
                     NumMyRows_, IndexOffset, Indices, values, xp, yp, cask);
+#else
+    EPETRA_DCRSSV_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, values, Indices, IndexOffset, xp, yp, &xysame);
 #endif
     return;
   }
@@ -3689,7 +3721,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
       }
       
     }
-#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK) || defined(Epetra_ENABLE_MKL_SPARSE)
   }
 #endif
   return;
@@ -4482,7 +4514,7 @@ int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData(){
  }
 
 //=============================================================================    
-int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer,int NumMyDiagonals){
+int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer, const Epetra_Export * Exporter, int NumMyDiagonals){
 
   Epetra_CrsGraphData& D=*Graph_.CrsGraphData_;
   int m=D.RowMap_.NumMyElements();
@@ -4495,10 +4527,11 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
      !D.ColMap_.ConstantElementSize() || D.ColMap_.ElementSize()!=1)
     EPETRA_CHK_ERR(-1);
 
-  // Maps, import export
+  // Maps
   D.DomainMap_ = DomainMap;
   D.RangeMap_  = RangeMap;
 
+  // Create import, if needed
   if (!D.ColMap_.SameAs(D.DomainMap_)) {
     if (D.Importer_ != 0) {
       delete D.Importer_;
@@ -4509,17 +4542,25 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
     }
     else {
       delete Importer;
-      D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_,0,0);
+      D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_);
     }
   }
-  
+
+  // Create export, if needed
   if (!D.RowMap_.SameAs(D.RangeMap_)) {
     if (D.Exporter_ != 0) {
       delete D.Exporter_;
       D.Exporter_ = 0;
     }
-    D.Exporter_ = new Epetra_Export(D.RowMap_, D.RangeMap_); // Create Export object. 
+    if(Exporter && Exporter->SourceMap().SameAs(D.RowMap_) && Exporter->TargetMap().SameAs(D.RangeMap_)){
+      D.Exporter_=Exporter;
+    }
+    else {
+      delete Exporter;
+      D.Exporter_ = new Epetra_Export(D.RowMap_,D.RangeMap_);				      
+    }
   }
+
 
   // Matrix constants
   Allocated_                  = true;
@@ -4535,8 +4576,9 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
   // Cleanup existing data
   for(int i=0;i<m;i++){
     if(Values_)            delete [] Values_[i];
-    D.data->SortedEntries_[i].entries_.resize(0);
   }
+  D.data->SortedEntries_.clear();
+
   delete [] Values_;                 Values_=0;
   delete [] Values_alloc_lengths_;   Values_alloc_lengths_=0;
   delete [] D.data->Indices_;        D.data->Indices_=0; 
@@ -4659,7 +4701,7 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
 template<class TransferType>
   void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, const TransferType & RowTransfer,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap,bool RestrictCommunicator)
 {
-   // Fused constructor, import & FillComplete
+  // Fused constructor, import & FillComplete
   int rv;
   int N = NumMyRows();
 
@@ -4809,7 +4851,23 @@ template<class TransferType>
     // Dangerous: If we're not in the new communicator, call it quits here.  The user is then responsible
     // for not breaking anything on the return.  Thankfully, the dummy RowMap should report no local unknowns,
     // so the user can at least test for this particular case.
-    if(!NewComm) return;
+    if(NewComm) {
+      // Replace the RowMap
+      Graph_.CrsGraphData_->RowMap_ = *ReducedRowMap;
+      Comm_ = &Graph_.CrsGraphData_->RowMap_.Comm();
+    }
+    else {
+      // Replace all the maps with dummy maps with SerialComm, then quit
+      Epetra_SerialComm SComm;
+      Epetra_Map DummyMap(0,0,SComm);
+      Graph_.CrsGraphData_->RowMap_    = DummyMap;
+      Graph_.CrsGraphData_->ColMap_    = DummyMap;
+      Graph_.CrsGraphData_->RangeMap_  = DummyMap;
+      Graph_.CrsGraphData_->DomainMap_ = DummyMap;
+      Comm_ = &Graph_.CrsGraphData_->RowMap_.Comm();
+      return;
+    }
+
 
     // Reset the "my" maps
     MyDomainMap = ReducedDomainMap;
@@ -4823,18 +4881,22 @@ template<class TransferType>
   std::vector<int> RemotePIDs;
   int * pids_ptr = TargetPids.size() ? &TargetPids[0] : 0;
   if(UseLL) {
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
    long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;  
    Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),CSR_colind_LL_ptr,
 							    *MyDomainMap,pids_ptr,
 							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
 							    Graph_.CrsGraphData_->ColMap_);
    Graph_.CrsGraphData_->HaveColMap_ = true;
+#endif
   }
   else {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
    Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),*MyDomainMap,pids_ptr,
 							    Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
 							    Graph_.CrsGraphData_->ColMap_);   
    Graph_.CrsGraphData_->HaveColMap_ = true;
+#endif
   }
 
   /***************************************************/
@@ -4855,7 +4917,6 @@ template<class TransferType>
 
   // Note: At the moment, the RemotePIDs_ptr won't work with the restricted communicator.
   // This should be fixed.
-
   ExpertStaticFillComplete(*MyDomainMap,*MyRangeMap,MyImport);
 
   // Note: ExpertStaticFillComplete assumes ownership of the importer, if we made one...
@@ -4865,7 +4926,6 @@ template<class TransferType>
   if(ReducedDomainMap!=ReducedRowMap) delete ReducedDomainMap;
   if(ReducedRangeMap !=ReducedRowMap) delete ReducedRangeMap;
   delete ReducedRowMap;
-
 }// end FusedTransfer
 
  

@@ -99,7 +99,6 @@ namespace MueLu {
     FactManager_->SetFactory("A", SchurFact);
     FactManager_->SetFactory("Smoother", SmooSCFact);
     FactManager_->SetIgnoreUserData(true);
-
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -112,7 +111,8 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    this->Input(currentLevel, "A");
+    //this->Input(currentLevel, "A");
+    currentLevel.DeclareInput("A",this->GetFactory("A").get());
     TEUCHOS_TEST_FOR_EXCEPTION(FactManager_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::BraessSarazinSmoother::DeclareInput: FactManager_ must not be Teuchos::null! error.");
     currentLevel.DeclareInput("PreSmoother",FactManager_->GetFactory("PreSmoother").get());
   }
@@ -156,6 +156,12 @@ namespace MueLu {
     G_ = Teuchos::rcp_dynamic_cast<Matrix>(Op01);
     D_ = Teuchos::rcp_dynamic_cast<Matrix>(Op10);
     Z_ = Teuchos::rcp_dynamic_cast<Matrix>(Op11);
+
+    // TODO move this to BlockedCrsMatrix->getMatrix routine...
+    F_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
+    G_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(1));
+    D_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
+    Z_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));
 
     // Create the inverse of the diagonal of F
     RCP<Vector> diagFVector = VectorFactory::Build(F_->getRowMap());

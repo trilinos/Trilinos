@@ -110,9 +110,11 @@ void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
 		 partition_file);
 	  data = fopen(partition_file,"r") ;
 	  N_blk_equations = 0;
+    int cnt;
 	  while(cur_blk_ptr !=*N_global)
 	    {
-	      fscanf(data, "%d", &cur_blk_ptr);
+	      cnt = fscanf(data, "%d", &cur_blk_ptr);
+        assert(cnt > 0);
 	      N_blk_equations++;
 	    }
 	  fclose(data);
@@ -122,11 +124,13 @@ void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
 
 	  N_blk_equations = 0;
 	  data = fopen(partition_file,"r") ;
-	  fscanf(data, "%d", &prev_blk_ptr);
+    cnt = fscanf(data, "%d", &prev_blk_ptr);
+    assert(cnt > 0);
 	  cur_blk_ptr = 0;
 	  while(cur_blk_ptr !=*N_global)
 	    {
-	      fscanf(data, "%d", &cur_blk_ptr);
+        cnt = fscanf(data, "%d", &cur_blk_ptr);
+        assert(cnt > 0);
 	      (*cpntr)[N_blk_equations] = cur_blk_ptr - prev_blk_ptr;
 	      prev_blk_ptr = cur_blk_ptr;
 	      N_blk_equations++;

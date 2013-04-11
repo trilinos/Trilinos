@@ -51,7 +51,8 @@ int Trilinos_Util_ReadMatrixMarket2Epetra_internal( char *data_file,
 				      Epetra_CrsMatrix *& A, 
 				      Epetra_Vector *& x, 
 				      Epetra_Vector *& b,
-				      Epetra_Vector *&xexact );
+				      Epetra_Vector *&xexact,
+              const char * fmt);
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 

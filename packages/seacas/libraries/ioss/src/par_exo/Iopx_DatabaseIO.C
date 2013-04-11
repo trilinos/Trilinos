@@ -66,6 +66,7 @@
 #include <utility>
 #include <vector>
 
+#include "Ioss_CoordinateFrame.h"
 #include "Ioss_CommSet.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
@@ -358,6 +359,9 @@ namespace {
     for (int i=0; i < count; i++) {delete [] names[i];}
     delete [] names;
   }
+
+  void add_coordinate_frames(int exoid, Ioss::Region *region);
+  void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames);
 
   std::string get_entity_name(int exoid, ex_entity_type type, int64_t id,
                               const std::string &basename, int length)
@@ -909,6 +913,10 @@ namespace Iopx {
     }
 
     Ioss::Region *this_region = get_region();
+
+    // See if any coordinate frames exist on mesh.  If so, define them on region.
+    add_coordinate_frames(get_file_pointer(), this_region);
+
     this_region->property_add(Ioss::Property(std::string("title"), info.title));
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
                                              spatialDimension));
@@ -5280,7 +5288,10 @@ namespace Iopx {
         ierr = ex_put_coord_names(get_file_pointer(), (char**)labels);
         if (ierr < 0)
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      }
+
+	// Write coordinate frame data...
+	write_coordinate_frames(get_file_pointer(), get_region()->get_coordinate_frames());
+      }
       // Set the processor offset property. Specifies where in the global list, the data from this
       // processor begins...
 
@@ -5845,12 +5856,16 @@ namespace Iopx {
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
         // Convert to lowercase.
+	bool attributes_named = true;
         for (int i=0; i < attribute_count; i++) {
           fix_bad_name(names[i]);
           Ioss::Utils::fixup_name(names[i]);
+	  if (names[i][0] == '\0' || names[i][0] == ' ' || !std::isalnum(names[i][0])) {
+	    attributes_named = false;
+	  }
         }
 
-        if (names[0][0] != '\0' && names[0][0] != ' ' && std::isalnum(names[0][0])) {
+        if (attributes_named) {
           std::vector<Ioss::Field> attributes;
           get_fields(my_element_count, names, attribute_count,
                      Ioss::Field::ATTRIBUTE, get_field_separator(), NULL,
@@ -6953,6 +6968,67 @@ namespace Iopx {
             side_map[name_topo] = 999;
           }
         }
+      }
+    }
+
+    template <typename INT>
+    void internal_add_coordinate_frames(int exoid, Ioss::Region *region, INT /*dummy*/)
+    {
+      // Query number of coordinate frames...
+      int nframes = 0;
+      ex_get_coordinate_frames(exoid, &nframes, NULL, NULL, NULL);
+
+      if (nframes > 0) {
+	std::vector<char> tags(nframes);
+	std::vector<double> coord(nframes*9);
+	std::vector<INT>  ids(nframes);
+	ex_get_coordinate_frames(exoid, &nframes, TOPTR(ids), TOPTR(coord), TOPTR(tags));
+
+	for (int i=0; i<nframes; i++) {
+	  Ioss::CoordinateFrame cf(ids[i], tags[i], &coord[9*i]);
+	  region->add(cf);
+	}
+      }
+    }
+
+    void add_coordinate_frames(int exoid, Ioss::Region *region)
+    {
+      if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+	internal_add_coordinate_frames(exoid, region, (int64_t)0);
+      }
+      else {
+	internal_add_coordinate_frames(exoid, region, (int)0);
+      }
+    }
+
+    template <typename INT>
+    void internal_write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames, INT /*dummy*/)
+    {
+      // Query number of coordinate frames...
+      int nframes = (int)frames.size();
+      if (nframes > 0) {
+	std::vector<char> tags(nframes);
+	std::vector<double> coordinates(nframes*9);
+	std::vector<INT>  ids(nframes);
+
+	for (size_t i=0; i < frames.size(); i++) {
+	  ids[i]  = frames[i].id();
+	  tags[i] = frames[i].tag();
+	  const double *coord = frames[i].coordinates();
+	  for (size_t j=0; j < 9; j++) {
+	    coordinates[9*i+j] = coord[j];
+	  }
+	}
+	ex_put_coordinate_frames(exoid, nframes, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
+      }
+    }
+
+    void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames) {
+      if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+	internal_write_coordinate_frames(exoid, frames, (int64_t)0);
+      }
+      else {
+	internal_write_coordinate_frames(exoid, frames, (int)0);
       }
     }
 

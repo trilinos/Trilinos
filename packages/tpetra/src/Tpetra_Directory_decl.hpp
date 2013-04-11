@@ -73,57 +73,51 @@ namespace Tpetra {
   /// corresponding to a given list of global IDs.  Each Map owns a
   /// Directory object that does this.  Map::getRemoteIndexList()
   /// calls the Map's directory's getDirectoryEntries() method
-  /// directly.  Directory has three different ways to perform this
+  /// directly.  Directory has four different ways to perform this
   /// lookup, depending on the kind of Map.
   ///
   /// 1. If the user's Map is not distributed (i.e., is serial or
   ///    locally replicated), then my process ID is the process ID for
-  ///    all global IDs.  I can get the local ID (if requested)
-  ///    directly from the user's Map via its \c getLocalElement()
-  ///    method (which requires no communication).
+  ///    all global IDs.  The Directory gets the local ID (if
+  ///    requested) directly from the user's Map via its
+  ///    getLocalElement() method (which requires no communication).
   ///
-  /// 2. If the user's Map is distributed but contiguous, then I build
-  ///    an array (replicated on all processes) that maps from each
-  ///    process ID to the minimum global ID that it owns.  This
-  ///    trades time and communication for space (\f$P + 1\f$ entries
-  ///    in the array if there are P processes in the communicator),
-  ///    in that it allows lookups without communication (once the
-  ///    array has been built).
+  /// 2. If the user's Map is distributed, contiguous, and uniform,
+  ///    the Directory computes a global ID's process ID and local ID
+  ///    on that process using a simple mathematical formula.  This
+  ///    requires \f$O(1)\f$ arithmetic operations per global ID, and
+  ///    no additional storage (beyond what the Map already stores).
   ///
-  /// 3. If the user's Map is distributed and noncontiguous, then I
-  ///    have to store a general mapping from global ID to (process
-  ///    ID, local ID).  I can't afford to store the whole mapping
-  ///    redundantly on all processes, so I distribute it using
-  ///    another Map (the "directory Map").  This is a uniform
-  ///    contiguous Map whose keys are the global IDs.
+  /// 3. If the user's Map is distributed, contiguous, but not
+  ///    uniform, then the Directory builds an array (replicated on
+  ///    all processes) that maps from each process ID to the minimum
+  ///    global ID that it owns.  This trades time and communication
+  ///    for space (P+1 entries in the array if there are P processes
+  ///    in the communicator), in that it allows lookups without
+  ///    communication (once the array has been built).
   ///
-  /// This class is templated on the same \c LocalOrdinal and \c
-  /// GlobalOrdinal types on which \c Map is templated.  Just as with
-  /// Map, the \c LocalOrdinal type defaults to \c int if omitted.
-  /// The \c GlobalOrdinal type defaults to the \c LocalOrdinal type,
-  /// and the Node type defaults to Kokkos' default node type.
+  /// 3. If the user's Map is distributed and noncontiguous, then the
+  ///    Directory must store a general mapping from global ID to
+  ///    (process ID, local ID).  It can't afford to store the whole
+  ///    mapping redundantly on all processes, so the Directory
+  ///    distributes it using another Map (the "directory Map").  This
+  ///    is a contiguous uniform Map whose keys are the global IDs.
   ///
-  /// \note (mfh 04 Jan 2012) To Epetra developers: This class
-  ///   corresponds roughly to \c Epetra_Directory or \c
-  ///   Epetra_BasicDirectory.  \c Epetra_BlockMap creates its \c
-  ///   Epetra_Directory object on demand whenever the map's \c
-  ///   RemoteIDList() method is called.  \c Tpetra::Map's
-  ///   getRemoteIndexList() method assumes that the map's directory
-  ///   already exists.  \c Epetra_Directory is an abstract interface
-  ///   with one implementation (\c Epetra_BasicDirectory); \c
+  /// This class is templated on the same \c LocalOrdinal and
+  /// <tt>GlobalOrdinal</tt> types on which Map is templated.  Just as
+  /// with Map, the \c LocalOrdinal type defaults to \c int if
+  /// omitted.  The \c GlobalOrdinal type defaults to the
+  /// <tt>LocalOrdinal</tt> type, and the \c Node type defaults to
+  /// Kokkos' default Node type.
+  ///
+  /// \note To Epetra developers: This class corresponds roughly to
+  ///   Epetra_Directory or Epetra_BasicDirectory.  Epetra_BlockMap
+  ///   creates its Epetra_Directory object on demand whenever the
+  ///   map's RemoteIDList() method is called.  Tpetra::Map's
+  ///   getRemoteIndexList() method assumes that the Map's directory
+  ///   already exists.  Epetra_Directory is an abstract interface
+  ///   with one implementation (Epetra_BasicDirectory);
   ///   Tpetra::Directory is a concrete implementation.
-  ///
-  /// \note (mfh 10 May 2012) To Tpetra developers: The current design
-  ///   of Directory is suboptimal.  Currently, the Directory has to
-  ///   ask the Map what kind of Map it is (e.g., globally
-  ///   distributed? contiguous?) in order to figure out how to
-  ///   represent its data.  This is suboptimal, because the Map
-  ///   already knows what kind of Map it is, based on which Map
-  ///   constructor was invoked.  Thus, it should be the Map that
-  ///   specifies which kind of Directory to create.  I've broken up
-  ///   Directory into an interface and an implementation
-  ///   (Details::Directory and its subclasses) in preparation for
-  ///   making this change.
   template<class LocalOrdinal,
            class GlobalOrdinal = LocalOrdinal,
            class Node = Kokkos::DefaultNode::DefaultNodeType>
@@ -226,7 +220,7 @@ namespace Tpetra {
     ///   AllIDsPresent.
     ///
     /// \note If <tt>nodeIDs.size() != globalIDs.size()</tt>, then
-    ///   this method throws a \c std::runtime_error exception.
+    ///   this method throws std::runtime_error.
     LookupStatus
     getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs) const;
@@ -262,7 +256,7 @@ namespace Tpetra {
     ///
     /// \note If <tt>nodeIDs.size() != globalIDs.size()</tt> or
     ///   <tt>localIDs.size() != globalIDs.size()</tt>, then
-    ///   this method throws a \c std::runtime_error exception.
+    ///   this method throws std::runtime_error.
     LookupStatus
     getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs,

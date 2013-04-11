@@ -143,10 +143,10 @@ return 0 ;
   comm - Epetra communicator
   */
   CrsMatrixGallery( const string name, const Epetra_Comm & comm, bool UseLongLong
-#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
-	  = false
-#elif defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
+#if defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
 	  = true
+#else
+	  = false
 #endif
 	  );
 
@@ -540,10 +540,10 @@ public:
    {} ;
 
   VbrMatrixGallery(const string name, const Epetra_Comm & Comm, bool UseLongLong
-#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
-	  = false
-#elif defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
+#if defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
 	  = true
+#else
+	  = false
 #endif
 	  ) :
     CrsMatrixGallery(name,Comm,UseLongLong),

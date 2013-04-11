@@ -150,7 +150,7 @@ except ImportError:
     npy_intp dims[ ] = { self->dimMethod() };
     PyArray_Descr * dtype = PyArray_DescrFromType(NPY_INT);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 1, dims, NULL,
-						NULL, NPY_FARRAY, NULL);
+						NULL, NPY_ARRAY_FARRAY, NULL);
     if (returnObj == NULL) goto fail;
     data = (int*) array_data(returnObj);
     for (int i=0; i<dims[0]; ++i) data[i] = result[i];
@@ -175,7 +175,7 @@ except ImportError:
     npy_intp dims[ ] = { self->dimMethod() };
     PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 1, dims, NULL,
-						NULL, NPY_FARRAY, NULL);
+						NULL, NPY_ARRAY_FARRAY, NULL);
     if (returnObj == NULL) goto fail;
     data = (double*) array_data(returnObj);
     for (int i=0; i<dims[0]; ++i) data[i] = result[i];
@@ -200,7 +200,7 @@ except ImportError:
     npy_intp dims[ ] = { self->dimMethod1(), self->dimMethod2() };
     PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dims, NULL,
-						NULL, NPY_FARRAY, NULL);
+						NULL, NPY_ARRAY_FARRAY, NULL);
     if (returnObj == NULL) goto fail;
     data = (double*) array_data(returnObj);
     for (int i=0; i<dims[0]*dims[1]; ++i) data[i] = result[i];

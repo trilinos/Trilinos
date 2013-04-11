@@ -50,6 +50,8 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory_Helmholtz.hpp>
+#include <Galeri_XpetraUtils.hpp>
+#include <Galeri_XpetraMaps.hpp>
 
 // MueLu
 #include "MueLu.hpp"
@@ -71,7 +73,7 @@ typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
 typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
 typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
 typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS;
+typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS; 
 typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
 typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
 
@@ -123,8 +125,28 @@ int main(int argc, char *argv[]) {
   RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
   RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
-  RCP<const Tpetra::Map<LO, GO, NO> > tmap = Tpetra::createUniformContigMap<LO, GO>(nx*ny, comm);
-  RCP<const Map> map = Xpetra::toXpetra(tmap);
+  Teuchos::ParameterList pl = matrixParameters_helmholtz.GetParameterList();
+  RCP<MultiVector> coordinates;
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", pl.get("nx", nx));
+  galeriList.set("ny", pl.get("ny", ny));
+  galeriList.set("nz", pl.get("nz", nz));
+  RCP<const Map> map;
+
+  if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz1D") {
+    map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters_helmholtz.GetNumGlobalElements(), 0, comm);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters_helmholtz.GetParameterList());
+  }
+  else if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz2D") {
+    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters_helmholtz.GetParameterList());
+  }
+  else if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz3D") {
+    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters_helmholtz.GetParameterList());
+  }
+
+  RCP<const Tpetra::Map<LO, GO, NO> > tmap = Xpetra::toTpetra(map);
 
   Teuchos::ParameterList matrixParams_laplace   = matrixParameters_laplace.GetParameterList();
   Teuchos::ParameterList matrixParams_helmholtz = matrixParameters_helmholtz.GetParameterList();
@@ -144,7 +166,7 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
   nullspace->putScalar( (SC) 1.0);
-
+ 
   comm->barrier();
 
   tm = Teuchos::null;
@@ -155,13 +177,13 @@ int main(int argc, char *argv[]) {
 
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
-  // Factory Options
+  // Factories
   RCP<TentativePFactory>  TentPFact = rcp( new TentativePFactory );
   RCP<SaPFactory>         Pfact     = rcp( new SaPFactory        );
   RCP<TransPFactory>      Rfact     = rcp( new TransPFactory     );
   RCP<RAPFactory>         Acfact    = rcp( new RAPFactory        );
 
-  // Smoother Options
+  // Smoother
   RCP<SmootherPrototype> smooProto;
   std::string ifpack2Type;
   Teuchos::ParameterList ifpack2List;
@@ -172,29 +194,15 @@ int main(int argc, char *argv[]) {
   ifpack2List.set("krylov: block size",1);
   ifpack2List.set("krylov: zero starting solution",true);
   ifpack2List.set("krylov: preconditioner type",3);
-  // Additive Schwarz smoother
-  //ifpack2Type = "SCHWARZ";
   ifpack2List.set("schwarz: compute condest", false);
   ifpack2List.set("schwarz: overlap level", 0);
-  // ILUT smoother
-  //ifpack2Type = "ILUT";
-  //ifpack2List.set("fact: ilut level-of-fill", (double)1.0);
-  //ifpack2List.set("fact: absolute threshold", (double)0.0);
-  //ifpack2List.set("fact: relative threshold", (double)1.0);
-  //ifpack2List.set("fact: relax value", (double)0.0);
-  //smooProto = Teuchos::rcp( new MueLu::Ifpack2Smoother<SC, LO, GO, NO, LMO>("ILUT",ifpack2List) );
-  // Gauss-Seidel smoother
-  //ifpack2Type = "RELAXATION";
-  //ifpack2List.set("relaxation: sweeps", (LO) 4);
-  //ifpack2List.set("relaxation: damping factor", 1.0); // 0.7
-  //ifpack2List.set("relaxation: type", "Gauss-Seidel");
   smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type,ifpack2List) );
   RCP<SmootherFactory> SmooFact;
   LO maxLevels = 6;
   if (maxLevels > 1)
     SmooFact = rcp( new SmootherFactory(smooProto) );
 
-  // Coarse grid solver options
+  // Coarse grid solver
   RCP<SmootherPrototype> coarsestSmooProto;
   std::string type = "";
   Teuchos::ParameterList coarsestSmooList;
@@ -224,9 +232,10 @@ int main(int argc, char *argv[]) {
   Manager.SetFactory("Smoother", SmooFact);
   Manager.SetFactory("CoarseSolver", coarsestSmooFact);
   H->Setup(Manager, 0, H->GetNumLevels());
+  //H->Write(-1,-1);
 
   tm = Teuchos::null;
-
+  
   //************************************//
   //   Solve linear system with Belos   //
   //************************************//
@@ -234,12 +243,12 @@ int main(int argc, char *argv[]) {
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
 
   RCP<TVEC> X = Tpetra::createVector<SC,LO,GO,NO>(tmap);
-  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(tmap);
+  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(tmap);  
   X->putScalar((SC) 0.0);
   B->putScalar((SC) 0.0);
   int pointsourceid=nx*ny/2+nx/2;
   if(map->isNodeGlobalElement(pointsourceid)==true) {
-    B->replaceGlobalValue(pointsourceid, 1.0);
+    B->replaceGlobalValue(pointsourceid, (SC) 1.0);
   }
 
   tm = Teuchos::null;
@@ -252,14 +261,14 @@ int main(int argc, char *argv[]) {
 
   // Construct a Belos LinearProblem object
   RCP<TProblem> belosProblem = rcp(new TProblem(belosOp,X,B));
-  belosProblem->setRightPrec(belosPrec);
+  belosProblem->setRightPrec(belosPrec); 
   bool set = belosProblem->setProblem();
   if (set == false) {
     if(comm->getRank()==0)
-      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;    
     return EXIT_FAILURE;
   }
-
+    
   // Belos parameter list
   int maxIts = 100;
   double tol = 1e-6;
@@ -286,7 +295,7 @@ int main(int argc, char *argv[]) {
     if (comm->getRank() == 0)
       std::cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
   }
-
+  
   // Check convergence
   if (ret != Belos::Converged) {
     if (comm->getRank() == 0) std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
@@ -297,7 +306,7 @@ int main(int argc, char *argv[]) {
   // Get the number of iterations for this solve.
   if(comm->getRank()==0)
     std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-
+ 
   tm = Teuchos::null;
 
   globalTimeMonitor = Teuchos::null;

@@ -57,7 +57,8 @@ int Trilinos_Util_ReadMatrixMarket2Epetra_internal( char *data_file,
 				      Epetra_CrsMatrix *& A, 
 				      Epetra_Vector *& x, 
 				      Epetra_Vector *& b,
-				      Epetra_Vector *&xexact ) {
+              Epetra_Vector *&xexact,
+              const char * fmt) {
   FILE *in_file ;
   int_type N_rows, nnz ; 
 
@@ -87,22 +88,24 @@ int Trilinos_Util_ReadMatrixMarket2Epetra_internal( char *data_file,
 
     iptrs = ptrs ; //  Current pointers into inds and vals for each row
 
-    fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
+    // Pick symmetry info off of this string
+    if (fgets( buffer, BUFSIZE, in_file) == NULL)
+        assert(false);
     bool symmetric = false ; 
     string headerline1 = buffer;
     if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
-    fgets( buffer, BUFSIZE, in_file ) ;
+    if (fgets( buffer, BUFSIZE, in_file) == NULL)
+        assert(false);
 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int_type i, j; 
       double val ; 
-      i = -13 ;   // Check for blank lines 
-      if(sizeof(int) == sizeof(int_type))
-        sscanf( buffer, "%d %d %lg", &i, &j, &val ) ; 
-      else if(sizeof(long long) == sizeof(int_type))
-        sscanf( buffer, "%lld %lld %lg", &i, &j, &val ) ; 
-      else
-        assert(false);
+      i = -13 ;   // Check for blank lines
+      // Build the format line.
+      char* formatline = new char[2*strlen(fmt) + 2 + 3];
+      snprintf( formatline, sizeof formatline, "%s %s %s", fmt, fmt, "%lg" );
+      sscanf( buffer, formatline, &i, &j, &val ) ;
+      delete[] formatline;
       assert( i != -13) ; 
       if ( diag || i != j ) { 
 	//	if ( i == j && i == 1 ) val *= 1.0001 ;
@@ -179,7 +182,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
 				      Epetra_Vector *& x, 
 				      Epetra_Vector *& b,
 				      Epetra_Vector *&xexact ) {
-  return Trilinos_Util_ReadMatrixMarket2Epetra_internal<int>(data_file, comm, map, A, x, b, xexact);
+  return Trilinos_Util_ReadMatrixMarket2Epetra_internal<int>(data_file, comm, map, A, x, b, xexact, "%d");
 }
 
 #endif
@@ -193,7 +196,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra64( char *data_file,
 				      Epetra_Vector *& x, 
 				      Epetra_Vector *& b,
 				      Epetra_Vector *&xexact ) {
-  return Trilinos_Util_ReadMatrixMarket2Epetra_internal<long long>(data_file, comm, map, A, x, b, xexact);
+  return Trilinos_Util_ReadMatrixMarket2Epetra_internal<long long>(data_file, comm, map, A, x, b, xexact, "%lld");
 }
 
 #endif

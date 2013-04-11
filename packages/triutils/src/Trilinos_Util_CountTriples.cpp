@@ -60,8 +60,9 @@ void Trilinos_Util_CountTriples_internal( const char *data_file,
 				 std::vector<int> &non_zeros,
 				 int_type &N_rows, int_type &nnz, 
 				 const Epetra_Comm  &comm, 
+         const char * fmt,
 				 bool TimDavisHeader=false,
-				 bool ZeroBased=false 
+				 bool ZeroBased=false
 ) { 
 
   FILE *in_file ;
@@ -92,13 +93,15 @@ void Trilinos_Util_CountTriples_internal( const char *data_file,
       }
     
     if ( TimDavisHeader ) { 
-      fgets( buffer, BUFSIZE, in_file );
-      if(sizeof(int) == sizeof(int_type))
-        sscanf( buffer, "%d %d %d %d", &num_rows, &num_cols, &num_nz, &hdr_type ) ; 
-      else if(sizeof(long long) == sizeof(int_type))
-        sscanf( buffer, "%lld %lld %lld %d", &num_rows, &num_cols, &num_nz, &hdr_type ) ; 
-      else
-        assert(false);
+      if (fgets( buffer, BUFSIZE, in_file ) == NULL)
+          assert(false);
+
+      // Build the format line.
+      char * formatline = new char[4*strlen(fmt) + 3];
+      snprintf( formatline, sizeof formatline, "%s %s %s %s", fmt, fmt, fmt, fmt);
+      sscanf( buffer, formatline, &num_rows, &num_cols, &num_nz, &hdr_type ) ; 
+      delete[] formatline;
+
       if( hdr_type != 0 ) {
 	if ( hdr_type == -131313 ) 
 	  printf("Bad Tim Davis header line.  Should have four  values and the fourth must be zero.\n"); 
@@ -107,8 +110,8 @@ void Trilinos_Util_CountTriples_internal( const char *data_file,
 	exit(1);
       }
       if ( num_rows != num_cols ) {
-	printf( "Bad Tim Davis header line.  First two values, number of rows and columns must be equal.  We see %d and %d\n" ,
-		num_rows, num_cols ) ; 
+	printf( "Bad Tim Davis header line.  First two values, number of rows and columns must be equal.  We see %lld and %lld\n" ,
+		(long long)num_rows, (long long)num_cols ) ; 
       }
     } 
 
@@ -116,12 +119,11 @@ void Trilinos_Util_CountTriples_internal( const char *data_file,
       int_type i, j; 
       float val ; 
       i = -13 ;   // Check for blank lines 
-      if(sizeof(int) == sizeof(int_type))
-        sscanf( buffer, "%d %d %f", &i, &j, &val ) ; 
-      else if(sizeof(long long) == sizeof(int_type))
-        sscanf( buffer, "%lld %lld %f", &i, &j, &val ) ; 
-      else
-        assert(false);
+      // Build the format line.
+      char * formatline = new char[2*strlen(fmt) + 2 + 2];
+      snprintf( formatline, sizeof formatline, "%s %s %s", fmt, fmt, "%f");
+      sscanf( buffer, formatline, &i, &j, &val ) ;
+      delete[] formatline;
 	  
       if ( ZeroBased ) { i++; j++ ; } 
       if ( i > 0 ) { 
@@ -156,18 +158,11 @@ void Trilinos_Util_CountTriples_internal( const char *data_file,
 
   if ( TimDavisHeader && comm.MyPID() == 0)  { 
     if ( num_rows != N_rows ) {
-      if(sizeof(int) == sizeof(int_type))
-        printf( " Bad Tim Davis Header Line.  The first value should be the number of rows.  We see %d, but the actual number of rows is: %d\n",
-	      num_rows, N_rows );
-      else if(sizeof(long long) == sizeof(int_type))
-        printf( " Bad Tim Davis Header Line.  The first value should be the number of rows.  We see %lld, but the actual number of rows is: %lld\n",
-	      num_rows, N_rows );
-      else
-        assert(false);
+      printf( " Bad Tim Davis Header Line.  The first value should be the number of rows.  We see %lld, but the actual number of rows is: %lld\n", (long long)num_rows, (long long)N_rows );
     }
     if ( num_nz != nnz ) {
-      printf( " Bad Tim Davis Header Line.  The third value should be the number of non-zeros.  We see %d, but the actual number of non-zeros is: %d\n",
-	      num_nz, nnz );
+      printf( " Bad Tim Davis Header Line.  The third value should be the number of non-zeros.  We see %lld, but the actual number of non-zeros is: %lld\n",
+	      (long long)num_nz, (long long)nnz );
     }
   }
 
@@ -186,7 +181,7 @@ void Trilinos_Util_CountTriples( const char *data_file,
 				 bool TimDavisHeader=false, 
 				 bool ZeroBased=false ) {
   Trilinos_Util_CountTriples_internal<int>(data_file, symmetric, non_zeros,
-    N_rows, nnz, comm, TimDavisHeader, ZeroBased);
+    N_rows, nnz, comm, "%d", TimDavisHeader, ZeroBased);
 }
 
 #endif
@@ -201,7 +196,7 @@ void Trilinos_Util_CountTriples( const char *data_file,
 				 bool TimDavisHeader=false, 
 				 bool ZeroBased=false ) {
   Trilinos_Util_CountTriples_internal<long long>(data_file, symmetric, non_zeros,
-    N_rows, nnz, comm, TimDavisHeader, ZeroBased);
+    N_rows, nnz, comm, "%lld", TimDavisHeader, ZeroBased);
 }
 
 #endif

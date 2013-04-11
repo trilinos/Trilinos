@@ -100,7 +100,7 @@ namespace MueLu {
     Input(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList  & pL = GetParameterList();
-    if (pL.get<std::string>("algorithm") == "laplacian")
+    if (pL.get<bool>("lightweight wrap") == true && pL.get<std::string>("algorithm") == "laplacian")
       Input(currentLevel, "Coordinates");
   }
 
@@ -130,7 +130,9 @@ namespace MueLu {
       GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << std::endl;
       Set(currentLevel, "Filtering", (threshold != STS::zero()));
 
-      LocalOrdinal numDropped = 0, numTotal = 0;
+      const typename STS::magnitudeType dirichletThreshold = STS::magnitude(pL.get<Scalar>("Dirichlet detection threshold"));
+
+      GlobalOrdinal numDropped = 0, numTotal = 0;
       if (algo == "original") {
         if (predrop_ == null) {
           // ap: this is a hack: had to declare predrop_ as mutable
@@ -153,14 +155,14 @@ namespace MueLu {
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
 
-        const typename STS::magnitudeType dirichletThreshold = STS::magnitude(pL.get<Scalar>("Dirichlet detection threshold"));
-
         if ( (A->GetFixedBlockSize() == 1) && (threshold == STS::zero()) ) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-          //Detect and record rows that correspond to Dirichlet boundary conditions
-          const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A,dirichletThreshold);
+
+          // Detect and record rows that correspond to Dirichlet boundary conditions
+          const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
           graph->SetBoundaryNodeMap(boundaryNodes);
+
           Set(currentLevel, "DofsPerNode", 1);
           Set(currentLevel, "Graph", graph);
 
@@ -190,6 +192,7 @@ namespace MueLu {
             //FIXME but the threshold doesn't take into account the rows' diagonal entries
             //FIXME For now, hardwiring the dropping in here
 
+            LocalOrdinal rownnz = 0;
             for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
               LocalOrdinal col = indices[colID];
 
@@ -197,12 +200,21 @@ namespace MueLu {
               typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
               typename STS::magnitudeType aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
 
-              if (aij > aiiajj || row == col)
+              if (aij > aiiajj || row == col) {
                 columns[realnnz++] = col;
-              else
+                rownnz++;
+              } else
                 numDropped++;
             }
-            if (realnnz == 1) boundaryNodes[row] = true;
+            if (rownnz == 1) {
+              // If the only element remaining after filtering is diagonal, mark node as bounday
+              // FIXME: this should really be replaced by the following
+              //    if (indices.size() == 1 && indices[0] == row)
+              //        boundaryNodes[row] = true;
+              // We do not do it this way now because there is no framework for distinguishing isolated
+              // and boundary nodes in the aggregation algorithms
+              boundaryNodes[row] = true;
+            }
             rows[row+1] = realnnz;
           }
           columns.resize(realnnz);
@@ -237,8 +249,13 @@ namespace MueLu {
         if ( (blkSize == 1) && (threshold == STS::zero()) ) {
           // Trivial case: scalar problem, no dropping. Can return original graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+
+          // Detect and record rows that correspond to Dirichlet boundary conditions
+          const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          graph->SetBoundaryNodeMap(boundaryNodes);
+
           Set(currentLevel, "DofsPerNode", blkSize);
-          Set(currentLevel, "Graph", graph);
+          Set(currentLevel, "Graph",       graph);
 
         } else {
           // ap: We make quite a few assumptions here; general case may be a lot different,
@@ -251,6 +268,10 @@ namespace MueLu {
           // but as I totally don't understand that code, here is my solution
 
           // [*1*]: see [*0*]
+
+          // Check that the number of local coordinates is consistent with the #rows in A
+          std::string msg = "MueLu::CoalesceDropFactory::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
+          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(),Exceptions::Incompatible,msg);
 
           RCP<const Map> uniqueMap, nonUniqueMap;
           if (blkSize == 1) {
@@ -332,6 +353,8 @@ namespace MueLu {
           ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(numRows+1);
           ArrayRCP<LocalOrdinal> columns = ArrayRCP<LO>(A->getNodeNumEntries());
 
+          const ArrayRCP<bool> boundaryNodes(numRows, false);
+
           LocalOrdinal realnnz = 0;
           rows[0] = 0;
           for (LocalOrdinal row = 0; row < numRows; row++) {
@@ -360,12 +383,13 @@ namespace MueLu {
             }
             numTotal += indices.size();
 
-            LocalOrdinal nnz = indices.size();
+            LocalOrdinal nnz = indices.size(), rownnz = 0;
             for (LocalOrdinal colID = 0; colID < nnz; colID++) {
               LocalOrdinal col = indices[colID];
 
               if (row == col) {
                 columns[realnnz++] = col;
+                rownnz++;
                 continue;
               }
 
@@ -373,22 +397,41 @@ namespace MueLu {
               typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
               typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
 
-              if (aij > aiiajj)
+              if (aij > aiiajj) {
                 columns[realnnz++] = col;
-              else
+                rownnz++;
+              } else {
                 numDropped++;
+              }
+            }
+
+            if (rownnz == 1) {
+              // If the only element remaining after filtering is diagonal, mark node as bounday
+              // FIXME: this should really be replaced by the following
+              //    if (indices.size() == 1 && indices[0] == row)
+              //        boundaryNodes[row] = true;
+              // We do not do it this way now because there is no framework for distinguishing isolated
+              // and boundary nodes in the aggregation algorithms
+              boundaryNodes[row] = true;
             }
             rows[row+1] = realnnz;
           }
           columns.resize(realnnz);
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+          graph->SetBoundaryNodeMap(boundaryNodes);
           Set(currentLevel, "Graph", graph);
           Set(currentLevel, "DofsPerNode", blkSize);
         }
       }
 
-      GetOStream(Statistics0, -1) << "number of dropped " << numDropped << " (" << 100*Teuchos::as<double>(numDropped)/Teuchos::as<double>(numTotal) << "%)" << std::endl;
+      if (GetVerbLevel() & Statistics0) {
+          RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+          GlobalOrdinal numGlobalTotal, numGlobalDropped;
+          sumAll(comm, numTotal,   numGlobalTotal);
+          sumAll(comm, numDropped, numGlobalDropped);
+          GetOStream(Statistics0, -1) << "number of dropped " << numGlobalDropped << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
+      }
 
     } else {
 

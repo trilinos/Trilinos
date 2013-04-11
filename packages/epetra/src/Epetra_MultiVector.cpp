@@ -533,7 +533,13 @@ int Epetra_MultiVector::ExtractCopy(double *A, int MyLDA) const {
 //=========================================================================
 int Epetra_MultiVector::ReplaceMap(const Epetra_BlockMap& map)
 {
-  if (Map().PointSameAs(map)) {
+  // mfh 28 Mar 2013: We can't check for compatibility across the
+  // whole communicator, unless we know that the current and new
+  // Maps are nonnull on _all_ participating processes.
+  
+  // So, we'll check to make sure that the maps are the same size on this processor and then
+  // just go with it.
+  if(Map().NumMyElements() == map.NumMyElements() && Map().NumMyPoints() == map.NumMyPoints()) {
     Epetra_DistObject::Map_ = map;
     return(0);
   }

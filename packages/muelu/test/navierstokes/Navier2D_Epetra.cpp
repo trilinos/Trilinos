@@ -78,6 +78,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
@@ -194,7 +195,6 @@ int main(int argc, char *argv[]) {
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetVerbLevel(MueLu::Extreme);
 
-
   //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
   //dropFact->SetPreDropFunction(predrop);
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
@@ -256,6 +256,7 @@ int main(int argc, char *argv[]) {
 
   FactoryManager M;
   M.SetFactory("Graph", dropFact);
+  //M.SetFactory("UnAmalgamationInfo", amalgFact);
   M.SetFactory("Aggregates", CoupledAggFact);
   M.SetFactory("P", Pfact);
   M.SetFactory("R", Rfact);
@@ -265,13 +266,16 @@ int main(int argc, char *argv[]) {
 
   H->Setup(M, 0, maxLevels);
 
-  Finest->print(*out);
-
-  RCP<Level> coarseLevel = H->GetLevel(1);
-  coarseLevel->print(*out);
-
-  RCP<Level> coarseLevel2 = H->GetLevel(2);
-  coarseLevel2->print(*out);
+  { // some debug output
+    // print out content of levels
+    std::cout << "FINAL CONTENT of multigrid levels" << std::endl;
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    for(LO l = 0; l < H->GetNumLevels(); l++) {
+      RCP<Level> coarseLevel = H->GetLevel(l);
+      coarseLevel->print(*out);
+    }
+    std::cout << "END FINAL CONTENT of multigrid levels" << std::endl;
+  } // end debug output
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);
 

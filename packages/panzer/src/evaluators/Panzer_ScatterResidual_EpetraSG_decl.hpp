@@ -44,6 +44,8 @@
 #ifndef PANZER_EVALUATOR_SCATTER_RESIDUAL_EPETRA_SG_DECL_HPP
 #define PANZER_EVALUATOR_SCATTER_RESIDUAL_EPETRA_SG_DECL_HPP
 
+#include "Panzer_SGEpetraLinearObjContainer.hpp"
+
 namespace panzer {
 
 // **************************************************************
@@ -58,15 +60,18 @@ class ScatterResidual_Epetra<panzer::Traits::SGResidual,Traits,LO,GO>
 public:
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                          const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
-                         bool=false) 
-     : globalIndexer_(indexer) {}
+                         bool useDiscreteAdjoint=false) 
+     : globalIndexer_(indexer),useDiscreteAdjoint_(useDiscreteAdjoint)  {}
   
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                          const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
-                         const Teuchos::ParameterList& p,bool=false);
+                         const Teuchos::ParameterList& p,
+                         bool=false);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -92,6 +97,11 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer_;
+
+  bool useDiscreteAdjoint_;
 };
 
 // **************************************************************
@@ -106,15 +116,19 @@ class ScatterResidual_Epetra<panzer::Traits::SGJacobian,Traits,LO,GO>
 public:
   
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,bool=false)
-     : globalIndexer_(indexer) {}
+                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
+                         bool useDiscreteAdjoint=false) 
+     : globalIndexer_(indexer),useDiscreteAdjoint_(useDiscreteAdjoint)  {}
 
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                          const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
-                         const Teuchos::ParameterList& pl,bool=false);
+                         const Teuchos::ParameterList& pl,
+                         bool=false);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -141,6 +155,11 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer_;
+
+  bool useDiscreteAdjoint_;
 
   ScatterResidual_Epetra();
 };

@@ -232,6 +232,9 @@ namespace Xpetra {
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
         virtual void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const = 0;
 
+    //! Does this have an underlying matrix
+    virtual bool hasMatrix() const = 0;
+
 
   }; // CrsMatrix class
 

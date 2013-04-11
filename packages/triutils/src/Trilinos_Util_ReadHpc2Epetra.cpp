@@ -54,7 +54,8 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
 				 Epetra_CrsMatrix *& A, 
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
-				 Epetra_Vector *&xexact) {
+				 Epetra_Vector *&xexact,
+         const char * fmt) {
 
 
   FILE *in_file ;
@@ -80,16 +81,11 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
       exit(1);
     }
   int_type numGlobalEquations, total_nnz;
-  if(sizeof(int) == sizeof(int_type)) {
-    fscanf(in_file,"%d",&numGlobalEquations);
-    fscanf(in_file,"%d",&total_nnz);
-  }
-  else if(sizeof(long long) == sizeof(int_type)) {
-    fscanf(in_file,"%lld",&numGlobalEquations);
-    fscanf(in_file,"%lld",&total_nnz);
-  }
-  else
-    assert(false);
+  int cnt;
+  cnt = fscanf(in_file,fmt,&numGlobalEquations);
+  assert(cnt > 0);
+  cnt = fscanf(in_file,fmt,&total_nnz);
+  assert(cnt > 0);
 
   map = new Epetra_Map(numGlobalEquations, (int_type) 0, comm); // Create map with uniform distribution
   
@@ -107,7 +103,8 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
   int max_nnz = 0;
 
   for (int i=0; i<numGlobalEquations; i++) {
-      fscanf(in_file, "%d",lp); /* row #, nnz in row */
+      cnt = fscanf(in_file, "%d",lp); /* row #, nnz in row */
+      assert(cnt > 0);
       if (map->MyGID(i)) max_nnz = EPETRA_MAX(max_nnz,l);
     }
 
@@ -119,7 +116,8 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
   {for (int_type i=0; i<numGlobalEquations; i++)
     {
       int cur_nnz;
-      fscanf(in_file, "%d",&cur_nnz);
+      cnt = fscanf(in_file, "%d",&cur_nnz);
+      assert(cnt > 0);
       if (map->MyGID(i)) // See if nnz for row should be added
 	{
 	  if (debug) cout << "Process "<<rank
@@ -127,7 +125,8 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
 	  int nnz_kept = 0;
 	  for (int j=0; j<cur_nnz; j++) 
 	    {
-	      fscanf(in_file, "%lf %d",vp,lp);
+	      cnt = fscanf(in_file, "%lf %d",vp,lp);
+        assert(cnt > 0);
 	      if (v!=0.0) {
 		list_of_vals[nnz_kept] = v;
 		list_of_inds[nnz_kept] = l;
@@ -137,7 +136,10 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
 	  A->InsertGlobalValues(i, nnz_kept, list_of_vals, list_of_inds);
 	}
       else
-	for (int j=0; j<cur_nnz; j++) fscanf(in_file, "%lf %d",vp,lp); // otherwise read and discard
+	for (int j=0; j<cur_nnz; j++) {
+    cnt = fscanf(in_file, "%lf %d",vp,lp); // otherwise read and discard
+    assert(cnt > 0);
+  }
     }}
 
   double xt, bt, xxt;
@@ -147,14 +149,18 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
 	{
 	  if (debug) cout << "Process "<<rank<<" of "
                        <<size<<" getting RHS "<<i<<endl;
-	  fscanf(in_file, "%lf %lf %lf",&xt, &bt, &xxt);
+	  cnt = fscanf(in_file, "%lf %lf %lf",&xt, &bt, &xxt);
+    assert(cnt > 0);
 	  int cur_local_row = map->LID(i);
 	  (*x)[cur_local_row] = xt;
 	  (*b)[cur_local_row] = bt;
 	  (*xexact)[cur_local_row] = xxt;
 	}
       else
-	fscanf(in_file, "%lf %lf %lf",vp, vp, vp); // or thrown away
+      {
+	  cnt = fscanf(in_file, "%lf %lf %lf",vp, vp, vp); // or thrown away
+    assert(cnt > 0);
+    }
     }}
 
   fclose(in_file);
@@ -197,7 +203,7 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact) {
-  Trilinos_Util_ReadHpc2Epetra_internal<int>(data_file, comm, map, A, x, b, xexact);
+  Trilinos_Util_ReadHpc2Epetra_internal<int>(data_file, comm, map, A, x, b, xexact, "%d");
 }
 
 #endif
@@ -211,7 +217,7 @@ void Trilinos_Util_ReadHpc2Epetra64(char *data_file,
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact) {
-  Trilinos_Util_ReadHpc2Epetra_internal<long long>(data_file, comm, map, A, x, b, xexact);
+  Trilinos_Util_ReadHpc2Epetra_internal<long long>(data_file, comm, map, A, x, b, xexact, "%lld");
 }
 
 #endif

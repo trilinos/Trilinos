@@ -52,44 +52,215 @@
 #include <Tpetra_Util.hpp>
 #include <Teuchos_as.hpp>
 
+namespace {
+  // Default value of Import's "Debug" parameter.
+  const bool debug_default = false;
+} // namespace (anonymous)
+
 namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,
-          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target)
+          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target) :
+    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
+    debug_ (debug_default)
   {
     using Teuchos::rcp;
+    using std::endl;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
 
-    ImportData_ = rcp (new data_type (source, target));
+    if (! out_.is_null ()) {
+      out_->pushTab ();
+    }
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor" << endl;
+      *out_ << os.str ();
+    }
+    ImportData_ = rcp (new data_type (source, target, out_));
     setupSamePermuteRemote ();
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor: setupSamePermuteRemote done" << endl;
+      *out_ << os.str ();
+    }
     if (source->isDistributed ()) {
       setupExport ();
     }
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor: done" << endl;
+      *out_ << os.str ();
+    }
+    if (! out_.is_null ()) {
+      out_->popTab ();
+    }
     remoteGIDs_ = null; // Don't need these anymore.
   }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  Import (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,
+          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target,
+          const RCP<Teuchos::FancyOStream>& out) :
+    out_ (out),
+    debug_ (debug_default)
+  {
+    using Teuchos::rcp;
+    using std::endl;
+    typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
+
+    if (! out_.is_null ()) {
+      out_->pushTab ();
+    }
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor" << endl;
+      *out_ << os.str ();
+    }
+    ImportData_ = rcp (new data_type (source, target, out_));
+    setupSamePermuteRemote ();
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor: "
+         << "setupSamePermuteRemote done" << endl;
+      *out_ << os.str ();
+    }
+    if (source->isDistributed ()) {
+      setupExport ();
+    }
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor: done" << endl;
+      *out_ << os.str ();
+    }
+    if (! out_.is_null ()) {
+      out_->popTab ();
+    }
+    remoteGIDs_ = null; // Don't need these anymore.
+  }
+
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,
           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target,
-          const Teuchos::RCP<Teuchos::ParameterList>& plist)
+          const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
+    debug_ (debug_default)
   {
     using Teuchos::rcp;
+    using std::endl;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
 
-    ImportData_ = rcp (new data_type (source, target, plist));
+    // Read "Debug" parameter from the input ParameterList.
+    bool debug = debug_default;
+    try {
+      debug = plist->get<bool> ("Debug");
+    } catch (Teuchos::Exceptions::InvalidParameter&) {}
+    debug_ = debug;
+
+    if (! out_.is_null ()) {
+      out_->pushTab ();
+    }
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor" << endl;
+      *out_ << os.str ();
+    }
+    ImportData_ = rcp (new data_type (source, target, out_, plist));
     setupSamePermuteRemote ();
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor: "
+         << "setupSamePermuteRemote done" << endl;
+      *out_ << os.str ();
+    }
     if (source->isDistributed ()) {
       setupExport ();
     }
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor: done" << endl;
+      *out_ << os.str ();
+    }
+    if (! out_.is_null ()) {
+      out_->popTab ();
+    }
     remoteGIDs_ = null; // Don't need this anymore.
   }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,
+          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target,
+          const RCP<Teuchos::FancyOStream>& out,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+    out_ (out),
+    debug_ (debug_default)
+  {
+    using Teuchos::rcp;
+    using std::endl;
+    typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
+
+    // Read "Debug" parameter from the input ParameterList.
+    bool debug = debug_default;
+    try {
+      debug = plist->get<bool> ("Debug");
+    } catch (Teuchos::Exceptions::InvalidParameter&) {}
+    debug_ = debug;
+
+    if (! out_.is_null ()) {
+      out_->pushTab ();
+    }
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor" << endl;
+      *out_ << os.str ();
+    }
+    ImportData_ = rcp (new data_type (source, target, out_, plist));
+    setupSamePermuteRemote ();
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor: "
+         << "setupSamePermuteRemote done" << endl;
+      *out_ << os.str ();
+    }
+    if (source->isDistributed ()) {
+      setupExport ();
+    }
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << myRank << ": Import ctor: done" << endl;
+      *out_ << os.str ();
+    }
+    if (! out_.is_null ()) {
+      out_->popTab ();
+    }
+    remoteGIDs_ = null; // Don't need this anymore.
+  }
+
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import (const Import<LocalOrdinal,GlobalOrdinal,Node>& rhs)
     : ImportData_ (rhs.ImportData_)
+    , out_ (rhs.out_)
+    , debug_ (rhs.debug_)
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -374,10 +545,20 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::null;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename Array<int>::difference_type size_type;
     const Map<LO, GO, Node> & source = *getSourceMap ();
+
+    Teuchos::OSTab tab (out_);
+
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source.getComm ()->getRank ();
+      os << myRank << ": Import::setupExport" << endl;
+      *out_ << os.str ();
+    }
 
     // For each entry remoteGIDs[i], remoteProcIDs[i] will contain
     // the process ID of the process that owns that GID.
@@ -404,6 +585,13 @@ namespace Tpetra {
     // in the source Map.
     const LookupStatus lookup =
       source.getRemoteIndexList (remoteGIDs, remoteProcIDs ());
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source.getComm ()->getRank ();
+      os << myRank << ": Import::setupExport: finished lookup" << endl;
+      *out_ << os.str ();
+    }
+
     TPETRA_ABUSE_WARNING( lookup == IDNotPresent, std::runtime_error,
       "::setupExport(): the source Map wasn't able to figure out which process "
       "owns one or more of the GIDs in the list of remote GIDs.  This probably "
@@ -479,6 +667,7 @@ namespace Tpetra {
     ImportData_->distributor_.createFromRecvs (remoteGIDs ().getConst (),
                                                remoteProcIDs, exportGIDs,
                                                ImportData_->exportImageIDs_);
+
     // Find the LIDs corresponding to the (outgoing) GIDs in
     // exportGIDs.  For sparse matrix-vector multiply, this tells the
     // calling process how to index into the source vector to get the
@@ -492,6 +681,12 @@ namespace Tpetra {
       for (size_type k = 0; k < numExportIDs; ++k) {
         expLIDs[k] = source.getLocalElement (expGIDs[k]);
       }
+    }
+    if (debug_) {
+      std::ostringstream os;
+      const int myRank = source.getComm ()->getRank ();
+      os << myRank << ": Import::setupExport: done" << endl;
+      *out_ << os.str ();
     }
   }
 } // namespace Tpetra

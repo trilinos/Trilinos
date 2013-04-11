@@ -85,6 +85,8 @@ namespace MueLu {
     //! @name Input
     //@{
 
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
@@ -153,6 +155,9 @@ namespace MueLu {
     //! i.e. if A(i,i) == 0.0 set A(i,i) = 1.0
     //! note, that the repairZeroDiagonals_ flag is only valid for checkAc_ == true
     bool repairZeroDiagonals_;
+
+    mutable
+    bool hasDeclaredInput_;
 
     //@}
 

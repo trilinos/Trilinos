@@ -125,6 +125,20 @@ namespace Tpetra {
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target);
 
+    /// \brief Construct an Import from the source and target Maps,
+    ///   with an output stream for debugging output.
+    ///
+    /// \param source [in] The source distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This may be a
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param out [in/out] Output stream for debugging output.
+    Import (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+            const RCP<Teuchos::FancyOStream>& out);
+
     /// \brief Constructor (with list of parameters)
     ///
     /// \param source [in] The source distribution.  This <i>must</i>
@@ -139,6 +153,26 @@ namespace Tpetra {
     ///   two-argument constructor, listed above.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+    /// \brief Constructor (with list of parameters and debug output stream)
+    ///
+    /// \param source [in] The source distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This may be a
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param out [in/out] Output stream (for printing copious debug
+    ///   output on all processes, if that option is enabled).
+    ///
+    /// \param plist [in/out] List of parameters.  Currently passed
+    ///   directly to the Distributor that implements communication.
+    ///   If you don't know what this should be, you should use the
+    ///   two-argument constructor, listed above.
+    Import (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+            const RCP<Teuchos::FancyOStream>& out,
             const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Copy constructor.
@@ -229,9 +263,14 @@ namespace Tpetra {
     //@}
 
   private:
-
+    //! All the data needed for executing the Import communication plan.
     RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ImportData_;
+    //! Temporary array used for initialization.
     RCP<Array<GlobalOrdinal> > remoteGIDs_;
+    //! Output stream for debug output.
+    RCP<Teuchos::FancyOStream> out_;
+    //! Whether to print copious debug output on each process.
+    bool debug_;
 
     //! @name Initialization helper functions (called by the constructor)
     //@{
@@ -301,7 +340,7 @@ namespace Tpetra {
     //@}
   }; // class Import
 
-  /** \brief Non-member constructor for Import objects.
+  /** \brief Nonmember constructor for Import.
 
       Create a Import object from the given source and target Maps.
       \pre <tt>src != null</tt>
@@ -327,6 +366,37 @@ namespace Tpetra {
       << std::endl);
 #endif // HAVE_TPETRA_DEBUG
     return Teuchos::rcp (new Import<LocalOrdinal, GlobalOrdinal, Node> (src, tgt));
+  }
+
+  /** \brief Nonmember constructor for Import that takes a ParameterList.
+
+      Create a Import object from the given source and target Maps,
+      using the given list of parameters.
+      \pre <tt>src != null</tt>
+      \pre <tt>tgt != null</tt>
+      \return The Import object. If <tt>src == tgt</tt>, returns \c null.
+        (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
+
+      \relatesalso Import
+    */
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+  createImport (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& src,
+                const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& tgt,
+                const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  {
+    if (src == tgt) {
+      return Teuchos::null;
+    }
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      src == null || tgt == null, std::runtime_error,
+      "Tpetra::createImport(): neither source nor target map may be null:"
+      << std::endl << "source: " << src << std::endl << "target: " << tgt
+      << std::endl);
+#endif // HAVE_TPETRA_DEBUG
+    typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+    return Teuchos::rcp (new import_type (src, tgt, plist));
   }
 } // namespace Tpetra
 

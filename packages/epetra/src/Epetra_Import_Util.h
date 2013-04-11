@@ -163,10 +163,11 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 
    \warning This method is intended for expert developer use only, and should never be called by user code.
 */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int LowCommunicationMakeColMapAndReindex(int N, const int *rowptr, int *colind, const Epetra_Map& domainMap, 
 					 const int *owningPIDs, bool SortGhostsAssociatedWithEachProcessor, 
 					 std::vector<int>& RemotePIDs, Epetra_BlockMap & NewColMap);
- 
+#endif 
 // ===================================================================
 //! LowCommunicationMakeColMapAndReindex
 /*! If you know the owning PIDs already, you can make the colmap a lot less expensively.
@@ -178,8 +179,10 @@ int LowCommunicationMakeColMapAndReindex(int N, const int *rowptr, int *colind, 
 
    \warning This method is intended for expert developer use only, and should never be called by user code.
 */
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int LowCommunicationMakeColMapAndReindex(int N, const int *rowptr, int *colind_LID, long long *colind_GID, const Epetra_Map& domainMap, 
 					 const int *owningPIDs, bool SortGhostsAssociatedWithEachProcessor, std::vector<int>& RemotePIDs, Epetra_BlockMap & NewColMap);
+#endif
 
 } /* Epetra_Import_Util namespace */
 

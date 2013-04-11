@@ -54,6 +54,8 @@
 
 #include "Galeri_StencilProblems.hpp"
 #include "Galeri_StencilProblems_Helmholtz.hpp"
+#include "Galeri_HelmholtzFEM2DProblem.hpp"
+#include "Galeri_HelmholtzFEM3DProblem.hpp"
 
 #include <iostream>
 
@@ -84,6 +86,12 @@ namespace Galeri {
 
       else if (MatrixType == "Helmholtz3D")
         P.reset(new Helmholtz3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
+
+      else if (MatrixType == "HelmholtzFEM2D")
+        P.reset(new HelmholtzFEM2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
+
+      else if (MatrixType == "HelmholtzFEM3D")
+        P.reset(new HelmholtzFEM3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
 
       else
         TEUCHOS_TEST_FOR_EXCEPTION(true,

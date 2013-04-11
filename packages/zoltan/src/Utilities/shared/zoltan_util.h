@@ -123,6 +123,12 @@ extern "C" {
 #define ZOLTAN_PARKWAY
 #endif
 
+#ifdef HAVE_PURIFY
+#define ZOLTAN_PURIFY
+#define strcasecmp Zoltan_strcasecmp
+#define strncasecmp Zoltan_strncasecmp
+#endif
+
 #else /* !AUTOTOOLS_BUILD */
 
   /* With the manual build system we support only Parallel Version of Scotch */

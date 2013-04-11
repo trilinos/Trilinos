@@ -71,7 +71,8 @@ void Trilinos_Util_read_coo(char *data_file, int MyPID,
  
       data = fopen(data_file,"r") ;
  
-      fscanf(data, "%d %d %d", N_global, &N_columns, &n_entries) ;
+      int count = fscanf(data, "%d %d %d", N_global, &N_columns, &n_entries) ;
+      assert(count > 0);
       if (N_columns != *N_global)
 	perror("Matrix dimensions must be the same");
       printf("Reading from file: %s\n",data_file);
@@ -93,7 +94,8 @@ void Trilinos_Util_read_coo(char *data_file, int MyPID,
 
       while(!feof(data))
 	{
-	  fscanf(data, "%d %d %lf", &ii, &jj, &value) ;
+	  int count = fscanf(data, "%d %d %lf", &ii, &jj, &value) ;
+    assert(count > 0);
 	  max_ii = Trilinos_Util_max(max_ii,ii);
 	  max_jj = Trilinos_Util_max(max_jj,jj);
 #ifdef DEBUG

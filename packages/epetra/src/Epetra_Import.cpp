@@ -47,6 +47,7 @@
 #include "Epetra_Distributor.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Util.h"
+#include "Epetra_Export.h"
 
 #include <algorithm>
 #include <vector>
@@ -648,6 +649,77 @@ Epetra_Import::~Epetra_Import()
   if( ExportPIDs_ != 0 ) delete [] ExportPIDs_; // These were created by Distor_
   if( ExportLIDs_ != 0 ) delete [] ExportLIDs_;
 }
+
+//==============================================================================
+// Epetra_Import pseudo-copy constructor. 
+Epetra_Import::Epetra_Import(const Epetra_Export& Exporter):
+  TargetMap_(Exporter.SourceMap_), //reverse
+  SourceMap_(Exporter.TargetMap_),//reverse
+  NumSameIDs_(Exporter.NumSameIDs_),
+  NumPermuteIDs_(Exporter.NumPermuteIDs_),
+  PermuteToLIDs_(0),
+  PermuteFromLIDs_(0),
+  NumRemoteIDs_(Exporter.NumExportIDs_),//reverse
+  RemoteLIDs_(0),
+  NumExportIDs_(Exporter.NumRemoteIDs_),//reverse
+  ExportLIDs_(0),
+  ExportPIDs_(0),
+  NumSend_(Exporter.NumRecv_),//reverse
+  NumRecv_(Exporter.NumSend_),//revsese
+  Distor_(0)
+{
+  int i;
+  // Reverse the permutes
+  if (NumPermuteIDs_>0) {
+    PermuteToLIDs_   = new int[NumPermuteIDs_];
+    PermuteFromLIDs_ = new int[NumPermuteIDs_];
+    for (i=0; i< NumPermuteIDs_; i++) {
+      PermuteFromLIDs_[i] = Exporter.PermuteToLIDs_[i];
+      PermuteToLIDs_[i]   = Exporter.PermuteFromLIDs_[i];
+    }
+  }
+
+  // Copy the exports to the remotes
+  if (NumRemoteIDs_>0) {
+    RemoteLIDs_ = new int[NumRemoteIDs_];
+    for (i=0; i< NumRemoteIDs_; i++) RemoteLIDs_[i] = Exporter.ExportLIDs_[i];
+  }
+
+  // Copy the remotes to the exports
+  if (NumExportIDs_>0) {
+    ExportLIDs_ = new int[NumExportIDs_];
+    ExportPIDs_ = new int[NumExportIDs_];
+    for (i=0; i< NumExportIDs_; i++) ExportLIDs_[i] = Exporter.RemoteLIDs_[i];
+
+    
+    // Extract the RemotePIDs from the Distributor
+#ifdef HAVE_MPI
+    Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Exporter.Distributor());
+    if(!D) throw ReportError("Epetra_Import: Can't have ExportPIDs w/o an Epetra::MpiDistributor.",-1);
+    int i,j,k;
+    
+    // Get the distributor's data
+    int NumReceives        = D->NumReceives();
+    const int *ProcsFrom   = D->ProcsFrom();
+    const int *LengthsFrom = D->LengthsFrom();
+    
+    // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
+    // MpiDistributor so it ought to duplicate that effect.
+    for(i=0,j=0;i<NumReceives;i++){
+      int pid=ProcsFrom[i];
+      for(k=0;k<LengthsFrom[i];k++){
+	ExportPIDs_[j]=pid;
+	j++;
+      }    
+    }
+#else
+    throw ReportError("Epetra_Import: Can't have ExportPIDs w/o an Epetra::MpiDistributor.",-2);
+#endif
+  }//end NumExportIDs>0
+
+  if (Exporter.Distor_!=0) Distor_ = Exporter.Distor_->ReverseClone();
+}
+
 //=============================================================================
 void Epetra_Import::Print(ostream & os) const
 {

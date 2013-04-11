@@ -123,6 +123,7 @@ namespace MueLu {
                      RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const
   {
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
+    LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
     // number of aggregates
     GO numAggs = aggregates.GetNumAggregates();
@@ -171,6 +172,7 @@ namespace MueLu {
     //This requires moving some parts of some local Q's to other processors
     //because aggregates can span processors.
     RCP<const Map > rowMapForPtent = fineA.getRowMap();
+    size_t numRowsForPtent = rowMapForPtent->getNodeNumElements();
     const Map& rowMapForPtentRef = *rowMapForPtent;
 
     // prerequisites: rowMapForPtent, NSDim
@@ -219,62 +221,66 @@ namespace MueLu {
     Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
 
     //Allocate temporary storage for the tentative prolongator.
-    GO nFineDofs = nonUniqueMap->getNodeNumElements();
-    ArrayRCP<GO> rowPtr(nFineDofs+1);
-    for (GO i=0; i<=nFineDofs; ++i)
-      rowPtr[i] = i*NSDim;
-    ArrayRCP<GO> colPtr(maxAggSize*NSDim,0);
-    ArrayRCP<SC> valPtr(maxAggSize*NSDim,0.);
+    Array<GO> globalColPtr(maxAggSize*NSDim,0);
+    Array<LO> localColPtr(maxAggSize*NSDim,0);
+    Array<SC> valPtr(maxAggSize*NSDim,0.);
 
     //Create column map for Ptent, estimate local #nonzeros in Ptent,  and create Ptent itself.
     const Map& coarseMapRef = *coarseMap;
-    Teuchos::Array<GO> colMapElts;
-    colMapElts.reserve(numAggs*NSDim);
-    GO nzEstimate=0;
-    for (GO agg=0; agg<numAggs; ++agg) {
-//      LO myAggSize = aggStart[agg+1]-aggStart[agg];
-//      for (GO j=0; j<myAggSize; ++j) {
-        //This loop checks whether row associated with current DOF is local, according to rowMapForPtent.
-        //If it is, increment nonzero count and add entries to column map
-        //MultiVectors that will be sent to other processors.
-//        GO globalRow = aggToRowMap[aggStart[agg]+j];
-//        if ( rowMapForPtentRef.isNodeGlobalElement(globalRow) == true ) {
-          nzEstimate += NSDim;
-          for (size_t k=0; k<NSDim; ++k)
-            colMapElts.push_back(coarseMapRef.getGlobalElement(agg * NSDim + k));
-//        }
-//      }
+    size_t nzEstimate = numRowsForPtent*NSDim;
+
+    // For the 3-arrays constructor
+    ArrayRCP<size_t>  ptent_rowptr;
+    ArrayRCP<LO>      ptent_colind;
+    ArrayRCP<Scalar>  ptent_values;
+
+    // Because ArrayRCPs are slow...
+    ArrayView<size_t> rowptr_v;
+    ArrayView<LO>     colind_v;
+    ArrayView<Scalar> values_v; 
+
+    // For temporary usage
+    Array<size_t>    rowptr_temp;
+    Array<LO>        colind_temp;
+    Array<Scalar>    values_temp;
+
+    RCP<CrsMatrix> PtentCrs;
+
+    if (aggregates.AggregatesCrossProcessors()) {
+      RCP<CrsMatrixWrap> PtentCrsWrap = rcp(new CrsMatrixWrap(rowMapForPtent, NSDim, Xpetra::StaticProfile));
+      PtentCrs   = PtentCrsWrap->getCrsMatrix();
+      Ptentative = PtentCrsWrap;
     }
-//    std::sort( colMapElts.begin(), colMapElts.end() );
-//    colMapElts.erase( std::unique( colMapElts.begin(), colMapElts.end() ), colMapElts.end() );
-    RCP<const Map > colMapForPtent = MapFactory::Build(fineA.getRowMap()->lib(),
-                                                  Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                  colMapElts(),
-                                                  indexBase, fineA.getRowMap()->getComm());
-
-//    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-//    fos->setOutputToRootOnly(0);
-//    *fos << "==============\ncolMapForPtent\n=============" << std::endl;
-//    fos->setOutputToRootOnly(-1);
-
-//    colMapForPtent->describe(*fos,Teuchos::VERB_EXTREME);
-//    fos->setOutputToRootOnly(0);
-//    *fos << "==============\nthe end!\n=============" << std::endl;
-//    fos->setOutputToRootOnly(-1);
-//    sleep(1);
-//    comm->barrier();
-
-
-    if (aggregates.AggregatesCrossProcessors())
-      Ptentative = rcp(new CrsMatrixWrap(rowMapForPtent, NSDim, Xpetra::StaticProfile));
-    else
-      Ptentative = rcp(new CrsMatrixWrap(rowMapForPtent, colMapForPtent, NSDim, Xpetra::StaticProfile));
+    else {
+      // Note: NNZ/row estimate is zero since we're using ESFC.
+      RCP<CrsMatrixWrap> PtentCrsWrap = rcp(new CrsMatrixWrap(rowMapForPtent, coarseMap, 0, Xpetra::StaticProfile));
+      PtentCrs   = PtentCrsWrap->getCrsMatrix();
+      Ptentative = PtentCrsWrap;
+      // Since the QR will almost certainly have zeros (NSDim>1) or we might have boundary conditions (NSDim==1), 
+      // we'll use our own temp storage for the colind/values
+      // arrays, since we will need to shrink the arrays down later.
+      // Perform initial seeding of the rowptr
+      rowptr_temp.resize(numRowsForPtent+1,0);
+      rowptr_temp[0]=0;
+      for(size_t i=1; i < numRowsForPtent+1; ++i) 
+	rowptr_temp[i] = rowptr_temp[i-1] + NSDim;
+      
+      colind_temp.resize(nzEstimate,INVALID);
+      values_temp.resize(nzEstimate,Teuchos::ScalarTraits<Scalar>::zero());
+      
+      // Alias the ArrayViews for these guys
+      rowptr_v = rowptr_temp();
+      colind_v = colind_temp();
+      values_v = values_temp();
+    }
 
     //*****************************************************************
     //Loop over all aggregates and calculate local QR decompositions.
     //*****************************************************************
     GO qctr=0; //for indexing into Ptent data vectors
     const Map& nonUniqueMapRef = *nonUniqueMap;
+
+    size_t total_nnz_count=0;
 
     for (GO agg=0; agg<numAggs; ++agg)
     {
@@ -426,7 +432,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
           }
         }
       } // end else (special handling for 1pt aggregates)
-
+    
       //Process each row in the local Q factor.  If the row is local to the current processor
       //according to the rowmap, insert it into Ptentative.  Otherwise, save it in ghostQ
       //to be communicated later to the owning processor.
@@ -436,6 +442,8 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
         //If it is, the row is inserted.  If not, the row number, columns, and values are saved in
         //MultiVectors that will be sent to other processors.
         GO globalRow = aggToRowMap[aggStart[agg]+j];
+	LO localRow  = rowMapForPtent->getLocalElement(globalRow); // CMS: There has to be an efficient way to do this...
+
         //TODO is the use of Xpetra::global_size_t below correct?
         if( rowMapForPtentRef.isNodeGlobalElement(globalRow) == false )
         {
@@ -446,12 +454,14 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
           }
           ++qctr;
         } else {
-          LO nnz=0;
+          size_t nnz=0;
           for (size_t k=0; k<NSDim; ++k) {
             try{
               if (localQR(j,k) != Teuchos::ScalarTraits<SC>::zero()) {
-                colPtr[nnz] = coarseMapRef.getGlobalElement(agg * NSDim + k);
+		localColPtr[nnz]  = agg * NSDim + k; 
+		globalColPtr[nnz] = coarseMapRef.getGlobalElement(localColPtr[nnz]);
                 valPtr[nnz] = localQR(j,k);
+		++total_nnz_count;
                 ++nnz;
               }
             }
@@ -461,9 +471,17 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
           } //for (size_t k=0; k<NSDim; ++k)
 
           try{
-            Ptentative->insertGlobalValues(globalRow,
-                                           colPtr.view(0,nnz),
-                                           valPtr.view(0,nnz));
+	    if (aggregates.AggregatesCrossProcessors()) {
+	      Ptentative->insertGlobalValues(globalRow,globalColPtr.view(0,nnz),valPtr.view(0,nnz));
+	    }
+	    else {
+	      // Copy all of the *active* cols/vals into the colind_v/values_v arrays.
+	      size_t start = rowptr_v[localRow];
+	      for(size_t i=0; i<nnz; ++i) {
+		colind_v[start+i] = localColPtr[i];
+		values_v[start+i] = valPtr[i];
+	      }
+	    }	  
           }
           catch(...) {
             std::cout << "pid " << fineA.getRowMap()->getComm()->getRank()
@@ -475,12 +493,40 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
 
     } // for (LO agg=0; agg<numAggs; ++agg)
 
+
     // ***********************************************************
     // ************* end of aggregate-wise QR ********************
     // ***********************************************************
 
     if (!aggregates.AggregatesCrossProcessors()) {
       GetOStream(Runtime1,0) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
+      // The QR will have plenty of zeros if we're NSDim > 1.  If NSDim==1, we still might have a handful of BCs.
+      // We need to shrink down the CRS arrays and copy them over the the "real" CrsArrays.
+
+      // Now allocate the final arrays
+      PtentCrs->allocateAllValues(total_nnz_count,ptent_rowptr,ptent_colind,ptent_values);
+      
+      // Because ArrayRCPs are slow...
+      ArrayView<size_t> rowptr_new = ptent_rowptr();
+      ArrayView<LO>     colind_new = ptent_colind();
+      ArrayView<Scalar> values_new = ptent_values();
+      size_t count=0;
+      // Collapse and copy
+      for(size_t i=0; i<numRowsForPtent; i++) {	  
+	rowptr_new[i]=count;
+	for(size_t j=rowptr_v[i]; j<rowptr_v[i+1] && colind_v[j]!=INVALID; j++){
+	  colind_new[count] = colind_v[j];
+	  values_new[count] = values_v[j];
+	    count++;
+	}	 
+      }
+      rowptr_new[numRowsForPtent]=count;
+      
+      if(count!=total_nnz_count) throw std::runtime_error("MueLu error in data copy!");	
+      
+      // Regardless, it is time to call setAllValues & ESFC
+      PtentCrs->setAllValues(ptent_rowptr,ptent_colind,ptent_values);
+      PtentCrs->expertStaticFillComplete(coarseMap,fineA.getDomainMap());
     } else {
       GetOStream(Runtime1,0) << "TentativePFactory : aggregates may cross process boundaries" << std::endl;
       // Import ghost parts of Q factors and insert into Ptentative.
@@ -524,20 +570,22 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
         }
       }
 
-      valPtr = ArrayRCP<SC>(NSDim,0.);
-      colPtr = ArrayRCP<GO>(NSDim,0);
+      valPtr = Array<SC>(NSDim,0.);
+      globalColPtr = Array<GO>(NSDim,0);
       for (typename Array<GO>::iterator r=gidsToImport.begin(); r!=gidsToImport.end(); ++r) {
         if (targetQvalues->getLocalLength() > 0) {
           for (size_t j=0; j<NSDim; ++j) {
             valPtr[j] = targetQvals[j][reducedMap->getLocalElement(*r)];
-            colPtr[j] = targetQcols[j][reducedMap->getLocalElement(*r)];
+            globalColPtr[j] = targetQcols[j][reducedMap->getLocalElement(*r)];
           }
-          Ptentative->insertGlobalValues(*r, colPtr.view(0,NSDim), valPtr.view(0,NSDim));
+          Ptentative->insertGlobalValues(*r, globalColPtr.view(0,NSDim), valPtr.view(0,NSDim));
         } //if (targetQvalues->getLocalLength() > 0)
       }
+
+      Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
     } //if (!aggregatesAreLocal)
 
-    Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
+    
 
 //    RCP<const Map> realColMap = Ptentative->getColMap();
 //    sleep(1);

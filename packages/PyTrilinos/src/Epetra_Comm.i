@@ -106,7 +106,7 @@ PyObject* methodName(PyObject* partialObj)
   count     = PyArray_SIZE(partialArray);
   globalObj = PyArray_SimpleNew(array_numdims(partialArray),
 				array_dimensions(partialArray), type);
-  PyArray_FILLWBYTE(globalObj, 0);
+  PyArray_FILLWBYTE((PyArrayObject*)globalObj, 0);
   if (type == NPY_INT)
   {
     int* partialVals = (int*) array_data(partialArray);

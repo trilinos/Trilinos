@@ -678,6 +678,7 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 
 // =========================================================================
 // =========================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int LowCommunicationMakeColMapAndReindex(int N, const int * rowptr, int * colind, const Epetra_Map& domainMap, const int * owningPIDs, bool SortGhostsAssociatedWithEachProcessor, std::vector<int>& RemotePIDs, Epetra_BlockMap & NewColMap) {
 
   
@@ -687,9 +688,11 @@ int LowCommunicationMakeColMapAndReindex(int N, const int * rowptr, int * colind
     throw std::runtime_error("LowCommunicationMakeColMapAndReindex: GID type mismatch.");
   return -1;
 }
+#endif
 
 // =========================================================================
 // =========================================================================
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int LowCommunicationMakeColMapAndReindex(int N, const int * rowptr, int * colind_LID, long long * colind_GID, const Epetra_Map& domainMap, const int * owningPIDs, bool SortGhostsAssociatedWithEachProcessor, std::vector<int>& RemotePIDs, Epetra_BlockMap & NewColMap) {
 
   
@@ -699,6 +702,7 @@ int LowCommunicationMakeColMapAndReindex(int N, const int * rowptr, int * colind
     throw std::runtime_error("LowCommunicationMakeColMapAndReindex: GID type mismatch.");
   return -1;
 }
+#endif
 
 
 }// end namespace Epetra_Import_Util

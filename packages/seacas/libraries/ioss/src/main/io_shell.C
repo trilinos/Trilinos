@@ -105,6 +105,7 @@ namespace {
   void transfer_elemsets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
   void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region, bool debug);
 
   template <typename T>
   void transfer_fields(const std::vector<T*>& entities,
@@ -511,6 +512,8 @@ namespace {
 
     transfer_sidesets(region, output_region, globals.debug);
     transfer_commsets(region, output_region, globals.debug);
+
+    transfer_coordinate_frames(region, output_region, globals.debug);
 
     if (globals.debug) OUTPUT << "END STATE_DEFINE_MODEL... " << '\n';
     output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
@@ -967,6 +970,17 @@ namespace {
       transfer_fields(*i, cs, Ioss::Field::MESH);
       transfer_fields(*i, cs, Ioss::Field::ATTRIBUTE);
       transfer_fields(*i, cs, Ioss::Field::COMMUNICATION);
+      ++i;
+    }
+    if (debug) OUTPUT << '\n';
+  }
+
+  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  {
+    Ioss::CoordinateFrameContainer      cf = region.get_coordinate_frames();
+    Ioss::CoordinateFrameContainer::const_iterator i = cf.begin();
+    while (i != cf.end()) {
+      output_region.add(*i);
       ++i;
     }
     if (debug) OUTPUT << '\n';

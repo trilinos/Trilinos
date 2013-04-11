@@ -47,57 +47,139 @@
 
 namespace Intrepid {
 
-  //
-  // Sign function
-  //
-  template <typename T>
-  inline
-  int
-  sgn(T const & s)
-  {
-    return (T(0) < s) - (s < T(0));
+//
+// Sign function
+//
+template <typename T>
+inline
+int
+sgn(T const & s)
+{
+  return (T(0) < s) - (s < T(0));
+}
+
+//
+// Copysign function
+//
+template<typename T>
+inline
+T
+copysign(T const & a, T const & b)
+{
+  return b >= 0 ? std::abs(a) : -std::abs(a);
+}
+
+//
+// NaN function. Necessary to choose the proper underlying NaN
+// for non-floating-point types.
+// Assumption: non-floating-point types have a typedef that
+// determines the underlying floating-point type.
+//
+template<typename T>
+inline
+typename Sacado::ScalarType<T>::type
+not_a_number()
+{
+  return
+      std::numeric_limits<typename Sacado::ScalarType<T>::type>::quiet_NaN();
+}
+
+//
+// Machine epsilon function. Necessary to choose the proper underlying
+// machine epsilon for non-floating-point types.
+// Assumption: non-floating-point types have a typedef that
+// determines the underlying floating-point type.
+//
+template<typename T>
+inline
+typename Sacado::ScalarType<T>::type
+machine_epsilon()
+{
+  return
+      std::numeric_limits<typename Sacado::ScalarType<T>::type>::epsilon();
+}
+
+//
+// Compute a non-negative integer power by binary manipulation.
+//
+template<typename T>
+T
+integer_power(T const & X, Index const exponent)
+{
+  switch (exponent) {
+    default:
+      break;
+    case 0:
+      return 1;
+      break;
+    case 1:
+      return X;
+      break;
+    case 2:
+      return X * X;
+      break;
+    case 3:
+      return X * X * X;
+      break;
+    case 4:
+    {
+      T const Y = X * X;
+      return Y * Y;
+    }
+    break;
   }
 
-  //
-  // Copysign function
-  //
-  template<typename T>
-  inline
+  Index const
+  rightmost_bit = 1;
+
+  Index const
+  number_digits = std::numeric_limits<Index>::digits;
+
+  Index const
+  leftmost_bit = rightmost_bit << (number_digits - 1);
+
+  Index
+  t = 0;
+
+  for (Index j = 0; j < number_digits; ++j) {
+
+    if (((exponent << j) & leftmost_bit) != 0) {
+
+      t = number_digits - j - 1;
+      break;
+
+    }
+
+  }
+
   T
-  copysign(T const & a, T const & b)
-  {
-    return b >= 0 ? std::abs(a) : -std::abs(a);
+  P = X;
+
+  Index
+  i = 0;
+
+  Index
+  m = exponent;
+
+  while ((m & rightmost_bit) == 0) {
+    P = P * P;
+    ++i;
+    m = m >> 1;
   }
 
-  //
-  // NaN function. Necessary to choose the proper underlying NaN
-  // for non-floating-point types.
-  // Assumption: non-floating-point types have a typedef that
-  // determines the underlying floating-point type.
-  //
-  template<typename T>
-  inline
-  typename Sacado::ScalarType<T>::type
-  not_a_number()
-  {
-    return
-        std::numeric_limits<typename Sacado::ScalarType<T>::type>::quiet_NaN();
+  T
+  Y = P;
+
+  for (Index j = i + 1; j <= t; ++j) {
+    P = P * P;
+
+    if (((exponent >> j) & rightmost_bit) != 0) {
+      Y = Y * P;
+    }
   }
 
-  //
-  // Machine epsilon function. Necessary to choose the proper underlying
-  // machine epsilon for non-floating-point types.
-  // Assumption: non-floating-point types have a typedef that
-  // determines the underlying floating-point type.
-  //
-  template<typename T>
-  inline
-  typename Sacado::ScalarType<T>::type
-  machine_epsilon()
-  {
-    return
-        std::numeric_limits<typename Sacado::ScalarType<T>::type>::epsilon();
-  }
+  return Y;
+}
 
 } // namespace Intrepid
 
