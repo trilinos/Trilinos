@@ -79,7 +79,7 @@ protected:
     omp_set_max_active_levels(1);
     omp_set_num_threads( gang_count * gang_worker_count );
 
-    KokkosArray::OpenMP::initialize();
+    KokkosArray::OpenMP::initialize( gang_count );
   }
 
   static void TearDownTestCase()

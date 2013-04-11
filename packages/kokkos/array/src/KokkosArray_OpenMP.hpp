@@ -93,15 +93,24 @@ public:
    *  2) Allocate a HostThread for each OpenMP thread to hold its
    *     topology and fan in/out data.
    */
-  enum BindingPolicy { SPREAD , PACK };
-
-  static void initialize();
+  static void initialize( const unsigned gang_count );
 
   static void resize_reduce_scratch( unsigned );
 
   static void * root_reduce_scratch();
 
   static void assert_not_in_parallel( const char * const );
+
+  inline static
+  Impl::HostThread * get_host_thread()
+    { return m_host_threads[ omp_get_thread_num() ]; }
+
+  inline static
+  Impl::HostThread * get_host_thread( const unsigned i )
+    { return m_host_threads[ i ]; }
+
+private:
+  static Impl::HostThread * m_host_threads[ Impl::HostThread::max_thread_count ];
 };
 
 /*--------------------------------------------------------------------------*/

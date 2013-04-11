@@ -75,7 +75,7 @@ public:
 
 #pragma omp parallel
     {
-      HostThread & thread = * HostThread::get_thread( omp_get_thread_num() );
+      HostThread & thread = * OpenMP::get_host_thread();
 
       const std::pair< size_type , size_type > range =
         thread.work_range( work_count );
@@ -171,7 +171,7 @@ public:
 
 #pragma omp parallel
     {
-      HostThread & thread = * HostThread::get_thread( omp_get_thread_num() );
+      HostThread & thread = * OpenMP::get_host_thread();
 
       const std::pair< size_type , size_type > range =
         thread.work_range( work_count );
@@ -205,9 +205,9 @@ public:
 
     {
       const unsigned n = omp_get_max_threads();
-      HostThread & root = * HostThread::get_thread(0);
+      HostThread & root = * OpenMP::get_host_thread();
       for ( unsigned i = 1 ; i < n ; ++i ) {
-        HostThread & th = * HostThread::get_thread(i);
+        HostThread & th = * OpenMP::get_host_thread(i);
         reduce.join( root.reduce_data() , th.reduce_data() );
       }
       reduce.finalize( root.reduce_data() );

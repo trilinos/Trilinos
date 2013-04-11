@@ -151,38 +151,63 @@ unsigned bind_host_thread()
 
 //----------------------------------------------------------------------------
 
-void thread_mapping( const unsigned thread_rank ,
-                     const unsigned gang_count,
-                     const unsigned worker_count ,
-                     std::pair<unsigned,unsigned> & coordinate )
+void thread_mapping( const unsigned gang_count,
+                     const unsigned worker_count )
 {
-  const unsigned gang_rank   = thread_rank / worker_count ;
-  const unsigned worker_rank = thread_rank % worker_count ;
+  const std::pair<unsigned,unsigned> core_topo   = hwloc::get_core_topology();
+  const std::pair<unsigned,unsigned> master_core = hwloc::get_this_thread_coordinate();
 
-  const std::pair<unsigned,unsigned> core_topo = hwloc::get_core_topology();
+  const unsigned thread_count = gang_count * worker_count ;
 
-  { // Distribute gangs amont NUMA regions:
-    // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
-    const unsigned bin  = gang_count / core_topo.first ;
-    const unsigned bin1 = bin + 1 ;
-    const unsigned k    = core_topo.first * bin1 - gang_count ;
-    const unsigned part = k * bin ;
+  for ( unsigned thread_rank = 0 , gang_rank = 0 ; gang_rank < gang_count ; ++gang_rank ) {
+  for ( unsigned worker_rank = 0 ; worker_rank < worker_count ; ++worker_rank , ++thread_rank ) {
 
-    coordinate.first = ( gang_rank < part )
-                     ? ( gang_rank / bin )
-                     : ( k + ( gang_rank - part ) / bin1 );
-  }
+    { // Distribute gangs amont NUMA regions:
+      // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
+      const unsigned bin  = gang_count / core_topo.first ;
+      const unsigned bin1 = bin + 1 ;
+      const unsigned k    = core_topo.first * bin1 - gang_count ;
+      const unsigned part = k * bin ;
 
-  { // Distribute workers to cores:
-    // worker_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
-    const unsigned bin  = worker_count / core_topo.second ;
-    const unsigned bin1 = bin + 1 ;
-    const unsigned k    = core_topo.second * bin1 - worker_count ;
-    const unsigned part = k * bin ;
+      s_host_thread_coord[ thread_rank ].first =
+        ( gang_rank < part )
+        ? ( gang_rank / bin )
+        : ( k + ( gang_rank - part ) / bin1 );
+    }
 
-    coordinate.second = ( worker_rank < part )
-                      ? ( worker_rank / bin )
-                      : ( k + ( worker_rank - part ) / bin1 );
+    { // Distribute workers to cores:
+      // worker_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
+      const unsigned bin  = worker_count / core_topo.second ;
+      const unsigned bin1 = bin + 1 ;
+      const unsigned k    = core_topo.second * bin1 - worker_count ;
+      const unsigned part = k * bin ;
+
+      s_host_thread_coord[ thread_rank ].second =
+        ( worker_rank < part )
+        ? ( worker_rank / bin )
+        : ( k + ( worker_rank - part ) / bin1 );
+    }
+  }}
+
+  // Reserve master thread's coordinates:
+  // Reserve entry #0 for the master thread by trading out entry #0
+  // with the best-fit entry for the master threads current location.
+  {
+    unsigned i = 0 ;
+
+    // First try for an exact match:
+    for ( ; i < thread_count && master_core != s_host_thread_coord[i] ; ++i );
+
+    if ( i == thread_count ) {
+      // Exact match failed: take the first entry in the NUMA region.
+      for ( i = 0 ; i < thread_count &&
+                    master_core.first != s_host_thread_coord[i].first ; ++i );
+    }
+
+    if ( i == thread_count ) i = 0 ;
+
+    s_host_thread_coord[i] = s_host_thread_coord[0] ;
+    s_host_thread_coord[0] = master_core ;
   }
 }
 
@@ -198,32 +223,14 @@ bool spawn_threads( const unsigned gang_count , const unsigned worker_count )
   bool ok_spawn_threads = true ;
 
   if ( 1 < thread_count ) {
-    // Reserve master thread's coordinates:
-    std::pair<unsigned,unsigned> master_core = hwloc::get_this_thread_coordinate();
 
-    for ( unsigned r = 0 ; r < thread_count ; ++r ) {
-      thread_mapping( r , gang_count , worker_count , s_host_thread_coord[r] );
-    }
+    thread_mapping( gang_count , worker_count );
 
-    // Reserve entry #0 for the master thread by trading out entry #0
-    // with the best-fit entry for the master threads current location.
-    {
-      unsigned i = 0 ;
+    // Reserve the master thread coordinate for the mater thread:
 
-      // First try for an exact match:
-      for ( ; i < thread_count && master_core != s_host_thread_coord[i] ; ++i );
+    const std::pair<unsigned,unsigned> master_core = s_host_thread_coord[0] ;
 
-      if ( i == thread_count ) {
-        // Exact match failed: take the first entry in the NUMA region.
-        for ( i = 0 ; i < thread_count &&
-                      master_core.first != s_host_thread_coord[i].first ; ++i );
-      }
-
-      if ( i == thread_count ) i = 0 ;
-
-      s_host_thread_coord[i] = s_host_thread_coord[0] ;
-      s_host_thread_coord[0] = std::pair<unsigned,unsigned>(~0u,~0u);
-    }
+    s_host_thread_coord[0] = std::pair<unsigned,unsigned>(~0u,~0u);
 
     s_current_worker = & s_worker_block ;
     s_host_thread_count = thread_count ;
