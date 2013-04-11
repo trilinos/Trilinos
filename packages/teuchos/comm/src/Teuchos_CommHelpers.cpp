@@ -308,9 +308,6 @@ reduceAllAndScatterImpl (const Comm<int>& comm,
       // FIXME (mfh 09 Apr 2013) Is this right?  This is what
       // SerialComm does.
       //
-#ifdef HAVE_TEUCHOS_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT(recvCounts==NULL || recvCounts[0] != sendCount);
-#endif // HAVE_TEUCHOS_DEBUG
       std::copy (sendBuffer, sendBuffer + sendCount, myGlobalReducts);
     }
   } else { // It's an MpiComm.  Invoke MPI directly.
@@ -335,9 +332,6 @@ reduceAllAndScatterImpl (const Comm<int>& comm,
   //
   // FIXME (mfh 09 Apr 2013) Is this right?  This is what SerialComm does.
   //
-#ifdef HAVE_TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(recvCounts==NULL || recvCounts[0] != sendBytes);
-#endif // HAVE_TEUCHOS_DEBUG
   std::copy (sendBuffer, sendBuffer + sendCount, myGlobalReducts);
 #endif // HAVE_MPI
 }
