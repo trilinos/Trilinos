@@ -59,6 +59,9 @@ namespace Tpetra {
   class ImportExportData;
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Import;
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -108,6 +111,7 @@ namespace Tpetra {
             class GlobalOrdinal = LocalOrdinal,
             class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Export: public Teuchos::Describable {
+      friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
   public:
     //! The specialization of Map used by this class.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
@@ -181,6 +185,12 @@ namespace Tpetra {
     ///   underlying data.
     Export (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
+    /// \brief Pseudo-copy constructor.
+    ///
+    /// \note Generates and Export object from the reverse of the provided Import object
+    ///   underlying data.
+    Export (const Import<LocalOrdinal,GlobalOrdinal,Node> & importer);
+
     //! Destructor.
     ~Export();
 
@@ -223,8 +233,8 @@ namespace Tpetra {
     /// \brief List of processes to which entries will be sent.
     ///
     /// The entry with local ID getExportLIDs()[i] will be sent to
-    /// process getExportImageIDs()[i].
-    ArrayView<const int> getExportImageIDs() const;
+    /// process getExportPiDs()[i].
+    ArrayView<const int> getExportPIDs() const;
 
     //! The source Map used to construct this Export.
     const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getSourceMap() const;
@@ -276,9 +286,9 @@ namespace Tpetra {
     //==============================================================================
     // sets up numSameIDs_, numPermuteIDs_, and the export IDs
     // these variables are already initialized to 0 by the ImportExportData ctr.
-    // also sets up permuteToLIDs_, permuteFromLIDs_, exportGIDs_, and exportLIDs_
-    void setupSamePermuteExport();
-    void setupRemote();
+    // also sets up permuteToLIDs_, permuteFromLIDs_, and exportLIDs_
+    void setupSamePermuteExport(Teuchos::Array<GlobalOrdinal> & exportGIDs);
+    void setupRemote(Teuchos::Array<GlobalOrdinal> & exportGIDs);
     //@}
   }; // class Export
 

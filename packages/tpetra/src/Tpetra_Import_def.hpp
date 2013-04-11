@@ -50,6 +50,7 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_ImportExportData.hpp>
 #include <Tpetra_Util.hpp>
+#include <Tpetra_Export.hpp>
 #include <Teuchos_as.hpp>
 
 namespace {
@@ -258,7 +259,6 @@ namespace Tpetra {
     remoteGIDs_ = null; // Don't need this anymore.
   }
 
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import (const Import<LocalOrdinal,GlobalOrdinal,Node>& rhs)
@@ -266,6 +266,15 @@ namespace Tpetra {
     , out_ (rhs.out_)
     , debug_ (rhs.debug_)
   {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  Import (const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter)
+    : out_ (exporter.out_)
+    , debug_ (exporter.debug_)
+  {
+    if(!exporter.ExportData_.is_null())  ImportData_ = exporter.ExportData_->reverseClone();
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::~Import()
@@ -317,8 +326,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ArrayView<const int>
-  Import<LocalOrdinal,GlobalOrdinal,Node>::getExportImageIDs() const {
-    return ImportData_->exportImageIDs_();
+  Import<LocalOrdinal,GlobalOrdinal,Node>::getExportPIDs() const {
+    return ImportData_->exportPIDs_();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -375,7 +384,7 @@ namespace Tpetra {
         os << "permuteToLIDs  : " << toString (getPermuteToLIDs ()) << endl;
         os << "remoteLIDs     : " << toString (getRemoteLIDs ()) << endl;
         os << "exportLIDs     : " << toString (getExportLIDs ()) << endl;
-        os << "exportImageIDs : " << toString (getExportImageIDs ()) << endl;
+        os << "exportPIDs     : " << toString (getExportPIDs ()) << endl;
 
         os << "numSameIDs     : " << getNumSameIDs () << endl;
         os << "numPermuteIDs  : " << getNumPermuteIDs () << endl;
@@ -667,10 +676,10 @@ namespace Tpetra {
     // communication plan.  remoteGIDs and remoteProcIDs_ are input;
     // exportGIDs and exportProcIDs_ are output arrays which are
     // allocated by createFromRecvs().
-    ArrayRCP<GO> exportGIDs;
+    Array<GO> exportGIDs;
     ImportData_->distributor_.createFromRecvs (remoteGIDs ().getConst (),
                                                remoteProcIDs, exportGIDs,
-                                               ImportData_->exportImageIDs_);
+                                               ImportData_->exportPIDs_);
 
     // Find the LIDs corresponding to the (outgoing) GIDs in
     // exportGIDs.  For sparse matrix-vector multiply, this tells the
@@ -678,7 +687,7 @@ namespace Tpetra {
     // elements which it needs to send.
     const size_type numExportIDs = exportGIDs.size ();
     if (numExportIDs > 0) {
-      ImportData_->exportLIDs_ = arcp<LO> (numExportIDs);
+      ImportData_->exportLIDs_.resize(numExportIDs);
 
       ArrayView<const GO> expGIDs = exportGIDs ();
       ArrayView<LO> expLIDs = ImportData_->exportLIDs_ ();

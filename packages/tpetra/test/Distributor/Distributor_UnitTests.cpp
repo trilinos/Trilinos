@@ -734,8 +734,8 @@ namespace {
       importGIDs.push_back( as<Ordinal>(generateValue(i, myImageID)) );
     }
     Distributor distributor(comm);
-    ArrayRCP<int> exportImageIDs;
-    ArrayRCP<Ordinal> exportGIDs;
+    Array<int> exportImageIDs;
+    Array<Ordinal> exportGIDs;
     distributor.createFromRecvs<Ordinal>(importGIDs, importImageIDs, exportGIDs, exportImageIDs);
     TEST_EQUALITY(exportGIDs.size(), exportImageIDs.size());  // should *always* be the case
     Array<Ordinal> expectedGIDs;

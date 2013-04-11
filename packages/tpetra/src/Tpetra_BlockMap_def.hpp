@@ -317,15 +317,15 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getRemoteBlockInfo(
 
   Tpetra::Distributor distor(pbmap->getComm());
 
-  Tpetra::ArrayRCP<GlobalOrdinal> exportGBIDs;
-  Tpetra::ArrayRCP<int> exportProcs;
+  Tpetra::Array<GlobalOrdinal> exportGBIDs;
+  Tpetra::Array<int> exportProcs;
 
   distor.createFromRecvs(GBIDs(), remoteProcs(), exportGBIDs, exportProcs);
 
   Tpetra::Array<GlobalOrdinal> exportFirstPointInBlocks(exportGBIDs.size());
   Tpetra::Array<LocalOrdinal> exportSizes(exportGBIDs.size());
 
-  typename Teuchos::ArrayRCP<GlobalOrdinal>::const_iterator
+  typename Teuchos::Array<GlobalOrdinal>::const_iterator
     iter = exportGBIDs.begin(),
     iter_end = exportGBIDs.end();
   for(int i=0; iter!=iter_end; ++iter, ++i) {

@@ -950,6 +950,89 @@ void build_test_matrix(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType>
 }
 
 
+
+
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ReverseImportExport, doImport, Ordinal, Scalar )  {
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::Map<Ordinal,Ordinal> MapType;
+  typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
+  typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MagType;
+  typedef Tpetra::Vector<Scalar,Ordinal,Ordinal, Node> VectorType;
+
+  RCP<VectorType> SourceVector, TargetVector, TestVector;
+  RCP<MapType> MapSource, MapTarget;
+  RCP<ImportType> Import1;
+  RCP<ExportType> Export1;
+  int MyPID = Comm->getRank();
+  double diff;
+  int total_err=0;
+  MagType diff_tol = 1e4*Teuchos::ScalarTraits<Scalar>::eps();
+  
+  Ordinal INVALID = Teuchos::OrdinalTraits<Ordinal>::invalid();
+  
+  global_size_t num_global=1000;
+  
+  int test_err=0;
+
+  // Initial setup - source = distributed, target = all on proc 0
+  MapSource = rcp(new MapType(num_global,INVALID),(Ordinal)0, Comm);
+  if(MyPID==0) MapTarget = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
+  else MapTarget = rcp(new MapType(num_global,(size_t)0,0,Comm));
+
+  SourceVector = rcp(new VectorType(MapSource));
+  TargetVector = rcp(new VectorType(MapTarget));
+  TestVector   = rcp(new VectorType(MapTarget));
+
+  Import1 = rcp(new ImportType(MapSource,MapTarget));
+  Export1 = rcp(new ExportType(MapSource,MapTarget));
+  Teuchos::Array< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > norms(1);
+
+
+  Teuchos::ScalarTraits< Scalar >::seedrandom(24601);
+  SourceVector.randomize();	
+
+  TestVector->doImport(SourceVector,Import1,Tpetra::INSERT);
+  
+  /////////////////////////////////////////////////////////
+  // Test #1: Use Exporter to create a reverse import
+  /////////////////////////////////////////////////////////
+  {
+    TargetVector->putScalar(0.0);
+    RCP<ImportType> Import2 = rcp(new ImportType(*Export1));
+    
+    TargetVector->doExport(SourceVector,Import2,Tpetra::ADD);
+    
+    TargetVector->update(-1.0,*TestVector,1.0);
+    
+    if(TargetVector->norm2(norms) > diff_tol) {
+      if(MyPID==0) cout<<"ReverseImport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }    
+  }
+  
+  /////////////////////////////////////////////////////////
+  // Test #2: Use Importer to create a reverse exporter
+  /////////////////////////////////////////////////////////
+  {
+    TargetVector->putScalar(0.0);
+    RCP<ExportType> Export2 = rcp(new ExportType(*Import1));
+    
+    TargetVector->doExport(SourceVector,Export2,Tpetra::ADD);
+    
+    TargetVector->update(-1.0,*TestVector,1.0);
+    
+    if(TargetVector->norm2(norms) > diff_tol) {
+      if(MyPID==0) cout<<"ReverseExport: Test #2 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }    
+  }
+
+   TEST_EQUALITY(test_err,0);
+}
+
   //
   // INSTANTIATIONS
   //

@@ -354,8 +354,8 @@ namespace Tpetra {
     void
     createFromRecvs (const ArrayView<const Ordinal>& remoteIDs,
                      const ArrayView<const int>& remoteNodeIDs,
-                     ArrayRCP<Ordinal>& exportIDs,
-                     ArrayRCP<int>& exportNodeIDs);
+                     Array<Ordinal>& exportIDs,
+                     Array<int>& exportNodeIDs);
 
     //@}
     //! @name Attribute accessor methods
@@ -852,8 +852,8 @@ namespace Tpetra {
     template <class Ordinal>
     void computeSends (const ArrayView<const Ordinal> &importIDs,
                        const ArrayView<const int> &importNodeIDs,
-                       ArrayRCP<Ordinal> &exportIDs,
-                       ArrayRCP<int> &exportNodeIDs);
+                       Array<Ordinal> &exportIDs,
+                       Array<int> &exportNodeIDs);
 
     //! Create a distributor for the reverse communication pattern.
     void createReverseDistributor() const;
@@ -1758,8 +1758,8 @@ namespace Tpetra {
   void Distributor::
   computeSends (const ArrayView<const OrdinalType> & importIDs,
                 const ArrayView<const int> & importNodeIDs,
-                ArrayRCP<OrdinalType> & exportIDs,
-                ArrayRCP<int> & exportNodeIDs)
+                Array<OrdinalType> & exportIDs,
+                Array<int> & exportNodeIDs)
   {
     // NOTE (mfh 19 Apr 2012): There was a note on this code saying:
     // "assumes that size_t >= Ordinal".  The code certainly does
@@ -1805,8 +1805,8 @@ namespace Tpetra {
     }
     numExports = tempPlan.createFromSends (importNodeIDs);
     if (numExports > 0) {
-      exportIDs = arcp<OrdinalType> (numExports);
-      exportNodeIDs = arcp<int> (numExports);
+      exportIDs.resize(numExports);
+      exportNodeIDs.resize(numExports);
     }
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
     if (debug_) {
@@ -1833,8 +1833,8 @@ namespace Tpetra {
   void Distributor::
   createFromRecvs (const ArrayView<const OrdinalType> &remoteIDs,
                    const ArrayView<const int> &remoteImageIDs,
-                   ArrayRCP<OrdinalType> &exportGIDs,
-                   ArrayRCP<int> &exportNodeIDs)
+                   Array<OrdinalType> &exportGIDs,
+                   Array<int> &exportNodeIDs)
   {
     using std::endl;
 

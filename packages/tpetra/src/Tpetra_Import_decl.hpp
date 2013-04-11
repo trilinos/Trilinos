@@ -59,6 +59,9 @@ namespace Tpetra {
   class ImportExportData;
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Export;
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -108,6 +111,7 @@ namespace Tpetra {
             class GlobalOrdinal = LocalOrdinal,
             class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Import: public Teuchos::Describable {
+    friend class Export<LocalOrdinal,GlobalOrdinal,Node>;
   public:
     //! The specialization of Map used by this class.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
@@ -179,8 +183,15 @@ namespace Tpetra {
     ///
     /// \note Currently this only makes a shallow copy of the Import's
     ///   underlying data.
-    Import(const Import<LocalOrdinal,GlobalOrdinal,Node> & import);
+    Import(const Import<LocalOrdinal,GlobalOrdinal,Node> & importer);
 
+
+    /// \brief Pseudo-copy constructor.
+    ///
+    /// \note Generates and Import object from the reverse of the provided Export object
+    ///   underlying data.
+    Import(const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter);
+    
     //! Destructor.
     ~Import();
 
@@ -223,8 +234,8 @@ namespace Tpetra {
     /// \brief List of processes to which entries will be sent.
     ///
     /// The entry with Local ID <tt>getExportLIDs()[i]</tt> will be
-    /// sent to process <tt>getExportImageIDs()[i]</tt>.
-    ArrayView<const int> getExportImageIDs() const;
+    /// sent to process <tt>getExportPIDs()[i]</tt>.
+    ArrayView<const int> getExportPIDs() const;
 
     //! The Source Map used to construct this Import object.
     const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getSourceMap() const;
