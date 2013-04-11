@@ -13,7 +13,11 @@ namespace KokkosArray {
 
 template<typename Scalar, class device>
 struct MultiVectorDynamic{
+#ifdef KOKKOS_USE_CUSPARSE
+  typedef typename KokkosArray::LayoutLeft layout;
+#else
   typedef typename device::array_layout layout;
+#endif
   typedef typename KokkosArray::View<Scalar**  , layout, device>  type ;
   typedef typename KokkosArray::View<const Scalar**  , layout, device>  const_type ;
   typedef typename KokkosArray::View<const Scalar**  , layout, device, KokkosArray::MemoryRandomRead>  random_read_type ;

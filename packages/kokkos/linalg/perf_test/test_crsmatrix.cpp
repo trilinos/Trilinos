@@ -9,7 +9,7 @@
 
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
-#include <KokkosArray_MultiVector.h>
+#include <KokkosArray_MultiVector.hpp>
 #include <KokkosArray_CRSMatrix.hpp>
 #ifndef DEVICE
 #define DEVICE 1
@@ -107,8 +107,14 @@ int test_crs_matrix_test(int numRows, int numCols, int nnz, int numVecs, int tes
 	KokkosArray::deep_copy(y,h_y);
 	KokkosArray::deep_copy(A.graph.entries,h_graph.entries);
 	KokkosArray::deep_copy(A.values,h_values);
+	/*for(int i=0;i<numRows;i++)
+		for(int k = 0; k<numVecs; k++) {
+          //error[k]+=(h_y_compare(i,k)-h_y(i,k))*(h_y_compare(i,k)-h_y(i,k));
+          printf("%i %i %lf %lf %lf\n",i,k,h_y_compare(i,k),h_y(i,k),h_x(i,k));
+		}*/
 
 	KokkosArray::MV_Multiply(0.0,y,1.0,A,x);
+	device_type::fence();
 	KokkosArray::deep_copy(h_y,y);
 	Scalar error[numVecs];
 	for(int k = 0; k<numVecs; k++)
@@ -116,8 +122,10 @@ int test_crs_matrix_test(int numRows, int numCols, int nnz, int numVecs, int tes
 	for(int i=0;i<numRows;i++)
 		for(int k = 0; k<numVecs; k++) {
           error[k]+=(h_y_compare(i,k)-h_y(i,k))*(h_y_compare(i,k)-h_y(i,k));
+         // printf("%i %i %lf %lf %lf\n",i,k,h_y_compare(i,k),h_y(i,k),h_x(i,k));
 		}
 
+	//for(int i=0;i<A.nnz;i++) printf("%i %lf\n",h_graph.entries(i),h_values(i));
     Scalar total_error = 0;
 	for(int k = 0; k<numVecs; k++)
 		total_error += error[k];
@@ -131,8 +139,12 @@ int test_crs_matrix_test(int numRows, int numCols, int nnz, int numVecs, int tes
 	clock_gettime(CLOCK_REALTIME,&endtime);
 	double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
 
-	double problem_size = 1.0*(nnz*((numVecs+1)*sizeof(Scalar)+sizeof(int))+numRows*(numVecs*sizeof(Scalar)+2*sizeof(int)))/1024/1024/1024;
-    printf("%6.2lf %6.2lf GB/s %6.2lf s %e\n",problem_size,problem_size/time*loop, time/loop*1000, total_error);
+	double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(int)) + numRows*sizeof(int)))/1024/1024;
+	double vector_size = 2.0*numRows*numVecs*sizeof(Scalar)/1024/1024;
+	double vector_readwrite = 2.0*nnz*numVecs*sizeof(Scalar)/1024/1024;
+
+	double problem_size = matrix_size+vector_size;
+    printf("%6.2lf MB %6.2lf GB/s %6.2lf s %e\n",problem_size,(matrix_size+vector_readwrite)/time*loop/1024, time/loop*1000, total_error);
 	return (int)total_error;
 }
 

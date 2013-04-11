@@ -15,8 +15,11 @@
 #include <KokkosArray_MultiVector.hpp>
 #ifdef KOKKOS_USE_CUSPARSE
 #include <cusparse_v2.h>
+#include <Kokkos_CRSMatrix_CuSparse.hpp>
 #endif
 namespace KokkosArray {
+
+//ToDo: Check Type compatibility for Kernel Calls
 
 #define UNROLL_LIMIT 16
 template< typename ScalarType , typename OrdinalType, class Device >
@@ -539,20 +542,6 @@ template<class RangeVector,class CrsMatrix,class DomainVector,class CoeffVector1
 void MV_MultiplyUnroll( const CoeffVector1 &betav, const RangeVector & y, const CoeffVector2& alphav,
 		const CrsMatrix & A , const DomainVector & x,int beta, int alpha)
 {
-#ifdef KOKKOS_USE_CUSPARSE
-	cusparseDcsrmm(A.cusparse_handle,CUSPARSE_OPERATION_NON_TRANSPOSE,
-	               A.numRows, x.dimension_1(),A.numCols, A.nnz,
-	               alphav.ptr_on_device(),
-	               A.cusparse_descr,
-	               A.values.ptr_on_device(),
-	               (const int*) A.graph.row_map.ptr_on_device(),
-	               A.graph.entries.ptr_on_device(),
-	               x.ptr_on_device(),
-	               x.dimension_0(),
-	               betav.ptr_on_device(),
-	               y.ptr_on_device(),
-				   y.dimension_0());
-#else
   if(beta==0) {
     if(alpha==0)
       MV_MulScalar<RangeVector,RangeVector>( y, 0, y);
@@ -590,7 +579,6 @@ void MV_MultiplyUnroll( const CoeffVector1 &betav, const RangeVector & y, const 
     else
    	  MV_MultiplyUnroll<RangeVector,CrsMatrix,DomainVector,CoeffVector1,CoeffVector2,UNROLL,2,2>( betav, y, alphav,A ,  x, beta,  alpha);
   }
-#endif
 }
 
 template<class RangeVector,class CrsMatrix,class DomainVector,class CoeffVector1,class CoeffVector2>
@@ -645,6 +633,9 @@ template<class RangeVector,class CrsMatrix,class DomainVector>
 void MV_Multiply( const RangeVector & y,
 		const CrsMatrix & A , const DomainVector & x)
 {
+#ifdef KOKKOS_USE_CUSPARSE
+    if(MV_Multiply_Try_CuSparse(0.0,y,1.0,A,x)) return;
+#endif
     typedef KokkosArray::View<typename DomainVector::scalar_type*,typename DomainVector::device_type> aVector;
     aVector a;
     if(x.dimension(1)<=16)
@@ -656,6 +647,9 @@ template<class RangeVector,class CrsMatrix,class DomainVector>
 void MV_Multiply( const RangeVector & y, typename DomainVector::scalar_type s_a,
 		const CrsMatrix & A , const DomainVector & x)
 {
+#ifdef KOKKOS_USE_CUSPARSE
+    if(MV_Multiply_Try_CuSparse(0.0,y,s_a,A,x)) return;
+#endif
     typedef KokkosArray::View<typename RangeVector::scalar_type*,typename RangeVector::device_type> aVector;
     aVector a;
     const int numVecs = x.dimension_1();
@@ -679,10 +673,14 @@ void MV_Multiply( const RangeVector & y, typename DomainVector::scalar_type s_a,
     }
 }
 
+//ToDo: make type of s_b and s_a independent of MV scalar_types
 template<class RangeVector,class CrsMatrix,class DomainVector>
 void MV_Multiply( typename RangeVector::scalar_type s_b,const RangeVector & y, typename DomainVector::scalar_type s_a,
 		const CrsMatrix & A , const DomainVector & x)
 {
+#ifdef KOKKOS_USE_CUSPARSE
+    if(MV_Multiply_Try_CuSparse(s_b,y,s_a,A,x)) return;
+#endif
     typedef KokkosArray::View<typename RangeVector::scalar_type*,typename RangeVector::device_type> aVector;
     aVector a;
     aVector b;
