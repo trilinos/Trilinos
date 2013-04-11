@@ -172,8 +172,9 @@ C   --   Uses NOUT, NCRT, NPRT, ANYPRT of /OUTFIL/
       CHARACTER*(MXNAME) MMNAME
       CHARACTER MMTYP
       CHARACTER*80 DUMLIN
-
-      CHARACTER*(MXSTLN) CMDTBL(14), SELTBL(15), LISTBL(38)
+      character*2048 OUTPUT, LCOUTPUT
+      
+      CHARACTER*(MXSTLN) CMDTBL(15), SELTBL(15), LISTBL(38)
       SAVE CMDTBL, SELTBL, LISTBL, KINVC, KINVS
 C      --CMDTBL - the valid commands table
 C      --SELTBL - the valid SELECT options table
@@ -185,7 +186,7 @@ C   --changing the table.
      1  'SELECT  ', 'LIST    ', 'PRINT   ', 'LIMITS  ',
      2  'MINMAX  ', 'CHECK   ', 'HELP    ', 'MAP     ',
      3  'EXIT    ', 'MAXERRS ', 'END     ', 'QUIT    ', 
-     4  'PRECISION',
+     4  'PRECISION','OUTPUT  ',
      5  '        ' /
       DATA SELTBL /
      1  'NODES   ', 'ELEMENTS', 'BLOCKS  ', 'MATERIAL',
@@ -208,6 +209,7 @@ C   --changing the table.
       DATA KINVC,KINVS /0,0/
 C   --Initialize
 
+      OUTPUT = "grope.o"
       MAXERRS = 10
 
       DOMAPN = .FALSE.
@@ -341,7 +343,7 @@ C   --Read command line
 
 C         --Set up the print file
 
-          OPEN (unit=nprt, file="grope.o", IOSTAT=IERR)
+          OPEN (unit=nprt, file=OUTPUT, IOSTAT=IERR)
           IF (IERR .NE. 0) THEN
             CALL PRTERR ('CMDERR', 'Print file cannot be opened')
             NPRT = -1
@@ -882,6 +884,23 @@ C *** Miscellaneous Commmands ***
      &        'maximum errors to print; 0 for all', 10, MAXERRS, *235)
  235     continue
 
+      ELSE IF (VERB .EQ. 'OUTPUT') THEN
+        CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', OUTPUT)
+C ... Filename will be converted to lowercase -- FREFLD returns
+C     everything in uppercase Assume user wanted lowercase; if they
+C     didn't, need to rewrite frefld to return mixed case.
+        call lowstr(lcoutput,output)
+        if (anyprt) then
+          close (nprt)
+        end if
+        OPEN (unit=nprt, file=lcoutput, IOSTAT=IERR)
+        IF (IERR .NE. 0) THEN
+          CALL PRTERR ('CMDERR', 'Print file cannot be opened')
+          NPRT = -1
+          GOTO 270
+        END IF
+        ANYPRT = .TRUE.
+        
       ELSE IF (VERB .EQ. 'CHECK') THEN
 
         L = MAX (NUMEL, NUMNPS, LNPSNL, NUMESS, LESSEL, LESSNL, NUMNP)
