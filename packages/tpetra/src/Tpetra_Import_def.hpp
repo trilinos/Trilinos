@@ -54,7 +54,7 @@
 
 namespace {
   // Default value of Import's "Debug" parameter.
-  const bool debug_default = false;
+  const bool tpetraImportDebugDefault = false;
 } // namespace (anonymous)
 
 namespace Tpetra {
@@ -63,7 +63,7 @@ namespace Tpetra {
   Import (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,
           const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target) :
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
-    debug_ (debug_default)
+    debug_ (tpetraImportDebugDefault)
   {
     using Teuchos::rcp;
     using std::endl;
@@ -108,7 +108,7 @@ namespace Tpetra {
           const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target,
           const RCP<Teuchos::FancyOStream>& out) :
     out_ (out),
-    debug_ (debug_default)
+    debug_ (tpetraImportDebugDefault)
   {
     using Teuchos::rcp;
     using std::endl;
@@ -154,17 +154,19 @@ namespace Tpetra {
           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
-    debug_ (debug_default)
+    debug_ (tpetraImportDebugDefault)
   {
     using Teuchos::rcp;
     using std::endl;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
 
     // Read "Debug" parameter from the input ParameterList.
-    bool debug = debug_default;
-    try {
-      debug = plist->get<bool> ("Debug");
-    } catch (Teuchos::Exceptions::InvalidParameter&) {}
+    bool debug = tpetraImportDebugDefault;
+    if (! plist.is_null ()) {
+      try {
+        debug = plist->get<bool> ("Debug");
+      } catch (Teuchos::Exceptions::InvalidParameter&) {}
+    }
     debug_ = debug;
 
     if (! out_.is_null ()) {
@@ -208,17 +210,19 @@ namespace Tpetra {
           const RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     out_ (out),
-    debug_ (debug_default)
+    debug_ (tpetraImportDebugDefault)
   {
     using Teuchos::rcp;
     using std::endl;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
 
     // Read "Debug" parameter from the input ParameterList.
-    bool debug = debug_default;
-    try {
-      debug = plist->get<bool> ("Debug");
-    } catch (Teuchos::Exceptions::InvalidParameter&) {}
+    bool debug = tpetraImportDebugDefault;
+    if (! plist.is_null ()) {
+      try {
+        debug = plist->get<bool> ("Debug");
+      } catch (Teuchos::Exceptions::InvalidParameter&) {}
+    }
     debug_ = debug;
 
     if (! out_.is_null ()) {
