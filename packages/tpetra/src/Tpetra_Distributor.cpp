@@ -85,7 +85,7 @@ namespace Tpetra {
   // ensure a consistent setting.
   namespace {
     // Default value of the "Debug" parameter.
-    const bool debug_default = false;
+    const bool tpetraDistributorDebugDefault = false;
     // Default value of the "Barrier between receives and sends" parameter.
     const bool barrierBetween_default = true;
     // Default value of the "Use distinct tags" parameter.
@@ -178,7 +178,7 @@ namespace Tpetra {
     , out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
-    , debug_ (debug_default)
+    , debug_ (tpetraDistributorDebugDefault)
     , numExports_(0)
     , selfMessage_(false)
     , numSends_(0)
@@ -191,12 +191,10 @@ namespace Tpetra {
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
     , useDistinctTags_ (useDistinctTags_default)
   {
-    using Teuchos::getFancyOStream;
-    using Teuchos::oblackholestream;
     using Teuchos::rcp;
-    // Always start by making sure the Distributor won't print anything.
-    this->setVerbLevel (Teuchos::VERB_NONE);
-    this->setOStream (getFancyOStream (rcp (new oblackholestream)));
+
+    this->setVerbLevel (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_NONE);
+    this->setOStream (out_);
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // Defer side effects until we know that everything else didn't throw.
     // This is not thread safe: tagCounter_ is global.
@@ -220,10 +218,10 @@ namespace Tpetra {
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out)
     : comm_(comm)
-    , out_ (out)
+    , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
-    , debug_ (debug_default)
+    , debug_ (tpetraDistributorDebugDefault)
     , numExports_(0)
     , selfMessage_(false)
     , numSends_(0)
@@ -236,12 +234,10 @@ namespace Tpetra {
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
     , useDistinctTags_ (useDistinctTags_default)
   {
-    using Teuchos::getFancyOStream;
-    using Teuchos::oblackholestream;
     using Teuchos::rcp;
-    // Always start by making sure the Distributor won't print anything.
-    this->setVerbLevel (Teuchos::VERB_NONE);
-    this->setOStream (getFancyOStream (rcp (new oblackholestream)));
+
+    this->setVerbLevel (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_NONE);
+    this->setOStream (out_);
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // Defer side effects until we know that everything else didn't throw.
     // This is not thread safe: tagCounter_ is global.
@@ -268,7 +264,7 @@ namespace Tpetra {
     , out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
-    , debug_ (debug_default)
+    , debug_ (tpetraDistributorDebugDefault)
     , numExports_(0)
     , selfMessage_(false)
     , numSends_(0)
@@ -281,8 +277,6 @@ namespace Tpetra {
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
     , useDistinctTags_ (useDistinctTags_default)
   {
-    using Teuchos::getFancyOStream;
-    using Teuchos::oblackholestream;
     using Teuchos::rcp;
     TEUCHOS_TEST_FOR_EXCEPTION (plist.is_null(), std::invalid_argument, "The "
       "two-argument Distributor constructor requires that the input "
@@ -290,11 +284,11 @@ namespace Tpetra {
       "set, you can either call the one-argument constructor, or supply a "
       "nonnull but empty ParameterList.  Both of these options will set default "
       "parameters.");
-    // Always start by making sure the Distributor won't print anything.
-    this->setVerbLevel (Teuchos::VERB_NONE);
-    this->setOStream (getFancyOStream (rcp (new oblackholestream)));
-    // Setting parameters may override these, if there is a
-    // "VerboseObject" sublist.
+
+    this->setVerbLevel (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_NONE);
+    this->setOStream (out_);
+    // The input parameters may override the above verbosity level
+    // setting, if there is a "VerboseObject" sublist.
     this->setParameterList (plist);
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // Defer side effects until we know that everything else didn't throw.
@@ -320,10 +314,10 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_(comm)
-    , out_ (out)
+    , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
-    , debug_ (debug_default)
+    , debug_ (tpetraDistributorDebugDefault)
     , numExports_(0)
     , selfMessage_(false)
     , numSends_(0)
@@ -336,8 +330,6 @@ namespace Tpetra {
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
     , useDistinctTags_ (useDistinctTags_default)
   {
-    using Teuchos::getFancyOStream;
-    using Teuchos::oblackholestream;
     using Teuchos::rcp;
     TEUCHOS_TEST_FOR_EXCEPTION (plist.is_null(), std::invalid_argument, "The "
       "two-argument Distributor constructor requires that the input "
@@ -345,11 +337,11 @@ namespace Tpetra {
       "set, you can either call the one-argument constructor, or supply a "
       "nonnull but empty ParameterList.  Both of these options will set default "
       "parameters.");
-    // Always start by making sure the Distributor won't print anything.
-    this->setVerbLevel (Teuchos::VERB_NONE);
-    this->setOStream (getFancyOStream (rcp (new oblackholestream)));
-    // Setting parameters may override these, if there is a
-    // "VerboseObject" sublist.
+
+    this->setVerbLevel (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_NONE);
+    this->setOStream (out_);
+    // The input parameters may override the above verbosity level
+    // setting, if there is a "VerboseObject" sublist.
     this->setParameterList (plist);
 #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     // Defer side effects until we know that everything else didn't throw.
@@ -390,16 +382,16 @@ namespace Tpetra {
 #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
     , useDistinctTags_ (distributor.useDistinctTags_)
   {
-    using Teuchos::getFancyOStream;
-    using Teuchos::oblackholestream;
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    this->setVerbLevel (Teuchos::VERB_NONE);
-    this->setOStream (getFancyOStream (rcp (new oblackholestream)));
-
+    this->setVerbLevel (distributor.getVerbLevel ());
+    this->setOStream (out_);
+    // The input parameters may override the above verbosity level
+    // setting, if there is a "VerboseObject" sublist.
+    //
     // Clone the right-hand side's ParameterList, so that this' list
     // is decoupled from the right-hand side's list.  We don't need to
     // do validation, since the right-hand side already has validated
@@ -489,31 +481,6 @@ namespace Tpetra {
     useDistinctTags_ = useDistinctTags;
     debug_ = debug;
 
-// #ifdef HAVE_TEUCHOS_DEBUG
-//     // Prepare for verbose output, if applicable.
-//     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
-//     RCP<FancyOStream> out = this->getOStream ();
-//     const int myRank = comm_->getRank ();
-//     // We only want one process to print verbose output here.
-//     // const bool doPrint = out.get () && (myRank == 0) &&
-//     //   includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
-//     (void) verbLevel; // Silence "unused variable" compiler warnings.
-//     const bool doPrint = out.get () && (myRank == 0);
-
-//     if (doPrint) {
-//       *out << "Distributor parameters:" << endl;
-//       OSTab tab = this->getOSTab (); // Add one tab level
-//       *out << "\"Send type\": " << DistributorSendTypeEnumToString (sendType_)
-//            << endl << "\"Barrier between receives and sends\": "
-//            << (barrierBetween_ ? "true" : "false") << endl;
-// #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-//       *out << "\"Use distinct tags\": "
-//            << (useDistinctTags_ ? "true" : "false") << endl;
-// #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
-//       *out << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
-//     }
-// #endif // HAVE_TEUCHOS_DEBUG
-
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
     this->setMyParamList (plist);
@@ -530,7 +497,7 @@ namespace Tpetra {
 
     const bool barrierBetween = barrierBetween_default;
     const bool useDistinctTags = useDistinctTags_default;
-    const bool debug = debug_default;
+    const bool debug = tpetraDistributorDebugDefault;
 
     Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Send");
@@ -662,18 +629,6 @@ namespace Tpetra {
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
     const int myRank = comm_->getRank ();
-// #ifdef HAVE_TEUCHOS_DEBUG
-//     // Prepare for verbose output, if applicable.
-//     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
-//     RCP<FancyOStream> out = this->getOStream ();
-//     const bool doPrint = out.get () &&
-//       includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
-
-//     if (doPrint) {
-//       *out << "Distributor::doWaits (Proc " << myRank << "):" << endl;
-//     }
-//     OSTab tab = this->getOSTab(); // Add one tab level
-// #endif // HAVE_TEUCHOS_DEBUG
 
     if (debug_) {
       std::ostringstream os;
@@ -686,11 +641,6 @@ namespace Tpetra {
       waitAll (*comm_, requests_());
 
 #ifdef HAVE_TEUCHOS_DEBUG
-      // if (doPrint) {
-      //   *out << "Proc " << myRank << ": waitAll completed " << requests_.size()
-      //        << " requests" << endl;
-      // }
-
       // Make sure that waitAll() nulled out all the requests.
       for (Array<RCP<CommRequest<int> > >::const_iterator it = requests_.begin();
            it != requests_.end(); ++it)
@@ -1051,22 +1001,6 @@ namespace Tpetra {
       imagesFrom_[i] = statuses[i]->getSourceRank ();
     }
 
-// #ifdef HAVE_TEUCHOS_DEBUG
-//     if (debug_) {
-//       std::ostringstream os;
-//       os << myRank << "," << instanceCount_
-//          << ": computeReceives: Calling barrier" << endl;
-//       *out_ << os.str ();
-//     }
-//     comm_->barrier();
-//     if (debug_) {
-//       std::ostringstream os;
-//       os << myRank << "," << instanceCount_
-//          << ": computeReceives: Past barrier" << endl;
-//       *out_ << os.str ();
-//     }
-// #endif // HAVE_TEUCHOS_DEBUG
-
     // Sort the imagesFrom_ array, and apply the same permutation to
     // lengthsFrom_.  This ensures that imagesFrom_[i] and
     // lengthsFrom_[i] refers to the same thing.
@@ -1090,16 +1024,6 @@ namespace Tpetra {
     if (selfMessage_) {
       --numReceives_;
     }
-
-// #ifdef HAVE_TEUCHOS_DEBUG
-//     if (debug_) {
-//       std::ostringstream os;
-//       os << myRank << "," << instanceCount_ << ": computeReceives: "
-//         "Calling last barrier" << endl;
-//       *out_ << os.str ();
-//     }
-//     comm_->barrier();
-// #endif // HAVE_TEUCHOS_DEBUG
 
     if (debug_) {
       std::ostringstream os;

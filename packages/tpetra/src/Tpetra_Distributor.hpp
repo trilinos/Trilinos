@@ -189,6 +189,15 @@ namespace Tpetra {
   ///   nonblocking receive.  Since we post receives first before
   ///   sends, this prevents deadlock, even if MPI_Send blocks and
   ///   does not buffer.)
+  /// - "Debug" (\c bool): If true, print copious debugging output on
+  ///   all processes in the Distributor's communicator.  This is
+  ///   useful only for debugging Distributor and other Tpetra classes
+  ///   that use it (like Import and Export).  If the Distributor was
+  ///   created using one of the constructors that takes a
+  ///   Teuchos::FancyOStream, it will write debugging output to that
+  ///   stream.  Otherwise, it will write debugging output to stderr.
+  ///   Currently, the "Debug" parameter overrides "VerboseObject"
+  ///   (see below).
   /// - "VerboseObject" (sublist): Optional sublist for controlling
   ///   behavior of Distributor as a Teuchos::VerboseObject.  This is
   ///   currently useful only for debugging.  This sublist takes
