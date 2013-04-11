@@ -219,7 +219,7 @@ int nssi_rpc_init(
                 nssi_config.buffer_queue_create_if_empty,
                 &transports[rpc_transport],
                 NNTI_RECV_DST,
-                NSSI_SHORT_REQUEST_SIZE);
+                NSSI_SHORT_RESULT_SIZE);
         trios_buffer_queue_init(
                 &rdma_target_bq,
                 nssi_config.rdma_buffer_queue_initial_size,
