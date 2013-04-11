@@ -946,7 +946,7 @@ void build_test_matrix(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType>
 
   }
 
-
+  TEST_EQUALITY(total_err,0);
 }
 
 
