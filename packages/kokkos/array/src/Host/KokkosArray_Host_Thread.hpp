@@ -50,9 +50,6 @@
 namespace KokkosArray {
 namespace Impl {
 
-class HostThreadSentinel ;
-
-//----------------------------------------------------------------------------
 /** \brief  A thread within the pool. */
 
 class HostThread {
@@ -119,9 +116,6 @@ __assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
 
   //----------------------------------------------------------------------
 
-  static
-  unsigned get_thread_count();
-
   inline static
   HostThread * get_thread( const unsigned entry )
     { return m_thread[ entry ]; }
@@ -130,8 +124,9 @@ __assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
   void set_thread( const unsigned rank , HostThread * );
 
   /**  */
-  void set_gang_worker( const unsigned gang_rank ,   const unsigned gang_count ,
-                        const unsigned worker_rank , const unsigned worker_count );
+  void set_topology( const unsigned thread_rank , const unsigned thread_count ,
+                     const unsigned gang_rank ,   const unsigned gang_count ,
+                     const unsigned worker_rank , const unsigned worker_count );
 
 
   /** \brief  Setup relationships between threads.
@@ -186,13 +181,12 @@ private:
   HostThread  * m_fan[ max_fan_count ] ;
 
   static HostThread * m_thread[ max_thread_count ];
+  static int          m_relations ;
 
   HostThread( const HostThread & );
   HostThread & operator = ( const HostThread & );
 
   static void warn_destroy_with_reduce();
-
-  friend class HostThreadSentinel ;
 };
 
 inline

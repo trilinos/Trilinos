@@ -144,10 +144,7 @@ public:
 } // namespace KokkosArray
 
 #include <Host/KokkosArray_Host_View.hpp>
-
 #include <Host/KokkosArray_Host_Parallel.hpp>
-#include <Host/KokkosArray_Host_ParallelFor.hpp>
-#include <Host/KokkosArray_Host_ParallelReduce.hpp>
 
 #endif /* #define KOKKOSARRAY_HOST_HPP */
 

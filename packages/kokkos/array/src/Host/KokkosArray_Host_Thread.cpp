@@ -64,29 +64,30 @@ void host_decrement_not_thread_safe( const void * ptr );
 
 //----------------------------------------------------------------------------
 
-class HostThreadSentinel {
-public:
-  HostThreadSentinel();
+namespace {
+
+struct HostThreadSentinel {
+  HostThreadSentinel() {}
   ~HostThreadSentinel();
-
-  static HostThreadSentinel & singleton();
-
-  unsigned get_thread_count();
-
-  void set_thread( const unsigned , HostThread *);
-
-  HostThread * clear_thread( const unsigned );
-
-  void set_relationships();
-  void clear_relationships();
-
-  static void resize_reduce( HostThread & , unsigned );
-
-  void resize_reduce( unsigned );
-
-private:
-  unsigned relationships ;
 };
+
+HostThreadSentinel::~HostThreadSentinel()
+{
+  unsigned i = 0 ;
+  for ( ; i < HostThread::max_thread_count && 0 == HostThread::get_thread(i) ; ++i );
+  if ( i < HostThread::max_thread_count ) {
+    std::cerr << "KokkosArray::Impl::HostThread WARNING : "
+              << "existing with live HostThread objects"
+              << std::endl ;
+  }
+}
+
+}
+
+//----------------------------------------------------------------------------
+
+HostThread * HostThread::m_thread[ HostThread::max_thread_count ];
+int          HostThread::m_relations = 0 ;
 
 //----------------------------------------------------------------------------
 
@@ -96,33 +97,37 @@ void HostThread::warn_destroy_with_reduce()
             << std::endl ;
 }
 
-void HostThread::set_gang_worker( const unsigned gang_rank ,   const unsigned gang_count ,
-                                  const unsigned worker_rank , const unsigned worker_count )
+void HostThread::set_topology( const unsigned thread_rank , const unsigned thread_count ,
+                               const unsigned gang_rank ,   const unsigned gang_count ,
+                               const unsigned worker_rank , const unsigned worker_count )
 {
-  m_gang_rank    = gang_rank ;
-  m_gang_count   = gang_count ;
-
-  m_worker_rank  = worker_rank ;
-  m_worker_count = worker_count ;
-
-  m_thread_rank  = worker_rank + worker_count * gang_rank ;
-  m_thread_count = gang_count * worker_count ;
-
-  if ( m_thread[ m_thread_rank ] != this ) {
+  if ( m_thread[ thread_rank ] != this ) {
     std::ostringstream msg ;
-    msg << "KokkosArray::Impl::HostThread::set_gang_worker("
+    msg << "KokkosArray::Impl::HostThread::set_topology("
+        << thread_rank << "," << thread_count << ","
         << gang_rank << "," << gang_count << ","
         << worker_rank << "," << worker_count << ")"
         << " ERROR : Does not match previously set thread rank" ;
     if ( m_thread[ m_thread_rank ] ) {
      msg << " : ("
-         << m_thread[ m_thread_rank ]->m_gang_rank << ","
-         << m_thread[ m_thread_rank ]->m_gang_count << ","
-         << m_thread[ m_thread_rank ]->m_worker_rank << ","
-         << m_thread[ m_thread_rank ]->m_worker_count << ")" ;
+         << m_thread[ thread_rank ]->m_thread_rank << ","
+         << m_thread[ thread_rank ]->m_thread_count << ","
+         << m_thread[ thread_rank ]->m_gang_rank << ","
+         << m_thread[ thread_rank ]->m_gang_count << ","
+         << m_thread[ thread_rank ]->m_worker_rank << ","
+         << m_thread[ thread_rank ]->m_worker_count << ")" ;
     }
     throw std::runtime_error( msg.str() );
   }
+
+  m_thread_rank  = thread_rank ;
+  m_thread_count = thread_count ;
+
+  m_gang_rank    = gang_rank ;
+  m_gang_count   = gang_count ;
+
+  m_worker_rank  = worker_rank ;
+  m_worker_count = worker_count ;
 }
 
 
@@ -147,149 +152,15 @@ void HostThread::resize_reduce( unsigned size )
   }
 }
 
-unsigned HostThread::get_thread_count()
-{ return HostThreadSentinel::singleton().get_thread_count(); }
-
 void HostThread::set_thread_relationships()
-{ HostThreadSentinel::singleton().set_relationships(); }
-
-void HostThread::clear_thread_relationships()
-{ HostThreadSentinel::singleton().clear_relationships(); }
-
-void HostThread::set_thread( const unsigned entry , HostThread * t )
-{ HostThreadSentinel::singleton().set_thread( entry , t ); }
-
-HostThread * HostThread::clear_thread( const unsigned entry )
-{ return HostThreadSentinel::singleton().clear_thread( entry ); }
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-HostThread * HostThread::m_thread[ HostThread::max_thread_count ];
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-HostThreadSentinel &
-HostThreadSentinel::singleton()
 {
-  static HostThreadSentinel self ;
-  return self ;
-}
-
-HostThreadSentinel::HostThreadSentinel()
-: relationships(0)
-{
-  for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
-    HostThread::m_thread[i] = 0 ;
-  }
-}
-
-HostThreadSentinel::~HostThreadSentinel()
-{
-  unsigned nonzero_count = 0 ;
-  for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
-    if ( 0 != HostThread::m_thread[i] ) ++nonzero_count ;
-  }
-  if ( nonzero_count ) {
-    std::cerr << "KokkosArray::Impl::HostThread WARNING Terminating with "
-              << nonzero_count
-              << " non-null threads."
-              << std::endl ;
-  }
-}
-
-//----------------------------------------------------------------------------
-
-void HostThreadSentinel::set_thread( const unsigned entry , HostThread * t )
-{
-  clear_relationships();
-
-  const bool ok_rank = entry < HostThread::max_thread_count ;
-  const bool ok_zero = ok_rank && ( 0 == HostThread::m_thread[ entry ] );
-
-  if ( ok_rank && ok_zero ) {
-    HostThread::m_thread[ entry ] = t ;
-  }
-  else {
-    std::ostringstream msg ;
-    msg << "KokkosArray::Impl::HostThread::set_thread( "
-        << entry << " , ... ) ERROR: " ;
-    if ( ! ok_rank ) { msg << " OUT OF BOUNDS" ; }
-    else if ( ! ok_zero ) { msg << " ALREADY SET" ; }
-    throw std::runtime_error( msg.str() );
-  }
-}
-
-HostThread * HostThreadSentinel::clear_thread( const unsigned entry )
-{
-  clear_relationships();
-
-  HostThread * th = 0 ;
-
-  if ( entry < HostThread::max_thread_count ) {
-    th = HostThread::m_thread[ entry ] ;
-    HostThread::m_thread[ entry ] = 0 ;
-  }
-  else {
-    std::ostringstream msg ;
-    msg << "KokkosArray::Impl::HostThread::clear_thread( "
-        << entry << " , ... ) ERROR:  OUT OF BOUNDS" ;
-    throw std::runtime_error( msg.str() );
-  }
-
-  return th ;
-}
-
-//----------------------------------------------------------------------------
-
-unsigned HostThreadSentinel::get_thread_count()
-{
-  unsigned count = 0 ;
-
-  for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
-    if ( HostThread::m_thread[i] ) ++count ;
-  }
-  return count ;
-}
-
-void HostThreadSentinel::clear_relationships()
-{
-  if ( relationships ) {
-    for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
-      if ( HostThread::m_thread[i] ) {
-
-        HostThread & thread = * HostThread::m_thread[i] ;
-
-        // Reset to view self as the only thread:
-
-        thread.m_fan_count    = 0 ;
-        thread.m_thread_rank  = 0 ;
-        thread.m_thread_count = 1 ;
-        thread.m_gang_rank    = 0 ;
-        thread.m_gang_count   = 1 ;
-        thread.m_worker_rank  = 0 ;
-        thread.m_worker_count = 1 ;
-
-        for ( unsigned j = 0 ; j < HostThread::max_fan_count ; ++j ) {
-          thread.m_fan[j] = 0 ;
-        }
-      }
-    }
-    relationships = 0 ;
-  }
-}
-
-//----------------------------------------------------------------------------
-// Set the fan based upon gang and worker rank:
-
-void HostThreadSentinel::set_relationships()
-{
-  if ( relationships ) return ;
+  if ( m_relations ) return ;
 
   bool error_gaps   = false ;
-  bool error_topo   = false ;
   bool error_thread = false ;
+
+  const unsigned gang_count   = HostThread::m_thread[0] ? HostThread::m_thread[0]->m_gang_count : 0 ;
+  const unsigned thread_count = HostThread::m_thread[0] ? HostThread::m_thread[0]->m_thread_count : 0 ;
 
   {
     unsigned i = 0 ;
@@ -303,27 +174,18 @@ void HostThreadSentinel::set_relationships()
 
     if ( 0 == i && HostThread::max_thread_count == j ) return ;
 
-    error_gaps = j < HostThread::max_thread_count ;
+    error_gaps   = j < HostThread::max_thread_count ;
+    error_thread = i != thread_count ;
   }
 
-  unsigned thread_count = 0 ;
-  unsigned gang_count   = 0 ;
-  unsigned worker_count = 0 ;
+  if ( ! error_gaps && ! error_thread ) {
 
-  if ( ! error_gaps ) {
+    for ( unsigned g = 0 , r = 0 ; g < gang_count && r < thread_count ; ++g ) {
 
-    thread_count = HostThread::m_thread[0]->m_thread_count ;
-    gang_count   = HostThread::m_thread[0]->m_gang_count ;
-    worker_count = HostThread::m_thread[0]->m_worker_count ;
+      const unsigned worker_count = HostThread::m_thread[r]->m_worker_count ;
 
-    error_topo = thread_count != gang_count * worker_count ;
-
-    if ( ! error_topo ) {
-
-      for ( unsigned g = 0 , r = 0 ; g < gang_count ; ++g ) {
       for ( unsigned w = 0 ; w < worker_count ; ++w , ++r ) {
-        if ( 0 == HostThread::m_thread[r] ||
-             r != HostThread::m_thread[r]->m_thread_rank ||
+        if ( r != HostThread::m_thread[r]->m_thread_rank ||
              g != HostThread::m_thread[r]->m_gang_rank ||
              w != HostThread::m_thread[r]->m_worker_rank ||
              thread_count != HostThread::m_thread[r]->m_thread_count ||
@@ -331,22 +193,17 @@ void HostThreadSentinel::set_relationships()
              worker_count != HostThread::m_thread[r]->m_worker_count ) {
           error_thread = true ;
         }
-      }}
+      }
     }
   }
-
-  if ( error_gaps || error_topo || error_thread ) {
+  else {
     std::ostringstream msg ;
     msg << "KokkosArray::Impl::HostThread::set_thread_ralationships ERROR :" ;
     if ( error_gaps ) {
       msg << " Gaps in thread array" ;
     }
-    else if ( error_topo ) {
-      msg << " Inconsistent gang*worker topology "
-          << thread_count << " != " << gang_count << " * " << worker_count ;
-    }
     else {
-      msg << " Inconsistent thread topology coordinate" ;
+      msg << " Inconsistent thread topology" ;
     }
     throw std::runtime_error( msg.str() );
   }
@@ -388,7 +245,7 @@ void HostThreadSentinel::set_relationships()
     thread.m_fan_count = fan_count ;
   }
 
-  relationships = 1 ;
+  m_relations = 1 ;
 
 #if 0
 
@@ -423,6 +280,76 @@ void HostThreadSentinel::set_relationships()
 
 }
 
+void HostThread::clear_thread_relationships()
+{
+  if ( m_relations ) {
+    for ( unsigned i = 0 ; i < HostThread::max_thread_count ; ++i ) {
+      if ( HostThread::m_thread[i] ) {
+
+        HostThread & thread = * HostThread::m_thread[i] ;
+
+        // Reset to view self as the only thread:
+
+        thread.m_fan_count    = 0 ;
+        thread.m_thread_rank  = 0 ;
+        thread.m_thread_count = 1 ;
+        thread.m_gang_rank    = 0 ;
+        thread.m_gang_count   = 1 ;
+        thread.m_worker_rank  = 0 ;
+        thread.m_worker_count = 1 ;
+
+        for ( unsigned j = 0 ; j < HostThread::max_fan_count ; ++j ) {
+          thread.m_fan[j] = 0 ;
+        }
+      }
+    }
+    m_relations = 0 ;
+  }
+}
+
+void HostThread::set_thread( const unsigned rank , HostThread * t )
+{
+  static const HostThreadSentinel sentinel ;
+
+  HostThread::clear_thread_relationships();
+
+  const bool ok_rank = rank < HostThread::max_thread_count ;
+  const bool ok_zero = ok_rank && ( 0 == HostThread::m_thread[ rank ] );
+
+  if ( ok_rank && ok_zero ) {
+    HostThread::m_thread[ rank ] = t ;
+  }
+  else {
+    std::ostringstream msg ;
+    msg << "KokkosArray::Impl::HostThread::set_thread( "
+        << rank << " , ... ) ERROR: " ;
+    if ( ! ok_rank ) { msg << " OUT OF BOUNDS" ; }
+    else if ( ! ok_zero ) { msg << " ALREADY SET" ; }
+    throw std::runtime_error( msg.str() );
+  }
+}
+
+HostThread * HostThread::clear_thread( const unsigned rank )
+{
+  HostThread::clear_thread_relationships();
+
+  HostThread * th = 0 ;
+
+  if ( rank < HostThread::max_thread_count ) {
+    th = HostThread::m_thread[ rank ] ;
+    HostThread::m_thread[ rank ] = 0 ;
+  }
+  else {
+    std::ostringstream msg ;
+    msg << "KokkosArray::Impl::HostThread::clear_thread( "
+        << rank << " , ... ) ERROR:  OUT OF BOUNDS" ;
+    throw std::runtime_error( msg.str() );
+  }
+
+  return th ;
+}
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 } // namespace Impl

@@ -110,43 +110,40 @@ unsigned bind_host_thread()
 {
   const std::pair<unsigned,unsigned> current = hwloc::get_this_thread_coordinate();
 
-  unsigned i = s_host_thread_count ;
+  unsigned i = 0 ;
 
-  if ( s_host_thread_count ) {
+  // Match one of the requests:
+  for ( i = 0 ; i < s_host_thread_count && current != s_host_thread_coord[i] ; ++i );
 
-    // Match one of the requests:
-    for ( i = 0 ; i < s_host_thread_count && current != s_host_thread_coord[i] ; ++i );
+  if ( s_host_thread_count == i ) {
+    // Match the NUMA request:
+    for ( i = 0 ; i < s_host_thread_count && current.first != s_host_thread_coord[i].first ; ++i );
+  }
 
-    if ( s_host_thread_count == i ) {
-      // Match the NUMA request:
-      for ( i = 0 ; i < s_host_thread_count && current.first != s_host_thread_coord[i].first ; ++i );
-    }
+  if ( s_host_thread_count == i ) {
+    // Match any unclaimed request:
+    for ( i = 0 ; i < s_host_thread_count && ~0u == s_host_thread_coord[i].first  ; ++i );
+  }
 
-    if ( s_host_thread_count == i ) {
-      // Match any unclaimed request:
-      for ( i = 0 ; i < s_host_thread_count && ~0u == s_host_thread_coord[i].first  ; ++i );
-    }
+  if ( i < s_host_thread_count ) {
+    if ( ! hwloc::bind_this_thread( s_host_thread_coord[i] ) ) i = s_host_thread_count ;
+  }
 
-    if ( i < s_host_thread_count ) {
-      if ( ! hwloc::bind_this_thread( s_host_thread_coord[i] ) ) i = s_host_thread_count ;
-    }
-
-    if ( i < s_host_thread_count ) {
+  if ( i < s_host_thread_count ) {
 
 #if 0
-      if ( current != s_host_thread_coord[i] ) {
-        std::cout << "  rebinding thread[" << i << "] from ("
-                  << current.first << "," << current.second
-                  << ") to ("
-                  << s_host_thread_coord[i].first << ","
-                  << s_host_thread_coord[i].second
-                  << ")" << std::endl ;
-      }
+    if ( current != s_host_thread_coord[i] ) {
+      std::cout << "  rebinding thread[" << i << "] from ("
+                << current.first << "," << current.second
+                << ") to ("
+                << s_host_thread_coord[i].first << ","
+                << s_host_thread_coord[i].second
+                << ")" << std::endl ;
+    }
 #endif
 
-      s_host_thread_coord[i].first  = ~0u ;
-      s_host_thread_coord[i].second = ~0u ;
-    }
+    s_host_thread_coord[i].first  = ~0u ;
+    s_host_thread_coord[i].second = ~0u ;
   }
 
   return i ;
@@ -195,91 +192,90 @@ bool spawn_threads( const unsigned gang_count , const unsigned worker_count )
   // then only use cores belonging to that node.
   // Otherwise use all nodes and all their cores.
 
-  // Reserve master thread's coordinates:
-  std::pair<unsigned,unsigned> master_core = hwloc::get_this_thread_coordinate();
-
   // Define coordinates for pinning threads:
   const unsigned thread_count = gang_count * worker_count ;
 
-  for ( unsigned r = 0 ; r < thread_count ; ++r ) {
-    thread_mapping( r , gang_count , worker_count , s_host_thread_coord[r] );
-  }
-
-  // Reserve entry #0 for the master thread by trading out entry #0
-  // with the best-fit entry for the master threads current location.
-  {
-    unsigned i = 0 ;
-
-    // First try for an exact match:
-    for ( ; i < thread_count && master_core != s_host_thread_coord[i] ; ++i );
-
-    if ( i == thread_count ) {
-      // Exact match failed: take the first entry in the NUMA region.
-      for ( i = 0 ; i < thread_count &&
-                    master_core.first != s_host_thread_coord[i].first ; ++i );
-    }
-
-    if ( i == thread_count ) i = 0 ;
-
-    s_host_thread_coord[i] = s_host_thread_coord[0] ;
-    s_host_thread_coord[0] = std::pair<unsigned,unsigned>(~0u,~0u);
-  }
-
   bool ok_spawn_threads = true ;
 
-  s_current_worker = & s_worker_block ;
-  s_host_thread_count = thread_count ;
+  if ( 1 < thread_count ) {
+    // Reserve master thread's coordinates:
+    std::pair<unsigned,unsigned> master_core = hwloc::get_this_thread_coordinate();
 
-  for ( unsigned i = 1 ; i < thread_count && ok_spawn_threads ; ++i ) {
+    for ( unsigned r = 0 ; r < thread_count ; ++r ) {
+      thread_mapping( r , gang_count , worker_count , s_host_thread_coord[r] );
+    }
 
-    s_master_thread.m_state = Impl::HostThread::ThreadInactive ;
+    // Reserve entry #0 for the master thread by trading out entry #0
+    // with the best-fit entry for the master threads current location.
+    {
+      unsigned i = 0 ;
 
-    // Spawn thread executing the 'driver' function.
-    ok_spawn_threads = Impl::host_thread_spawn();
+      // First try for an exact match:
+      for ( ; i < thread_count && master_core != s_host_thread_coord[i] ; ++i );
 
-    // Thread spawned.  Thread will inform me of its condition as:
-    //   Active     = success and has entered its 'HostThread' data in the lookup table.
-    //   Terminate  = failure
+      if ( i == thread_count ) {
+        // Exact match failed: take the first entry in the NUMA region.
+        for ( i = 0 ; i < thread_count &&
+                      master_core.first != s_host_thread_coord[i].first ; ++i );
+      }
+
+      if ( i == thread_count ) i = 0 ;
+
+      s_host_thread_coord[i] = s_host_thread_coord[0] ;
+      s_host_thread_coord[0] = std::pair<unsigned,unsigned>(~0u,~0u);
+    }
+
+    s_current_worker = & s_worker_block ;
+    s_host_thread_count = thread_count ;
+
+    for ( unsigned i = 1 ; i < thread_count && ok_spawn_threads ; ++i ) {
+
+      s_master_thread.m_state = Impl::HostThread::ThreadInactive ;
+
+      // Spawn thread executing the 'driver' function.
+      ok_spawn_threads = Impl::host_thread_spawn();
+
+      // Thread spawned.  Thread will inform me of its condition as:
+      //   Active     = success and has entered its 'HostThread' data in the lookup table.
+      //   Terminate  = failure
+
+      if ( ok_spawn_threads ) {
+        ok_spawn_threads =
+          Impl::HostThread::ThreadActive ==
+            host_thread_wait( & s_master_thread.m_state , Impl::HostThread::ThreadInactive );
+      }
+    }
+
+    // All successfully spawned threads are in the list as [1,thread_count)
+    // Wait for them to deactivate before zeroing the worker
+
+    for ( unsigned rank = 1 ; rank < thread_count ; ++rank ) {
+      Impl::HostThread * const th = Impl::HostThread::get_thread(rank);
+      if ( th ) {
+        host_thread_wait( & th->m_state , Impl::HostThread::ThreadActive );
+      }
+    }
+
+    s_current_worker = NULL ;
+    s_host_thread_count = 0 ;
 
     if ( ok_spawn_threads ) {
-      ok_spawn_threads =
-        Impl::HostThread::ThreadActive ==
-          host_thread_wait( & s_master_thread.m_state , Impl::HostThread::ThreadInactive );
+
+      hwloc::bind_this_thread( master_core );
+
+      Impl::HostThread::set_thread( 0 , & s_master_thread );
+
+      // All threads spawned, set the fan-in relationships
+
+      for ( unsigned g = 0 , r = 0 ; g < gang_count ; ++g ) {
+      for ( unsigned w = 0 ;         w < worker_count ; ++w , ++r ) {
+        Impl::HostThread::get_thread(r)->set_topology( r , thread_count ,
+                                                       g , gang_count ,
+                                                       w , worker_count );
+      }}
+
+      Impl::HostThread::set_thread_relationships();
     }
-  }
-
-  // All successfully spawned threads are in the list...
-
-  unsigned count_verify = 0 ;
-
-  for ( unsigned entry = 0 ; entry < thread_count ; ++entry ) {
-    Impl::HostThread * const thread = Impl::HostThread::get_thread(entry);
-
-    if ( thread ) {
-      host_thread_wait( & thread->m_state , Impl::HostThread::ThreadActive );
-      ++count_verify ;
-    }
-  }
-
-  ok_spawn_threads = thread_count == 1 + count_verify ;
-
-  if ( ok_spawn_threads ) {
-    hwloc::bind_this_thread( master_core );
-    Impl::HostThread::set_thread( 0 , & s_master_thread );
-  }
-
-  s_current_worker = NULL ;
-  s_host_thread_count = 0 ;
-
-  if ( ok_spawn_threads ) {
-    // All threads spawned, set the fan-in relationships
-
-    for ( unsigned g = 0 , r = 0 ; g < gang_count ; ++g ) {
-    for ( unsigned w = 0 ;         w < worker_count ; ++w , ++r ) {
-      Impl::HostThread::get_thread(r)->set_gang_worker( g , gang_count , w , worker_count );
-    }}
-
-    Impl::HostThread::set_thread_relationships();
   }
 
   return ok_spawn_threads ;
@@ -466,8 +462,6 @@ void Host::finalize()
 
   Impl::HostThread::clear_thread_relationships();
 
-  s_master_thread.set_gang_worker(0,1,0,1);
-
   for ( unsigned r = 0 ; r < Impl::HostThread::max_thread_count ; ++r ) {
 
     Impl::HostThread * thread = Impl::HostThread::get_thread( r );
@@ -497,7 +491,7 @@ void Host::initialize( const Host::size_type gang_count ,
 
   const bool ok_inactive = Impl::host_thread_is_master() &&
                            1 == s_master_thread.count() &&
-                           0 == Impl::HostThread::get_thread_count();
+                           0 == Impl::HostThread::get_thread(0);
   bool ok_spawn_threads = true ;
 
   // Only try to spawn threads if input is valid.

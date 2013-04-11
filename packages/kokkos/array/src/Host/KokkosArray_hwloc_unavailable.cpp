@@ -44,36 +44,30 @@
 /*--------------------------------------------------------------------------*/
 /* KokkosArray interfaces */
 
-#include <Host/KokkosArray_hwloc.hpp>
+#include <KokkosArray_hwloc.hpp>
 
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
-namespace Impl {
 
-unsigned hwloc::get_thread_capacity_depth()
-{
-  return 1 ;
-}
+bool hwloc::bind_this_thread( const std::pair<unsigned,unsigned> )
+{ return true ; }
 
-void hwloc::get_thread_capacity( unsigned capacity[] )
-{
-  capacity[0] = 1 ;
-  capacity[1] = 0 ;
-  capacity[2] = 0 ;
-  capacity[3] = 0 ;
-}
+bool hwloc::unbind_this_thread()
+{ return true ; }
 
-bool hwloc::bind_this_thread( const unsigned [] )
-{
-  return true ;
-}
+std::pair<unsigned,unsigned> hwloc::get_this_thread_coordinate()
+{ return std::pair<unsigned,unsigned>(0,0); }
 
-void hwloc::print_thread_capacity( std::ostream & s )
-{
-  s << "KokkosArray::Impl::hwloc unavailable" ;
-}
+std::pair<unsigned,unsigned> hwloc::get_core_topology()
+{ return std::pair<unsigned,unsigned>(1,1); }
 
-} // namespace Impl
+unsigned hwloc::get_core_capacity()
+{ return 1 ; }
+
+hwloc::~hwloc() {}
+
+hwloc::hwloc() {}
+
 } // namespace KokkosArray
 

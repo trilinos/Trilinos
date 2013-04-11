@@ -69,7 +69,7 @@ void OpenMP::initialize()
 {
   assert_not_in_parallel("KokkosArray::OpenMP::initialize");
 
-  const bool ok_inactive = 0 == Impl::HostThread::get_thread_count();
+  const bool ok_inactive = 0 == Impl::HostThread::get_thread(0);
 
   if ( ok_inactive ) {
 #if 1
@@ -92,7 +92,7 @@ void OpenMP::initialize()
 
         Impl::HostThread * const th = new Impl::HostThread();
         Impl::HostThread::set_thread( rank , th );
-        th->set_gang_worker( 0 , 1 , rank , count );
+        th->set_topology( rank, count, 0, 1, rank, count );
       }
     }
 // END #pragma omp parallel
