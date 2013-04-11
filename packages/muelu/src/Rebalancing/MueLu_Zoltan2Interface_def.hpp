@@ -74,6 +74,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Coordinates",            Teuchos::null, "Factory of the coordinates");
     validParamList->set< RCP<const FactoryBase> >("number of partitions",   Teuchos::null, "(advanced) Factory computing the number of partitions");
     validParamList->set< int >                   ("rowWeight",                          0, "Default weight to rows (total weight = nnz + rowWeight");
+    validParamList->set< std::string >           ("algorithm",              "multijagged", "Zoltan2 partitioning algorithm (multijagged,rcb)");
 
     return validParamList;
   }
@@ -109,7 +110,7 @@ namespace MueLu {
 
     // Check that the number of local coordinates is consistent with the #rows in A
     std::string msg = "MueLu::Zoltan2Interface::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
-    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != coords->getLocalLength(),Exceptions::Incompatible,msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != coords->getLocalLength(), Exceptions::Incompatible, msg);
 
     RCP<const Map> map = coords->getMap();
 
@@ -146,12 +147,13 @@ namespace MueLu {
 
     Teuchos::ParameterList params;
 
-    bool usePQJagged = true;
-    if (usePQJagged) {
+    std::string algo = pL.get<std::string>("algorithm");
+    TEUCHOS_TEST_FOR_EXCEPTION(algo != "multijagged" && algo != "rcb", Exceptions::RuntimeError, "Unknown partitioning algorithm: \"" << algo << "\"");
+    if (algo == "multijagged") {
       params.set("algorithm",             "multijagged");
       params.set("pqParts",               getPQParts(numParts, dim));
 
-    } else {
+    } else if (algo == "rcb") {
       params.set("algorithm",             "rcb");
       params.set("num_global_parts",      numParts);
     }
