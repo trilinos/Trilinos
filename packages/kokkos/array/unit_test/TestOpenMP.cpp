@@ -93,7 +93,7 @@ protected:
 };
 
 
-#if 0
+#if 1
 
 TEST_F( openmp, view_impl) {
   test_view_impl< KokkosArray::OpenMP >();

@@ -73,7 +73,7 @@ void OpenMP::initialize()
 
   if ( ok_inactive ) {
 #if 1
-    const int thread_count = omp_get_max_threads();
+    const int thread_count  = omp_get_max_threads();
     const int thread_levels = omp_get_max_active_levels();
 
     std::cout << "KokkosArray::OpenMP::initialize :"
@@ -86,9 +86,13 @@ void OpenMP::initialize()
     {
 #pragma omp critical
       {
+        const int count = omp_get_num_threads();
         const int rank = omp_get_thread_num();
         // Impl::hwloc::bind_this_thread( coordinates[ rank ] );
-        Impl::HostThread::set_thread( rank , new Impl::HostThread() );
+
+        Impl::HostThread * const th = new Impl::HostThread();
+        Impl::HostThread::set_thread( rank , th );
+        th->set_gang_worker( 0 , 1 , rank , count );
       }
     }
 // END #pragma omp parallel
