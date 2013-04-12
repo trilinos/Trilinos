@@ -182,9 +182,9 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
 
   if (sumLocalSubDims == 0) {
     // This is an uninitialized space (zero on every process)
-    mapCode_  = -1;     // Uninitialized!
-    defaultLocalOffset_ = -1;
-    defaultGlobalDim_ = -1;
+    mapCode_  = 0;
+    defaultLocalOffset_ = 0;
+    defaultGlobalDim_ = 0;
   }
   else if (
     numProc == 1
@@ -205,12 +205,6 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
   else {
     // This is a regular distributed vector space
     defaultGlobalDim_ = sumLocalSubDims;
-  }
-
-  if (defaultGlobalDim_ == 0) {
-    mapCode_  = -1;     // Uninitialized!
-    defaultLocalOffset_ = -1;
-    defaultGlobalDim_ = -1;
   }
 
   smallVecSpcFcty_ = defaultSpmdVectorSpaceFactory<Scalar>(comm);
