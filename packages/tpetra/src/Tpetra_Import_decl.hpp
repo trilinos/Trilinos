@@ -107,6 +107,17 @@ namespace Tpetra {
   /// This class is templated on the same template arguments as Map:
   /// the local ordinal type <tt>LocalOrdinal</tt>, the global ordinal
   /// type <tt>GlobalOrdinal</tt>, and the Kokkos <tt>Node</tt> type.
+  ///
+  /// This method accepts an optional list of parameters, either
+  /// through the constructor or through the setParameterList()
+  /// method.  Most users do not need to worry about these parameters;
+  /// the default values are fine.  However, for expert users, we
+  /// expose the following parameter:
+  /// - "Barrier between receives and sends" (\c bool): Whether to
+  ///   execute a barrier between receives and sends, when executing
+  ///   the Import (i.e., when calling DistObject's doImport()
+  ///   (forward mode) or doExport() (reverse mode)).
+  ///
   template <class LocalOrdinal,
             class GlobalOrdinal = LocalOrdinal,
             class Node = Kokkos::DefaultNode::DefaultNodeType>
@@ -185,15 +196,26 @@ namespace Tpetra {
     ///   underlying data.
     Import(const Import<LocalOrdinal,GlobalOrdinal,Node> & importer);
 
-
-    /// \brief Pseudo-copy constructor.
+    /// \brief "Copy" constructor from an Export object.
     ///
-    /// \note Generates and Import object from the reverse of the provided Export object
-    ///   underlying data.
-    Import(const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter);
-    
+    /// This constructor creates an Import object from the "reverse"
+    /// of the given Export object.  This method is mainly useful for
+    /// Tpetra developers, for example when building the explicit
+    /// transpose of a sparse matrix.
+    Import (const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter);
+
     //! Destructor.
     ~Import();
+
+    //@}
+    //! @name Import Attribute Methods
+    //@{
+
+    /// \brief Set parameters.
+    ///
+    /// Please see the class documentation for a list of all accepted
+    /// parameters and their default values.
+    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     //@}
     //! @name Import Attribute Methods
