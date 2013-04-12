@@ -182,25 +182,27 @@ namespace MueLu {
     }
 
     // Level Set
-    if(!restrictionMode_)
-      {
-        // prolongation factory is in prolongation mode
-        Set(coarseLevel, "P", finalP);
+    if (!restrictionMode_) {
+      // prolongation factory is in prolongation mode
+      Set(coarseLevel, "P", finalP);
 
-        ///////////////////////// EXPERIMENTAL
-        if(Ptent->IsView("stridedMaps")) finalP->CreateView("stridedMaps", Ptent);
-        ///////////////////////// EXPERIMENTAL
-      }
-    else
-      {
-        // prolongation factory is in restriction mode
-        RCP<Matrix> R = Utils2::Transpose(finalP, true); // use Utils2 -> specialization for double
-        Set(coarseLevel, "R", R);
+      // NOTE: EXPERIMENTAL
+      if (Ptent->IsView("stridedMaps"))
+        finalP->CreateView("stridedMaps", Ptent);
 
-        ///////////////////////// EXPERIMENTAL
-        if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);
-        ///////////////////////// EXPERIMENTAL
-      }
+    } else {
+      // prolongation factory is in restriction mode
+      RCP<Matrix> R = Utils2::Transpose(finalP, true); // use Utils2 -> specialization for double
+      Set(coarseLevel, "R", R);
+
+      // NOTE: EXPERIMENTAL
+      if (Ptent->IsView("stridedMaps"))
+        R->CreateView("stridedMaps", Ptent, true);
+    }
+
+    RCP<ParameterList> params = rcp(new ParameterList());
+    params->set("printLoadBalancingInfo", true);
+    GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
 
   } //Build()
 

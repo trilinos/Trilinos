@@ -487,7 +487,7 @@ namespace panzer {
           = Teuchos::rcp(new ResponseLibrary<Traits>(wkstContainer,dofManager,lof));
 
     
-    RespFactoryIPCoords_Builder builder;
+    ResponseEvaluatorFactory_IPCoordinates_Builder builder;
     builder.cubatureDegree = 1;
 
     std::vector<std::string> blocks(1);

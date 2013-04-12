@@ -60,6 +60,14 @@ private:
    int cubatureDegree_;
 };
 
+struct ResponseEvaluatorFactory_IPCoordinates_Builder {
+  int cubatureDegree;
+
+  template <typename T>
+  Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
+  { return Teuchos::rcp(new ResponseEvaluatorFactory_IPCoordinates<T>(cubatureDegree)); }
+};
+
 }
 
 #include "Panzer_ResponseEvaluatorFactory_IPCoordinates_impl.hpp"

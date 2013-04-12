@@ -86,6 +86,32 @@ ResponseScatterEvaluator_Functional(const std::string & name,
 }
 
 template<typename EvalT, typename Traits>
+ResponseScatterEvaluator_Functional<EvalT,Traits>::
+ResponseScatterEvaluator_Functional(const std::string & integrandName,
+                                    const std::string & responseName,
+                                    const CellData & cd)
+  : responseName_(responseName)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  std::string dummyName = ResponseBase::buildLookupName(responseName) + " dummy target";
+
+  // build dummy target tag
+  RCP<PHX::DataLayout> dl_dummy = rcp(new PHX::MDALayout<panzer::Dummy>(0));
+  scatterHolder_ = rcp(new PHX::Tag<ScalarT>(dummyName,dl_dummy));
+  this->addEvaluatedField(*scatterHolder_);
+
+  // build dendent field
+  RCP<PHX::DataLayout> dl_cell = rcp(new PHX::MDALayout<panzer::Cell>(cd.numCells()));
+  cellIntegral_ = PHX::MDField<ScalarT,panzer::Cell>(integrandName,dl_cell);
+  this->addDependentField(cellIntegral_);
+
+  std::string n = "Functional Response Scatter: " + responseName;
+  this->setName(n);
+}
+
+template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_Functional<EvalT,Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {

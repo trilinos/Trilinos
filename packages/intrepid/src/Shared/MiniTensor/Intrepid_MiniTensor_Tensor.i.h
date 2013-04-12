@@ -130,11 +130,12 @@ Tensor<T>::set_dimension(Index const N)
 //
 // Fill components from array defined by pointer.
 // \param data_ptr pointer into array for filling components
+// \param order component convention (3D only)
 //
 template<typename T>
 inline
 void
-Tensor<T>::fill(T const * data_ptr)
+Tensor<T>::fill(T const * data_ptr, ComponentOrder const order)
 {
   assert(data_ptr != NULL);
 
@@ -153,17 +154,64 @@ Tensor<T>::fill(T const * data_ptr)
       break;
 
     case 3:
-      e[0] = data_ptr[0];
-      e[1] = data_ptr[1];
-      e[2] = data_ptr[2];
 
-      e[3] = data_ptr[3];
-      e[4] = data_ptr[4];
-      e[5] = data_ptr[5];
+      switch (order) {
 
-      e[6] = data_ptr[6];
-      e[7] = data_ptr[7];
-      e[8] = data_ptr[8];
+        default:
+          std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+          std::cerr << std::endl;
+          std::cerr << "Inverse of singular tensor.";
+          std::cerr << std::endl;
+          exit(1);
+          break;
+
+        case CANONICAL:
+          e[0] = data_ptr[0];
+          e[1] = data_ptr[1];
+          e[2] = data_ptr[2];
+
+          e[3] = data_ptr[3];
+          e[4] = data_ptr[4];
+          e[5] = data_ptr[5];
+
+          e[6] = data_ptr[6];
+          e[7] = data_ptr[7];
+          e[8] = data_ptr[8];
+          break;
+
+        case SIERRA_FULL:
+
+          //  0  1  2  3  4  5  6  7  8
+          // XX YY ZZ XY YZ ZX YX ZY XZ
+          //  0  4  8  1  5  6  3  7  2
+          e[0] = data_ptr[0];
+          e[4] = data_ptr[1];
+          e[8] = data_ptr[2];
+
+          e[1] = data_ptr[3];
+          e[5] = data_ptr[4];
+          e[6] = data_ptr[5];
+
+          e[3] = data_ptr[6];
+          e[7] = data_ptr[7];
+          e[2] = data_ptr[8];
+          break;
+
+        case SIERRA_SYMMETRIC:
+          e[0] = data_ptr[0];
+          e[4] = data_ptr[1];
+          e[8] = data_ptr[2];
+
+          e[1] = data_ptr[3];
+          e[5] = data_ptr[4];
+          e[6] = data_ptr[5];
+
+          e[3] = data_ptr[3];
+          e[7] = data_ptr[4];
+          e[2] = data_ptr[5];
+          break;
+      }
+
       break;
 
     case 2:
@@ -342,17 +390,21 @@ Tensor<T>::Tensor(
 //
 // R^N create tensor from array - const version
 // \param data_ptr
+// \param order component convention (3D only)
 //
 template<typename T>
 inline
-Tensor<T>::Tensor(Index const N, T const * data_ptr) :
+Tensor<T>::Tensor(
+    Index const N,
+    T const * data_ptr,
+    ComponentOrder const order) :
 dimension(0)
 {
   assert(data_ptr != NULL);
 
   set_dimension(N);
 
-  fill(data_ptr);
+  fill(data_ptr, order);
 
   return;
 }
@@ -410,6 +462,32 @@ dimension(0)
 }
 
 //
+// 2nd-order tensor from 4th-order tensor
+//
+template<typename T>
+inline
+Tensor<T>::Tensor(Tensor4<T> const & A) :
+dimension(0)
+{
+  Index const
+  N = A.get_dimension();
+
+  Index const
+  N2 = N * N;
+
+  set_dimension(N2);
+
+  Index const
+  number_components = N2 * N2;
+
+  for (Index i = 0; i < number_components; ++i) {
+    e[i] = A[i];
+  }
+
+  return;
+}
+
+//
 // R^N simple destructor
 //
 template<typename T>
@@ -447,6 +525,32 @@ Tensor<T>::operator()(Index const i, Index const j)
   assert(i < get_dimension());
   assert(j < get_dimension());
   return e[i * get_dimension() + j];
+}
+
+//
+// Linear access to components
+// \param i the index
+//
+template<typename T>
+inline
+T const &
+Tensor<T>::operator[](Index const i) const
+{
+  assert(i < integer_power(get_dimension(), order()));
+  return e[i];
+}
+
+//
+// Linear access to components
+// \param i the index
+//
+template<typename T>
+inline
+T &
+Tensor<T>::operator[](Index const i)
+{
+  assert(i < integer_power(get_dimension(), order()));
+  return e[i];
 }
 
 //

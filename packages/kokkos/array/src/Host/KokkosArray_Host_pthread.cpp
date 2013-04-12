@@ -44,7 +44,7 @@
 /*--------------------------------------------------------------------------*/
 /* KokkosArray interfaces */
 
-#include <KokkosArray_Host.hpp>
+#include <iostream>
 #include <Host/KokkosArray_Host_Internal.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -63,22 +63,36 @@ namespace Impl {
 
 namespace {
 
-void * host_internal_pthread_driver( void * arg )
-{
-  HostInternal & pool = HostInternal::singleton();
+pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
 
-  pool.driver( reinterpret_cast<size_t>( arg ) );
+void * host_internal_pthread_driver( void * )
+{
+  try {
+    host_thread_driver();
+  }
+  catch( const std::exception & x ) {
+    // mfh 29 May 2012: Doesn't calling std::terminate() seem a
+    // little violent?  On the other hand, C++ doesn't define how
+    // to transport exceptions between threads (until C++11).
+    // Since this is a worker thread, it would be hard to tell the
+    // master thread what happened.
+    std::cerr << "Worker thread uncaught exception : " << x.what() << std::endl ;
+    std::terminate();
+  }
+  catch( ... ) {
+    // mfh 29 May 2012: See note above on std::terminate().
+    std::cerr << "Worker thread uncaught exception" << std::endl ;
+    std::terminate();
+  }
 
   return NULL ;
 }
-
-pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
 
 }
 
 //----------------------------------------------------------------------------
 
-bool HostInternal::is_master_thread() const
+bool host_thread_is_master()
 {
   static const pthread_t master_pid = pthread_self();
 
@@ -88,7 +102,7 @@ bool HostInternal::is_master_thread() const
 //----------------------------------------------------------------------------
 // Spawn this thread
 
-bool HostInternal::spawn( const size_t thread_rank )
+bool host_thread_spawn()
 {
   bool result = false ;
 
@@ -98,12 +112,10 @@ bool HostInternal::spawn( const size_t thread_rank )
        0 == pthread_attr_setscope(       & attr, PTHREAD_SCOPE_SYSTEM ) ||
        0 == pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ) {
 
-    void * const arg = reinterpret_cast<void*>( thread_rank );
-
     pthread_t pt ;
 
     result =
-      0 == pthread_create( & pt, & attr, host_internal_pthread_driver, arg );
+      0 == pthread_create( & pt, & attr, host_internal_pthread_driver, 0 );
   }
 
   pthread_attr_destroy( & attr );
@@ -113,21 +125,21 @@ bool HostInternal::spawn( const size_t thread_rank )
 
 //----------------------------------------------------------------------------
 
-void HostWorkerBlock::execute_on_thread( HostThread & ) const
+int host_thread_wait( volatile int * const flag , const int value )
 {
-  pthread_mutex_lock(   & host_internal_pthread_mutex );
-  pthread_mutex_unlock( & host_internal_pthread_mutex );
+  int result ;
+  while ( value == ( result = *flag ) ) sched_yield();
+  return result ;
 }
 
-//----------------------------------------------------------------------------
-// Performance critical function: thread waits while value == *state
-
-void HostThread::wait( const HostThread::State flag )
+void host_thread_lock()
 {
-  const long value = flag ;
-  while ( value == m_state ) {
-    sched_yield();
-  }
+  pthread_mutex_lock( & host_internal_pthread_mutex );
+}
+
+void host_thread_unlock()
+{
+  pthread_mutex_unlock( & host_internal_pthread_mutex );
 }
 
 } // namespace Impl
@@ -135,51 +147,4 @@ void HostThread::wait( const HostThread::State flag )
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-namespace KokkosArray {
-
-bool Host::sleep()
-{
-  Impl::HostInternal & h = Impl::HostInternal::singleton();
-
-  const bool is_ready   = NULL == h.m_worker ;
-        bool is_blocked = & h.m_worker_block == h.m_worker ;
-
-  if ( is_ready ) {
-    pthread_mutex_lock( & Impl::host_internal_pthread_mutex );
-
-    h.m_worker = & h.m_worker_block ;
-
-    // Activate threads so that they will proceed from
-    // spinning state to being blocked on the mutex.
-
-    h.activate_threads();
-
-    is_blocked = true ;
-  }
-
-  return is_blocked ;
-}
-
-bool Host::wake()
-{
-  Impl::HostInternal & h = Impl::HostInternal::singleton();
-
-  const bool is_blocked = & h.m_worker_block == h.m_worker ;
-        bool is_ready   = NULL == h.m_worker ;
-
-  if ( is_blocked ) {
-    pthread_mutex_unlock( & Impl::host_internal_pthread_mutex );
-
-    h.m_worker_block.fanin_deactivation( h.m_master_thread );
-
-    h.m_worker = NULL ;
-
-    is_ready = true ;
-  }
-
-  return is_ready ;
-}
-
-} // namespace KokkosArray
 

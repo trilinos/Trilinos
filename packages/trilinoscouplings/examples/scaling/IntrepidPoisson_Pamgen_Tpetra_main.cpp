@@ -67,8 +67,7 @@
 
 // MueLu includes
 #include "MueLu_CreateTpetraPreconditioner.hpp"
-#include <Ifpack2_Relaxation.hpp>
-#include <Ifpack2_Relaxation2.hpp>
+
 int
 main (int argc, char *argv[])
 {
@@ -206,7 +205,6 @@ main (int argc, char *argv[])
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
-#ifdef MTB
     if (prec_type == "MueLu") {
       if (inputList.isSublist("MueLu")) {
         ParameterList mueluParams = inputList.sublist("MueLu");
@@ -215,25 +213,7 @@ main (int argc, char *argv[])
         M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
       }
     }
-#endif
-    if (prec_type == "IFPACK2") {
-      RCP<Ifpack2::Relaxation<sparse_matrix_type> > ifM = rcp(new Ifpack2::Relaxation<sparse_matrix_type>(A));
-      ifM->setParameters(inputList.sublist("IFPACK2"));
-      ifM->initialize();
-      ifM->compute();
-
-      M = ifM;
-    }
-
-    if (prec_type == "IFPACK2B") {
-      RCP<Ifpack2::Relaxation2<sparse_matrix_type> > ifM = rcp(new Ifpack2::Relaxation2<sparse_matrix_type>(A));
-      ifM->setParameters(inputList.sublist("IFPACK2"));
-      ifM->initialize();
-      ifM->compute();
-
-      M = ifM;
-    }
-}
+  }
 
   bool converged = false;
   int numItersPerformed = 0;

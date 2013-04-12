@@ -28,6 +28,8 @@
 
 #include <iostream>
 
+#include "KokkosArray_hwloc.hpp"
+
 #include "Stokhos_ConfigDefs.h"
 #if defined(HAVE_STOKHOS_OPENMP) && defined(HAVE_STOKHOS_MKL)
 #include <omp.h>
@@ -98,8 +100,12 @@ template <typename Scalar>
 int mainHost(bool test_flat, bool test_orig, bool test_block, bool symmetric,
              bool mkl)
 {
-  const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
-  const size_t gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity() ;
+  const std::pair<unsigned,unsigned> core_topo =
+    KokkosArray::hwloc::get_core_topology();
+  const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+
+  const size_t gang_count = core_topo.first ;
+  const size_t gang_worker_count = core_topo.second * core_capacity;
 
 #if defined(HAVE_STOKHOS_OPENMP) && defined(HAVE_STOKHOS_MKL)
   // Call a little OpenMP parallel region so that MKL will get the right

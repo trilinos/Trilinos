@@ -627,8 +627,8 @@ namespace Tpetra {
         }
       }
 
-      ArrayRCP<GO> sendGIDs;
-      ArrayRCP<int> sendImages;
+      Array<GO> sendGIDs;
+      Array<int> sendImages;
       distor.createFromRecvs (globalIDs, dirImages (), sendGIDs, sendImages);
       const size_t numSends = sendGIDs.size ();
 
@@ -672,7 +672,7 @@ namespace Tpetra {
         // "PID" means "process ID" (a.k.a. "node ID," a.k.a. "rank").
         LO curLID;
         typename Array<global_size_t>::iterator exportsIter = exports.begin();
-        typename ArrayRCP<GO>::const_iterator gidIter = sendGIDs.begin();
+        typename Array<GO>::const_iterator gidIter = sendGIDs.begin();
         for ( ; gidIter != sendGIDs.end(); ++gidIter) {
           // Don't use as() here (see above note).
           *exportsIter++ = static_cast<global_size_t> (*gidIter);

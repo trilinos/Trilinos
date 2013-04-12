@@ -70,11 +70,11 @@ struct FunctionalResponse_Builder {
   MPI_Comm comm;
   int cubatureDegree;
   bool requiresCellIntegral;
-  std::string quadPointField_;
+  std::string quadPointField;
 
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
-  { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T>(comm,cubatureDegree,requiresCellIntegral,quadPointField_)); }
+  { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T>(comm,cubatureDegree,requiresCellIntegral,quadPointField)); }
 };
 
 

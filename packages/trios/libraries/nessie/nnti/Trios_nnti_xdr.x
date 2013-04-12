@@ -80,12 +80,16 @@ const NNTI_URL_LEN = 128;
 
 /**
  * @brief The size of a buffer used for receiving requests (should be configurable via URL).
+ *
+ * This should be a multiple of 64 for best cache performance.  1216=64*19
  */
-const NNTI_REQUEST_BUFFER_SIZE=1200;
+const NNTI_REQUEST_BUFFER_SIZE=1216;
 /**
  * @brief The size of a buffer used for receiving results (should be configurable via URL).
+ *
+ * This should be a multiple of 64 for best cache performance.  1216=64*19
  */
-const NNTI_RESULT_BUFFER_SIZE=1200;
+const NNTI_RESULT_BUFFER_SIZE=1216;
 
 
 /**

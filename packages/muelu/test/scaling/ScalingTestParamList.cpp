@@ -201,6 +201,13 @@ int main(int argc, char *argv[]) {
 
   tm = Teuchos::null;
 
+  if (comm->getRank() == 0) {
+    std::cout << "Galeri complete." << std::endl
+              << "========================================================" << std::endl;
+  }
+
+
+
   //
   // Construct a multigrid preconditioner
   //

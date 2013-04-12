@@ -291,7 +291,7 @@ void reduceAll(
  */
 template<typename Ordinal, typename Packet, typename Serializer>
 void reduceAll(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
   const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
@@ -304,7 +304,7 @@ void reduceAll(
  */
 template<typename Ordinal, typename Packet, typename Serializer>
 void reduceAll(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const EReductionType reductType,
   const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
@@ -365,7 +365,7 @@ void scan(
  */
 template<typename Ordinal, typename Packet, typename Serializer>
 void reduceAllAndScatter(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
   const Ordinal sendCount, const Packet sendBuffer[],
@@ -379,7 +379,7 @@ void reduceAllAndScatter(
  */
 template<typename Ordinal, typename Packet, typename Serializer>
 void reduceAllAndScatter(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const EReductionType reductType,
   const Ordinal sendCount, const Packet sendBuffer[] ,
@@ -437,7 +437,7 @@ void scan(
  */
 template<typename Ordinal, typename Packet, typename Serializer>
 void scan(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
   const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
@@ -450,7 +450,7 @@ void scan(
  */
 template<typename Ordinal, typename Packet, typename Serializer>
 void scan(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const EReductionType reductType,
   const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
@@ -468,9 +468,9 @@ void send(
 
 //! Variant of send() that takes a tag (and restores the correct order of arguments).
 template<typename Ordinal, typename Packet>
-void 
+void
 send (const Packet sendBuffer[],
-      const Ordinal count, 
+      const Ordinal count,
       const int destRank,
       const int tag,
       const Comm<Ordinal>& comm);
@@ -536,7 +536,7 @@ void send(
 template<typename Ordinal, typename Packet>
 int receive(
   const Comm<Ordinal>& comm,
-  const int sourceRank, const Ordinal count, Packet recvBuffer[] 
+  const int sourceRank, const Ordinal count, Packet recvBuffer[]
   );
 
 /** \brief Receive a single object that use values semantics from another process.
@@ -546,7 +546,7 @@ int receive(
 template<typename Ordinal, typename Packet>
 int receive(
   const Comm<Ordinal>& comm,
-  const int sourceRank, Packet *recv 
+  const int sourceRank, Packet *recv
   );
 
 /** \brief Receive objects that use reference semantics from another process.
@@ -556,7 +556,7 @@ int receive(
 template<typename Ordinal, typename Packet>
 int receive(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
-  const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
+  const int sourceRank, const Ordinal count, Packet*const recvBuffer[]
   );
 
 /** \brief Receive objects that use values semantics from another process
@@ -568,7 +568,7 @@ template<typename Ordinal, typename Packet, typename Serializer>
 int receive(
   const Comm<Ordinal>& comm,
   const Serializer& serializer,
-  const int sourceRank, const Ordinal count, Packet recvBuffer[] 
+  const int sourceRank, const Ordinal count, Packet recvBuffer[]
   );
 
 /** \brief Ready-Send an array of objects that use values semantics to another
@@ -620,7 +620,7 @@ RCP<CommRequest<Ordinal> > isend(
 
 //! Variant of isend() that takes a tag (and restores the correct order of arguments).
 template<typename Ordinal, typename Packet>
-RCP<CommRequest<Ordinal> > 
+RCP<CommRequest<Ordinal> >
 isend (const ArrayRCP<const Packet>& sendBuffer,
        const int destRank,
        const int tag,
@@ -637,7 +637,7 @@ RCP<CommRequest<Ordinal> > isend(
   const int destRank
   );
 
-/** \brief Send objects that use values semantics to another process 
+/** \brief Send objects that use values semantics to another process
  * using customized serializer.
  *
  * \relates Comm
@@ -672,11 +672,11 @@ RCP<CommRequest<Ordinal> > ireceive(
 
 //! Variant of ireceive that takes a tag argument (and restores the correct order of arguments).
 template<typename Ordinal, typename Packet>
-RCP<CommRequest<Ordinal> > 
+RCP<CommRequest<Ordinal> >
 ireceive (const ArrayRCP<Packet> &recvBuffer,
-	  const int sourceRank,
-	  const int tag,
-	  const Comm<Ordinal>& comm);
+          const int sourceRank,
+          const int tag,
+          const Comm<Ordinal>& comm);
 
 /// \brief Receive one object (that uses values semantics) from another process.
 /// \relates Comm
@@ -696,7 +696,7 @@ RCP<CommRequest<Ordinal> > ireceive(
   const int sourceRank
   );
 
-/** \brief Send objects that use values semantics to another process 
+/** \brief Send objects that use values semantics to another process
  * using customized serializer.
  *
  * \relates Comm
@@ -756,10 +756,10 @@ void waitAll(
 ///   Any element of the array may be null, for example if its
 ///   corresponding CommRequest was null on input.
 template<typename Ordinal>
-void 
+void
 waitAll (const Comm<Ordinal>& comm,
-	 const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
-	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses);
+         const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
+         const ArrayView<RCP<CommStatus<Ordinal> > >& statuses);
 
 /// \brief Wait on a single communication request, and return its status.
 /// \relates Comm
@@ -781,7 +781,7 @@ waitAll (const Comm<Ordinal>& comm,
 ///   completing the request.  You may query it for information about
 ///   the completed communication operation.  This may be null, for
 ///   example if <tt>*request</tt> was null on input.
-/// 
+///
 /// \pre <tt>!is_null(request)</tt> (that is, the Ptr is not null).
 /// \post <tt>is_null(*request)</tt> (that is, the RCP is null).
 template<typename Ordinal>
@@ -1334,323 +1334,334 @@ namespace Teuchos {
 // Specialization for Ordinal=int and Packet=std::complex<double>.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, std::complex<double> > (const Comm<int>& comm, 
-				       const EReductionType reductType,
-				       const int count, 
-				       const std::complex<double> sendBuffer[], 
-				       std::complex<double> globalReducts[]);
+reduceAll<int, std::complex<double> > (const Comm<int>& comm,
+                                       const EReductionType reductType,
+                                       const int count,
+                                       const std::complex<double> sendBuffer[],
+                                       std::complex<double> globalReducts[]);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, std::complex<double> > (const Comm<int>& comm, 
-				      const ArrayRCP<std::complex<double> >& recvBuffer,
-				      const int sourceRank);
+ireceive<int, std::complex<double> > (const Comm<int>& comm,
+                                      const ArrayRCP<std::complex<double> >& recvBuffer,
+                                      const int sourceRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 ireceive<int, std::complex<double> > (const ArrayRCP<std::complex<double> > &recvBuffer,
-				      const int sourceRank,
-				      const int tag,
-				      const Comm<int>& comm);
+                                      const int sourceRank,
+                                      const int tag,
+                                      const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, std::complex<double> > (const Comm<int>& comm, 
-				  const int count,
-				  const std::complex<double> sendBuffer[],
-				  const int destRank);
+send<int, std::complex<double> > (const Comm<int>& comm,
+                                  const int count,
+                                  const std::complex<double> sendBuffer[],
+                                  const int destRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, std::complex<double> > (const std::complex<double> sendBuffer[],
-				  const int count,
-				  const int destRank,
-				  const int tag,
-				  const Comm<int>& comm);
+                                  const int count,
+                                  const int destRank,
+                                  const int tag,
+                                  const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 isend<int, std::complex<double> > (const ArrayRCP<const std::complex<double> >& sendBuffer,
-				   const int destRank,
-				   const int tag,
-				   const Comm<int>& comm);
+                                   const int destRank,
+                                   const int tag,
+                                   const Comm<int>& comm);
 
 // Specialization for Ordinal=int and Packet=std::complex<float>.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, std::complex<float> > (const Comm<int>& comm, 
-				      const EReductionType reductType,
-				      const int count, 
-				      const std::complex<float> sendBuffer[], 
-				      std::complex<float> globalReducts[]);
+reduceAll<int, std::complex<float> > (const Comm<int>& comm,
+                                      const EReductionType reductType,
+                                      const int count,
+                                      const std::complex<float> sendBuffer[],
+                                      std::complex<float> globalReducts[]);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, std::complex<float> > (const Comm<int>& comm, 
-				     const ArrayRCP<std::complex<float> >& recvBuffer,
-				     const int sourceRank);
+ireceive<int, std::complex<float> > (const Comm<int>& comm,
+                                     const ArrayRCP<std::complex<float> >& recvBuffer,
+                                     const int sourceRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 ireceive<int, std::complex<float> > (const ArrayRCP<std::complex<float> > &recvBuffer,
-				     const int sourceRank,
-				     const int tag,
-				     const Comm<int>& comm);
+                                     const int sourceRank,
+                                     const int tag,
+                                     const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, std::complex<float> > (const Comm<int>& comm, 
-				 const int count,
-				 const std::complex<float> sendBuffer[],
-				 const int destRank);
+send<int, std::complex<float> > (const Comm<int>& comm,
+                                 const int count,
+                                 const std::complex<float> sendBuffer[],
+                                 const int destRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, std::complex<float> > (const std::complex<float> sendBuffer[],
-				 const int count,
-				 const int destRank,
-				 const int tag,
-				 const Comm<int>& comm);
+                                 const int count,
+                                 const int destRank,
+                                 const int tag,
+                                 const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 isend<int, std::complex<float> > (const ArrayRCP<const std::complex<float> >& sendBuffer,
-				  const int destRank,
-				  const int tag,
-				  const Comm<int>& comm);
+                                  const int destRank,
+                                  const int tag,
+                                  const Comm<int>& comm);
 #endif // TEUCHOS_HAVE_COMPLEX
 
 // Specialization for Ordinal=int and Packet=double.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, double> (const Comm<int>& comm, 
-			const EReductionType reductType,
-			const int count, 
-			const double sendBuffer[], 
-			double globalReducts[]);
+reduceAll<int, double> (const Comm<int>& comm,
+                        const EReductionType reductType,
+                        const int count,
+                        const double sendBuffer[],
+                        double globalReducts[]);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, double> (const Comm<int>& comm, 
-		       const ArrayRCP<double>& recvBuffer,
-		       const int sourceRank);
+ireceive<int, double> (const Comm<int>& comm,
+                       const ArrayRCP<double>& recvBuffer,
+                       const int sourceRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 ireceive<int, double> (const ArrayRCP<double> &recvBuffer,
-		       const int sourceRank,
-		       const int tag,
-		       const Comm<int>& comm);
+                       const int sourceRank,
+                       const int tag,
+                       const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, double> (const Comm<int>& comm, 
-		   const int count,
-		   const double sendBuffer[],
-		   const int destRank);
+send<int, double> (const Comm<int>& comm,
+                   const int count,
+                   const double sendBuffer[],
+                   const int destRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, double> (const double sendBuffer[],
-		   const int count,
-		   const int destRank,
-		   const int tag,
-		   const Comm<int>& comm);
+                   const int count,
+                   const int destRank,
+                   const int tag,
+                   const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 isend<int, double> (const ArrayRCP<const double>& sendBuffer,
-		    const int destRank,
-		    const int tag,
-		    const Comm<int>& comm);
+                    const int destRank,
+                    const int tag,
+                    const Comm<int>& comm);
 
 // Specialization for Ordinal=int and Packet=float.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, float> (const Comm<int>& comm, 
-		       const EReductionType reductType,
-		       const int count, 
-		       const float sendBuffer[], 
-		       float globalReducts[]);
+reduceAll<int, float> (const Comm<int>& comm,
+                       const EReductionType reductType,
+                       const int count,
+                       const float sendBuffer[],
+                       float globalReducts[]);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, float> (const Comm<int>& comm, 
-		      const ArrayRCP<float>& recvBuffer,
-		      const int sourceRank);
+ireceive<int, float> (const Comm<int>& comm,
+                      const ArrayRCP<float>& recvBuffer,
+                      const int sourceRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 ireceive<int, float> (const ArrayRCP<float> &recvBuffer,
-		      const int sourceRank,
-		      const int tag,
-		      const Comm<int>& comm);
+                      const int sourceRank,
+                      const int tag,
+                      const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, float> (const Comm<int>& comm, 
-		  const int count,
-		  const float sendBuffer[],
-		  const int destRank);
+send<int, float> (const Comm<int>& comm,
+                  const int count,
+                  const float sendBuffer[],
+                  const int destRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, float> (const float sendBuffer[],
-		  const int count,
-		  const int destRank,
-		  const int tag,
-		  const Comm<int>& comm);
+                  const int count,
+                  const int destRank,
+                  const int tag,
+                  const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 isend<int, float> (const ArrayRCP<const float>& sendBuffer,
-		   const int destRank,
-		   const int tag,
-		   const Comm<int>& comm);
+                   const int destRank,
+                   const int tag,
+                   const Comm<int>& comm);
 
 #ifdef TEUCHOS_HAVE_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, long long> (const Comm<int>& comm, 
-			   const EReductionType reductType,
-			   const int count, 
-			   const long long sendBuffer[], 
-			   long long globalReducts[]);
+reduceAll<int, long long> (const Comm<int>& comm,
+                           const EReductionType reductType,
+                           const int count,
+                           const long long sendBuffer[],
+                           long long globalReducts[]);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, long long> (const Comm<int>& comm, 
-			  const ArrayRCP<long long>& recvBuffer,
-			  const int sourceRank);
+ireceive<int, long long> (const Comm<int>& comm,
+                          const ArrayRCP<long long>& recvBuffer,
+                          const int sourceRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 ireceive<int, long long> (const ArrayRCP<long long> &recvBuffer,
-			  const int sourceRank,
-			  const int tag,
-			  const Comm<int>& comm);
+                          const int sourceRank,
+                          const int tag,
+                          const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, long long> (const Comm<int>& comm, 
-		      const int count,
-		      const long long sendBuffer[],
-		      const int destRank);
+send<int, long long> (const Comm<int>& comm,
+                      const int count,
+                      const long long sendBuffer[],
+                      const int destRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, long long> (const long long sendBuffer[],
-		      const int count,
-		      const int destRank,
-		      const int tag,
-		      const Comm<int>& comm);
+                      const int count,
+                      const int destRank,
+                      const int tag,
+                      const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 isend<int, long long> (const ArrayRCP<const long long>& sendBuffer,
-		       const int destRank,
-		       const int tag,
-		       const Comm<int>& comm);
+                       const int destRank,
+                       const int tag,
+                       const Comm<int>& comm);
 #endif // TEUCHOS_HAVE_LONG_LONG_INT
 
 // Specialization for Ordinal=int and Packet=long.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, long> (const Comm<int>& comm, 
-		      const EReductionType reductType,
-		      const int count, 
-		      const long sendBuffer[], 
-		      long globalReducts[]);
+reduceAll<int, long> (const Comm<int>& comm,
+                      const EReductionType reductType,
+                      const int count,
+                      const long sendBuffer[],
+                      long globalReducts[]);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, long> (const Comm<int>& comm, 
-		     const ArrayRCP<long>& recvBuffer,
-		     const int sourceRank);
+ireceive<int, long> (const Comm<int>& comm,
+                     const ArrayRCP<long>& recvBuffer,
+                     const int sourceRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 ireceive<int, long> (const ArrayRCP<long> &recvBuffer,
-		     const int sourceRank,
-		     const int tag,
-		     const Comm<int>& comm);
+                     const int sourceRank,
+                     const int tag,
+                     const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, long> (const Comm<int>& comm, 
-		 const int count,
-		 const long sendBuffer[],
-		 const int destRank);
+send<int, long> (const Comm<int>& comm,
+                 const int count,
+                 const long sendBuffer[],
+                 const int destRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, long> (const long sendBuffer[],
-		 const int count,
-		 const int destRank,
-		 const int tag,
-		 const Comm<int>& comm);
+                 const int count,
+                 const int destRank,
+                 const int tag,
+                 const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 isend<int, long> (const ArrayRCP<const long>& sendBuffer,
-		  const int destRank,
-		  const int tag,
-		  const Comm<int>& comm);
+                  const int destRank,
+                  const int tag,
+                  const Comm<int>& comm);
 
 // Specialization for Ordinal=int and Packet=int.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, int> (const Comm<int>& comm, 
-		     const EReductionType reductType,
-		     const int count, 
-		     const int sendBuffer[], 
-		     int globalReducts[]);
+reduceAll<int, int> (const Comm<int>& comm,
+                     const EReductionType reductType,
+                     const int count,
+                     const int sendBuffer[],
+                     int globalReducts[]);
+// mfh 09 Apr 2013: We provide a full specialization of
+// reduceAllAndScatter, because it is an important part of
+// Tpetra::Distributor initialization.
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduceAllAndScatter<int, int> (const Comm<int>& comm,
+                               const EReductionType reductType,
+                               const int sendCount,
+                               const int sendBuffer[],
+                               const int recvCounts[],
+                               int myGlobalReducts[]);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, int> (const Comm<int>& comm, 
-		    const ArrayRCP<int>& recvBuffer,
-		    const int sourceRank);
+ireceive<int, int> (const Comm<int>& comm,
+                    const ArrayRCP<int>& recvBuffer,
+                    const int sourceRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 ireceive<int, int> (const ArrayRCP<int> &recvBuffer,
-		    const int sourceRank,
-		    const int tag,
-		    const Comm<int>& comm);
+                    const int sourceRank,
+                    const int tag,
+                    const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, int> (const Comm<int>& comm, 
-		const int count,
-		const int sendBuffer[],
-		const int destRank);
+send<int, int> (const Comm<int>& comm,
+                const int count,
+                const int sendBuffer[],
+                const int destRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, int> (const int sendBuffer[],
-		const int count,
-		const int destRank,
-		const int tag,
-		const Comm<int>& comm);
+                const int count,
+                const int destRank,
+                const int tag,
+                const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 isend<int, int> (const ArrayRCP<const int>& sendBuffer,
-		 const int destRank,
-		 const int tag,
-		 const Comm<int>& comm);
+                 const int destRank,
+                 const int tag,
+                 const Comm<int>& comm);
 
 // Specialization for Ordinal=int and Packet=short.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, short> (const Comm<int>& comm, 
-		       const EReductionType reductType,
-		       const int count, 
-		       const short sendBuffer[], 
-		       short globalReducts[]);
+reduceAll<int, short> (const Comm<int>& comm,
+                       const EReductionType reductType,
+                       const int count,
+                       const short sendBuffer[],
+                       short globalReducts[]);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, short> (const Comm<int>& comm, 
-		      const ArrayRCP<short>& recvBuffer,
-		      const int sourceRank);
+ireceive<int, short> (const Comm<int>& comm,
+                      const ArrayRCP<short>& recvBuffer,
+                      const int sourceRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 ireceive<int, short> (const ArrayRCP<short> &recvBuffer,
-		      const int sourceRank,
-		      const int tag,
-		      const Comm<int>& comm);
+                      const int sourceRank,
+                      const int tag,
+                      const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, short> (const Comm<int>& comm, 
-		  const int count,
-		  const short sendBuffer[],
-		  const int destRank);
+send<int, short> (const Comm<int>& comm,
+                  const int count,
+                  const short sendBuffer[],
+                  const int destRank);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 send<int, short> (const short sendBuffer[],
-		  const int count,
-		  const int destRank,
-		  const int tag,
-		  const Comm<int>& comm);
+                  const int count,
+                  const int destRank,
+                  const int tag,
+                  const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
 isend<int, short> (const ArrayRCP<const short>& sendBuffer,
-		   const int destRank,
-		   const int tag,
-		   const Comm<int>& comm);
+                   const int destRank,
+                   const int tag,
+                   const Comm<int>& comm);
 
 // mfh 18 Oct 2012: The specialization for Packet=char seems to be
 // causing problems such as the following:
 //
 // http://testing.sandia.gov/cdash/testDetails.php?test=9909246&build=747699
-// 
+//
 // I am disabling it for now.  This should revert back to the old
 // behavior for Packet=char.  That should fix the Tpetra errors, since
 // many Tpetra objects inherit from DistObject<char, ...>.
@@ -1658,11 +1669,11 @@ isend<int, short> (const ArrayRCP<const short>& sendBuffer,
 // Specialization for Ordinal=int and Packet=char.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, char> (const Comm<int>& comm, 
-		      const EReductionType reductType,
-		      const int count, 
-		      const char sendBuffer[], 
-		      char globalReducts[]);
+reduceAll<int, char> (const Comm<int>& comm,
+                      const EReductionType reductType,
+                      const int count,
+                      const char sendBuffer[],
+                      char globalReducts[]);
 #endif // 0
 } // namespace Teuchos
 
@@ -1705,7 +1716,7 @@ void Teuchos::reduceAll(
 
 template<typename Ordinal, typename Packet, typename Serializer>
 void Teuchos::reduceAll(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
   const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
@@ -1731,7 +1742,7 @@ void Teuchos::reduceAll(
 
 template<typename Ordinal, typename Packet, typename Serializer>
 void Teuchos::reduceAll(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const EReductionType reductType,
   const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
@@ -1787,7 +1798,7 @@ void Teuchos::reduceAllAndScatter(
   for (Ordinal k = 0; k < size; ++k) {
     charRecvCounts[k] = as<Ordinal>(recvCounts[static_cast<ptrdiff_t>(k)] * packetSize);
   }
- 
+
   comm.reduceAllAndScatter(
     charReductOp, charSendBuffer.getBytes(), charSendBuffer.getCharBuffer(),
     &charRecvCounts[0], charMyGlobalReducts.getCharBuffer()
@@ -1829,7 +1840,7 @@ void Teuchos::reduceAllAndScatter(
 
 template<typename Ordinal, typename Packet, typename Serializer>
 void Teuchos::reduceAllAndScatter(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
   const Ordinal sendCount, const Packet sendBuffer[] ,
@@ -1868,7 +1879,7 @@ void Teuchos::reduceAllAndScatter(
   for (Ordinal k = 0; k < size; ++k) {
     charRecvCounts[k] = as<Ordinal>(recvCounts[static_cast<ptrdiff_t>(k)] * packetSize);
   }
- 
+
   comm.reduceAllAndScatter(
     charReductOp, charSendBuffer.getBytes(), charSendBuffer.getCharBuffer(),
     &charRecvCounts[0], charMyGlobalReducts.getCharBuffer()
@@ -1878,7 +1889,7 @@ void Teuchos::reduceAllAndScatter(
 
 template<typename Ordinal, typename Packet, typename Serializer>
 void Teuchos::reduceAllAndScatter(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const EReductionType reductType,
   const Ordinal sendCount, const Packet sendBuffer[] ,
@@ -1893,7 +1904,7 @@ void Teuchos::reduceAllAndScatter(
   std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
     reductOp(createOp<Ordinal,Packet>(reductType));
   reduceAllAndScatter(
-    comm, serializer, *reductOp, sendCount, sendBuffer, recvCounts, 
+    comm, serializer, *reductOp, sendCount, sendBuffer, recvCounts,
     myGlobalReducts
     );
 }
@@ -1962,7 +1973,7 @@ void Teuchos::scan(
 
 template<typename Ordinal, typename Packet, typename Serializer>
 void Teuchos::scan(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
   const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
@@ -1988,7 +1999,7 @@ void Teuchos::scan(
 
 template<typename Ordinal, typename Packet, typename Serializer>
 void Teuchos::scan(
-  const Comm<Ordinal>& comm, 
+  const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const EReductionType reductType,
   const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
@@ -2024,12 +2035,12 @@ void Teuchos::send(
 }
 
 template<typename Ordinal, typename Packet>
-void 
+void
 Teuchos::send (const Packet sendBuffer[],
-	       const Ordinal count,
-	       const int destRank,
-	       const int tag,
-	       const Comm<Ordinal>& comm)
+               const Ordinal count,
+               const int destRank,
+               const int tag,
+               const Comm<Ordinal>& comm)
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: send<"
@@ -2109,7 +2120,7 @@ void Teuchos::send(
 template<typename Ordinal, typename Packet>
 int Teuchos::receive(
   const Comm<Ordinal>& comm,
-  const int sourceRank, const Ordinal count, Packet recvBuffer[] 
+  const int sourceRank, const Ordinal count, Packet recvBuffer[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -2129,7 +2140,7 @@ int Teuchos::receive(
 template<typename Ordinal, typename Packet>
 int Teuchos::receive(
   const Comm<Ordinal>& comm,
-  const int sourceRank, Packet *recv 
+  const int sourceRank, Packet *recv
   )
 {
   return Teuchos::receive<Ordinal,Packet>(comm,sourceRank,1,recv);
@@ -2139,7 +2150,7 @@ int Teuchos::receive(
 template<typename Ordinal, typename Packet>
 int Teuchos::receive(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
-  const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
+  const int sourceRank, const Ordinal count, Packet*const recvBuffer[]
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
@@ -2149,7 +2160,7 @@ template<typename Ordinal, typename Packet, typename Serializer>
 int Teuchos::receive(
   const Comm<Ordinal>& comm,
   const Serializer& serializer,
-  const int sourceRank, const Ordinal count, Packet recvBuffer[] 
+  const int sourceRank, const Ordinal count, Packet recvBuffer[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -2235,16 +2246,16 @@ Teuchos::isend(
 template<typename Ordinal, typename Packet>
 Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
 Teuchos::isend (const ArrayRCP<const Packet> &sendBuffer,
-		const int destRank,
-		const int tag,
-		const Comm<Ordinal>& comm)
+                const int destRank,
+                const int tag,
+                const Comm<Ordinal>& comm)
 {
   TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::isend<" << OrdinalTraits<Ordinal>::name () << "," 
+    "Teuchos::isend<" << OrdinalTraits<Ordinal>::name () << ","
     << TypeNameTraits<Packet>::name () << ">");
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
     charSendBuffer (sendBuffer.size (), sendBuffer.getRawPtr ());
-  RCP<CommRequest<Ordinal> > commRequest = 
+  RCP<CommRequest<Ordinal> > commRequest =
     comm.isend (charSendBuffer.getCharBufferView (), destRank, tag);
   set_extra_data (sendBuffer, "buffer", inOutArg (commRequest));
   return commRequest;
@@ -2306,17 +2317,17 @@ Teuchos::ireceive(
 }
 
 template<typename Ordinal, typename Packet>
-Teuchos::RCP<Teuchos::CommRequest<Ordinal> > 
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
 Teuchos::ireceive (const Teuchos::ArrayRCP<Packet> &recvBuffer,
-		   const int sourceRank,
-		   const int tag,
-		   const Teuchos::Comm<Ordinal>& comm)
+                   const int sourceRank,
+                   const int tag,
+                   const Teuchos::Comm<Ordinal>& comm)
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::ireceive<int, " << "," << TypeNameTraits<Packet>::name () << ">");
   ValueTypeSerializationBuffer<int, Packet>
     charRecvBuffer (recvBuffer.size (), recvBuffer.getRawPtr ());
-  RCP<CommRequest<int> > commRequest = 
+  RCP<CommRequest<int> > commRequest =
     comm.ireceive (charRecvBuffer.getCharBufferView (), sourceRank, tag);
   set_extra_data (recvBuffer, "buffer", inOutArg (commRequest));
   return commRequest;
@@ -2370,10 +2381,10 @@ void Teuchos::waitAll(
 
 
 template<typename Ordinal>
-void 
+void
 Teuchos::waitAll (const Comm<Ordinal>& comm,
-		  const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
-		  const ArrayView<RCP<CommStatus<Ordinal> > >& statuses)
+                  const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
+                  const ArrayView<RCP<CommStatus<Ordinal> > >& statuses)
 {
   comm.waitAll (requests, statuses);
 }
@@ -2382,7 +2393,7 @@ Teuchos::waitAll (const Comm<Ordinal>& comm,
 template<typename Ordinal>
 Teuchos::RCP<Teuchos::CommStatus<Ordinal> >
 Teuchos::wait (const Comm<Ordinal>& comm,
-	       const Ptr<RCP<CommRequest<Ordinal> > > &request)
+               const Ptr<RCP<CommRequest<Ordinal> > > &request)
 {
   return comm.wait (request);
 }

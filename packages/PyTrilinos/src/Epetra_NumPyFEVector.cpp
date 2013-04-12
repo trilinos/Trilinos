@@ -49,7 +49,7 @@ double * Epetra_NumPyFEVector::getArray(PyObject * pyObject)
   // Try to build a contiguous PyArrayObject from the pyObject
   if (!tmp_array)
     tmp_array = (PyArrayObject *)
-      PyArray_ContiguousFromObject(pyObject,PyArray_DOUBLE,0,0);
+      PyArray_ContiguousFromObject(pyObject,NPY_DOUBLE,0,0);
   
   // If this fails, build a vector with length zero to prevent a Bus
   // Error
@@ -59,7 +59,7 @@ double * Epetra_NumPyFEVector::getArray(PyObject * pyObject)
     throw PythonException();
   }
 
-  return (double*)(tmp_array->data);
+  return (double*)(PyArray_DATA(tmp_array));
 }
 
 // =============================================================================
@@ -76,7 +76,7 @@ double * Epetra_NumPyFEVector::getArray(const Epetra_BlockMap & blockMap,
     if (PyBool_Check(pyObject))
     {
       tmp_array = (PyArrayObject *)
-	PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
+	PyArray_SimpleNew(1,defaultDims,NPY_DOUBLE);
       if (tmp_array == NULL)
       {
 	cleanup();
@@ -86,7 +86,7 @@ double * Epetra_NumPyFEVector::getArray(const Epetra_BlockMap & blockMap,
       {
 	if (pyObject == Py_True)     // bool zeroOut is True
 	{
-	  double * data = (double*) tmp_array->data;
+	  double * data = (double*) PyArray_DATA(tmp_array);
 	  for (int i=0; i<defaultDims[0]; ++i) data[i] = 0.0;
 	}
       }
@@ -96,7 +96,7 @@ double * Epetra_NumPyFEVector::getArray(const Epetra_BlockMap & blockMap,
     else
     {
       tmp_array = (PyArrayObject *)
-	PyArray_ContiguousFromObject(pyObject,PyArray_DOUBLE,0,0);
+	PyArray_ContiguousFromObject(pyObject,NPY_DOUBLE,0,0);
 
       // If this fails, clean up and throw a PythonException
       if (!tmp_array)
@@ -108,19 +108,19 @@ double * Epetra_NumPyFEVector::getArray(const Epetra_BlockMap & blockMap,
       // it has the correct number of dimensions
       else
       {
-	int  nd = tmp_array->nd;
-	npy_intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
+	int  nd = PyArray_NDIM(tmp_array);
+	npy_intp arraySize = PyArray_MultiplyList(PyArray_DIMS(tmp_array),nd);
 	if (arraySize != defaultDims[0])
 	{
 	  PyArrayObject * myArray = 
-	    (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
+	    (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,NPY_DOUBLE);
 	  if (!myArray)
 	  {
 	    cleanup();
 	    throw PythonException();
 	  }
-	  double        * myData  = (double *) myArray->data;
-	  double        * tmpData = (double *) tmp_array->data;
+	  double        * myData  = (double *) PyArray_DATA(myArray);
+	  double        * tmpData = (double *) PyArray_DATA(tmp_array);
 	  for (int i=0; i<defaultDims[0]; i++)
 	  {
 	    myData[i] = tmpData[i];
@@ -131,7 +131,7 @@ double * Epetra_NumPyFEVector::getArray(const Epetra_BlockMap & blockMap,
       }
     }
   }
-  return (double*)(tmp_array->data);
+  return (double*)(PyArray_DATA(tmp_array));
 }
 
 // =============================================================================
@@ -182,7 +182,7 @@ Epetra_NumPyFEVector::Epetra_NumPyFEVector(const Epetra_BlockMap & blockMap,
   double **v = NULL;
   Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *)
-    PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,(void *)v[0]);
+    PyArray_SimpleNewFromData(2,dims,NPY_DOUBLE,(void *)v[0]);
   if (!array)
   {
     cleanup();
@@ -202,7 +202,7 @@ Epetra_NumPyFEVector::Epetra_NumPyFEVector(const Epetra_FEVector & source):
   double **v = NULL;
   Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *)
-    PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,(void *)v[0]);
+    PyArray_SimpleNewFromData(2,dims,NPY_DOUBLE,(void *)v[0]);
   if (!array)
   {
     cleanup();
@@ -221,7 +221,7 @@ Epetra_NumPyFEVector::~Epetra_NumPyFEVector()
 // =============================================================================
 PyObject * Epetra_NumPyFEVector::ExtractCopy() const
 {
-  return PyArray_NewCopy(array,PyArray_ANYORDER);
+  return PyArray_NewCopy(array,NPY_ANYORDER);
 }
 
 // =============================================================================
@@ -371,13 +371,15 @@ int Epetra_NumPyFEVector::ReplaceGlobalValues(PyObject * indices,
   int lenIndices;
   int result;
   myValues  = (PyArrayObject *)
-    PyArray_ContiguousFromObject(values, PyArray_DOUBLE,0,0);
+    PyArray_ContiguousFromObject(values, NPY_DOUBLE,0,0);
   if (!myValues) goto fail;
   myIndices = (PyArrayObject *)
-    PyArray_ContiguousFromObject(indices,PyArray_INT,0,0);
+    PyArray_ContiguousFromObject(indices,NPY_INT,0,0);
   if (!myIndices) goto fail;
-  lenValues  = (int) PyArray_MultiplyList(myValues->dimensions,  myValues->nd );
-  lenIndices = (int) PyArray_MultiplyList(myIndices->dimensions, myIndices->nd);
+  lenValues  = (int) PyArray_MultiplyList(PyArray_DIMS(myValues),
+                                          PyArray_NDIM(myValues) );
+  lenIndices = (int) PyArray_MultiplyList(PyArray_DIMS(myIndices),
+                                          PyArray_NDIM(myIndices));
   if (lenValues != lenIndices)
   {
     PyErr_Format(PyExc_ValueError,
@@ -386,8 +388,8 @@ int Epetra_NumPyFEVector::ReplaceGlobalValues(PyObject * indices,
     goto fail;
   }
   result = Epetra_FEVector::ReplaceGlobalValues(lenValues,
-						(int    *) myIndices->data,
-						(double *) myValues->data);
+						(int    *) PyArray_DATA(myIndices),
+						(double *) PyArray_DATA(myValues));
   Py_DECREF(myValues );
   Py_DECREF(myIndices);
   return result;
@@ -407,13 +409,15 @@ int Epetra_NumPyFEVector::SumIntoGlobalValues(PyObject * indices,
   int lenIndices;
   int result;
   myValues  = (PyArrayObject *)
-    PyArray_ContiguousFromObject(values,PyArray_DOUBLE,0,0);
+    PyArray_ContiguousFromObject(values,NPY_DOUBLE,0,0);
   if (!myValues) goto fail;
   myIndices = (PyArrayObject *)
-    PyArray_ContiguousFromObject(indices,PyArray_INT,0,0);
+    PyArray_ContiguousFromObject(indices,NPY_INT,0,0);
   if (!myIndices) goto fail;
-  lenValues  = (int) PyArray_MultiplyList(myValues->dimensions,  myValues->nd );
-  lenIndices = (int) PyArray_MultiplyList(myIndices->dimensions, myIndices->nd);
+  lenValues  = (int) PyArray_MultiplyList(PyArray_DIMS(myValues),
+                                          PyArray_NDIM(myValues) );
+  lenIndices = (int) PyArray_MultiplyList(PyArray_DIMS(myIndices),
+                                          PyArray_NDIM(myIndices));
   if (lenValues != lenIndices)
   {
     PyErr_Format(PyExc_ValueError,
@@ -422,8 +426,8 @@ int Epetra_NumPyFEVector::SumIntoGlobalValues(PyObject * indices,
     goto fail;
   }
   result = Epetra_FEVector::SumIntoGlobalValues(lenValues,
-						(int    *) myIndices->data,
-						(double *) myValues->data);
+						(int    *) PyArray_DATA(myIndices),
+						(double *) PyArray_DATA(myValues));
   Py_DECREF(myValues );
   Py_DECREF(myIndices);
   return result;

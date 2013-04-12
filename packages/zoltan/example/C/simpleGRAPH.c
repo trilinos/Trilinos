@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
   int myRank, numProcs;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
-  int *parts;
+  int *parts = NULL;
   FILE *fp;
   GRAPH_DATA myGraph;
 
@@ -224,6 +224,8 @@ int main(int argc, char *argv[])
   }
 
   showGraphPartitions(myRank, myGraph.numMyVertices, myGraph.vertexGID, parts, numProcs);
+
+  if (parts) free(parts);
 
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
@@ -392,6 +394,8 @@ char *c = buf;
 int count=0;
 
   while (1){
+    if ( (c-buf) >= bufsize) break;
+
     while (!(isdigit(*c))){
       if ((c - buf) >= bufsize) break;
       c++;
@@ -445,7 +449,6 @@ int i, j, part, cuts, prevPart=-1;
 float imbal, localImbal, sum;
 int *partCount;
 
-  partCount = (int *)calloc(sizeof(int), nparts);
 
   memset(partAssign, 0, sizeof(int) * 25);
 
@@ -456,6 +459,7 @@ int *partCount;
   MPI_Reduce(partAssign, allPartAssign, 25, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
 
   if (myProc == 0){
+    partCount = (int *)calloc(sizeof(int), nparts);
 
     cuts = 0;
 
@@ -566,7 +570,7 @@ GRAPH_DATA *send_graph;
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, count_tag, 1);
 
-      num = get_line_ints(buf, bufsize, vals);
+      num = get_line_ints(buf, strlen(buf), vals);
 
       if (num < 2) input_file_error(numProcs, count_tag, 1);
 

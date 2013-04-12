@@ -59,6 +59,9 @@ namespace Tpetra {
   class ImportExportData;
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Import;
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -108,6 +111,7 @@ namespace Tpetra {
             class GlobalOrdinal = LocalOrdinal,
             class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Export: public Teuchos::Describable {
+      friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
   public:
     //! The specialization of Map used by this class.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
@@ -125,7 +129,21 @@ namespace Tpetra {
     Export (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target);
 
-    /// \brief Constructor (with list of parameters).
+    /// \brief Construct an Export from the source and target Maps,
+    ///   with an output stream for debugging output.
+    ///
+    /// \param source [in] The source distribution.  This may be a
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    ///
+    /// \param out [in/out] Output stream for debugging output.
+    Export (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+            const RCP<Teuchos::FancyOStream>& out);
+
+    /// \brief Constructor (with list of parameters)
     ///
     /// \param source [in] The source distribution.  This may be a
     ///   multiply owned (overlapping) distribution.
@@ -141,11 +159,37 @@ namespace Tpetra {
             const Teuchos::RCP<const map_type>& target,
             const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
+    /// \brief Constructor (with list of parameters and debugging
+    ///   output stream)
+    ///
+    /// \param source [in] The source distribution.  This may be a
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    ///
+    /// \param out [in/out] Output stream for debugging output.
+    ///
+    /// \param plist [in/out] List of parameters.  Currently passed
+    ///   directly to the Distributor that implements communication.
+    ///   If you don't know what this should be, you should use the
+    ///   two-argument constructor, listed above.
+    Export (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+            const RCP<Teuchos::FancyOStream>& out,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
     /// \brief Copy constructor.
     ///
     /// \note Currently this only makes a shallow copy of the Export's
     ///   underlying data.
     Export (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs);
+
+    /// \brief Pseudo-copy constructor.
+    ///
+    /// \note Generates and Export object from the reverse of the provided Import object
+    ///   underlying data.
+    Export (const Import<LocalOrdinal,GlobalOrdinal,Node> & importer);
 
     //! Destructor.
     ~Export();
@@ -189,8 +233,8 @@ namespace Tpetra {
     /// \brief List of processes to which entries will be sent.
     ///
     /// The entry with local ID getExportLIDs()[i] will be sent to
-    /// process getExportImageIDs()[i].
-    ArrayView<const int> getExportImageIDs() const;
+    /// process getExportPiDs()[i].
+    ArrayView<const int> getExportPIDs() const;
 
     //! The source Map used to construct this Export.
     const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getSourceMap() const;
@@ -229,8 +273,12 @@ namespace Tpetra {
     //@}
 
   private:
-
+    //! All the data needed for executing the Export communication plan.
     RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ExportData_;
+    //! Output stream for debugging output.
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
+    //! Whether to print copious debugging output on all processes.
+    bool debug_;
 
     //! @name Initialization helper functions (called by the constructor)
     //@{
@@ -238,9 +286,9 @@ namespace Tpetra {
     //==============================================================================
     // sets up numSameIDs_, numPermuteIDs_, and the export IDs
     // these variables are already initialized to 0 by the ImportExportData ctr.
-    // also sets up permuteToLIDs_, permuteFromLIDs_, exportGIDs_, and exportLIDs_
-    void setupSamePermuteExport();
-    void setupRemote();
+    // also sets up permuteToLIDs_, permuteFromLIDs_, and exportLIDs_
+    void setupSamePermuteExport(Teuchos::Array<GlobalOrdinal> & exportGIDs);
+    void setupRemote(Teuchos::Array<GlobalOrdinal> & exportGIDs);
     //@}
   }; // class Export
 

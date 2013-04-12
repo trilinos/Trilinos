@@ -133,26 +133,9 @@ public:
   static void initialize( const size_type gang_count ,
                           const size_type worker_count );
 
-  /** \brief  Detect (if possible) the gang X gang_worker capacity.
-   *          Return zero if cannot be detected.
-   *
-   *  A "gang" of threads has strong memory affinity;
-   *  e.g., sharing a NUMA region or some level of cache memory.
-   *
-   *  If this capacity cannot be detected then one is returned.
-   */
-  static size_type detect_gang_capacity();
+  static void resize_reduce_scratch( unsigned );
 
-  /** \brief  The hardware can efficiently support up to
-   *  'gang_worker_capacity' threads per gang.
-   *
-   *  If this capacity cannot be detected then zero is returned.
-   */
-  static size_type detect_gang_worker_capacity();
-
-  //! An alignment size for arrays
-  static size_type detect_cache_line_size();
-
+  static void * root_reduce_scratch();
   //@}
 };
 
@@ -161,10 +144,7 @@ public:
 } // namespace KokkosArray
 
 #include <Host/KokkosArray_Host_View.hpp>
-
 #include <Host/KokkosArray_Host_Parallel.hpp>
-#include <Host/KokkosArray_Host_ParallelFor.hpp>
-#include <Host/KokkosArray_Host_ParallelReduce.hpp>
 
 #endif /* #define KOKKOSARRAY_HOST_HPP */
 

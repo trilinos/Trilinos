@@ -52,6 +52,7 @@
 #include <Ioss_SideSet.h>
 
 #include <Ioss_CommSet.h>
+#include <Ioss_CoordinateFrame.h>
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_Property.h>
 #include <Ioss_Field.h>

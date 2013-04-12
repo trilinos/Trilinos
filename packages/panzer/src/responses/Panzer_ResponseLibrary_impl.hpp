@@ -46,6 +46,7 @@
 #include "Panzer_ResponseContainer.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_ResponseFactory_BCStrategyAdapter.hpp"
+#include "Panzer_EquationSet_Factory.hpp"
 
 #include <boost/unordered_set.hpp>
 
@@ -473,7 +474,7 @@ namespace {
 template <typename TraitsT>
 template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
-addResponse(const std::string responseName,
+addResponse(const std::string & responseName,
             const std::vector<std::string> & blocks,
             const ResponseEvaluatorFactory_BuilderT & builder) 
 {
@@ -503,7 +504,7 @@ addResponse(const std::string responseName,
 template <typename TraitsT>
 template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
-addResponse(const std::string responseName,
+addResponse(const std::string & responseName,
             const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
             const ResponseEvaluatorFactory_BuilderT & builder) 
 {
@@ -543,7 +544,7 @@ addResponse(const std::string responseName,
 template <typename TraitsT>
 template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
-addResponse(const std::string responseName,
+addResponse(const std::string & responseName,
             const std::vector<WorksetDescriptor> & wkst_desc,
             const ResponseEvaluatorFactory_BuilderT & builder) 
 {
@@ -573,7 +574,7 @@ addResponse(const std::string responseName,
 template <typename TraitsT>
 template <typename EvalT>
 Teuchos::RCP<ResponseBase> ResponseLibrary<TraitsT>::
-getResponse(const std::string responseName) const
+getResponse(const std::string & responseName) const
 {
    typedef boost::unordered_map<std::string, Response_TemplateManager> HashMap;
    HashMap::const_iterator itr = responseObjects_.find(responseName);

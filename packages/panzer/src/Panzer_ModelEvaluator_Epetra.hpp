@@ -56,6 +56,8 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_ParameterLibrary.hpp"
+#include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_ResponseMESupportBase.hpp"
 
 #include "Thyra_VectorBase.hpp"
 
@@ -70,7 +72,6 @@ namespace panzer {
   #ifdef HAVE_STOKHOS
      template<typename, typename>  class SGEpetraLinearObjFactory;
   #endif
-  template<typename>  class ResponseLibrary;
   class EpetraLinearObjContainer;
   class SGEpetraLinearObjContainer;
   class GlobalData;
@@ -162,6 +163,51 @@ namespace panzer {
 				const Teuchos::RCP<Epetra_Import>& importer,
 				const Teuchos::RCP<Epetra_Vector>& ghosted_vector);
 
+    /** Add a response specified by a list of WorksetDescriptor objects. The specifics of the
+      * response are specified by the response factory builder.
+      *
+      * NOTE: Response factories must use a response of type <code>ResponseMESupportBase</code>. This is
+      * how the model evaluator parses and puts responses in the right location. If this condition is violated
+      * the <code>evalModel</code> call will fail. Furthermore, this method cannot be called after <code>buildRespones</code>
+      * has been called.
+      *
+      * \param[in] responseName Name of the response to be added.
+      * \param[in] wkst_desc A vector of descriptors describing the types of elements
+      *                                that make up the response.
+      * \param[in] builder Builder that builds the correct response object.
+      *
+      * \return The index associated with this response for accessing it through the ModelEvaluator interface.
+      */
+    template <typename ResponseEvaluatorFactory_BuilderT>
+    int addResponse(const std::string & responseName,
+                    const std::vector<WorksetDescriptor> & wkst_desc,
+                    const ResponseEvaluatorFactory_BuilderT & builder);
+
+    /** Build all the responses set on the model evaluator.  Once this method is called
+      * no other responses can be added. An exception is thrown if they are.
+      */
+    void buildResponses(
+         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const panzer::EquationSetFactory & eqset_factory,
+         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+         const Teuchos::ParameterList& closure_models,
+         const Teuchos::ParameterList& user_data,
+         const bool write_graphviz_file=false,
+         const std::string& graphviz_file_prefix="")
+    { responseLibrary_->buildResponseEvaluators(physicsBlocks,eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix); }
+
+    /** Build all the responses set on the model evaluator.  Once this method is called
+      * no other responses can be added. An exception is thrown if they are.
+      */
+    void buildResponses(
+         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+         const Teuchos::ParameterList& closure_models,
+         const Teuchos::ParameterList& user_data,
+         const bool write_graphviz_file=false,
+         const std::string& graphviz_file_prefix="")
+    { responseLibrary_->buildResponseEvaluators(physicsBlocks,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix); }
+
     //@}
 
   private:
@@ -232,18 +278,20 @@ namespace panzer {
     double t_init_;
     mutable Teuchos::RCP<Epetra_Vector> dummy_f_;    
     
+    /** @} */
+    
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb_;
+    mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;   // they control and provide access to evaluate
+
+    // responses
+    mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
+    std::vector<Teuchos::RCP<const Epetra_Map> > g_map_;
+    std::vector<std::string> g_names_;
+
     // parameters
     std::vector<Teuchos::RCP<Epetra_Map> > p_map_;
     std::vector<Teuchos::RCP<Epetra_Vector> > p_init_;
 
-    // responses
-    std::vector<Teuchos::RCP<Epetra_Map> > g_map_;
-    
-    /** @} */
-    
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb_;
-    mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
-    mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;   // they control and provide access to evaluate
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
     //Teuchos::RCP<panzer::ParamLib> parameter_library_;
     mutable Teuchos::Array<panzer::ParamVec> parameter_vector_;
@@ -275,6 +323,49 @@ namespace panzer {
 
     Teuchos::RCP<Teuchos::AbstractFactory<Epetra_Operator> > epetraOperatorFactory_;
   };
+
+  // Inline definition of the add response (its template on the builder type)
+  template <typename ResponseEvaluatorFactory_BuilderT>
+  int ModelEvaluator_Epetra::
+  addResponse(const std::string & responseName,
+              const std::vector<WorksetDescriptor> & wkst_desc,
+              const ResponseEvaluatorFactory_BuilderT & builder)
+  {
+     // see if the response evaluators have been constucted yet
+     TEUCHOS_TEST_FOR_EXCEPTION(responseLibrary_->responseEvaluatorsBuilt(),std::logic_error,
+                                "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                                "cannot be added to the model evaluator because evalModel has already been called!");
+
+     // add the response, and then push back its name for safe keeping
+     responseLibrary_->addResponse(responseName,wkst_desc,builder);
+
+     // check that the response can be found
+     TEUCHOS_TEST_FOR_EXCEPTION(std::find(g_names_.begin(),g_names_.end(),responseName)!=g_names_.end(),std::logic_error,
+                                "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                                "has already been added to the model evaluator!");
+
+     // check that at least there is a response value
+     Teuchos::RCP<panzer::ResponseBase> respBase = responseLibrary_->getResponse<panzer::Traits::Residual>(responseName);
+     TEUCHOS_TEST_FOR_EXCEPTION(respBase==Teuchos::null,std::logic_error,
+                                "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                                "has no residual type! Not sure what is going on!");
+
+     // check that the response supports interactions with the model evaluator
+     Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(respBase);
+     TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
+                                "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                                "resulted in bad cast to panzer::ResponseMESupportBase, the type of the response is incompatible!");
+
+     // set the response in the model evaluator
+     Teuchos::RCP<const Epetra_Map> eMap = resp->getMap();
+     g_map_.push_back(eMap);
+     g_names_.push_back(responseName);
+
+     // lets be cautious and set a vector on the response
+     resp->setVector(Teuchos::rcp(new Epetra_Vector(*eMap)));
+
+     return g_names_.size()-1;
+  }
 
   /** From a genericly typed linear object factory try and build an epetra model evaluator.
     * This method attempts to cast to the right linear object factory and then calls the

@@ -129,6 +129,7 @@ class TestReduceMulti
 public:
   typedef DeviceType    device_type ;
   typedef typename device_type::size_type size_type ;
+  typedef typename device_type::memory_space memory_space ;
 
   typedef Test::ReduceMultiFunctorTraits< ScalarType , device_type > reduce_traits ;
   typedef typename reduce_traits::value_type value_type ;

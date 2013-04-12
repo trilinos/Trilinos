@@ -44,6 +44,7 @@
 #include <gtest/gtest.h>
 
 #include <KokkosArray_Host.hpp>
+#include <KokkosArray_hwloc.hpp>
 
 #include <KokkosArray_View.hpp>
 
@@ -66,14 +67,18 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    size_t gang_count        = KokkosArray::Host::detect_gang_capacity();
-    size_t gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity();
+    const std::pair<unsigned,unsigned> core_top =
+      KokkosArray::hwloc::get_core_topology();
 
-    if ( gang_worker_count < gang_count ) {
-      gang_count = ( gang_count + 1 ) / 2 ;
-    }
-    else {
-      gang_worker_count = ( gang_worker_count + 1 ) / 2 ;
+    const unsigned core_size =
+      KokkosArray::hwloc::get_core_capacity();
+
+    const unsigned gang_count        = core_top.first ;
+    const unsigned gang_worker_count = ( core_top.second * core_size ) / 2 ;
+
+    for ( unsigned i = 0 ; i < 100 ; ++i ) {
+      KokkosArray::Host::initialize( gang_count , gang_worker_count );
+      KokkosArray::Host::finalize();
     }
 
     KokkosArray::Host::initialize( gang_count , gang_worker_count );
@@ -170,35 +175,56 @@ TEST_F( host , view_remap )
 
 //----------------------------------------------------------------------------
 
-struct HostFunctor {
+struct HostFunctor
+  : public KokkosArray::Impl::HostThreadWorker
+{
+  struct Finalize {
+
+    typedef int value_type ;
+
+    volatile int & flag ;
+
+    void operator()( const value_type & value ) const
+      { flag += value + 1 ; }
+
+    Finalize( int & f ) : flag(f) {}
+  };
+
+  struct Reduce {
+
+    typedef int value_type ;
+
+    static void init( int & update ) { update = 0 ; }
+
+    static void join( volatile int & update , const volatile int & input )
+      { update += input ; }
+  };
+
+  typedef KokkosArray::Impl::ReduceOperator< Reduce , Finalize > reduce_type ;
 
   typedef int value_type ;
 
-  volatile int & flag ;
+  const reduce_type m_reduce ;
 
-  static void init( int & update )
-    { update = 0 ; }
+  HostFunctor( int & f ) : m_reduce(f)
+    { KokkosArray::Impl::HostThreadWorker::execute(); }
 
-  static void join( volatile int & update , const volatile int & input )
-    { update += input ; }
-
-  void operator()( const value_type & value ) const
-    { flag += value + 1 ; }
-
-  HostFunctor( int & f ) : flag(f) {}
-
-  void operator()( KokkosArray::Impl::HostThread & thread ) const
+  void execute_on_thread( KokkosArray::Impl::HostThread & thread ) const
     {
-      const KokkosArray::Impl::ReduceOperator< HostFunctor , HostFunctor >
-        reduce(*this);
+      m_reduce.init( thread.reduce_data() );
 
-      reduce.init( thread.reduce_data() );
+      barrier( thread );
+      barrier( thread );
 
-      thread.barrier();
-      thread.barrier();
-      thread.reduce( reduce );
-      thread.reduce( reduce );
-      thread.barrier();
+      // Reduce to master thread:
+      reduce( thread , m_reduce );
+      if ( 0 == thread.rank() ) m_reduce.finalize( thread.reduce_data() );
+
+      // Reduce to master thread:
+      reduce( thread , m_reduce );
+      if ( 0 == thread.rank() ) m_reduce.finalize( thread.reduce_data() );
+
+      end_barrier( thread );
     }
 };
 
@@ -208,7 +234,7 @@ TEST_F( host , host_thread )
   int flag = 0 ;
 
   for ( int i = 0 ; i < N ; ++i ) {
-    KokkosArray::Impl::HostParallelLaunch< HostFunctor >( HostFunctor( flag ) );
+    HostFunctor tmp( flag );
   }
 
   ASSERT_EQ( flag , N * 2 );

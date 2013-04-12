@@ -83,17 +83,20 @@
     // Create the array of rows
     rowArray = obj_to_array_allow_conversion(Rows, NPY_INT, &newRows);
     if (rowArray == NULL) goto fail;
-    numRowEntries = (int) PyArray_MultiplyList(rowArray->dimensions,rowArray->nd);
+    numRowEntries = (int) PyArray_MultiplyList(PyArray_DIMS(rowArray),
+                                               PyArray_NDIM(rowArray));
 
     // Create the array of cols
     colArray = obj_to_array_allow_conversion(Cols, NPY_INT, &newCols);
     if (colArray == NULL) goto fail;
-    numColEntries = (int) PyArray_MultiplyList(colArray->dimensions,colArray->nd);
+    numColEntries = (int) PyArray_MultiplyList(PyArray_DIMS(colArray),
+                                               PyArray_NDIM(colArray));
 
     // Create the array of values
     valArray = obj_to_array_allow_conversion(Values, NPY_DOUBLE, &newVals);
     if (valArray == NULL) goto fail;
-    numValEntries = (int) PyArray_MultiplyList(valArray->dimensions,valArray->nd);
+    numValEntries = (int) PyArray_MultiplyList(PyArray_DIMS(valArray),
+                                               PyArray_NDIM(valArray));
 
     // Error checking
     if(numValEntries != numColEntries || numValEntries != numRowEntries ||
@@ -109,9 +112,9 @@
     // value to the matrix
     for(int i = 0 ; i < numValEntries ; ++i)
     {
-      double Value = ((double*)valArray->data)[i];
-      int Row = ((int*)rowArray->data)[i];
-      int Col = ((int*)colArray->data)[i];
+      double Value = ((double*)PyArray_DATA(valArray))[i];
+      int Row = ((int*)PyArray_DATA(rowArray))[i];
+      int Col = ((int*)PyArray_DATA(colArray))[i];
 
       result = self->methodName(Row, 1, &Value, &Col);
       if(result < 0) goto fail;
@@ -182,17 +185,20 @@
     // Create the array of rows
     rowArray = obj_to_array_allow_conversion(Rows,NPY_INT,&newRows);
     if (rowArray == NULL) goto fail;
-    numRowEntries = (int) PyArray_MultiplyList(rowArray->dimensions,rowArray->nd);
+    numRowEntries = (int) PyArray_MultiplyList(PyArray_DIMS(rowArray),
+                                               PyArray_NDIM(rowArray));
 
     // Create the array of cols
     colArray = obj_to_array_allow_conversion(Cols,NPY_INT,&newCols);
     if (colArray == NULL) goto fail;
-    numColEntries = (int) PyArray_MultiplyList(colArray->dimensions,colArray->nd);
+    numColEntries = (int) PyArray_MultiplyList(PyArray_DIMS(colArray),
+                                               PyArray_NDIM(colArray));
 
     // Create the array of values
     valArray = obj_to_array_allow_conversion(Values,NPY_DOUBLE,&newVals);
     if (valArray == NULL) goto fail;
-    numValEntries = (int) PyArray_MultiplyList(valArray->dimensions,valArray->nd);
+    numValEntries = (int) PyArray_MultiplyList(PyArray_DIMS(valArray),
+                                               PyArray_NDIM(valArray));
 
     // Error checking
     if(numValEntries != numColEntries || numValEntries != numRowEntries || 
@@ -208,9 +214,9 @@
     // value to the matrix
     for(int i = 0 ; i < numValEntries ; ++i)
     {
-      double Value = ((double*)valArray->data)[i];
-      int Row = ((int*)rowArray->data)[i];
-      int Col = ((int*)colArray->data)[i];
+      double Value = ((double*)PyArray_DATA(valArray))[i];
+      int Row = ((int*)PyArray_DATA(rowArray))[i];
+      int Col = ((int*)PyArray_DATA(colArray))[i];
 
       result = self->methodName(Row, 1, &Value, &Col);
       if(result < 0) goto fail;

@@ -131,7 +131,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(it == requests_.end(), Exceptions::RuntimeError, "MueLu::VariableContainer::Release(): cannot call Release if factory has not been requested before by factory " << reqFactory);
       if (it != requests_.end()) {
         (it->second)--;
-        if (!it->second && !GetKeepFlag())
+        if (!it->second)
           requests_.erase(it);
       }
       count_--; // decrement request counter

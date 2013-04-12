@@ -125,7 +125,7 @@ extern "C" {
                 void *data;
 
                 /** @brief The max size of the memory used for bulk transfers. */
-                int data_size;
+                uint32_t data_size;
 
                 /** @brief The error code of request. This value will be \ref NSSI_OK unless the
                  *          request status=\ref NSSI_REQUEST_ERROR . */
@@ -154,7 +154,8 @@ extern "C" {
                 /** @brief Handle for the buffer where the long arguments reside.  */
                 NNTI_buffer_t long_args_hdl;
                 /** @brief Handle for the buffer where the data reside.  */
-                NNTI_buffer_t data_hdl;
+                NNTI_buffer_t *bulk_data_hdl;
+                NNTI_buffer_t bulk_data;
                 /** @brief Handle for the buffer where the short result will be put.  */
                 NNTI_buffer_t *short_result_hdl;
                 NNTI_buffer_t short_result;

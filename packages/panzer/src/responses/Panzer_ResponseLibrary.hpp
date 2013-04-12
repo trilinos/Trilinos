@@ -244,7 +244,7 @@ public:
      * \param[in] builder Builder that builds the correct response object.
      */
    template <typename ResponseEvaluatorFactory_BuilderT>
-   void addResponse(const std::string responseName,
+   void addResponse(const std::string & responseName,
                     const std::vector<std::string> & blocks,
                     const ResponseEvaluatorFactory_BuilderT & builder); 
 
@@ -256,7 +256,7 @@ public:
      * \param[in] builder Builder that builds the correct response object.
      */
    template <typename ResponseEvaluatorFactory_BuilderT>
-   void addResponse(const std::string responseName,
+   void addResponse(const std::string & responseName,
                     const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
                     const ResponseEvaluatorFactory_BuilderT & builder); 
 
@@ -269,19 +269,19 @@ public:
      * \param[in] builder Builder that builds the correct response object.
      */
    template <typename ResponseEvaluatorFactory_BuilderT>
-   void addResponse(const std::string responseName,
+   void addResponse(const std::string & responseName,
                     const std::vector<WorksetDescriptor> & wkst_desc,
                     const ResponseEvaluatorFactory_BuilderT & builder); 
                    
    /** Access a response by name and evaluation type.
      *
-     * \param[in] responseName Name of the response to be added.
+     * \param[in] responseName Name of the response to be retrieved.
      *
      * \return Returns a nonnull response object if it exists, otherwise
      *         it returns null.
      */
    template <typename EvalT>
-   Teuchos::RCP<ResponseBase> getResponse(const std::string responseName) const;
+   Teuchos::RCP<ResponseBase> getResponse(const std::string & responseName) const;
 
    /** Get the set of responses corresponding to a particular evaluation type. This will
      * overwrite (<code>clear</code>) the vector.
