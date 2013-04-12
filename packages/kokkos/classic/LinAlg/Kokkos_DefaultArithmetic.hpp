@@ -2525,7 +2525,6 @@ namespace Kokkos {
         "B must have exactly one column.");
       // "Trivial" (no rows) dot product result is zero,
       // since trivial sum (sum of no terms) is zero.
-      double result = 0.0;
       const double* A_raw = A.getValues ().getRawPtr ();
       const double* B_raw = B.getValues ().getRawPtr ();
       Teuchos::BLAS<int,double> blas;
