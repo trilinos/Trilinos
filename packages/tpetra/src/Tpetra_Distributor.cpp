@@ -871,6 +871,10 @@ namespace Tpetra {
       // critical path length of MPI_Reduce, so reduceAllAndScatter
       // can't be more than twice as fast as the all-reduce, even if
       // the scatter is free).
+      //
+      // mfh 12 Apr 2013: See discussion in createFromSends() about
+      // how we could use this communication to propagate an error
+      // flag for "free" in a release build.
       Array<int> counts (numProcs, 1);
       int numReceivesAsInt = 0; // output
       reduceAllAndScatter<int, int> (*comm_, REDUCE_SUM, numProcs,
@@ -1136,6 +1140,22 @@ namespace Tpetra {
         Teuchos::typeName(*this) << "::createFromSends(): Process  " << gbl_badID
         << ", perhaps among other processes, got a bad send process ID.");
     }
+#else
+    // FIXME (mfh 12 Apr 2013) Rather than simply ignoring this
+    // information, we should think about how to pass it along so that
+    // all the processes find out about it.  In a release build with
+    // efficiency warnings turned off, the next communication happens
+    // in computeReceives(), in the reduceAllAndScatter
+    // (MPI_Reduce_scatter).  We could figure out how to encode the
+    // error flag in that operation, for example by replacing it with
+    // a reduceAll (MPI_Allreduce) as described there, and adding an
+    // extra element to the array that encodes the error condition
+    // (zero on all processes if no error, else 1 on any process with
+    // the error, so that the sum will produce a nonzero value if any
+    // process had an error).  I'll defer this change for now and
+    // recommend instead that people with troubles try a debug build.
+
+    (void) badID; // forestall "unused variable" compile warning
 #endif // HAVE_TPETRA_DEBUG
 
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
@@ -1158,7 +1178,6 @@ namespace Tpetra {
     else {
       selfMessage_ = false;
     }
-
 
 #ifdef HAVE_TEUCHOS_DEBUG
     bool index_neq_numActive = false;
