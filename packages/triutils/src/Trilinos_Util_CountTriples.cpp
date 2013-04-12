@@ -98,7 +98,13 @@ void Trilinos_Util_CountTriples_internal( const char *data_file,
 
       // Build the format line.
       char * formatline = new char[4*strlen(fmt) + 3];
-      snprintf( formatline, sizeof formatline, "%s %s %s %s", fmt, fmt, fmt, fmt);
+      strcpy(formatline, fmt);
+      strcat(formatline, " ");
+      strcat(formatline, fmt);
+      strcat(formatline, " ");
+      strcat(formatline, fmt);
+      strcat(formatline, " ");
+      strcat(formatline, fmt);
       sscanf( buffer, formatline, &num_rows, &num_cols, &num_nz, &hdr_type ) ; 
       delete[] formatline;
 
@@ -121,7 +127,10 @@ void Trilinos_Util_CountTriples_internal( const char *data_file,
       i = -13 ;   // Check for blank lines 
       // Build the format line.
       char * formatline = new char[2*strlen(fmt) + 2 + 2];
-      snprintf( formatline, sizeof formatline, "%s %s %s", fmt, fmt, "%f");
+      strcpy(formatline, fmt);
+      strcat(formatline, " ");
+      strcat(formatline, fmt);
+      strcat(formatline, " %f");
       sscanf( buffer, formatline, &i, &j, &val ) ;
       delete[] formatline;
 	  
