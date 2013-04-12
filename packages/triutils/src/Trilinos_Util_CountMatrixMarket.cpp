@@ -94,10 +94,7 @@ void TTrilinos_Util_CountMatrixMarket(const char *fmt,
       float val ;
       // Build the format line.
       char* formatline = new char[2*strlen(fmt) + 2 + 2];
-      strcpy(formatline, fmt);
-      strcat(formatline, " ");
-      strcat(formatline, fmt);
-      strcat(formatline, " %f");
+      snprintf( formatline, sizeof formatline, "%s %s %s", fmt, fmt, "%f" );
       sscanf( buffer, formatline, &i, &j, &val ) ;
       delete[] formatline;
       int_type needvecsize = i;

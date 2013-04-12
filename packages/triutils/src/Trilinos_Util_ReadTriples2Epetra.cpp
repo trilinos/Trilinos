@@ -131,10 +131,7 @@ int Trilinos_Util_ReadTriples2Epetra_internal( char *data_file,
       int_type i, j; 
       double val ;
       char *formatline = new char[2*strlen(fmt) + 2 + 3];
-      strcpy(formatline, fmt);
-      strcat(formatline, " ");
-      strcat(formatline, fmt);
-      strcat(formatline, " %lg");
+      snprintf( formatline, sizeof formatline, "%s %s %s", fmt, fmt, "%lg" );
       sscanf( buffer, formatline, &i, &j, &val );
       delete[] formatline;
 

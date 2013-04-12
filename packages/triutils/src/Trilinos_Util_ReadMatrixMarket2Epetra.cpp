@@ -103,10 +103,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra_internal( char *data_file,
       i = -13 ;   // Check for blank lines
       // Build the format line.
       char* formatline = new char[2*strlen(fmt) + 2 + 3];
-      strcpy(formatline, fmt);
-      strcat(formatline, " ");
-      strcat(formatline, fmt);
-      strcat(formatline, " %lg");
+      snprintf( formatline, sizeof formatline, "%s %s %s", fmt, fmt, "%lg" );
       sscanf( buffer, formatline, &i, &j, &val ) ;
       delete[] formatline;
       assert( i != -13) ; 
