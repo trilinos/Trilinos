@@ -84,21 +84,43 @@ using Thyra::DetachedSpmdVectorView;
 typedef Thyra::Ordinal Ordinal;
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, empty_proc,
-  Scalar )
+template<class Scalar>
+RCP<const DefaultSpmdVectorSpace<Scalar> >
+createZeroEleProcVS(const Ordinal localSize)
 {
   const RCP<const Teuchos::Comm<Ordinal> > comm =
     Teuchos::DefaultComm<Teuchos_Ordinal>::getComm();
 
-  Thyra::Ordinal localSize = comm->getRank()==0 ? 0 : 5;
+  const Ordinal thisLocalSize = comm->getRank()==0 ? 0 : localSize;
   RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    Thyra::defaultSpmdVectorSpace<Scalar>(comm, localSize, 5);
+    Thyra::defaultSpmdVectorSpace<Scalar>(comm, thisLocalSize, -1);
 
-  TEST_EQUALITY_CONST(vs->dim(), as<Ordinal>(5*(comm->getSize()-1)));
+  return vs;
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcConstruct,
+  Scalar )
+{
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(2);
+  TEST_EQUALITY_CONST(vs->dim(), as<Ordinal>(2*(vs->getComm()->getSize()-1)));
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
-  empty_proc )
+  emptyProcConstruct )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAssign,
+  Scalar )
+{
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(2);
+  const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
+  ECHO(assign(v.ptr(), as<Scalar>(1.5)));
+  TEST_EQUALITY_CONST(sum(*v), as<Scalar>(1.5*2*(vs->getComm()->getSize()-1)));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
+  emptyProcAssign )
 
 
 // ToDo:
