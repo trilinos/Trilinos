@@ -192,12 +192,13 @@ protected:
   /** \brief This function must be called whenever the state of
    * <tt>this</tt> changes and some internal state must be updated.
    *
-   * @param  globalDim
-   *             [in] If <tt>globalDim > 0</tt> then this determines
-   *             the global dimension of the vector space.  If <tt>globalDim==this->localSubDim()</tt>
-   *             then this is a locally replicated vector space.  If <tt>globalDim < 0</tt> then
-   *             the global dimension is computed using a global reduction.
-   *             If <tt>this->getComm()->size()==1</tt> then this argument is ignored.
+   * @param globalDim [in] If <tt>globalDim > 0</tt> then this determines the
+   * global dimension of the vector space.  If
+   * <tt>globalDim==this->localSubDim()</tt> and <tt>this->localSubDim()</tt>
+   * is the same on every process and is > 0 then this is a locally replicated
+   * vector space.  If <tt>globalDim < 0</tt> then the global dimension is
+   * computed using a global reduction.  If
+   * <tt>this->getComm()->size()==1</tt> then this argument is ignored.
    *
    * Note that calling this function may involve one or more global reductions
    * being called if this is parallel vector space so it should only be called

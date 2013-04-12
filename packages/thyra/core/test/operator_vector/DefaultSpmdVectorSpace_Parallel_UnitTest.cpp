@@ -103,10 +103,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parall
 
 // ToDo:
 
-// Test all zeros on all processes ...
+// Test all zeros on all processes and assert that dim()==0, etc ...
 
 // Test a locally repricated vectors space ...
 
 // Test a vector space with the wrong size global dim.
+
+
 
 } // namespace
