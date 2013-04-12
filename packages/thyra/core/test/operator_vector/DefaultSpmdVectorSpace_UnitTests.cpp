@@ -146,18 +146,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, serialConstructZeroSi
 
   ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
     defaultSpmdVectorSpace<Scalar>(0));
-  TEST_EQUALITY(vs->getComm(), null);
-  TEST_EQUALITY(vs->localOffset(), as<Ordinal>(0));
-  TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(0));
-  TEST_EQUALITY(vs->mapCode(), as<Ordinal>(0));
-  TEST_EQUALITY(vs->dim(), as<Ordinal>(0));
+  TEST_EQUALITY_CONST(vs->getComm(), null);
+  TEST_EQUALITY_CONST(vs->localOffset(), as<Ordinal>(0));
+  TEST_EQUALITY_CONST(vs->localSubDim(), as<Ordinal>(0));
+  TEST_EQUALITY_CONST(vs->mapCode(), as<Ordinal>(0));
+  TEST_EQUALITY_CONST(vs->dim(), as<Ordinal>(0));
 
   ECHO(const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs));
   out << "v = " << *v;
+  
+  TEST_ASSERT(vs->isCompatible(*v->space()));
+  TEST_EQUALITY_CONST(v->space()->dim(), as<Ordinal>(0));
 
   ECHO(const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, 0));
   out << "mv = " << *mv;
-
+  
+  TEST_ASSERT(vs->isCompatible(*mv->range()));
+  TEST_EQUALITY_CONST(mv->range()->dim(), as<Ordinal>(0));
+  TEST_EQUALITY_CONST(mv->domain()->dim(), as<Ordinal>(0));
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
