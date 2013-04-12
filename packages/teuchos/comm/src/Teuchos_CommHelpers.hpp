@@ -1527,45 +1527,6 @@ isend<int, long long> (const ArrayRCP<const long long>& sendBuffer,
                        const int destRank,
                        const int tag,
                        const Comm<int>& comm);
-
-// Specialization for Ordinal=int and Packet=unsigned long long.
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, unsigned long long> (const Comm<int>& comm,
-                                    const EReductionType reductType,
-                                    const int count,
-                                    const unsigned long long sendBuffer[],
-                                    unsigned long long globalReducts[]);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, unsigned long long> (const Comm<int>& comm,
-                          const ArrayRCP<unsigned long long>& recvBuffer,
-                          const int sourceRank);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, unsigned long long> (const ArrayRCP<unsigned long long> &recvBuffer,
-                                   const int sourceRank,
-                                   const int tag,
-                                   const Comm<int>& comm);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, unsigned long long> (const Comm<int>& comm,
-                               const int count,
-                               const unsigned long long sendBuffer[],
-                               const int destRank);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, unsigned long long> (const unsigned long long sendBuffer[],
-                               const int count,
-                               const int destRank,
-                               const int tag,
-                               const Comm<int>& comm);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-isend<int, unsigned long long> (const ArrayRCP<const unsigned long long>& sendBuffer,
-                                const int destRank,
-                                const int tag,
-                                const Comm<int>& comm);
 #endif // TEUCHOS_HAVE_LONG_LONG_INT
 
 // Specialization for Ordinal=int and Packet=long.
@@ -1606,45 +1567,6 @@ isend<int, long> (const ArrayRCP<const long>& sendBuffer,
                   const int destRank,
                   const int tag,
                   const Comm<int>& comm);
-
-// Specialization for Ordinal=int and Packet=unsigned long.
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, unsigned long> (const Comm<int>& comm,
-                               const EReductionType reductType,
-                               const int count,
-                               const unsigned long sendBuffer[],
-                               unsigned long globalReducts[]);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, unsigned long> (const Comm<int>& comm,
-                              const ArrayRCP<unsigned long>& recvBuffer,
-                              const int sourceRank);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, unsigned long> (const ArrayRCP<unsigned long> &recvBuffer,
-                              const int sourceRank,
-                              const int tag,
-                              const Comm<int>& comm);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, unsigned long> (const Comm<int>& comm,
-                          const int count,
-                          const unsigned long sendBuffer[],
-                          const int destRank);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, unsigned long> (const unsigned long sendBuffer[],
-                          const int count,
-                          const int destRank,
-                          const int tag,
-                          const Comm<int>& comm);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-isend<int, unsigned long> (const ArrayRCP<const unsigned long>& sendBuffer,
-                           const int destRank,
-                           const int tag,
-                           const Comm<int>& comm);
 
 // Specialization for Ordinal=int and Packet=int.
 template<>
@@ -1696,45 +1618,6 @@ isend<int, int> (const ArrayRCP<const int>& sendBuffer,
                  const int tag,
                  const Comm<int>& comm);
 
-// Specialization for Ordinal=int and Packet=unsigned int.
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, unsigned int> (const Comm<int>& comm,
-                              const EReductionType reductType,
-                              const int count,
-                              const unsigned int sendBuffer[],
-                              unsigned int globalReducts[]);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, unsigned int> (const Comm<int>& comm,
-                             const ArrayRCP<unsigned int>& recvBuffer,
-                             const int sourceRank);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, unsigned int> (const ArrayRCP<unsigned int> &recvBuffer,
-                             const int sourceRank,
-                             const int tag,
-                             const Comm<int>& comm);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, unsigned int> (const Comm<int>& comm,
-                         const int count,
-                         const unsigned int sendBuffer[],
-                         const int destRank);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, unsigned int> (const unsigned int sendBuffer[],
-                         const int count,
-                         const int destRank,
-                         const int tag,
-                         const Comm<int>& comm);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-isend<int, unsigned int> (const ArrayRCP<const unsigned int>& sendBuffer,
-                          const int destRank,
-                          const int tag,
-                          const Comm<int>& comm);
-
 // Specialization for Ordinal=int and Packet=short.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
@@ -1773,45 +1656,6 @@ isend<int, short> (const ArrayRCP<const short>& sendBuffer,
                    const int destRank,
                    const int tag,
                    const Comm<int>& comm);
-
-// Specialization for Ordinal=int and Packet=unsigned short.
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-reduceAll<int, unsigned short> (const Comm<int>& comm,
-                                const EReductionType reductType,
-                                const int count,
-                                const unsigned short sendBuffer[],
-                                unsigned short globalReducts[]);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, unsigned short> (const Comm<int>& comm,
-                               const ArrayRCP<unsigned short>& recvBuffer,
-                               const int sourceRank);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-ireceive<int, unsigned short> (const ArrayRCP<unsigned short> &recvBuffer,
-                               const int sourceRank,
-                               const int tag,
-                               const Comm<int>& comm);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, unsigned short> (const Comm<int>& comm,
-                           const int count,
-                           const unsigned short sendBuffer[],
-                           const int destRank);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
-send<int, unsigned short> (const unsigned short sendBuffer[],
-                           const int count,
-                           const int destRank,
-                           const int tag,
-                           const Comm<int>& comm);
-template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
-isend<int, unsigned short> (const ArrayRCP<const unsigned short>& sendBuffer,
-                            const int destRank,
-                            const int tag,
-                            const Comm<int>& comm);
 
 // mfh 18 Oct 2012: The specialization for Packet=char seems to be
 // causing problems such as the following:
