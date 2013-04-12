@@ -1184,6 +1184,39 @@ namespace MueLu {
     return boundaryNodes;
   } //DetectDirichletRows
 
+  template <class SC, class LO, class GO, class NO, class LMO>
+  std::string Utils<SC, LO, GO, NO, LMO>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
+    std::ostringstream ss;
+    ss << msgTag << " size =  " << A.getGlobalNumRows() << " x " << A.getGlobalNumCols() << ", nnz = " << A.getGlobalNumEntries() << std::endl;
+
+    if (params.is_null())
+      return ss.str();
+
+    if (params->isParameter("printLoadBalancingInfo") && params->get<bool>("printLoadBalancingInfo")) {
+      RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
+      GO numActiveProcesses = comm->getSize(), numProcessesWithData = 0;
+
+      // aggregate data
+      GO  numMyNnz = A.getNodeNumEntries(),     minNnz,     maxNnz;
+      GO numMyRows = A.getNodeNumRows(),    minNumRows, maxNumRows;
+      maxAll(comm,                                       numMyNnz, maxNnz);
+      maxAll(comm,                                      numMyRows, maxNumRows);
+      sumAll(comm, (GO)((numMyRows > 0) ?         1 :          0), numProcessesWithData);
+      minAll(comm, (GO)(( numMyNnz > 0) ?  numMyNnz :     maxNnz), minNnz);
+      minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
+
+      double   avgNumRows = A.getGlobalNumRows() / numProcessesWithData;
+      double nnzImbalance = ((double) maxNnz) / minNnz;
+
+      ss << msgTag << " Load balancing info:" << std::endl;
+      ss << msgTag << "   # active processes = "   << numActiveProcesses << std::endl;
+      ss << msgTag << "   # rows per proc: min = " << minNumRows << ", avg  = "  << avgNumRows << ", max  = "  << maxNumRows << std::endl;
+      ss << msgTag << "   nonzero imbalance = "    << nnzImbalance << std::endl;
+    }
+
+    return ss.str();
+  }
+
 #ifdef HAVE_MUELU_EPETRA
 //   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 //   RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB) {

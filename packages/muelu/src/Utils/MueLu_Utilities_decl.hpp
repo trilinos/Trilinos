@@ -389,6 +389,10 @@ namespace MueLu {
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol=Teuchos::ScalarTraits<SC>::zero());
 
+    /*! @brief print matrix info
+    */
+    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params = Teuchos::null);
+
   }; // class Utils
 
 #ifdef HAVE_MUELU_EPETRA
