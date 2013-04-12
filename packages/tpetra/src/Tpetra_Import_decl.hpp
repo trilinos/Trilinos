@@ -194,7 +194,7 @@ namespace Tpetra {
     ///
     /// \note Currently this only makes a shallow copy of the Import's
     ///   underlying data.
-    Import(const Import<LocalOrdinal,GlobalOrdinal,Node> & importer);
+    Import (const Import<LocalOrdinal,GlobalOrdinal,Node>& importer);
 
     /// \brief "Copy" constructor from an Export object.
     ///
@@ -206,10 +206,6 @@ namespace Tpetra {
 
     //! Destructor.
     ~Import();
-
-    //@}
-    //! @name Import Attribute Methods
-    //@{
 
     /// \brief Set parameters.
     ///

@@ -60,6 +60,21 @@ namespace {
 
 namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  Export<LocalOrdinal,GlobalOrdinal,Node>::
+  setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  {
+    bool debug = tpetraExportDebugDefault;
+    if (! plist.is_null ()) {
+      try {
+        debug = plist->get<bool> ("Debug");
+      } catch (Teuchos::Exceptions::InvalidParameter&) {}
+    }
+    debug_ = debug;
+    ExportData_->distributor_.setParameterList (plist);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
   Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target) :
@@ -509,7 +524,7 @@ namespace Tpetra {
         // instead of passing over exportGIDs again below?  That
         // would make the implementations of Export and Import look
         // more alike.
-	exportGIDs.push_back (curSourceGID);
+        exportGIDs.push_back (curSourceGID);
       }
     }
 
@@ -558,9 +573,9 @@ namespace Tpetra {
       // This call will assign any GID in the target Map with no
       // corresponding process ID a fake process ID of -1.  We'll use
       // this below to remove exports for processses that don't exist.
-      const LookupStatus lookup = 
-	target.getRemoteIndexList (exportGIDs(), 
-				   ExportData_->exportPIDs_ ());
+      const LookupStatus lookup =
+        target.getRemoteIndexList (exportGIDs(),
+                                   ExportData_->exportPIDs_ ());
       TPETRA_ABUSE_WARNING( lookup == IDNotPresent, std::runtime_error,
         "::setupSamePermuteExport(): The source Map has GIDs not found "
         "in the target Map.");
@@ -589,13 +604,13 @@ namespace Tpetra {
           size_type numValidExports = 0;
           for (size_type e = 0; e < totalNumExports; ++e) {
             if (ExportData_->exportPIDs_[e] != -1) {
-	      exportGIDs[numValidExports]               = exportGIDs[e];
+              exportGIDs[numValidExports]               = exportGIDs[e];
               ExportData_->exportLIDs_[numValidExports] = ExportData_->exportLIDs_[e];
               ExportData_->exportPIDs_[numValidExports] = ExportData_->exportPIDs_[e];
               ++numValidExports;
             }
           }
-	  exportGIDs.resize (numValidExports);
+          exportGIDs.resize (numValidExports);
           ExportData_->exportLIDs_.resize (numValidExports);
           ExportData_->exportPIDs_.resize (numValidExports);
         }
@@ -629,7 +644,7 @@ namespace Tpetra {
     // refer to the same thing.
     sort3 (ExportData_->exportPIDs_.begin(),
            ExportData_->exportPIDs_.end(),
-	   exportGIDs.begin(),
+           exportGIDs.begin(),
            ExportData_->exportLIDs_.begin());
 
     if (debug_) {
