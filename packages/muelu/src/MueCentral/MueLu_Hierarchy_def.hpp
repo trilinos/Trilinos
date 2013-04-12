@@ -480,7 +480,7 @@ namespace MueLu {
       std::string fileName = "A_" + buf.str() + ".m";
       Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("A")) );
 
-      if (i>startLevel) {
+      if (i>0) {
         fileName = "P_" + buf.str() + ".m";
         Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("P")) );
 
