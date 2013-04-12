@@ -1517,7 +1517,6 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::as;
-    typedef ArrayView<size_t>::size_type size_type;
     const char tfecfFuncName[] = "getLocalDiagOffsets";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! hasColMap (), std::runtime_error,

@@ -2674,7 +2674,6 @@ namespace Kokkos {
     Norm1 (const MultiVector<double,SerialNode> &A,
            const ArrayView<double> &norms)
     {
-      typedef Teuchos::ScalarTraits<double> STS;
       typedef double magnitude_type;
       typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
@@ -2709,7 +2708,6 @@ namespace Kokkos {
     static double
     Norm1 (const MultiVector<double,SerialNode> &A)
     {
-      typedef Teuchos::ScalarTraits<double> STS;
       typedef double magnitude_type;
       typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
