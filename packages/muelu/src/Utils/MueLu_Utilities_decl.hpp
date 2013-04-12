@@ -264,10 +264,6 @@ namespace MueLu {
     It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
     */
 
-    static void MatrixPrint(RCP<Matrix> const &Op);
-
-    static void MatrixPrint(RCP<Matrix> const &Op, std::string const &label);
-
     /*! @brief Get Matrix Diagonal
      */
     static RCP<Matrix> BuildMatrixDiagonal(RCP<Matrix> const &A);

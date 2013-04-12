@@ -540,36 +540,6 @@ namespace MueLu {
     return C;
   } // TwoMatrixMultiplyBlock
 
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MatrixPrint(RCP<Matrix> const &Op) {
-    std::string label = "unlabeled operator";
-    MatrixPrint(Op, label);
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MatrixPrint(RCP<Matrix> const &Op, std::string const &label) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-    RCP<const Epetra_CrsMatrix> epOp = Op2EpetraCrs(Op);
-    int mypid = epOp->RowMap().Comm().MyPID();
-    if (mypid == 0)
-      std::cout << "\n===============\n" << label << "\n==============" << std::endl;
-
-    if (mypid == 0) std::cout << "\n   -- row map -- \n" << std::endl;
-    std::cout << epOp->RowMap() << std::endl;
-    sleep(1);
-    epOp->RowMap().Comm().Barrier();
-
-    if (mypid == 0) std::cout << "\n   -- column map -- \n" << std::endl;
-    std::cout << epOp->ColMap() << std::endl;
-    sleep(1);
-    epOp->RowMap().Comm().Barrier();
-
-    std::cout << *epOp << std::endl;
-#endif
-  }
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildMatrixDiagonal(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &A)
   {
@@ -602,7 +572,6 @@ namespace MueLu {
       D->insertGlobalValues(i,iv,av);
     }
     D->fillComplete();
-    //MatrixPrint(D);
 
     return D;
 
