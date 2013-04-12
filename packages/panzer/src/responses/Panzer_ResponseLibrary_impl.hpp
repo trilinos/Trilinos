@@ -46,6 +46,7 @@
 #include "Panzer_ResponseContainer.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_ResponseFactory_BCStrategyAdapter.hpp"
+#include "Panzer_EquationSet_Factory.hpp"
 
 #include <boost/unordered_set.hpp>
 
