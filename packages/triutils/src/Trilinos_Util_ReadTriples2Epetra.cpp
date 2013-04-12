@@ -64,7 +64,6 @@ int Trilinos_Util_ReadTriples2Epetra_internal( char *data_file,
 				      Epetra_Vector *& x, 
 				      Epetra_Vector *& b,
 				      Epetra_Vector *&xexact,
-              const char * fmt,
 				      bool NonUniformMap=false,
 				      bool TimDavisHeader=false,
 				      bool ZeroBased=false ) {
@@ -122,18 +121,16 @@ int Trilinos_Util_ReadTriples2Epetra_internal( char *data_file,
 
     std::vector<int_type> iptrs = ptrs ; //  Current pointers into inds and vals for each row
 
-    if ( TimDavisHeader ) {
-      // Throw away the Tim Davis Header Line 
-      if (fgets( buffer, BUFSIZE, in_file ) == NULL)
-        assert(false);
-    }
+    if ( TimDavisHeader ) fgets( buffer, BUFSIZE, in_file ); // Throw away the Tim Davis Header Line 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int_type i, j; 
-      double val ;
-      char formatline[2*strlen(fmt) + 2 + 3];
-      snprintf( formatline, sizeof formatline, "%s %s %s", fmt, fmt, "%lg" );
-      sscanf( buffer, formatline, &i, &j, &val );
-
+      double val ; 
+      if(sizeof(int) == sizeof(int_type))
+        sscanf( buffer, "%d %d %lg", &i, &j, &val ) ; 
+      else if(sizeof(long long) == sizeof(int_type))
+        sscanf( buffer, "%lld %lld %lg", &i, &j, &val ) ; 
+      else
+        assert(false);
       const int_type i_index = ( ZeroBased?i:i-1 );
       const int_type j_index = ( ZeroBased?j:j-1 );
 
@@ -212,7 +209,7 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 				      bool TimDavisHeader=false,
 				      bool ZeroBased=false ) {
   return Trilinos_Util_ReadTriples2Epetra_internal<int>(data_file, symmetric, comm, map, A, x, b,
-	  xexact, "%d", NonUniformMap, TimDavisHeader, ZeroBased);
+	  xexact, NonUniformMap, TimDavisHeader, ZeroBased);
 }
 
 #endif
@@ -231,7 +228,7 @@ int Trilinos_Util_ReadTriples2Epetra64( char *data_file,
 				      bool TimDavisHeader=false,
 				      bool ZeroBased=false ) {
   return Trilinos_Util_ReadTriples2Epetra_internal<long long>(data_file, symmetric, comm, map, A, x, b,
-	  xexact, "%lld", NonUniformMap, TimDavisHeader, ZeroBased);
+	  xexact, NonUniformMap, TimDavisHeader, ZeroBased);
 }
 
 #endif
