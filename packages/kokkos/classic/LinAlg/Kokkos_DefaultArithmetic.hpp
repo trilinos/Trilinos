@@ -2502,8 +2502,8 @@ namespace Kokkos {
       Teuchos::BLAS<int,double> blas;
       for (size_t j = 0; j < nC; ++j) {
         dots[j] = blas.DOT(nR, A_raw, 1, B_raw, 1);
-        A_raw += j * A_stride;
-        B_raw += j * B_stride;
+        A_raw += A_stride;
+        B_raw += B_stride;
       }
     }
 
