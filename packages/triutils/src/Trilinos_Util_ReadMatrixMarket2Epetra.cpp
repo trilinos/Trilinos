@@ -102,10 +102,9 @@ int Trilinos_Util_ReadMatrixMarket2Epetra_internal( char *data_file,
       double val ; 
       i = -13 ;   // Check for blank lines
       // Build the format line.
-      char* formatline = new char[2*strlen(fmt) + 2 + 3];
+      char formatline[2*strlen(fmt) + 2 + 3];
       snprintf( formatline, sizeof formatline, "%s %s %s", fmt, fmt, "%lg" );
       sscanf( buffer, formatline, &i, &j, &val ) ;
-      delete[] formatline;
       assert( i != -13) ; 
       if ( diag || i != j ) { 
 	//	if ( i == j && i == 1 ) val *= 1.0001 ;
