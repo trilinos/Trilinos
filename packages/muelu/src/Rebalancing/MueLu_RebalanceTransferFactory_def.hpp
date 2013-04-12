@@ -113,6 +113,9 @@ namespace MueLu {
 
     RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
 
+    RCP<ParameterList> params = rcp(new ParameterList());;
+    params->set("printLoadBalancingInfo", true);
+
     if (pL.get<std::string>("type") == "Interpolation") {
 
       RCP<Matrix> originalP = Get< RCP<Matrix> >(coarseLevel, "P");
@@ -155,6 +158,8 @@ namespace MueLu {
 
         Set(coarseLevel, "P", rebalancedP);
 
+        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
+
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
         // That is probably something for an external permutation factory
@@ -185,12 +190,14 @@ namespace MueLu {
         RCP<Matrix> rebalancedR;
         {
           SubFactoryMonitor subM(*this, "Rebalancing restriction -- fusedImport", coarseLevel);
-	  // Note: The 3rd argument says to use originalR's domain map.
+          // Note: The 3rd argument says to use originalR's domain map.
 
-	  RCP<Map> dummy;
-	  rebalancedR = MatrixFactory::Build(originalR,*rebalanceImporter,dummy,rebalanceImporter->getTargetMap());
-	}
+          RCP<Map> dummy;
+          rebalancedR = MatrixFactory::Build(originalR,*rebalanceImporter,dummy,rebalanceImporter->getTargetMap());
+        }
         Set(coarseLevel, "R", rebalancedR);
+
+        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
 
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.

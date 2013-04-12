@@ -7,6 +7,8 @@
 
 #include "MueLu_EminPFactory_decl.hpp"
 
+#include "MueLu_Utilities.hpp"
+
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 
@@ -61,6 +63,10 @@ namespace MueLu {
     EminSolver.Iterate(*A, *X, *P0, *B, P);
 
     Set(coarseLevel, "P", P);
+
+    RCP<ParameterList> params = rcp(new ParameterList());
+    params->set("printLoadBalancingInfo", true);
+    GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*P, "P", params);
   }
 
 } // namespace MueLu
