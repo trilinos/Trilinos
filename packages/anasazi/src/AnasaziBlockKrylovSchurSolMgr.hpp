@@ -544,13 +544,11 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           int numConv = ordertest->howMany();
           cur_nevBlocks = _nevBlocks*_blockSize;
           if ( _dynXtraNev && _blockSize==1 ) {
-            std::cout << "RESTART : " << numRestarts << ", Number of converged eigenpairs: " << numConv << std::endl;
             int maxDynNev = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
             if ( cur_nevBlocks + numConv <= maxDynNev )
               cur_nevBlocks += numConv;
             else
               cur_nevBlocks = maxDynNev;
-            std::cout << "RESTART : " << numRestarts << ", cur_nevBlocks: " << cur_nevBlocks << std::endl;
           }
   
           printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << std::endl << std::endl;
