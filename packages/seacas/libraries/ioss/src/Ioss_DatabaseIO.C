@@ -443,6 +443,15 @@ namespace Ioss {
     informationRecords.push_back(info);
   }
 
+  void DatabaseIO::add_qa_record(const std::string &code, const std::string &code_qa,
+				 const std::string &date, const std::string &time)
+  {
+    qaRecords.push_back(code);
+    qaRecords.push_back(code_qa);
+    qaRecords.push_back(date);
+    qaRecords.push_back(time);
+  }
+
   void DatabaseIO::set_block_omissions(const std::vector<std::string> &omissions)
   {
     blockOmissions.assign(omissions.begin(), omissions.end());
