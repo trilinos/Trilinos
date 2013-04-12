@@ -1265,7 +1265,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   // print timing information
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor::summarize(printer_->stream(TimingDetails));
+  if ( printer_->isVerbosity( TimingDetails ) ) {
+    Teuchos::TimeMonitor::summarize( printer_->stream( TimingDetails ) );
+  }
 #endif
 
   problem_->setSolution(sol);

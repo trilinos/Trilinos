@@ -229,12 +229,12 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   std::vector<Value<ScalarType> > _ritzValues;
 
+  int _printNum;
   Teuchos::RCP<Teuchos::Time> _timerSolve, _timerRestarting;
 
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugTest_;
 
-  int _printNum;
 };
 
 
@@ -260,9 +260,11 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _verbosity(Anasazi::Errors),
   _inSituRestart(false),
   _dynXtraNev(false),
-  _timerSolve(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchurSolMgr::solve()")),
-  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchurSolMgr restarting")),
   _printNum(-1)
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+  ,_timerSolve(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchurSolMgr::solve()")),
+  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchurSolMgr restarting"))
+#endif
 {
   TEUCHOS_TEST_FOR_EXCEPTION(_problem == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
   TEUCHOS_TEST_FOR_EXCEPTION(!_problem->isProblemSet(),               std::invalid_argument, "Problem not set.");
@@ -491,7 +493,9 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
   // enter solve() iterations
   {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*_timerSolve);
+#endif
   
     // tell bks_solver to iterate
     while (1) {
@@ -538,7 +542,9 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           }
 
           // Start restarting timer and increment counter 
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor restimer(*_timerRestarting);
+#endif
           numRestarts++;
 
           int numConv = ordertest->howMany();
@@ -795,7 +801,11 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   bks_solver->currentStatus(printer->stream(FinalSummary));
 
   // print timing information
-  Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+  if ( printer->isVerbosity( TimingDetails ) ) {
+    Teuchos::TimeMonitor::summarize( printer->stream( TimingDetails ) );
+  }
+#endif
 
   _problem->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
