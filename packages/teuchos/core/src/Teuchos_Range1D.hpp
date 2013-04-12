@@ -317,16 +317,8 @@ void Range1D::assert_valid_range(Ordinal lbound_in, Ordinal ubound_in) const
 {
   (void)lbound_in; (void)ubound_in;
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    lbound_in < 0, std::range_error
-    ,"Range1D::assert_valid_range(): Error, lbound ="
-    <<lbound_in<<" must be greater than or equal to 0."
-    );
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    lbound_in > ubound_in, std::range_error
-    ,"Range1D::assert_valid_range(): Error, lbound = "
-    <<lbound_in<<" > ubound = "<<ubound_in
-    );
+  TEUCHOS_ASSERT_INEQUALITY(lbound_in, >=, 0);
+  TEUCHOS_ASSERT_INEQUALITY(ubound_in, >=, lbound_in);
 #endif
 }
 
