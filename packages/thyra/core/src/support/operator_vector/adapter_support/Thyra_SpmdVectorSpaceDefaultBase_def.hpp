@@ -164,6 +164,7 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
   namespace SVSU = SpmdVectorSpaceUtilities;
 
   localSubDim_ = this->localSubDim(); 
+
   const Teuchos::RCP<const Teuchos::Comm<Ordinal> >
     comm = this->getComm();
 
@@ -171,24 +172,39 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
   if (nonnull(comm)) {
     numProc = comm->getSize();
   }
-  if (numProc > 1 && (localSubDim_ < globalDim || globalDim < 0)) {
+
+  Ordinal sumLocalSubDims = localSubDim_;
+  if (numProc > 1) {
     mapCode_ = SVSU::computeMapCode(*comm, localSubDim_);
     defaultLocalOffset_ = SVSU::computeLocalOffset(*comm, localSubDim_);
-    if (globalDim < 1) {
-      defaultGlobalDim_ = SVSU::computeGlobalDim(*comm, localSubDim_);
-    }
-    else {
-      defaultGlobalDim_ = globalDim;
-      // ToDo: Perform global reduction to check that this is correct in
-      // debug build
-    }
+    sumLocalSubDims = SVSU::computeGlobalDim(*comm, localSubDim_);
   }
-  else {
+
+  if (sumLocalSubDims == 0) {
+    // This is an uninitialized space (zero on every process)
+    mapCode_  = -1;     // Uninitialized!
+    defaultLocalOffset_ = -1;
+    defaultGlobalDim_ = -1;
+  }
+  else if (
+    numProc == 1
+    ||
+    (
+      sumLocalSubDims / numProc == globalDim
+      &&
+      sumLocalSubDims % numProc == 0
+      )
+    )
+  {
     // This is a serial or a locally-replicated parallel
     // vector space.
     mapCode_ = localSubDim_;
     defaultLocalOffset_ = 0;
     defaultGlobalDim_ = localSubDim_;
+  }
+  else {
+    // This is a regular distributed vector space
+    defaultGlobalDim_ = sumLocalSubDims;
   }
 
   if (defaultGlobalDim_ == 0) {
@@ -198,6 +214,7 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
   }
 
   smallVecSpcFcty_ = defaultSpmdVectorSpaceFactory<Scalar>(comm);
+
 }
 
  
