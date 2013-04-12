@@ -3854,6 +3854,7 @@ void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
   int_type * VbrIndices = new int_type[MaxNnzPerRow];
   double * VbrValues = new double[MaxBlockSize];
   int BlockRows = NumPDEEqns_;
+  int ierr;
     
   // cycle over all the local rows. 
 
@@ -3866,7 +3867,7 @@ void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
 
     // extract Crs row
 
-    (void) matrix_->ExtractMyRowView(i,CrsNumEntries,
+    ierr = matrix_->ExtractMyRowView(i,CrsNumEntries,
 				     CrsValues,CrsIndices);
 
     // matrix_ is in local form. Need global indices
