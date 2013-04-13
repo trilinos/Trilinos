@@ -70,10 +70,10 @@ namespace Teuchos {
  * etc.).
  *
  * Constructing using <tt>\ref Range1D::Range1D "Range1D(INVALID)"</tt> yields
- * an invalid range <tt>[0,-1]</tt> with <tt>size() == 0</tt>.  Once
+ * an invalid range <tt>[0,-2]</tt> with <tt>size() == -1</tt>.  Once
  * constructed with <tt>Range1D(INVALID)</tt>, a <tt>%Range1D</tt> object can
  * pass through many other operations that may change <tt>%lbound()</tt> and
- * <tt>%ubound()</tt> but will never change <tt>size()==0</tt>.
+ * <tt>%ubound()</tt> but will never change <tt>size()==-1</tt>.
  *
  * Constructing using <tt>\ref Range1D::Range1D "Range1D(lbound,ubound)"</tt>
  * yields a finite-dimensional zero-based range.  The validity of constructed
@@ -115,9 +115,9 @@ public:
    *
    * Postconditions: <ul>
    * <li> <tt>this->full_range() == false</tt>
-   * <li> <tt>this->size() == 0</tt>
+   * <li> <tt>this->size() == -1</tt>
    * <li> <tt>this->lbound()==0</tt>
-   * <li> <tt>this->ubound()==-1</tt>
+   * <li> <tt>this->ubound()==-2</tt>
    * </ul>
    */
   inline Range1D(EInvalidRange);
@@ -126,15 +126,19 @@ public:
    *
    * Preconditions: <ul>
    * <li> <tt>lbound >= 0</tt> (throw \c out_of_range)
-   * <li> <tt>ubound >= lbound</tt> (throw \c out_of_range)
+   * <li> <tt>ubound >= lbound-1</tt> (throw \c out_of_range)
    * </ul>
    *
    * Postconditions: <ul>
-   *	<li> <tt>this->full_range() == false</tt>
+   * <li> <tt>this->full_range() == false</tt>
    * <li> <tt>this->size() == ubound - lbound + 1</tt>
    * <li> <tt>this->lbound() == lbound</tt>
    * <li> <tt>this->ubound() == ubound</tt>
-   *	</ul>
+   * </ul>
+   *
+   * \note It is allowed for <tt>ubound == lbound-1</tt> which yields a
+   * zero-sized range.  There are use cases where this is useful so it is
+   * allowed.
    */
   inline Range1D(Ordinal lbound, Ordinal ubound);
 
@@ -286,7 +290,7 @@ Range1D::Range1D()
 
 inline
 Range1D::Range1D( EInvalidRange )
-  : lbound_(0), ubound_(-1)
+  : lbound_(0), ubound_(-2)
 {}
 
 
@@ -347,7 +351,7 @@ void Range1D::assert_valid_range(Ordinal lbound_in, Ordinal ubound_in) const
   (void)lbound_in; (void)ubound_in;
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_INEQUALITY(lbound_in, >=, 0);
-  TEUCHOS_ASSERT_INEQUALITY(ubound_in, >=, lbound_in);
+  TEUCHOS_ASSERT_INEQUALITY(ubound_in, >=, lbound_in - 1);
 #endif
 }
 

@@ -102,11 +102,51 @@ TEUCHOS_UNIT_TEST( Range1D, range_invalid )
 {
   ECHO(Range1D rng(Range1D::INVALID));
   TEST_EQUALITY_CONST(rng.lbound(), 0);
-  TEST_EQUALITY_CONST(rng.ubound(), -1);
+  TEST_EQUALITY_CONST(rng.ubound(), -2);
+  TEST_EQUALITY_CONST(rng.size(), -1);
   TEST_ASSERT(!rng.full_range());
   TEST_ASSERT(!rng.in_range(-1));
   TEST_ASSERT(!rng.in_range(0));
   TEST_ASSERT(!rng.in_range(1));
+}
+
+
+TEUCHOS_UNIT_TEST( Range1D, range_0_m1 )
+{
+  ECHO(Range1D rng(0,-1));
+  TEST_EQUALITY_CONST(rng.lbound(), 0);
+  TEST_EQUALITY_CONST(rng.ubound(), -1);;
+  TEST_EQUALITY_CONST(rng.size(), 0);
+  TEST_ASSERT(!rng.full_range());
+  TEST_ASSERT(!rng.in_range(-1));
+  TEST_ASSERT(!rng.in_range(0));
+  TEST_ASSERT(!rng.in_range(1));
+}
+
+
+TEUCHOS_UNIT_TEST( Range1D, range_1_0 )
+{
+  ECHO(Range1D rng(1,0));
+  TEST_EQUALITY_CONST(rng.lbound(), 1);
+  TEST_EQUALITY_CONST(rng.ubound(), 0);;
+  TEST_EQUALITY_CONST(rng.size(), 0);
+  TEST_ASSERT(!rng.full_range());
+  TEST_ASSERT(!rng.in_range(0));
+  TEST_ASSERT(!rng.in_range(1));
+  TEST_ASSERT(!rng.in_range(2));
+}
+
+
+TEUCHOS_UNIT_TEST( Range1D, range_4_3 )
+{
+  ECHO(Range1D rng(4,3));
+  TEST_EQUALITY_CONST(rng.lbound(), 4);
+  TEST_EQUALITY_CONST(rng.ubound(), 3);
+  TEST_EQUALITY_CONST(rng.size(), 0);
+  TEST_ASSERT(!rng.full_range());
+  TEST_ASSERT(!rng.in_range(2));
+  TEST_ASSERT(!rng.in_range(3));
+  TEST_ASSERT(!rng.in_range(4));
 }
 
 
@@ -178,9 +218,9 @@ TEUCHOS_UNIT_TEST( Range1D, outOfRange )
 {
   TEST_THROW(Range1D(-1,-1), std::out_of_range);
   TEST_THROW(Range1D(-1,1), std::out_of_range);
-  TEST_THROW(Range1D(0,-1), std::out_of_range);
-  TEST_THROW(Range1D(1,0), std::out_of_range);
-  TEST_THROW(Range1D(2,1), std::out_of_range);
+  TEST_THROW(Range1D(2,0), std::out_of_range);
+  TEST_THROW(Range1D(3,0), std::out_of_range);
+  TEST_THROW(Range1D(5,3), std::out_of_range);
   TEST_THROW(Range1D(0,0)-1, std::out_of_range);
   TEST_THROW(Range1D(0,0)+(-1), std::out_of_range);
 }
