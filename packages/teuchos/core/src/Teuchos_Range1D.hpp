@@ -54,25 +54,26 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Assert.hpp"
 
+
 namespace Teuchos {
+
 
 /** \brief Subregion Index Range Class.
  * 
- * The class <tt>%Range1D</tt> abstracts a 1-D, zero-based, range of indexes.
- * It is used to index into vectors and matrices and return subregions of them
- * respectively.
+ * The class <tt>%Range1D</tt> encapsulates a 1-D, zero-based, range of
+ * non-negative indexes.  It is used to index into vectors and matrices and
+ * return subregions of them respectively.
  *
  * Constructing using <tt>Range1D()</tt> yields a range that represents the
- * entire dimension of an object <tt>[0, max_ubound-1]</tt> (an entire std::vector,
- * all the rows in a matrix, or all the columns in a matrix etc.).
+ * entire dimension of an object <tt>[0, max_ubound]</tt> (an entire
+ * std::vector, all the rows in a matrix, or all the columns in a matrix
+ * etc.).
  *
  * Constructing using <tt>\ref Range1D::Range1D "Range1D(INVALID)"</tt> yields
- * an invalid range <tt>[0,-1]</tt> with <tt>size() == 0</tt>.  In fact the
- * condition <tt>size()==0</tt> is the determining flag that a range is not
- * valid.  Once constructed with <tt>Range1D(INVALID)</tt>, a
- * <tt>%Range1D</tt> object can pass through many other operations that may
- * change <tt>%lbound()</tt> and <tt>%ubound()</tt> but will never change
- * <tt>size()==0</tt>.
+ * an invalid range <tt>[0,-1]</tt> with <tt>size() == 0</tt>.  Once
+ * constructed with <tt>Range1D(INVALID)</tt>, a <tt>%Range1D</tt> object can
+ * pass through many other operations that may change <tt>%lbound()</tt> and
+ * <tt>%ubound()</tt> but will never change <tt>size()==0</tt>.
  *
  * Constructing using <tt>\ref Range1D::Range1D "Range1D(lbound,ubound)"</tt>
  * yields a finite-dimensional zero-based range.  The validity of constructed
@@ -99,34 +100,34 @@ public:
   /** \brief Used for Range1D(INVALID) */
   static const Range1D Invalid;
 
-  /** \brief Constructs a range representing the entire range.
+  /** \brief Construct a full range.
    *
    * Postconditions: <ul>
-   *	<li> <tt>this->full_range()==true</tt>
+   * <li> <tt>this->full_range()==true</tt>
    * <li> <tt>this->size()</tt> is a very large number
    * <li> <tt>this->lbound()==0</tt>
    * <li> <tt>this->ubound()</tt> is a very large number
-   *	</ul>
+   * </ul>
    */
   inline Range1D();
 
-  /** Constructs an invalid (zero) range.
+  /** \brief Constructs an invalid range.
    *
    * Postconditions: <ul>
-   *	<li> <tt>this->full_range() == false</tt>
+   * <li> <tt>this->full_range() == false</tt>
    * <li> <tt>this->size() == 0</tt>
    * <li> <tt>this->lbound()==0</tt>
    * <li> <tt>this->ubound()==-1</tt>
-   *	</ul>
+   * </ul>
    */
-  inline Range1D( EInvalidRange );
+  inline Range1D(EInvalidRange);
 
-  /** \brief Constructs a range that represents the range <tt>[lbound, ubound]</tt>.
+  /** \brief Construct a finite range <tt>[lbound, ubound]</tt>.
    *
    * Preconditions: <ul>
-   *	<li> <tt>lbound >= 0</tt> (throw \c range_error)
-   *	<li> <tt>lbound <= ubound</tt> (throw \c range_error)
-   *	</ul>
+   * <li> <tt>lbound >= 0</tt> (throw \c out_of_range)
+   * <li> <tt>ubound >= lbound</tt> (throw \c out_of_range)
+   * </ul>
    *
    * Postconditions: <ul>
    *	<li> <tt>this->full_range() == false</tt>
@@ -137,9 +138,7 @@ public:
    */
   inline Range1D(Ordinal lbound, Ordinal ubound);
 
-  /** Returns \c true if the range represents the entire region (constructed
-   * from \c Range1D())
-   */
+  /** \brief Returns \c true if the range represents the entire region. */
   inline bool full_range() const;
 
   /** \brief Return lower bound of the range */
@@ -154,21 +153,27 @@ public:
   /** \brief Return true if the index is in range */
   inline bool in_range(Ordinal i) const;
 
-  /** \brief Increment the range by a constant */
+  /** \brief Increment the range by a constant
+   *
+   * \precondition <tt>this->lbound() + incr >= 0</tt> (throws \c out_of_range)
+   */
   inline Range1D& operator+=( Ordinal incr );
 
-  /** \brief  Deincrement the range by a constant */
+  /** \brief Deincrement the range by a constant.
+   *
+   * \precondition <tt>this->lbound() - incr >= 0</tt> (throws \c out_of_range)
+   */
   inline Range1D& operator-=( Ordinal incr );
 
 private:
+
   Ordinal lbound_;
-  Ordinal ubound_;	// = INT_MAX-1 flag for entire range
-  // lbound == ubound == 0 flag for invalid range.
+  Ordinal ubound_;
   
-  // assert that the range is valid
   inline void assert_valid_range(Ordinal lbound, Ordinal ubound) const;
   
 }; // end class Range1D
+
   
 /** \brief rng1 == rng2.
  *
@@ -180,6 +185,19 @@ inline bool operator==(const Range1D& rng1, const Range1D& rng2 )
 {
   return rng1.lbound() == rng2.lbound() && rng1.ubound() == rng2.ubound();
 }
+
+  
+/** \brief rng1 == rng2.
+ *
+ * @return Returns <tt>rng1.lbound() == rng2.ubound() && rng1.ubound() == rng2.ubound()</tt>.
+ *
+ * \relates Range1D
+ */
+inline bool operator!=(const Range1D& rng1, const Range1D& rng2 )
+{
+  return !(rng1 == rng2);
+}
+
 
 /** \brief rng_lhs = rng_rhs + i.
   *
@@ -197,6 +215,7 @@ inline Range1D operator+(const Range1D &rng_rhs, Range1D::Ordinal i)
     return Range1D(i+rng_rhs.lbound(), i+rng_rhs.ubound());
 }
 
+
 /** \brief rng_lhs = i + rng_rhs.
   *
   * Increments the upper and lower bounds by a constant.
@@ -213,6 +232,7 @@ inline Range1D operator+(Range1D::Ordinal i, const Range1D &rng_rhs)
     return Range1D(i+rng_rhs.lbound(), i+rng_rhs.ubound());
 }
 
+
 /** \brief rng_lhs = rng_rhs - i.
   *
   * Deincrements the upper and lower bounds by a constant.
@@ -228,6 +248,7 @@ inline Range1D operator-(const Range1D &rng_rhs, Range1D::Ordinal i)
 {
     return Range1D(rng_rhs.lbound()-i, rng_rhs.ubound()-i);
 }
+
 
 /** \brief Return a bounded index range from a potentially unbounded index
   * range.
@@ -247,12 +268,20 @@ inline Range1D operator-(const Range1D &rng_rhs, Range1D::Ordinal i)
 inline Range1D full_range(const Range1D &rng, Range1D::Ordinal lbound, Range1D::Ordinal ubound)
 {	return rng.full_range() ? Range1D(lbound,ubound) : rng; }
 
+  
+/** \brief Print out to ostream.
+ *
+ * \relates Range1D
+ */
+std::ostream& operator<<(std::ostream &out, const Range1D& rng);
+
+
 // //////////////////////////////////////////////////////////
 // Inline members
 
 inline
 Range1D::Range1D()
-  : lbound_(0), ubound_(INT_MAX-1)
+  : lbound_(0), ubound_(std::numeric_limits<Ordinal>::max()-1)
 {}
 
 inline
@@ -270,7 +299,7 @@ Range1D::Range1D(Ordinal lbound_in, Ordinal ubound_in)
 
 inline
 bool Range1D::full_range() const {
-  return ubound_ == INT_MAX-1;
+  return (lbound_ == 0 && ubound_ == std::numeric_limits<Ordinal>::max()-1);
 }
 
 inline
