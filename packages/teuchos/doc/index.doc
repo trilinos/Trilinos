@@ -81,11 +81,10 @@ contains basic, general-purpose utilities.
 <li> <b> Memory Management: </b>
 
   For a detailed description of the Teuchos memory management classes, see the
-  report <a
-  href="http://www.cs.sandia.gov/~rabartl/TeuchosMemoryManagementSAND.pdf">Teuchos
-  C++ Memory Management Classes, Idioms, and Related
-  Topics: The Complete Reference</a>.  An abbreviated table of contents can be
-  found in the Preface of the document.
+  report <a href="TeuchosMemoryManagementSAND.pdf">Teuchos C++ Memory
+  Management Classes, Idioms, and Related Topics: The Complete Reference</a>.
+  An abbreviated table of contents can be found in the Preface of the
+  document.
 
   The classes are:
 
