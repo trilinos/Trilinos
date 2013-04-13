@@ -716,8 +716,9 @@ namespace stk {
       }
 
       const stk::mesh::PartVector& get_io_omitted_parts() { return m_io_omitted_parts; }
-      void set_io_omitted_parts(stk::mesh::PartVector& io_omitted_parts) { m_io_omitted_parts = io_omitted_parts; }
+      void add_io_omitted_part(stk::mesh::Part * omitted_part) { m_io_omitted_parts.push_back(omitted_part); }
 
+      void output_active_children_only(bool flag) { m_outputActiveChildrenOnly = flag; }
 
     private:
 
@@ -777,6 +778,7 @@ namespace stk {
       bool                                  m_isAdopted;
       bool                                  m_needsDelete;
       bool                                  m_dontCheckState;
+      bool                                  m_outputActiveChildrenOnly;
       std::string                           m_filename;
       stk::ParallelMachine                  m_comm;
 
@@ -807,6 +809,7 @@ namespace stk {
 
       std::string                           m_ioss_read_options;
       std::string                           m_ioss_write_options;
+
     private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 

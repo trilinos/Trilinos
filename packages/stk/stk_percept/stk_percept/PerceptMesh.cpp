@@ -97,6 +97,7 @@ namespace stk {
       m_isAdopted(false),
       m_needsDelete(false),
       m_dontCheckState(false),
+      m_outputActiveChildrenOnly(false),
       m_filename(),
       m_comm(comm),
       m_streaming_size(0),
@@ -1207,6 +1208,7 @@ namespace stk {
         m_isAdopted(true),
         m_needsDelete(false),
         m_dontCheckState(false),
+        m_outputActiveChildrenOnly(false),
         m_filename(),
         m_comm(),
         m_streaming_size(0),
@@ -2064,6 +2066,7 @@ namespace stk {
         }
     }
 
+
 #if 0
     /// now we have created all fields we need, we can commit the meta data and actually read the bulk data
 
@@ -2190,12 +2193,9 @@ namespace stk {
             //if (!get_rank()) std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
             const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
             if (entity)
+            {
               stk::io::remove_io_part_attribute(part);
-            else if (!get_rank())
-              {
-                //std::cout << "tmp srk checkForPartsToAvoidWriting found part to omit but it's not a real part,  part= " << name << std::endl;
-              }
-
+            }
           }
         }
 
@@ -2211,12 +2211,9 @@ namespace stk {
             //std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() omitted part= " << name << std::endl;
             const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
             if (entity)
+            {
               stk::io::remove_io_part_attribute(part);
-            else if (!get_rank())
-              {
-                //std::cout << "tmp srk checkForPartsToAvoidWriting found part to omit from get_io_omitted_parts() but it's not a real part,  part= " << name << std::endl;
-              }
-
+            }
           }
         }
     }
@@ -2305,8 +2302,6 @@ namespace stk {
       //std::cout << "tmp dump_elements PerceptMesh::writeModel: " << out_filename << std::endl;
       //dump_elements();
 
-      checkForPartsToAvoidWriting();
-
       //checkState("writeModel" );
       stk::mesh::BulkData& bulk_data = *m_bulkData;
 
@@ -2317,6 +2312,30 @@ namespace stk {
       const stk::ParallelMachine& comm = m_bulkData->parallel();
       stk::io::MeshData mesh_data_0;
       stk::io::MeshData& mesh_data = (!Teuchos::is_null(m_iossMeshData) && m_sync_io_regions ) ? *m_iossMeshData : mesh_data_0;
+      checkForPartsToAvoidWriting();
+
+      if (m_outputActiveChildrenOnly)
+      {
+        if (Teuchos::is_null(mesh_data.selector()))
+        {
+          Teuchos::RCP<stk::mesh::Selector> io_mesh_selector = Teuchos::rcp(new stk::mesh::Selector(get_fem_meta_data()->universal_part()));
+          mesh_data.set_selector(io_mesh_selector);
+        }
+        stk::mesh::Selector & io_mesh_selector = *(mesh_data.selector());
+
+        stk::mesh::Part* active_child_elements_part = get_part("refine_active_elements_part");
+        stk::mesh::Part* inactive_parent_elements_part = get_part("refine_inactive_elements_part");
+
+        unsigned num_inactive = stk::mesh::count_selected_entities(stk::mesh::Selector(*inactive_parent_elements_part), bulk_data.buckets(stk::mesh::MetaData::ELEMENT_RANK));
+        if (0 == num_inactive)
+        {
+          io_mesh_selector = stk::mesh::Selector(get_fem_meta_data()->universal_part());
+        }
+        else
+        {
+          io_mesh_selector = stk::mesh::Selector(*active_child_elements_part);
+        }
+      }
 
       if (!(!Teuchos::is_null(m_iossMeshData) && m_sync_io_regions)) {
         if (!mesh_data.bulk_data_is_set())
@@ -4235,15 +4254,12 @@ namespace stk {
       GeometryFactory factory(&gk, &mesh_geometry);
       factory.read_file(geometry_file_name, this);
 
-      const stk::mesh::PartVector& eMeshOmittedParts = get_io_omitted_parts();
-      stk::mesh::PartVector newOmittedParts = eMeshOmittedParts;
       const std::vector<GeometryEvaluator*>& geomEvals = mesh_geometry.getGeomEvaluators();
       for (unsigned i = 0; i < geomEvals.size(); i++)
         {
           if (!get_rank()) std::cout << " tmp srk adding geomEvals[i]->mPart->name()..." << geomEvals[i]->mPart->name() << std::endl;
-          newOmittedParts.push_back(geomEvals[i]->mPart);
+          add_io_omitted_part(geomEvals[i]->mPart);
         }
-      set_io_omitted_parts(newOmittedParts);
 #else
         throw std::runtime_error("no geometry available, set STK_PERCEPT_HAS_GEOMETRY flag: not implemented");
 #endif
