@@ -457,7 +457,12 @@ namespace MueLu {
         }
 
         // update X += P * coarseX
-        P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
+        // Note that due to what may be round-off error accumulation, use of the fused kernel
+        //    P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
+        // can in some cases result in slightly higher iteration counts.
+        RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(), X.getNumVectors(),false);
+        P->apply(*coarseX, *correction, Teuchos::NO_TRANS, one, zero);
+        X.update(one, *correction, one);
 
         if (Fine->IsAvailable("PostSmoother")) {
           RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
