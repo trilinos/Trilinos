@@ -2250,13 +2250,15 @@ namespace Tpetra {
         ! domainMapsMatch, std::runtime_error,
         ": The CrsMatrix's domain Map does not match the graph's domain Map.  "
         "The graph cannot be changed because it was given to the CrsMatrix "
-        "constructor as const.");
+        "constructor as const.  You can fix this by passing in the graph's "
+        "domain Map and range Map to the matrix's fillComplete call.");
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         ! rangeMapsMatch, std::runtime_error,
         ": The CrsMatrix's range Map does not match the graph's range Map.  "
         "The graph cannot be changed because it was given to the CrsMatrix "
-        "constructor as const.");
+        "constructor as const.  You can fix this by passing in the graph's "
+        "domain Map and range Map to the matrix's fillComplete call.");
     }
     else {
       // Set the graph's domain and range Maps.  This will clear the
