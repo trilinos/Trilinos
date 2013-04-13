@@ -232,10 +232,6 @@ int main(int argc, char *argv[]) {
 
   mueLuFactory.SetupHierarchy(*H);
 
-  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  fos->setOutputToRootOnly(-1);
-  H->print(*fos);
-
   tm = Teuchos::null;
   //
   // Solve Ax = b
