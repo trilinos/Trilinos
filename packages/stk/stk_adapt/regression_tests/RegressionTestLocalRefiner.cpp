@@ -968,7 +968,220 @@ namespace stk
         }
       }
 
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
 
+      class Mimic_Encr_Entity_Marker {
+      public:
+        Mimic_Encr_Entity_Marker(stk::percept::PerceptMesh & pMesh, const stk::mesh::FieldBase * marker_field, const stk::mesh::EntityRank entity_rank)
+        : my_pMesh(pMesh), my_marker_field(marker_field), my_entity_rank(entity_rank) {}
+        void update_markers();
+        Int get_marker(stk::mesh::Entity entity);
+
+      protected:
+        stk::percept::PerceptMesh & my_pMesh;
+        const stk::mesh::FieldBase * my_marker_field;
+        const stk::mesh::EntityRank my_entity_rank;
+        std::vector<stk::mesh::Entity> my_entities;
+        std::vector<Int> my_markers;
+      };
+
+      class Mimic_Encr_Percept_Edge_Adapter : public stk::adapt::IEdgeAdapter
+      {
+      public:
+        Mimic_Encr_Percept_Edge_Adapter(Mimic_Encr_Entity_Marker & element_marker, stk::percept::PerceptMesh & pMesh, stk::adapt::UniformRefinerPatternBase & bp, stk::mesh::FieldBase * proc_rank_field=0)
+        : stk::adapt::IEdgeAdapter(pMesh, bp, proc_rank_field), my_element_marker(element_marker) {}
+        virtual int mark(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
+          double *coord0, double *coord1, std::vector<int>* existing_edge_marks);
+      protected:
+        Mimic_Encr_Entity_Marker & my_element_marker;
+      };
+
+      int
+      Mimic_Encr_Percept_Edge_Adapter::mark(
+          const stk::mesh::Entity element,
+          unsigned which_edge,
+          stk::mesh::Entity node0,
+          stk::mesh::Entity node1,
+          double *coord0,
+          double *coord1,
+          std::vector<int>* existing_edge_marks)
+      {
+        std::vector<stk::mesh::Entity> nodes;
+        nodes.push_back(node0);
+        nodes.push_back(node1);
+        std::vector<stk::mesh::Entity> edge_elems;
+        get_entities_through_relations(nodes, stk::mesh::MetaData::ELEMENT_RANK, edge_elems);
+        ThrowRequire(!edge_elems.empty());
+
+        bool all_marked_for_refinement = true;
+        bool all_marked_for_unrefinement = true;
+        for ( UInt ie = 0 ; ie < edge_elems.size(); ++ie )
+        {
+          stk::mesh::Entity edge_elem = edge_elems[ie];
+          ThrowRequire(edge_elem.is_valid());
+
+          Int element_marker = my_element_marker.get_marker(edge_elem);
+          if (element_marker <= 0) all_marked_for_refinement = false;
+          if (element_marker >= 0) all_marked_for_unrefinement = false;
+        }
+        ThrowRequire(!(all_marked_for_refinement && all_marked_for_unrefinement));
+
+        if (all_marked_for_refinement)
+        {
+          return stk::adapt::DO_REFINE;
+        }
+        else if (all_marked_for_unrefinement)
+        {
+          return stk::adapt::DO_UNREFINE;
+        }
+        return stk::adapt::DO_NOTHING;
+      }
+
+      void
+      Mimic_Encr_Entity_Marker::update_markers()
+      {
+        my_entities.clear();
+        stk::mesh::get_entities( *my_pMesh.get_bulk_data(), my_entity_rank, my_entities );
+        my_markers.resize(my_entities.size());
+
+        for (unsigned i=0; i<my_entities.size(); ++i)
+        {
+          mesh::Entity elem = my_entities[i];
+
+          if (my_pMesh.isParentElement(elem,false))
+          {
+            my_markers[i] = stk::adapt::DO_NOTHING;
+          }
+          else
+          {
+            my_markers[i] = *((Int *)stk::mesh::field_data( *my_marker_field, my_entities[i] ));
+          }
+          //std::cout << "Storing element marker for element " << elem.identifier() << " = " << my_markers[i] << std::endl;
+        }
+      }
+
+      Int
+      Mimic_Encr_Entity_Marker::get_marker(stk::mesh::Entity entity)
+      {
+        std::vector<stk::mesh::Entity>::iterator it = std::find(my_entities.begin(), my_entities.end(), entity);
+        if (it == my_entities.end())
+        {
+          return stk::adapt::DO_NOTHING;
+        }
+        else
+        {
+          ThrowRequire(it->is_valid());
+          const UInt index = std::distance(my_entities.begin(), it);
+          return my_markers[index];
+        }
+      }
+
+      static void mimic_encr_function_and_element_marker(stk::percept::PerceptMesh & pMesh, double time, ScalarFieldType & function_field, mesh::Field<int> & marker_field)
+      {
+        std::vector<stk::mesh::Entity> entities;
+        stk::mesh::get_entities( *pMesh.get_bulk_data(), stk::mesh::MetaData::NODE_RANK, entities );
+
+        VectorFieldType* coordField = pMesh.get_coordinates_field();
+
+        for (unsigned i=0; i<entities.size(); ++i)
+        {
+          mesh::Entity node = entities[i];
+          double *coord_data = PerceptMesh::field_data(coordField, node);
+          double *function_data = PerceptMesh::field_data(&function_field, node);
+          *function_data = (2.0*time-10.0-coord_data[0]-coord_data[1])*(2.0*time-10.0-coord_data[0]-coord_data[1]);
+        }
+
+        // Now calculate element field marker
+
+        const double refine_lower = 0.0;
+        const double refine_upper = 1.0;
+        double coarsen_lower = 4.0;
+        double coarsen_upper = 1000.0;
+
+        entities.clear();
+        stk::mesh::get_entities( *pMesh.get_bulk_data(), stk::mesh::MetaData::ELEMENT_RANK, entities );
+
+        for (unsigned i=0; i<entities.size(); ++i)
+        {
+          mesh::Entity elem = entities[i];
+
+          if (pMesh.isParentElement(elem,false)) continue;
+
+          int elem_mark = 0;
+          const mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::MetaData::NODE_RANK );
+          unsigned num_node = elem_nodes.size();
+          for (unsigned inode=0; inode < num_node; inode++)
+          {
+            mesh::Entity node = elem_nodes[ inode ].entity();
+            double cur_value = *(PerceptMesh::field_data(&function_field, node));
+
+            //If one of the values is in the refine region, immediately mark and return
+            if(refine_upper>=cur_value && cur_value>=refine_lower)
+            {
+              elem_mark = 1;
+              break;
+            }
+            else if(coarsen_lower<=cur_value && cur_value<=coarsen_upper)
+            {
+              elem_mark = -1;
+            }
+          }
+          Int * marker_data = stk::mesh::field_data( marker_field, elem );
+          *marker_data = elem_mark;
+        }
+      }
+
+      STKUNIT_UNIT_TEST(regr_localRefiner, break_tri_to_tri_N_EdgeFromElementMarker_MimicEncr)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size == 1 || p_size == 3)
+        {
+          PerceptMesh eMesh;
+          eMesh.open(input_files_loc+"square_tri3_uns.e");
+
+          Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
+          int scalarDimension = 0; // a scalar
+          stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+          ScalarFieldType * function_field =
+            (ScalarFieldType *) eMesh.add_field("s_node", stk::mesh::MetaData::NODE_RANK, scalarDimension);
+          mesh::Field<int> & marker_field =  eMesh.get_fem_meta_data()->declare_field< mesh::Field<int> >("marker_field_1");
+          stk::io::set_field_role(marker_field, Ioss::Field::TRANSIENT);
+          stk::mesh::put_field( marker_field, stk::mesh::MetaData::ELEMENT_RANK, eMesh.get_fem_meta_data()->universal_part() );
+          eMesh.commit();
+          eMesh.output_active_children_only(true);
+
+          eMesh.save_as(output_files_loc+"mimic_encr_percept_square_adapt_tri_"+post_fix[p_size]+".e");
+
+          Mimic_Encr_Entity_Marker element_marker(eMesh, &marker_field, stk::mesh::MetaData::ELEMENT_RANK);
+          Mimic_Encr_Percept_Edge_Adapter breaker(element_marker, eMesh, break_tri_to_tri_N, proc_rank_field);
+          breaker.setRemoveOldElements(false);
+          breaker.setAlwaysInitializeNodeRegistry(false);
+
+          for (int ipass=0; ipass < 10; ipass++)
+          {
+            const double time = ipass+1.0;
+            mimic_encr_function_and_element_marker(eMesh, time, *function_field, marker_field);
+            element_marker.update_markers();
+            breaker.doBreak();
+
+            for (int iunref_pass=0; iunref_pass < 3; iunref_pass++)
+            {
+              std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << std::endl;
+              ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+              breaker.unrefineTheseElements(elements_to_unref);
+            }
+
+            std::stringstream fileid_ss;
+            fileid_ss << std::setfill('0') << std::setw(4) << ipass+2;
+            eMesh.save_as(output_files_loc+"mimic_encr_percept_square_adapt_tri_"+post_fix[p_size]+".e-s"+fileid_ss.str(), time);
+          }
+        }
+      }
     }
   }
 }
