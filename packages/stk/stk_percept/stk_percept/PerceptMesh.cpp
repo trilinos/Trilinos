@@ -325,9 +325,9 @@ namespace stk {
 
     /// commits mesh if not committed and saves it in new file
     void PerceptMesh::
-    save_as(const std::string& out_filename )
+    save_as(const std::string& out_filename, const double time )
     {
-      writeModel(out_filename);
+      writeModel(out_filename, time);
     }
 
     /// closes this mesh to further changes
@@ -2292,7 +2292,7 @@ namespace stk {
       mesh_data.set_output_io_region(out_region);
     }
 
-    void PerceptMesh::writeModel( const std::string& out_filename)
+    void PerceptMesh::writeModel( const std::string& out_filename, const double time)
     {
       const unsigned p_rank = parallel_machine_rank( get_bulk_data()->parallel() );
       const unsigned p_size = parallel_machine_size( get_bulk_data()->parallel() );
@@ -2398,7 +2398,6 @@ namespace stk {
       //deprecated omitted_output_db_processing(out_region);
 
       // Read and Write transient fields...
-      double time = 0.0;
       mesh_data.process_output_request(time);
 
       if (!Teuchos::is_null(mesh_data.input_io_region()))

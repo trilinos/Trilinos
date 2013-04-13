@@ -179,7 +179,7 @@ namespace stk {
 
       /// commits mesh if not committed and saves it in new file
       void
-      save_as(const std::string& out_filename);
+      save_as(const std::string& out_filename, const double time=0.0);
 
       /// closes this mesh, deleting its data
       void
@@ -752,7 +752,7 @@ namespace stk {
       void checkForPartsToAvoidWriting();
 
       // write in exodus format to given file
-      void writeModel( const std::string& out_filename );
+      void writeModel( const std::string& out_filename, const double time=0.0 );
 
       /// if add_to_io is set, the field will appear in the output database
       stk::mesh::FieldBase * createField(const std::string& name, const unsigned entity_rank, const std::vector<int>& dimensions,
