@@ -1169,8 +1169,9 @@ namespace Tpetra {
             }
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            // FIXME (mfh 10 Apr 2013) Need to pass in the tag.
-            readySend<int, Packet> (*comm_, tmpSend, imagesTo_[p]);
+            readySend<int, Packet> (tmpSend.getRawPtr (),
+                                    as<int> (tmpSend.size ()),
+                                    imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
@@ -1181,10 +1182,9 @@ namespace Tpetra {
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             // "ssend" means "synchronous send."
-            // FIXME (mfh 10 Apr 2013) Need to pass in the tag.
-            ssend<int, Packet> (*comm_, tmpSend.size(),
-                                tmpSend.getRawPtr(), imagesTo_[p]);
-
+            ssend<int, Packet> (tmpSend.getRawPtr (),
+                                as<int> (tmpSend.size ()),
+                                imagesTo_[p], tag, *comm_);
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
               "Distributor (3 args): Invalid send type.  We should never get "
@@ -1251,8 +1251,9 @@ namespace Tpetra {
           ArrayView<const Packet> tmpSend = sendArray.view (0, lengthsTo_[p]*numPackets);
 
           if (sendType == Details::DISTRIBUTOR_RSEND) {
-            // FIXME (mfh 10 Apr 2013) Need to pass in the tag.
-            readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+            readySend<int, Packet> (tmpSend.getRawPtr (),
+                                    as<int> (tmpSend.size ()),
+                                    imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
@@ -1261,15 +1262,16 @@ namespace Tpetra {
                                                      tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            // FIXME (mfh 10 Apr 2013) Need to pass in the tag.
-            ssend<int,Packet> (*comm_, tmpSend.size(),
-                               tmpSend.getRawPtr(), imagesTo_[p]);
+            ssend<int, Packet> (tmpSend.getRawPtr (),
+                                as<int> (tmpSend.size ()),
+                                imagesTo_[p], tag, *comm_);
           }
           else { // if (sendType == Details::DISTRIBUTOR_SEND)
             // We've already validated sendType, so it has to be
             // Details::DISTRIBUTOR_SEND.  If it's not, well, this is a
             // reasonable fallback.
-            send<int, Packet> (tmpSend.getRawPtr (), as<int> (tmpSend.size ()),
+            send<int, Packet> (tmpSend.getRawPtr (),
+                               as<int> (tmpSend.size ()),
                                imagesTo_[p], tag, *comm_);
           }
         }
@@ -1519,12 +1521,14 @@ namespace Tpetra {
             exports.view (sendPacketOffsets[p], packetsPerSend[p]);
 
           if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
-            send<int, Packet> (tmpSend.getRawPtr (), as<int> (tmpSend.size ()),
+            send<int, Packet> (tmpSend.getRawPtr (),
+                               as<int> (tmpSend.size ()),
                                imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            // FIXME (mfh 10 Apr 2013) Need to pass in the tag.
-            readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+            readySend<int, Packet> (tmpSend.getRawPtr (),
+                                    as<int> (tmpSend.size ()),
+                                    imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
@@ -1533,9 +1537,9 @@ namespace Tpetra {
                                                      tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            // FIXME (mfh 10 Apr 2013) Need to pass in the tag.
-            ssend<int, Packet> (*comm_, tmpSend.size(),
-                                tmpSend.getRawPtr(), imagesTo_[p]);
+            ssend<int, Packet> (tmpSend.getRawPtr (),
+                                as<int> (tmpSend.size ()),
+                                imagesTo_[p], tag, *comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
@@ -1607,8 +1611,9 @@ namespace Tpetra {
               sendArray.view (0, numPacketsTo_p);
 
             if (sendType == Details::DISTRIBUTOR_RSEND) {
-              // FIXME (mfh 10 Apr 2013) Need to pass in the tag.
-              readySend<int,Packet> (*comm_,tmpSend,imagesTo_[p]);
+              readySend<int, Packet> (tmpSend.getRawPtr (),
+                                      as<int> (tmpSend.size ()),
+                                      imagesTo_[p], tag, *comm_);
             }
             else if (sendType == Details::DISTRIBUTOR_ISEND) {
               ArrayRCP<const Packet> tmpSendBuf =
@@ -1617,9 +1622,9 @@ namespace Tpetra {
                                                        tag, *comm_));
             }
             else if (sendType == Details::DISTRIBUTOR_SSEND) {
-              // FIXME (mfh 10 Apr 2013) Need to pass in the tag.
-              ssend<int, Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(),
-                                  imagesTo_[p]);
+              ssend<int, Packet> (tmpSend.getRawPtr (),
+                                  as<int> (tmpSend.size ()),
+                                  imagesTo_[p], tag, *comm_);
             }
             else { // if (sendType == Details::DISTRIBUTOR_SSEND)
               send<int, Packet> (tmpSend.getRawPtr (),
