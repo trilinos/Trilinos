@@ -124,7 +124,24 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  LocalOrdinal Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetNumLevels() const { return Levels_.size(); }
+  LocalOrdinal Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetNumLevels() const {
+    return Levels_.size();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  double Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetOperatorComplexity() const {
+    Xpetra::global_size_t totalNnz = 0;
+
+    for (int i = 0; i < GetNumLevels(); ++i) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError, "Operator complexity cannot be calculated because A is unavailable on level " << i);
+      RCP<Matrix> A = Levels_[i]->template Get<RCP<Matrix> >("A");
+      if (A.is_null())
+        break;
+
+      totalNnz += A->getGlobalNumEntries();
+    }
+    return Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetImplicitTranspose(const bool &implicit) { implicitTranspose_ = implicit; }
@@ -306,6 +323,10 @@ namespace MueLu {
     // TODO: this is not exception safe: manager will still hold default factories if you exit this function with an exception
     manager.Clean();
 
+    std::ostringstream ss;
+    ss << print(ss, GetVerbLevel());
+    GetOStream(Statistics0,0) << ss.str();
+
   } // Setup()
 
   // ---------------------------------------- Iterate -------------------------------------------------------
@@ -436,7 +457,12 @@ namespace MueLu {
         }
 
         // update X += P * coarseX
-        P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
+        // Note that due to what may be round-off error accumulation, use of the fused kernel
+        //    P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
+        // can in some cases result in slightly higher iteration counts.
+        RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(), X.getNumVectors(),false);
+        P->apply(*coarseX, *correction, Teuchos::NO_TRANS, one, zero);
+        X.update(one, *correction, one);
 
         if (Fine->IsAvailable("PostSmoother")) {
           RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
@@ -480,7 +506,7 @@ namespace MueLu {
       std::string fileName = "A_" + buf.str() + ".m";
       Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("A")) );
 
-      if (i>startLevel) {
+      if (i>0) {
         fileName = "P_" + buf.str() + ".m";
         Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("P")) );
 
@@ -529,25 +555,33 @@ namespace MueLu {
   Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE; //macro that defines out0
 
+    std::ostringstream ss;
+    ss << print(ss, verbLevel);
+
+    out0 << ss.str();
+
+    Teuchos::ParameterList status;
+    status.set("number of levels", GetNumLevels());
+    status.set("complexity", GetOperatorComplexity());
+
+    return status;
+  }
+
+  // NOTE: at some point this should be replaced by a friend operator <<
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  std::ostream& Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(std::ostream& out, const VerbLevel verbLevel) const {
     if (verbLevel & Parameters0) {
-      out0 << std::endl << "--------------------------------------------------------------------------------"
+      out << std::endl << "--------------------------------------------------------------------------------"
            << std::endl << "---                            Multigrid Summary                             ---"
            << std::endl << "--------------------------------------------------------------------------------"
            << std::endl;
     }
 
-    Teuchos::ParameterList status;
-    status.set("number of levels", GetNumLevels());
-
-    Xpetra::global_size_t totalNnz;
-    double operatorComplexity;
-
-    totalNnz = 0;
+    Xpetra::global_size_t totalNnz = 0;
     std::vector<Xpetra::global_size_t> nnzPerLevel;
     std::vector<Xpetra::global_size_t> rowsPerLevel;
     for (int i = 0; i < GetNumLevels(); ++i) {
-      TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError,
-                                 "Operator complexity cannot be calculated because A is unavailable on level " << i);
+      TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError, "Operator complexity cannot be calculated because A is unavailable on level " << i);
 
       RCP<Matrix> A = Levels_[i]->template Get<RCP<Matrix> >("A");
       if (A.is_null())
@@ -558,17 +592,16 @@ namespace MueLu {
       nnzPerLevel.push_back(nnz);
       rowsPerLevel.push_back(A->getGlobalNumRows());
     }
-    operatorComplexity = Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
-    status.set("complexity", operatorComplexity);
+    double operatorComplexity = Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
 
     if (verbLevel & Parameters0)
-      out0 << "Number of levels    = " << GetNumLevels() << std::endl;
+      out << "Number of levels    = " << GetNumLevels() << std::endl;
     if (verbLevel & Statistics0)
-      out0 << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-                                       << operatorComplexity << std::endl;
+      out << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
+                                      << operatorComplexity << std::endl;
     if (verbLevel & Parameters0) {
-      out0 << "Max Coarse Size     = " << maxCoarseSize_ << std::endl;
-      out0 << "Implicit Transpose  = " << (implicitTranspose_ ? "true" : "false") << std::endl;
+      out << "Max Coarse Size     = " << maxCoarseSize_ << std::endl;
+      out << "Implicit Transpose  = " << (implicitTranspose_ ? "true" : "false") << std::endl;
     }
 
     if (verbLevel & Parameters1) {
@@ -576,9 +609,9 @@ namespace MueLu {
       int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
       tt = nnzPerLevel[0];
       int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
-      out0  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::endl;
+      out  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::endl;
       for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
-        out0 << "A " << i << "  "
+        out << "A " << i << "  "
              << std::setw(rowspacer) << rowsPerLevel[i]
              << std::setw(nnzspacer) << nnzPerLevel[i]
              << std::setw(9) << std::setprecision(2) << std::setiosflags(std::ios::fixed)
@@ -591,15 +624,15 @@ namespace MueLu {
         if (Levels_[i]->IsAvailable("PostSmoother"))
           postSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PostSmoother");
         if (preSmoo != null && preSmoo == postSmoo)
-          out0 << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
+          out << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
         else {
-          if (preSmoo != null)  out0 << "Smoother (level " << i << ") pre  : "
-                                                         << preSmoo->description() << std::endl;
-          if (postSmoo != null) out0 << "Smoother (level " << i << ") post : "
-                                                         << postSmoo->description() << std::endl;
+          if (preSmoo != null)  out << "Smoother (level " << i << ") pre  : "
+                                                          << preSmoo->description() << std::endl;
+          if (postSmoo != null) out << "Smoother (level " << i << ") post : "
+                                                          << postSmoo->description() << std::endl;
         }
 
-        out0 << std::endl;
+        out << std::endl;
 
       } //for (int i=0; i<GetNumLevels(); ++i)
     }
@@ -608,13 +641,12 @@ namespace MueLu {
     if (verbLevel & Statistics1) {
       Teuchos::OSTab tab2(out);
       for(int i = 0; i < GetNumLevels(); ++i) {
-        Levels_[i]->print(out0, verbLevel);
-        out0 << std::endl;
+        out << Levels_[i]->print(out, verbLevel);
+        out << std::endl;
       }
     }
 
-    return status;
-
+    return out;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

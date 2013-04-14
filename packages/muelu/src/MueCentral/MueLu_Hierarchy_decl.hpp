@@ -131,6 +131,7 @@ namespace MueLu {
     RCP<Level> & GetLevel(const int levelID = 0);
 
     LO GetNumLevels() const;
+    double GetOperatorComplexity() const;
 
     //! Indicate that Iterate should use tranpose of prolongator for restriction operations.
     void SetImplicitTranspose(const bool &implicit);
@@ -247,6 +248,7 @@ namespace MueLu {
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
     Teuchos::ParameterList print(Teuchos::FancyOStream &out=*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)),
                                  const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
+    std::ostream& print(std::ostream& out, const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
 
     /*! Indicate whether the multigrid method is a preconditioner or a solver.
 

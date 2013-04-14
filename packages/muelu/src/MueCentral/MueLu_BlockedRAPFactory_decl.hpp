@@ -123,9 +123,6 @@ namespace MueLu {
 
   private:
 
-    //! @name internal print methods.
-    static void PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag);
-
     //! @name internal plausibility check methods
     //! checks main diagonal entries of (0,0) block. Does not affect entries in (1,1) block!
     static void CheckMainDiagonal(RCP<BlockedCrsMatrix> & bAc, bool repairZeroDiagonals = false);

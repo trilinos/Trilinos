@@ -56,6 +56,10 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       DEPLIBS muelu xpetra muelu-adapters
     )
 
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(Helmholtz_cp
+    SOURCE_FILES helm2D.xml helm3D.xml
+    )
+
   ENDIF()
 
 ENDIF() # Galeri

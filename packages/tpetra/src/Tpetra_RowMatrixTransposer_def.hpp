@@ -93,7 +93,6 @@ createTranspose()
   using Tpetra::Import;
   using Tpetra::Export;
   typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
 
   //
   // This transpose is based upon the approach in EpetraExt.

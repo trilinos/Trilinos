@@ -105,8 +105,9 @@ namespace MueLu {
       }
 
       if (!rebalancedAc.is_null()) {
-        GetOStream(Statistics0, 0) << RAPFactory::PrintMatrixInfo       (*rebalancedAc, "Ac (rebalanced)");
-        GetOStream(Statistics0, 0) << RAPFactory::PrintLoadBalancingInfo(*rebalancedAc, "Ac (rebalanced)");
+        RCP<ParameterList> params = rcp(new ParameterList());
+        params->set("printLoadBalancingInfo", true);
+        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
       }
 
     } else {
