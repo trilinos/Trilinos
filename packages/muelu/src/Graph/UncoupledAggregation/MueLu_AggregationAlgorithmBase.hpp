@@ -145,16 +145,6 @@ class AggregationAlgorithmBase
     const LocalOrdinal nRows = graph.GetNodeNumVertices();
     const LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates();
 
-    if(IsPrint(Warnings0)) {
-      GO localNotAggregated  = 0;
-      GO globalNotAggregated = 0;
-      for(LO i=0; i<nRows; ++i)
-        if(aggStat[i] != NodeStats::AGGREGATED ) localNotAggregated++;
-        sumAll(comm, (GO)localNotAggregated, globalNotAggregated);
-        if(globalNotAggregated > 0)
-          GetOStream(Warnings0,0) << "Aggregation (UC): " << phase << " (WARNING) " << globalNotAggregated << " unaggregated nodes left" << std::endl;
-    }
-
     if(IsPrint(Statistics1)) {
       LO localAggregated  = 0;
       GO globalAggregated = 0;
@@ -168,6 +158,16 @@ class AggregationAlgorithmBase
       sumAll(comm, (GO)nLocalAggregates, nAggregatesGlobal);
       GetOStream(Statistics1, 0) << "Aggregation (UC): " << phase << " Total aggregates = " << nAggregatesGlobal << std::endl;
     }
+    if(IsPrint(Warnings0)) {
+      GO localNotAggregated  = 0;
+      GO globalNotAggregated = 0;
+      for(LO i=0; i<nRows; ++i)
+        if(aggStat[i] != NodeStats::AGGREGATED ) localNotAggregated++;
+        sumAll(comm, (GO)localNotAggregated, globalNotAggregated);
+        if(globalNotAggregated > 0)
+          GetOStream(Warnings0,0) << "Aggregation (UC): " << phase << " (WARNING) " << globalNotAggregated << " unaggregated nodes left" << std::endl;
+    }
+
   }
 
   //@}
