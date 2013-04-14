@@ -107,6 +107,17 @@ namespace Tpetra {
   /// This class is templated on the same template arguments as Map:
   /// the local ordinal type <tt>LocalOrdinal</tt>, the global ordinal
   /// type <tt>GlobalOrdinal</tt>, and the Kokkos <tt>Node</tt> type.
+  ///
+  /// This method accepts an optional list of parameters, either
+  /// through the constructor or through the setParameterList()
+  /// method.  Most users do not need to worry about these parameters;
+  /// the default values are fine.  However, for expert users, we
+  /// expose the following parameter:
+  /// - "Barrier between receives and sends" (\c bool): Whether to
+  ///   execute a barrier between receives and sends, when executing
+  ///   the Import (i.e., when calling DistObject's doImport()
+  ///   (forward mode) or doExport() (reverse mode)).
+  ///
   template <class LocalOrdinal,
             class GlobalOrdinal = LocalOrdinal,
             class Node = Kokkos::DefaultNode::DefaultNodeType>
@@ -185,14 +196,22 @@ namespace Tpetra {
     ///   underlying data.
     Export (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
-    /// \brief Pseudo-copy constructor.
+    /// \brief "Copy" constructor from an Export object.
     ///
-    /// \note Generates and Export object from the reverse of the provided Import object
-    ///   underlying data.
+    /// This constructor creates an Export object from the "reverse"
+    /// of the given Import object.  This method is mainly useful for
+    /// Tpetra developers, for example when building the explicit
+    /// transpose of a sparse matrix.
     Export (const Import<LocalOrdinal,GlobalOrdinal,Node> & importer);
 
     //! Destructor.
     ~Export();
+
+    /// \brief Set parameters.
+    ///
+    /// Please see the class documentation for a list of all accepted
+    /// parameters and their default values.
+    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     //@}
     //! @name Export Attribute Methods

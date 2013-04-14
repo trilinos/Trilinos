@@ -227,19 +227,25 @@ namespace MueLu {
     return out.str();
   }
 
-  void Level::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
-    //MUELU_DESCRIBE;
-    //out0 << ""; // remove warning
-
+  void Level::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     RCP<Teuchos::FancyOStream> out0 = Teuchos::rcpFromRef(out);
     int previousSetting = out0->getOutputToRootOnly();
-    out0->setOutputToRootOnly(0);
     out0->setShowProcRank(true);
 
-    *out0 << "LevelID = " << GetLevelID() << std::endl;
+    std::ostringstream ss;
+    ss << print(ss, verbLevel);
+
+    out0->setOutputToRootOnly(-1);
+    *out0 << ss.str();
+    out0->setOutputToRootOnly(previousSetting);
+    out0->setShowProcRank(false);
+  }
+
+  std::ostream& Level::print(std::ostream& out, const VerbLevel verbLevel) const {
+    out << "LevelID = " << GetLevelID() << std::endl;
 
     typedef Teuchos::TabularOutputter TTO;
-    TTO outputter(out0);
+    TTO outputter(out);
     outputter.pushFieldSpec("data name",                TTO::STRING, TTO::LEFT, TTO::GENERAL, 20);
     // outputter.pushFieldSpec("generating factory type",  TTO::STRING, TTO::LEFT, TTO::GENERAL, 30);
     outputter.pushFieldSpec("gen. factory addr.",       TTO::STRING, TTO::LEFT, TTO::GENERAL, 18);
@@ -250,7 +256,6 @@ namespace MueLu {
     outputter.pushFieldSpec("req'd by",                 TTO::STRING, TTO::LEFT, TTO::GENERAL, 20);
     outputter.outputHeader();
 
-    out0->setOutputToRootOnly(-1);
     std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedFactories();
     for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
       std::vector<std::string> enames = needs_.RequestedKeys(*kt);
@@ -339,9 +344,8 @@ namespace MueLu {
         outputter.nextRow();
       }
     } //for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++)
-    out0->setOutputToRootOnly(previousSetting);
-    out0->setShowProcRank(false);
 
+    return out;
   }
 
   Level::Level(const Level& source) { }

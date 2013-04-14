@@ -60,6 +60,21 @@ namespace {
 
 namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  {
+    bool debug = tpetraImportDebugDefault;
+    if (! plist.is_null ()) {
+      try {
+        debug = plist->get<bool> ("Debug");
+      } catch (Teuchos::Exceptions::InvalidParameter&) {}
+    }
+    debug_ = debug;
+    ImportData_->distributor_.setParameterList (plist);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,
           const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target) :
@@ -273,7 +288,9 @@ namespace Tpetra {
     : out_ (exporter.out_)
     , debug_ (exporter.debug_)
   {
-    if(!exporter.ExportData_.is_null())  ImportData_ = exporter.ExportData_->reverseClone();
+    if (! exporter.ExportData_.is_null ()) {
+      ImportData_ = exporter.ExportData_->reverseClone ();
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
