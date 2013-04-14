@@ -1160,29 +1160,28 @@ namespace MueLu {
   }
 
   template <class SC, class LO, class GO, class NO, class LMO>
-  ArrayRCP<const bool>
-  Utils<SC, LO, GO, NO, LMO>::DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol)
-  {
-    const RCP<const Map> rowMap = A.getRowMap();
-    ArrayRCP<bool> boundaryNodes(A.getNodeNumRows(),true);
+  ArrayRCP<const bool> Utils<SC, LO, GO, NO, LMO>::DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol) {
+    LO numRows = A.getNodeNumRows();
 
-    for(LO row=0; row < Teuchos::as<LO>(rowMap->getNodeNumElements()); ++row) {
+    typedef Teuchos::ScalarTraits<SC> STS;
 
+    ArrayRCP<bool> boundaryNodes(numRows, true);
+    for (LO row = 0; row < numRows; row++) {
       ArrayView<const LO> indices;
       ArrayView<const SC> vals;
       A.getLocalRowView(row, indices, vals);
+
       size_t nnz = A.getNumEntriesInLocalRow(row);
-      if (nnz > 1) {
-        for(size_t col=0; col<nnz; ++col) {
-          if ( (indices[col] != row) && Teuchos::ScalarTraits<SC>::magnitude(vals[col]) > tol) {
+      if (nnz > 1)
+        for (size_t col = 0; col < nnz; col++)
+          if ( (indices[col] != row) && STS::magnitude(vals[col]) > tol) {
             boundaryNodes[row] = false;
             break;
           }
-        }
-      }
     }
+
     return boundaryNodes;
-  } //DetectDirichletRows
+  }
 
   template <class SC, class LO, class GO, class NO, class LMO>
   std::string Utils<SC, LO, GO, NO, LMO>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
