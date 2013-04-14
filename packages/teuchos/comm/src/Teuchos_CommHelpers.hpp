@@ -485,6 +485,15 @@ void ssend(
   const Ordinal count, const Packet sendBuffer[], const int destRank
   );
 
+//! Variant of ssend() that takes a tag (and restores the correct order of arguments).
+template<typename Ordinal, typename Packet>
+void
+ssend (const Packet sendBuffer[],
+       const Ordinal count,
+       const int destRank,
+       const int tag,
+       const Comm<Ordinal>& comm);
+
 /** \brief Send a single object that use values semantics to another process.
  *
  * \relates Comm
@@ -582,6 +591,15 @@ void readySend(
   const ArrayView<const Packet> &sendBuffer,
   const int destRank
   );
+
+//! Variant of readySend() that accepts a message tag.
+template<typename Ordinal, typename Packet>
+void
+readySend (const Packet sendBuffer[],
+           const Ordinal count,
+           const int destRank,
+           const int tag,
+           const Comm<Ordinal>& comm);
 
 /** \brief Ready-Send a single object that use values semantics to another process.
  *
@@ -2071,6 +2089,26 @@ void Teuchos::ssend(
 }
 
 template<typename Ordinal, typename Packet>
+void
+Teuchos::ssend (const Packet sendBuffer[],
+                const Ordinal count,
+                const int destRank,
+                const int tag,
+                const Comm<Ordinal>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: ssend<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  typedef ConstValueTypeSerializationBuffer<Ordinal, Packet> buf_type;
+  buf_type charSendBuffer (count, sendBuffer);
+  comm.ssend (charSendBuffer.getBytes (),
+              charSendBuffer.getCharBuffer (),
+              destRank, tag);
+}
+
+template<typename Ordinal, typename Packet>
 void Teuchos::send(
   const Comm<Ordinal>& comm,
   const Packet &send, const int destRank
@@ -2193,6 +2231,25 @@ void Teuchos::readySend(
   comm.readySend( charSendBuffer.getCharBufferView(), destRank );
 }
 
+template<typename Ordinal, typename Packet>
+void
+Teuchos::readySend (const Packet sendBuffer[],
+                    const Ordinal count,
+                    const int destRank,
+                    const int tag,
+                    const Comm<Ordinal>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: readySend<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  typedef ConstValueTypeSerializationBuffer<Ordinal, Packet> buf_type;
+  buf_type charSendBuffer (count, sendBuffer);
+  comm.readySend (charSendBuffer.getBytes (),
+                  charSendBuffer.getCharBuffer (),
+                  destRank, tag);
+}
 
 template<typename Ordinal, typename Packet>
 void Teuchos::readySend(
