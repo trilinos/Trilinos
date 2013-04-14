@@ -54,7 +54,6 @@
 #define MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_
 
 #include <Xpetra_Map.hpp>
-#include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 

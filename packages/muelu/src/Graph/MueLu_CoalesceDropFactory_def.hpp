@@ -247,7 +247,9 @@ namespace MueLu {
         }
 
       } else if (algo == "laplacian") {
-        LO blkSize = A->GetFixedBlockSize();
+        LO blkSize   = A->GetFixedBlockSize();
+        GO indexBase = A->getRowMap()->getIndexBase();
+        GetOStream(Runtime0,0) << "Index base: " << indexBase << std::endl;
 
         // [*0*] : FIXME
         // ap: somehow, if I move this line to [*1*], Belos throws an error
@@ -302,13 +304,12 @@ namespace MueLu {
 
           RCP<const Map> uniqueMap, nonUniqueMap;
           if (blkSize == 1) {
-            uniqueMap    = A->getRowMap();
+            uniqueMap     = A->getRowMap();
             nonUniqueMap = A->getColMap();
 
           } else {
-            uniqueMap   = Coords->getMap();
-            TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() !=
-            A->getRowMap()->getIndexBase(),Exceptions::Incompatible,"Coordinate map and A's row map do not have the same index base");
+            uniqueMap    = Coords->getMap();
+            TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible, "Different index bases for matrix and coordinates");
 
             // Amalgamate column map
             const RCP<const Map> colMap = A->getColMap();
@@ -322,7 +323,7 @@ namespace MueLu {
             LO numRows = 0;
             LO indexBase = uniqueMap->getIndexBase();
             for (LO id = 0; id < static_cast<LO>(numElements); id++) {
-              GO amalgID = (elementAList[id]-indexBase)/blkSize + indexBase;
+              GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
               if (filter.find(amalgID) == filter.end()) {
                 elementList[numRows++] = amalgID;
                 filter.insert(amalgID);
@@ -330,12 +331,12 @@ namespace MueLu {
             }
             elementList.resize(numRows);
 
-            nonUniqueMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, uniqueMap->getIndexBase(), uniqueMap->getComm());
+            nonUniqueMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, uniqueMap->getComm());
           }
 
           // Get ghost coordinates
-          RCP<const Import>     importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
-          RCP<MultiVector> ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
+          RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+          RCP<MultiVector>  ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
           ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
 
           // Construct Distance Laplacian diagonal
@@ -399,7 +400,7 @@ namespace MueLu {
               A->getLocalRowView(row, indices, vals);
 
             } else {
-              //if all point rows are Dirichlet, then mark amalgamated row as Dirichlet
+              // if all point rows are Dirichlet, then mark amalgamated row as Dirichlet
               bool isBoundary=true;
               for (LO j = 0; j < blkSize; ++j) {
                 if (!boundaryNodes[row*blkSize+j]) {
@@ -467,7 +468,6 @@ namespace MueLu {
           columns.resize(realnnz);
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
-          graph->SetBoundaryNodeMap(amalgBoundaryNodes);
           if (GetVerbLevel() & Statistics0) {
             GO numLocalBoundaryNodes=0;
             GO numGlobalBoundaryNodes=0;
@@ -478,7 +478,8 @@ namespace MueLu {
             GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " agglomerated Dirichlet nodes"
                                        << " using threshold " << dirichletThreshold << std::endl;
           }
-          Set(currentLevel, "Graph", graph);
+          graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+          Set(currentLevel,       "Graph", graph);
           Set(currentLevel, "DofsPerNode", blkSize);
         } //if ( (blkSize == 1) && (threshold == STS::zero()) )
       }
