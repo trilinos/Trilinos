@@ -40,37 +40,28 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef USER_APP_NOX_OBSERVER_EPETRA_TO_EXODUS_HPP
-#define USER_APP_NOX_OBSERVER_EPETRA_TO_EXODUS_HPP
+#ifndef USER_APP_NOX_OBSERVER_WRITE_TO_EXODUS_HPP
+#define USER_APP_NOX_OBSERVER_WRITE_TO_EXODUS_HPP
 
 #include "NOX_Abstract_PrePostOperator.H"
 #include "Teuchos_RCP.hpp"
 
 #include "Panzer_config.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
-#include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
-#include "NOX_Epetra_Vector.H"
-#include "Epetra_Vector.h"
-#include "Epetra_MpiComm.h"
-
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
-#include "Thyra_DefaultProductVector.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-
 namespace user_app {
   
-  class NOXObserver_EpetraToExodus : public NOX::Abstract::PrePostOperator {
+  class NOXObserver_WriteToExodus : public NOX::Abstract::PrePostOperator {
     
   public:
     
-    NOXObserver_EpetraToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+    NOXObserver_WriteToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 			       const Teuchos::RCP<panzer::UniqueGlobalIndexerBase>& dof_manager,
 			       const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
                                const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library) :
@@ -199,8 +190,6 @@ namespace user_app {
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_dof_manager;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lof;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
-
-    bool m_isEpetraLOF;
   };
 }
 

@@ -46,19 +46,18 @@
 #include "Panzer_config.hpp"
 
 #include "Panzer_STK_RythmosObserverFactory.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_Traits.hpp"
 
 // Individual Observers
-#include "user_app_RythmosObserver_EpetraToExodus.hpp"
+#include "user_app_RythmosObserver_WriteToExodus.hpp"
 
 namespace user_app {
 
-  class RythmosObserverFactory_Epetra : public panzer_stk::RythmosObserverFactory {
+  class RythmosObserverFactory : public panzer_stk::RythmosObserverFactory {
 
   public:
-    RythmosObserverFactory_Epetra(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary)
+    RythmosObserverFactory(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary)
        : stkIOResponseLibrary_(stkIOResponseLibrary) {}
 
     bool useNOXObserver() const { return false; }
@@ -68,7 +67,7 @@ namespace user_app {
 			 const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & dof_manager,
 			 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof) const
     {
-      Teuchos::RCP<user_app::RythmosObserver_EpetraToExodus> observer = Teuchos::rcp(new user_app::RythmosObserver_EpetraToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
+      Teuchos::RCP<user_app::RythmosObserver_WriteToExodus> observer = Teuchos::rcp(new user_app::RythmosObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
       return observer;
     }
 
