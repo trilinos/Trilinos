@@ -490,7 +490,7 @@ buildGhostedGraph() const
 {
    // build the map and allocate the space for the graph
    Teuchos::RCP<MapType> map = getGhostedMap();
-   Teuchos::RCP<CrsGraphType> graph = Teuchos::rcp(new CrsGraphType(map,0));
+   Teuchos::RCP<CrsGraphType> graph = Teuchos::rcp(new CrsGraphType(map,map,0));
 
    std::vector<std::string> elementBlockIds;
    
@@ -517,7 +517,7 @@ buildGhostedGraph() const
    }
 
    // finish filling the graph
-   graph->fillComplete();
+   graph->fillComplete(map,map);
 
    return graph;
 }
