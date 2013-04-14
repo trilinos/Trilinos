@@ -46,6 +46,7 @@
 #include <Kokkos_NodeTrace.hpp>
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_as.hpp>
+#include <Tpetra_Util.hpp>
 #include <Tpetra_Vector.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
