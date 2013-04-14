@@ -1156,22 +1156,11 @@ namespace Tpetra {
         if (imagesTo_[p] != myImageID) {
           ArrayView<const Packet> tmpSend =
             exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
-          if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
-            send<int, Packet> (tmpSend.getRawPtr (), as<int> (tmpSend.size ()),
+
+          if (sendType == Details::DISTRIBUTOR_SEND) {
+            send<int, Packet> (tmpSend.getRawPtr (),
+                               as<int> (tmpSend.size ()),
                                imagesTo_[p], tag, *comm_);
-            if (debug_) {
-              std::ostringstream os;
-              os << myImageID << "," << instanceCount_  << ": doPosts(3,"
-                 << (indicesTo_.empty () ? "fast" : "slow") << "): "
-                 << "Posted send to Proc " << imagesTo_[i]
-                 << " w/ specified tag " << tag << endl;
-              *out_ << os.str ();
-            }
-          }
-          else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int, Packet> (tmpSend.getRawPtr (),
-                                    as<int> (tmpSend.size ()),
-                                    imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
@@ -1180,8 +1169,12 @@ namespace Tpetra {
             requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
                                                      tag, *comm_));
           }
+          else if (sendType == Details::DISTRIBUTOR_RSEND) {
+            readySend<int, Packet> (tmpSend.getRawPtr (),
+                                    as<int> (tmpSend.size ()),
+                                    imagesTo_[p], tag, *comm_);
+          }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            // "ssend" means "synchronous send."
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
                                 imagesTo_[p], tag, *comm_);
@@ -1189,6 +1182,14 @@ namespace Tpetra {
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
               "Distributor (3 args): Invalid send type.  We should never get "
               "here.  Please report this bug to the Tpetra developers.");
+          }
+
+          if (debug_) {
+            std::ostringstream os;
+            os << myImageID << "," << instanceCount_  << ": doPosts(3,fast): "
+               << "Posted send to Proc " << imagesTo_[i]
+               << " w/ specified tag " << tag << endl;
+            *out_ << os.str ();
           }
         }
         else { // "Sending" the message to myself
@@ -1248,12 +1249,13 @@ namespace Tpetra {
             std::copy (srcBegin, srcEnd, sendArray.begin()+sendArrayOffset);
             sendArrayOffset += numPackets;
           }
-          ArrayView<const Packet> tmpSend = sendArray.view (0, lengthsTo_[p]*numPackets);
+          ArrayView<const Packet> tmpSend =
+            sendArray.view (0, lengthsTo_[p]*numPackets);
 
-          if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int, Packet> (tmpSend.getRawPtr (),
-                                    as<int> (tmpSend.size ()),
-                                    imagesTo_[p], tag, *comm_);
+          if (sendType == Details::DISTRIBUTOR_SEND) {
+            send<int, Packet> (tmpSend.getRawPtr (),
+                               as<int> (tmpSend.size ()),
+                               imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
@@ -1261,18 +1263,28 @@ namespace Tpetra {
             requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
                                                      tag, *comm_));
           }
+          else if (sendType == Details::DISTRIBUTOR_RSEND) {
+            readySend<int, Packet> (tmpSend.getRawPtr (),
+                                    as<int> (tmpSend.size ()),
+                                    imagesTo_[p], tag, *comm_);
+          }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
                                 imagesTo_[p], tag, *comm_);
           }
-          else { // if (sendType == Details::DISTRIBUTOR_SEND)
-            // We've already validated sendType, so it has to be
-            // Details::DISTRIBUTOR_SEND.  If it's not, well, this is a
-            // reasonable fallback.
-            send<int, Packet> (tmpSend.getRawPtr (),
-                               as<int> (tmpSend.size ()),
-                               imagesTo_[p], tag, *comm_);
+          else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
+              "Distributor (3 args): Invalid send type.  We should never get "
+              "here.  Please report this bug to the Tpetra developers.");
+          }
+
+          if (debug_) {
+            std::ostringstream os;
+            os << myImageID << "," << instanceCount_  << ": doPosts(3,slow): "
+               << "Posted send to Proc " << imagesTo_[i]
+               << " w/ specified tag " << tag << endl;
+            *out_ << os.str ();
           }
         }
         else { // "Sending" the message to myself
