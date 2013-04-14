@@ -53,6 +53,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
+#include "Panzer_TpetraLinearObjContainer.hpp"
 
 #include"Kokkos_DefaultNode.hpp"
 
@@ -98,6 +99,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData d);
 
@@ -117,6 +120,9 @@ private:
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 
   GatherSolution_Tpetra();
 };
@@ -139,6 +145,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData d);
 
@@ -158,6 +166,9 @@ private:
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 
   GatherSolution_Tpetra();
 };
