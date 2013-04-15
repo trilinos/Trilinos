@@ -67,6 +67,7 @@ class EpetraTimeTestCase(unittest.TestCase):
         # Using a delta for testing requires Python 2.7, which is not always
         # available
         # self.delta    = 0.1
+        self.places = 3
         self.comm.Barrier()
 
     def tearDown(self):
@@ -110,7 +111,7 @@ class EpetraTimeTestCase(unittest.TestCase):
         # self.assertAlmostEqual(et2    , self.duration, delta=self.delta)
         self.assertGreater(et2, self.duration)
         # self.assertAlmostEqual(wt2-wt1, et1+et2      , delta=self.delta)
-        self.assertGreater(wt2-wt1, self.duration)
+        self.assertAlmostEqual(wt2-wt1, et1+et2, places=self.places)
 
 ##########################################################################
 
