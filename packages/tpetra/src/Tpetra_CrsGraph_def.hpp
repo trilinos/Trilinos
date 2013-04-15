@@ -46,6 +46,7 @@
 #define TPETRA_CRSGRAPH_DEF_HPP
 
 #include <Kokkos_NodeTrace.hpp>
+#include "Tpetra_Distributor.hpp"
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_NullIteratorTraits.hpp>
 #include <Teuchos_as.hpp>

@@ -64,7 +64,7 @@ class EpetraTimeTestCase(unittest.TestCase):
     def setUp(self):
         self.comm     = Epetra.PyComm()
         self.duration = 0.5
-        self.delta    = 0.005
+        self.delta    = 0.1
         self.comm.Barrier()
 
     def tearDown(self):

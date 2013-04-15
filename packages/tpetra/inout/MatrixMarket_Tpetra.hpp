@@ -317,62 +317,20 @@ namespace Tpetra {
             allGlobalElts = arcp<GO> (oneToOneMap->getGlobalNumElements ());
             std::fill (allGlobalElts.begin (), allGlobalElts.end (), 0);
           }
-          //const int numAllGlobalElts = as<int> (allGlobalElts.size ());
 
           if (debug) {
-            *err << myRank << ": computeGatherMap: Computing MPI_Gatherv displacements" << endl;
+            *err << myRank << ": computeGatherMap: Computing MPI_Gatherv "
+              "displacements" << endl;
           }
           // Displacements for gatherv() in this case (where we are
           // gathering into a contiguous array) are an exclusive
           // partial sum (first entry is zero, second starts the
           // partial sum) of recvCounts.
           Array<int> displs (numProcs, 0);
-          std::partial_sum (recvCounts.begin (), recvCounts.end () - 1, displs.begin () + 1);
-
-          // if (debug) {
-          //   if (myRank == 0) {
-          //     *err << "- Partial sum results:" << endl;
-          //   }
-          //   comm->barrier ();
-          //   comm->barrier ();
-          //   comm->barrier ();
-          //   std::ostringstream os;
-          //   os << "  - Proc " << myRank << ":" << endl
-          //      << "    - recvCounts (input): " << Teuchos::toString (recvCounts) << endl
-          //      << "    - displs (output): " << Teuchos::toString (displs) << endl;
-          //   for (int p = 0; p < numProcs; ++p) {
-          //     if (p == myRank) {
-          //       *err << os.str ();
-          //     }
-          //     comm->barrier ();
-          //     comm->barrier ();
-          //     comm->barrier ();
-          //   }
-          // }
-
+          std::partial_sum (recvCounts.begin (), recvCounts.end () - 1,
+                            displs.begin () + 1);
           if (debug) {
             *err << myRank << ": computeGatherMap: Calling MPI_Gatherv" << endl;
-            // comm->barrier (); // Wait for output to finish
-            // comm->barrier ();
-            // comm->barrier ();
-            // {
-            //   std::ostringstream os;
-            //   os << "  - Proc " << myRank << ":" << endl
-            //      << "    - myGlobalElts: " << Teuchos::toString (myGlobalElts) << endl
-            //      << "    - numMyGlobalElts: " << numMyGlobalElts << endl
-            //      << "    - myGlobalElts: " << Teuchos::toString (myGlobalElts) << endl
-            //      << "    - allGlobalElts: " << Teuchos::toString (allGlobalElts) << endl
-            //      << "    - recvCounts: " << Teuchos::toString (recvCounts) << endl
-            //      << "    - displs: " << Teuchos::toString (displs) << endl;
-            //   for (int p = 0; p < numProcs; ++p) {
-            //     if (p == myRank) {
-            //       *err << os.str ();
-            //     }
-            //     comm->barrier (); // Wait for output to finish
-            //     comm->barrier ();
-            //     comm->barrier ();
-            //   }
-            // }
           }
           gatherv<GO> (myGlobalElts.getRawPtr (), numMyGlobalElts,
                        allGlobalElts.getRawPtr (), recvCounts.getRawPtr (),
@@ -387,24 +345,11 @@ namespace Tpetra {
           if (myRank == 0) {
             allElts = allGlobalElts ();
           }
-          if (debug) {
-            // comm->barrier (); // Wait for output to finish
-            // comm->barrier ();
-            // comm->barrier ();
-            // std::ostringstream os;
-            // os << "  - Proc " << myRank << endl
-            //    << "    - allElts: " << Teuchos::toString (allElts) << endl;
-            // *err << os.str ();
-            // comm->barrier (); // Wait for output to finish
-            // comm->barrier ();
-            // comm->barrier ();
-          } // if debug
           const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid ();
           gatherMap = rcp (new MapType (INVALID, allElts,
                                         oneToOneMap->getIndexBase (),
                                         comm, map->getNode ()));
         }
-
         if (! err.is_null ()) {
           err->popTab ();
         }
@@ -416,7 +361,6 @@ namespace Tpetra {
         }
         return gatherMap;
       }
-
     } // namespace (anonymous)
 
     /// \class Reader
@@ -734,8 +678,8 @@ namespace Tpetra {
 
          const bool extraDebug = false;
          comm_ptr pComm = pRowMap->getComm();
-         const int numProcs = Teuchos::size (*pComm);
-         const int myRank = Teuchos::rank (*pComm);
+         const int numProcs = pComm->getSize ();
+         const int myRank = pComm->getRank ();
          const int rootRank = 0;
 
          // Type abbreviations to make the code more concise.
@@ -761,63 +705,60 @@ namespace Tpetra {
                             << myNumRows << ".  Please report this bug to the "
                             "Tpetra developers.");
 
-         // Space for my proc's number of entries per row.
-         // Will be filled in below.
+         // Space for my proc's number of entries per row.  Will be
+         // filled in below.
          myNumEntriesPerRow = arcp<size_t> (myNumRows);
 
-         if (myRank != rootRank)
-           {
-             // Tell the root how many rows we have.  If we're sending
-             // none, then we don't have anything else to send, nor
-             // does the root have to receive anything else.
-             send (*pComm, myNumRows, rootRank);
-             if (myNumRows != 0)
-               {
-                 // Now send my rows' global indices.  Hopefully the
-                 // cast to int doesn't overflow.  This is unlikely,
-                 // since it should fit in a LO, even
-                 // though it is a GO.
-                 send (*pComm, static_cast<int> (myNumRows),
-                       myRows.getRawPtr(), rootRank);
+         if (myRank != rootRank) {
+           // Tell the root how many rows we have.  If we're sending
+           // none, then we don't have anything else to send, nor does
+           // the root have to receive anything else.
+           send (*pComm, myNumRows, rootRank);
+           if (myNumRows != 0) {
+             // Now send my rows' global indices.  Hopefully the cast
+             // to int doesn't overflow.  This is unlikely, since it
+             // should fit in a LO, even though it is a GO.
+             send (*pComm, static_cast<int> (myNumRows),
+                   myRows.getRawPtr(), rootRank);
 
-                 // I (this proc) don't care if my global row indices
-                 // are contiguous, though the root proc does (since
-                 // otherwise it needs to pack noncontiguous data into
-                 // contiguous storage before sending).  That's why we
-                 // don't check for contiguousness here.
+             // I (this proc) don't care if my global row indices are
+             // contiguous, though the root proc does (since otherwise
+             // it needs to pack noncontiguous data into contiguous
+             // storage before sending).  That's why we don't check
+             // for contiguousness here.
 
-                 // Ask the root processor for my part of the array of the
-                 // number of entries per row.
-                 receive (*pComm, rootRank,
-                          static_cast<int> (myNumRows),
-                          myNumEntriesPerRow.getRawPtr());
+             // Ask the root process for my part of the array of the
+             // number of entries per row.
+             receive (*pComm, rootRank,
+                      static_cast<int> (myNumRows),
+                      myNumEntriesPerRow.getRawPtr());
 
-                 // Use the resulting array to figure out how many column
-                 // indices and values for which I should ask from the root
-                 // processor.
-                 const local_ordinal_type myNumEntries =
-                   std::accumulate (myNumEntriesPerRow.begin(),
-                                    myNumEntriesPerRow.end(),
-                                    0);
+             // Use the resulting array to figure out how many column
+             // indices and values for which I should ask from the
+             // root process.
+             const local_ordinal_type myNumEntries =
+               std::accumulate (myNumEntriesPerRow.begin(),
+                                myNumEntriesPerRow.end(),
+                                0);
 
-                 // Make space for my entries of the sparse matrix.
-                 // Note that they don't have to be sorted by row
-                 // index.  Iterating through all my rows requires
-                 // computing a running sum over myNumEntriesPerRow.
-                 myColInd = arcp<GO> (myNumEntries);
-                 myValues = arcp<scalar_type> (myNumEntries);
-                 if (myNumEntries > 0)
-                   { // Ask for that many column indices and values,
-                     // if there are any.
-                     receive (*pComm, rootRank,
-                              static_cast<int> (myNumEntries),
-                              myColInd.getRawPtr());
-                     receive (*pComm, rootRank,
-                              static_cast<int> (myNumEntries),
-                              myValues.getRawPtr());
-                   }
-               } // If I own at least one row
-           } // If I am not the root processor
+             // Make space for my entries of the sparse matrix.  Note
+             // that they don't have to be sorted by row index.
+             // Iterating through all my rows requires computing a
+             // running sum over myNumEntriesPerRow.
+             myColInd = arcp<GO> (myNumEntries);
+             myValues = arcp<scalar_type> (myNumEntries);
+             if (myNumEntries > 0) {
+               // Ask for that many column indices and values, if
+               // there are any.
+               receive (*pComm, rootRank,
+                        static_cast<int> (myNumEntries),
+                        myColInd.getRawPtr());
+               receive (*pComm, rootRank,
+                        static_cast<int> (myNumEntries),
+                        myValues.getRawPtr());
+             }
+           } // If I own at least one row
+         } // If I am not the root processor
          else { // I _am_ the root processor
            if (debug) {
              cerr << "-- Proc 0: Copying my data from global arrays" << endl;
@@ -982,20 +923,19 @@ namespace Tpetra {
                  continue;
                }
 
-               // Construct (views of) proc p's column indices
-               // and values.  Later, we might like to optimize
-               // for the (common) contiguous case, for which we
-               // don't need to copy data into separate "their*"
-               // arrays (we can just use contiguous views of
-               // the global arrays).
+               // Construct (views of) proc p's column indices and
+               // values.  Later, we might like to optimize for the
+               // (common) contiguous case, for which we don't need to
+               // copy data into separate "their*" arrays (we can just
+               // use contiguous views of the global arrays).
                ArrayRCP<GO> theirColInd (theirNumEntries);
                ArrayRCP<scalar_type> theirValues (theirNumEntries);
                // Copy Proc p's part of the matrix into the their*
-               // arrays.  It's important that theirCurPos be
-               // updated _before_ k, otherwise theirCurPos will get
-               // the wrong number of entries per row (it should be
-               // for the row in the just-completed iteration, not
-               // for the next iteration's row).
+               // arrays.  It's important that theirCurPos be updated
+               // _before_ k, otherwise theirCurPos will get the wrong
+               // number of entries per row (it should be for the row
+               // in the just-completed iteration, not for the next
+               // iteration's row).
                local_ordinal_type theirCurPos = 0;
                for (size_type k = 0; k < theirNumRows;
                     theirCurPos += theirNumEntriesPerRow[k], k++) {
