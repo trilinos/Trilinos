@@ -3251,7 +3251,7 @@ namespace Tpetra {
 
 	// Create a row Map which is entirely owned on Proc 0.
 	RCP<Teuchos::FancyOStream> err = debug ? 
-	  Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : null;
+	  Teuchos::getFancyOStream (Teuchos::rcpFromRef (cerr)) : null;
 	RCP<const map_type> gatherRowMap = computeGatherMap (rowMap, err, debug);
 
 	// Create a matrix using this Map, and fill in on Proc 0.  We
@@ -3261,8 +3261,14 @@ namespace Tpetra {
 	  rcp (new sparse_matrix_type (gatherRowMap, numEntriesPerRow, 
 				       Tpetra::StaticProfile));
 	if (myRank == rootRank) {
+	  if (debug) {
+	    cerr << "-- Proc 0: Filling gather matrix" << endl;
+	  }
 	  ArrayView<const global_ordinal_type> myRows = 
 	    gatherRowMap->getNodeElementList ();
+	  if (debug) {
+	    cerr << "---- Rows: " << Teuchos::toString (myRows) << endl;
+	  }
 	  const size_type myNumRows = myRows.size ();
 
 	  // Add Proc 0's matrix entries to the CrsMatrix.
@@ -3278,6 +3284,10 @@ namespace Tpetra {
 	    // Modify the column indices in place to have the right index base.
 	    for (size_type k = 0; k < curNumEntries; ++k) {
 	      curColInd[k] += indexBase;
+	    }
+	    if (debug) {
+	      cerr << "------ Columns: " << Teuchos::toString (curColInd) << endl;
+	      cerr << "------ Values: " << Teuchos::toString (curValues) << endl;
 	    }
 	    // Avoid constructing empty views of ArrayRCP objects.
 	    if (curNumEntries > 0) {
