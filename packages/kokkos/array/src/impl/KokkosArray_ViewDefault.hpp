@@ -50,6 +50,7 @@
 namespace KokkosArray {
 namespace Impl {
 
+struct PhysicalLayout;
 struct LayoutDefault ;
 
 template< typename ScalarType , class Rank , class RankDynamic , class MemorySpace , class MemoryTraits >
@@ -753,18 +754,19 @@ template< class DataType , class LayoutType , class DeviceType , class MemoryTra
 class View< DataType , LayoutType , DeviceType , MemoryTraits , Impl::LayoutDefault >
   : public ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >
 {
+public:
+	typedef ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits > traits ;
 private:
 
   template< class , class , class > friend class Impl::ViewAssignment ;
-
-  typedef ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits > traits ;
+  friend class Impl::PhysicalLayout;
 
   typedef Impl::ViewAssignment<Impl::LayoutDefault> alloc ;
   typedef Impl::ViewAssignment<Impl::LayoutDefault,Impl::LayoutDefault> assign ;
 
   typename traits::value_type * m_ptr_on_device ;
-  unsigned                      m_stride ;
   typename traits::shape_type   m_shape ;
+  unsigned                      m_stride ;
 
 public:
 

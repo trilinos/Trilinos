@@ -82,7 +82,7 @@ namespace MueLu {
     validParamList->set<LO>         ("minRowsPerProcessor",       1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
     validParamList->set<double>     ("nonzeroImbalance",           1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by "
                                                                         "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
-    validParamList->set<bool>       ("fixedOrder",               false, "Use sorting of recv PIDs to force reproducibility");
+    validParamList->set<bool>       ("fixedOrder",                true, "Use sorting of recv PIDs to force reproducibility");
     // FIXME: Unused; LO instead of GO?
     // validParamList->set<GO>         ("minNnzPerProcessor",          -1, "Minimum number of nonzeros over all processes. If any process falls below this, repartitioning is initiated.");
     validParamList->set<std::string>("adjustNumPartitions",     "none", "Algorithm for adjusting number of partitions (none|2k)");

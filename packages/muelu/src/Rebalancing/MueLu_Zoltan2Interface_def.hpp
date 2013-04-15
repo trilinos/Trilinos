@@ -117,7 +117,7 @@ namespace MueLu {
 
     if (numParts == 1) {
       // Single processor, decomposition is trivial: all zeros
-      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(map, true);
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
       Set(level, "Partition", decomposition);
       return;
     }

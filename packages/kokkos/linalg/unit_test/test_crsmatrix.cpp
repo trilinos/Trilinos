@@ -247,10 +247,7 @@ int main(int argc, char **argv)
    KokkosArray::Cuda::initialize( select_device );
  )
 
- if(numa>1 || threads>1)
- {
-   KokkosArray::Host::initialize( numa , threads );
- }
+ KokkosArray::Host::initialize( numa , threads );
 
  int numVecsList[10] = {1, 2, 3, 4, 5, 8, 11, 15, 16, 17};
  int maxNumVecs = numVecs==-1?17:numVecs;
