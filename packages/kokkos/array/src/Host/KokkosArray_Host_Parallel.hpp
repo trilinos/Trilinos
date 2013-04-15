@@ -188,7 +188,7 @@ public:
   void execute_on_thread( HostThread & thread ) const
   {
 #if defined( __INTEL_COMPILER )
-    enum { vectorize = is_same<WorkSpec,VectorParallel>::value && 1 < HostSpace::WORK_ALIGN };
+    enum { vectorize = is_same<WorkSpec,VectorParallel>::value && 1 < HostSpace::WORK_ALIGNMENT };
 #else
     enum { vectorize = 0 };
 #endif

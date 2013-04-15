@@ -17,6 +17,11 @@
 #include <cusparse_v2.h>
 #include <Kokkos_CRSMatrix_CuSparse.hpp>
 #endif
+#ifdef KOKKOS_USE_MKL
+#include <mkl.h>
+#include <mkl_spblas.h>
+#include <Kokkos_CRSMatrix_MKL.hpp>
+#endif
 namespace KokkosArray {
 
 //ToDo: Check Type compatibility for Kernel Calls
@@ -242,7 +247,7 @@ struct MV_MultiplyFunctor
       for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
     	const scalar_type val = m_A.values(iEntry);
     	const size_type ind = m_A.graph.entries(iEntry);
-        #pragma vector aligned
+        //#pragma vector aligned
         #pragma ivdep
         #pragma unroll
         for ( size_type k = 0 ; k < 16 ; k++ )
@@ -256,7 +261,7 @@ struct MV_MultiplyFunctor
       for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
     	const scalar_type val = m_A.values(iEntry);
     	const size_type ind = m_A.graph.entries(iEntry);
-        #pragma vector aligned
+        //#pragma vector aligned
         #pragma ivdep
         for ( size_type k = 0 ; k < 16 ; ++k )
     	  sum[k] -=  val*m_x(ind,kk+k);
@@ -264,29 +269,29 @@ struct MV_MultiplyFunctor
     }
 
     if(doalpha*doalpha!=1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type k = 0 ; k < 16 ; ++k )
         sum[k] *= alpha(kk+k);
     }
 
     if(dobeta == 0) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type k = 0 ; k < 16 ; ++k )
         m_y(iRow,kk+k) = sum[k] ;
     } else if(dobeta == 1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type k = 0 ; k < 16 ; ++k )
         m_y(iRow,kk+k) += sum[k] ;
     } else if(dobeta == -1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type k = 0 ; k < 16 ; ++k )
         m_y(iRow,kk+k) = -m_y(iRow,kk+k) +  sum[k] ;
     } else {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type k = 0 ; k < 16 ; ++k )
         m_y(iRow,kk+k) = beta(kk+k)*m_y(iRow,kk+k) + sum[k] ;
@@ -295,7 +300,7 @@ struct MV_MultiplyFunctor
 
     //do remainder
 	const int remain = n-kk;
- #pragma vector aligned
+ //#pragma vector aligned
  #pragma ivdep
  for ( size_type k = 0 ; k < 16 ; ++k )
 	  sum[k] =  0;
@@ -307,7 +312,7 @@ struct MV_MultiplyFunctor
    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
  	const scalar_type val = m_A.values(iEntry);
  	const size_type ind = m_A.graph.entries(iEntry);
-     #pragma vector aligned
+     //#pragma vector aligned
      #pragma ivdep
      #pragma unroll
      for ( size_type k = 0 ; k < remain ; k++ )
@@ -321,7 +326,7 @@ struct MV_MultiplyFunctor
    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
  	 const scalar_type val = m_A.values(iEntry);
  	 const size_type ind = m_A.graph.entries(iEntry);
-     #pragma vector aligned
+     //#pragma vector aligned
      #pragma ivdep
      for ( size_type k = 0 ; k < remain ; ++k )
  	  sum[k] -=  val*m_x(ind,kk+k);
@@ -329,29 +334,29 @@ struct MV_MultiplyFunctor
  }
 
  if(doalpha*doalpha!=1) {
-   #pragma vector aligned
+   //#pragma vector aligned
    #pragma ivdep
    for ( size_type k = 0 ; k < remain ; ++k )
      sum[k] *= alpha(kk+k);
  }
 
  if(dobeta == 0) {
-   #pragma vector aligned
+   //#pragma vector aligned
    #pragma ivdep
    for ( size_type k = 0 ; k < remain ; ++k )
      m_y(iRow,kk+k) = sum[k] ;
  } else if(dobeta == 1) {
-   #pragma vector aligned
+   //#pragma vector aligned
    #pragma ivdep
    for ( size_type k = 0 ; k < remain ; ++k )
      m_y(iRow,kk+k) += sum[k] ;
  } else if(dobeta == -1) {
-   #pragma vector aligned
+   //#pragma vector aligned
    #pragma ivdep
    for ( size_type k = 0 ; k < remain ; ++k )
      m_y(iRow,kk+k) = -m_y(iRow,kk+k) + sum[k] ;
  } else {
-   #pragma vector aligned
+   //#pragma vector aligned
    #pragma ivdep
    for ( size_type k = 0 ; k < remain ; ++k )
      m_y(iRow,kk+k) = beta(kk+k)*m_y(iRow,kk+k) + sum[k] ;
@@ -390,7 +395,7 @@ struct MV_MultiplyFunctorUnroll
       const size_type iEntryBegin = m_A.graph.row_map(iRow);
       const size_type iEntryEnd   = m_A.graph.row_map(iRow+1);
 
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
     	  const scalar_type val = m_A.values(iEntry);
@@ -404,7 +409,7 @@ struct MV_MultiplyFunctorUnroll
     {
       const size_type iEntryBegin = m_A.graph.row_map(iRow);
       const size_type iEntryEnd   = m_A.graph.row_map(iRow+1);
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
     	  const scalar_type val = m_A.values(iEntry);
@@ -417,7 +422,7 @@ struct MV_MultiplyFunctorUnroll
     }
 
     if(doalpha*doalpha!=1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       #pragma unroll
       for ( size_type k = 0 ; k < UNROLL ; ++k )
@@ -425,7 +430,7 @@ struct MV_MultiplyFunctorUnroll
     }
 
     if(dobeta == 0) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
 	  #pragma unroll
       for ( size_type k = 0 ; k < UNROLL ; ++k )
@@ -434,7 +439,7 @@ struct MV_MultiplyFunctorUnroll
     }
     else
     if(dobeta == 1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       #pragma unroll
       for ( size_type k = 0 ; k < UNROLL ; ++k )
@@ -443,7 +448,7 @@ struct MV_MultiplyFunctorUnroll
     }
     else
     if(dobeta == -1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       #pragma unroll
       for ( size_type k = 0 ; k < UNROLL ; ++k )
@@ -452,7 +457,7 @@ struct MV_MultiplyFunctorUnroll
     }
     else
     {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       #pragma unroll
       for ( size_type k = 0 ; k < UNROLL ; ++k )
@@ -636,6 +641,9 @@ void MV_Multiply( const RangeVector & y,
 #ifdef KOKKOS_USE_CUSPARSE
     if(MV_Multiply_Try_CuSparse(0.0,y,1.0,A,x)) return;
 #endif
+#ifdef KOKKOS_USE_MKL
+    if(MV_Multiply_Try_MKL(0.0,y,1.0,A,x)) return;
+#endif
     typedef KokkosArray::View<typename DomainVector::scalar_type*,typename DomainVector::device_type> aVector;
     aVector a;
     if(x.dimension(1)<=16)
@@ -649,6 +657,9 @@ void MV_Multiply( const RangeVector & y, typename DomainVector::scalar_type s_a,
 {
 #ifdef KOKKOS_USE_CUSPARSE
     if(MV_Multiply_Try_CuSparse(0.0,y,s_a,A,x)) return;
+#endif
+#ifdef KOKKOS_USE_MKL
+    if(MV_Multiply_Try_MKL(0.0,y,s_a,A,x)) return;
 #endif
     typedef KokkosArray::View<typename RangeVector::scalar_type*,typename RangeVector::device_type> aVector;
     aVector a;
@@ -680,6 +691,9 @@ void MV_Multiply( typename RangeVector::scalar_type s_b,const RangeVector & y, t
 {
 #ifdef KOKKOS_USE_CUSPARSE
     if(MV_Multiply_Try_CuSparse(s_b,y,s_a,A,x)) return;
+#endif
+#ifdef KOKKOS_USE_MKL
+    if(MV_Multiply_Try_MKL(s_b,y,s_a,A,x)) return;
 #endif
     typedef KokkosArray::View<typename RangeVector::scalar_type*,typename RangeVector::device_type> aVector;
     aVector a;

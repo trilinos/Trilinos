@@ -53,8 +53,6 @@
 #ifndef MUELU_AMALGAMATIONINFO_DEF_HPP_
 #define MUELU_AMALGAMATIONINFO_DEF_HPP_
 
-#include <Xpetra_MapFactory.hpp>
-
 #include "MueLu_AmalgamationInfo_decl.hpp"
 #include "MueLu_Exceptions.hpp"
 

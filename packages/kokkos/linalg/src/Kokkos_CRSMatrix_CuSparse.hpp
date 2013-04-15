@@ -61,6 +61,7 @@ template<class RangeVector,class CrsMatrix,class DomainVector>
 bool MV_Multiply_Try_CuSparse( typename RangeVector::scalar_type s_b,const RangeVector & y, typename DomainVector::scalar_type s_a,
 		const CrsMatrix & A , const DomainVector & x)
 {
+  if(!KokkosArray::Impl::is_same<typename RangeVector::device_type,typename KokkosArray::Cuda>::value) return false;
   if(KokkosArray::Impl::is_same<typename RangeVector::non_const_scalar_type,float>::value&&
 	 KokkosArray::Impl::is_same<typename DomainVector::non_const_scalar_type,float>::value&&
 	 KokkosArray::Impl::is_same<typename CrsMatrix::values_type::non_const_scalar_type,float>::value) {
