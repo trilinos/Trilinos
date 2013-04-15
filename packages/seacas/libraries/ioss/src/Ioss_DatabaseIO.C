@@ -594,7 +594,7 @@ namespace {
     if (single_proc_only) {
       all_sizes.push_back(field.get_size());
     } else {
-      util.gather(field.get_size(), all_sizes);
+      util.gather((int64_t)field.get_size(), all_sizes);
     }
 
     if (util.parallel_rank() == 0 || single_proc_only) {
