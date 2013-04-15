@@ -69,7 +69,7 @@ struct PhysicalLayout {
 	rank = view.Rank;
     for(int i=0;i<8;i++) stride[i] = 0;
 	stride[rank-1] = 1;
-    for(int i = rank-2;i>=0;i++)
+    for(int i = rank-2;i>=0;i--)
     	stride[i] = view.dimension(i+1)*stride[i+1];
 	stride[0] = view.m_stride;
   }

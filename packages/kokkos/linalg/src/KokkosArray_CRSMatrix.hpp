@@ -17,6 +17,11 @@
 #include <cusparse_v2.h>
 #include <Kokkos_CRSMatrix_CuSparse.hpp>
 #endif
+#ifdef KOKKOS_USE_MKL
+#include <mkl.h>
+#include <mkl_spblas.h>
+#include <Kokkos_CRSMatrix_MKL.hpp>
+#endif
 namespace KokkosArray {
 
 //ToDo: Check Type compatibility for Kernel Calls
@@ -636,6 +641,9 @@ void MV_Multiply( const RangeVector & y,
 #ifdef KOKKOS_USE_CUSPARSE
     if(MV_Multiply_Try_CuSparse(0.0,y,1.0,A,x)) return;
 #endif
+#ifdef KOKKOS_USE_MKL
+    if(MV_Multiply_Try_MKL(0.0,y,1.0,A,x)) return;
+#endif
     typedef KokkosArray::View<typename DomainVector::scalar_type*,typename DomainVector::device_type> aVector;
     aVector a;
     if(x.dimension(1)<=16)
@@ -649,6 +657,9 @@ void MV_Multiply( const RangeVector & y, typename DomainVector::scalar_type s_a,
 {
 #ifdef KOKKOS_USE_CUSPARSE
     if(MV_Multiply_Try_CuSparse(0.0,y,s_a,A,x)) return;
+#endif
+#ifdef KOKKOS_USE_MKL
+    if(MV_Multiply_Try_MKL(0.0,y,s_a,A,x)) return;
 #endif
     typedef KokkosArray::View<typename RangeVector::scalar_type*,typename RangeVector::device_type> aVector;
     aVector a;
@@ -680,6 +691,9 @@ void MV_Multiply( typename RangeVector::scalar_type s_b,const RangeVector & y, t
 {
 #ifdef KOKKOS_USE_CUSPARSE
     if(MV_Multiply_Try_CuSparse(s_b,y,s_a,A,x)) return;
+#endif
+#ifdef KOKKOS_USE_MKL
+    if(MV_Multiply_Try_MKL(s_b,y,s_a,A,x)) return;
 #endif
     typedef KokkosArray::View<typename RangeVector::scalar_type*,typename RangeVector::device_type> aVector;
     aVector a;

@@ -16,7 +16,11 @@ struct MultiVectorDynamic{
 #ifdef KOKKOS_USE_CUSPARSE
   typedef typename KokkosArray::LayoutLeft layout;
 #else
+#ifdef KOKKOS_USE_MKL
+  typedef typename KokkosArray::LayoutRight layout;
+#else
   typedef typename device::array_layout layout;
+#endif
 #endif
   typedef typename KokkosArray::View<Scalar**  , layout, device>  type ;
   typedef typename KokkosArray::View<const Scalar**  , layout, device>  const_type ;
