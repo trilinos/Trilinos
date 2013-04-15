@@ -163,20 +163,21 @@ if __name__ == "__main__":
         print "******************"
 
     # Run the test and catch any errors
+    errors = 0
     try:
         main(iAmRoot)
-        errors = 0
     except Exception, e:
+        print "Processor", comm.getRank(), ": Exception raised"
         print e
         errors = 1
 
     # Sum the errors, report the status and exit
-    print "Processor", comm.getRank(), "-- errors =", errors
+    print "Processor", comm.getRank(), ": errors =", errors
     totalErrors = comm.reduceAll(Teuchos.REDUCE_SUM, errors)
-    print "Processor", comm.getRank(), "-- totalErrors =", totalErrors
+    print "Processor", comm.getRank(), ": totalErrors =", totalErrors
     if iAmRoot:
-        if errors == 0:
+        if totalErrors == 0:
             print "End Result: TEST PASSED"
         else:
             print "End Result: TEST FAILED"
-    sys.exit(errors)
+    sys.exit(totalErrors)
