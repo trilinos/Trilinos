@@ -454,9 +454,9 @@ void Zoltan_Print_Configuration(char *indent)
   if (indent == NULL){
     indent = "";
   }
-  printf("\n%sZOLTAN_ID_TYPE: %s (%ld bytes)\n",
+  printf("\n%sZOLTAN_ID_TYPE: %s (%zd bytes)\n",
     indent, zoltan_id_datatype_name, sizeof(ZOLTAN_ID_TYPE));
-  printf("%sZOLTAN_GNO_TYPE: %s, (%ld bytes)\n",
+  printf("%sZOLTAN_GNO_TYPE: %s, (%zd bytes)\n",
     indent, zoltan_gno_datatype_name, sizeof(ZOLTAN_GNO_TYPE));
   printf("%sMPI_Datatype for ZOLTAN_ID_TYPE: %s\n", indent,
     zoltan_mpi_id_datatype_name);

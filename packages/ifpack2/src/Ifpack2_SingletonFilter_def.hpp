@@ -413,14 +413,27 @@ void SingletonFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOr
 				       Scalar alpha,
 				       Scalar beta) const
 {  
+  this->template applyTempl<Scalar,Scalar>(X, Y, mode, alpha, beta);
+}
+
+
+//==========================================================================  
+template<class MatrixType> 
+template<class DomainScalar, class RangeScalar>
+void SingletonFilter<MatrixType>::applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+					     Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+					     Teuchos::ETransp mode, 
+					     RangeScalar alpha,
+					     RangeScalar beta) const
+{  
   // Note: This isn't AztecOO compliant.  But neither was Ifpack's version.
 
   TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
 			     "Ifpack2::SingletonFilter::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
-
-  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr = X.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr = Y.get2dViewNonConst();
+  
+  RangeScalar zero = Teuchos::ScalarTraits<RangeScalar>::zero();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = X.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = Y.get2dViewNonConst();
 
   Y.putScalar(zero);
   size_t NumVectors = Y.getNumVectors();
@@ -433,17 +446,17 @@ void SingletonFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOr
     if (mode==Teuchos::NO_TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];      
+	  y_ptr[k][i] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][Indices_[j]];      
     }
     else if (mode==Teuchos::TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][Indices_[j]] += Values_[j] * x_ptr[k][i];
+	  y_ptr[k][Indices_[j]] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][i];
     }
     else { //mode==Teuchos::CONJ_TRANS
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<Scalar>::conjugate(Values_[j]) * x_ptr[k][i];
+	  y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<RangeScalar>::conjugate((RangeScalar)Values_[j]) * (RangeScalar)x_ptr[k][i];
     }
   }
 }
@@ -468,8 +481,17 @@ template<class MatrixType>
 void SingletonFilter<MatrixType>::SolveSingletons(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
 						  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
 {
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > RHS_ptr = RHS.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       LHS_ptr = LHS.get2dViewNonConst();
+  this->template SolveSingletonsTempl<Scalar,Scalar>(RHS, LHS);
+}
+
+//==============================================================================
+template<class MatrixType> 
+template<class DomainScalar, class RangeScalar>
+void SingletonFilter<MatrixType>::SolveSingletonsTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
+						       Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
+{
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > RHS_ptr = RHS.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        LHS_ptr = LHS.get2dViewNonConst();
 
   for (size_t i = 0 ; i < NumSingletons_ ; ++i) {
     LocalOrdinal ii = SingletonIndex_[i];
@@ -479,7 +501,7 @@ void SingletonFilter<MatrixType>::SolveSingletons(const Tpetra::MultiVector<Scal
     for (size_t j = 0 ; j < Nnz ; ++j) {
       if (Indices_[j] == ii) {
 	for (size_t k = 0 ; k < LHS.getNumVectors() ; ++k)
-	  LHS_ptr[k][ii] = RHS_ptr[k][ii] / Values_[j];
+	  LHS_ptr[k][ii] = (RangeScalar)RHS_ptr[k][ii] / (RangeScalar)Values_[j];
       }
     }
   }
@@ -491,9 +513,19 @@ void SingletonFilter<MatrixType>::CreateReducedRHS(const Tpetra::MultiVector<Sca
 						   const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
 						   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedRHS)
 {
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > RHS_ptr = RHS.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > LHS_ptr = LHS.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       ReducedRHS_ptr = ReducedRHS.get2dViewNonConst();
+  this->template CreateReducedRHSTempl<Scalar,Scalar>(LHS, RHS, ReducedRHS);
+}
+
+//==============================================================================
+template<class MatrixType> 
+template<class DomainScalar, class RangeScalar>
+void SingletonFilter<MatrixType>::CreateReducedRHSTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& LHS,
+							const Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
+							Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedRHS)
+{
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const RangeScalar > > RHS_ptr = RHS.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > LHS_ptr = LHS.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        ReducedRHS_ptr = ReducedRHS.get2dViewNonConst();
 
   size_t NumVectors = LHS.getNumVectors();
 
@@ -509,7 +541,7 @@ void SingletonFilter<MatrixType>::CreateReducedRHS(const Tpetra::MultiVector<Sca
     for (size_t j = 0 ; j < Nnz ; ++j) {
       if (Reorder_[Indices_[j]] == -1) {
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  ReducedRHS_ptr[k][i] -= Values_[j] * LHS_ptr[k][Indices_[j]];
+	  ReducedRHS_ptr[k][i] -= (RangeScalar)Values_[j] * (RangeScalar)LHS_ptr[k][Indices_[j]];
       }
     }
   }
@@ -520,13 +552,22 @@ template<class MatrixType>
 void SingletonFilter<MatrixType>::UpdateLHS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedLHS,
 					    Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
 {
+  this->template UpdateLHSTempl<Scalar,Scalar>(ReducedLHS, LHS);
+}
+
+//==============================================================================
+template<class MatrixType> 
+template<class DomainScalar, class RangeScalar>
+void SingletonFilter<MatrixType>::UpdateLHSTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedLHS,
+						 Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
+{
   
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >        LHS_ptr = LHS.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >  ReducedLHS_ptr = ReducedLHS.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        LHS_ptr = LHS.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> >  ReducedLHS_ptr = ReducedLHS.get2dView();
 
   for (size_t i = 0 ; i < NumRows_ ; ++i)
     for (size_t k = 0 ; k < LHS.getNumVectors() ; ++k)
-      LHS_ptr[k][InvReorder_[i]] = ReducedLHS_ptr[k][i];
+      LHS_ptr[k][InvReorder_[i]] = (RangeScalar)ReducedLHS_ptr[k][i];
 }
 
 //==========================================================================  

@@ -657,6 +657,12 @@ void NemSpread<T,INT>::load_mesh()
   safe_free((void **) &Side_Set_Names);
   safe_free((void **) &Elem_Blk_Names);
 
+  safe_free((void **) &Restart_Info.NV_Name);
+  safe_free((void **) &Restart_Info.EV_Name);
+  safe_free((void **) &Restart_Info.GV_Name);
+  safe_free((void **) &Restart_Info.NSV_Name);
+  safe_free((void **) &Restart_Info.SSV_Name);
+
   /*
    * free up some other memory so that there is more
    * memory available for reading restart variables

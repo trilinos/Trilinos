@@ -663,8 +663,6 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(Repartition, Build)
   {
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-
     out << "version: " << MueLu::Version() << std::endl;
     out << "Tests build of the permutation matrix for repartitioning." << std::endl;
     out << std::endl;

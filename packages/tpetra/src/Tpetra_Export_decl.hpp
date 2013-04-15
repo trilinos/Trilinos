@@ -59,6 +59,9 @@ namespace Tpetra {
   class ImportExportData;
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Import;
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -79,6 +82,17 @@ namespace Tpetra {
   /// is for redistributing data from a possibly multiply-owned
   /// distribution to a uniquely-owned distribution.
   ///
+  /// The names "Import" and "Export" have nothing to do with the
+  /// direction in which data moves relative to the calling process;
+  /// any process may do both receives and sends in an Import or
+  /// Export.  Rather, the names suggest what happens in their most
+  /// common use case, the communication pattern for sparse
+  /// matrix-vector multiply.  Import "brings in" remote source vector
+  /// data (from the domain Map to the column Map) for local
+  /// computation, and Export "pushes" the result back (from the row
+  /// Map to the range Map).  Import and Export have other uses as
+  /// well.
+  ///
   /// One use case of Export is finite element assembly.  For example,
   /// one way to compute a distributed forcing term vector is to use
   /// an overlapping distribution for the basis functions' domains.
@@ -86,19 +100,29 @@ namespace Tpetra {
   /// contribution to the integration into a single nonoverlapping
   /// distribution.
   ///
-  /// Epetra separated Import and Export for performance
-  /// reasons.  The implementation is different, depending on which
-  /// direction is the uniquely-owned Map.  Tpetra retains this
-  /// convention.
+  /// Epetra separated Import and Export for performance reasons.  The
+  /// implementation is different, depending on which direction is the
+  /// uniquely-owned Map.  Tpetra retains this convention.
   ///
   /// This class is templated on the same template arguments as Map:
-  /// the local ordinal type (\c LocalOrdinal), the global ordinal
-  /// type (\c GlobalOrdinal), and the Kokkos Node type
-  /// (<tt>Node</tt>).
-  template <class LocalOrdinal, 
-	    class GlobalOrdinal = LocalOrdinal, 
-	    class Node = Kokkos::DefaultNode::DefaultNodeType>
+  /// the local ordinal type <tt>LocalOrdinal</tt>, the global ordinal
+  /// type <tt>GlobalOrdinal</tt>, and the Kokkos <tt>Node</tt> type.
+  ///
+  /// This method accepts an optional list of parameters, either
+  /// through the constructor or through the setParameterList()
+  /// method.  Most users do not need to worry about these parameters;
+  /// the default values are fine.  However, for expert users, we
+  /// expose the following parameter:
+  /// - "Barrier between receives and sends" (\c bool): Whether to
+  ///   execute a barrier between receives and sends, when executing
+  ///   the Import (i.e., when calling DistObject's doImport()
+  ///   (forward mode) or doExport() (reverse mode)).
+  ///
+  template <class LocalOrdinal,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Export: public Teuchos::Describable {
+      friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
   public:
     //! The specialization of Map used by this class.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
@@ -116,7 +140,21 @@ namespace Tpetra {
     Export (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target);
 
-    /// \brief Constructor (with list of parameters).
+    /// \brief Construct an Export from the source and target Maps,
+    ///   with an output stream for debugging output.
+    ///
+    /// \param source [in] The source distribution.  This may be a
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    ///
+    /// \param out [in/out] Output stream for debugging output.
+    Export (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+            const RCP<Teuchos::FancyOStream>& out);
+
+    /// \brief Constructor (with list of parameters)
     ///
     /// \param source [in] The source distribution.  This may be a
     ///   multiply owned (overlapping) distribution.
@@ -132,14 +170,48 @@ namespace Tpetra {
             const Teuchos::RCP<const map_type>& target,
             const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
+    /// \brief Constructor (with list of parameters and debugging
+    ///   output stream)
+    ///
+    /// \param source [in] The source distribution.  This may be a
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    ///
+    /// \param out [in/out] Output stream for debugging output.
+    ///
+    /// \param plist [in/out] List of parameters.  Currently passed
+    ///   directly to the Distributor that implements communication.
+    ///   If you don't know what this should be, you should use the
+    ///   two-argument constructor, listed above.
+    Export (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+            const RCP<Teuchos::FancyOStream>& out,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
     /// \brief Copy constructor.
     ///
     /// \note Currently this only makes a shallow copy of the Export's
     ///   underlying data.
     Export (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
+    /// \brief "Copy" constructor from an Export object.
+    ///
+    /// This constructor creates an Export object from the "reverse"
+    /// of the given Import object.  This method is mainly useful for
+    /// Tpetra developers, for example when building the explicit
+    /// transpose of a sparse matrix.
+    Export (const Import<LocalOrdinal,GlobalOrdinal,Node> & importer);
+
     //! Destructor.
     ~Export();
+
+    /// \brief Set parameters.
+    ///
+    /// Please see the class documentation for a list of all accepted
+    /// parameters and their default values.
+    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     //@}
     //! @name Export Attribute Methods
@@ -180,8 +252,8 @@ namespace Tpetra {
     /// \brief List of processes to which entries will be sent.
     ///
     /// The entry with local ID getExportLIDs()[i] will be sent to
-    /// process getExportImageIDs()[i].
-    ArrayView<const int> getExportImageIDs() const;
+    /// process getExportPiDs()[i].
+    ArrayView<const int> getExportPIDs() const;
 
     //! The source Map used to construct this Export.
     const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getSourceMap() const;
@@ -220,8 +292,12 @@ namespace Tpetra {
     //@}
 
   private:
-
+    //! All the data needed for executing the Export communication plan.
     RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ExportData_;
+    //! Output stream for debugging output.
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
+    //! Whether to print copious debugging output on all processes.
+    bool debug_;
 
     //! @name Initialization helper functions (called by the constructor)
     //@{
@@ -229,9 +305,9 @@ namespace Tpetra {
     //==============================================================================
     // sets up numSameIDs_, numPermuteIDs_, and the export IDs
     // these variables are already initialized to 0 by the ImportExportData ctr.
-    // also sets up permuteToLIDs_, permuteFromLIDs_, exportGIDs_, and exportLIDs_
-    void setupSamePermuteExport();
-    void setupRemote();
+    // also sets up permuteToLIDs_, permuteFromLIDs_, and exportLIDs_
+    void setupSamePermuteExport(Teuchos::Array<GlobalOrdinal> & exportGIDs);
+    void setupRemote(Teuchos::Array<GlobalOrdinal> & exportGIDs);
     //@}
   }; // class Export
 
@@ -256,8 +332,8 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       src == null || tgt == null, std::runtime_error,
-      "Tpetra::createExport(): neither source nor target map may be null:" 
-      << std::endl << "source: " << src << std::endl << "target: " << tgt 
+      "Tpetra::createExport(): neither source nor target map may be null:"
+      << std::endl << "source: " << src << std::endl << "target: " << tgt
       << std::endl);
 #endif // HAVE_TPETRA_DEBUG
     return Teuchos::rcp (new Export<LocalOrdinal, GlobalOrdinal, Node> (src, tgt));

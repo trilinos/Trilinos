@@ -231,6 +231,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     TEUCHOS_TEST_FOR_EXCEPTION(nonAggregatedNodes > 0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
   }
 
+  aggregates->AggregatesCrossProcessors(false);
   // Level Set
   Set(currentLevel, "Aggregates", aggregates);
 

@@ -60,7 +60,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::isLocalNeighborVertex(LocalOrdinal v) const {
-    return domainMap_->isNodeLocalElement(v);
+    return domainMapRef_.isNodeLocalElement(v);
   }
 
   /// Return a simple one-line description of this object.

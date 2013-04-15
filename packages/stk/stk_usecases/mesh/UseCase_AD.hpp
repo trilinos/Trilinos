@@ -298,8 +298,8 @@ namespace lame {
       {
         const int num_material_properties = 2;
         properties = new T[num_material_properties];
-        getMaterialProperty("YOUNGS_MODULUS",props, properties[0]);
-        getMaterialProperty("POISSONS_RATIO",props, properties[1]);
+        this->getMaterialProperty("YOUNGS_MODULUS",props, properties[0]);
+        this->getMaterialProperty("POISSONS_RATIO",props, properties[1]);
       }
 
       ~Elastic() { delete [] properties; properties = NULL; }

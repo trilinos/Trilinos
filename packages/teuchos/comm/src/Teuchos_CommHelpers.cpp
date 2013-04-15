@@ -216,6 +216,69 @@ reduceAllImpl (const Comm<int>& comm,
 #endif // HAVE_MPI
 }
 
+
+/// \brief Generic implementation of reduceAllAndScatter().
+/// \tparam T The type of data on which to reduce.  The requirements
+///   for this type are the same as for the template parameter T of
+///   MpiTypeTraits.
+///
+/// This generic implementation factors out common code among all full
+/// specializations of reduceAllAndScatter() in this file.
+template<class T>
+void
+reduceAllAndScatterImpl (const Comm<int>& comm,
+                         const EReductionType reductType,
+                         const int sendCount,
+                         const T sendBuffer[],
+                         const int recvCounts[],
+                         T myGlobalReducts[])
+{
+#ifdef HAVE_MPI
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "reduceAllAndScatter: "
+        "Not implemented for Comm not MpiComm or SerialComm.");
+    }
+    else { // It's a SerialComm; there is only 1 process, so just copy.
+      //
+      // FIXME (mfh 09 Apr 2013) Is this right?  This is what
+      // SerialComm does.
+      //
+      std::copy (sendBuffer, sendBuffer + sendCount, myGlobalReducts);
+    }
+  } else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Op rawMpiOp = getMpiOpForEReductionType (reductType);
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    T t;
+    MPI_Datatype rawMpiType = MpiTypeTraits<T>::getType (t);
+    const int err = MPI_Reduce_scatter (const_cast<T*> (sendBuffer),
+                                        myGlobalReducts,
+                                        const_cast<int*> (recvCounts),
+                                        rawMpiType,
+                                        rawMpiOp,
+                                        rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      err != MPI_SUCCESS,
+      std::runtime_error,
+      "MPI_Reduce_scatter failed with the following error: "
+      << getMpiErrorString (err));
+  }
+#else
+  // We've built without MPI, so just assume it's a SerialComm and copy the data.
+  //
+  // FIXME (mfh 09 Apr 2013) Is this right?  This is what SerialComm does.
+  //
+  std::copy (sendBuffer, sendBuffer + sendCount, myGlobalReducts);
+#endif // HAVE_MPI
+}
+
+
 /// \brief Generic implementation of ireceive() for any Comm subclass.
 /// \tparam Packet The type of data to receive.
 /// 
@@ -227,7 +290,6 @@ ireceiveGeneral(const Comm<int>& comm,
 		const ArrayRCP<Packet> &recvBuffer,
 		const int sourceRank)
 {
-  typedef std::pair<RCP<CommRequest<int> >, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::ireceive<int, " << "," << TypeNameTraits<Packet>::name () 
     << "> ( value type )"
@@ -249,7 +311,6 @@ ireceiveGeneral (const ArrayRCP<Packet> &recvBuffer,
 		 const int tag,
 		 const Comm<int>& comm)
 {
-  typedef std::pair<RCP<CommRequest<int> >, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::ireceive<int, " << "," << TypeNameTraits<Packet>::name () 
     << "> ( value type )"
@@ -1090,6 +1151,19 @@ reduceAll<int, int> (const Comm<int>& comm,
     << toString (reductType) << ")"
     );
   reduceAllImpl<int> (comm, reductType, count, sendBuffer, globalReducts);
+}
+
+template<>
+void
+reduceAllAndScatter<int, int> (const Comm<int>& comm,
+                               const EReductionType reductType,
+                               const int sendCount,
+                               const int sendBuffer[],
+                               const int recvCounts[],
+                               int myGlobalReducts[])
+{
+  reduceAllAndScatterImpl<int> (comm, reductType, sendCount, sendBuffer,
+                                recvCounts, myGlobalReducts);
 }
 
 template<>

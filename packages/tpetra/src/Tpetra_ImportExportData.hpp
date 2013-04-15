@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -61,7 +61,7 @@ namespace Tpetra {
   /// \warning This class is an implementation detail of Import and
   ///   Export.  It may change or disappear at any time.  Tpetra users
   ///   must not depend on this class.
-  /// 
+  ///
   /// Import and Export both require the same data.  We use this class
   /// as a container for those data.  They include incoming ("remote")
   /// and outgoing ("export") local indices (LIDs), LIDs to permute on
@@ -74,23 +74,51 @@ namespace Tpetra {
     typedef Node node_type;
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-    /// \brief Constructor 
+    /// \brief Constructor
     ///
     /// \param source [in] Source Map of the Import or Export
     /// \param target [in] Target Map of the Import or Export
-    ImportExportData (const Teuchos::RCP<const map_type>& source, 
+    ImportExportData (const Teuchos::RCP<const map_type>& source,
                       const Teuchos::RCP<const map_type>& target);
+
+    /// \brief Constructor with output stream.
+    ///
+    /// \param source [in] Source Map of the Import or Export
+    /// \param target [in] Target Map of the Import or Export
+    /// \param out [in/out] Output stream (for debugging output)
+    ImportExportData (const Teuchos::RCP<const map_type>& source,
+                      const Teuchos::RCP<const map_type>& target,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& out);
 
     /// \brief Constructor with ParameterList for Distributor
     ///
     /// \param source [in] Source Map of the Import or Export
     /// \param target [in] Target Map of the Import or Export
     /// \param plist [in/out] List of parameters for the Distributor
-    ImportExportData (const Teuchos::RCP<const map_type>& source, 
+    ImportExportData (const Teuchos::RCP<const map_type>& source,
                       const Teuchos::RCP<const map_type>& target,
                       const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
+    /// \brief Constructor with output stream, and ParameterList for Distributor
+    ///
+    /// \param source [in] Source Map of the Import or Export
+    /// \param target [in] Target Map of the Import or Export
+    /// \param out [in/out] Output stream (for debugging output)
+    /// \param plist [in/out] List of parameters for the Distributor
+    ImportExportData (const Teuchos::RCP<const map_type>& source,
+                      const Teuchos::RCP<const map_type>& target,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& out,
+                      const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+
     ~ImportExportData();
+
+    //! Output stream for debug output.
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
+
+    /// \brief Copys the import/export data, but reverse the direction of the transfer
+    /// as well as reversing the distributor
+    Teuchos::RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> > reverseClone();
 
     /// \brief Index of target Map LIDs to which to permute.
     ///
@@ -126,23 +154,16 @@ namespace Tpetra {
     /// other processes.
     Teuchos::Array<LocalOrdinal> remoteLIDs_;
 
-    /// \brief "Outgoing" global indices.
-    ///
-    /// This is only used by Export, not by Import.  There is some
-    /// question whether this array can be deallocated or resized to
-    /// zero after use during Export construction.
-    Teuchos::Array<GlobalOrdinal> exportGIDs_;
-
     /// \brief "Outgoing" local indices.
     ///
     /// This array holds the LIDs of the GIDs that are owned by the
     /// source Map, but not by the target Map.  The source object of
     /// the Import or Export will send data from these LIDs to other
     /// processes.
-    Teuchos::ArrayRCP<LocalOrdinal> exportLIDs_;
+    Teuchos::Array<LocalOrdinal> exportLIDs_;
 
     //! Ranks of the processes to which the source object sends data.
-    Teuchos::ArrayRCP<int> exportImageIDs_;
+    Teuchos::Array<int> exportPIDs_;
 
     /// \brief Number of initial identical indices.
     ///
@@ -179,7 +200,7 @@ namespace Tpetra {
     //! Copy constructor (declared but not defined, do not use)
     ImportExportData (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> &rhs);
     //! Assignment operator (declared but not defined, do not use)
-    ImportExportData<LocalOrdinal,GlobalOrdinal,Node>& 
+    ImportExportData<LocalOrdinal,GlobalOrdinal,Node>&
     operator= (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & rhs);
   }; // class ImportExportData
 
@@ -187,11 +208,25 @@ namespace Tpetra {
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
   ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target)
-  : numSameIDs_ (0)
-  , source_ (source)
-  , target_ (target)
-  , comm_ (source->getComm())
-  , distributor_ (comm_)
+    : out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
+    , numSameIDs_ (0)
+    , source_ (source)
+    , target_ (target)
+    , comm_ (source->getComm())
+    , distributor_ (comm_, out_)
+  {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
+  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+                    const Teuchos::RCP<Teuchos::FancyOStream>& out)
+    : out_ (out)
+    , numSameIDs_ (0)
+    , source_ (source)
+    , target_ (target)
+    , comm_ (source->getComm())
+    , distributor_ (comm_, out_)
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -199,12 +234,63 @@ namespace Tpetra {
   ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
                     const Teuchos::RCP<Teuchos::ParameterList>& plist)
-  : numSameIDs_ (0)
-  , source_ (source)
-  , target_ (target)
-  , comm_ (source->getComm())
-  , distributor_ (comm_, plist)
+    : out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
+    , numSameIDs_ (0)
+    , source_ (source)
+    , target_ (target)
+    , comm_ (source->getComm())
+    , distributor_ (comm_, out_, plist)
   {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
+  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+                    const Teuchos::RCP<Teuchos::FancyOStream>& out,
+                    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    : out_ (out)
+    , numSameIDs_ (0)
+    , source_ (source)
+    , target_ (target)
+    , comm_ (source->getComm())
+    , distributor_ (comm_, out_, plist)
+  {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> >
+  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::reverseClone()
+  {
+    Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > tData = rcp(new ImportExportData<LocalOrdinal,GlobalOrdinal,Node>(target_,source_));
+
+    // Things that stay the same
+    tData->comm_             = comm_;
+    tData->numSameIDs_       = numSameIDs_;
+
+    // Things that reverse
+    tData->distributor_      = *distributor_.getReverse();
+    tData->permuteToLIDs_    = permuteFromLIDs_;
+    tData->permuteFromLIDs_  = permuteToLIDs_;
+
+    // Remotes / exports (easy part)
+    tData->exportLIDs_       = remoteLIDs_;
+    tData->remoteLIDs_       = exportLIDs_;
+    tData->exportPIDs_.resize(tData->exportLIDs_.size());
+
+    // Remotes / exports (hard part) - extract the exportPIDs from the remotes of my distributor
+    size_t NumReceives                  = distributor_.getNumReceives();
+    ArrayView<const int> ProcsFrom      = distributor_.getImagesFrom();
+    ArrayView<const size_t> LengthsFrom = distributor_.getLengthsFrom();
+
+    for(size_t i=0,j=0;i<NumReceives;i++) {
+      int pid=ProcsFrom[i];
+      for(size_t k=0;k<LengthsFrom[i];k++){
+	tData->exportPIDs_[j]=pid;
+	j++;
+      }    
+    }
+    return tData;
+  }
+
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::~ImportExportData() 

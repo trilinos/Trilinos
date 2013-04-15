@@ -73,10 +73,10 @@ SolverFactory::getLabel<NOX::Epetra::Observer>()
 }
 
 template <>
-ExtensibleFactory<NOX::Epetra::Observer> &
-SolverFactory::getFactory<NOX::Epetra::Observer>()
+Provider<NOX::Epetra::Observer> &
+SolverFactory::getSource<NOX::Epetra::Observer>()
 {
-  return noxObserverFactory_;
+  return noxObserverSource_;
 }
 
 
@@ -88,10 +88,10 @@ SolverFactory::getLabel<NOX::Epetra::ModelEvaluatorInterface>()
 }
 
 template <>
-ExtensibleFactory<NOX::Epetra::ModelEvaluatorInterface> &
-SolverFactory::getFactory<NOX::Epetra::ModelEvaluatorInterface>()
+Provider<NOX::Epetra::ModelEvaluatorInterface> &
+SolverFactory::getSource<NOX::Epetra::ModelEvaluatorInterface>()
 {
-  return noxInterfaceFactory_;
+  return noxInterfaceSource_;
 }
 
 
@@ -103,10 +103,10 @@ SolverFactory::getLabel<NOX::Epetra::LinearSystem>()
 }
 
 template <>
-ExtensibleFactory<NOX::Epetra::LinearSystem> &
-SolverFactory::getFactory<NOX::Epetra::LinearSystem>()
+Provider<NOX::Epetra::LinearSystem> &
+SolverFactory::getSource<NOX::Epetra::LinearSystem>()
 {
-  return noxLinearSystemFactory_;
+  return noxLinearSystemSource_;
 }
 
 
@@ -118,10 +118,10 @@ SolverFactory::getLabel<LOCA::SaveEigenData::AbstractStrategy>()
 }
 
 template <>
-ExtensibleFactory<LOCA::SaveEigenData::AbstractStrategy> &
-SolverFactory::getFactory<LOCA::SaveEigenData::AbstractStrategy>()
+Provider<LOCA::SaveEigenData::AbstractStrategy> &
+SolverFactory::getSource<LOCA::SaveEigenData::AbstractStrategy>()
 {
-  return saveEigFactory_;
+  return saveEigSource_;
 }
 
 
@@ -133,10 +133,10 @@ SolverFactory::getLabel<LOCA::StatusTest::Abstract>()
 }
 
 template <>
-ExtensibleFactory<LOCA::StatusTest::Abstract> &
-SolverFactory::getFactory<LOCA::StatusTest::Abstract>()
+Provider<LOCA::StatusTest::Abstract> &
+SolverFactory::getSource<LOCA::StatusTest::Abstract>()
 {
-  return statusTestFactory_;
+  return statusTestSource_;
 }
 
 
@@ -148,12 +148,13 @@ SolverFactory::getLabel<Piro::Epetra::AdaptiveSolutionManager>()
 }
 
 template <>
-ExtensibleFactory<Piro::Epetra::AdaptiveSolutionManager> &
-SolverFactory::getFactory<Piro::Epetra::AdaptiveSolutionManager>()
+Provider<Piro::Epetra::AdaptiveSolutionManager> &
+SolverFactory::getSource<Piro::Epetra::AdaptiveSolutionManager>()
 {
-  return adaptSolMgrFactory_;
+  return adaptSolMgrSource_;
 }
 #endif /* Piro_ENABLE_NOX */
+
 
 #ifdef Piro_ENABLE_Rythmos
 template <>
@@ -164,10 +165,10 @@ SolverFactory::getLabel<Rythmos::IntegrationObserverBase<double> >()
 }
 
 template <>
-ExtensibleFactory<Rythmos::IntegrationObserverBase<double> > &
-SolverFactory::getFactory<Rythmos::IntegrationObserverBase<double> >()
+Provider<Rythmos::IntegrationObserverBase<double> > &
+SolverFactory::getSource<Rythmos::IntegrationObserverBase<double> >()
 {
-  return rythmosObserverFactory_;
+  return rythmosObserverSource_;
 }
 #endif /* Piro_ENABLE_Rythmos */
 
@@ -180,9 +181,8 @@ Teuchos::RCP<T>
 Piro::Epetra::SolverFactory::create(const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
   const std::string &label = this->getLabel<T>();
-  return this->getFactory<T>().create(Teuchos::sublist(params, label));
+  return this->getSource<T>()(Teuchos::sublist(params, label));
 }
-
 
 Teuchos::RCP<EpetraExt::ModelEvaluator>
 Piro::Epetra::SolverFactory::createSolver(

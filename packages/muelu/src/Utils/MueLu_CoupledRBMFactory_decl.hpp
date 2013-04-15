@@ -89,7 +89,7 @@ namespace MueLu {
     virtual ~CoupledRBMFactory();
 
     //@}
-    
+
     //! @name Input
     //@{
 

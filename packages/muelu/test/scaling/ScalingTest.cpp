@@ -76,13 +76,13 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
-#include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 
@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
     //
 
     {
-      RCP<CoupledAggregationFactory> AggregationFact = rcp(new CoupledAggregationFactory());
+      RCP<UncoupledAggregationFactory> AggregationFact = rcp(new UncoupledAggregationFactory());
       *out << "========================= Aggregate option summary =========================" << std::endl;
       *out << "min DOFs per aggregate :                " << optMinPerAgg << std::endl;
       *out << "min # of root nbrs already aggregated : " << optMaxNbrSel << std::endl;
@@ -313,7 +313,7 @@ int main(int argc, char *argv[]) {
         std::string msg = "main: bad aggregation option """ + optAggOrdering + """.";
         throw(MueLu::Exceptions::RuntimeError(msg));
       }
-      AggregationFact->SetPhase3AggCreation(0.5);
+      //AggregationFact->SetPhase3AggCreation(0.5);
       M.SetFactory("Aggregates", AggregationFact);
 
     *out << "=============================================================================" << std::endl;
@@ -365,10 +365,7 @@ int main(int argc, char *argv[]) {
         AFact->SetFactory("R", RFact);
 
         // Transfer coordinates
-        RCP<MultiVectorTransferFactory> TransferCoordinatesFact = rcp(new MultiVectorTransferFactory());
-        RCP<Factory> TentativeRFact = rcp(new TransPFactory()); TentativeRFact->SetFactory("P", M.GetFactory("Ptent")); // Use Ptent for coordinate projection
-        TransferCoordinatesFact->SetParameter("Vector name", Teuchos::ParameterEntry(std::string("Coordinates")));
-        TransferCoordinatesFact->SetFactory("R", TentativeRFact);
+        RCP<CoordinatesTransferFactory> TransferCoordinatesFact = rcp(new CoordinatesTransferFactory());
         AFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
 
         // Compute partition (creates "Partition" object)
@@ -463,6 +460,17 @@ int main(int argc, char *argv[]) {
     H->Setup(M, startLevel, optMaxLevels);
 
   } // end of Setup TimeMonitor
+
+  { // some debug output
+    // print out content of levels
+    std::cout << "FINAL CONTENT of multigrid levels" << std::endl;
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    for(LO l = 0; l < H->GetNumLevels(); l++) {
+      RCP<Level> coarseLevel = H->GetLevel(l);
+      coarseLevel->print(*out);
+    }
+    std::cout << "END FINAL CONTENT of multigrid levels" << std::endl;
+  } // end debug output
 
   //
   //

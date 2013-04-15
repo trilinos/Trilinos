@@ -112,7 +112,6 @@ namespace Tpetra {
     using Teuchos::rcpFromRef;
     using Teuchos::rcp_const_cast;
     typedef OpScalar OS;
-    typedef Teuchos::ScalarTraits<OS> STS;
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
@@ -350,7 +349,6 @@ namespace Tpetra {
     using Teuchos::rcpFromRef;
     using Teuchos::rcp_const_cast;
     typedef OpScalar OS;
-    typedef Teuchos::ScalarTraits<OS> STS;
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;

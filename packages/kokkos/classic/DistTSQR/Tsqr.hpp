@@ -231,7 +231,6 @@ namespace TSQR {
 		    const bool forceNonnegativeDiagonal=false)
     {
       using Teuchos::asSafe;
-      typedef Kokkos::MultiVector<Scalar, NodeType> KMV;
 
       // Tsqr currently likes LocalOrdinal ordinals, but
       // Kokkos::MultiVector has size_t ordinals.  Do conversions
@@ -680,8 +679,6 @@ namespace TSQR {
 		const magnitude_type& tol,
 		const bool contiguousCacheBlocks = false) const
     {
-      typedef Kokkos::MultiVector<Scalar, NodeType> KMV;
-
       const LocalOrdinal nrows = static_cast<LocalOrdinal> (Q.getNumRows());
       const LocalOrdinal ncols = static_cast<LocalOrdinal> (Q.getNumCols());
       const LocalOrdinal ldq = static_cast<LocalOrdinal> (Q.getStride());

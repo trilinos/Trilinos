@@ -229,6 +229,38 @@ namespace Tpetra {
     checkInternalState();
   }
 
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node,
+            class LocalMatOps>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+             const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+             const ArrayRCP<size_t> & rowPointers,
+             const ArrayRCP<LocalOrdinal> & columnIndices,
+             const ArrayRCP<Scalar> & values,
+             const RCP<Teuchos::ParameterList>& params) :
+    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
+    insertGlobalValuesWarnedEfficiency_ (false),
+    insertLocalValuesWarnedEfficiency_ (false)
+  {
+    try {
+      myGraph_ = rcp (new Graph (rowMap, colMap, rowPointers,columnIndices,params));
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+        typeName(*this) << "::CrsMatrix(): caught exception while allocating "
+        "CrsGraph object: " << std::endl << e.what ());
+    }
+    staticGraph_ = myGraph_;
+    values1D_    = values;
+    resumeFill(params);
+    checkInternalState();
+  }
+
+
+
   template<class Scalar,
            class LocalOrdinal,
            class GlobalOrdinal,
@@ -615,7 +647,7 @@ namespace Tpetra {
     // (isStorageOptimized()).
     if (requestOptimizedStorage) {
       // Free the old, unpacked, unoptimized allocations.
-      // Change the graph from dynamic to static allocaiton profile
+      // Change the graph from dynamic to static allocation profile
       //
       // delete old data
       lclInds2D_ = null;
@@ -837,10 +869,23 @@ namespace Tpetra {
       lclparams = sublist (params, "Local Matrix");
     }
 
-    // The local matrix should be null at this point Just in case it isn't
-    // (future-proofing), delete it first in order to free memory before we allocate a new
-    // one.  Otherwise, we risk storing two matrices temporarily, since the destructor
-    // of the old matrix won't be called until the new matrix's constructor finishes.
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      staticGraph_->getLocalGraph ().is_null (), std::runtime_error,
+      "Tpetra::CrsMatrix::fillLocalMatrix (called by fillComplete with a const "
+      "graph): the local graph is null.  This can happen if you constructed "
+      "this CrsMatrix B using a const CrsGraph that belongs to another "
+      "CrsMatrix A, and A is fill complete.  You can prevent this error by "
+      "setting the bool parameter \"Preserve Local Graph\" to true when "
+      "calling fillComplete on the original CrsMatrix A.");
+#endif // HAVE_TPETRA_DEBUG
+
+    // The local matrix should be null at this point.  Just in case it
+    // isn't (future-proofing), delete it first in order to free
+    // memory before we allocate a new one.  Otherwise, we risk
+    // storing two matrices temporarily, since the destructor of the
+    // old matrix won't be called until the new matrix's constructor
+    // finishes.
     lclMatrix_ = null;
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
     lclMatrix_->setValues (vals);
@@ -1446,41 +1491,202 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values)
+  {
+    const char tfecfFuncName[] = "setAllValues()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null,std::runtime_error," requires that myGraph_ != Teuchos::null.");
+    try {
+      myGraph_->setAllIndices(rowPointers,columnIndices);
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling myGraph_->setAllIndices().");
+    }
+    values1D_    = values;
+    checkInternalState();
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    const char tfecfFuncName[] = "getLocalDiagOffsets";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! hasColMap (), std::runtime_error,
+      ": This method requires that the matrix have a column Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      staticGraph_.is_null (), std::runtime_error,
+      ": This method requires that the matrix have a graph.");
+
+    const map_type& rowMap = * (this->getRowMap ());
+    const map_type& colMap = * (this->getColMap ());
+
+    const size_t myNumRows = getNodeNumRows ();
+    if (as<size_t> (offsets.size ()) != myNumRows) {
+      offsets.resize (as<size_t> (myNumRows));
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+    bool allRowMapDiagEntriesInColMap = true;
+    bool allDiagEntriesFound = true;
+#endif // HAVE_TPETRA_DEBUG
+
+    for (size_t r = 0; r < myNumRows; ++r) {
+      const GlobalOrdinal rgid = rowMap.getGlobalElement (r);
+      const LocalOrdinal rlid = colMap.getLocalElement (rgid);
+
+#ifdef HAVE_TPETRA_DEBUG
+      if (rlid == Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+        allRowMapDiagEntriesInColMap = false;
+      }
+#endif // HAVE_TPETRA_DEBUG
+
+      if (rlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+        RowInfo rowinfo = staticGraph_->getRowInfo (r);
+        if (rowinfo.numEntries > 0) {
+          offsets[r] = staticGraph_->findLocalIndex (rowinfo, rlid);
+        }
+        else {
+          offsets[r] = Teuchos::OrdinalTraits<size_t>::invalid ();
+#ifdef HAVE_TPETRA_DEBUG
+          allDiagEntriesFound = false;
+#endif // HAVE_TPETRA_DEBUG
+        }
+      }
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+    using Teuchos::reduceAll;
+    using std::endl;
+
+    const bool localSuccess =
+      allRowMapDiagEntriesInColMap && allDiagEntriesFound;
+    int localResults[3];
+    localResults[0] = allRowMapDiagEntriesInColMap ? 1 : 0;
+    localResults[1] = allDiagEntriesFound ? 1 : 0;
+    // min-all-reduce will compute least rank of all the processes
+    // that didn't succeed.
+    localResults[2] =
+      ! localSuccess ? getComm ()->getRank () : getComm ()->getSize ();
+    int globalResults[3];
+    globalResults[0] = 0;
+    globalResults[1] = 0;
+    globalResults[2] = 0;
+    reduceAll<int, int> (* (getComm ()), Teuchos::REDUCE_MIN,
+                         3, localResults, globalResults);
+    if (globalResults[0] == 0 || globalResults[1] == 0) {
+      std::ostringstream os; // build error message
+      const bool both =
+        globalResults[0] == 0 && globalResults[1] == 0;
+      os << ": At least one process (including Process " << globalResults[2]
+         << ") had the following issue" << (both ? "s" : "") << ":" << endl;
+      if (globalResults[0] == 0) {
+        os << "  - The column Map does not contain at least one diagonal entry "
+          "of the matrix." << endl;
+      }
+      if (globalResults[1] == 0) {
+        os << "  - There is a row on that / those process(es) that does not "
+          "contain a diagonal entry." << endl;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, os.str());
+    }
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dvec) const
   {
-    const char tfecfFuncName[] = "getLocalDiagCopy()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillComplete() == false, std::runtime_error, " until fillComplete() has been called.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(dvec.getMap()->isSameAs(*getRowMap()) == false, std::runtime_error, ": dvec must have the same map as the CrsMatrix.");
-    const size_t STINV = OrdinalTraits<size_t>::invalid();
+    using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
+    const char tfecfFuncName[] = "getLocalDiagCopy";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! hasColMap (), std::runtime_error,
+      ": This method requires that the matrix have a column Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      staticGraph_.is_null (), std::runtime_error,
+      ": This method requires that the matrix have a graph.");
+
+    const map_type& rowMap = * (this->getRowMap ());
+    const map_type& colMap = * (this->getColMap ());
+
 #ifdef HAVE_TPETRA_DEBUG
-    size_t numDiagFound = 0;
-#endif
-    const size_t nlrs = getNodeNumRows();
-    ArrayRCP<Scalar> vecView = dvec.get1dViewNonConst();
-    RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = getColMap();
-    for (size_t r=0; r < nlrs; ++r) {
-      vecView[r] = STS::zero();
-      GlobalOrdinal rgid = getRowMap()->getGlobalElement(r);
-      if (colMap->isNodeGlobalElement(rgid)) {
-        LocalOrdinal rlid = colMap->getLocalElement(rgid);
-        RowInfo rowinfo = staticGraph_->getRowInfo(r);
+    // isCompatible() requires an all-reduce, and thus this check
+    // should only be done in debug mode.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! dvec.getMap ()->isCompatible (rowMap), std::runtime_error,
+      ": The input Vector's Map must be compatible with (in the sense of Map::"
+      "isCompatible) the CrsMatrix's row Map.");
+#endif // HAVE_TPETRA_DEBUG
+
+    const size_t myNumRows = getNodeNumRows ();
+    ArrayRCP<Scalar> vecView = dvec.get1dViewNonConst ();
+
+    for (size_t r = 0; r < myNumRows; ++r) {
+      vecView[r] = STS::zero ();
+      const GlobalOrdinal rgid = rowMap.getGlobalElement (r);
+      const LocalOrdinal rlid = colMap.getLocalElement (rgid);
+
+      if (rlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+        RowInfo rowinfo = staticGraph_->getRowInfo (r);
         if (rowinfo.numEntries > 0) {
-          const size_t j = staticGraph_->findLocalIndex(rowinfo, rlid);
-          ArrayView<const Scalar> view = this->getView(rowinfo);
-          if (j != STINV) {
+          const size_t j = staticGraph_->findLocalIndex (rowinfo, rlid);
+          if (j != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+            ArrayView<const Scalar> view = this->getView (rowinfo);
             vecView[r] = view[j];
-#ifdef HAVE_TPETRA_DEBUG
-            ++numDiagFound;
-#endif
           }
         }
       }
     }
-    vecView = null;
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numDiagFound != getNodeNumDiags(), std::logic_error, ": logic error. Please contact Tpetra team.");
-#endif
   }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getLocalDiagCopy (Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag,
+                    const Teuchos::ArrayView<const size_t>& offsets) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
+
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "getLocalDiagCopy";
+    const map_type& rowMap = * (this->getRowMap ());
+    // isCompatible() requires an all-reduce, and thus this check
+    // should only be done in debug mode.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! diag.getMap ()->isCompatible (rowMap), std::runtime_error,
+      ": The input Vector's Map must be compatible with (in the sense of Map::"
+      "isCompatible) the CrsMatrix's row Map.");
+#endif // HAVE_TPETRA_DEBUG
+
+    const size_t myNumRows = getNodeNumRows ();
+    ArrayRCP<Scalar> d = diag.get1dViewNonConst ();
+    for (size_t i = 0; i < myNumRows; ++i) {
+      if (offsets[i] == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        d[i] = STS::zero ();
+      }
+      else {
+        ArrayView<const LocalOrdinal> ind;
+        ArrayView<const Scalar> val;
+        this->getLocalRowView (i, ind, val);
+        d[i] = val[offsets[i]];
+      }
+    }
+  }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::leftScale(
@@ -1733,10 +1939,13 @@ namespace Tpetra {
       Array<int> NLRIds(NLRs.size());
       {
         LookupStatus stat = getRowMap()->getRemoteIndexList(NLRs(),NLRIds());
-        char lclerror = ( stat == IDNotPresent ? 1 : 0 );
-        char gblerror;
-        Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,lclerror,outArg(gblerror));
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(gblerror, std::runtime_error, ": non-local entries correspond to invalid rows.");
+        int lclerror = ( stat == IDNotPresent ? 1 : 0 );
+        int gblerror;
+        Teuchos::reduceAll<int, int> (*getComm(), Teuchos::REDUCE_MAX,
+                                      lclerror, outArg (gblerror));
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          gblerror, std::runtime_error, ": non-local entries correspond to "
+          "invalid rows.");
       }
 
       // build up a list of neighbors, as well as a map between NLRs and Ids
@@ -2041,13 +2250,15 @@ namespace Tpetra {
         ! domainMapsMatch, std::runtime_error,
         ": The CrsMatrix's domain Map does not match the graph's domain Map.  "
         "The graph cannot be changed because it was given to the CrsMatrix "
-        "constructor as const.");
+        "constructor as const.  You can fix this by passing in the graph's "
+        "domain Map and range Map to the matrix's fillComplete call.");
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         ! rangeMapsMatch, std::runtime_error,
         ": The CrsMatrix's range Map does not match the graph's range Map.  "
         "The graph cannot be changed because it was given to the CrsMatrix "
-        "constructor as const.");
+        "constructor as const.  You can fix this by passing in the graph's "
+        "domain Map and range Map to the matrix's fillComplete call.");
     }
     else {
       // Set the graph's domain and range Maps.  This will clear the
@@ -2124,6 +2335,66 @@ namespace Tpetra {
     checkInternalState();
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+                                                                                               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+                                                                                               const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
+                                                                                               const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
+                                                                                               const RCP<ParameterList> &params)
+  {
+  const char tfecfFuncName[] = "experStaticFillComplete()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
+      std::runtime_error, ": Matrix fill state must be active (isFillActive() "
+      "must be true) before calling fillComplete().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null, std::logic_error,": myGraph_ is null.  This is not allowed.");
+
+#ifdef HAVE_TPETRA_DEBUG
+    getRowMap ()->getComm ()->barrier ();
+#endif // HAVE_TPETRA_DEBUG
+
+    // We will presume globalAssemble is not needed, so we do the ESFC on the graph
+    myGraph_->expertStaticFillComplete(domainMap,rangeMap,importer,exporter);
+
+    computeGlobalConstants();
+
+    // Fill the local matrix & MatOps
+    fillLocalGraphAndMatrix(params);
+    lclMatOps_ = rcp (new sparse_ops_type (getNode ()));
+
+    // This is where we take the local graph and matrix, and turn them
+    // into (possibly optimized) sparse kernels.
+    lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (), lclMatrix_);
+
+    // Once we've initialized the sparse kernels, we're done with the
+    // local objects.  We may now release them and their memory, since
+    // they will persist in the local sparse ops if necessary.  We
+    // keep the local graph if the parameters tell us to do so.
+    lclMatrix_ = null;
+    bool preserveLocalGraph = false;
+    if (params != null) {
+      preserveLocalGraph = params->get ("Preserve Local Graph", false);
+    }
+    if (! preserveLocalGraph) {
+      myGraph_->lclGraph_ = null;
+    }
+
+    // Now we're fill complete!
+    fillComplete_ = true;
+
+    // Sanity checks at the end.
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillActive(), std::logic_error,
+      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillComplete(), std::logic_error,
+      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+    checkInternalState();
+
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -4036,13 +4307,32 @@ namespace Tpetra {
     return Y_rowMap;
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  //                                                                         //
-  //                         Deprecated methods                              //
-  //                                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node,
+            class LocalMatOps>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      myGraph_.is_null (), std::logic_error, "Tpetra::CrsMatrix::"
+      "removeEmptyProcessesInPlace: This method does not work when the matrix "
+      "was created with a constant graph (that is, when it was created using "
+      "the version of its constructor that takes an RCP<const CrsGraph>).  "
+      "This is because the matrix is not allowed to modify the graph in that "
+      "case, but removing empty processes requires modifying the graph.");
+    myGraph_->removeEmptyProcessesInPlace (newMap);
+    // Even though CrsMatrix's row Map (as returned by getRowMap())
+    // comes from its CrsGraph, CrsMatrix still implements DistObject,
+    // so we also have to change the DistObject's Map.
+    this->map_ = this->getRowMap ();
+    // In the nonconst graph case, staticGraph_ is just a const
+    // pointer to myGraph_.  This assignment is probably redundant,
+    // but it doesn't hurt.
+    staticGraph_ = Teuchos::rcp_const_cast<const Graph> (myGraph_);
+  }
 
 } // namespace Tpetra
 

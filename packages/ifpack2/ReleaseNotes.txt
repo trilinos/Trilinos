@@ -1,0 +1,19 @@
+------------------------------------------
+Release Notes for Trilinos Package Ifpack2
+------------------------------------------
+
+Trilinos 11.4:
+--------------
+
+* Relaxation: Use precomputed offsets to extract diagonal
+
+As of this release, Tpetra::CrsMatrix has the ability to to precompute
+offsets of diagonal entries, and use them to accelerate extracting a
+copy of the diagonal. Relaxation now exploits this feature to speed up
+compute() (which extracts a copy of the diagonal of the input matrix).
+The optimization only occurs if the input matrix is a CrsMatrix (not
+just a RowMatrix) and if it has a const ("static") graph. The latter
+is necessary so that we know that the structure can't change between
+calls to compute(). (Otherwise we would have to recompute the offsets
+each time, which would be no more efficient than what it was doing
+before.)

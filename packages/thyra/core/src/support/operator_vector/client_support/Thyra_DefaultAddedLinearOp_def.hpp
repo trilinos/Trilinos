@@ -199,7 +199,6 @@ void DefaultAddedLinearOp<Scalar>::describe(
   ,const Teuchos::EVerbosityLevel      verbLevel
   ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
   using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
@@ -287,7 +286,6 @@ void DefaultAddedLinearOp<Scalar>::applyImpl(
 template<class Scalar>
 void DefaultAddedLinearOp<Scalar>::validateOps()
 {
-  typedef std::string s;
   using Teuchos::toString;
 #ifdef TEUCHOS_DEBUG
   try {

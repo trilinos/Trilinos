@@ -70,7 +70,7 @@ namespace MueLu {
     return validParamList;
   }
 
-  
+
   $SHORTTEMPLATEDEFINITION
   void $CLASSNAME$TEMPLATEPARAMETERS::$DECLAREINPUT const {
     // TODO: declare input for factory

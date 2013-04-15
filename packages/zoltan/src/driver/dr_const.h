@@ -133,6 +133,12 @@ extern "C" {
 #define ZOLTAN_NEMESIS
 #endif
 
+#ifdef HAVE_PURIFY
+#define ZOLTAN_PURIFY
+#define strcasecmp Zoltan_strcasecmp
+#define strncasecmp Zoltan_strncasecmp
+#endif
+
 #endif /* TRILINOS_NO_CONFIG_H */
 /*****************************************************************************
  *  Definitions for the LB library driver program.

@@ -50,10 +50,47 @@ namespace Piro {
 template <typename Scalar>
 class ObserverBase {
 public:
-  virtual void observeSolution(const Thyra::VectorBase<Scalar> &solution) = 0;
+  virtual void observeSolution(
+      const Thyra::VectorBase<Scalar> &solution);
+
+  virtual void observeSolution(
+      const Thyra::VectorBase<Scalar> &solution,
+      const Scalar &stamp);
+
+  virtual void observeSolution(
+      const Thyra::VectorBase<Scalar> &solution,
+      const Thyra::VectorBase<Scalar> &solution_dot,
+      const Scalar &stamp);
 
   virtual ~ObserverBase() {}
 };
+
+template <typename Scalar>
+void
+ObserverBase<Scalar>::observeSolution(
+    const Thyra::VectorBase<Scalar> &/*solution*/)
+{
+  // Nothing to do by default
+}
+
+template <typename Scalar>
+void
+ObserverBase<Scalar>::observeSolution(
+    const Thyra::VectorBase<Scalar> &/*solution*/,
+    const Scalar &/*stamp*/)
+{
+  // Nothing to do by default
+}
+
+template <typename Scalar>
+void
+ObserverBase<Scalar>::observeSolution(
+    const Thyra::VectorBase<Scalar> &/*solution*/,
+    const Thyra::VectorBase<Scalar> &/*solution_dot*/,
+    const Scalar &/*stamp*/)
+{
+  // Nothing to do by default
+}
 
 } // namespace Piro
 

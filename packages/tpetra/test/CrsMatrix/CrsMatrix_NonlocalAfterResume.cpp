@@ -104,8 +104,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
   RCP<Node> node = getNode<Node>();
   // test that an exception is thrown when we exceed statically allocated memory
   typedef ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType Mag;
-  typedef ScalarTraits<Mag> MT;
   const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();

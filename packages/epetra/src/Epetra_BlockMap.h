@@ -225,6 +225,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   Epetra_BlockMap(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_BlockMap(long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
   Epetra_BlockMap(long long NumGlobalElements, int ElementSize, long long IndexBase, const Epetra_Comm& Comm);
 #endif
 
@@ -263,6 +264,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
      int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_BlockMap(long long NumGlobalElements, int NumMyElements, 
+    int ElementSize, int IndexBase, const Epetra_Comm& Comm);
   Epetra_BlockMap(long long NumGlobalElements, int NumMyElements, 
     int ElementSize, long long IndexBase, const Epetra_Comm& Comm);
 #endif
@@ -310,6 +313,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
        int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
+                  const long long *MyGlobalElements,  
+      int ElementSize, int IndexBase, const Epetra_Comm& Comm);
   Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
                   const long long *MyGlobalElements,  
       int ElementSize, long long IndexBase, const Epetra_Comm& Comm);
@@ -360,6 +366,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
                   const Epetra_Comm& Comm);
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
+                  const long long *MyGlobalElements,
+      const int *ElementSizeList, int IndexBase,
+                  const Epetra_Comm& Comm);
   Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
                   const long long *MyGlobalElements,
       const int *ElementSizeList, long long IndexBase,
@@ -560,9 +570,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Index base for this map.
   int  IndexBase() const {
-    if(GlobalIndicesInt())
+    if(GlobalIndicesInt() || IndexBase64() == (long long) static_cast<int>(IndexBase64()))
       return (int) IndexBase64();
-    throw "Epetra_BlockMap::IndexBase: GlobalIndices not int.";
+    throw "Epetra_BlockMap::IndexBase: GlobalIndices not int and IndexBase cannot fit an int.";
   }
 #endif
   long long  IndexBase64() const {return(BlockMapData_->IndexBase_);};
@@ -759,6 +769,80 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   /*! (Intended for developer use only for testing purposes.) */
   const Epetra_BlockMapData * DataPtr() const {return(BlockMapData_);}
 
+  /// \brief Return a new BlockMap with processes with zero elements removed.
+  ///
+  /// \warning This method is only for expert users.  Understanding
+  ///   how to use this method correctly requires some familiarity
+  ///   with semantics of MPI communicators.
+  ///
+  /// \warning We make no promises of backwards compatibility for
+  ///   this method.  It may go away or change at any time.
+  ///
+  /// This method first computes a new communicator, which contains
+  /// only those processes in this Map's communicator (the "original
+  /// communicator") that have a nonzero number of elements in this
+  /// BlockMap (the "original BlockMap").  It then returns a new BlockMap
+  /// distributed over the new communicator.  The new BlockMap represents
+  /// the same distribution as the original BlockMap, except that
+  /// processes containing zero elements are not included in the new
+  /// BlockMap or its communicator.  On processes not included in the new
+  /// BlockMap or communicator, this method returns NULL.
+  ///
+  /// The returned BlockMap always has a distinct communicator from this
+  /// BlockMap's original communicator.  The new communicator contains a
+  /// subset of processes from the original communicator.  Even if
+  /// the number of processes in the new communicator equals the
+  /// number of processes in the original communicator, the new
+  /// communicator is distinct.  (In an MPI implementation, the new
+  /// communicator is created using MPI_Comm_split.)
+  ///
+  /// This method must be called collectively on the original
+  /// communicator.  It leaves the original Map and communicator
+  /// unchanged.
+  ///
+  /// This method was intended for applications such as algebraic
+  /// multigrid or other multilevel preconditioners.  Construction
+  /// of each level of the multilevel preconditioner typically
+  /// requires constructing sparse matrices, which in turn requires
+  /// all-reduces over all participating processes at that level.
+  /// Matrix sizes at successively coarser levels shrink
+  /// geometrically.  At the coarsest levels, some processes might
+  /// be left with zero rows of the matrix, or the multigrid
+  /// implementation might "rebalance" (redistribute the matrix) and
+  /// intentionally leave some processes with zero rows.  Removing
+  /// processes with zero rows makes the all-reduces and other
+  /// communication operations cheaper.
+  Epetra_BlockMap * RemoveEmptyProcesses() const;
+
+  /// \brief Replace this BlockMap's communicator with a subset communicator.
+  ///
+  /// \warning This method is only for expert users.  Understanding
+  ///   how to use this method correctly requires some familiarity
+  ///   with semantics of MPI communicators.
+  ///
+  /// \warning We make no promises of backwards compatibility for
+  ///   this method.  It may go away or change at any time.
+  ///
+  /// \pre The input communicator's processes are a subset of this
+  ///   BlockMap's current communicator's processes.
+  /// \pre On processes which are not included in the input
+  ///   communicator, the input communicator is null.
+  ///
+  /// This method must be called collectively on the original
+  /// communicator.  It leaves the original BlockMap and communicator
+  /// unchanged.
+  ///
+  /// \note This method differs from removeEmptyProcesses(), in that
+  ///   it does not assume that excluded processes have zero
+  ///   entries.  For example, one might wish to remove empty
+  ///   processes from the row BlockMap of a CrsGraph using
+  ///   removeEmptyProcesses(), and then apply the resulting subset
+  ///   communicator to the column, domain, and range Maps of the
+  ///   same graph.  For the latter three Maps, one would in general
+  ///   use this method instead of removeEmptyProcesses(), giving
+  ///   the new row BlockMap's communicator to this method.
+  Epetra_BlockMap* ReplaceCommWithSubset(const Epetra_Comm * Comm) const;
+
   //@}
   
  private: // These need to be accessible to derived map classes.
@@ -768,6 +852,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   bool IsDistributedGlobal(long long NumGlobalElements, int NumMyElements) const;
   void CheckValidNGE(long long NumGlobalElements);
   void EndOfConstructorOps();
+
+ protected:
   void CleanupData();
   
   Epetra_BlockMapData * BlockMapData_;

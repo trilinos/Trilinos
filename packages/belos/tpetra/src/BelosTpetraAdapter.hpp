@@ -327,6 +327,12 @@ namespace Belos {
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
 #endif
+      // Check if B is 1-by-1, in which case we can just call update()
+      if (B.numRows() == 1 && B.numCols() == 1) {
+        mv.update(alpha*B(0,0), A, beta);
+        return;
+      }
+
       // create local map
       Teuchos::SerialComm<int> serialComm;
       // FIXME (mfh 07 Mar 2013) Shouldn't we use the same index base
@@ -389,6 +395,13 @@ namespace Belos {
       const int numRowsC = C.numRows(),
                 numColsC = C.numCols(),
                 strideC  = C.stride();
+
+      // Check if numRowsC == numColsC == 1, in which case we can call dot()
+      if (numRowsC == 1 && numColsC == 1) {
+        A.dot(B, Teuchos::ArrayView<Scalar>(C.values(),1));
+        return;
+      }
+
       Teuchos::SerialComm<int> scomm;
       // create local map with serial comm
       Tpetra::Map<LO,GO,Node> LocalMap(numRowsC, 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Tpetra::LocallyReplicated, A.getMap()->getNode());

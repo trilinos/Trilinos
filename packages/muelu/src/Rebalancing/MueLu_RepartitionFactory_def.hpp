@@ -78,10 +78,14 @@ namespace MueLu {
  RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set<int>                     ("startLevel",             1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
-    validParamList->set<LO>                      ("minRowsPerProcessor", 1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
-    validParamList->set<double>                  ("nonzeroImbalance",     1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
-    // validParamList->set<GO>                   ("minNnzPerProcessor",    -1, "Minimum number of nonzeros over all processes. If any process falls below this, repartitioning is initiated."); // FIXME: Unused; LO instead of GO?
+    validParamList->set<int>        ("startLevel",                   1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
+    validParamList->set<LO>         ("minRowsPerProcessor",       1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
+    validParamList->set<double>     ("nonzeroImbalance",           1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by "
+                                                                        "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
+    validParamList->set<bool>       ("fixedOrder",               false, "Use sorting of recv PIDs to force reproducibility");
+    // FIXME: Unused; LO instead of GO?
+    // validParamList->set<GO>         ("minNnzPerProcessor",          -1, "Minimum number of nonzeros over all processes. If any process falls below this, repartitioning is initiated.");
+    validParamList->set<std::string>("adjustNumPartitions",     "none", "Algorithm for adjusting number of partitions (none|2k)");
 
     {
       std::stringstream docDiffusiveHeuristic;
@@ -227,10 +231,15 @@ namespace MueLu {
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
 
-      // Zoltan2: try to make number of processors to be 2x2x? for pqJagged algorithm
-      // 1x1x2 to 1x1x7 are acceptable
-      if ((numPartitions > 8) && (numPartitions % 4))
-        numPartitions -= numPartitions % 4;
+      std::string adjustment = pL.get<std::string>("adjustNumPartitions");
+      if (adjustment == "2k") {
+        GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
+
+        int i2 = Teuchos::as<int>(floor(log(numPartitions)/log(2)));
+        numPartitions = Teuchos::as<int>(std::pow(2.,i2));
+
+        GetOStream(Runtime0,0) << "Adjusting number of partitions using \"2k\" algorithm to " << numPartitions << std::endl;
+      }
 
       Set(currentLevel, "number of partitions", numPartitions);
     }
@@ -248,8 +257,22 @@ namespace MueLu {
       // TODO: can we skip more work (ie: building the hashtable, etc.)?
       GetOStream(Warnings0, 0) << "Only one partition: Skip call to the repartitioner." << std::endl;
       decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
-    } else{
+    } else {
       decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
+
+      // Zoltan2 changes the number of partitions. There is no good mechanism to propagate that new number
+      // to this factory, but we can do that by finding out the max number of partition across all processors
+      GO maxPartLocal = 0;
+      if (decomposition->getLocalLength()) {
+        // NOTE: this is a stupid check. We would not be here if we didn't have any data.
+        // But one of the unit tests (Repartition_Build) constructs a stupid map in which processor
+        // 2 does not have any data. I'll add this check here.
+        maxPartLocal = *std::max_element(decomposition->getData(0).begin(), decomposition->getData(0).end());
+      }
+      maxAll(decomposition->getMap()->getComm(), maxPartLocal, numPartitions);
+      numPartitions++;
+
+      Set(currentLevel, "number of partitions", numPartitions);
 
       if (decomposition == Teuchos::null) {
         GetOStream(Warnings0, 0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
@@ -423,7 +446,7 @@ namespace MueLu {
     // First post non-blocking receives.
     Array<MPI_Request> requests(howManyPidsSendToThisPartition);
     for (int i=0; i<howManyPidsSendToThisPartition; ++i) {
-      MPI_Irecv((void*)&(numDofsIReceiveFromOnePid[i]), 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, *rawMpiComm, &requests[i]);
+      MPI_Irecv((void*)&(numDofsIReceiveFromOnePid[i]), sizeof(GO), MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, *rawMpiComm, &requests[i]);
     }
 
     // Next post sends.
@@ -438,6 +461,24 @@ namespace MueLu {
 
     for (int i=0; i<pidsIReceiveFrom.size(); ++i)
       pidsIReceiveFrom[i] = status[i].MPI_SOURCE;
+
+    if (pL.get<bool>("fixedOrder")) {
+      // Sort pids for reproducibility (and numDofsIReceiveFromOnePid for consistency)
+      GetOStream(Runtime0,0) << "Sorting recv PIDs for results reproducibility" << std::endl;
+
+      // For simplicity, do insertion sort of pidsIReceiveFrom and use that permutation for numDofsIReceiveFrom
+      // NOTE: if insertion sort becomes slow for some use cases, we may replace it with the quicksort Tpetra::sort2
+      for (int i = 1; i < howManyPidsSendToThisPartition; i++) {
+        GO d = pidsIReceiveFrom[i], v = numDofsIReceiveFromOnePid[i];
+        int j;
+        for (j = i-1; j >= 0 && pidsIReceiveFrom[j] > d; j--) {
+          pidsIReceiveFrom         [j+1] = pidsIReceiveFrom[j];
+          numDofsIReceiveFromOnePid[j+1] = numDofsIReceiveFromOnePid[j];
+        }
+        pidsIReceiveFrom         [j+1] = d;
+        numDofsIReceiveFromOnePid[j+1] = v;
+      }
+    }
 
     comm->barrier();
 
@@ -638,7 +679,7 @@ namespace MueLu {
     RCP<Teuchos::Hashtable<GO, GO> > hashTable;
     hashTable = rcp(new Teuchos::Hashtable<GO, GO>(numPartitions + numPartitions/2));
     Teuchos::Hashtable<GO, GO>& htref = *hashTable;
-    
+
     ArrayRCP<const GO> decompEntries;
     if (decomposition->getLocalLength() > 0)
       decompEntries = decomposition->getData(0);

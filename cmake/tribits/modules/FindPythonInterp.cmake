@@ -110,12 +110,13 @@ IF (PYTHON_EXECUTABLE OR PythonInterp_MUST_BE_FOUND)
   ENDIF()
   IF (PythonInterp_FIND_VERSION)
     EXECUTE_PROCESS(COMMAND
-      ${PYTHON_EXECUTABLE} "-V"
-      ERROR_VARIABLE PythonInterp_VERSION
-      ERROR_STRIP_TRAILING_WHITESPACE
+      ${PYTHON_EXECUTABLE} -c "import sys; print sys.version.split()[0]"
+      OUTPUT_VARIABLE PythonInterp_VERSION
+      OUTPUT_STRIP_TRAILING_WHITESPACE
       )
-    SEPARATE_ARGUMENTS(PythonInterp_VERSION)
-    LIST(GET PythonInterp_VERSION -1 PythonInterp_VERSION)
+    MESSAGE(STATUS "Python version ${PythonInterp_VERSION}")
+    #SEPARATE_ARGUMENTS(PythonInterp_VERSION)
+    #LIST(GET PythonInterp_VERSION 1 PythonInterp_VERSION)
     IF(${PythonInterp_VERSION} VERSION_LESS ${PythonInterp_FIND_VERSION})
       MESSAGE(WARNING
         "Python version ${PythonInterp_VERSION}"

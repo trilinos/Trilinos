@@ -64,7 +64,7 @@ template<typename value_type> class Epetra_HashTable;
 
 class Epetra_BlockMapData : public Epetra_Data {
   friend class Epetra_BlockMap;
-
+  friend class Epetra_Map;
  private:
 
   //! @name Constructor/Destructor Methods

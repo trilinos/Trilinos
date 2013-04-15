@@ -106,8 +106,8 @@ namespace MueLu {
 
       // Optimization storage option. If not modifying matrix later (inserting local values),
       // allow optimization of storage.  This is necessary for new faster Epetra MM kernels.
-      bool doOptimizedStorage = !checkAc_; 
-      
+      bool doOptimizedStorage = !checkAc_;
+
       RCP<Matrix> Ac, Kc, Mc;
 
       // Reuse pattern if available (multiple solve)
@@ -132,9 +132,13 @@ namespace MueLu {
       Utils2::TwoMatrixAdd(Kc, false, (Scalar) 1.0, Mc, false, shift, Ac);
       Ac->fillComplete();
 
-      if(checkAc_) CheckMainDiagonal(Ac);
-      GetOStream(Statistics0, 0) << PrintMatrixInfo(*Ac, "Ac");
-      GetOStream(Statistics0, 0) << PrintLoadBalancingInfo(*Ac, "Ac");
+      if (checkAc_)
+        CheckMainDiagonal(Ac);
+
+      RCP<ParameterList> params = rcp(new ParameterList());;
+      params->set("printLoadBalancingInfo", true);
+      GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*Ac, "Ac", params);
+
       Set(coarseLevel, "A", Ac);
       Set(coarseLevel, "K", Kc);
       Set(coarseLevel, "M", Mc);
@@ -150,53 +154,6 @@ namespace MueLu {
         (*it)->CallBuild(coarseLevel);
       }
     }
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string RAPShiftFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag) {
-    std::stringstream ss(std::stringstream::out);
-    ss << msgTag
-       << " # global rows = "      << Ac.getGlobalNumRows()
-       << ", estim. global nnz = " << Ac.getGlobalNumEntries()
-       << std::endl;
-    return ss.str();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string RAPShiftFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag) {
-    std::stringstream ss(std::stringstream::out);
-
-    // TODO: provide a option to skip this (to avoid global communication)
-      // TODO: skip if nproc == 1
-
-    //nonzero imbalance
-    size_t numMyNnz  = Ac.getNodeNumEntries();
-    GO maxNnz, minNnz;
-    RCP<const Teuchos::Comm<int> > comm = Ac.getRowMap()->getComm();
-    maxAll(comm,(GO)numMyNnz,maxNnz);
-    //min nnz over all proc (disallow any processors with 0 nnz)
-    minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
-    double imbalance = ((double) maxNnz) / minNnz;
-
-    size_t numMyRows = Ac.getNodeNumRows();
-    //Check whether Ac is spread over more than one process.
-    GO numActiveProcesses=0;
-    sumAll(comm, (GO)((numMyRows > 0) ? 1 : 0), numActiveProcesses);
-
-    //min, max, and avg # rows per proc
-    GO minNumRows, maxNumRows;
-    double avgNumRows;
-    maxAll(comm, (GO)numMyRows, maxNumRows);
-    minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
-    assert(numActiveProcesses > 0);
-    avgNumRows = Ac.getGlobalNumRows() / numActiveProcesses;
-
-    ss << msgTag << " # processes with rows = " << numActiveProcesses << std::endl;
-    ss << msgTag << " min # rows per proc = " << minNumRows << ", max # rows per proc = " << maxNumRows << ", avg # rows per proc = " << avgNumRows << std::endl;
-    ss << msgTag << " nonzero imbalance = " << imbalance << std::endl;
-
-    return ss.str();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

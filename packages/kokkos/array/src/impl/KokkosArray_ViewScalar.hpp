@@ -72,7 +72,7 @@ struct ViewAssignment< LayoutScalar , void , void >
 {
   template< class T , class L , class D , class M >
   KOKKOSARRAY_INLINE_FUNCTION static
-  size_t allocation_count( View<T,L,D,M,LayoutScalar> & dst ) { return 1 ; }
+  size_t allocation_count( const View<T,L,D,M,LayoutScalar> & ) { return 1 ; }
 
   template< class T , class L , class D , class M >
   ViewAssignment( View<T,L,D,M,LayoutScalar> & dst ,
@@ -169,6 +169,7 @@ public:
 
   enum { Rank = 0 };
 
+  KOKKOSARRAY_INLINE_FUNCTION typename traits::shape_type shape() const { return typename traits::shape_type(); }
   KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_0() const { return 1 ; }
   KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_1() const { return 1 ; }
   KOKKOSARRAY_INLINE_FUNCTION typename traits::size_type dimension_2() const { return 1 ; }

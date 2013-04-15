@@ -207,6 +207,8 @@ def get_options(workingDir):
     help="Enable verbose error reporting. This will cause the output of the command that failed to be sent to stdout. Default=master")
   parser.add_option("-j", dest="buildProcs", action="store", default=1, 
     help="Specify the number of processes to run make with. Default=%default")
+  parser.add_option("--build-type", dest="buildType", action="store", default="RELEASE", 
+    help="Specify the build type to build for the install(eg. RELEASE or DEBUG). Default=%default")
 
   return parser.parse_args()
 
@@ -272,6 +274,7 @@ def main(package_enable_disable_list, options):
     cmake_configure_options.append(("Netcdf_INCLUDE_DIRS",
                                    os.path.join(options.netcdfDir, "include")))
   cmake_configure_options.append(("CMAKE_INSTALL_PREFIX", options.installDir))
+  cmake_configure_options.append(("CMAKE_BUILD_TYPE", options.buildType))
 
   #removing install directory first so that subsequent installs aren't polluted by old installs
   print "attempting to remove the old install dir"

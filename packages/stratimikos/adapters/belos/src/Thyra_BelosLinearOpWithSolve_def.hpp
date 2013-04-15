@@ -290,7 +290,6 @@ void BelosLinearOpWithSolve<Scalar>::describe(
   const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   using Teuchos::describe;

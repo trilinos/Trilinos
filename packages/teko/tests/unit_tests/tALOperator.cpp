@@ -14,6 +14,8 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <sys/types.h>
+#include <unistd.h>
 
 // Teuchos
 #include "Teuchos_ConfigDefs.hpp"

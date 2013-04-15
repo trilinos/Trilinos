@@ -3,6 +3,24 @@ Release Notes for Trilinos Package Teuchos
 ------------------------------------------
 
 
+Trilinos 11.4:
+--------------
+
+(*) Added new feature to TimeMonitor: You may now enable or disable a
+timer (instance of Time) by name.  Disabled timers ignore start() and
+stop() calls; calling these methods on a disabled timer does not
+change its elapsed time or call count.  Thus, TimeMonitor's
+constructor and destructor have no effect on disabled timers.
+However, the disabled timers still exist, and TimeMonitor's
+summarize() and report() class methods will print statistics for
+disabled timers (using their elapsed times and call counts while
+enabled).  Enabling a timer does not reset its elapsed time or call
+count.  This feature is useful if you want to time only certain
+invocations of a particular function that has an internal timer,
+without modifying the function's source code.  For an example, see
+packages/teuchos/comm/test/Time/TimeMonitor_UnitTests.cpp, line 175
+("TimeMonitor, enableTimer" unit test).
+
 Trilinos 11.0:
 --------------
 

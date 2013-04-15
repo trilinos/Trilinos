@@ -280,7 +280,6 @@ namespace TSQR {
     
       typedef typename MatrixViewType::ordinal_type second_ordinal_type;
       typedef typename MatrixViewType::scalar_type second_scalar_type;
-      typedef typename MatrixViewType::pointer_type second_pointer_type;
 
       const ordinal_type A_nrows = nrows();
       const ordinal_type A_lda = lda();

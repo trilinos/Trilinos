@@ -56,12 +56,12 @@ namespace {
     double *rdata = static_cast<double*>(data);
     if (component_count == 1) {
       for (size_t i=0; i < ids.size(); i++) {
-        rdata[i] = sqrt(ids[i]);
+        rdata[i] = sqrt((double)ids[i]);
       }
     } else {
       for (size_t i=0; i < ids.size(); i++) {
         for (size_t j=0; j < component_count; j++) {
-          rdata[i*component_count + j] = j+sqrt(ids[i]);
+          rdata[i*component_count + j] = j+sqrt((double)ids[i]);
         }
       }
     }
@@ -207,7 +207,10 @@ namespace Iogn {
         m_generatedMesh->coordinates(rdata);
       }
 
-      else if (field.get_name() == "ids") {
+      // NOTE: The implicit_ids field is ONLY provided for backward-
+      // compatibility and should not be used unless absolutely
+      // required. For generated mesh, the implicit_ids and ids are the same.
+      else if (field.get_name() == "ids" || field.get_name() == "implicit_ids") {
         // Map the local ids in this node block
         // (1...node_count) to global node ids.
         get_node_map().map_implicit_data(data, field, num_to_get, 0);
@@ -508,10 +511,10 @@ namespace Iogn {
   // Input only database -- these will never be called...
   int64_t DatabaseIO::put_field_internal(const Ioss::Region*,      const Ioss::Field&, void*, size_t) const {return -1;}
   int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
   int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::ElementSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::ElementSet*,  const Ioss::Field&, void*, size_t) const {return -1;}
   int64_t DatabaseIO::put_field_internal(const Ioss::FaceSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
   int64_t DatabaseIO::put_field_internal(const Ioss::EdgeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
   int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}

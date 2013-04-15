@@ -64,6 +64,13 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   TRIBITS_ADD_EXECUTABLE(
+    TransposeTest
+    SOURCES TransposeTest.cpp
+    COMM serial mpi
+    DEPLIBS muelu xpetra muelu-adapters
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
     SmootherScalingTest
     SOURCES SmootherScalingTest.cpp
     COMM serial mpi
@@ -99,7 +106,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
   IF (${PACKAGE_NAME}_ENABLE_Zoltan)
     TRIBITS_ADD_TEST(
       ScalingTestParamList
-      NAME "ScalingTestParamListEpetra"
+      NAME "ScalingTestParamListEpetra_Defaults"
       ARGS "--linAlgebra=Epetra"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
@@ -107,7 +114,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
 
     TRIBITS_ADD_TEST(
       ScalingTestParamList
-      NAME "ScalingTestParamListEpetra"
+      NAME "ScalingTestParamListEpetra_IsotropicPoisson"
       ARGS "--linAlgebra=Epetra --xml=isotropicPoisson.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
@@ -115,7 +122,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
 
     TRIBITS_ADD_TEST(
       ScalingTestParamList
-      NAME "ScalingTestParamListEpetra"
+      NAME "ScalingTestParamListEpetra_Milestone"
       ARGS "--linAlgebra=Epetra --xml=conchas_milestone.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
@@ -125,6 +132,14 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
   TRIBITS_ADD_TEST(
     RAPScalingTest
     NAME "RAPScalingTestEpetra"
+    ARGS "--linAlgebra=Epetra --nraps=2"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    TransposeTest
+    NAME "TransposeTestEpetra"
     ARGS "--linAlgebra=Epetra --nraps=2"
     NUM_MPI_PROCS 4
     COMM serial mpi
@@ -156,6 +171,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
   TRIBITS_ADD_TEST(
     RAPScalingTest
     NAME "RAPScalingTestTpetra"
+    ARGS "--linAlgebra=Tpetra --nraps=2"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    TransposeTest
+    NAME "TransposeTestTpetra"
     ARGS "--linAlgebra=Tpetra --nraps=2"
     NUM_MPI_PROCS 4
     COMM serial mpi

@@ -326,17 +326,6 @@ public:
   /// factor \f$\omega \f$.  The main documentation of this class
   /// explains how we use this value.  The default value is 1.0.
   ///
-  /// The "relaxation: min diagonal value" (scalar_type) parameter
-  /// limits how close to zero the diagonal elements of the matrix are
-  /// allowed to be.  If the magnitude of a diagonal element of the
-  /// matrix is less than the magnitude of this value, then we set
-  /// that diagonal element to this value.  (We don't actually modify
-  /// the matrix; we just remember the diagonal values.)  The use of
-  /// magnitude rather than the value itself makes this well defined
-  /// if scalar_type is complex.  The default value of this parameter
-  /// is zero, meaning that we do not impose a minimum diagonal value
-  /// by default.
-  ///
   /// The "relaxation: zero starting solution" (bool) parameter
   /// governs whether or not we use the existing values in the output
   /// multivector Y when applying the relaxation.  Its default value
@@ -347,6 +336,39 @@ public:
   /// perform Gauss-Seidel in reverse mode.  The default value is
   /// false, meaning that we do forward-mode Gauss-Seidel.  This only
   /// affects standard Gauss-Seidel, not symmetric Gauss-Seidel.
+  ///
+  /// The "relaxation: fix tiny diagonal entries" (bool) parameter
+  /// defaults to false.  If true, the compute() method will do extra
+  /// work (computation only, no MPI communication) to "fix" diagonal
+  /// entries that are less than or equal to the threshold given by
+  /// the (magnitude of the) "relaxation: min diagonal value"
+  /// parameter.  The default behavior imitates that of Aztec, which
+  /// does not do any special modification of the diagonal.
+  ///
+  /// The "relaxation: min diagonal value" (scalar_type) parameter
+  /// only matters if "relaxation: fix tiny diagonal entries" (see
+  /// above) is true.  This parameter limits how close to zero the
+  /// diagonal elements of the matrix are allowed to be.  If the
+  /// magnitude of a diagonal element of the matrix is less than the
+  /// magnitude of this value, then we set that diagonal element to
+  /// this value.  (We don't actually modify the matrix; we just
+  /// remember the diagonal values.)  The use of magnitude rather than
+  /// the value itself makes this well defined if scalar_type is
+  /// complex.  The default value of this parameter is zero, in which
+  /// case we will replace diagonal entries that are exactly equal to
+  /// zero with a small nonzero value (machine precision for the given
+  /// \c Scalar type) before inverting them.  Note that if
+  /// "relaxation: fix tiny diagonal entries" is false, the default
+  /// value, this parameter does nothing.)
+  ///
+  /// The "relaxation: check diagonal entries" (bool) parameter
+  /// defaults to false.  If true, the compute() method will do extra
+  /// work (both computation and communication) to count diagonal
+  /// entries that are zero, have negative real part, or are small in
+  /// magnitude.  The describe() method will then print this
+  /// information for you.  You may find this useful for checking
+  /// whether your input matrix has issues that make Jacobi or
+  /// Gauss-Seidel a poor choice of preconditioner.
   ///
   /// The last two parameters govern the L1 variant of Gauss-Seidel.
   /// The "relaxation: use l1" (bool) parameter, if true, turns on the
@@ -533,6 +555,9 @@ public:
 
 private:
 
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
   //! @name Unimplemented methods that you are syntactically forbidden to call.
   //@{
 
@@ -609,12 +634,11 @@ private:
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c Matrix.
   mutable Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
+
   //! How many times to apply the relaxation per apply() call.
   int NumSweeps_;
   //! Which relaxation method to use.
   int PrecType_;
-  //! Minimum diagonal value
-  scalar_type MinDiagonalValue_;
   //! Damping factor
   scalar_type DampingFactor_;
   //! If \c true, more than 1 processor is currently used.
@@ -627,6 +651,13 @@ private:
   bool DoL1Method_;
   //! Eta parameter for modified L1 method
   magnitude_type L1Eta_;
+  //! Minimum diagonal value
+  scalar_type MinDiagonalValue_;
+  //! Whether to fix up zero or tiny diagonal entries.
+  bool fixTinyDiagEntries_;
+  //! Whether to spend extra effort and all-reduces checking diagonal entries.
+  bool checkDiagEntries_;
+
   //! Condition number estimate
   magnitude_type Condest_;
   //! If \c true, the preconditioner has been initialized successfully.
@@ -649,6 +680,35 @@ private:
   double ComputeFlops_;
   //! The total number of floating-point operations for all successful calls to apply().
   mutable double ApplyFlops_;
+
+  //! Global magnitude of the diagonal entry with the minimum magnitude.
+  magnitude_type globalMinMagDiagEntryMag_;
+  //! Global magnitude of the diagonal entry with the maximum magnitude.
+  magnitude_type globalMaxMagDiagEntryMag_;
+  //! Global number of small (in magnitude) diagonal entries detected by compute().
+  size_t globalNumSmallDiagEntries_;
+  //! Global number of zero diagonal entries detected by compute().
+  size_t globalNumZeroDiagEntries_;
+  //! Global number of negative (real part) diagonal entries detected by compute().
+  size_t globalNumNegDiagEntries_;
+  /// \brief Absolute two-norm difference between computed and actual inverse diagonal.
+  ///
+  /// "Actual inverse diagonal" means the result of 1/diagonal,
+  /// without any protection against zero or small diagonal entries.
+  magnitude_type globalDiagNormDiff_;
+
+  /// \brief Precomputed offsets of local diagonal entries of the matrix.
+  ///
+  /// These are only used if the matrix has a const ("static") graph.
+  /// In that case, the offsets of the diagonal entries will never
+  /// change, even if the values of the diagonal entries change.
+  Teuchos::ArrayRCP<size_t> diagOffsets_;
+  /// \brief Whether we have precomputed offsets of diagonal entries.
+  ///
+  /// We need this flag because it is not enough just to test if
+  /// diagOffsets_ has size zero.  It is perfectly legitimate for the
+  /// matrix to have zero rows on the calling process.
+  bool savedDiagOffsets_;
   //@}
 
 }; //class Relaxation

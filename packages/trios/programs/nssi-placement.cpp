@@ -66,6 +66,14 @@ int placement_debug_level = LOG_UNDEFINED;
 
 string strategy("ascending");
 
+enum graph_connection_t {
+    GRAPH_COMPLETE=0,
+    GRAPH_CLIENT_COMPLETE,
+    GRAPH_SERVER_COMPLETE,
+    GRAPH_CLIENT_SERVER_ONLY
+};
+
+
 /* ----------------- COMMAND-LINE OPTIONS --------------- */
 
 #define DEBUG_PLACEMENT
@@ -77,6 +85,10 @@ void construct_graph(
         int num_clients,
         int servers_per_node,
         int clients_per_node,
+        int server_weight,
+        int client_weight,
+        int client_server_weight,
+        enum graph_connection_t connection,
         int passthru)
 {
     int npes, me, i, status;
@@ -94,13 +106,11 @@ void construct_graph(
     gethostname(my_hostname, len);
     my_nid = atoi(my_hostname+3);
 
-#if defined(DEBUG_PLACEMENT)
-    printf("%i: hostname=%s, nid=%i\n", me, my_hostname, my_nid);
-    sleep(2);
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-    // printf("%i: npx=%i, npy=%i, npz=%i\n", me, npx, npy, npz);
+//#if defined(DEBUG_PLACEMENT)
+//    fprintf(stdout, "%i: hostname=%s, nid=%i\n", me, my_hostname, my_nid);
+//    sleep(2);
+//    MPI_Barrier(MPI_COMM_WORLD);
+//#endif
 
     // Original rank_map
     for (i = 0; i < npes; i++) {
@@ -110,19 +120,25 @@ void construct_graph(
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (me < num_servers) {
-        // construct a complete graph for servers-to-server communication
-        for (i=0;i<num_servers;i++) {
-            if (i != me) {
-                neighbors.push_back(i);
-                weights.push_back(10);
+        if ((connection == GRAPH_COMPLETE) ||
+            (connection == GRAPH_SERVER_COMPLETE)) {
+            // construct a complete graph for servers-to-server communication
+            for (i=0;i<num_servers;i++) {
+                if (i != me) {
+                    neighbors.push_back(i);
+                    weights.push_back(server_weight);
+                }
             }
         }
     } else {
-        // construct a complete graph for client-to-client communication
-        for (i=num_servers;i<npes;i++) {
-            if (i != me) {
-                neighbors.push_back(i);
-                weights.push_back(10);
+        if ((connection == GRAPH_COMPLETE) ||
+            (connection == GRAPH_CLIENT_COMPLETE)) {
+            // construct a complete graph for client-to-client communication
+            for (i=num_servers;i<npes;i++) {
+                if (i != me) {
+                    neighbors.push_back(i);
+                    weights.push_back(client_weight);
+                }
             }
         }
         if (num_servers > 0) {
@@ -131,7 +147,7 @@ void construct_graph(
             int bin_size=(num_clients/num_servers); // clients per server
             int my_server=client_rank/bin_size;
             neighbors.push_back(my_server);
-            weights.push_back(5);
+            weights.push_back(client_server_weight);
         }
     }
 
@@ -139,21 +155,17 @@ void construct_graph(
 
     num_neighs=neighbors.size();
 
-    MPI_Barrier(MPI_COMM_WORLD);
-
-#if 0
-    char adjstr[4096];
-    int offset = 0;
-
-    // Print out my neighbors and their weights
-    offset += sprintf(&adjstr[offset], "%i ", me);
-    for (i = 0; i < num_neighs; i++) {
-        offset += sprintf(&adjstr[offset], "%i(%i) ", neighbors[i], weights[i]);
+#if defined(DEBUG_PLACEMENT)
+    for (i=0;i<npes;i++) {
+        if (i == me) {
+            std::vector<int>::iterator iter=neighbors.begin();
+            for (;iter<neighbors.end();iter++) {
+                fprintf(stdout, "%d: neighbor=%d\n", me, *iter);
+            }
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    printf("%s\n", adjstr);
-    MPI_Barrier(MPI_COMM_WORLD);
-    sleep(2);
 #endif
 
     // Create a MPI distributed graph communicator
@@ -169,7 +181,7 @@ void construct_graph(
                 0,
                 &distgr);
     if (status != MPI_SUCCESS) {
-        printf("%i: MPI_Dist_graph_create() failed.\n", me);
+        fprintf(stdout, "%i: MPI_Dist_graph_create() failed.\n", me);
         exit(-1);
     }
 
@@ -179,7 +191,7 @@ void construct_graph(
     int dgpe;
     MPI_Comm_rank(distgr, &dgpe);
     if (dgpe != me) {
-        printf("%d: dgpe != me (%i != %i)\n", me, dgpe, me);
+        fprintf(stdout, "%d: dgpe != me (%i != %i)\n", me, dgpe, me);
         exit(-1);
     }
 }
@@ -194,57 +206,60 @@ void construct_graph(
         setenv("TPM_FIX_PARMETIS", "no", 1);
         setenv("TPM_ANNEAL", "no", 1);
     } else {
-        //setenv("TPM_STRATEGY", "greedy", 1);
-        //setenv("TPM_STRATEGY", "greedy_route", 1);
-        //setenv("TPM_STRATEGY", "recursive", 1);
-        //setenv("TPM_STRATEGY", "rcm", 1);
-        //setenv("TPM_STRATEGY", "scotch", 1);
-//        setenv("TPM_STRATEGY", "ascending", 1);
         setenv("TPM_STRATEGY", strategy.c_str(), 1);
     }
     int new_rank;
     status = TPM_Topomap(distgr, "topomap.txt", 0, &new_rank);
     if (status != 0) {
-        printf("%i: TPM_Topomap() failed.\n", me);
+        fprintf(stdout, "%i: TPM_Topomap() failed.\n", me);
+        exit(-1);
+    }
+
+//#if defined(DEBUG_PLACEMENT)
+//    fprintf(stdout, "%i: my new rank = %i\n", me, new_rank);
+//    sleep(2);
+//    MPI_Barrier(MPI_COMM_WORLD);
+//#endif
+
+    MPI_Comm improved_placement_comm;
+    MPI_Comm_split(MPI_COMM_WORLD, 1, new_rank, &improved_placement_comm);
+    int improved_npes=-1;
+    int improved_me=-1;
+    MPI_Comm_size(improved_placement_comm, &improved_npes);
+    MPI_Comm_rank(improved_placement_comm, &improved_me);
+    if (new_rank != improved_me) {
+        fprintf(stdout, "%d: new_rank != improved_me (%i != %i)\n", me, new_rank, improved_me);
         exit(-1);
     }
 
 #if defined(DEBUG_PLACEMENT)
-    printf("%i: my new rank = %i\n", me, new_rank);
-    sleep(2);
+    for (i=0;i<npes;i++) {
+        if (i == me) {
+            fprintf(stdout, "i = %3d ; me = %3d ; new_rank = %3d ; improved_me = %3d\n", i, me, new_rank, improved_me);
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
     MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-#if defined(DEBUG_PLACEMENT)
-{
-    // Make sure our rank hasn't changed!
-    int dgpe;
-    MPI_Comm_rank(distgr, &dgpe);
-    if (dgpe != me) {
-        printf("%d: dgpe != me (%i != %i)\n", me, dgpe, me);
-        exit(-1);
-    }
-}
 #endif
 
     // Gather the new rank_map
     status = MPI_Allgather(&new_rank, 1, MPI_INT, rank_map, 1, MPI_INT, MPI_COMM_WORLD);
     if (status != MPI_SUCCESS) {
-        printf("%i: MPI_Allgather() failed.\n", me);
+        fprintf(stdout, "%i: MPI_Allgather() failed.\n", me);
     }
 
     // Gather the nid map... nid_map[MPI_COMM_WORLD Rank] = nid
     status = MPI_Allgather(&my_nid, 1, MPI_INT, nid_map, 1, MPI_INT, MPI_COMM_WORLD);
     if (status != MPI_SUCCESS) {
-        printf("%i: MPI_Allgather() failed. 2\n", me);
+        fprintf(stdout, "%i: MPI_Allgather() failed. 2\n", me);
     }
 
     if (!me) {
-        printf("New Process to Rank/Block map:\n");
+        fprintf(stdout, "New Process to Rank/Block map:\n");
         for (i = 0; i < npes; i++) {
-            printf("\trank_map[%d]=%d(nid=%d)\n", i, rank_map[i], nid_map[i]);
+            fprintf(stdout, "\trank_map[%d]=%d(nid=%d)\n", i, rank_map[i], nid_map[i]);
         }
-        printf("\n");
+        fprintf(stdout, "\n");
     }
 }
 
@@ -264,8 +279,27 @@ main (int argc, char *argv[])
     int servers_per_node=1;
     int clients_per_node=1;
 
+    int client_weight=10;
+    int server_weight=10;
+    int client_server_weight=5;
+
     string server_node_file("SNF.txt");
     string client_node_file("CNF.txt");
+
+    const int num_graphs = 4;
+    const int graph_vals[] = {
+            GRAPH_COMPLETE,
+            GRAPH_CLIENT_COMPLETE,
+            GRAPH_SERVER_COMPLETE,
+            GRAPH_CLIENT_SERVER_ONLY
+    };
+    const char * graph_names[] = {
+            "complete",
+            "client-complete",
+            "server-complete",
+            "client-server-only"
+    };
+    enum graph_connection_t graph_connection=GRAPH_COMPLETE;
 
     MPI_Init(&argc, &argv);
 
@@ -280,10 +314,22 @@ main (int argc, char *argv[])
         parser.setOption("num-clients", (int *)(&num_clients), "Number of clients to place");
         parser.setOption("servers-per-node", (int *)(&servers_per_node), "Number of server ranks per compute node");
         parser.setOption("clients-per-node", (int *)(&clients_per_node), "Number of client ranks per compute node");
+        parser.setOption("server-weight", (int *)(&server_weight), "Edge weight of server-to-server communication");
+        parser.setOption("client-weight", (int *)(&client_weight), "Edge weight of client-to-client communication");
+        parser.setOption("client-server-weight", (int *)(&client_server_weight), "Edge weight of client-to-server communication");
         parser.setOption("server-node-file", &server_node_file, "Where to write the server placement results");
         parser.setOption("client-node-file", &client_node_file, "Where to write the client placement results");
         parser.setOption("verbose", (int *)(&debug_level), "Debug level");
         parser.setOption("logfile", &logfile, "Path to file for debug statements");
+        // Set an enumeration command line option for the connection graph
+        parser.setOption("graph-connection", (int*)&graph_connection, num_graphs, graph_vals, graph_names,
+                "Graph Connections for the example: \n"
+                "\t\t\tcomplete : client-client graph is complete, server-server graph is complete\n"
+                "\t\t\tclient-complete: client-client graph is complete, server-server graph is empty\n"
+                "\t\t\tserver-complete : client-client graph is empty, server-server graph is complete\n"
+                "\t\t\tclient-server-only: client-client graph is empty, server-server graph is empty\n"
+                "\t\t\tIn all cases, each client has an edge to one of the servers\n"
+                );
 
         parser.recogniseAllOptions();
         parser.throwExceptions();
@@ -307,6 +353,25 @@ main (int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &npes);
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
+    if (me==0) {
+        cout << " ----------------  ARGUMENTS --------------- " << std::endl;
+        cout << " \tstrategy             = " << strategy << std::endl;
+        cout << " \tgraph-connection     = " << graph_names[graph_connection] << std::endl;
+        cout << " \tnum-servers          = " << num_servers << std::endl;
+        cout << " \tnum-clients          = " << num_clients << std::endl;
+        cout << " \tservers-per-node     = " << servers_per_node << std::endl;
+        cout << " \tclients-per-node     = " << clients_per_node << std::endl;
+        cout << " \tserver-weight        = " << server_weight << std::endl;
+        cout << " \tclient-weight        = " << client_weight << std::endl;
+        cout << " \tclient-server-weight = " << client_server_weight << std::endl;
+        cout << " \tserver-node-file     = " << server_node_file << std::endl;
+        cout << " \tclient-node-file     = " << client_node_file << std::endl;
+        cout << " \tverbose              = " << debug_level << std::endl;
+        cout << " \tlogfile              = " << logfile << std::endl;
+        cout << " ------------------------------------------- " << std::endl;
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+
     int *rank_map=(int*)malloc(sizeof(int) * npes);
     int *nid_map=(int*)malloc(sizeof(int) * npes);
 
@@ -317,6 +382,10 @@ main (int argc, char *argv[])
             num_clients,
             servers_per_node,
             clients_per_node,
+            server_weight,
+            client_weight,
+            client_server_weight,
+            graph_connection,
             0);
 
     if (me == 0) {

@@ -201,6 +201,13 @@ int main(int argc, char *argv[]) {
 
   tm = Teuchos::null;
 
+  if (comm->getRank() == 0) {
+    std::cout << "Galeri complete." << std::endl
+              << "========================================================" << std::endl;
+  }
+
+
+
   //
   // Construct a multigrid preconditioner
   //
@@ -224,10 +231,6 @@ int main(int argc, char *argv[]) {
   H->GetLevel(0)->Set("Coordinates", coordinates);
 
   mueLuFactory.SetupHierarchy(*H);
-
-  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  fos->setOutputToRootOnly(-1);
-  H->print(*fos);
 
   tm = Teuchos::null;
   //
@@ -329,7 +332,7 @@ int main(int argc, char *argv[]) {
   globalTimeMonitor = Teuchos::null;
 
   if (printTimings)
-    TimeMonitor::summarize();
+    TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
 
   MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
 

@@ -103,7 +103,6 @@ void scaleModelVar(
   using Teuchos::RCP;
   using Teuchos::Ptr;
   using Teuchos::rcp_const_cast;
-  typedef EpetraExt::ModelEvaluator EME;
 
 
 #ifdef TEUCHOS_DEBUG
@@ -171,7 +170,6 @@ void scaleModelBound(
   using Teuchos::rcp;
   using Teuchos::RCP;
   using Teuchos::rcp_const_cast;
-  typedef EpetraExt::ModelEvaluator EME;
 
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(!scaledLowerBounds);
@@ -231,7 +229,6 @@ void unscaleModelVar(
   using Teuchos::RCP;
   using Teuchos::rcp_const_cast;
   using Teuchos::includesVerbLevel;
-  typedef EpetraExt::ModelEvaluator EME;
 
 
 #ifdef TEUCHOS_DEBUG

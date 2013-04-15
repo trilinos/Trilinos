@@ -72,10 +72,10 @@ namespace Galeri {
 
       Scalar delta_x, delta_y, delta_z;
 
-      double one = 1.0;
-      Scalar lx = list.get<Scalar>("lx", one) * list.get<Scalar>("stretchx", one);
-      Scalar ly = list.get<Scalar>("ly", one) * list.get<Scalar>("stretchy", one);
-      Scalar lz = list.get<Scalar>("lz", one) * list.get<Scalar>("stretchz", one);
+      Scalar one = (Scalar) 1.0;
+      Scalar lx = list.get<Scalar>("lx", one) * list.get<double>("stretchx", 1.0);
+      Scalar ly = list.get<Scalar>("ly", one) * list.get<double>("stretchy", 1.0);
+      Scalar lz = list.get<Scalar>("lz", one) * list.get<double>("stretchz", 1.0);
 
       GlobalOrdinal nx = list.get<GlobalOrdinal>("nx", -1);
       GlobalOrdinal ny = list.get<GlobalOrdinal>("ny", -1);
@@ -91,11 +91,11 @@ namespace Galeri {
         Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(1);
         Coord[0] = coordinates->getDataNonConst(0);
 
-        delta_x = lx / (nx - 1);
+        delta_x = lx / ((Scalar)(nx - 1));
 
         for (LocalOrdinal i = 0; i < NumMyElements; ++i) {
           ix = MyGlobalElements[i];
-          Coord[0][i] = delta_x * ix;
+          Coord[0][i] = delta_x * ((Scalar) ix);
         }
 
       } else if (coordType == "2D") {
@@ -105,16 +105,16 @@ namespace Galeri {
         Coord[0] = coordinates->getDataNonConst(0);
         Coord[1] = coordinates->getDataNonConst(1);
 
-        delta_x = lx / (nx - 1);
-        delta_y = ly / (ny - 1);
+        delta_x = lx / ((Scalar)(nx - 1));
+        delta_y = ly / ((Scalar)(ny - 1));
 
         for (LocalOrdinal i = 0; i < NumMyElements; ++i)
         {
           ix = MyGlobalElements[i] % nx;
           iy = (MyGlobalElements[i] - ix) / nx;
 
-          Coord[0][i] = delta_x * ix;
-          Coord[1][i] = delta_y * iy;
+          Coord[0][i] = delta_x * ((Scalar) ix);
+          Coord[1][i] = delta_y * ((Scalar) iy);
         }
 
       } else if (coordType == "3D") {
@@ -125,9 +125,9 @@ namespace Galeri {
         Coord[1] = coordinates->getDataNonConst(1);
         Coord[2] = coordinates->getDataNonConst(2);
 
-        delta_x = lx / (nx - 1);
-        delta_y = ly / (ny - 1);
-        delta_z = lz / (nz - 1);
+        delta_x = lx / ((Scalar) (nx - 1));
+        delta_y = ly / ((Scalar) (ny - 1));
+        delta_z = lz / ((Scalar) (nz - 1));
 
         for (LocalOrdinal i = 0; i < NumMyElements; i++)
         {
@@ -137,9 +137,9 @@ namespace Galeri {
           ix = ixy % nx;
           iy = (ixy - ix) / nx;
 
-          Coord[0][i] = delta_x * ix;
-          Coord[1][i] = delta_y * iy;
-          Coord[2][i] = delta_z * iz;
+          Coord[0][i] = delta_x * ((Scalar) ix);
+          Coord[1][i] = delta_y * ((Scalar) iy);
+          Coord[2][i] = delta_z * ((Scalar) iz);
         }
 
       } else {

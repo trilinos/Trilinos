@@ -724,7 +724,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_MultiVector *& bt,
 			Epetra_MultiVector *&xexact, bool StaticProfile, bool MakeLocalOnly) {
 
-  int i, j;
+  int i;
 
   // Determine my global IDs
   long long * myGlobalElements;
@@ -734,8 +734,6 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   
   Epetra_Map ptMap((long long)-1, numMyElements, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
   delete [] myGlobalElements;
-
-  long long numGlobalEquations = ptMap.NumGlobalElements64();
 
   Epetra_IntVector elementSizes(ptMap); // This vector will have the list of element sizes
   for (i=0; i<numMyElements; i++) 
@@ -748,6 +746,8 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   
 // FIXME: Won't compile until Epetra_VbrMatrix is modified.
 #if 0
+  int j;
+  long long numGlobalEquations = ptMap.NumGlobalElements64();
 
   if (MakeLocalOnly) 
     A = new Epetra_VbrMatrix(Copy, *map, *map, profile); // Construct matrix rowmap=colmap

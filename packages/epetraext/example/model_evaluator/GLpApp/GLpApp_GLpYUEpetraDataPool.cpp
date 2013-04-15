@@ -625,8 +625,7 @@ void GLpYUEpetraDataPool::computeAugmat()
                                   indices.Values());
   }
   
-  bool MakeDataContiguous = false;
-  EpetraExt::RowMatrix_Transpose transposer( MakeDataContiguous );
+  EpetraExt::RowMatrix_Transpose transposer;
   Epetra_CrsMatrix & transA = dynamic_cast<Epetra_CrsMatrix&>(transposer(*A_));
   Epetra_CrsMatrix & transB = dynamic_cast<Epetra_CrsMatrix&>(transposer(*B_));
   Epetra_CrsMatrix & transNpy = dynamic_cast<Epetra_CrsMatrix&>(transposer(*Npy_));

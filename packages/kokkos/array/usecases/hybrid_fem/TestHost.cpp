@@ -21,20 +21,6 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-void test_host_query( comm::Machine machine )
-{
-  const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
-
-  std::cout << "P" << comm::rank( machine )
-            << ": Host gang_count = " << gang_count
-            << " , gang_worker_capacity = "
-            << KokkosArray::Host::detect_gang_worker_capacity();
-
-  std::cout << std::endl ;
-}
-
-//----------------------------------------------------------------------------
-
 void test_host_fixture( comm::Machine machine ,
                         size_t gang_count ,
                         size_t gang_worker_count ,

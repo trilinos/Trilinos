@@ -150,7 +150,6 @@ namespace Belos {
                             Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
-      typedef OperatorTraits<ScalarType,MV,OP>  OPT;
 
       Teuchos::RCP<MV> P,Q;
 

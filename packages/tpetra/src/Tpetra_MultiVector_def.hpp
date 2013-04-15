@@ -42,12 +42,11 @@
 #ifndef TPETRA_MULTIVECTOR_DEF_HPP
 #define TPETRA_MULTIVECTOR_DEF_HPP
 
+#include <Kokkos_DefaultArithmetic.hpp>
 #include <Kokkos_NodeTrace.hpp>
-
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_as.hpp>
-
-#include "Tpetra_Vector.hpp"
+#include <Tpetra_Vector.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_MultiVector_decl.hpp"
@@ -1100,16 +1099,96 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map)
+  replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& newMap)
   {
+    using Teuchos::ArrayRCP;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
+
+    // mfh 28 Mar 2013: This method doesn't forget whichVectors_, so
+    // it might work if the MV is a column view of another MV.
+    // However, things might go wrong when restoring the original
+    // Map, so we don't allow this case for now.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! this->isConstantStride (), std::logic_error,
+      "Tpetra::MultiVector::replaceMap: This method does not currently work "
+      "if the MultiVector is a column view of another MultiVector (that is, if "
+      "isConstantStride() == false).");
+
+    // Case 1: current Map and new Map are both nonnull on this process.
+    // Case 2: current Map is nonnull, new Map is null.
+    // Case 3: current Map is null, new Map is nonnull.
+    // Case 4: both Maps are null: forbidden.
+    //
+    // Case 1 means that we don't have to do anything on this process,
+    // other than assign the new Map.  (We always have to do that.)
+    // It's an error for the user to supply a Map that requires
+    // resizing in this case.
+    //
+    // Case 2 means that the calling process is in the current Map's
+    // communicator, but will be excluded from the new Map's
+    // communicator.  We don't have to do anything on the calling
+    // process; just leave whatever data it may have alone.
+    //
+    // Case 3 means that the calling process is excluded from the
+    // current Map's communicator, but will be included in the new
+    // Map's communicator.  This means we need to (re)allocate the
+    // local (Kokkos::)MultiVector if it does not have the right
+    // number of rows.  If the new number of rows is nonzero, we'll
+    // fill the newly allocated local data with zeros, as befits a
+    // projection operation.
+    //
+    // The typical use case for Case 3 is that the MultiVector was
+    // first created with the Map with more processes, then that Map
+    // was replaced with a Map with fewer processes, and finally the
+    // original Map was restored on this call to replaceMap.
+
 #ifdef HAVE_TEUCHOS_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(! this->getMap ()->isCompatible (*map),
-      std::invalid_argument, "Tpetra::MultiVector::replaceMap(): The input map "
-      "is not compatible with this multivector's current map.  The replaceMap() "
-      "method is not for data redistribution; use Import or Export for that.");
+    // mfh 28 Mar 2013: We can't check for compatibility across the
+    // whole communicator, unless we know that the current and new
+    // Maps are nonnull on _all_ participating processes.
+    // TEUCHOS_TEST_FOR_EXCEPTION(
+    //   origNumProcs == newNumProcs && ! this->getMap ()->isCompatible (*map),
+    //   std::invalid_argument, "Tpetra::MultiVector::project: "
+    //   "If the input Map's communicator is compatible (has the same number of "
+    //   "processes as) the current Map's communicator, then the two Maps must be "
+    //   "compatible.  The replaceMap() method is not for data redistribution; "
+    //   "use Import or Export for that purpose.");
+
+    // TODO (mfh 28 Mar 2013) Add compatibility checks for projections
+    // of the Map, in case the process counts don't match.
 #endif // HAVE_TEUCHOS_DEBUG
-    this->map_ = map;
+
+    if (this->getMap ().is_null ()) { // current Map is null
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newMap.is_null (), std::invalid_argument,
+        "Tpetra::MultiVector::replaceMap: both current and new Maps are null.  "
+        "This probably means that the input Map is incorrect.");
+      // Case 3: current Map is null, new Map is nonnull.
+      const size_t newNumRows = newMap->getNodeNumElements ();
+      const size_t origNumRows = lclMV_.getNumRows ();
+      const size_t numCols = getNumVectors ();
+
+      if (origNumRows != newNumRows) {
+        RCP<Node> node = newMap->getNode ();
+        ArrayRCP<Scalar> data = newNumRows == 0 ? Teuchos::null :
+          node->template allocBuffer<Scalar> (newNumRows * numCols);
+        const size_t stride = newNumRows;
+        MVT::initializeValues (lclMV_, newNumRows, numCols, data, stride);
+        if (newNumRows > 0) {
+          MVT::Init (lclMV_, Teuchos::ScalarTraits<Scalar>::zero ());
+        }
+      }
+    }
+    else if (newMap.is_null ()) { // Case 2: current Map is nonnull, new Map is null
+      // I am an excluded process.  Reinitialize my data so that I
+      // have 0 rows.  Keep the number of columns as before.
+      const size_t numVecs = getNumVectors ();
+      MVT::initializeValues (lclMV_, 0, numVecs, Teuchos::null, 0);
+    }
+    this->map_ = newMap;
   }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -2513,6 +2592,16 @@ namespace Tpetra {
     cview_ = Teuchos::null;
     ncview_ = Teuchos::null;
   }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
+  {
+    replaceMap (newMap);
+  }
+
 } // namespace Tpetra
 
 //

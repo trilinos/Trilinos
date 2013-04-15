@@ -16,7 +16,7 @@
 #
 # required arguments
 #
-#   file1,file2  epetra/tpetra screen dumps  (order doesn't matter) 
+#   file1,file2  epetra/tpetra screen dumps  (order doesn't matter)
 #
 # You should see something like the following:
 #                                                                                          Tpetra       Epetra    T/E ratio
@@ -73,7 +73,7 @@ done
 # Remove the switches we parsed above.
 shift `expr $OPTIND - 1`
 
-# We want at least two non-option arguments. 
+# We want at least two non-option arguments.
 # Remove this block if you don't need it.
 if (( $# < $numReqd )); then
     echo $USAGE >&2
@@ -83,7 +83,7 @@ fi
 file1=$1;
 file2=$2;
 
-# Access additional arguments as usual through 
+# Access additional arguments as usual through
 # variables $@, $*, $1, $2, etc. or using this loop:
 #for PARAM; do
 #    echo $PARAM

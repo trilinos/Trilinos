@@ -217,6 +217,26 @@ namespace Teuchos {
   }
 
   void
+  TimeMonitor::disableTimer (const std::string& name)
+  {
+    RCP<Time> timer = lookupCounter (name);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      timer == null, std::invalid_argument,
+      "TimeMonitor::disableTimer: Invalid timer \"" << name << "\"");
+    timer->disable ();
+  }
+
+  void
+  TimeMonitor::enableTimer (const std::string& name)
+  {
+    RCP<Time> timer = lookupCounter (name);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      timer == null, std::invalid_argument,
+      "TimeMonitor::enableTimer: Invalid timer \"" << name << "\"");
+    timer->enable ();
+  }
+
+  void
   TimeMonitor::zeroOutTimers()
   {
     typedef std::map<std::string, RCP<Time> > map_type;
@@ -283,7 +303,6 @@ namespace Teuchos {
                            const std::string& filter="")
     {
       using std::make_pair;
-      typedef timer_map_t::const_iterator const_iter_t;
       typedef timer_map_t::iterator iter_t;
 
       timer_map_t theLocalData;

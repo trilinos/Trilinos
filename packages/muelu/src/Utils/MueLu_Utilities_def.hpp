@@ -540,36 +540,6 @@ namespace MueLu {
     return C;
   } // TwoMatrixMultiplyBlock
 
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MatrixPrint(RCP<Matrix> const &Op) {
-    std::string label = "unlabeled operator";
-    MatrixPrint(Op, label);
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MatrixPrint(RCP<Matrix> const &Op, std::string const &label) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-    RCP<const Epetra_CrsMatrix> epOp = Op2EpetraCrs(Op);
-    int mypid = epOp->RowMap().Comm().MyPID();
-    if (mypid == 0)
-      std::cout << "\n===============\n" << label << "\n==============" << std::endl;
-
-    if (mypid == 0) std::cout << "\n   -- row map -- \n" << std::endl;
-    std::cout << epOp->RowMap() << std::endl;
-    sleep(1);
-    epOp->RowMap().Comm().Barrier();
-
-    if (mypid == 0) std::cout << "\n   -- column map -- \n" << std::endl;
-    std::cout << epOp->ColMap() << std::endl;
-    sleep(1);
-    epOp->RowMap().Comm().Barrier();
-
-    std::cout << *epOp << std::endl;
-#endif
-  }
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildMatrixDiagonal(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &A)
   {
@@ -602,7 +572,6 @@ namespace MueLu {
       D->insertGlobalValues(i,iv,av);
     }
     D->fillComplete();
-    //MatrixPrint(D);
 
     return D;
 
@@ -758,7 +727,7 @@ namespace MueLu {
 
     SC one    = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
 
-    RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRangeMap(), numVecs);
+    RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRangeMap(), numVecs,false); //no need to initialize to zero
     Op.apply(X, *RES, Teuchos::NO_TRANS, one, zero);
     RES->update(one, RHS, negone);
 
@@ -809,7 +778,7 @@ namespace MueLu {
     if (lib == Xpetra::UseEpetra) {
 
 #     if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-      
+
       Epetra_CrsMatrix *A;
       const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(comm);
       int rv = EpetraExt::MatrixMarketFileToCrsMatrix( fileName.c_str(), *epcomm, A);
@@ -1134,7 +1103,8 @@ namespace MueLu {
         if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
           throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
         RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-        params->set("Optimize Storage",doOptimizeStorage);
+        params->set("Optimize Storage",    doOptimizeStorage);
+        params->set("No Nonlocal Changes", true);
         Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
       }
 #else
@@ -1214,6 +1184,39 @@ namespace MueLu {
     return boundaryNodes;
   } //DetectDirichletRows
 
+  template <class SC, class LO, class GO, class NO, class LMO>
+  std::string Utils<SC, LO, GO, NO, LMO>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
+    std::ostringstream ss;
+    ss << msgTag << " size =  " << A.getGlobalNumRows() << " x " << A.getGlobalNumCols() << ", nnz = " << A.getGlobalNumEntries() << std::endl;
+
+    if (params.is_null())
+      return ss.str();
+
+    if (params->isParameter("printLoadBalancingInfo") && params->get<bool>("printLoadBalancingInfo")) {
+      RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
+      GO numActiveProcesses = comm->getSize(), numProcessesWithData = 0;
+
+      // aggregate data
+      GO  numMyNnz = A.getNodeNumEntries(),     minNnz,     maxNnz;
+      GO numMyRows = A.getNodeNumRows(),    minNumRows, maxNumRows;
+      maxAll(comm,                                       numMyNnz, maxNnz);
+      maxAll(comm,                                      numMyRows, maxNumRows);
+      sumAll(comm, (GO)((numMyRows > 0) ?         1 :          0), numProcessesWithData);
+      minAll(comm, (GO)(( numMyNnz > 0) ?  numMyNnz :     maxNnz), minNnz);
+      minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
+
+      double   avgNumRows = A.getGlobalNumRows() / numProcessesWithData;
+      double nnzImbalance = ((double) maxNnz) / minNnz;
+
+      ss << msgTag << " Load balancing info:" << std::endl;
+      ss << msgTag << "   # active processes = "   << numActiveProcesses << std::endl;
+      ss << msgTag << "   # rows per proc: min = " << minNumRows << ", avg  = "  << avgNumRows << ", max  = "  << maxNumRows << std::endl;
+      ss << msgTag << "   nonzero imbalance = "    << nnzImbalance << std::endl;
+    }
+
+    return ss.str();
+  }
+
 #ifdef HAVE_MUELU_EPETRA
 //   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 //   RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB) {
@@ -1274,7 +1277,7 @@ namespace MueLu {
       RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A;
       {
       Teuchos::TimeMonitor tmm(*Teuchos::TimeMonitor::getNewTimer("YY Tpetra Transpose Only"));
-      Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer(*tpetraOp); //more than meets the eye
+      Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer (tpetraOp); //more than meets the eye
       A = transposer.createTranspose();
       }
 

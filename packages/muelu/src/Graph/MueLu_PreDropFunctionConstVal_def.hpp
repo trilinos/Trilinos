@@ -50,6 +50,7 @@
 
 #include "MueLu_PreDropFunctionConstVal_decl.hpp"
 #include "MueLu_Graph.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace MueLu {
 
@@ -59,7 +60,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool PreDropFunctionConstVal<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Drop(size_t lrow, GlobalOrdinal grow, size_t k, LocalOrdinal lcid, GlobalOrdinal gcid, const Teuchos::ArrayView<const LocalOrdinal> & indices, const Teuchos::ArrayView<const Scalar> & vals) {
-    if(std::abs(vals[k]) > std::abs(threshold_) || grow == gcid ) {
+    if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[k]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold_) || grow == gcid ) {
       return false; // keep values
     }
     return true;    // values too small -> drop them

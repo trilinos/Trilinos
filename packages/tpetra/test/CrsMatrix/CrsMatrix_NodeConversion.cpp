@@ -113,7 +113,6 @@ namespace {
     typedef typename Kokkos::DefaultNode::DefaultNodeType N1;
     typedef Map<LO,GO,N1>              Map1;
     typedef CrsMatrix<SCALAR,LO,GO,N1> Mat1;
-    typedef Map<LO,GO,N2>              Map2;
     typedef CrsMatrix<SCALAR,LO,GO,N2> Mat2;
     // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();

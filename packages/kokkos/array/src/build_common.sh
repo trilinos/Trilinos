@@ -33,6 +33,10 @@ MPI | mpi )
   OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
   ;;
 #-------------------------------
+OMP | omp | OpenMP )
+  HAVE_OMP="-DHAVE_OMP"
+  ;;
+#-------------------------------
 CUDA | Cuda | cuda )
   HAVE_CUDA="-DHAVE_CUDA"
   OPTFLAGS="${OPTFLAGS} ${HAVE_CUDA}"
@@ -110,6 +114,14 @@ then
   exit -1
 fi
 
+if [ -n "${HAVE_OMP}" ]
+then
+CXX="${CXX} -fopenmp"
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/OpenMP/KokkosArray_OpenMP_Parallel.cpp"
+fi
+
+#-----------------------------------------------------------------------------
+
 CXX="${CXX} ${OPTFLAGS}"
 
 if [ -n "${NVCC}" ] ;
@@ -123,9 +135,11 @@ INC_PATH="${INC_PATH} -I${KOKKOSARRAY}/src"
 
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_Impl.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_Thread.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_HostSpace.cpp"
 
 #-----------------------------------------------------------------------------
+#
 
 if [ -n "${HAVE_HWLOC}" ] ;
 then
@@ -138,11 +152,11 @@ then
 
   echo "LD_LIBRARY_PATH must include ${HAVE_HWLOC}/lib"
 
-  CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_hwloc.cpp"
+  CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_hwloc.cpp"
   LIB="${LIB} -L${HAVE_HWLOC}/lib -lhwloc"
   INC_PATH="${INC_PATH} -I${HAVE_HWLOC}/include"
 else
-  CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_hwloc_unavailable.cpp"
+  CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_hwloc_unavailable.cpp"
 fi
 
 #-----------------------------------------------------------------------------

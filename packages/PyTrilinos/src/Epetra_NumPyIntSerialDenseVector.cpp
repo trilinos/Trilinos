@@ -46,13 +46,13 @@ int * Epetra_NumPyIntSerialDenseVector::getArray(PyObject * pyObject)
     if (PyInt_Check(pyObject))
     {
       npy_intp dimensions[ ] = {(npy_intp) PyInt_AsLong(pyObject)};
-      tmp_array = (PyArrayObject*) PyArray_SimpleNew(1,dimensions,PyArray_INT);
+      tmp_array = (PyArrayObject*) PyArray_SimpleNew(1,dimensions,NPY_INT);
     }
     // Else try to build a contiguous PyArrayObject from the pyObject
     else
     {
       tmp_array = (PyArrayObject *)
-	PyArray_ContiguousFromObject(pyObject,PyArray_INT,0,0);
+	PyArray_ContiguousFromObject(pyObject,NPY_INT,0,0);
     }
   }
 
@@ -62,7 +62,7 @@ int * Epetra_NumPyIntSerialDenseVector::getArray(PyObject * pyObject)
     cleanup();
     throw PythonException();
   }
-  return (int*)(tmp_array->data);
+  return (int*)(PyArray_DATA(tmp_array));
 }
 
 // =============================================================================
@@ -77,7 +77,7 @@ void Epetra_NumPyIntSerialDenseVector::setArray()
   {
     npy_intp dimensions[ ] = {Length()};
     array = (PyArrayObject*)
-      PyArray_SimpleNewFromData(1,dimensions,PyArray_INT,
+      PyArray_SimpleNewFromData(1,dimensions,NPY_INT,
 				(void*)Epetra_IntSerialDenseVector::Values());
     if (!array)
     {
@@ -91,7 +91,8 @@ void Epetra_NumPyIntSerialDenseVector::setArray()
 int Epetra_NumPyIntSerialDenseVector::getVectorSize(PyObject * pyObject)
 {
   if (!tmp_array) getArray(pyObject);
-  return (int) PyArray_MultiplyList(tmp_array->dimensions, tmp_array->nd);
+  return (int) PyArray_MultiplyList(PyArray_DIMS(tmp_array),
+                                    PyArray_NDIM(tmp_array));
 }
 
 void Epetra_NumPyIntSerialDenseVector::cleanup()

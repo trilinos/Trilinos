@@ -760,6 +760,7 @@ public:
   {
     run_test_mirror();
     run_test();
+    run_test_scalar();
     run_test_const();
     run_test_subview();
     run_test_vector();
@@ -797,6 +798,28 @@ public:
     mirror_type am = KokkosArray::create_mirror_view(a);
     mirror_type ax = KokkosArray::create_mirror(a);
     ASSERT_EQ( & a() , & am() );
+  }
+
+  static void run_test_scalar()
+  {
+    typedef typename dView0::HostMirror  hView0 ;
+
+    dView0 dx , dy ;
+    hView0 hx , hy ;
+
+    dx = dView0( "dx" );
+    dy = dView0( "dy" );
+
+    hx = KokkosArray::create_mirror( dx );
+    hy = KokkosArray::create_mirror( dy );
+
+    hx = 1 ;
+
+    KokkosArray::deep_copy( dx , hx );
+    KokkosArray::deep_copy( dy , dx );
+    KokkosArray::deep_copy( hy , dy );
+
+    ASSERT_EQ( hx(), hy() );
   }
 
   static void run_test()

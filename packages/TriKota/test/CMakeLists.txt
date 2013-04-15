@@ -5,6 +5,11 @@ INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib/)
 
+# Needed to find Dakota components built with ExternalProject_Add
+# and their dependencies; only defined in recent versions of Dakota
+IF(DEFINED Dakota_LINK_DIRS)
+  LINK_DIRECTORIES(${Dakota_LINK_DIRS})
+ENDIF()
 
 # This is needed to compile codes with dakota headers.
 ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})

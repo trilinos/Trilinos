@@ -167,8 +167,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, LeftRightScale, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
-    typedef OrdinalTraits<LO> LOT;
     typedef Vector<Scalar,LO,GO,Node> VEC;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     // get a comm

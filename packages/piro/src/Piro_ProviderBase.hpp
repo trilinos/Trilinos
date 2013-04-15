@@ -46,15 +46,12 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include <functional>
-
 namespace Piro {
 
 template <typename T>
-class ProviderBase :
-  public std::unary_function<const Teuchos::RCP<Teuchos::ParameterList> &, Teuchos::RCP<T> > {
+class ProviderBase {
 public:
-  virtual Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) = 0;
+  virtual Teuchos::RCP<T> getInstance(const Teuchos::RCP<Teuchos::ParameterList> &params) = 0;
 
   ProviderBase() {}
   virtual ~ProviderBase() {}

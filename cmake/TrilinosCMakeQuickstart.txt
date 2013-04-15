@@ -14,7 +14,7 @@ Section B: Getting Help
 Section C: Configuring Trilinos
   --  Setting up a build directory
   --  Basic configuration
-  --  Selecting packages to enable
+  --  Selecting the list of packages to enable
   --  Selecting compiler and linker options.
   --  Disabling Fortran
   --  Runtime Debug support
@@ -255,13 +255,22 @@ C) Configuring (Makefile Generator)
 
   e) Removing all package enables in the Cache
 
-      $ ./-do-confiugre -D Trilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+      $ ./do-confiugre -D Trilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
 
     This option will set to empty '' all package enables, leaving all other
     cache variables as they are.  You can then reconfigure with a new set of
     package enables for a different set of packages.  This allows you to avoid
     more expensive configure time checks and to preserve other cache variables
     that you have set and don't want to loose.
+
+  f) Allowing enabled forward dependent packages to be disabled when upstreams are disabled
+
+    $ ./do-configure -D Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES:BOOL=ON
+
+    With this option, when a package is explictly enabled that has a disabled
+    required upstream package or TPL, then the forward/downstream package will
+    be disabled with a warning.  The default behavor (OFF) is to error out when
+    an enabled package has a disabled required upstream dependency.
 
 
 (*) Selecting compiler and linker options:

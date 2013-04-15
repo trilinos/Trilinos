@@ -138,10 +138,10 @@ namespace Teuchos
     void POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const;
 
     //! Computes row and column scalings intended to equilibrate a symmetric positive definite matrix \c A and reduce its condition number (w.r.t. 2-norm).
-    void POEQU(const OrdinalType n, const ScalarType* A, const OrdinalType lda, ScalarType* S, ScalarType* scond, ScalarType* amax, OrdinalType* info) const;
+    void POEQU(const OrdinalType n, const ScalarType* A, const OrdinalType lda, MagnitudeType* S, MagnitudeType* scond, MagnitudeType* amax, OrdinalType* info) const;
 
     //! Improves the computed solution to a system of linear equations when the coefficient matrix is symmetric positive definite, and provides error bounds and backward error estimates for the solution.
-    void PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, const ScalarType* AF, const OrdinalType ldaf, const ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
+    void PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const ScalarType* AF, const OrdinalType ldaf, const ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
 
     //! Uses the Cholesky factorization to compute the solution to a real system of linear equations \c A*X=B, where \c A is symmetric positive definite.  System can be equilibrated by POEQU and iteratively refined by PORFS, if requested.
     void POSVX(const char FACT, const char UPLO, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* AF, const OrdinalType ldaf, char EQUED, ScalarType* S, ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
@@ -572,13 +572,59 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::POEQU(const OrdinalType n, const ScalarType* A, const OrdinalType lda, ScalarType* S, ScalarType* scond, ScalarType* amax, OrdinalType* info) const
+  void LAPACK<OrdinalType, ScalarType>::POEQU(const OrdinalType n, const ScalarType* A, const OrdinalType lda, MagnitudeType* S, MagnitudeType* scond, MagnitudeType* amax, OrdinalType* info) const
   {
-    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+    // Test the input parameters
+    *info = 0;
+    if (n < 0) {
+      *info = -1;
+    } else if (lda < TEUCHOS_MAX(1, n)) {
+      *info = -3;
+    }
+    if (*info != 0) {
+      return;
+    }
+
+    ScalarType sZero = ScalarTraits<ScalarType>::zero();
+    ScalarType sOne  = ScalarTraits<ScalarType>::one();
+    MagnitudeType mZero = ScalarTraits<ScalarType>::magnitude(sZero);
+    MagnitudeType mOne = ScalarTraits<ScalarType>::magnitude(sOne);
+
+    // Quick return
+    if (n == 0) {
+      *scond = mOne;
+      *amax = mZero;
+      return;
+    }
+
+    // Find the minimum and maximum diagonal elements
+    S[0] = ScalarTraits<ScalarType>::magnitude( A[0] );
+    MagnitudeType smin = S[0];
+    *amax = S[0];
+    for (OrdinalType i=0; i<n; ++i) {
+      S[i] = ScalarTraits<ScalarType>::magnitude( A[i*lda + i] );
+      smin = TEUCHOS_MIN( smin, S[i] );
+      *amax = TEUCHOS_MAX( *amax, S[i] );
+    }
+
+    if (smin < mZero) {
+      // Find the first non-positve diagonal element and return an error code
+      for (OrdinalType i=0; i<n; ++i) {
+	if (S[i] < mZero)
+	  *info = i;
+      }
+    } else {
+      // Set the scale factors to the reciprocals of the diagonal elements
+      for (OrdinalType i=0; i<n; ++i) {
+	S[i] = mOne / ScalarTraits<ScalarType>::squareroot( S[i] );
+      }
+      // Compute scond = min(S(i)) / max(S(i))
+      *scond = ScalarTraits<ScalarType>::squareroot( smin ) / ScalarTraits<ScalarType>::squareroot( *amax );
+    }
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, const ScalarType* AF, const OrdinalType ldaf, const ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
+  void LAPACK<OrdinalType, ScalarType>::PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, const ScalarType* AF, const OrdinalType ldaf, const ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -781,15 +827,15 @@ namespace Teuchos
   {
 
     // Test the input parameters
-    info = 0;
+    *info = 0;
     if (m < 0) {
-      info = -1;
+      *info = -1;
     } else if (n < 0) {
-      info = -2;
+      *info = -2;
     } else if (lda < TEUCHOS_MAX(1, m)) {
-      info = -4;
+      *info = -4;
     }
-    if (info != 0) {
+    if (*info != 0) {
       return;
     }
 
@@ -893,19 +939,19 @@ namespace Teuchos
   {
 
     // Test the input parameters
-    info = 0;
+   * info = 0;
     if (m < 0) {
-      info = -1;
+      *info = -1;
     } else if (n < 0) {
-      info = -2;
+      *info = -2;
     } else if (kl < 0) {
-      info = -3;
+      *info = -3;
     } else if (ku < 0) {
-      info = -4;
+      *info = -4;
     } else if (lda < kl+ku+1) {
-      info = -6;
+      *info = -6;
     }
-    if (info != 0) {
+    if (*info != 0) {
       return;
     }
 

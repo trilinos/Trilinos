@@ -155,7 +155,14 @@ namespace MueLu {
     // Usage: Level->Get< RCP<Matrix> >("A", factoryPtr)
     template <class T>
     T & Get(const std::string & ename, const FactoryBase* factory) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory, ename), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
       return const_cast<T &>(const_cast<const Needs &>(*this).Get<T>(ename, factory)); // Valid cast. See Effective C++, Item 3.
+    }
+
+    const VariableContainer::request_container& GetRequests(const std::string& ename, const FactoryBase* factory) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory, ename), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
+      const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
+      return var->Requests();
     }
 
     //@}

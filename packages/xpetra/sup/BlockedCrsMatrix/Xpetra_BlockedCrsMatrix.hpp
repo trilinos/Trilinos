@@ -182,6 +182,11 @@ public:
         "insertLocalValues not supported by BlockedCrsMatrix" );
   }
 
+  void removeEmptyProcessesInPlace(const Teuchos::RCP<const MapClass>& newMap) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "removeEmptyProcesses not supported by BlockedCrsMatrix");
+  }
+
   //! \brief Replace matrix entries, using global IDs.
   /** All index values must be in the global space.
 

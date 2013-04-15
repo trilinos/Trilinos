@@ -193,7 +193,14 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
 int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
     partId_t numParts, float imbalance,
     std::string paramFile, std::string pqParts/*, std::string paramFile*/,
-    partId_t k, bool force_binary, bool force_linear)
+    partId_t k, bool force_binary, bool force_linear,
+
+  
+    int migration_check_option,
+    int migration_option,
+    scalar_t migration_imbalance_cut_off
+
+    )
 {
 
   Teuchos::ParameterList geoparams("geo params");
@@ -265,14 +272,21 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
   //inputAdapter_t ia(coordsConst);
   inputAdapter_t ia(coordsConst,weights, stride);
 #endif
-
+  
 
   Teuchos::ParameterList params("test params");
 
   params.set("pqParts", pqParts);
   params.set("timer_output_stream" , "std::cout");
   params.set("num_global_parts", numParts);
+
+  params.set("migration_option", migration_check_option);
+  params.set("migration_type", migration_option);
+  params.set("migration_imbalance_cut_off", migration_imbalance_cut_off);
+
   params.set("algorithm", "multijagged");
+  //params.set("algorithm", "rcb");
+
   params.set("compute_metrics", "true");
   params.set("imbalance_tolerance", double(imbalance));
   params.set("parallel_part_calculation_count", k);
@@ -327,7 +341,13 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
 }
 
 int testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string fname, std::string pqParts, partId_t k,
-    bool force_binary, bool force_linear)
+    bool force_binary, bool force_linear,
+
+  
+  int migration_check_option,
+  int migration_option,
+  scalar_t migration_imbalance_cut_off
+)
 {
   //std::string fname("simple");
   cout << "running " << fname << endl;
@@ -363,6 +383,10 @@ int testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numPa
 
   Teuchos::ParameterList params("test params");
 
+
+  params.set("migration_option", migration_check_option);
+  params.set("migration_type", migration_option);
+  params.set("migration_imbalance_cut_off", migration_imbalance_cut_off);
 
   params.set("pqParts", pqParts);
   params.set("timer_output_stream" , "std::cout");
@@ -442,7 +466,10 @@ bool getArgumentValue(string &argumentid, double &argumentValue, string argument
 
 void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
      string &pqParts, int &opt,std::string &fname/*, std::string &paramFile*/, partId_t &k,
-     bool &force_binary , bool &force_linear){
+     bool &force_binary , bool &force_linear,
+  int &migration_check_option,
+  int &migration_option,
+  scalar_t &migration_imbalance_cut_off){
 
   bool isCset = false;
   bool isPset = false;
@@ -481,7 +508,28 @@ void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
         } else {
           throw "Invalid argument at " + tmp;
         }
-      } else if(identifier == "F"){
+      } else if(identifier == "MI"){
+        if(fval > 0){
+          migration_imbalance_cut_off=fval;
+        } else {
+          throw "Invalid argument at " + tmp;
+        }
+      } else if(identifier == "MO"){
+        if(value >=0 ){
+          migration_check_option = value;
+        } else {
+          throw "Invalid argument at " + tmp;
+        }
+      }
+      else if(identifier == "MT"){
+        if(value >=0 ){
+          migration_option = value;
+        } else {
+          throw "Invalid argument at " + tmp;
+        }
+      }
+
+      else if(identifier == "F"){
         stringstream stream(stringstream::in | stringstream::out);
         stream << tmp;
         getline(stream, fname, '=');
@@ -552,6 +600,10 @@ void print_usage(char *executable){
   cout << "\tEB=force binary search: EB=0 as default, EB=1 will force to do binary search regardless of the part number" << endl;
   cout << "\tO=input option: O=0 for reading coordinate from file, O>0 for generating coordinate from coordinate generator file. Default will run geometric generator." << endl;
   cout << "\tK=concurrent part calculation input: K>0." << endl;
+  cout << "\tMI=Migration cutoff imbalance MI=1.03. " << endl;
+  cout << "\tMT=Migration type: 0 for naive migration, >0 for smarter migration (Default 1)." << endl;
+  cout << "\tMO=Migration option: 0 for decision on imbalance, 1 for forcing migration, >1 for avoiding migration. (Default-2)" << endl;
+
   cout << "Example:\n" << executable << " P=2,2,2 C=8 F=simple O=0" << endl;
 }
 
@@ -572,10 +624,17 @@ int main(int argc, char *argv[])
   //std::string paramFile = "";
   bool force_binary = false, force_linear = false;
 
+  int migration_check_option = 2;
+  int migration_option = 1;
+  scalar_t migration_imbalance_cut_off = 1.03;
+
   try{
     try {
     getArgVals(argc, argv,   numParts, imbalance ,
-        pqParts, opt,fname/*, paramFile*/, k, force_binary, force_linear);
+        pqParts, opt,fname/*, paramFile*/, k, force_binary, force_linear,
+  migration_check_option,
+  migration_option,
+  migration_imbalance_cut_off);
     }
     catch(std::string s){
       if(tcomm->getRank() == 0){
@@ -600,10 +659,16 @@ int main(int argc, char *argv[])
     int ierr = 0;
     switch (opt){
     case 0:
-      ierr = testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, k, force_binary, force_linear);
+      ierr = testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, k, force_binary, force_linear,
+  migration_check_option,
+  migration_option,
+  migration_imbalance_cut_off);
       break;
     default:
-      GeometricGen(tcomm, numParts, imbalance, fname, pqParts/*, paramFile*/, k, force_binary, force_linear);
+      GeometricGen(tcomm, numParts, imbalance, fname, pqParts/*, paramFile*/, k, force_binary, force_linear,
+  migration_check_option,
+  migration_option,
+  migration_imbalance_cut_off);
       break;
     }
 

@@ -70,7 +70,7 @@
 
 //#define BINARYCUTSEARCH
 
-#define enable_migration
+//#define enable_migration
 #define ABS(x) ((x) >= 0 ? (x) : -(x))
 
 #define LEAF_IMBALANCE_FACTOR 0.1
@@ -81,7 +81,7 @@
 //#define mpi_communication
 
 #define KCUTOFF 0.80
-#define defaultK 16
+#define Z2_DEFAULT_CON_PART_COUNT 16
 
 namespace Teuchos{
   template <typename Ordinal, typename T>
@@ -397,7 +397,7 @@ namespace Zoltan2{
         imbalanceTolerance = tol - 1.0;
       }
 
-      imbalanceTolerance = .1;
+      migration_imbalance_cut_off = .1;
       pe = pl.getEntryPtr("migration_imbalance_cut_off");
       if (pe){
         double tol;
@@ -446,6 +446,7 @@ namespace Zoltan2{
           force_linear = true;
       }
 
+
       //TODO: FIX ME.
       //double aa = 1;
       pe = pl.getEntryPtr("parallel_part_calculation_count");
@@ -453,7 +454,7 @@ namespace Zoltan2{
         //aa = pe->getValue(&aa);
         concurrentPartCount = pe->getValue(&concurrentPartCount);
       }else {
-        concurrentPartCount = 1;
+        concurrentPartCount = 0; // Set to invalid value
         //concurrentPartCount = partId_t(aa);
       }
       int val = 0;
@@ -535,28 +536,29 @@ namespace Zoltan2{
    *
    */
 
+
   template <typename Adapter, typename scalar_t, typename gno_t>
-    void pqJagged_getInputValues(
-        const RCP<const Environment> &env, const RCP<const CoordinateModel<
-        typename Adapter::base_adapter_t> > &coords,
-        RCP<PartitioningSolution<Adapter> > &solution,
-        std::bitset<NUM_RCB_PARAMS> &params,
-        const int &coordDim,
-        const int &weightDim,
-        const size_t &numLocalCoords, size_t &numGlobalParts, int &pqJagged_multiVectorDim,
-        scalar_t **pqJagged_values, const int &criteriaDim, scalar_t **pqJagged_weights, ArrayView<const gno_t> &pqJagged_gnos, bool &ignoreWeights,
-        bool *pqJagged_uniformWeights, bool *pqJagged_uniformParts, scalar_t **pqJagged_partSizes
-        ){
-      typedef typename Adapter::node_t node_t;
-      typedef typename Adapter::lno_t lno_t;
-      typedef StridedData<lno_t, scalar_t> input_t;
+  void pqJagged_getInputValues(
+      const RCP<const Environment> &env, const RCP<const CoordinateModel<
+      typename Adapter::base_adapter_t> > &coords,
+      RCP<PartitioningSolution<Adapter> > &solution,
+      std::bitset<NUM_RCB_PARAMS> &params,
+      const int &coordDim,
+      const int &weightDim,
+      const size_t &numLocalCoords, size_t &numGlobalParts, int &pqJagged_multiVectorDim,
+      scalar_t **pqJagged_values, const int &criteriaDim, scalar_t **pqJagged_weights, ArrayView<const gno_t> &pqJagged_gnos, bool &ignoreWeights,
+      bool *pqJagged_uniformWeights, bool *pqJagged_uniformParts, scalar_t **pqJagged_partSizes
+      ){
+    //typedef typename Adapter::node_t node_t;
+    typedef typename Adapter::lno_t lno_t;
+    typedef StridedData<lno_t, scalar_t> input_t;
 
-      ArrayView<const gno_t> gnos;
-      ArrayView<input_t>     xyz;
-      ArrayView<input_t>     wgts;
+    ArrayView<const gno_t> gnos;
+    ArrayView<input_t>     xyz;
+    ArrayView<input_t>     wgts;
 
-      coords->getCoordinates(gnos, xyz, wgts);
-      pqJagged_gnos = gnos;
+    coords->getCoordinates(gnos, xyz, wgts);
+    pqJagged_gnos = gnos;
 
 
       //std::cout << std::endl;
@@ -3071,7 +3073,8 @@ bool migrateData(
     partId_t &partIndexBegin, partId_t futurePartIndex, 
     int migration_option,
     int migration_check_option,
-    scalar_t migration_imbalance_cut_off
+    scalar_t migration_imbalance_cut_off,
+    string iteration
     //,    lno_t *permutation
     )          // on return is num procs with left data
 {
@@ -3620,8 +3623,12 @@ bool migrateData(
   RCP<const mvector_t> constInput = rcp_const_cast<const mvector_t>(vectors);
 
   try{
+    env->timerStart(MACRO_TIMERS, "PQJagged Actual_Migration-" + iteration);
+    
     newMultiVector = XpetraTraits<mvector_t>::doMigration(
         constInput, numMyNewGnos, recvBuf.getRawPtr());
+    env->timerStop(MACRO_TIMERS, "PQJagged Actual_Migration-" + iteration);
+    
   }
   Z2_FORWARD_EXCEPTIONS
 
@@ -3729,7 +3736,8 @@ bool migration(
     partId_t futurePartIndex, 
     int migration_option, 
     int migration_check_option,
-    scalar_t migration_imbalance_cut_off){
+    scalar_t migration_imbalance_cut_off,
+    string iteration){
 
   partId_t nprocs = comm->getSize();
   scalar_t *assigned_parts = NULL;
@@ -3794,7 +3802,8 @@ bool migration(
       futurePartIndex, 
       migration_option,
       migration_check_option,
-      migration_imbalance_cut_off
+      migration_imbalance_cut_off,
+      iteration
       )
     )
    {
@@ -3921,7 +3930,7 @@ void AlgPQJagged(
   bool ignoreWeights=false;
 
   bool allowNonRectelinearPart = false;
-  int concurrentPartCount = 1;
+  int concurrentPartCount = 0; // Set to invalid value
   bool force_binary = false, force_linear = false;
   pqJagged_getParameters<scalar_t>(pl, 
       imbalanceTolerance, 
@@ -3997,6 +4006,24 @@ void AlgPQJagged(
   partId_t maxTotalCumulativePartCount = totalPartCount / partNo[partArraySize - 1];
   size_t maxTotalPartCount = maxPartNo + size_t(maxCutNo);
   //maxPartNo is P, maxCutNo = P-1, matTotalPartcount = 2P-1
+  if (concurrentPartCount == 0)
+  {
+      // User did not specify concurrentPartCount parameter, Pick a default.
+      // Still a conservative default. We could go as big as
+      // maxTotalCumulativePartCount, but trying not to use too much memory.
+      // Another assumption the total #parts will be large-very large
+      if (coordDim == partArraySize)
+      {
+          // partitioning each dimension only once, pick the default as
+          // maxPartNo >> default
+          concurrentPartCount = min(Z2_DEFAULT_CON_PART_COUNT, maxPartNo);
+      }
+      else
+      {
+          // partitioning each dimension more than once, pick the max
+          concurrentPartCount = max(Z2_DEFAULT_CON_PART_COUNT, maxPartNo);
+      }
+  }
 
   if(concurrentPartCount > maxTotalCumulativePartCount){
     if(comm->getRank() == 0){
@@ -4454,12 +4481,14 @@ void AlgPQJagged(
               futurePartNumbers, 
               migration_option, 
               migration_check_option,
-              migration_imbalance_cut_off
+              migration_imbalance_cut_off,
+              istring
               )
            )
-        { 
+        { /*
           if(comm->getRank() == 0)
           cout <<"i:" << i << " migration is done" << endl;
+          */
           is_migrated_in_current = true;
           is_data_migrated = true;
           env->timerStop(MACRO_TIMERS, "PQJagged Problem_Migration-" + istring);
@@ -4468,8 +4497,10 @@ void AlgPQJagged(
 
         }
         else {
+          /*
           if(comm->getRank() == 0)
           cout << "i:" << i << " migration is not done" << endl;
+          */
           env->timerStop(MACRO_TIMERS, "PQJagged Problem_Migration-" + istring);
 
           is_migrated_in_current = false;

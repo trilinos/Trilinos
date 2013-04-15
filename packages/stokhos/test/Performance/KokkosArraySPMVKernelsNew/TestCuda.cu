@@ -36,6 +36,7 @@
 #include "Stokhos_Cuda_CrsProductTensor.hpp"
 #include "Stokhos_Cuda_FlatSparse3Tensor.hpp"
 #include "Stokhos_Cuda_FlatSparse3Tensor_kji.hpp"
+#include "Stokhos_Cuda_LexicographicBlockSparse3Tensor.hpp"
 
 namespace unit_test {
 

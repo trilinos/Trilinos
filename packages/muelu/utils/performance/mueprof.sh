@@ -54,7 +54,7 @@ done
 # Remove the switches we parsed above.
 shift `expr $OPTIND - 1`
 
-# We want at least $numReqd non-option arguments. 
+# We want at least $numReqd non-option arguments.
 # Remove this block if you don't need it.
 if (( $# < $numReqd )); then
     echo $USAGE >&2
@@ -63,7 +63,7 @@ fi
 
 file=$1;
 
-# Access additional arguments as usual through 
+# Access additional arguments as usual through
 # variables $@, $*, $1, $2, etc. or using this loop:
 #for PARAM; do
 #    echo $PARAM

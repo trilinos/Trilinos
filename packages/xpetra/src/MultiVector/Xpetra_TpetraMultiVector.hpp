@@ -303,6 +303,11 @@ namespace Xpetra {
 
     }
 
+    void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
+      this->getTpetra_MultiVector()->replaceMap(toTpetra(map));
+    }
+
+
     //@}
 
     //! @name Xpetra specific

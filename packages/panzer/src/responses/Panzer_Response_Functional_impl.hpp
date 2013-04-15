@@ -17,7 +17,6 @@ scatterResponse()
   double glbValue = 0.0;
 
   // do global summation
-  // eComm_.SumAll(&locValue,&glbValue,1);
   Teuchos::reduceAll(*this->getComm(), Teuchos::REDUCE_SUM, static_cast<Thyra::Ordinal>(1), &locValue,&glbValue);
 
   value = glbValue;

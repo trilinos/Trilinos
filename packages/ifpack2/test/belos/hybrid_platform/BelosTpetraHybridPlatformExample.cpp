@@ -138,9 +138,9 @@ class runTest {
     typedef Tpetra::Operator<Scalar,LO,GO,Node>    TOP;
     typedef Belos::LinearProblem<Scalar,TMV,TOP>   BLP;
     typedef Belos::SolverManager<Scalar,TMV,TOP>   BSM;
-    typedef Belos::MultiVecTraits<Scalar,TMV>      BMVT;
 
 #ifdef HAVE_BELOS_TPETRA_TIMERS
+    typedef Belos::MultiVecTraits<Scalar,TMV>      BMVT;
     BMVT::mvTimesMatAddMvTimer_ = Teuchos::TimeMonitor::getNewTimer("Belos/Tpetra::MvTimesMatAddMv()");
     BMVT::mvTransMvTimer_ = Teuchos::TimeMonitor::getNewTimer("Belos/Tpetra::MvTransMv()");
 #endif

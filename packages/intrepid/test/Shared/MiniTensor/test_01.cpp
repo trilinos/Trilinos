@@ -457,6 +457,22 @@ namespace Intrepid
     TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
   }
 
+  TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3Fad)
+  {
+    Tensor<Sacado::Fad::DFad<double> > A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
+        9.0);
+
+    Tensor<Sacado::Fad::DFad<double> > U(3), S(3), V(3);
+
+    boost::tie(U, S, V) = svd(A);
+
+    Tensor<Sacado::Fad::DFad<double> > B = U * S * transpose(V);
+
+    Sacado::Fad::DFad<double> const error = norm(B - A) / norm(A);
+
+    TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  }
+
   TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen2x2)
   {
     Tensor<Real> const A(2.0, 1.0, 1.0, 2.0);
@@ -526,22 +542,6 @@ namespace Intrepid
     Tensor<Real> B = R - X * transpose(Y) + U - Y * D * transpose(Y);
 
     Real const error = norm(B) / norm(A);
-
-    TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
-  }
-
-  TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3Fad)
-  {
-    Tensor<Sacado::Fad::DFad<double> > A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
-        9.0);
-
-    Tensor<Sacado::Fad::DFad<double> > U(3), S(3), V(3);
-
-    boost::tie(U, S, V) = svd(A);
-
-    Tensor<Sacado::Fad::DFad<double> > B = U * S * transpose(V);
-
-    Sacado::Fad::DFad<double> const error = norm(B - A) / norm(A);
 
     TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
   }

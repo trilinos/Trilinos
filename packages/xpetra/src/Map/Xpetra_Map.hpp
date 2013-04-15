@@ -165,6 +165,9 @@ namespace Xpetra {
     //! Print this object with the given verbosity level to the given FancyOStream.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
 
+    virtual RCP<const Map> removeEmptyProcesses  () const = 0;
+    virtual RCP<const Map> replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const = 0;
+
     //@}
 
     //! @name Xpetra specific

@@ -30,6 +30,8 @@
 #include <iostream>
 #include <cstdlib>
 
+#include "KokkosArray_hwloc.hpp"
+
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
@@ -115,9 +117,14 @@ int main(int argc, char *argv[])
     CLP.parse( argc, argv );
     
     // Detect number of CPUs and number of cores
-    const size_t num_cpu  = KokkosArray::Host::detect_gang_capacity();
-    const size_t num_core = KokkosArray::Host::detect_gang_worker_capacity() / 
-      n_thread_per_core;
+    const std::pair<unsigned,unsigned> core_topo =
+    KokkosArray::hwloc::get_core_topology();
+    const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+
+    const size_t num_cpu = core_topo.first;
+    const size_t num_core = core_topo.second;
+    if (static_cast<size_t>(n_thread_per_core) > core_capacity)
+      n_thread_per_core = core_capacity;
     
     // Print header
     std::cout << std::endl

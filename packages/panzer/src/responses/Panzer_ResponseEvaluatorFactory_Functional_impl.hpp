@@ -37,7 +37,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
      RCP<IntegrationRule> ir = rcp(new IntegrationRule(cubatureDegree_,physicsBlock.cellData()));
 
      Teuchos::ParameterList pl;
-     pl.set("Integral Name",responseName);
+     pl.set("Integral Name",field);
      pl.set("Integrand Name",field);
      pl.set("IR",ir);
 
@@ -53,7 +53,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
 
      // build useful evaluator
      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
-         = Teuchos::rcp(new ResponseScatterEvaluator_Functional<EvalT,panzer::Traits>(field,physicsBlock.cellData()));
+         = Teuchos::rcp(new ResponseScatterEvaluator_Functional<EvalT,panzer::Traits>(field,responseName,physicsBlock.cellData()));
 
      fm.template registerEvaluator<EvalT>(eval);
 

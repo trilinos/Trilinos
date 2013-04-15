@@ -159,7 +159,7 @@ namespace MueLuTests {
     TEST_EQUALITY(drows[localRowToZero-1], false);
 
   } //DetectDirichletRows
-  
+
 
 }//namespace MueLuTests
 

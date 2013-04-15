@@ -533,6 +533,11 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
     }
     Z2_FORWARD_EXCEPTIONS
   
+//KDDKDD TODO  This code assumes the solution has the part ordered the
+//KDDKDD TODO  same way as the user input.  That assumption is not
+//KDDKDD TODO  currently true, although we plan to make it true.
+//KDDKDD TODO  As a results, currently the weight metrics may be wrong.
+//KDDKDD TODO  See bug 5891.  April 5, 2013
     if (vwgtDim > 1){
       wgt += nparts;         // individual weights
       for (int vdim = 0; vdim < vwgtDim; vdim++){

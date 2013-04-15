@@ -180,14 +180,14 @@ void * HostSpace::allocate(
 
 void HostSpace::increment( const void * ptr )
 {
-  if ( Impl::HostInternal::singleton().is_master_thread() ) {
+  if ( Impl::host_thread_is_master() ) {
     host_space_singleton().increment( ptr );
   }
 }
 
 void HostSpace::decrement( const void * ptr )
 {
-  if ( Impl::HostInternal::singleton().is_master_thread() ) {
+  if ( Impl::host_thread_is_master() ) {
     Impl::host_decrement_not_thread_safe( ptr );
   }
 }
@@ -238,12 +238,9 @@ DeepCopy<HostSpace,HostSpace>
 
 namespace KokkosArray {
 
-size_t HostSpace::detect_cache_line_size()
-{ return Impl::HostInternal::singleton().m_cache_line_size ; }
-
 void HostSpace::assert_master_thread( const char * const name )
 {
-  if ( ! Impl::HostInternal::singleton().is_master_thread() ) {
+  if ( ! Impl::host_thread_is_master() ) {
     std::string msg ;
     msg.append( "KokkosArray::HostSpace::assert_master_thread( " );
     msg.append( name );

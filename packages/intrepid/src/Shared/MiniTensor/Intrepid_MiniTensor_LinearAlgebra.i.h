@@ -44,21 +44,21 @@
 
 namespace Intrepid {
 
-  //
-  // R^N tensor Frobenius norm
-  // \return \f$ \sqrt{A:A} \f$
-  //
-  template<typename T>
-  inline
-  T
-  norm(Tensor<T> const & A)
-  {
-    Index const
-    N = A.get_dimension();
+//
+// R^N tensor Frobenius norm
+// \return \f$ \sqrt{A:A} \f$
+//
+template<typename T>
+inline
+T
+norm(Tensor<T> const & A)
+{
+  Index const
+  N = A.get_dimension();
 
-    T s = 0.0;
+  T s = 0.0;
 
-    switch (N) {
+  switch (N) {
 
     default:
       s = dotdot(A, A);
@@ -75,28 +75,28 @@ namespace Intrepid {
       s+= A(1,0)*A(1,0) + A(1,1)*A(1,1);
       break;
 
-    }
-
-    return std::sqrt(s);
   }
 
-  //
-  // R^N tensor 1-norm
-  // \return \f$ \max_{j \in {0,\cdots,N}}\Sigma_{i=0}^N |A_{ij}| \f$
-  //
-  template<typename T>
-  inline
-  T
-  norm_1(Tensor<T> const & A)
-  {
-    Index const
-    N = A.get_dimension();
+  return std::sqrt(s);
+}
 
-    Vector<T> v(N);
+//
+// R^N tensor 1-norm
+// \return \f$ \max_{j \in {0,\cdots,N}}\Sigma_{i=0}^N |A_{ij}| \f$
+//
+template<typename T>
+inline
+T
+norm_1(Tensor<T> const & A)
+{
+  Index const
+  N = A.get_dimension();
 
-    T s = 0.0;
+  Vector<T> v(N);
 
-    switch (N) {
+  T s = 0.0;
+
+  switch (N) {
 
     default:
 
@@ -128,28 +128,28 @@ namespace Intrepid {
       s = std::max(v(0),v(1));
       break;
 
-    }
-
-    return s;
   }
 
-  //
-  // R^N tensor infinity-norm
-  // \return \f$ \max_{i \in {0,\cdots,N}}\Sigma_{j=0}^N |A_{ij}| \f$
-  //
-  template<typename T>
-  inline
-  T
-  norm_infinity(Tensor<T> const & A)
-  {
-    Index const
-    N = A.get_dimension();
+  return s;
+}
 
-    Vector<T> v(N);
+//
+// R^N tensor infinity-norm
+// \return \f$ \max_{i \in {0,\cdots,N}}\Sigma_{j=0}^N |A_{ij}| \f$
+//
+template<typename T>
+inline
+T
+norm_infinity(Tensor<T> const & A)
+{
+  Index const
+  N = A.get_dimension();
 
-    T s = 0.0;
+  Vector<T> v(N);
 
-    switch (N) {
+  T s = 0.0;
+
+  switch (N) {
 
     default:
       for (Index i = 0; i < N; ++i) {
@@ -180,116 +180,116 @@ namespace Intrepid {
       s = std::max(v(0),v(1));
       break;
 
-    }
-
-    return s;
   }
 
-  //
-  // Swap row. Exchange rows i and j in place
-  // \param A tensor
-  // \param i index
-  // \param j index
-  //
-  template<typename T>
-  void
-  swap_row(Tensor<T> & A, Index const i, Index const j)
-  {
-    Index const
-    N = A.get_dimension();
+  return s;
+}
 
-    if (i != j) {
-      for (Index k = 0; k < N; ++k) {
-        std::swap(A(i, k), A(j, k));
-      }
+//
+// Swap row. Exchange rows i and j in place
+// \param A tensor
+// \param i index
+// \param j index
+//
+template<typename T>
+void
+swap_row(Tensor<T> & A, Index const i, Index const j)
+{
+  Index const
+  N = A.get_dimension();
+
+  if (i != j) {
+    for (Index k = 0; k < N; ++k) {
+      std::swap(A(i, k), A(j, k));
     }
-    return;
   }
+  return;
+}
 
-  //
-  // Swap column. Exchange columns i and j in place
-  // \param A tensor
-  // \param i index
-  // \param j index
-  //
-  template<typename T>
-  void
-  swap_col(Tensor<T> & A, Index const i, Index const j)
-  {
-    Index const
-    N = A.get_dimension();
+//
+// Swap column. Exchange columns i and j in place
+// \param A tensor
+// \param i index
+// \param j index
+//
+template<typename T>
+void
+swap_col(Tensor<T> & A, Index const i, Index const j)
+{
+  Index const
+  N = A.get_dimension();
 
-    if (i != j) {
-      for (Index k = 0; k < N; ++k) {
-        std::swap(A(k, i), A(k, j));
-      }
+  if (i != j) {
+    for (Index k = 0; k < N; ++k) {
+      std::swap(A(k, i), A(k, j));
     }
-    return;
   }
+  return;
+}
 
-  //
-  // R^N determinant
-  // Laplace expansion. Warning: no pivoting.
-  // Casual use only. Use Teuchos LAPACK interface for
-  // more efficient and robust techniques.
-  // \param A tensor
-  // \return \f$ \det A \f$
-  //
-  template<typename T>
-  inline
-  T
-  det(Tensor<T> const & A)
-  {
-    Index const
-    N = A.get_dimension();
+//
+// R^N determinant
+// Laplace expansion. Warning: no pivoting.
+// Casual use only. Use Teuchos LAPACK interface for
+// more efficient and robust techniques.
+// \param A tensor
+// \return \f$ \det A \f$
+//
+template<typename T>
+inline
+T
+det(Tensor<T> const & A)
+{
+  Index const
+  N = A.get_dimension();
 
-    T s = 0.0;
+  T s = 0.0;
 
-    switch (N) {
+  switch (N) {
 
     default:
-      {
-        int sign = 1;
-        for (Index i = 0; i < N; ++i) {
-          const T d = det(subtensor(A, i, 1));
-          s += sign * d * A(i, 1);
-          sign *= -1;
-        }
+    {
+      int sign = 1;
+      for (Index i = 0; i < N; ++i) {
+        const T d = det(subtensor(A, i, 1));
+        s += sign * d * A(i, 1);
+        sign *= -1;
       }
-      break;
+    }
+    break;
 
     case 3:
       s =
-      -A(0,2)*A(1,1)*A(2,0) + A(0,1)*A(1,2)*A(2,0) +
-       A(0,2)*A(1,0)*A(2,1) - A(0,0)*A(1,2)*A(2,1) -
-       A(0,1)*A(1,0)*A(2,2) + A(0,0)*A(1,1)*A(2,2);
+          -A(0,2)*A(1,1)*A(2,0) + A(0,1)*A(1,2)*A(2,0) +
+          A(0,2)*A(1,0)*A(2,1) - A(0,0)*A(1,2)*A(2,1) -
+          A(0,1)*A(1,0)*A(2,2) + A(0,0)*A(1,1)*A(2,2);
       break;
 
     case 2:
       s = A(0,0) * A(1,1) - A(1,0) * A(0,1);
       break;
 
-    }
-
-    return s;
   }
 
-  //
-  // R^N trace
-  // \param A tensor
-  // \return \f$ A:I \f$
-  //
-  template<typename T>
-  inline
-  T
-  trace(Tensor<T> const & A)
-  {
-    Index const
-    N = A.get_dimension();
+  return s;
+}
 
-    T s = 0.0;
+//
+// R^N trace
+// \param A tensor
+// \return \f$ A:I \f$
+//
+template<typename T>
+inline
+T
+trace(Tensor<T> const & A)
+{
+  Index const
+  N = A.get_dimension();
 
-    switch (N) {
+  T s = 0.0;
+
+  switch (N) {
 
     default:
       for (Index i = 0; i < N; ++i) {
@@ -305,44 +305,44 @@ namespace Intrepid {
       s = A(0,0) + A(1,1);
       break;
 
-    }
-
-    return s;
   }
 
-  //
-  // R^N first invariant, trace
-  // \param A tensor
-  // \return \f$ I_A = A:I \f$
-  //
-  template<typename T>
-  inline
+  return s;
+}
+
+//
+// R^N first invariant, trace
+// \param A tensor
+// \return \f$ I_A = A:I \f$
+//
+template<typename T>
+inline
+T
+I1(Tensor<T> const & A)
+{
+  return trace(A);
+}
+
+//
+// R^N second invariant
+// \param A tensor
+// \return \f$ II_A = \frac{1}{2}((I_A)^2-I_{A^2}) \f$
+//
+template<typename T>
+inline
+T
+I2(Tensor<T> const & A)
+{
+  Index const
+  N = A.get_dimension();
+
   T
-  I1(Tensor<T> const & A)
-  {
-    return trace(A);
-  }
+  s = 0.0;
 
-  //
-  // R^N second invariant
-  // \param A tensor
-  // \return \f$ II_A = \frac{1}{2}((I_A)^2-I_{A^2}) \f$
-  //
-  template<typename T>
-  inline
-  T
-  I2(Tensor<T> const & A)
-  {
-    Index const
-    N = A.get_dimension();
+  const T
+  trA = trace(A);
 
-    T
-    s = 0.0;
-
-    const T
-    trA = trace(A);
-
-    switch (N) {
+  switch (N) {
 
     default:
       s = 0.5 * (trA * trA - trace(A * A));
@@ -350,30 +350,30 @@ namespace Intrepid {
 
     case 3:
       s = 0.5 * (trA*trA - A(0,0)*A(0,0) - A(1,1)*A(1,1) - A(2,2)*A(2,2)) -
-          A(0,1)*A(1,0) - A(0,2)*A(2,0) - A(1,2)*A(2,1);
+      A(0,1)*A(1,0) - A(0,2)*A(2,0) - A(1,2)*A(2,1);
       break;
 
     case 2:
       s =  0.5 * (trA * trA - trace(A * A));
       break;
 
-    }
-
-    return s;
   }
 
-  //
-  // R^N third invariant
-  // \param A tensor
-  // \return \f$ III_A = \det A \f$
-  //
-  template<typename T>
-  inline
-  T
-  I3(Tensor<T> const & A)
-  {
-    return det(A);
-  }
+  return s;
+}
+
+//
+// R^N third invariant
+// \param A tensor
+// \return \f$ III_A = \det A \f$
+//
+template<typename T>
+inline
+T
+I3(Tensor<T> const & A)
+{
+  return det(A);
+}
 
 } // namespace Intrepid
 

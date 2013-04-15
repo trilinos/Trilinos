@@ -48,6 +48,7 @@
 #include <iostream>
 
 #include <KokkosArray_Macros.hpp>
+#include <KokkosArray_hwloc.hpp>
 #include <GramSchmidt.hpp>
 
 //----------------------------------------------------------------------------
@@ -59,8 +60,11 @@ int main( int argc , char ** argv )
 
   const int comm_size = comm::size( machine );
   const int comm_rank = comm::rank( machine );
-  const int gang_capacity        = KokkosArray::Host::detect_gang_capacity();
-  const int gang_worker_capacity = KokkosArray::Host::detect_gang_worker_capacity();
+  const std::pair<unsigned,unsigned> core_top = KokkosArray::hwloc::get_core_topology();
+  const unsigned                     core_cap = KokkosArray::hwloc::get_core_capacity();
+  const unsigned                     thread_capacity = core_top.first * core_top.second * core_cap ;
+  const unsigned                     gang_worker_capacity = core_top.second * core_cap ;
+
   const int cuda_device_count =
 #if defined( HAVE_CUDA )
     KokkosArray::Cuda::detect_device_count() ;
@@ -109,7 +113,7 @@ int main( int argc , char ** argv )
 
       error = error
             || argc <= i
-            || gang_capacity        < gang_count
+            || thread_capacity      < gang_count * gang_worker
             || gang_worker_capacity < gang_worker
             || cuda_device_count <= cuda_device
             ;
@@ -122,8 +126,7 @@ int main( int argc , char ** argv )
                 << "cuda DEVICE# | "
                 << "test #LENGTH_BEGIN #LENGTH_END #COUNT #ITER )"
                 << std::endl
-                << "host capacity = "
-                << gang_capacity << " " << gang_worker_capacity
+                << "thread capacity = " << thread_capacity
                 << std::endl
                 << "cuda devices = "
                 << cuda_device_count
