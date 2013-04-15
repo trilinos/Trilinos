@@ -242,7 +242,7 @@ struct MV_MultiplyFunctor
       for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
     	const scalar_type val = m_A.values(iEntry);
     	const size_type ind = m_A.graph.entries(iEntry);
-        #pragma vector aligned
+        //#pragma vector aligned
         #pragma ivdep
         #pragma unroll
         for ( size_type k = 0 ; k < 16 ; k++ )
@@ -256,7 +256,7 @@ struct MV_MultiplyFunctor
       for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
     	const scalar_type val = m_A.values(iEntry);
     	const size_type ind = m_A.graph.entries(iEntry);
-        #pragma vector aligned
+        //#pragma vector aligned
         #pragma ivdep
         for ( size_type k = 0 ; k < 16 ; ++k )
     	  sum[k] -=  val*m_x(ind,kk+k);
@@ -264,29 +264,29 @@ struct MV_MultiplyFunctor
     }
 
     if(doalpha*doalpha!=1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type k = 0 ; k < 16 ; ++k )
         sum[k] *= alpha(kk+k);
     }
 
     if(dobeta == 0) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type k = 0 ; k < 16 ; ++k )
         m_y(iRow,kk+k) = sum[k] ;
     } else if(dobeta == 1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type k = 0 ; k < 16 ; ++k )
         m_y(iRow,kk+k) += sum[k] ;
     } else if(dobeta == -1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type k = 0 ; k < 16 ; ++k )
         m_y(iRow,kk+k) = -m_y(iRow,kk+k) +  sum[k] ;
     } else {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type k = 0 ; k < 16 ; ++k )
         m_y(iRow,kk+k) = beta(kk+k)*m_y(iRow,kk+k) + sum[k] ;
@@ -295,7 +295,7 @@ struct MV_MultiplyFunctor
 
     //do remainder
 	const int remain = n-kk;
- #pragma vector aligned
+ //#pragma vector aligned
  #pragma ivdep
  for ( size_type k = 0 ; k < 16 ; ++k )
 	  sum[k] =  0;
@@ -307,7 +307,7 @@ struct MV_MultiplyFunctor
    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
  	const scalar_type val = m_A.values(iEntry);
  	const size_type ind = m_A.graph.entries(iEntry);
-     #pragma vector aligned
+     //#pragma vector aligned
      #pragma ivdep
      #pragma unroll
      for ( size_type k = 0 ; k < remain ; k++ )
@@ -321,7 +321,7 @@ struct MV_MultiplyFunctor
    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
  	 const scalar_type val = m_A.values(iEntry);
  	 const size_type ind = m_A.graph.entries(iEntry);
-     #pragma vector aligned
+     //#pragma vector aligned
      #pragma ivdep
      for ( size_type k = 0 ; k < remain ; ++k )
  	  sum[k] -=  val*m_x(ind,kk+k);
@@ -329,29 +329,29 @@ struct MV_MultiplyFunctor
  }
 
  if(doalpha*doalpha!=1) {
-   #pragma vector aligned
+   //#pragma vector aligned
    #pragma ivdep
    for ( size_type k = 0 ; k < remain ; ++k )
      sum[k] *= alpha(kk+k);
  }
 
  if(dobeta == 0) {
-   #pragma vector aligned
+   //#pragma vector aligned
    #pragma ivdep
    for ( size_type k = 0 ; k < remain ; ++k )
      m_y(iRow,kk+k) = sum[k] ;
  } else if(dobeta == 1) {
-   #pragma vector aligned
+   //#pragma vector aligned
    #pragma ivdep
    for ( size_type k = 0 ; k < remain ; ++k )
      m_y(iRow,kk+k) += sum[k] ;
  } else if(dobeta == -1) {
-   #pragma vector aligned
+   //#pragma vector aligned
    #pragma ivdep
    for ( size_type k = 0 ; k < remain ; ++k )
      m_y(iRow,kk+k) = -m_y(iRow,kk+k) + sum[k] ;
  } else {
-   #pragma vector aligned
+   //#pragma vector aligned
    #pragma ivdep
    for ( size_type k = 0 ; k < remain ; ++k )
      m_y(iRow,kk+k) = beta(kk+k)*m_y(iRow,kk+k) + sum[k] ;
@@ -390,7 +390,7 @@ struct MV_MultiplyFunctorUnroll
       const size_type iEntryBegin = m_A.graph.row_map(iRow);
       const size_type iEntryEnd   = m_A.graph.row_map(iRow+1);
 
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
     	  const scalar_type val = m_A.values(iEntry);
@@ -404,7 +404,7 @@ struct MV_MultiplyFunctorUnroll
     {
       const size_type iEntryBegin = m_A.graph.row_map(iRow);
       const size_type iEntryEnd   = m_A.graph.row_map(iRow+1);
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
     	  const scalar_type val = m_A.values(iEntry);
@@ -417,7 +417,7 @@ struct MV_MultiplyFunctorUnroll
     }
 
     if(doalpha*doalpha!=1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       #pragma unroll
       for ( size_type k = 0 ; k < UNROLL ; ++k )
@@ -425,7 +425,7 @@ struct MV_MultiplyFunctorUnroll
     }
 
     if(dobeta == 0) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
 	  #pragma unroll
       for ( size_type k = 0 ; k < UNROLL ; ++k )
@@ -434,7 +434,7 @@ struct MV_MultiplyFunctorUnroll
     }
     else
     if(dobeta == 1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       #pragma unroll
       for ( size_type k = 0 ; k < UNROLL ; ++k )
@@ -443,7 +443,7 @@ struct MV_MultiplyFunctorUnroll
     }
     else
     if(dobeta == -1) {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       #pragma unroll
       for ( size_type k = 0 ; k < UNROLL ; ++k )
@@ -452,7 +452,7 @@ struct MV_MultiplyFunctorUnroll
     }
     else
     {
-      #pragma vector aligned
+      //#pragma vector aligned
       #pragma ivdep
       #pragma unroll
       for ( size_type k = 0 ; k < UNROLL ; ++k )

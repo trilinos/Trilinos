@@ -74,15 +74,15 @@ struct PhysicalLayout {
 	stride[0] = view.m_stride;
   }
 
-  template<class DataType, class Device, class DataManagement, class Specialisation>
-  PhysicalLayout(View<DataType,LayoutScalar,Device,DataManagement,Specialisation> view) {
+  template<class DataType, class Layout, class Device, class DataManagement>
+  PhysicalLayout(View<DataType,Layout,Device,DataManagement,LayoutScalar> view) {
 	layout_type = Scalar;
 	rank = 0;
     for(int i=0;i<8;i++) stride[i] = 0;
   }
 
-  template<class DataType, class Device, class DataManagement, class Specialisation>
-  PhysicalLayout(View<DataType,LayoutVector,Device,DataManagement,Specialisation> view) {
+  template<class DataType, class Layout, class Device, class DataManagement>
+  PhysicalLayout(View<DataType,Layout,Device,DataManagement,LayoutVector> view) {
 	layout_type = Vector;
 	rank = 1;
     for(int i=0;i<8;i++) stride[i] = 0;
