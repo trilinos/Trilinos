@@ -62,8 +62,21 @@ namespace RTOpPack {
 //
 
 
+int g_localDim = 2;
+
+
+TEUCHOS_STATIC_SETUP()
+{
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "localDim", &g_localDim, "Number of elements in a process" );
+}
+
+
 using Teuchos::as;
 using Teuchos::inoutArg;
+
+#define PRINT_VAR(varName) \
+  out << #varName" = " << (varName) << "\n"
 
 
 Ordinal computeLocalOffset(const Teuchos::Comm<Ordinal> &comm, const Ordinal localDim)
@@ -99,7 +112,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce, Scalar )
 
   //const int procRank = rank(*comm);
 
-  const Ordinal localDim = 2; // ToDo: Make a commandline argument!
+  const Ordinal localDim = g_localDim;
 
   const Ordinal localOffset = computeLocalOffset(*comm, localDim);
   
@@ -119,6 +132,71 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce, Scalar )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
   SPMD_apply_op, args_1_0_reduce)
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce_zero_p0, Scalar )
+{
+
+  const RCP<const Teuchos::Comm<Ordinal> > comm =
+    Teuchos::DefaultComm<Ordinal>::getComm();
+
+  const int procRank = rank(*comm);
+
+  const Ordinal localDim = (procRank == 0 ? 0 : g_localDim);
+
+  const Ordinal localOffset = computeLocalOffset(*comm, localDim);
+  
+  const Scalar val = 1.1;
+
+  RTOpPack::SubVectorView<Scalar> x =
+    getLocalSubVectorView<Scalar>(localOffset, localDim, val);
+
+  RTOpPack::ROpSum<Scalar> sumOp;
+  RCP<RTOpPack::ReductTarget> sumTarget = sumOp.reduct_obj_create();
+  RTOpPack::SPMD_apply_op<Scalar>(&*comm, sumOp, 1, &x, 0, 0, &*sumTarget);
+  Scalar sum_x = sumOp(*sumTarget);
+
+  TEST_EQUALITY(sum_x, as<Scalar>(g_localDim * val * (comm->getSize()-1)))
+
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
+  SPMD_apply_op, args_1_0_reduce_zero_p0)
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce_zero_p1, Scalar )
+{
+
+  const RCP<const Teuchos::Comm<Ordinal> > comm =
+    Teuchos::DefaultComm<Ordinal>::getComm();
+
+  const int procRank = rank(*comm);
+
+  const Ordinal localDim = (procRank == 1 ? 0 : g_localDim);
+  PRINT_VAR(g_localDim);
+  PRINT_VAR(localDim);
+
+  const Ordinal localOffset = computeLocalOffset(*comm, localDim);
+  
+  const Scalar val = 1.1;
+  PRINT_VAR(val);
+
+  RTOpPack::SubVectorView<Scalar> x =
+    getLocalSubVectorView<Scalar>(localOffset, localDim, val);
+
+  RTOpPack::ROpSum<Scalar> sumOp;
+  RCP<RTOpPack::ReductTarget> sumTarget = sumOp.reduct_obj_create();
+  RTOpPack::SPMD_apply_op<Scalar>(&*comm, sumOp, 1, &x, 0, 0, &*sumTarget);
+  Scalar sum_x = sumOp(*sumTarget);
+
+  const Ordinal procFactor = (comm->getSize() == 1 ? 1 : (comm->getSize()-1));
+  PRINT_VAR(procFactor);
+  TEST_EQUALITY(sum_x, as<Scalar>(g_localDim * val * procFactor))
+
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
+  SPMD_apply_op, args_1_0_reduce_zero_p1)
 
 
 } // namespace RTOpPack
