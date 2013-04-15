@@ -2,14 +2,6 @@ INCLUDE(TribitsAddExecutableAndTest)
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  runSpmdTests
-  SOURCES runSpmdTests.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SPMD_apply_op_UnitTests
   SOURCES
     SPMD_apply_op_UnitTests.cpp
