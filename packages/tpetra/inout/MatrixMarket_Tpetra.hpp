@@ -734,12 +734,10 @@ namespace Tpetra {
                       myNumEntriesPerRow.getRawPtr());
 
              // Use the resulting array to figure out how many column
-             // indices and values for which I should ask from the
-             // root process.
+             // indices and values I should ask from the root process.
              const local_ordinal_type myNumEntries =
                std::accumulate (myNumEntriesPerRow.begin(),
-                                myNumEntriesPerRow.end(),
-                                0);
+                                myNumEntriesPerRow.end(), 0);
 
              // Make space for my entries of the sparse matrix.  Note
              // that they don't have to be sorted by row index.
@@ -768,11 +766,10 @@ namespace Tpetra {
            for (size_type k = 0; k < myNumRows; ++k) {
              const GO myCurRow = myRows[k];
              const local_ordinal_type numEntriesInThisRow = numEntriesPerRow[myCurRow];
-             //myNumEntriesPerRow[k] = numEntriesPerRow[myCurRow];
              myNumEntriesPerRow[k] = numEntriesInThisRow;
            }
            if (extraDebug && debug) {
-             cerr << "Proc " << Teuchos::rank (*(pRowMap->getComm()))
+             cerr << "Proc " << pRowMap->getComm ()->getRank ()
                   << ": myNumEntriesPerRow[0.." << (myNumRows-1) << "] = [";
              for (size_type k = 0; k < myNumRows; ++k) {
                cerr << myNumEntriesPerRow[k];
@@ -804,25 +801,18 @@ namespace Tpetra {
              const local_ordinal_type curNumEntries = myNumEntriesPerRow[k];
              const GO myRow = myRows[k];
              const size_t curPos = rowPtr[myRow];
-             if (extraDebug && debug) {
-               cerr << "k = " << k << ", myRow = " << myRow << ": colInd("
-                    << curPos << "," << curNumEntries << "), myColInd("
-                    << myCurPos << "," << curNumEntries << ")" << endl;
-             }
-             // Only copy if there are entries to copy, in order
-             // not to construct empty ranges for the ArrayRCP
-             // views.
+             // Only copy if there are entries to copy, in order not
+             // to construct empty ranges for the ArrayRCP views.
              if (curNumEntries > 0) {
-               ArrayView<GO> colIndView = colInd(curPos, curNumEntries);
-               ArrayView<GO> myColIndView =
-                 myColInd(myCurPos, curNumEntries);
+               ArrayView<GO> colIndView = colInd (curPos, curNumEntries);
+               ArrayView<GO> myColIndView = myColInd (myCurPos, curNumEntries);
                std::copy (colIndView.begin(), colIndView.end(),
                           myColIndView.begin());
 
                ArrayView<scalar_type> valuesView =
-                 values(curPos, curNumEntries);
+                 values (curPos, curNumEntries);
                ArrayView<scalar_type> myValuesView =
-                 myValues(myCurPos, curNumEntries);
+                 myValues (myCurPos, curNumEntries);
                std::copy (valuesView.begin(), valuesView.end(),
                           myValuesView.begin());
              }
@@ -860,18 +850,12 @@ namespace Tpetra {
                // message, rather than segfault and print a cryptic
                // error message.
                {
-                 const global_size_t numRows = pRowMap->getGlobalNumElements();
+                 const global_size_t numRows = pRowMap->getGlobalNumElements ();
+		 const GO indexBase = pRowMap->getIndexBase ();
                  bool theirRowsValid = true;
                  for (size_type k = 0; k < theirNumRows; ++k) {
-                   // global_ordinal_type is generally signed, but it
-                   // is possible for it to be unsigned.  Hence, the
-                   // convoluted predicate, rather than the obvious
-                   // "theirRows[k] < 0".
-                   if (theirRows[k] < 1 && theirRows[k] != 0) { // theirRows[k] < 0
-                     theirRowsValid = false;
-                   }
-                   // Same-size signed->unsigned cast never overflows.
-                   else if (as<global_size_t> (theirRows[k]) >= numRows) {
+		   if (theirRows[k] < indexBase ||
+		       as<global_size_t> (theirRows[k] - indexBase) >= numRows) {
                      theirRowsValid = false;
                    }
                  }
@@ -879,7 +863,9 @@ namespace Tpetra {
                    TEUCHOS_TEST_FOR_EXCEPTION(
                      ! theirRowsValid, std::logic_error,
                      "Proc " << p << " has at least one invalid row index.  "
-                     "Here are all of them: " << Teuchos::toString (theirRows));
+                     "Here are all of them: " << 
+		     Teuchos::toString (theirRows ()) << ".  Valid row index "
+		     "range (zero-based): [0, " << (numRows - 1) << "].");
                  }
                }
 
@@ -2942,6 +2928,8 @@ namespace Tpetra {
 
         // "Adder" object for collecting all the sparse matrix entries
         // from the input stream.  This is only nonnull on Proc 0.
+        // The Adder internally converts the one-based indices (native
+        // Matrix Market format) into zero-based indices.
         RCP<adder_type> pAdder =
           makeAdder (pComm, pBanner, dims, tolerant, debug);
 
@@ -3226,6 +3214,12 @@ namespace Tpetra {
                 }
               }
               cerr << rowPtr[numRows] << "]" << endl;
+
+              cerr << "----- Proc 0: colInd = [";
+	      for (size_type k = 0; k < rowPtr[numRows]; ++k) {
+		cerr << colInd[k] << " ";
+	      }
+              cerr << "]" << endl;
             }
           } // if myRank == rootRank
         } // Done converting sparse matrix data to CSR format
@@ -3255,69 +3249,69 @@ namespace Tpetra {
           << " entries, but the matrix has a global number of columns "
           << dims[1] << ".");
 
-        // Distribute the matrix data.  Each processor has to add the
-        // rows that it owns.  If you try to make Proc 0 call
-        // insertGlobalValues() for _all_ the rows, not just those it
-        // owns, then fillComplete() will compute the number of
-        // columns incorrectly.  That's why Proc 0 has to distribute
-        // the matrix data and why we make all the processors (not
-        // just Proc 0) call insertGlobalValues() on their own data.
-        if (debug && myRank == rootRank) {
-          cerr << "-- Distributing the matrix data" << endl;
-        }
-        // These arrays represent each processor's part of the matrix
-        // data, in "CSR" format (sort of, since the row indices might
-        // not be contiguous).
-        ArrayRCP<size_t> myNumEntriesPerRow;
-        ArrayRCP<size_t> myRowPtr;
-        ArrayRCP<global_ordinal_type> myColInd;
-        ArrayRCP<scalar_type> myValues;
-        // Distribute the matrix data.  This is a collective operation.
-        distribute (myNumEntriesPerRow, myRowPtr, myColInd, myValues, rowMap,
-                    numEntriesPerRow, rowPtr, colInd, values, debug);
+	// Create a row Map which is entirely owned on Proc 0.
+	RCP<Teuchos::FancyOStream> err = debug ? 
+	  Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : null;
+	RCP<const map_type> gatherRowMap = computeGatherMap (rowMap, err, debug);
 
-        if (debug && myRank == rootRank) {
-          cerr << "-- Inserting matrix entries on each processor";
-          if (callFillComplete) {
-            cerr << " and calling fillComplete()";
-          }
-          cerr << endl;
-        }
-        // Each processor inserts its part of the matrix data, and
-        // then they all call fillComplete().  This method invalidates
-        // the my* distributed matrix data before calling
-        // fillComplete(), in order to save space.  In general, we
-        // never store more than two copies of the matrix's entries in
-        // memory at once, which is no worse than what Tpetra
-        // promises.
-        //
-        // This only computes the column Map if colMap was null on
-        // input, and if callFillComplete is true.
-        sparse_matrix_ptr pMatrix =
-          makeMatrix (myNumEntriesPerRow, myRowPtr, myColInd, myValues,
-                      rowMap, colMap, domainMap, rangeMap, callFillComplete);
-        // Only use an all-reduce in debug mode to check if pMatrix is
-        // null.  Otherwise, just throw an exception.  We never expect
-        // a null pointer here, so we can save a communication.
-        if (debug) {
-          int localIsNull = pMatrix.is_null () ? 1 : 0;
-          int globalIsNull = 0;
-          reduceAll (*pComm, Teuchos::REDUCE_MAX, localIsNull, ptr (&globalIsNull));
-          TEUCHOS_TEST_FOR_EXCEPTION(globalIsNull != 0, std::logic_error,
-            "Reader::makeMatrix() returned a null pointer on at least one "
-            "process.  Please report this bug to the Tpetra developers.");
-        }
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(pMatrix.is_null(), std::logic_error,
-            "Reader::makeMatrix() returned a null pointer.  "
-            "Please report this bug to the Tpetra developers.");
-        }
+	// Create a matrix using this Map, and fill in on Proc 0.  We
+	// know how many entries there are in each row, so we can use
+	// static profile.
+	RCP<sparse_matrix_type> A_proc0 = 
+	  rcp (new sparse_matrix_type (gatherRowMap, numEntriesPerRow, 
+				       Tpetra::StaticProfile));
+	if (myRank == rootRank) {
+	  ArrayView<const global_ordinal_type> myRows = 
+	    gatherRowMap->getNodeElementList ();
+	  const size_type myNumRows = myRows.size ();
+
+	  // Add Proc 0's matrix entries to the CrsMatrix.
+	  const global_ordinal_type indexBase = gatherRowMap->getIndexBase ();
+	  for (size_type i = 0; i < myNumRows; ++i) {
+	    const size_type curPos = as<size_type> (rowPtr[i]);
+	    const local_ordinal_type curNumEntries = numEntriesPerRow[i];
+	    ArrayView<global_ordinal_type> curColInd = 
+	      colInd.view (curPos, curNumEntries);
+	    ArrayView<scalar_type> curValues = 
+	      values.view (curPos, curNumEntries);
+
+	    // Modify the column indices in place to have the right index base.
+	    for (size_type k = 0; k < curNumEntries; ++k) {
+	      curColInd[k] += indexBase;
+	    }
+	    // Avoid constructing empty views of ArrayRCP objects.
+	    if (curNumEntries > 0) {
+	      A_proc0->insertGlobalValues (myRows[i], curColInd, curValues);
+	    }
+	  }
+	  // Now we can save space by deallocating numEntriesPerRow,
+	  // rowPtr, colInd, and values, since we've already put those
+	  // data in the matrix.
+	  numEntriesPerRow = null;
+	  rowPtr = null;
+	  colInd = null;
+	  values = null;
+	} // if myRank == rootRank
+
+	RCP<sparse_matrix_type> A;
+	if (colMap.is_null ()) {
+	  A = rcp (new sparse_matrix_type (rowMap, 0));
+	} else {
+	  A = rcp (new sparse_matrix_type (rowMap, colMap, 0));
+	}
+	typedef Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
+	export_type exp (gatherRowMap, rowMap);
+	A->doExport (*A_proc0, exp, INSERT);
+
+	if (callFillComplete) {
+	  A->fillComplete (domainMap, rangeMap);
+	}
 
         // We can't get the dimensions of the matrix until after
         // fillComplete() is called.  Thus, we can't do the sanity
         // check (dimensions read from the Matrix Market data,
         // vs. dimensions reported by the CrsMatrix) unless the user
-        // asked makeMatrix() to call fillComplete().
+        // asked us to call fillComplete().
         //
         // Note that pMatrix->getGlobalNum{Rows,Cols}() does _not_ do
         // what one might think it does, so you have to ask the range
@@ -3331,16 +3325,16 @@ namespace Tpetra {
             if (myRank == rootRank) {
               cerr << "-- Matrix is "
                    << globalNumRows << " x " << globalNumCols
-                   << " with " << pMatrix->getGlobalNumEntries()
+                   << " with " << A->getGlobalNumEntries()
                    << " entries, and index base "
-                   << pMatrix->getIndexBase() << "." << endl;
+                   << A->getIndexBase() << "." << endl;
             }
             pComm->barrier ();
             for (int p = 0; p < numProcs; ++p) {
               if (myRank == p) {
                 cerr << "-- Proc " << p << " owns "
-                     << pMatrix->getNodeNumCols() << " columns, and "
-                     << pMatrix->getNodeNumEntries() << " entries." << endl;
+                     << A->getNodeNumCols() << " columns, and "
+                     << A->getNodeNumEntries() << " entries." << endl;
               }
               pComm->barrier ();
             }
@@ -3351,7 +3345,7 @@ namespace Tpetra {
           cerr << "-- Done creating the CrsMatrix from the Matrix Market data"
                << endl;
         }
-        return pMatrix;
+        return A;
       }
 
 
