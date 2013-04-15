@@ -42,8 +42,9 @@
 #ifndef TPETRA_CRSGRAPH_DECL_HPP
 #define TPETRA_CRSGRAPH_DECL_HPP
 
-#include <Teuchos_Describable.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
+#include <Teuchos_Describable.hpp>
+#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
@@ -51,8 +52,8 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_DistObject.hpp"
-#include "Tpetra_Util.hpp"
 #include "Tpetra_Exceptions.hpp"
+
 
 namespace Tpetra {
 

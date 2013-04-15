@@ -42,7 +42,8 @@
 #ifndef TPETRA_CRSMATRIXMULTIPLYOP_DEF_HPP
 #define TPETRA_CRSMATRIXMULTIPLYOP_DEF_HPP
 
-#include "Tpetra_CrsMatrix.hpp"
+#include <Tpetra_Util.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
@@ -731,9 +732,9 @@ namespace Tpetra {
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyTranspose(
                const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in,
                      MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & Y_in,
-	       Teuchos::ETransp mode, 
-               OpScalar alpha, 
-	       OpScalar beta) const
+               Teuchos::ETransp mode,
+               OpScalar alpha,
+               OpScalar beta) const
   {
     typedef Teuchos::ScalarTraits<OpScalar> ST;
     using Teuchos::null;

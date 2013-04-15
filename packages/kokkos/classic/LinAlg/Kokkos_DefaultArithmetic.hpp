@@ -2494,19 +2494,16 @@ namespace Kokkos {
         }
         return;
       }
-      const double* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
-      const double* const KOKKOSCLASSIC_RESTRICT B_raw = B.getValues ().getRawPtr ();
+      const double* A_raw = A.getValues ().getRawPtr ();
+      const double* B_raw = B.getValues ().getRawPtr ();
       const size_t A_stride = A.getStride ();
       const size_t B_stride = B.getStride ();
 
+      Teuchos::BLAS<int,double> blas;
       for (size_t j = 0; j < nC; ++j) {
-        const double* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
-        const double* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
-        double dot_j = 0.0;
-        for (size_t i = 0; i < nR; ++i) {
-          dot_j += A_j[i] * B_j[i];
-        }
-        dots[j] = dot_j;
+        dots[j] = blas.DOT(nR, A_raw, 1, B_raw, 1);
+        A_raw += A_stride;
+        B_raw += B_stride;
       }
     }
 
@@ -2528,13 +2525,10 @@ namespace Kokkos {
         "B must have exactly one column.");
       // "Trivial" (no rows) dot product result is zero,
       // since trivial sum (sum of no terms) is zero.
-      double result = 0.0;
-      const double* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
-      const double* const KOKKOSCLASSIC_RESTRICT B_raw = B.getValues ().getRawPtr ();
-      for (size_t i = 0; i < nR; ++i) {
-        result += A_raw[i] * B_raw[i];
-      }
-      return result;
+      const double* A_raw = A.getValues ().getRawPtr ();
+      const double* B_raw = B.getValues ().getRawPtr ();
+      Teuchos::BLAS<int,double> blas;
+      return blas.DOT(nR, A_raw, 1, B_raw, 1);
     }
 
     static void
@@ -2553,12 +2547,14 @@ namespace Kokkos {
         "DefaultArithmetic<" << Teuchos::typeName (A)
         << ">::GESUM(B,alpha,A,beta): "
         "A and B must have the same dimensions.");
-      const double* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
-      double* const KOKKOSCLASSIC_RESTRICT B_raw = B.getValuesNonConst ().getRawPtr ();
 
       // mfh 07 Mar 2013: Special case for beta = 0, that overwrites
       // any NaN entries in B.
       if (beta == Teuchos::ScalarTraits<double>::zero ()) {
+        const double* const KOKKOSCLASSIC_RESTRICT A_raw =
+          A.getValues ().getRawPtr ();
+        double* const KOKKOSCLASSIC_RESTRICT B_raw =
+          B.getValuesNonConst ().getRawPtr ();
         for (size_t j = 0; j < nC; ++j) {
           const double* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
           double* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
@@ -2567,7 +2563,19 @@ namespace Kokkos {
           }
         }
       }
+      else if (beta == Teuchos::ScalarTraits<double>::one ()) {
+        const double* A_raw = A.getValues ().getRawPtr ();
+        double* B_raw = B.getValuesNonConst ().getRawPtr ();
+        Teuchos::BLAS<int,double> blas;
+        for (size_t j = 0; j < nC; ++j) {
+          blas.AXPY(nR, alpha, A_raw + j * A_stride, 1, B_raw + j * B_stride, 1);
+        }
+      }
       else {
+        const double* const KOKKOSCLASSIC_RESTRICT A_raw =
+          A.getValues ().getRawPtr ();
+        double* const KOKKOSCLASSIC_RESTRICT B_raw =
+          B.getValuesNonConst ().getRawPtr ();
         for (size_t j = 0; j < nC; ++j) {
           const double* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
           double* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
@@ -2666,7 +2674,6 @@ namespace Kokkos {
     Norm1 (const MultiVector<double,SerialNode> &A,
            const ArrayView<double> &norms)
     {
-      typedef Teuchos::ScalarTraits<double> STS;
       typedef double magnitude_type;
       typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
@@ -2701,7 +2708,6 @@ namespace Kokkos {
     static double
     Norm1 (const MultiVector<double,SerialNode> &A)
     {
-      typedef Teuchos::ScalarTraits<double> STS;
       typedef double magnitude_type;
       typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
@@ -3014,12 +3020,10 @@ namespace Kokkos {
       const size_t nC = A.getNumCols ();
       const size_t A_stride = A.getStride ();
 
-      double* KOKKOSCLASSIC_RESTRICT A_raw = A.getValuesNonConst ().getRawPtr ();
+      double* A_raw = A.getValuesNonConst ().getRawPtr ();
+      Teuchos::BLAS<int,double> blas;
       for (size_t j = 0; j < nC; ++j) {
-        double* const KOKKOSCLASSIC_RESTRICT A_j = A_raw;
-        for (size_t i = 0; i < nR; ++i) {
-          A_j[i] *= alpha;
-        }
+        blas.SCAL(nR, alpha, A_raw, 1);
         A_raw += A_stride;
       }
     }

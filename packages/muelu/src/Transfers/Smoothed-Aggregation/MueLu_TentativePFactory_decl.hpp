@@ -61,6 +61,7 @@
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"

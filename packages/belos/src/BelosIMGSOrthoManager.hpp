@@ -757,7 +757,7 @@ namespace Belos {
 #endif
 
     ScalarType    ONE  = SCT::one();
-    ScalarType    ZERO  = SCT::zero();
+    //ScalarType    ZERO  = SCT::zero();
 
     int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
@@ -861,10 +861,10 @@ namespace Belos {
         MVT::MvDot( X, *MX, diag );
         (*B)(0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
         rank = 1; 
-        MVT::MvAddMv( ONE/(*B)(0,0), X, ZERO, X, X );
+        MVT::MvScale( X, ONE/(*B)(0,0) );
         if (this->_hasOp) {
           // Update MXj.
-	  MVT::MvAddMv( ONE/(*B)(0,0), *MX, ZERO, *MX, *MX );
+	  MVT::MvScale( *MX, ONE/(*B)(0,0) );
         }
       }
 
@@ -881,9 +881,9 @@ namespace Belos {
         rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
         // Copy tmpX back into X.
-        MVT::MvAddMv( ONE, *tmpX, ZERO, *tmpX, X );
+        MVT::Assign( *tmpX, X );
         if (this->_hasOp) {
-	  MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
+	  MVT::Assign( *tmpMX, *MX );
         }
       } 
       else {
@@ -896,9 +896,9 @@ namespace Belos {
 	  rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
 	  // Copy tmpX back into X.
-	  MVT::MvAddMv( ONE, *tmpX, ZERO, *tmpX, X );
+	  MVT::Assign( *tmpX, X );
 	  if (this->_hasOp) {
-	    MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
+	    MVT::Assign( *tmpMX, *MX );
 	  }
         }    
       }
@@ -1253,9 +1253,9 @@ namespace Belos {
 	  //
 	  if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
 	    // Copy vector into current column of _basisvecs
-	    MVT::MvAddMv( ONE, *tempXj, ZERO, *tempXj, *Xj );
+	    MVT::Assign( *tempXj, *Xj );
 	    if (this->_hasOp) {
-	      MVT::MvAddMv( ONE, *tempMXj, ZERO, *tempMXj, *MXj );
+	      MVT::Assign( *tempMXj, *MXj );
 	    }
 	  }
 	  else {
@@ -1278,10 +1278,10 @@ namespace Belos {
       // Xj <- Xj / std::sqrt(newDot)
       ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
       {
-        MVT::MvAddMv( ONE/diag, *Xj, ZERO, *Xj, *Xj );
+        MVT::MvScale( *Xj, ONE/diag );
         if (this->_hasOp) {
 	  // Update MXj.
-	  MVT::MvAddMv( ONE/diag, *MXj, ZERO, *MXj, *MXj );
+	  MVT::MvScale( *MXj, ONE/diag );
         }
       }
       
@@ -1685,10 +1685,10 @@ namespace Belos {
       if (!dep_flg) {
 	ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 	
-	MVT::MvAddMv( ONE/diag, *Xj, ZERO, *Xj, *Xj );
+	MVT::MvScale( *Xj, ONE/diag );
 	if (this->_hasOp) {
 	  // Update MXj.
-	  MVT::MvAddMv( ONE/diag, *MXj, ZERO, *MXj, *MXj );
+	  MVT::MvScale( *MXj, ONE/diag );
 	}
 	
 	// Enter value on diagonal of B.

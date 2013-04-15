@@ -79,8 +79,8 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                double t_init)
   : t_init_(t_init)
   , fmb_(fmb)
-  , responseLibrary_(rLibrary)
   , p_names_(p_names)
+  , responseLibrary_(rLibrary)
   , global_data_(global_data)
   , build_transient_support_(build_transient_support)
   , lof_(lof)
@@ -108,10 +108,6 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   //
   // Setup responses
   //
-
-  // setup scalar responses
-  for (std::size_t i=0;i<responseLibrary_->getLabeledResponseCount();i++)
-    g_space_.push_back(Thyra::defaultSpmdVectorSpace<Scalar>(1));
 
   //
   // Create the structure for the problem
@@ -423,31 +419,19 @@ evalModelImpl_basic_g(panzer::AssemblyEngineInArgs & ae_inargs,
    // optional sanity check
    // TEUCHOS_ASSERT(required_basic_g(outArgs));
 
-   // build a teuchos comm from an mpi comm
-   Teuchos::MpiComm<int> tComm = lof_->getComm();
-
-   // evaluator responses
-   responseLibrary_->evaluateVolumeFieldManagers<panzer::Traits::Residual>(ae_inargs,tComm);
-
-   std::vector<Teuchos::RCP<const Response<panzer::Traits> > > responses;
-   responseLibrary_->getLabeledVolumeResponses(responses);
-
-   // loop over all albeld responses
-   for(std::size_t i=0;i<responses.size();i++) {
-      // grab SPMD vector to get direct acess to data
-      Teuchos::RCP<Thyra::SpmdVectorBase<double> > vec 
-         = Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(outArgs.get_g(i),true);
-
-
+   for(std::size_t i=0;i<g_names_.size();i++) {
+      Teuchos::RCP<Thyra::VectorBase<double> > vec = outArgs.get_g(i);
       if(vec!=Teuchos::null) {
-         Teuchos::ArrayRCP<double> vec_data; 
-         vec->getNonconstLocalData(Teuchos::ptrFromRef(vec_data));
-
-         TEUCHOS_ASSERT(vec_data.size()==1);
-
-         vec_data[0] = responses[i]->getValue();
+        std::string responseName = g_names_[i];
+        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp 
+            = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(responseLibrary_->getResponse<panzer::Traits::Residual>(responseName));
+        resp->setVector(vec);
       }
    }
+
+   // evaluator responses
+   responseLibrary_->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
+   responseLibrary_->evaluate<panzer::Traits::Residual>(ae_inargs);
 }
 
 template <typename Scalar, typename NODE>

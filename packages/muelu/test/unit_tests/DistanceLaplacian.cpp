@@ -110,8 +110,6 @@ namespace MueLuTests {
     result->norm2(norms);
     TEST_EQUALITY(norms[0]<1e-12, true);
 
-    //Utils::MatrixPrint(DL,"distance Laplacian");
-
   } //MakeTentative  Lapack QR
 
 } // namespace MueLuTests

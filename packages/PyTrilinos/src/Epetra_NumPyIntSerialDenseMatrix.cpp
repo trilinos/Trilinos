@@ -43,9 +43,9 @@ int * Epetra_NumPyIntSerialDenseMatrix::getArray(PyObject * pyObject)
   if (tmp_array == NULL)
   {
     // This NumPy function returns a borrowed pointer: do not DECREF
-    PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_INT);
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_INT);
     tmp_array = (PyArrayObject *)
-      PyArray_FromAny(pyObject,dtype,2,2,NPY_FARRAY,NULL);
+      PyArray_FromAny(pyObject,dtype,2,2,NPY_ARRAY_FARRAY,NULL);
   }
 
   // If this fails, clean up and throw a PythonException
@@ -55,7 +55,7 @@ int * Epetra_NumPyIntSerialDenseMatrix::getArray(PyObject * pyObject)
     throw PythonException();
   }
 
-  return (int*)(tmp_array->data);
+  return (int*)(PyArray_DATA(tmp_array));
 }
 
 // =============================================================================
@@ -72,10 +72,10 @@ void Epetra_NumPyIntSerialDenseMatrix::setArray(bool copy)
     int    * data           = NULL;
     if (!copy) data = Epetra_IntSerialDenseMatrix::A();
     // This NumPy function returns a borrowed pointer: do not DECREF
-    PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_INT);
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_INT);
     array = (PyArrayObject*)
       PyArray_NewFromDescr(&PyArray_Type,dtype,2,dimensions,NULL,(void*)data,
-			   NPY_FARRAY,NULL);
+			   NPY_ARRAY_FARRAY,NULL);
     if (!array)
     {
       cleanup();
@@ -84,7 +84,7 @@ void Epetra_NumPyIntSerialDenseMatrix::setArray(bool copy)
     if (copy)
     {
       int * oldData = Epetra_IntSerialDenseMatrix::A();
-      int * newData = (int*) array->data;
+      int * newData = (int*) PyArray_DATA(array);
       int   size    = dimensions[0] * dimensions[1];
       for (int i=0; i<size; ++i) newData[i] = oldData[i];
     }
@@ -95,14 +95,14 @@ void Epetra_NumPyIntSerialDenseMatrix::setArray(bool copy)
 int Epetra_NumPyIntSerialDenseMatrix::getNumCols(PyObject * pyObject)
 {
   if (!tmp_array) getArray(pyObject);
-  return (int) tmp_array->dimensions[1];
+  return (int) PyArray_DIMS(tmp_array)[1];
 }
 
 // =============================================================================
 int Epetra_NumPyIntSerialDenseMatrix::getNumRows(PyObject * pyObject)
 {
   if (!tmp_array) getArray(pyObject);
-  return (int) tmp_array->dimensions[0];
+  return (int) PyArray_DIMS(tmp_array)[0];
 }
 
 // =============================================================================

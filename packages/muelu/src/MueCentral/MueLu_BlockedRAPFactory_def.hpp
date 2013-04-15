@@ -124,8 +124,10 @@ namespace MueLu {
     RCP<BlockedCrsMatrixClass> bAP = Utils::TwoMatrixMultiplyBlock(bA, false, bP,  false, true, true);
     RCP<BlockedCrsMatrixClass> bAc = Utils::TwoMatrixMultiplyBlock(bR, false, bAP, false, true, true);
 
-    if(checkAc_) CheckMainDiagonal(bAc);
-    GetOStream(Statistics0, 0) << RAPFactory::PrintMatrixInfo(*bAc, "Ac (blocked)");
+    if (checkAc_)
+      CheckMainDiagonal(bAc);
+
+    GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*bAc, "Ac (blocked)");
 
     Set<RCP <Matrix> >(coarseLevel, "A", bAc);
 

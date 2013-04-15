@@ -138,7 +138,7 @@ int logger_init(const log_level debug_level,  const char *logfile)
     }
 
     /* initialize the logfile */
-    if (logfile == NULL) {
+    if ((logfile == NULL) || (logfile[0] == '\0')) {
         logger_set_file(stdout);
     }
     else if (strcasecmp("stdout", logfile) == 0) {

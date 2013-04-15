@@ -57,6 +57,7 @@
 #include <Xpetra_StridedMap.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 
+#include "MueLu_Utilities.hpp"
 #include "MueLu_TentativePFactory_decl.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
@@ -114,6 +115,10 @@ namespace MueLu {
     // Level Set
     Set(coarseLevel, "Nullspace", coarseNullspace);
     Set(coarseLevel, "P",         Ptentative);
+
+    RCP<ParameterList> params = rcp(new ParameterList());
+    params->set("printLoadBalancingInfo", true);
+    GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*Ptentative, "Ptent", params);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -237,7 +242,7 @@ namespace MueLu {
     // Because ArrayRCPs are slow...
     ArrayView<size_t> rowptr_v;
     ArrayView<LO>     colind_v;
-    ArrayView<Scalar> values_v; 
+    ArrayView<Scalar> values_v;
 
     // For temporary usage
     Array<size_t>    rowptr_temp;
@@ -256,18 +261,18 @@ namespace MueLu {
       RCP<CrsMatrixWrap> PtentCrsWrap = rcp(new CrsMatrixWrap(rowMapForPtent, coarseMap, 0, Xpetra::StaticProfile));
       PtentCrs   = PtentCrsWrap->getCrsMatrix();
       Ptentative = PtentCrsWrap;
-      // Since the QR will almost certainly have zeros (NSDim>1) or we might have boundary conditions (NSDim==1), 
+      // Since the QR will almost certainly have zeros (NSDim>1) or we might have boundary conditions (NSDim==1),
       // we'll use our own temp storage for the colind/values
       // arrays, since we will need to shrink the arrays down later.
       // Perform initial seeding of the rowptr
       rowptr_temp.resize(numRowsForPtent+1,0);
       rowptr_temp[0]=0;
-      for(size_t i=1; i < numRowsForPtent+1; ++i) 
+      for(size_t i=1; i < numRowsForPtent+1; ++i)
 	rowptr_temp[i] = rowptr_temp[i-1] + NSDim;
-      
+
       colind_temp.resize(nzEstimate,INVALID);
       values_temp.resize(nzEstimate,Teuchos::ScalarTraits<Scalar>::zero());
-      
+
       // Alias the ArrayViews for these guys
       rowptr_v = rowptr_temp();
       colind_v = colind_temp();
@@ -432,7 +437,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
           }
         }
       } // end else (special handling for 1pt aggregates)
-    
+
       //Process each row in the local Q factor.  If the row is local to the current processor
       //according to the rowmap, insert it into Ptentative.  Otherwise, save it in ghostQ
       //to be communicated later to the owning processor.
@@ -458,7 +463,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
           for (size_t k=0; k<NSDim; ++k) {
             try{
               if (localQR(j,k) != Teuchos::ScalarTraits<SC>::zero()) {
-		localColPtr[nnz]  = agg * NSDim + k; 
+		localColPtr[nnz]  = agg * NSDim + k;
 		globalColPtr[nnz] = coarseMapRef.getGlobalElement(localColPtr[nnz]);
                 valPtr[nnz] = localQR(j,k);
 		++total_nnz_count;
@@ -481,7 +486,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
 		colind_v[start+i] = localColPtr[i];
 		values_v[start+i] = valPtr[i];
 	      }
-	    }	  
+	    }
           }
           catch(...) {
             std::cout << "pid " << fineA.getRowMap()->getComm()->getRank()
@@ -505,25 +510,25 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
 
       // Now allocate the final arrays
       PtentCrs->allocateAllValues(total_nnz_count,ptent_rowptr,ptent_colind,ptent_values);
-      
+
       // Because ArrayRCPs are slow...
       ArrayView<size_t> rowptr_new = ptent_rowptr();
       ArrayView<LO>     colind_new = ptent_colind();
       ArrayView<Scalar> values_new = ptent_values();
       size_t count=0;
       // Collapse and copy
-      for(size_t i=0; i<numRowsForPtent; i++) {	  
+      for(size_t i=0; i<numRowsForPtent; i++) {
 	rowptr_new[i]=count;
 	for(size_t j=rowptr_v[i]; j<rowptr_v[i+1] && colind_v[j]!=INVALID; j++){
 	  colind_new[count] = colind_v[j];
 	  values_new[count] = values_v[j];
 	    count++;
-	}	 
+	}
       }
       rowptr_new[numRowsForPtent]=count;
-      
-      if(count!=total_nnz_count) throw std::runtime_error("MueLu error in data copy!");	
-      
+
+      if(count!=total_nnz_count) throw std::runtime_error("MueLu error in data copy!");
+
       // Regardless, it is time to call setAllValues & ESFC
       PtentCrs->setAllValues(ptent_rowptr,ptent_colind,ptent_values);
       PtentCrs->expertStaticFillComplete(coarseMap,fineA.getDomainMap());
@@ -585,7 +590,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
       Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
     } //if (!aggregatesAreLocal)
 
-    
+
 
 //    RCP<const Map> realColMap = Ptentative->getColMap();
 //    sleep(1);

@@ -79,9 +79,15 @@ struct sockaddr_in {
 
 typedef struct {
     uint8_t  use_buffer_queue;
+
     uint32_t buffer_queue_initial_size;
     uint32_t buffer_queue_max_size;
     uint8_t  buffer_queue_create_if_empty;
+
+    uint32_t rdma_buffer_queue_initial_size;
+    uint32_t rdma_buffer_queue_max_size;
+    uint8_t  rdma_buffer_queue_create_if_empty;
+    uint32_t rdma_buffer_queue_buffer_size;
 } nssi_config_t;
 
 

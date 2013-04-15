@@ -24,7 +24,7 @@ getThyraVector() const
    TEUCHOS_ASSERT(useThyra());
 
    Teuchos::ArrayRCP<double> data;
-   Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(tVector_)->getNonconstLocalData(Teuchos::outArg(data));
+   Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(tVector_,true)->getNonconstLocalData(Teuchos::outArg(data));
  
    return data;
 }
@@ -70,10 +70,7 @@ getVectorSpace() const
                              "Epetra object, now trying to initalize as a Thyra object! Error!");
 
   // lazily build the space and return it
-  if(vSpace_==Teuchos::null)
-    vSpace_ = Thyra::defaultSpmdVectorSpace<double>(1);
-  // lazily construct the map only as needed
-  if(map_==Teuchos::null) {
+  if(vSpace_==Teuchos::null) {
     if(this->vectorIsDistributed())
       vSpace_ = Thyra::defaultSpmdVectorSpace<double>(tComm_,this->localSizeRequired(),-1);
     else

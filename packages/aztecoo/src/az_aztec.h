@@ -1612,4 +1612,29 @@ extern void   AZ_sym_rescale_vbr(double x[], int data_org[], int options[]);
 }
 #endif
 
+/* Define macros for starting and stopping Teuchos timers.
+ * These macros will always be defined, regardless if Teuchos is enabled
+ * or if the timers are, so they are always safe to call.
+ */
+#ifdef HAVE_AZTECOO_TEUCHOS
+#  include "AztecOO_config.h"
+#  ifdef AZ_ENABLE_TIMEMONITOR
+#    define AZ_TIMERS_ENABLED 1
+#    include "Teuchos_CTimeMonitor.h"
+#    define AZ_START_TIMER( label, ID )                                 \
+       static int ID = -1;                                              \
+       ID = Teuchos_startTimer( label, ID );
+#    define AZ_STOP_TIMER( ID )                                         \
+       Teuchos_stopTimer( ID );
+#  else
+#    define AZ_TIMERS_ENABLED 0
+#  endif
+#else
+#  define AZ_TIMERS_ENABLED 0
+#endif
+#if !AZ_TIMERS_ENABLED
+#  define AZ_START_TIMER( label, ID ) ((void)0)
+#  define AZ_STOP_TIMER( ID ) ((void)0)
+#endif
+
 #endif

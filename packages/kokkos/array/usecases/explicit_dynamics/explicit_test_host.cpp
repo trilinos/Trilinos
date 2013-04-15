@@ -57,25 +57,24 @@
 
 namespace Test{
 
-void test_Host( int beg, int end, int runs, int threads){
-
-  const size_t node_count = KokkosArray::Host::detect_gang_capacity();
+void test_Host( int beg, int end, int runs, int threads)
+{
+  const std::pair<unsigned,unsigned> core_topo = KokkosArray::hwloc::get_core_topology();
+  const unsigned                     core_cap  = KokkosArray::hwloc::get_core_capacity();
 
   if ( 0 < threads ) {
-    const size_t node_thread_count = ( threads + node_count - 1 ) / node_count ;
+    const size_t node_thread_count = ( threads + core_topo.first - 1 ) / core_topo.first ;
 
-    KokkosArray::Host::initialize( node_count , node_thread_count );
+    KokkosArray::Host::initialize( core_topo.first , node_thread_count );
 
     std::cout << std::endl << "\"Host with manually set threads = \" , "
-              << node_count * node_thread_count << std::endl ;
+              << core_topo.first * node_thread_count << std::endl ;
   }
   else {
-    const size_t node_thread_count = KokkosArray::Host::detect_gang_worker_capacity();
-
-    KokkosArray::Host::initialize( node_count , node_thread_count );
+    KokkosArray::Host::initialize( core_topo.first , core_topo.second * core_cap );
 
     std::cout << std::endl << "\"Host with detected sequential threads = \" , "
-              << node_count * node_thread_count << std::endl ;
+              << core_topo.first * node_thread_count << std::endl ;
   }
 
   explicit_dynamics::driver<float,KokkosArray::Host>("Host-float", beg, end, runs);

@@ -62,6 +62,10 @@ extern "C" {
 /*****************************************************************************/
 /*****************************************************************************/
 
+#ifdef ZOLTAN_PURIFY
+extern int Zoltan_strcasecmp(const char *, const char *);
+extern int Zoltan_strncasecmp(const char *, const char *, size_t n);
+#endif
 extern int Zoltan_Clean_String(const char *, char **);
 extern char *Zoltan_Strdup(const char *);
 void Zoltan_Transform_Point( double *p, double (*m)[3], int *a, int d,

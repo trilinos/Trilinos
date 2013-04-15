@@ -196,12 +196,13 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
     if (dirichletBoundaryMap == Teuchos::null)
       dirichletBoundaryMap = ArrayRCP<bool>(nRows,false);
+    GO indexBase = graph->GetDomainMap()->getIndexBase();
     for(LocalOrdinal i=0; i<nRows; ++i) {
       if (dirichletBoundaryMap[i] == false)
         aggStat[i] = NodeStats::READY;
       else
         aggStat[i] = NodeStats::BOUNDARY;
-      GlobalOrdinal grid = graph->GetDomainMap()->getGlobalElement(i) * nDofsPerNode;
+      GlobalOrdinal grid = (graph->GetDomainMap()->getGlobalElement(i)-indexBase) * nDofsPerNode + indexBase;
       if(SmallAggMap != Teuchos::null) {
          // reconstruct global row id (FIXME only works for contiguous maps)
         for(LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {

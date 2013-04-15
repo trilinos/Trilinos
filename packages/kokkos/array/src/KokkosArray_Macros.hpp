@@ -49,6 +49,8 @@
 namespace KokkosArray {
 class HostSpace ;
 class CudaSpace ;
+class Host ;
+class Cuda ;
 }
 
 //----------------------------------------------------------------------------

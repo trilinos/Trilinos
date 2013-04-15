@@ -131,6 +131,13 @@ namespace panzer_stk {
 
     void setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk::RythmosObserverFactory>& rythmos_observer_factory);
 
+    template <typename BuilderT>
+    int addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder);
+
+    void buildResponses(const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory, 
+                        const bool write_graphviz_file=false,
+                        const std::string& graphviz_file_prefix="");
+
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getResponseOnlyModelEvaluator();
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > 
@@ -263,6 +270,7 @@ namespace panzer_stk {
     #endif
     bool useDiscreteAdjoint;
     bool m_is_transient;
+    Teuchos::RCP<const panzer::EquationSetFactory> m_eqset_factory;
 
     Teuchos::RCP<const panzer_stk::NOXObserverFactory> m_nox_observer_factory;
     Teuchos::RCP<const panzer_stk::RythmosObserverFactory> m_rythmos_observer_factory;

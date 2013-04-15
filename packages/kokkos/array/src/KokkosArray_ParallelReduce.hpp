@@ -156,8 +156,8 @@ typename FunctorType::value_type
 parallel_reduce( const size_t work_count ,
                  const FunctorType & functor )
 {
-  typedef typename FunctorType::device_type device_type ;
-  typedef typename FunctorType::value_type  value_type ;
+  typedef typename FunctorType::value_type    value_type ;
+  typedef typename FunctorType::device_type   device_type ;
 
   typedef Impl::ParallelReduceFunctorValue< value_type , device_type >
     FinalizeType ; 
@@ -175,8 +175,8 @@ typename FunctorType::value_type
 vector_parallel_reduce( const size_t work_count ,
                         const FunctorType & functor )
 {
-  typedef typename FunctorType::device_type device_type ;
-  typedef typename FunctorType::value_type  value_type ;
+  typedef typename FunctorType::value_type    value_type ;
+  typedef typename FunctorType::device_type   device_type ;
 
   typedef Impl::ParallelReduceFunctorValue< value_type , device_type >
     FinalizeType ; 
@@ -210,8 +210,8 @@ void parallel_reduce( const size_t work_count ,
                       MemberType value[] ,
                       const unsigned count )
 {
-  typedef typename FunctorType::device_type device_type ;
-  typedef typename FunctorType::value_type  value_type ;
+  typedef typename FunctorType::value_type    value_type ;
+  typedef typename FunctorType::device_type   device_type ;
 
   typedef
     typename Impl::StaticAssertSame< value_type , MemberType[] >::type

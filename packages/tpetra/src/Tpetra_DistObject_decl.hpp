@@ -46,7 +46,6 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
-#include "Tpetra_Distributor.hpp"
 
 // #ifndef HAVE_TPETRA_TRANSFER_TIMERS
 // #  define HAVE_TPETRA_TRANSFER_TIMERS 1

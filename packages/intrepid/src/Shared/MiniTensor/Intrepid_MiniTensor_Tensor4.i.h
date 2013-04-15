@@ -129,6 +129,32 @@ Tensor4<T>::operator()(
   return e[((i * N + j) * N + k) * N + l];
 }
 
+//
+// Linear access to components
+// \param i the index
+//
+template<typename T>
+inline
+T const &
+Tensor4<T>::operator[](Index const i) const
+{
+  assert(i < integer_power(get_dimension(), order()));
+  return e[i];
+}
+
+//
+// Linear access to components
+// \param i the index
+//
+template<typename T>
+inline
+T &
+Tensor4<T>::operator[](Index const i)
+{
+  assert(i < integer_power(get_dimension(), order()));
+  return e[i];
+}
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Tensor4_i_h

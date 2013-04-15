@@ -264,10 +264,6 @@ namespace MueLu {
     It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
     */
 
-    static void MatrixPrint(RCP<Matrix> const &Op);
-
-    static void MatrixPrint(RCP<Matrix> const &Op, std::string const &label);
-
     /*! @brief Get Matrix Diagonal
      */
     static RCP<Matrix> BuildMatrixDiagonal(RCP<Matrix> const &A);
@@ -392,6 +388,10 @@ namespace MueLu {
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol=Teuchos::ScalarTraits<SC>::zero());
+
+    /*! @brief print matrix info
+    */
+    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params = Teuchos::null);
 
   }; // class Utils
 

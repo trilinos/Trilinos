@@ -134,6 +134,20 @@ public:
   operator()(Index const i);
 
   ///
+  /// Linear access to components
+  /// \param i the index
+  ///
+  T const &
+  operator[](Index const i) const;
+
+  ///
+  /// Linear access to components
+  /// \param i the index
+  ///
+  T &
+  operator[](Index const i);
+
+  ///
   /// \return dimension
   ///
   Index

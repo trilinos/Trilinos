@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -45,6 +45,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Tpetra_BlockMap.hpp"
+#include "Tpetra_DistObject.hpp"
 #include <map>
 
 /** \file Tpetra_VbrUtils.hpp
@@ -95,7 +96,7 @@ void zeroEntries(VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata)
     for(; rgc_it != rgc_end; ++rgc_it) {
       BlkInfo<LocalOrdinal,Scalar>& blk = rgc_it->second;
       std::fill (blk.blkEntry.begin (), blk.blkEntry.end (), STS::zero ());
-    }    
+    }
   }
 }
 
@@ -221,19 +222,19 @@ struct VbrDataDist : public Tpetra::DistObject<char,LocalOrdinal,GlobalOrdinal,N
     }
     typedef typename Teuchos::ArrayView<const LocalOrdinal>::size_type Tsize_t;
     typedef typename VbrData<LocalOrdinal,GlobalOrdinal,Scalar>::RowGlobalCols RowGlobalCols;
-  
+
     //We will pack each row's data into the exports buffer as follows:
     //[num-block-cols,numPtRows,{list-of-blk-cols},{list-of-ptColsPerBlkCol},{all vals}]
     //so the length of the char exports buffer for a row is:
     //sizeof(LocalOrdinal)*(2+2*(num-block-cols)) + sizeof(Scalar)*numPtRows*sum(numPtCols_i)
-  
+
     //For each row corresponding to exportLIDs, accumulate the size that it will
     //occupy in the exports buffer:
     size_t total_exports_size = 0;
     for(Tsize_t i=0; i<exportLIDs.size(); ++i) {
       LocalOrdinal numBlkCols = 0;
       LocalOrdinal numScalars = 0;
-  
+
       LocalOrdinal localIndex = exportLIDs[i];
       const RowGlobalCols& rgc = (*vdd->vbrdata.data)[localIndex];
       numBlkCols = rgc.size();
@@ -242,28 +243,28 @@ struct VbrDataDist : public Tpetra::DistObject<char,LocalOrdinal,GlobalOrdinal,N
         const BlkInfo<LocalOrdinal,Scalar>& blk = rgc_it->second;
         numScalars += blk.numPtRows*blk.numPtCols;
       }
-  
+
       size_t size_for_this_row = sizeof(GlobalOrdinal)*(2+2*numBlkCols)
                    + sizeof(Scalar)*numScalars;
       numPacketsPerLID[i] = size_for_this_row;
       total_exports_size += size_for_this_row;
     }
-  
+
     exports.resize(total_exports_size);
-  
+
     ArrayView<char> avIndsC, avValsC;
     ArrayView<Scalar> avVals;
-  
+
     Teuchos::Array<GlobalOrdinal> blkCols;
     Teuchos::Array<LocalOrdinal> ptColsPerBlkCol;
     Teuchos::Array<Scalar> blkEntries;
-  
+
     size_t offset = 0;
     for(Tsize_t i=0; i<exportLIDs.size(); ++i) {
       blkCols.clear();
       ptColsPerBlkCol.clear();
       blkEntries.clear();
-  
+
       LocalOrdinal numPtRows = 0;
       LocalOrdinal localIndex = exportLIDs[i];
       const RowGlobalCols& rgc = (*vdd->vbrdata.data)[localIndex];
@@ -277,10 +278,10 @@ struct VbrDataDist : public Tpetra::DistObject<char,LocalOrdinal,GlobalOrdinal,N
           blkEntries.push_back(blk.blkEntry[j]);
         }
       }
-  
+
       LocalOrdinal numBlkCols = blkCols.size();
       LocalOrdinal numScalars = blkEntries.size();
-  
+
       LocalOrdinal num_chars_for_ordinals = (2*numBlkCols+2)*sizeof(GlobalOrdinal);
       //get export views
       avIndsC = exports(offset, num_chars_for_ordinals);

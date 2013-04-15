@@ -2,24 +2,107 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Current (11.3)
+Trilinos 11.4:
 --------------
 
-* Non-backwards compatible change: Default Kokkos/Tpetra Node type is now Kokkos::SerialNode
-  User expectation seems to be that the default behavior of Tpetra is
-  MPI-only. These users are therefore experiencing unexpected performance when
-  the default node is threaded, as is currently the case if any of the
-  threading libraries (pthreads, TBB, OpenMP) are enabled. Therefore, after
-  some discussion among Kokkos/Tpetra developers, it was decided to change the 
-  default Kokkos node (and therefore, the default node used by Tpetra
-  objects) to Kokkos::SerialNode. This can be over-ridden at configure time by
-  specifying the following option to CMake when configuring Trilinos: 
-    -D KokkosClassic_DefaultNode:STRING="node_type"
-  where node_type is one of the official Kokkos nodes:
-    Kokkos::SerialNode    (current default)
-    Kokkos::TBBNode
-    Kokkos::TPINode  
-    Kokkos::OpenMPNode
+* MPI performance optimizations
+
+Methods that perform communication between (MPI) processes do less
+communication than before.  This should improve performance,
+especially for large process counts, of the following operations:
+
+  - Creating a Map
+  - Creating an Import or Export communication plan
+  - Executing an Import or Export (e.g., in a distributed sparse
+    matrix-vector multiply, or in global finite element assembly)
+  - Calling fillComplete() on a CrsGraph or CrsMatrix
+
+* Restrict a Map's communicator to processes with nonzero elements,
+  and apply the result to a distributed object
+
+Map now has two new methods.  The first, removeEmptyProcesses(),
+returns a new Map with a new communicator, which contains only those
+processes which have a nonzero number of entries in the original Map.
+The second method, replaceCommWithSubset(), returns a new Map whose
+communicator is an arbitrary subset of processes of the original Map's
+communicator.  Distributed objects (subclasses of DistObject) also
+have a new removeEmptyProcessesInPlace() method, for applying in place
+the new Map created by calling removeEmptyProcesses() on the original
+Map over which the object was distributed.
+
+These methods are especially useful for algebraic multigrid.  At
+coarser levels of the multigrid hierarchy, it is helpful for
+performance to "rebalance" the matrices at those levels, so that a
+subset of processes share the elements.  This leaves the remaining
+processes without any elements.  Excluding them from the communicator
+reduces the cost of all-reduces and other communication operations
+necessary for creating the coarser levels of the hierarchy.
+
+* CrsMatrix: Native SOR and Gauss-Seidel kernels
+
+These kernels improve the performance of Ifpack2 and MueLu.
+Gauss-Seidel is a special case of SOR (Symmetric Over-Relaxation).
+See the documentation of Ifpack2::Relaxation for details on the
+algorithm, which is actually a "hybrid" of Jacobi between MPI
+processes, and SOR (or Gauss-Seidel) within an MPI process.  The
+kernels also include the "symmetric" variant (forward and backward
+sweeps) of SOR and Gauss-Seidel.
+
+* CrsMatrix: Precompute and reuse offsets of diagonal entries
+
+The (existing) one-argument verison of CrsMatrix's getLocalDiagCopy()
+method requires the following operations per row:
+
+  1. Convert current local row index to global, using the row Map
+  2. Convert global index to local column index, using the column Map
+  3. Search the row for that local column index
+    
+Precomputing the offsets of diagonal entries and reusing them skips
+all these steps.  CrsMatrix has a new method getLocalDiagOffsets() to
+precompute the offsets, and a two-argument version of
+getLocalDiagCopy() that uses the precomputed offsets.  The precomputed
+offsets are not meant to be used in any way other than to be given to
+the two-argument version of getLocalDiagCopy().  They must be
+recomputed whenever the structure of the sparse matrix changes (by
+calling insertGlobalValues() or insertLocalValues()) or is optimized
+(e.g., by calling fillComplete() for the first time).
+
+* CrsGraph,CrsMatrix: Added "No Nonlocal Changes" parameter to
+  fillComplete()
+
+The fillComplete() method accepts an optional ParameterList which
+controls the behavior of fillComplete(), as opposed to behavior of the
+object in general.  "No Nonlocal Changes" is a bool parameter which is
+false by default.  Its value must be the same on all processes in the
+graph or matrix's communicator.  If the parameter is true, the caller
+asserts that no entries were inserted in nonowned rows.  This lets
+fillComplete() skip the global communication that checks whether any
+processes inserted any entries in nonowned rows.
+
+* Default Kokkos/Tpetra Node type is now Kokkos::SerialNode
+
+NOTE: This change breaks backwards compatibility.
+
+Users expect that Tpetra by default uses "MPI only" for parallelism,
+rather than "MPI plus threads."  These users were therefore
+experiencing unexpected performance issues when the default Kokkos
+Node type is threaded, as was the case if Trilinos' support for any of
+the threading libraries (Pthreads, TBB, OpenMP) are enabled.  Trilinos
+detects and enables support for Pthreads automatically on many
+platforms.  Therefore, after some discussion among Kokkos and Tpetra
+developers, we decided to change the default Kokkos Node type (and
+therefore, the default Node used by Tpetra objects) to
+Kokkos::SerialNode. This can be overridden at configure time by
+specifying the following option to CMake when configuring Trilinos:
+
+-D KokkosClassic_DefaultNode:STRING="<node-type>" 
+
+where <node-type> any of the official Kokkos Node types, such as the
+following:
+- Kokkos::SerialNode (current default) 
+- Kokkos::TBBNode
+- Kokkos::TPINode
+- Kokkos::OpenMPNode
 
 
 Trilinos 11.0: 

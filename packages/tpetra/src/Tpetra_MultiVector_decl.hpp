@@ -44,18 +44,28 @@
 
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Range1D.hpp>
-#include <Kokkos_DefaultArithmetic.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DistObject.hpp"
-#include "Tpetra_Map.hpp"
 #include "Tpetra_ViewAccepter.hpp"
+#include <Kokkos_MultiVector.hpp>
+#include <Teuchos_BLAS_types.hpp>
 
+namespace Kokkos {
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  // forward declaration of DefaultArithmetic
+  template<class KokkosMultiVectorType>
+  class DefaultArithmetic;
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+} // namespace Kokkos
 
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Vector, needed to prevent circular inclusions
   template<class S, class LO, class GO, class N> class Vector;
+
+  // forward declaration of Map
+  template<class LO, class GO, class N> class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class MultiVector

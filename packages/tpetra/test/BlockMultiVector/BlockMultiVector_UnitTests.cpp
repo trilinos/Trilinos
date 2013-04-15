@@ -45,6 +45,7 @@
 
 #include <Tpetra_BlockMultiVector.hpp>
 #include <Tpetra_Vector.hpp>
+#include <iterator>
 
 // FINISH: add test for BlockMultiVector with a node containing zero local entries
 // FINISH: add tests for local BlockMultiVectors

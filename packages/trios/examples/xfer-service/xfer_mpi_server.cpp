@@ -293,7 +293,9 @@ int process_mpi_get(
     log_debug(debug_level, "%d: creating window", rank);
 
     // initialize the array
-    xfer_init_data_array(seed, &array);
+    if (validate) {
+        xfer_init_data_array(seed, &array);
+    }
 
     // Collective call to create a window for the data being transferred (like registering the memory)
     MPI_Win_create(array.data_array_t_val, sizeof(data_t)*len,

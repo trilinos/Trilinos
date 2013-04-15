@@ -126,8 +126,25 @@ CreateTpetraPreconditioner(Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > cons
   if (inNullspace != Teuchos::null) {
     nullspace = TpetraMultiVector_To_XpetraMultiVector<SC, LO, GO, NO>(inNullspace);
   } else {
-    nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Amuelu->getDomainMap(),1);
-    nullspace->putScalar( Teuchos::ScalarTraits<SC>::one() );
+    int nPDE = 1;
+    if (paramList.isSublist("Matrix")) {
+      Teuchos::ParameterList operatorList_ = paramList.sublist("Matrix");
+      if (operatorList_.isParameter("PDE equations"))
+        nPDE = operatorList_.get<int>("PDE equations");
+    }
+    nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Amuelu->getDomainMap(),nPDE);
+    if (nPDE == 1)
+      nullspace->putScalar( Teuchos::ScalarTraits<SC>::one() );
+    else {
+      for (int i=0; i<nPDE; ++i) {
+        Teuchos::ArrayRCP<SC> nsData = nullspace->getDataNonConst(i);
+        for (int j=0; j<nsData.size(); ++j) {
+          GO gel = Amuelu->getDomainMap()->getGlobalElement(j) - Amuelu->getDomainMap()->getIndexBase();
+          if ((gel-i) % nPDE == 0)
+            nsData[j] = Teuchos::ScalarTraits<SC>::one();
+        }
+      }
+    }
   }
   H->GetLevel(0)->Set("Nullspace", nullspace);
 

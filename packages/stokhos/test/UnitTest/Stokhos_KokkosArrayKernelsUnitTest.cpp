@@ -38,6 +38,7 @@
 #include <Host/KokkosArray_Host_CrsMatrix.hpp>
 #include <Host/KokkosArray_Host_BlockCrsMatrix.hpp>
 
+#include "KokkosArray_hwloc.hpp"
 #include <KokkosArray_Cuda.hpp>
 
 using namespace KokkosArrayKernelsUnitTest;
@@ -181,10 +182,12 @@ int main( int argc, char* argv[] ) {
   setup.setup();
 
   // Initialize host
-  const size_t gang_count =
-    KokkosArray::Host::detect_gang_capacity();
-  const size_t gang_worker_count =
-    KokkosArray::Host::detect_gang_worker_capacity() / 2 ;
+  const std::pair<unsigned,unsigned> core_topo =
+    KokkosArray::hwloc::get_core_topology();
+  //const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+
+  const size_t gang_count = core_topo.first ;
+  const size_t gang_worker_count = core_topo.second;
   KokkosArray::Host::initialize( gang_count , gang_worker_count );
 
 #ifdef HAVE_KOKKOSARRAY_CUDA

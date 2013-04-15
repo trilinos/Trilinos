@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -47,8 +47,10 @@
 
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Map.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_Util.hpp>
+
 #include <MatrixMarket_Tpetra.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
@@ -128,7 +130,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
   // CrsMatrix specialization).
   typedef Tpetra::CrsGraph<LO, GO, NT, typename CrsMatrixType::mat_solve_type> crs_graph_type;
 
-  ////////////////////////////////////////////////////////////////////  
+  ////////////////////////////////////////////////////////////////////
   // HERE BEGINS THE TEST.
   ////////////////////////////////////////////////////////////////////
 
@@ -171,7 +173,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
   const GO numGlobalCols = numGlobalRows;
   // Prevent compile warning for unused variable.
   // (It's not really "variable" if it's const, but oh well.)
-  (void) numGlobalCols; 
+  (void) numGlobalCols;
 
   if (myRank == 0) {
     out << "Creating contiguous row Map" << endl;
@@ -208,7 +210,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
     // We have a good upper bound for the number of entries per row, so use static profile.
     RCP<crs_graph_type> nonconstGraph (new crs_graph_type (rowMap, 2, Tpetra::StaticProfile));
 
-    TEUCHOS_TEST_FOR_EXCEPTION(globalMinRow >= globalMaxRow, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(globalMinRow >= globalMaxRow, std::logic_error,
       "This test only works if globalMinRow < globalMaxRow.");
 
     // Insert all the diagonal entries.
@@ -247,46 +249,46 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
       std::sort (indView.begin (), indView.end ());
 
       if (globalRow == globalMinRow && globalRow > rowMap->getMinAllGlobalIndex ()) {
-	if (numEntries != as<size_t> (2)) {
-	  localGraphSuccess = false;
-	  graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 2" << endl;
-	}
-	if (numEntries > 0 && indView[0] != globalMinCol) {
-	  localGraphSuccess = false;
-	  graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalMinCol = " << globalMinCol << endl;
-	}
-	if (numEntries > 1 && indView[1] != globalRow) {
-	  localGraphSuccess = false;
-	  graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[1] = " << indView[1] << " != globalRow = " << globalRow << endl;
-	}
-      }	
+        if (numEntries != as<size_t> (2)) {
+          localGraphSuccess = false;
+          graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 2" << endl;
+        }
+        if (numEntries > 0 && indView[0] != globalMinCol) {
+          localGraphSuccess = false;
+          graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalMinCol = " << globalMinCol << endl;
+        }
+        if (numEntries > 1 && indView[1] != globalRow) {
+          localGraphSuccess = false;
+          graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[1] = " << indView[1] << " != globalRow = " << globalRow << endl;
+        }
+      }
       else if (globalRow == globalMaxRow && globalRow < rowMap->getMaxAllGlobalIndex ()) {
-	if (numEntries != as<size_t> (2)) {
-	  localGraphSuccess = false;
-	  graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 2" << endl;
-	}
-	if (numEntries > 0 && indView[0] != globalRow) {
-	  localGraphSuccess = false;
-	  graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
-	}
-	if (numEntries > 1 && indView[1] != globalMaxCol) {
-	  localGraphSuccess = false;
-	  graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[1] = " << indView[1] << " != globalMaxCol = " << globalMaxCol << endl;
-	}
-      }	
+        if (numEntries != as<size_t> (2)) {
+          localGraphSuccess = false;
+          graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 2" << endl;
+        }
+        if (numEntries > 0 && indView[0] != globalRow) {
+          localGraphSuccess = false;
+          graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
+        }
+        if (numEntries > 1 && indView[1] != globalMaxCol) {
+          localGraphSuccess = false;
+          graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[1] = " << indView[1] << " != globalMaxCol = " << globalMaxCol << endl;
+        }
+      }
       else {
-	if (numEntries != as<size_t> (1)) {
-	  localGraphSuccess = false;
-	  graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 1" << endl;
-	}
-	if (numEntries > 0 && indView[0] != globalRow) {
-	  localGraphSuccess = false;
-	  graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
-	}
+        if (numEntries != as<size_t> (1)) {
+          localGraphSuccess = false;
+          graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 1" << endl;
+        }
+        if (numEntries > 0 && indView[0] != globalRow) {
+          localGraphSuccess = false;
+          graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
+        }
       }
     }
   }
- 
+
   // Make sure that all processes successfully created the graph.
   bool globalGraphSuccess = true;
   {
@@ -301,8 +303,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
     // Print out the failure messages on all processes.
     for (int p = 0; p < numProcs; ++p) {
       if (p == myRank) {
-	out << graphFailMsg.str () << endl;
-	std::flush (out);
+        out << graphFailMsg.str () << endl;
+        std::flush (out);
       }
       // Do some barriers to allow output to finish.
       comm->barrier ();
@@ -310,7 +312,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
       comm->barrier ();
     }
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(! globalGraphSuccess, std::logic_error, "Graph structure test failed.");  
+  TEUCHOS_TEST_FOR_EXCEPTION(! globalGraphSuccess, std::logic_error, "Graph structure test failed.");
 
   if (myRank == 0) {
     out << "Creating matrix" << endl;
@@ -372,62 +374,62 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
       Tpetra::sort2 (indView.begin (), indView.end (), valView.begin ());
 
       if (globalRow == globalMinRow && globalRow > rowMap->getMinAllGlobalIndex ()) {
-	if (numEntries != as<size_t> (2)) {
-	  localSuccess = false;
-	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 2" << endl;
-	}
-	if (numEntries > 0 && indView[0] != globalMinCol) {
-	  localSuccess = false;
-	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalMinCol = " << globalMinCol << endl;
-	}
-	if (numEntries > 1 && indView[1] != globalRow) {
-	  localSuccess = false;
-	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[1] = " << indView[1] << " != globalRow = " << globalRow << endl;
-	}
-	if (numEntries > 0 && valView[0] != as<ST> (myRank)) {
-	  localSuccess = false;
-	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": valView[0] = " << valView[0] << " != myRank = " << myRank << endl;
-	}
-	if (numEntries > 1 && valView[1] != STS::one ()) {
-	  localSuccess = false;
-	  failMsg << "Proc " << 1 << ": globalRow = " << globalRow << ": valView[1] = " << valView[1] << " != 1" << endl;
-	}
-      }	
+        if (numEntries != as<size_t> (2)) {
+          localSuccess = false;
+          failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 2" << endl;
+        }
+        if (numEntries > 0 && indView[0] != globalMinCol) {
+          localSuccess = false;
+          failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalMinCol = " << globalMinCol << endl;
+        }
+        if (numEntries > 1 && indView[1] != globalRow) {
+          localSuccess = false;
+          failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[1] = " << indView[1] << " != globalRow = " << globalRow << endl;
+        }
+        if (numEntries > 0 && valView[0] != as<ST> (myRank)) {
+          localSuccess = false;
+          failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": valView[0] = " << valView[0] << " != myRank = " << myRank << endl;
+        }
+        if (numEntries > 1 && valView[1] != STS::one ()) {
+          localSuccess = false;
+          failMsg << "Proc " << 1 << ": globalRow = " << globalRow << ": valView[1] = " << valView[1] << " != 1" << endl;
+        }
+      }
       else if (globalRow == globalMaxRow && globalRow < rowMap->getMaxAllGlobalIndex ()) {
-	if (numEntries != as<size_t> (2)) {
-	  localSuccess = false;
-	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 2" << endl;
-	}
-	if (numEntries > 0 && indView[0] != globalRow) {
-	  localSuccess = false;
-	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
-	}
-	if (numEntries > 1 && indView[1] != globalMaxCol) {
-	  localSuccess = false;
-	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[1] = " << indView[1] << " != globalMaxCol = " << globalMaxCol << endl;
-	}
-	if (numEntries > 0 && valView[0] != STS::one ()) {
-	  localSuccess = false;
-	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": valView[0] = " << valView[0] << " != 1" << endl;
-	}
-	if (numEntries > 1 && valView[1] != as<ST> (myRank+2)) {
-	  localSuccess = false;
-	  failMsg << "Proc " << 1 << ": globalRow = " << globalRow << ": valView[1] = " << valView[1] << " != myRank+2 = " << (myRank+2) << endl;
-	}
-      }	
+        if (numEntries != as<size_t> (2)) {
+          localSuccess = false;
+          failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 2" << endl;
+        }
+        if (numEntries > 0 && indView[0] != globalRow) {
+          localSuccess = false;
+          failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
+        }
+        if (numEntries > 1 && indView[1] != globalMaxCol) {
+          localSuccess = false;
+          failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[1] = " << indView[1] << " != globalMaxCol = " << globalMaxCol << endl;
+        }
+        if (numEntries > 0 && valView[0] != STS::one ()) {
+          localSuccess = false;
+          failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": valView[0] = " << valView[0] << " != 1" << endl;
+        }
+        if (numEntries > 1 && valView[1] != as<ST> (myRank+2)) {
+          localSuccess = false;
+          failMsg << "Proc " << 1 << ": globalRow = " << globalRow << ": valView[1] = " << valView[1] << " != myRank+2 = " << (myRank+2) << endl;
+        }
+      }
       else {
-	if (numEntries != as<size_t> (1)) {
-	  localSuccess = false;
-	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 1" << endl;
-	}
-	if (numEntries > 0 && indView[0] != globalRow) {
-	  localSuccess = false;
-	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
-	}
-	if (numEntries > 0 && valView[0] != STS::one ()) {
-	  localSuccess = false;
-	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": valView[0] = " << valView[0] << " != 1" << endl;
-	}
+        if (numEntries != as<size_t> (1)) {
+          localSuccess = false;
+          failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 1" << endl;
+        }
+        if (numEntries > 0 && indView[0] != globalRow) {
+          localSuccess = false;
+          failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
+        }
+        if (numEntries > 0 && valView[0] != STS::one ()) {
+          localSuccess = false;
+          failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": valView[0] = " << valView[0] << " != 1" << endl;
+        }
       }
     }
   }
@@ -443,9 +445,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
     // Print out the failure messages on all processes.
     for (int p = 0; p < numProcs; ++p) {
       if (p == myRank) {
-	out << failMsg.str () << endl;
-	out << "Proc " << myRank << ": localSuccess = " << localSuccess << ", globalSuccess = " << globalSuccess << endl;
-	//      std::flush (out);
+        out << failMsg.str () << endl;
+        out << "Proc " << myRank << ": localSuccess = " << localSuccess << ", globalSuccess = " << globalSuccess << endl;
+        //      std::flush (out);
       }
       // Do some barriers to allow output to finish.
       comm->barrier ();

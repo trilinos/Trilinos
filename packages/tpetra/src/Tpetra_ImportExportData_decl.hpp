@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,13 +34,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_IMPORTEXPORTDATA_HPP
-#define TPETRA_IMPORTEXPORTDATA_HPP
+#ifndef TPETRA_IMPORTEXPORTDATA_DECL_HPP
+#define TPETRA_IMPORTEXPORTDATA_DECL_HPP
 
 #include "Tpetra_Distributor.hpp"
 
@@ -50,6 +50,9 @@ namespace Tpetra {
   // forward declaration of Import,Export, needed to prevent circular inclusions
   template<class LocalOrdinal, class GlobalOrdinal, class Node> class Import;
   template<class LocalOrdinal, class GlobalOrdinal, class Node> class Export;
+
+  // Forward declaration of Map
+  template<class LocalOrdinal, class GlobalOrdinal, class Node> class Map;
 #endif
 
   /// \class ImportExportData
@@ -61,7 +64,7 @@ namespace Tpetra {
   /// \warning This class is an implementation detail of Import and
   ///   Export.  It may change or disappear at any time.  Tpetra users
   ///   must not depend on this class.
-  /// 
+  ///
   /// Import and Export both require the same data.  We use this class
   /// as a container for those data.  They include incoming ("remote")
   /// and outgoing ("export") local indices (LIDs), LIDs to permute on
@@ -74,23 +77,53 @@ namespace Tpetra {
     typedef Node node_type;
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-    /// \brief Constructor 
+    /// \brief Constructor
     ///
     /// \param source [in] Source Map of the Import or Export
     /// \param target [in] Target Map of the Import or Export
-    ImportExportData (const Teuchos::RCP<const map_type>& source, 
+    ImportExportData (const Teuchos::RCP<const map_type>& source,
                       const Teuchos::RCP<const map_type>& target);
+
+    /// \brief Constructor with output stream.
+    ///
+    /// \param source [in] Source Map of the Import or Export
+    /// \param target [in] Target Map of the Import or Export
+    /// \param out [in/out] Output stream (for debugging output)
+    ImportExportData (const Teuchos::RCP<const map_type>& source,
+                      const Teuchos::RCP<const map_type>& target,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& out);
 
     /// \brief Constructor with ParameterList for Distributor
     ///
     /// \param source [in] Source Map of the Import or Export
     /// \param target [in] Target Map of the Import or Export
     /// \param plist [in/out] List of parameters for the Distributor
-    ImportExportData (const Teuchos::RCP<const map_type>& source, 
+    ImportExportData (const Teuchos::RCP<const map_type>& source,
                       const Teuchos::RCP<const map_type>& target,
                       const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
+    /// \brief Constructor with output stream, and ParameterList for Distributor
+    ///
+    /// \param source [in] Source Map of the Import or Export
+    /// \param target [in] Target Map of the Import or Export
+    /// \param out [in/out] Output stream (for debugging output)
+    /// \param plist [in/out] List of parameters for the Distributor
+    ImportExportData (const Teuchos::RCP<const map_type>& source,
+                      const Teuchos::RCP<const map_type>& target,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& out,
+                      const Teuchos::RCP<Teuchos::ParameterList>& plist);
+    //! Destructor
     ~ImportExportData();
+
+    //! Output stream for debug output.
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
+
+    /// \brief Copy the data, but reverse the direction of the
+    ///   transfer as well as reversing the Distributor.
+    ///
+    /// "Reverse the direction of the transfer" means that an Import
+    /// becomes an Export in the opposite direction, and vice versa.
+    Teuchos::RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> > reverseClone();
 
     /// \brief Index of target Map LIDs to which to permute.
     ///
@@ -126,23 +159,16 @@ namespace Tpetra {
     /// other processes.
     Teuchos::Array<LocalOrdinal> remoteLIDs_;
 
-    /// \brief "Outgoing" global indices.
-    ///
-    /// This is only used by Export, not by Import.  There is some
-    /// question whether this array can be deallocated or resized to
-    /// zero after use during Export construction.
-    Teuchos::Array<GlobalOrdinal> exportGIDs_;
-
     /// \brief "Outgoing" local indices.
     ///
     /// This array holds the LIDs of the GIDs that are owned by the
     /// source Map, but not by the target Map.  The source object of
     /// the Import or Export will send data from these LIDs to other
     /// processes.
-    Teuchos::ArrayRCP<LocalOrdinal> exportLIDs_;
+    Teuchos::Array<LocalOrdinal> exportLIDs_;
 
     //! Ranks of the processes to which the source object sends data.
-    Teuchos::ArrayRCP<int> exportImageIDs_;
+    Teuchos::Array<int> exportPIDs_;
 
     /// \brief Number of initial identical indices.
     ///
@@ -179,37 +205,10 @@ namespace Tpetra {
     //! Copy constructor (declared but not defined, do not use)
     ImportExportData (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> &rhs);
     //! Assignment operator (declared but not defined, do not use)
-    ImportExportData<LocalOrdinal,GlobalOrdinal,Node>& 
+    ImportExportData<LocalOrdinal,GlobalOrdinal,Node>&
     operator= (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & rhs);
   }; // class ImportExportData
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
-  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target)
-  : numSameIDs_ (0)
-  , source_ (source)
-  , target_ (target)
-  , comm_ (source->getComm())
-  , distributor_ (comm_)
-  {}
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
-  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-                    const Teuchos::RCP<Teuchos::ParameterList>& plist)
-  : numSameIDs_ (0)
-  , source_ (source)
-  , target_ (target)
-  , comm_ (source->getComm())
-  , distributor_ (comm_, plist)
-  {}
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::~ImportExportData() 
-  {}
-
 } // namespace Tpetra
 
-#endif // TPETRA_IMPORTEXPORTDATA_HPP
+#endif // TPETRA_IMPORTEXPORTDATA_DECL_HPP

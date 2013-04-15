@@ -464,6 +464,12 @@ public:
   virtual void ssend(
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
+  //! Variant of ssend() that takes a message tag.
+  virtual void
+  ssend (const Ordinal bytes,
+         const char sendBuffer[],
+         const int destRank,
+         const int tag) const;
   /** \brief . */
   virtual int receive(
     const int sourceRank, const Ordinal bytes, char recvBuffer[]
@@ -473,6 +479,12 @@ public:
     const ArrayView<const char> &sendBuffer,
     const int destRank
     ) const;
+  //! Variant of readySend() that accepts a message tag.
+  virtual void
+  readySend (const Ordinal bytes,
+             const char sendBuffer[],
+             const int destRank,
+             const int tag) const;
   /** \brief . */
   virtual RCP<CommRequest<Ordinal> > isend(
     const ArrayView<const char> &sendBuffer,
@@ -1019,6 +1031,21 @@ MpiComm<Ordinal>::ssend (const Ordinal bytes,
     << mpiErrorCodeToString (err) << "\".");
 }
 
+template<typename Ordinal>
+void
+MpiComm<Ordinal>::ssend (const Ordinal bytes,
+                         const char sendBuffer[],
+                         const int destRank,
+                         const int tag) const
+{
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::ssend(...)" );
+  const int err =
+    MPI_Ssend (const_cast<char*>(sendBuffer), bytes, MPI_CHAR,
+               destRank, tag, *rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::send: MPI_Ssend() failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
+}
 
 template<typename Ordinal>
 void MpiComm<Ordinal>::readySend(
@@ -1040,6 +1067,23 @@ void MpiComm<Ordinal>::readySend(
   const int err =
     MPI_Rsend (const_cast<char*>(sendBuffer.getRawPtr()), sendBuffer.size(),
                MPI_CHAR, destRank, tag_, *rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::readySend: MPI_Rsend() failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
+}
+
+
+template<typename Ordinal>
+void MpiComm<Ordinal>::
+readySend (const Ordinal bytes,
+           const char sendBuffer[],
+           const int destRank,
+           const int tag) const
+{
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::readySend" );
+  const int err =
+    MPI_Rsend (const_cast<char*> (sendBuffer), bytes,
+               MPI_CHAR, destRank, tag, *rawMpiComm_);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm::readySend: MPI_Rsend() failed with error \""
     << mpiErrorCodeToString (err) << "\".");

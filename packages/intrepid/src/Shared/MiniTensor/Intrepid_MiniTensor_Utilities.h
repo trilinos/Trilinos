@@ -81,6 +81,13 @@ typename Sacado::ScalarType<T>::type
 machine_epsilon();
 
 ///
+/// Compute a non-negative integer power by binary manipulation.
+///
+template<typename T>
+T
+integer_power(T const & X, Index const exponent);
+
+///
 /// Duet type. Holder of two objects of the same type.
 /// Useful as return type for functions that need to return two objects.
 ///

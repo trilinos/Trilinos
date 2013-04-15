@@ -130,7 +130,9 @@ namespace MueLu {
       GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << std::endl;
       Set(currentLevel, "Filtering", (threshold != STS::zero()));
 
-      LocalOrdinal numDropped = 0, numTotal = 0;
+      const typename STS::magnitudeType dirichletThreshold = STS::magnitude(pL.get<Scalar>("Dirichlet detection threshold"));
+
+      GlobalOrdinal numDropped = 0, numTotal = 0;
       if (algo == "original") {
         if (predrop_ == null) {
           // ap: this is a hack: had to declare predrop_ as mutable
@@ -153,14 +155,23 @@ namespace MueLu {
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
 
-        const typename STS::magnitudeType dirichletThreshold = STS::magnitude(pL.get<Scalar>("Dirichlet detection threshold"));
-
         if ( (A->GetFixedBlockSize() == 1) && (threshold == STS::zero()) ) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-          //Detect and record rows that correspond to Dirichlet boundary conditions
-          const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A,dirichletThreshold);
+
+          // Detect and record rows that correspond to Dirichlet boundary conditions
+          const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes=0;
+            GO numGlobalBoundaryNodes=0;
+            for (LO i=0; i<boundaryNodes.size(); ++i)
+              if (boundaryNodes[i]) ++numLocalBoundaryNodes;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+          }
           graph->SetBoundaryNodeMap(boundaryNodes);
+
           Set(currentLevel, "DofsPerNode", 1);
           Set(currentLevel, "Graph", graph);
 
@@ -190,6 +201,7 @@ namespace MueLu {
             //FIXME but the threshold doesn't take into account the rows' diagonal entries
             //FIXME For now, hardwiring the dropping in here
 
+            LocalOrdinal rownnz = 0;
             for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
               LocalOrdinal col = indices[colID];
 
@@ -197,12 +209,21 @@ namespace MueLu {
               typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
               typename STS::magnitudeType aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
 
-              if (aij > aiiajj || row == col)
+              if (aij > aiiajj || row == col) {
                 columns[realnnz++] = col;
-              else
+                rownnz++;
+              } else
                 numDropped++;
             }
-            if (realnnz == 1) boundaryNodes[row] = true;
+            if (rownnz == 1) {
+              // If the only element remaining after filtering is diagonal, mark node as bounday
+              // FIXME: this should really be replaced by the following
+              //    if (indices.size() == 1 && indices[0] == row)
+              //        boundaryNodes[row] = true;
+              // We do not do it this way now because there is no framework for distinguishing isolated
+              // and boundary nodes in the aggregation algorithms
+              boundaryNodes[row] = true;
+            }
             rows[row+1] = realnnz;
           }
           columns.resize(realnnz);
@@ -234,11 +255,32 @@ namespace MueLu {
         // DeclareInput for it?
         RCP<MultiVector> Coords = Get< RCP<MultiVector> >(currentLevel, "Coordinates");
 
+        // Detect and record rows that correspond to Dirichlet boundary conditions
+        // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
+        // TODO the array one bigger than the number of local rows, and the last entry can
+        // TODO hold the actual number of boundary nodes.
+        //const ArrayRCP<const bool > pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+        const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
         if ( (blkSize == 1) && (threshold == STS::zero()) ) {
           // Trivial case: scalar problem, no dropping. Can return original graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes=0;
+            GO numGlobalBoundaryNodes=0;
+            //for (LO i=0; i<pointBoundaryNodes.size(); ++i)
+            for (LO i=0; i<boundaryNodes.size(); ++i)
+              //if (pointBoundaryNodes[i]) ++numLocalBoundaryNodes;
+              if (boundaryNodes[i]) ++numLocalBoundaryNodes;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+          }
+          //graph->SetBoundaryNodeMap(pointBoundaryNodes);
+          graph->SetBoundaryNodeMap(boundaryNodes);
+
           Set(currentLevel, "DofsPerNode", blkSize);
-          Set(currentLevel, "Graph", graph);
+          Set(currentLevel, "Graph",       graph);
 
         } else {
           // ap: We make quite a few assumptions here; general case may be a lot different,
@@ -254,7 +296,9 @@ namespace MueLu {
 
           // Check that the number of local coordinates is consistent with the #rows in A
           std::string msg = "MueLu::CoalesceDropFactory::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
-          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(),Exceptions::Incompatible,msg);
+          size_t nodeNumElts = A->getRowMap()->getNodeNumElements();
+          size_t nodeCoordLeng = Coords->getLocalLength();
+          TEUCHOS_TEST_FOR_EXCEPTION(nodeNumElts/blkSize != nodeCoordLeng,Exceptions::Incompatible,msg);
 
           RCP<const Map> uniqueMap, nonUniqueMap;
           if (blkSize == 1) {
@@ -263,6 +307,8 @@ namespace MueLu {
 
           } else {
             uniqueMap   = Coords->getMap();
+            TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() !=
+            A->getRowMap()->getIndexBase(),Exceptions::Incompatible,"Coordinate map and A's row map do not have the same index base");
 
             // Amalgamate column map
             const RCP<const Map> colMap = A->getColMap();
@@ -274,8 +320,9 @@ namespace MueLu {
             std::set<GO>        filter;
 
             LO numRows = 0;
+            LO indexBase = uniqueMap->getIndexBase();
             for (LO id = 0; id < static_cast<LO>(numElements); id++) {
-              GO amalgID = elementAList[id]/blkSize;
+              GO amalgID = (elementAList[id]-indexBase)/blkSize + indexBase;
               if (filter.find(amalgID) == filter.end()) {
                 elementList[numRows++] = amalgID;
                 filter.insert(amalgID);
@@ -336,6 +383,11 @@ namespace MueLu {
           ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(numRows+1);
           ArrayRCP<LocalOrdinal> columns = ArrayRCP<LO>(A->getNodeNumEntries());
 
+          const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
+
+          RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
+          const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
+
           LocalOrdinal realnnz = 0;
           rows[0] = 0;
           for (LocalOrdinal row = 0; row < numRows; row++) {
@@ -347,14 +399,29 @@ namespace MueLu {
               A->getLocalRowView(row, indices, vals);
 
             } else {
+              //if all point rows are Dirichlet, then mark amalgamated row as Dirichlet
+              bool isBoundary=true;
+              for (LO j = 0; j < blkSize; ++j) {
+                if (!boundaryNodes[row*blkSize+j]) {
+                  isBoundary=false;
+                  break;
+                }
+              }
               // Merge rows of A
               std::set<LO> cols;
-              for (LO j = 0; j < blkSize; ++j) {
-                ArrayView<const LocalOrdinal> inds;
-                ArrayView<const Scalar>       vals;
-                A->getLocalRowView(row*blkSize+j, inds, vals);
-                for (LO k = 0; k < inds.size(); k++)
-                  cols.insert(inds[k]/blkSize);
+              if (!isBoundary) {
+                for (LO j = 0; j < blkSize; ++j) {
+                  ArrayView<const LocalOrdinal> inds;
+                  ArrayView<const Scalar>       vals;
+                  LO rowInd = row*blkSize+j;
+                  A->getLocalRowView(rowInd, inds, vals);
+                  for (LO k = 0; k < inds.size(); k++) {
+                    // TODO this is where we would add numerical thresholding
+                       cols.insert(inds[k]/blkSize);
+                  }
+                }
+              } else {
+                cols.insert(row);
               }
               indicesExtra.resize(cols.size());
               size_t pos = 0;
@@ -364,12 +431,13 @@ namespace MueLu {
             }
             numTotal += indices.size();
 
-            LocalOrdinal nnz = indices.size();
+            LocalOrdinal nnz = indices.size(), rownnz = 0;
             for (LocalOrdinal colID = 0; colID < nnz; colID++) {
               LocalOrdinal col = indices[colID];
 
               if (row == col) {
                 columns[realnnz++] = col;
+                rownnz++;
                 continue;
               }
 
@@ -377,22 +445,51 @@ namespace MueLu {
               typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
               typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
 
-              if (aij > aiiajj)
+              if (aij > aiiajj) {
                 columns[realnnz++] = col;
-              else
+                rownnz++;
+              } else {
                 numDropped++;
+              }
+            }
+
+            if (rownnz == 1) {
+              // If the only element remaining after filtering is diagonal, mark node as bounday
+              // FIXME: this should really be replaced by the following
+              //    if (indices.size() == 1 && indices[0] == row)
+              //        boundaryNodes[row] = true;
+              // We do not do it this way now because there is no framework for distinguishing isolated
+              // and boundary nodes in the aggregation algorithms
+              amalgBoundaryNodes[row] = true;
             }
             rows[row+1] = realnnz;
-          }
+          } //for (LocalOrdinal row = 0; row < numRows; row++)
           columns.resize(realnnz);
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+          graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes=0;
+            GO numGlobalBoundaryNodes=0;
+            for (LO i=0; i<amalgBoundaryNodes.size(); ++i)
+              if (amalgBoundaryNodes[i]) ++numLocalBoundaryNodes;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " agglomerated Dirichlet nodes"
+                                       << " using threshold " << dirichletThreshold << std::endl;
+          }
           Set(currentLevel, "Graph", graph);
           Set(currentLevel, "DofsPerNode", blkSize);
-        }
+        } //if ( (blkSize == 1) && (threshold == STS::zero()) )
       }
 
-      GetOStream(Statistics0, -1) << "number of dropped " << numDropped << " (" << 100*Teuchos::as<double>(numDropped)/Teuchos::as<double>(numTotal) << "%)" << std::endl;
+      if (GetVerbLevel() & Statistics0) {
+          RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+          GlobalOrdinal numGlobalTotal, numGlobalDropped;
+          sumAll(comm, numTotal,   numGlobalTotal);
+          sumAll(comm, numDropped, numGlobalDropped);
+          GetOStream(Statistics0, -1) << "number of dropped " << numGlobalDropped << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
+      }
 
     } else {
 
