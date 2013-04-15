@@ -162,36 +162,42 @@ mpiCommStatus (MPI_Status rawMpiStatus)
   return rcp (new MpiCommStatus<OrdinalType> (rawMpiStatus));
 }
 
-/// \class MpiCommRequest
-/// \brief MPI implementation of CommRequest.
+
+/// \class MpiCommRequestBase
+/// \brief Base class MPI implementation of CommRequest.
 /// \tparam OrdinalType Same as the template parameter of Comm.
 ///
 /// This class wraps MPI_Request, which is MPI's reification of a
 /// nonblocking communication operation.
 ///
 /// Users would not normally create an instance of this class.  Calls
-/// to nonblocking communication operations (such as \c ireceive() or
-/// \c isend()) return a pointer to a CommRequest.  If the Comm is an
+/// to nonblocking communication operations (such as ireceive() or
+/// isend()) return a pointer to a CommRequest.  If the Comm is an
 /// MpiComm, then the returned CommRequest is an MpiCommRequest.
 ///
 /// Users might wish to create an MpiCommRequest directly if they want
 /// to encapsulate an MPI_Request returned by an external library or
 /// by their own code.
 template<class OrdinalType>
-class MpiCommRequest : public CommRequest<OrdinalType> {
+class MpiCommRequestBase : public CommRequest<OrdinalType> {
 public:
+  //! Default constructor.
+  MpiCommRequestBase () :
+    rawMpiRequest_ (MPI_REQUEST_NULL)
+  {}
+
   //! Constructor (from a raw MPI_Request).
-  MpiCommRequest (MPI_Request rawMpiRequest,
-                  const ArrayView<char>::size_type numBytesInMessage) :
-    rawMpiRequest_ (rawMpiRequest), numBytes_ (numBytesInMessage)
+  MpiCommRequestBase (MPI_Request rawMpiRequest) :
+    rawMpiRequest_ (rawMpiRequest)
   {}
 
   /// \brief Return and relinquish ownership of the raw MPI_Request.
   ///
   /// "Relinquish ownership" means that this object sets its raw
-  /// MPI_Request to MPI_REQUEST_NULL, but returns the original
-  /// MPI_Request.  This effectively gives the caller ownership of the
-  /// raw MPI_Request.  This prevents hanging requests.
+  /// MPI_Request to <tt>MPI_REQUEST_NULL</tt>, but returns the
+  /// original MPI_Request.  This effectively gives the caller
+  /// ownership of the raw MPI_Request.  This prevents hanging
+  /// requests.
   MPI_Request releaseRawMpiRequest()
   {
     MPI_Request tmp_rawMpiRequest = rawMpiRequest_;
@@ -199,18 +205,9 @@ public:
     return tmp_rawMpiRequest;
   }
 
-  //! Whether the raw MPI_Request is MPI_REQUEST_NULL.
+  //! Whether the raw MPI_Request is <tt>MPI_REQUEST_NULL</tt>.
   bool isNull() const {
     return rawMpiRequest_ == MPI_REQUEST_NULL;
-  }
-
-  /// \brief Number of bytes in the nonblocking send or receive request.
-  ///
-  /// Remembering this is inexpensive, and is also useful for
-  /// debugging (e.g., for detecting whether the send and receive have
-  /// matching message lengths).
-  ArrayView<char>::size_type numBytes () const {
-    return numBytes_;
   }
 
   /// \brief Wait on this communication request to complete.
@@ -223,9 +220,10 @@ public:
     // Whether this function satisfies the strong exception guarantee
     // depends on whether MPI_Wait modifies its input request on error.
     const int err = MPI_Wait (&rawMpiRequest_, &rawMpiStatus);
-    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-      "Teuchos::MpiCommStatus::wait: MPI_Wait() failed with error \""
-      << mpiErrorCodeToString (err) << "\".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      err != MPI_SUCCESS, std::runtime_error,
+      "Teuchos: MPI_Wait() failed with error \"" 
+      << mpiErrorCodeToString (err));
     // MPI_Wait sets the MPI_Request to MPI_REQUEST_NULL on success.
     return mpiCommStatus<OrdinalType> (rawMpiStatus);
   }
@@ -240,9 +238,10 @@ public:
     }
     else {
       int err = MPI_Cancel (&rawMpiRequest_);
-      TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-        "Teuchos::MpiCommStatus::cancel: MPI_Cancel failed with the following "
-        "error: " << mpiErrorCodeToString (err));
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        err != MPI_SUCCESS, std::runtime_error,
+        "Teuchos: MPI_Cancel failed with the following error: " 
+        << mpiErrorCodeToString (err));
 
       // Wait on the request.  If successful, MPI_Wait will set the
       // MPI_Request to MPI_REQUEST_NULL.  The returned status may
@@ -258,7 +257,7 @@ public:
   }
 
   //! Destructor; cancels the request if it is still pending.
-  ~MpiCommRequest () {
+  virtual ~MpiCommRequestBase () {
     if (rawMpiRequest_ != MPI_REQUEST_NULL) {
       // We're in a destructor, so don't throw errors.  However, if
       // MPI_Cancel fails, it's probably a bad idea to call MPI_Wait.
@@ -288,10 +287,55 @@ public:
 private:
   //! The raw MPI request (an opaque object).
   MPI_Request rawMpiRequest_;
+};
+
+
+/// \class MpiCommRequest
+/// \brief MPI implementation of CommRequest.
+/// \tparam OrdinalType Same as the template parameter of Comm.
+///
+/// This class wraps MPI_Request, which is MPI's reification of a
+/// nonblocking communication operation.
+///
+/// Users would not normally create an instance of this class.  Calls
+/// to nonblocking communication operations (such as \c ireceive() or
+/// \c isend()) return a pointer to a CommRequest.  If the Comm is an
+/// MpiComm, then the returned CommRequest is an MpiCommRequest.
+///
+/// Users might wish to create an MpiCommRequest directly if they want
+/// to encapsulate an MPI_Request returned by an external library or
+/// by their own code.
+template<class OrdinalType>
+class MpiCommRequest : public MpiCommRequestBase<OrdinalType> {
+public:
+  //! Default constructor.
+  MpiCommRequest () :
+    MpiCommRequestBase<OrdinalType> (MPI_REQUEST_NULL),
+    numBytes_ (0)
+  {}
+
+  //! Constructor (from a raw MPI_Request).
+  MpiCommRequest (MPI_Request rawMpiRequest,
+                  const ArrayView<char>::size_type numBytesInMessage) :
+    MpiCommRequestBase<OrdinalType> (rawMpiRequest),
+    numBytes_ (numBytesInMessage)
+  {}
+
+  /// \brief Number of bytes in the nonblocking send or receive request.
+  ///
+  /// Remembering this is inexpensive, and is also useful for
+  /// debugging (e.g., for detecting whether the send and receive have
+  /// matching message lengths).
+  ArrayView<char>::size_type numBytes () const {
+    return numBytes_;
+  }
+
+  //! Destructor; cancels the request if it is still pending.
+  virtual ~MpiCommRequest () {}
+
+private:
   //! Number of bytes in the nonblocking send or receive request.
   ArrayView<char>::size_type numBytes_;
-
-  MpiCommRequest(); // Not defined
 };
 
 /// \fn mpiCommRequest
@@ -1245,8 +1289,8 @@ namespace {
     for (int i = 0; i < count; ++i) {
       RCP<CommRequest<Ordinal> > request = requests[i];
       if (! is_null (request)) {
-        RCP<MpiCommRequest<Ordinal> > mpiRequest =
-          rcp_dynamic_cast<MpiCommRequest<Ordinal> > (request);
+        RCP<MpiCommRequestBase<Ordinal> > mpiRequest =
+          rcp_dynamic_cast<MpiCommRequestBase<Ordinal> > (request);
         // releaseRawMpiRequest() sets the MpiCommRequest's raw
         // MPI_Request to MPI_REQUEST_NULL.  This makes waitAll() not
         // satisfy the strong exception guarantee.  That's OK because
@@ -1340,49 +1384,8 @@ namespace {
       }
     }
 
-#ifdef HAVE_TEUCHOS_DEBUG
-    if (false) // mfh 02 Apr 2012: This test fails in some cases (e.g., Belos BlockCG), with the MPI_Request reporting 8 bytes and the MPI_Status reporting 0 bytes.  The tests pass otherwise, so I'm disabling this check for now.
-    {
-      // In debug mode, test whether the requests' message lengths
-      // matched the message lengths on completion.
-      Array<size_type> nonmatchingIndices;
-      Array<std::pair<size_type, size_type> > nonmatchingLengthPairs;
-      for (size_type k = 0; k < count; ++k) {
-        if (! is_null (requests[k])) {
-          RCP<MpiCommRequest<Ordinal> > mpiRequest =
-            rcp_dynamic_cast<MpiCommRequest<Ordinal> > (requests[k]);
-
-          int statusCount = -1;
-          (void) MPI_Get_count (&rawMpiStatuses[k], MPI_CHAR, &statusCount);
-          if (mpiRequest->numBytes() != as<size_type> (statusCount)) {
-            nonmatchingIndices.push_back (k);
-            nonmatchingLengthPairs.push_back (std::make_pair (mpiRequest->numBytes(), Teuchos::as<size_type> (statusCount)));
-          }
-        }
-      }
-      const size_type numNonmatching = nonmatchingIndices.size();
-      if (numNonmatching > 0) {
-        std::ostringstream os;
-        os << "Teuchos::MpiComm::waitAll(): " << numNonmatching << " message "
-          "request" << (numNonmatching != 1 ? "s" : "") << " have a number of "
-          "bytes which does not match the number of bytes in "
-           << (numNonmatching != 1 ? "their" : "its") << " corresponding status"
-           << (numNonmatching != 1 ? "es" : "") << "." << std::endl;
-        os << "Here are the lengths that don't match (from MPI_Request, MPI_Status resp.): " << std::endl;
-        for (typename Array<std::pair<size_type, size_type> >::const_iterator it = nonmatchingLengthPairs.begin(); it != nonmatchingLengthPairs.end(); ++it) {
-          os << "(" << it->first << "," << it->second << ") ";
-        }
-        if (err == MPI_ERR_IN_STATUS) {
-          os << std::endl << "This is that weird case where MPI_Waitall returned MPI_ERR_IN_STATUS, but all of the MPI_Statuses' error codes were MPI_SUCCESS.";
-        }
-        // This is a bug, so we throw std::logic_error.
-        TEUCHOS_TEST_FOR_EXCEPTION(numNonmatching > 0, std::logic_error, os.str());
-      }
-    }
-#endif // HAVE_TEUCHOS_DEBUG
-
-    // Invalidate the input array of requests by setting all entries to
-    // null.
+    // Invalidate the input array of requests by setting all entries
+    // to null.
     std::fill (requests.begin(), requests.end(), null);
   }
 
@@ -1411,9 +1414,9 @@ namespace {
     Array<MPI_Request> rawMpiRequests (count, MPI_REQUEST_NULL);
     for (int i = 0; i < count; ++i) {
       RCP<CommRequest<Ordinal> > request = requests[i];
-      if (! is_null (request)) {
-        RCP<MpiCommRequest<Ordinal> > mpiRequest =
-          rcp_dynamic_cast<MpiCommRequest<Ordinal> > (request);
+      if (! request.is_null ()) {
+        RCP<MpiCommRequestBase<Ordinal> > mpiRequest =
+          rcp_dynamic_cast<MpiCommRequestBase<Ordinal> > (request);
         // releaseRawMpiRequest() sets the MpiCommRequest's raw
         // MPI_Request to MPI_REQUEST_NULL.  This makes waitAll() not
         // satisfy the strong exception guarantee.  That's OK because
@@ -1427,8 +1430,6 @@ namespace {
         rawMpiRequests[i] = MPI_REQUEST_NULL;
         someNullRequests = true;
       }
-      // This is how users see that the request was invalidated.
-      requests[i] = null;
     }
 
     // This is the part where we've finally peeled off the wrapper and
@@ -1460,6 +1461,13 @@ namespace {
       }
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, os.str());
     }
+
+    // Invalidate the input array of requests by setting all entries
+    // to null.  We delay this until the end, since some
+    // implementations of CommRequest might hold the only reference to
+    // the communication buffer, and we don't want that to go away
+    // until we've waited on the communication operation.
+    std::fill (requests.begin(), requests.end(), null);
   }
 
 } // namespace (anonymous)

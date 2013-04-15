@@ -656,6 +656,21 @@ namespace Tpetra {
       requests_.resize (0);
     }
 
+#ifdef HAVE_TEUCHOS_DEBUG
+    {
+      const int localSizeNonzero = (requests_.size () != 0) ? 1 : 0;
+      int globalSizeNonzero = 0;
+      Teuchos::reduceAll<int, int> (*comm_, Teuchos::REDUCE_MAX, 
+				    localSizeNonzero, 
+				    Teuchos::outArg (globalSizeNonzero));
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        globalSizeNonzero != 0, std::runtime_error,
+        "Tpetra::Distributor::doWaits: After waitAll, at least one process has "
+	"a nonzero number of outstanding posts.  There should be none at this "
+	"point.  Please report this bug to the Tpetra developers.");
+    }
+#endif // HAVE_TEUCHOS_DEBUG
+
     if (debug_) {
       std::ostringstream os;
       os << myRank << "," << instanceCount_ << ": doWaits done" << endl;
