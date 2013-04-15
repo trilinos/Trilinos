@@ -57,8 +57,38 @@
 namespace RTOpPack {
 
 
+//
+// Helpers
+//
+
+
 using Teuchos::as;
 using Teuchos::inoutArg;
+
+
+Ordinal computeLocalOffset(const Teuchos::Comm<Ordinal> &comm, const Ordinal localDim)
+{
+  Ordinal localOffset = 0;
+  Teuchos::scan<Ordinal>(comm, Teuchos::REDUCE_SUM, localDim, inoutArg(localOffset));
+  localOffset -= localDim;
+  return localOffset;
+}
+
+
+template<typename Scalar>
+RTOpPack::SubVectorView<Scalar> getLocalSubVectorView(
+  const Ordinal &localOffset, const Ordinal &localDim, const Scalar val)
+{
+  Teuchos::ArrayRCP<Scalar> x_dat(localDim);
+  std::fill_n(x_dat.begin(), localDim, val);
+  return RTOpPack::SubVectorView<Scalar>(
+    localOffset, localDim, x_dat, 1);
+}
+
+
+//
+// Unit tests
+//
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce, Scalar )
@@ -71,21 +101,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce, Scalar )
 
   const Ordinal localDim = 2; // ToDo: Make a commandline argument!
 
-  Ordinal localOffset = 0;
-  Teuchos::scan<Ordinal>( *comm, Teuchos::REDUCE_SUM, localDim, inoutArg(localOffset) );
-  localOffset -= localDim;
+  const Ordinal localOffset = computeLocalOffset(*comm, localDim);
   
-  Teuchos::Array<Scalar> x_dat(localDim);
-  std::fill_n(&x_dat[0], localDim, as<Scalar>(1.0));
-  RTOpPack::SubVectorView<Scalar> x(
-    localOffset, localDim, Teuchos::arcpFromArray(x_dat), 1);
+  const Scalar val = 1.1;
+
+  RTOpPack::SubVectorView<Scalar> x =
+    getLocalSubVectorView<Scalar>(localOffset, localDim, val);
 
   RTOpPack::ROpSum<Scalar> sumOp;
   RCP<RTOpPack::ReductTarget> sumTarget = sumOp.reduct_obj_create();
   RTOpPack::SPMD_apply_op<Scalar>(&*comm, sumOp, 1, &x, 0, 0, &*sumTarget);
   Scalar sum_x = sumOp(*sumTarget);
 
-  TEST_EQUALITY(sum_x, as<Scalar>(localDim * comm->getSize()))
+  TEST_EQUALITY(sum_x, as<Scalar>(localDim * val * comm->getSize()))
 
 }
 
