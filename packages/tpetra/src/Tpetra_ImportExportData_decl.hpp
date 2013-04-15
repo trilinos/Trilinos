@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_IMPORTEXPORTDATA_HPP
-#define TPETRA_IMPORTEXPORTDATA_HPP
+#ifndef TPETRA_IMPORTEXPORTDATA_DECL_HPP
+#define TPETRA_IMPORTEXPORTDATA_DECL_HPP
 
 #include "Tpetra_Distributor.hpp"
 
@@ -50,6 +50,9 @@ namespace Tpetra {
   // forward declaration of Import,Export, needed to prevent circular inclusions
   template<class LocalOrdinal, class GlobalOrdinal, class Node> class Import;
   template<class LocalOrdinal, class GlobalOrdinal, class Node> class Export;
+
+  // Forward declaration of Map
+  template<class LocalOrdinal, class GlobalOrdinal, class Node> class Map;
 #endif
 
   /// \class ImportExportData
@@ -109,15 +112,17 @@ namespace Tpetra {
                       const Teuchos::RCP<const map_type>& target,
                       const Teuchos::RCP<Teuchos::FancyOStream>& out,
                       const Teuchos::RCP<Teuchos::ParameterList>& plist);
-
-
+    //! Destructor
     ~ImportExportData();
 
     //! Output stream for debug output.
     Teuchos::RCP<Teuchos::FancyOStream> out_;
 
-    /// \brief Copys the import/export data, but reverse the direction of the transfer
-    /// as well as reversing the distributor
+    /// \brief Copy the data, but reverse the direction of the
+    ///   transfer as well as reversing the Distributor.
+    ///
+    /// "Reverse the direction of the transfer" means that an Import
+    /// becomes an Export in the opposite direction, and vice versa.
     Teuchos::RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> > reverseClone();
 
     /// \brief Index of target Map LIDs to which to permute.
@@ -204,98 +209,6 @@ namespace Tpetra {
     operator= (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & rhs);
   }; // class ImportExportData
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
-  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target)
-    : out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
-    , numSameIDs_ (0)
-    , source_ (source)
-    , target_ (target)
-    , comm_ (source->getComm())
-    , distributor_ (comm_, out_)
-  {}
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
-  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-                    const Teuchos::RCP<Teuchos::FancyOStream>& out)
-    : out_ (out)
-    , numSameIDs_ (0)
-    , source_ (source)
-    , target_ (target)
-    , comm_ (source->getComm())
-    , distributor_ (comm_, out_)
-  {}
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
-  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-                    const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
-    , numSameIDs_ (0)
-    , source_ (source)
-    , target_ (target)
-    , comm_ (source->getComm())
-    , distributor_ (comm_, out_, plist)
-  {}
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
-  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-                    const Teuchos::RCP<Teuchos::FancyOStream>& out,
-                    const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : out_ (out)
-    , numSameIDs_ (0)
-    , source_ (source)
-    , target_ (target)
-    , comm_ (source->getComm())
-    , distributor_ (comm_, out_, plist)
-  {}
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> >
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::reverseClone()
-  {
-    Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > tData = rcp(new ImportExportData<LocalOrdinal,GlobalOrdinal,Node>(target_,source_));
-
-    // Things that stay the same
-    tData->comm_             = comm_;
-    tData->numSameIDs_       = numSameIDs_;
-
-    // Things that reverse
-    tData->distributor_      = *distributor_.getReverse();
-    tData->permuteToLIDs_    = permuteFromLIDs_;
-    tData->permuteFromLIDs_  = permuteToLIDs_;
-
-    // Remotes / exports (easy part)
-    tData->exportLIDs_       = remoteLIDs_;
-    tData->remoteLIDs_       = exportLIDs_;
-    tData->exportPIDs_.resize(tData->exportLIDs_.size());
-
-    // Remotes / exports (hard part) - extract the exportPIDs from the remotes of my distributor
-    size_t NumReceives                  = distributor_.getNumReceives();
-    ArrayView<const int> ProcsFrom      = distributor_.getImagesFrom();
-    ArrayView<const size_t> LengthsFrom = distributor_.getLengthsFrom();
-
-    for(size_t i=0,j=0;i<NumReceives;i++) {
-      int pid=ProcsFrom[i];
-      for(size_t k=0;k<LengthsFrom[i];k++){
-	tData->exportPIDs_[j]=pid;
-	j++;
-      }    
-    }
-    return tData;
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::~ImportExportData() 
-  {}
-
 } // namespace Tpetra
 
-#endif // TPETRA_IMPORTEXPORTDATA_HPP
+#endif // TPETRA_IMPORTEXPORTDATA_DECL_HPP

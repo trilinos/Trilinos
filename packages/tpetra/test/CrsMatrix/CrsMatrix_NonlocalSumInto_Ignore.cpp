@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -47,8 +47,10 @@
 
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Map.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_Util.hpp>
+
 #include <MatrixMarket_Tpetra.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
@@ -136,7 +138,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   // CrsMatrix specialization).
   typedef Tpetra::CrsGraph<LO, GO, NT, typename CrsMatrixType::mat_solve_type> crs_graph_type;
 
-  ////////////////////////////////////////////////////////////////////  
+  ////////////////////////////////////////////////////////////////////
   // HERE BEGINS THE TEST.
   ////////////////////////////////////////////////////////////////////
 
@@ -179,7 +181,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   const GO numGlobalCols = numGlobalRows;
   // Prevent compile warning for unused variable.
   // (It's not really "variable" if it's const, but oh well.)
-  (void) numGlobalCols; 
+  (void) numGlobalCols;
 
   if (myRank == 0) {
     out << "Creating contiguous row Map" << endl;
@@ -219,7 +221,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
     // calls to sumIntoGlobalValues().
     RCP<crs_graph_type> nonconstGraph (new crs_graph_type (rowMap, 2, Tpetra::StaticProfile));
 
-    TEUCHOS_TEST_FOR_EXCEPTION(globalMinRow >= globalMaxRow, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(globalMinRow >= globalMaxRow, std::logic_error,
       "This test only works if globalMinRow < globalMaxRow.");
 
     // Insert all the diagonal entries, and only the diagonal entries
@@ -249,16 +251,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
       std::sort (indView.begin (), indView.end ());
 
       if (numEntries != as<size_t> (1)) {
-	localGraphSuccess = false;
-	graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 1" << endl;
+        localGraphSuccess = false;
+        graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 1" << endl;
       }
       if (numEntries > 0 && indView[0] != globalRow) {
-	localGraphSuccess = false;
-	graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
+        localGraphSuccess = false;
+        graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
       }
     }
   }
- 
+
   // Make sure that all processes successfully created the graph.
   bool globalGraphSuccess = true;
   {
@@ -273,8 +275,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
     // Print out the failure messages on all processes.
     for (int p = 0; p < numProcs; ++p) {
       if (p == myRank) {
-	out << graphFailMsg.str () << endl;
-	std::flush (out);
+        out << graphFailMsg.str () << endl;
+        std::flush (out);
       }
       // Do some barriers to allow output to finish.
       comm->barrier ();
@@ -282,7 +284,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
       comm->barrier ();
     }
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(! globalGraphSuccess, std::logic_error, "Graph structure test failed.");  
+  TEUCHOS_TEST_FOR_EXCEPTION(! globalGraphSuccess, std::logic_error, "Graph structure test failed.");
 
   if (myRank == 0) {
     out << "Creating matrix" << endl;
@@ -360,16 +362,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
       Tpetra::sort2 (indView.begin (), indView.end (), valView.begin ());
 
       if (numEntries != as<size_t> (1)) {
-	localSuccess = false;
-	failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 1" << endl;
+        localSuccess = false;
+        failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 1" << endl;
       }
       if (numEntries > 0 && indView[0] != globalRow) {
-	localSuccess = false;
-	failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
+        localSuccess = false;
+        failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
       }
       if (numEntries > 0 && valView[0] != STS::one ()) {
-	localSuccess = false;
-	failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": valView[0] = " << valView[0] << " != 1" << endl;
+        localSuccess = false;
+        failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": valView[0] = " << valView[0] << " != 1" << endl;
       }
     }
   }
@@ -385,9 +387,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
     // Print out the failure messages on all processes.
     for (int p = 0; p < numProcs; ++p) {
       if (p == myRank) {
-	out << failMsg.str () << endl;
-	out << "Proc " << myRank << ": localSuccess = " << localSuccess << ", globalSuccess = " << globalSuccess << endl;
-	//      std::flush (out);
+        out << failMsg.str () << endl;
+        out << "Proc " << myRank << ": localSuccess = " << localSuccess << ", globalSuccess = " << globalSuccess << endl;
+        //      std::flush (out);
       }
       // Do some barriers to allow output to finish.
       comm->barrier ();
