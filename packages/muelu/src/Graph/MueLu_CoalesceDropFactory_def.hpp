@@ -331,61 +331,69 @@ namespace MueLu {
 
             nonUniqueMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, uniqueMap->getComm());
           }
+          LocalOrdinal numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
-          // Get ghost coordinates
-          RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
-          RCP<MultiVector>  ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
-          ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
+          RCP<MultiVector>          ghostedCoords;
+          RCP<Vector>               ghostedLaplDiag;
+          Teuchos::ArrayRCP<Scalar> ghostedLaplDiagData;
+          if (threshold != STS::zero()) {
+            // Get ghost coordinates
+            RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+            ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
+            ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
 
-          // Construct Distance Laplacian diagonal
-          RCP<Vector>      localLaplDiag     = VectorFactory::Build(uniqueMap);
-          ArrayRCP<Scalar> localLaplDiagData = localLaplDiag->getDataNonConst(0);
-          LocalOrdinal     numRows           = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
-          for (LocalOrdinal row = 0; row < numRows; row++) {
-            ArrayView<const LocalOrdinal> indices;
-            Array<LocalOrdinal>           indicesExtra;
+            // Construct Distance Laplacian diagonal
+            RCP<Vector>      localLaplDiag     = VectorFactory::Build(uniqueMap);
+            ArrayRCP<Scalar> localLaplDiagData = localLaplDiag->getDataNonConst(0);
+            for (LocalOrdinal row = 0; row < numRows; row++) {
+              ArrayView<const LocalOrdinal> indices;
+              Array<LocalOrdinal>           indicesExtra;
 
-            if (blkSize == 1) {
-              ArrayView<const Scalar> vals;
-              A->getLocalRowView(row, indices, vals);
+              if (blkSize == 1) {
+                ArrayView<const Scalar> vals;
+                A->getLocalRowView(row, indices, vals);
 
-            } else {
-              // Merge rows of A
-              std::set<LO> cols;
-              for (LO j = 0; j < blkSize; ++j) {
-                ArrayView<const LocalOrdinal> inds;
-                ArrayView<const Scalar>       vals;
-                A->getLocalRowView(row*blkSize+j, inds, vals);
-                for (LO k = 0; k < inds.size(); k++)
-                  cols.insert(inds[k]/blkSize);
+              } else {
+                // Merge rows of A
+                std::set<LO> cols;
+                for (LO j = 0; j < blkSize; ++j) {
+                  ArrayView<const LocalOrdinal> inds;
+                  ArrayView<const Scalar>       vals;
+                  A->getLocalRowView(row*blkSize+j, inds, vals);
+                  for (LO k = 0; k < inds.size(); k++)
+                    // FIXME FIXME FIXME
+                    cols.insert(inds[k]/blkSize);
+                }
+                indicesExtra.resize(cols.size());
+                size_t pos = 0;
+                for (typename std::set<LocalOrdinal>::const_iterator it = cols.begin(); it != cols.end(); it++)
+                  indicesExtra[pos++] = *it;
+                indices = indicesExtra;
               }
-              indicesExtra.resize(cols.size());
-              size_t pos = 0;
-              for (typename std::set<LocalOrdinal>::const_iterator it = cols.begin(); it != cols.end(); it++)
-                indicesExtra[pos++] = *it;
-              indices = indicesExtra;
-            }
 
-            LocalOrdinal nnz = indices.size();
-            for (LocalOrdinal colID = 0; colID < nnz; colID++) {
-              LocalOrdinal col = indices[colID];
+              LocalOrdinal nnz = indices.size();
+              for (LocalOrdinal colID = 0; colID < nnz; colID++) {
+                LocalOrdinal col = indices[colID];
 
-              if (row != col)
-                localLaplDiagData[row] += STS::one()/MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                if (row != col)
+                  localLaplDiagData[row] += STS::one()/MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+              }
             }
+            ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
+            ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
+            ghostedLaplDiagData = ghostedLaplDiag->getDataNonConst(0);
+
+          } else {
+            GetOStream(Runtime0,0) << "Skipping distance laplacian construction due to 0 threshold" << std::endl;
           }
-          RCP<Vector> ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
-          ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
-          Teuchos::ArrayRCP<Scalar> ghostedLaplDiagData = ghostedLaplDiag->getDataNonConst(0);
+
+          // NOTE: ghostedLaplDiagData might be zero if we don't actually calculate the laplacian
 
           // allocate space for the local graph
           ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(numRows+1);
           ArrayRCP<LocalOrdinal> columns = ArrayRCP<LO>(A->getNodeNumEntries());
 
           const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
-
-          RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
-          const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
 
           LocalOrdinal realnnz = 0;
           rows[0] = 0;
@@ -415,6 +423,7 @@ namespace MueLu {
                   ArrayView<const Scalar>       vals;
                   A->getLocalRowView(row*blkSize+j, inds, vals);
                   for (LO k = 0; k < inds.size(); k++)
+                    // FIXME FIXME FIXME
                     cols.insert(inds[k]/blkSize);
                 }
               } else {
@@ -429,24 +438,34 @@ namespace MueLu {
             numTotal += indices.size();
 
             LocalOrdinal nnz = indices.size(), rownnz = 0;
-            for (LocalOrdinal colID = 0; colID < nnz; colID++) {
-              LocalOrdinal col = indices[colID];
+            if (threshold != STS::zero()) {
+              for (LocalOrdinal colID = 0; colID < nnz; colID++) {
+                LocalOrdinal col = indices[colID];
 
-              if (row == col) {
-                columns[realnnz++] = col;
-                rownnz++;
-                continue;
+                if (row == col) {
+                  columns[realnnz++] = col;
+                  rownnz++;
+                  continue;
+                }
+
+                Scalar laplVal = STS::one() / MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
+
+                if (aij > aiiajj) {
+                  columns[realnnz++] = col;
+                  rownnz++;
+                } else {
+                  numDropped++;
+                }
               }
 
-              Scalar laplVal = STS::one() / MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
-              typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
-              typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
-
-              if (aij > aiiajj) {
+            } else {
+              // Skip laplace calculation and threshold comparison for zero threshold
+              for (LocalOrdinal colID = 0; colID < nnz; colID++) {
+                LocalOrdinal col = indices[colID];
                 columns[realnnz++] = col;
                 rownnz++;
-              } else {
-                numDropped++;
               }
             }
 
