@@ -83,14 +83,12 @@ namespace stk {
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
-        unsigned edge_marks[4] = {0,0,0,0};
         unsigned num_edges_marked=0;
         for (int iedge = 0; iedge < 4; iedge++)
           {
             unsigned num_nodes_on_edge = new_sub_entity_nodes[m_eMesh.edge_rank()][iedge].size();
             if (num_nodes_on_edge)
               {
-                edge_marks[iedge] = 1;
                 ++num_edges_marked;
               }
           }
