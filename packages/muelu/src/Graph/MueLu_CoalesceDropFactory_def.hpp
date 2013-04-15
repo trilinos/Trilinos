@@ -161,6 +161,15 @@ namespace MueLu {
 
           // Detect and record rows that correspond to Dirichlet boundary conditions
           const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes=0;
+            GO numGlobalBoundaryNodes=0;
+            for (LO i=0; i<boundaryNodes.size(); ++i)
+              if (boundaryNodes[i]) ++numLocalBoundaryNodes;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+          }
           graph->SetBoundaryNodeMap(boundaryNodes);
 
           Set(currentLevel, "DofsPerNode", 1);
@@ -246,12 +255,28 @@ namespace MueLu {
         // DeclareInput for it?
         RCP<MultiVector> Coords = Get< RCP<MultiVector> >(currentLevel, "Coordinates");
 
+        // Detect and record rows that correspond to Dirichlet boundary conditions
+        // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
+        // TODO the array one bigger than the number of local rows, and the last entry can
+        // TODO hold the actual number of boundary nodes.
+        //const ArrayRCP<const bool > pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+        const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
         if ( (blkSize == 1) && (threshold == STS::zero()) ) {
           // Trivial case: scalar problem, no dropping. Can return original graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
 
-          // Detect and record rows that correspond to Dirichlet boundary conditions
-          const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes=0;
+            GO numGlobalBoundaryNodes=0;
+            //for (LO i=0; i<pointBoundaryNodes.size(); ++i)
+            for (LO i=0; i<boundaryNodes.size(); ++i)
+              //if (pointBoundaryNodes[i]) ++numLocalBoundaryNodes;
+              if (boundaryNodes[i]) ++numLocalBoundaryNodes;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+          }
+          //graph->SetBoundaryNodeMap(pointBoundaryNodes);
           graph->SetBoundaryNodeMap(boundaryNodes);
 
           Set(currentLevel, "DofsPerNode", blkSize);
@@ -271,7 +296,9 @@ namespace MueLu {
 
           // Check that the number of local coordinates is consistent with the #rows in A
           std::string msg = "MueLu::CoalesceDropFactory::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
-          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(),Exceptions::Incompatible,msg);
+          size_t nodeNumElts = A->getRowMap()->getNodeNumElements();
+          size_t nodeCoordLeng = Coords->getLocalLength();
+          TEUCHOS_TEST_FOR_EXCEPTION(nodeNumElts/blkSize != nodeCoordLeng,Exceptions::Incompatible,msg);
 
           RCP<const Map> uniqueMap, nonUniqueMap;
           if (blkSize == 1) {
@@ -280,6 +307,8 @@ namespace MueLu {
 
           } else {
             uniqueMap   = Coords->getMap();
+            TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() !=
+            A->getRowMap()->getIndexBase(),Exceptions::Incompatible,"Coordinate map and A's row map do not have the same index base");
 
             // Amalgamate column map
             const RCP<const Map> colMap = A->getColMap();
@@ -291,8 +320,9 @@ namespace MueLu {
             std::set<GO>        filter;
 
             LO numRows = 0;
+            LO indexBase = uniqueMap->getIndexBase();
             for (LO id = 0; id < static_cast<LO>(numElements); id++) {
-              GO amalgID = elementAList[id]/blkSize;
+              GO amalgID = (elementAList[id]-indexBase)/blkSize + indexBase;
               if (filter.find(amalgID) == filter.end()) {
                 elementList[numRows++] = amalgID;
                 filter.insert(amalgID);
@@ -353,7 +383,10 @@ namespace MueLu {
           ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(numRows+1);
           ArrayRCP<LocalOrdinal> columns = ArrayRCP<LO>(A->getNodeNumEntries());
 
-          const ArrayRCP<bool> boundaryNodes(numRows, false);
+          const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
+
+          RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
+          const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
 
           LocalOrdinal realnnz = 0;
           rows[0] = 0;
@@ -366,14 +399,29 @@ namespace MueLu {
               A->getLocalRowView(row, indices, vals);
 
             } else {
+              //if all point rows are Dirichlet, then mark amalgamated row as Dirichlet
+              bool isBoundary=true;
+              for (LO j = 0; j < blkSize; ++j) {
+                if (!boundaryNodes[row*blkSize+j]) {
+                  isBoundary=false;
+                  break;
+                }
+              }
               // Merge rows of A
               std::set<LO> cols;
-              for (LO j = 0; j < blkSize; ++j) {
-                ArrayView<const LocalOrdinal> inds;
-                ArrayView<const Scalar>       vals;
-                A->getLocalRowView(row*blkSize+j, inds, vals);
-                for (LO k = 0; k < inds.size(); k++)
-                  cols.insert(inds[k]/blkSize);
+              if (!isBoundary) {
+                for (LO j = 0; j < blkSize; ++j) {
+                  ArrayView<const LocalOrdinal> inds;
+                  ArrayView<const Scalar>       vals;
+                  LO rowInd = row*blkSize+j;
+                  A->getLocalRowView(rowInd, inds, vals);
+                  for (LO k = 0; k < inds.size(); k++) {
+                    // TODO this is where we would add numerical thresholding
+                       cols.insert(inds[k]/blkSize);
+                  }
+                }
+              } else {
+                cols.insert(row);
               }
               indicesExtra.resize(cols.size());
               size_t pos = 0;
@@ -412,17 +460,27 @@ namespace MueLu {
               //        boundaryNodes[row] = true;
               // We do not do it this way now because there is no framework for distinguishing isolated
               // and boundary nodes in the aggregation algorithms
-              boundaryNodes[row] = true;
+              amalgBoundaryNodes[row] = true;
             }
             rows[row+1] = realnnz;
-          }
+          } //for (LocalOrdinal row = 0; row < numRows; row++)
           columns.resize(realnnz);
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
-          graph->SetBoundaryNodeMap(boundaryNodes);
+          graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes=0;
+            GO numGlobalBoundaryNodes=0;
+            for (LO i=0; i<amalgBoundaryNodes.size(); ++i)
+              if (amalgBoundaryNodes[i]) ++numLocalBoundaryNodes;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " agglomerated Dirichlet nodes"
+                                       << " using threshold " << dirichletThreshold << std::endl;
+          }
           Set(currentLevel, "Graph", graph);
           Set(currentLevel, "DofsPerNode", blkSize);
-        }
+        } //if ( (blkSize == 1) && (threshold == STS::zero()) )
       }
 
       if (GetVerbLevel() & Statistics0) {
