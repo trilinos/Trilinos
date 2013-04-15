@@ -117,18 +117,27 @@ int test_crs_matrix_test(int numRows, int numCols, int nnz, int numVecs, int tes
 	device_type::fence();
 	KokkosArray::deep_copy(h_y,y);
 	Scalar error[numVecs];
-	for(int k = 0; k<numVecs; k++)
+	Scalar sum[numVecs];
+	for(int k = 0; k<numVecs; k++) {
 		error[k] = 0;
+		sum[k] = 0;
+	}
 	for(int i=0;i<numRows;i++)
 		for(int k = 0; k<numVecs; k++) {
           error[k]+=(h_y_compare(i,k)-h_y(i,k))*(h_y_compare(i,k)-h_y(i,k));
+          sum[k] += h_y_compare(i,k)*h_y_compare(i,k);
          // printf("%i %i %lf %lf %lf\n",i,k,h_y_compare(i,k),h_y(i,k),h_x(i,k));
 		}
 
 	//for(int i=0;i<A.nnz;i++) printf("%i %lf\n",h_graph.entries(i),h_values(i));
-    Scalar total_error = 0;
-	for(int k = 0; k<numVecs; k++)
+    int num_errors = 0;
+    double total_error = 0;
+    double total_sum = 0;
+	for(int k = 0; k<numVecs; k++) {
+		num_errors += (error[k]/(sum[k]==0?1:sum[k]))>1e-5?1:0;
 		total_error += error[k];
+		total_sum += sum[k];
+	}
 
     int loop = 100;
 	timespec starttime,endtime;
@@ -144,7 +153,7 @@ int test_crs_matrix_test(int numRows, int numCols, int nnz, int numVecs, int tes
 	double vector_readwrite = 2.0*nnz*numVecs*sizeof(Scalar)/1024/1024;
 
 	double problem_size = matrix_size+vector_size;
-    printf("%6.2lf MB %6.2lf GB/s %6.2lf s %e\n",problem_size,(matrix_size+vector_readwrite)/time*loop/1024, time/loop*1000, total_error);
+    printf("%6.2lf MB %6.2lf GB/s %6.2lf s %i\n",problem_size,(matrix_size+vector_readwrite)/time*loop/1024, time/loop*1000, num_errors);
 	return (int)total_error;
 }
 
