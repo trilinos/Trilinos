@@ -170,7 +170,6 @@ public:
         TEUCHOS_ASSERT(values_in.lowerOffset() <= 0);
       }
       else {
-        TEUCHOS_ASSERT(stride_in == 0);
         TEUCHOS_ASSERT(subDim_in==0);
       }
 #endif
@@ -383,8 +382,6 @@ public:
       }
       else {
         TEUCHOS_ASSERT(subDim_in == 0);
-        TEUCHOS_ASSERT(leadingDim_in == 0);
-        TEUCHOS_ASSERT(numSubCols_in == 0);
       }
 #endif
       globalOffset_=globalOffset_in;
