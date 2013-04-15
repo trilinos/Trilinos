@@ -251,7 +251,6 @@ namespace MueLu {
       } else if (algo == "laplacian") {
         LO blkSize   = A->GetFixedBlockSize();
         GO indexBase = A->getRowMap()->getIndexBase();
-        GetOStream(Runtime0,0) << "Index base: " << indexBase << std::endl;
 
         // [*0*] : FIXME
         // ap: somehow, if I move this line to [*1*], Belos throws an error
@@ -302,7 +301,7 @@ namespace MueLu {
 
           RCP<const Map> uniqueMap, nonUniqueMap;
           if (blkSize == 1) {
-            uniqueMap     = A->getRowMap();
+            uniqueMap    = A->getRowMap();
             nonUniqueMap = A->getColMap();
 
           } else {
@@ -319,7 +318,6 @@ namespace MueLu {
             std::set<GO>        filter;
 
             LO numRows = 0;
-            LO indexBase = uniqueMap->getIndexBase();
             for (LO id = 0; id < static_cast<LO>(numElements); id++) {
               GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
               if (filter.find(amalgID) == filter.end()) {
