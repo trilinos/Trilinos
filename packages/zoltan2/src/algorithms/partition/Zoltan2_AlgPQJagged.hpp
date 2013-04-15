@@ -3906,12 +3906,6 @@ void AlgPQJagged(
      */
     env->timerStart(MACRO_TIMERS, "PQJagged Total");
 
-  int migration_check_option = 0;
-  int migration_option = 1;
-  scalar_t migration_imbalance_cut_off = 0.03;
-  // 0 - for decision
-  // > 0 - for force migration
-  // < 0 - for avoid migration
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Init");
   RCP<Comm<int> > comm = problemComm->duplicate();
@@ -3925,6 +3919,12 @@ void AlgPQJagged(
   std::bitset<NUM_RCB_PARAMS> params;
   int numTestCuts = 5;
   scalar_t imbalanceTolerance;
+  int migration_check_option = 0;
+  int migration_option = 1;
+  scalar_t migration_imbalance_cut_off = 0.03;
+  // 0 - for decision
+  // > 0 - for force migration
+  // < 0 - for avoid migration
 
   multiCriteriaNorm mcnorm;
   bool ignoreWeights=false;
