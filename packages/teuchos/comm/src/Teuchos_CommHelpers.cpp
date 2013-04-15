@@ -40,6 +40,9 @@
 // @HEADER
 
 #include "Teuchos_CommHelpers.hpp"
+#ifdef HAVE_MPI
+#  include "Teuchos_Details_MpiCommRequest.hpp"
+#endif // HAVE_MPI
 
 namespace Teuchos {
 namespace { // (anonymous)
@@ -372,17 +375,13 @@ ireceiveImpl (const Comm<int>& comm,
     const int err = MPI_Irecv (rawRecvBuf, count, rawType, sourceRank, tag, 
 			       rawComm, &rawRequest);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      err != MPI_SUCCESS, 
-      std::runtime_error,
+      err != MPI_SUCCESS, std::runtime_error,
       "MPI_Irecv failed with the following error: " 
       << getMpiErrorString (err));
-    // The number of bytes is only valid if sizeof(T) says how much
-    // data lives in an T instance.
-    RCP<MpiCommRequest<int> > req (new MpiCommRequest<int> (rawRequest, count * sizeof(T)));
-    // mfh 13 Jan 2013: This ensures survival of the buffer until the
-    // request is waited on, by tying the request to the buffer (so
-    // that the buffer will survive at least as long as the request).
-    set_extra_data (recvBuffer, "buffer", inOutArg (req));
+
+    ArrayRCP<const char> buf = 
+      arcp_const_cast<const char> (arcp_reinterpret_cast<char> (recvBuffer));
+    RCP<Details::MpiCommRequest> req (new Details::MpiCommRequest (rawRequest, buf));
     return rcp_implicit_cast<CommRequest<int> > (req);
   }
 #else 
@@ -434,17 +433,13 @@ ireceiveImpl (const ArrayRCP<T>& recvBuffer,
     const int err = MPI_Irecv (rawRecvBuf, count, rawType, sourceRank, tag, 
 			       rawComm, &rawRequest);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      err != MPI_SUCCESS, 
-      std::runtime_error,
+      err != MPI_SUCCESS, std::runtime_error,
       "MPI_Irecv failed with the following error: " 
       << getMpiErrorString (err));
-    // The number of bytes is only valid if sizeof(T) says how much
-    // data lives in an T instance.
-    RCP<MpiCommRequest<int> > req (new MpiCommRequest<int> (rawRequest, count * sizeof(T)));
-    // mfh 13 Jan 2013: This ensures survival of the buffer until the
-    // request is waited on, by tying the request to the buffer (so
-    // that the buffer will survive at least as long as the request).
-    set_extra_data (recvBuffer, "buffer", inOutArg (req));
+
+    ArrayRCP<const char> buf = 
+      arcp_const_cast<const char> (arcp_reinterpret_cast<char> (recvBuffer));
+    RCP<Details::MpiCommRequest> req (new Details::MpiCommRequest (rawRequest, buf));
     return rcp_implicit_cast<CommRequest<int> > (req);
   }
 #else 
@@ -695,13 +690,8 @@ isendImpl (const ArrayRCP<const T>& sendBuffer,
       "MPI_Isend failed with the following error: " 
       << getMpiErrorString (err));
 
-    // The number of bytes is only valid if sizeof(T) says how much
-    // data lives in an T instance.
-    RCP<MpiCommRequest<int> > req (new MpiCommRequest<int> (rawRequest, count * sizeof(T)));
-    // mfh 13 Jan 2013: This ensures survival of the buffer until the
-    // request is waited on, by tying the request to the buffer (so
-    // that the buffer will survive at least as long as the request).
-    set_extra_data (sendBuffer, "buffer", inOutArg (req));
+    ArrayRCP<const char> buf = arcp_reinterpret_cast<const char> (sendBuffer);
+    RCP<Details::MpiCommRequest> req (new Details::MpiCommRequest (rawRequest, buf));
     return rcp_implicit_cast<CommRequest<int> > (req);
   }
 #else 
