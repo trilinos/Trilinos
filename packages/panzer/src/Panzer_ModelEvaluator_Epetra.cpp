@@ -374,6 +374,22 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
       )
     );
 
+  // add in dg/dx (if appropriate)
+  for(std::size_t i=0;i<g_names_.size();i++) {
+    typedef panzer::Traits::Jacobian RespEvalT;
+
+    // check dg/dx and add it in if appropriate
+    Teuchos::RCP<panzer::ResponseBase> respJacBase = responseLibrary_->getResponse<RespEvalT>(g_names_[i]);
+    if(respJacBase!=Teuchos::null) {
+      // cast is guranteed to succeed because of check in addResponse
+      Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
+ 
+      // class must supoprt a derivative 
+      if(resp->supportsDerivative())
+        outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_LINEAR_OP));
+    }
+  }
+
 #ifdef HAVE_STOKHOS
   if(!Teuchos::is_null(sg_lof_)) {
      outArgs.setSupports(OUT_ARG_f_sg,true);
