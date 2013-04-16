@@ -394,8 +394,9 @@ void RTOpPack::SPMD_apply_op(
     for( off = 0, j = 0; j < num_cols; ++j ) {
       for( k = 0; k < num_targ_multi_vecs; ++k ) {
         const SubMultiVectorView<Scalar> &mv = targ_sub_multi_vecs[k];
-        c_targ_sub_vecs[off++].initialize(mv.globalOffset(), mv.subDim(),
-          arcp(&mv(0,j), 0, mv.subDim(), false), 1);
+        ArrayRCP<Scalar> mv_j = Teuchos::null;
+        if (mv.subDim()) { mv_j = arcp(&mv(0,j), 0, mv.subDim(), false); }
+        c_targ_sub_vecs[off++].initialize(mv.globalOffset(), mv.subDim(), mv_j, 1);
       }
     }
   }

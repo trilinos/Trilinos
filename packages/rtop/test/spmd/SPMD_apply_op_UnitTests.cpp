@@ -103,14 +103,41 @@ RTOpPack::SubVectorView<Scalar> getLocalSubVectorView(
 template<typename Scalar>
 RTOpPack::SubMultiVectorView<Scalar> getLocalSubMultiVectorView(
   const Ordinal localOffset, const Ordinal localDim,
-  const Ordinal numCols,
-  const Scalar val)
+  const Ordinal numCols, const Scalar val)
 {
   const Ordinal totalLen = localDim*numCols;
   Teuchos::ArrayRCP<Scalar> x_dat(totalLen);
   std::fill_n(x_dat.begin(), totalLen, val);
   return RTOpPack::SubMultiVectorView<Scalar>(
     localOffset, localDim, 0, numCols, x_dat, localDim);
+}
+
+
+template<typename Scalar>
+void assertMultiVectorSums(const Teuchos::Comm<Ordinal> &comm,
+  const ConstSubMultiVectorView<Scalar> &mv,
+  const Scalar localDim, const Scalar val, const int numProcsFact,
+  Teuchos::FancyOStream &out, bool &success)
+{
+  const Ordinal numCols = mv.numSubCols();
+  RTOpPack::ROpSum<Scalar> sumOp;
+  Array<RCP<RTOpPack::ReductTarget> > sumTargets_store(numCols);
+  Array<RTOpPack::ReductTarget*> sumTargets(numCols);
+  for (int j = 0; j < numCols; ++j) {
+    sumTargets_store[j] = sumOp.reduct_obj_create();
+    sumTargets[j] = sumTargets_store[j].getRawPtr();
+  }
+  RTOpPack::SPMD_apply_op<Scalar>(&comm, sumOp, numCols, 1, &mv, 0, 0,
+    sumTargets.getRawPtr());
+
+  PRINT_VAR(localDim);
+  PRINT_VAR(val);
+  PRINT_VAR(numProcsFact);
+  for (int j = 0; j < numCols; ++j) {
+    PRINT_VAR(j);
+    Scalar sum_mv_j = sumOp(*sumTargets[j]);
+    TEST_EQUALITY(sum_mv_j, as<Scalar>(localDim*val*numProcsFact));
+  }
 }
 
 
@@ -234,21 +261,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_sum, Scalar 
   RTOpPack::SubMultiVectorView<Scalar> mv =
     getLocalSubMultiVectorView<Scalar>(localOffset, localDim, numCols, val);
 
-  RTOpPack::ROpSum<Scalar> sumOp;
-  Array<RCP<RTOpPack::ReductTarget> > sumTargets_store(numCols);
-  Array<RTOpPack::ReductTarget*> sumTargets(numCols);
-  for (int j = 0; j < numCols; ++j) {
-    sumTargets_store[j] = sumOp.reduct_obj_create();
-    sumTargets[j] = sumTargets_store[j].getRawPtr();
-  }
-  RTOpPack::SPMD_apply_op<Scalar>(&*comm, sumOp, numCols, 1, &mv, 0, 0,
-    sumTargets.getRawPtr());
-
-  for (int j = 0; j < numCols; ++j) {
-    PRINT_VAR(j);
-    Scalar sum_mv_j = sumOp(*sumTargets[j]);
-    TEST_EQUALITY(sum_mv_j, as<Scalar>(localDim*val* comm->getSize()));
-  }
+  assertMultiVectorSums<Scalar>(*comm, mv, g_localDim, val, comm->getSize(),
+    out, success);
 
 }
 
@@ -276,21 +290,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_sum_zero_p0,
   RTOpPack::SubMultiVectorView<Scalar> mv =
     getLocalSubMultiVectorView<Scalar>(localOffset, localDim, numCols, val);
 
-  RTOpPack::ROpSum<Scalar> sumOp;
-  Array<RCP<RTOpPack::ReductTarget> > sumTargets_store(numCols);
-  Array<RTOpPack::ReductTarget*> sumTargets(numCols);
-  for (int j = 0; j < numCols; ++j) {
-    sumTargets_store[j] = sumOp.reduct_obj_create();
-    sumTargets[j] = sumTargets_store[j].getRawPtr();
-  }
-  RTOpPack::SPMD_apply_op<Scalar>(&*comm, sumOp, numCols, 1, &mv, 0, 0,
-    sumTargets.getRawPtr());
-
-  for (int j = 0; j < numCols; ++j) {
-    PRINT_VAR(j);
-    Scalar sum_mv_j = sumOp(*sumTargets[j]);
-    TEST_EQUALITY(sum_mv_j, as<Scalar>(g_localDim*val*(comm->getSize()-1)));
-  }
+  assertMultiVectorSums<Scalar>(*comm, mv, g_localDim, val, comm->getSize()-1,
+    out, success);
 
 }
 
@@ -323,23 +324,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_0_1_assign, Scal
   RTOpPack::TOpAssignScalar<Scalar> assignOp(val);
   RTOpPack::SPMD_apply_op<Scalar>(&*comm, assignOp, numCols, 0, 0, 1, &mv, 0);
 
-  for (int j = 0; j < numCols; ++j) {
-    PRINT_VAR(j);
-    for (int i = 0 ; i < localDim; ++i) {
-      PRINT_VAR(i);
-      TEST_EQUALITY(mv(i,j), as<Scalar>(val));
-    }
-  }
+  assertMultiVectorSums<Scalar>(*comm, mv, g_localDim, val, comm->getSize(),
+    out, success);
 
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
   SPMD_apply_op, multivec_args_0_1_assign)
-
-
-
-
-
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_0_1_assign_zero_p0, Scalar )
@@ -367,13 +358,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_0_1_assign_zero_
   RTOpPack::TOpAssignScalar<Scalar> assignOp(val);
   RTOpPack::SPMD_apply_op<Scalar>(&*comm, assignOp, numCols, 0, 0, 1, &mv, 0);
 
-  for (int j = 0; j < numCols; ++j) {
-    PRINT_VAR(j);
-    for (int i = 0 ; i < localDim; ++i) {
-      PRINT_VAR(i);
-      TEST_EQUALITY(mv(i,j), as<Scalar>(val));
-    }
-  }
+  assertMultiVectorSums<Scalar>(*comm, mv, g_localDim, val, comm->getSize()-1,
+    out, success);
 
 }
 
