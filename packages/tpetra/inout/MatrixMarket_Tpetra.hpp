@@ -851,11 +851,11 @@ namespace Tpetra {
                // error message.
                {
                  const global_size_t numRows = pRowMap->getGlobalNumElements ();
-		 const GO indexBase = pRowMap->getIndexBase ();
+                 const GO indexBase = pRowMap->getIndexBase ();
                  bool theirRowsValid = true;
                  for (size_type k = 0; k < theirNumRows; ++k) {
-		   if (theirRows[k] < indexBase ||
-		       as<global_size_t> (theirRows[k] - indexBase) >= numRows) {
+                   if (theirRows[k] < indexBase ||
+                       as<global_size_t> (theirRows[k] - indexBase) >= numRows) {
                      theirRowsValid = false;
                    }
                  }
@@ -863,9 +863,9 @@ namespace Tpetra {
                    TEUCHOS_TEST_FOR_EXCEPTION(
                      ! theirRowsValid, std::logic_error,
                      "Proc " << p << " has at least one invalid row index.  "
-                     "Here are all of them: " << 
-		     Teuchos::toString (theirRows ()) << ".  Valid row index "
-		     "range (zero-based): [0, " << (numRows - 1) << "].");
+                     "Here are all of them: " <<
+                     Teuchos::toString (theirRows ()) << ".  Valid row index "
+                     "range (zero-based): [0, " << (numRows - 1) << "].");
                  }
                }
 
@@ -1030,10 +1030,6 @@ namespace Tpetra {
         // Typedef to make certain type declarations shorter.
         typedef global_ordinal_type GO;
 
-        const int myRank = pRangeMap->getComm ()->getRank ();
-        const bool extraDebug = false;
-        const bool debug = false;
-
         // The row pointer array always has at least one entry, even
         // if the matrix has zero rows.  myNumEntriesPerRow, myColInd,
         // and myValues would all be empty arrays in that degenerate
@@ -1067,17 +1063,17 @@ namespace Tpetra {
         const size_type myNumRows = myRows.size ();
 
         // Add this processor's matrix entries to the CrsMatrix.
-	const GO indexBase = pRowMap->getIndexBase ();
+        const GO indexBase = pRowMap->getIndexBase ();
         for (size_type i = 0; i < myNumRows; ++i) {
           const size_type myCurPos = myRowPtr[i];
           const local_ordinal_type curNumEntries = myNumEntriesPerRow[i];
-	  ArrayView<GO> curColInd = myColInd.view (myCurPos, curNumEntries);
-	  ArrayView<scalar_type> curValues = myValues.view (myCurPos, curNumEntries);
+          ArrayView<GO> curColInd = myColInd.view (myCurPos, curNumEntries);
+          ArrayView<scalar_type> curValues = myValues.view (myCurPos, curNumEntries);
 
-	  // Modify the column indices in place to have the right index base.
-	  for (size_type k = 0; k < curNumEntries; ++k) {
-	    curColInd[k] += indexBase;
-	  }
+          // Modify the column indices in place to have the right index base.
+          for (size_type k = 0; k < curNumEntries; ++k) {
+            curColInd[k] += indexBase;
+          }
           // Avoid constructing empty views of ArrayRCP objects.
           if (curNumEntries > 0) {
             A->insertGlobalValues (myRows[i], curColInd, curValues);
@@ -1156,17 +1152,17 @@ namespace Tpetra {
         const size_type myNumRows = myRows.size();
 
         // Add this processor's matrix entries to the CrsMatrix.
-	const GO indexBase = pRowMap->getIndexBase ();
+        const GO indexBase = pRowMap->getIndexBase ();
         for (size_type i = 0; i < myNumRows; ++i) {
           const size_type myCurPos = myRowPtr[i];
           const local_ordinal_type curNumEntries = myNumEntriesPerRow[i];
-	  ArrayView<GO> curColInd = myColInd.view (myCurPos, curNumEntries);
-	  ArrayView<scalar_type> curValues = myValues.view (myCurPos, curNumEntries);
+          ArrayView<GO> curColInd = myColInd.view (myCurPos, curNumEntries);
+          ArrayView<scalar_type> curValues = myValues.view (myCurPos, curNumEntries);
 
-	  // Modify the column indices in place to have the right index base.
-	  for (size_type k = 0; k < curNumEntries; ++k) {
-	    curColInd[k] += indexBase;
-	  }
+          // Modify the column indices in place to have the right index base.
+          for (size_type k = 0; k < curNumEntries; ++k) {
+            curColInd[k] += indexBase;
+          }
           if (curNumEntries > 0) {
             A->insertGlobalValues (myRows[i], curColInd, curValues);
           }
@@ -1224,17 +1220,17 @@ namespace Tpetra {
         const size_type myNumRows = myRows.size ();
 
         // Add this process' matrix entries to the CrsMatrix.
-	const GO indexBase = rowMap->getIndexBase ();
+        const GO indexBase = rowMap->getIndexBase ();
         for (size_type i = 0; i < myNumRows; ++i) {
           const size_type myCurPos = myRowPtr[i];
           const size_type curNumEntries = as<size_type> (myNumEntriesPerRow[i]);
-	  ArrayView<GO> curColInd = myColInd.view (myCurPos, curNumEntries);
-	  ArrayView<scalar_type> curValues = myValues.view (myCurPos, curNumEntries);
+          ArrayView<GO> curColInd = myColInd.view (myCurPos, curNumEntries);
+          ArrayView<scalar_type> curValues = myValues.view (myCurPos, curNumEntries);
 
-	  // Modify the column indices in place to have the right index base.
-	  for (size_type k = 0; k < curNumEntries; ++k) {
-	    curColInd[k] += indexBase;
-	  }
+          // Modify the column indices in place to have the right index base.
+          for (size_type k = 0; k < curNumEntries; ++k) {
+            curColInd[k] += indexBase;
+          }
           if (curNumEntries > 0) {
             A->insertGlobalValues (myRows[i], curColInd, curValues);
           }
@@ -3216,9 +3212,9 @@ namespace Tpetra {
               cerr << rowPtr[numRows] << "]" << endl;
 
               cerr << "----- Proc 0: colInd = [";
-	      for (size_type k = 0; k < rowPtr[numRows]; ++k) {
-		cerr << colInd[k] << " ";
-	      }
+              for (size_t k = 0; k < rowPtr[numRows]; ++k) {
+                cerr << colInd[k] << " ";
+              }
               cerr << "]" << endl;
             }
           } // if myRank == rootRank
@@ -3249,73 +3245,73 @@ namespace Tpetra {
           << " entries, but the matrix has a global number of columns "
           << dims[1] << ".");
 
-	// Create a row Map which is entirely owned on Proc 0.
-	RCP<Teuchos::FancyOStream> err = debug ? 
-	  Teuchos::getFancyOStream (Teuchos::rcpFromRef (cerr)) : null;
-	RCP<const map_type> gatherRowMap = computeGatherMap (rowMap, err, debug);
+        // Create a row Map which is entirely owned on Proc 0.
+        RCP<Teuchos::FancyOStream> err = debug ?
+          Teuchos::getFancyOStream (Teuchos::rcpFromRef (cerr)) : null;
+        RCP<const map_type> gatherRowMap = computeGatherMap (rowMap, err, debug);
 
-	// Create a matrix using this Map, and fill in on Proc 0.  We
-	// know how many entries there are in each row, so we can use
-	// static profile.
-	RCP<sparse_matrix_type> A_proc0 = 
-	  rcp (new sparse_matrix_type (gatherRowMap, numEntriesPerRow, 
-				       Tpetra::StaticProfile));
-	if (myRank == rootRank) {
-	  if (debug) {
-	    cerr << "-- Proc 0: Filling gather matrix" << endl;
-	  }
-	  ArrayView<const global_ordinal_type> myRows = 
-	    gatherRowMap->getNodeElementList ();
-	  if (debug) {
-	    cerr << "---- Rows: " << Teuchos::toString (myRows) << endl;
-	  }
-	  const size_type myNumRows = myRows.size ();
+        // Create a matrix using this Map, and fill in on Proc 0.  We
+        // know how many entries there are in each row, so we can use
+        // static profile.
+        RCP<sparse_matrix_type> A_proc0 =
+          rcp (new sparse_matrix_type (gatherRowMap, numEntriesPerRow,
+                                       Tpetra::StaticProfile));
+        if (myRank == rootRank) {
+          if (debug) {
+            cerr << "-- Proc 0: Filling gather matrix" << endl;
+          }
+          ArrayView<const global_ordinal_type> myRows =
+            gatherRowMap->getNodeElementList ();
+          if (debug) {
+            cerr << "---- Rows: " << Teuchos::toString (myRows) << endl;
+          }
+          const size_type myNumRows = myRows.size ();
 
-	  // Add Proc 0's matrix entries to the CrsMatrix.
-	  const global_ordinal_type indexBase = gatherRowMap->getIndexBase ();
-	  for (size_type i = 0; i < myNumRows; ++i) {
-	    const size_type curPos = as<size_type> (rowPtr[i]);
-	    const local_ordinal_type curNumEntries = numEntriesPerRow[i];
-	    ArrayView<global_ordinal_type> curColInd = 
-	      colInd.view (curPos, curNumEntries);
-	    ArrayView<scalar_type> curValues = 
-	      values.view (curPos, curNumEntries);
+          // Add Proc 0's matrix entries to the CrsMatrix.
+          const global_ordinal_type indexBase = gatherRowMap->getIndexBase ();
+          for (size_type i = 0; i < myNumRows; ++i) {
+            const size_type curPos = as<size_type> (rowPtr[i]);
+            const local_ordinal_type curNumEntries = numEntriesPerRow[i];
+            ArrayView<global_ordinal_type> curColInd =
+              colInd.view (curPos, curNumEntries);
+            ArrayView<scalar_type> curValues =
+              values.view (curPos, curNumEntries);
 
-	    // Modify the column indices in place to have the right index base.
-	    for (size_type k = 0; k < curNumEntries; ++k) {
-	      curColInd[k] += indexBase;
-	    }
-	    if (debug) {
-	      cerr << "------ Columns: " << Teuchos::toString (curColInd) << endl;
-	      cerr << "------ Values: " << Teuchos::toString (curValues) << endl;
-	    }
-	    // Avoid constructing empty views of ArrayRCP objects.
-	    if (curNumEntries > 0) {
-	      A_proc0->insertGlobalValues (myRows[i], curColInd, curValues);
-	    }
-	  }
-	  // Now we can save space by deallocating numEntriesPerRow,
-	  // rowPtr, colInd, and values, since we've already put those
-	  // data in the matrix.
-	  numEntriesPerRow = null;
-	  rowPtr = null;
-	  colInd = null;
-	  values = null;
-	} // if myRank == rootRank
+            // Modify the column indices in place to have the right index base.
+            for (size_type k = 0; k < curNumEntries; ++k) {
+              curColInd[k] += indexBase;
+            }
+            if (debug) {
+              cerr << "------ Columns: " << Teuchos::toString (curColInd) << endl;
+              cerr << "------ Values: " << Teuchos::toString (curValues) << endl;
+            }
+            // Avoid constructing empty views of ArrayRCP objects.
+            if (curNumEntries > 0) {
+              A_proc0->insertGlobalValues (myRows[i], curColInd, curValues);
+            }
+          }
+          // Now we can save space by deallocating numEntriesPerRow,
+          // rowPtr, colInd, and values, since we've already put those
+          // data in the matrix.
+          numEntriesPerRow = null;
+          rowPtr = null;
+          colInd = null;
+          values = null;
+        } // if myRank == rootRank
 
-	RCP<sparse_matrix_type> A;
-	if (colMap.is_null ()) {
-	  A = rcp (new sparse_matrix_type (rowMap, 0));
-	} else {
-	  A = rcp (new sparse_matrix_type (rowMap, colMap, 0));
-	}
-	typedef Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
-	export_type exp (gatherRowMap, rowMap);
-	A->doExport (*A_proc0, exp, INSERT);
+        RCP<sparse_matrix_type> A;
+        if (colMap.is_null ()) {
+          A = rcp (new sparse_matrix_type (rowMap, 0));
+        } else {
+          A = rcp (new sparse_matrix_type (rowMap, colMap, 0));
+        }
+        typedef Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
+        export_type exp (gatherRowMap, rowMap);
+        A->doExport (*A_proc0, exp, INSERT);
 
-	if (callFillComplete) {
-	  A->fillComplete (domainMap, rangeMap);
-	}
+        if (callFillComplete) {
+          A->fillComplete (domainMap, rangeMap);
+        }
 
         // We can't get the dimensions of the matrix until after
         // fillComplete() is called.  Thus, we can't do the sanity
