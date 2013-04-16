@@ -187,7 +187,7 @@ namespace Xpetra {
 
     //! EpetraMap constructor to wrap a Epetra_Map object
     StridedEpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0)
-      : EpetraMap(map), StridedMap<int, int>(stridingInfo, stridedBlockId, offset) {
+      : EpetraMap(map), StridedMap<int, int>(stridingInfo, map->IndexBase(), stridedBlockId, offset) {
       int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize());
       TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");
