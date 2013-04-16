@@ -74,6 +74,8 @@ namespace Galeri {
 	py_          = list.get("py", 1);
         nx_          = list.get("nx", -1);
         ny_          = list.get("ny", -1);
+        mx_          = list.get("mx", 1);
+        my_          = list.get("my", 1);
 	omega_       = list.get("omega", 2.0*M_PI);
 	shift_       = list.get("shift", 0.0);
 	delta_       = list.get("delta", 2.0);
@@ -120,6 +122,7 @@ namespace Galeri {
 
       // General mesh parameters
       GlobalOrdinal                   nx_, ny_, nz_;
+      int                             mx_, my_, mz_;
       size_t                          nDim, px_, py_, pz_;
       std::vector<GO>                 dims;
       std::vector<Point>              nodes;
@@ -230,8 +233,8 @@ namespace Galeri {
 
       GO myPID  = this->Map_->getComm()->getRank();
       GO mySize = this->Map_->getComm()->getSize();
-      GO nx = -1,                       ny = -1;
-      GO mx = this->list_.get("mx", 1), my = this->list_.get("my", 1);
+      GO nx = -1,  ny = -1;
+      GO mx = mx_, my = my_;
       if(mx*my != mySize) {
 	int squareRoot = std::max(1,(int)std::floor(sqrt((double) mySize)));
 	my = squareRoot;

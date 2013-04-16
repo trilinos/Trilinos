@@ -449,6 +449,76 @@ namespace Tpetra {
     }
   }
 
+  /**
+   * \brief Sort the first array using shell sort, and apply the resulting
+   * permutation to the second and third arrays.
+   *
+   * All of the input argument iterators are random access iterators.
+   */
+  template<class IT1, class IT2, class IT3>
+  void sh_sort3(
+    const IT1& first1,
+    const IT1& last1,
+    const IT2& first2,
+    const IT2& last2,
+    const IT3& first3,
+    const IT3& last3)
+   {
+        typedef typename std::iterator_traits<IT1>::difference_type DT;
+        DT n = last1 - first1;
+        DT m = n / 2;
+        DT z = OrdinalTraits<DT>::zero();
+        while (m > z)
+        {
+            DT max = n - m;
+            for (DT j = 0; j < max; j++)
+            {
+                for (DT k = j; k >= 0; k-=m)
+                {
+                    if (first1[k+m] >= first1[k])
+                        break;
+                    std::swap(first1[k+m], first1[k]);
+                    std::swap(first2[k+m], first2[k]);
+                    std::swap(first3[k+m], first3[k]);
+                }
+            }
+            m = m/2;
+        }
+   }
+
+  /**
+   * \brief Sort the first array using shell sort, and apply the resulting
+   * permutation to the second array.
+   *
+   * All of the input argument iterators are random access iterators.
+   */
+  template<class IT1, class IT2>
+  void sh_sort2(
+    const IT1& first1,
+    const IT1& last1,
+    const IT2& first2,
+    const IT2& last2)
+   {
+        typedef typename std::iterator_traits<IT1>::difference_type DT;
+        DT n = last1 - first1;
+        DT m = n / 2;
+        DT z = OrdinalTraits<DT>::zero();
+        while (m > z)
+        {
+            DT max = n - m;
+            for (DT j = 0; j < max; j++)
+            {
+                for (DT k = j; k >= 0; k-=m)
+                {
+                    if (first1[k+m] >= first1[k])
+                        break;
+                    std::swap(first1[k+m], first1[k]);
+                    std::swap(first2[k+m], first2[k]);
+                }
+            }
+            m = m/2;
+        }
+   }
 
   } //end namespace SortDetails
 
@@ -480,12 +550,19 @@ namespace Tpetra {
     if(SortDetails::isAlreadySorted(first1, last1)){
       return;
     }
-    SortDetails::quicksort2(first1, last1, first2, first2+(last1-first1));
+    SortDetails::sh_sort2(first1, last1, first2, first2+(last1-first1));
+#ifdef HAVE_TPETRA_DEBUG
+    if(!SortDetails::isAlreadySorted(first1, last1)){
+      std::cout << "Trouble: sort() did not sort !!" << std::endl;
+      return;
+    }
+#endif
   }
 
   
   /** 
-   * \brief Sort the first array, and apply the same permutation to the second and third arrays.
+   * \brief Sort the first array, and apply the same permutation to the second
+   * and third arrays.
    *
    * Sort the values in the first array (represented by the exclusive
    * iterator range first1,last1) in ascending order.  Apply the
@@ -499,7 +576,8 @@ namespace Tpetra {
    * @param first3 A random access iterator pointing to the beginning of the third array.
    */
   template<class IT1, class IT2, class IT3>
-  void sort3(const IT1 &first1, const IT1 &last1, const IT2 &first2, const IT3 &first3)
+  void sort3(const IT1 &first1, const IT1 &last1, const IT2 &first2,
+    const IT3 &first3)
   {
     // Quicksort uses best-case N log N time whether or not the input
     // data is sorted.  However, the common case in Tpetra is that the
@@ -508,7 +586,16 @@ namespace Tpetra {
     if(SortDetails::isAlreadySorted(first1, last1)){
       return;
     }
-    SortDetails::quicksort3(first1, last1, first2, first2+(last1-first1), first3, first3+(last1-first1));
+    SortDetails::sh_sort3(first1, last1, first2, first2+(last1-first1), first3,
+                    first3+(last1-first1));
+
+#ifdef HAVE_TPETRA_DEBUG
+    if(!SortDetails::isAlreadySorted(first1, last1)){
+        std::cout << " Trouble sort did not actually sort... !!!!!!" <<
+                        std::endl;
+      return;
+    }
+#endif
   }
 
 } // namespace Tpetra

@@ -656,11 +656,29 @@ namespace Ioex {
 
   void DatabaseIO::put_qa()
   {
-    static char qa_temp[4][MAX_STR_LENGTH+1];
-    static char *qa[1][4] =
-    {{qa_temp[0],qa_temp[1],qa_temp[2],qa_temp[3]}};
+    struct qa_element {
+      char *qa_record[1][4];
+    };
+    
+    size_t num_qa_records = qaRecords.size()/4;
 
-    Ioss::Utils::time_and_date(qa[0][3], qa[0][2], MAX_STR_LENGTH);
+    qa_element *qa = new qa_element[num_qa_records+1];
+    for (int i=0; i < num_qa_records+1; i++) {
+      for (int j=0; j < 4; j++) {
+	qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
+      }
+    }
+
+    int j = 0;
+    for (int i=0; i < num_qa_records; i++) {
+      std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+      std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+      std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+      std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+    }
+
+    Ioss::Utils::time_and_date(qa[num_qa_records].qa_record[0][3],
+			       qa[num_qa_records].qa_record[0][2], MAX_STR_LENGTH);
 
     std::string codename = "unknown";
     std::string version  = "unknown";
@@ -672,14 +690,25 @@ namespace Ioex {
       version = get_region()->get_property("code_version").get_string();
     }
 
-    std::strncpy(qa[0][0], codename.c_str(), MAX_STR_LENGTH);
-    std::strncpy(qa[0][1], version.c_str(),  MAX_STR_LENGTH);
-    qa[0][0][MAX_STR_LENGTH] = '\0';
-    qa[0][1][MAX_STR_LENGTH] = '\0';
+    char buffer[MAX_STR_LENGTH+1];
+    std::strncpy(buffer, codename.c_str(), MAX_STR_LENGTH);
+    buffer[MAX_STR_LENGTH] = '\0';
+    std::strcpy(qa[num_qa_records].qa_record[0][0], buffer);
 
-    int ierr = ex_put_qa(get_file_pointer(), 1, qa);
+    std::strncpy(buffer, version.c_str(), MAX_STR_LENGTH);
+    buffer[MAX_STR_LENGTH] = '\0';
+    std::strcpy(qa[num_qa_records].qa_record[0][1], buffer);
+    
+    int ierr = ex_put_qa(get_file_pointer(), num_qa_records+1, qa[0].qa_record);
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+    for (int i=0; i < num_qa_records+1; i++) {
+      for (int j=0; j < 4; j++) {
+	delete [] qa[i].qa_record[0][j];
+      }
+    }
+    delete [] qa;
   }
 
   void DatabaseIO::put_info()
@@ -867,6 +896,33 @@ namespace Ioex {
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
                                              spatialDimension));
 
+    // Get QA records from database and add to qaRecords...
+    int num_qa = ex_inquire_int(get_file_pointer(), EX_INQ_QA);    
+    if (num_qa > 0) {
+      struct qa_element {
+	char *qa_record[1][4];
+      };
+    
+      qa_element *qa = new qa_element[num_qa];
+      for (int i=0; i < num_qa; i++) {
+	for (int j=0; j < 4; j++) {
+	  qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
+	}
+      }
+
+      ex_get_qa(get_file_pointer(), qa[0].qa_record);
+      for (int i=0; i < num_qa; i++) {
+        add_qa_record(qa[i].qa_record[0][0], qa[i].qa_record[0][1], qa[i].qa_record[0][2], qa[i].qa_record[0][3]);
+      }
+      for (int i=0; i < num_qa; i++) {
+	for (int j=0; j < 4; j++) {
+	  delete [] qa[i].qa_record[0][j];
+	}
+      }
+      delete [] qa;
+
+    }
+    
     // Get information records from database and add to informationRecords...
     int num_info = ex_inquire_int(get_file_pointer(), EX_INQ_INFO);    
     if (num_info > 0) {
