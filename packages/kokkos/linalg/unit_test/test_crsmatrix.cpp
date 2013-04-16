@@ -7,7 +7,11 @@
 #include <limits.h>
 #include <cmath>
 
+#ifdef _OPENMP
+#include <KokkosArray_OpenMP.hpp>
+#else
 #include <KokkosArray_Host.hpp>
+#endif
 #include <KokkosArray_Cuda.hpp>
 #include <KokkosArray_MultiVector.hpp>
 #include <KokkosArray_CRSMatrix.hpp>
@@ -15,7 +19,11 @@
 #define DEVICE 1
 #endif
 #if DEVICE==1
+#ifdef _OPENMP
+typedef KokkosArray::OpenMP device_type;
+#else
 typedef KokkosArray::Host device_type;
+#endif
 #define KokkosArrayHost(a) a
 #define KokkosArrayCUDA(a)
 #else
@@ -247,7 +255,14 @@ int main(int argc, char **argv)
    KokkosArray::Cuda::initialize( select_device );
  )
 
- KokkosArray::Host::initialize( numa , threads );
+#ifdef _OPENMP
+   omp_set_num_threads(numa*threads);
+   KokkosArray::OpenMP::initialize( numa);
+#pragma message "Compile OpenMP"
+#else
+   KokkosArray::Host::initialize( numa , threads );
+#pragma message "Compile PThreads"
+#endif
 
  int numVecsList[10] = {1, 2, 3, 4, 5, 8, 11, 15, 16, 17};
  int maxNumVecs = numVecs==-1?17:numVecs;
@@ -271,6 +286,12 @@ int main(int argc, char **argv)
    printf("Kokkos::MultiVector Test: Failed %i of %i tests\n",test_sum.num_errors,test_sum.num_tests);
 
 
- KokkosArrayCUDA(KokkosArray::Host::finalize();)
+ KokkosArrayCUDA(
+#ifdef _OPENMP
+ KokkosArray::OpenMP::finalize();
+#else
+ KokkosArray::Host::finalize();
+#endif
+ )
  device_type::finalize(  );
 }

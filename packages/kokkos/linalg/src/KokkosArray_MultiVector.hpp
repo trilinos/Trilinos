@@ -3,6 +3,7 @@
 
 #include <KokkosArray_View.hpp>
 #include <KokkosArray_Host.hpp>
+#include <KokkosArray_OpenMP.hpp>
 #include <KokkosArray_Cuda.hpp>
 #include <KokkosArray_Macros.hpp>
 #include <KokkosArray_ParallelReduce.hpp>

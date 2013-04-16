@@ -4,7 +4,6 @@
 # Shared portion of build script for the base KokkosArray functionality
 # Simple build script with options
 #-----------------------------------------------------------------------------
-
 if [ ! -d "${KOKKOSARRAY}" ] ;
 then
 echo "Must set KOKKOSARRAY to the top level KokkosArray directory"
@@ -72,9 +71,9 @@ GNU | gnu | g++ )
   LIB="${LIB} -ldl"
   ;;
 #-------------------------------
-INTEL | intel | icc )
+INTEL | intel | icc | icpc )
   # -xW = use SSE and SSE2 instructions
-  CXX="icc -Wall -xW"
+  CXX="icpc -Wall"
   LIB="${LIB} -lstdc++"
   ;;
 #-------------------------------
@@ -101,6 +100,23 @@ curie )
   INC_PATH="${INC_PATH} -I${HAVE_MPI}/include"
   OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
   ;;  
+#-------------------------------
+MKL | mkl )
+  HAVE_MKL=${1} ; shift 1 ;
+  CXX_FLAGS="${CXX_FLAGS} -DKOKKOS_USE_MKL -I${HAVE_MKL}/include/"
+  LIB="${LIB}  -L${HAVE_MKL}/lib/intel64/ -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core"
+  NVCC_FLAGS="${NVCC_FLAGS} -DKOKKOS_USE_MKL"
+;;
+#-------------------------------
+CUSPARSE | cusparse )
+  CXX_FLAGS="${CXX_FLAGS} -DKOKKOS_USE_CUSPARSE"
+  NVCC_FLAGS="${NVCC_FLAGS} -DKOKKOS_USE_CUSPARSE"
+  LIB="${LIB} -lcusparse"
+;;
+#-------------------------------
+AVX | avx )
+  CXX_FLAGS="${CXX_FLAGS} -mavx"
+;;
 #-------------------------------
 *) echo 'unknown option: ' ${ARG} ; exit -1 ;;
 esac

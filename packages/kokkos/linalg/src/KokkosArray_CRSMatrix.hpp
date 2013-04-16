@@ -34,7 +34,12 @@ public:
   typedef ScalarType  scalar_type ;
   typedef OrdinalType  ordinal_type ;
 
-  typedef CrsMatrix<ScalarType, OrdinalType,KokkosArray::Host> HostMirror;
+#ifdef _OPENMP
+  typedef KokkosArray::OpenMP host_device_type;
+#else
+  typedef KokkosArray::Host host_device_type;
+#endif
+  typedef CrsMatrix<ScalarType, OrdinalType,host_device_type> HostMirror;
   typedef KokkosArray::CrsArray<OrdinalType, KokkosArray::LayoutLeft, Device> CrsArrayType;
   typedef typename CrsArrayType::entries_type   index_type;
   typedef typename CrsArrayType::row_map_type   row_map_type;
