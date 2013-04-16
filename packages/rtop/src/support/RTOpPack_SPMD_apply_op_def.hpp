@@ -174,10 +174,15 @@ void RTOpPack::deserialize(
   ITST::deserialize(index_type_size, &reduct_obj_ext[num_values_off], 1, &num_values);
   ITST::deserialize(index_type_size, &reduct_obj_ext[num_indexes_off], 1, &num_indexes);
   ITST::deserialize(index_type_size, &reduct_obj_ext[num_chars_off], 1, &num_chars);
-  TEUCHOS_TEST_FOR_EXCEPT(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !(
       num_values==num_values_in && num_indexes==num_indexes_in
-      && num_chars==num_chars_in )
+      && num_chars==num_chars_in ),
+    std::logic_error,
+    "Error: RTOp="<<op.op_name()
+    << ", num_values="<<num_values<<", num_values_in="<<num_values_in
+    << ", num_indexes="<<num_indexes<<", num_indexes_in="<<num_indexes_in
+    << ", num_chars="<<num_chars<<", num_chars_in="<<num_chars_in
     );
 #endif
   op.load_reduct_obj_state(
