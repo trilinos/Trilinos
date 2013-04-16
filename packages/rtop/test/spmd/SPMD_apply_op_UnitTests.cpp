@@ -286,7 +286,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_reduce_zero_
 
   for (int j = 0; j < numCols; ++j) {
     Scalar sum_mv_j = sumOp(*sumTargets[j]);
-    TEST_EQUALITY(sum_mv_j, as<Scalar>(localDim*val*(comm->getSize()-1)));
+    TEST_EQUALITY(sum_mv_j, as<Scalar>(g_localDim*val*(comm->getSize()-1)));
   }
 
 }
