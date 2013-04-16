@@ -205,6 +205,20 @@ gather (const Packet sendBuf[],
         const int root,
         const Comm<Ordinal>& comm);
 
+/// \brief Gather arrays of possibly different lengths from each process to the root process.
+/// \relates Comm
+///
+/// This wraps MPI_Gatherv in an MPI build, when Comm implements MpiComm.
+template<typename Ordinal, typename Packet>
+void
+gatherv (const Packet sendBuf[],
+         const Ordinal sendCount,
+         Packet recvBuf[],
+         const Ordinal recvCounts[],
+         const Ordinal displs[],
+         const int root,
+         const Comm<Ordinal>& comm);
+
 /** \brief Gather array of objects that use value semantics from every process
  * to every process.
  *
@@ -1309,6 +1323,40 @@ Teuchos::gather (const Packet sendBuf[],
 }
 
 template<typename Ordinal, typename Packet>
+void
+Teuchos::gatherv (const Packet sendBuf[],
+                  const Ordinal sendCount,
+                  Packet recvBuf[],
+                  const Ordinal recvCounts[],
+                  const Ordinal displs[],
+                  const int root,
+                  const Comm<Ordinal>& comm)
+{
+  // Ordinal totalRecvCount = 0;
+
+  // // In order to get the right output buffer length, we have to sum
+  // // the receive counts from all the processes in the communicator.
+  // const Ordinal numProcs = as<Ordinal> (comm->getSize ());
+  // for (Ordinal k = 0; k < as<Ordinal> (numProcs); ++k) {
+  //   totalRecvCount += recvCounts[k];
+  // }
+
+  // // FIXME (mfh 16 Apr 2013) We also have to redo the displacements.
+
+  // ConstValueTypeSerializationBuffer<Ordinal,Packet>
+  //   charSendBuffer (sendCount, sendBuf);
+  // ValueTypeSerializationBuffer<Ordinal,Packet>
+  //   charRecvBuffer (totalRecvCount, recvBuf);
+  // comm.gatherv (charSendBuffer.getBytes (),
+  //               charSendBuffer.getCharBuffer (),
+  //               charRecvBuffer.getBytes (),
+  //               charRecvBuffer.getCharBuffer (),
+  //               root);
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    "Teuchos::gatherv: The general case is not implemented.");
+}
+
+template<typename Ordinal, typename Packet>
 void Teuchos::gatherAll(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
   const Ordinal sendCount, const Packet*const sendBuffer[],
@@ -1555,6 +1603,15 @@ gather<int, long long> (const long long sendBuf[],
                         const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
+gatherv<int, long long> (const long long sendBuf[],
+                         const int sendCount,
+                         long long recvBuf[],
+                         const int recvCounts[],
+                         const int displs[],
+                         const int root,
+                         const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
 reduceAll<int, long long> (const Comm<int>& comm,
                            const EReductionType reductType,
                            const int count,
@@ -1603,6 +1660,15 @@ gather<int, long> (const long sendBuf[],
                    const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
+gatherv<int, long> (const long sendBuf[],
+                    const int sendCount,
+                    long recvBuf[],
+                    const int recvCounts[],
+                    const int displs[],
+                    const int root,
+                    const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
 reduceAll<int, long> (const Comm<int>& comm,
                       const EReductionType reductType,
                       const int count,
@@ -1648,6 +1714,15 @@ gather<int, int> (const int sendBuf[],
                   const int recvCount,
                   const int root,
                   const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+gatherv<int, int> (const int sendBuf[],
+                   const int sendCount,
+                   int recvBuf[],
+                   const int recvCounts[],
+                   const int displs[],
+                   const int root,
+                   const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 reduceAll<int, int> (const Comm<int>& comm,
@@ -1706,6 +1781,15 @@ gather<int, short> (const short sendBuf[],
                     const int recvCount,
                     const int root,
                     const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+gatherv<int, short> (const short sendBuf[],
+                     const int sendCount,
+                     short recvBuf[],
+                     const int recvCounts[],
+                     const int displs[],
+                     const int root,
+                     const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 reduceAll<int, short> (const Comm<int>& comm,

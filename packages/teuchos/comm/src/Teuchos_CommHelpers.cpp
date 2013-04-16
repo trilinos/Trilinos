@@ -272,6 +272,83 @@ gatherImpl (const T sendBuf[],
 }
 
 
+/// \brief Generic implementation of gatherv().
+/// \tparam T The type of data on which to reduce.  The requirements
+///   for this type are the same as for the template parameter T of
+///   MpiTypeTraits.
+///
+/// This generic implementation factors out common code among all full
+/// specializations of gatherv() in this file.
+template<class T>
+void
+gathervImpl (const T sendBuf[],
+             const int sendCount,
+             T recvBuf[],
+             const int recvCounts[],
+             const int displs[],
+             const int root,
+             const Comm<int>& comm)
+{
+#ifdef HAVE_MPI
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) {
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      gatherv<int, T> (sendBuf, sendCount, recvBuf, recvCounts, displs, root, comm);
+    }
+    else { // It's a SerialComm; there is only 1 process, so just copy.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        recvCounts[0] > sendCount, std::invalid_argument,
+        "Teuchos::gatherv: If the input communicator contains only one "
+        "process, then you cannot receive more entries than you send.  "
+        "You aim to receive " << recvCounts[0] << " entries, but to send "
+        << sendCount << " entries.");
+      // Serial communicator case: just copy.  recvCounts[0] is the
+      // amount to receive, so it's the amount to copy.  Start writing
+      // to recvbuf at the offset displs[0].
+      std::copy (sendBuf, sendBuf + recvCounts[0], recvBuf + displs[0]);
+    }
+  } else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    T t;
+    MPI_Datatype rawMpiType = MpiTypeTraits<T>::getType (t);
+    const int err = MPI_Gatherv (const_cast<T*> (sendBuf),
+                                 sendCount,
+                                 rawMpiType,
+                                 recvBuf,
+                                 const_cast<int*> (recvCounts),
+                                 const_cast<int*> (displs),
+                                 rawMpiType,
+                                 root,
+                                 rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      err != MPI_SUCCESS,
+      std::runtime_error,
+      "MPI_Gatherv failed with the following error: "
+      << getMpiErrorString (err));
+  }
+#else
+  // We've built without MPI, so just assume it's a SerialComm and copy the data.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    recvCounts[0] > sendCount, std::invalid_argument,
+    "Teuchos::gatherv: If the input communicator contains only one "
+    "process, then you cannot receive more entries than you send.  "
+    "You aim to receive " << recvCounts[0] << " entries, but to send "
+    << sendCount << " entries.");
+  // Serial communicator case: just copy.  recvCounts[0] is the
+  // amount to receive, so it's the amount to copy.  Start writing
+  // to recvbuf at the offset displs[0].
+  std::copy (sendBuf, sendBuf + recvCounts[0], recvBuf + displs[0]);
+#endif // HAVE_MPI
+}
+
+
 /// \brief Generic implementation of reduceAllAndScatter().
 /// \tparam T The type of data on which to reduce.  The requirements
 ///   for this type are the same as for the template parameter T of
@@ -1056,6 +1133,19 @@ gather<int, long long> (const long long sendBuf[],
 
 template<>
 void
+gatherv<int, long long> (const long long sendBuf[],
+                         const int sendCount,
+                         long long recvBuf[],
+                         const int recvCounts[],
+                         const int displs[],
+                         const int root,
+                         const Comm<int>& comm)
+{
+  gathervImpl<long long> (sendBuf, sendCount, recvBuf, recvCounts, displs, root, comm);
+}
+
+template<>
+void
 reduceAll<int, long long> (const Comm<int>& comm,
                            const EReductionType reductType,
                            const int count,
@@ -1138,6 +1228,19 @@ gather<int, long> (const long sendBuf[],
 
 template<>
 void
+gatherv<int, long> (const long sendBuf[],
+                    const int sendCount,
+                    long recvBuf[],
+                    const int recvCounts[],
+                    const int displs[],
+                    const int root,
+                    const Comm<int>& comm)
+{
+  gathervImpl<long> (sendBuf, sendCount, recvBuf, recvCounts, displs, root, comm);
+}
+
+template<>
+void
 reduceAll<int, long> (const Comm<int>& comm,
                       const EReductionType reductType,
                       const int count,
@@ -1214,6 +1317,19 @@ gather<int, int> (const int sendBuf[],
                   const Comm<int>& comm)
 {
   gatherImpl<int> (sendBuf, sendCount, recvBuf, recvCount, root, comm);
+}
+
+template<>
+void
+gatherv<int, int> (const int sendBuf[],
+                   const int sendCount,
+                   int recvBuf[],
+                   const int recvCounts[],
+                   const int displs[],
+                   const int root,
+                   const Comm<int>& comm)
+{
+  gathervImpl<int> (sendBuf, sendCount, recvBuf, recvCounts, displs, root, comm);
 }
 
 template<>
@@ -1307,6 +1423,19 @@ gather<int, short> (const short sendBuf[],
                     const Comm<int>& comm)
 {
   gatherImpl<short> (sendBuf, sendCount, recvBuf, recvCount, root, comm);
+}
+
+template<>
+void
+gatherv<int, short> (const short sendBuf[],
+                     const int sendCount,
+                     short recvBuf[],
+                     const int recvCounts[],
+                     const int displs[],
+                     const int root,
+                     const Comm<int>& comm)
+{
+  gathervImpl<short> (sendBuf, sendCount, recvBuf, recvCounts, displs, root, comm);
 }
 
 template<>
