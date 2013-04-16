@@ -186,13 +186,13 @@ void DefaultSpmdMultiVector<Scalar>::initialize(
   const Ordinal leadingDim_in
   )
 {
-  const Ordinal leadingDim =
-    (leadingDim_in >= 0 ? leadingDim_in : spmdRangeSpace->localSubDim());
+  const Ordinal localSubDim = spmdRangeSpace->localSubDim();
+  const Ordinal leadingDim = (leadingDim_in >= 0 ? leadingDim_in : localSubDim);
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT(!is_null(spmdRangeSpace));
   TEUCHOS_ASSERT(!is_null(domainSpace));
-  if (spmdRangeSpace->dim()) {
-    TEUCHOS_ASSERT(!is_null(localValues));
+  if (spmdRangeSpace->dim() && localSubDim) {
+    TEUCHOS_ASSERT(nonnull(localValues));
   }
   TEUCHOS_ASSERT_INEQUALITY(leadingDim, >=, spmdRangeSpace->localSubDim());
 #endif

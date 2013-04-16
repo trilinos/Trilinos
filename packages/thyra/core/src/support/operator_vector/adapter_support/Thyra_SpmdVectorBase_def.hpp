@@ -145,7 +145,7 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
 
   // First see if this is a locally replicated vector in which case
   // we treat this as a local operation only.
-  const bool locallyReplicated = ( comm_in == null && localSubDim_ == globalDim_ );
+  const bool locallyReplicated = spmdSpc.isLocallyReplicated();
 
   const Range1D local_rng(localOffset_, localOffset_+localSubDim_-1);
 

@@ -139,6 +139,9 @@ public:
    * Spmd-based vector implementations.
    */
   Ordinal mapCode() const;
+  
+  /** \brief Returns true if vector space is locally replicated space. */
+  bool isLocallyReplicated() const;
 
   //@}
 
@@ -215,10 +218,11 @@ private:
   // //////////////////////////////////////
   // Private data members
 
-  Ordinal     mapCode_;    // < 0 is a flag that everything needs initialized
-  Ordinal     defaultLocalOffset_;
-  Ordinal     defaultGlobalDim_;
-  Ordinal     localSubDim_;
+  Ordinal mapCode_;    // < 0 is a flag that everything needs initialized
+  Ordinal defaultLocalOffset_;
+  Ordinal defaultGlobalDim_;
+  Ordinal localSubDim_;
+  bool isLocallyReplicated_;
 
   Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> >  smallVecSpcFcty_;
   

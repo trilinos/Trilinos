@@ -54,7 +54,8 @@ namespace Thyra {
 
 template<class Scalar>
 SpmdVectorSpaceDefaultBase<Scalar>::SpmdVectorSpaceDefaultBase()
-  :mapCode_(-1), defaultLocalOffset_(-1), defaultGlobalDim_(-1), localSubDim_(-1)
+  :mapCode_(-1), defaultLocalOffset_(-1), defaultGlobalDim_(-1),
+   localSubDim_(-1), isLocallyReplicated_(false)
 {}
 
 
@@ -72,6 +73,13 @@ template<class Scalar>
 Ordinal SpmdVectorSpaceDefaultBase<Scalar>::mapCode() const
 {
   return mapCode_;
+}
+
+
+template<class Scalar>
+bool SpmdVectorSpaceDefaultBase<Scalar>::isLocallyReplicated() const
+{
+  return isLocallyReplicated_;
 }
 
 
@@ -180,6 +188,7 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
     sumLocalSubDims = SVSU::computeGlobalDim(*comm, localSubDim_);
   }
 
+  isLocallyReplicated_ = false;
   if (sumLocalSubDims == 0) {
     // This is an uninitialized space (zero on every process)
     mapCode_  = 0;
@@ -198,6 +207,7 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
   {
     // This is a serial or a locally-replicated parallel
     // vector space.
+    isLocallyReplicated_ = true;
     mapCode_ = localSubDim_;
     defaultLocalOffset_ = 0;
     defaultGlobalDim_ = localSubDim_;

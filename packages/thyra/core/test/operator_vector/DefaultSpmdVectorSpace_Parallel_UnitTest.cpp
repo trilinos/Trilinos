@@ -45,6 +45,7 @@
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedSpmdVectorView.hpp"
 #include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -84,6 +85,10 @@ using Thyra::DetachedSpmdVectorView;
 typedef Thyra::Ordinal Ordinal;
 
 
+#define PRINT_VAR(varName) \
+  out << #varName" = " << (varName) << "\n"
+
+
 template<class Scalar>
 RCP<const DefaultSpmdVectorSpace<Scalar> >
 createZeroEleProcVS(const Ordinal localSize)
@@ -110,23 +115,54 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parall
   emptyProcConstruct )
 
 
-#if 0
-
-
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAssign,
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAssignSumVec,
   Scalar )
 {
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(2);
   const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+//  RTOpPack::show_spmd_apply_op_dump = true;
+#endif
   ECHO(assign(v.ptr(), as<Scalar>(1.5)));
   TEST_EQUALITY_CONST(sum(*v), as<Scalar>(1.5*2*(vs->getComm()->getSize()-1)));
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+//  RTOpPack::show_spmd_apply_op_dump = false;
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
-  emptyProcAssign )
+  emptyProcAssignSumVec )
 
 
-#endif // #if 0/1
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAssignSumMultiVec,
+  Scalar )
+{
+  const Ordinal localDim = 2;
+  PRINT_VAR(localDim);
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(localDim);
+  const Ordinal numCols = 3; 
+  PRINT_VAR(numCols);
+  const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, numCols);
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+//  RTOpPack::show_spmd_apply_op_dump = true;
+#endif
+  const Scalar val = 1.5;
+  PRINT_VAR(val);
+  ECHO(assign(mv.ptr(), as<Scalar>(val)));
+  Teuchos::Array<Scalar> sums(numCols);
+  Thyra::sums<Scalar>(*mv, sums());
+  for (int j = 0; j < numCols; ++j) {
+    PRINT_VAR(j);
+    TEST_EQUALITY(sums[j],  
+      as<Scalar>(val*localDim*(vs->getComm()->getSize()-1)));
+  }
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+//  RTOpPack::show_spmd_apply_op_dump = false;
+#endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
+  emptyProcAssignSumMultiVec )
 
 
 // ToDo:
