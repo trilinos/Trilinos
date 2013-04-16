@@ -690,9 +690,15 @@ namespace Ioex {
       version = get_region()->get_property("code_version").get_string();
     }
 
-    std::strncpy(qa[num_qa_records].qa_record[0][0], codename.c_str(), MAX_STR_LENGTH);
-    std::strncpy(qa[num_qa_records].qa_record[0][1], version.c_str(),  MAX_STR_LENGTH);
+    char buffer[MAX_STR_LENGTH+1];
+    std::strncpy(buffer, codename.c_str(), MAX_STR_LENGTH);
+    buffer[MAX_STR_LENGTH] = '\0';
+    std::strcpy(qa[num_qa_records].qa_record[0][0], buffer);
 
+    std::strncpy(buffer, version.c_str(), MAX_STR_LENGTH);
+    buffer[MAX_STR_LENGTH] = '\0';
+    std::strcpy(qa[num_qa_records].qa_record[0][1], buffer);
+    
     int ierr = ex_put_qa(get_file_pointer(), num_qa_records+1, qa[0].qa_record);
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
