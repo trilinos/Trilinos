@@ -317,6 +317,33 @@ namespace MueLu {
             // NOTE: very ineffective, should be replaced
             std::set<GO>        filter;
 
+// #ifdef HAVE_MUELU_DEBUG
+            // For now, leave it outside of HAVE_MUELU_DEBUG. In the future, we need to move it there
+
+            // Check that matrix column map is consistent with this block size.
+            // We assume that GIDs corresponding to blocks are all present and numbered consecutive, i.e.
+            // if one of the entries in a point map is present, then all entries in the same block must be present.
+            bool columnMapIsBad = false;
+            if (numElements % blkSize)
+              columnMapIsBad = true;
+
+            for (LO id = 0; id < static_cast<LO>(numElements); id += blkSize) {
+              GO ID0 = elementAList[id];
+              if (columnMapIsBad || ((ID0 - indexBase) % blkSize)) {
+                columnMapIsBad = true;
+                break;
+              }
+
+              for (size_t k = 1; k < blkSize; k++)
+                if (elementAList[id+k] != ID0+k)
+                  columnMapIsBad = true;
+            }
+            std::string errMsg = "Matrix column map is inconsistent with this block size. "
+                "We assume that GIDs corresponding to blocks are all present and numbered consecutive, i.e. "
+                "if one of the entries in a point map is present, then all entries in the same block must be present.";
+            TEUCHOS_TEST_FOR_EXCEPTION(columnMapIsBad, Exceptions::RuntimeError, errMsg);
+// #endif
+
             LO numRows = 0;
             for (LO id = 0; id < static_cast<LO>(numElements); id++) {
               GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
