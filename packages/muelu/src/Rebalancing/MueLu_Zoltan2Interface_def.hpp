@@ -192,7 +192,7 @@ namespace MueLu {
 
     for (GO i = 0; i < numElements; i++) {
       //GO localID = i;   // KDDKDD OLD
-      GO localID = A->getRowMap()->getLocalElement(zgids[i]*blkSize) / blkSize; // KDDKDD NEW
+      GO localID = map->getLocalElement(zgids[i]); // KDDKDD NEW
       int partNum = parts[i];
 
       for (LO j = 0; j < blkSize; j++)
