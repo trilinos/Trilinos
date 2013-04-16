@@ -47,6 +47,8 @@
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
+#include "Thyra_VectorSpaceTester.hpp"
+#include "Thyra_VectorStdOpsTester.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
 
@@ -163,6 +165,55 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAss
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
   emptyProcAssignSumMultiVec )
+
+
+#if 0
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, emptyProcVectorSpaceTester,
+  Scalar )
+{
+  const Ordinal localDim = 2;
+  PRINT_VAR(localDim);
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    createZeroEleProcVS<Scalar>(localDim);
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType  ScalarMag;
+  Scalar tol = 1.0e-12;
+  bool showAllTests=true, dumpAll=true;
+
+  Thyra::VectorSpaceTester<Scalar> vectorSpaceTester;
+  vectorSpaceTester.warning_tol(ScalarMag(0.1)*tol);
+  vectorSpaceTester.error_tol(tol);
+  vectorSpaceTester.show_all_tests(showAllTests);
+  vectorSpaceTester.dump_all(dumpAll);
+
+  Thyra::VectorStdOpsTester<Scalar> vectorStdOpsTester;
+  vectorStdOpsTester.warning_tol(ScalarMag(0.1)*tol);
+  vectorStdOpsTester.error_tol(tol);
+
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+  RTOpPack::show_spmd_apply_op_dump = true;
+#endif
+
+  out << "\nTesting the VectorSpaceBase interface of vs ...\n";
+  TEUCHOS_TEST_ASSERT(vectorSpaceTester.check(*vs, &out), out, success);
+
+  out << "\nTesting standard vector ops for vs ...\n";
+  TEUCHOS_TEST_ASSERT(vectorStdOpsTester.checkStdOps(*vs, &out), out, success);
+
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+  RTOpPack::show_spmd_apply_op_dump = false;
+#endif
+
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
+  emptyProcVectorSpaceTester )
+
+
+#endif // if 0
 
 
 // ToDo:
