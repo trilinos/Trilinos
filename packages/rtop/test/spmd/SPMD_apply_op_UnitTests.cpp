@@ -104,7 +104,7 @@ RTOpPack::SubVectorView<Scalar> getLocalSubVectorView(
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_reduce, Scalar )
 {
 
   const RCP<const Teuchos::Comm<Ordinal> > comm =
@@ -131,10 +131,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce, Scalar )
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
-  SPMD_apply_op, args_1_0_reduce)
+  SPMD_apply_op, vec_args_1_0_reduce)
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce_zero_p0, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_reduce_zero_p0, Scalar )
 {
 
   const RCP<const Teuchos::Comm<Ordinal> > comm =
@@ -161,10 +161,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce_zero_p0, Scala
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
-  SPMD_apply_op, args_1_0_reduce_zero_p0)
+  SPMD_apply_op, vec_args_1_0_reduce_zero_p0)
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce_zero_p1, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_reduce_zero_p1, Scalar )
 {
 
   const RCP<const Teuchos::Comm<Ordinal> > comm =
@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, args_1_0_reduce_zero_p1, Scala
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
-  SPMD_apply_op, args_1_0_reduce_zero_p1)
+  SPMD_apply_op, vec_args_1_0_reduce_zero_p1)
 
 
 } // namespace RTOpPack
