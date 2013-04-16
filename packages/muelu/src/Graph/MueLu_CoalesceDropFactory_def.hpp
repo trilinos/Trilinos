@@ -334,7 +334,7 @@ namespace MueLu {
                 break;
               }
 
-              for (size_t k = 1; k < blkSize; k++)
+              for (LO k = 1; k < blkSize; k++)
                 if (elementAList[id+k] != ID0+k)
                   columnMapIsBad = true;
             }
