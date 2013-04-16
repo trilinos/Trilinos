@@ -62,12 +62,12 @@ using std::endl;
 const bool callFillComplete = true;
 const bool tolerant = false;
 // Whether to print copious debugging output to stderr when doing
-// Matrix Market input and output. 
+// Matrix Market input and output.
 const bool debug = false;
 
 namespace {
 
-const char matrix_symRealSmall[] = 
+const char matrix_symRealSmall[] =
 "%%MatrixMarket matrix coordinate real general\n"
 "5 5 13\n"
 "1 1  2.0000000000000e+00\n"
@@ -83,6 +83,129 @@ const char matrix_symRealSmall[] =
 "4 5  -1.0000000000000e+00\n"
 "5 4  -1.0000000000000e+00\n"
 "5 5  2.0000000000000e+00\n";
+
+
+// Given an arbitrary Map, compute a Map containing all the GIDs
+// in the same order as in (the one-to-one version of) map, but
+// all owned exclusively by Proc 0.
+template<class MapType>
+Teuchos::RCP<const MapType>
+computeGatherMap (Teuchos::RCP<const MapType> map,
+                  const Teuchos::RCP<Teuchos::FancyOStream>& err=Teuchos::null,
+                  const bool debug=false)
+{
+  using Tpetra::createOneToOne;
+  using Tpetra::global_size_t;
+  using Teuchos::arcp;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::as;
+  using Teuchos::Comm;
+  using Teuchos::gather;
+  using Teuchos::gatherv;
+  using Teuchos::RCP;
+  using std::endl;
+  typedef typename MapType::local_ordinal_type LO;
+  typedef typename MapType::global_ordinal_type GO;
+  typedef typename MapType::node_type NT;
+
+  RCP<const Comm<int> > comm = map->getComm ();
+  const int numProcs = comm->getSize ();
+  const int myRank = comm->getRank ();
+
+  if (! err.is_null ()) {
+    err->pushTab ();
+  }
+  if (debug) {
+    *err << myRank << ": computeGatherMap:" << endl;
+  }
+  if (! err.is_null ()) {
+    err->pushTab ();
+  }
+
+  RCP<const MapType> oneToOneMap;
+  if (map->isContiguous ()) {
+    oneToOneMap = map; // contiguous Maps are always 1-to-1
+  } else {
+    if (debug) {
+      *err << myRank << ": computeGatherMap: Calling createOneToOne" << endl;
+    }
+    // It could be that Map is one-to-one, but the class doesn't
+    // give us a way to test this, other than to create the
+    // one-to-one Map.
+    oneToOneMap = createOneToOne<LO, GO, NT> (map);
+  }
+
+  RCP<const MapType> gatherMap;
+  if (numProcs == 1) {
+    gatherMap = oneToOneMap;
+  } else {
+    if (debug) {
+      *err << myRank << ": computeGatherMap: Gathering Map counts" << endl;
+    }
+    // Gather each process' count of Map elements to Proc 0,
+    // into the recvCounts array.  This will tell Proc 0 how
+    // many GIDs to expect from each process when calling
+    // MPI_Gatherv.  Counts and offsets are all int, because
+    // that's what MPI uses.  Teuchos::as will at least prevent
+    // bad casts to int in a debug build.
+    const int myEltCount = as<int> (oneToOneMap->getNodeNumElements ());
+    Array<int> recvCounts (numProcs);
+    const int rootProc = 0;
+    gather<int, int> (&myEltCount, 1, recvCounts.getRawPtr (), 1, rootProc, *comm);
+
+    ArrayView<const GO> myGlobalElts = oneToOneMap->getNodeElementList ();
+    const int numMyGlobalElts = as<int> (myGlobalElts.size ());
+    // Only Proc 0 needs to receive and store all the GIDs (from
+    // all processes).
+    ArrayRCP<GO> allGlobalElts;
+    if (myRank == 0) {
+      allGlobalElts = arcp<GO> (oneToOneMap->getGlobalNumElements ());
+      std::fill (allGlobalElts.begin (), allGlobalElts.end (), 0);
+    }
+
+    if (debug) {
+      *err << myRank << ": computeGatherMap: Computing MPI_Gatherv "
+        "displacements" << endl;
+    }
+    // Displacements for gatherv() in this case (gathering into a
+    // contiguous array) are an exclusive partial sum (first entry is
+    // zero, second starts the partial sum) of recvCounts.
+    Array<int> displs (numProcs, 0);
+    std::partial_sum (recvCounts.begin (), recvCounts.end () - 1,
+                      displs.begin () + 1);
+    if (debug) {
+      *err << myRank << ": computeGatherMap: Calling MPI_Gatherv" << endl;
+    }
+    gatherv<int, GO> (myGlobalElts.getRawPtr (), numMyGlobalElts,
+                      allGlobalElts.getRawPtr (), recvCounts.getRawPtr (),
+                      displs.getRawPtr (), rootProc, *comm);
+    if (debug) {
+      *err << myRank << ": computeGatherMap: Creating gather Map" << endl;
+    }
+    // Create a Map with all the GIDs, in the same order as in
+    // the one-to-one Map, but owned by Proc 0.
+    ArrayView<const GO> allElts (NULL, 0);
+    if (myRank == 0) {
+      allElts = allGlobalElts ();
+    }
+    const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid ();
+    gatherMap = rcp (new MapType (INVALID, allElts,
+                                  oneToOneMap->getIndexBase (),
+                                  comm, map->getNode ()));
+  }
+  if (! err.is_null ()) {
+    err->popTab ();
+  }
+  if (debug) {
+    *err << myRank << ": computeGatherMap: done" << endl;
+  }
+  if (! err.is_null ()) {
+    err->popTab ();
+  }
+  return gatherMap;
+}
 
 // Input matrices must be fill complete.
 template<class CrsMatrixType>
@@ -131,14 +254,14 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A)
       numEntries = A.getNumEntriesInGlobalRow (globalRow);
 
       if (numEntriesOrig != numEntries) {
-	localEqual = 0;
-	break;
+        localEqual = 0;
+        break;
       }
       indOrig.resize (numEntriesOrig);
-      valOrig.resize (numEntriesOrig);      
+      valOrig.resize (numEntriesOrig);
       A_orig.getGlobalRowCopy (globalRow, indOrig (), valOrig (), numEntriesOrig);
       ind.resize (numEntries);
-      val.resize (numEntries);      
+      val.resize (numEntries);
       A.getGlobalRowCopy (globalRow, ind (), val (), numEntries);
 
       // Global row entries are not necessarily sorted.  Sort them so
@@ -147,11 +270,11 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A)
       Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
 
       for (size_t entryIndex = 0; entryIndex < numEntries; ++entryIndex) {
-	// Values should be _exactly_ equal.
-	if (indOrig[k] != ind[k] || valOrig[k] != val[k]) {
-	  localEqual = 0;
-	  break;
-	}
+        // Values should be _exactly_ equal.
+        if (indOrig[k] != ind[k] || valOrig[k] != val[k]) {
+          localEqual = 0;
+          break;
+        }
       }
     }
 
@@ -163,13 +286,16 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A)
 
 template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
 Teuchos::RCP<Tpetra::CrsMatrix<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> >
-createSymRealSmall (const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, GlobalOrdinalType, NodeType> >& rowMap)
+createSymRealSmall (const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, GlobalOrdinalType, NodeType> >& rowMap,
+                    Teuchos::FancyOStream& out,
+                    const bool debug)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
   typedef ScalarType ST;
   typedef LocalOrdinalType LO;
   typedef GlobalOrdinalType GO;
@@ -184,10 +310,7 @@ createSymRealSmall (const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, Globa
 
   const GST globalNumElts = rowMap->getGlobalNumElements ();
   const size_t myNumElts = (myRank == 0) ? as<size_t> (globalNumElts) : 0;
-  const GO indexBase = rowMap->getIndexBase ();
-  RCP<const map_type> gatherRowMap = 
-    rcp (new map_type (globalNumElts, myNumElts, indexBase, 
-		       comm, rowMap->getNode ()));
+  RCP<const map_type> gatherRowMap = computeGatherMap (rowMap, rcpFromRef (out), debug);
   matrix_type A_gather (gatherRowMap, as<size_t> (0));
 
   if (myRank == 0) {
@@ -196,27 +319,27 @@ createSymRealSmall (const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, Globa
     for (size_t myRow = 0; myRow < myNumElts; ++myRow) {
       const GO globalRow = gatherRowMap->getGlobalElement (myRow);
       if (globalRow == gatherRowMap->getMinAllGlobalIndex ()) {
-	val[0] = as<ST> (2);
-	val[1] = as<ST> (-1);
-	ind[0] = globalRow;
-	ind[1] = globalRow + 1;
-	A_gather.insertGlobalValues (globalRow, ind.view (0, 2), val.view (0, 2));
+        val[0] = as<ST> (2);
+        val[1] = as<ST> (-1);
+        ind[0] = globalRow;
+        ind[1] = globalRow + 1;
+        A_gather.insertGlobalValues (globalRow, ind.view (0, 2), val.view (0, 2));
       }
       else if (globalRow == gatherRowMap->getMaxAllGlobalIndex ()) {
-	val[0] = as<ST> (-1);
-	val[1] = as<ST> (2);
-	ind[0] = globalRow - 1;
-	ind[1] = globalRow;
-	A_gather.insertGlobalValues (globalRow, ind.view (0, 2), val.view (0, 2));
+        val[0] = as<ST> (-1);
+        val[1] = as<ST> (2);
+        ind[0] = globalRow - 1;
+        ind[1] = globalRow;
+        A_gather.insertGlobalValues (globalRow, ind.view (0, 2), val.view (0, 2));
       }
       else {
-	val[0] = as<ST> (-1);
-	val[1] = as<ST> (2);
-	val[2] = as<ST> (-1);
-	ind[0] = globalRow - 1;
-	ind[1] = globalRow;
-	ind[2] = globalRow + 1;
-	A_gather.insertGlobalValues (globalRow, ind.view (0, 3), val.view (0, 3));
+        val[0] = as<ST> (-1);
+        val[1] = as<ST> (2);
+        val[2] = as<ST> (-1);
+        ind[0] = globalRow - 1;
+        ind[1] = globalRow;
+        ind[2] = globalRow + 1;
+        A_gather.insertGlobalValues (globalRow, ind.view (0, 3), val.view (0, 3));
       }
     }
   }
@@ -241,11 +364,11 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   bool result = true; // current Boolean result; reused below
   bool success = true; // used by TEST_EQUALITY
 
-  out << "Test: CrsMatrix Matrix Market I/O, w/ Map with index base " 
+  out << "Test: CrsMatrix Matrix Market I/O, w/ Map with index base "
       << indexBase << endl;
   OSTab tab1 (out);
 
-  RCP<const Comm<int> > comm = 
+  RCP<const Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
@@ -254,9 +377,9 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
 
   out << "Creating the row Map" << endl;
   const global_size_t globalNumElts = 5;
-  RCP<const map_type> rowMap = 
-    rcp (new map_type (globalNumElts, indexBase, comm, 
-		       Tpetra::GloballyDistributed, node));
+  RCP<const map_type> rowMap =
+    rcp (new map_type (globalNumElts, indexBase, comm,
+                       Tpetra::GloballyDistributed, node));
 
   out << "Reading in the matrix" << endl;
   std::istringstream inStr (matrix_symRealSmall);
@@ -264,12 +387,13 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   RCP<const map_type> domainMap = rowMap;
   RCP<const map_type> rangeMap = rowMap;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  RCP<crs_matrix_type> A = 
-    reader_type::readSparse (inStr, rowMap, colMap, domainMap, rangeMap, 
-			     callFillComplete, tolerant, debug);
+  RCP<crs_matrix_type> A =
+    reader_type::readSparse (inStr, rowMap, colMap, domainMap, rangeMap,
+                             callFillComplete, tolerant, debug);
 
   out << "Creating original matrix" << endl;
-  RCP<crs_matrix_type> A_orig = createSymRealSmall<ST, LO, GO, NT> (rowMap);
+  RCP<crs_matrix_type> A_orig =
+    createSymRealSmall<ST, LO, GO, NT> (rowMap, out, debug);
 
   out << "Comparing read-in matrix to original matrix" << endl;
   result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A);
@@ -282,9 +406,9 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
 
   out << "Reading it in again and comparing with original matrix" << endl;
   std::istringstream inStr2 (outStr.str ());
-  RCP<crs_matrix_type> A_orig2 = 
-    reader_type::readSparse (inStr2, rowMap, colMap, domainMap, rangeMap, 
-			     callFillComplete, tolerant, debug);
+  RCP<crs_matrix_type> A_orig2 =
+    reader_type::readSparse (inStr2, rowMap, colMap, domainMap, rangeMap,
+                             callFillComplete, tolerant, debug);
   result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A_orig2);
   TEST_EQUALITY( result, true );
 }
