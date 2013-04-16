@@ -103,7 +103,8 @@ bool hwloc::bind_this_thread( const std::pair<unsigned,unsigned> coord )
 
 bool hwloc::unbind_this_thread()
 {
-  return 0 == hwloc_set_cpubind( s_hwloc_topology ,
+  return s_hwloc_topology &&
+         0 == hwloc_set_cpubind( s_hwloc_topology ,
                                  s_process_binding ,
                                  HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
 }
@@ -112,19 +113,24 @@ bool hwloc::unbind_this_thread()
 
 std::pair<unsigned,unsigned> hwloc::get_this_thread_coordinate()
 {
-  // Using the pre-allocated 's_hwloc_location' to avoid memory
-  // allocation by this thread.  This call is NOT thread-safe.
-  hwloc_get_last_cpu_location( s_hwloc_topology ,
-                               s_hwloc_location , HWLOC_CPUBIND_THREAD );
-
   const unsigned n = s_core_topology.first * s_core_topology.second ;
 
-  unsigned i = 0 ;
+  std::pair<unsigned,unsigned> coord(0,0);
 
-  while ( i < n && ! hwloc_bitmap_intersects( s_hwloc_location , s_core[ i ] ) ) ++i ;
+  if ( n ) {
+    // Using the pre-allocated 's_hwloc_location' to avoid memory
+    // allocation by this thread.  This call is NOT thread-safe.
+    hwloc_get_last_cpu_location( s_hwloc_topology ,
+                                 s_hwloc_location , HWLOC_CPUBIND_THREAD );
 
-  return std::pair<unsigned,unsigned>( i / s_core_topology.second ,
-                                       i % s_core_topology.second );
+    unsigned i = 0 ;
+
+    while ( i < n && ! hwloc_bitmap_intersects( s_hwloc_location , s_core[ i ] ) ) ++i ;
+
+    coord.first  = i / s_core_topology.second ;
+    coord.second = i % s_core_topology.second ;
+  }
+  return coord ;
 }
 
 //----------------------------------------------------------------------------

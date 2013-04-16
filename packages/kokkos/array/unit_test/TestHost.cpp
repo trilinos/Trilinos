@@ -67,6 +67,13 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
+    // Finalize without initialize is a no-op:
+    KokkosArray::Host::finalize();
+
+    // Initialize and finalize with no threads:
+    KokkosArray::Host::initialize( 1 , 1 );
+    KokkosArray::Host::finalize();
+
     const std::pair<unsigned,unsigned> core_top =
       KokkosArray::hwloc::get_core_topology();
 
@@ -76,6 +83,7 @@ protected:
     const unsigned gang_count        = core_top.first ;
     const unsigned gang_worker_count = ( core_top.second * core_size ) / 2 ;
 
+    // Attempt to verify thread start/terminate don't have race condition:
     for ( unsigned i = 0 ; i < 100 ; ++i ) {
       KokkosArray::Host::initialize( gang_count , gang_worker_count );
       KokkosArray::Host::finalize();
