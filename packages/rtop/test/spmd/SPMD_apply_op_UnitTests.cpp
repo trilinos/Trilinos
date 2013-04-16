@@ -118,7 +118,7 @@ RTOpPack::SubMultiVectorView<Scalar> getLocalSubMultiVectorView(
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_reduce, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum, Scalar )
 {
 
   const RCP<const Teuchos::Comm<Ordinal> > comm =
@@ -145,10 +145,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_reduce, Scalar )
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
-  SPMD_apply_op, vec_args_1_0_reduce)
+  SPMD_apply_op, vec_args_1_0_sum)
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_reduce_zero_p0, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum_zero_p0, Scalar )
 {
 
   const RCP<const Teuchos::Comm<Ordinal> > comm =
@@ -175,10 +175,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_reduce_zero_p0, S
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
-  SPMD_apply_op, vec_args_1_0_reduce_zero_p0)
+  SPMD_apply_op, vec_args_1_0_sum_zero_p0)
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_reduce_zero_p1, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum_zero_p1, Scalar )
 {
 
   const RCP<const Teuchos::Comm<Ordinal> > comm =
@@ -210,10 +210,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_reduce_zero_p1, S
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
-  SPMD_apply_op, vec_args_1_0_reduce_zero_p1)
+  SPMD_apply_op, vec_args_1_0_sum_zero_p1)
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_reduce, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_sum, Scalar )
 {
 
   const RCP<const Teuchos::Comm<Ordinal> > comm =
@@ -251,10 +251,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_reduce, Scal
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
-  SPMD_apply_op, multivec_args_1_0_reduce)
+  SPMD_apply_op, multivec_args_1_0_sum)
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_reduce_zero_p0, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_sum_zero_p0, Scalar )
 {
 
   const RCP<const Teuchos::Comm<Ordinal> > comm =
@@ -292,7 +292,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_reduce_zero_
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
-  SPMD_apply_op, multivec_args_1_0_reduce_zero_p0)
+  SPMD_apply_op, multivec_args_1_0_sum_zero_p0)
 
 
 
