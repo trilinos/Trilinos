@@ -222,7 +222,7 @@ public:
     const int err = MPI_Wait (&rawMpiRequest_, &rawMpiStatus);
     TEUCHOS_TEST_FOR_EXCEPTION(
       err != MPI_SUCCESS, std::runtime_error,
-      "Teuchos: MPI_Wait() failed with error \"" 
+      "Teuchos: MPI_Wait() failed with error \""
       << mpiErrorCodeToString (err));
     // MPI_Wait sets the MPI_Request to MPI_REQUEST_NULL on success.
     return mpiCommStatus<OrdinalType> (rawMpiStatus);
@@ -240,7 +240,7 @@ public:
       int err = MPI_Cancel (&rawMpiRequest_);
       TEUCHOS_TEST_FOR_EXCEPTION(
         err != MPI_SUCCESS, std::runtime_error,
-        "Teuchos: MPI_Cancel failed with the following error: " 
+        "Teuchos: MPI_Cancel failed with the following error: "
         << mpiErrorCodeToString (err));
 
       // Wait on the request.  If successful, MPI_Wait will set the
@@ -473,6 +473,11 @@ public:
   virtual void broadcast(
     const int rootRank, const Ordinal bytes, char buffer[]
     ) const;
+  //! Gather values from all processes to the root process.
+  virtual void
+  gather (const Ordinal sendBytes, const char sendBuffer[],
+          const Ordinal recvBytes, char recvBuffer[],
+          const int root) const;
   /** \brief . */
   virtual void gatherAll(
     const Ordinal sendBytes, const char sendBuffer[]
@@ -888,6 +893,26 @@ void MpiComm<Ordinal>::gatherAll(
 
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm::gatherAll: MPI_Allgather failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
+}
+
+
+template<typename Ordinal>
+void
+MpiComm<Ordinal>::gather (const Ordinal sendBytes,
+                          const char sendBuffer[],
+                          const Ordinal recvBytes,
+                          char recvBuffer[],
+                          const int root) const
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::gather(...)"
+    );
+  const int err =
+    MPI_Gather (const_cast<char *> (sendBuffer), sendBytes, MPI_CHAR,
+                recvBuffer, sendBytes, MPI_CHAR, root, *rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::gather: MPI_Gather failed with error \""
     << mpiErrorCodeToString (err) << "\".");
 }
 

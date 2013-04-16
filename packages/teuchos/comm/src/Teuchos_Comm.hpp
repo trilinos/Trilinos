@@ -370,6 +370,12 @@ public:
     const int rootRank, const Ordinal bytes, char buffer[]
     ) const = 0;
 
+  //! Gather values from all processes to the root process.
+  virtual void
+  gather (const Ordinal sendBytes, const char sendBuffer[],
+          const Ordinal recvBytes, char recvBuffer[],
+          const int root) const = 0;
+
   /** \brief Gather values from each process to collect on all processes.
    *
    * \param sendBytes [in] Number of entires in <tt>sendBuffer[]</tt> on
