@@ -136,6 +136,49 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parall
   emptyProcAssignSumVec )
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcGetFullSubVector,
+  Scalar )
+{
+  const Ordinal localSubDim = 2;
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    createZeroEleProcVS<Scalar>(localSubDim);
+  const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
+  ECHO(assign(v.ptr(), as<Scalar>(1.5)));
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+  //RTOpPack::show_spmd_apply_op_dump = true;
+#endif
+  RTOpPack::ConstSubVectorView<Scalar> subVec;
+  v->acquireDetachedView(Teuchos::Range1D(), &subVec);
+  TEST_EQUALITY(subVec.subDim(),
+    as<Ordinal>(localSubDim*(vs->getComm()->getSize()-1)));
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+  //RTOpPack::show_spmd_apply_op_dump = false;
+#endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
+  emptyProcGetFullSubVector )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcPrintVec,
+  Scalar )
+{
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(2);
+  const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+//  RTOpPack::show_spmd_apply_op_dump = true;
+#endif
+  ECHO(assign(v.ptr(), as<Scalar>(1.5)));
+  out << "v = " << *v;
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+//  RTOpPack::show_spmd_apply_op_dump = false;
+#endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
+  emptyProcPrintVec )
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAssignSumMultiVec,
   Scalar )
 {
@@ -165,6 +208,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAss
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
   emptyProcAssignSumMultiVec )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcPrintMultiVec,
+  Scalar )
+{
+  const Ordinal localDim = 2;
+  PRINT_VAR(localDim);
+  const Ordinal numCols = 3;
+  PRINT_VAR(numCols);
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(localDim);
+  const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, numCols);
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+//  RTOpPack::show_spmd_apply_op_dump = true;
+#endif
+  ECHO(assign(mv.ptr(), as<Scalar>(1.5)));
+  out << "mv = " << *mv;
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+//  RTOpPack::show_spmd_apply_op_dump = false;
+#endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
+  emptyProcPrintMultiVec )
 
 
 #if 0
