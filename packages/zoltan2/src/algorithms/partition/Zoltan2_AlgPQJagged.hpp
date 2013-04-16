@@ -3953,12 +3953,16 @@ void AlgPQJagged(
   */
   //allowNonRectelinearPart = false;
 
-  int coordDim, weightDim; size_t nlc; global_size_t gnc; int criteriaDim;
+  int coordDim, weightDim;
+  size_t nlc;
+  global_size_t gnc;
+  int criteriaDim;
   pqJagged_getCoordinateValues<Adapter>( coords, coordDim, weightDim, nlc, gnc, criteriaDim, ignoreWeights);
-  lno_t numLocalCoords = nlc;
+  size_t numLocalCoords = nlc;
 #ifdef enable_migration
   gno_t numGlobalCoords = gnc;
 #endif
+
   //allocate only two dimensional pointer.
   //raw pointer addresess will be obtained from multivector.
   scalar_t **pqJagged_coordinates = allocMemory<scalar_t *>(coordDim);
@@ -4677,6 +4681,21 @@ void AlgPQJagged(
   problemComm->barrier();
   cout << "0" << endl;    
   problemComm->barrier();
+#endif
+
+#ifdef KDD
+// KDDKDD
+problemComm->barrier();
+for (size_t i = 0; i < numLocalCoords; i++) {
+//  cout << problemComm->getRank() << " MJ " 
+//       << i << "(" << pqJagged_coordinates[0][i] << "," << pqJagged_coordinates[1][i] 
+//       << ") gno " << gnoList[i] << " part " << partIds[i] << endl;
+  cout << partIds[i] << " "
+       << pqJagged_coordinates[0][i] << " " << pqJagged_coordinates[1][i] << " "
+       << gnoList[i] << " MJP " << endl;
+}
+problemComm->barrier();
+// KDDKDD
 #endif
 
   partId = arcp(partIds, 0, numLocalCoords, true);
