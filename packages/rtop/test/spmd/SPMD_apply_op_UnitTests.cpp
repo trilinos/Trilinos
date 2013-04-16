@@ -49,6 +49,7 @@
 
 #include "RTOpPack_SPMD_apply_op.hpp"
 #include "RTOpPack_ROpSum.hpp"
+#include "RTOpPack_TOpAssignScalar.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_as.hpp"
@@ -244,6 +245,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_sum, Scalar 
     sumTargets.getRawPtr());
 
   for (int j = 0; j < numCols; ++j) {
+    PRINT_VAR(j);
     Scalar sum_mv_j = sumOp(*sumTargets[j]);
     TEST_EQUALITY(sum_mv_j, as<Scalar>(localDim*val* comm->getSize()));
   }
@@ -285,6 +287,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_sum_zero_p0,
     sumTargets.getRawPtr());
 
   for (int j = 0; j < numCols; ++j) {
+    PRINT_VAR(j);
     Scalar sum_mv_j = sumOp(*sumTargets[j]);
     TEST_EQUALITY(sum_mv_j, as<Scalar>(g_localDim*val*(comm->getSize()-1)));
   }
@@ -294,6 +297,45 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_sum_zero_p0,
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
   SPMD_apply_op, multivec_args_1_0_sum_zero_p0)
 
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_0_1_assign, Scalar )
+{
+
+  const RCP<const Teuchos::Comm<Ordinal> > comm =
+    Teuchos::DefaultComm<Ordinal>::getComm();
+
+  //const int procRank = rank(*comm);
+
+  const Ordinal localDim = g_localDim;
+  PRINT_VAR(localDim);
+  const Ordinal numCols = 3;
+  PRINT_VAR(numCols);
+  const Ordinal localOffset = computeLocalOffset(*comm, localDim);
+  PRINT_VAR(localOffset);
+  const Scalar val_init = -0.1;
+  PRINT_VAR(val_init);
+
+  RTOpPack::SubMultiVectorView<Scalar> mv =
+    getLocalSubMultiVectorView<Scalar>(localOffset, localDim, numCols, val_init);
+
+  const Scalar val = 1.2;
+  PRINT_VAR(val);
+  RTOpPack::TOpAssignScalar<Scalar> assignOp(val);
+  RTOpPack::SPMD_apply_op<Scalar>(&*comm, assignOp, numCols, 0, 0, 1, &mv, 0);
+
+  for (int j = 0; j < numCols; ++j) {
+    PRINT_VAR(j);
+    for (int i = 0 ; i < localDim; ++i) {
+      PRINT_VAR(i);
+      TEST_EQUALITY(mv(i,j), as<Scalar>(val));
+    }
+  }
+
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(
+  SPMD_apply_op, multivec_args_0_1_assign)
 
 
 
