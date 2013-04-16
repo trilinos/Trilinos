@@ -4961,7 +4961,7 @@ static NNTI_result_t check_for_waiting_connection()
         insert_conn_qpn(conn->data_qp.qpn, conn);
         insert_conn_peer(&peer, conn);
 
-        log_debug(LOG_ALL, "Allocating new connection count=%d", ++connection_count);
+        log_debug(nnti_debug_level, "Allocating new connection count=%d", ++connection_count);
 
         transition_connection_to_ready(s, conn);
 //        nthread_unlock(&nnti_ib_lock);
