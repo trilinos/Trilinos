@@ -4683,21 +4683,6 @@ void AlgPQJagged(
   problemComm->barrier();
 #endif
 
-#ifdef KDD
-// KDDKDD
-problemComm->barrier();
-for (size_t i = 0; i < numLocalCoords; i++) {
-//  cout << problemComm->getRank() << " MJ " 
-//       << i << "(" << pqJagged_coordinates[0][i] << "," << pqJagged_coordinates[1][i] 
-//       << ") gno " << gnoList[i] << " part " << partIds[i] << endl;
-  cout << partIds[i] << " "
-       << pqJagged_coordinates[0][i] << " " << pqJagged_coordinates[1][i] << " "
-       << gnoList[i] << " MJP " << endl;
-}
-problemComm->barrier();
-// KDDKDD
-#endif
-
   partId = arcp(partIds, 0, numLocalCoords, true);
   if (is_data_migrated){
     solution->setParts(gnoList, partId,false);
