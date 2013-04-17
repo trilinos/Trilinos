@@ -138,6 +138,7 @@ TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner)
 
 } //CreatePreconditioner
 
+#ifdef DISABLED_FIND_BETTER_SYSTEM_TEST
 TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner_PDESystem)
 {
 
@@ -201,5 +202,6 @@ TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner_PDESystem)
   }
 
 } //CreatePreconditioner
+#endif //ifdef DISABLED_FIND_BETTER_SYSTEM_TEST
 
 }//namespace MueLuTests
