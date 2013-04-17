@@ -2,6 +2,16 @@ INCLUDE(TribitsAddExecutableAndTest)
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TestingToolsUnitTests
+  SOURCES
+    TestingTools_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   test_product_space
   SOURCES test_product_space.cpp
   )

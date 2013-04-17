@@ -41,6 +41,7 @@
 
 #include "Thyra_TestingTools.hpp"
 
+
 bool Thyra::testBoolExpr(
   const std::string &boolExprName,
   const bool &boolExpr,
@@ -58,3 +59,84 @@ bool Thyra::testBoolExpr(
   }
   return success;
 }
+
+
+void Thyra::printTestResults(
+  const bool result,
+  const std::string &test_summary,
+  const bool show_all_tests,
+  bool *success,
+  std::ostream *out
+  )
+{
+  if (!result) *success = false;
+  if (out) {
+    if( !result || show_all_tests )
+      *out << std::endl << test_summary;
+    else
+      *out << "passed!\n";
+  }
+}
+
+
+// TestResultsPrinter
+
+
+namespace Thyra {
+
+
+TestResultsPrinter::TestResultsPrinter(
+  const RCP<FancyOStream> &out, const bool show_all_tests)
+  : out_(out.assert_not_null()), show_all_tests_(show_all_tests),
+    printedTestResults_(false)
+{
+  if (show_all_tests_) {
+    oss_ = out_;
+  }
+  else {
+    oss_ = Teuchos::fancyOStream(Teuchos::rcpFromRef(ossStore_));
+    ossStore_.copyfmt(*out_);
+  }
+}
+
+
+TestResultsPrinter::~TestResultsPrinter()
+{
+  if (!printedTestResults_) {
+    TEUCHOS_TEST_FOR_EXCEPT(true);
+  }
+}
+
+
+RCP<FancyOStream>
+TestResultsPrinter::replaceOStream(const RCP<FancyOStream> &out)
+{
+  const RCP<FancyOStream> oldOut = out_;
+  out_ = out;
+  return oldOut;
+}
+
+
+RCP<FancyOStream> TestResultsPrinter::getTestOStream()
+{
+  return oss_;
+}
+
+
+void TestResultsPrinter::printTestResults(const bool this_result,
+  const Ptr<bool> &success)
+{
+  if (!show_all_tests_) {
+    TEUCHOS_TEST_FOR_EXCEPT(true);
+    Thyra::printTestResults(this_result, ossStore_.str(), true, &*success, &*out_);
+  }
+  else {
+    if (!this_result) {
+      *success = false;
+    }
+  }
+  printedTestResults_ = true;
+}
+
+
+} // namespace Thyra

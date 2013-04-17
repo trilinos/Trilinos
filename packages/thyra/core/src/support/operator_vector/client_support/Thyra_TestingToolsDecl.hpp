@@ -221,6 +221,45 @@ void printTestResults(
   std::ostream *out
   );
 
+/** \brief Control printing of test results.
+ *
+ * This class is designed to help control printing of test results and to help
+ * summarize test results.  The idea is that by default, we might want to
+ * limit output when the test passes but allow it to be printed in full if the
+ * test fails.  However, we want to ahve a testing mode show_all_tests==true
+ * where the test results are printed to the direct std::ostream object in
+ * real time to aid in debugging.  To accomplish this, when
+ * show_all_tests==false, the output from the test is sent to disconnected
+ * std::ostringstream object and then is only printed if the test fails.
+ * Otherwise, the detailed output from the test is never printed to the direct
+ * std::ostream object.
+ *
+ * ToDo: Fill in detailed documentation!
+ */
+class TestResultsPrinter {
+public:
+  /** \brief . */
+  TestResultsPrinter(const RCP<FancyOStream> &out, const bool show_all_tests);
+  /** \brief Print the test results on destruction if not already printed. */
+  ~TestResultsPrinter();
+  /** \brief Replace the underlying output stream (used for unit testing this
+   * class).
+   */
+  RCP<FancyOStream> replaceOStream(const RCP<FancyOStream> &out);
+  /** \brief Return the stream used for  testing */
+  RCP<FancyOStream> getTestOStream();
+  /** \brief Print the test result. */
+  void printTestResults(const bool this_result, const Ptr<bool> &success);
+private:
+  RCP<FancyOStream> out_;
+  bool show_all_tests_;
+  std::ostringstream ossStore_;
+  RCP<FancyOStream> oss_;
+  bool printedTestResults_;
+  TestResultsPrinter(); // Not defined!
+  TestResultsPrinter(const TestResultsPrinter&); // Not defined!
+};
+
 
 /** \brief Output operator to pretty print any <tt>Thyra::VectorBase</tt>
  * object.
@@ -244,29 +283,6 @@ template<class Scalar>
 std::ostream& operator<<( std::ostream& o, const LinearOpBase<Scalar>& M );
 
 } // namespace Thyra
-
-
-// //////////////////////////
-// Inline functions                        
-
-
-inline
-void Thyra::printTestResults(
-  const bool result,
-  const std::string &test_summary,
-  const bool show_all_tests,
-  bool *success,
-  std::ostream *out
-  )
-{
-  if (!result) *success = false;
-  if (out) {
-    if( !result || show_all_tests )
-      *out << std::endl << test_summary;
-    else
-      *out << "passed!\n";
-  }
-}
 
 
 #endif // THYRA_TESTING_TOOLS_DECL_HPP
