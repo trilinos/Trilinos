@@ -310,6 +310,8 @@ namespace MueLu {
 
             // Amalgamate column map
             const RCP<const Map> colMap = A->getColMap();
+            std::ostringstream mypid;
+            mypid << colMap->getComm()->getRank();
 
             ArrayView<const GO> elementAList = colMap->getNodeElementList();
             size_t              numElements  = elementAList.size();
@@ -317,32 +319,49 @@ namespace MueLu {
             // NOTE: very ineffective, should be replaced
             std::set<GO>        filter;
 
-// #ifdef HAVE_MUELU_DEBUG
+//#ifdef HAVE_MUELU_DEBUG
             // For now, leave it outside of HAVE_MUELU_DEBUG. In the future, we need to move it there
 
             // Check that matrix column map is consistent with this block size.
             // We assume that GIDs corresponding to blocks are all present and numbered consecutive, i.e.
-            // if one of the entries in a point map is present, then all entries in the same block must be present.
+            // if one of the entries in a point map is present, then all entries in the same block must
+            // be present.
+            std::string errMsg;
             bool columnMapIsBad = false;
-            if (numElements % blkSize)
+            if (numElements % blkSize) {
               columnMapIsBad = true;
-
+              std::ostringstream buf1,buf2;
+              buf1 << numElements; buf2 << blkSize;
+              errMsg = "[pid " + mypid.str() + "] Number of IDs in matrix column map (" + buf1.str()
+                       + ") is not a multiple of block size (" + buf2.str() + ").";
+            }
             for (LO id = 0; id < static_cast<LO>(numElements); id += blkSize) {
               GO ID0 = elementAList[id];
               if (columnMapIsBad || ((ID0 - indexBase) % blkSize)) {
-                columnMapIsBad = true;
+                if (!columnMapIsBad) {
+                  columnMapIsBad = true;
+                  std::ostringstream buf0,buf1,buf2,buf3,buf4;
+                  buf0 << colMap->getLocalElement(ID0); buf1 << ID0; buf2 << indexBase;
+                  buf3 << id/blkSize;  buf4 << blkSize;
+                  errMsg = "[pid " + mypid.str() + "] First GID " + buf1.str() + "(LID " + buf0.str()
+                           + ") (minus indexBase " + buf2.str() + ") in block "
+                           + buf3.str() + " of column map is not a multiple of block size ("
+                           + buf4.str() + ").";
+                }
                 break;
               }
 
               for (LO k = 1; k < blkSize; k++)
-                if (elementAList[id+k] != ID0+k)
+                if (elementAList[id+k] != ID0+k) {
                   columnMapIsBad = true;
+                  std::ostringstream buf1,buf2,buf3,buf4;
+                  buf1 << id/blkSize; buf2 << ID0+k; buf3 << k; buf4 << blkSize;
+                  errMsg = "[pid " + mypid.str() + "] Block " + buf1.str() + " in column map is missing GID " + buf2.str()
+                           + "(entry " + buf3.str() + " in block of size " + buf4.str() = ").";
+                }
             }
-            std::string errMsg = "Matrix column map is inconsistent with this block size. "
-                "We assume that GIDs corresponding to blocks are all present and numbered consecutive, i.e. "
-                "if one of the entries in a point map is present, then all entries in the same block must be present.";
             TEUCHOS_TEST_FOR_EXCEPTION(columnMapIsBad, Exceptions::RuntimeError, errMsg);
-// #endif
+//#endif
 
             LO numRows = 0;
             for (LO id = 0; id < static_cast<LO>(numElements); id++) {
