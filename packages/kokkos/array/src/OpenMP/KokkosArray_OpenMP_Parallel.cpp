@@ -81,7 +81,7 @@ unsigned bind_host_thread()
 
   if ( i < thread_count ) {
 
-#if 1
+#if 0
     if ( current != s_coordinates[i] ) {
       std::cout << "  KokkosArray::OpenMP rebinding omp_thread["
                 << omp_get_thread_num()
@@ -137,32 +137,42 @@ void thread_mapping( const unsigned gang_count )
       }
     }
 
-    // Distribute gangs amont NUMA regions:
-    {
+    unsigned gang_in_numa_count = 0 ;
+    unsigned gang_in_numa_rank  = 0 ;
+
+    { // Distribute gangs among NUMA regions:
       // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
       const unsigned bin  = gang_count / core_topo.first ;
       const unsigned bin1 = bin + 1 ;
       const unsigned k    = core_topo.first * bin1 - gang_count ;
       const unsigned part = k * bin ;
 
-      s_coordinates[ thread_rank ].first =
-        ( gang_rank < part )
-        ? ( gang_rank / bin )
-        : ( k + ( gang_rank - part ) / bin1 );
+      if ( gang_rank < part ) {
+        s_coordinates[ thread_rank ].first = gang_rank / bin ;
+        gang_in_numa_rank  = gang_rank % bin ;
+        gang_in_numa_count = bin ;
+      }
+      else {
+        s_coordinates[ thread_rank ].first = k + ( gang_rank - part ) / bin1 ;
+        gang_in_numa_rank  = ( gang_rank - part ) % bin1 ;
+        gang_in_numa_count = bin1 ;
+      }
     }
 
-    // Distribute threads of the gang
-    {
-      // worker_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
-      const unsigned bin  = worker_count / core_topo.second ;
+    { // Distribute workers to cores within this NUMA region:
+      // worker_in_numa_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
+      const unsigned worker_in_numa_count = gang_in_numa_count * worker_count ;
+      const unsigned worker_in_numa_rank  = gang_in_numa_rank  * worker_count + worker_rank ;
+
+      const unsigned bin  = worker_in_numa_count / core_topo.second ;
       const unsigned bin1 = bin + 1 ;
-      const unsigned k    = core_topo.second * bin1 - worker_count ;
+      const unsigned k    = core_topo.second * bin1 - worker_in_numa_count ;
       const unsigned part = k * bin ;
 
-      s_coordinates[thread_rank].second =
-        ( worker_rank < part )
-        ? ( worker_rank / bin )
-        : ( k + ( worker_rank - part ) / bin1 );
+      s_coordinates[ thread_rank ].second =
+        ( worker_in_numa_rank < part )
+        ? ( worker_in_numa_rank / bin )
+        : ( k + ( worker_in_numa_rank - part ) / bin1 );
     }
   }
 
