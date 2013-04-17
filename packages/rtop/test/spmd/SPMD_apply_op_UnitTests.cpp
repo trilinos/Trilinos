@@ -64,12 +64,15 @@ namespace RTOpPack {
 
 
 int g_localDim = 2;
+bool g_dumpRTOps = false;
 
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::UnitTestRepository::getCLP().setOption(
     "localDim", &g_localDim, "Number of elements in a process" );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "dump-rtops", "no-dump-rtops", &g_dumpRTOps, "Set if RTOps are dumped or not." );
 }
 
 
@@ -153,12 +156,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum, Scalar )
     Teuchos::DefaultComm<Ordinal>::getComm();
 
   //const int procRank = rank(*comm);
-
   const Ordinal localDim = g_localDim;
-
   const Ordinal localOffset = computeLocalOffset(*comm, localDim);
-  
   const Scalar val = 1.1;
+
+  if (g_dumpRTOps) {
+    RTOpPack::set_SPMD_apply_op_dump_out(rcpFromRef(out));
+  }
 
   RTOpPack::SubVectorView<Scalar> x =
     getLocalSubVectorView<Scalar>(localOffset, localDim, val);
@@ -169,6 +173,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum, Scalar )
   Scalar sum_x = sumOp(*sumTarget);
 
   TEST_EQUALITY(sum_x, as<Scalar>(localDim * val * comm->getSize()))
+
+  RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
 
 }
 
@@ -183,12 +189,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum_zero_p0, Scal
     Teuchos::DefaultComm<Ordinal>::getComm();
 
   const int procRank = rank(*comm);
-
   const Ordinal localDim = (procRank == 0 ? 0 : g_localDim);
-
   const Ordinal localOffset = computeLocalOffset(*comm, localDim);
-  
   const Scalar val = 1.1;
+
+  if (g_dumpRTOps) {
+    RTOpPack::set_SPMD_apply_op_dump_out(rcpFromRef(out));
+  }
 
   RTOpPack::SubVectorView<Scalar> x =
     getLocalSubVectorView<Scalar>(localOffset, localDim, val);
@@ -199,6 +206,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum_zero_p0, Scal
   Scalar sum_x = sumOp(*sumTarget);
 
   TEST_EQUALITY(sum_x, as<Scalar>(g_localDim * val * (comm->getSize()-1)))
+
+  RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
 
 }
 
@@ -213,15 +222,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum_zero_p1, Scal
     Teuchos::DefaultComm<Ordinal>::getComm();
 
   const int procRank = rank(*comm);
-
   const Ordinal localDim = (procRank == 1 ? 0 : g_localDim);
   PRINT_VAR(g_localDim);
   PRINT_VAR(localDim);
-
   const Ordinal localOffset = computeLocalOffset(*comm, localDim);
-  
   const Scalar val = 1.1;
   PRINT_VAR(val);
+
+  if (g_dumpRTOps) {
+    RTOpPack::set_SPMD_apply_op_dump_out(rcpFromRef(out));
+  }
 
   RTOpPack::SubVectorView<Scalar> x =
     getLocalSubVectorView<Scalar>(localOffset, localDim, val);
@@ -234,6 +244,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum_zero_p1, Scal
   const Ordinal procFactor = (comm->getSize() == 1 ? 1 : (comm->getSize()-1));
   PRINT_VAR(procFactor);
   TEST_EQUALITY(sum_x, as<Scalar>(g_localDim * val * procFactor))
+
+  RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
 
 }
 
@@ -287,11 +299,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_1_0_sum_zero_p0,
   const Scalar val = 1.1;
   PRINT_VAR(val);
 
+  if (g_dumpRTOps) {
+    RTOpPack::set_SPMD_apply_op_dump_out(rcpFromRef(out));
+  }
+
   RTOpPack::SubMultiVectorView<Scalar> mv =
     getLocalSubMultiVectorView<Scalar>(localOffset, localDim, numCols, val);
 
   assertMultiVectorSums<Scalar>(*comm, mv, g_localDim, val, comm->getSize()-1,
     out, success);
+
+  RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
 
 }
 
@@ -316,6 +334,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_0_1_assign, Scal
   const Scalar val_init = -0.1;
   PRINT_VAR(val_init);
 
+  if (g_dumpRTOps) {
+    RTOpPack::set_SPMD_apply_op_dump_out(rcpFromRef(out));
+  }
+
   RTOpPack::SubMultiVectorView<Scalar> mv =
     getLocalSubMultiVectorView<Scalar>(localOffset, localDim, numCols, val_init);
 
@@ -326,6 +348,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_0_1_assign, Scal
 
   assertMultiVectorSums<Scalar>(*comm, mv, g_localDim, val, comm->getSize(),
     out, success);
+
+  RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
 
 }
 
@@ -338,6 +362,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_0_1_assign_zero_
 
   const RCP<const Teuchos::Comm<Ordinal> > comm =
     Teuchos::DefaultComm<Ordinal>::getComm();
+
+  if (g_dumpRTOps) {
+    RTOpPack::set_SPMD_apply_op_dump_out(rcpFromRef(out));
+  }
 
   const int procRank = rank(*comm);
 
@@ -360,6 +388,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, multivec_args_0_1_assign_zero_
 
   assertMultiVectorSums<Scalar>(*comm, mv, g_localDim, val, comm->getSize()-1,
     out, success);
+
+  RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
 
 }
 

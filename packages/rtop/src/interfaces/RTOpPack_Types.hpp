@@ -54,6 +54,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_implicit_cast.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 
 namespace RTOpPack {
@@ -81,6 +82,8 @@ using Teuchos::Range1D;
 using Teuchos::ScalarTraits;
 /** \brief . */
 using Teuchos::TypeNameTraits;
+/** \brief . */
+using Teuchos::FancyOStream;
 
 /** \brief . */
 typedef Teuchos_Ordinal index_type;

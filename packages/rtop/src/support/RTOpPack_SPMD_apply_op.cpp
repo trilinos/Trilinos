@@ -41,17 +41,25 @@
 // @HEADER
 
 #include "RTOpPack_SPMD_apply_op_decl.hpp"
+#include "RTOpPack_SPMD_apply_op_def.hpp"
 
 
 #ifdef RTOPPACK_ENABLE_SHOW_DUMP
+// Keep for backward compatibility but it is a no-op now!
 bool RTOpPack::show_spmd_apply_op_dump = false;
 #endif // RTOPPACK_ENABLE_SHOW_DUMP
+
+
+Teuchos::RCP<Teuchos::FancyOStream>& RTOpPack::spmdApplyOpDumpOut()
+{
+  static Teuchos::RCP<Teuchos::FancyOStream> dumpOut;
+  return dumpOut;
+}
 
 
 #ifdef HAVE_RTOP_EXPLICIT_INSTANTIATION
 
 
-#include "RTOpPack_SPMD_apply_op_def.hpp"
 #include "Teuchos_ExplicitInstantiationHelpers.hpp"
 
 

@@ -63,8 +63,17 @@ namespace Teuchos { template<typename Ordinal> class Comm; }
 namespace RTOpPack {
 
 
+/** \brief Set up to show a dump of RTOps applied through SPMD_apply_op().
+ *
+ * \param dumOut [in] RCP to output stream.  If non-null, output will be
+ * dumped to this stream.  If null, then no output will be dumped.
+ *
+ * \ingroup RTOpPack_parallel_helpers_grp
+ */
+void set_SPMD_apply_op_dump_out(const RCP<FancyOStream> &dumpOut);
+
 #ifdef RTOPPACK_ENABLE_SHOW_DUMP
-extern bool show_spmd_apply_op_dump;
+RTOP_DEPRECATED extern bool show_spmd_apply_op_dump;
 #endif // RTOPPACK_ENABLE_SHOW_DUMP
 
 

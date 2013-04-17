@@ -47,15 +47,16 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-#  include "Teuchos_VerboseObject.hpp"
-#endif // RTOPPACK_ENABLE_SHOW_DUMP
+
+//
+// Implementation-only utlities!
+//
 
 
 namespace RTOpPack {
 
 
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
+RCP<FancyOStream>& spmdApplyOpDumpOut();
 
 
 template<class Scalar>
@@ -72,11 +73,6 @@ void print( const ConstSubVectorView<Scalar> &v, Teuchos::FancyOStream &out_arg 
   *out << "\n";
 }
 
-# include "Teuchos_VerboseObject.hpp"
-
-
-#endif // RTOPPACK_ENABLE_SHOW_DUMP
-
 
 } // namespace RTOpPack
 
@@ -88,6 +84,12 @@ void print( const ConstSubVectorView<Scalar> &v, Teuchos::FancyOStream &out_arg 
 //
 // Misc Helper functions
 //
+
+
+void RTOpPack::set_SPMD_apply_op_dump_out(const RCP<FancyOStream> &dumpOut)
+{
+  spmdApplyOpDumpOut() = dumpOut;
+}
 
 
 template<class PrimitiveScalar>
@@ -427,11 +429,9 @@ void RTOpPack::SPMD_apply_op(
   )
 {
   using Teuchos::arrayView;
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-  Teuchos::RCP<Teuchos::FancyOStream>
-    out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = spmdApplyOpDumpOut();
   Teuchos::OSTab tab(out);
-  if(show_spmd_apply_op_dump) {
+  if (nonnull(out)) {
     *out << "\nEntering RTOpPack::SPMD_apply_op(...) ...\n";
     *out
       << "\ncomm = " << (comm?comm->description():"NULL")
@@ -470,7 +470,6 @@ void RTOpPack::SPMD_apply_op(
       }
     }
   }
-#endif // RTOPPACK_ENABLE_SHOW_DUMP
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   if( reduct_objs == NULL && sub_vecs == NULL && sub_targ_vecs == NULL ) {
@@ -523,8 +522,7 @@ void RTOpPack::SPMD_apply_op(
             );
         }
       }
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-      if(show_spmd_apply_op_dump) {
+      if(nonnull(out)) {
         if(reduct_objs) {
           *out << "\nIntermediate reduction objects in this process before global reduction:\n";
           Teuchos::OSTab tab2(out);
@@ -535,7 +533,6 @@ void RTOpPack::SPMD_apply_op(
           }
         }
       }
-#endif // RTOPPACK_ENABLE_SHOW_DUMP
       //
       // Reduce the local intermediate reduction objects into the global reduction objects
       //
@@ -544,18 +541,15 @@ void RTOpPack::SPMD_apply_op(
       for( int kc = 0; kc < num_cols; ++kc ) {
         _i_reduct_objs[kc] = &*i_reduct_objs[kc];
       }
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-      if(show_spmd_apply_op_dump) {
+      if(nonnull(out)) {
         if(reduct_objs) {
           *out << "\nPerforming global reduction ...\n";
         }
       }
-#endif // RTOPPACK_ENABLE_SHOW_DUMP
       SPMD_all_reduce(comm,op,num_cols,&_i_reduct_objs[0],reduct_objs);
     }
   }
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-  if(show_spmd_apply_op_dump) {
+  if(nonnull(out)) {
     if( num_targ_vecs && sub_targ_vecs ) {
       *out << "\nInput/output vectors *after* transforamtion:\n";
       Teuchos::OSTab tab2(out);
@@ -578,7 +572,6 @@ void RTOpPack::SPMD_apply_op(
     *out << "\nLeaving RTOpPack::SPMD_apply_op(...) ...\n";
     *out << std::flush;
   }
-#endif // RTOPPACK_ENABLE_SHOW_DUMP
 }
 
 
