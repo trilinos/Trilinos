@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -125,7 +125,7 @@ private:
 private:
 
   RCP<LinearOpWithSolveFactoryBase<Scalar> > W_factory_;
- 
+
 };
 
 
@@ -260,7 +260,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModelImpl(
   typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveFactoryBase<Scalar> >
     VOTSLOWSF;
   VOTSLOWSF W_factory_outputTempState(W_factory_,out,verbLevel);
- 
+
   // InArgs
 
   MEB::InArgs<Scalar> wrappedInArgs = thyraModel->createInArgs();
@@ -272,7 +272,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModelImpl(
   MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
 
   wrappedOutArgs.setArgs(outArgs,true);
- 
+
   RCP<LinearOpWithSolveBase<Scalar> > W;
   RCP<LinearOpBase<Scalar> > W_op;
   RCP<const LinearOpBase<Scalar> > fwdW;
@@ -296,31 +296,31 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModelImpl(
   }
 
   // Do the evaluation
- 
+
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
     *out << "\nEvaluating the output functions on model \'"
          << thyraModel->description() << "\' ...\n";
   timer.start(true);
- 
+
   thyraModel->evalModel(wrappedInArgs,wrappedOutArgs);
- 
+
   timer.stop();
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
     OSTab(out).o() << "\nTime to evaluate underlying model = "
                    << timer.totalElapsedTime()<<" sec\n";
 
   // Postprocess arguments
- 
+
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
     *out << "\nPost processing the output objects ...\n";
   timer.start(true);
- 
+
   if( W.get() ) {
     Thyra::initializeOp<Scalar>(*W_factory_,fwdW,&*W);
     W->setVerbLevel(this->getVerbLevel());
     W->setOStream(this->getOStream());
   }
- 
+
   if( W_op.get() ) {
     TEUCHOS_TEST_FOR_EXCEPT(true); // Handle this case later if we need to!
   }
@@ -331,7 +331,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModelImpl(
                    << timer.totalElapsedTime()<<" sec\n";
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
- 
+
 }
 
 
