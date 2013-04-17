@@ -53,12 +53,8 @@ int main(int argc, char **argv)
     CLP.setOption("drop", &drop, "Drop tolerance");
     bool symmetric = true;
     CLP.setOption("symmetric", "asymmetric", &symmetric, "Use basis polynomials with symmetric PDF");
-    int a_size = 100;
-    CLP.setOption("a_size", &a_size, "Size of a (matrix) partition");
-    int x_size = 100;
-    CLP.setOption("x_size", &x_size, "Size of x (input vector) partition");
-    int y_size = 100;
-    CLP.setOption("y_size", &y_size, "Size of y (output vector) partition");
+    int level = 1;
+    CLP.setOption("level", &level, "Level to partition");
     bool save_3tensor = false;
     CLP.setOption("save_3tensor", "no-save_3tensor", &save_3tensor,
                   "Save full 3tensor to file");
@@ -93,10 +89,6 @@ int main(int argc, char **argv)
               << std::endl;
 
     // Setup partitions
-    if (a_size > sz) a_size = sz;
-    if (x_size > sz) x_size = sz;
-    if (y_size > sz) y_size = sz;
-
     Teuchos::Array< Teuchos::RCP<const node_type> > node_stack;
     Teuchos::Array< int > index_stack;
     node_stack.push_back(Cijk->getHeadNode());
@@ -104,6 +96,7 @@ int main(int argc, char **argv)
     Teuchos::RCP<const node_type> node;
     int child_index;
     Teuchos::Array< Teuchos::RCP<const node_type> > partition_stack;
+    int my_level = 0;
     while (node_stack.size() > 0) {
       node = node_stack.back();
       child_index = index_stack.back();
@@ -113,15 +106,15 @@ int main(int argc, char **argv)
         partition_stack.push_back(node);
         node_stack.pop_back();
         index_stack.pop_back();
+        --my_level;
       }
 
-      // Once sizes are small enough, push node onto partition stack
-      else if (node->i_size <= y_size &&
-               node->j_size <= a_size &&
-               node->k_size <= x_size) {
+      // Put nodes into partition if level matches
+      else if (my_level == level) {
         partition_stack.push_back(node);
         node_stack.pop_back();
         index_stack.pop_back();
+        --my_level;
       }
 
       // More children to process -- process them first
@@ -130,30 +123,30 @@ int main(int argc, char **argv)
         node = node->children[child_index];
         node_stack.push_back(node);
         index_stack.push_back(0);
+        ++my_level;
       }
 
       // No more children
       else {
         node_stack.pop_back();
         index_stack.pop_back();
+        --my_level;
       }
 
     }
 
-    std::cout << "num partitions = " << partition_stack.size() << std::endl;
-    /*
+    // Print statistics
+    int max_i_size = 0, max_j_size = 0, max_k_size = 0;
     for (int part=0; part<partition_stack.size(); ++part) {
       node = partition_stack[part];
-      std::cout << "partition " << part << ":" << std::endl
-                << "\ti-range: [" << node->i_begin << ","
-                << node->i_begin+node->i_size << ")" << std::endl
-                << "\tj-range: [" << node->j_begin << ","
-                << node->j_begin+node->j_size << ")" << std::endl
-                << "\tk-range: [" << node->k_begin << ","
-                << node->k_begin+node->k_size << ")" << std::endl
-                << "\tnum_non_zeros = " << node->total_num_entries << std::endl;
+      if (node->i_size > max_i_size) max_i_size = node->i_size;
+      if (node->j_size > max_j_size) max_j_size = node->j_size;
+      if (node->k_size > max_k_size) max_k_size = node->k_size;
     }
-    */
+    std::cout << "num partitions = " << partition_stack.size() << std::endl
+              << "max i size = " << max_i_size << std::endl
+              << "max j size = " << max_j_size << std::endl
+              << "max k size = " << max_k_size << std::endl;
 
     // Build flat list of (i,j,k,part) tuples
     typedef Stokhos::ProductBasisUtils::Cijk_1D_Iterator<int> Cijk_Iterator;

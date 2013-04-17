@@ -117,6 +117,12 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_ADD_EXECUTABLE(
+  cijk_ltb_partition_level
+  SOURCES cijk_ltb_partition_level.cpp
+  DEPLIBS stokhos
+  )
+
+TRIBITS_ADD_EXECUTABLE(
   sparsity_slice_example
   SOURCES sparsity_slice_example.cpp
   DEPLIBS stokhos
