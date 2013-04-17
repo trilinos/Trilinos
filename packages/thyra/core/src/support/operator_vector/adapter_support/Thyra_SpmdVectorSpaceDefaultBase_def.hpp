@@ -183,8 +183,6 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
 
   Ordinal sumLocalSubDims = localSubDim_;
   if (numProc > 1) {
-    mapCode_ = SVSU::computeMapCode(*comm, localSubDim_);
-    defaultLocalOffset_ = SVSU::computeLocalOffset(*comm, localSubDim_);
     sumLocalSubDims = SVSU::computeGlobalDim(*comm, localSubDim_);
   }
 
@@ -215,6 +213,8 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
   else {
     // This is a regular distributed vector space
     defaultGlobalDim_ = sumLocalSubDims;
+    mapCode_ = SVSU::computeMapCode(*comm, localSubDim_);
+    defaultLocalOffset_ = SVSU::computeLocalOffset(*comm, localSubDim_);
   }
 
   smallVecSpcFcty_ = defaultSpmdVectorSpaceFactory<Scalar>(comm);
