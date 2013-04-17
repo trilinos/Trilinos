@@ -107,6 +107,14 @@ public:
 
   //@}
 
+  /** \name Public functions overridden from ModelEvaluatorDelegatorBase. */
+  //@{
+
+  /** \brief . */
+  RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+
+  //@}
+
 private:
 
   /** \name Private functions overridden from ModelEvaluatorDefaultBase. */
@@ -215,6 +223,17 @@ DefaultModelEvaluatorWithSolveFactory<Scalar>::create_W() const
   W_factory_->setOStream(this->getOStream());
   W_factory_->setVerbLevel(this->getVerbLevel());
   return W_factory_->createOp();
+}
+
+
+// Overridden from ModelEvaluatorDelegatorBase.
+
+
+template<class Scalar>
+RCP<const LinearOpWithSolveFactoryBase<Scalar> >
+DefaultModelEvaluatorWithSolveFactory<Scalar>::get_W_factory() const
+{
+  return W_factory_;
 }
 
 
