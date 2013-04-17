@@ -78,11 +78,12 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
-    LocalOrdinal  fullblocksize = 1;   // block dim for fixed size blocks
-    GlobalOrdinal offset = 0;          // global offset of dof gids
-    LocalOrdinal blockid = -1;         // block id in strided map
-    LocalOrdinal nStridedOffset = 0;   // DOF offset for strided block id "blockid" (default = 0)
-    LocalOrdinal stridedblocksize = fullblocksize; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
+    LO fullblocksize = 1;                // block dim for fixed size blocks
+    GO offset = 0;                       // global offset of dof gids
+    GO indexBase = 0;                    // index base for maps
+    LO blockid = -1;                     // block id in strided map
+    LO nStridedOffset = 0;               // DOF offset for strided block id "blockid" (default = 0)
+    LO stridedblocksize = fullblocksize; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
 
     // 1) check for blocking/striding information
     if(A->IsView("stridedMaps") &&
@@ -90,8 +91,9 @@ namespace MueLu {
       Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
       TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
       fullblocksize = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize(); // TODO shorten code
-      offset   = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getOffset();
-      blockid  = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getStridedBlockId();
+      offset    = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getOffset();
+      indexBase = A->getRowMap()->getIndexBase();
+      blockid   = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getStridedBlockId();
       if (blockid > -1) {
         std::vector<size_t> stridingInfo = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getStridingData();
         for(size_t j=0; j<Teuchos::as<size_t>(blockid); j++) {
@@ -133,7 +135,7 @@ namespace MueLu {
       GlobalOrdinal gDofId = colMap->getGlobalElement(i);
 
       // translate DOFGid to node id
-      GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, A, fullblocksize, offset);
+      GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, A, fullblocksize, offset, indexBase);
 
       // gblockid -> gDofId/lDofId
       if(nodegid2dofgids_->count(gNodeId) == 0) {
@@ -146,7 +148,7 @@ namespace MueLu {
 
         DOFs.reserve(stridedblocksize);
         for(LocalOrdinal k=0; k<stridedblocksize; k++) {
-          DOFs.push_back(offset + (gNodeId-offset)*fullblocksize + nStridedOffset + k);
+          DOFs.push_back(offset + (gNodeId-indexBase)*fullblocksize + nStridedOffset + k);
         }
 
         (*nodegid2dofgids_)[gNodeId] = DOFs;
@@ -167,8 +169,8 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset) {
-    GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset) / blockSize + offset;
+  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset, GlobalOrdinal indexBase) {
+    GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset) / blockSize + indexBase;
     return globalblockid;
   }
 
