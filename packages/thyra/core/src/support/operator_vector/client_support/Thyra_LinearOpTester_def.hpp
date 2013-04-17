@@ -95,7 +95,7 @@ public:
           << endl << "      v4                    v3"
           << endl << ""
           << endl << "         <v4,v1> == <v2,v3>"
-          << endl;
+          << endl << std::flush;
         
         for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors; ++rand_vec_i ) {
           
@@ -312,7 +312,7 @@ bool LinearOpTester<Scalar>::check(
         << endl << "         v4                    v5"
         << endl << ""
         << endl << "           sum(v4) == sum(v5)"
-        << endl;
+        << endl << std::flush;
       
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
         
@@ -398,7 +398,7 @@ bool LinearOpTester<Scalar>::check(
         << endl << "         v4                      v5"
         << endl << ""
         << endl << "           sum(v4) == sum(v5)"
-        << endl;
+        << endl << std::flush;
       
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
         
@@ -434,7 +434,6 @@ bool LinearOpTester<Scalar>::check(
         *oss << endl << "v5 = 0.5*op'*v2 + 0.5*v5 ...\n" ;
         apply( op, CONJTRANS, *v2, v5.ptr(), d_half, d_half );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
-        
 
         Array<Scalar> sum_v4(loc_num_rhs), sum_v5(loc_num_rhs);
         sums(*v4, sum_v4());
@@ -483,7 +482,7 @@ bool LinearOpTester<Scalar>::check(
         << endl << "       v4                   v3"
         << endl << ""
         << endl << "         <v4,v1>  == <v2,v3>"
-        << endl;
+        << endl << std::flush;
     
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
       
@@ -672,7 +671,7 @@ bool LinearOpTester<Scalar>::compare(
       << endl << ""
       << endl << "   norm(v2-v3) ~= 0"
       // << endl << "   |sum(v2)| == |sum(v3)|"
-      << endl;
+      << endl << std::flush;
 
     for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
       
