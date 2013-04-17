@@ -13,13 +13,13 @@
 
 namespace panzer {
 
-template <typename EvalT>
-Teuchos::RCP<ResponseBase> ResponseEvaluatorFactory_Functional<EvalT>::
+template <typename EvalT,typename LO,typename GO>
+Teuchos::RCP<ResponseBase> ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 buildResponseObject(const std::string & responseName) const
 { return Teuchos::rcp(new Response_Functional<EvalT>(responseName,comm_,linearObjFactory_)); }
 
-template <typename EvalT>
-void ResponseEvaluatorFactory_Functional<EvalT>::
+template <typename EvalT,typename LO,typename GO>
+void ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 buildAndRegisterEvaluators(const std::string & responseName,
                            PHX::FieldManager<panzer::Traits> & fm,
                            const panzer::PhysicsBlock & physicsBlock,
@@ -47,13 +47,16 @@ buildAndRegisterEvaluators(const std::string & responseName,
      fm.template registerEvaluator<EvalT>(eval);
    }
 
+
    // build scatter evaluator
    {
+     Teuchos::RCP<FunctionalScatterBase> scatterObj =
+         (globalIndexer_!=Teuchos::null) ?  Teuchos::rcp(new FunctionalScatter<LO,GO>(globalIndexer_)) : Teuchos::null;
      std::string field = (quadPointField_=="" ? responseName : quadPointField_);
 
      // build useful evaluator
      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
-         = Teuchos::rcp(new ResponseScatterEvaluator_Functional<EvalT,panzer::Traits>(field,responseName,physicsBlock.cellData()));
+         = Teuchos::rcp(new ResponseScatterEvaluator_Functional<EvalT,panzer::Traits>(field,responseName,physicsBlock.cellData(),scatterObj));
 
      fm.template registerEvaluator<EvalT>(eval);
 
@@ -62,35 +65,22 @@ buildAndRegisterEvaluators(const std::string & responseName,
    }
 }
 
-template <typename EvalT>
-bool ResponseEvaluatorFactory_Functional<EvalT>::
+template <typename EvalT,typename LO,typename GO>
+bool ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 typeSupported() const
 {
-   return false;
-}
-
-template < >
-bool ResponseEvaluatorFactory_Functional<panzer::Traits::Residual>::
-typeSupported() const
-{
-  return true;
-}
-
-template < >
-bool ResponseEvaluatorFactory_Functional<panzer::Traits::Jacobian>::
-typeSupported() const
-{
-  return linearObjFactory_!=Teuchos::null;
-}
-
+  if(   PHX::TypeString<EvalT>::value==PHX::TypeString<panzer::Traits::Residual>::value 
 #ifdef HAVE_STOKHOS
-template < >
-bool ResponseEvaluatorFactory_Functional<panzer::Traits::SGResidual>::
-typeSupported() const
-{
-  return true;
-}
+     || PHX::TypeString<EvalT>::value==PHX::TypeString<panzer::Traits::SGResidual>::value
 #endif
+    )
+    return true;
+
+  if(PHX::TypeString<EvalT>::value==PHX::TypeString<panzer::Traits::Jacobian>::value)
+    return linearObjFactory_!=Teuchos::null;
+
+  return false;
+}
 
 }
 

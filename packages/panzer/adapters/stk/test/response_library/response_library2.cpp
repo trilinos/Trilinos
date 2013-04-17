@@ -122,10 +122,11 @@ namespace panzer {
   struct RespFactoryFunc_Builder {
     MPI_Comm comm;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
+    Teuchos::RCP<const panzer::UniqueGlobalIndexer<int,int> > globalIndexer;
 
     template <typename T>
     Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
-    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T>(comm,1,true,"",linearObjFactory)); }
+    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,int,int>(comm,1,true,"",linearObjFactory,globalIndexer)); }
   };
 
   TEUCHOS_UNIT_TEST(response_library2, test)
@@ -247,15 +248,19 @@ namespace panzer {
           = buildResponseLibrary(physics_blocks,cm_factory,closure_models,user_data);
     RCP<ResponseLibrary<Traits> > rLibrary = data.first;
     RCP<panzer::LinearObjFactory<panzer::Traits> > lof = data.second;
+    RCP<const panzer::UniqueGlobalIndexer<int,int> > globalIndexer 
+        = user_data.sublist("Panzer Data").get<RCP<panzer::UniqueGlobalIndexer<int,int> > >("DOF Manager");
 
     RespFactoryFunc_Builder builder;
     builder.comm = MPI_COMM_WORLD;
     builder.linearObjFactory = lof;
+    builder.globalIndexer = globalIndexer;
     std::vector<std::string> blocks(1);
     blocks[0] = "eblock-0_0";
     rLibrary->addResponse("FIELD_A",blocks,builder);
 
     builder.linearObjFactory = Teuchos::null;
+    builder.globalIndexer = Teuchos::null;
     std::vector<std::pair<std::string,std::string> > sidesets;
     sidesets.push_back(std::make_pair("bottom","eblock-0_0")); // 0.5
     sidesets.push_back(std::make_pair("top","eblock-0_0"));    // 0.5
