@@ -1205,8 +1205,8 @@ namespace MueLu {
       sumAll(comm, (GO)((numMyRows > 0) ?         1 :          0), numProcessesWithData);
       minAll(comm, (GO)(( numMyNnz > 0) ?  numMyNnz :     maxNnz), minNnz);
       minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
-      sumAll(comm,                      double(numMyNnz)*numMyNnz, sum2Nnz);        // do not want to overflow
-      sumAll(comm,                    double(numMyRows)*numMyRows, sum2NumRows);    // do not want to overflow
+      sumAll(comm,         Teuchos::as<double>(numMyNnz)*numMyNnz, sum2Nnz);        // do not want to overflow
+      sumAll(comm,       Teuchos::as<double>(numMyRows)*numMyRows, sum2NumRows);    // do not want to overflow
 
       double avgNumRows = sumNumRows / numProcessesWithData;
       double avgNnz     = sumNnz     / numProcessesWithData;
