@@ -71,10 +71,12 @@ void Thyra::printTestResults(
 {
   if (!result) *success = false;
   if (out) {
-    if( !result || show_all_tests )
+    if( !result || show_all_tests ) {
       *out << std::endl << test_summary;
-    else
+    }
+    else {
       *out << "passed!\n";
+    }
   }
 }
 
@@ -102,9 +104,21 @@ TestResultsPrinter::TestResultsPrinter(
 
 TestResultsPrinter::~TestResultsPrinter()
 {
+  using Teuchos::inoutArg;
   if (!printedTestResults_) {
-    TEUCHOS_TEST_FOR_EXCEPT(true);
+    // If we get here, either someone made a mistake in not calling
+    // printTestResults() or an exception was thrown.  Either way, we are
+    // going to assume failure and dump everything.
+    try {
+      bool dummy_success = true;
+      this->printTestResults(false, inoutArg(dummy_success));
+    }
+    catch(...) {
+      // Need to eat any exceptions in case an exception is already active
+      // which is calling this destructor.
+    }
   }
+  printedTestResults_ = true;
 }
 
 
@@ -127,8 +141,7 @@ void TestResultsPrinter::printTestResults(const bool this_result,
   const Ptr<bool> &success)
 {
   if (!show_all_tests_) {
-    TEUCHOS_TEST_FOR_EXCEPT(true);
-    Thyra::printTestResults(this_result, ossStore_.str(), true, &*success, &*out_);
+    Thyra::printTestResults(this_result, ossStore_.str(), false, &*success, &*out_);
   }
   else {
     if (!this_result) {
