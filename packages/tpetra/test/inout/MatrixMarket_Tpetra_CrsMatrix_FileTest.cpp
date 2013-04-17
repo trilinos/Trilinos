@@ -122,8 +122,8 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A)
 
     ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
     const size_type numLocalElts = localElts.size ();
-    for (size_type k = 0; k < numLocalElts; ++k) {
-      const GO globalRow = localElts[k];
+    for (size_type i = 0; i < numLocalElts; ++i) {
+      const GO globalRow = localElts[i];
       numEntriesOrig = A_orig.getNumEntriesInGlobalRow (globalRow);
       numEntries = A.getNumEntriesInGlobalRow (globalRow);
 
@@ -143,7 +143,7 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A)
       Tpetra::sort2 (indOrig.begin (), indOrig.end (), valOrig.begin ());
       Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
 
-      for (size_t entryIndex = 0; entryIndex < numEntries; ++entryIndex) {
+      for (size_t k = 0; k < numEntries; ++k) {
         // Values should be _exactly_ equal.
         if (indOrig[k] != ind[k] || valOrig[k] != val[k]) {
           localEqual = 0;
