@@ -1196,31 +1196,33 @@ namespace MueLu {
       GO numActiveProcesses = comm->getSize(), numProcessesWithData = 0;
 
       // aggregate data
-      GO  numMyNnz = A.getNodeNumEntries(),     minNnz,     maxNnz,     sum2Nnz,     sumNnz = A.getGlobalNumEntries();
-      GO numMyRows = A.getNodeNumRows(),    minNumRows, maxNumRows, sum2NumRows, sumNumRows = A.getGlobalNumRows();
+      GO  numMyNnz = A.getNodeNumEntries(),     minNnz,     maxNnz;
+      GO numMyRows = A.getNodeNumRows(),    minNumRows, maxNumRows;
+      double     sumNnz = Teuchos::as<double>(A.getGlobalNumEntries()),     sum2Nnz;
+      double sumNumRows = Teuchos::as<double>(A.getGlobalNumRows()),    sum2NumRows;
       maxAll(comm,                                       numMyNnz, maxNnz);
       maxAll(comm,                                      numMyRows, maxNumRows);
       sumAll(comm, (GO)((numMyRows > 0) ?         1 :          0), numProcessesWithData);
       minAll(comm, (GO)(( numMyNnz > 0) ?  numMyNnz :     maxNnz), minNnz);
       minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
-      sumAll(comm,                              numMyNnz*numMyNnz, sum2Nnz);
-      sumAll(comm,                            numMyRows*numMyRows, sum2NumRows);
+      sumAll(comm,                      double(numMyNnz)*numMyNnz, sum2Nnz);        // do not want to overflow
+      sumAll(comm,                    double(numMyRows)*numMyRows, sum2NumRows);    // do not want to overflow
 
       double avgNumRows = sumNumRows / numProcessesWithData;
       double avgNnz     = sumNnz     / numProcessesWithData;
       // NOTE: division by zero is proper here, it produces reasonable nans
-      double devNumRows = sqrt(double(sum2NumRows - sumNumRows*sumNumRows/numProcessesWithData)/(numProcessesWithData-1));
-      double devNnz     = sqrt(double(sum2Nnz     - sumNnz*sumNnz/numProcessesWithData)        /(numProcessesWithData-1));
+      double devNumRows = sqrt((sum2NumRows - sumNumRows*sumNumRows/numProcessesWithData)/(numProcessesWithData-1));
+      double devNnz     = sqrt((sum2Nnz     -         sumNnz*sumNnz/numProcessesWithData)/(numProcessesWithData-1));
       if (numProcessesWithData == 1)
         devNumRows = devNnz = 0;
 
       char buf[256];
       ss << msgTag << " Load balancing info:" << std::endl;
       ss << msgTag << "   # active processes: "   << numActiveProcesses << ",  # processes with data = " << numProcessesWithData << std::endl;
-      sprintf(buf, "avg = %.2e,  dev = %.1f%%,  min = %+.1f%%,  max = %+.1f%%", avgNumRows,
+      sprintf(buf, "avg = %.2e,  dev = %4.1f%%,  min = %+5.1f%%,  max = %+5.1f%%", avgNumRows,
               (devNumRows/avgNumRows)*100, (minNumRows/avgNumRows-1)*100, (maxNumRows/avgNumRows-1)*100);
       ss << msgTag << "   # rows per proc   : " << buf << std::endl;
-      sprintf(buf, "avg = %.2e,  dev = %.1f%%,  min = %+.1f%%,  max = %+.1f%%", avgNnz,
+      sprintf(buf, "avg = %.2e,  dev = %4.1f%%,  min = %+5.1f%%,  max = %+5.1f%%", avgNnz,
               (devNnz/avgNnz)*100, (minNnz/avgNnz-1)*100, (maxNnz/avgNnz-1)*100);
       ss << msgTag << "   #  nnz per proc   : " << buf << std::endl;
     }
