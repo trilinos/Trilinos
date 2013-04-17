@@ -217,6 +217,15 @@ void printTestResults(
   const bool result,
   const std::string &test_summary,
   const bool show_all_tests,
+  const Ptr<bool> &success,
+  const Ptr<std::ostream> &out
+  );
+
+/** \brief Deprecated (call overload without raw pointers). */
+THYRA_DEPRECATED void printTestResults(
+  const bool result,
+  const std::string &test_summary,
+  const bool show_all_tests,
   bool *success,
   std::ostream *out
   );

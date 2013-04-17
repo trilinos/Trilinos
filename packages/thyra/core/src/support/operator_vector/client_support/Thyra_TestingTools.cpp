@@ -65,19 +65,33 @@ void Thyra::printTestResults(
   const bool result,
   const std::string &test_summary,
   const bool show_all_tests,
-  bool *success,
-  std::ostream *out
+  const Ptr<bool> &success,
+  const Ptr<std::ostream> &out
   )
 {
   if (!result) *success = false;
-  if (out) {
-    if( !result || show_all_tests ) {
+  if (nonnull(out)) {
+    if (!result || show_all_tests) {
       *out << std::endl << test_summary;
     }
     else {
       *out << "passed!\n";
     }
   }
+}
+
+
+void Thyra::printTestResults(
+  const bool result,
+  const std::string &test_summary,
+  const bool show_all_tests,
+  bool *success,
+  std::ostream *out
+  )
+{
+  using Teuchos::ptr;
+  printTestResults(result, test_summary, show_all_tests,
+    ptr(success), ptr(out));
 }
 
 
@@ -141,7 +155,8 @@ void TestResultsPrinter::printTestResults(const bool this_result,
   const Ptr<bool> &success)
 {
   if (!show_all_tests_) {
-    Thyra::printTestResults(this_result, ossStore_.str(), false, &*success, &*out_);
+    Thyra::printTestResults(this_result, ossStore_.str(), false,
+      success, out_.ptr());
   }
   else {
     if (!this_result) {

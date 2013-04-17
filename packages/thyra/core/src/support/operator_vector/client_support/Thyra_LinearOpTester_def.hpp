@@ -62,7 +62,7 @@ public:
   static void checkSymmetry(
     const LinearOpBase<Scalar> &op,
     const Ptr<MultiVectorRandomizerBase<Scalar> > &dRand,
-    Teuchos::FancyOStream &oss,
+    Teuchos::FancyOStream &testOut,
     const int num_rhs,
     const int num_random_vectors,
     const Teuchos::EVerbosityLevel verbLevel,
@@ -81,14 +81,14 @@ public:
       const Scalar half = Scalar(0.4)*ST::one();
       RCP<const VectorSpaceBase<Scalar> > domain = op.domain();
       
-      oss << endl << "op.domain()->isCompatible(*op.range()) == true : ";
+      testOut << endl << "op.domain()->isCompatible(*op.range()) == true : ";
       result = op.domain()->isCompatible(*op.range());
       if(!result) *these_results = false;
-      oss << passfail(result) << endl;
+      testOut << passfail(result) << endl;
       
       if(result) {
         
-        oss
+        testOut
           << endl << "Checking that the operator is symmetric as:\n"
           << endl << "  <0.5*op*v2,v1> == <v2,0.5*op*v1>"
           << endl << "   \\_______/            \\_______/"
@@ -99,29 +99,29 @@ public:
         
         for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors; ++rand_vec_i ) {
           
-          oss << endl << "Random vector tests = " << rand_vec_i << endl;
+          testOut << endl << "Random vector tests = " << rand_vec_i << endl;
 
-          OSTab tab(Teuchos::rcp(&oss,false));
+          OSTab tab(testOut);
 
-          if(dump_all) oss << endl << "v1 = randomize(-1,+1); ...\n" ;
+          if(dump_all) testOut << endl << "v1 = randomize(-1,+1); ...\n" ;
           RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,num_rhs);
           dRand->randomize(v1.ptr());
-          if(dump_all) oss << endl << "v1 =\n" << describe(*v1,verbLevel);
+          if(dump_all) testOut << endl << "v1 =\n" << describe(*v1,verbLevel);
           
-          if(dump_all) oss << endl << "v2 = randomize(-1,+1); ...\n" ;
+          if(dump_all) testOut << endl << "v2 = randomize(-1,+1); ...\n" ;
           RCP<MultiVectorBase<Scalar> > v2 = createMembers(domain,num_rhs);
           dRand->randomize(v2.ptr());
-          if(dump_all) oss << endl << "v2 =\n" << describe(*v2,verbLevel);
+          if(dump_all) testOut << endl << "v2 =\n" << describe(*v2,verbLevel);
           
-          if(dump_all) oss << endl << "v3 = 0.5*op*v1 ...\n" ;
+          if(dump_all) testOut << endl << "v3 = 0.5*op*v1 ...\n" ;
           RCP<MultiVectorBase<Scalar> > v3 = createMembers(domain,num_rhs);
           apply( op, NOTRANS, *v1, v3.ptr(), half );
-          if(dump_all) oss << endl << "v3 =\n" << describe(*v3,verbLevel);
+          if(dump_all) testOut << endl << "v3 =\n" << describe(*v3,verbLevel);
           
-          if(dump_all) oss << endl << "v4 = 0.5*op*v2 ...\n" ;
+          if(dump_all) testOut << endl << "v4 = 0.5*op*v2 ...\n" ;
           RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,num_rhs);
           apply( op, NOTRANS, *v2, v4.ptr(), half );
-          if(dump_all) oss << endl << "v4 =\n" << describe(*v4,verbLevel);
+          if(dump_all) testOut << endl << "v4 =\n" << describe(*v4,verbLevel);
 
           Array<Scalar> prod1(num_rhs), prod2(num_rhs);
           domain->scalarProds(*v4, *v1, prod1());
@@ -132,14 +132,14 @@ public:
             "<v2,v3>", prod2(),
             "symmetry_error_tol()", symmetry_error_tol,
             "symmetry_warning_tol()", symmetry_warning_tol,
-            inOutArg(oss)
+            inOutArg(testOut)
             );
           if(!result) *these_results = false;
         
         }
       }
       else {
-        oss << endl << "Range and domain spaces are different, skipping check!\n";
+        testOut << endl << "Range and domain spaces are different, skipping check!\n";
       }
     }
 };
@@ -212,6 +212,7 @@ bool LinearOpTester<Scalar>::check(
   using Teuchos::rcpFromPtr;
   using Teuchos::rcpFromRef;
   using Teuchos::outArg;
+  using Teuchos::inoutArg;
   using Teuchos::fancyOStream;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
@@ -270,22 +271,22 @@ bool LinearOpTester<Scalar>::check(
   
   {
 
-    std::ostringstream ossStore;
-    const RCP<FancyOStream> oss = fancyOStream(rcpFromRef(ossStore));
-    ossStore.copyfmt(*out);
+    TestResultsPrinter testResultsPrinter(out, show_all_tests());
+    const RCP<FancyOStream> testOut = testResultsPrinter.getTestOStream();
+
     bool these_results = true;
 
-    *oss << endl << "op.domain().get() != NULL ? ";
+    *testOut << endl << "op.domain().get() != NULL ? ";
     result = domain.get() != NULL;
     if(!result) these_results = false;
-    *oss << passfail(result) << endl;
+    *testOut << passfail(result) << endl;
     
-    *oss << endl << "op.range().get() != NULL ? ";
+    *testOut << endl << "op.range().get() != NULL ? ";
     result = range.get() != NULL;
     if(!result) these_results = false;
-    *oss << passfail(result) << endl;
+    *testOut << passfail(result) << endl;
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
+    testResultsPrinter.printTestResults(these_results, inoutArg(success));
 
   }
 
@@ -294,16 +295,16 @@ bool LinearOpTester<Scalar>::check(
     *out << endl << "this->check_linear_properties()==true:"
          << "Checking the linear properties of the forward linear operator ... ";
 
-    std::ostringstream ossStore;
-    const RCP<FancyOStream> oss = fancyOStream(rcpFromRef(ossStore));
-    ossStore.copyfmt(*out);
+    TestResultsPrinter testResultsPrinter(out, show_all_tests());
+    const RCP<FancyOStream> testOut = testResultsPrinter.getTestOStream();
+
     bool these_results = true;
 
-    TEUCHOS_TEST_EQUALITY_CONST( op.opSupported(NOTRANS), true, *oss, these_results );
+    TEUCHOS_TEST_EQUALITY_CONST( op.opSupported(NOTRANS), true, *testOut, these_results );
 
     if(result) {
     
-      *oss
+      *testOut
         << endl << "Checking that the forward operator is truly linear:\n"
         << endl << "  0.5*op*(v1 + v2) == 0.5*op*v1 + 0.5*op*v2"
         << endl << "          \\_____/         \\___/"
@@ -316,38 +317,38 @@ bool LinearOpTester<Scalar>::check(
       
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
         
-        *oss << endl << "Random vector tests = " << rand_vec_i << endl;
+        *testOut << endl << "Random vector tests = " << rand_vec_i << endl;
 
-        OSTab tab3(oss);
+        OSTab tab3(testOut);
         
-        *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
+        *testOut << endl << "v1 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,loc_num_rhs);
         dRand->randomize(v1.ptr());
-        if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
+        if(dump_all()) *testOut << endl << "v1 =\n" << describe(*v1,verbLevel);
         
-        *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
+        *testOut << endl << "v2 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v2 = createMembers(domain,loc_num_rhs);
         dRand->randomize(v2.ptr());
-        if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
+        if(dump_all()) *testOut << endl << "v2 =\n" << describe(*v2,verbLevel);
         
-        *oss << endl << "v3 = v1 + v2 ...\n" ;
+        *testOut << endl << "v3 = v1 + v2 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v3 = createMembers(domain,loc_num_rhs);
         V_VpV(v3.ptr(),*v1,*v2);
-        if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
+        if(dump_all()) *testOut << endl << "v3 =\n" << describe(*v3,verbLevel);
         
-        *oss << endl << "v4 = 0.5*op*v3 ...\n" ;
+        *testOut << endl << "v4 = 0.5*op*v3 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v4 = createMembers(range,loc_num_rhs);
         apply( op, NOTRANS, *v3, v4.ptr(), r_half );
-        if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
+        if(dump_all()) *testOut << endl << "v4 =\n" << describe(*v4,verbLevel);
         
-        *oss << endl << "v5 = op*v1 ...\n" ;
+        *testOut << endl << "v5 = op*v1 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v5 = createMembers(range,loc_num_rhs);
         apply( op, NOTRANS, *v1, v5.ptr() );
-        if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
+        if(dump_all()) *testOut << endl << "v5 =\n" << describe(*v5,verbLevel);
         
-        *oss << endl << "v5 = 0.5*op*v2 + 0.5*v5 ...\n" ;
+        *testOut << endl << "v5 = 0.5*op*v2 + 0.5*v5 ...\n" ;
         apply( op, NOTRANS, *v2, v5.ptr(), r_half, r_half );
-        if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
+        if(dump_all()) *testOut << endl << "v5 =\n" << describe(*v5,verbLevel);
 
         Array<Scalar> sum_v4(loc_num_rhs), sum_v5(loc_num_rhs);
         sums(*v4, sum_v4());
@@ -358,17 +359,17 @@ bool LinearOpTester<Scalar>::check(
           "sum(v5)", sum_v5(),
           "linear_properties_error_tol()", linear_properties_error_tol(),
           "linear_properties_warning_tol()", linear_properties_warning_tol(),
-          oss.ptr()
+          testOut.ptr()
           );
         if(!result) these_results = false;
         
       }
     }
     else {
-      *oss << endl << "Forward operator not supported, skipping check!\n";
+      *testOut << endl << "Forward operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
+    testResultsPrinter.printTestResults(these_results, inoutArg(success));
 
   }
   else {
@@ -380,16 +381,17 @@ bool LinearOpTester<Scalar>::check(
     *out << endl << "(this->check_linear_properties()&&this->check_adjoint())==true:"
          << " Checking the linear properties of the adjoint operator ... ";
 
-    std::ostringstream ossStore;
-    const RCP<FancyOStream> oss = Teuchos::fancyOStream(rcpFromRef(ossStore));
-    ossStore.copyfmt(*out);
+
+    TestResultsPrinter testResultsPrinter(out, show_all_tests());
+    const RCP<FancyOStream> testOut = testResultsPrinter.getTestOStream();
+
     bool these_results = true;
 
-    TEUCHOS_TEST_EQUALITY_CONST( op.opSupported(CONJTRANS), true, *oss, these_results );
+    TEUCHOS_TEST_EQUALITY_CONST( op.opSupported(CONJTRANS), true, *testOut, these_results );
 
     if(result) {
     
-      *oss
+      *testOut
         << endl << "Checking that the adjoint operator is truly linear:\n"
         << endl << "  0.5*op'*(v1 + v2) == 0.5*op'*v1 + 0.5*op'*v2"
         << endl << "           \\_____/         \\____/"
@@ -402,38 +404,38 @@ bool LinearOpTester<Scalar>::check(
       
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
         
-        *oss << endl << "Random vector tests = " << rand_vec_i << endl;
+        *testOut << endl << "Random vector tests = " << rand_vec_i << endl;
 
-        OSTab tab(oss);
+        OSTab tab(testOut);
         
-        *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
+        *testOut << endl << "v1 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v1 = createMembers(range,loc_num_rhs);
         rRand->randomize(v1.ptr());
-        if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
+        if(dump_all()) *testOut << endl << "v1 =\n" << describe(*v1,verbLevel);
         
-        *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
+        *testOut << endl << "v2 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,loc_num_rhs);
         rRand->randomize(v2.ptr());
-        if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
+        if(dump_all()) *testOut << endl << "v2 =\n" << describe(*v2,verbLevel);
         
-        *oss << endl << "v3 = v1 + v2 ...\n" ;
+        *testOut << endl << "v3 = v1 + v2 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,loc_num_rhs);
         V_VpV(v3.ptr(),*v1,*v2);
-        if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
+        if(dump_all()) *testOut << endl << "v3 =\n" << describe(*v3,verbLevel);
         
-        *oss << endl << "v4 = 0.5*op'*v3 ...\n" ;
+        *testOut << endl << "v4 = 0.5*op'*v3 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,loc_num_rhs);
         apply( op, CONJTRANS, *v3, v4.ptr(), d_half );
-        if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
+        if(dump_all()) *testOut << endl << "v4 =\n" << describe(*v4,verbLevel);
         
-        *oss << endl << "v5 = op'*v1 ...\n" ;
+        *testOut << endl << "v5 = op'*v1 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v5 = createMembers(domain,loc_num_rhs);
         apply( op, CONJTRANS, *v1, v5.ptr() );
-        if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
+        if(dump_all()) *testOut << endl << "v5 =\n" << describe(*v5,verbLevel);
         
-        *oss << endl << "v5 = 0.5*op'*v2 + 0.5*v5 ...\n" ;
+        *testOut << endl << "v5 = 0.5*op'*v2 + 0.5*v5 ...\n" ;
         apply( op, CONJTRANS, *v2, v5.ptr(), d_half, d_half );
-        if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
+        if(dump_all()) *testOut << endl << "v5 =\n" << describe(*v5,verbLevel);
 
         Array<Scalar> sum_v4(loc_num_rhs), sum_v5(loc_num_rhs);
         sums(*v4, sum_v4());
@@ -444,17 +446,17 @@ bool LinearOpTester<Scalar>::check(
           "sum(v5)", sum_v5(),
           "linear_properties_error_tol()", linear_properties_error_tol(),
           "linear_properties_warning_tol()", linear_properties_warning_tol(),
-          oss.ptr()
+          testOut.ptr()
           );
         if(!result) these_results = false;
         
       }
     }
     else {
-      *oss << endl << "Adjoint operator not supported, skipping check!\n";
+      *testOut << endl << "Adjoint operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
+    testResultsPrinter.printTestResults(these_results, inoutArg(success));
 
   }
   else {
@@ -466,16 +468,16 @@ bool LinearOpTester<Scalar>::check(
     *out << endl << "this->check_adjoint()==true:"
          << " Checking the agreement of the adjoint and forward operators ... ";
 
-    std::ostringstream ossStore;
-    const RCP<FancyOStream> oss = Teuchos::fancyOStream(rcpFromRef(ossStore));
-    ossStore.copyfmt(*out);
+    TestResultsPrinter testResultsPrinter(out, show_all_tests());
+    const RCP<FancyOStream> testOut = testResultsPrinter.getTestOStream();
+
     bool these_results = true;
 
-    TEUCHOS_TEST_EQUALITY_CONST( op.opSupported(CONJTRANS), true, *oss, these_results );
+    TEUCHOS_TEST_EQUALITY_CONST( op.opSupported(CONJTRANS), true, *testOut, these_results );
 
     if(result) {
     
-      *oss
+      *testOut
         << endl << "Checking that the adjoint agrees with the non-adjoint operator as:\n"
         << endl << "  <0.5*op'*v2,v1> == <v2,0.5*op*v1>"
         << endl << "   \\________/            \\_______/"
@@ -486,29 +488,29 @@ bool LinearOpTester<Scalar>::check(
     
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
       
-        *oss << endl << "Random vector tests = " << rand_vec_i << endl;
+        *testOut << endl << "Random vector tests = " << rand_vec_i << endl;
 
-        OSTab tab(oss);
+        OSTab tab(testOut);
       
-        *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
+        *testOut << endl << "v1 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,loc_num_rhs);
         dRand->randomize(v1.ptr());
-        if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
+        if(dump_all()) *testOut << endl << "v1 =\n" << describe(*v1,verbLevel);
       
-        *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
+        *testOut << endl << "v2 = randomize(-1,+1); ...\n" ;
         RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,loc_num_rhs);
         rRand->randomize(v2.ptr());
-        if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
+        if(dump_all()) *testOut << endl << "v2 =\n" << describe(*v2,verbLevel);
       
-        *oss << endl << "v3 = 0.5*op*v1 ...\n" ;
+        *testOut << endl << "v3 = 0.5*op*v1 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,loc_num_rhs);
         apply( op, NOTRANS, *v1, v3.ptr(), r_half );
-        if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
+        if(dump_all()) *testOut << endl << "v3 =\n" << describe(*v3,verbLevel);
       
-        *oss << endl << "v4 = 0.5*op'*v2 ...\n" ;
+        *testOut << endl << "v4 = 0.5*op'*v2 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,loc_num_rhs);
         apply( op, CONJTRANS, *v2, v4.ptr(), d_half );
-        if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
+        if(dump_all()) *testOut << endl << "v4 =\n" << describe(*v4,verbLevel);
 
         Array<Scalar> prod_v4_v1(loc_num_rhs);
         domain->scalarProds(*v4, *v1, prod_v4_v1());
@@ -520,17 +522,17 @@ bool LinearOpTester<Scalar>::check(
           "<v2,v3>", prod_v2_v3(),
           "adjoint_error_tol()", adjoint_error_tol(),
           "adjoint_warning_tol()", adjoint_warning_tol(),
-          oss.ptr()
+          testOut.ptr()
           );
         if(!result) these_results = false;
         
       }
     }
     else {
-      *oss << endl << "Adjoint operator not supported, skipping check!\n";
+      *testOut << endl << "Adjoint operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
+    testResultsPrinter.printTestResults(these_results, inoutArg(success));
 
   }
   else {
@@ -543,19 +545,18 @@ bool LinearOpTester<Scalar>::check(
 
     *out << endl << "this->check_for_symmetry()==true: Performing check of symmetry ... ";
 
+    TestResultsPrinter testResultsPrinter(out, show_all_tests());
+    const RCP<FancyOStream> testOut = testResultsPrinter.getTestOStream();
 
-    std::ostringstream ossStore;
-    RCP<FancyOStream> oss = fancyOStream(rcpFromRef(ossStore));
-    ossStore.copyfmt(*out);
     bool these_results = true;
     
     SymmetricLinearOpTester<Scalar>::checkSymmetry(
-      op, dRand.ptr(), *oss, loc_num_rhs,num_random_vectors(), verbLevel,dump_all(),
+      op, dRand.ptr(), *testOut, loc_num_rhs,num_random_vectors(), verbLevel,dump_all(),
       symmetry_error_tol(), symmetry_warning_tol(),
       outArg(these_results)
       );
     
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
+    testResultsPrinter.printTestResults(these_results, inoutArg(success));
     
   }
   else {
@@ -595,6 +596,7 @@ bool LinearOpTester<Scalar>::compare(
 
   using std::endl;
   using Teuchos::rcpFromPtr;
+  using Teuchos::inoutArg;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -630,22 +632,22 @@ bool LinearOpTester<Scalar>::compare(
 
   {
 
-    std::ostringstream ossStore;
-    RCP<FancyOStream> oss = Teuchos::fancyOStream(Teuchos::rcp(&ossStore,false));
-    if(out.get()) ossStore.copyfmt(*out);
+    TestResultsPrinter testResultsPrinter(out, show_all_tests());
+    const RCP<FancyOStream> testOut = testResultsPrinter.getTestOStream();
+
     bool these_results = true;
 
-    *oss << endl << "op1.domain()->isCompatible(*op2.domain()) ? ";
+    *testOut << endl << "op1.domain()->isCompatible(*op2.domain()) ? ";
     result = op1.domain()->isCompatible(*op2.domain());
     if(!result) these_results = false;
-    *oss << passfail(result) << endl;
+    *testOut << passfail(result) << endl;
     
-    *oss << endl << "op1.range()->isCompatible(*op2.range()) ? ";
+    *testOut << endl << "op1.range()->isCompatible(*op2.range()) ? ";
     result = op1.range()->isCompatible(*op2.range());
     if(!result) these_results = false;
-    *oss << passfail(result) << endl;
+    *testOut << passfail(result) << endl;
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
+    testResultsPrinter.printTestResults(these_results, inoutArg(success));
 
   }
 
@@ -658,12 +660,12 @@ bool LinearOpTester<Scalar>::compare(
 
   {
 
-    std::ostringstream ossStore;
-    RCP<FancyOStream> oss = Teuchos::fancyOStream(Teuchos::rcpFromRef(ossStore));
-    if(out.get()) ossStore.copyfmt(*out);
+    TestResultsPrinter testResultsPrinter(out, show_all_tests());
+    const RCP<FancyOStream> testOut = testResultsPrinter.getTestOStream();
+
     bool these_results = true;
 
-    *oss
+    *testOut
       << endl << "Checking that op1 and op2 produce the same results:\n"
       << endl << "  0.5*op1*v1 == 0.5*op2*v1"
       << endl << "  \\________/    \\________/"
@@ -675,24 +677,24 @@ bool LinearOpTester<Scalar>::compare(
 
     for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
       
-      *oss << endl << "Random vector tests = " << rand_vec_i << endl;
+      *testOut << endl << "Random vector tests = " << rand_vec_i << endl;
 
-      OSTab tab2(oss);
+      OSTab tab2(testOut);
       
-      if(dump_all()) *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
+      if(dump_all()) *testOut << endl << "v1 = randomize(-1,+1); ...\n" ;
       RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,loc_num_rhs);
       dRand->randomize(v1.ptr());
-      if(dump_all()) *oss << endl << "v1 =\n" << *v1;
+      if(dump_all()) *testOut << endl << "v1 =\n" << *v1;
       
-      if(dump_all()) *oss << endl << "v2 = 0.5*op1*v1 ...\n" ;
+      if(dump_all()) *testOut << endl << "v2 = 0.5*op1*v1 ...\n" ;
       RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,loc_num_rhs);
       apply( op1, NOTRANS, *v1, v2.ptr(), r_half );
-      if(dump_all()) *oss << endl << "v2 =\n" << *v2;
+      if(dump_all()) *testOut << endl << "v2 =\n" << *v2;
       
-      if(dump_all()) *oss << endl << "v3 = 0.5*op2*v1 ...\n" ;
+      if(dump_all()) *testOut << endl << "v3 = 0.5*op2*v1 ...\n" ;
       RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,loc_num_rhs);
       apply( op2, NOTRANS, *v1, v3.ptr(), r_half );
-      if(dump_all()) *oss << endl << "v3 =\n" << *v3;
+      if(dump_all()) *testOut << endl << "v3 =\n" << *v3;
       
       // check error in each column
       for(int col_id=0;col_id < v1->domain()->dim();col_id++) {
@@ -704,7 +706,7 @@ bool LinearOpTester<Scalar>::compare(
            "v3"+ss.str(),*v3->col(col_id),
            "linear_properties_error_tol()", linear_properties_error_tol(),
            "linear_properties_warning_tol()", linear_properties_warning_tol(),
-           &*oss);
+           &*testOut);
          if(!result) these_results = false;
       }
       /*
@@ -718,15 +720,14 @@ bool LinearOpTester<Scalar>::compare(
         ,"sum(v3)", &sum_v3[0]
         ,"linear_properties_error_tol()", linear_properties_error_tol()
         ,"linear_properties_warning_tol()", linear_properties_warning_tol()
-        ,inOutArg(oss)
+        ,inOutArg(testOut)
         );
       */
       if(!result) these_results = false;
       
     }
 
-    printTestResults(these_results, ossStore.str(), show_all_tests(),
-      &success, OSTab(out).get() );
+    testResultsPrinter.printTestResults(these_results, inoutArg(success));
 
   }
   
