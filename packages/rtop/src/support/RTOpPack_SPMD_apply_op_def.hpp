@@ -576,6 +576,7 @@ void RTOpPack::SPMD_apply_op(
       }
     }
     *out << "\nLeaving RTOpPack::SPMD_apply_op(...) ...\n";
+    *out << std::flush;
   }
 #endif // RTOPPACK_ENABLE_SHOW_DUMP
 }
