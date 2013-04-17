@@ -278,7 +278,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModelImpl(
   RCP<const LinearOpBase<Scalar> > fwdW;
   RCP<LinearOpBase<Scalar> > nonconst_fwdW;
   if( outArgs.supports(MEB::OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
-    Thyra::uninitializeOp<Scalar>(*W_factory_,&*W,&fwdW);
+    Thyra::uninitializeOp<Scalar>(*W_factory_, W.ptr(), outArg(fwdW));
     if(fwdW.get()) {
       nonconst_fwdW = rcp_const_cast<LinearOpBase<Scalar> >(fwdW);
     }
@@ -316,7 +316,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModelImpl(
   timer.start(true);
 
   if( W.get() ) {
-    Thyra::initializeOp<Scalar>(*W_factory_,fwdW,&*W);
+    Thyra::initializeOp<Scalar>(*W_factory_, fwdW, W.ptr());
     W->setVerbLevel(this->getVerbLevel());
     W->setOStream(this->getOStream());
   }
