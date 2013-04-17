@@ -1198,15 +1198,15 @@ namespace MueLu {
       // aggregate data
       GO  numMyNnz = A.getNodeNumEntries(),     minNnz,     maxNnz;
       GO numMyRows = A.getNodeNumRows(),    minNumRows, maxNumRows;
-      double     sumNnz = Teuchos::as<double>(A.getGlobalNumEntries()),     sum2Nnz;
-      double sumNumRows = Teuchos::as<double>(A.getGlobalNumRows()),    sum2NumRows;
+      double  numMyNnz2 =  Teuchos::as<double>(numMyNnz)* numMyNnz,     sumNnz = Teuchos::as<double>(A.getGlobalNumEntries()),     sum2Nnz;
+      double numMyRows2 = Teuchos::as<double>(numMyRows)*numMyRows, sumNumRows = Teuchos::as<double>(A.getGlobalNumRows()),    sum2NumRows;
       maxAll(comm,                                       numMyNnz, maxNnz);
       maxAll(comm,                                      numMyRows, maxNumRows);
       sumAll(comm, (GO)((numMyRows > 0) ?         1 :          0), numProcessesWithData);
       minAll(comm, (GO)(( numMyNnz > 0) ?  numMyNnz :     maxNnz), minNnz);
       minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
-      sumAll(comm,         Teuchos::as<double>(numMyNnz)*numMyNnz, sum2Nnz);        // do not want to overflow
-      sumAll(comm,       Teuchos::as<double>(numMyRows)*numMyRows, sum2NumRows);    // do not want to overflow
+      sumAll(comm,                                      numMyNnz2, sum2Nnz);
+      sumAll(comm,                                     numMyRows2, sum2NumRows);
 
       double avgNumRows = sumNumRows / numProcessesWithData;
       double avgNnz     = sumNnz     / numProcessesWithData;
