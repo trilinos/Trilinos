@@ -53,7 +53,6 @@ namespace stk
 
     typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
     typedef stk::mesh::Field<double>                      ScalarFieldType ;
-    typedef stk::mesh::Field<double*,stk::mesh::ElementNode> ElementNodePointerFieldType ;
 
     template<typename T> void push_back( std::vector<T>& dst, const std::vector<T>& src)
     {
@@ -164,7 +163,7 @@ namespace stk
 
       /// only a few sweep types allowed so far; later could add quadratic sweeping
       SweepMesher(unsigned spatialDim=3) : m_spatial_dimension(spatialDim)
-      //: m_deleteAfterSweep(1), m_deleteAfterBreak(1), m_metaData(0), m_bulkData(0) 
+      //: m_deleteAfterSweep(1), m_deleteAfterBreak(1), m_metaData(0), m_bulkData(0)
       {
         //m_dump = false;
         //m_elemInfo = ShardsInterfaceTable::s_elemInfo;
@@ -178,7 +177,7 @@ namespace stk
         delete m_bulkData;
       }
 
-      void initialize() 
+      void initialize()
       {
         m_deleteAfterSweep = 1;
         m_deleteAfterBreak = 1;
@@ -215,7 +214,6 @@ namespace stk
       //         VectorFieldType & m_centroid_field;
       //         ScalarFieldType & m_temperature_field;
       //         ScalarFieldType & m_volume_field;
-      ElementNodePointerFieldType * m_element_node_coordinates_field;
 
     public:
 

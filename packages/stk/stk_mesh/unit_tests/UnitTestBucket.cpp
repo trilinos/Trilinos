@@ -322,7 +322,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
   put_field ( volume2 , element_rank  , universal );
 
   typedef Field<double>  VectorFieldType;
-  typedef Field<double>  ElementNodePointerFieldType;
 
   meta2.commit();
 

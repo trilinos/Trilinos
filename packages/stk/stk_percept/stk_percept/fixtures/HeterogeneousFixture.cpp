@@ -68,7 +68,6 @@ namespace stk{
       , m_centroid_field(    m_metaData.declare_field< VectorFieldType >( "centroid" ))
       , m_temperature_field( m_metaData.declare_field< ScalarFieldType >( "temperature" ))
       , m_volume_field( m_metaData.declare_field< ScalarFieldType >( "volume" ))
-      , m_element_node_coordinates_field( m_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
     {
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
@@ -80,33 +79,6 @@ namespace stk{
       put_field( m_volume_field, m_elem_rank, m_block_wedge );
       put_field( m_volume_field, m_elem_rank, m_block_tet );
       put_field( m_volume_field, m_elem_rank, m_block_pyramid );
-
-      // Define the field-relation such that the values of the
-      // 'element_node_coordinates_field' are pointers to the
-      // element's nodal 'coordinates_field'.
-      // I.e., let:
-      //   double *const* elem_node_coord =
-      //     field_data( m_element_node_coordinates_field , element );
-      // then
-      //     elem_node_coord[n][0..2] is the coordinates of element node 'n'
-      //     that are attached to that node.
-
-      m_metaData.declare_field_relation(
-                                        m_element_node_coordinates_field ,
-                                        stk::mesh::get_element_node_stencil(3) ,
-                                        m_coordinates_field
-                                        );
-
-      // Define element node coordinate field for all element parts
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_hex, Hex8::node_count );
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_wedge, Wedge6::node_count );
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_tet, Tet4::node_count );
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_pyramid, Pyramid5::node_count );
-
-#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_quad_shell, ShellQuad4::node_count);
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_tri_shell, ShellTriangle3::node_count );
-#endif
 
       stk::io::put_io_part_attribute(  m_block_hex );
       stk::io::put_io_part_attribute(  m_block_wedge );
@@ -319,7 +291,6 @@ namespace stk{
 
       const stk::mesh::BulkData & bulkData = mesh.m_bulkData ;
       //const VectorFieldType & node_coord = mesh.m_coordinates_field ;
-      //const ElementNodePointerFieldType & elem_node_coord  =  mesh.m_element_node_coordinates_field ;
 
       std::vector<stk::mesh::Bucket *> element_buckets = bulkData.buckets( mesh.m_elem_rank );
 

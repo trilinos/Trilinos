@@ -174,7 +174,6 @@ typedef mesh::Field<double,mesh::Cartesian>    VectorFieldType ;
 
 // Specification for the aggressive gather pointer-field for elements.
 
-typedef mesh::Field<double*,mesh::ElementNode> ElementNodePointerFieldType ;
 void my_test(
   mesh::BulkData & M ,
   const unsigned          elem_type ,
@@ -280,33 +279,6 @@ void io_example( stk::ParallelMachine comm,
   stk::mesh::put_field(
                        elem_centroid_field2 , stk::mesh::MetaData::ELEMENT_RANK , *block_1 , SpatialDim );
 
-
-  //--------------------------------
-  // Declare an aggressive "gather" field which is an
-  // array of pointers to the element's nodes' coordinate field data.
-  // The declaration specifies:
-  //
-  //     double * elem_node_coord[number_of_nodes]
-
-  ElementNodePointerFieldType & elem_node_coord =
-    meta_data.
-    declare_field< ElementNodePointerFieldType >( "elem_node_coord" );
-
-  // Declare that the 'elem_node_coord' pointer field data
-  // points to the 'coordinates_field' data on the nodes.
-
-  meta_data.declare_field_relation(
-    elem_node_coord ,
-    stk::mesh::get_element_node_stencil(SpatialDim),
-    coordinates_field );
-
-  // Declare the size of the aggressive "gather" field
-  //     double * elem_node_coord[ size = number_of_nodes ]
-  // is the number of nodes of the elements.
-  // This size is different for each element block.
-
-  stk::mesh::put_field(
-                       elem_node_coord , stk::mesh::MetaData::ELEMENT_RANK , universal , shards::Hexahedron<8> ::node_count );
 
 
   //----------------------------------

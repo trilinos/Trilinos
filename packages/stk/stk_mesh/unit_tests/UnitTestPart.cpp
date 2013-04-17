@@ -19,7 +19,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
-#include <stk_mesh/base/FieldRelation.hpp>
 
 using stk::mesh::MetaData;
 using stk::mesh::Part;

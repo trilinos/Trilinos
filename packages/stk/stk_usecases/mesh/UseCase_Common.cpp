@@ -45,7 +45,6 @@ namespace use_cases {
 
 bool verify_elem_node_coord(
   mesh::Entity elem ,
-  const ElementNodePointerFieldType & elem_node_coord ,
   const VectorFieldType & node_coord ,
   const unsigned node_count )
 {
@@ -57,29 +56,6 @@ bool verify_elem_node_coord(
       << node_count << " == node count" << std::endl;
     result = false;
   }
-
-  // Field data for the elem_node_coord for elem
-  mesh::EntityArray< ElementNodePointerFieldType >
-    elem_node_array( elem_node_coord , elem );
-
-  // Checking the size and dimensionality of elem_node_array
-  {
-    const unsigned n1 = elem_node_array.dimension<0>();
-    if( n1 != node_count ) {
-      std::cerr << "Error!  element node array dimension<0> == " << n1 << " != "
-        << node_count << " == node count" << std::endl;
-      result = false;
-    }
-    if ( (unsigned) elem_node_array.size() != node_count ) {
-      std::cerr << "Error!  element node array size == "
-        << elem_node_array.size() << " != " << node_count << " == node count"
-        << std::endl;
-      result = false;
-    }
-  }
-
-  // Get the raw memory for the entity field array
-  double * const * const elem_data = elem_node_array.contiguous_data();
 
   // Iterating over the nodes in element
   for ( unsigned j = 0 ; j < node_count ; ++j ) {
@@ -104,35 +80,6 @@ bool verify_elem_node_coord(
       }
     }
 
-    // Confirming that element data points to nodal coordinate data for
-    // this node
-    double * const node_data = node_coord_array.contiguous_data();
-    if( elem_data[j] != node_data ) {
-      std::cerr << "Error!  elem_data[" << j << "] == " << elem_data[j]
-        << " != " << node_data << " node_data" << std::endl;
-      result = false;
-    }
-  }
-  return result;
-}
-
-bool verify_elem_node_coord_by_part(
-    stk::mesh::Part & part,
-    const std::vector<Bucket *> & bucket_vector,
-    const ElementNodePointerFieldType & elem_node_coord,
-    const VectorFieldType & node_coord,
-    const unsigned node_count )
-{
-  Selector selector(part);
-  std::vector<Entity> entities;
-  get_selected_entities( selector, bucket_vector, entities);
-  std::vector<Entity>::iterator entity_it = entities.begin();
-  bool result = true;
-  for ( ; entity_it != entities.end() ; ++entity_it ) {
-    result = result &&
-      verify_elem_node_coord(
-          *entity_it , elem_node_coord , node_coord , node_count
-          );
   }
   return result;
 }

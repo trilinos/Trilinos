@@ -650,15 +650,6 @@ BulkData & BulkData::get( const impl::BucketRepository & bucket_repo ) {
 
 /** \} */
 
-/** \brief Free function for setting relations on entities.
- * \relates BulkData
- * \relates BucketRepository
- */
-// TODO - Does this need to be in the public API? It's only used internally.
-// In what context would a client ever call this?
-void set_field_relations( Entity e_from ,
-                          Entity e_to ,
-                          const unsigned ident );
 
 inline
 void BulkData::internal_basic_part_check(const Part* part,

@@ -281,7 +281,7 @@ void BulkData::internal_change_entity_parts(
   }
 
   if (always_propagate_internal_changes ||
-      !rank_parts_removed.empty() || !m_mesh_meta_data.get_field_relations().empty()) {
+      !rank_parts_removed.empty() ) {
     internal_propagate_part_changes( entity , rank_parts_removed );
   }
 
@@ -371,12 +371,6 @@ void BulkData::internal_propagate_part_changes(
         internal_change_entity_parts( e_to , to_add , empty );
       }
 
-      set_field_relations( entity, e_to, rel_ident );
-    }
-    else if ( etype < rel_type ) { // a 'from' entity
-      Entity e_from = rel->entity();
-
-      set_field_relations( e_from, entity, rel_ident );
     }
   }
 }

@@ -34,12 +34,10 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
     m_bulk_data( m_meta, pm ),
     m_quad_part( declare_part<shards::Quadrilateral<4> >(m_meta, "quad_part" ) ),
     m_coord_field( m_meta.declare_field<CoordFieldType>("Coordinates") ),
-    m_coord_gather_field( m_meta.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
     m_nx( nx ),
     m_ny( ny )
 {
   typedef shards::Quadrilateral<4> Quad4 ;
-  const unsigned nodes_per_elem = Quad4::node_count;
 
   //put coord-field on all nodes:
   put_field(
@@ -47,22 +45,6 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
       MetaData::NODE_RANK,
       m_meta.universal_part(),
       m_spatial_dimension
-      );
-
-  //put coord-gather-field on all elements:
-  put_field(
-      m_coord_gather_field,
-      MetaData::ELEMENT_RANK,
-      m_meta.universal_part(),
-      nodes_per_elem
-      );
-
-  // Field relation so coord-gather-field on elements points
-  // to coord-field of the element's nodes
-  m_meta.declare_field_relation(
-      m_coord_gather_field,
-      element_node_stencil<Quad4, 2>,
-      m_coord_field
       );
 }
 

@@ -86,7 +86,6 @@ template< class ElementTraits >
 void centroid_algorithm(
   const BulkData & bulkData ,
   const VectorFieldType             & elem_centroid ,
-  const ElementNodePointerFieldType & elem_node_coord ,
   Part & elem_part,
   EntityRank element_rank )
 {
@@ -137,7 +136,6 @@ template< class ElementTraits >
 bool centroid_algorithm_unit_test_dimensions(
   const BulkData & bulkData ,
   const VectorFieldType             & elem_centroid ,
-  const ElementNodePointerFieldType & elem_node_coord ,
   Part & elem_part,
   EntityRank element_rank )
 {
@@ -162,26 +160,6 @@ bool centroid_algorithm_unit_test_dimensions(
       // Number of elements in the bucket:
 
       const unsigned size = bucket.size();
-
-      // Unit testing the dimension feature
-      {
-        BucketArray< ElementNodePointerFieldType >
-          array( elem_node_coord, bucket.begin(), bucket.end() );
-        const unsigned n1 = array.template dimension<0>();
-        const unsigned n2 = array.template dimension<1>();
-        if ( n1 != ElementTraits::node_count ) {
-          std::cerr << "Error!  n1 == " << n1 << " != " << ElementTraits::node_count << " == ElementTraits::node_count" << std::endl;
-          result = false;
-        }
-        if ( n2 != size ) {
-          std::cerr << "Error!  n2 == " << n2 << " != " << size << " == size" << std::endl;
-          result = false;
-        }
-        if ( (unsigned) array.size() != n1 * n2 ) {
-          std::cerr << "Error!  array.size() == " << array.size() << " != " << n1*n2 << " == n1*n2" << std::endl;
-          result = false;
-        }
-      }
 
       {
         BucketArray< VectorFieldType > array( elem_centroid , bucket.begin(), bucket.end()  );

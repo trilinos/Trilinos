@@ -475,8 +475,6 @@ namespace stk
         }
       m_coordinates_field = &m_metaData->declare_field< VectorFieldType >( "coordinates" );
 
-      m_element_node_coordinates_field = &m_metaData->declare_field< ElementNodePointerFieldType >( "elem_node_coord" );
-
       // set cell topology
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
         {
@@ -492,11 +490,6 @@ namespace stk
 
       put_field( *m_coordinates_field , stk::mesh::MetaData::NODE_RANK , universal );
 
-      m_metaData->declare_field_relation(
-                                         *m_element_node_coordinates_field ,
-                                         stk::mesh::get_element_node_stencil(3) ,
-                                         *m_coordinates_field
-                                         );
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
         {
@@ -508,7 +501,6 @@ namespace stk
               std::cout << "shards::Wedge<> ::node_count = " << shards::Wedge<> ::node_count
                         << " " << m_elemInfo[ieletype].node_count << std::endl;
 #endif
-              put_field( *m_element_node_coordinates_field, stk::mesh::MetaData::ELEMENT_RANK, *m_parts[ieletype], m_elemInfo[ieletype].node_count);
             }
         }
     }

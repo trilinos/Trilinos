@@ -58,7 +58,6 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   , m_centroid_field(    m_fem_metaData.declare_field< VectorFieldType >( "centroid" ))
   , m_temperature_field( m_fem_metaData.declare_field< ScalarFieldType >( "temperature" ))
   , m_volume_field( m_fem_metaData.declare_field< ScalarFieldType >( "volume" ))
-  , m_element_node_coordinates_field( m_fem_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
 {
   // Define where fields exist on the mesh:
   Part & universal = m_fem_metaData.universal_part();
@@ -70,30 +69,6 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   put_field( m_volume_field, m_elem_rank, m_block_wedge );
   put_field( m_volume_field, m_elem_rank, m_block_tet );
   put_field( m_volume_field, m_elem_rank, m_block_pyramid );
-
-  // Define the field-relation such that the values of the
-  // 'element_node_coordinates_field' are pointers to the
-  // element's nodal 'coordinates_field'.
-  // I.e., let:
-  //   double *const* elem_node_coord =
-  //     field_data( m_element_node_coordinates_field , element );
-  // then
-  //     elem_node_coord[n][0..2] is the coordinates of element node 'n'
-  //     that are attached to that node.
-
-  m_fem_metaData.declare_field_relation(
-    m_element_node_coordinates_field ,
-    get_element_node_stencil(3) ,
-    m_coordinates_field
-    );
-
-  // Define element node coordinate field for all element parts
-  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_hex, Hex8::node_count );
-  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_wedge, Wedge6::node_count );
-  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_tet, Tet4::node_count );
-  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_pyramid, Pyramid4::node_count );
-  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_quad_shell, ShellQuad4::node_count);
-  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_tri_shell, ShellTriangle3::node_count );
 
   if (doCommit)
     m_fem_metaData.commit();
@@ -218,9 +193,6 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
   bool result = true;
 
   const BulkData & bulkData = mesh.m_bulkData ;
-  const VectorFieldType & node_coord = mesh.m_coordinates_field ;
-  const ElementNodePointerFieldType & elem_node_coord  =
-    mesh.m_element_node_coordinates_field ;
 
   std::vector<Bucket *> element_buckets = bulkData.buckets( mesh.m_elem_rank );
 
@@ -233,22 +205,6 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
   part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_pyramid, Pyramid4::node_count));
   part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_quad_shell, ShellQuad4::node_count));
   part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_tri_shell, ShellTriangle3::node_count));
-
-  // Verify that entities in each part are set up correctly.
-  // Use a PartVector iterator for parts_to_check and call
-  // verify_elem_node_coord_by_part in UseCase_Common.cpp for
-  // each part in turn.
-  for( std::vector<PartNodeCountPair>::const_iterator  i = part_and_node_counts.begin() ; i != part_and_node_counts.end() ; ++i )
-    {
-      result = result &&
-        verify_elem_node_coord_by_part(
-          *(i->first),
-          element_buckets,
-          elem_node_coord,
-          node_coord,
-          i->second
-      );
-    }
 
   // Check that all the nodes were allocated.
   for ( unsigned i = 0 ; i < node_count ; ++i ) {

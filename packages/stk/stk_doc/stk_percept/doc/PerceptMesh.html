@@ -240,7 +240,6 @@ Data descriptors defined here:<br>
 <dd><tt>BeamFixture_m_elem_rank_get(BeamFixture&nbsp;self)&nbsp;-&gt;&nbsp;EntityRank</tt></dd>
 </dl>
 <dl><dt><strong>m_element_node_coordinates_field</strong></dt>
-<dd><tt>BeamFixture_m_element_node_coordinates_field_get(BeamFixture&nbsp;self)&nbsp;-&gt;&nbsp;ElementNodePointerFieldType</tt></dd>
 </dl>
 <dl><dt><strong>m_metaData</strong></dt>
 <dd><tt>BeamFixture_m_metaData_get(BeamFixture&nbsp;self)&nbsp;-&gt;&nbsp;FEMMetaData</tt></dd>
@@ -1059,8 +1058,6 @@ Data descriptors inherited from <a href="PerceptMesh.html#vectori">vectori</a>:<
 <dl><dt><a name="FEMMetaData-get_entity_rank"><strong>get_entity_rank</strong></a>(self, *args)</dt><dd><tt><a href="#FEMMetaData-get_entity_rank">get_entity_rank</a>(self,&nbsp;CellTopology&nbsp;cell_topology)&nbsp;-&gt;&nbsp;EntityRank</tt></dd></dl>
 
 <dl><dt><a name="FEMMetaData-get_field"><strong>get_field</strong></a>(self, *args)</dt><dd><tt><a href="#FEMMetaData-get_field">get_field</a>(self,&nbsp;string&nbsp;name)&nbsp;-&gt;&nbsp;<a href="#FieldBase">FieldBase</a></tt></dd></dl>
-
-<dl><dt><a name="FEMMetaData-get_field_relations"><strong>get_field_relations</strong></a>(self)</dt><dd><tt><a href="#FEMMetaData-get_field_relations">get_field_relations</a>(self)&nbsp;-&gt;&nbsp;std::vector&lt;(FieldRelation,std::allocator&lt;(FieldRelation)&gt;)&gt;</tt></dd></dl>
 
 <dl><dt><a name="FEMMetaData-get_fields"><strong>get_fields</strong></a>(self)</dt><dd><tt><a href="#FEMMetaData-get_fields">get_fields</a>(self)&nbsp;-&gt;&nbsp;FieldVector</tt></dd></dl>
 
@@ -1978,7 +1975,6 @@ Data descriptors defined here:<br>
 <dd><tt>HeterogeneousFixture_m_elem_rank_get(HeterogeneousFixture&nbsp;self)&nbsp;-&gt;&nbsp;EntityRank</tt></dd>
 </dl>
 <dl><dt><strong>m_element_node_coordinates_field</strong></dt>
-<dd><tt>HeterogeneousFixture_m_element_node_coordinates_field_get(HeterogeneousFixture&nbsp;self)&nbsp;-&gt;&nbsp;ElementNodePointerFieldType</tt></dd>
 </dl>
 <dl><dt><strong>m_metaData</strong></dt>
 <dd><tt>HeterogeneousFixture_m_metaData_get(HeterogeneousFixture&nbsp;self)&nbsp;-&gt;&nbsp;FEMMetaData</tt></dd>
@@ -5894,7 +5890,6 @@ mesh_difference(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href=
  <dl><dt><a name="-selectUnion"><strong>selectUnion</strong></a>(*args)</dt><dd><tt><a href="#-selectUnion">selectUnion</a>(PartVector&nbsp;union_part_vector)&nbsp;-&gt;&nbsp;<a href="#Selector">Selector</a></tt></dd></dl>
  <dl><dt><a name="-set_cell_topology"><strong>set_cell_topology</strong></a>(*args)</dt><dd><tt><a href="#-set_cell_topology">set_cell_topology</a>(<a href="#Part">Part</a>&nbsp;part,&nbsp;CellTopology&nbsp;cell_topology)</tt></dd></dl>
  <dl><dt><a name="-set_distribution_factor_field"><strong>set_distribution_factor_field</strong></a>(*args)</dt><dd><tt><a href="#-set_distribution_factor_field">set_distribution_factor_field</a>(mesh::<a href="#Part">Part</a>&nbsp;p,&nbsp;mesh::Field&lt;(double,mesh::ElementNode,void,void,void,void,void,void)&gt;&nbsp;df_field)</tt></dd></dl>
- <dl><dt><a name="-set_field_relations"><strong>set_field_relations</strong></a>(*args)</dt><dd><tt><a href="#-set_field_relations">set_field_relations</a>(Entity nbsp;e_from,&nbsp;Entity nbsp;e_to,&nbsp;unsigned&nbsp;int&nbsp;ident)</tt></dd></dl>
  <dl><dt><a name="-set_field_role"><strong>set_field_role</strong></a>(*args)</dt><dd><tt><a href="#-set_field_role">set_field_role</a>(mesh::<a href="#FieldBase">FieldBase</a>&nbsp;f,&nbsp;Ioss::Field::RoleType&nbsp;role)</tt></dd></dl>
  <dl><dt><a name="-setlinemask"><strong>setlinemask</strong></a>(*args)</dt><dd><tt><a href="#-setlinemask">setlinemask</a>(PrintMask&nbsp;line_mask)&nbsp;-&gt;&nbsp;_setlinemask</tt></dd></dl>
  <dl><dt><a name="-side_rank"><strong>side_rank</strong></a>(*args)</dt><dd><tt><a href="#-side_rank">side_rank</a>(mesh::MetaData&nbsp;meta)&nbsp;-&gt;&nbsp;mesh::EntityRank</tt></dd></dl>

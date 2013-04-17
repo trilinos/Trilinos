@@ -15,7 +15,6 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FieldRelation.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/baseImpl/PartRepository.hpp>
@@ -34,7 +33,6 @@ public:
 
   void testField();
   void testFieldRestriction();
-  void testFieldRelation();
 
 };
 
@@ -53,12 +51,6 @@ STKUNIT_UNIT_TEST(UnitTestFieldRestriction, testUnit)
 {
   stk::mesh::UnitTestFieldImpl ufield;
   ufield.testFieldRestriction();
-}
-
-STKUNIT_UNIT_TEST(UnitTestFieldRelation, testUnit)
-{
-  stk::mesh::UnitTestFieldImpl ufield;
-  ufield.testFieldRelation();
 }
 
 }//namespace <anonymous>
@@ -466,16 +458,6 @@ void UnitTestFieldImpl::testFieldRestriction()
   }
 }
 
-// Unit test the FieldRelation copy constructor:
-void UnitTestFieldImpl::testFieldRelation()
-{
-
-  FieldRelation rA;
-  FieldRelation rB(rA);
-
-  rA = rB;
-
-}
 
 }
 }

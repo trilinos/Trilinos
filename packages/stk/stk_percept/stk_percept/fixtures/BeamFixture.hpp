@@ -45,7 +45,6 @@ namespace stk {
 
     typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
     typedef stk::mesh::Field<double>                          ScalarFieldType ;
-    typedef stk::mesh::Field<double*, stk::mesh::ElementNode> ElementNodePointerFieldType ;
 
     /** Use case with mixed element topologies and
      *  field relations to provide fast access to node field data
@@ -75,7 +74,6 @@ namespace stk {
       VectorFieldType & m_centroid_field;
       ScalarFieldType & m_temperature_field;
       ScalarFieldType & m_volume_field;
-      ElementNodePointerFieldType & m_element_node_coordinates_field;
     };
 
     bool verifyMesh( const BeamFixture & mesh );

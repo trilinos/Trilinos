@@ -171,7 +171,6 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
     m_owns_part( NULL ),
     m_shares_part( NULL ),
     m_field_repo(),
-    m_field_relations( ),
     m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/)
@@ -193,7 +192,6 @@ MetaData::MetaData()
     m_owns_part( NULL ),
     m_shares_part( NULL ),
     m_field_repo(),
-    m_field_relations( ),
     m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/)
@@ -429,19 +427,6 @@ void MetaData::declare_field_restriction(
       );
 }
 
-
-void MetaData::internal_declare_field_relation(
-  FieldBase & pointer_field ,
-  relation_stencil_ptr stencil ,
-  FieldBase & referenced_field )
-{
-  FieldRelation tmp ;
-  tmp.m_root   = & pointer_field ;
-  tmp.m_target = & referenced_field ;
-  tmp.m_function = stencil ;
-
-  m_field_relations.push_back( tmp );
-}
 
 //----------------------------------------------------------------------
 

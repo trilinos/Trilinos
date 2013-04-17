@@ -27,71 +27,6 @@
 namespace stk {
 namespace mesh {
 
-void set_field_relations( Entity e_from ,
-                          Entity e_to ,
-                          const unsigned ident )
-{
-  const std::vector<FieldRelation> & field_rels =
-    MetaData::get(e_from).get_field_relations();
-
-  for ( std::vector<FieldRelation>::const_iterator
-        j = field_rels.begin() ; j != field_rels.end() ; ++j ) {
-
-    const FieldRelation & fr = *j ;
-
-    void ** const ptr = (void**) field_data( * fr.m_root , e_from );
-
-    if ( ptr ) {
-
-      void * const src = field_data( * fr.m_target , e_to );
-
-      const size_t number =
-        field_data_size(*fr.m_root,e_from) / sizeof(void*);
-
-      const size_t offset =
-         (*fr.m_function)( e_from.entity_rank() ,
-                           e_to.entity_rank() , ident );
-
-      if ( offset < number ) {
-        ptr[ offset ] = src ;
-      }
-    }
-  }
-}
-
-namespace {
-
-void clear_field_relations( Entity e_from ,
-                            const unsigned type ,
-                            const unsigned ident )
-{
-  const std::vector<FieldRelation> & field_rels =
-    MetaData::get(e_from).get_field_relations();
-
-  for ( std::vector<FieldRelation>::const_iterator
-        j = field_rels.begin() ; j != field_rels.end() ; ++j ) {
-
-    const FieldRelation & fr = *j ;
-
-    void ** const ptr = (void**) field_data( * fr.m_root , e_from );
-
-    if ( ptr ) {
-
-      const size_t number =
-        field_data_size(*fr.m_root,e_from) / sizeof(void*);
-
-      const size_t offset =
-        (*fr.m_function)( e_from.entity_rank() , type , ident );
-
-      if ( offset < number ) {
-        ptr[ offset ] = NULL ;
-      }
-    }
-  }
-}
-
-} // empty namespace
-
 //----------------------------------------------------------------------
 
 void BulkData::require_valid_relation( const char action[] ,
@@ -157,7 +92,6 @@ void BulkData::declare_relation( Entity e_from ,
 
   internal_change_entity_parts( e_to , add , empty );
 
-  set_field_relations( e_from , e_to , local_id );
 }
 
 //----------------------------------------------------------------------
@@ -242,24 +176,12 @@ bool BulkData::destroy_relation( Entity e_from ,
         induced_part_membership( e_from, keep, e_to.entity_rank(),
                                  i->relation_ordinal(), del,
                                  false /*Do not look at supersets*/);
-        clear_field_relations( e_from , e_to.entity_rank() ,
-                               i->relation_ordinal() );
         break; // at most 1 relation can match our specification
       }
     }
 
     if ( !del.empty() ) {
       internal_change_entity_parts( e_to , empty , del );
-    }
-  }
-  else {
-    // Just clear the field, part membership will be handled by modification end
-    for ( PairIterRelation i = e_from.relations() ; !i.empty() ; ++i ) {
-      if ( i->entity() == e_to && i->relation_ordinal() == local_id ) {
-        clear_field_relations( e_from , e_to.entity_rank() ,
-                               i->relation_ordinal() );
-        break; // at most 1 relation can match our specification
-      }
     }
   }
 

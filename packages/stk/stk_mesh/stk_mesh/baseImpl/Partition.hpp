@@ -147,8 +147,6 @@ private:
   // an empty bucket if necessary.
   Bucket *get_bucket_for_adds();
 
-  void internal_propagate_relocation( Entity );
-
 };
 
 std::ostream &operator<<(std::ostream &, const stk::mesh::impl::Partition &);

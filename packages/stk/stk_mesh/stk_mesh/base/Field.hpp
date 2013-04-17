@@ -13,7 +13,6 @@
 //----------------------------------------------------------------------
 
 #include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/FieldRelation.hpp>
 #include <stk_mesh/base/FieldTraits.hpp>
 
 //----------------------------------------------------------------------
@@ -85,7 +84,6 @@ namespace mesh {
  *
  * Items of interest
  *   - Accessing field data: see FieldData.hpp
- *   - Field relations: see FieldRelations.hpp
  *
  * Field-related API
  *   - stk_mesh/base/MetaData - Methods for...
@@ -100,7 +98,6 @@ namespace mesh {
  *   - stk_mesh/base/Field - Place to put Field template, not much API here
  *   - stk_mesh/base/FieldParallel - Free functions for some parallel operations
  *   - stk_mesh/base/FieldRestriction - Defines FieldRestriction class
- *   - stk_mesh/base/FieldRelation - Defines FieldRelation class
  *   - stk_mesh/base/FieldState - Defines enums to refer to field states
  *   - stk_mesh/base/FieldTraits - Defines API for querying field-types
  *   - stk_mesh/base/CoordinateSystems - Defines common ArrayDimTags (used for defining Field types)

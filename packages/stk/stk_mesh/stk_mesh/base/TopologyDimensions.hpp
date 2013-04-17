@@ -53,8 +53,6 @@ typedef Field<double,ElementNode> ElementNodeField ;
  *  \brief  A Field defining an array of pointers
  *          to an element's nodal field data.
  */
-typedef Field<double*,ElementNode> ElementNodePointerField ;
-typedef Field<int *,ElementNode> ElementNodeLockField ;
 
 /** \ingroup stk_mesh_relation_stencil
  *  \brief  Declare an element-node field.
@@ -70,31 +68,6 @@ declare_element_node_field( MetaData & md , const std::string & s )
   return f ;
 }
 
-/** \ingroup stk_mesh_relation_stencil
- *  \brief  Declare an element-to-node-data pointer field.
- */
-template< class NodeField >
-inline
-ElementNodeLockField &
-declare_element_node_lock_field(
-  MetaData & md , const std::string & s ,
-  NodeField & node_field )
-{
-  const unsigned num_states = node_field.number_of_states();
-
-  ElementNodeLockField & f =
-    md.template declare_field< ElementNodeLockField >( s, num_states );
-
-  for ( unsigned i = 0 ; i < num_states ; ++i ) {
-    FieldState state = (FieldState) i;
-    md.declare_field_relation(
-      f.field_of_state( state ) ,
-      get_element_node_stencil(md.spatial_dimension()) ,
-      node_field.field_of_state( state ) );
-  }
-
-  return f ;
-}
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_field_dimension_tags
  *  \{

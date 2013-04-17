@@ -409,7 +409,6 @@ typedef mesh::Field<double,mesh::Cartesian>    VectorFieldType ;
 
 // Specification for the aggressive gather pointer-field for elements.
 
-typedef mesh::Field<double*,mesh::ElementNode> ElementNodePointerFieldType ;
 
 //--------------------------------
 // prototype for the function that will generate the use-case mesh.
@@ -419,7 +418,6 @@ void use_encr_case_1_generate_mesh(
   mesh::BulkData & mesh ,
   const unsigned N[] ,
   const VectorFieldType & node_coord ,
-  const ElementNodePointerFieldType & elem_node_coord ,
   mesh::Part & hex_block );
 
 
@@ -478,33 +476,6 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //--------------------------------
 
     //--------------------------------
-    // Declare an aggressive "gather" field which is an
-    // array of pointers to the element's nodes' coordinate field data.
-    // The declaration specifies:
-    //
-    //     double * elem_node_coord[number_of_nodes]
-
-    ElementNodePointerFieldType & elem_node_coord =
-      mesh_meta_data.
-      declare_field< ElementNodePointerFieldType >( "elem_node_coord" );
-
-    // Declare that the 'elem_node_coord' pointer field data
-    // points to the 'coordinates_field' data on the nodes.
-
-    mesh_meta_data.declare_field_relation(
-      elem_node_coord ,
-      stk::mesh::get_element_node_stencil(3) ,
-      coordinates_field );
-
-    // Declare the size of the aggressive "gather" field
-    //     double * elem_node_coord[ size = number_of_nodes ]
-    // is the number of nodes of the elements.
-    // This size is different for each element block.
-
-    stk::mesh::put_field(
-                         elem_node_coord , stk::mesh::MetaData::ELEMENT_RANK , block_hex , shards::Hexahedron<8> ::node_count );
-
-    //--------------------------------
     // Commit (finalize) the meta data.  Is now ready to be used
     // in the creation and management of mesh bulk data.
 
@@ -523,7 +494,6 @@ void use_encr_case_1_driver( MPI_Comm comm )
       mesh_bulk_data ,
       box_size ,
       coordinates_field ,
-      elem_node_coord ,
       block_hex );
 
     //use_encr_case_1_generate_sides( mesh_bulk_data , false );
@@ -592,7 +562,6 @@ void use_encr_case_1_generate_mesh(
   mesh::BulkData & mesh ,
   const unsigned N[] ,
   const VectorFieldType & node_coord_field ,
-  const ElementNodePointerFieldType & elem_node_coord_field,
   mesh::Part & hex_block )
 {
   //EXCEPTWATCH;

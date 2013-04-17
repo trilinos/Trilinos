@@ -19,41 +19,6 @@
 namespace stk {
 namespace app {
 
-bool use_case_7_driver( MPI_Comm comm ,
-                        bool performance_test ,
-                        const std::string &mesh_filename ,
-                        int num_threads ,
-                        const std::string& thread_runner );
-
-bool use_case_blas_driver(MPI_Comm comm,
-                        int num_threads,
-                        int num_trials,
-                        const std::string &working_directory,
-                        const std::string &mesh_filename,
-                        const std::string &mesh_type,
-                        const std::string &thread_runner,
-                        int chunk_size,
-                        bool performance_test);
-
-bool use_case_14_driver(MPI_Comm comm,
-                        int num_threads,
-                        int num_trials,
-                        const std::string &working_directory,
-                        const std::string &mesh_filename,
-                        const std::string &mesh_type,
-                        const std::string &thread_runner,
-                        int chunk_size,
-                        bool performance_test);
-
-bool use_case_14a_driver(MPI_Comm comm,
-                         int num_threads,
-                         int num_trials,
-                         const std::string &working_directory,
-                         const std::string &mesh_filename,
-                         const std::string &mesh_type,
-                         const std::string &thread_runner,
-                         int chunk_size,
-                         bool performance_test);
 
 bool use_case_24_driver( MPI_Comm comm,
                          const std::string &working_directory,
@@ -65,10 +30,6 @@ bool use_case_24_driver( MPI_Comm comm,
 
 
 namespace {
-  const char use_case_7[]  = "use_case_7" ;
-  const char use_case_blas[]  = "use_case_blas" ;
-  const char use_case_14[]  = "use_case_14" ;
-  const char use_case_14a[] = "use_case_14a" ;
   const char use_case_24[]  = "use_case_24" ;
 }
 
@@ -108,10 +69,6 @@ int main(int argc, char** argv)
     ("tbb",           "Use Threaded Building Blocks algorithm thread runner [14/14a/blas only]")
     ("tpi",           "Use Thread Pool Interface algorithm thread runner [14/14a/blas only]")
     ("nonthreaded",   "Run algorithms non-threaded [default] [14/14a/blas only]")
-    ( use_case_7 ,   "use case 7" )
-    ( use_case_blas , "use case blas (fill, axpby, dot, norm)" )
-    ( use_case_14 ,   "use case 14 (hex internal force algorithm)" )
-    ( use_case_14a ,  "use case 14a (hex internal force algorithm)" )
     ( use_case_24 ,   "use case 24 " );
 
   bopt::variables_map vm;
@@ -131,8 +88,6 @@ int main(int argc, char** argv)
     std::cout << desc << "\n";
     std::exit(EXIT_SUCCESS);
   }
-
-  bool run_performance_test = vm.count( "performance" ) > 0;
 
   std::string thread_runner = "NonThreaded";
   if (vm.count("tbb"))
@@ -172,35 +127,7 @@ int main(int argc, char** argv)
 
   bool success = false;
 
-  if ( vm.count( use_case_7 ) ) {
-
-    if (in_filetype != "generated") {
-      std::cout << "OPTION ERROR: For use case 7, only the 'generated' mesh option is supported!\n";
-      std::exit(EXIT_FAILURE);
-    }
-
-    success = stk::app::use_case_7_driver( comm , run_performance_test , in_filename , nthreads, thread_runner );
-  }
-
-  else if ( vm.count( use_case_blas ) ) {
-    success = stk::app::use_case_blas_driver(comm, nthreads, num_trials, working_directory,
-                                             in_filename, in_filetype, thread_runner, bucket_size,
-                                             run_performance_test);
-  }
-
-  else if ( vm.count( use_case_14 ) ) {
-    success = stk::app::use_case_14_driver(comm, nthreads, num_trials, working_directory,
-                                           in_filename, in_filetype, thread_runner, bucket_size,
-                                           run_performance_test);
-  }
-
-  else if ( vm.count( use_case_14a ) ) {
-    success = stk::app::use_case_14a_driver(comm, nthreads, num_trials, working_directory,
-                                            in_filename, in_filetype, thread_runner, bucket_size,
-                                            run_performance_test);
-  }
-
-  else if ( vm.count( use_case_24 ) ) {
+  if ( vm.count( use_case_24 ) ) {
     if (in_filetype == "generated") {
       std::cout << "OPTION ERROR: The 'generated mesh option' option is not supported for use case 24!\n";
       std::exit(EXIT_FAILURE);

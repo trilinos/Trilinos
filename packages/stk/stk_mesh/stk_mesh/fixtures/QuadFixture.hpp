@@ -38,7 +38,6 @@ class QuadFixture
  public:
   typedef int Scalar ;
   typedef Field<Scalar, Cartesian>    CoordFieldType;
-  typedef Field<Scalar*,ElementNode>  CoordGatherFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted
@@ -53,7 +52,6 @@ class QuadFixture
   BulkData                      m_bulk_data ;
   Part &                        m_quad_part ;
   CoordFieldType &              m_coord_field ;
-  CoordGatherFieldType &        m_coord_gather_field ;
   const unsigned                m_nx ;
   const unsigned                m_ny ;
 

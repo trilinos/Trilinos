@@ -62,7 +62,6 @@ public:
   VectorFieldType & m_centroid_field;
   ScalarFieldType & m_temperature_field;
   ScalarFieldType & m_volume_field;
-  ElementNodePointerFieldType & m_element_node_coordinates_field;
 };
 
 bool verifyMesh( const UseCase_3_Mesh & mesh );

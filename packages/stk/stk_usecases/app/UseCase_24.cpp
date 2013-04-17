@@ -56,10 +56,6 @@ typedef mesh::EntityArray<VectorFieldType> VectorArray;
 typedef mesh::EntityArray<ScalarIPFieldType> ScalarIPArray;
 typedef mesh::EntityArray<VectorIPFieldType> VectorIPArray;
 
-// Specification for the aggressive gather pointer-field for elements.
-
-typedef mesh::Field<double*,mesh::ElementNode> ElementNodePointerFieldType ;
-
 //--------------------------------
 // prototype for the function that will generate the use-case mesh.
 

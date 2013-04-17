@@ -21,8 +21,6 @@
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 
-#include <stk_mesh/base/FieldRelation.hpp>
-
 #include <stk_mesh/base/Stencils.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>

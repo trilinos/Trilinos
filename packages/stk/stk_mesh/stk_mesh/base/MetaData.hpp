@@ -320,34 +320,6 @@ public:
   template<class T>
   const T * declare_attribute_no_delete( FieldBase & field, const T * attribute);
 
-  /** \brief Declare a field relation.
-   *
-   *  The pointer_field's scalar type must be a pointer to the
-   *  scalar type of the reference_field.  The following
-   *  derived field data relationship maintained.
-   *
-   *  Let   e_root -> Relation( e_target , ord , kind )
-   *  Let   i = stencil( e_root.entity_rank() ,
-   *                     e_target.entity_rank() , ord , kind )
-   *  Let   Scalar ** ptr = field_data( pointer_field , e_root )
-   *  then  ptr[i] = field_data( referenced_field , e_target )
-   *
-   *  This derived field data relationship is typically used
-   *  to support fast access to field data on entities
-   *  related to the root entity; e.g. field data associated with
-   *  the nodes of an element.
-   *
-   *  See FieldRelation.hpp for a full discussion of field relations.
-   */
-  template< class PointerFieldType , class ReferencedFieldType >
-  void declare_field_relation( PointerFieldType & pointer_field ,
-                               relation_stencil_ptr stencil ,
-                               ReferencedFieldType & referenced_field );
-
-  /** \brief  Get all field relations */
-  const std::vector<FieldRelation> & get_field_relations() const
-    { return m_field_relations ; }
-
   /** \} */
   //------------------------------------
 
@@ -507,7 +479,6 @@ private:
 
   impl::FieldRepository        m_field_repo ;
 
-  std::vector< FieldRelation > m_field_relations ;
   std::vector< PropertyBase* > m_properties ;
   std::vector< std::string >   m_entity_rank_names ;
   std::vector<shards::CellTopologyManagedData*> m_created_topologies;
@@ -538,10 +509,6 @@ private:
   Property<void> * get_property_base( const std::string & ,
                                       const std::type_info & ,
                                       unsigned = 0 ) const ;
-
-  void internal_declare_field_relation( FieldBase & ,
-                                        relation_stencil_ptr ,
-                                        FieldBase & );
 
   void clean_field_restrictions();
 };
@@ -1095,23 +1062,6 @@ MetaData::declare_attribute_no_delete( FieldBase & field , const T * attribute )
 
 //----------------------------------------------------------------------
 
-template< class PointerFieldType , class ReferencedFieldType >
-inline
-void MetaData::declare_field_relation(
-  PointerFieldType & pointer_field ,
-  relation_stencil_ptr stencil ,
-  ReferencedFieldType & referenced_field )
-{
-  typedef typename FieldTraits< PointerFieldType >::data_type pointer_type ;
-  typedef typename FieldTraits< ReferencedFieldType >::data_type data_type ;
-
-  StaticAssert< SameType< pointer_type , data_type * >::value >::ok();
-  StaticAssert< FieldTraits< PointerFieldType >::Rank == 1 >::ok();
-
-  internal_declare_field_relation( pointer_field , stencil , referenced_field );
-}
-
-//----------------------------------------------------------------------
 
 template< typename DataType >
 inline

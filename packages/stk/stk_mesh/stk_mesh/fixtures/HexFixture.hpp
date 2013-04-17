@@ -38,7 +38,6 @@ class HexFixture
  public:
   typedef double                     Scalar ;
   typedef Field<Scalar, Cartesian>   CoordFieldType;
-  typedef Field<Scalar*,ElementNode> CoordGatherFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted
@@ -55,7 +54,6 @@ class HexFixture
   Part &                        m_hex_part;
   Part &                        m_node_part;
   CoordFieldType &              m_coord_field ;
-  CoordGatherFieldType &        m_coord_gather_field ;
 
   /**
    * Thinking in terms of a 3D grid of nodes, get the id of the node in

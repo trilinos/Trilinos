@@ -131,7 +131,6 @@ bool Partition::add(Entity entity)
   ++m_size;
 
   m_updated_since_compress = m_updated_since_sort = true;
-  internal_propagate_relocation(entity);
   entity.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
 
   DiagIfWatching(LOG_ENTITY, entity.key(),
@@ -187,7 +186,6 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
   dst_partition.m_size++;
 
   m_updated_since_compress = m_updated_since_sort = true;
-  internal_propagate_relocation(entity);
   entity.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
 
   DiagIf(LOG_PARTITION, "After move_to, src state is: " << *this);
@@ -221,7 +219,6 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
     e_swap.m_entityImpl->set_bucket_and_ordinal(bucket_k, ord_k);
 
     // Entity field data has relocated.
-    internal_propagate_relocation(e_swap);
   }
 
   e_k.m_entityImpl->set_bucket_and_ordinal(0, 0);
@@ -366,7 +363,6 @@ void Partition::compress(bool force)
     new_bucket->replace_fields(new_ordinal, old_bucket, old_ordinal);
     entity.m_entityImpl->set_bucket_and_ordinal(new_bucket, new_ordinal);
     new_bucket->replace_entity( new_ordinal , entity ) ;
-    internal_propagate_relocation(entity);
   }
   new_bucket->m_size = m_size;
 
@@ -432,7 +428,6 @@ void Partition::sort(bool force)
   // in the right order in the buckets.
 
   std::vector<Entity>::iterator j = entities.begin();
-  bool change_this_partition = false ;
 
   for (std::vector<Bucket *>::iterator b_i = begin(); b_i != buckets_end; ++b_i)
   {
@@ -463,19 +458,9 @@ void Partition::sort(bool force)
         b->replace_fields(i, *vacancy_bucket , vacancy_ordinal );
         j->m_entityImpl->set_bucket_and_ordinal(b, i);
         b->replace_entity( i, *j );
-        change_this_partition = true ;
 
         TraceIfWatching("stk::mesh::impl::Partition::sort affects", LOG_ENTITY, j->key());
         DiagIfWatching(LOG_ENTITY, j->key(), "  new_bucket: " << *b << ", new_ordinal: " << i);
-      }
-
-      // Once a change has occurred then need to propagate the
-      // relocation for the remainder of the partition.
-      // This allows the propagation to be performed once per
-      // entity as opposed to both times the entity is moved.
-      if ( change_this_partition )
-      {
-        internal_propagate_relocation( *j );
       }
     }
   }
@@ -530,29 +515,6 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
   }
 
   return bucket;
-}
-
-void Partition::internal_propagate_relocation( Entity entity )
-{
-  const EntityRank erank = entity.entity_rank();
-  PairIterRelation rel = entity.relations();
-
-  for ( ; ! rel.empty() ; ++rel )
-  {
-    const EntityRank rel_rank = rel->entity_rank();
-    if ( rel_rank < erank )
-    {
-      Entity e_to = rel->entity();
-
-      set_field_relations( entity, e_to, rel->relation_ordinal() );
-    }
-    else if ( erank < rel_rank )
-    {
-      Entity e_from = rel->entity();
-
-      set_field_relations( e_from, entity, rel->relation_ordinal() );
-    }
-  }
 }
 
 void Partition::reverseEntityOrderWithinBuckets()

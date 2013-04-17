@@ -84,9 +84,6 @@ namespace stk {
             bulk_data(  meta_data, pm ),
             quad_part( meta_data.declare_part("block_1", stk::mesh::MetaData::ELEMENT_RANK ) ),
             coord_field( meta_data.declare_field<CoordFieldType>("coordinates") ),
-#if PERCEPT_QF_USE_COORD_GATHER_FIELD
-            coord_gather_field( meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
-#endif
             NX( nx ),
             NY( ny ),
             generate_sidesets(generate_sidesets_in),
@@ -112,7 +109,6 @@ namespace stk {
 #if PERCEPT_QF_USE_COORD_GATHER_FIELD
           //put coord-gather-field on all elements:
           put_field(
-                    coord_gather_field,
                     stk::mesh::MetaData::ELEMENT_RANK,
                     meta_data.universal_part(),
                     NodesPerElem
@@ -121,7 +117,6 @@ namespace stk {
           // to coord-field of the element's nodes
 
           const stk::mesh::EntityRank element_rank = 2;
-          meta_data.declare_field_relation( coord_gather_field, stk::mesh::element_node_stencil<QuadOrTriTopo, element_rank>, coord_field);
 #endif
 
 
@@ -249,9 +244,6 @@ namespace stk {
         stk::mesh::BulkData    bulk_data ;
         stk::mesh::Part      & quad_part ;
         CoordFieldType       & coord_field ;
-#if PERCEPT_QF_USE_COORD_GATHER_FIELD
-        CoordGatherFieldType & coord_gather_field ;
-#endif
         const unsigned         NX ;
         const unsigned         NY ;
         stk::mesh::Part *side_parts[4];

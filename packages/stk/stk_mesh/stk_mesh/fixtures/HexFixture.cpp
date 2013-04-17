@@ -34,11 +34,9 @@ HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsign
     m_bulk_data( m_fem_meta, pm ),
     m_hex_part( declare_part<shards::Hexahedron<8> >(m_fem_meta, "hex_part") ),
     m_node_part( m_fem_meta.declare_part("node_part", MetaData::NODE_RANK ) ),
-    m_coord_field( m_fem_meta.declare_field<CoordFieldType>("Coordinates") ),
-    m_coord_gather_field(m_fem_meta.declare_field<CoordGatherFieldType>("GatherCoordinates"))
+    m_coord_field( m_fem_meta.declare_field<CoordFieldType>("Coordinates") )
 {
   typedef shards::Hexahedron<8> Hex8 ;
-  const unsigned nodes_per_elem = Hex8::node_count;
 
   //put coord-field on all nodes:
   put_field(
@@ -47,18 +45,6 @@ HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsign
     m_fem_meta.universal_part(),
     m_spatial_dimension);
 
-  //put coord-gather-field on all elements:
-  put_field(
-    m_coord_gather_field,
-    MetaData::ELEMENT_RANK,
-    m_fem_meta.universal_part(),
-    nodes_per_elem);
-
-  // Field relation so coord-gather-field on elements points
-  // to coord-field of the element's nodes
-  m_fem_meta.declare_field_relation( m_coord_gather_field,
-                                     element_node_stencil<Hex8, 3>,
-                                     m_coord_field);
 }
 
 void HexFixture::generate_mesh()

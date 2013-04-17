@@ -118,32 +118,6 @@ int get_entity_subcell_id( const Entity entity ,
                            const CellTopologyData  * side_topology,
                            const EntityVector      & side_nodes );
 
-typedef Field<double*,stk::mesh::ElementNode> ElementNodePointerField ;
-
-/** \brief  Declare an element-to-node-data pointer field.
- */
-template< class NodeField >
-inline
-ElementNodePointerField &
-declare_element_node_pointer_field(
-  MetaData & fmd , const std::string & s ,
-  NodeField & node_field )
-{
-  const unsigned num_states = node_field.number_of_states();
-
-  ElementNodePointerField & f =
-    fmd.template declare_field< ElementNodePointerField >( s, num_states );
-
-  for ( unsigned i = 0 ; i < num_states ; ++i ) {
-    FieldState state = (FieldState) i;
-    fmd.declare_field_relation(
-      f.field_of_state( state ) ,
-      get_element_node_stencil(fmd.spatial_dimension()) ,
-      node_field.field_of_state( state ) );
-  }
-
-  return f ;
-}
 
 template< class Traits >
 void get_parts_with_topology(stk::mesh::BulkData& mesh,

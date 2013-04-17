@@ -86,32 +86,5 @@ namespace mesh {
  *    are satisfied.
  * 
  *
- * \section  Induced Field Relations
- *
- *  A \ref stk::mesh::FieldRelation "field relation" is used to induce
- *  \ref stk_mesh_field_data "field data" relationships between related
- *  mesh entities.
- *
- *  If the following field relation conditions are satisfied
- *  - Let <em>field_from</em> be a pointer-valued field to the
- *    scalar data type of the <em>field_to</em> non-pointer valued field.
- *  - Let <em>( field_from , stencil , field_to )</em> be a
- *    \ref stk::mesh::FieldRelation "field relation".
- *  - Let <em>( entity_from , relation , entity_to )</em> be an
- *    \ref stk::mesh::Relation "entity relation".
- *  - If <em>entity_from</em> has field data for <em>field_from</em>, and
- *    if <em>entity_to</em> has field data for <em>field_to<em>, and
- *  - index = stencil( entity_from.entity_type() , entity_to.entity_type() ,
- *                     relation.identifier() , relation.kind() ), and
- *  - if <em>0 <= index < n</em> where <em>n</em> is the length
- *    of the field data on <em>entity_from</em>
- *  - then following field data relationship is maintained.
- *  \code
- *    field_data( field_from , entity_from )[ index ] =
- *      field_data( field_to , entity_to )
- *  \endcode
- *
- *  Note that the non-negative values of the <em>stencil</em> map must
- *  be unique over the domain of the stencil.
  */
 

@@ -41,7 +41,6 @@ namespace stk {
 
     typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
     typedef stk::mesh::Field<double>                          ScalarFieldType ;
-    typedef stk::mesh::Field<double*, stk::mesh::ElementNode> ElementNodePointerFieldType ;
 
     /** Use case with mixed element topologies and
      *  field relations to provide fast access to node field data
@@ -59,7 +58,7 @@ namespace stk {
 
       ~SingleTetFixture();
 
-      SingleTetFixture( stk::ParallelMachine comm, bool doCommit = true, unsigned npts=0, Point *points=0, unsigned ntets=0, TetIds *tetIds=0, 
+      SingleTetFixture( stk::ParallelMachine comm, bool doCommit = true, unsigned npts=0, Point *points=0, unsigned ntets=0, TetIds *tetIds=0,
                         stk::mesh::EntityId elem_id_start=0);
 
       void populate();
@@ -80,7 +79,7 @@ namespace stk {
       TetIds *m_tetIds;
 
       stk::mesh::EntityId m_elem_id_start;
-      
+
     };
 
     //bool verifyMesh( const SingleTetFixture & mesh );
