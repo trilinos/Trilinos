@@ -62,6 +62,36 @@ buildAndRegisterEvaluators(const std::string & responseName,
    }
 }
 
+template <typename EvalT>
+bool ResponseEvaluatorFactory_Functional<EvalT>::
+typeSupported() const
+{
+   return false;
+}
+
+template < >
+bool ResponseEvaluatorFactory_Functional<panzer::Traits::Residual>::
+typeSupported() const
+{
+  return true;
+}
+
+template < >
+bool ResponseEvaluatorFactory_Functional<panzer::Traits::Jacobian>::
+typeSupported() const
+{
+  return linearObjFactory_!=Teuchos::null;
+}
+
+#ifdef HAVE_STOKHOS
+template < >
+bool ResponseEvaluatorFactory_Functional<panzer::Traits::SGResidual>::
+typeSupported() const
+{
+  return true;
+}
+#endif
+
 }
 
 #endif

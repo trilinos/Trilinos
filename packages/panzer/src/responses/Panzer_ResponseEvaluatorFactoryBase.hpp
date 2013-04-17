@@ -62,6 +62,20 @@ public:
                                            PHX::FieldManager<panzer::Traits> & fm,
                                            const panzer::PhysicsBlock & physicsBlock,
                                            const Teuchos::ParameterList & user_data) const = 0;
+
+   /** Is this evaluation type supported by the factory. This is used to determine cases
+     * where a response may support a particular evaluation type, however at runtime the user
+     * decides not to enable the (say) Jacobian evaluation of this response.
+     *
+     * Note that use of this mechanism is complementary to having the builder return 
+     * <code>Teuchos::null</code> for a particular evaluation type.
+     *
+     * \note In this contect the "type" does not make a lot of sense. But in the dervied
+     *       interface <code>ResponseEvaluatorFactory<EvalT></code> the type is the <code>EvalT</code>.
+     *       Inclusion of this method here simply makes dynamic access to this method
+     *       possible with out a cast. In the end it cleans up the code.
+     */
+   virtual bool typeSupported() const = 0;
 };
 
 }

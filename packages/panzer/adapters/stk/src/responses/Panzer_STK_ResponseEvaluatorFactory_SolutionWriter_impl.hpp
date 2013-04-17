@@ -223,6 +223,20 @@ scaleField(const std::string & fieldName,double fieldScalar)
   fieldToScalar_[fieldName] = fieldScalar;
 }
 
+template <typename EvalT>
+bool ResponseEvaluatorFactory_SolutionWriter<EvalT>::
+typeSupported() const
+{
+   return false;
+}
+
+template < >
+bool ResponseEvaluatorFactory_SolutionWriter<panzer::Traits::Residual>::
+typeSupported() const
+{
+  return true;
+}
+
 }
 
 #endif

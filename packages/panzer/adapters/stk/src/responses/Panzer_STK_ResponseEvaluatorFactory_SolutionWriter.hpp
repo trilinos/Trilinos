@@ -61,6 +61,15 @@ public:
                                            const panzer::PhysicsBlock & physicsBlock,
                                            const Teuchos::ParameterList & user_data) const;
 
+   /** Is this evaluation type supported by the factory. This is used to determine cases
+     * where a response may support a particular evaluation type, however at runtime the user
+     * decides not to enable the (say) Jacobian evaluation of this response.
+     *
+     * Note that use of this mechanism is complementary to having the builder return 
+     * <code>Teuchos::null</code> for a particular evaluation type.
+     */
+   virtual bool typeSupported() const;
+
    /** Take a vector of (std::string (field name), RCP<PureBasis>) pairs and bucket them
      * by basis name. What is returned is a map pairing the basis to a vector of field names.
      */
@@ -77,7 +86,6 @@ public:
      * \param[in] fieldScalar Value to scale the field by.
      */
    void scaleField(const std::string & fieldName,double fieldScalar);
-
 
 private:
    void computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases,

@@ -255,6 +255,7 @@ namespace panzer {
     blocks[0] = "eblock-0_0";
     rLibrary->addResponse("FIELD_A",blocks,builder);
 
+    builder.linearObjFactory = Teuchos::null;
     std::vector<std::pair<std::string,std::string> > sidesets;
     sidesets.push_back(std::make_pair("bottom","eblock-0_0")); // 0.5
     sidesets.push_back(std::make_pair("top","eblock-0_0"));    // 0.5
@@ -265,7 +266,11 @@ namespace panzer {
     Teuchos::RCP<ResponseBase> ssResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_B");
 
     Teuchos::RCP<ResponseBase> blkRespJac = rLibrary->getResponse<panzer::Traits::Jacobian>("FIELD_A");
+    TEST_ASSERT(blkRespJac!=Teuchos::null);
 
+    // no response should be build for this one
+    TEST_ASSERT(rLibrary->getResponse<panzer::Traits::Jacobian>("FIELD_B")==Teuchos::null);
+ 
     RCP<Epetra_Vector> eVec, eVec2;
     {
       RCP<const Epetra_Map> map = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(ssResp)->getMap();
@@ -292,14 +297,19 @@ namespace panzer {
     Teuchos::RCP<panzer::LinearObjContainer> gloc = lof->buildGhostedLinearObjContainer();
     lof->initializeGhostedContainer(panzer::LinearObjContainer::X,*gloc);
 
-    panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
 
-    rLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
-    rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
+    {
+      panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
+      rLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
+      rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
+    }
 
     // evaluate derivatives
-    // rLibrary->addResponsesToInArgs<panzer::Traits::Jacobian>(ae_inargs);
-    // rLibrary->evaluate<panzer::Traits::Jacobian>(ae_inargs);
+    {
+      panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
+      rLibrary->addResponsesToInArgs<panzer::Traits::Jacobian>(ae_inargs);
+      rLibrary->evaluate<panzer::Traits::Jacobian>(ae_inargs);
+    }
 
     double iValue = -2.3;
     double tValue = 82.9;
