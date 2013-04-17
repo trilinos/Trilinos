@@ -99,7 +99,7 @@ public:
 
   //@}
 
-  /** \name Public functions overridden from ModelEvaulator. */
+  /** \name Public functions overridden from ModelEvaluator. */
   //@{
 
   /** \brief . */
@@ -109,7 +109,7 @@ public:
 
 private:
 
-  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  /** \name Private functions overridden from ModelEvaluatorDefaultBase. */
   //@{
 
   /** \brief . */
@@ -200,7 +200,7 @@ std::string DefaultModelEvaluatorWithSolveFactory<Scalar>::description() const
 }
 
 
-// Overridden from ModelEvaulator.
+// Overridden from ModelEvaluator.
 
 
 template<class Scalar>
@@ -218,7 +218,7 @@ DefaultModelEvaluatorWithSolveFactory<Scalar>::create_W() const
 }
 
 
-// Private functions overridden from ModelEvaulatorDefaultBase.
+// Private functions overridden from ModelEvaluatorDefaultBase.
 
 
 template<class Scalar>
