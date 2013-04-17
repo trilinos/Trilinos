@@ -293,11 +293,17 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModelImpl(
   wrappedOutArgs.setArgs(outArgs,true);
 
   RCP<LinearOpWithSolveBase<Scalar> > W;
-  RCP<LinearOpBase<Scalar> > W_op;
   RCP<const LinearOpBase<Scalar> > fwdW;
-  RCP<LinearOpBase<Scalar> > nonconst_fwdW;
   if( outArgs.supports(MEB::OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
     Thyra::uninitializeOp<Scalar>(*W_factory_, W.ptr(), outArg(fwdW));
+
+    {
+      // Handle this case later if we need to!
+      const bool both_W_and_W_op_requested = nonnull(outArgs.get_W_op());
+      TEUCHOS_TEST_FOR_EXCEPT(both_W_and_W_op_requested);
+    }
+
+    RCP<LinearOpBase<Scalar> > nonconst_fwdW;
     if(fwdW.get()) {
       nonconst_fwdW = rcp_const_cast<LinearOpBase<Scalar> >(fwdW);
     }
@@ -305,12 +311,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModelImpl(
       nonconst_fwdW = thyraModel->create_W_op();
       fwdW = nonconst_fwdW;
     }
-  }
-  if( outArgs.supports(MEB::OUT_ARG_W_op) && (W_op = outArgs.get_W_op()).get() ) {
-    if( W_op.get() && !nonconst_fwdW.get() )
-      nonconst_fwdW = rcp_const_cast<LinearOpBase<Scalar> >(fwdW);
-  }
-  if(nonconst_fwdW.get()) {
+
     wrappedOutArgs.set_W_op(nonconst_fwdW);
   }
 
@@ -338,10 +339,6 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModelImpl(
     Thyra::initializeOp<Scalar>(*W_factory_, fwdW, W.ptr());
     W->setVerbLevel(this->getVerbLevel());
     W->setOStream(this->getOStream());
-  }
-
-  if( W_op.get() ) {
-    TEUCHOS_TEST_FOR_EXCEPT(true); // Handle this case later if we need to!
   }
 
   timer.stop();
