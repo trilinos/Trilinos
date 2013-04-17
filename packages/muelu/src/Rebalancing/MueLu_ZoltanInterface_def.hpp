@@ -302,7 +302,7 @@ namespace MueLu {
       return;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(numObjectIDs != Coords->getLocalLength(), Exceptions::Incompatible, "Length of coordinates must be the same as the number of objects");
+    TEUCHOS_TEST_FOR_EXCEPTION(numObjectIDs != static_cast<int>(Coords->getLocalLength()), Exceptions::Incompatible, "Length of coordinates must be the same as the number of objects");
 
     ArrayRCP<ArrayRCP<const SC> > CoordsData(dim);
     for (int j = 0; j < dim; ++j)
