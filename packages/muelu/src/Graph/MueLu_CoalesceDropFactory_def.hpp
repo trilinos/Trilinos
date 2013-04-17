@@ -561,8 +561,12 @@ namespace MueLu {
       Set(currentLevel, "Filtering", (predrop_ != Teuchos::null));
       //what Tobias has implemented
 
-      LocalOrdinal blockdim = 1;         // block dim for fixed size blocks
-      GlobalOrdinal offset = 0;          // global offset of dof gids
+      RCP<const Map> rowMap = A->getRowMap();
+      RCP<const Map> colMap = A->getColMap();
+
+      LO blockdim = 1;                          // block dim for fixed size blocks
+      GO indexBase = rowMap->getIndexBase();    // index base of maps
+      GO offset    = indexBase;                 // global offset of dof gids
 
       // 1) check for blocking/striding information
       if(A->IsView("stridedMaps") &&
@@ -606,10 +610,10 @@ namespace MueLu {
       // 5) do amalgamation. generate graph of amalgamated matrix
       for(LocalOrdinal row=0; row<Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements()); row++) {
         // get global DOF id
-        GlobalOrdinal grid = A->getRowMap()->getGlobalElement(row);
+        GlobalOrdinal grid = rowMap->getGlobalElement(row);
 
         // translate grid to nodeid
-        GlobalOrdinal nodeId = AmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset);
+        GlobalOrdinal nodeId = AmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset, indexBase);
 
         size_t nnz = A->getNumEntriesInLocalRow(row);
         Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -621,11 +625,11 @@ namespace MueLu {
         LocalOrdinal realnnz = 0;
         for(LocalOrdinal col=0; col<Teuchos::as<LocalOrdinal>(nnz); col++) {
           //TEUCHOS_TEST_FOR_EXCEPTION(A->getColMap()->isNodeLocalElement(indices[col])==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: Problem with columns. Error.");
-          GlobalOrdinal gcid = A->getColMap()->getGlobalElement(indices[col]); // global column id
+          GlobalOrdinal gcid = colMap->getGlobalElement(indices[col]); // global column id
 
           if((predrop_ == Teuchos::null && vals[col]!=0.0) ||
              (predrop_ != Teuchos::null && predrop_->Drop(row,grid, col,indices[col],gcid,indices,vals) == false)) {
-            GlobalOrdinal cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset);
+            GlobalOrdinal cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset, indexBase);
             cnodeIds->push_back(cnodeId);
             realnnz++; // increment number of nnz in matrix row
           }
