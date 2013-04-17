@@ -3508,10 +3508,22 @@ namespace Tpetra {
                    const bool tolerant=false,
                    const bool debug=false)
       {
+        using Teuchos::inOutArg;
+        using Teuchos::broadcast;
         std::ifstream in;
+
+        int success = 1;
         if (comm->getRank () == 0) { // Only open the file on Proc 0.
           in.open (filename.c_str ()); // Destructor closes safely
+          if (! in) {
+            success = 0;
+          }
         }
+        broadcast<int, int> (*comm, 0, inOutArg (success));
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          success == 0, std::runtime_error,
+          "Tpetra::MatrixMarket::Reader::readMapFile: "
+          "Failed to read file \"" << filename << "\" on Process 0.");
         return readMap (in, comm, node, tolerant, debug);
       }
 
@@ -4088,8 +4100,10 @@ namespace Tpetra {
         using Teuchos::Array;
         using Teuchos::ArrayRCP;
         using Teuchos::as;
+        using Teuchos::broadcast;
         using Teuchos::Comm;
         using Teuchos::CommRequest;
+        using Teuchos::inOutArg;
         using Teuchos::outArg;
         using Teuchos::reduceAll;
         using Teuchos::REDUCE_MIN;
@@ -4115,12 +4129,8 @@ namespace Tpetra {
           err->pushTab ();
         }
 
-        // This is currently the only place where we use 'tolerant'
-        // and 'debug'.  Later, if we want to be clever, we could have
-        // tolerant mode allow PIDs out of order.
-        int localReadSuccess = 1;
-        std::string readExMsg;
-
+        int readSuccess = 1;
+        std::ostringstream exMsg;
         RCP<MV> data; // Will only be valid on Proc 0
         if (myRank == 0) {
           // If we want to reuse readDenseImpl, we have to make a
@@ -4132,22 +4142,24 @@ namespace Tpetra {
           RCP<const Comm<int> > proc0Comm (new SerialComm<int> ());
           try {
             RCP<const map_type> dataMap;
+            // This is currently the only place where we use
+            // 'tolerant' and 'debug'.  Later, if we want to be
+            // clever, we could have tolerant mode allow PIDs out of
+            // order.
             data = readDenseImpl<int_type> (in, proc0Comm, node, dataMap,
                                             err, tolerant, debug);
             (void) dataMap; // Silence "unused" warnings
           } catch (std::exception& e) {
-            localReadSuccess = 0;
-            readExMsg = e.what ();
+            readSuccess = 0;
+            exMsg << e.what ();
           }
         }
-        int globalReadSuccess = 1;
-        reduceAll (*comm, REDUCE_MIN, localReadSuccess,
-                   outArg (globalReadSuccess));
+        broadcast<int, int> (*comm, 0, inOutArg (readSuccess));
         TEUCHOS_TEST_FOR_EXCEPTION(
-          globalReadSuccess == 0, std::runtime_error,
+          readSuccess == 0, std::runtime_error,
           "Tpetra::MatrixMarket::readMap: "
           "Reading the Map failed with the following exception message: "
-          << readExMsg);
+          << exMsg.str ());
 
         if (debug) {
           *err << myRank << ": readMap: Successfully read data" << endl;
@@ -4155,111 +4167,134 @@ namespace Tpetra {
 
         ArrayRCP<const GO> myGids;
         GO indexBase = 0; // must be global min GID
+
+        ArrayRCP<size_type> gidsPerProcess;
+        ArrayRCP<const int_type> GIDs, PIDs;
+        ArrayRCP<size_type> startIndices;
         if (myRank == 0) {
-          // Assume that the Map's data are ordered by PID (2nd column).
-          ArrayRCP<const int_type> GIDs = data->getData (0);
-          ArrayRCP<const int_type> PIDs = data->getData (1);
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            GIDs.size () != PIDs.size (), std::logic_error,
-            "GIDs.size() = " << GIDs.size() << " != PIDs.size() = "
-            << PIDs.size() << ".  This should never happen.  "
-            "Please report this bug to the Tpetra developers.");
-          // Count of data in each process.
-          const size_type globalNumGIDs = GIDs.size ();
-          ArrayRCP<size_type> gidsPerProcess (numProcs, 0);
+          try {
+            // Assume that the Map's data are ordered by PID (2nd column).
+            GIDs = data->getData (0);
+            PIDs = data->getData (1);
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              GIDs.size () != PIDs.size (), std::logic_error,
+              "GIDs.size() = " << GIDs.size() << " != PIDs.size() = "
+              << PIDs.size() << ".  This should never happen.  "
+              "Please report this bug to the Tpetra developers.");
+            // Count of data in each process.
+            const size_type globalNumGIDs = GIDs.size ();
+            gidsPerProcess = arcp<size_type> (numProcs);
+            std::fill (gidsPerProcess.begin (), gidsPerProcess.end (), 0);
 
-          // Don't throw in the loop; just accumulate an error string.
-          // That way, we won't stall the other processes, which have
-          // posted receives.
-          //std::ostringstream exMsg;
+            // Error conditions.  If any are nonzero, there was an
+            // error.  We use int, not bool, because bool doesn't have
+            // an MPI_Datatype.
+            int numNegPids = 0;
+            int numTooBigPids = 0;
+            int pidsOutOfOrder = 0;
+            Array<size_type> badRows;
+            startIndices = arcp<size_type> (numProcs+1);
+            std::fill (startIndices.begin (), startIndices.end (), 0);
+            //startIndices[0] = 0;
+            int lastPid = 0;
+            for (size_type k = 0; k < globalNumGIDs; ++k) {
+              const GO gid = as<GO> (GIDs[k]);
+              const int pid = as<int> (PIDs[k]);
+              if (debug) {
+                std::ostringstream os;
+                os << "0: readMap: "
+                   << "{k: " << k
+                   << ", gid: " << gid
+                   << ", pid: " << pid
+                   << ", lastPid: " << lastPid << "}" << endl;
+                *err << os.str ();
+              }
+              if (pid < 0) {
+                ++numNegPids;
+                badRows.push_back (k);
+              }
+              else if (pid >= numProcs) {
+                ++numTooBigPids;
+                badRows.push_back (k);
+              }
+              else if (pid < lastPid) {
+                // Did the PID occur out of order?
+                // We allow PIDs to have zero GIDs.
+                ++pidsOutOfOrder;
+                badRows.push_back (k);
+              }
+              else { // We know now that pid is valid.
+                ++gidsPerProcess[pid];
+                if (k == 0 || GIDs[k] < indexBase) {
+                  indexBase = GIDs[k]; // indexBase must be the global min GID
+                }
+                // It could be that Proc 0 owns no GIDs.  In that case,
+                // PID[0] will be > 0 and the code below will fill in
+                // startIndices[p] = 0 for p = 1, 2, ..., PIDs[0].
+                if (pid > lastPid) {
+                  // startIndices is analogous to the 'ptr' array in CSR.
+                  // Fill in offsets for processes with no GIDs.
+                  for (int p = lastPid+1; p <= pid; ++p) {
+                    startIndices[p] = k;
+                  }
+                }
+                lastPid = PIDs[k];
+              }
+            } // for each GID
+            startIndices[numProcs] = globalNumGIDs;
 
-          // Error conditions.  If any are nonzero, there was an
-          // error.  We use int, not bool, because bool doesn't have
-          // an MPI_Datatype.
-          int numNegPids = 0;
-          int numTooBigPids = 0;
-          int pidsOutOfOrder = 0;
-          Array<size_type> badRows;
-          Array<size_type> startIndices (numProcs+1, 0);
-          startIndices[0] = 0;
-          int lastPid = 0;
-          for (size_type k = 0; k < globalNumGIDs; ++k) {
-            const GO gid = as<GO> (GIDs[k]);
-            const int pid = as<int> (PIDs[k]);
+            readSuccess =
+              (numNegPids == 0 && numTooBigPids == 0 && pidsOutOfOrder == 0) ?
+              1 : 0;
             if (debug) {
+              if (readSuccess) {
+                *err << "0: readMap: The Map's data are valid" << endl;
+              } else {
+                *err << "0: readMap: The Map's data are INVALID" << endl;
+              }
+              Teuchos::OSTab tab (err);
               std::ostringstream os;
-              os << "0: readMap: "
-                 << "{k: " << k
-                 << ", gid: " << gid
-                 << ", pid: " << pid
-                 << ", lastPid: " << lastPid << "}" << endl;
+              os << "startIndices: " << toString (startIndices) << endl
+                 << "gidsPerProcess: " << toString (gidsPerProcess ()) << endl;
               *err << os.str ();
             }
-            if (pid < 0) {
-              ++numNegPids;
-              badRows.push_back (k);
-              // exMsg << "Row k=" << k << " (zero-based) of the Map data file, "
-              //   "corresponding to global index GID=" << gid << ", contains an "
-              //   "invalid negative process rank PID=" << pid << ".  This probably "
-              //   "means that the data file is corrupt or does not encode a Map.";
-            }
-            else if (pid >= numProcs) {
-              ++numTooBigPids;
-              badRows.push_back (k);
-              // exMsg << "Row k=" << k << " (zero-based) of the Map data file, "
-              //   "corresponding to global index GID=" << gid << ", contains a "
-              //   "process rank PID=" << pid << " >= the number of processes "
-              //     << numProcs << " in the communicator.  This may mean that the "
-              //   "data file is corrupt or does not encode a Map.  It may also "
-              //   "mean that the communicator over which the Map was distributed "
-              //   "had a different process count than the given communicator.";
-            }
-            else if (pid < lastPid) {
-              // Did the PID occur out of order?
-              // We allow PIDs to have zero GIDs.
-              ++pidsOutOfOrder;
-              badRows.push_back (k);
-            }
-            else { // We know now that pid is valid.
-              ++gidsPerProcess[pid];
-              if (k == 0 || GIDs[k] < indexBase) {
-                indexBase = GIDs[k]; // indexBase must be the global min GID
+            if (readSuccess == 0) {
+              // Construct an informative error message and throw.
+              exMsg << "We found the following errors in the Map's data:" << endl;
+              if (numNegPids > 0) {
+                exMsg << "  - There were " << numNegPids << " negative process "
+                  "ranks (PIDs)" << endl;
               }
-              // It could be that Proc 0 owns no GIDs.  In that case,
-              // PID[0] will be > 0 and the code below will fill in
-              // startIndices[p] = 0 for p = 1, 2, ..., PIDs[0].
-              if (pid > lastPid) {
-                // startIndices is analogous to the 'ptr' array in CSR.
-                // Fill in offsets for processes with no GIDs.
-                for (int p = lastPid+1; p <= pid; ++p) {
-                  startIndices[p] = k;
-                }
+              if (numTooBigPids > 0) {
+                exMsg << "  - There were " << numTooBigPids << " PIDs that "
+                      << "were out of the valid range [0, " << (numProcs-1)
+                      << "].  This probably means that the communicator with "
+                      << "which you saved the Map had a different number of "
+                      << "processes than the communicator with which you are "
+                      << "reading in the Map." << endl;
               }
-              lastPid = PIDs[k];
+              if (pidsOutOfOrder > 0) {
+                exMsg << "  - There were " << pidsOutOfOrder << " PIDs that "
+                  "occurred out of order.  We require that PIDs occur in "
+                  "consecutive increasing order in the file or input stream."
+                      << endl;
+              }
+              exMsg << "List of bad lines in the file or input stream:" << endl;
+              if (badRows.size () > 50) {
+                exMsg << "  - (Over 50 bad lines, so not showing all; first is "
+                      << badRows[0] << ")" << endl;
+              } else {
+                exMsg << "  - " << toString (badRows) << endl;
+              }
+              TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, exMsg.str ());
             }
-          } // for each GID
-          startIndices[numProcs] = globalNumGIDs;
 
-          const bool readSucceeded =
-            numNegPids == 0 && numTooBigPids == 0 && pidsOutOfOrder == 0;
-
-          if (debug) {
-            if (readSucceeded) {
-              *err << "0: readMap: The Map's data are valid" << endl;
-            } else {
-              *err << "0: readMap: The Map's data are INVALID" << endl;
-            }
-            Teuchos::OSTab tab (err);
-            std::ostringstream os;
-            os << "startIndices: " << toString (startIndices) << endl
-               << "gidsPerProcess: " << toString (gidsPerProcess ()) << endl;
-            *err << os.str ();
-          }
-          if (readSucceeded) {
-            // We have to be tricky because we read in GIDs as
-            // int_type, which may differ from GO.  (For example, on
-            // 64-bit Mac or Linux, int_type is long; GO might be int
-            // or long.)  If GO == int_type, we can just make myGids a
+            // convert GIDs from int_type to GO.
+            //
+            // We read in GIDs as int_type, which may differ from GO.
+            // (For example, on 64-bit Mac or Linux, int_type is long;
+            // GO might be int or long, or even an unsigned integer
+            // type.)  If GO == int_type, we can just make myGids a
             // view of the relevant section of GIDs.  However, the
             // code still has to compile when GO != int_type.  Since
             // we know that GIDs will be valid until the end of this
@@ -4280,10 +4315,22 @@ namespace Tpetra {
               }
               myGids = myGidsAsGO.getConst ();
             }
-          } else {
-            myGids = Teuchos::null;
-          } // if readSucceeded
-          //
+          } catch (std::exception& e) {
+            readSuccess = 0;
+            exMsg << e.what ();
+          }
+        } // if myRank == 0
+
+        broadcast<int, int> (*comm, 0, inOutArg (readSuccess));
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          readSuccess == 0, std::runtime_error,
+          "Tpetra::MatrixMarket::readMap: The Map's data were invalid: "
+          << exMsg.str ());
+
+        // If we get this far, every process knows that the read-in
+        // data are valid.  That means we can distribute them without
+        // any more fuss for error conditions.
+        if (myRank == 0) {
           // Distribute the GIDs from Process 0 to the processes to
           // which they belong.  Also tell the GIDs the index base
           // while we're at it, so we don't have to do an all-reduce
@@ -4292,24 +4339,19 @@ namespace Tpetra {
           // MPI guarantees ordering of messages, so we can use
           // nonblocking sends for both (count, indexBase) and the
           // content (the GIDs).  We don't send the GIDs if that
-          // process will own zero of them.  We use a count of -1 as a
-          // flag that something went wrong while reading.
+          // process will own zero of them.
+          //
+          // We could avoid the broadcast above by using a count of -1
+          // as a flag that something went wrong while reading.
+          // However, broadcasts are generally inexpensive compared
+          // with this data redistribution.
           Array<RCP<CommRequest<int> > > countRequests (numProcs-1);
           for (int p = 1; p < numProcs; ++p) {
             ArrayRCP<size_type> sendBuf (2);
-            if (readSucceeded) {
-              sendBuf[0] = gidsPerProcess[p];
-            } else { // read did not succeed
-              // Tell all the other processes that the read failed,
-              // before throwing an exception.
-              sendBuf[0] = as<size_type> (-1);
-            }
+            sendBuf[0] = gidsPerProcess[p];
             sendBuf[1] = as<size_type> (indexBase);
             countRequests[p-1] = isend (*comm, sendBuf.getConst (), p);
           }
-          // This matches the "gidCount < 0" throw test on other processes.
-          TEUCHOS_TEST_FOR_EXCEPTION(! readSucceeded, std::runtime_error,
-            "Reading the Map from the given file on Process 0 failed.");
 
           Array<RCP<CommRequest<int> > > dataRequests;
           ArrayRCP<GO> gidsToSend;
@@ -4335,25 +4377,20 @@ namespace Tpetra {
         }
         else { // if (myRank != 0)
           const int rootRank = 0;
-
           if (debug) {
             *err << myRank <<": readMap: receiving GID count" << endl;
           }
 
-          // Receive the count of GIDs to receive.
-          // If -1, there was an error.  If 0, don't do a second receive.
+          // Receive the count of GIDs to receive.  If 0, don't do a
+          // second receive.  We use blocking receives here because
+          // there's nothing we can do in the meantime while waiting.
           Tuple<size_type, 2> gidCountAndMinAllGid;
           gidCountAndMinAllGid[0] = 0; // gidCount
           receive (*comm, rootRank, 2, gidCountAndMinAllGid.getRawPtr ());
           indexBase = as<GO> (gidCountAndMinAllGid[1]);
           const size_type gidCount = gidCountAndMinAllGid[0];
           indexBase = as<GO> (gidCountAndMinAllGid[1]);
-          if (gidCount < 0) {
-            // This matches the "! readSucceeded" throw test on Proc 0.
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-              "Reading the Map from the given file on Process 0 failed.");
-          }
-          else if (gidCount > 0) {
+          if (gidCount > 0) { // there are actual data to receive
             if (debug) {
               *err << myRank << ": readMap: receiving GID list" << endl;
             }
@@ -4361,7 +4398,7 @@ namespace Tpetra {
             receive (*comm, rootRank, as<int> (gidCount), myGidsCopy.getRawPtr ());
             myGids = myGidsCopy.getConst ();
           }
-        } // whether myRank is 0
+        } // if myRank == 0
 
         if (debug) {
           *err << myRank << ": readMap: Done distributing GID list" << endl;
