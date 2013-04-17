@@ -336,15 +336,15 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   const SpmdVectorSpaceBase<Scalar> &spmdSpc = *this->spmdSpace();
 
   // Get the Spmd communicator
-  const RCP<const Teuchos::Comm<Ordinal> >
-    comm = spmdSpc.getComm();
+  const RCP<const Teuchos::Comm<Ordinal> > comm = spmdSpc.getComm();
+
 #ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar>
     &Y_range = *Y->range(),
     &X_range = *X.range();
 //	std::cout << "SpmdMultiVectorBase<Scalar>::apply(...): comm = " << comm << std::endl;
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ( globalDim_ > localSubDim_ ) && comm.get()==NULL, std::logic_error
+    ( globalDim_ > localSubDim_ ) && is_null(comm), std::logic_error
     ,"SpmdMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
     );
   // ToDo: Write a good general validation function that I can call that will replace
@@ -432,10 +432,17 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   timer.start();
 #endif
  
+  const bool isNonLocalAdjoint = 
+    (
+      real_trans(M_trans) == TRANS
+      &&
+      (globalDim_ > localSubDim_  || (nonnull(comm) && comm->getSize() > 1))
+      );
+
   Workspace<Scalar> Y_local_tmp_store(wss, Y_local.subDim()*Y_local.numSubCols(), false);
   RTOpPack::SubMultiVectorView<Scalar> Y_local_tmp;
   Scalar localBeta;
-  if( real_trans(M_trans) == TRANS && globalDim_ > localSubDim_ ) {
+  if (isNonLocalAdjoint) {
     // Nonlocal
     Y_local_tmp.initialize(
       0, Y_local.subDim(),
@@ -526,13 +533,13 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
     << timer.totalElapsedTime() << " seconds\n";
 #endif
 
-  if( comm.get() ) {
+  if (nonnull(comm)) {
  
     //
     // Perform the global reduction of Y_local_tmp back into Y_local
     //
  
-    if( real_trans(M_trans)==TRANS && globalDim_ > localSubDim_ ) {
+    if (isNonLocalAdjoint) {
       // Contiguous buffer for final reduction
       Workspace<Scalar> Y_local_final_buff(wss,Y_local.subDim()*Y_local.numSubCols(),false);
       // Perform the reduction

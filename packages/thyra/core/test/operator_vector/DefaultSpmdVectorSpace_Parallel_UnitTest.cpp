@@ -49,6 +49,7 @@
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_VectorSpaceTester.hpp"
 #include "Thyra_VectorStdOpsTester.hpp"
+#include "Thyra_MultiVectorStdOpsTester.hpp"
 #include "RTOpPack_SPMD_apply_op_decl.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -57,13 +58,29 @@
 namespace {
 
 
+int g_localDim = 4;
+bool g_show_all_tests = false;
+bool g_dump_objects = false;
 bool g_dumpRTOps = false;
+bool g_emptyProcVectorSpaceTester = false;
 
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::UnitTestRepository::getCLP().setOption(
-    "dump-rtops", "no-dump-rtops", &g_dumpRTOps, "Set if RTOps are dumped or not." );
+    "local-dim", &g_localDim, "Local dimension of each vector." );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "show-all-tests", "no-show-all-tests", &g_show_all_tests,
+    "Set if all tests are shown or not." );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "dump-objects", "no-dump-objects", &g_dump_objects,
+    "Set if vector, multivector, etc. objects are printed or not." );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "dump-rtops", "no-dump-rtops", &g_dumpRTOps,
+    "Set if RTOps are dumped or not." );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "run-vec-spc-tester", "no-run-vec-spc-tester", &g_emptyProcVectorSpaceTester,
+    "Temporary option!");
 }
 
 
@@ -124,10 +141,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parall
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAssignSumVec,
   Scalar )
 {
-  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(2);
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    createZeroEleProcVS<Scalar>(g_localDim);
   const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
   ECHO(assign(v.ptr(), as<Scalar>(1.5)));
-  TEST_EQUALITY_CONST(sum(*v), as<Scalar>(1.5*2*(vs->getComm()->getSize()-1)));
+  TEST_EQUALITY_CONST(sum(*v), as<Scalar>(1.5*g_localDim*(vs->getComm()->getSize()-1)));
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
@@ -137,7 +155,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parall
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcGetFullSubVector,
   Scalar )
 {
-  const Ordinal localSubDim = 2;
+  const Ordinal localSubDim = g_localDim;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
     createZeroEleProcVS<Scalar>(localSubDim);
   const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
@@ -155,7 +173,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parall
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcPrintVec,
   Scalar )
 {
-  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(2);
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    createZeroEleProcVS<Scalar>(g_localDim);
   const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
   ECHO(assign(v.ptr(), as<Scalar>(1.5)));
   out << "v = " << *v;
@@ -168,7 +187,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parall
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAssignSumMultiVec,
   Scalar )
 {
-  const Ordinal localDim = 2;
+  const Ordinal localDim = g_localDim;
   PRINT_VAR(localDim);
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(localDim);
   const Ordinal numCols = 3; 
@@ -193,7 +212,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parall
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcPrintMultiVec,
   Scalar )
 {
-  const Ordinal localDim = 2;
+  const Ordinal localDim = g_localDim;
   PRINT_VAR(localDim);
   const Ordinal numCols = 3;
   PRINT_VAR(numCols);
@@ -207,51 +226,58 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parall
   emptyProcPrintMultiVec )
 
 
-#if 1
-
-
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, emptyProcVectorSpaceTester,
   Scalar )
 {
-  const Ordinal localDim = 2;
-  PRINT_VAR(localDim);
-  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    createZeroEleProcVS<Scalar>(localDim);
 
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType  ScalarMag;
-  Scalar tol = 1.0e-12;
-  bool showAllTests=true, dumpAll=true;
+  if (g_emptyProcVectorSpaceTester) {
 
-  Thyra::VectorSpaceTester<Scalar> vectorSpaceTester;
-  vectorSpaceTester.warning_tol(ScalarMag(0.1)*tol);
-  vectorSpaceTester.error_tol(tol);
-  vectorSpaceTester.show_all_tests(showAllTests);
-  vectorSpaceTester.dump_all(dumpAll);
+    const Ordinal localDim = g_localDim;
+    PRINT_VAR(localDim);
+    const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+      createZeroEleProcVS<Scalar>(localDim);
+  
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    typedef typename ST::magnitudeType  ScalarMag;
+    Scalar tol = 1.0e-12;
+  
+    Thyra::VectorSpaceTester<Scalar> vectorSpaceTester;
+    vectorSpaceTester.warning_tol(ScalarMag(0.1)*tol);
+    vectorSpaceTester.error_tol(tol);
+    vectorSpaceTester.show_all_tests(g_show_all_tests);
+    vectorSpaceTester.dump_all(g_dump_objects);
+  
+    Thyra::VectorStdOpsTester<Scalar> vectorStdOpsTester;
+    vectorStdOpsTester.warning_tol(ScalarMag(0.1)*tol);
+    vectorStdOpsTester.error_tol(tol);
+  
+    Thyra::MultiVectorStdOpsTester<Scalar> multiVectorStdOpsTester;
+    multiVectorStdOpsTester.warning_tol(ScalarMag(0.1)*tol);
+    multiVectorStdOpsTester.error_tol(tol);
+  
+    if (g_dumpRTOps) {
+      RTOpPack::set_SPMD_apply_op_dump_out(rcpFromRef(out));
+    }
+  
+    out << "\nTesting the VectorSpaceBase interface of vs ...\n";
+    TEST_ASSERT(vectorSpaceTester.check(*vs, &out));
+  
+    out << "\nTesting standard vector ops for vs ...\n";
+    TEST_ASSERT(vectorStdOpsTester.checkStdOps(*vs, &out));
+  
+    out << "\nTesting standard multivector ops for vs ...\n";
+    TEST_ASSERT(multiVectorStdOpsTester.checkStdOps(*vs, &out));
+  
+    RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
 
-  Thyra::VectorStdOpsTester<Scalar> vectorStdOpsTester;
-  vectorStdOpsTester.warning_tol(ScalarMag(0.1)*tol);
-  vectorStdOpsTester.error_tol(tol);
-
-  if (g_dumpRTOps) {
-    RTOpPack::set_SPMD_apply_op_dump_out(rcpFromRef(out));
   }
-
-  out << "\nTesting the VectorSpaceBase interface of vs ...\n";
-  TEUCHOS_TEST_ASSERT(vectorSpaceTester.check(*vs, &out), out, success);
-
-  out << "\nTesting standard vector ops for vs ...\n";
-  TEUCHOS_TEST_ASSERT(vectorStdOpsTester.checkStdOps(*vs, &out), out, success);
-
-  RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
-
+  else {
+    out << "Skipping test because g_emptyProcVectorSpaceTester == false!\n";
+  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
   emptyProcVectorSpaceTester )
-
-
-#endif // if 0
 
 
 // ToDo:
