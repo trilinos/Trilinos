@@ -71,7 +71,7 @@ public:
     enum { vectorize = 0 };
 #endif
 
-    OpenMP::assert_not_in_parallel("parallel_for");
+    OpenMP::assert_ready("KokkosArray::OpenMP - parallel_for");
 
 #pragma omp parallel
     {
@@ -163,7 +163,7 @@ public:
     enum { work_mask  = 0 };
 #endif
 
-    OpenMP::assert_not_in_parallel("parallel_reduce");
+    OpenMP::assert_ready("KokkosArray::OpenMP - parallel_reduce");
 
     const ReduceOperator< ValueOper , FinalizeType > reduce( finalize );
 

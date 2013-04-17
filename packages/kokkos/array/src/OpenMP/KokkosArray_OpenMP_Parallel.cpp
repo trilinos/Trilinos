@@ -211,22 +211,30 @@ Impl::HostThread * OpenMP::m_host_threads[ Impl::HostThread::max_thread_count ];
 
 //----------------------------------------------------------------------------
 
-void OpenMP::assert_not_in_parallel( const char * const function )
+void OpenMP::assert_ready( const char * const function )
 {
-  if ( omp_in_parallel() ) {
+  const bool error_not_initialized = 0 == m_host_threads[0] ;
+  const bool error_in_parallel     = 0 != omp_in_parallel();
+
+  if ( error_not_initialized || error_in_parallel ) {
     std::string msg(function);
-    msg.append(" ERROR : Cannot be called OMP parallel");
+    msg.append(" ERROR" );
+    if ( error_not_initialized ) {
+      msg.append(" : Not initialized");
+    }
+    if ( error_in_parallel ) {
+      msg.append(" : Already within an OMP parallel region");
+    }
     throw std::runtime_error(msg);
   }
 }
 
 void OpenMP::initialize( const unsigned gang_count )
 {
-  assert_not_in_parallel("KokkosArray::OpenMP::initialize");
-
   const bool ok_inactive = 0 == m_host_threads[0] ;
+  const bool ok_serial   = 0 == omp_in_parallel();
 
-  if ( ok_inactive ) {
+  if ( ok_inactive && ok_serial ) {
 
     const unsigned thread_count = (unsigned) omp_get_max_threads();
 
@@ -304,6 +312,9 @@ void OpenMP::initialize( const unsigned gang_count )
     if ( ! ok_inactive ) {
       msg << " : Device is already active" ;
     }
+    if ( ! ok_serial ) {
+      msg << " : Called within an OMP parallel region" ;
+    }
 
     KokkosArray::Impl::throw_runtime_exception( msg.str() );
   }
@@ -311,7 +322,7 @@ void OpenMP::initialize( const unsigned gang_count )
 
 void OpenMP::finalize()
 {
-  assert_not_in_parallel("KokkosArray::OpenMP::finalize");
+  assert_ready("KokkosArray::OpenMP::finalize");
 
   resize_reduce_scratch(0);
 
