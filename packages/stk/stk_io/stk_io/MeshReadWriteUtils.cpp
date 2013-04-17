@@ -298,6 +298,17 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
         elements[i].set_local_id(offset+i);
       }
 
+      // Temporary (2013/04/17) kluge for Salinas porting to stk-based mesh.
+      // Salinas uses the "implicit id" which is the ordering of the nodes
+      // in the "undecomposed" or "serial" mesh as user-visible ids
+      // instead of the "global" ids. If there exists a stk-field with the
+      // name "implicit_ids", then populate the field with the correct
+      // data.
+      stk::mesh::FieldBase *imp_id_field = meta.get_field<stk::mesh::FieldBase> ("implicit_ids");
+      if (imp_id_field) {
+        stk::io::field_data_from_ioss(imp_id_field, elements, entity, "implicit_ids");
+      }
+
       // Add all element attributes as fields.
       // If the only attribute is 'attribute', then add it; otherwise the other attributes are the
       // named components of the 'attribute' field, so add them instead.

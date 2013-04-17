@@ -45,6 +45,7 @@ namespace {
     stk::mesh::MetaData &meta = mesh_data.meta_data();
     stk::mesh::Field<int> &imp_id_field = meta.declare_field<stk::mesh::Field<int> >("implicit_ids");
     stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part());
+    stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::ELEMENT_RANK, meta.universal_part());
 
     mesh_data.populate_bulk_data();
 
