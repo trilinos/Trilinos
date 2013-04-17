@@ -49,18 +49,22 @@
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_VectorSpaceTester.hpp"
 #include "Thyra_VectorStdOpsTester.hpp"
+#include "RTOpPack_SPMD_apply_op_decl.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
 
-//#define THYRA_DEFAULT_SPMD_VECTOR_SPACE_UNIT_TESTS_DUMP
-
-#ifdef THYRA_DEFAULT_SPMD_VECTOR_SPACE_UNIT_TESTS_DUMP
-#  include "RTOpPack_SPMD_apply_op_decl.hpp"
-#  include "Thyra_SpmdVectorBase.hpp"
-#endif // THYRA_DEFAULT_SPMD_VECTOR_SPACE_UNIT_TESTS_DUMP
-
 
 namespace {
+
+
+bool g_dumpRTOps = false;
+
+
+TEUCHOS_STATIC_SETUP()
+{
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "dump-rtops", "no-dump-rtops", &g_dumpRTOps, "Set if RTOps are dumped or not." );
+}
 
 
 //
@@ -122,14 +126,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAss
 {
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(2);
   const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-//  RTOpPack::show_spmd_apply_op_dump = true;
-#endif
   ECHO(assign(v.ptr(), as<Scalar>(1.5)));
   TEST_EQUALITY_CONST(sum(*v), as<Scalar>(1.5*2*(vs->getComm()->getSize()-1)));
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-//  RTOpPack::show_spmd_apply_op_dump = false;
-#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
@@ -144,16 +142,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcGet
     createZeroEleProcVS<Scalar>(localSubDim);
   const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
   ECHO(assign(v.ptr(), as<Scalar>(1.5)));
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-  //RTOpPack::show_spmd_apply_op_dump = true;
-#endif
   RTOpPack::ConstSubVectorView<Scalar> subVec;
   v->acquireDetachedView(Teuchos::Range1D(), &subVec);
   TEST_EQUALITY(subVec.subDim(),
     as<Ordinal>(localSubDim*(vs->getComm()->getSize()-1)));
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-  //RTOpPack::show_spmd_apply_op_dump = false;
-#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
@@ -165,14 +157,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcPri
 {
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(2);
   const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-//  RTOpPack::show_spmd_apply_op_dump = true;
-#endif
   ECHO(assign(v.ptr(), as<Scalar>(1.5)));
   out << "v = " << *v;
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-//  RTOpPack::show_spmd_apply_op_dump = false;
-#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
@@ -188,9 +174,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAss
   const Ordinal numCols = 3; 
   PRINT_VAR(numCols);
   const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, numCols);
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-//  RTOpPack::show_spmd_apply_op_dump = true;
-#endif
   const Scalar val = 1.5;
   PRINT_VAR(val);
   ECHO(assign(mv.ptr(), as<Scalar>(val)));
@@ -201,9 +184,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAss
     TEST_EQUALITY(sums[j],  
       as<Scalar>(val*localDim*(vs->getComm()->getSize()-1)));
   }
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-//  RTOpPack::show_spmd_apply_op_dump = false;
-#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
@@ -219,21 +199,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcPri
   PRINT_VAR(numCols);
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(localDim);
   const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, numCols);
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-//  RTOpPack::show_spmd_apply_op_dump = true;
-#endif
   ECHO(assign(mv.ptr(), as<Scalar>(1.5)));
   out << "mv = " << *mv;
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-//  RTOpPack::show_spmd_apply_op_dump = false;
-#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
   emptyProcPrintMultiVec )
 
 
-#if 0
+#if 1
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, emptyProcVectorSpaceTester,
@@ -259,9 +233,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, emptyProcVectorSpaceT
   vectorStdOpsTester.warning_tol(ScalarMag(0.1)*tol);
   vectorStdOpsTester.error_tol(tol);
 
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-  RTOpPack::show_spmd_apply_op_dump = true;
-#endif
+  if (g_dumpRTOps) {
+    RTOpPack::set_SPMD_apply_op_dump_out(rcpFromRef(out));
+  }
 
   out << "\nTesting the VectorSpaceBase interface of vs ...\n";
   TEUCHOS_TEST_ASSERT(vectorSpaceTester.check(*vs, &out), out, success);
@@ -269,9 +243,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, emptyProcVectorSpaceT
   out << "\nTesting standard vector ops for vs ...\n";
   TEUCHOS_TEST_ASSERT(vectorStdOpsTester.checkStdOps(*vs, &out), out, success);
 
-#ifdef RTOPPACK_ENABLE_SHOW_DUMP
-  RTOpPack::show_spmd_apply_op_dump = false;
-#endif
+  RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
 
 }
 
