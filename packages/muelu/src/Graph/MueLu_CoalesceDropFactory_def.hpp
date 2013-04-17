@@ -299,6 +299,7 @@ namespace MueLu {
           std::string msg = "MueLu::CoalesceDropFactory::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
           TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible, msg);
 
+          const RCP<const Map> colMap = A->getColMap();
           RCP<const Map> uniqueMap, nonUniqueMap;
           if (blkSize == 1) {
             uniqueMap    = A->getRowMap();
@@ -309,15 +310,8 @@ namespace MueLu {
             TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible, "Different index bases for matrix and coordinates");
 
             // Amalgamate column map
-            const RCP<const Map> colMap = A->getColMap();
-            std::ostringstream mypid;
-            mypid << colMap->getComm()->getRank();
-
             ArrayView<const GO> elementAList = colMap->getNodeElementList();
             size_t              numElements  = elementAList.size();
-            Array<GO>           elementList(numElements);
-            // NOTE: very ineffective, should be replaced
-            std::set<GO>        filter;
 
 //#ifdef HAVE_MUELU_DEBUG
             // For now, leave it outside of HAVE_MUELU_DEBUG. In the future, we need to move it there
@@ -363,6 +357,9 @@ namespace MueLu {
             TEUCHOS_TEST_FOR_EXCEPTION(columnMapIsBad, Exceptions::RuntimeError, errMsg);
 //#endif
 
+            Array<GO>           elementList(numElements);
+            std::set<GO>        filter;        // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
+
             LO numRows = 0;
             for (LO id = 0; id < static_cast<LO>(numElements); id++) {
               GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
@@ -404,9 +401,14 @@ namespace MueLu {
                   ArrayView<const LocalOrdinal> inds;
                   ArrayView<const Scalar>       vals;
                   A->getLocalRowView(row*blkSize+j, inds, vals);
-                  for (LO k = 0; k < inds.size(); k++)
-                    // FIXME FIXME FIXME
-                    cols.insert(inds[k]/blkSize);
+                  for (LO k = 0; k < inds.size(); k++) {
+                    // TODO: speed this up by using something like map for translation
+                    LO  dofLID = inds[k];
+                    GO  dofGID = colMap->getGlobalElement(dofLID);
+                    GO nodeGID = (dofGID-indexBase)/blkSize + indexBase;
+                    LO nodeLID = nonUniqueMap->getLocalElement(nodeGID);
+                    cols.insert(nodeLID);
+                  }
                 }
                 indicesExtra.resize(cols.size());
                 size_t pos = 0;
@@ -466,9 +468,14 @@ namespace MueLu {
                   ArrayView<const LocalOrdinal> inds;
                   ArrayView<const Scalar>       vals;
                   A->getLocalRowView(row*blkSize+j, inds, vals);
-                  for (LO k = 0; k < inds.size(); k++)
-                    // FIXME FIXME FIXME
-                    cols.insert(inds[k]/blkSize);
+                  for (LO k = 0; k < inds.size(); k++) {
+                    // TODO: speed this up by using something like map for translation
+                    LO  dofLID = inds[k];
+                    GO  dofGID = colMap->getGlobalElement(dofLID);
+                    GO nodeGID = (dofGID-indexBase)/blkSize + indexBase;
+                    LO nodeLID = nonUniqueMap->getLocalElement(nodeGID);
+                    cols.insert(nodeLID);
+                  }
                 }
               } else {
                 cols.insert(row);
@@ -553,7 +560,8 @@ namespace MueLu {
           GlobalOrdinal numGlobalTotal, numGlobalDropped;
           sumAll(comm, numTotal,   numGlobalTotal);
           sumAll(comm, numDropped, numGlobalDropped);
-          GetOStream(Statistics0, -1) << "number of dropped " << numGlobalDropped << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
+          GetOStream(Statistics0, -1) << "Number of dropped entries in amalgamated graph: " << numGlobalDropped << "/" << numGlobalTotal
+              << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
       }
 
     } else {
