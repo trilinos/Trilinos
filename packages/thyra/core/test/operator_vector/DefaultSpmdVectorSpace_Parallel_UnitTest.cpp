@@ -63,6 +63,7 @@ bool g_show_all_tests = false;
 bool g_dump_objects = false;
 bool g_dumpRTOps = false;
 bool g_emptyProcVectorSpaceTester = false;
+bool g_emptyProcSimpleMultiVecAdjointApply = false;
 
 
 TEUCHOS_STATIC_SETUP()
@@ -80,6 +81,9 @@ TEUCHOS_STATIC_SETUP()
     "Set if RTOps are dumped or not." );
   Teuchos::UnitTestRepository::getCLP().setOption(
     "run-vec-spc-tester", "no-run-vec-spc-tester", &g_emptyProcVectorSpaceTester,
+    "Temporary option!");
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "run-simple-mv-adjoint", "run-simple-mv-adjoint", &g_emptyProcSimpleMultiVecAdjointApply,
     "Temporary option!");
 }
 
@@ -105,6 +109,8 @@ using Thyra::ConstDetachedVectorView;
 using Thyra::DetachedVectorView;
 using Thyra::ConstDetachedSpmdVectorView;
 using Thyra::DetachedSpmdVectorView;
+using Thyra::assign;
+using Thyra::apply;
 typedef Thyra::Ordinal Ordinal;
 
 
@@ -224,6 +230,46 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcPri
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
   emptyProcPrintMultiVec )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcSimpleMultiVecAdjointApply,
+  Scalar )
+{
+  if (g_emptyProcSimpleMultiVecAdjointApply) {
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  const Ordinal localDim = g_localDim;
+  PRINT_VAR(localDim);
+  const Ordinal numCols = 1;
+  PRINT_VAR(numCols);
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    createZeroEleProcVS<Scalar>(localDim);
+  const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, numCols);
+  const Scalar val1 = 1.0;
+  PRINT_VAR(val1);
+  ECHO(assign<Scalar>(mv.ptr(), val1));
+  out << "mv = " << *mv;
+  ECHO(const RCP<VectorBase<Scalar> > y = createMember<Scalar>(mv->range()));
+  ECHO(const RCP<VectorBase<Scalar> > x = createMember<Scalar>(mv->range()));
+  const Scalar val2 = 1.0;
+  PRINT_VAR(val2);
+  ECHO(assign<Scalar>(x.ptr(), val2));
+  out << "x = " << *x;
+  ECHO(apply<Scalar>(*mv, Thyra::CONJTRANS, *x, y.ptr()));
+  out << "y = " << *y;
+  TEST_FLOATING_EQUALITY(
+    Thyra::sum<Scalar>(*y),
+    as<Scalar>(val1 * val2 * numCols * g_localDim * (vs->getComm()->getSize()-1)),
+    as<ScalarMag>(10.0*SMT::eps())
+    );
+  }
+  else {
+    out << "Skipping test because g_emptyProcSimpleMultiVecAdjointApply == false!\n";
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
+  emptyProcSimpleMultiVecAdjointApply )
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, emptyProcVectorSpaceTester,

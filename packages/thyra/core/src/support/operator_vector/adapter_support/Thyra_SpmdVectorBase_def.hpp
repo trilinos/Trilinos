@@ -248,12 +248,17 @@ void SpmdVectorBase<Scalar>::acquireDetachedVectorViewImpl(
   }
   const bool isFullRng = rng_in.full_range(); 
   const Range1D rng = validateRange(rng_in);
-  if(
-    rng.lbound() < localOffset_ 
-    ||
-    localOffset_+localSubDim_-1 < rng.ubound()
-    ||
-    isFullRng
+  const bool isLocallyReplicated = this->spmdSpace()->isLocallyReplicated();
+  if (
+    (
+      rng.lbound() < localOffset_ 
+      ||
+      localOffset_+localSubDim_-1 < rng.ubound()
+      ||
+      isFullRng
+      )
+    &&
+    !isLocallyReplicated
     )
   {
     // rng consists of off-processor elements so use the default implementation!
@@ -311,11 +316,19 @@ void SpmdVectorBase<Scalar>::acquireNonconstDetachedVectorViewImpl(
     *sub_vec = RTOpPack::SubVectorView<Scalar>();
     return;
   }
+  const bool isFullRng = rng_in.full_range(); 
   const Range1D rng = validateRange(rng_in);
-  if(
-    rng.lbound() < localOffset_ 
-    ||
-    localOffset_+localSubDim_-1 < rng.ubound()
+  const bool isLocallyReplicated = this->spmdSpace()->isLocallyReplicated();
+  if (
+    (
+      rng.lbound() < localOffset_ 
+      ||
+      localOffset_+localSubDim_-1 < rng.ubound()
+      ||
+      isFullRng
+      )
+    &&
+    !isLocallyReplicated
     )
   {
     // rng consists of off-processor elements so use the default implementation!
