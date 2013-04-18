@@ -227,14 +227,10 @@ template <typename EvalT>
 bool ResponseEvaluatorFactory_SolutionWriter<EvalT>::
 typeSupported() const
 {
-   return false;
-}
+  if(PHX::TypeString<EvalT>::value==PHX::TypeString<panzer::Traits::Residual>::value)
+    return true;
 
-template < >
-bool ResponseEvaluatorFactory_SolutionWriter<panzer::Traits::Residual>::
-typeSupported() const
-{
-  return true;
+  return false;
 }
 
 }

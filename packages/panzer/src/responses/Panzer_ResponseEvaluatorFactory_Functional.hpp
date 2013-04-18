@@ -91,6 +91,7 @@ struct FunctionalResponse_Builder {
   int cubatureDegree;
   bool requiresCellIntegral;
   std::string quadPointField;
+
   void setDerivativeInformation(const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
                                 const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & in_globalIndexer)
   {
@@ -99,6 +100,12 @@ struct FunctionalResponse_Builder {
 
     TEUCHOS_ASSERT((linearObjFactory==Teuchos::null && globalIndexer==Teuchos::null) ||
                    (linearObjFactory!=Teuchos::null && globalIndexer!=Teuchos::null));
+  }
+
+  void setDerivativeInformationBase(const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
+                                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & in_globalIndexer)
+  {
+    setDerivativeInformation(in_linearObjFactory,Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<LO,GO> >(in_globalIndexer,true));
   }
 
   template <typename T>
