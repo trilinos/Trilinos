@@ -64,8 +64,9 @@ panzer::GatherSolution_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
 GatherSolution_Tpetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
-  : globalIndexer_(indexer),
-    useTimeDerivativeSolutionVector_(false)
+  : globalIndexer_(indexer)
+  , useTimeDerivativeSolutionVector_(false)
+  , globalDataKey_("Solution Gather Container")
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -85,6 +86,9 @@ GatherSolution_Tpetra(
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
     useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName("Gather Solution");
 }
 
@@ -94,14 +98,11 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  // globalIndexer_ = d.globalIndexer_;
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
   fieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
-    // get field ID from DOF manager
-    //std::string fieldName = gatherFields_[fd].fieldTag().name();
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
@@ -115,24 +116,32 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+
+   // extract linear object container
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_),true);
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
-   std::vector<GO> GIDs;
    std::vector<LO> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<LOC> tpetraContainer 
-         = Teuchos::rcp_dynamic_cast<LOC>(workset.ghostedLinContainer);
    Teuchos::RCP<typename LOC::VectorType> x;
    if (useTimeDerivativeSolutionVector_)
-     x = tpetraContainer->get_dxdt();
+     x = tpetraContainer_->get_dxdt();
    else
-     x = tpetraContainer->get_x(); 
+     x = tpetraContainer_->get_x(); 
 
    Teuchos::ArrayRCP<const double> x_array = x->get1dView();
  
@@ -145,12 +154,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
  
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs,blockId); 
- 
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = x->getMap()->getLocalElement(GIDs[i]);
+      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
  
       // loop over the fields to be gathered
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
@@ -176,8 +180,9 @@ panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
 GatherSolution_Tpetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
-  : globalIndexer_(indexer),
-    useTimeDerivativeSolutionVector_(false)
+  : globalIndexer_(indexer)
+  , useTimeDerivativeSolutionVector_(false)
+  , globalDataKey_("Solution Gather Container")
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -197,6 +202,9 @@ GatherSolution_Tpetra(
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
     useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName("Gather Solution");
 }
 
@@ -206,14 +214,12 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  // globalIndexer_ = d.globalIndexer_;
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
   fieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
-    //std::string fieldName = gatherFields_[fd].fieldTag().name();
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
@@ -227,27 +233,35 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+
+   // extract linear object container
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_),true);
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
-   std::vector<GO> GIDs;
    std::vector<LO> LIDs;
 
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<LOC> tpetraContainer 
-         = Teuchos::rcp_dynamic_cast<LOC>(workset.ghostedLinContainer);
    Teuchos::RCP<typename LOC::VectorType> x;
    double seed_value = 0.0;
    if (useTimeDerivativeSolutionVector_) {
-     x = tpetraContainer->get_dxdt();
+     x = tpetraContainer_->get_dxdt();
      seed_value = workset.alpha;
    }
    else {
-     x = tpetraContainer->get_x();
+     x = tpetraContainer_->get_x();
      seed_value = workset.beta;
    }
 
@@ -262,12 +276,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs,blockId); 
-
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = x->getMap()->getLocalElement(GIDs[i]);
+      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
       // loop over the fields to be gathered
       for(std::size_t fieldIndex=0;
@@ -281,7 +290,7 @@ evaluateFields(typename Traits::EvalData workset)
             LO lid = LIDs[offset];
 
             // set the value and seed the FAD object
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = ScalarT(GIDs.size(), x_array[lid]);
+            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = ScalarT(LIDs.size(), x_array[lid]);
             (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
          }
       }

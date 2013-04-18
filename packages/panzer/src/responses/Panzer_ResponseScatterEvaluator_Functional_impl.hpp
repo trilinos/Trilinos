@@ -138,6 +138,13 @@ evaluateFields(typename Traits::EvalData d)
   }
 }
 
+template < >
+void ResponseScatterEvaluator_Functional<panzer::Traits::Jacobian,panzer::Traits>::
+evaluateFields(panzer::Traits::EvalData d)
+{
+   std::cout << "STUFF" << std::endl;
+}
+
 }
 
 #endif

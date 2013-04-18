@@ -16,7 +16,7 @@ namespace panzer {
 template <typename EvalT>
 Teuchos::RCP<ResponseBase> ResponseEvaluatorFactory_Functional<EvalT>::
 buildResponseObject(const std::string & responseName) const
-{ return Teuchos::rcp(new Response_Functional<EvalT>(responseName,comm_)); }
+{ return Teuchos::rcp(new Response_Functional<EvalT>(responseName,comm_,linearObjFactory_)); }
 
 template <typename EvalT>
 void ResponseEvaluatorFactory_Functional<EvalT>::

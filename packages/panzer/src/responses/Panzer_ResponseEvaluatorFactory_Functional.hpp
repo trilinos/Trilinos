@@ -8,6 +8,7 @@
 #include "Panzer_BC.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_ResponseEvaluatorFactory.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
 #include <mpi.h>
 
@@ -19,8 +20,10 @@ template <typename EvalT>
 class ResponseEvaluatorFactory_Functional : public ResponseEvaluatorFactory<EvalT> {
 public:
 
-   ResponseEvaluatorFactory_Functional(MPI_Comm comm, int cubatureDegree=1,bool requiresCellIntegral=true,const std::string & quadPointField="") 
-     : comm_(comm), cubatureDegree_(cubatureDegree), requiresCellIntegral_(requiresCellIntegral), quadPointField_(quadPointField) {}
+   ResponseEvaluatorFactory_Functional(MPI_Comm comm, int cubatureDegree=1,bool requiresCellIntegral=true,const std::string & quadPointField="",
+                                       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory=Teuchos::null)
+     : comm_(comm), cubatureDegree_(cubatureDegree), requiresCellIntegral_(requiresCellIntegral)
+     , quadPointField_(quadPointField), linearObjFactory_(linearObjFactory) {}
 
    virtual ~ResponseEvaluatorFactory_Functional() {}
  
@@ -64,6 +67,7 @@ private:
    int cubatureDegree_;
    bool requiresCellIntegral_;
    std::string quadPointField_;
+   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory_;
 };
 
 struct FunctionalResponse_Builder {
@@ -71,10 +75,11 @@ struct FunctionalResponse_Builder {
   int cubatureDegree;
   bool requiresCellIntegral;
   std::string quadPointField;
+  Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
 
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
-  { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T>(comm,cubatureDegree,requiresCellIntegral,quadPointField)); }
+  { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T>(comm,cubatureDegree,requiresCellIntegral,quadPointField,linearObjFactory)); }
 };
 
 

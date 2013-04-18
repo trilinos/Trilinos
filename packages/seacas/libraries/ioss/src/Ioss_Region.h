@@ -207,6 +207,10 @@ namespace Ioss {
     void add_information_records(const std::vector<std::string> &info);
     void add_information_record(const std::string &info);
     
+    const std::vector<std::string> &get_qa_records() const;
+    void add_qa_record(const std::string &code, const std::string &code_qa,
+		       const std::string &date="", const std::string &time="");
+
   protected:
     int64_t internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
@@ -257,4 +261,11 @@ inline void Ioss::Region::add_information_records(const std::vector<std::string>
 inline void Ioss::Region::add_information_record(const std::string &info)
 { return get_database()->add_information_record(info); }
     
+inline void Ioss::Region::add_qa_record(const std::string &code, const std::string &code_qa,
+					const std::string &date, const std::string &time)
+{ return get_database()->add_qa_record(code, code_qa, date, time); }
+
+inline const std::vector<std::string> &Ioss::Region::get_qa_records() const
+{ return get_database()->get_qa_records(); }
+
 #endif

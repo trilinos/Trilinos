@@ -46,7 +46,6 @@
 #include "Panzer_config.hpp"
 
 #include "Panzer_STK_NOXObserverFactory.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_Traits.hpp"
 #include "NOX_PrePostOperator_Vector.H"
@@ -56,12 +55,12 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
 // Individual Observers
-#include "user_app_NOXObserver_EpetraToExodus.hpp"
+#include "user_app_NOXObserver_WriteToExodus.hpp"
 #include "user_app_NOXObserver_NeumannBCAnalyticSystemTest.hpp"
 
 namespace user_app {
   
-  class NOXObserverFactory_Epetra :
+  class NOXObserverFactory :
     public panzer_stk::NOXObserverFactory,
     public Teuchos::ParameterListAcceptorDefaultBase  {
     
@@ -72,7 +71,7 @@ namespace user_app {
 
   public:
 
-    NOXObserverFactory_Epetra(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary)
+    NOXObserverFactory(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary)
        : stkIOResponseLibrary_(stkIOResponseLibrary) {}
     
     Teuchos::RCP<NOX::Abstract::PrePostOperator>
@@ -91,7 +90,7 @@ namespace user_app {
       // Exodus writer to output solution
       if (this->getParameterList()->get<std::string>("Write Solution to Exodus File") == "ON") {
 	Teuchos::RCP<NOX::Abstract::PrePostOperator> solution_writer = 
-	  Teuchos::rcp(new user_app::NOXObserver_EpetraToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
+	  Teuchos::rcp(new user_app::NOXObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
 	observer->pushBack(solution_writer);
       }
 

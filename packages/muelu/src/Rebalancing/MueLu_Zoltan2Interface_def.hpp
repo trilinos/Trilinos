@@ -117,7 +117,7 @@ namespace MueLu {
 
     if (numParts == 1) {
       // Single processor, decomposition is trivial: all zeros
-      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(map, true);
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
       Set(level, "Partition", decomposition);
       return;
     }
@@ -181,8 +181,19 @@ namespace MueLu {
 
     const zoltan2_partId_t * parts = problem->getSolution().getPartList();
 
-    for (GO localID = 0; localID < numElements; localID++) {
-      int partNum = parts[localID];
+    // KDDKDD NEW:  At present, Zoltan2 does not guarantee that the
+    // KDDKDD NEW:  parts in getPartList() are listed in the same order
+    // KDDKDD NEW:  as the input.  Using getIdList() compensates for
+    // KDDKDD NEW:  differences in the order.  Eventually, Zoltan2 will
+    // KDDKDD NEW:  guarantee identical ordering; at that time, all code
+    // KDDKDD NEW:  marked with "KDDKDD NEW" can be reverted to the code
+    // KDDKDD NEW:  marked with "KDDKDD OLD".
+    const GO * zgids = problem->getSolution().getIdList();  // KDDKDD  NEW
+
+    for (GO i = 0; i < numElements; i++) {
+      //GO localID = i;   // KDDKDD OLD
+      GO localID = map->getLocalElement(zgids[i]); // KDDKDD NEW
+      int partNum = parts[i];
 
       for (LO j = 0; j < blkSize; j++)
         decompEntries[localID*blkSize + j] = partNum;

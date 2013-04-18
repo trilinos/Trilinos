@@ -1160,29 +1160,28 @@ namespace MueLu {
   }
 
   template <class SC, class LO, class GO, class NO, class LMO>
-  ArrayRCP<const bool>
-  Utils<SC, LO, GO, NO, LMO>::DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol)
-  {
-    const RCP<const Map> rowMap = A.getRowMap();
-    ArrayRCP<bool> boundaryNodes(A.getNodeNumRows(),true);
+  ArrayRCP<const bool> Utils<SC, LO, GO, NO, LMO>::DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol) {
+    LO numRows = A.getNodeNumRows();
 
-    for(LO row=0; row < Teuchos::as<LO>(rowMap->getNodeNumElements()); ++row) {
+    typedef Teuchos::ScalarTraits<SC> STS;
 
+    ArrayRCP<bool> boundaryNodes(numRows, true);
+    for (LO row = 0; row < numRows; row++) {
       ArrayView<const LO> indices;
       ArrayView<const SC> vals;
       A.getLocalRowView(row, indices, vals);
+
       size_t nnz = A.getNumEntriesInLocalRow(row);
-      if (nnz > 1) {
-        for(size_t col=0; col<nnz; ++col) {
-          if ( (indices[col] != row) && Teuchos::ScalarTraits<SC>::magnitude(vals[col]) > tol) {
+      if (nnz > 1)
+        for (size_t col = 0; col < nnz; col++)
+          if ( (indices[col] != row) && STS::magnitude(vals[col]) > tol) {
             boundaryNodes[row] = false;
             break;
           }
-        }
-      }
     }
+
     return boundaryNodes;
-  } //DetectDirichletRows
+  }
 
   template <class SC, class LO, class GO, class NO, class LMO>
   std::string Utils<SC, LO, GO, NO, LMO>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
@@ -1199,19 +1198,33 @@ namespace MueLu {
       // aggregate data
       GO  numMyNnz = A.getNodeNumEntries(),     minNnz,     maxNnz;
       GO numMyRows = A.getNodeNumRows(),    minNumRows, maxNumRows;
+      double  numMyNnz2 =  Teuchos::as<double>(numMyNnz)* numMyNnz,     sumNnz = Teuchos::as<double>(A.getGlobalNumEntries()),     sum2Nnz;
+      double numMyRows2 = Teuchos::as<double>(numMyRows)*numMyRows, sumNumRows = Teuchos::as<double>(A.getGlobalNumRows()),    sum2NumRows;
       maxAll(comm,                                       numMyNnz, maxNnz);
       maxAll(comm,                                      numMyRows, maxNumRows);
       sumAll(comm, (GO)((numMyRows > 0) ?         1 :          0), numProcessesWithData);
       minAll(comm, (GO)(( numMyNnz > 0) ?  numMyNnz :     maxNnz), minNnz);
       minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
+      sumAll(comm,                                      numMyNnz2, sum2Nnz);
+      sumAll(comm,                                     numMyRows2, sum2NumRows);
 
-      double   avgNumRows = A.getGlobalNumRows() / numProcessesWithData;
-      double nnzImbalance = ((double) maxNnz) / minNnz;
+      double avgNumRows = sumNumRows / numProcessesWithData;
+      double avgNnz     = sumNnz     / numProcessesWithData;
+      // NOTE: division by zero is proper here, it produces reasonable nans
+      double devNumRows = sqrt((sum2NumRows - sumNumRows*sumNumRows/numProcessesWithData)/(numProcessesWithData-1));
+      double devNnz     = sqrt((sum2Nnz     -         sumNnz*sumNnz/numProcessesWithData)/(numProcessesWithData-1));
+      if (numProcessesWithData == 1)
+        devNumRows = devNnz = 0;
 
+      char buf[256];
       ss << msgTag << " Load balancing info:" << std::endl;
-      ss << msgTag << "   # active processes = "   << numActiveProcesses << std::endl;
-      ss << msgTag << "   # rows per proc: min = " << minNumRows << ", avg  = "  << avgNumRows << ", max  = "  << maxNumRows << std::endl;
-      ss << msgTag << "   nonzero imbalance = "    << nnzImbalance << std::endl;
+      ss << msgTag << "   # active processes: "   << numActiveProcesses << ",  # processes with data = " << numProcessesWithData << std::endl;
+      sprintf(buf, "avg = %.2e,  dev = %4.1f%%,  min = %+5.1f%%,  max = %+5.1f%%", avgNumRows,
+              (devNumRows/avgNumRows)*100, (minNumRows/avgNumRows-1)*100, (maxNumRows/avgNumRows-1)*100);
+      ss << msgTag << "   # rows per proc   : " << buf << std::endl;
+      sprintf(buf, "avg = %.2e,  dev = %4.1f%%,  min = %+5.1f%%,  max = %+5.1f%%", avgNnz,
+              (devNnz/avgNnz)*100, (minNnz/avgNnz-1)*100, (maxNnz/avgNnz-1)*100);
+      ss << msgTag << "   #  nnz per proc   : " << buf << std::endl;
     }
 
     return ss.str();

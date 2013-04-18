@@ -44,7 +44,7 @@
 
 #ifndef AMESOS2_MATRIXADAPTER_DEF_HPP
 #define AMESOS2_MATRIXADAPTER_DEF_HPP
-
+#include <Tpetra_Util.hpp>
 #include "Amesos2_MatrixAdapter_decl.hpp"
 #include "Amesos2_ConcreteMatrixAdapter_def.hpp"
 //#include "Amesos2_ConcreteMatrixAdapter.hpp"

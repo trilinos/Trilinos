@@ -65,13 +65,6 @@
 #include "az_blas_wrappers.h"
 #include "az_lapack_wrappers.h"
 
-#ifdef HAVE_AZTECOO_TEUCHOS
-#include "AztecOO_config.h"
-#ifdef AZ_ENABLE_TIMEMONITOR
-#include "Teuchos_CTimeMonitor.h"
-#endif
-#endif
-
 extern int az_iterate_id;
 
 void AZ_pgmres (double b[], double x[],double weight[], int options[],
@@ -165,6 +158,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
 
   /**************************** execution begins ******************************/
+  AZ_START_TIMER( "AztecOO: GMRES total solve time", gmresID );
 
   sprintf(suffix," in gmres%d",options[AZ_recursion_level]);/* set string that will be used */
   /* for manage_memory label      */
@@ -251,7 +245,6 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
     v[k]  = &(vblock[k*aligned_N_total]);
   }
 
-
   AZ_compute_residual(b, x, v[0], proc_config, Amat);
 
   /*
@@ -269,10 +262,12 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
      AZ_compute_global_scalars in order to be consistent with subsequent calls
      to the same function later.  
   */
+  AZ_START_TIMER( "AztecOO: Ortho (Norm)", orthoNormID );
   r_2norm = DDOT_F77(&N, v[0], &one, v[0], &one);
   AZ_gdot_vec(1, &r_2norm, &rec_residual, proc_config);  
   r_2norm = sqrt(r_2norm);
   rec_residual = r_2norm;
+  AZ_STOP_TIMER( orthoNormID );
 
   AZ_compute_global_scalars(Amat, x, b, v[0],
                             weight, &rec_residual, &scaled_r_norm, options,
@@ -325,53 +320,23 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
       if (precond_flag) {
 
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-        /* Start timer. */
-      static int precID = -1;
-      precID = Teuchos_startTimer( "AztecOO: Operation Prec*x", precID );
-#endif
-#endif
+        AZ_START_TIMER( "AztecOO: Operation Prec*x", precID );
         precond->prec_function(temp,options,proc_config,params,Amat,precond);
+        AZ_STOP_TIMER( precID );
 
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-      /* Stop timer. */
-      Teuchos_stopTimer( precID );
-#endif
-#endif
       }
 
       if (iter == 1) status[AZ_first_precond] = AZ_second() - init_time;
 
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-      /* Start timer. */
-      static int matvecID = -1;
-      matvecID = Teuchos_startTimer( "AztecOO: Operation Op*x", matvecID );
-#endif
-#endif
-
+      AZ_START_TIMER( "AztecOO: Operation Op*x", matvecID );
       Amat->matvec(temp, v[i1], Amat, proc_config);
+      AZ_STOP_TIMER( matvecID );
 
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-      /* Stop timer. */
-      Teuchos_stopTimer( matvecID );
-#endif
-#endif
       /* Use ||v[i1]|| as estimate for ||A|| in checks below for breakdown. */
 
       /* Gram-Schmidt orthogonalization */
 
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-      /* Start the timer. */
-      static int orthoID = -1;
-      orthoID = Teuchos_startTimer( "AztecOO: Orthogonalization", orthoID );
-#endif
-#endif
-
+      AZ_START_TIMER( "AztecOO: Orthogonalization", orthoID );
       if (type_orthog==0) { /* Classical. Actually, we do */
 	                    /* this twice. DGKS method */
 
@@ -379,64 +344,45 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
         for (ii = 0 ; ii < num_orthog_steps; ii++ ) {
           if (N == 0) for (k = 0; k <= i; k++) dots[k] = 0.0;
           dble_tmp = 0.0; mm = i+1;
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-      /* Start the timer. */
-      static int orthoInnerProdID = -1;
-      orthoInnerProdID = Teuchos_startTimer( "AztecOO: Ortho (Inner Product)", orthoInnerProdID );
-#endif
-#endif
+
+          AZ_START_TIMER( "AztecOO: Ortho (Inner Product)", orthoInnerProdID );
           DGEMV_F77(CHAR_MACRO(T[0]), &N, &mm, &doubleone, vblock, &aligned_N_total,
                     v[i1], &one, &dble_tmp, dots, &one);
           AZ_gdot_vec(i1, dots, tmp, proc_config);
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-      Teuchos_stopTimer( orthoInnerProdID );
-#endif
-#endif
+          AZ_STOP_TIMER( orthoInnerProdID );
+
           for (k = 0; k <= i; k++) hh[k][i] += dots[k];
 
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-      /* Start the timer. */
-      static int orthoUpdateID = -1;
-      orthoUpdateID = Teuchos_startTimer( "AztecOO: Ortho (Update)", orthoUpdateID );
-#endif
-#endif
+          AZ_START_TIMER( "AztecOO: Ortho (Update)", orthoUpdateID );
           DGEMV_F77(CHAR_MACRO(T2[0]), &N, &mm, &minusone, vblock, &aligned_N_total,
                     dots, &one, &doubleone, v[i1], &one);
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-      Teuchos_stopTimer( orthoUpdateID );
-#endif
-#endif
+          AZ_STOP_TIMER( orthoUpdateID );
+
         }
       }
       else {                    /* modified */
         for (k = 0; k <= i; k++) hh[k][i] = 0.0;
         for (ii = 0 ; ii < num_orthog_steps; ii++ ) {
 	  for (k = 0; k <= i; k++) {
+
+            AZ_START_TIMER( "AztecOO: Ortho (Inner Product)", orthoInnerProdID );
 	    hh[k][i] += dble_tmp = AZ_gdot(N, v[k], v[i1], proc_config);
-	    dble_tmp = -dble_tmp;
+            AZ_STOP_TIMER( orthoInnerProdID );
+
+            AZ_START_TIMER( "AztecOO: Ortho (Update)", orthoUpdateID );
+            dble_tmp = -dble_tmp;
 	    DAXPY_F77(&N, &dble_tmp, v[k], &one, v[i1], &one);
+            AZ_STOP_TIMER( orthoUpdateID );
+
 	  }
 	}
       }
 
       /* normalize vector */
 
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-      static int orthoNormID = -1;
-      orthoNormID = Teuchos_startTimer( "AztecOO: Ortho (Norm)", orthoNormID );
-#endif
-#endif
+      AZ_START_TIMER( "AztecOO: Ortho (Norm)", orthoNormID );
       hh[i1][i] = dble_tmp = sqrt(AZ_gdot(N, v[i1], v[i1], proc_config));
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-      Teuchos_stopTimer( orthoNormID );
-#endif
-#endif
+
       /* Relative size doesn't matter here, it just needs to be nonzero.
          Some very, very tiny number, such as DBL_MIN, might cause trouble,
          so check for that.
@@ -448,12 +394,8 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
       DSCAL_F77(&N, &dble_tmp, v[i1], &one);
 
-#ifdef AZ_ENABLE_TIMEMONITOR
-#ifdef HAVE_AZTECOO_TEUCHOS
-      /* Stop the timer. */
-      Teuchos_stopTimer( orthoID );
-#endif
-#endif
+      AZ_STOP_TIMER( orthoNormID );
+      AZ_STOP_TIMER( orthoID );
 
       /* update factorization of hh by plane rotation */
 
@@ -644,6 +586,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
                             scaled_r_norm, actual_residual, options,
                             proc_config);
 
+  AZ_STOP_TIMER( gmresID );
 } /* AZ_pgmres */
 
 /******************************************************************************/
@@ -745,7 +688,11 @@ void AZ_get_x_incr(int options[], int data_org[], int
   precond_flag = options[AZ_precond];
   if (options[AZ_check_update_size] & *converged) {
     for (j = 0; j < N; j++) temp[j] = v[i][j];
-    if (precond_flag) precond->prec_function(temp,options,proc_config,params, Amat,precond);
+    if (precond_flag) {
+      AZ_START_TIMER( "AztecOO: Operation Prec*x", precID );
+      precond->prec_function(temp,options,proc_config,params, Amat,precond);
+      AZ_STOP_TIMER( precID );
+    }
     update_norm = fabs(rs[i]*sqrt(AZ_gdot(N, temp, temp, proc_config)));
   }
 
@@ -756,8 +703,11 @@ void AZ_get_x_incr(int options[], int data_org[], int
     DAXPY_F77(&N, &t, v[j], &one, temp, &one);
   }
 
-  if (precond_flag) precond->prec_function(temp,options,proc_config,params,
-                                           Amat,precond);
+  if (precond_flag) {
+    AZ_START_TIMER( "AztecOO: Operation Prec*x", precID );
+    precond->prec_function(temp,options,proc_config,params,Amat,precond);
+    AZ_STOP_TIMER( precID );
+  }
 
   DAXPY_F77(&N, &doubleone, temp, &one, x, &one);
 

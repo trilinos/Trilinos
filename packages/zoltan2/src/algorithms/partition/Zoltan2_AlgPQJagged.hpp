@@ -3966,12 +3966,6 @@ void AlgPQJagged(
      */
     env->timerStart(MACRO_TIMERS, "PQJagged Total");
 
-  int migration_check_option = 0;
-  int migration_option = 1;
-  scalar_t migration_imbalance_cut_off = 0.03;
-  // 0 - for decision
-  // > 0 - for force migration
-  // < 0 - for avoid migration
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Init");
   RCP<Comm<int> > comm = problemComm->duplicate();
@@ -3985,6 +3979,12 @@ void AlgPQJagged(
   std::bitset<NUM_RCB_PARAMS> params;
   int numTestCuts = 5;
   scalar_t imbalanceTolerance;
+  int migration_check_option = 0;
+  int migration_option = 1;
+  scalar_t migration_imbalance_cut_off = 0.03;
+  // 0 - for decision
+  // > 0 - for force migration
+  // < 0 - for avoid migration
 
   multiCriteriaNorm mcnorm;
   bool ignoreWeights=false;
@@ -4013,12 +4013,16 @@ void AlgPQJagged(
   */
   allowNonRectelinearPart = false;
 
-  int coordDim, weightDim; size_t nlc; global_size_t gnc; int criteriaDim;
+  int coordDim, weightDim;
+  size_t nlc;
+  global_size_t gnc;
+  int criteriaDim;
   pqJagged_getCoordinateValues<Adapter>( coords, coordDim, weightDim, nlc, gnc, criteriaDim, ignoreWeights);
-  lno_t numLocalCoords = nlc;
+  size_t numLocalCoords = nlc;
 #ifdef enable_migration
   gno_t numGlobalCoords = gnc;
 #endif
+
   //allocate only two dimensional pointer.
   //raw pointer addresess will be obtained from multivector.
   scalar_t **pqJagged_coordinates = allocMemory<scalar_t *>(coordDim);

@@ -81,7 +81,7 @@ unsigned bind_host_thread()
 
   if ( i < thread_count ) {
 
-#if 1
+#if 0
     if ( current != s_coordinates[i] ) {
       std::cout << "  KokkosArray::OpenMP rebinding omp_thread["
                 << omp_get_thread_num()
@@ -137,32 +137,42 @@ void thread_mapping( const unsigned gang_count )
       }
     }
 
-    // Distribute gangs amont NUMA regions:
-    {
+    unsigned gang_in_numa_count = 0 ;
+    unsigned gang_in_numa_rank  = 0 ;
+
+    { // Distribute gangs among NUMA regions:
       // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
       const unsigned bin  = gang_count / core_topo.first ;
       const unsigned bin1 = bin + 1 ;
       const unsigned k    = core_topo.first * bin1 - gang_count ;
       const unsigned part = k * bin ;
 
-      s_coordinates[ thread_rank ].first =
-        ( gang_rank < part )
-        ? ( gang_rank / bin )
-        : ( k + ( gang_rank - part ) / bin1 );
+      if ( gang_rank < part ) {
+        s_coordinates[ thread_rank ].first = gang_rank / bin ;
+        gang_in_numa_rank  = gang_rank % bin ;
+        gang_in_numa_count = bin ;
+      }
+      else {
+        s_coordinates[ thread_rank ].first = k + ( gang_rank - part ) / bin1 ;
+        gang_in_numa_rank  = ( gang_rank - part ) % bin1 ;
+        gang_in_numa_count = bin1 ;
+      }
     }
 
-    // Distribute threads of the gang
-    {
-      // worker_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
-      const unsigned bin  = worker_count / core_topo.second ;
+    { // Distribute workers to cores within this NUMA region:
+      // worker_in_numa_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
+      const unsigned worker_in_numa_count = gang_in_numa_count * worker_count ;
+      const unsigned worker_in_numa_rank  = gang_in_numa_rank  * worker_count + worker_rank ;
+
+      const unsigned bin  = worker_in_numa_count / core_topo.second ;
       const unsigned bin1 = bin + 1 ;
-      const unsigned k    = core_topo.second * bin1 - worker_count ;
+      const unsigned k    = core_topo.second * bin1 - worker_in_numa_count ;
       const unsigned part = k * bin ;
 
-      s_coordinates[thread_rank].second =
-        ( worker_rank < part )
-        ? ( worker_rank / bin )
-        : ( k + ( worker_rank - part ) / bin1 );
+      s_coordinates[ thread_rank ].second =
+        ( worker_in_numa_rank < part )
+        ? ( worker_in_numa_rank / bin )
+        : ( k + ( worker_in_numa_rank - part ) / bin1 );
     }
   }
 
@@ -211,22 +221,30 @@ Impl::HostThread * OpenMP::m_host_threads[ Impl::HostThread::max_thread_count ];
 
 //----------------------------------------------------------------------------
 
-void OpenMP::assert_not_in_parallel( const char * const function )
+void OpenMP::assert_ready( const char * const function )
 {
-  if ( omp_in_parallel() ) {
+  const bool error_not_initialized = 0 == m_host_threads[0] ;
+  const bool error_in_parallel     = 0 != omp_in_parallel();
+
+  if ( error_not_initialized || error_in_parallel ) {
     std::string msg(function);
-    msg.append(" ERROR : Cannot be called OMP parallel");
+    msg.append(" ERROR" );
+    if ( error_not_initialized ) {
+      msg.append(" : Not initialized");
+    }
+    if ( error_in_parallel ) {
+      msg.append(" : Already within an OMP parallel region");
+    }
     throw std::runtime_error(msg);
   }
 }
 
 void OpenMP::initialize( const unsigned gang_count )
 {
-  assert_not_in_parallel("KokkosArray::OpenMP::initialize");
-
   const bool ok_inactive = 0 == m_host_threads[0] ;
+  const bool ok_serial   = 0 == omp_in_parallel();
 
-  if ( ok_inactive ) {
+  if ( ok_inactive && ok_serial ) {
 
     const unsigned thread_count = (unsigned) omp_get_max_threads();
 
@@ -304,6 +322,9 @@ void OpenMP::initialize( const unsigned gang_count )
     if ( ! ok_inactive ) {
       msg << " : Device is already active" ;
     }
+    if ( ! ok_serial ) {
+      msg << " : Called within an OMP parallel region" ;
+    }
 
     KokkosArray::Impl::throw_runtime_exception( msg.str() );
   }
@@ -311,7 +332,7 @@ void OpenMP::initialize( const unsigned gang_count )
 
 void OpenMP::finalize()
 {
-  assert_not_in_parallel("KokkosArray::OpenMP::finalize");
+  assert_ready("KokkosArray::OpenMP::finalize");
 
   resize_reduce_scratch(0);
 

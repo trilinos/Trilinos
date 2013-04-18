@@ -121,10 +121,11 @@ namespace panzer {
 
   struct RespFactoryFunc_Builder {
     MPI_Comm comm;
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
 
     template <typename T>
     Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
-    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T>(comm)); }
+    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T>(comm,1,true,"",linearObjFactory)); }
   };
 
   TEUCHOS_UNIT_TEST(response_library2, test)
@@ -249,6 +250,7 @@ namespace panzer {
 
     RespFactoryFunc_Builder builder;
     builder.comm = MPI_COMM_WORLD;
+    builder.linearObjFactory = lof;
     std::vector<std::string> blocks(1);
     blocks[0] = "eblock-0_0";
     rLibrary->addResponse("FIELD_A",blocks,builder);
@@ -262,6 +264,8 @@ namespace panzer {
     Teuchos::RCP<ResponseBase> blkResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_A");
     Teuchos::RCP<ResponseBase> ssResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_B");
 
+    Teuchos::RCP<ResponseBase> blkRespJac = rLibrary->getResponse<panzer::Traits::Jacobian>("FIELD_A");
+
     RCP<Epetra_Vector> eVec, eVec2;
     {
       RCP<const Epetra_Map> map = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(ssResp)->getMap();
@@ -271,6 +275,9 @@ namespace panzer {
       
       TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(blkResp)->setVector(eVec));
       TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(ssResp)->setVector(eVec2));
+
+      RCP<Epetra_Vector> dVec = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Jacobian> >(blkRespJac,true)->buildEpetraDerivative();
+      TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Jacobian> >(blkRespJac,true)->setDerivative(dVec));
     }
 
     rLibrary->buildResponseEvaluators(physics_blocks,
@@ -289,6 +296,10 @@ namespace panzer {
 
     rLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
     rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
+
+    // evaluate derivatives
+    // rLibrary->addResponsesToInArgs<panzer::Traits::Jacobian>(ae_inargs);
+    // rLibrary->evaluate<panzer::Traits::Jacobian>(ae_inargs);
 
     double iValue = -2.3;
     double tValue = 82.9;

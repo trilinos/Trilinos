@@ -146,7 +146,7 @@ namespace MueLu {
 
         DOFs.reserve(stridedblocksize);
         for(LocalOrdinal k=0; k<stridedblocksize; k++) {
-          DOFs.push_back(offset + gNodeId*fullblocksize + nStridedOffset + k);
+          DOFs.push_back(offset + (gNodeId-offset)*fullblocksize + nStridedOffset + k);
         }
 
         (*nodegid2dofgids_)[gNodeId] = DOFs;
@@ -168,7 +168,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset) {
-    GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset) / blockSize;
+    GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset) / blockSize + offset;
     return globalblockid;
   }
 

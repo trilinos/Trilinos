@@ -95,11 +95,13 @@ public:
    */
   static void initialize( const unsigned gang_count );
 
+  //------------------------------------
+
   static void resize_reduce_scratch( unsigned );
 
   static void * root_reduce_scratch();
 
-  static void assert_not_in_parallel( const char * const );
+  static void assert_ready( const char * const );
 
   inline static
   Impl::HostThread * get_host_thread()

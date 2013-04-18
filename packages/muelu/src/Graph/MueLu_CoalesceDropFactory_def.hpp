@@ -155,13 +155,24 @@ namespace MueLu {
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
 
+        // Detect and record rows that correspond to Dirichlet boundary conditions
+        const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+
         if ( (A->GetFixedBlockSize() == 1) && (threshold == STS::zero()) ) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-
-          // Detect and record rows that correspond to Dirichlet boundary conditions
-          const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
           graph->SetBoundaryNodeMap(boundaryNodes);
+
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes  = 0;
+            GO numGlobalBoundaryNodes = 0;
+            for (LO i = 0; i < boundaryNodes.size(); ++i)
+              if (boundaryNodes[i])
+                numLocalBoundaryNodes++;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+          }
 
           Set(currentLevel, "DofsPerNode", 1);
           Set(currentLevel, "Graph", graph);
@@ -176,7 +187,7 @@ namespace MueLu {
 
           RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
           const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
-          const ArrayRCP<bool> boundaryNodes(A->getNodeNumRows(),false);
+          const ArrayRCP<bool> amalgBoundaryNodes(A->getNodeNumRows(),false);
 
           LocalOrdinal realnnz = 0;
 
@@ -210,10 +221,10 @@ namespace MueLu {
               // If the only element remaining after filtering is diagonal, mark node as bounday
               // FIXME: this should really be replaced by the following
               //    if (indices.size() == 1 && indices[0] == row)
-              //        boundaryNodes[row] = true;
+              //        amalgBoundaryNodes[row] = true;
               // We do not do it this way now because there is no framework for distinguishing isolated
               // and boundary nodes in the aggregation algorithms
-              boundaryNodes[row] = true;
+              amalgBoundaryNodes[row] = true;
             }
             rows[row+1] = realnnz;
           }
@@ -223,7 +234,7 @@ namespace MueLu {
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "amalgamated graph of A"));
           graph->SetBoundaryNodeMap(boundaryNodes);
-          Set(currentLevel, "Graph", graph);
+          Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", 1);
 
         } else if ( (A->GetFixedBlockSize() > 1) && (threshold == STS::zero()) ) {
@@ -238,7 +249,8 @@ namespace MueLu {
         }
 
       } else if (algo == "laplacian") {
-        LO blkSize = A->GetFixedBlockSize();
+        LO blkSize   = A->GetFixedBlockSize();
+        GO indexBase = A->getRowMap()->getIndexBase();
 
         // [*0*] : FIXME
         // ap: somehow, if I move this line to [*1*], Belos throws an error
@@ -246,13 +258,27 @@ namespace MueLu {
         // DeclareInput for it?
         RCP<MultiVector> Coords = Get< RCP<MultiVector> >(currentLevel, "Coordinates");
 
+        // Detect and record rows that correspond to Dirichlet boundary conditions
+        // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
+        // TODO the array one bigger than the number of local rows, and the last entry can
+        // TODO hold the actual number of boundary nodes.  Clever, huh?
+        const ArrayRCP<const bool > pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+
         if ( (blkSize == 1) && (threshold == STS::zero()) ) {
           // Trivial case: scalar problem, no dropping. Can return original graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+          graph->SetBoundaryNodeMap(pointBoundaryNodes);
 
-          // Detect and record rows that correspond to Dirichlet boundary conditions
-          const ArrayRCP<const bool > boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
-          graph->SetBoundaryNodeMap(boundaryNodes);
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes  = 0;
+            GO numGlobalBoundaryNodes = 0;
+            for (LO i = 0; i < pointBoundaryNodes.size(); ++i)
+              if (pointBoundaryNodes[i])
+                numLocalBoundaryNodes++;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+          }
 
           Set(currentLevel, "DofsPerNode", blkSize);
           Set(currentLevel, "Graph",       graph);
@@ -271,7 +297,7 @@ namespace MueLu {
 
           // Check that the number of local coordinates is consistent with the #rows in A
           std::string msg = "MueLu::CoalesceDropFactory::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
-          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(),Exceptions::Incompatible,msg);
+          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible, msg);
 
           RCP<const Map> uniqueMap, nonUniqueMap;
           if (blkSize == 1) {
@@ -279,10 +305,13 @@ namespace MueLu {
             nonUniqueMap = A->getColMap();
 
           } else {
-            uniqueMap   = Coords->getMap();
+            uniqueMap    = Coords->getMap();
+            TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible, "Different index bases for matrix and coordinates");
 
             // Amalgamate column map
             const RCP<const Map> colMap = A->getColMap();
+            std::ostringstream mypid;
+            mypid << colMap->getComm()->getRank();
 
             ArrayView<const GO> elementAList = colMap->getNodeElementList();
             size_t              numElements  = elementAList.size();
@@ -290,9 +319,53 @@ namespace MueLu {
             // NOTE: very ineffective, should be replaced
             std::set<GO>        filter;
 
+//#ifdef HAVE_MUELU_DEBUG
+            // For now, leave it outside of HAVE_MUELU_DEBUG. In the future, we need to move it there
+
+            // Check that matrix column map is consistent with this block size.
+            // We assume that GIDs corresponding to blocks are all present and numbered consecutive, i.e.
+            // if one of the entries in a point map is present, then all entries in the same block must
+            // be present.
+            std::string errMsg;
+            bool columnMapIsBad = false;
+            if (numElements % blkSize) {
+              columnMapIsBad = true;
+              std::ostringstream buf1,buf2;
+              buf1 << numElements; buf2 << blkSize;
+              errMsg = "[pid " + mypid.str() + "] Number of IDs in matrix column map (" + buf1.str()
+                       + ") is not a multiple of block size (" + buf2.str() + ").";
+            }
+            for (LO id = 0; id < static_cast<LO>(numElements); id += blkSize) {
+              GO ID0 = elementAList[id];
+              if (columnMapIsBad || ((ID0 - indexBase) % blkSize)) {
+                if (!columnMapIsBad) {
+                  columnMapIsBad = true;
+                  std::ostringstream buf0,buf1,buf2,buf3,buf4;
+                  buf0 << colMap->getLocalElement(ID0); buf1 << ID0; buf2 << indexBase;
+                  buf3 << id/blkSize;  buf4 << blkSize;
+                  errMsg = "[pid " + mypid.str() + "] First GID " + buf1.str() + "(LID " + buf0.str()
+                           + ") (minus indexBase " + buf2.str() + ") in block "
+                           + buf3.str() + " of column map is not a multiple of block size ("
+                           + buf4.str() + ").";
+                }
+                break;
+              }
+
+              for (LO k = 1; k < blkSize; k++)
+                if (elementAList[id+k] != ID0+k) {
+                  columnMapIsBad = true;
+                  std::ostringstream buf1,buf2,buf3,buf4;
+                  buf1 << id/blkSize; buf2 << ID0+k; buf3 << k; buf4 << blkSize;
+                  errMsg = "[pid " + mypid.str() + "] Block " + buf1.str() + " in column map is missing GID " + buf2.str()
+                           + "(entry " + buf3.str() + " in block of size " + buf4.str() = ").";
+                }
+            }
+            TEUCHOS_TEST_FOR_EXCEPTION(columnMapIsBad, Exceptions::RuntimeError, errMsg);
+//#endif
+
             LO numRows = 0;
             for (LO id = 0; id < static_cast<LO>(numElements); id++) {
-              GO amalgID = elementAList[id]/blkSize;
+              GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
               if (filter.find(amalgID) == filter.end()) {
                 elementList[numRows++] = amalgID;
                 filter.insert(amalgID);
@@ -300,60 +373,71 @@ namespace MueLu {
             }
             elementList.resize(numRows);
 
-            nonUniqueMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, uniqueMap->getIndexBase(), uniqueMap->getComm());
+            nonUniqueMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, uniqueMap->getComm());
           }
+          LocalOrdinal numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
-          // Get ghost coordinates
-          RCP<const Import>     importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
-          RCP<MultiVector> ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
-          ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
+          RCP<MultiVector>          ghostedCoords;
+          RCP<Vector>               ghostedLaplDiag;
+          Teuchos::ArrayRCP<Scalar> ghostedLaplDiagData;
+          if (threshold != STS::zero()) {
+            // Get ghost coordinates
+            RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+            ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
+            ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
 
-          // Construct Distance Laplacian diagonal
-          RCP<Vector>      localLaplDiag     = VectorFactory::Build(uniqueMap);
-          ArrayRCP<Scalar> localLaplDiagData = localLaplDiag->getDataNonConst(0);
-          LocalOrdinal     numRows           = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
-          for (LocalOrdinal row = 0; row < numRows; row++) {
-            ArrayView<const LocalOrdinal> indices;
-            Array<LocalOrdinal>           indicesExtra;
+            // Construct Distance Laplacian diagonal
+            RCP<Vector>      localLaplDiag     = VectorFactory::Build(uniqueMap);
+            ArrayRCP<Scalar> localLaplDiagData = localLaplDiag->getDataNonConst(0);
+            for (LocalOrdinal row = 0; row < numRows; row++) {
+              ArrayView<const LocalOrdinal> indices;
+              Array<LocalOrdinal>           indicesExtra;
 
-            if (blkSize == 1) {
-              ArrayView<const Scalar> vals;
-              A->getLocalRowView(row, indices, vals);
+              if (blkSize == 1) {
+                ArrayView<const Scalar> vals;
+                A->getLocalRowView(row, indices, vals);
 
-            } else {
-              // Merge rows of A
-              std::set<LO> cols;
-              for (LO j = 0; j < blkSize; ++j) {
-                ArrayView<const LocalOrdinal> inds;
-                ArrayView<const Scalar>       vals;
-                A->getLocalRowView(row*blkSize+j, inds, vals);
-                for (LO k = 0; k < inds.size(); k++)
-                  cols.insert(inds[k]/blkSize);
+              } else {
+                // Merge rows of A
+                std::set<LO> cols;
+                for (LO j = 0; j < blkSize; ++j) {
+                  ArrayView<const LocalOrdinal> inds;
+                  ArrayView<const Scalar>       vals;
+                  A->getLocalRowView(row*blkSize+j, inds, vals);
+                  for (LO k = 0; k < inds.size(); k++)
+                    // FIXME FIXME FIXME
+                    cols.insert(inds[k]/blkSize);
+                }
+                indicesExtra.resize(cols.size());
+                size_t pos = 0;
+                for (typename std::set<LocalOrdinal>::const_iterator it = cols.begin(); it != cols.end(); it++)
+                  indicesExtra[pos++] = *it;
+                indices = indicesExtra;
               }
-              indicesExtra.resize(cols.size());
-              size_t pos = 0;
-              for (typename std::set<LocalOrdinal>::const_iterator it = cols.begin(); it != cols.end(); it++)
-                indicesExtra[pos++] = *it;
-              indices = indicesExtra;
-            }
 
-            LocalOrdinal nnz = indices.size();
-            for (LocalOrdinal colID = 0; colID < nnz; colID++) {
-              LocalOrdinal col = indices[colID];
+              LocalOrdinal nnz = indices.size();
+              for (LocalOrdinal colID = 0; colID < nnz; colID++) {
+                LocalOrdinal col = indices[colID];
 
-              if (row != col)
-                localLaplDiagData[row] += STS::one()/MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                if (row != col)
+                  localLaplDiagData[row] += STS::one()/MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+              }
             }
+            ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
+            ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
+            ghostedLaplDiagData = ghostedLaplDiag->getDataNonConst(0);
+
+          } else {
+            GetOStream(Runtime0,0) << "Skipping distance laplacian construction due to 0 threshold" << std::endl;
           }
-          RCP<Vector> ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
-          ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
-          Teuchos::ArrayRCP<Scalar> ghostedLaplDiagData = ghostedLaplDiag->getDataNonConst(0);
+
+          // NOTE: ghostedLaplDiagData might be zero if we don't actually calculate the laplacian
 
           // allocate space for the local graph
           ArrayRCP<LocalOrdinal> rows    = ArrayRCP<LO>(numRows+1);
           ArrayRCP<LocalOrdinal> columns = ArrayRCP<LO>(A->getNodeNumEntries());
 
-          const ArrayRCP<bool> boundaryNodes(numRows, false);
+          const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
 
           LocalOrdinal realnnz = 0;
           rows[0] = 0;
@@ -362,18 +446,32 @@ namespace MueLu {
             Array<LocalOrdinal>           indicesExtra;
 
             if (blkSize == 1) {
-              ArrayView<const Scalar>       vals;
+              ArrayView<const Scalar>     vals;
               A->getLocalRowView(row, indices, vals);
 
             } else {
+              // FIXME: for now, if any of the rows in the row block is Dirichlet, we
+              // assume that all are
+              // This may not be true in general, for instance we might have mixed b.c.
+              // where pressure is Dirichlet and velocities are not
+              bool isBoundary = false;
+              for (LO j = 0; j < blkSize; j++)
+                if (pointBoundaryNodes[row*blkSize+j])
+                  isBoundary = true;
+
               // Merge rows of A
               std::set<LO> cols;
-              for (LO j = 0; j < blkSize; ++j) {
-                ArrayView<const LocalOrdinal> inds;
-                ArrayView<const Scalar>       vals;
-                A->getLocalRowView(row*blkSize+j, inds, vals);
-                for (LO k = 0; k < inds.size(); k++)
-                  cols.insert(inds[k]/blkSize);
+              if (!isBoundary) {
+                for (LO j = 0; j < blkSize; j++) {
+                  ArrayView<const LocalOrdinal> inds;
+                  ArrayView<const Scalar>       vals;
+                  A->getLocalRowView(row*blkSize+j, inds, vals);
+                  for (LO k = 0; k < inds.size(); k++)
+                    // FIXME FIXME FIXME
+                    cols.insert(inds[k]/blkSize);
+                }
+              } else {
+                cols.insert(row);
               }
               indicesExtra.resize(cols.size());
               size_t pos = 0;
@@ -384,24 +482,34 @@ namespace MueLu {
             numTotal += indices.size();
 
             LocalOrdinal nnz = indices.size(), rownnz = 0;
-            for (LocalOrdinal colID = 0; colID < nnz; colID++) {
-              LocalOrdinal col = indices[colID];
+            if (threshold != STS::zero()) {
+              for (LocalOrdinal colID = 0; colID < nnz; colID++) {
+                LocalOrdinal col = indices[colID];
 
-              if (row == col) {
-                columns[realnnz++] = col;
-                rownnz++;
-                continue;
+                if (row == col) {
+                  columns[realnnz++] = col;
+                  rownnz++;
+                  continue;
+                }
+
+                Scalar laplVal = STS::one() / MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
+
+                if (aij > aiiajj) {
+                  columns[realnnz++] = col;
+                  rownnz++;
+                } else {
+                  numDropped++;
+                }
               }
 
-              Scalar laplVal = STS::one() / MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
-              typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
-              typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
-
-              if (aij > aiiajj) {
+            } else {
+              // Skip laplace calculation and threshold comparison for zero threshold
+              for (LocalOrdinal colID = 0; colID < nnz; colID++) {
+                LocalOrdinal col = indices[colID];
                 columns[realnnz++] = col;
                 rownnz++;
-              } else {
-                numDropped++;
               }
             }
 
@@ -412,17 +520,32 @@ namespace MueLu {
               //        boundaryNodes[row] = true;
               // We do not do it this way now because there is no framework for distinguishing isolated
               // and boundary nodes in the aggregation algorithms
-              boundaryNodes[row] = true;
+              amalgBoundaryNodes[row] = true;
             }
             rows[row+1] = realnnz;
-          }
+          } //for (LocalOrdinal row = 0; row < numRows; row++)
           columns.resize(realnnz);
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
-          graph->SetBoundaryNodeMap(boundaryNodes);
+          graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes  = 0;
+            GO numGlobalBoundaryNodes = 0;
+
+            for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
+              if (amalgBoundaryNodes[i])
+                numLocalBoundaryNodes++;
+
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " agglomerated Dirichlet nodes"
+                                       << " using threshold " << dirichletThreshold << std::endl;
+          }
+
           Set(currentLevel, "Graph", graph);
           Set(currentLevel, "DofsPerNode", blkSize);
-        }
+        } //if ( (blkSize == 1) && (threshold == STS::zero()) )
       }
 
       if (GetVerbLevel() & Statistics0) {
@@ -438,8 +561,12 @@ namespace MueLu {
       Set(currentLevel, "Filtering", (predrop_ != Teuchos::null));
       //what Tobias has implemented
 
-      LocalOrdinal blockdim = 1;         // block dim for fixed size blocks
-      GlobalOrdinal offset = 0;          // global offset of dof gids
+      RCP<const Map> rowMap = A->getRowMap();
+      RCP<const Map> colMap = A->getColMap();
+
+      LO blockdim = 1;                          // block dim for fixed size blocks
+      GO indexBase = rowMap->getIndexBase();    // index base of maps
+      GO offset    = indexBase;                 // global offset of dof gids
 
       // 1) check for blocking/striding information
       if(A->IsView("stridedMaps") &&
@@ -483,7 +610,7 @@ namespace MueLu {
       // 5) do amalgamation. generate graph of amalgamated matrix
       for(LocalOrdinal row=0; row<Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements()); row++) {
         // get global DOF id
-        GlobalOrdinal grid = A->getRowMap()->getGlobalElement(row);
+        GlobalOrdinal grid = rowMap->getGlobalElement(row);
 
         // translate grid to nodeid
         GlobalOrdinal nodeId = AmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset);
@@ -498,7 +625,7 @@ namespace MueLu {
         LocalOrdinal realnnz = 0;
         for(LocalOrdinal col=0; col<Teuchos::as<LocalOrdinal>(nnz); col++) {
           //TEUCHOS_TEST_FOR_EXCEPTION(A->getColMap()->isNodeLocalElement(indices[col])==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: Problem with columns. Error.");
-          GlobalOrdinal gcid = A->getColMap()->getGlobalElement(indices[col]); // global column id
+          GlobalOrdinal gcid = colMap->getGlobalElement(indices[col]); // global column id
 
           if((predrop_ == Teuchos::null && vals[col]!=0.0) ||
              (predrop_ != Teuchos::null && predrop_->Drop(row,grid, col,indices[col],gcid,indices,vals) == false)) {

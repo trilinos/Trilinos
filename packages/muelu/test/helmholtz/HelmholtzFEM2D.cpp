@@ -98,7 +98,8 @@ int main(int argc, char *argv[]) {
   //   Galeri Parameters   //
   //***********************//
 
-  GO nx,ny,nz;
+  GO nx, ny, nz;
+  int mx, my, mz;
   double stretchx, stretchy, stretchz, h, delta;
   int PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR;
   double omega, shift;
@@ -126,15 +127,17 @@ int main(int argc, char *argv[]) {
   inputfile >> omega    >> shift ;
   if(comm->getRank()==0)
     std::cout<<"omega: "<<omega<<"  shift: "<<shift<<std::endl;
+  inputfile >> mx       >> my       >> mz ;
+  if(comm->getRank()==0)
+    std::cout<<"mx: "<<mx<<"  my: "<<my<<"  mz: "<<mz<<std::endl;
 
   Galeri::Xpetra::Parameters<GO> matrixParameters_laplace  (clp, nx, ny, nz, "HelmholtzFEM2D", 0, stretchx, stretchy, stretchz,
-							    h, delta, 0,     0,     0,     0,     0,     0,     0.0,   0.0  );
+							    h, delta, 0,     0,     0,     0,     0,     0,     0.0,   0.0,   mx,   my,   mz  );
   Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "HelmholtzFEM2D", 0, stretchx, stretchy, stretchz,
-							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0  );
+							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0,   mx,   my,   mz  );
   Galeri::Xpetra::Parameters<GO> matrixParameters_shift    (clp, nx, ny, nz, "HelmholtzFEM2D", 0, stretchx, stretchy, stretchz,
-							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
+							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift, mx,   my,   mz  );
   Xpetra::Parameters             xpetraParameters(clp);
-
 
   //****************************************//
   //   Setup Galeri Problems and Matrices   //

@@ -54,7 +54,6 @@
 #define MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_
 
 #include <Xpetra_Map.hpp>
-#include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -170,18 +169,15 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   {
     // Level Get
     RCP<const GraphBase> graph   = Get< RCP<GraphBase> >(currentLevel, "Graph");
-    LocalOrdinal nDofsPerNode = Get<LocalOrdinal>(currentLevel, "DofsPerNode");
+    LocalOrdinal    nDofsPerNode = Get<LocalOrdinal>(currentLevel, "DofsPerNode");
 
     // TODO create a map of Xpetra::Maps for different
     // aggregation information (OnePtAggregegates...)
-    Teuchos::RCP<const Map> OnePtMap = Teuchos::null;
-    if(mapOnePtName.length() > 0) {
+    Teuchos::RCP<const Map> OnePtMap = Teuchos::null, SmallAggMap = Teuchos::null;
+    if (mapOnePtName.length()    > 0)
       OnePtMap = currentLevel.Get<Teuchos::RCP<const Map> >(mapOnePtName,mapOnePtFact.get());
-    }
-    Teuchos::RCP<const Map> SmallAggMap = Teuchos::null;
-    if(mapSmallAggName.length() > 0) {
+    if (mapSmallAggName.length() > 0)
       SmallAggMap = currentLevel.Get<Teuchos::RCP<const Map> >(mapSmallAggName,mapSmallAggFact.get());
-    }
 
     // Build
     aggregates = rcp(new Aggregates(*graph));
@@ -192,30 +188,35 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
     // construct aggStat information
     Teuchos::ArrayRCP<unsigned int> aggStat;
-    if(nRows > 0) aggStat = Teuchos::arcp<unsigned int>(nRows);
+    if (nRows > 0)
+      aggStat = Teuchos::arcp<unsigned int>(nRows);
+
     ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
     if (dirichletBoundaryMap == Teuchos::null)
-      dirichletBoundaryMap = ArrayRCP<bool>(nRows,false);
-    for(LocalOrdinal i=0; i<nRows; ++i) {
+      dirichletBoundaryMap = ArrayRCP<bool>(nRows, false);
+
+    GO indexBase = graph->GetDomainMap()->getIndexBase();
+    for (LocalOrdinal i = 0; i < nRows; i++) {
       if (dirichletBoundaryMap[i] == false)
         aggStat[i] = NodeStats::READY;
       else
         aggStat[i] = NodeStats::BOUNDARY;
-      GlobalOrdinal grid = graph->GetDomainMap()->getGlobalElement(i) * nDofsPerNode;
-      if(SmallAggMap != Teuchos::null) {
-         // reconstruct global row id (FIXME only works for contiguous maps)
-        for(LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {
-          if(SmallAggMap->isNodeGlobalElement(grid+kr)) {
+
+      GlobalOrdinal grid = (graph->GetDomainMap()->getGlobalElement(i)-indexBase) * nDofsPerNode + indexBase;
+
+      if (SmallAggMap != Teuchos::null) {
+        // reconstruct global row id (FIXME only works for contiguous maps)
+        for (LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {
+          if (SmallAggMap->isNodeGlobalElement(grid + kr))
             aggStat[i] = MueLu::NodeStats::SMALLAGG;
-          }
         }
       }
-      if(OnePtMap != Teuchos::null) {
+
+      if (OnePtMap != Teuchos::null) {
         // reconstruct global row id (FIXME only works for contiguous maps)
-        for(LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {
-          if(OnePtMap->isNodeGlobalElement(grid+kr)) {
+        for (LocalOrdinal kr = 0; kr < nDofsPerNode; kr++) {
+          if (OnePtMap->isNodeGlobalElement(grid + kr))
             aggStat[i] = MueLu::NodeStats::ONEPT;
-          }
         }
       }
     }
@@ -223,12 +224,10 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     // TODO: check return values of functions
     LocalOrdinal nonAggregatedNodes = -1;
 
-    //Teuchos::ParameterList params;
-    for(size_t a = 0; a < algos_.size(); a++) {
-      nonAggregatedNodes = algos_[a]->BuildAggregates(pL,*graph,*aggregates,aggStat);
-    }
+    for (size_t a = 0; a < algos_.size(); a++)
+      nonAggregatedNodes = algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStat);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(nonAggregatedNodes > 0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
+    TEUCHOS_TEST_FOR_EXCEPTION(nonAggregatedNodes > 0, Exceptions::RuntimeError, "MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
   }
 
   aggregates->AggregatesCrossProcessors(false);

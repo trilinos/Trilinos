@@ -67,8 +67,8 @@
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
-#include "user_app_NOXObserverFactory_Epetra.hpp"
-#include "user_app_RythmosObserverFactory_Epetra.hpp"
+#include "user_app_NOXObserverFactory.hpp"
+#include "user_app_RythmosObserverFactory.hpp"
 #include "user_app_ResponseAggregatorFactory.hpp"
 #include "user_app_ResponseEvaluatorFactory_HOFlux.hpp"
 
@@ -176,14 +176,14 @@ int main(int argc, char *argv[])
 	// Rythmos
 	{
 	  Teuchos::RCP<const panzer_stk::RythmosObserverFactory> rof = 
-	    Teuchos::rcp(new user_app::RythmosObserverFactory_Epetra(stkIOResponseLibrary));
+	    Teuchos::rcp(new user_app::RythmosObserverFactory(stkIOResponseLibrary));
 	  me_factory.setRythmosObserverFactory(rof);
 	}
 	
 	// NOX
 	{
-	  Teuchos::RCP<user_app::NOXObserverFactory_Epetra> nof = 
-	    Teuchos::rcp(new user_app::NOXObserverFactory_Epetra(stkIOResponseLibrary));
+	  Teuchos::RCP<user_app::NOXObserverFactory> nof = 
+	    Teuchos::rcp(new user_app::NOXObserverFactory(stkIOResponseLibrary));
 	  
 	  Teuchos::RCP<Teuchos::ParameterList> observers_to_build = 
 	    Teuchos::parameterList(input_params->sublist("Solver Factories").sublist("NOX Observers"));
