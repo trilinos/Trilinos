@@ -375,7 +375,7 @@ compareCrsMatrixValues (const CrsMatrixType& A_orig,
 }
 
 
-void
+bool
 testReadAndWriteFile (Teuchos::FancyOStream& out,
                       const std::string& mapOutFile,
                       const std::string& matrixOutFile,
@@ -453,6 +453,8 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
   out << "Test the two matrices for exact equality of values, independent of local structure" << endl;
   result = compareCrsMatrixValues<crs_matrix_type> (*A_in, *A_out, out);
   TEST_EQUALITY( result, true );
+
+  return result;
 }
 
 } // namespace (anonymous)
@@ -556,7 +558,7 @@ TEUCHOS_UNIT_TEST( MatrixMarket, Merge2 )
 
 TEUCHOS_UNIT_TEST( MatrixMarket, CrsMatrixFileTest )
 {
-  testReadAndWriteFile (out, mapOutputFilename, matrixOutputFilename,
-                        mapInputFilename, matrixInputFilename);
+  success = testReadAndWriteFile (out, mapOutputFilename, matrixOutputFilename,
+                                  mapInputFilename, matrixInputFilename);
 }
 
