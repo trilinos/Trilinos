@@ -613,7 +613,7 @@ namespace MueLu {
         GlobalOrdinal grid = rowMap->getGlobalElement(row);
 
         // translate grid to nodeid
-        GlobalOrdinal nodeId = AmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset, indexBase);
+        GlobalOrdinal nodeId = AmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset);
 
         size_t nnz = A->getNumEntriesInLocalRow(row);
         Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -629,7 +629,7 @@ namespace MueLu {
 
           if((predrop_ == Teuchos::null && vals[col]!=0.0) ||
              (predrop_ != Teuchos::null && predrop_->Drop(row,grid, col,indices[col],gcid,indices,vals) == false)) {
-            GlobalOrdinal cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset, indexBase);
+            GlobalOrdinal cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset);
             cnodeIds->push_back(cnodeId);
             realnnz++; // increment number of nnz in matrix row
           }
