@@ -44,6 +44,8 @@
 /*--------------------------------------------------------------------------*/
 
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 
 /* KokkosArray interfaces */
 
@@ -117,18 +119,33 @@ std::pair<unsigned,unsigned> hwloc::get_this_thread_coordinate()
 
   std::pair<unsigned,unsigned> coord(0,0);
 
-  if ( n ) {
-    // Using the pre-allocated 's_hwloc_location' to avoid memory
-    // allocation by this thread.  This call is NOT thread-safe.
-    hwloc_get_last_cpu_location( s_hwloc_topology ,
-                                 s_hwloc_location , HWLOC_CPUBIND_THREAD );
+  // Using the pre-allocated 's_hwloc_location' to avoid memory
+  // allocation by this thread.  This call is NOT thread-safe.
+  hwloc_get_last_cpu_location( s_hwloc_topology ,
+                               s_hwloc_location , HWLOC_CPUBIND_THREAD );
 
-    unsigned i = 0 ;
+  unsigned i = 0 ;
 
-    while ( i < n && ! hwloc_bitmap_intersects( s_hwloc_location , s_core[ i ] ) ) ++i ;
+  while ( i < n && ! hwloc_bitmap_intersects( s_hwloc_location , s_core[ i ] ) ) ++i ;
 
+  if ( i < n ) {
     coord.first  = i / s_core_topology.second ;
     coord.second = i % s_core_topology.second ;
+  }
+  else {
+    std::ostringstream msg ;
+    msg << "KokkosArray::hwloc::get_this_thread_coordinate() FAILED :" ;
+
+    if ( 0 != s_process_binding && 0 != s_hwloc_location ) {
+      msg << " cpu_location" ;
+      print_bitmap( msg , s_hwloc_location );
+      msg << " is not a member of the process_cpu_set" ;
+      print_bitmap( msg , s_process_binding );
+    }
+    else {
+      msg << " not initialized" ;
+    }
+    throw std::runtime_error( msg.str() );
   }
   return coord ;
 }
@@ -164,7 +181,6 @@ hwloc::hwloc()
   s_process_binding = 0 ;
 
   for ( unsigned i = 0 ; i < MAX_CORE ; ++i ) s_core[i] = 0 ;
-
 
   hwloc_topology_init( & s_hwloc_topology );
   hwloc_topology_load( s_hwloc_topology );

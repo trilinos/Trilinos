@@ -76,10 +76,7 @@ protected:
     const unsigned gang_count        = core_top.first ;
     const unsigned gang_worker_count = ( core_top.second * core_size ) / 2 ;
 
-    omp_set_max_active_levels(1);
-    omp_set_num_threads( gang_count * gang_worker_count );
-
-    KokkosArray::OpenMP::initialize( gang_count );
+    KokkosArray::OpenMP::initialize( gang_count , gang_worker_count );
   }
 
   static void TearDownTestCase()

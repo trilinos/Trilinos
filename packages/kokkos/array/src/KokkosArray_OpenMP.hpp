@@ -87,13 +87,15 @@ public:
 
   /** \brief  Initialize the device.
    *
-   *  1) If the hardware locality library is enabled then pin OpenMP
-   *     threads to the hardware topology according to the given policy.
+   *  1) If the hardware locality library is enabled and OpenMP has not
+   *     already bound threads then bind OpenMP threads to maximize
+   *     core utilization and group for memory hierarchy locality.
    *
    *  2) Allocate a HostThread for each OpenMP thread to hold its
    *     topology and fan in/out data.
    */
-  static void initialize( const unsigned gang_count );
+  static void initialize( const unsigned gang_count = 1 ,
+                          const unsigned worker_per_gang = 0 );
 
   //------------------------------------
 

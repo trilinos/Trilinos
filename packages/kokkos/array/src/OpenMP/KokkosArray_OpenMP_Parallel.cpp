@@ -239,46 +239,95 @@ void OpenMP::assert_ready( const char * const function )
   }
 }
 
-void OpenMP::initialize( const unsigned gang_count )
+//----------------------------------------------------------------------------
+
+void OpenMP::initialize( const unsigned gang_count ,
+                         const unsigned worker_per_gang )
 {
   const bool ok_inactive = 0 == m_host_threads[0] ;
   const bool ok_serial   = 0 == omp_in_parallel();
 
   if ( ok_inactive && ok_serial ) {
 
+    // If user specifies worker_per_gang then kill existing threads
+    // allocate new threads.
+
+    if ( worker_per_gang ) {
+      omp_set_num_threads( gang_count * worker_per_gang ); // Spawn threads
+    }
+
+    const std::pair<unsigned,unsigned> core_topo = hwloc::get_core_topology();
+
+    const unsigned core_capa = hwloc::get_core_capacity();
+
     const unsigned thread_count = (unsigned) omp_get_max_threads();
 
-    thread_mapping( gang_count );
+    // If there are more threads than "allowed" cores
+    // then omp threads have already been bound (or overallocated)
+    // and there is no opportunity to improve locality.
 
-    const std::pair<unsigned,unsigned> master_core = s_coordinates[0] ;
+    const bool bind_threads = thread_count <= core_topo.first * core_topo.second * core_capa ;
 
-    s_coordinates[0] = std::pair<unsigned,unsigned>(~0u,~0u);
+    //------------------------------------
+
+    if ( bind_threads ) {
+
+      thread_mapping( gang_count );
+
+      const std::pair<unsigned,unsigned> master_core = s_coordinates[0] ;
+
+      s_coordinates[0] = std::pair<unsigned,unsigned>(~0u,~0u);
 
 #pragma omp parallel
-    {
-#pragma omp critical
       {
-        if ( thread_count != (unsigned) omp_get_num_threads() ) {
-          KokkosArray::Impl::throw_runtime_exception( "omp_get_max_threads() != omp_get_num_threads()" );
+#pragma omp critical
+        {
+          if ( thread_count != (unsigned) omp_get_num_threads() ) {
+            KokkosArray::Impl::throw_runtime_exception( "omp_get_max_threads() != omp_get_num_threads()" );
+          }
+          if ( 0 != omp_get_thread_num() ) {
+            const unsigned bind_rank = bind_host_thread();
+            Impl::HostThread * const th = new Impl::HostThread();
+            Impl::HostThread::set_thread( bind_rank , th );
+            m_host_threads[ omp_get_thread_num() ] = th ;
+          }
         }
-        if ( 0 != omp_get_thread_num() ) {
-          const unsigned bind_rank = bind_host_thread();
-          Impl::HostThread * const th = new Impl::HostThread();
-          Impl::HostThread::set_thread( bind_rank , th );
-          m_host_threads[ omp_get_thread_num() ] = th ;
-        }
+// END #pragma omp critical
       }
-    }
 // END #pragma omp parallel
 
-    // Bind master thread last
-    hwloc::bind_this_thread( master_core );
+      // Bind master thread last
+      hwloc::bind_this_thread( master_core );
 
-    {
-      Impl::HostThread * const th = new Impl::HostThread();
-      Impl::HostThread::set_thread( 0 , th );
-      m_host_threads[ 0 ] = th ;
+      {
+        Impl::HostThread * const th = new Impl::HostThread();
+        Impl::HostThread::set_thread( 0 , th );
+        m_host_threads[ 0 ] = th ;
+      }
     }
+    //------------------------------------
+    else {
+
+#pragma omp parallel
+      {
+#pragma omp critical
+        {
+          if ( thread_count != (unsigned) omp_get_num_threads() ) {
+            KokkosArray::Impl::throw_runtime_exception( "omp_get_max_threads() != omp_get_num_threads()" );
+          }
+
+          const unsigned rank = (unsigned) omp_get_thread_num() ;
+
+          Impl::HostThread * const th = new Impl::HostThread();
+          Impl::HostThread::set_thread( rank , th );
+          m_host_threads[ rank ] = th ;
+        }
+// END #pragma omp critical
+      }
+// END #pragma omp parallel
+
+    }
+    //------------------------------------
 
     // Set the thread's ranks and counts
     for ( unsigned thread_rank = 0 ; thread_rank < thread_count ; ++thread_rank ) {

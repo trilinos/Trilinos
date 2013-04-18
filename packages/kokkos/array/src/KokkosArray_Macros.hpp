@@ -109,45 +109,53 @@ namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 /* END: #if defined( __CUDACC__ ) */
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-#elif defined( __INTEL_COMPILER ) && defined( __MIC__ )
+#else /* Host memory space and no special markups needed */
+
+namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
+
+#define KOKKOSARRAY_INLINE_FUNCTION  inline
+#define KOKKOSARRAY_FUNCTION         /* */
+
+//----------------------------------------------------------------------------
+
+#if defined( __INTEL_COMPILER )
+
+#if defined( __MIC__ )
 
 /*  Compiling with Intel compiler for execution on an Intel MIC device.
  *  These devices are used in no-offload mode so the Host space is the MIC space.
  */
 
-namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
+#endif
 
-#define KOKKOSARRAY_INLINE_FUNCTION  inline
-#define KOKKOSARRAY_FUNCTION         /* */
+#endif
 
 //----------------------------------------------------------------------------
+
+#if defined( __GNUC__ ) && defined( __GNUG__ )
+
+/*  Compiling with GNU compatible compiler.
+ *  These devices are used in no-offload mode so the Host space is the MIC space.
+ */
+
+#endif
+
 //----------------------------------------------------------------------------
 
-#elif defined( _OPENMP )
+#if defined( _OPENMP )
 
-/*  Compiling with an OpenMP compiler.
+/*  Compiling with in OpenMP mode.
  *  The value of _OPENMP is an integer value YYYYMM 
  *  where YYYY and MM are the year and month designation
  *  of the supported OpenMP API version.
  */
 
-namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
+#endif /* END: #if defined( _OPENMP ) */
 
-#define KOKKOSARRAY_INLINE_FUNCTION  inline
-#define KOKKOSARRAY_FUNCTION         /* */
-
-/* END defined( _OPENMP ) */
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#else /* No special compilation space detected */
-
-namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
-
-#define KOKKOSARRAY_INLINE_FUNCTION  inline
-#define KOKKOSARRAY_FUNCTION         /* */
-
-#endif
+#endif /* END: ! #if defined( __CUDACC__ ) */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
