@@ -152,7 +152,173 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A)
       }
     }
 
-    int globalEqual = 1;
+    int globalEqual = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, 1, &localEqual, &globalEqual);
+    return globalEqual == 1;
+  }
+}
+
+template<class IT1, class IT2>
+void
+merge2 (IT1& indResultOut, IT2& valResultOut, IT1 indBeg, IT1 indEnd, IT2 valBeg, IT2 valEnd)
+{
+  if (indBeg == indEnd) {
+    indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
+    valResultOut = valBeg; // It's allowed for valResultOut to alias valEnd
+  }
+  else {
+    IT1 indResult = indBeg;
+    IT2 valResult = valBeg;
+    if (indBeg != indEnd) {
+      ++indBeg;
+      ++valBeg;
+      while (indBeg != indEnd) {
+        if (*indResult == *indBeg) { // adjacent column indices equal
+          *valResult += *valBeg; // merge entries by adding their values together
+        } else { // adjacent column indices not equal
+          *(++indResult) = *indBeg; // shift over the index
+          *(++valResult) = *valBeg; // shift over the value
+        }
+        ++indBeg;
+        ++valBeg;
+      }
+      ++indResult; // exclusive end of merged result
+      ++valResult; // exclusive end of merged result
+      indEnd = indResult;
+      valEnd = valResult;
+    }
+    indResultOut = indResult;
+    valResultOut = valResult;
+  }
+}
+
+// Input matrices must be fill complete.
+template<class CrsMatrixType>
+bool
+compareCrsMatrixValues (const CrsMatrixType& A_orig,
+                        const CrsMatrixType& A,
+                        Teuchos::FancyOStream& out)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
+  using Teuchos::reduceAll;
+  using Teuchos::REDUCE_MIN;
+  using std::endl;
+  typedef typename CrsMatrixType::scalar_type ST;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
+  typedef typename ArrayView<const GO>::size_type size_type;
+  typedef Teuchos::ScalarTraits<ST> STS;
+  typedef typename STS::magnitudeType MT;
+  typedef Teuchos::ScalarTraits<MT> STM;
+
+  Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
+
+  if (! A_orig.getRowMap ()->isSameAs (* (A.getRowMap ()))) {
+    out << "Row Maps are not the same" << endl;
+    return false;
+  }
+  else if (! A_orig.getColMap ()->isSameAs (* (A.getColMap ()))) {
+    out << "Column Maps are not the same" << endl;
+    return false;
+  }
+  else if (! A_orig.getDomainMap ()->isSameAs (* (A.getDomainMap ()))) {
+    out << "Domain Maps are not the same" << endl;
+    return false;
+  }
+  else if (! A_orig.getRangeMap ()->isSameAs (* (A.getRangeMap ()))) {
+    out << "Range Maps are not the same" << endl;
+    return false;
+  }
+  else {
+    //
+    // Are my local matrices equal?
+    //
+    RCP<const Comm<int> > comm = A.getRowMap ()->getComm ();
+
+    Array<GO> indOrig, ind;
+    Array<ST> valOrig, val;
+    size_t numEntriesOrig = 0;
+    size_t numEntries = 0;
+
+    ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
+    const size_type numLocalElts = localElts.size ();
+    MT localDiff = STM::zero (); // \sum_{i,j} |A_orig(i,j) - A(i,j)| locally
+    for (size_type i = 0; i < numLocalElts; ++i) {
+      const GO globalRow = localElts[i];
+      numEntriesOrig = A_orig.getNumEntriesInGlobalRow (globalRow);
+      numEntries = A.getNumEntriesInGlobalRow (globalRow);
+
+      indOrig.resize (numEntriesOrig);
+      valOrig.resize (numEntriesOrig);
+      A_orig.getGlobalRowCopy (globalRow, indOrig (), valOrig (), numEntriesOrig);
+      ind.resize (numEntries);
+      val.resize (numEntries);
+      A.getGlobalRowCopy (globalRow, ind (), val (), numEntries);
+
+      // Global row entries are not necessarily sorted.  Sort them
+      // (and their values with them) so we can merge their values.
+      Tpetra::sort2 (indOrig.begin (), indOrig.end (), valOrig.begin ());
+      Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
+
+      //
+      // Merge repeated values in each set of indices and values.
+      //
+
+      typename Array<GO>::iterator indOrigIter = indOrig.begin ();
+      typename Array<ST>::iterator valOrigIter = valOrig.begin ();
+      typename Array<GO>::iterator indOrigEnd = indOrig.end ();
+      typename Array<ST>::iterator valOrigEnd = valOrig.end ();
+      merge2 (indOrigEnd, valOrigEnd, indOrigIter, indOrigEnd, valOrigIter, valOrigEnd);
+
+      typename Array<GO>::iterator indIter = ind.begin ();
+      typename Array<ST>::iterator valIter = val.begin ();
+      typename Array<GO>::iterator indEnd = ind.end ();
+      typename Array<ST>::iterator valEnd = val.end ();
+      merge2 (indEnd, valEnd, indIter, indEnd, valIter, valEnd);
+
+      //
+      // Compare the merged sets of entries.
+      //
+
+      indOrigIter = indOrig.begin ();
+      indIter = ind.begin ();
+      valOrigIter = valOrig.begin ();
+      valIter = val.begin ();
+      while (indOrigIter != indOrigEnd && indIter != indEnd) {
+        const GO j_orig = *indOrigIter;
+        const GO j = *indIter;
+
+        if (j_orig < j) { // entry is in A_orig, not in A
+          localDiff += STS::magnitude (*valOrigIter);
+          ++indOrigIter;
+          ++valOrigIter;
+        } else if (j_orig > j) { // entry is in A, not A_orig
+          localDiff += STS::magnitude (*valIter);
+          ++indIter;
+          ++valIter;
+        } else { // j_orig == j: entry is in both matrices
+          localDiff += STS::magnitude (*valOrigIter - *valIter);
+          ++indOrigIter;
+          ++valOrigIter;
+          ++indIter;
+          ++valIter;
+        }
+      }
+    }
+
+    std::ostringstream os;
+    const int myRank = comm->getRank ();
+    os << "Values are ";
+    if (localDiff == STM::zero ()) {
+      os << "the same on process " << myRank << endl;
+    } else {
+      os << "NOT the same on process " << myRank
+         << ": \\sum_{i,j} |A_orig(i,j) - A(i,j)| = " << localDiff << endl;
+    }
+    int globalEqual = 0;
+    int localEqual = (localDiff == STM::zero ()) ? 1 : 0;
     reduceAll<int, int> (*comm, REDUCE_MIN, 1, &localEqual, &globalEqual);
     return globalEqual == 1;
   }
@@ -226,12 +392,69 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
                                  rowMap, colMap, domainMap, rangeMap,
                                  callFillComplete, tolerant, debug);
 
-  out << "Test the two matrices for equality" << endl;
+  out << "Test the two matrices for exact equality of structure and values" << endl;
   result = compareCrsMatrix<crs_matrix_type> (*A_in, *A_out);
+  {
+    OSTab tab (rcpFromRef (out));
+    out << "- Matrices are " << (result ? "" : "NOT ") << "equal" << endl;
+  }
   TEST_EQUALITY( result, true );
+
+  out << "Test the two matrices for exact equality of values" << endl;
+  result = compareCrsMatrixValues<crs_matrix_type> (*A_in, *A_out, out);
+
 }
 
 } // namespace (anonymous)
+
+
+TEUCHOS_UNIT_TEST( MatrixMarket, Merge2 )
+{
+  using Teuchos::Array;
+  typedef Array<int>::size_type size_type;
+  const size_type origNumEntries = 8;
+
+  Array<int> ind (origNumEntries);
+  ind[0] =  0;
+  ind[1] =  1;
+  ind[2] =  1;
+  ind[3] =  3;
+  ind[4] = -1;
+  ind[5] = -1;
+  ind[6] = -1;
+  ind[7] =  0;
+
+  Array<double> val (origNumEntries);
+  val[0] =  42.0;
+  val[1] =  -4.0;
+  val[2] =  -3.0;
+  val[3] =   1.5;
+  val[4] =   1.0;
+  val[5] =   2.0;
+  val[6] =   3.0;
+  val[7] = 100.0;
+
+  const int expNumEntries = 5;
+  const int    indExp[] = { 0,    1,   3,  -1,     0  };
+  const double valExp[] = {42.0, -7.0, 1.5, 6.0, 100.0};
+
+  Array<int>::iterator indEnd = ind.end ();
+  Array<double>::iterator valEnd = val.end ();
+  merge2 (indEnd, valEnd, ind.begin (), indEnd, val.begin (), valEnd);
+
+  const size_type newIndLen = indEnd - ind.begin ();
+  const size_type newValLen = valEnd - val.begin ();
+
+  TEST_EQUALITY( newIndLen, expNumEntries );
+  TEST_EQUALITY( newValLen, expNumEntries );
+
+  const bool indEq = std::equal (ind.begin (), indEnd, indExp);
+  const bool valEq = std::equal (val.begin (), valEnd, valExp);
+
+  TEST_EQUALITY( indEq, true );
+  TEST_EQUALITY( valEq, true );
+}
+
 
 TEUCHOS_UNIT_TEST( MatrixMarket, CrsMatrixFileTest )
 {
