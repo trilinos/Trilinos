@@ -81,10 +81,11 @@ TEUCHOS_STATIC_SETUP()
                  "(using the input Map as its row Map)");
 }
 
+
 // Input matrices must be fill complete.
 template<class CrsMatrixType>
 bool
-compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A)
+compareCrsMatrixMaps (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::FancyOStream& out)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -96,66 +97,94 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A)
   typedef typename CrsMatrixType::global_ordinal_type GO;
   typedef typename ArrayView<const GO>::size_type size_type;
 
+  Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
+
+  bool globalAllSame = true;
   if (! A_orig.getRowMap ()->isSameAs (* (A.getRowMap ()))) {
-    return false;
+    out << "Row Maps are not the same" << endl;
+    globalAllSame = false;
   }
-  else if (! A_orig.getColMap ()->isSameAs (* (A.getColMap ()))) {
-    return false;
+  if (! A_orig.getColMap ()->isSameAs (* (A.getColMap ()))) {
+    out << "Column Maps are not the same" << endl;
+    globalAllSame = false;
   }
-  else if (! A_orig.getDomainMap ()->isSameAs (* (A.getDomainMap ()))) {
-    return false;
+  if (! A_orig.getDomainMap ()->isSameAs (* (A.getDomainMap ()))) {
+    out << "Domain Maps are not the same" << endl;
+    globalAllSame = false;
   }
-  else if (! A_orig.getRangeMap ()->isSameAs (* (A.getRangeMap ()))) {
-    return false;
+  if (! A_orig.getRangeMap ()->isSameAs (* (A.getRangeMap ()))) {
+    out << "Range Maps are not the same" << endl;
+    globalAllSame = false;
   }
-  else {
-    //
-    // Are my local matrices equal?
-    //
-    RCP<const Comm<int> > comm = A.getRowMap ()->getComm ();
-    int localEqual = 1;
+  if (globalAllSame) {
+    out << "All Maps are the same" << endl;
+  }
+  return globalAllSame;
+}
 
-    Array<GO> indOrig, ind;
-    Array<ST> valOrig, val;
-    size_t numEntriesOrig = 0;
-    size_t numEntries = 0;
+// Input matrices must be fill complete, and all four of their Maps
+// (row, column, domain, and range) must be the same.
+template<class CrsMatrixType>
+bool
+compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::FancyOStream& out)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
+  using Teuchos::reduceAll;
+  using Teuchos::REDUCE_MIN;
+  typedef typename CrsMatrixType::scalar_type ST;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
+  typedef typename ArrayView<const GO>::size_type size_type;
 
-    ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
-    const size_type numLocalElts = localElts.size ();
-    for (size_type i = 0; i < numLocalElts; ++i) {
-      const GO globalRow = localElts[i];
-      numEntriesOrig = A_orig.getNumEntriesInGlobalRow (globalRow);
-      numEntries = A.getNumEntriesInGlobalRow (globalRow);
+  Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
+  int localEqual = 1;
 
-      if (numEntriesOrig != numEntries) {
+  //
+  // Are my local matrices equal?
+  //
+  Array<GO> indOrig, ind;
+  Array<ST> valOrig, val;
+  size_t numEntriesOrig = 0;
+  size_t numEntries = 0;
+
+  ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
+  const size_type numLocalElts = localElts.size ();
+  for (size_type i = 0; i < numLocalElts; ++i) {
+    const GO globalRow = localElts[i];
+    numEntriesOrig = A_orig.getNumEntriesInGlobalRow (globalRow);
+    numEntries = A.getNumEntriesInGlobalRow (globalRow);
+
+    if (numEntriesOrig != numEntries) {
+      localEqual = 0;
+      break;
+    }
+    indOrig.resize (numEntriesOrig);
+    valOrig.resize (numEntriesOrig);
+    A_orig.getGlobalRowCopy (globalRow, indOrig (), valOrig (), numEntriesOrig);
+    ind.resize (numEntries);
+    val.resize (numEntries);
+    A.getGlobalRowCopy (globalRow, ind (), val (), numEntries);
+
+    // Global row entries are not necessarily sorted.  Sort them so
+    // we can compare them.
+    Tpetra::sort2 (indOrig.begin (), indOrig.end (), valOrig.begin ());
+    Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
+
+    for (size_t k = 0; k < numEntries; ++k) {
+      // Values should be _exactly_ equal.
+      if (indOrig[k] != ind[k] || valOrig[k] != val[k]) {
         localEqual = 0;
         break;
       }
-      indOrig.resize (numEntriesOrig);
-      valOrig.resize (numEntriesOrig);
-      A_orig.getGlobalRowCopy (globalRow, indOrig (), valOrig (), numEntriesOrig);
-      ind.resize (numEntries);
-      val.resize (numEntries);
-      A.getGlobalRowCopy (globalRow, ind (), val (), numEntries);
-
-      // Global row entries are not necessarily sorted.  Sort them so
-      // we can compare them.
-      Tpetra::sort2 (indOrig.begin (), indOrig.end (), valOrig.begin ());
-      Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
-
-      for (size_t k = 0; k < numEntries; ++k) {
-        // Values should be _exactly_ equal.
-        if (indOrig[k] != ind[k] || valOrig[k] != val[k]) {
-          localEqual = 0;
-          break;
-        }
-      }
     }
-
-    int globalEqual = 0;
-    reduceAll<int, int> (*comm, REDUCE_MIN, 1, &localEqual, &globalEqual);
-    return globalEqual == 1;
   }
+
+  RCP<const Comm<int> > comm = A.getRowMap ()->getComm ();
+  int globalEqual = 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, 1, &localEqual, &globalEqual);
+  return globalEqual == 1;
 }
 
 template<class IT1, class IT2>
@@ -192,7 +221,45 @@ merge2 (IT1& indResultOut, IT2& valResultOut, IT1 indBeg, IT1 indEnd, IT2 valBeg
   }
 }
 
-// Input matrices must be fill complete.
+template<class IT1, class IT2, class BinaryFunction>
+void
+merge2 (IT1& indResultOut, IT2& valResultOut,
+        IT1 indBeg, IT1 indEnd,
+        IT2 valBeg, IT2 valEnd,
+        BinaryFunction f)
+{
+  if (indBeg == indEnd) {
+    indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
+    valResultOut = valBeg; // It's allowed for valResultOut to alias valEnd
+  }
+  else {
+    IT1 indResult = indBeg;
+    IT2 valResult = valBeg;
+    if (indBeg != indEnd) {
+      ++indBeg;
+      ++valBeg;
+      while (indBeg != indEnd) {
+        if (*indResult == *indBeg) { // adjacent column indices equal
+          *valResult = f (*valResult, *valBeg); // merge entries by adding their values together
+        } else { // adjacent column indices not equal
+          *(++indResult) = *indBeg; // shift over the index
+          *(++valResult) = *valBeg; // shift over the value
+        }
+        ++indBeg;
+        ++valBeg;
+      }
+      ++indResult; // exclusive end of merged result
+      ++valResult; // exclusive end of merged result
+      indEnd = indResult;
+      valEnd = valResult;
+    }
+    indResultOut = indResult;
+    valResultOut = valResult;
+  }
+}
+
+// Input matrices must be fill complete, and all four of their Maps
+// (row, column, domain, and range) must be the same.
 template<class CrsMatrixType>
 bool
 compareCrsMatrixValues (const CrsMatrixType& A_orig,
@@ -215,113 +282,96 @@ compareCrsMatrixValues (const CrsMatrixType& A_orig,
 
   Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
 
-  if (! A_orig.getRowMap ()->isSameAs (* (A.getRowMap ()))) {
-    out << "Row Maps are not the same" << endl;
-    return false;
-  }
-  else if (! A_orig.getColMap ()->isSameAs (* (A.getColMap ()))) {
-    out << "Column Maps are not the same" << endl;
-    return false;
-  }
-  else if (! A_orig.getDomainMap ()->isSameAs (* (A.getDomainMap ()))) {
-    out << "Domain Maps are not the same" << endl;
-    return false;
-  }
-  else if (! A_orig.getRangeMap ()->isSameAs (* (A.getRangeMap ()))) {
-    out << "Range Maps are not the same" << endl;
-    return false;
-  }
-  else {
+  //
+  // Are my local matrices equal?
+  //
+  Array<GO> indOrig, ind;
+  Array<ST> valOrig, val;
+  size_t numEntriesOrig = 0;
+  size_t numEntries = 0;
+
+  ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
+  const size_type numLocalElts = localElts.size ();
+  MT localDiff = STM::zero (); // \sum_{i,j} |A_orig(i,j) - A(i,j)| locally
+  for (size_type i = 0; i < numLocalElts; ++i) {
+    const GO globalRow = localElts[i];
+    numEntriesOrig = A_orig.getNumEntriesInGlobalRow (globalRow);
+    numEntries = A.getNumEntriesInGlobalRow (globalRow);
+
+    indOrig.resize (numEntriesOrig);
+    valOrig.resize (numEntriesOrig);
+    A_orig.getGlobalRowCopy (globalRow, indOrig (), valOrig (), numEntriesOrig);
+    ind.resize (numEntries);
+    val.resize (numEntries);
+    A.getGlobalRowCopy (globalRow, ind (), val (), numEntries);
+
+    // Global row entries are not necessarily sorted.  Sort them
+    // (and their values with them) so we can merge their values.
+    Tpetra::sort2 (indOrig.begin (), indOrig.end (), valOrig.begin ());
+    Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
+
     //
-    // Are my local matrices equal?
+    // Merge repeated values in each set of indices and values.
     //
-    RCP<const Comm<int> > comm = A.getRowMap ()->getComm ();
 
-    Array<GO> indOrig, ind;
-    Array<ST> valOrig, val;
-    size_t numEntriesOrig = 0;
-    size_t numEntries = 0;
+    typename Array<GO>::iterator indOrigIter = indOrig.begin ();
+    typename Array<ST>::iterator valOrigIter = valOrig.begin ();
+    typename Array<GO>::iterator indOrigEnd = indOrig.end ();
+    typename Array<ST>::iterator valOrigEnd = valOrig.end ();
+    merge2 (indOrigEnd, valOrigEnd, indOrigIter, indOrigEnd, valOrigIter, valOrigEnd);
 
-    ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
-    const size_type numLocalElts = localElts.size ();
-    MT localDiff = STM::zero (); // \sum_{i,j} |A_orig(i,j) - A(i,j)| locally
-    for (size_type i = 0; i < numLocalElts; ++i) {
-      const GO globalRow = localElts[i];
-      numEntriesOrig = A_orig.getNumEntriesInGlobalRow (globalRow);
-      numEntries = A.getNumEntriesInGlobalRow (globalRow);
+    typename Array<GO>::iterator indIter = ind.begin ();
+    typename Array<ST>::iterator valIter = val.begin ();
+    typename Array<GO>::iterator indEnd = ind.end ();
+    typename Array<ST>::iterator valEnd = val.end ();
+    merge2 (indEnd, valEnd, indIter, indEnd, valIter, valEnd);
 
-      indOrig.resize (numEntriesOrig);
-      valOrig.resize (numEntriesOrig);
-      A_orig.getGlobalRowCopy (globalRow, indOrig (), valOrig (), numEntriesOrig);
-      ind.resize (numEntries);
-      val.resize (numEntries);
-      A.getGlobalRowCopy (globalRow, ind (), val (), numEntries);
+    //
+    // Compare the merged sets of entries.
+    //
 
-      // Global row entries are not necessarily sorted.  Sort them
-      // (and their values with them) so we can merge their values.
-      Tpetra::sort2 (indOrig.begin (), indOrig.end (), valOrig.begin ());
-      Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
+    indOrigIter = indOrig.begin ();
+    indIter = ind.begin ();
+    valOrigIter = valOrig.begin ();
+    valIter = val.begin ();
+    while (indOrigIter != indOrigEnd && indIter != indEnd) {
+      const GO j_orig = *indOrigIter;
+      const GO j = *indIter;
 
-      //
-      // Merge repeated values in each set of indices and values.
-      //
-
-      typename Array<GO>::iterator indOrigIter = indOrig.begin ();
-      typename Array<ST>::iterator valOrigIter = valOrig.begin ();
-      typename Array<GO>::iterator indOrigEnd = indOrig.end ();
-      typename Array<ST>::iterator valOrigEnd = valOrig.end ();
-      merge2 (indOrigEnd, valOrigEnd, indOrigIter, indOrigEnd, valOrigIter, valOrigEnd);
-
-      typename Array<GO>::iterator indIter = ind.begin ();
-      typename Array<ST>::iterator valIter = val.begin ();
-      typename Array<GO>::iterator indEnd = ind.end ();
-      typename Array<ST>::iterator valEnd = val.end ();
-      merge2 (indEnd, valEnd, indIter, indEnd, valIter, valEnd);
-
-      //
-      // Compare the merged sets of entries.
-      //
-
-      indOrigIter = indOrig.begin ();
-      indIter = ind.begin ();
-      valOrigIter = valOrig.begin ();
-      valIter = val.begin ();
-      while (indOrigIter != indOrigEnd && indIter != indEnd) {
-        const GO j_orig = *indOrigIter;
-        const GO j = *indIter;
-
-        if (j_orig < j) { // entry is in A_orig, not in A
-          localDiff += STS::magnitude (*valOrigIter);
-          ++indOrigIter;
-          ++valOrigIter;
-        } else if (j_orig > j) { // entry is in A, not A_orig
-          localDiff += STS::magnitude (*valIter);
-          ++indIter;
-          ++valIter;
-        } else { // j_orig == j: entry is in both matrices
-          localDiff += STS::magnitude (*valOrigIter - *valIter);
-          ++indOrigIter;
-          ++valOrigIter;
-          ++indIter;
-          ++valIter;
-        }
+      if (j_orig < j) { // entry is in A_orig, not in A
+        localDiff += STS::magnitude (*valOrigIter);
+        ++indOrigIter;
+        ++valOrigIter;
+      } else if (j_orig > j) { // entry is in A, not A_orig
+        localDiff += STS::magnitude (*valIter);
+        ++indIter;
+        ++valIter;
+      } else { // j_orig == j: entry is in both matrices
+        localDiff += STS::magnitude (*valOrigIter - *valIter);
+        ++indOrigIter;
+        ++valOrigIter;
+        ++indIter;
+        ++valIter;
       }
     }
-
-    std::ostringstream os;
-    const int myRank = comm->getRank ();
-    os << "Values are ";
-    if (localDiff == STM::zero ()) {
-      os << "the same on process " << myRank << endl;
-    } else {
-      os << "NOT the same on process " << myRank
-         << ": \\sum_{i,j} |A_orig(i,j) - A(i,j)| = " << localDiff << endl;
-    }
-    int globalEqual = 0;
-    int localEqual = (localDiff == STM::zero ()) ? 1 : 0;
-    reduceAll<int, int> (*comm, REDUCE_MIN, 1, &localEqual, &globalEqual);
-    return globalEqual == 1;
   }
+
+  RCP<const Comm<int> > comm = A.getRowMap ()->getComm ();
+  const int myRank = comm->getRank ();
+  std::ostringstream os;
+  os << "Values are ";
+  if (localDiff == STM::zero ()) {
+    os << "the same on process " << myRank << endl;
+  } else {
+    os << "NOT the same on process " << myRank
+       << ": \\sum_{i,j} |A_orig(i,j) - A(i,j)| = " << localDiff << endl;
+  }
+  out << os.str ();
+
+  int globalEqual = 0;
+  int localEqual = (localDiff == STM::zero ()) ? 1 : 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, 1, &localEqual, &globalEqual);
+  return globalEqual == 1;
 }
 
 
@@ -393,16 +443,16 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
                                  callFillComplete, tolerant, debug);
 
   out << "Test the two matrices for exact equality of structure and values" << endl;
-  result = compareCrsMatrix<crs_matrix_type> (*A_in, *A_out);
+  result = compareCrsMatrix<crs_matrix_type> (*A_in, *A_out, out);
   {
     OSTab tab (rcpFromRef (out));
     out << "- Matrices are " << (result ? "" : "NOT ") << "equal" << endl;
   }
   TEST_EQUALITY( result, true );
 
-  out << "Test the two matrices for exact equality of values" << endl;
+  out << "Test the two matrices for exact equality of values, independent of local structure" << endl;
   result = compareCrsMatrixValues<crs_matrix_type> (*A_in, *A_out, out);
-
+  TEST_EQUALITY( result, true );
 }
 
 } // namespace (anonymous)
@@ -411,6 +461,9 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
 TEUCHOS_UNIT_TEST( MatrixMarket, Merge2 )
 {
   using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::toString;
+  using std::endl;
   typedef Array<int>::size_type size_type;
   const size_type origNumEntries = 8;
 
@@ -423,6 +476,7 @@ TEUCHOS_UNIT_TEST( MatrixMarket, Merge2 )
   ind[5] = -1;
   ind[6] = -1;
   ind[7] =  0;
+  Array<int> indCopy = ind; // deep copy
 
   Array<double> val (origNumEntries);
   val[0] =  42.0;
@@ -433,26 +487,70 @@ TEUCHOS_UNIT_TEST( MatrixMarket, Merge2 )
   val[5] =   2.0;
   val[6] =   3.0;
   val[7] = 100.0;
+  Array<double> valCopy = val; // deep copy
 
   const int expNumEntries = 5;
   const int    indExp[] = { 0,    1,   3,  -1,     0  };
   const double valExp[] = {42.0, -7.0, 1.5, 6.0, 100.0};
 
-  Array<int>::iterator indEnd = ind.end ();
-  Array<double>::iterator valEnd = val.end ();
-  merge2 (indEnd, valEnd, ind.begin (), indEnd, val.begin (), valEnd);
+  // Test merge2 with default merge policy (add).
+  {
+    Array<int>::iterator indEnd = ind.end ();
+    Array<double>::iterator valEnd = val.end ();
+    merge2 (indEnd, valEnd, ind.begin (), indEnd, val.begin (), valEnd);
 
-  const size_type newIndLen = indEnd - ind.begin ();
-  const size_type newValLen = valEnd - val.begin ();
+    const size_type newIndLen = indEnd - ind.begin ();
+    const size_type newValLen = valEnd - val.begin ();
 
-  TEST_EQUALITY( newIndLen, expNumEntries );
-  TEST_EQUALITY( newValLen, expNumEntries );
+    TEST_EQUALITY( newIndLen, expNumEntries );
+    TEST_EQUALITY( newValLen, expNumEntries );
 
-  const bool indEq = std::equal (ind.begin (), indEnd, indExp);
-  const bool valEq = std::equal (val.begin (), valEnd, valExp);
+    const bool indEq = std::equal (ind.begin (), indEnd, indExp);
+    const bool valEq = std::equal (val.begin (), valEnd, valExp);
 
-  TEST_EQUALITY( indEq, true );
-  TEST_EQUALITY( valEq, true );
+    TEST_EQUALITY( indEq, true );
+    TEST_EQUALITY( valEq, true );
+
+    if (! valEq) {
+      out << "Input value range: " << toString (valCopy ()) << endl;
+      out << "Expected output: "
+          << toString (ArrayView<const double> ((const double*) valExp, expNumEntries))
+          << endl;
+      out << "Actual output: " << toString (val.view (0, newValLen)) << endl;
+      Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
+    }
+  }
+
+  ind = indCopy; // deep copy; restore original values
+  val = valCopy; // deep copy; restore original values
+
+  // Test merge2 with custom merge policy (also add).
+  {
+    Array<int>::iterator indEnd = ind.end ();
+    Array<double>::iterator valEnd = val.end ();
+    merge2 (indEnd, valEnd, ind.begin (), indEnd, val.begin (), valEnd, std::plus<double> ());
+
+    const size_type newIndLen = indEnd - ind.begin ();
+    const size_type newValLen = valEnd - val.begin ();
+
+    TEST_EQUALITY( newIndLen, expNumEntries );
+    TEST_EQUALITY( newValLen, expNumEntries );
+
+    const bool indEq = std::equal (ind.begin (), indEnd, indExp);
+    const bool valEq = std::equal (val.begin (), valEnd, valExp);
+
+    TEST_EQUALITY( indEq, true );
+    TEST_EQUALITY( valEq, true );
+
+    if (! valEq) {
+      out << "Input value range: " << toString (valCopy ()) << endl;
+      out << "Expected output: "
+          << toString (ArrayView<const double> ((const double*) valExp, expNumEntries))
+          << endl;
+      out << "Actual output: " << toString (val.view (0, newValLen)) << endl;
+      Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
+    }
+  }
 }
 
 
