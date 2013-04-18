@@ -118,8 +118,8 @@ namespace Xpetra {
         GlobalOrdinal gid = nodeMap->getGlobalElement(i);
         for(size_t dof = 0; dof < nDofsPerNode; ++dof) {
           // dofs are calculated by
-          // global offset + node_GID * full size of strided map + striding offset of current striding block + dof id of current striding block
-          dofgids.push_back(StridedMapClass::offset_ + (gid-indexBase)*Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) + Teuchos::as<GlobalOrdinal>(nStridedOffset + dof));
+          // indexBase + global offset + (node_GID - nodeMapIndexBase) * full size of strided map + striding offset of current striding block + dof id of current striding block
+          dofgids.push_back(indexBase + StridedMapClass::offset_ + (gid-indexBase)*Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) + Teuchos::as<GlobalOrdinal>(nStridedOffset + dof));
         }
       }
 
@@ -192,8 +192,8 @@ namespace Xpetra {
         GlobalOrdinal gid = nodeMap->getGlobalElement(i);
         for(size_t dof = 0; dof < nDofsPerNode; ++dof) {
           // dofs are calculated by
-          // global offset + node_GID * full size of strided map + striding offset of current striding block + dof id of current striding block
-          dofgids.push_back(StridedMapClass::offset_ + (gid-indexBase)*Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) + Teuchos::as<GlobalOrdinal>(nStridedOffset + dof));
+          // indexBase + global offset + ( node_GID - nodeMapIndexBase) * full size of strided map + striding offset of current striding block + dof id of current striding block
+          dofgids.push_back(indexBase + StridedMapClass::offset_ + (gid-indexBase)*Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) + Teuchos::as<GlobalOrdinal>(nStridedOffset + dof));
         }
       }
 
@@ -231,6 +231,9 @@ namespace Xpetra {
         if(stridedBlockId != -1) {
           TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: stridedBlockId > stridingInfo.size()");
         }
+
+        // create TpetraMap using the dofs from ElementList
+        TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::map_ = Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, elementList, indexBase, comm, node));
 
         // set parameters for striding information
         TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");
