@@ -8,13 +8,13 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   TIMEOUT_MINUTES 330
 )
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  SERIAL_DEBUG_MueLu_Tpetra
-  ctest_linux_nightly_serial_debug_muelu_tpetra_eleanor.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 330
-)
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  SERIAL_DEBUG_MueLu_Tpetra
+#  ctest_linux_nightly_serial_debug_muelu_tpetra_eleanor.cmake
+#  CTEST_INSTALLER_TYPE release
+#  RUN_SERIAL
+#  TIMEOUT_MINUTES 330
+#)
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG_MueLu_Epetra
