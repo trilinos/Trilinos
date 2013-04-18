@@ -150,7 +150,35 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconstColImpl(Ordin
 }
 
 
-/* ToDo: Implement these?
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const MultiVectorBase<Scalar> >
+TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::contigSubViewImpl(
+  const Range1D& col_rng_in
+  ) const
+{
+#ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
+  std::cerr << "\nTpetraMultiVector::subView(Range1D) const called!\n";
+#endif
+  const Range1D colRng = this->validateColRange(col_rng_in);
+
+  const RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetraView =
+    this->getConstTpetraMultiVector()->subView(colRng);
+
+  const RCP<const ScalarProdVectorSpaceBase<Scalar> > viewDomainSpace =
+    tpetraVectorSpace<Scalar>(
+        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+          tpetraView->getNumVectors(),
+          tpetraView->getMap()->getComm(),
+          tpetraView->getMap()->getNode()
+          )
+        );
+
+  return constTpetraMultiVector(
+      tpetraVectorSpace_,
+      viewDomainSpace,
+      tpetraView
+      );
+}
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -160,21 +188,31 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconstContigSubView
   )
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nSpmdMultiVectorStd<Scalar>::subView() called!\n";
+  std::cerr << "\nTpetraMultiVector::subView(Range1D) called!\n";
 #endif
   const Range1D colRng = this->validateColRange(col_rng_in);
-  return Teuchos::rcp(
-    new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
-      spmdRangeSpace_,
-      Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
-        spmdRangeSpace_->smallVecSpcFcty()->createVecSpc(colRng.size())
-        ,true
-        ),
-      localValues_.persistingView(colRng.lbound()*leadingDim_,colRng.size()*spmdRangeSpace_->localSubDim()),
-      leadingDim_
-      )
-    );
+
+  const RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetraView =
+    this->getTpetraMultiVector()->subViewNonConst(colRng);
+
+  const RCP<const ScalarProdVectorSpaceBase<Scalar> > viewDomainSpace =
+    tpetraVectorSpace<Scalar>(
+        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+          tpetraView->getNumVectors(),
+          tpetraView->getMap()->getComm(),
+          tpetraView->getMap()->getNode()
+          )
+        );
+
+  return tpetraMultiVector(
+      tpetraVectorSpace_,
+      viewDomainSpace,
+      tpetraView
+      );
 }
+
+
+/* ToDo: Implement these?
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

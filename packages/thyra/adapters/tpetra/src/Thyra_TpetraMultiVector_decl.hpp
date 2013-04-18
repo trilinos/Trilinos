@@ -114,9 +114,13 @@ protected:
   RCP<const VectorBase<Scalar> > colImpl(Ordinal j) const;
   /** \brief . */
   RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);
-//  /** \brief . */
-//  RCP<MultiVectorBase<Scalar> >
-//  nonconstContigSubViewImpl( const Range1D& colRng );
+
+  /** \brief . */
+  RCP<const MultiVectorBase<Scalar> >
+  contigSubViewImpl( const Range1D& colRng ) const;
+  /** \brief . */
+  RCP<MultiVectorBase<Scalar> >
+  nonconstContigSubViewImpl( const Range1D& colRng );
 //  /** \brief . */
 //  RCP<const MultiVectorBase<Scalar> >
 //  nonContigSubViewImpl( const ArrayView<const int> &cols ) const;
