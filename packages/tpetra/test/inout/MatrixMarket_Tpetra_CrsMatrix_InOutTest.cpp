@@ -210,7 +210,7 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
 // Input matrices must be fill complete.
 template<class CrsMatrixType>
 bool
-compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A)
+compareCrsMatrixMaps (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::FancyOStream& out)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -220,68 +220,283 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A)
   using Teuchos::REDUCE_MIN;
   typedef typename CrsMatrixType::scalar_type ST;
   typedef typename CrsMatrixType::global_ordinal_type GO;
+  typedef typename ArrayView<const GO>::size_type size_type;
 
+  Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
+
+  bool globalAllSame = true;
   if (! A_orig.getRowMap ()->isSameAs (* (A.getRowMap ()))) {
-    return false;
+    out << "Row Maps are not the same" << endl;
+    globalAllSame = false;
   }
-  else if (! A_orig.getColMap ()->isSameAs (* (A.getColMap ()))) {
-    return false;
+  if (! A_orig.getColMap ()->isSameAs (* (A.getColMap ()))) {
+    out << "Column Maps are not the same" << endl;
+    globalAllSame = false;
   }
-  else if (! A_orig.getDomainMap ()->isSameAs (* (A.getDomainMap ()))) {
-    return false;
+  if (! A_orig.getDomainMap ()->isSameAs (* (A.getDomainMap ()))) {
+    out << "Domain Maps are not the same" << endl;
+    globalAllSame = false;
   }
-  else if (! A_orig.getRangeMap ()->isSameAs (* (A.getRangeMap ()))) {
-    return false;
+  if (! A_orig.getRangeMap ()->isSameAs (* (A.getRangeMap ()))) {
+    out << "Range Maps are not the same" << endl;
+    globalAllSame = false;
   }
-  else {
-    //
-    // Are my local matrices equal?
-    //
-    RCP<const Comm<int> > comm = A.getRowMap ()->getComm ();
-    int localEqual = 1;
+  if (globalAllSame) {
+    out << "All Maps are the same" << endl;
+  }
+  return globalAllSame;
+}
 
-    Array<GO> indOrig, ind;
-    Array<ST> valOrig, val;
-    size_t numEntriesOrig = 0;
-    size_t numEntries = 0;
+// Input matrices must be fill complete, and all four of their Maps
+// (row, column, domain, and range) must be the same.
+template<class CrsMatrixType>
+bool
+compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::FancyOStream& out)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
+  using Teuchos::reduceAll;
+  using Teuchos::REDUCE_MIN;
+  typedef typename CrsMatrixType::scalar_type ST;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
+  typedef typename ArrayView<const GO>::size_type size_type;
 
-    ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
-    typedef typename ArrayView<const GO>::size_type size_type;
-    const size_type numLocalElts = localElts.size ();
-    for (size_type i = 0; i < numLocalElts; ++i) {
-      const GO globalRow = localElts[i];
-      numEntriesOrig = A_orig.getNumEntriesInGlobalRow (globalRow);
-      numEntries = A.getNumEntriesInGlobalRow (globalRow);
+  Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
+  int localEqual = 1;
 
-      if (numEntriesOrig != numEntries) {
+  //
+  // Are my local matrices equal?
+  //
+  Array<GO> indOrig, ind;
+  Array<ST> valOrig, val;
+  size_t numEntriesOrig = 0;
+  size_t numEntries = 0;
+
+  ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
+  const size_type numLocalElts = localElts.size ();
+  for (size_type i = 0; i < numLocalElts; ++i) {
+    const GO globalRow = localElts[i];
+    numEntriesOrig = A_orig.getNumEntriesInGlobalRow (globalRow);
+    numEntries = A.getNumEntriesInGlobalRow (globalRow);
+
+    if (numEntriesOrig != numEntries) {
+      localEqual = 0;
+      break;
+    }
+    indOrig.resize (numEntriesOrig);
+    valOrig.resize (numEntriesOrig);
+    A_orig.getGlobalRowCopy (globalRow, indOrig (), valOrig (), numEntriesOrig);
+    ind.resize (numEntries);
+    val.resize (numEntries);
+    A.getGlobalRowCopy (globalRow, ind (), val (), numEntries);
+
+    // Global row entries are not necessarily sorted.  Sort them so
+    // we can compare them.
+    Tpetra::sort2 (indOrig.begin (), indOrig.end (), valOrig.begin ());
+    Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
+
+    for (size_t k = 0; k < numEntries; ++k) {
+      // Values should be _exactly_ equal.
+      if (indOrig[k] != ind[k] || valOrig[k] != val[k]) {
         localEqual = 0;
         break;
       }
-      indOrig.resize (numEntriesOrig);
-      valOrig.resize (numEntriesOrig);
-      A_orig.getGlobalRowCopy (globalRow, indOrig (), valOrig (), numEntriesOrig);
-      ind.resize (numEntries);
-      val.resize (numEntries);
-      A.getGlobalRowCopy (globalRow, ind (), val (), numEntries);
+    }
+  }
 
-      // Global row entries are not necessarily sorted.  Sort them so
-      // we can compare them.
-      Tpetra::sort2 (indOrig.begin (), indOrig.end (), valOrig.begin ());
-      Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
+  RCP<const Comm<int> > comm = A.getRowMap ()->getComm ();
+  int globalEqual = 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, 1, &localEqual, &globalEqual);
+  return globalEqual == 1;
+}
 
-      for (size_t k = 0; k < numEntries; ++k) {
-        // Values should be _exactly_ equal.
-        if (indOrig[k] != ind[k] || valOrig[k] != val[k]) {
-          localEqual = 0;
-          break;
+template<class IT1, class IT2>
+void
+merge2 (IT1& indResultOut, IT2& valResultOut, IT1 indBeg, IT1 indEnd, IT2 valBeg, IT2 valEnd)
+{
+  if (indBeg == indEnd) {
+    indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
+    valResultOut = valBeg; // It's allowed for valResultOut to alias valEnd
+  }
+  else {
+    IT1 indResult = indBeg;
+    IT2 valResult = valBeg;
+    if (indBeg != indEnd) {
+      ++indBeg;
+      ++valBeg;
+      while (indBeg != indEnd) {
+        if (*indResult == *indBeg) { // adjacent column indices equal
+          *valResult += *valBeg; // merge entries by adding their values together
+        } else { // adjacent column indices not equal
+          *(++indResult) = *indBeg; // shift over the index
+          *(++valResult) = *valBeg; // shift over the value
         }
+        ++indBeg;
+        ++valBeg;
+      }
+      ++indResult; // exclusive end of merged result
+      ++valResult; // exclusive end of merged result
+      indEnd = indResult;
+      valEnd = valResult;
+    }
+    indResultOut = indResult;
+    valResultOut = valResult;
+  }
+}
+
+template<class IT1, class IT2, class BinaryFunction>
+void
+merge2 (IT1& indResultOut, IT2& valResultOut,
+        IT1 indBeg, IT1 indEnd,
+        IT2 valBeg, IT2 valEnd,
+        BinaryFunction f)
+{
+  if (indBeg == indEnd) {
+    indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
+    valResultOut = valBeg; // It's allowed for valResultOut to alias valEnd
+  }
+  else {
+    IT1 indResult = indBeg;
+    IT2 valResult = valBeg;
+    if (indBeg != indEnd) {
+      ++indBeg;
+      ++valBeg;
+      while (indBeg != indEnd) {
+        if (*indResult == *indBeg) { // adjacent column indices equal
+          *valResult = f (*valResult, *valBeg); // merge entries by adding their values together
+        } else { // adjacent column indices not equal
+          *(++indResult) = *indBeg; // shift over the index
+          *(++valResult) = *valBeg; // shift over the value
+        }
+        ++indBeg;
+        ++valBeg;
+      }
+      ++indResult; // exclusive end of merged result
+      ++valResult; // exclusive end of merged result
+      indEnd = indResult;
+      valEnd = valResult;
+    }
+    indResultOut = indResult;
+    valResultOut = valResult;
+  }
+}
+
+// Input matrices must be fill complete, and all four of their Maps
+// (row, column, domain, and range) must be the same.
+template<class CrsMatrixType>
+bool
+compareCrsMatrixValues (const CrsMatrixType& A_orig,
+                        const CrsMatrixType& A,
+                        Teuchos::FancyOStream& out)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
+  using Teuchos::reduceAll;
+  using Teuchos::REDUCE_MIN;
+  using std::endl;
+  typedef typename CrsMatrixType::scalar_type ST;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
+  typedef typename ArrayView<const GO>::size_type size_type;
+  typedef Teuchos::ScalarTraits<ST> STS;
+  typedef typename STS::magnitudeType MT;
+  typedef Teuchos::ScalarTraits<MT> STM;
+
+  Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
+
+  //
+  // Are my local matrices equal?
+  //
+  Array<GO> indOrig, ind;
+  Array<ST> valOrig, val;
+  size_t numEntriesOrig = 0;
+  size_t numEntries = 0;
+
+  ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
+  const size_type numLocalElts = localElts.size ();
+  MT localDiff = STM::zero (); // \sum_{i,j} |A_orig(i,j) - A(i,j)| locally
+  for (size_type i = 0; i < numLocalElts; ++i) {
+    const GO globalRow = localElts[i];
+    numEntriesOrig = A_orig.getNumEntriesInGlobalRow (globalRow);
+    numEntries = A.getNumEntriesInGlobalRow (globalRow);
+
+    indOrig.resize (numEntriesOrig);
+    valOrig.resize (numEntriesOrig);
+    A_orig.getGlobalRowCopy (globalRow, indOrig (), valOrig (), numEntriesOrig);
+    ind.resize (numEntries);
+    val.resize (numEntries);
+    A.getGlobalRowCopy (globalRow, ind (), val (), numEntries);
+
+    // Global row entries are not necessarily sorted.  Sort them
+    // (and their values with them) so we can merge their values.
+    Tpetra::sort2 (indOrig.begin (), indOrig.end (), valOrig.begin ());
+    Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
+
+    //
+    // Merge repeated values in each set of indices and values.
+    //
+
+    typename Array<GO>::iterator indOrigIter = indOrig.begin ();
+    typename Array<ST>::iterator valOrigIter = valOrig.begin ();
+    typename Array<GO>::iterator indOrigEnd = indOrig.end ();
+    typename Array<ST>::iterator valOrigEnd = valOrig.end ();
+    merge2 (indOrigEnd, valOrigEnd, indOrigIter, indOrigEnd, valOrigIter, valOrigEnd);
+
+    typename Array<GO>::iterator indIter = ind.begin ();
+    typename Array<ST>::iterator valIter = val.begin ();
+    typename Array<GO>::iterator indEnd = ind.end ();
+    typename Array<ST>::iterator valEnd = val.end ();
+    merge2 (indEnd, valEnd, indIter, indEnd, valIter, valEnd);
+
+    //
+    // Compare the merged sets of entries.
+    //
+
+    indOrigIter = indOrig.begin ();
+    indIter = ind.begin ();
+    valOrigIter = valOrig.begin ();
+    valIter = val.begin ();
+    while (indOrigIter != indOrigEnd && indIter != indEnd) {
+      const GO j_orig = *indOrigIter;
+      const GO j = *indIter;
+
+      if (j_orig < j) { // entry is in A_orig, not in A
+        localDiff += STS::magnitude (*valOrigIter);
+        ++indOrigIter;
+        ++valOrigIter;
+      } else if (j_orig > j) { // entry is in A, not A_orig
+        localDiff += STS::magnitude (*valIter);
+        ++indIter;
+        ++valIter;
+      } else { // j_orig == j: entry is in both matrices
+        localDiff += STS::magnitude (*valOrigIter - *valIter);
+        ++indOrigIter;
+        ++valOrigIter;
+        ++indIter;
+        ++valIter;
       }
     }
-
-    int globalEqual = 1;
-    reduceAll<int, int> (*comm, REDUCE_MIN, 1, &localEqual, &globalEqual);
-    return globalEqual == 1;
   }
+
+  RCP<const Comm<int> > comm = A.getRowMap ()->getComm ();
+  const int myRank = comm->getRank ();
+  std::ostringstream os;
+  os << "Values are ";
+  if (localDiff == STM::zero ()) {
+    os << "the same on process " << myRank << endl;
+  } else {
+    os << "NOT the same on process " << myRank
+       << ": \\sum_{i,j} |A_orig(i,j) - A(i,j)| = " << localDiff << endl;
+  }
+  out << os.str ();
+
+  int globalEqual = 0;
+  int localEqual = (localDiff == STM::zero ()) ? 1 : 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, 1, &localEqual, &globalEqual);
+  return globalEqual == 1;
 }
 
 template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
@@ -352,7 +567,7 @@ createSymRealSmall (const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, Globa
 }
 
 template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
-void
+bool
 testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
 {
   typedef ScalarType ST;
@@ -396,8 +611,12 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
     createSymRealSmall<ST, LO, GO, NT> (rowMap, out, debug);
 
   out << "Comparing read-in matrix to original matrix" << endl;
-  result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A);
+  result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A, out);
   TEST_EQUALITY( result, true );
+  if (! result) { // see if ignoring zero values helps
+    result = compareCrsMatrixValues<crs_matrix_type> (*A_orig, *A, out);
+    TEST_EQUALITY( result, true );
+  }
 
   out << "Writing out the original matrix" << endl;
   std::ostringstream outStr;
@@ -409,8 +628,14 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   RCP<crs_matrix_type> A_orig2 =
     reader_type::readSparse (inStr2, rowMap, colMap, domainMap, rangeMap,
                              callFillComplete, tolerant, debug);
-  result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A_orig2);
+  result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A_orig2, out);
   TEST_EQUALITY( result, true );
+  if (! result) { // see if ignoring zero values helps
+    result = compareCrsMatrixValues<crs_matrix_type> (*A_orig, *A_orig2, out);
+    TEST_EQUALITY( result, true );
+  }
+
+  return result;
 }
 
 } // namespace (anonymous)
@@ -418,13 +643,13 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase0, ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType )
 {
   const GlobalOrdinalType indexBase = 0;
-  testCrsMatrix<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> (out, indexBase);
+  success = testCrsMatrix<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> (out, indexBase);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase1, ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType )
 {
   const GlobalOrdinalType indexBase = 1;
-  testCrsMatrix<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> (out, indexBase);
+  success = testCrsMatrix<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> (out, indexBase);
 }
 
 
