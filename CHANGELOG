@@ -4,6 +4,14 @@
 #                                                                             #
 ###############################################################################
 
+Release update 11.0.4 April 18, 2013
+
+1. Amesos2   - Prevent a portion of Amesos2 that isn't distributed from being
+               enabled when Amesos is enabled.
+
+2. PyTrilios - Made some changes to generated Doxygen pages.
+
+
 Release update 11.0.3 Oct 25, 2012
 
 1. ShyLU - Fix copying non-existant files in build system
