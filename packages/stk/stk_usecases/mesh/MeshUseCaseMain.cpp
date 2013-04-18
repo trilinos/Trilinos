@@ -52,6 +52,8 @@ main(
 
   stk::ParallelMachine parallel_machine = use_case_environment.m_comm;
 
+  bool status = true;
+
   // Now call the use-case drivers based on command line options
 
   const bool single_process =
@@ -60,8 +62,6 @@ main(
   {
 
     // Use cases imported from stk_mesh/use_cases
-
-    bool status = true;
 
     if ( single_process ) {
       std::cout << "Use Case 1 ... ";
@@ -165,12 +165,8 @@ main(
       status = status && local_status;
     }
 
-    bool collective_result = use_case::print_status(parallel_machine, status);
-    return collective_result ? 0 : -1;
   }
 
-  // If we've made it this far, the use-case has passed
-  use_case::print_status(parallel_machine, true);
-
-  return 0;
+  bool collective_result = use_case::print_status(parallel_machine, status);
+  return collective_result ? 0 : -1;
 }
