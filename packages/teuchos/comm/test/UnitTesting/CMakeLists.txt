@@ -14,9 +14,9 @@ TRIBITS_ADD_ADVANCED_TEST(
   UnitTestHarness_Parallel_UnitTests_MPI
     TEST_0
       EXEC UnitTestHarness_Parallel_UnitTests
-    PASS_REGULAR_EXPRESSION_ALL
-      ".*FAILED.* UnitTestHarness_nonRankFails_UnitTest"
-      ".*FAILED.* UnitTestHarness_nonRankThrowsTeuchosExcept_UnitTest"
-      ".*FAILED.* UnitTestHarness_nonRankThrowsIntExcept_UnitTest"
+      PASS_REGULAR_EXPRESSION_ALL
+        ".*FAILED.* UnitTestHarness_nonRankFails_UnitTest"
+        ".*FAILED.* UnitTestHarness_nonRankThrowsTeuchosExcept_UnitTest"
+        ".*FAILED.* UnitTestHarness_nonRankThrowsIntExcept_UnitTest"
   COMM mpi
   )
