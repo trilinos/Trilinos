@@ -145,8 +145,10 @@ namespace MueLu {
         std::vector<GlobalOrdinal> DOFs;
 
         DOFs.reserve(stridedblocksize);
-        for(LocalOrdinal k=0; k<stridedblocksize; k++) {
-          DOFs.push_back(offset + (gNodeId-offset)*fullblocksize + nStridedOffset + k);
+        for (LocalOrdinal k = 0; k < stridedblocksize; k++) {
+          GO gDofIndex = offset + (gNodeId-offset)*fullblocksize + nStridedOffset + k;
+          if (colMap->isNodeGlobalElement(gDofIndex))
+            DOFs.push_back(gDofIndex);
         }
 
         (*nodegid2dofgids_)[gNodeId] = DOFs;
