@@ -22,6 +22,7 @@ export TDD_CTEST_TEST_TYPE=Nightly
 #
 
 export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80"
+export http_proxy="http://wwwproxy.sandia.gov:80"
 export TDD_FORCE_CMAKE_INSTALL=0
 
 # Machine independent cron_driver:
