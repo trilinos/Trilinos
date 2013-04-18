@@ -134,7 +134,8 @@ namespace MueLu {
     GetOStream(Runtime0,0) << "Using weights formula: nnz + " << rowWeight << std::endl;
 
     Array<SC> weightsPerRow(numElements);
-    for (LO i = 0; i < numElements; i++)
+    for (LO i = 0; i < numElements; i++) {
+      weightsPerRow[i] = Teuchos::ScalarTraits<SC>::zero();
       for (LO j = 0; j < blkSize; j++) {
         weightsPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
         // Zoltan2 pqJagged gets as good partitioning as Zoltan RCB in terms of nnz
@@ -144,6 +145,7 @@ namespace MueLu {
         // NOTE: no good heuristic here, the value was chosen almost randomly
         weightsPerRow[i] += rowWeight;
       }
+    }
     weights[0] = weightsPerRow.getRawPtr();
 
     Teuchos::ParameterList params;
