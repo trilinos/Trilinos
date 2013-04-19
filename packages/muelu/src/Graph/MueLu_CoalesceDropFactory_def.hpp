@@ -232,7 +232,7 @@ namespace MueLu {
 
           numTotal = A->getNodeNumEntries();
 
-          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "amalgamated graph of A"));
+          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
           graph->SetBoundaryNodeMap(amalgBoundaryNodes);
           if (GetVerbLevel() & Statistics0) {
             GO numLocalBoundaryNodes  = 0;
