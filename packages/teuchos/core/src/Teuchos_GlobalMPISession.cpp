@@ -132,31 +132,56 @@ GlobalMPISession::~GlobalMPISession()
 #endif
 }
 
+
 bool GlobalMPISession::mpiIsInitialized() {
-  if(!haveMPIState_)
-    initialize(&std::cerr);
+  justInTimeInitialize();
   return haveMPIState_;
 }
+
 
 bool GlobalMPISession::mpiIsFinalized()
 {
   return mpiIsFinalized_;
 }
 
+
 int GlobalMPISession::getRank()
 {
-  if(!haveMPIState_)
-    initialize(&std::cerr);
+  justInTimeInitialize();
   return rank_;
 }
 
+
 int GlobalMPISession::getNProc() {
-  if(!haveMPIState_)
-    initialize(&std::cerr);
+  justInTimeInitialize();
   return nProc_;
 }
 
+
+void GlobalMPISession::barrier()
+{
+  justInTimeInitialize();
+#ifdef HAVE_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
+}
+
+
+int GlobalMPISession::sum(int localVal)
+{
+  justInTimeInitialize();
+#ifdef HAVE_MPI
+  int globalSum = -1;
+  MPI_Allreduce(&localVal, &globalSum, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); 
+  return globalSum;
+#else
+  return localVal;
+#endif
+}
+
+
 // private
+
 
 void GlobalMPISession::initialize( std::ostream *out )
 {
@@ -204,5 +229,13 @@ void GlobalMPISession::initialize( std::ostream *out )
 #endif // HAVE_MPI
 
 }
+
+
+void GlobalMPISession::justInTimeInitialize()
+{
+  if(!haveMPIState_)
+    initialize(&std::cerr);
+}
+
 
 } // namespace Teuchos

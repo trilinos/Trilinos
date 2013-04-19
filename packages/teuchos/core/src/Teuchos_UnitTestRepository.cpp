@@ -176,6 +176,7 @@ public:
   unitTests_t unitTests;
   CommandLineProcessor clp;
   EShowTestDetails showTestDetails;
+  bool globallyReduceUnitTestResult;
   bool showSrcLocation;
   bool showFailSrcLocation;
   bool noOp;
@@ -187,6 +188,7 @@ public:
   InstanceData()
     :clp(false),
      showTestDetails(SHOW_TEST_DETAILS_TEST_NAMES),
+     globallyReduceUnitTestResult(false),
      showSrcLocation(false),
      showFailSrcLocation(true),
      noOp(false),
@@ -202,6 +204,19 @@ public:
 CommandLineProcessor& UnitTestRepository::getCLP()
 {
   return getData().clp;
+}
+
+
+void UnitTestRepository::setGloballyReduceTestResult(
+  const bool globallyReduceUnitTestResult)
+{
+  getData().globallyReduceUnitTestResult = globallyReduceUnitTestResult;
+}
+
+
+bool UnitTestRepository::getGloballyReduceTestResult()
+{
+  return getData().globallyReduceUnitTestResult;
 }
 
 
@@ -294,7 +309,7 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
           if (!data.noOp) {
 
             timer.start(true);
-            const bool result = utd.unitTest->runUnitTest(*localOut);
+            const bool result = runUnitTestImpl(*utd.unitTest, *localOut);
             timer.stop();
 
             if (!result) {
@@ -504,6 +519,33 @@ UnitTestRepository::InstanceData& UnitTestRepository::getData()
 {
   static UnitTestRepository::InstanceData data;
   return data;
+}
+
+
+bool UnitTestRepository::runUnitTestImpl(const UnitTestBase &unitTest,
+  FancyOStream &out)
+{
+  const bool result = unitTest.runUnitTest(out);
+  if (getData().globallyReduceUnitTestResult) {
+    const int globalSum = GlobalMPISession::sum(result ? 0 : 1);
+    if (globalSum == 0) {
+      return true;
+    }
+    else {
+      if (result) {
+        out << "NOTE: Global reduction shows failures on other processes!\n"
+            << "(rerun with --output-to-root-rank-only=-1 to see output\n"
+            << "from other processes to see what process failed!)\n";
+        // ToDo: Put in a global gather to find out what processes failed and
+        // print that here!
+      }
+      else {
+        // The test failed on the root process so the user already knows it failed!
+      }
+      return false;
+    }
+  }
+  return result;
 }
 
 

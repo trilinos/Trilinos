@@ -39,74 +39,73 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_UNIT_TEST_REPOSITORY_HPP
-#define TEUCHOS_UNIT_TEST_REPOSITORY_HPP
+#include "Teuchos_GlobalMPISession.hpp"
+
+#ifdef HAVE_MPI
+#  include "mpi.h"
+#endif
+
+#include "Teuchos_UnitTestHarness.hpp"
 
 
-/*! \file Teuchos_UnitTestRepository.hpp
-    \brief Unit testing support.
-*/
-
-
-#include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_StandardMemberCompositionMacros.hpp"
-#include "Teuchos_Ptr.hpp"
+//
+// Unit tests for GlobalMPISession
+//
+// NOTE: Becuase this class is used to implement the parallel reduction
+// feature of the unit test harness, we can't use that feature here and we
+// have to do the global reductions across processes ourselves.
+//
 
 
 namespace Teuchos {
 
 
-class UnitTestBase;
+void globalReduceSuccess(bool &success, FancyOStream &out)
+{
+#ifdef HAVE_MPI
+  int globalSumSuccessInt = -1;
+  int localSuccessInt = (success ? 0 : 1);
+  MPI_Allreduce(&localSuccessInt, &globalSumSuccessInt, 1,
+    MPI_INT, MPI_SUM, MPI_COMM_WORLD); 
+  TEST_EQUALITY_CONST(globalSumSuccessInt, 0);
+#endif
+}
 
 
-class CommandLineProcessor;
+TEUCHOS_UNIT_TEST( GlobalMPISession, basic ) {
+  TEST_ASSERT(GlobalMPISession::mpiIsInitialized());
+  TEST_ASSERT(!GlobalMPISession::mpiIsFinalized());
+#ifdef HAVE_MPI
+  int numProcs = -1;
+  ECHO(::MPI_Comm_size(MPI_COMM_WORLD, &numProcs));
+  TEST_EQUALITY(GlobalMPISession::getNProc(), numProcs);
+  int procRank = -1;
+  ECHO(::MPI_Comm_rank(MPI_COMM_WORLD, &procRank));
+  TEST_EQUALITY(GlobalMPISession::getRank(), procRank);
+#else
+  TEST_EQUALITY_CONST(GlobalMPISession::getNProc(), 1);
+  TEST_EQUALITY_CONST(GlobalMPISession::getRank(), 0);
+#endif // HAVE_MPI
+  globalReduceSuccess(success, out);
+}
 
 
-/** \brief Singleton unit testing repository. */
-class TEUCHOSCORE_LIB_DLL_EXPORT UnitTestRepository {
-public:
+TEUCHOS_UNIT_TEST( GlobalMPISession, barrier ) {
+  out << "*** Just make sure the basic barrier does not hang or something.\n";
+  ECHO(GlobalMPISession::barrier());
+  globalReduceSuccess(success, out);
+}
 
-  /** \brief Return the CLP to add options to. */
-  static CommandLineProcessor& getCLP();
 
-  /** \brief Set if the unit tests should reduce across processes or not. */
-  static void setGloballyReduceTestResult(const bool globallyReduceUnitTestResult);
-
-  /** \brief Get if the unit tests should reduce across processes or not. */
-  static bool getGloballyReduceTestResult();
-
-  /** \brief Run the registered unit tests */
-  static bool runUnitTests(FancyOStream &out);
-
-  /** \brief Run the unit tests from main() passing in (argc, argv).
-   *
-   * \returns Returns the appropriate int for main()
-   */
-  static int runUnitTestsFromMain(int argc, char* argv[]);
-
-  /** \brief . */
-  static void addUnitTest(UnitTestBase *unitTest, const std::string groupName,
-    const std::string testName);
-
-  /** \brief . */
-  static bool verboseUnitTests();
-
-private:
-
-  UnitTestRepository();
-
-  static void setUpCLP(const Ptr<CommandLineProcessor>& clp);
-
-  class InstanceData;
-
-  static InstanceData& getData();
-
-  static bool runUnitTestImpl(const UnitTestBase &unitTest, FancyOStream &out);
-
-};
+TEUCHOS_UNIT_TEST( GlobalMPISession, sum ) {
+  ECHO(const int globalSum = GlobalMPISession::sum(GlobalMPISession::getRank()+1));
+  ECHO(const int n = GlobalMPISession::getNProc());
+  TEST_EQUALITY(globalSum, (n*(n+1))/2);
+  globalReduceSuccess(success, out);
+}
 
 
 } // namespace Teuchos
 
 
-#endif  // TEUCHOS_UNIT_TEST_REPOSITORY_HPP
+

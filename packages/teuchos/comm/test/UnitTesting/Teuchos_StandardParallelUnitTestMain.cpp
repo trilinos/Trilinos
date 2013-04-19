@@ -39,74 +39,28 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_UNIT_TEST_REPOSITORY_HPP
-#define TEUCHOS_UNIT_TEST_REPOSITORY_HPP
 
+/*! \file Teuchos_StandardUnitTestMain.cpp
 
-/*! \file Teuchos_UnitTestRepository.hpp
-    \brief Unit testing support.
+\brief Standard Parallel Unit testing main program.
+
+This file is ment to be used as a standard main program for a unit test
+executable for parallel unit tests.
+
+NOTE: This file should *not* be built and included as part of the Teuchos
+library.  It is instead to be directly included in the build files for
+specific unit test suites.
+
 */
 
 
-#include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_StandardMemberCompositionMacros.hpp"
-#include "Teuchos_Ptr.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 
-namespace Teuchos {
-
-
-class UnitTestBase;
-
-
-class CommandLineProcessor;
-
-
-/** \brief Singleton unit testing repository. */
-class TEUCHOSCORE_LIB_DLL_EXPORT UnitTestRepository {
-public:
-
-  /** \brief Return the CLP to add options to. */
-  static CommandLineProcessor& getCLP();
-
-  /** \brief Set if the unit tests should reduce across processes or not. */
-  static void setGloballyReduceTestResult(const bool globallyReduceUnitTestResult);
-
-  /** \brief Get if the unit tests should reduce across processes or not. */
-  static bool getGloballyReduceTestResult();
-
-  /** \brief Run the registered unit tests */
-  static bool runUnitTests(FancyOStream &out);
-
-  /** \brief Run the unit tests from main() passing in (argc, argv).
-   *
-   * \returns Returns the appropriate int for main()
-   */
-  static int runUnitTestsFromMain(int argc, char* argv[]);
-
-  /** \brief . */
-  static void addUnitTest(UnitTestBase *unitTest, const std::string groupName,
-    const std::string testName);
-
-  /** \brief . */
-  static bool verboseUnitTests();
-
-private:
-
-  UnitTestRepository();
-
-  static void setUpCLP(const Ptr<CommandLineProcessor>& clp);
-
-  class InstanceData;
-
-  static InstanceData& getData();
-
-  static bool runUnitTestImpl(const UnitTestBase &unitTest, FancyOStream &out);
-
-};
-
-
-} // namespace Teuchos
-
-
-#endif  // TEUCHOS_UNIT_TEST_REPOSITORY_HPP
+int main( int argc, char* argv[] )
+{
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+}
