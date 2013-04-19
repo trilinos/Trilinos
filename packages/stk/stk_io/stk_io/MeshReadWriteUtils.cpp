@@ -347,10 +347,33 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 
     if (stk::io::include_entity(entity)) {
       stk::mesh::Part* const part = meta.get_part(entity->name());
+
       assert(part != NULL);
       assert(entity->field_exists("distribution_factors"));
 
+      stk::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
       stk::mesh::put_field(distribution_factors_field, stk::mesh::MetaData::NODE_RANK, *part);
+    }
+  }
+
+  for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
+      it != node_sets.end(); ++it) {
+    Ioss::NodeSet *entity = *it;
+
+    if (stk::io::include_entity(entity)) {
+      stk::mesh::Part* const part = meta.get_part(entity->name());
+
+      assert(part != NULL);
+      assert(entity->field_exists("distribution_factors"));
+
+      std::string nodesetName = part->name();
+      std::string nodesetDistFieldName = "distribution_factors_" + nodesetName;
+
+      stk::mesh::Field<double> & distribution_factors_field_per_nodeset =
+           meta.declare_field<stk::mesh::Field<double> >(nodesetDistFieldName);
+
+      stk::io::set_field_role(distribution_factors_field_per_nodeset, Ioss::Field::MESH);
+      stk::mesh::put_field(distribution_factors_field_per_nodeset, stk::mesh::MetaData::NODE_RANK, *part);
     }
   }
 }
@@ -407,6 +430,15 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dum
 
       if (df_field != NULL) {
         stk::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
+      }
+
+      std::string distributionFactorsPerNodesetFieldName = "distribution_factors_" + part->name();
+
+      stk::mesh::Field<double> *df_field_per_nodeset =
+                meta.get_field<stk::mesh::Field<double> >(distributionFactorsPerNodesetFieldName);
+
+      if (df_field_per_nodeset != NULL) {
+        stk::io::field_data_from_ioss(df_field_per_nodeset, nodes, entity, "distribution_factors");
       }
 
       // Add all attributes as fields.
