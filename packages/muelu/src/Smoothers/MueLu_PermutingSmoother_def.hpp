@@ -112,7 +112,6 @@ namespace MueLu {
 
     // create internal smoother
     if(type_ == "ILU") {
-      std::cout << "overlap=" << overlap_ << std::endl;
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
       s_ = MueLu::GetIfpackSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(type_, paramList_,overlap_,permFact_);
       //s_->SetFactory("A", permFact_);
