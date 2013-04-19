@@ -538,15 +538,41 @@ bool UnitTestRepository::runUnitTestImpl(const UnitTestBase &unitTest,
       return true;
     }
     else {
+      // Only print that there are failures on processes where the local
+      // unit test actally passed.  On processes where the local unit test
+      // fails, users already know that test failed so there is no need to
+      // exlain it.
       if (result) {
         out << "NOTE: Global reduction shows failures on other processes!\n"
             << "(rerun with --output-to-root-rank-only=-1 to see output\n"
             << "from other processes to see what process failed!)\n";
-        // ToDo: Put in a global gather to find out what processes failed and
-        // print that here!
       }
       else {
         // The test failed on the root process so the user already knows it failed!
+      }
+      // Determine what processes have failing tests
+      const int numProcs = GlobalMPISession::getNProc();
+      Array<int> passFailFlags(numProcs);
+      GlobalMPISession::allGather( result ? 0 : 1, passFailFlags());
+      Array<int> procsThatFailed;
+      for ( int proc_k = 0; proc_k < numProcs; ++proc_k ) {
+        if (passFailFlags[proc_k] != 0) {
+          procsThatFailed.push_back(proc_k);
+        }
+      }
+      // Print what processes have the failing tests.  If there is only one
+      // processes, don't print anything.
+      if (numProcs > 1) {
+        if (procsThatFailed.size() == numProcs) {
+          out << "NOTE: Unit test failed on all processes!\n";
+          // NOTE: when all the processes are failing it is useless to print
+          // out a list of all of the processes.
+        }
+        else {
+          out << "NOTE: Unit test failed on processes = " << procsThatFailed << "\n"
+              << "(rerun with --output-to-root-rank-only=<procID> to see output\n"
+              << "from individual processes where the unit test is failing!)\n";
+        }
       }
       return false;
     }
