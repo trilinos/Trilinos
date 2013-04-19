@@ -132,7 +132,7 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
   if(!lumping) {
     // extract diagonal of F. store it in ArrayRCP object
     Teuchos::ArrayRCP<SC> AdiagFinv = Utils::GetMatrixDiagonal(*F);
-    for(size_t k = 0; k < AdiagFinv.size(); ++k) {
+    for (size_t k = 0; k < Teuchos::as<size_t> (AdiagFinv.size ()); ++k) {
       if (Teuchos::ScalarTraits<SC>::magnitude(AdiagFinv[k]) < 1e-4)
         AdiagFinv[k] = Teuchos::ScalarTraits<SC>::one();
     }

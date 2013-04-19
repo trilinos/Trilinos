@@ -336,9 +336,15 @@ namespace MueLu {
             elementList.resize(numRows);
 
 #ifdef HAVE_MUELU_DEBUG
-            // At the moment we assume that first GIDs in nonUniqueMap coincide with those in uniqueMap
-            for (LO row = 0; row < uniqueMap->getNodeNumElements(); row++)
-              TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getGlobalElement(row) != elementList[row], Exceptions::RuntimeError, "row = " << row << ", uniqueMap GID = " << uniqueMap->getGlobalElement(row) << ", nonUniqueMap GID = " << elementList[row] << std::endl);
+            // At the moment we assume that first GIDs in nonUniqueMap
+            // coincide with those in uniqueMap.
+            for (LO row = 0; row < Teuchos::as<LO> (uniqueMap->getNodeNumElements ()); ++row) {
+              TEUCHOS_TEST_FOR_EXCEPTION(
+                uniqueMap->getGlobalElement(row) != elementList[row],
+                Exceptions::RuntimeError, "row = " << row << ", uniqueMap GID = "
+                << uniqueMap->getGlobalElement(row) << ", nonUniqueMap GID = "
+                << elementList[row] << std::endl);
+            }
 #endif
 
             nonUniqueMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, uniqueMap->getComm());
