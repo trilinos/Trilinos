@@ -56,6 +56,7 @@
 
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
+#include <TestAtomic.hpp>
 
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
@@ -252,6 +253,41 @@ TEST_F( host , host_thread )
     KokkosArray::Host::wake();
   }
 
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( host , atomics )
+{
+  const int loop_count = 1e6 ;
+
+  ASSERT_TRUE( ( TestAtomic::Loop<int,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<double,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<float,KokkosArray::Host>(100,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,KokkosArray::Host>(100,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,KokkosArray::Host>(100,3) ) );
 }
 
 //----------------------------------------------------------------------------

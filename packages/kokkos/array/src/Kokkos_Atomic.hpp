@@ -42,113 +42,100 @@
 */
 
 
-#ifndef KOKKOSARRAY_ATOMIC_H_
-#define KOKKOSARRAY_ATOMIC_H_
+#ifndef KOKKOSARRAY_ATOMIC_HPP
+#define KOKKOSARRAY_ATOMIC_HPP
 
+// This header file defines prototypes for the atomic functions: exchange, compare_exchange, add
+// Supported types are: signed and unsigned 4 and 8 byte integers, float, and double
+// They are implemented through GCC compatible intrinsics, OpenMP directives and native CUDA intrinsics.
 
-//This header file defines prototypes for the atomic functions: exchange, compare_exchange, add
-//Supported types are: signed and unsigned 4 and 8 byte integers, float, and double
-//They are implemented through GCC compatible intrinsics, OpenMP directives and native CUDA intrinsics.
+#include <KokkosArray_Macros.hpp>
+#include <impl/Kokkos_Utility.hpp>
 
-#include <stdint.h>
-#include "KokkosArray_Macros.hpp"
-#include "KokkosArray_Host.hpp"
+//----------------------------------------------------------------------------
 
-namespace KokkosArray {
+#if defined( __CUDA_ARCH__ )
 
-#if defined(GNU_ATOMICS_GCC) || defined(GNU_ATOMICS_INTEL) || defined(OMP31_ATOMICS)
-#define EXTERNAL_ATOMICS_CHOICE
-#endif
+// Compiling NVIDIA device code, must use Cuda atomics:
 
-#ifndef EXTERNAL_ATOMICS_CHOICE
-#ifndef __CUDA_ARCH__
-  #undef EXTERNAL_ATOMICS_CHOICE
-  #if !defined(_OPENMP) || _OPENMP < 201107
-    #if defined(__GNUC__) || defined(__GNUG__)
-      #define GNU_ATOMICS_GCC
-    #else
-      #define GNU_ATOMICS_INTEL
-    #endif
-  #else
-    #define OMP31_ATOMICS
-  #endif
+#define KOKKOS_ATOMICS_USE_CUDA
+
+#elif ! defined( KOKKOS_ATOMICS_USE_GCC ) && \
+      ! defined( KOKKOS_ATOMICS_USE_INTEL ) && \
+      ! defined( KOKKOS_ATOMICS_USE_OMP31 )
+
+// Compiling for Host and atomic implementation has not been pre-selected,
+// choose the best implementation for the detected compiler.
+// Preference: GCC, INTEL, OMP31
+
+#if defined( __GNUC__ ) || defined( __GNUG__ )
+
+#define KOKKOS_ATOMICS_USE_GCC
+
+#elif defined( __INTEL_COMPILER )
+
+#define KOKKOS_ATOMICS_USE_INTEL
+
+#elif defined( _OPENMP ) && ( 201107 <= _OPENMP )
+
+#define KOKKOS_ATOMICS_USE_OMP31
+
 #else
-  #define CUDA_ATOMICS
-#endif
+
+#error "KOKKOS_ATOMICS_USE : Unsupported compiler"
+
 #endif
 
+#endif /* Not pre-selected atomic implementation */
 
-//replaces the value at dest with val, and returns the prior value.
-//template<typename T>
-//KOKKOSARRAY_INLINE_FUNCTION T atomic_exchange(volatile T* dest, T val);
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+inline
+const char * atomic_query_version()
+{
+#if defined( KOKKOS_ATOMICS_USE_CUDA )
+  return "KOKKOS_ATOMICS_USE_CUDA" ;
+#elif defined( KOKKOS_ATOMICS_USE_GCC )
+  return "KOKKOS_ATOMICS_USE_GCC" ;
+#elif defined( KOKKOS_ATOMICS_USE_INTEL )
+  return "KOKKOS_ATOMICS_USE_INTEL" ;
+#elif defined( KOKKOS_ATOMICS_USE_OMP31 )
+  return "KOKKOS_ATOMICS_USE_OMP31" ;
+#endif
+}
+
+}
+
+//----------------------------------------------------------------------------
+// Atomic exchange
+//
+// template< typename T >
+// T atomic_exchange( volatile T* const dest , const T val )
+// { T tmp = *dest ; *dest = val ; return tmp ; }
 
 #include "impl/Kokkos_Atomic_Exchange.hpp"
 
+//----------------------------------------------------------------------------
+// Atomic compare-and-exchange
+//
+// template<class T>
+// bool atomic_compare_exchange_strong(volatile T* const dest, const T compare, const T val)
+// { bool equal = compare == *dest ; if ( equal ) *dest = val ; return bool ; }
 
-
-#ifndef EXTERNAL_ATOMICS_CHOICE
-#undef GNU_ATOMICS_GCC
-#undef GNU_ATOMICS_INTEL
-#undef OMP31_ATOMICS
-#undef CUDA_ATOMICS
-#ifndef __CUDA_ARCH__
-  #if !defined(_OPENMP) || _OPENMP < 201107
-    #if defined(__GNUC__) || defined(__GNUG__)
-      #define GNU_ATOMICS_GCC
-    #else
-      #define GNU_ATOMICS_INTEL
-    #endif
-  #else
-    #define OMP31_ATOMICS
-  #endif
-#else
-  #define CUDA_ATOMICS
-#endif
-#endif
-
-const char* atomic_query_version() {
-#ifdef GNU_ATOMICS_GCC
-	return "GNU_ATOMICS_GCC";
-#endif
-#ifdef GNU_ATOMICS_INTEL
-	return "GNU_ATOMICS_INTEL";
-#endif
-#ifdef OMP31_ATOMICS
-	return "OMP31_ATOMICS";
-#endif
-#ifdef CUDA_ATOMICS
-	return "CUDA_ATOMICS";
-#endif
-}
-
-//template<class T>
-//bool atomic_compare_exchange_strong(volatile T* dest, T compare, T val);
 #include "impl/Kokkos_Atomic_Compare_Exchange_Strong.hpp"
 
-#ifndef EXTERNAL_ATOMICS_CHOICE
-#undef GNU_ATOMICS_GCC
-#undef GNU_ATOMICS_INTEL
-#undef OMP31_ATOMICS
-#undef CUDA_ATOMICS
-#ifndef __CUDA_ARCH__
-  #if !defined(_OPENMP) || _OPENMP < 201107
-    #if defined(__GNUC__) || defined(__GNUG__)
-      #define GNU_ATOMICS_GCC
-    #else
-      #define GNU_ATOMICS_INTEL
-    #endif
-  #else
-    #define OMP31_ATOMICS
-  #endif
-#else
-  #define CUDA_ATOMICS
-#endif
-#endif
+//----------------------------------------------------------------------------
+// Atomic fetch and add
+//
+// template<class T>
+// T atomic_fetch_add(volatile T* const dest, const T val)
+// { T tmp = *dest ; *dest += val ; return tmp ; }
 
-//template<class T>
-//T atomic_fetch_add(volatile T* dest, T val);
 #include "impl/Kokkos_Atomic_Fetch_Add.hpp"
 
-}
+//----------------------------------------------------------------------------
 
-#endif /* KOKKOSARRAY_ATOMIC_H_ */
+#endif /* KOKKOSARRAY_ATOMIC_HPP */
+

@@ -132,11 +132,10 @@ namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 
 //----------------------------------------------------------------------------
 
-#if defined( __GNUC__ ) && defined( __GNUG__ )
+#if defined( __GNUC__ ) /* GNU C   */ || \
+    defined( __GNUG__ ) /* GNU C++ */
 
-/*  Compiling with GNU compatible compiler.
- *  These devices are used in no-offload mode so the Host space is the MIC space.
- */
+/*  Compiling with GNU compatible compiler.  */
 
 #endif
 
