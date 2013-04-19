@@ -46,7 +46,7 @@
     \brief A MPI utilities class, providing methods for initializing,
         finalizing, and querying the global MPI session
 */
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_ArrayView.hpp"
 
 
 namespace Teuchos {
@@ -174,9 +174,19 @@ public:
 
   /** \brief Sum a set of integers across processes.
    *
-   * \param
+   * \param localVal [in] Value on local process to sum across processes.
    */
   static int sum(int localVal);
+
+  /** \brief Global all-to-all of a set of integers across processes.
+   *
+   * \param localVal [in] Value on local process to pass to all processes.
+   *
+   * \param allVals [out] Array (length getNProc()) that gives the value of
+   * localVal for each process.  On output, allVals[k] is localVal for process
+   * k.
+   */
+  static void allGather(int localVal, const ArrayView<int> &allVals);
 
   //@}
 

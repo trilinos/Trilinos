@@ -40,6 +40,7 @@
 // @HEADER
 
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_Array.hpp"
 
 #ifdef HAVE_MPI
 #  include "mpi.h"
@@ -102,6 +103,29 @@ TEUCHOS_UNIT_TEST( GlobalMPISession, sum ) {
   ECHO(const int n = GlobalMPISession::getNProc());
   TEST_EQUALITY(globalSum, (n*(n+1))/2);
   globalReduceSuccess(success, out);
+}
+
+
+TEUCHOS_UNIT_TEST( GlobalMPISession, allGather )
+{
+  const int numProcs = GlobalMPISession::getNProc();
+  const int procRank = GlobalMPISession::getRank();
+  {
+    Array<int> allInts;
+    ECHO(allInts.resize(numProcs-1));
+    TEST_THROW(GlobalMPISession::allGather(procRank+1, allInts()), std::out_of_range);
+    ECHO(allInts.resize(numProcs+1));
+    TEST_THROW(GlobalMPISession::allGather(procRank+1, allInts()), std::out_of_range);
+  }
+  {
+    Array<int> allInts_expected(numProcs);
+    for (int k = 0; k < numProcs; ++k) {
+      allInts_expected[k] = k+1;
+    }
+    Array<int> allInts(numProcs);
+    ECHO(GlobalMPISession::allGather(procRank+1, allInts()));
+    TEST_EQUALITY(allInts, allInts_expected);
+  }
 }
 
 

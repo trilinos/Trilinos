@@ -180,6 +180,19 @@ int GlobalMPISession::sum(int localVal)
 }
 
 
+void GlobalMPISession::allGather(int localVal, const ArrayView<int> &allVals)
+{
+  justInTimeInitialize();
+  TEUCHOS_ASSERT_EQUALITY(allVals.size(), getNProc());
+#ifdef HAVE_MPI
+  MPI_Allgather( &localVal, 1, MPI_INT, allVals.getRawPtr(), 1, MPI_INT,
+    MPI_COMM_WORLD); 
+#else
+  allVals[0] = localVal;
+#endif
+}
+
+
 // private
 
 
