@@ -67,7 +67,7 @@ namespace Galeri {
       //TODO: avoid using GlobalOrdinal everywhere?
 
       template <class LocalOrdinal, class GlobalOrdinal, class Map>
-      RCP<Map>
+      Teuchos::RCP<Map>
       Cartesian3D(const Teuchos::RCP<const Teuchos::Comm<int> > & comm, const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
                   const GlobalOrdinal mx, const GlobalOrdinal my, const GlobalOrdinal mz)
       {
