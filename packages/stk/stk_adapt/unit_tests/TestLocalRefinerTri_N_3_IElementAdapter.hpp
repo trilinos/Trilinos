@@ -23,7 +23,7 @@ namespace stk {
 
       /// Client supplies these methods - given an element, which edge, and the nodes on the edge, return instruction on what to do to the edge,
       ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
-      virtual int mark(const stk::mesh::Entity element);
+      virtual int markElement(const stk::mesh::Entity element);
 
     };
 
@@ -36,7 +36,7 @@ namespace stk {
 
 
     int TestLocalRefinerTri_N_3_IElementAdapter::
-    mark(const stk::mesh::Entity element)
+    markElement(const stk::mesh::Entity element)
     {
       int mark=0;
 

@@ -25,13 +25,13 @@ namespace stk {
      */
 
     // Example
-    struct IElementBasedAdapterPredicate : public std::unary_function<const stk::mesh::Entity , bool> {
-      stk::mesh::Selector * m_selector;
+    struct IElementBasedAdapterPredicate : public std::unary_function<const stk::mesh::Entity , int> {
+      stk::mesh::Selector * m_eb_selector;
       stk::mesh::FieldBase *m_field;
       double m_tolerance;
     protected:
       IElementBasedAdapterPredicate(stk::mesh::Selector * selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
-        m_selector(selector), m_field(field), m_tolerance(tolerance) {}
+        m_eb_selector(selector), m_field(field), m_tolerance(tolerance) {}
     };
 
     // Can be instantiated by the user, or used to define your own
@@ -40,12 +40,12 @@ namespace stk {
       ElementRefinePredicate(stk::mesh::Selector* selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
         IElementBasedAdapterPredicate(selector, field, tolerance) {}
 
-      /// Return true for refine, false for ignore
+      /// Return DO_REFINE, DO_UNREFINE, DO_NOTHING
       int operator()(const stk::mesh::Entity entity) {
         double *fdata = 0;
         if (m_field)
           fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
-        bool selected = (m_selector==0 || (*m_selector)(entity));
+        bool selected = (m_eb_selector==0 || (*m_eb_selector)(entity));
         bool ref_field_criterion = (fdata  && fdata[0] > 0);
         bool unref_field_criterion = (fdata && fdata[0] < 0);
         int mark = 0;

@@ -75,12 +75,12 @@ namespace stk {
 
     static const unsigned EntityRankEnd = 6;
 
-    enum FamiltyTreeLevel {
+    enum FamilyTreeLevel {
       FAMILY_TREE_LEVEL_0 = 0,
       FAMILY_TREE_LEVEL_1 = 1
     };
 
-    enum FamiltyTreeParentIndex {
+    enum FamilyTreeParentIndex {
       FAMILY_TREE_PARENT = 0,
       FAMILY_TREE_CHILD_START_INDEX = 1
     };
@@ -406,7 +406,7 @@ namespace stk {
 
       /// dump a vtk file for the mesh surrounding the given node
       void dump_vtk(stk::mesh::Entity node, std::string filename, stk::mesh::Selector *selector=0);
-      void dump_vtk(std::string filename);
+      void dump_vtk(std::string filename, bool dump_sides=true);
 
       /// choose to respect the mesh spacing in the refined mesh
       void set_respect_spacing(bool do_respect_spacing=true) { m_do_respect_spacing = do_respect_spacing; }
@@ -583,7 +583,7 @@ namespace stk {
        *    where we are looking for the family tree of the element associated with it being a parent).
        *
        */
-      unsigned getFamilyTreeRelationIndex(FamiltyTreeLevel level, const stk::mesh::Entity element);
+      unsigned getFamilyTreeRelationIndex(FamilyTreeLevel level, const stk::mesh::Entity element);
 
       /// the element is not a parent of the 0'th family_tree relation
       bool isChildElement( const stk::mesh::Entity element, bool check_for_family_tree=true);
@@ -599,6 +599,9 @@ namespace stk {
       /// if the element is a parent at any level, return true
       bool isParentElement( const stk::mesh::Entity element, bool check_for_family_tree=true);
 
+      stk::mesh::Entity getGrandParent(stk::mesh::Entity element, bool check_for_family_tree=true);
+      bool hasGreatGrandChildren(stk::mesh::Entity gp, bool check_for_family_tree=true);
+
       /// is element a parent at the leaf level (either there is only one level, and it's a parent, or
       ///    if more than one, the element is a child and a parent and its children have no children)
       bool isParentElementLeaf( const stk::mesh::Entity element, bool check_for_family_tree=true);
@@ -609,6 +612,9 @@ namespace stk {
       /// is element a child with siblings with no nieces or nephews (siblings with children)
       ///  (alternative would be "is child and is parent not a grandparent")
       bool isChildWithoutNieces( const stk::mesh::Entity element, bool check_for_family_tree=true);
+
+      /// is element a child with siblings with no nieces who have nieces (siblings with children)
+      bool isChildWithoutGrandNieces( const stk::mesh::Entity element, bool check_for_family_tree=true);
 
       // return false if we couldn't get the children
       bool getChildren( const stk::mesh::Entity element, std::vector<stk::mesh::Entity>& children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false);

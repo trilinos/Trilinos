@@ -659,6 +659,7 @@ namespace stk {
       unsigned nelems = count[ element_rank() ];
       stk::ParallelMachine pm = get_bulk_data()->parallel();
       stk::all_reduce( pm, stk::ReduceSum<1>( &nelems ) );
+
       return nelems;
 
       //         std::cout << " Node = " << count[  0 ] ;
@@ -1965,7 +1966,7 @@ namespace stk {
       if ((timestep_count > 0 && step <= 0) || (step > timestep_count))
         {
           std::cout << "Warning: step is out of range for PerceptMesh::read_database_at_step, step="+toString(step)+" timestep_count= "+toString(timestep_count) << std::endl;
-          if (timestep_count > 0) 
+          if (timestep_count > 0)
             throw std::runtime_error("Error: step is out of range for PerceptMesh::read_database_at_step, step="+toString(step)+" timestep_count= "+toString(timestep_count));
         }
       // FIXME
@@ -4426,13 +4427,14 @@ namespace stk {
 
     }
 
-    void PerceptMesh::dump_vtk(std::string filename)
+    void PerceptMesh::dump_vtk(std::string filename, bool dump_sides)
     {
+      unsigned sdr = (dump_sides?side_rank():element_rank());
       typedef std::map<stk::mesh::Entity , unsigned> NodeMap;
       NodeMap node_map;
       unsigned nnode_per_elem=0;
       unsigned nelem=0, nelem_node_size=0;
-      for (unsigned irank=side_rank(); irank <= element_rank(); irank++)
+      for (unsigned irank=sdr; irank <= element_rank(); irank++)
         {
           const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( irank );
           for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -4474,7 +4476,7 @@ namespace stk {
           file << "\n";
         }
       file << "CELLS " << nelem << " " << nelem_node_size << "\n";
-      for (unsigned irank=side_rank(); irank <= element_rank(); irank++)
+      for (unsigned irank=sdr; irank <= element_rank(); irank++)
         {
           const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( irank );
           for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -4497,7 +4499,7 @@ namespace stk {
             }
         }
       file << "CELL_TYPES " << nelem << "\n";
-      for (unsigned irank=side_rank(); irank <= element_rank(); irank++)
+      for (unsigned irank=sdr; irank <= element_rank(); irank++)
         {
           const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( irank );
           for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -4646,7 +4648,7 @@ namespace stk {
                   min_max_ave[2] += ele_hmesh;
                   if (histogram) histogram->push_back(ele_hmesh);
                   double denom = min_edge_length;
-                  if (min_edge_length == 0.0) 
+                  if (min_edge_length == 0.0)
                     {
                       denom = max_edge_length*1.e-10;
                     }
@@ -5048,7 +5050,7 @@ namespace stk {
      *    where we are looking for the family tree of the element associated with it being a parent).
      *
      */
-    unsigned PerceptMesh::getFamilyTreeRelationIndex(FamiltyTreeLevel level, const stk::mesh::Entity element)
+    unsigned PerceptMesh::getFamilyTreeRelationIndex(FamilyTreeLevel level, const stk::mesh::Entity element)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
       stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
@@ -5204,6 +5206,43 @@ namespace stk {
       return true;
     }
 
+
+    stk::mesh::Entity PerceptMesh::getGrandParent(stk::mesh::Entity element, bool check_for_family_tree)
+    {
+      stk::mesh::Entity parent = getParent(element, check_for_family_tree);
+      if (parent.is_valid())
+        return getParent(parent, check_for_family_tree);
+      else
+        return stk::mesh::Entity();
+    }
+
+
+    bool PerceptMesh::hasGreatGrandChildren(stk::mesh::Entity gp, bool check_for_family_tree)
+    {
+      std::vector<stk::mesh::Entity> children;
+      bool hasChildren = getChildren(gp, children, check_for_family_tree, false);
+      if (hasChildren && children.size())
+        {
+          for (unsigned ic=0; ic < children.size(); ic++)
+            {
+              std::vector<stk::mesh::Entity> grandChildren;
+              bool hasGrandChildren = getChildren(children[ic], grandChildren, check_for_family_tree, false);
+              if (hasGrandChildren && grandChildren.size())
+                {
+                  for (unsigned ig=0; ig < grandChildren.size(); ig++)
+                    {
+                      std::vector<stk::mesh::Entity> greatGrandChildren;
+                      bool hasGreatGrandChildren = getChildren(grandChildren[ig], greatGrandChildren, check_for_family_tree, false);
+                      if (hasGreatGrandChildren && greatGrandChildren.size())
+                        return true;
+                    }
+                }
+            }
+        }
+      return false;
+    }
+
+
     /// if the element is a parent at any level, return true
     bool PerceptMesh::isParentElement( const stk::mesh::Entity element, bool check_for_family_tree)
     {
@@ -5241,12 +5280,15 @@ namespace stk {
           stk::mesh::Entity parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
           if (element == parent)
             {
+              if (family_tree_relations.size() == 1 || isParent)
+                throw std::runtime_error("isParentElement:: bad size - no children but is parent ");
+
               if (element_to_family_tree_relations[FAMILY_TREE_PARENT].relation_ordinal() != 0)
                 {
                   throw std::runtime_error("isParentElement:: bad identifier ");
                 }
               isParent = true;
-              break;
+              //break;
             }
         }
       return isParent;
@@ -5372,8 +5414,8 @@ namespace stk {
       if (!isChildElement(element, check_for_family_tree))
         return false;
 
-      if (element_to_family_tree_relations.size() == 2)
-        return false;
+      //!srk if (element_to_family_tree_relations.size() == 2)
+      //!srk   return false;
 
       unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
       stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
@@ -5389,6 +5431,75 @@ namespace stk {
           if (isParentElement(child, check_for_family_tree))
             {
               return false;
+            }
+        }
+      return true;
+    }
+
+    /// is element a child with siblings with no nieces who have nieces (siblings with children)
+    bool PerceptMesh::isChildWithoutGrandNieces( const stk::mesh::Entity element, bool check_for_family_tree)
+    {
+      const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
+      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      if (element_to_family_tree_relations.size()==0 )
+        {
+          if (check_for_family_tree)
+            {
+              std::cout << "isChildWithoutNieces:: no FAMILY_TREE_RANK relations: element= " << element << std::endl;
+              print_entity(std::cout, element);
+              throw std::runtime_error("isChildWithoutNieces:: no FAMILY_TREE_RANK relations: element");
+            }
+          else
+            {
+              return false;
+            }
+        }
+
+      if (element_to_family_tree_relations.size() > 2)
+        throw std::logic_error(std::string("isChildWithoutNieces:: too many relations = ")+toString(element_to_family_tree_relations.size()));
+
+      if (!isChildElement(element, check_for_family_tree))
+        return false;
+
+      //!srk if (element_to_family_tree_relations.size() == 2)
+      //!srk   return false;
+
+      unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
+      stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
+      stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+      if (family_tree_relations.size() == 0)
+        {
+          throw std::logic_error(std::string("isChildWithoutNieces:: family_tree_relations size=0 = "));
+        }
+      //stk::mesh::Entity parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
+      // logic check
+      bool found_me = false;
+      for (unsigned isibling = 1; isibling < family_tree_relations.size(); isibling++)
+        {
+          stk::mesh::Entity sibling = family_tree_relations[isibling].entity();
+          if (sibling == element)
+            {
+              found_me = true;
+              break;
+            }
+        }
+      if (!found_me) throw std::logic_error("tree issue in isChildWithoutGrandNieces");
+
+      for (unsigned isibling = 1; isibling < family_tree_relations.size(); isibling++)
+        {
+          stk::mesh::Entity sibling = family_tree_relations[isibling].entity();
+          //if (!isChildWithoutNieces(sibling, check_for_family_tree))
+          if (isParentElement(sibling, check_for_family_tree))
+            {
+              std::vector<stk::mesh::Entity> nieces;
+              bool noChild = getChildren(sibling, nieces);
+              //if (err) throw std::logic_error("err in getChildren");
+              if (noChild) continue;
+              for (unsigned ii=0; ii < nieces.size(); ii++)
+                {
+                  if (isParentElement(nieces[ii], check_for_family_tree))
+                    return false;
+                }
             }
         }
       return true;
@@ -5423,8 +5534,18 @@ namespace stk {
       if (only_if_element_is_parent_leaf && !isParentElementLeaf(element, check_for_family_tree))
         return false;
 
-      unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
-      stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
+      ///!!! srk 041413 - changed to get proper level
+      unsigned element_ft_level = 0;
+      if (element_to_family_tree_relations.size() == 1)
+        {
+          element_ft_level = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
+        }
+      else
+        {
+          element_ft_level = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
+        }
+
+      stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level].entity();
       stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
       if (family_tree_relations.size() == 0)
         {
@@ -5434,6 +5555,7 @@ namespace stk {
       for (unsigned ichild = 1; ichild < family_tree_relations.size(); ichild++)
         {
           stk::mesh::Entity child = family_tree_relations[ichild].entity();
+          if (child == element) throw std::logic_error("bad elem/child");
           children.push_back(child);
         }
       return true;

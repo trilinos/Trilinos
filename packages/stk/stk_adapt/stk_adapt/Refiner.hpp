@@ -217,6 +217,9 @@ namespace stk {
 
       //============= unrefine
       void
+      preUnrefine(ElementUnrefineCollection& elements_to_unref);
+
+      void
       filterUnrefSet(ElementUnrefineCollection& elements_to_unref);
 
       void

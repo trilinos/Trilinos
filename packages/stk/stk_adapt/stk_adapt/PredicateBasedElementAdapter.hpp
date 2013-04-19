@@ -32,6 +32,8 @@ namespace stk {
       {
       }
 
+      RefinePredicate& getRefinePredicate() { return m_predicate_refine; }
+
       virtual ElementUnrefineCollection  buildUnrefineList()
       {
         ElementUnrefineCollection elements_to_unref;
@@ -58,9 +60,8 @@ namespace stk {
 
                   const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
-                  if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false))
+                  if (elem_nodes.size())
                     {
-
                       if (m_predicate_refine(element) & DO_UNREFINE)
                         elements_to_unref.insert(element);
                     }

@@ -565,9 +565,10 @@ namespace stk
         {
           double *f_data = PerceptMesh::field_data_entity(field, element);
           int unref = m_iea->markUnrefine(element);
-
           int ref_count = m_iea->markCountRefinedEdges(element);
-          f_data[0] = (double)((unref < 0 ? -1 : 1)*(ref_count?(ref_count+1):1));
+          f_data[0] = (double)((unref & DO_UNREFINE ? -1 : 0));
+          f_data[0] = (double)(ref_count?1.0:f_data[0]);
+
 
           return false;  // don't terminate the loop
         }
@@ -593,14 +594,15 @@ namespace stk
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
             stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+
+            // just some debugging fields, not necessary
             stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
 
+            // for future...
             eMesh.add_field("refine_level", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
-            eMesh.add_field("normal_kept_deleted", eMesh.node_rank(), scalarDimension);
 
             eMesh.commit();
-            //eMesh.delete_side_sets();
 
             std::cout << "moving_shock initial number elements= " << eMesh.get_number_elements() << std::endl;
 
@@ -616,9 +618,17 @@ namespace stk
 
             ShockBasedRefinePredicate srp(nodal_refine_field, eMesh, 0, refine_field, 0.0, shock, 0.0, shock_diff_criterion);
 
+#define USE_EDGE_BASED 1
+
+#if USE_EDGE_BASED
             PredicateBasedEdgeAdapter<ShockBasedRefinePredicate>
               breaker(srp,
                       eMesh, break_tri_to_tri_N, proc_rank_field);
+#else
+            PredicateBasedElementAdapter<ShockBasedRefinePredicate>
+              breaker(srp,
+                      eMesh, break_tri_to_tri_N, proc_rank_field);
+#endif
 
             breaker.setRemoveOldElements(false);
             breaker.setAlwaysInitializeNodeRegistry(false);
@@ -627,7 +637,7 @@ namespace stk
             double delta_shock_displacement = 0.2;
             double shock_displacement = 0.0;
             int num_ref_passes = 3;
-            int num_unref_passes = 10;
+            int num_unref_passes = 3;
 
             for (int istep = 0; istep < num_time_steps; istep++)
               {
@@ -642,54 +652,30 @@ namespace stk
                     std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
                   }
 
+#if USE_EDGE_BASED
                 {
                   SetElementField set_ref_field(eMesh, &breaker);
                   eMesh.elementOpLoop(set_ref_field, refine_field);
                 }
+#endif
 
-                //breaker.deleteParentElements();
                 eMesh.save_as(output_files_loc+"tmp_square_sidesets_moving_shock_ref_"+post_fix[p_size]+".e.s-"+toString(istep+1));
-                //eMesh.save_as("square_anim."+toString(istep+1)+".e");
                 char buf[1000];
                 sprintf(buf, "%04d", istep);
                 if (istep==0)
                   eMesh.save_as("square_anim.e");
                 else
                   eMesh.save_as("square_anim.e-s"+std::string(buf));
-                //eMesh.save_as("square_anim.e-s"+toString(istep));
-                //eMesh.dump_vtk("square_anim."+toString(istep+1)+".vtk", false);
 
-                //exit(123);
-                bool test_unref_all = false;
-                //if (test_unref_all && istep==num_time_steps-1)
-                if (test_unref_all && istep==0)
-                  {
-                    for (int iunref=0; iunref < 10; iunref++)
-                      {
-                        char buf1[1000];
-                        sprintf(buf1, "%04d", iunref);
-                        //eMesh.save_as(output_files_loc+"square_sidesets_final_moving_shock_"+post_fix[p_size]+"_unrefAll_pass_"+toString(iunref)+".e."+toString(num_time_steps) );
-                        if (iunref==0)
-                          eMesh.save_as("usquare_anim.e");
-                        else
-                          eMesh.save_as("usquare_anim.e-s"+std::string(buf1));
-                        std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_pass= " << iunref <<  std::endl;
-                        breaker.unrefineAll();
-                        std::cout << "P[" << eMesh.get_rank() << "] done... iunrefAll_pass= " << iunref << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
-                      }
-                    return;
-                  }
-
-                //breaker.getNodeRegistry().init_entity_repo();
                 for (int iunref_pass=0; iunref_pass < num_unref_passes; iunref_pass++)
                   {
                     std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass <<  std::endl;
+
                     ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
                     breaker.unrefineTheseElements(elements_to_unref);
                     std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
                   }
 
-                //                 breaker.deleteParentElements();
                 eMesh.save_as(output_files_loc+"tmp_square_sidesets_moving_shock_unref_"+post_fix[p_size]+".e");
 
                 if (delete_parents && istep == num_time_steps-1)
@@ -716,7 +702,6 @@ namespace stk
               breaker.deleteParentElements();
             std::cout << "moving_shock final number elements= " << eMesh.get_number_elements() << std::endl;
             eMesh.save_as(output_files_loc+"square_sidesets_final_unrefed_moving_shock_"+post_fix[p_size]+".e."+toString(num_time_steps) );
-            //exit(123);
 
             // end_demo
           }
@@ -750,8 +735,9 @@ namespace stk
             //eMesh.print_info("test1",2);
             //eMesh.dump_vtk("sqtri3.vtk",false);
           }
-          //if (1) return;
 
+          // structured mesh
+          if (0)
           {
             PerceptMesh eMesh;
             eMesh.open(input_files_loc+"square_tri3_0.e");
@@ -774,6 +760,8 @@ namespace stk
             eMesh1.save_as(input_files_loc+"square_tri3_uns_xformed.e");
           }
 
+          // unstructured mesh
+          if (1)
           {
             PerceptMesh eMesh2;
             eMesh2.open(input_files_loc+"square_tri3_uns_xformed.e");

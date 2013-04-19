@@ -9,6 +9,8 @@ namespace stk {
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
+      int spatialDimension = m_eMesh.get_spatial_dim();
+
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
@@ -58,9 +60,10 @@ namespace stk {
                   stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
                   double * const coord0 = stk::mesh::field_data( *coordField , node0 );
                   double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+                  double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
+                  double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
-
-                  int markInfo = mark(element, iSubDimOrd, node0, node1, coord0, coord1, &edge_marks);
+                  int markInfo = markEdge(element, iSubDimOrd, node0, node1, dcoord0, dcoord1, &edge_marks);
 
                   bool needNodes = (DO_REFINE & markInfo);
                     {
@@ -75,7 +78,7 @@ namespace stk {
     int IEdgeAdapter::markCountRefinedEdges(const stk::mesh::Entity element)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-
+      int spatialDimension = m_eMesh.get_spatial_dim();
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
@@ -91,8 +94,10 @@ namespace stk {
           stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
           double * const coord0 = stk::mesh::field_data( *coordField , node0 );
           double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+          double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
+          double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
-          int markInfo = mark(element, iSubDimOrd, node0, node1, coord0, coord1, 0);
+          int markInfo = markEdge(element, iSubDimOrd, node0, node1, dcoord0, dcoord1, 0);
           bool do_ref = markInfo & DO_REFINE;
           if (do_ref)
             {
@@ -109,6 +114,7 @@ namespace stk {
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
+      int spatialDimension = m_eMesh.get_spatial_dim();
       VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
       unsigned numSubDimNeededEntities = 0;
@@ -121,8 +127,10 @@ namespace stk {
           stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
           double * const coord0 = stk::mesh::field_data( *coordField , node0 );
           double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+          double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
+          double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
-          int markInfo = mark(element, iSubDimOrd, node0, node1, coord0, coord1, 0);
+          int markInfo = markEdge(element, iSubDimOrd, node0, node1, dcoord0, dcoord1, 0);
           bool do_unref = markInfo & DO_UNREFINE;
           if (!do_unref)
             {
@@ -131,9 +139,9 @@ namespace stk {
             }
         }
       if (unrefAllEdges)
-        return -1;
+        return DO_UNREFINE;
       else
-        return 0;
+        return DO_NOTHING;
     }
 
     ElementUnrefineCollection IEdgeAdapter::buildUnrefineList()
@@ -162,7 +170,7 @@ namespace stk {
 
                 const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
-                if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false))
+                if (elem_nodes.size())
                   {
                     int markInfo = markUnrefine(element);
                     if (markInfo & DO_UNREFINE)

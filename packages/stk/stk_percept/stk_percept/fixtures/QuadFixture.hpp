@@ -288,7 +288,8 @@ namespace stk {
             {
               if (!debug_geom_side_sets_as_blocks)
                 {
-                  side_parts[i_side] = &meta_data.declare_part(std::string("surface_quad4_edge2_")+boost::lexical_cast<std::string>(i_side+1), stk::mesh::MetaData::EDGE_RANK);
+                  std::string topo_name = NodesPerElem == 4 ? "surface_quad4_edge2_" : "surface_tri3_edge2_" ;
+                  side_parts[i_side] = &meta_data.declare_part(topo_name+boost::lexical_cast<std::string>(i_side+1), stk::mesh::MetaData::EDGE_RANK);
                   mesh::Part& side_part = meta_data.declare_part(std::string("surface_")+boost::lexical_cast<std::string>(i_side+1), stk::mesh::MetaData::EDGE_RANK);
                   //void set_cell_topology(MetaData & fem_meta, Part &part, CellTopology cell_topology);
 

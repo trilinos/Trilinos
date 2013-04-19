@@ -23,7 +23,7 @@ namespace stk {
 
       /// Client supplies these methods - given an element, which edge, and the nodes on the edge, return instruction on what to do to the edge,
       ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
-      virtual int mark(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
+      virtual int markEdge(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
                            double *coord0, double *coord1, std::vector<int>* existing_edge_marks) ;
 
     };
@@ -37,7 +37,7 @@ namespace stk {
 
 
     int TestLocalRefinerTri_N_3_IEdgeAdapter::
-    mark(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
+    markEdge(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
              double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
     {
       int mark=0;

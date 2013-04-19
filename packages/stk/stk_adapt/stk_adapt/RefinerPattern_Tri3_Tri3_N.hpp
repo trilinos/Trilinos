@@ -289,10 +289,13 @@ namespace stk {
           }
         else if (num_edges_marked == 0)
           {
-#if 0
-            // this allows each level to be at the same hierarchical level by having a single parent to single child
-            elems.resize(1);
-            elems[0] = tri_tuple_type(T_VERT_N(0), T_VERT_N(1), T_VERT_N(2) );
+#if 1
+            if (allow_single_refine)
+              {
+                // this allows each level to be at the same hierarchical level by having a single parent to single child
+                elems.resize(1);
+                elems[0] = tri_tuple_type(T_VERT_N(0), T_VERT_N(1), T_VERT_N(2) );
+              }
 #else
             if (elems.size() != 0)
               {
@@ -344,7 +347,7 @@ namespace stk {
                 ++num_edges_marked;
               }
           }
-        if (num_edges_marked == 0)
+        if (num_edges_marked == 0 && !allow_single_refine)
           return;
 
         stk::mesh::Entity elem_nodes_local[3] = {stk::mesh::Entity()};

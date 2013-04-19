@@ -25,7 +25,7 @@ namespace stk {
 
       /// Client supplies this method - given an element return instruction on what to do to the element:
       ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
-      virtual int mark(const stk::mesh::Entity element) = 0;
+      virtual int markElement(const stk::mesh::Entity element) = 0;
 
       virtual void
       refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element,

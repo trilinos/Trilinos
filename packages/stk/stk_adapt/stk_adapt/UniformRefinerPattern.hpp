@@ -68,6 +68,8 @@
 namespace stk {
   namespace adapt {
 
+    extern bool allow_single_refine;
+
     using std::vector;
     //using namespace stk::percept;
 

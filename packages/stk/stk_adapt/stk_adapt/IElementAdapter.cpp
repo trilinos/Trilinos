@@ -14,7 +14,7 @@ namespace stk {
 
       //VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
-      int markInfo = mark(element);
+      int markInfo = markElement(element);
 
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
         {
@@ -71,9 +71,9 @@ namespace stk {
 
                 const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
-                if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false))
+                if (elem_nodes.size())
                   {
-                    int markInfo = mark(element);
+                    int markInfo = markElement(element);
                     if (markInfo & DO_UNREFINE)
                       {
                         elements_to_unref.insert(element);
