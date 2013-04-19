@@ -97,6 +97,11 @@ public:
   static void initialize( const unsigned gang_count = 1 ,
                           const unsigned worker_per_gang = 0 );
 
+
+  static void initialize( const std::pair<unsigned,unsigned> gang_topo ,
+                          const std::pair<unsigned,unsigned> core_use =
+                                std::pair<unsigned,unsigned>(0,0) );
+
   //------------------------------------
 
   static void resize_reduce_scratch( unsigned );

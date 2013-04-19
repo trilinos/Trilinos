@@ -46,6 +46,7 @@
 #include <stdexcept>
 #include <KokkosArray_OpenMP.hpp>
 #include <KokkosArray_hwloc.hpp>
+#include <Host/KokkosArray_Host_Internal.hpp>
 
 namespace KokkosArray {
 
@@ -102,115 +103,6 @@ unsigned bind_host_thread()
 }
 
 //----------------------------------------------------------------------------
-
-void thread_mapping( const unsigned gang_count )
-{
-  const std::pair<unsigned,unsigned> core_topo   = hwloc::get_core_topology();
-  const std::pair<unsigned,unsigned> master_core = hwloc::get_this_thread_coordinate();
-
-  const unsigned thread_count = (unsigned) omp_get_max_threads();
-
-  // Map threads to cores, gangs, and workers
-  for ( unsigned thread_rank = 0 ; thread_rank < thread_count ; ++thread_rank ) {
-
-    unsigned gang_rank    = 0 ;
-    unsigned worker_count = 0 ;
-    unsigned worker_rank  = 0 ;
-
-    // Distribute threads among gangs:
-    {
-      // thread_count = k * bin + ( gang_count - k ) * ( bin + 1 )
-      const unsigned bin  = thread_count / gang_count ;
-      const unsigned bin1 = bin + 1 ;
-      const unsigned k    = gang_count * bin1 - thread_count ;
-      const unsigned part = k * bin ;
-
-      if ( thread_rank < part ) {
-        gang_rank    = thread_rank / bin ;
-        worker_rank  = thread_rank % bin ;
-        worker_count = bin ;
-      }
-      else {
-        gang_rank    = k + ( thread_rank - part ) / bin1 ;
-        worker_rank  = ( thread_rank - part ) % bin1 ;
-        worker_count = bin1 ;
-      }
-    }
-
-    unsigned gang_in_numa_count = 0 ;
-    unsigned gang_in_numa_rank  = 0 ;
-
-    { // Distribute gangs among NUMA regions:
-      // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
-      const unsigned bin  = gang_count / core_topo.first ;
-      const unsigned bin1 = bin + 1 ;
-      const unsigned k    = core_topo.first * bin1 - gang_count ;
-      const unsigned part = k * bin ;
-
-      if ( gang_rank < part ) {
-        s_coordinates[ thread_rank ].first = gang_rank / bin ;
-        gang_in_numa_rank  = gang_rank % bin ;
-        gang_in_numa_count = bin ;
-      }
-      else {
-        s_coordinates[ thread_rank ].first = k + ( gang_rank - part ) / bin1 ;
-        gang_in_numa_rank  = ( gang_rank - part ) % bin1 ;
-        gang_in_numa_count = bin1 ;
-      }
-    }
-
-    { // Distribute workers to cores within this NUMA region:
-      // worker_in_numa_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
-      const unsigned worker_in_numa_count = gang_in_numa_count * worker_count ;
-      const unsigned worker_in_numa_rank  = gang_in_numa_rank  * worker_count + worker_rank ;
-
-      const unsigned bin  = worker_in_numa_count / core_topo.second ;
-      const unsigned bin1 = bin + 1 ;
-      const unsigned k    = core_topo.second * bin1 - worker_in_numa_count ;
-      const unsigned part = k * bin ;
-
-      s_coordinates[ thread_rank ].second =
-        ( worker_in_numa_rank < part )
-        ? ( worker_in_numa_rank / bin )
-        : ( k + ( worker_in_numa_rank - part ) / bin1 );
-    }
-  }
-
-  //------------------------------------
-  // Don't move the master thread:
-  // Reserve entry #0 for the master thread by trading out entry #0
-  // with the best-fit entry for the master threads current location.
-  {
-    unsigned i = 0 ;
-
-    // First try for an exact match:
-    for ( ; i < thread_count && master_core != s_coordinates[i] ; ++i );
-
-    if ( i == thread_count ) {
-      // Exact match failed: take the first entry in the NUMA region.
-      for ( i = 0 ; i < thread_count &&
-                    master_core.first != s_coordinates[i].first ; ++i );
-    }
-
-    if ( i == thread_count ) i = 0 ;
-
-    s_coordinates[i] = s_coordinates[0] ;
-    s_coordinates[0] = master_core ;
-  }
-
-  //------------------------------------
-
-#if 0
-  for ( unsigned thread_rank = 0 ; thread_rank < thread_count ; ++thread_rank ) {
-    std::cout << "KokkosArray::OpenMP::thread_mapping"
-              << " rank[" << thread_rank << "]"
-              << " core(" << s_coordinates[thread_rank].first
-              << "," << s_coordinates[thread_rank].second
-              << ")" << std::endl ;
-  }
-#endif
-
-}
 
 }
 
@@ -272,7 +164,13 @@ void OpenMP::initialize( const unsigned gang_count ,
 
     if ( bind_threads ) {
 
-      thread_mapping( gang_count );
+      {
+        const std::pair<unsigned,unsigned> gang_topo( gang_count , worker_per_gang );
+        const std::pair<unsigned,unsigned> core_topo    = hwloc::get_core_topology();
+        const std::pair<unsigned,unsigned> master_coord = hwloc::get_this_thread_coordinate();
+
+        Impl::host_thread_mapping( gang_topo , core_topo , core_topo , master_coord , s_coordinates );
+      }
 
       const std::pair<unsigned,unsigned> master_core = s_coordinates[0] ;
 

@@ -84,8 +84,8 @@ protected:
     const unsigned gang_count        = core_top.first ;
     const unsigned gang_worker_count = ( core_top.second * core_size ) / 2 ;
 
-    // Attempt to verify thread start/terminate don't have race condition:
-    for ( unsigned i = 0 ; i < 100 ; ++i ) {
+    // Quick attempt to verify thread start/terminate don't have race condition:
+    for ( unsigned i = 0 ; i < 10 ; ++i ) {
       KokkosArray::Host::initialize( gang_count , gang_worker_count );
       KokkosArray::Host::finalize();
     }

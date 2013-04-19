@@ -100,7 +100,7 @@ int atomic_fetch_add( volatile int * const dest , const int val )
 { return __sync_fetch_and_add(dest,val); }
 
 KOKKOSARRAY_INLINE_FUNCTION
-long long int atomic_fetch_add( volatile long int * const dest , const long int val )
+long int atomic_fetch_add( volatile long int * const dest , const long int val )
 { return __sync_fetch_and_add(dest,val); }
 
 #if defined( KOKKOS_ATOMICS_USE_GCC )
