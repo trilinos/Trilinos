@@ -42,12 +42,6 @@ CMAKE_HWLOC="${CMAKE_HWLOC} -D HWLOC_LIBRARY_DIRS:FILEPATH=${HWLOC_BASE_DIR}/lib
 #-----------------------------------------------------------------------------
 # Cuda cmake configuration:
 #
-# Extract release major and minor version from compiler
-#
-CUDA_VERSION="`nvcc --version | sed -n -e '/release/{s/^.*release //;s/,.*$//;p}'`"
-CUDA_VERSION_MAJOR=`echo ${CUDA_VERSION} | sed 's/\..*//'`
-CUDA_VERSION_MINOR=`echo ${CUDA_VERSION} | sed 's/^.*\.//'`
-#
 # Note:  Must turn off CUDA_PROPAGATE_HOST_FLAGS because the
 #        Tribits wrapper on cmake forces -pedantic, which results in
 #        a flood of warnings from nvcc compiler produced code.
@@ -58,12 +52,7 @@ CUDA_VERSION_MINOR=`echo ${CUDA_VERSION} | sed 's/^.*\.//'`
 
 # Cuda compilation flags:
 
-CUDA_NVCC_FLAGS="-gencode;arch=compute_20,code=sm_20"
-if [ 5 -le ${CUDA_VERSION_MAJOR} ] ;
-then
-  CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30"
-fi
-
+CUDA_NVCC_FLAGS="-gencode;arch=compute_20,code=sm_20;-gencode;arch=compute_30,code=sm_30"
 CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi"
 CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-O3"
 
