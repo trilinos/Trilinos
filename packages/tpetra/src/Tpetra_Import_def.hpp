@@ -448,21 +448,26 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   setupSamePermuteRemote()
   {
+    using Teuchos::arcp;
+    using Teuchos::Array;
+    using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::as;
-    typedef typename ArrayView<const GlobalOrdinal>::size_type size_type;
-
-    const Map<LocalOrdinal,GlobalOrdinal,Node>& source = * (getSourceMap ());
-    const Map<LocalOrdinal,GlobalOrdinal,Node>& target = * (getTargetMap ());
-    ArrayView<const GlobalOrdinal> sourceGIDs = source.getNodeElementList ();
-    ArrayView<const GlobalOrdinal> targetGIDs = target.getNodeElementList ();
+    using Teuchos::null;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef typename ArrayView<const GO>::size_type size_type;
+    const Map<LO,GO,Node>& source = * (getSourceMap ());
+    const Map<LO,GO,Node>& target = * (getTargetMap ());
+    ArrayView<const GO> sourceGIDs = source.getNodeElementList ();
+    ArrayView<const GO> targetGIDs = target.getNodeElementList ();
 
 #ifdef HAVE_TPETRA_DEBUG
-    ArrayView<const GlobalOrdinal> rawSrcGids = sourceGIDs;
-    ArrayView<const GlobalOrdinal> rawTgtGids = targetGIDs;
+    ArrayView<const GO> rawSrcGids = sourceGIDs;
+    ArrayView<const GO> rawTgtGids = targetGIDs;
 #else
-    const GlobalOrdinal* const rawSrcGids = sourceGIDs.getRawPtr ();
-    const GlobalOrdinal* const rawTgtGids = targetGIDs.getRawPtr ();
+    const GO* const rawSrcGids = sourceGIDs.getRawPtr ();
+    const GO* const rawTgtGids = targetGIDs.getRawPtr ();
 #endif // HAVE_TPETRA_DEBUG
     const size_type numSrcGids = sourceGIDs.size ();
     const size_type numTgtGids = targetGIDs.size ();
@@ -471,7 +476,7 @@ namespace Tpetra {
     // Compute numSameIDs_: the number of initial GIDs that are the
     // same (and occur in the same order) in both Maps.  The point of
     // numSameIDs_ is for the common case of an Import where all the
-    // overlapping GIDs are at the end of the source Map, but
+    // overlapping GIDs are at the end of the target Map, but
     // otherwise the source and target Maps are the same.  This allows
     // a fast contiguous copy for the initial "same IDs."
     size_type numSameGids = 0;
@@ -488,27 +493,21 @@ namespace Tpetra {
     // means we don't have to send or receive them, but we do have to
     // rearrange (permute) them in general.  IDs to receive are in the
     // target Map, but not the source Map.
-    //
-    // The following code and its equivalent in Export differ in that
-    // Import collects remoteGIDs_ (target Map GIDs that are not in
-    // the source Map), which is a separate array.  Export can use
-    // exportGIDs_, which is an array belonging to its
-    // ImportExportData object.
 
-    remoteGIDs_ = rcp (new Array<GlobalOrdinal> ());
-    Array<GlobalOrdinal>& remoteGids = *remoteGIDs_;
-    Array<LocalOrdinal>& permuteToLIDs = ImportData_->permuteToLIDs_;
-    Array<LocalOrdinal>& permuteFromLIDs = ImportData_->permuteFromLIDs_;
-    Array<LocalOrdinal>& remoteLIDs = ImportData_->remoteLIDs_;
-    const LocalOrdinal LINVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
-    const LocalOrdinal numTgtLids = as<LocalOrdinal> (numTgtGids);
+    remoteGIDs_ = rcp (new Array<GO> ());
+    Array<GO>& remoteGids = *remoteGIDs_;
+    Array<LO>& permuteToLIDs = ImportData_->permuteToLIDs_;
+    Array<LO>& permuteFromLIDs = ImportData_->permuteFromLIDs_;
+    Array<LO>& remoteLIDs = ImportData_->remoteLIDs_;
+    const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
+    const LO numTgtLids = as<LO> (numTgtGids);
     // Iterate over the target Map's LIDs, since we only need to do
     // GID -> LID lookups for the source Map.
-    for (LocalOrdinal tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
-      const GlobalOrdinal curTargetGid = rawTgtGids[tgtLid];
+    for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
+      const GO curTargetGid = rawTgtGids[tgtLid];
       // getLocalElement() returns LINVALID if the GID isn't in the source Map.
       // This saves us a lookup (which isNodeGlobalElement() would do).
-      const LocalOrdinal srcLid = source.getLocalElement (curTargetGid);
+      const LO srcLid = source.getLocalElement (curTargetGid);
       if (srcLid != LINVALID) { // if source.isNodeGlobalElement (curTargetGid)
         permuteToLIDs.push_back (tgtLid);
         permuteFromLIDs.push_back (srcLid);
