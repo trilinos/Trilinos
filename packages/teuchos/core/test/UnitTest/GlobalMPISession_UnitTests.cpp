@@ -74,19 +74,20 @@ void globalReduceSuccess(bool &success, FancyOStream &out)
 
 
 TEUCHOS_UNIT_TEST( GlobalMPISession, basic ) {
-  TEST_ASSERT(GlobalMPISession::mpiIsInitialized());
-  TEST_ASSERT(!GlobalMPISession::mpiIsFinalized());
 #ifdef HAVE_MPI
+  TEST_ASSERT(GlobalMPISession::mpiIsInitialized());
   int numProcs = -1;
   ECHO(::MPI_Comm_size(MPI_COMM_WORLD, &numProcs));
   TEST_EQUALITY(GlobalMPISession::getNProc(), numProcs);
   int procRank = -1;
   ECHO(::MPI_Comm_rank(MPI_COMM_WORLD, &procRank));
   TEST_EQUALITY(GlobalMPISession::getRank(), procRank);
-#else
+#else // HAVE_MPI
+  TEST_ASSERT(!GlobalMPISession::mpiIsInitialized());
   TEST_EQUALITY_CONST(GlobalMPISession::getNProc(), 1);
   TEST_EQUALITY_CONST(GlobalMPISession::getRank(), 0);
 #endif // HAVE_MPI
+  TEST_ASSERT(!GlobalMPISession::mpiIsFinalized());
   globalReduceSuccess(success, out);
 }
 
