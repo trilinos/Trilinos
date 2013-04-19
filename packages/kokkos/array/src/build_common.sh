@@ -49,7 +49,7 @@ CUDA | Cuda | cuda )
   NVCC="${NVCC} -Xcompiler -Wall,-ansi"
   NVCC="${NVCC} -lib -o libCuda.a -x cu"
 
-  LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcuda -lcusparse"
+  LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcusparse"
   ;;
 #-------------------------------
 GNU | gnu | g++ )
