@@ -233,7 +233,17 @@ namespace MueLu {
           numTotal = A->getNodeNumEntries();
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "amalgamated graph of A"));
-          graph->SetBoundaryNodeMap(boundaryNodes);
+          graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes  = 0;
+            GO numGlobalBoundaryNodes = 0;
+            for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
+              if (amalgBoundaryNodes[i])
+                numLocalBoundaryNodes++;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+          }
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", 1);
 
@@ -326,9 +336,15 @@ namespace MueLu {
             elementList.resize(numRows);
 
 #ifdef HAVE_MUELU_DEBUG
-            // At the moment we assume that first GIDs in nonUniqueMap coincide with those in uniqueMap
-            for (LO row = 0; row < uniqueMap->getNodeNumElements(); row++)
-              TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getGlobalElement(row) != elementList[row], Exceptions::RuntimeError, "row = " << row << ", uniqueMap GID = " << uniqueMap->getGlobalElement(row) << ", nonUniqueMap GID = " << elementList[row] << std::endl);
+            // At the moment we assume that first GIDs in nonUniqueMap
+            // coincide with those in uniqueMap.
+            for (LO row = 0; row < Teuchos::as<LO> (uniqueMap->getNodeNumElements ()); ++row) {
+              TEUCHOS_TEST_FOR_EXCEPTION(
+                uniqueMap->getGlobalElement(row) != elementList[row],
+                Exceptions::RuntimeError, "row = " << row << ", uniqueMap GID = "
+                << uniqueMap->getGlobalElement(row) << ", nonUniqueMap GID = "
+                << elementList[row] << std::endl);
+            }
 #endif
 
             nonUniqueMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, uniqueMap->getComm());
@@ -535,7 +551,7 @@ namespace MueLu {
 
       LO blockdim = 1;                          // block dim for fixed size blocks
       GO indexBase = rowMap->getIndexBase();    // index base of maps
-      GO offset    = indexBase;                 // global offset of dof gids
+      GO offset    = 0; //indexBase;  ? doesn't make sense               // global offset of dof gids
 
       // 1) check for blocking/striding information
       if(A->IsView("stridedMaps") &&
@@ -565,7 +581,7 @@ namespace MueLu {
       // 3) generate row map for amalgamated matrix (graph of A)
       //    with same distribution over all procs as row map of A
       Teuchos::ArrayRCP<GlobalOrdinal> arr_gNodeIds = Teuchos::arcp( gNodeIds );
-      Teuchos::RCP<Map> nodeMap = MapFactory::Build(A->getRowMap()->lib(), num_blockids, arr_gNodeIds(), A->getRowMap()->getIndexBase(), A->getRowMap()->getComm());
+      Teuchos::RCP<Map> nodeMap = MapFactory::Build(A->getRowMap()->lib(), num_blockids, arr_gNodeIds(), indexBase, A->getRowMap()->getComm()); // note: nodeMap has same indexBase as row map of A (=dof map)
       GetOStream(Statistics0, -1) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
 
       /////////////////////// experimental
@@ -582,7 +598,7 @@ namespace MueLu {
         GlobalOrdinal grid = rowMap->getGlobalElement(row);
 
         // translate grid to nodeid
-        GlobalOrdinal nodeId = AmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset);
+        GlobalOrdinal nodeId = AmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset, indexBase);
 
         size_t nnz = A->getNumEntriesInLocalRow(row);
         Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -598,7 +614,7 @@ namespace MueLu {
 
           if((predrop_ == Teuchos::null && vals[col]!=0.0) ||
              (predrop_ != Teuchos::null && predrop_->Drop(row,grid, col,indices[col],gcid,indices,vals) == false)) {
-            GlobalOrdinal cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset);
+            GlobalOrdinal cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset, indexBase);
             cnodeIds->push_back(cnodeId);
             realnnz++; // increment number of nnz in matrix row
           }

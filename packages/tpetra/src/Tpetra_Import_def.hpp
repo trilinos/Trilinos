@@ -448,116 +448,74 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   setupSamePermuteRemote()
   {
-    const Map<LocalOrdinal,GlobalOrdinal,Node> & source = *getSourceMap();
-    const Map<LocalOrdinal,GlobalOrdinal,Node> & target = *getTargetMap();
-    ArrayView<const GlobalOrdinal> sourceGIDs = source.getNodeElementList();
-    ArrayView<const GlobalOrdinal> targetGIDs = target.getNodeElementList();
+    using Teuchos::arcp;
+    using Teuchos::Array;
+    using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::null;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef typename ArrayView<const GO>::size_type size_type;
+    const Map<LO,GO,Node>& source = * (getSourceMap ());
+    const Map<LO,GO,Node>& target = * (getTargetMap ());
+    ArrayView<const GO> sourceGIDs = source.getNodeElementList ();
+    ArrayView<const GO> targetGIDs = target.getNodeElementList ();
 
-    const bool fasterImplementation = false;
-    if (fasterImplementation) {
-      typedef typename ArrayView<const GlobalOrdinal>::size_type size_type;
-      const LocalOrdinal LINVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+#ifdef HAVE_TPETRA_DEBUG
+    ArrayView<const GO> rawSrcGids = sourceGIDs;
+    ArrayView<const GO> rawTgtGids = targetGIDs;
+#else
+    const GO* const rawSrcGids = sourceGIDs.getRawPtr ();
+    const GO* const rawTgtGids = targetGIDs.getRawPtr ();
+#endif // HAVE_TPETRA_DEBUG
+    const size_type numSrcGids = sourceGIDs.size ();
+    const size_type numTgtGids = targetGIDs.size ();
+    const size_type numGids = std::min (numSrcGids, numTgtGids);
 
-      const GlobalOrdinal* const rawSrcGids = sourceGIDs.getRawPtr ();
-      const GlobalOrdinal* const rawTgtGids = targetGIDs.getRawPtr ();
-      const size_type numSrcGids = sourceGIDs.size ();
-      const size_type numTgtGids = targetGIDs.size ();
-      const size_type numGids = std::min (numSrcGids, numTgtGids);
+    // Compute numSameIDs_: the number of initial GIDs that are the
+    // same (and occur in the same order) in both Maps.  The point of
+    // numSameIDs_ is for the common case of an Import where all the
+    // overlapping GIDs are at the end of the target Map, but
+    // otherwise the source and target Maps are the same.  This allows
+    // a fast contiguous copy for the initial "same IDs."
+    size_type numSameGids = 0;
+    for ( ; numSameGids < numGids && rawSrcGids[numSameGids] == rawTgtGids[numSameGids]; ++numSameGids)
+      {} // third clause of 'for' does everything
+    ImportData_->numSameIDs_ = numSameGids;
 
-      size_type numSameGids = 0;
-      for ( ; numSameGids < numGids && rawSrcGids[numSameGids] == rawTgtGids[numSameGids]; ++numSameGids)
-        {} // third clause of 'for' does everything
-      ImportData_->numSameIDs_ = numSameGids;
+    // Compute permuteToLIDs_, permuteFromLIDs_, remoteGIDs_, and
+    // remoteLIDs_.  The first two arrays are IDs to be permuted, and
+    // the latter two arrays are IDs to be received ("imported"),
+    // called "remote" IDs.
+    //
+    // IDs to permute are in both the source and target Maps, which
+    // means we don't have to send or receive them, but we do have to
+    // rearrange (permute) them in general.  IDs to receive are in the
+    // target Map, but not the source Map.
 
-      remoteGIDs_ = rcp (new Array<GlobalOrdinal> ());
-      Array<GlobalOrdinal>& remoteGids = *remoteGIDs_;
-      Array<LocalOrdinal>& permuteToLIDs = ImportData_->permuteToLIDs_;
-      Array<LocalOrdinal>& permuteFromLIDs = ImportData_->permuteFromLIDs_;
-      Array<LocalOrdinal>& remoteLIDs = ImportData_->remoteLIDs_;
-
-      for (size_type targetIndex = numSameGids; targetIndex < numTgtGids; ++targetIndex) {
-        const GlobalOrdinal curTargetGid = rawTgtGids[targetIndex];
-        // getLocalElement() returns LINVALID if the GID isn't in the source Map.
-        // This saves us a lookup (which isNodeGlobalElement() would do).
-        const LocalOrdinal srcLid = source.getLocalElement (curTargetGid);
-        const LocalOrdinal tgtLid = target.getLocalElement (curTargetGid);
-
-        if (srcLid != LINVALID) { // if source.isNodeGlobalElement (curTargetGid)
-          permuteToLIDs.push_back (tgtLid);
-          permuteFromLIDs.push_back (srcLid);
-        } else {
-          remoteGids.push_back (curTargetGid);
-          remoteLIDs.push_back (tgtLid);
-        }
+    remoteGIDs_ = rcp (new Array<GO> ());
+    Array<GO>& remoteGids = *remoteGIDs_;
+    Array<LO>& permuteToLIDs = ImportData_->permuteToLIDs_;
+    Array<LO>& permuteFromLIDs = ImportData_->permuteFromLIDs_;
+    Array<LO>& remoteLIDs = ImportData_->remoteLIDs_;
+    const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
+    const LO numTgtLids = as<LO> (numTgtGids);
+    // Iterate over the target Map's LIDs, since we only need to do
+    // GID -> LID lookups for the source Map.
+    for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
+      const GO curTargetGid = rawTgtGids[tgtLid];
+      // getLocalElement() returns LINVALID if the GID isn't in the source Map.
+      // This saves us a lookup (which isNodeGlobalElement() would do).
+      const LO srcLid = source.getLocalElement (curTargetGid);
+      if (srcLid != LINVALID) { // if source.isNodeGlobalElement (curTargetGid)
+        permuteToLIDs.push_back (tgtLid);
+        permuteFromLIDs.push_back (srcLid);
+      } else {
+        remoteGids.push_back (curTargetGid);
+        remoteLIDs.push_back (tgtLid);
       }
-    } else {
-      // Compute numSameIDs_:
-      //
-      // Iterate through the source and target GID lists.  If the i-th
-      // GID of both is the same, increment numSameIDs_ and try the
-      // next.  As soon as you come to a nonmatching pair, give up.
-      //
-      // The point of numSameIDs_ is for the common case of an Import
-      // where all the overlapping GIDs are at the end of the source
-      // Map, but otherwise the source and target Maps are the same.
-      // This allows a fast contiguous copy for the initial "same IDs."
-      typename ArrayView<const GlobalOrdinal>::iterator sourceIter = sourceGIDs.begin(),
-        targetIter = targetGIDs.begin();
-      while (sourceIter != sourceGIDs.end() &&
-             targetIter != targetGIDs.end() &&
-             *sourceIter == *targetIter) {
-        ++ImportData_->numSameIDs_;
-        ++sourceIter;
-        ++targetIter;
-      }
-      // targetIter should now point either to the GID of the first
-      // non-same entry in targetGIDs, or to the end of targetGIDs (if
-      // all the entries were the same).
-
-      // Compute IDs to be permuted, vs. IDs to be received ("imported";
-      // called "remote" IDs).
-      //
-      // IDs to permute are in both the source and target Maps, which
-      // means we don't have to send or receive them, but we do have to
-      // rearrange (permute) them in general.  (We've already identified
-      // an initial stretch of IDs which can be copied without
-      // rearrangement; the iterator targetIter is past that point.)
-      // IDs to receive are in the target Map, but not the source Map.
-      //
-      // How do the following code and its equivalent in Export differ?
-      //
-      // 1. Export uses sourceIter, whereas Import uses targetIter.
-      //
-      // 2. Import collects remoteGIDs_ (target Map GIDs that are not in
-      //    the source Map), which is a separate array.  Export can use
-      //    exportGIDs_, which is an array belonging to its
-      //    ImportExportData object.
-      remoteGIDs_ = rcp( new Array<GlobalOrdinal>() );
-      for (; targetIter != targetGIDs.end(); ++targetIter) {
-        const GlobalOrdinal curTargetGID = *targetIter;
-        if (source.isNodeGlobalElement (curTargetGID)) {
-          // The current process owns this GID, for both the source and
-          // the target Maps.  Determine the LIDs for this GID on both
-          // Maps and add them to the permutation lists.
-          ImportData_->permuteToLIDs_.push_back (target.getLocalElement (curTargetGID));
-          ImportData_->permuteFromLIDs_.push_back (source.getLocalElement (curTargetGID));
-        }
-        else {
-          // The current GID is owned by this process in the target Map,
-          // but is not owned by this process in the source Map.  That
-          // means the Import operation has to receive it from another
-          // process.  Store it in the "remote" (incoming) list, along
-          // with its destination LID on this process.
-          //
-          // remoteLIDs_ is the list of this process' LIDs that it has
-          // to receive from other processes.  Since this is an Import,
-          // and therefore the source Map is nonoverlapping, we know
-          // that each remote LID can receive from only one process.
-          remoteGIDs_->push_back (curTargetGID);
-          ImportData_->remoteLIDs_.push_back (target.getLocalElement (curTargetGID));
-        }
-      }
-    } // if using the hopefully faster implementation
+    }
 
     TPETRA_ABUSE_WARNING(
       getNumRemoteIDs() > 0 && ! source.isDistributed(),

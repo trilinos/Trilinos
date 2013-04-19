@@ -75,6 +75,11 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DSuperLU_INCLUDE_DIRS=/home/jhu/Software/SuperLU_4.3/SRC"
   "-DSuperLU_LIBRARY_DIRS=/home/jhu/Software/SuperLU_4.3/lib"
   "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
+
+  "-D BLAS_LIBRARY_DIRS:STRING=/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t;/usr/local/intel/Compiler/11.1/064/lib/intel64;/usr/lib64"
+  "-D BLAS_LIBRARY_NAMES:STRING=mkl_intel_lp64; mkl_intel_thread; mkl_core; iomp5; pthread"
+  "-D LAPACK_LIBRARY_DIRS:STRING=/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t;/usr/local/intel/Compiler/11.1/064/lib/intel64;/usr/lib64"
+  "-D LAPACK_LIBRARY_NAMES:STRING=mkl_intel_lp64; mkl_intel_thread; mkl_core; iomp5; pthread"
 )
 
 #

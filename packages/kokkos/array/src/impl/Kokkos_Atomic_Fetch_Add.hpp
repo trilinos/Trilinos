@@ -41,229 +41,122 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_ATOMIC_FETCH_ADD_H_
-#define KOKKOSARRAY_ATOMIC_FETCH_ADD_H_
+#if defined( KOKKOSARRAY_ATOMIC_HPP ) && ! defined( KOKKOSARRAY_ATOMIC_FETCH_ADD_HPP )
+#define KOKKOSARRAY_ATOMIC_FETCH_ADD_HPP
 
+namespace Kokkos {
 
-template<typename T>
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_ATOMICS_USE_CUDA )
+
+// Support for int, unsigned int, unsigned long long int, and float
+
 KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,int>::value, int  >::type
-atomic_fetch_add(T* dest, T val) {
-  #if defined(GNU_ATOMICS_GCC) || defined(GNU_ATOMICS_INTEL)
-	return __sync_fetch_and_add(dest,val);
-  #endif
+int atomic_fetch_add( volatile int * const dest , const int val )
+{ return atomicAdd((int*)dest,val); }
 
-  #ifdef OMP31_ATOMICS
-	int retval;
-    #pragma omp atomic capture
-	{
-	  retval = dest[0];
-	  dest[0] += val;
-	}
-    return retval;
-  #endif
+KOKKOSARRAY_INLINE_FUNCTION
+unsigned int atomic_fetch_add( volatile unsigned int * const dest , const unsigned int val )
+{ return atomicAdd((unsigned int*)dest,val); }
 
-  #ifdef CUDA_ATOMICS
-    return atomicAdd(dest,val);
-  #endif
+KOKKOSARRAY_INLINE_FUNCTION
+unsigned long long int atomic_fetch_add( volatile unsigned long long int * const dest ,
+                                         const unsigned long long int val )
+{ return atomicAdd((unsigned long long int*)dest,val); }
+
+KOKKOSARRAY_INLINE_FUNCTION
+float atomic_fetch_add( volatile float * const dest , const float val )
+{ return atomicAdd((float*)dest,val); }
+
+template < typename T >
+KOKKOSARRAY_INLINE_FUNCTION
+typename Kokkos::Impl::UnionPair<T,int,unsigned long long int>::first_type
+atomic_fetch_add( volatile T * const dest , const T val )
+{
+  typedef Kokkos::Impl::UnionPair<T,int,unsigned long long int> union_type ;
+  typedef typename union_type::second_type type ;
+
+  union_type assumed , old , newval ;
+
+  old.first = *dest ;
+  do {
+    assumed.second = old.second ;
+    newval.first = assumed.first + val ;
+    old.second = atomicCAS( (type *) union_type::cast( dest ),
+                            assumed.second ,
+                            newval.second );
+  } while ( assumed.second != old.second );
+
+  return old.first ;
 }
 
+//----------------------------------------------------------------------------
 
-template<typename T>
+#elif defined(KOKKOS_ATOMICS_USE_GCC) || defined(KOKKOS_ATOMICS_USE_INTEL)
+
 KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,long long int>::value, long long int  >::type
-atomic_fetch_add(T* dest, T val) {
-  #if defined(GNU_ATOMICS_GCC) || defined(GNU_ATOMICS_INTEL)
-	return __sync_fetch_and_add(dest,val);
-  #endif
+int atomic_fetch_add( volatile int * const dest , const int val )
+{ return __sync_fetch_and_add(dest,val); }
 
-  #ifdef OMP31_ATOMICS
-	long long int retval;
-    #pragma omp atomic capture
-	{
-	  retval = dest[0];
-	  dest[0] += val;
-	}
-    return retval;
-  #endif
+KOKKOSARRAY_INLINE_FUNCTION
+long int atomic_fetch_add( volatile long int * const dest , const long int val )
+{ return __sync_fetch_and_add(dest,val); }
 
-  #ifdef CUDA_ATOMICS
-    unsigned long long int return_value =
-    atomicAdd(reinterpret_cast<unsigned long long int*>(dest),*reinterpret_cast<unsigned long long int*>(&val));
-    return *reinterpret_cast<unsigned long long int*>(&return_value);
-  #endif
+#if defined( KOKKOS_ATOMICS_USE_GCC )
+
+KOKKOSARRAY_INLINE_FUNCTION
+unsigned int atomic_fetch_add( volatile unsigned int * const dest , const unsigned int val )
+{ return __sync_fetch_and_add(dest,val); }
+
+KOKKOSARRAY_INLINE_FUNCTION
+unsigned long int atomic_fetch_add( volatile unsigned long int * const dest , const unsigned long int val )
+{ return __sync_fetch_and_add(dest,val); }
+
+#endif
+
+template < typename T >
+KOKKOSARRAY_INLINE_FUNCTION
+typename Kokkos::Impl::UnionPair<T,int,long>::first_type
+atomic_fetch_add( volatile T * const dest , const T val )
+{
+  typedef Kokkos::Impl::UnionPair<T,int,long> union_type ;
+
+  union_type assumed , old , newval ;
+
+  old.first = *dest ;
+  do {
+    assumed.second = old.second ;
+    newval.first = assumed.first + val ;
+    old.second = __sync_val_compare_and_swap( union_type::cast( dest ),
+                                              assumed.second ,
+                                              newval.second );
+  } while ( assumed.second != old.second );
+
+  return old.first ;
 }
 
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,long int>::value && (sizeof(T) == sizeof(int)), long int >::type
-atomic_fetch_add(T* dest, T val) {
-  return (long int) atomic_fetch_add((int*) dest,*reinterpret_cast<int*>(&val));
+//----------------------------------------------------------------------------
+
+#elif defined( KOKKOS_ATOMICS_USE_OMP31 )
+
+template< typename T >
+T atomic_fetch_add( volatile T * const dest , const T val )
+{
+  T retval;
+#pragma omp critical
+  {
+    retval = dest[0];
+    dest[0] += val;
+  }
+  return retval;
 }
 
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,long int>::value && (sizeof(T) == sizeof(long long int)), long int >::type
-atomic_fetch_add(T* dest, T val) {
-  return (long int) atomic_fetch_add((long long int*) dest,*reinterpret_cast<long long int*>(&val));
+#endif
+
+//----------------------------------------------------------------------------
+
 }
 
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,unsigned int>::value, unsigned int  >::type
-atomic_fetch_add(T* dest, T val) {
-  #ifdef GNU_ATOMICS_GCC
-	return __sync_fetch_and_add(dest,val);
-  #endif
-  #ifdef GNU_ATOMICS_INTEL
-	  volatile int* address_as_int = reinterpret_cast<volatile int*>(dest);
-	  int old = *address_as_int;
-	  int assumed;
-	  unsigned int newval;
-	  do {
-	    assumed = old;
-	    newval = val + *(reinterpret_cast<unsigned int*>(&assumed));
-	    old = __sync_val_compare_and_swap(address_as_int, assumed, *reinterpret_cast<int*>(&newval));
-	  } while (assumed != old);
-	  return *reinterpret_cast<unsigned int*>(&old);
-  #endif
+#endif
 
-  #ifdef OMP31_ATOMICS
-	unsigned int retval;
-    #pragma omp atomic capture
-	{
-	  retval = dest[0];
-	  dest[0] += val;
-	}
-    return retval;
-  #endif
-
-  #ifdef CUDA_ATOMICS
-    return atomicAdd(dest,val);
-  #endif
-}
-
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T, unsigned long long int >::value, unsigned long long int  >::type
-atomic_fetch_add(T* dest, T val) {
-  #ifdef GNU_ATOMICS_GCC
-	return __sync_fetch_and_add(dest,val);
-  #endif
-  #ifdef GNU_ATOMICS_INTEL
-	  volatile long long int* address_as_int = reinterpret_cast<volatile long long int*>(dest);
-	  long long int old = *address_as_int;
-	  long long int assumed;
-	  unsigned long long int newval;
-	  do {
-	    assumed = old;
-	    newval = val + *(reinterpret_cast<unsigned long long int*>(&assumed));
-	    old = __sync_val_compare_and_swap(address_as_int, assumed, *reinterpret_cast<long long int*>(&newval));
-	  } while (assumed != old);
-	  return *reinterpret_cast<unsigned long long int*>(&old);
-  #endif
-
-  #ifdef OMP31_ATOMICS
-	unsigned long long int retval;
-    #pragma omp atomic capture
-	{
-	  retval = dest[0];
-	  dest[0] += val;
-	}
-    return retval;
-  #endif
-
-  #ifdef CUDA_ATOMICS
-    return atomicAdd(dest,val);
-  #endif
-}
-
-
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,unsigned long int>::value && (sizeof(T) == sizeof(int)), unsigned long int >::type
-atomic_fetch_add(T* dest, T val) {
-  return (unsigned long int) atomic_fetch_add((unsigned int*) dest,*reinterpret_cast<unsigned int*>(&val));
-}
-
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,unsigned long int>::value && (sizeof(T) == sizeof(long long int)), unsigned long int >::type
-atomic_fetch_add(volatile T* dest, T val) {
-  return (unsigned long int) atomic_fetch_add((unsigned long long int*) dest,*reinterpret_cast<unsigned long long int*>(&val));
-}
-
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T, float >::value, float  >::type
-atomic_fetch_add(T* dest, T val) {
-  #if defined(GNU_ATOMICS_GCC) || defined(GNU_ATOMICS_INTEL)
-	  int32_t* address_as_int = reinterpret_cast<int32_t*>(dest);
-	  int32_t old = *address_as_int;
-	  int32_t assumed;
-	  float newval;
-	  do {
-	    assumed = old;
-	    newval = val + *(reinterpret_cast<float*>(&assumed));
-	    old = __sync_val_compare_and_swap(address_as_int, assumed, *reinterpret_cast<int32_t*>(&newval));
-	  } while (assumed != old);
-	  return *reinterpret_cast<float*>(&old);
-  #endif
-
-  #ifdef OMP31_ATOMICS
-	float retval;
-    #pragma omp atomic capture
-	{
-	  retval = dest[0];
-	  dest[0] += val;
-	}
-    return retval;
-  #endif
-
-  #ifdef CUDA_ATOMICS
-    return atomicAdd(dest,val);
-  #endif
-}
-
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T, double >::value, double  >::type
-atomic_fetch_add(T* dest, T val) {
-  #if defined(GNU_ATOMICS_GCC) || defined(GNU_ATOMICS_INTEL)
-	  int64_t* address_as_int = reinterpret_cast<int64_t*>(dest);
-	  int64_t old = *address_as_int;
-	  int64_t assumed;
-	  double newval;
-	  do {
-	    assumed = old;
-	    newval = val + *(reinterpret_cast<double*>(&assumed));
-	    old = __sync_val_compare_and_swap(address_as_int, assumed, *reinterpret_cast<int64_t*>(&newval));
-	  } while (assumed != old);
-	  return *reinterpret_cast<double*>(&old);
-  #endif
-
-  #ifdef OMP31_ATOMICS
-	double retval;
-    #pragma omp atomic capture
-	{
-	  retval = dest[0];
-	  dest[0] += val;
-	}
-    return retval;
-  #endif
-
-  #ifdef CUDA_ATOMICS
-      unsigned long long int* address_as_int = (unsigned long long int*) dest;
-      unsigned long long int old = *address_as_int;
-	  unsigned long long int assumed;
-	  double newval;
-	  do {
-	    assumed = old;
-	    newval = val + *(reinterpret_cast<double*>(&assumed));
-	    old = atomicCAS(address_as_int, assumed, *reinterpret_cast<unsigned long long int*>(&newval));
-	  } while (assumed != old);
-	  return *reinterpret_cast<double*>(&old);
-  #endif
-}
-
-#endif /* KOKKOSARRAY_ATOMIC_FETCH_ADD_H_ */

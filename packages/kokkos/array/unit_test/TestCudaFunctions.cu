@@ -55,6 +55,7 @@
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
+#include <TestAtomic.hpp>
 
 #include <TestViewAPI.hpp>
 #include <TestCrsArray.hpp>
@@ -117,5 +118,37 @@ void test_device_cuda_multi_reduce() {
   TestReduceMulti< long , KokkosArray::Cuda >( 1000000 , 7 );
 }
 
+void test_device_cuda_atomic()
+{
+  const int loop_count = 1e3 ;
+
+  ASSERT_TRUE( ( TestAtomic::Loop<int,KokkosArray::Cuda>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,KokkosArray::Cuda>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,KokkosArray::Cuda>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,KokkosArray::Cuda>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,KokkosArray::Cuda>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,KokkosArray::Cuda>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,KokkosArray::Cuda>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,KokkosArray::Cuda>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,KokkosArray::Cuda>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,KokkosArray::Cuda>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,KokkosArray::Cuda>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,KokkosArray::Cuda>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,KokkosArray::Cuda>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,KokkosArray::Cuda>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,KokkosArray::Cuda>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<double,KokkosArray::Cuda>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,KokkosArray::Cuda>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,KokkosArray::Cuda>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<float,KokkosArray::Cuda>(100,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,KokkosArray::Cuda>(100,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,KokkosArray::Cuda>(100,3) ) );
 }
 
+}

@@ -61,6 +61,94 @@
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
+namespace Impl {
+
+void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
+                          const std::pair<unsigned,unsigned> core_use ,
+                          const std::pair<unsigned,unsigned> core_topo ,
+                          const std::pair<unsigned,unsigned> master_coord ,
+                                std::pair<unsigned,unsigned> thread_coord[] )
+{
+  const unsigned thread_count = gang_topo.first * gang_topo.second ;
+  const unsigned core_base    = core_topo.second - core_use.second ;
+
+  for ( unsigned thread_rank = 0 , gang_rank = 0 ; gang_rank < gang_topo.first ; ++gang_rank ) {
+  for ( unsigned worker_rank = 0 ; worker_rank < gang_topo.second ; ++worker_rank , ++thread_rank ) {
+
+    unsigned gang_in_numa_count = 0 ;
+    unsigned gang_in_numa_rank  = 0 ;
+
+    { // Distribute gangs among NUMA regions:
+      // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
+      const unsigned bin  = gang_topo.first / core_use.first ;
+      const unsigned bin1 = bin + 1 ;
+      const unsigned k    = core_use.first * bin1 - gang_topo.first ;
+      const unsigned part = k * bin ;
+
+      if ( gang_rank < part ) {
+        thread_coord[ thread_rank ].first = gang_rank / bin ;
+        gang_in_numa_rank  = gang_rank % bin ;
+        gang_in_numa_count = bin ;
+      }
+      else {
+        thread_coord[ thread_rank ].first = k + ( gang_rank - part ) / bin1 ;
+        gang_in_numa_rank  = ( gang_rank - part ) % bin1 ;
+        gang_in_numa_count = bin1 ;
+      }
+    }
+
+    { // Distribute workers to cores within this NUMA region:
+      // worker_in_numa_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
+      const unsigned worker_in_numa_count = gang_in_numa_count * gang_topo.second ;
+      const unsigned worker_in_numa_rank  = gang_in_numa_rank  * gang_topo.second + worker_rank ;
+
+      const unsigned bin  = worker_in_numa_count / core_use.second ;
+      const unsigned bin1 = bin + 1 ;
+      const unsigned k    = core_use.second * bin1 - worker_in_numa_count ;
+      const unsigned part = k * bin ;
+
+      thread_coord[ thread_rank ].second = core_base +
+        ( ( worker_in_numa_rank < part )
+          ? ( worker_in_numa_rank / bin )
+          : ( k + ( worker_in_numa_rank - part ) / bin1 ) );
+    }
+  }}
+
+  // The master core should be thread #0 so rotate all coordinates accordingly ...
+
+  const std::pair<unsigned,unsigned> offset
+    ( ( thread_coord[0].first  < master_coord.first  ? master_coord.first  - thread_coord[0].first  : 0 ) ,
+      ( thread_coord[0].second < master_coord.second ? master_coord.second - thread_coord[0].second : 0 ) );
+
+  for ( unsigned i = 0 ; i < thread_count ; ++i ) {
+    thread_coord[i].first  = ( thread_coord[i].first + offset.first ) % core_use.first ;
+    thread_coord[i].second = core_base + ( thread_coord[i].second + offset.second - core_base ) % core_use.second ;
+  }
+
+#if 0
+
+  std::cout << "KokkosArray::Host thread_mapping" << std::endl ;
+
+  for ( unsigned g = 0 , t = 0 ; g < gang_topo.first ; ++g ) {
+    std::cout << "  gang[" << g 
+              << "] on numa[" << thread_coord[t].first
+              << "] cores(" ;
+    for ( unsigned w = 0 ; w < gang_topo.second ; ++w , ++t ) {
+      std::cout << " " << thread_coord[t].second ;
+    }
+    std::cout << " )" << std::endl ;
+  }
+
+#endif
+
+}
+
+} // namespace Impl
+} // namespace KokkosArray
+
+/*--------------------------------------------------------------------------*/
+
+namespace KokkosArray {
 namespace {
 
 class HostWorkerBlock : public Impl::HostThreadWorker {
@@ -132,6 +220,7 @@ unsigned bind_host_thread()
   if ( i < s_host_thread_count ) {
 
 #if 0
+
     if ( current != s_host_thread_coord[i] ) {
       std::cout << "  rebinding thread[" << i << "] from ("
                 << current.first << "," << current.second
@@ -140,6 +229,7 @@ unsigned bind_host_thread()
                 << s_host_thread_coord[i].second
                 << ")" << std::endl ;
     }
+
 #endif
 
     s_host_thread_coord[i].first  = ~0u ;
@@ -149,94 +239,29 @@ unsigned bind_host_thread()
   return i ;
 }
 
-//----------------------------------------------------------------------------
 
-void thread_mapping( const unsigned gang_count,
-                     const unsigned worker_count )
-{
-  const std::pair<unsigned,unsigned> core_topo   = hwloc::get_core_topology();
-  const std::pair<unsigned,unsigned> master_core = hwloc::get_this_thread_coordinate();
-
-  const unsigned thread_count = gang_count * worker_count ;
-
-  for ( unsigned thread_rank = 0 , gang_rank = 0 ; gang_rank < gang_count ; ++gang_rank ) {
-  for ( unsigned worker_rank = 0 ; worker_rank < worker_count ; ++worker_rank , ++thread_rank ) {
-
-    unsigned gang_in_numa_count = 0 ;
-    unsigned gang_in_numa_rank  = 0 ;
-
-    { // Distribute gangs among NUMA regions:
-      // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
-      const unsigned bin  = gang_count / core_topo.first ;
-      const unsigned bin1 = bin + 1 ;
-      const unsigned k    = core_topo.first * bin1 - gang_count ;
-      const unsigned part = k * bin ;
-
-      if ( gang_rank < part ) {
-        s_host_thread_coord[ thread_rank ].first = gang_rank / bin ;
-        gang_in_numa_rank  = gang_rank % bin ;
-        gang_in_numa_count = bin ;
-      }
-      else {
-        s_host_thread_coord[ thread_rank ].first = k + ( gang_rank - part ) / bin1 ;
-        gang_in_numa_rank  = ( gang_rank - part ) % bin1 ;
-        gang_in_numa_count = bin1 ;
-      }
-    }
-
-    { // Distribute workers to cores within this NUMA region:
-      // worker_in_numa_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
-      const unsigned worker_in_numa_count = gang_in_numa_count * worker_count ;
-      const unsigned worker_in_numa_rank  = gang_in_numa_rank  * worker_count + worker_rank ;
-
-      const unsigned bin  = worker_in_numa_count / core_topo.second ;
-      const unsigned bin1 = bin + 1 ;
-      const unsigned k    = core_topo.second * bin1 - worker_in_numa_count ;
-      const unsigned part = k * bin ;
-
-      s_host_thread_coord[ thread_rank ].second =
-        ( worker_in_numa_rank < part )
-        ? ( worker_in_numa_rank / bin )
-        : ( k + ( worker_in_numa_rank - part ) / bin1 );
-    }
-  }}
-
-  // Reserve master thread's coordinates:
-  // Reserve entry #0 for the master thread by trading out entry #0
-  // with the best-fit entry for the master threads current location.
-  {
-    unsigned i = 0 ;
-
-    // First try for an exact match:
-    for ( ; i < thread_count && master_core != s_host_thread_coord[i] ; ++i );
-
-    if ( i == thread_count ) {
-      // Exact match failed: take the first entry in the NUMA region.
-      for ( i = 0 ; i < thread_count &&
-                    master_core.first != s_host_thread_coord[i].first ; ++i );
-    }
-
-    if ( i == thread_count ) i = 0 ;
-
-    s_host_thread_coord[i] = s_host_thread_coord[0] ;
-    s_host_thread_coord[0] = master_core ;
-  }
-}
-
-bool spawn_threads( const unsigned gang_count , const unsigned worker_count )
+bool spawn_threads( const std::pair<unsigned,unsigned> gang_topo ,
+                          std::pair<unsigned,unsigned> core_use )
 {
   // If the process is bound to a particular node
   // then only use cores belonging to that node.
   // Otherwise use all nodes and all their cores.
 
   // Define coordinates for pinning threads:
-  const unsigned thread_count = gang_count * worker_count ;
+  const unsigned thread_count = gang_topo.first * gang_topo.second ;
 
   bool ok_spawn_threads = true ;
 
   if ( 1 < thread_count ) {
+    const std::pair<unsigned,unsigned> core_topo    = hwloc::get_core_topology();
+    const std::pair<unsigned,unsigned> master_coord = hwloc::get_this_thread_coordinate();
 
-    thread_mapping( gang_count , worker_count );
+    if ( 0 == core_use.first  || core_topo.first  < core_use.first ||
+         0 == core_use.second || core_topo.second < core_use.second ) {
+      core_use = core_topo ;
+    }
+
+    Impl::host_thread_mapping( gang_topo , core_use , core_topo , master_coord , s_host_thread_coord );
 
     // Reserve the master thread coordinate for the mater thread:
 
@@ -286,11 +311,11 @@ bool spawn_threads( const unsigned gang_count , const unsigned worker_count )
 
       // All threads spawned, set the fan-in relationships
 
-      for ( unsigned g = 0 , r = 0 ; g < gang_count ; ++g ) {
-      for ( unsigned w = 0 ;         w < worker_count ; ++w , ++r ) {
+      for ( unsigned g = 0 , r = 0 ; g < gang_topo.first ; ++g ) {
+      for ( unsigned w = 0 ;         w < gang_topo.second ; ++w , ++r ) {
         Impl::HostThread::get_thread(r)->set_topology( r , thread_count ,
-                                                       g , gang_count ,
-                                                       w , worker_count );
+                                                       g , gang_topo.first ,
+                                                       w , gang_topo.second );
       }}
 
       Impl::HostThread::set_thread_relationships();
@@ -503,8 +528,8 @@ void Host::finalize()
   hwloc::unbind_this_thread();
 }
 
-void Host::initialize( const Host::size_type gang_count ,
-                       const Host::size_type gang_worker_count )
+void Host::initialize( const std::pair<unsigned,unsigned> gang_topo ,
+                       const std::pair<unsigned,unsigned> core_topo )
 {
   static const Sentinel sentinel ;
 
@@ -515,9 +540,9 @@ void Host::initialize( const Host::size_type gang_count ,
 
   // Only try to spawn threads if input is valid.
 
-  if ( ok_inactive && 1 < gang_count * gang_worker_count ) {
+  if ( ok_inactive && 1 < gang_topo.first * gang_topo.second ) {
 
-    ok_spawn_threads = spawn_threads( gang_count , gang_worker_count );
+    ok_spawn_threads = spawn_threads( gang_topo , core_topo );
 
     if ( ! ok_spawn_threads ) {
       finalize();

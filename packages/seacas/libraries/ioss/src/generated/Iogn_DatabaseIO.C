@@ -272,7 +272,7 @@ namespace Iogn {
           }
         }
       }
-      else if (field.get_name() == "ids") {
+      else if (field.get_name() == "ids" || field.get_name() == "implicit_ids") {
         // Map the local ids in this element block
         // (eb_offset+1...eb_offset+1+element_count) to global element ids.
         get_element_map().map_implicit_data(data, field, num_to_get, eb->get_offset());

@@ -462,8 +462,10 @@ namespace {
       Teuchos::RCP<const panzer::ResponseEvaluatorFactoryBase> baseObj = respFact_->template getAsBase<T>();
      
       // only build this templated set of objects if the there is something to build them with
-      if(baseObj!=Teuchos::null) {
-        return baseObj->buildResponseObject(respName_,wkstDesc_); 
+      if(baseObj!=Teuchos::null && baseObj->typeSupported()) {
+        Teuchos::RCP<ResponseBase> resp = baseObj->buildResponseObject(respName_,wkstDesc_); 
+
+        return resp;
       }
 
       return Teuchos::null;
@@ -636,7 +638,7 @@ public:
            rf_itr!=fact->end();++rf_itr) {
 
          // not setup for this template type, ignore it
-         if(rf_itr.rcp()==Teuchos::null) 
+         if(rf_itr.rcp()==Teuchos::null || !rf_itr.rcp()->typeSupported()) 
            continue;
 
          // build and register evaluators, store field tag, make it required
@@ -746,8 +748,9 @@ addResponsesToInArgs(panzer::AssemblyEngineInArgs & input_args) const
 
    // add all responses to input args  
    for(std::size_t i=0;i<responses.size();i++) {
-     if(responses[i]!=Teuchos::null)
+     if(responses[i]!=Teuchos::null) {
        input_args.addGlobalEvaluationData(responses[i]->getLookupName(),responses[i]);
+      }
    }
 }
 

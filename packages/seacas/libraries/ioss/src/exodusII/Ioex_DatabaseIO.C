@@ -2739,25 +2739,25 @@ namespace Ioex {
 	    // undecomposed mesh file.  This is ONLY provided for backward-
 	    // compatibility and should not be used unless absolutely required.
             else if (field.get_name() == "implicit_ids") {
-	      // If not parallel, then this is just 1..node_count
-	      // If parallel, then it is the data in the ex_get_id_map created by nem_spread.
-	      if (isParallel) {
-		int error = ex_get_id_map(get_file_pointer(), EX_NODE_MAP, data);
-		if (error < 0)
-		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      } else {
-		if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-		  int64_t *idata = static_cast<int64_t*>(data);
-		  for (int64_t i=0; i < nodeCount; i++) {
-		    idata[i] = i+1;
-		  }
-		} else {
-		  int *idata = static_cast<int*>(data);
-		  for (int64_t i=0; i < nodeCount; i++) {
-		    idata[i] = i+1;
-		  }
-		}
-	      }
+              // If not parallel, then this is just 1..node_count
+              // If parallel, then it is the data in the ex_get_id_map created by nem_spread.
+              if (isParallel) {
+                int error = ex_get_id_map(get_file_pointer(), EX_NODE_MAP, data);
+                if (error < 0)
+                  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+              } else {
+                if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+                  int64_t *idata = static_cast<int64_t*>(data);
+                  for (int64_t i=0; i < nodeCount; i++) {
+                    idata[i] = i+1;
+                  }
+                } else {
+                  int *idata = static_cast<int*>(data);
+                  for (int64_t i=0; i < nodeCount; i++) {
+                    idata[i] = i+1;
+                  }
+                }
+              }
             }
 
             else if (field.get_name() == "connectivity") {
@@ -2893,6 +2893,28 @@ namespace Ioex {
               // Map the local ids in this element block
               // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
               get_map(EX_ELEM_BLOCK).map_implicit_data(data, field, num_to_get, eb->get_offset());
+            }
+            else if (field.get_name() == "implicit_ids") {
+              // If not parallel, then this is just one..element_count
+              // If parallel, then it is the data in the ex_get_id_map created by nem_spread.
+              size_t eb_offset_plus_one = eb->get_offset() + 1;
+              if (isParallel) {
+                int error = ex_get_partial_id_map(get_file_pointer(), EX_ELEM_MAP, eb_offset_plus_one, my_element_count, data);
+                if (error < 0)
+                  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+              } else {
+                if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+                  int64_t *idata = static_cast<int64_t*>(data);
+                  for (int64_t i=0; i < my_element_count; i++) {
+                    idata[i] = eb_offset_plus_one + i;
+                  }
+                } else {
+                  int *idata = static_cast<int*>(data);
+                  for (int64_t i=0; i < my_element_count; i++) {
+                    idata[i] = eb_offset_plus_one + i;
+                  }
+                }
+              }
             }
             else if (field.get_name() == "skin") {
               // This is (currently) for the skinned body. It maps the
@@ -4387,8 +4409,11 @@ namespace Ioex {
               }
             } else if (field.get_name() == "ids") {
               handle_element_ids(eb, data, num_to_get);
-
-            } else if (field.get_name() == "skin") {
+            }
+            else if (field.get_name() == "implicit_ids") {
+              // Do nothing, input only field.
+            }
+            else if (field.get_name() == "skin") {
               // This is (currently) for the skinned body. It maps the
               // side element on the skin to the original element/local
               // side number.  It is a two component field, the first

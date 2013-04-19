@@ -125,13 +125,21 @@ public:
    *  Initialize with the number of thread gangs
    *  and number of thread workers per gang.
    *  All worker threads of a gang will occupy the same NUMA node.
-   *  The total number of threads = gang_count * worker_count.
+   *  The total number of threads = gang_topo.first * gang_topo.second.
    *
-   * \pre gang_count   <= node_count
-   * \pre worker_count <= node_core_count OR node_core_count == 0
+   *  The core topology must be less than or equal to hwloc::get_core_topology().
+   *  If core topology is not input then the full hwloc::get_core_topology() is used.
    */
+  static void initialize( const std::pair<unsigned,unsigned> gang_topo ,
+                          const std::pair<unsigned,unsigned> core_topo =
+                                std::pair<unsigned,unsigned>(0,0) );
+
+  inline
   static void initialize( const size_type gang_count ,
-                          const size_type worker_count );
+                          const size_type worker_count )
+  {
+    initialize( std::pair<unsigned,unsigned>( gang_count , worker_count ) );
+  }
 
   static void resize_reduce_scratch( unsigned );
 

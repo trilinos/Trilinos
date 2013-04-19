@@ -1312,16 +1312,19 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   // in the future, this could use std::unique with a boost::zip_iterator
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <class Iter, class BinaryFunction>
+  template<class Scalar>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  mergeRowIndicesAndValues(RowInfo rowinfo, Iter rowValueIter, BinaryFunction f)
+  mergeRowIndicesAndValues (RowInfo rowinfo, const ArrayView<Scalar>& rowValues)
   {
-    const char tfecfFuncName[] = "mergRowIndicesAndValues()";
+    const char tfecfFuncName[] = "mergeRowIndicesAndValues";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStorageOptimized() == true, std::logic_error,
-      ": The graph is already storage optimized, so we shouldn't be merging any indices/values."
-      " Please report this bug to the Tpetra developers.");
-    ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
+      isStorageOptimized(), std::logic_error, ": It is invalid to call this "
+      "method if the graph's storage has already been optimized." << std::endl
+      << "Please report this bug to the Tpetra developers.");
+
+    typedef typename ArrayView<Scalar>::iterator Iter;
+    Iter rowValueIter = rowValues.begin ();
+    ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst (rowinfo);
     typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
 
     // beg,end define a half-exclusive interval over which to iterate.
@@ -1330,8 +1333,8 @@ namespace Tpetra {
     newend = beg;
     if (beg != end) {
       typename ArrayView<LocalOrdinal>::iterator cur = beg + 1;
-      Iter vcur = rowValueIter + 1,
-           vend = rowValueIter;
+      Iter vcur = rowValueIter + 1;
+      Iter vend = rowValueIter;
       cur = beg+1;
       while (cur != end) {
         if (*cur != *newend) {
@@ -1343,7 +1346,8 @@ namespace Tpetra {
         }
         else {
           // old entry; merge it
-          (*vend) = f (*vend, *vcur);
+          //(*vend) = f (*vend, *vcur);
+          (*vend) += *vcur;
         }
         ++cur;
         ++vcur;
@@ -1354,7 +1358,11 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     // merge should not have eliminated any entries; if so, the
     // assignment below will destroy the packed structure
-    TEUCHOS_TEST_FOR_EXCEPT( isStorageOptimized() && mergedEntries != rowinfo.numEntries );
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isStorageOptimized() && mergedEntries != rowinfo.numEntries,
+      std::logic_error,
+      ": Merge was incorrect; it eliminated entries from the graph.  "
+      << std::endl << "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
     numRowEntries_[rowinfo.localRow] = mergedEntries;
     nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
@@ -1364,9 +1372,9 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setDomainRangeMaps(
-                                const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
-                                const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap)
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  setDomainRangeMaps (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                      const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap)
   {
     // simple pointer comparison for equality
     if (domainMap_ != domainMap) {

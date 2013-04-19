@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 
 
         // parameterize the builder
-        panzer::FunctionalResponse_Builder builder;
+        panzer::FunctionalResponse_Builder<int,int> builder;
         builder.comm = MPI_COMM_WORLD; // good enough
         builder.cubatureDegree = 2;
         builder.requiresCellIntegral = lst.isType<bool>("Requires Cell Integral") ? lst.get<bool>("Requires Cell Integral"): false;

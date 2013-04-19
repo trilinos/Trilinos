@@ -78,13 +78,15 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
-    LO fullblocksize   = 1;    // block dim for fixed size blocks
-    GO offset          = 0;   // global offset of dof gids
-    LO blockid         = -1;  // block id in strided map
-    LO nStridedOffset  = 0;   // DOF offset for strided block id "blockid" (default = 0)
+    LO fullblocksize    = 1;    // block dim for fixed size blocks
+    GO offset           = 0;   // global offset of dof gids
+    LO blockid          = -1;  // block id in strided map
+    LO nStridedOffset   = 0;   // DOF offset for strided block id "blockid" (default = 0)
     LO stridedblocksize = fullblocksize; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
+    GO indexBase        = A->getRowMap()->getIndexBase();  // index base for maps
 
     // 1) check for blocking/striding information
+
     if (A->IsView("stridedMaps") && Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null) {
       Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // NOTE: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
       RCP<const StridedMap> stridedRowMap = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap());
@@ -133,7 +135,7 @@ namespace MueLu {
       GlobalOrdinal gDofId = colMap->getGlobalElement(i);
 
       // translate DOFGid to node id
-      GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, A, fullblocksize, offset);
+      GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, A, fullblocksize, offset, indexBase);
 
       // gblockid -> gDofId/lDofId
       if (nodegid2dofgids_->count(gNodeId) == 0) {
@@ -146,7 +148,9 @@ namespace MueLu {
 
         DOFs.reserve(stridedblocksize);
         for (LocalOrdinal k = 0; k < stridedblocksize; k++) {
-          GO gDofIndex = offset + (gNodeId-offset)*fullblocksize + nStridedOffset + k;
+          // here, the assumption is, that the node map has the same indexBase as the dof map
+          //                            this is the node map index base                    this is the dof map index base
+          GO gDofIndex = offset + (gNodeId-indexBase)*fullblocksize + nStridedOffset + k + indexBase;
           if (colMap->isNodeGlobalElement(gDofIndex))
             DOFs.push_back(gDofIndex);
         }
@@ -169,8 +173,9 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset) {
-    GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset) / blockSize + offset;
+  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset, const GlobalOrdinal indexBase) {
+    // here, the assumption is, that the node map has the same indexBase as the dof map
+    GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset - indexBase) / blockSize + indexBase;
     return globalblockid;
   }
 

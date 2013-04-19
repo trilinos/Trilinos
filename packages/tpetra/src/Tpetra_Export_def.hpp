@@ -452,103 +452,83 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  Export<LocalOrdinal,GlobalOrdinal,Node>::setupSamePermuteExport(Teuchos::Array<GlobalOrdinal> & exportGIDs)
+  Export<LocalOrdinal,GlobalOrdinal,Node>::
+  setupSamePermuteExport (Teuchos::Array<GlobalOrdinal>& exportGIDs)
   {
     using Teuchos::arcp;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
+    using Teuchos::as;
     using Teuchos::null;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    const Map<LO,GO,Node> & source = *getSourceMap();
-    const Map<LO,GO,Node> & target = *getTargetMap();
-    ArrayView<const GO> sourceGIDs = source.getNodeElementList();
-    ArrayView<const GO> targetGIDs = target.getNodeElementList();
-    const LO localInvalid = Teuchos::OrdinalTraits<LO>::invalid ();
-    exportGIDs.resize(0);
+    typedef typename ArrayView<const GO>::size_type size_type;
+    const Map<LO,GO,Node>& source = * (getSourceMap ());
+    const Map<LO,GO,Node>& target = * (getTargetMap ());
+    ArrayView<const GO> sourceGIDs = source.getNodeElementList ();
+    ArrayView<const GO> targetGIDs = target.getNodeElementList ();
 
-    // Compute numSameIDs_:
-    //
-    // Iterate through the source and target GID lists.  If the i-th
-    // GID of both is the same, increment numSameIDs_ and try the
-    // next.  As soon as you come to a nonmatching pair, give up.
-    //
-    // The point of numSameIDs_ is for the common case of an Export
-    // where all the overlapping GIDs are at the end of the target
-    // Map, but otherwise the source and target Maps are the same.
-    // This allows a fast contiguous copy for the initial "same IDs."
-    typename ArrayView<const GO>::iterator sourceIter = sourceGIDs.begin();
-    typename ArrayView<const GO>::iterator targetIter = targetGIDs.begin();
-    while (sourceIter != sourceGIDs.end() &&
-           targetIter != targetGIDs.end() &&
-           *sourceIter == *targetIter) {
-      ++ExportData_->numSameIDs_;
-      ++sourceIter;
-      ++targetIter;
-    }
-    // sourceIter should now point either to the GID of the first
-    // non-same entry in sourceGIDs, or to the end of sourceGIDs (if
-    // all the entries were the same).
+#ifdef HAVE_TPETRA_DEBUG
+    ArrayView<const GO> rawSrcGids = sourceGIDs;
+    ArrayView<const GO> rawTgtGids = targetGIDs;
+#else
+    const GO* const rawSrcGids = sourceGIDs.getRawPtr ();
+    const GO* const rawTgtGids = targetGIDs.getRawPtr ();
+#endif // HAVE_TPETRA_DEBUG
+    const size_type numSrcGids = sourceGIDs.size ();
+    const size_type numTgtGids = targetGIDs.size ();
+    const size_type numGids = std::min (numSrcGids, numTgtGids);
 
-    // Compute IDs to be permuted, vs. IDs to be sent out ("exported";
-    // called "export" IDs).
+    // Compute numSameIDs_: the number of initial GIDs that are the
+    // same (and occur in the same order) in both Maps.  The point of
+    // numSameIDs_ is for the common case of an Export where all the
+    // overlapping GIDs are at the end of the source Map, but
+    // otherwise the source and target Maps are the same.  This allows
+    // a fast contiguous copy for the initial "same IDs."
+    size_type numSameGids = 0;
+    for ( ; numSameGids < numGids && rawSrcGids[numSameGids] == rawTgtGids[numSameGids]; ++numSameGids)
+      {} // third clause of 'for' does everything
+    ExportData_->numSameIDs_ = numSameGids;
+
+    // Compute permuteToLIDs_, permuteFromLIDs_, exportGIDs, and
+    // exportLIDs_.  The first two arrays are IDs to be permuted, and
+    // the latter two arrays are IDs to sent out ("exported"), called
+    // "export" IDs.
     //
     // IDs to permute are in both the source and target Maps, which
     // means we don't have to send or receive them, but we do have to
-    // rearrange (permute) them in general.  (We've already identified
-    // an initial stretch of IDs which can be copied without
-    // rearrangement; the iterator sourceIter is past that point.)
-    // IDs to send out are in the source Map, but not the target Map.
-    for (; sourceIter != sourceGIDs.end(); ++sourceIter) {
-      const GO curSourceGID = *sourceIter;
-      const LO curTargetLID = target.getLocalElement (curSourceGID);
-      // Test same as: target.isNodeGlobalElement (curSourceGID).
-      // isNodeGlobalElement() costs just as much as
-      // getLocalElement(), and we need to call the latter anyway.
-      if (curTargetLID != localInvalid) {
-        // The current process owns this GID, for both the source and
-        // the target Maps.  Add the LIDs for this GID on both Maps to
-        // the permutation lists.
-        ExportData_->permuteToLIDs_.push_back (curTargetLID);
-        ExportData_->permuteFromLIDs_.push_back (source.getLocalElement (curSourceGID));
-      }
-      else {
-        // The current GID is owned by this process in the source Map,
-        // but is not owned by this process in the target Map.  That
-        // means the Export operation has to send it to another
-        // process.  Store such GIDs in the "export" (outgoing) list.
-        //
-        // QUESTION (mfh 18 Aug 2012) Import at this point computes
-        // remoteLIDs_.  Would it makes sense to compute them here,
-        // instead of passing over exportGIDs again below?  That
-        // would make the implementations of Export and Import look
-        // more alike.
-        exportGIDs.push_back (curSourceGID);
+    // rearrange (permute) them in general.  IDs to send are in the
+    // source Map, but not in the target Map.
+
+    exportGIDs.resize (0);
+    Array<LO>& permuteToLIDs = ExportData_->permuteToLIDs_;
+    Array<LO>& permuteFromLIDs = ExportData_->permuteFromLIDs_;
+    Array<LO>& exportLIDs = ExportData_->exportLIDs_;
+    const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
+    const LO numSrcLids = as<LO> (numSrcGids);
+    // Iterate over the source Map's LIDs, since we only need to do
+    // GID -> LID lookups for the target Map.
+    for (LO srcLid = numSameGids; srcLid < numSrcLids; ++srcLid) {
+      const GO curSrcGid = rawSrcGids[srcLid];
+      // getLocalElement() returns LINVALID if the GID isn't in the target Map.
+      // This saves us a lookup (which isNodeGlobalElement() would do).
+      const LO tgtLid = target.getLocalElement (curSrcGid);
+      if (tgtLid != LINVALID) { // if target.isNodeGlobalElement (curSrcGid)
+        permuteToLIDs.push_back (tgtLid);
+        permuteFromLIDs.push_back (srcLid);
+      } else {
+        exportGIDs.push_back (curSrcGid);
+        exportLIDs.push_back (srcLid);
       }
     }
 
-    // Above, we filled exportGIDs with all the "outgoing" GIDs (that
-    // is, the GIDs which we own in the source Map, but not in the
-    // target Map).  Now allocate exportLIDs_, and fill it with the
-    // LIDs (from the source Map) corresponding to those GIDs.
-    //
     // exportLIDs_ is the list of this process' LIDs that it has to
     // send out.  Since this is an Export, and therefore the target
     // Map is nonoverlapping, we know that each export LID only needs
     // to be sent to one process.  However, the source Map may be
     // overlapping, so multiple processes might send to the same LID
     // on a receiving process.
-    if (exportGIDs.size ()) {
-      ExportData_->exportLIDs_.resize(exportGIDs.size ());
-    }
-    {
-      typename Array<LO>::iterator liditer = ExportData_->exportLIDs_.begin();
-      typename Array<GO>::iterator giditer = exportGIDs.begin();
-      for (; giditer != exportGIDs.end(); ++liditer, ++giditer) {
-        *liditer = source.getLocalElement (*giditer);
-      }
-    }
 
     TPETRA_ABUSE_WARNING(
       getNumExportIDs() > 0 && ! source.isDistributed(),

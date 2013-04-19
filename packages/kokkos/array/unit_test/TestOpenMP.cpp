@@ -43,6 +43,11 @@
 
 #include <gtest/gtest.h>
 
+// Force OMP atomics
+
+#define KOKKOS_ATOMICS_USE_OMP31
+#include <Kokkos_Atomic.hpp>
+
 #include <KokkosArray_OpenMP.hpp>
 #include <KokkosArray_hwloc.hpp>
 
@@ -53,6 +58,7 @@
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
+#include <TestAtomic.hpp>
 
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
@@ -76,10 +82,7 @@ protected:
     const unsigned gang_count        = core_top.first ;
     const unsigned gang_worker_count = ( core_top.second * core_size ) / 2 ;
 
-    omp_set_max_active_levels(1);
-    omp_set_num_threads( gang_count * gang_worker_count );
-
-    KokkosArray::OpenMP::initialize( gang_count );
+    KokkosArray::OpenMP::initialize( gang_count , gang_worker_count );
   }
 
   static void TearDownTestCase()
@@ -126,6 +129,39 @@ TEST_F( openmp, double_reduce_dynamic ) {
 
 TEST_F( openmp, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   KokkosArray::OpenMP >( 1000000 );
+}
+
+TEST_F( openmp , atomics )
+{
+  const int loop_count = 1e6 ;
+
+  ASSERT_TRUE( ( TestAtomic::Loop<int,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<double,KokkosArray::Host>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,KokkosArray::Host>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,KokkosArray::Host>(loop_count,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<float,KokkosArray::Host>(100,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,KokkosArray::Host>(100,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,KokkosArray::Host>(100,3) ) );
 }
 
 #endif
