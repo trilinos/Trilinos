@@ -50,7 +50,7 @@
 namespace Teuchos {
 
 
-TEUCHOS_UNIT_TEST( UnitTestHarness, nonRankFails ) {
+TEUCHOS_UNIT_TEST( UnitTestHarness, nonRootFails ) {
   out << "Pass on proc 0 but fail on other procs!\n";
   const RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   const int procRank = comm->getRank();
@@ -58,7 +58,7 @@ TEUCHOS_UNIT_TEST( UnitTestHarness, nonRankFails ) {
 }
 
 
-TEUCHOS_UNIT_TEST( UnitTestHarness, nonRankThrowsTeuchosExcept ) {
+TEUCHOS_UNIT_TEST( UnitTestHarness, nonRootThrowsTeuchosExcept ) {
   out << "Pass on proc 0 but throws Teuchos exception on other processes!\n";
   const RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   const int procRank = comm->getRank();
@@ -68,7 +68,7 @@ TEUCHOS_UNIT_TEST( UnitTestHarness, nonRankThrowsTeuchosExcept ) {
 }
 
 
-TEUCHOS_UNIT_TEST( UnitTestHarness, nonRankThrowsIntExcept ) {
+TEUCHOS_UNIT_TEST( UnitTestHarness, nonRootThrowsIntExcept ) {
   out << "Pass on proc 0 but throws int exception on other processes!\n";
   const RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   const int procRank = comm->getRank();

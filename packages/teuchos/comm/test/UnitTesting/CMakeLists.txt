@@ -11,14 +11,40 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
+
 TRIBITS_ADD_ADVANCED_TEST(
-  UnitTestHarness_Parallel_UnitTests_MPI
+  UnitTestHarness_Parallel_UnitTests_MPI_2
     TEST_0
       EXEC UnitTestHarness_Parallel_UnitTests
       PASS_REGULAR_EXPRESSION_ALL
         "NOTE: Global reduction shows failures on other processes"
-        ".*FAILED.* UnitTestHarness_nonRankFails_UnitTest"
-        ".*FAILED.* UnitTestHarness_nonRankThrowsTeuchosExcept_UnitTest"
-        ".*FAILED.* UnitTestHarness_nonRankThrowsIntExcept_UnitTest"
+        ".*FAILED.* UnitTestHarness_nonRootFails_UnitTest"
+        ".*FAILED.* UnitTestHarness_nonRootThrowsTeuchosExcept_UnitTest"
+        ".*FAILED.* UnitTestHarness_nonRootThrowsIntExcept_UnitTest"
+      NUM_MPI_PROCS 2
+  COMM mpi
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(
+  UnitTestHarness_Parallel_UnitTests_MPI_4
+    TEST_0
+      EXEC UnitTestHarness_Parallel_UnitTests
+      PASS_REGULAR_EXPRESSION_ALL
+        "NOTE: Global reduction shows failures on other processes"
+        ".*FAILED.* UnitTestHarness_nonRootFails_UnitTest"
+        ".*FAILED.* UnitTestHarness_nonRootThrowsTeuchosExcept_UnitTest"
+        ".*FAILED.* UnitTestHarness_nonRootThrowsIntExcept_UnitTest"
+      NUM_MPI_PROCS 4
+  COMM mpi
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(
+  UnitTestHarness_Parallel_UnitTests_MPI_no_reduce
+    TEST_0
+      EXEC UnitTestHarness_Parallel_UnitTests
+      ARGS --test=nonRootFails --no-globally-reduce-test-result
+      PASS_REGULAR_EXPRESSION_ALL
+        "UnitTestHarness_nonRootFails_UnitTest ... .Passed."
+      NUM_MPI_PROCS 2
   COMM mpi
   )

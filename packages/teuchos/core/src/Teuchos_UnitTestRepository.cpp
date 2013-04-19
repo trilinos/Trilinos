@@ -490,6 +490,12 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
     );
 
   clp->setOption(
+    "globally-reduce-test-result", "no-globally-reduce-test-result",
+    &getData().globallyReduceUnitTestResult,
+    "If true, individual unit test pass/fail is globally reduced across MPI processes."
+    );
+
+  clp->setOption(
     "group-name", &getData().groupName,
     "If specified, selects only tests that match the group name glob." );
   clp->setOption(
