@@ -233,7 +233,17 @@ namespace MueLu {
           numTotal = A->getNodeNumEntries();
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "amalgamated graph of A"));
-          graph->SetBoundaryNodeMap(boundaryNodes);
+          graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes  = 0;
+            GO numGlobalBoundaryNodes = 0;
+            for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
+              if (amalgBoundaryNodes[i])
+                numLocalBoundaryNodes++;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+          }
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", 1);
 
