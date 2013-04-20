@@ -93,6 +93,9 @@ namespace MueLu {
 
     ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
     LO                  blkSize      = 1;
+    if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
+      blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
+
     GO                  indexBase    = coarseMap->getIndexBase();
     size_t              numElements  = elementAList.size() / blkSize;
     Array<GO>           elementList(numElements);
