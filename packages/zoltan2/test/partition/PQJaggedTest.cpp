@@ -386,7 +386,7 @@ int testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numPa
 
   params.set("migration_option", migration_check_option);
   params.set("migration_type", migration_option);
-  params.set("migration_imbalance_cut_off", migration_imbalance_cut_off);
+  params.set("migration_imbalance_cut_off", double (migration_imbalance_cut_off));
 
   params.set("pqParts", pqParts);
   params.set("timer_output_stream" , "std::cout");
