@@ -990,8 +990,8 @@ namespace Tpetra {
         rowInfo = myGraph_->template updateAllocAndValues<LocalIndices, Scalar> (rowInfo, newNumEntries, values2D_[localRow]);
       }
       typename Graph::SLocalGlobalViews inds_view;
-      inds_view.linds = f_inds(0,numFilteredEntries);
-      myGraph_->template insertIndicesAndValues<LocalIndices, LocalIndices> (rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), f_vals.begin());
+      inds_view.linds = f_inds (0, numFilteredEntries);
+      myGraph_->template insertIndicesAndValues (rowInfo, inds_view, this->getViewNonConst (rowInfo).begin (), f_vals.begin (), LocalIndices, LocalIndices);
 #ifdef HAVE_TPETRA_DEBUG
       {
         const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow (localRow);
@@ -1101,13 +1101,13 @@ namespace Tpetra {
           // <GlobalIndices, GlobalIndices> template parameters
           // involve getGlobalViewNonConst() and direct copying, which
           // should be reasonably fast.
-          myGraph_->template insertIndicesAndValues<GlobalIndices,GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
+          myGraph_->template insertIndicesAndValues (rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin(), GlobalIndices, GlobalIndices);
         }
         else {
           // <GlobalIndices, LocalIndices> template parameters involve
           // calling the Map's getLocalElement() once per entry to
           // insert.  This may be slow.
-          myGraph_->template insertIndicesAndValues<GlobalIndices,LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
+          myGraph_->template insertIndicesAndValues (rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin(), GlobalIndices, LocalIndices);
         }
 #ifdef HAVE_TPETRA_DEBUG
         {
@@ -1237,7 +1237,9 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayView<Scalar> CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getViewNonConst(RowInfo rowinfo)
+  ArrayView<Scalar> 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getViewNonConst (RowInfo rowinfo)
   {
     ArrayView<Scalar> view;
     if (values1D_ != null && rowinfo.allocSize > 0) {

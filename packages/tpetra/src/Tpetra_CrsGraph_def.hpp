@@ -1020,10 +1020,19 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <ELocalGlobal lg, ELocalGlobal I>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::insertIndices(RowInfo rowinfo, const SLocalGlobalViews &newInds)
+  size_t 
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  insertIndices (const RowInfo& rowinfo, 
+		 const SLocalGlobalViews &newInds,
+		 const ELocalGlobal lg,
+		 const ELocalGlobal I)
   {
-    Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg; (void)cta_lg;
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      lg != GlobalIndices && lg != LocalIndices, std::invalid_argument, 
+      "Tpetra::CrsGraph::insertIndices: lg must be either GlobalIndices or "
+      "LocalIndices.");
+#endif // HAVE_TPETRA_DEBUG
     size_t numNewInds = 0;
     if (lg == GlobalIndices) { // input indices are global
       ArrayView<const GlobalOrdinal> new_ginds = newInds.ginds;
@@ -1191,13 +1200,17 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN>
+  template <class IterO, class IterN>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertIndicesAndValues (RowInfo rowinfo, const SLocalGlobalViews &newInds,
-                          IterO rowVals, IterN newVals)
+  insertIndicesAndValues (const RowInfo& rowInfo,
+			  const SLocalGlobalViews& newInds,
+			  IterO rowVals,
+			  IterN newVals,
+			  const ELocalGlobal lg,
+			  const ELocalGlobal I)
   {
-    size_t numNewInds = insertIndices<lg,I> (rowinfo, newInds);
-    std::copy (newVals, newVals + numNewInds, rowVals + rowinfo.numEntries);
+    const size_t numNewInds = insertIndices (rowInfo, newInds, lg, I);
+    std::copy (newVals, newVals + numNewInds, rowVals + rowInfo.numEntries);
   }
 
   /////////////////////////////////////////////////////////////////////////////

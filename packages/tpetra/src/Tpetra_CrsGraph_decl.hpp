@@ -1035,16 +1035,6 @@ namespace Tpetra {
 
     /// \brief Insert indices into the given row.
     ///
-    /// \tparam lg If <tt>lg == GlobalIndices</tt>, then the input
-    ///   indices (in \c newInds) are global indices.  Otherwise, if
-    ///   <tt>lg == LocalIndices</tt>, the input indices are local
-    ///   indices.
-    ///
-    /// \tparam I If <tt>lg == GlobalIndices</tt>, then this method
-    ///   will store the input indices as global indices.  Otherwise,
-    ///   if <tt>I == LocalIndices</tt>, this method will store the
-    ///   input indices as local indices.
-    ///
     /// \param rowInfo [in] Result of CrsGraph's getRowInfo() or
     ///   updateAllocAndValues() methods, for the locally owned row
     ///   (whose local index is <tt>rowInfo.localRow</tt>) for which
@@ -1057,15 +1047,30 @@ namespace Tpetra {
     ///   == LocalIndices</tt>, then newInds.linds, a
     ///   <tt>Teuchos::ArrayView<const LocalOrdinal></tt>, contains
     ///   the (local) column indices to insert.
-    template<ELocalGlobal lg, ELocalGlobal I>
-    size_t insertIndices (RowInfo rowInfo, const SLocalGlobalViews &newInds);
+    ///
+    /// \param lg If <tt>lg == GlobalIndices</tt>, then the input
+    ///   indices (in \c newInds) are global indices.  Otherwise, if
+    ///   <tt>lg == LocalIndices</tt>, the input indices are local
+    ///   indices.
+    ///
+    /// \param I If <tt>lg == GlobalIndices</tt>, then this method
+    ///   will store the input indices as global indices.  Otherwise,
+    ///   if <tt>I == LocalIndices</tt>, this method will store the
+    ///   input indices as local indices.
+    size_t 
+    insertIndices (const RowInfo& rowInfo, 
+		   const SLocalGlobalViews& newInds,
+		   const ELocalGlobal lg,
+		   const ELocalGlobal I);
 
-    template<ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN>
+    template<class IterO, class IterN>
     void
-    insertIndicesAndValues (RowInfo rowInfo,
-                            const SLocalGlobalViews &newInds,
+    insertIndicesAndValues (const RowInfo& rowInfo,
+                            const SLocalGlobalViews& newInds,
                             IterO rowVals,
-                            IterN newVals);
+                            IterN newVals,
+			    const ELocalGlobal lg,
+			    const ELocalGlobal I);
     void
     insertGlobalIndicesImpl (LocalOrdinal myRow,
                              const ArrayView<const GlobalOrdinal> &indices);
