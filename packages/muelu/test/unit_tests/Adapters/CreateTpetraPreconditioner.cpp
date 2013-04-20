@@ -138,10 +138,6 @@ TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner)
 
 } //CreatePreconditioner
 
-//JJH April 17 2013
-//I'm disabling until either we have a different matrix for testing
-//or we resolve the map check issue in CoalesceDropFactory
-#ifdef REENABLE_LATER
 TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner_PDESystem)
 {
 
@@ -195,7 +191,6 @@ TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner_PDESystem)
     X1->putScalar( (SC) 0.0);
     tH->apply(*(Utils::MV2TpetraMV(RHS1)),*(Utils::MV2NonConstTpetraMV(X1)));
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-#endif
 
 
   } else {
