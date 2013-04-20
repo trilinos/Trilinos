@@ -306,8 +306,8 @@ namespace MueLu {
           // [*1*]: see [*0*]
 
           // Check that the number of local coordinates is consistent with the #rows in A
-          std::string msg = "MueLu::CoalesceDropFactory::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
-          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible, msg);
+          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible,
+                                     "Coordinate vector length (" << Coords->getLocalLength() << ") is incompatible with number of rows in A (" << A->getRowMap() << ") by modulo block size ("<< blkSize <<").");
 
           const RCP<const Map> colMap = A->getColMap();
           RCP<const Map> uniqueMap, nonUniqueMap;
@@ -339,11 +339,10 @@ namespace MueLu {
             // At the moment we assume that first GIDs in nonUniqueMap
             // coincide with those in uniqueMap.
             for (LO row = 0; row < Teuchos::as<LO> (uniqueMap->getNodeNumElements ()); ++row) {
-              TEUCHOS_TEST_FOR_EXCEPTION(
-                uniqueMap->getGlobalElement(row) != elementList[row],
-                Exceptions::RuntimeError, "row = " << row << ", uniqueMap GID = "
-                << uniqueMap->getGlobalElement(row) << ", nonUniqueMap GID = "
-                << elementList[row] << std::endl);
+              TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getGlobalElement(row) != elementList[row], Exceptions::RuntimeError,
+                                         "row = " << row << ", uniqueMap GID = "
+                                         << uniqueMap->getGlobalElement(row) << ", nonUniqueMap GID = "
+                                         << elementList[row] << std::endl);
             }
 #endif
 
