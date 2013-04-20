@@ -83,9 +83,12 @@ namespace MueLu {
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) const {
     FactoryMonitor m(*this, "Build", level);
 
-    RCP<Matrix>    A             = Get< RCP<Matrix> >(level, "A");
+    RCP<Matrix>      A             = Get< RCP<Matrix> >     (level, "A");
+    RCP<MultiVector> Coords        = Get< RCP<MultiVector> >(level, "Coordinates");
+    GO               numPartitions = Get<GO>                (level, "number of partitions");
+
     RCP<const Map> rowMap        = A->getRowMap();
-    GO             numPartitions = Get<GO>(level, "number of partitions");
+    size_t problemDimension      = Coords->getNumVectors();
 
     if (numPartitions == 1) {
       // Running on one processor, so decomposition is the trivial one, all zeros.
@@ -104,7 +107,7 @@ namespace MueLu {
     RCP<const Teuchos::MpiComm<int> >            mpiComm    = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm());
     RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm = mpiComm->getRawMpiComm();
 
-    RCP<Zoltan> zoltanObj_ = rcp( new Zoltan( (*zoltanComm)() ) );  //extract the underlying MPI_Comm handle and create a Zoltan object
+    RCP<Zoltan> zoltanObj_ = rcp(new Zoltan((*zoltanComm)()));  //extract the underlying MPI_Comm handle and create a Zoltan object
     if (zoltanObj_ == Teuchos::null)
       throw Exceptions::RuntimeError("MueLu::Zoltan : Unable to create Zoltan data structure");
 
@@ -114,7 +117,7 @@ namespace MueLu {
     if ((rv = zoltanObj_->Set_Param("num_lid_entries", "0") ) != ZOLTAN_OK)
       throw Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'num_lid_entries' returned error code " + Teuchos::toString(rv));
     if ((rv = zoltanObj_->Set_Param("obj_weight_dim", "1") ) != ZOLTAN_OK)
-      throw Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'obj_weight_dim' returned error code " + Teuchos::toString(rv));
+      throw Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'obj_weight_dim' returned error code "  + Teuchos::toString(rv));
 
     if (GetVerbLevel() & Statistics1) zoltanObj_->Set_Param("debug_level", "1");
     else                              zoltanObj_->Set_Param("debug_level", "0");
@@ -122,20 +125,6 @@ namespace MueLu {
     std::stringstream ss;
     ss << numPartitions;
     zoltanObj_->Set_Param("num_global_partitions", ss.str());
-
-    //TODO: coordinates should be const
-
-    Array<ArrayRCP<SC> > XYZ; // Using this format because no communications needed here. No need for a map and a Xpetra::MultiVector
-
-    if (!IsAvailable(level, "Coordinates")) {
-      std::cout << GetFactory("Coordinates") << std::endl;
-
-      level.print(*getOStream());
-      throw Exceptions::RuntimeError("MueLu::ZoltanInterface::Build(): no coordinates available");
-    }
-
-    RCP<MultiVector> Coords = Get< RCP<MultiVector> >(level, "Coordinates");
-    size_t problemDimension = Coords->getNumVectors();
 
     zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,      (void *) &*A);
     zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros, (void *) &*A);
@@ -178,7 +167,7 @@ namespace MueLu {
       for (typename ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
         *i = mypid;
 
-      LocalOrdinal blockSize = A->GetFixedBlockSize();
+      LO blockSize = A->GetFixedBlockSize();
       for (int i = 0; i < num_exported; ++i) {
         // We have assigned Zoltan gids to first row GID in the block
         // NOTE: Zoltan GIDs are different from GIDs in the Coordinates vector
@@ -209,7 +198,7 @@ namespace MueLu {
     Matrix *A = (Matrix*) data;
     *ierr = ZOLTAN_OK;
 
-    LocalOrdinal blockSize = A->GetFixedBlockSize();
+    LO blockSize = A->GetFixedBlockSize();
     if (blockSize == 0)
       throw Exceptions::RuntimeError("MueLu::Zoltan : Matrix has block size 0.");
 

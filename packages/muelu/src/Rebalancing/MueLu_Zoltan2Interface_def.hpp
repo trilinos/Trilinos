@@ -86,38 +86,43 @@ namespace MueLu {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
     Input(currentLevel, "number of partitions");
-
   } //DeclareInput()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) const {
     FactoryMonitor m(*this, "Build", level);
 
-    RCP<Matrix>         A = Get< RCP<Matrix> >(level, "A");
-    GO           numParts = Get<GO>(level, "number of partitions");
-    LocalOrdinal  blkSize = A->GetFixedBlockSize();
-
-    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->lib() == Xpetra::UseEpetra, Exceptions::RuntimeError, "Zoltan2 does not work with Epetra at the moment. Please use Zoltan through ZoltanInterface");
-
-    if (!IsAvailable(level, "Coordinates")) {
-      std::cout << GetFactory("Coordinates") << std::endl;
-
-      level.print(*getOStream());
-      throw Exceptions::RuntimeError("MueLu::ZoltanInterface::Build(): no coordinates available");
-    }
-
+    RCP<Matrix>           A = Get< RCP<Matrix> >     (level, "A");
     RCP<MultiVector> coords = Get< RCP<MultiVector> >(level, "Coordinates");
-    size_t              dim = coords->getNumVectors();
+    GO             numParts = Get<GO>                (level, "number of partitions");
+
+    RCP<const Map> rowMap = A->getRowMap();
+    RCP<const Map> map    = coords->getMap();
+    TEUCHOS_TEST_FOR_EXCEPTION(rowMap->lib() == Xpetra::UseEpetra, Exceptions::RuntimeError,
+                               "Zoltan2 does not work with Epetra at the moment. Please use Zoltan through ZoltanInterface");
+
+    size_t dim       = coords->getNumVectors();
+    GO     indexBase = rowMap->getIndexBase();
+    LO     blkSize   = A->GetFixedBlockSize();
 
     // Check that the number of local coordinates is consistent with the #rows in A
-    std::string msg = "MueLu::Zoltan2Interface::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
-    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != coords->getLocalLength(), Exceptions::Incompatible, msg);
-
-    RCP<const Map> map = coords->getMap();
+    TEUCHOS_TEST_FOR_EXCEPTION(rowMap->getNodeNumElements()/blkSize != coords->getLocalLength(), Exceptions::Incompatible,
+                               "Coordinate vector length (" + toString(coords->getLocalLength()) << " is incompatible with number of block rows in A ("
+                               + toString(rowMap->getNodeNumElements()/blkSize) + "The vector length should be the same as the number of mesh points.");
+#ifdef HAVE_MUELU_DEBUG
+    GetOStream(Runtime0,0) << "Checking consistence of row and coordinates maps" << std::endl;
+    // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
+    ArrayView<const GO> rowElements    = rowMap->getNodeElementList();
+    ArrayView<const GO> coordsElements = map   ->getNodeElementList();
+    for (LO i = 0; i < Teuchos::as<LO>(rowMap->getNodeNumElements ()); i++)
+      TEUCHOS_TEST_FOR_EXCEPTION((coordsElements[i]-indexBase)*blkSize + indexBase != rowElements[i*blkSize],
+                                 Exceptions::RuntimeError, "i = " << i << ", coords GID = " << coordsElements[i]
+                                 << ", row GID = " << rowElements[i*blkSize] << std::endl);
+#endif
 
     if (numParts == 1) {
       // Single processor, decomposition is trivial: all zeros
-      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
       Set(level, "Partition", decomposition);
       return;
     }
@@ -153,8 +158,8 @@ namespace MueLu {
     std::string algo = pL.get<std::string>("algorithm");
     TEUCHOS_TEST_FOR_EXCEPTION(algo != "multijagged" && algo != "rcb", Exceptions::RuntimeError, "Unknown partitioning algorithm: \"" << algo << "\"");
     if (algo == "multijagged") {
-      params.set("algorithm",             "multijagged");
       std::string pqalgo = pL.get<std::string>("pqparts");
+      params.set("algorithm",             "multijagged");
       params.set("pqParts",               getPQParts(pqalgo, numParts, dim));
 
     } else if (algo == "rcb") {
@@ -176,9 +181,12 @@ namespace MueLu {
     const Teuchos::MpiComm<int>& comm = static_cast<const Teuchos::MpiComm<int>& >(*map->getComm());
     RCP<ProblemType> problem(new ProblemType(&adapter, &params, *comm.getRawMpiComm()));
 
-    problem->solve();
+    {
+      SubFactoryMonitor m1(*this, "Zoltan2 " + toString(algo), level);
+      problem->solve();
+    }
 
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(), false);
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap, false);
     ArrayRCP<GO>                      decompEntries = decomposition->getDataNonConst(0);
 
     const zoltan2_partId_t * parts = problem->getSolution().getPartList();
