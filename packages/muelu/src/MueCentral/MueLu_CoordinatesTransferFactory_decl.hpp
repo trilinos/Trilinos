@@ -51,6 +51,8 @@
 #include "Xpetra_MultiVector_fwd.hpp"
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
 #include "Xpetra_Matrix.hpp"
+
+#include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
 
 namespace MueLu {
