@@ -63,6 +63,14 @@ namespace Tpetra {
   class CrsMatrix;
 #endif
 
+  /// \struct RowInfo
+  /// \brief Allocation information for a locally owned row in a
+  ///   CrsGraph or CrsMatrix
+  ///  
+  /// A RowInfo instance identifies a locally owned row uniquely by
+  /// its local index, and contains other information useful for
+  /// inserting entries into the row.  It is the return value of
+  /// CrsGraph's getRowInfo() or updateAllocAndValues() methods.
   struct RowInfo {
     size_t localRow;
     size_t allocSize;
@@ -1025,6 +1033,30 @@ namespace Tpetra {
     filterIndicesAndValues (const SLocalGlobalNCViews &inds,
                             const ArrayView<T> &vals) const;
 
+    /// \brief Insert indices into the given row.
+    ///
+    /// \tparam lg If <tt>lg == GlobalIndices</tt>, then the input
+    ///   indices (in \c newInds) are global indices.  Otherwise, if
+    ///   <tt>lg == LocalIndices</tt>, the input indices are local
+    ///   indices.
+    ///
+    /// \tparam I If <tt>lg == GlobalIndices</tt>, then this method
+    ///   will store the input indices as global indices.  Otherwise,
+    ///   if <tt>I == LocalIndices</tt>, this method will store the
+    ///   input indices as local indices.
+    ///
+    /// \param rowInfo [in] Result of CrsGraph's getRowInfo() or
+    ///   updateAllocAndValues() methods, for the locally owned row
+    ///   (whose local index is <tt>rowInfo.localRow</tt>) for which
+    ///   you want to insert indices.
+    ///
+    /// \param newInds [in] View of the column indices to insert.  If
+    ///   <tt>lg == GlobalIndices</tt>, then newInds.ginds, a
+    ///   <tt>Teuchos::ArrayView<const GlobalOrdinal></tt>, contains
+    ///   the (global) column indices to insert.  Otherwise, if <tt>lg
+    ///   == LocalIndices</tt>, then newInds.linds, a
+    ///   <tt>Teuchos::ArrayView<const LocalOrdinal></tt>, contains
+    ///   the (local) column indices to insert.
     template<ELocalGlobal lg, ELocalGlobal I>
     size_t insertIndices (RowInfo rowInfo, const SLocalGlobalViews &newInds);
 
