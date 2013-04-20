@@ -1077,8 +1077,8 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertGlobalIndicesImpl(LocalOrdinal myRow,
-                          const ArrayView<const GlobalOrdinal> &indices)
+  insertGlobalIndicesImpl (const LocalOrdinal myRow,
+			   const ArrayView<const GlobalOrdinal> &indices)
   {
     const char* tfecfFuncName("insertGlobalIndicesImpl()");
 
@@ -1139,8 +1139,8 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertLocalIndicesImpl(LocalOrdinal myRow,
-                         const ArrayView<const LocalOrdinal> &indices)
+  insertLocalIndicesImpl (const LocalOrdinal myRow,
+                          const ArrayView<const LocalOrdinal> &indices)
   {
     const char* tfecfFuncName("insertLocallIndicesImpl()");
 
@@ -1200,17 +1200,20 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <class IterO, class IterN>
+  template <class Scalar>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   insertIndicesAndValues (const RowInfo& rowInfo,
 			  const SLocalGlobalViews& newInds,
-			  IterO rowVals,
-			  IterN newVals,
+			  const ArrayView<Scalar>& oldRowVals,
+			  const ArrayView<const Scalar>& newRowVals,
 			  const ELocalGlobal lg,
 			  const ELocalGlobal I)
   {
     const size_t numNewInds = insertIndices (rowInfo, newInds, lg, I);
-    std::copy (newVals, newVals + numNewInds, rowVals + rowInfo.numEntries);
+    typename ArrayView<const Scalar>::const_iterator newRowValsBegin = 
+      newRowVals.begin ();
+    std::copy (newRowValsBegin, newRowValsBegin + numNewInds, 
+	       oldRowVals.begin () + rowInfo.numEntries);
   }
 
   /////////////////////////////////////////////////////////////////////////////

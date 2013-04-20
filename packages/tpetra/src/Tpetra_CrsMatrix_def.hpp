@@ -991,7 +991,10 @@ namespace Tpetra {
       }
       typename Graph::SLocalGlobalViews inds_view;
       inds_view.linds = f_inds (0, numFilteredEntries);
-      myGraph_->template insertIndicesAndValues (rowInfo, inds_view, this->getViewNonConst (rowInfo).begin (), f_vals.begin (), LocalIndices, LocalIndices);
+      myGraph_->template insertIndicesAndValues<Scalar> (rowInfo, inds_view, 
+							 this->getViewNonConst (rowInfo), 
+							 f_vals, 
+							 LocalIndices, LocalIndices);
 #ifdef HAVE_TPETRA_DEBUG
       {
         const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow (localRow);
@@ -1098,16 +1101,22 @@ namespace Tpetra {
           rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices,Scalar>(rowInfo, newNumEntries, values2D_[lrow]);
         }
         if (isGloballyIndexed()) {
-          // <GlobalIndices, GlobalIndices> template parameters
-          // involve getGlobalViewNonConst() and direct copying, which
+          // lg=GlobalIndices, I=GlobalIndices means the method calls
+          // getGlobalViewNonConst() and does direct copying, which
           // should be reasonably fast.
-          myGraph_->template insertIndicesAndValues (rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin(), GlobalIndices, GlobalIndices);
+          myGraph_->template insertIndicesAndValues<Scalar> (rowInfo, inds_view, 
+							     this->getViewNonConst (rowInfo), 
+							     vals_view, 
+							     GlobalIndices, GlobalIndices);
         }
         else {
-          // <GlobalIndices, LocalIndices> template parameters involve
-          // calling the Map's getLocalElement() once per entry to
+          // lg=GlobalIndices, I=LocalIndices means the method calls
+          // the Map's getLocalElement() method once per entry to
           // insert.  This may be slow.
-          myGraph_->template insertIndicesAndValues (rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin(), GlobalIndices, LocalIndices);
+          myGraph_->template insertIndicesAndValues<Scalar> (rowInfo, inds_view, 
+							     this->getViewNonConst (rowInfo), 
+							     vals_view, 
+							     GlobalIndices, LocalIndices);
         }
 #ifdef HAVE_TPETRA_DEBUG
         {

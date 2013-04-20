@@ -1063,19 +1063,19 @@ namespace Tpetra {
 		   const ELocalGlobal lg,
 		   const ELocalGlobal I);
 
-    template<class IterO, class IterN>
+    template<class Scalar>
     void
     insertIndicesAndValues (const RowInfo& rowInfo,
                             const SLocalGlobalViews& newInds,
-                            IterO rowVals,
-                            IterN newVals,
+			    const ArrayView<Scalar>& oldRowVals,
+                            const ArrayView<const Scalar>& newRowVals,
 			    const ELocalGlobal lg,
 			    const ELocalGlobal I);
     void
-    insertGlobalIndicesImpl (LocalOrdinal myRow,
+    insertGlobalIndicesImpl (const LocalOrdinal myRow,
                              const ArrayView<const GlobalOrdinal> &indices);
     void
-    insertLocalIndicesImpl (LocalOrdinal myRow,
+    insertLocalIndicesImpl (const LocalOrdinal myRow,
                             const ArrayView<const LocalOrdinal> &indices);
 
     /// \brief Transform the given values using local indices.
