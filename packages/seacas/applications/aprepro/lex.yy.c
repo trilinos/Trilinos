@@ -3162,7 +3162,6 @@ int yywrap(void)
 	  echo = True;
 	  /* Set immutability back to global immutable state */
 	  state_immutable = ap_options.immutable;	  
-	  fprintf(stderr, "IMMUTABLE: Turn immutable to %d\n", state_immutable);
 	}
       return (0);
     }

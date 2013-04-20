@@ -44,6 +44,8 @@
 #ifndef KOKKOSARRAY_HOST_INTERNAL_HPP
 #define KOKKOSARRAY_HOST_INTERNAL_HPP
 
+#include <utility>
+
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
@@ -70,6 +72,14 @@ void host_thread_lock();
 /** \brief  Unlock the current thread */
 void host_thread_unlock();
 /**@} */
+
+//----------------------------------------------------------------------------
+
+void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
+                          const std::pair<unsigned,unsigned> core_use ,
+                          const std::pair<unsigned,unsigned> core_topo ,
+                          const std::pair<unsigned,unsigned> master_coord ,
+                                std::pair<unsigned,unsigned> thread_coord[] );
 
 } /* namespace Impl */
 } /* namespace KokkosArray */

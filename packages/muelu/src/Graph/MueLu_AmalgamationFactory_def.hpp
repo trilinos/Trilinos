@@ -78,37 +78,38 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
-    LocalOrdinal  fullblocksize = 1;   // block dim for fixed size blocks
-    GlobalOrdinal offset = 0;          // global offset of dof gids
-    LocalOrdinal blockid = -1;         // block id in strided map
-    LocalOrdinal nStridedOffset = 0;   // DOF offset for strided block id "blockid" (default = 0)
-    LocalOrdinal stridedblocksize = fullblocksize; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
+    LO fullblocksize    = 1;    // block dim for fixed size blocks
+    GO offset           = 0;   // global offset of dof gids
+    LO blockid          = -1;  // block id in strided map
+    LO nStridedOffset   = 0;   // DOF offset for strided block id "blockid" (default = 0)
+    LO stridedblocksize = fullblocksize; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
+    GO indexBase        = A->getRowMap()->getIndexBase();  // index base for maps
 
     // 1) check for blocking/striding information
-    if(A->IsView("stridedMaps") &&
-       Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null) {
-      Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
-      fullblocksize = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize(); // TODO shorten code
-      offset   = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getOffset();
-      blockid  = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getStridedBlockId();
+
+    if (A->IsView("stridedMaps") && Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null) {
+      Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // NOTE: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+      RCP<const StridedMap> stridedRowMap = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap());
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedRowMap == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
+      fullblocksize = stridedRowMap->getFixedBlockSize();
+      offset        = stridedRowMap->getOffset();
+      blockid       = stridedRowMap->getStridedBlockId();
+
       if (blockid > -1) {
-        std::vector<size_t> stridingInfo = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getStridingData();
-        for(size_t j=0; j<Teuchos::as<size_t>(blockid); j++) {
+        std::vector<size_t> stridingInfo = stridedRowMap->getStridingData();
+        for (size_t j = 0; j < Teuchos::as<size_t>(blockid); j++)
           nStridedOffset += stridingInfo[j];
-        }
         stridedblocksize = Teuchos::as<LocalOrdinal>(stridingInfo[blockid]);
+
       } else {
         stridedblocksize = fullblocksize;
       }
       oldView = A->SwitchToView(oldView);
       GetOStream(Runtime1, 0) << "AmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << " and stridedblocksize=" << stridedblocksize << " from strided maps. offset=" << offset << std::endl;
-      /*std::cout << "fullblocksize: " << fullblocksize << std::endl;
-        std::cout << "offset: " << offset << std::endl;
-        std::cout << "blockid: " << blockid << std::endl;
-        std::cout << "nStridedOffset: " << nStridedOffset << std::endl;
-        std::cout << "stridedblocksize: " << stridedblocksize << std::endl;*/
-    } else GetOStream(Warnings0, 0) << "AmalagamationFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
+
+    } else {
+      GetOStream(Warnings0, 0) << "AmalagamationFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
+    }
     // TODO: maybe no striding information on coarser levels -> misuse nullspace vector?
 
     // 2) prepare maps for amalgamated graph of A and
@@ -124,19 +125,20 @@ namespace MueLu {
     // nodes that are stored on other procs when there are off-diagonal entries in A)
     nodegid2dofgids_ = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >);
 
-    // extract information from overlapping column map of A
-    Teuchos::RCP<const Map> colMap = A->getColMap();
+    RCP<const Map> rowMap = A->getRowMap();
+    RCP<const Map> colMap = A->getColMap();
+
     GlobalOrdinal cnt_amalRows = 0; // counts number of nodes (rows in amalgamated matrix) on current proc
-    LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(A->getColMap()->getNodeNumElements());
-    for(LocalOrdinal i=0; i<nColEle;i++) {
+    LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(colMap->getNodeNumElements());
+    for (LocalOrdinal i = 0; i < nColEle; i++) {
       // get global DOF id
       GlobalOrdinal gDofId = colMap->getGlobalElement(i);
 
       // translate DOFGid to node id
-      GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, A, fullblocksize, offset);
+      GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, A, fullblocksize, offset, indexBase);
 
       // gblockid -> gDofId/lDofId
-      if(nodegid2dofgids_->count(gNodeId) == 0) {
+      if (nodegid2dofgids_->count(gNodeId) == 0) {
 
         // current column DOF gDofId belongs to a node that has not been added
         // to nodeid2dofgids_ yet. Do it now and add ALL DOFs of node gNodeId to
@@ -145,13 +147,17 @@ namespace MueLu {
         std::vector<GlobalOrdinal> DOFs;
 
         DOFs.reserve(stridedblocksize);
-        for(LocalOrdinal k=0; k<stridedblocksize; k++) {
-          DOFs.push_back(offset + (gNodeId-offset)*fullblocksize + nStridedOffset + k);
+        for (LocalOrdinal k = 0; k < stridedblocksize; k++) {
+          // here, the assumption is, that the node map has the same indexBase as the dof map
+          //                            this is the node map index base                    this is the dof map index base
+          GO gDofIndex = offset + (gNodeId-indexBase)*fullblocksize + nStridedOffset + k + indexBase;
+          if (colMap->isNodeGlobalElement(gDofIndex))
+            DOFs.push_back(gDofIndex);
         }
 
         (*nodegid2dofgids_)[gNodeId] = DOFs;
 
-        if(A->getRowMap()->isNodeGlobalElement(gDofId)) {
+        if (rowMap->isNodeGlobalElement(gDofId)) {
           gNodeIds->push_back(gNodeId);
           cnt_amalRows++; // new local block row in amalgamated matrix graph
         }
@@ -167,8 +173,9 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset) {
-    GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset) / blockSize + offset;
+  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset, const GlobalOrdinal indexBase) {
+    // here, the assumption is, that the node map has the same indexBase as the dof map
+    GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset - indexBase) / blockSize + indexBase;
     return globalblockid;
   }
 
@@ -202,10 +209,11 @@ const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggStart, T
     }
 
     // count, how many dofs have been recorded for each aggregate so far
-    Array<LO> numDofs(aggregates.GetNumAggregates(),0); // empty array with number of Dofs for each aggregate
+    Array<LO> numDofs(aggregates.GetNumAggregates(), 0); // empty array with number of Dofs for each aggregate
 
     for (LO lnode = 0; lnode < size; ++lnode) {
       LO myAgg = vertex2AggId[lnode];
+
       if (procWinner[lnode] == myPid) {
         //GO gnodeid = map.getGlobalElement(lnode);
         GO gnodeid = (aggregates.GetMap())->getGlobalElement(lnode);

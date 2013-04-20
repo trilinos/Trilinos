@@ -2445,7 +2445,7 @@ namespace Iopx {
           // FIXME SIZE
           decomp->get_block_connectivity(get_file_pointer(), data, id, order, element_nodes);
         }
-        else if (field.get_name() == "ids") {
+        else if (field.get_name() == "ids" || field.get_name() == "implicit_ids") {
           // Map the local ids in this element block
           // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
           get_map(EX_ELEM_BLOCK).map_implicit_data(data, field, num_to_get, eb->get_offset());
@@ -3835,7 +3835,8 @@ namespace Iopx {
         } else if (field.get_name() == "ids") {
           size_t glob_map_offset = eb->get_property("global_map_offset").get_int();
           handle_element_ids(eb, data, num_to_get, glob_map_offset+proc_offset, file_count);
-
+        } else if (field.get_name() == "implicit_ids") {
+          // Do nothing, input only field.
         } else if (field.get_name() == "skin") {
           // This is (currently) for the skinned body. It maps the
           // side element on the skin to the original element/local

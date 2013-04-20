@@ -50,6 +50,7 @@
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_MapFactory.hpp"
 
+#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_CoordinatesTransferFactory_decl.hpp"
 
@@ -64,6 +65,7 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory for coordinates generation");
     validParamList->set< RCP<const FactoryBase> >("Aggregates",     Teuchos::null, "Factory for coordinates generation");
+    validParamList->set< RCP<const FactoryBase> >("CoarseMap",      Teuchos::null, "Generating factory of the coarse map");
 
     return validParamList;
   }
@@ -72,6 +74,7 @@ namespace MueLu {
   void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "Coordinates");
     Input(fineLevel, "Aggregates");
+    Input(fineLevel, "CoarseMap");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -82,6 +85,28 @@ namespace MueLu {
 
     RCP<Aggregates>     aggregates = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
     RCP<MultiVector>    fineCoords = Get< RCP<MultiVector> >(fineLevel, "Coordinates");
+    RCP<const Map>      coarseMap  = Get< RCP<const Map> >  (fineLevel, "CoarseMap");
+
+    // coarseMap is being used to set up the domain map of tentative P, and therefore, the row map of Ac
+    // Therefore, if we amalgamate coarseMap, logical nodes in the coordinates vector would correspond to
+    // logical blocks in the matrix
+
+    ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
+    LO                  blkSize      = 1;
+    if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
+      blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
+
+    GO                  indexBase    = coarseMap->getIndexBase();
+    size_t              numElements  = elementAList.size() / blkSize;
+    Array<GO>           elementList(numElements);
+
+    // Amalgamate the map
+    LO numRows = 0;
+    for (LO i = 0; i < static_cast<LO>(numElements); i++)
+      elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
+
+    RCP<const Map> coarseCoordMap = MapFactory        ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
+    RCP<MultiVector> coarseCoords = MultiVectorFactory::Build(coarseCoordMap, fineCoords->getNumVectors());
 
     // Maps
     RCP<const Map> uniqueMap    = fineCoords->getMap();
@@ -99,11 +124,9 @@ namespace MueLu {
     const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
     const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
 
-    // Coarse map dist objects
-    RCP<Map> coarseMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), numAggs, uniqueMap->getIndexBase(), uniqueMap->getComm());
-    RCP<MultiVector> coarseCoords = MultiVectorFactory::Build(coarseMap, fineCoords->getNumVectors());
-
     // Fill in coarse coordinates
+    // FIXME: in the case of coupled aggregation, do we need to fetch ghost data
+    // in order to properly compute the center of the aggregate?
     for (size_t j = 0; j < fineCoords->getNumVectors(); j++) {
       ArrayRCP<const Scalar> fineCoordsData = fineCoords->getData(j);
       ArrayRCP<Scalar>     coarseCoordsData = coarseCoords->getDataNonConst(j);

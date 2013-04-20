@@ -41,208 +41,112 @@
 //@HEADER
 */
 
+#if defined( KOKKOSARRAY_ATOMIC_HPP ) && ! defined( KOKKOSARRAY_ATOMIC_COMPARE_EXCHANGE_STRONG_HPP )
+#define KOKKOSARRAY_ATOMIC_COMPARE_EXCHANGE_STRONG_HPP
 
-template<typename T>
+namespace Kokkos {
+
+//----------------------------------------------------------------------------
+// Cuda native CAS supports int, unsigned int, and unsigned long long int (non-standard type).
+// Must cast-away 'volatile' for the CAS call.
+
+#if defined( KOKKOS_ATOMICS_USE_CUDA )
+
 KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,int>::value, int  >::type
-atomic_compare_exchange(volatile T* dest, T compare, T val) {
-  #if defined(GNU_ATOMICS_GCC) || defined(GNU_ATOMICS_INTEL)
-	return __sync_val_compare_and_swap(dest,compare,val);
-  #endif
+int atomic_compare_exchange( volatile int * const dest, const int compare, const int val)
+{ return atomicCAS((int*)dest,compare,val); }
 
-  #ifdef OMP31_ATOMICS
-	T retval;
-    #pragma omp critical
-	{
-	  retval = dest[0];
-	  if(retval == compare)
-		dest[0] = val;
-	}
-    return retval;
-  #endif
+KOKKOSARRAY_INLINE_FUNCTION
+unsigned int atomic_compare_exchange( volatile unsigned int * const dest, const unsigned int compare, const unsigned int val)
+{ return atomicCAS((unsigned int*)dest,compare,val); }
 
-  #ifdef CUDA_ATOMICS
-    return atomicCAS((T*) dest,compare,val);
-  #endif
+KOKKOSARRAY_INLINE_FUNCTION
+unsigned long long int atomic_compare_exchange( volatile unsigned long long int * const dest ,
+                                                const unsigned long long int compare ,
+                                                const unsigned long long int val )
+{ return atomicCAS((unsigned long long int*)dest,compare,val); }
+
+template < typename T >
+KOKKOSARRAY_INLINE_FUNCTION
+typename Kokkos::Impl::UnionPair<T,int,unsigned long long int>::first_type
+atomic_compare_exchange( volatile T * const dest , const T compare , const T val )
+{
+  typedef Kokkos::Impl::UnionPair<T,int,unsigned long long int> union_type ;
+  typedef typename union_type::second_type int_type ;
+
+  return union_type( atomicCAS( (int_type *) union_type::cast( dest ) ,
+                                union_type::cast( compare ) ,
+                                union_type::cast( val ) )
+                   ).first ;
 }
 
-template<typename T>
+//----------------------------------------------------------------------------
+// GCC native CAS supports int, long, unsigned int, unsigned long.
+// Intel native CAS support int and long with the same interface as GCC.
+
+#elif defined(KOKKOS_ATOMICS_USE_GCC) || defined(KOKKOS_ATOMICS_USE_INTEL)
+
 KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,long long int>::value, long long int  >::type
-atomic_compare_exchange(volatile T* dest, T compare, T val) {
-  #if defined(GNU_ATOMICS_GCC) || defined(GNU_ATOMICS_INTEL)
-	return __sync_val_compare_and_swap(dest,compare,val);
-  #endif
+int atomic_compare_exchange( volatile int * const dest, const int compare, const int val)
+{ return __sync_val_compare_and_swap(dest,compare,val); }
 
-  #ifdef OMP31_ATOMICS
-	T retval;
-    #pragma omp critical
-	{
-	  retval = dest[0];
-	  if(retval == compare)
-		dest[0] = val;
-	}
-    return retval;
-  #endif
+KOKKOSARRAY_INLINE_FUNCTION
+long atomic_compare_exchange( volatile long * const dest, const long compare, const long val )
+{ return __sync_val_compare_and_swap(dest,compare,val); }
 
-  #ifdef CUDA_ATOMICS
-    return atomicCAS((unsigned long long int*) reinterpret_cast<volatile unsigned long long int*>(dest),
-    		*reinterpret_cast<unsigned long long int*>(&compare),*reinterpret_cast<unsigned long long int*>(&val));
-  #endif
+#if defined( KOKKOS_ATOMICS_USE_GCC )
+
+// GCC supports unsigned
+
+KOKKOSARRAY_INLINE_FUNCTION
+unsigned int atomic_compare_exchange( volatile unsigned int * const dest, const unsigned int compare, const unsigned int val )
+{ return __sync_val_compare_and_swap(dest,compare,val); }
+
+KOKKOSARRAY_INLINE_FUNCTION
+unsigned long atomic_compare_exchange( volatile unsigned long * const dest ,
+                                       const unsigned long compare ,
+                                       const unsigned long val )
+{ return __sync_val_compare_and_swap(dest,compare,val); }
+
+#endif
+
+template < typename T >
+KOKKOSARRAY_INLINE_FUNCTION
+typename Kokkos::Impl::UnionPair<T,int,long>::first_type
+atomic_compare_exchange( volatile T * const dest, const T compare, const T val )
+{
+  typedef Kokkos::Impl::UnionPair<T,int,long> union_type ;
+
+  return union_type(
+    __sync_val_compare_and_swap( union_type::cast( dest ) ,
+                                 union_type::cast( compare ) ,
+                                 union_type::cast( val ) )
+  ).first ;
 }
 
-template<typename T>
+//----------------------------------------------------------------------------
+
+#elif defined( KOKKOS_ATOMICS_USE_OMP31 )
+
+template< typename T >
 KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,long int>::value && (sizeof(T) == sizeof(int)), long int >::type
-atomic_compare_exchange(volatile T* dest, T compare, T val) {
-  return (long int) atomic_compare_exchange((int*) dest,*reinterpret_cast<int*>(&compare),*reinterpret_cast<int*>(&val));
+T atomic_compare_exchange( volatile T * const dest, const T compare, const T val )
+{
+  T retval;
+#pragma omp critical
+  {
+    retval = dest[0];
+    if ( retval == compare )
+  	dest[0] = val;
+  }
+  return retval;
 }
 
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,long int>::value && (sizeof(T) == sizeof(long long int)), long int >::type
-atomic_compare_exchange(volatile T* dest, T compare, T val) {
-  return (long int) atomic_compare_exchange((long long int*) dest,*reinterpret_cast<long long int*>(&compare),*reinterpret_cast<long long int*>(&val));
-}
+#endif
 
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,unsigned int>::value, unsigned int  >::type
-atomic_compare_exchange(volatile T* dest, T compare, T val) {
-  #ifdef GNU_ATOMICS_GCC
-	return __sync_val_compare_and_swap(dest,compare,val);
-  #endif
+//----------------------------------------------------------------------------
 
-  #ifdef GNU_ATOMICS_INTEL
-	volatile int* dest_int = reinterpret_cast<volatile int*>(dest);
-	int compare_int = *reinterpret_cast<int*> (&compare);
-	int val_int = *reinterpret_cast<int*> (&val);
-	int return_value = __sync_val_compare_and_swap(dest_int,compare_int,val_int);
-	return *reinterpret_cast<T*>(&return_value);
-  #endif
+} // namespace Kokkos
 
-  #ifdef OMP31_ATOMICS
-	T retval;
-    #pragma omp critical
-	{
-	  retval = dest[0];
-	  if(retval == compare)
-		dest[0] = val;
-	}
-    return retval;
-  #endif
+#endif
 
-  #ifdef CUDA_ATOMICS
-    return atomicCAS((T*) dest,compare,val);
-  #endif
-}
-
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,unsigned long long int>::value, unsigned long long int  >::type
-atomic_compare_exchange(volatile T* dest, T compare, T val) {
-  #ifdef GNU_ATOMICS_GCC
-	return __sync_val_compare_and_swap(dest,compare,val);
-  #endif
-
-  #ifdef GNU_ATOMICS_INTEL
-	volatile long long int* dest_int = reinterpret_cast<volatile long long int*>(dest);
-	long long int compare_int = *reinterpret_cast<long long int*> (&compare);
-	long long int val_int = *reinterpret_cast<long long int*> (&val);
-	long long int return_value = __sync_val_compare_and_swap(dest_int,compare_int,val_int);
-	return *reinterpret_cast<T*>(&return_value);
-  #endif
-
-  #ifdef OMP31_ATOMICS
-	T retval;
-    #pragma omp critical
-	{
-	  retval = dest[0];
-	  if(retval == compare)
-		dest[0] = val;
-	}
-    return retval;
-  #endif
-
-  #ifdef CUDA_ATOMICS
-    return atomicCAS((T*) dest,compare,val);
-  #endif
-}
-
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,unsigned long int>::value && (sizeof(T) == sizeof(unsigned int)), unsigned long int >::type
-atomic_compare_exchange(volatile T* dest, T compare, T val) {
-  return (unsigned long int) atomic_compare_exchange((unsigned int*) dest,*reinterpret_cast<unsigned int*>(&compare),*reinterpret_cast<unsigned int*>(&val));
-}
-
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,unsigned long int>::value && (sizeof(T) == sizeof(unsigned long long int)), unsigned long int >::type
-atomic_compare_exchange(volatile T* dest, T compare, T val) {
-  return (unsigned long int) atomic_compare_exchange((unsigned long long int*) dest,*reinterpret_cast<unsigned long long int*>(&compare),*reinterpret_cast<unsigned long long int*>(&val));
-}
-
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,float>::value, float  >::type
-atomic_compare_exchange(volatile T* dest, T compare, T val) {
-  #if defined(GNU_ATOMICS_GCC) || defined(GNU_ATOMICS_INTEL)
-	volatile int32_t* dest_int = reinterpret_cast<volatile int32_t*>(dest);
-	int32_t compare_int = *reinterpret_cast<int32_t*> (&compare);
-	int32_t val_int = *reinterpret_cast<int32_t*> (&val);
-	int32_t return_value = __sync_val_compare_and_swap(dest_int,compare_int,val_int);
-	return *reinterpret_cast<float*> (&return_value);
-  #endif
-
-  #ifdef OMP31_ATOMICS
-	float retval;
-    #pragma omp critical
-	{
-	  retval = dest[0];
-	  if(retval == compare)
-		dest[0] = val;
-	}
-    return retval;
-  #endif
-
-  #ifdef CUDA_ATOMICS
-    volatile unsigned int* dest_int = reinterpret_cast<volatile unsigned int*>(dest);
-    unsigned int compare_int = *reinterpret_cast<unsigned int*> (&compare);
-    unsigned int val_int = *reinterpret_cast<unsigned int*> (&val);
-    unsigned int return_value = atomicCAS((unsigned int*) dest_int,compare_int,val_int);
-	return *reinterpret_cast<float*> (&return_value);
-  #endif
-}
-
-template<typename T>
-KOKKOSARRAY_INLINE_FUNCTION
-typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,double>::value, double  >::type
-atomic_compare_exchange(volatile T* dest, T compare, T val) {
-  #if defined(GNU_ATOMICS_GCC) || defined(GNU_ATOMICS_INTEL)
-    volatile int64_t* dest_int = reinterpret_cast<volatile int64_t*>(dest);
-    int64_t compare_int = *reinterpret_cast<int64_t*> (&compare);
-    int64_t val_int = *reinterpret_cast<int64_t*> (&val);
-	int64_t return_value = __sync_val_compare_and_swap(dest_int,compare_int,val_int);
-	return *reinterpret_cast<double*> (&return_value);
-  #endif
-
-  #ifdef OMP31_ATOMICS
-	double retval;
-    #pragma omp critical
-	{
-	  retval = dest[0];
-	  if(retval == compare)
-		dest[0] = val;
-	}
-    return retval;
-  #endif
-
-  #ifdef CUDA_ATOMICS
-    volatile unsigned long long int* dest_int = reinterpret_cast<volatile unsigned long long int*>(dest);
-    unsigned long long int compare_int = *reinterpret_cast<unsigned long long int*> (&compare);
-    unsigned long long int val_int = *reinterpret_cast<unsigned long long int*> (&val);
-    unsigned long long int return_value = atomicCAS((unsigned long long int*) dest_int,compare_int,val_int);
-	return *reinterpret_cast<double*> (&return_value);
-  #endif
-}

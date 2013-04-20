@@ -3,8 +3,19 @@ Release Notes for Trilinos Package Teuchos
 ------------------------------------------
 
 
-Trilinos 11.4:
+Trilinos 11.3:
 --------------
+
+(*) Added optional automatic global reductions of pass/fail to Teuchos Unit
+Test Harness: Prior to this feature addition, only the result on the root
+process of a parallel unit test would determine pass/fail, even if tests on
+other proesses failed.  This makes it easier to write parallel unit tests and
+results in more robust test code.  For a discussion, see Trilinos issue #5909.
+An example can be found in
+teuchos/comm/test/UnitTesting/UnitTestHarness_Parallel_UnitTests.cpp (see the
+CMakeLists.txt file for how that test is run).  NOTE: By default, no global
+reductions of pass/fail are done as to maintain perfect backward
+compatibility.
 
 (*) Added new feature to TimeMonitor: You may now enable or disable a
 timer (instance of Time) by name.  Disabled timers ignore start() and

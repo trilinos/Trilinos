@@ -233,7 +233,17 @@ namespace MueLu {
           numTotal = A->getNodeNumEntries();
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "amalgamated graph of A"));
-          graph->SetBoundaryNodeMap(boundaryNodes);
+          graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes  = 0;
+            GO numGlobalBoundaryNodes = 0;
+            for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
+              if (amalgBoundaryNodes[i])
+                numLocalBoundaryNodes++;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+          }
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", 1);
 
@@ -296,9 +306,10 @@ namespace MueLu {
           // [*1*]: see [*0*]
 
           // Check that the number of local coordinates is consistent with the #rows in A
-          std::string msg = "MueLu::CoalesceDropFactory::Build : coordinate vector length is incompatible with number of rows in A.  The vector length should be the same as the number of mesh points.";
-          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible, msg);
+          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible,
+                                     "Coordinate vector length (" << Coords->getLocalLength() << ") is incompatible with number of rows in A (" << A->getRowMap() << ") by modulo block size ("<< blkSize <<").");
 
+          const RCP<const Map> colMap = A->getColMap();
           RCP<const Map> uniqueMap, nonUniqueMap;
           if (blkSize == 1) {
             uniqueMap    = A->getRowMap();
@@ -309,59 +320,10 @@ namespace MueLu {
             TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible, "Different index bases for matrix and coordinates");
 
             // Amalgamate column map
-            const RCP<const Map> colMap = A->getColMap();
-            std::ostringstream mypid;
-            mypid << colMap->getComm()->getRank();
-
             ArrayView<const GO> elementAList = colMap->getNodeElementList();
             size_t              numElements  = elementAList.size();
             Array<GO>           elementList(numElements);
-            // NOTE: very ineffective, should be replaced
-            std::set<GO>        filter;
-
-//#ifdef HAVE_MUELU_DEBUG
-            // For now, leave it outside of HAVE_MUELU_DEBUG. In the future, we need to move it there
-
-            // Check that matrix column map is consistent with this block size.
-            // We assume that GIDs corresponding to blocks are all present and numbered consecutive, i.e.
-            // if one of the entries in a point map is present, then all entries in the same block must
-            // be present.
-            std::string errMsg;
-            bool columnMapIsBad = false;
-            if (numElements % blkSize) {
-              columnMapIsBad = true;
-              std::ostringstream buf1,buf2;
-              buf1 << numElements; buf2 << blkSize;
-              errMsg = "[pid " + mypid.str() + "] Number of IDs in matrix column map (" + buf1.str()
-                       + ") is not a multiple of block size (" + buf2.str() + ").";
-            }
-            for (LO id = 0; id < static_cast<LO>(numElements); id += blkSize) {
-              GO ID0 = elementAList[id];
-              if (columnMapIsBad || ((ID0 - indexBase) % blkSize)) {
-                if (!columnMapIsBad) {
-                  columnMapIsBad = true;
-                  std::ostringstream buf0,buf1,buf2,buf3,buf4;
-                  buf0 << colMap->getLocalElement(ID0); buf1 << ID0; buf2 << indexBase;
-                  buf3 << id/blkSize;  buf4 << blkSize;
-                  errMsg = "[pid " + mypid.str() + "] First GID " + buf1.str() + "(LID " + buf0.str()
-                           + ") (minus indexBase " + buf2.str() + ") in block "
-                           + buf3.str() + " of column map is not a multiple of block size ("
-                           + buf4.str() + ").";
-                }
-                break;
-              }
-
-              for (LO k = 1; k < blkSize; k++)
-                if (elementAList[id+k] != ID0+k) {
-                  columnMapIsBad = true;
-                  std::ostringstream buf1,buf2,buf3,buf4;
-                  buf1 << id/blkSize; buf2 << ID0+k; buf3 << k; buf4 << blkSize;
-                  errMsg = "[pid " + mypid.str() + "] Block " + buf1.str() + " in column map is missing GID " + buf2.str()
-                           + "(entry " + buf3.str() + " in block of size " + buf4.str() = ").";
-                }
-            }
-            TEUCHOS_TEST_FOR_EXCEPTION(columnMapIsBad, Exceptions::RuntimeError, errMsg);
-//#endif
+            std::set<GO>        filter;        // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
 
             LO numRows = 0;
             for (LO id = 0; id < static_cast<LO>(numElements); id++) {
@@ -372,6 +334,17 @@ namespace MueLu {
               }
             }
             elementList.resize(numRows);
+
+#ifdef HAVE_MUELU_DEBUG
+            // At the moment we assume that first GIDs in nonUniqueMap
+            // coincide with those in uniqueMap.
+            for (LO row = 0; row < Teuchos::as<LO> (uniqueMap->getNodeNumElements ()); ++row) {
+              TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getGlobalElement(row) != elementList[row], Exceptions::RuntimeError,
+                                         "row = " << row << ", uniqueMap GID = "
+                                         << uniqueMap->getGlobalElement(row) << ", nonUniqueMap GID = "
+                                         << elementList[row] << std::endl);
+            }
+#endif
 
             nonUniqueMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, uniqueMap->getComm());
           }
@@ -404,9 +377,14 @@ namespace MueLu {
                   ArrayView<const LocalOrdinal> inds;
                   ArrayView<const Scalar>       vals;
                   A->getLocalRowView(row*blkSize+j, inds, vals);
-                  for (LO k = 0; k < inds.size(); k++)
-                    // FIXME FIXME FIXME
-                    cols.insert(inds[k]/blkSize);
+                  for (LO k = 0; k < inds.size(); k++) {
+                    // TODO: speed this up by using something like map for translation
+                    LO  dofLID = inds[k];
+                    GO  dofGID = colMap->getGlobalElement(dofLID);
+                    GO nodeGID = (dofGID-indexBase)/blkSize + indexBase;
+                    LO nodeLID = nonUniqueMap->getLocalElement(nodeGID);
+                    cols.insert(nodeLID);
+                  }
                 }
                 indicesExtra.resize(cols.size());
                 size_t pos = 0;
@@ -466,9 +444,14 @@ namespace MueLu {
                   ArrayView<const LocalOrdinal> inds;
                   ArrayView<const Scalar>       vals;
                   A->getLocalRowView(row*blkSize+j, inds, vals);
-                  for (LO k = 0; k < inds.size(); k++)
-                    // FIXME FIXME FIXME
-                    cols.insert(inds[k]/blkSize);
+                  for (LO k = 0; k < inds.size(); k++) {
+                    // TODO: speed this up by using something like map for translation
+                    LO  dofLID = inds[k];
+                    GO  dofGID = colMap->getGlobalElement(dofLID);
+                    GO nodeGID = (dofGID-indexBase)/blkSize + indexBase;
+                    LO nodeLID = nonUniqueMap->getLocalElement(nodeGID);
+                    cols.insert(nodeLID);
+                  }
                 }
               } else {
                 cols.insert(row);
@@ -543,7 +526,7 @@ namespace MueLu {
                                        << " using threshold " << dirichletThreshold << std::endl;
           }
 
-          Set(currentLevel, "Graph", graph);
+          Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", blkSize);
         } //if ( (blkSize == 1) && (threshold == STS::zero()) )
       }
@@ -553,7 +536,8 @@ namespace MueLu {
           GlobalOrdinal numGlobalTotal, numGlobalDropped;
           sumAll(comm, numTotal,   numGlobalTotal);
           sumAll(comm, numDropped, numGlobalDropped);
-          GetOStream(Statistics0, -1) << "number of dropped " << numGlobalDropped << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
+          GetOStream(Statistics0, -1) << "Number of dropped entries in amalgamated graph: " << numGlobalDropped << "/" << numGlobalTotal
+              << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
       }
 
     } else {
@@ -566,7 +550,7 @@ namespace MueLu {
 
       LO blockdim = 1;                          // block dim for fixed size blocks
       GO indexBase = rowMap->getIndexBase();    // index base of maps
-      GO offset    = indexBase;                 // global offset of dof gids
+      GO offset    = 0; //indexBase;  ? doesn't make sense               // global offset of dof gids
 
       // 1) check for blocking/striding information
       if(A->IsView("stridedMaps") &&
@@ -596,7 +580,7 @@ namespace MueLu {
       // 3) generate row map for amalgamated matrix (graph of A)
       //    with same distribution over all procs as row map of A
       Teuchos::ArrayRCP<GlobalOrdinal> arr_gNodeIds = Teuchos::arcp( gNodeIds );
-      Teuchos::RCP<Map> nodeMap = MapFactory::Build(A->getRowMap()->lib(), num_blockids, arr_gNodeIds(), A->getRowMap()->getIndexBase(), A->getRowMap()->getComm());
+      Teuchos::RCP<Map> nodeMap = MapFactory::Build(A->getRowMap()->lib(), num_blockids, arr_gNodeIds(), indexBase, A->getRowMap()->getComm()); // note: nodeMap has same indexBase as row map of A (=dof map)
       GetOStream(Statistics0, -1) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
 
       /////////////////////// experimental
@@ -613,7 +597,7 @@ namespace MueLu {
         GlobalOrdinal grid = rowMap->getGlobalElement(row);
 
         // translate grid to nodeid
-        GlobalOrdinal nodeId = AmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset);
+        GlobalOrdinal nodeId = AmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset, indexBase);
 
         size_t nnz = A->getNumEntriesInLocalRow(row);
         Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -629,7 +613,7 @@ namespace MueLu {
 
           if((predrop_ == Teuchos::null && vals[col]!=0.0) ||
              (predrop_ != Teuchos::null && predrop_->Drop(row,grid, col,indices[col],gcid,indices,vals) == false)) {
-            GlobalOrdinal cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset);
+            GlobalOrdinal cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset, indexBase);
             cnodeIds->push_back(cnodeId);
             realnnz++; // increment number of nnz in matrix row
           }

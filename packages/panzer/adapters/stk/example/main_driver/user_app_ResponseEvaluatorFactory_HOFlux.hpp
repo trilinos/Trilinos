@@ -10,13 +10,13 @@ namespace user_app {
 
 /** This class defines a response based on a functional. */
   
-template <typename EvalT> 
-class ResponseEvaluatorFactory_HOFlux : public panzer::ResponseEvaluatorFactory_Functional<EvalT> 
+template <typename EvalT,typename LO,typename GO> 
+class ResponseEvaluatorFactory_HOFlux : public panzer::ResponseEvaluatorFactory_Functional<EvalT,LO,GO> 
 {
 public:
 
    ResponseEvaluatorFactory_HOFlux(MPI_Comm comm, int cubatureDegree)
-     : panzer::ResponseEvaluatorFactory_Functional<EvalT>(comm,cubatureDegree,false)
+     : panzer::ResponseEvaluatorFactory_Functional<EvalT,LO,GO>(comm,cubatureDegree,false)
    {}
 
    virtual ~ResponseEvaluatorFactory_HOFlux() {}
@@ -45,7 +45,7 @@ struct HOFluxResponse_Builder {
 
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
-  { return Teuchos::rcp(new ResponseEvaluatorFactory_HOFlux<T>(comm,cubatureDegree)); }
+  { return Teuchos::rcp(new ResponseEvaluatorFactory_HOFlux<T,int,int>(comm,cubatureDegree)); }
 };
 
 }

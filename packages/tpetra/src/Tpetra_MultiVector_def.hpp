@@ -610,20 +610,36 @@ namespace Tpetra {
 
     ArrayView<const Scalar> srcView = sourceMV.cview_ ();
     const size_type numExportLIDs = exportLIDs.size ();
-    if (sourceMV.isConstantStride ()) {
-      for (size_type k = 0; k < numExportLIDs; ++k) {
-        const size_t localRow = as<size_t> (exportLIDs[k]);
-        for (size_t j = 0; j < numCols; ++j) {
-          *expptr++ = srcView[localRow + j*stride];
+
+    if (numCols == 1) {
+      if (sourceMV.isConstantStride ()) {
+        for (size_type k = 0; k < numExportLIDs; ++k) {
+          exports[k] = srcView[exportLIDs[k]];
+        }
+      }
+      else {
+        const size_t offset = sourceMV.whichVectors_[0] * stride;
+        for (size_type k = 0; k < numExportLIDs; ++k) {
+          exports[k] = srcView[exportLIDs[k] + offset];
         }
       }
     }
     else {
-      ArrayView<const size_t> srcWhichVectors = sourceMV.whichVectors_ ();
-      for (size_type k = 0; k < numExportLIDs; ++k) {
-        const size_t localRow = as<size_t> (exportLIDs[k]);
-        for (size_t j = 0; j < numCols; ++j) {
-          *expptr++ = srcView[localRow + srcWhichVectors[j]*stride];
+      if (sourceMV.isConstantStride ()) {
+        for (size_type k = 0; k < numExportLIDs; ++k) {
+          const size_t localRow = as<size_t> (exportLIDs[k]);
+          for (size_t j = 0; j < numCols; ++j) {
+            *expptr++ = srcView[localRow + j*stride];
+          }
+        }
+      }
+      else {
+        ArrayView<const size_t> srcWhichVectors = sourceMV.whichVectors_ ();
+        for (size_type k = 0; k < numExportLIDs; ++k) {
+          const size_t localRow = as<size_t> (exportLIDs[k]);
+          for (size_t j = 0; j < numCols; ++j) {
+            *expptr++ = srcView[localRow + srcWhichVectors[j]*stride];
+          }
         }
       }
     }

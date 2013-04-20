@@ -57,14 +57,43 @@
 
 namespace panzer {
 
+template <typename LO,typename GO>
+void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
+                                                panzer::Traits::EvalData workset, 
+                                                Teuchos::ArrayRCP<double> & dgdx) const
+{
+  std::vector<int> LIDs;
+ 
+  // for convenience pull out some objects from workset
+  std::string blockId = workset.block_id;
+  const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+
+  // NOTE: A reordering of these loops will likely improve performance
+  //       The "getGIDFieldOffsets may be expensive.  However the
+  //       "getElementGIDs" can be cheaper. However the lookup for LIDs
+  //       may be more expensive!
+
+  // scatter operation for each cell in workset
+  for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+    std::size_t cellLocalId = localCellIds[worksetCellIndex];
+    LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+
+    // loop over basis functions
+    for(std::size_t i=0;i<LIDs.size();i++)
+      dgdx[LIDs[i]] += cellIntegral(worksetCellIndex).dx(i); // its possible functional is independent of solution value!
+  }
+}
+
 /** This class handles responses with values aggregated
   * on each finite element cell.
   */
 template<typename EvalT, typename Traits>
 ResponseScatterEvaluator_Functional<EvalT,Traits>::
 ResponseScatterEvaluator_Functional(const std::string & name,
-                                    const CellData & cd)
+                                    const CellData & cd,
+                                    const Teuchos::RCP<FunctionalScatterBase> & functionalScatter)
   : responseName_(name)
+  , scatterObj_(functionalScatter)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -89,8 +118,10 @@ template<typename EvalT, typename Traits>
 ResponseScatterEvaluator_Functional<EvalT,Traits>::
 ResponseScatterEvaluator_Functional(const std::string & integrandName,
                                     const std::string & responseName,
-                                    const CellData & cd)
+                                    const CellData & cd,
+                                    const Teuchos::RCP<FunctionalScatterBase> & functionalScatter)
   : responseName_(responseName)
+  , scatterObj_(functionalScatter)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -142,7 +173,19 @@ template < >
 void ResponseScatterEvaluator_Functional<panzer::Traits::Jacobian,panzer::Traits>::
 evaluateFields(panzer::Traits::EvalData d)
 {
-   std::cout << "STUFF" << std::endl;
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Thyra::SpmdVectorBase;
+
+  TEUCHOS_ASSERT(scatterObj_!=Teuchos::null);
+
+  // grab local data for inputing
+  Teuchos::ArrayRCP<double> local_dgdx;
+  RCP<SpmdVectorBase<double> > dgdx = rcp_dynamic_cast<SpmdVectorBase<double> >(responseObj_->getGhostedVector());
+  dgdx->getNonconstLocalData(ptrFromRef(local_dgdx));
+  TEUCHOS_ASSERT(!local_dgdx.is_null());
+
+  scatterObj_->scatterDerivative(cellIntegral_,d,local_dgdx);
 }
 
 }

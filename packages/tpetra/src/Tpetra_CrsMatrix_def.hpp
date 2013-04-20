@@ -2418,17 +2418,20 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::mergeRedundantEntries()
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  mergeRedundantEntries ()
   {
     TEUCHOS_TEST_FOR_EXCEPTION(isStaticGraph() == true, std::runtime_error,
-        typeName(*this) << "::mergeRedundantEntries(): cannot merge with static graph.");
-    if (myGraph_->isMerged() == false) {
-      for (size_t row=0; row < getNodeNumRows(); ++row) {
-        RowInfo rowInfo = myGraph_->getRowInfo(row);
-        myGraph_->template mergeRowIndicesAndValues<typename ArrayRCP<Scalar>::iterator>(rowInfo,this->getViewNonConst(rowInfo).begin(), std::plus<Scalar>());
+      typeName(*this) << "::mergeRedundantEntries: Cannot merge with static graph.");
+    if (! myGraph_->isMerged ()) {
+      const size_t nodeNumRows = getNodeNumRows ();
+      for (size_t row = 0; row < nodeNumRows; ++row) {
+        RowInfo rowInfo = myGraph_->getRowInfo (row);
+        Teuchos::ArrayView<Scalar> rowView = (this->getViewNonConst (rowInfo)) ();
+        myGraph_->template mergeRowIndicesAndValues<Scalar> (rowInfo, rowView);
       }
-      // we just merged every row
-      myGraph_->setMerged(true);
+      myGraph_->setMerged (true); // we just merged every row
     }
   }
 

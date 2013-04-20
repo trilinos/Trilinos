@@ -41,25 +41,15 @@ CUDA | Cuda | cuda )
   OPTFLAGS="${OPTFLAGS} ${HAVE_CUDA}"
   NVCC_SOURCES="${NVCC_SOURCES} ${KOKKOSARRAY}/src/Cuda/*.cu"
   #
-  # Extract release major and minor version from compiler
-  #
-  CUDA_VERSION="`nvcc --version | sed -n -e '/release/{s/^.*release //;s/,.*$//;p}'`"
-  CUDA_VERSION_MAJOR=`echo ${CUDA_VERSION} | sed 's/\..*//'`
-  CUDA_VERSION_MINOR=`echo ${CUDA_VERSION} | sed 's/^.*\.//'`
-  #
   # -x cu : process all files through the Cuda compiler as Cuda code.
   # -lib -o : produce library
   #
   NVCC="nvcc"
-  NVCC="${NVCC} -gencode arch=compute_20,code=sm_20"
-  if [ 5 -le ${CUDA_VERSION_MAJOR} ] ;
-  then
-    NVCC="${NVCC} -gencode arch=compute_30,code=sm_30"
-  fi
+  NVCC="${NVCC} -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,code=sm_30"
   NVCC="${NVCC} -Xcompiler -Wall,-ansi"
   NVCC="${NVCC} -lib -o libCuda.a -x cu"
 
-  LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcuda -lcusparse"
+  LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcusparse"
   ;;
 #-------------------------------
 GNU | gnu | g++ )

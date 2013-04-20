@@ -71,6 +71,7 @@ extern void test_device_cuda_reduce();
 extern void test_device_cuda_reduce_dynamic();
 extern void test_device_cuda_reduce_dynamic_view();
 extern void test_device_cuda_multi_reduce();
+extern void test_device_cuda_atomic();
 
 TEST_F( cuda, view_impl )
 {
@@ -110,6 +111,11 @@ TEST_F( cuda, multi_reduce )
 TEST_F( cuda, tile )
 {
   test_device_cuda_tile();
+}
+
+TEST_F( cuda, atomic )
+{
+  test_device_cuda_atomic();
 }
 
 }

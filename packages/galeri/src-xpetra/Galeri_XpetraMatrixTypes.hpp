@@ -138,6 +138,7 @@ namespace Galeri {
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+      GlobalOrdinal indexBase = map->getIndexBase();
 
       Teuchos::RCP<const Teuchos::Comm<int> > comm = map->getComm();
 
@@ -151,30 +152,24 @@ namespace Galeri {
       comm->barrier();
       if (comm->getRank() == 0) {
         std::cout << "starting global insert" << std::endl;
-	//        std::cout << MemUtils::PrintMemoryUsage() << std::endl;
       }
-
-/*
-      double t0 = MPI_Wtime();
-      double t1,t2;
-*/
 
       Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
       timer->start(true);
 
       for (LocalOrdinal i = 0; i < NumMyElements; ++i)
         {
-          if (MyGlobalElements[i] == 0)
+          if (MyGlobalElements[i] == indexBase)
             {
               // off-diagonal for first row
-              Indices[0] = 1;
+              Indices[0] = 1 + indexBase;
               NumEntries = 1;
               Values[0] = c;
             }
-          else if (MyGlobalElements[i] == NumGlobalElements - 1)
+          else if (MyGlobalElements[i] == NumGlobalElements + indexBase - 1)
             {
               // off-diagonal for last row
-              Indices[0] = NumGlobalElements - 2;
+              Indices[0] = NumGlobalElements - 2 + indexBase;
               NumEntries = 1;
               Values[0] = b;
             }
@@ -199,48 +194,16 @@ namespace Galeri {
                                   Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
                                   Teuchos::tuple<Scalar>(a) );
 
-/*
-        if ( (comm->getRank() == 0) && (NumMyElements >= 10) &&  (i % (NumMyElements / 10) == 0) ) {
-            int percDone = (int) floor((((double)i)/NumMyElements)*100);
-            t1 = MPI_Wtime() - t0;
-            std::cout << percDone << "% done (" << i << " rows) in " << t1 << " seconds, [pid 0]" << std::endl;
-            std::cout << MemUtils::PrintMemoryUsage() << std::endl;
-          }
-*/
         } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
 
         timer->stop();
-        //MemUtils::ReportTimeAndMemory(*timer, *comm);
 
-/*
-      t1 = MPI_Wtime() - t0;
-      if (comm->getRank() == 0) {
-        std::cout << "100% done in " << t1 << " seconds [pid 0]" << std::endl;
-        std::cout << MemUtils::PrintMemoryUsage() << std::endl;
-      }
-      if (comm->getRank() == 0) {
-        std::cout << "starting fill complete" << std::endl;
-        std::cout << MemUtils::PrintMemoryUsage() << std::endl;
-      }
-*/
-
-      //t2 = MPI_Wtime();
       timer = rcp(new Teuchos::Time("TriDiag fillComplete"));
       timer->start(true);
 
       mtx->fillComplete();
 
       timer->stop();
-      //MemUtils::ReportTimeAndMemory(*timer, *comm);
-      /*
-      t2 = MPI_Wtime() - t2;
-      t1 = MPI_Wtime() - t0;
-      if (comm->getRank() == 0) {
-        std::cout << "time to FillComplete = " << t2 << " seconds [pid 0]" << std::endl;
-        std::cout << "total time = " << t1 << " seconds [pid 0]" << std::endl;
-        std::cout << MemUtils::PrintMemoryUsage() << std::endl;
-      }
-      */
 
       return mtx;
     } //TriDiag
@@ -260,6 +223,7 @@ namespace Galeri {
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+      GlobalOrdinal indexBase = map->getIndexBase();
 
       GlobalOrdinal left, right, lower, upper, center;
       LocalOrdinal nnz=5;
@@ -274,7 +238,8 @@ namespace Galeri {
         size_t numEntries = 0;
 
         center = MyGlobalElements[i];
-        GetNeighboursCartesian2d(center, nx, ny,
+        //GetNeighboursCartesian2d is zero-based, so shift the center point to get the correct neighbors
+        GetNeighboursCartesian2d(center-indexBase, nx, ny,
                                  left, right, lower, upper);
 
         bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
@@ -296,22 +261,22 @@ namespace Galeri {
           // not kept. But we use an old GIDs. So yes, that's weird.
 
           if (left != -1) {
-            Indices[numEntries] = left;
+            Indices[numEntries] = left+indexBase;
             Values [numEntries] = b;
             numEntries++;
           }
           if (right != -1) {
-            Indices[numEntries] = right;
+            Indices[numEntries] = right+indexBase;
             Values [numEntries] = c;
             numEntries++;
           }
           if (lower != -1) {
-            Indices[numEntries] = lower;
+            Indices[numEntries] = lower+indexBase;
             Values [numEntries] = d;
             numEntries++;
           }
           if (upper != -1) {
-            Indices[numEntries] = upper;
+            Indices[numEntries] = upper+indexBase;
             Values [numEntries] = e;
             numEntries++;
           }

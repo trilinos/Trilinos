@@ -111,9 +111,7 @@ namespace Xpetra {
     StridedMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset)
     {
-      // FIXME: this is a hack to get quick working indexBase = 1
-      // Need to either introduce a proper indexBase to this class, or replace offset_ with indexBase_
-      offset_ += indexBase;
+      indexBase_ = indexBase;
 
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() == 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingInfo.size() = 0?");
       //TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
@@ -123,9 +121,7 @@ namespace Xpetra {
     StridedMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset)
     {
-      // FIXME: this is a hack to get quick working indexBase = 1
-      // Need to either introduce a proper indexBase to this class, or replace offset_ with indexBase_
-      offset_ += indexBase;
+      indexBase_ = indexBase;
 
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() == 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingInfo.size() = 0?");
       //TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
@@ -136,12 +132,14 @@ namespace Xpetra {
     StridedMap(std::vector<size_t>& stridingInfo, GlobalOrdinal indexBase, LocalOrdinal stridedBlockId, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset)
     {
-      offset_ += indexBase;
+      indexBase_ = indexBase;
     }
 
     StridedMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId)
     {
+      indexBase_ = indexBase;
+
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() == 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingInfo.size() = 0?");
       TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId < -1, Exceptions::RuntimeError, "StridedMap::StridedMap: stridedBlockId must not be smaller than -1.");
 
@@ -158,7 +156,7 @@ namespace Xpetra {
       // calculate offset_
 
       // find minimum GID over all procs
-      GlobalOrdinal minGidOnCurProc = 99999;  // TODO use scalar traits for max possible gid.
+      GlobalOrdinal minGidOnCurProc = 999999;  // TODO use scalar traits for max possible gid.
       for(Teuchos_Ordinal k=0; k<elementList.size(); ++k) { // TODO fix occurence of Teuchos_Ordinal
         if(elementList[k] < minGidOnCurProc) minGidOnCurProc = elementList[k];
       }
@@ -172,7 +170,7 @@ namespace Xpetra {
       const GlobalOrdinal goStridedOffset = Teuchos::as<GlobalOrdinal>(nStridedOffset);
 
       // adapt offset_
-      offset_ -= goStridedOffset;
+      offset_ -= goStridedOffset - indexBase_;  // TODO check me
     }
 
     //! Destructor.
@@ -269,6 +267,7 @@ namespace Xpetra {
                                             // stridedBlock == -1: the full map (with all strided block dofs)
                                             // stridedBlock  > -1: only dofs of strided block with index "stridedBlockId" are stored in this map
     GlobalOrdinal       offset_;		    //!< offset for gids in map (default = 0)
+    GlobalOrdinal       indexBase_;     //!< index base for the strided map (default = 0)
 
   }; // StridedMap class
 

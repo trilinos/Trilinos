@@ -1129,7 +1129,7 @@ namespace Tpetra {
     template <class Scalar>
     void sortRowIndicesAndValues (RowInfo rowinfo, ArrayView<Scalar> values);
 
-    /// Merge duplicate row indices in all of the rows.
+    /// \brief Merge duplicate row indices in all of the rows.
     ///
     /// \pre The graph is locally indexed:
     ///   <tt>isGloballyIndexed() == false</tt>.
@@ -1139,15 +1139,27 @@ namespace Tpetra {
     ///   be called after calling sortIndices().
     void mergeAllIndices ();
 
-    /// Merge duplicate row indices in the given row.
+    /// \brief Merge duplicate row indices in the given row.
     ///
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
     void mergeRowIndices (RowInfo rowinfo);
 
-    template <class Iter, class BinaryFunction>
-    void mergeRowIndicesAndValues (RowInfo rowinfo, Iter rowValueIter, BinaryFunction f);
 
+    /// \brief Merge duplicate row indices in the given row, along
+    ///   with their corresponding values.
+    ///
+    /// This method is only called by CrsMatrix, for a CrsMatrix whose
+    /// graph is this CrsGraph instance.  It is only called when the
+    /// matrix owns the graph, not when the matrix was constructed
+    /// with a const graph.
+    ///
+    /// \pre The graph is not already storage optimized:
+    ///   <tt>isStorageOptimized() == false</tt>
+    template<class Scalar>
+    void
+    mergeRowIndicesAndValues (RowInfo rowinfo,
+                              const Teuchos::ArrayView<Scalar>& rowValues);
     //@}
 
     /// Set the domain and range Maps, and invalidate the Import

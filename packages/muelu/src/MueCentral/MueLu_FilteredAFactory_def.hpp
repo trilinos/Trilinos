@@ -98,10 +98,6 @@ namespace MueLu {
     if (lumping)
       GetOStream(Runtime0,0) << "Lumping dropped entries" << std::endl;
 
-    ArrayView<const GO> GIDs = A->getColMap()->getNodeElementList();
-
-    // NOTE: the good thing is that we mostly deal with local IDs
-
     // Calculate max entries per row
     RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries(), Xpetra::StaticProfile);
 
@@ -153,11 +149,9 @@ namespace MueLu {
         newInds.resize(numInds);
         newVals.resize(numInds);
 
-        // NOTE: this is the only place where we do need GIDs
-        for (size_t j = 0; j < numInds; j++)
-          newInds[j] = GIDs[newInds[j]];
-
-        filteredA->insertGlobalValues(GIDs[row], newInds, newVals);
+        // Because we used a column map in the construction of the matrix
+        // we can just use insertLocalValues here instead of insertGlobalValues
+        filteredA->insertLocalValues(row, newInds, newVals);
       }
 
       // Clean up filtering array

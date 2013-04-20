@@ -9,8 +9,8 @@
 
 namespace user_app {
 
-template <typename EvalT>
-void ResponseEvaluatorFactory_HOFlux<EvalT>::
+template <typename EvalT,typename LO,typename GO>
+void ResponseEvaluatorFactory_HOFlux<EvalT,LO,GO>::
 buildAndRegisterEvaluators(const std::string & responseName,
                            PHX::FieldManager<panzer::Traits> & fm,
                            const panzer::PhysicsBlock & physicsBlock,
@@ -37,7 +37,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
     fm.template registerEvaluator<EvalT>(eval);
   }
 
-  panzer::ResponseEvaluatorFactory_Functional<EvalT>::buildAndRegisterEvaluators(responseName,fm,physicsBlock,user_data);
+  panzer::ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::buildAndRegisterEvaluators(responseName,fm,physicsBlock,user_data);
 }
 
 }
