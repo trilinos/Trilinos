@@ -191,7 +191,7 @@ TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner_PDESystem)
     X1->putScalar( (SC) 0.0);
     tH->apply(*(Utils::MV2TpetraMV(RHS1)),*(Utils::MV2NonConstTpetraMV(X1)));
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
+#endif // defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
   } else {
 
@@ -200,6 +200,6 @@ TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner_PDESystem)
   }
 
 } //CreatePreconditioner
-#endif
+
 
 }//namespace MueLuTests
