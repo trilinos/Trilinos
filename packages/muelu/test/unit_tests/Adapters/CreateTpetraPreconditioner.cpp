@@ -201,5 +201,4 @@ TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner_PDESystem)
 
 } //CreatePreconditioner
 
-
 }//namespace MueLuTests
