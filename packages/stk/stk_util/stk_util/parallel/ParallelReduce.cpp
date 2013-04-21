@@ -199,6 +199,13 @@ void all_reduce_max( ParallelMachine comm ,
   MPI_Allreduce( tmp , global , count , MPI_DOUBLE , MPI_MAX , comm );
 }
 
+void all_reduce_min( ParallelMachine comm ,
+                     const double * local , double * global , unsigned count )
+{
+  double * tmp = const_cast<double*>( local );
+  MPI_Allreduce( tmp , global , count , MPI_DOUBLE , MPI_MIN , comm );
+}
+
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
