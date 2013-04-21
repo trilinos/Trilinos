@@ -957,13 +957,10 @@ namespace Tpetra {
       allocateValues (LocalIndices, GraphNotYetAllocated);
     }
     // use column map to filter the entries:
-    Array<LocalOrdinal> f_inds(indices);
-    Array<Scalar>       f_vals(values);
-    typename Graph::SLocalGlobalNCViews inds_ncview;
-    inds_ncview.linds = f_inds();
+    Array<LocalOrdinal> f_inds (indices);
+    Array<Scalar>       f_vals (values);
     const size_t numFilteredEntries =
-      myGraph_->template filterIndicesAndValues<LocalIndices, Scalar> (inds_ncview,
-                                                                       f_vals ());
+      myGraph_->template filterLocalIndicesAndValues<Scalar> (f_inds (), f_vals ());
     if (numFilteredEntries > 0) {
       RowInfo rowInfo = myGraph_->getRowInfo(localRow);
       const size_t curNumEntries = rowInfo.numEntries;
@@ -1057,15 +1054,14 @@ namespace Tpetra {
       Array<GlobalOrdinal> filtered_indices;
       Array<Scalar>        filtered_values;
       if (hasColMap()) { // We have a column Map.
-        //
+	//
         // Use column map to filter the indices and corresponding
         // values, so that we only insert entries into columns we own.
-        typename Graph::SLocalGlobalNCViews inds_ncview;
-        ArrayView<Scalar> vals_ncview;
-        filtered_indices.assign(indices.begin(), indices.end());
-        filtered_values.assign(values.begin(), values.end());
-        inds_ncview.ginds = filtered_indices();
-        const size_t numFilteredEntries = myGraph_->template filterIndicesAndValues<GlobalIndices,Scalar>(inds_ncview,filtered_values());
+        filtered_indices.assign (indices.begin (), indices.end ());
+        filtered_values.assign (values.begin (), values.end ());
+        const size_t numFilteredEntries = 
+	  myGraph_->template filterGlobalIndicesAndValues<Scalar> (filtered_indices (), 
+								   filtered_values ());
         inds_view.ginds = filtered_indices(0,numFilteredEntries);
         vals_view       = filtered_values(0,numFilteredEntries);
       }

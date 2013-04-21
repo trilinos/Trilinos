@@ -1028,10 +1028,14 @@ namespace Tpetra {
     template<ELocalGlobal lg>
     size_t filterIndices (const SLocalGlobalNCViews &inds) const;
 
-    template<ELocalGlobal lg, class T>
+    template<class T>
     size_t
-    filterIndicesAndValues (const SLocalGlobalNCViews &inds,
-                            const ArrayView<T> &vals) const;
+    filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds,
+				  const ArrayView<T>& vals) const;
+    template<class T>
+    size_t
+    filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
+				 const ArrayView<T>& vals) const;
 
     /// \brief Insert indices into the given row.
     ///

@@ -961,57 +961,79 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <ELocalGlobal lg, class T>
+  template <class T>
   size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  filterIndicesAndValues (const SLocalGlobalNCViews &inds, const ArrayView<T> &vals) const
+  filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds, 
+				const ArrayView<T>& vals) const
   {
-    const Map<LocalOrdinal,GlobalOrdinal,Node> &cmap = *colMap_;
-    Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg;
-    (void)cta_lg;
+    const Map<LocalOrdinal,GlobalOrdinal,Node>& cmap = *colMap_;
     size_t numFiltered = 0;
-    typename ArrayView<T>::iterator fvalsend = vals.begin(),
-                                    valscptr = vals.begin();
+    typename ArrayView<T>::iterator fvalsend = vals.begin();
+    typename ArrayView<T>::iterator valscptr = vals.begin();
 #ifdef HAVE_TPETRA_DEBUG
     size_t numFiltered_debug = 0;
 #endif
-    if (lg == GlobalIndices) {
-      ArrayView<GlobalOrdinal> ginds = inds.ginds;
-      typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin(),
-                                                  cptr = ginds.begin();
-      while (cptr != ginds.end()) {
-        if (cmap.isNodeGlobalElement(*cptr)) {
-          *fend++ = *cptr;
-          *fvalsend++ = *valscptr;
+    typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin();
+    typename ArrayView<GlobalOrdinal>::iterator cptr = ginds.begin();
+    while (cptr != ginds.end()) {
+      if (cmap.isNodeGlobalElement (*cptr)) {
+	*fend++ = *cptr;
+	*fvalsend++ = *valscptr;
 #ifdef HAVE_TPETRA_DEBUG
-          ++numFiltered_debug;
+	++numFiltered_debug;
 #endif
-        }
-        ++cptr;
-        ++valscptr;
       }
-      numFiltered = fend - ginds.begin();
+      ++cptr;
+      ++valscptr;
     }
-    else if (lg == LocalIndices) {
-      ArrayView<LocalOrdinal> linds = inds.linds;
-      typename ArrayView<LocalOrdinal>::iterator fend = linds.begin(),
-                                                 cptr = linds.begin();
-      while (cptr != linds.end()) {
-        if (cmap.isNodeLocalElement(*cptr)) {
-          *fend++ = *cptr;
-          *fvalsend++ = *valscptr;
-#ifdef HAVE_TPETRA_DEBUG
-          ++numFiltered_debug;
-#endif
-        }
-        ++cptr;
-        ++valscptr;
-      }
-      numFiltered = fend - linds.begin();
-    }
+    numFiltered = fend - ginds.begin();
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
     TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
-    TEUCHOS_TEST_FOR_EXCEPT( numFiltered != (size_t)(fvalsend - vals.begin()) );
+    const size_t numFilteredActual = 
+      Teuchos::as<size_t> (fvalsend - vals.begin ());
+    TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
+#endif
+    return numFiltered;
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class T>
+  size_t
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
+			       const ArrayView<T>& vals) const
+  {
+    const Map<LocalOrdinal,GlobalOrdinal,Node>& cmap = *colMap_;
+    size_t numFiltered = 0;
+    typename ArrayView<T>::iterator fvalsend = vals.begin();
+    typename ArrayView<T>::iterator valscptr = vals.begin();
+#ifdef HAVE_TPETRA_DEBUG
+    size_t numFiltered_debug = 0;
+#endif
+    typename ArrayView<LocalOrdinal>::iterator fend = linds.begin();
+    typename ArrayView<LocalOrdinal>::iterator cptr = linds.begin();
+    while (cptr != linds.end()) {
+      if (cmap.isNodeLocalElement (*cptr)) {
+	*fend++ = *cptr;
+	*fvalsend++ = *valscptr;
+#ifdef HAVE_TPETRA_DEBUG
+	++numFiltered_debug;
+#endif
+      }
+      ++cptr;
+      ++valscptr;
+    }
+    numFiltered = fend - linds.begin();
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
+    TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
+    const size_t numFilteredActual = 
+      Teuchos::as<size_t> (fvalsend - vals.begin ());
+    TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
 #endif
     return numFiltered;
   }
