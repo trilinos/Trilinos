@@ -101,7 +101,6 @@ namespace MueLu {
     Array<GO>           elementList(numElements);
 
     // Amalgamate the map
-    LO numRows = 0;
     for (LO i = 0; i < static_cast<LO>(numElements); i++)
       elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
 

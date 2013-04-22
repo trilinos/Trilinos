@@ -4355,7 +4355,7 @@ void AlgPQJagged(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-  for(size_t i = 0; i < numLocalCoords; ++i){
+  for(size_t i = 0; i < static_cast<size_t>(numLocalCoords); ++i){
     partitionedPointCoordinates[i] = i;
   }
 

@@ -102,7 +102,6 @@ namespace MueLu {
                                "Zoltan2 does not work with Epetra at the moment. Please use Zoltan through ZoltanInterface");
 
     size_t dim       = coords->getNumVectors();
-    GO     indexBase = rowMap->getIndexBase();
     LO     blkSize   = A->GetFixedBlockSize();
 
     // Check that the number of local coordinates is consistent with the #rows in A
