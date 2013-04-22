@@ -74,6 +74,11 @@
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #endif // HAVE_MUELU_TPETRA
 
+#ifdef HAVE_MUELU_EPETRA
+#include <EpetraExt_BlockMapOut.h>
+#include <Xpetra_EpetraMap.hpp>
+#endif //ifdef HAVE_MUELU_EPETRA
+
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -851,7 +856,41 @@ namespace MueLu {
     const RCP<const TpetraMultiVector> &tmp_TVec = rcp_dynamic_cast<const TpetraMultiVector>(tmp_Vec);
     if (tmp_TVec != Teuchos::null) {
       RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > TVec = tmp_TVec->getTpetra_MultiVector();
-      Tpetra::MatrixMarket::Writer<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeDenseFile(fileName, TVec);
+      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeDenseFile(fileName, TVec);
+      return;
+    }
+#endif // HAVE_MUELU_TPETRA
+
+    throw(Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in matrix writing"));
+
+  } //Write
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(std::string const & fileName, const Map& M) {
+    RCP<const Map> tmp_Map = rcpFromRef(M);
+#ifdef HAVE_MUELU_EPETRAEXT
+    const RCP<const Xpetra::EpetraMap> &tmp_EMap = rcp_dynamic_cast<const Xpetra::EpetraMap>(tmp_Map);
+    if (tmp_EMap != Teuchos::null) {
+#ifdef HAVE_MUELU_EPETRAEXT
+      int rv = EpetraExt::BlockMapToMatrixMarketFile(fileName.c_str(), tmp_EMap->getEpetra_Map());
+      if (rv != 0) {
+        std::ostringstream buf;
+        buf << rv;
+        std::string msg = "EpetraExt::BlockMapToMatrixMarketFile() return value of " + buf.str();
+        throw(Exceptions::RuntimeError(msg));
+      }
+#else
+      throw(Exceptions::RuntimeError("Compiled without EpetraExt"));
+#endif
+      return;
+    }
+#endif // HAVE_MUELU_EPETRAEXT
+
+#ifdef HAVE_MUELU_TPETRA
+    const RCP<const TpetraMap> &tmp_TMap = rcp_dynamic_cast<const TpetraMap>(tmp_Map);
+    if (tmp_TMap != Teuchos::null) {
+      RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > TMap = tmp_TMap->getTpetra_Map();
+      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeMapFile(fileName, *TMap);
       return;
     }
 #endif // HAVE_MUELU_TPETRA
