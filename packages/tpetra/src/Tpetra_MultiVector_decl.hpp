@@ -955,7 +955,7 @@ namespace Tpetra {
 
     /// \brief Whether data redistribution between \c sourceObj and this object is legal.
     ///
-    /// This method is called in \c DistObject::doTransfer() to check
+    /// This method is called in DistObject::doTransfer() to check
     /// whether data redistribution between the two objects is legal.
     bool
     checkSizes (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj);
@@ -965,6 +965,9 @@ namespace Tpetra {
                     size_t numSameIDs,
                     const ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const ArrayView<const LocalOrdinal>& permuteFromLIDs);
+
+    //! Number of packets to send per LID
+    virtual size_t constantNumberOfPackets () const;
 
     void
     packAndPrepare (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj,

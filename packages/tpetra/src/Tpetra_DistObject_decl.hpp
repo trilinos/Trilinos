@@ -413,6 +413,23 @@ namespace Tpetra {
       DoReverse  //*!< Perform the transfer in reverse mode.
     };
 
+    /// \brief Whether the implementation's instance promises always
+    ///   to have a constant number of packets per LID, and if so, how
+    ///   many packets per LID there are.
+    ///
+    /// If this method returns zero, the instance says that it might
+    /// possibly have a different number of packets for each LID to
+    /// send or receive.  If it returns nonzero, the instance promises
+    /// that the number of packets is the same for all LIDs, and that
+    /// the return value is this number of packets per LID.
+    ///
+    /// The default implementation of this method returns zero.  This
+    /// does not affect the behavior of doTransfer() in any way.  If a
+    /// nondefault implementation returns nonzero, doTransfer() will
+    /// use this information to avoid unnecessary allocation and / or
+    /// resizing of arrays.
+    virtual size_t constantNumberOfPackets () const;
+
     /// \brief Redistribute data across memory images.
     ///
     /// \param source [in] The source object, to redistribute into
@@ -496,16 +513,17 @@ namespace Tpetra {
     ///
     /// \param exports [out] On exit, the buffer for data to send.
     ///
-    /// \param numPacketsPerLID [out] On exit, numPacketsPerLID[i]
-    ///   contains the number of packets to be exported for
-    ///   exportLIDs[i].  If constantNumPackets is nonzero, you should
-    ///   use that instead, and not rely on numPacketsPerLID[i] being
-    ///   filled.
+    /// \param numPacketsPerLID [out] On exit, the implementation of
+    ///   this method must do one of two things: set
+    ///   numPacketsPerLID[i] to contain the number of packets to be
+    ///   exported for exportLIDs[i] and set constantNumPackets to
+    ///   zero, or set constantNumPackets to a nonzero value.  If the
+    ///   latter, the implementation need not fill numPacketsPerLID.
     ///
     /// \param constantNumPackets [out] On exit, 0 if numPacketsPerLID
     ///   has variable contents (different size for each LID).  If
-    ///   nonzero, then it is expected that num-packets-per-LID is
-    ///   constant, and constantNumPackets holds that value.
+    ///   nonzero, then it is expected that the number of packets per
+    ///   LID is constant, and that constantNumPackets is that value.
     ///
     /// \param distor [in] The Distributor object we are using.
     virtual void
@@ -523,13 +541,15 @@ namespace Tpetra {
     ///
     /// \param imports [in] Buffer containing data we received.
     ///
-    /// \param numPacketsPerLID [in] numPacketsPerLID[i] contains the
-    ///   number of packets imported for importLIDs[i].
+    /// \param numPacketsPerLID [in] If constantNumPackets is zero,
+    ///   then numPacketsPerLID[i] contains the number of packets
+    ///   imported for importLIDs[i].
     ///
     /// \param constantNumPackets [in] If nonzero, then
     ///   numPacketsPerLID is constant (same value in all entries) and
-    ///   constantNumPackets is that value.  If zero, use
-    ///   numPacketsPerLID[i] instead.
+    ///   constantNumPackets is that value.  If zero, then
+    ///   numPacketsPerLID[i] is the number of packets imported for
+    ///   importLIDs[i].
     ///
     /// \param distor [in] The Distributor object we are using.
     ///
