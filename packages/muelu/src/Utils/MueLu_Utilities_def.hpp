@@ -464,7 +464,11 @@ namespace MueLu {
             if (gcid[j]<0) throw(Exceptions::RuntimeError("Error: cannot find gcid!"));
           }
         int err = result->InsertGlobalValues(grid,rowlength,val,&gcid[0]);
-        if (err!=0 && err!=1) throw(Exceptions::RuntimeError("Epetra_CrsMatrix::InsertGlobalValues returned err="+err));
+        if (err!=0 && err!=1) {
+	  std::ostringstream errStr;
+	  errStr << "Epetra_CrsMatrix::InsertGlobalValues returned err=" << err;
+	  throw Exceptions::RuntimeError (errStr.str ());
+	}
       }
     // free memory
     if (bindx) ML_free(bindx);

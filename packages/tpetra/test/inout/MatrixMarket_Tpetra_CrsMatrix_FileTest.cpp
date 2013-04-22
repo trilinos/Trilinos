@@ -454,6 +454,7 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
   result = compareCrsMatrixValues<crs_matrix_type> (*A_in, *A_out, out);
   TEST_EQUALITY( result, true );
 
+  (void) success; // silence compile warning ("set but not used")
   return result;
 }
 

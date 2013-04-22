@@ -63,6 +63,14 @@ namespace Tpetra {
   class CrsMatrix;
 #endif
 
+  /// \struct RowInfo
+  /// \brief Allocation information for a locally owned row in a
+  ///   CrsGraph or CrsMatrix
+  ///  
+  /// A RowInfo instance identifies a locally owned row uniquely by
+  /// its local index, and contains other information useful for
+  /// inserting entries into the row.  It is the return value of
+  /// CrsGraph's getRowInfo() or updateAllocAndValues() methods.
   struct RowInfo {
     size_t localRow;
     size_t allocSize;
@@ -1020,25 +1028,58 @@ namespace Tpetra {
     template<ELocalGlobal lg>
     size_t filterIndices (const SLocalGlobalNCViews &inds) const;
 
-    template<ELocalGlobal lg, class T>
+    template<class T>
     size_t
-    filterIndicesAndValues (const SLocalGlobalNCViews &inds,
-                            const ArrayView<T> &vals) const;
+    filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds,
+				  const ArrayView<T>& vals) const;
+    template<class T>
+    size_t
+    filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
+				 const ArrayView<T>& vals) const;
 
-    template<ELocalGlobal lg, ELocalGlobal I>
-    size_t insertIndices (RowInfo rowInfo, const SLocalGlobalViews &newInds);
+    /// \brief Insert indices into the given row.
+    ///
+    /// \param rowInfo [in] Result of CrsGraph's getRowInfo() or
+    ///   updateAllocAndValues() methods, for the locally owned row
+    ///   (whose local index is <tt>rowInfo.localRow</tt>) for which
+    ///   you want to insert indices.
+    ///
+    /// \param newInds [in] View of the column indices to insert.  If
+    ///   <tt>lg == GlobalIndices</tt>, then newInds.ginds, a
+    ///   <tt>Teuchos::ArrayView<const GlobalOrdinal></tt>, contains
+    ///   the (global) column indices to insert.  Otherwise, if <tt>lg
+    ///   == LocalIndices</tt>, then newInds.linds, a
+    ///   <tt>Teuchos::ArrayView<const LocalOrdinal></tt>, contains
+    ///   the (local) column indices to insert.
+    ///
+    /// \param lg If <tt>lg == GlobalIndices</tt>, then the input
+    ///   indices (in \c newInds) are global indices.  Otherwise, if
+    ///   <tt>lg == LocalIndices</tt>, the input indices are local
+    ///   indices.
+    ///
+    /// \param I If <tt>lg == GlobalIndices</tt>, then this method
+    ///   will store the input indices as global indices.  Otherwise,
+    ///   if <tt>I == LocalIndices</tt>, this method will store the
+    ///   input indices as local indices.
+    size_t 
+    insertIndices (const RowInfo& rowInfo, 
+		   const SLocalGlobalViews& newInds,
+		   const ELocalGlobal lg,
+		   const ELocalGlobal I);
 
-    template<ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN>
+    template<class Scalar>
     void
-    insertIndicesAndValues (RowInfo rowInfo,
-                            const SLocalGlobalViews &newInds,
-                            IterO rowVals,
-                            IterN newVals);
+    insertIndicesAndValues (const RowInfo& rowInfo,
+                            const SLocalGlobalViews& newInds,
+			    const ArrayView<Scalar>& oldRowVals,
+                            const ArrayView<const Scalar>& newRowVals,
+			    const ELocalGlobal lg,
+			    const ELocalGlobal I);
     void
-    insertGlobalIndicesImpl (LocalOrdinal myRow,
+    insertGlobalIndicesImpl (const LocalOrdinal myRow,
                              const ArrayView<const GlobalOrdinal> &indices);
     void
-    insertLocalIndicesImpl (LocalOrdinal myRow,
+    insertLocalIndicesImpl (const LocalOrdinal myRow,
                             const ArrayView<const LocalOrdinal> &indices);
 
     /// \brief Transform the given values using local indices.

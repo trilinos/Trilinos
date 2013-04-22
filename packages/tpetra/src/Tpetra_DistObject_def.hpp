@@ -361,8 +361,9 @@ namespace Tpetra {
       copyAndPermute (source, numSameIDs, permuteToLIDs, permuteFromLIDs);
     }
     size_t constantNumPackets = 0;
-    numExportPacketsPerLID_.resize(exportLIDs.size());
-    numImportPacketsPerLID_.resize(remoteLIDs.size());
+
+    numExportPacketsPerLID_.resize (exportLIDs.size ());
+    numImportPacketsPerLID_.resize (remoteLIDs.size ());
 
     {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS

@@ -957,13 +957,10 @@ namespace Tpetra {
       allocateValues (LocalIndices, GraphNotYetAllocated);
     }
     // use column map to filter the entries:
-    Array<LocalOrdinal> f_inds(indices);
-    Array<Scalar>       f_vals(values);
-    typename Graph::SLocalGlobalNCViews inds_ncview;
-    inds_ncview.linds = f_inds();
+    Array<LocalOrdinal> f_inds (indices);
+    Array<Scalar>       f_vals (values);
     const size_t numFilteredEntries =
-      myGraph_->template filterIndicesAndValues<LocalIndices, Scalar> (inds_ncview,
-                                                                       f_vals ());
+      myGraph_->template filterLocalIndicesAndValues<Scalar> (f_inds (), f_vals ());
     if (numFilteredEntries > 0) {
       RowInfo rowInfo = myGraph_->getRowInfo(localRow);
       const size_t curNumEntries = rowInfo.numEntries;
@@ -990,8 +987,11 @@ namespace Tpetra {
         rowInfo = myGraph_->template updateAllocAndValues<LocalIndices, Scalar> (rowInfo, newNumEntries, values2D_[localRow]);
       }
       typename Graph::SLocalGlobalViews inds_view;
-      inds_view.linds = f_inds(0,numFilteredEntries);
-      myGraph_->template insertIndicesAndValues<LocalIndices, LocalIndices> (rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), f_vals.begin());
+      inds_view.linds = f_inds (0, numFilteredEntries);
+      myGraph_->template insertIndicesAndValues<Scalar> (rowInfo, inds_view, 
+							 this->getViewNonConst (rowInfo), 
+							 f_vals, 
+							 LocalIndices, LocalIndices);
 #ifdef HAVE_TPETRA_DEBUG
       {
         const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow (localRow);
@@ -1054,15 +1054,14 @@ namespace Tpetra {
       Array<GlobalOrdinal> filtered_indices;
       Array<Scalar>        filtered_values;
       if (hasColMap()) { // We have a column Map.
-        //
+	//
         // Use column map to filter the indices and corresponding
         // values, so that we only insert entries into columns we own.
-        typename Graph::SLocalGlobalNCViews inds_ncview;
-        ArrayView<Scalar> vals_ncview;
-        filtered_indices.assign(indices.begin(), indices.end());
-        filtered_values.assign(values.begin(), values.end());
-        inds_ncview.ginds = filtered_indices();
-        const size_t numFilteredEntries = myGraph_->template filterIndicesAndValues<GlobalIndices,Scalar>(inds_ncview,filtered_values());
+        filtered_indices.assign (indices.begin (), indices.end ());
+        filtered_values.assign (values.begin (), values.end ());
+        const size_t numFilteredEntries = 
+	  myGraph_->template filterGlobalIndicesAndValues<Scalar> (filtered_indices (), 
+								   filtered_values ());
         inds_view.ginds = filtered_indices(0,numFilteredEntries);
         vals_view       = filtered_values(0,numFilteredEntries);
       }
@@ -1098,16 +1097,22 @@ namespace Tpetra {
           rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices,Scalar>(rowInfo, newNumEntries, values2D_[lrow]);
         }
         if (isGloballyIndexed()) {
-          // <GlobalIndices, GlobalIndices> template parameters
-          // involve getGlobalViewNonConst() and direct copying, which
+          // lg=GlobalIndices, I=GlobalIndices means the method calls
+          // getGlobalViewNonConst() and does direct copying, which
           // should be reasonably fast.
-          myGraph_->template insertIndicesAndValues<GlobalIndices,GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
+          myGraph_->template insertIndicesAndValues<Scalar> (rowInfo, inds_view, 
+							     this->getViewNonConst (rowInfo), 
+							     vals_view, 
+							     GlobalIndices, GlobalIndices);
         }
         else {
-          // <GlobalIndices, LocalIndices> template parameters involve
-          // calling the Map's getLocalElement() once per entry to
+          // lg=GlobalIndices, I=LocalIndices means the method calls
+          // the Map's getLocalElement() method once per entry to
           // insert.  This may be slow.
-          myGraph_->template insertIndicesAndValues<GlobalIndices,LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
+          myGraph_->template insertIndicesAndValues<Scalar> (rowInfo, inds_view, 
+							     this->getViewNonConst (rowInfo), 
+							     vals_view, 
+							     GlobalIndices, LocalIndices);
         }
 #ifdef HAVE_TPETRA_DEBUG
         {
@@ -1237,7 +1242,9 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayView<Scalar> CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getViewNonConst(RowInfo rowinfo)
+  ArrayView<Scalar> 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getViewNonConst (RowInfo rowinfo)
   {
     ArrayView<Scalar> view;
     if (values1D_ != null && rowinfo.allocSize > 0) {
