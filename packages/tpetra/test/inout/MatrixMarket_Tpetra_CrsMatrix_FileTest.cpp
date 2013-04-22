@@ -48,37 +48,52 @@
 
 using Tpetra::global_size_t;
 using Teuchos::Array;
+using Teuchos::ArrayView;
 using Teuchos::as;
 using Teuchos::Comm;
+using Teuchos::null;
 using Teuchos::OSTab;
 using Teuchos::ParameterList;
 using Teuchos::ptr;
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::rcp_dynamic_cast;
+using Teuchos::rcpFromRef;
 using Teuchos::REDUCE_MAX;
 using Teuchos::REDUCE_MIN;
 using Teuchos::reduceAll;
 using std::endl;
 
+
 namespace {
 
+// Command-line arguments
 std::string mapOutputFilename;
 std::string matrixOutputFilename;
 std::string mapInputFilename;
 std::string matrixInputFilename;
+bool debug = false;
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP ();
   clp.setOption ("mapOutputFilename", &mapOutputFilename,
-                 "Name of file to which to write temporary Map output");
+                 "Name of file to which to write temporary Map output.  "
+                 "If not provided, we will not test Map output.");
   clp.setOption ("matrixOutputFilename", &matrixOutputFilename,
-                 "Name of file to which to write temporary CrsMatrix output");
+                 "Name of file to which to write temporary CrsMatrix output.  "
+                 "If not provided, we write output to an std::ostringstream in "
+                 "memory.  WARNING: If you don't provide an output file name, "
+                 "the test may run out of memory if the input file is large, "
+                 "since in that case we have to store two copies of the "
+                 "matrix's data in memory at once.");
   clp.setOption ("mapInputFilename", &mapInputFilename,
                  "Name of file from which to read the initial Map");
   clp.setOption ("matrixInputFilename", &matrixInputFilename,
                  "Name of file from which to read the initial CrsMatrix "
                  "(using the input Map as its row Map)");
+  clp.setOption ("debug", "release", &debug, "If true, print copious debugging "
+                 "output to stderr on all processes.");
 }
 
 
@@ -87,17 +102,11 @@ template<class CrsMatrixType>
 bool
 compareCrsMatrixMaps (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::FancyOStream& out)
 {
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::Comm;
-  using Teuchos::RCP;
-  using Teuchos::reduceAll;
-  using Teuchos::REDUCE_MIN;
   typedef typename CrsMatrixType::scalar_type ST;
   typedef typename CrsMatrixType::global_ordinal_type GO;
   typedef typename ArrayView<const GO>::size_type size_type;
 
-  Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
+  Teuchos::OSTab tab (out);
 
   bool globalAllSame = true;
   if (! A_orig.getRowMap ()->isSameAs (* (A.getRowMap ()))) {
@@ -128,17 +137,11 @@ template<class CrsMatrixType>
 bool
 compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::FancyOStream& out)
 {
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::Comm;
-  using Teuchos::RCP;
-  using Teuchos::reduceAll;
-  using Teuchos::REDUCE_MIN;
   typedef typename CrsMatrixType::scalar_type ST;
   typedef typename CrsMatrixType::global_ordinal_type GO;
   typedef typename ArrayView<const GO>::size_type size_type;
 
-  Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
+  OSTab tab (out);
   int localEqual = 1;
 
   //
@@ -187,77 +190,6 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::
   return globalEqual == 1;
 }
 
-template<class IT1, class IT2>
-void
-merge2 (IT1& indResultOut, IT2& valResultOut, IT1 indBeg, IT1 indEnd, IT2 valBeg, IT2 valEnd)
-{
-  if (indBeg == indEnd) {
-    indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
-    valResultOut = valBeg; // It's allowed for valResultOut to alias valEnd
-  }
-  else {
-    IT1 indResult = indBeg;
-    IT2 valResult = valBeg;
-    if (indBeg != indEnd) {
-      ++indBeg;
-      ++valBeg;
-      while (indBeg != indEnd) {
-        if (*indResult == *indBeg) { // adjacent column indices equal
-          *valResult += *valBeg; // merge entries by adding their values together
-        } else { // adjacent column indices not equal
-          *(++indResult) = *indBeg; // shift over the index
-          *(++valResult) = *valBeg; // shift over the value
-        }
-        ++indBeg;
-        ++valBeg;
-      }
-      ++indResult; // exclusive end of merged result
-      ++valResult; // exclusive end of merged result
-      indEnd = indResult;
-      valEnd = valResult;
-    }
-    indResultOut = indResult;
-    valResultOut = valResult;
-  }
-}
-
-template<class IT1, class IT2, class BinaryFunction>
-void
-merge2 (IT1& indResultOut, IT2& valResultOut,
-        IT1 indBeg, IT1 indEnd,
-        IT2 valBeg, IT2 valEnd,
-        BinaryFunction f)
-{
-  if (indBeg == indEnd) {
-    indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
-    valResultOut = valBeg; // It's allowed for valResultOut to alias valEnd
-  }
-  else {
-    IT1 indResult = indBeg;
-    IT2 valResult = valBeg;
-    if (indBeg != indEnd) {
-      ++indBeg;
-      ++valBeg;
-      while (indBeg != indEnd) {
-        if (*indResult == *indBeg) { // adjacent column indices equal
-          *valResult = f (*valResult, *valBeg); // merge entries by adding their values together
-        } else { // adjacent column indices not equal
-          *(++indResult) = *indBeg; // shift over the index
-          *(++valResult) = *valBeg; // shift over the value
-        }
-        ++indBeg;
-        ++valBeg;
-      }
-      ++indResult; // exclusive end of merged result
-      ++valResult; // exclusive end of merged result
-      indEnd = indResult;
-      valEnd = valResult;
-    }
-    indResultOut = indResult;
-    valResultOut = valResult;
-  }
-}
-
 // Input matrices must be fill complete, and all four of their Maps
 // (row, column, domain, and range) must be the same.
 template<class CrsMatrixType>
@@ -266,13 +198,6 @@ compareCrsMatrixValues (const CrsMatrixType& A_orig,
                         const CrsMatrixType& A,
                         Teuchos::FancyOStream& out)
 {
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::Comm;
-  using Teuchos::RCP;
-  using Teuchos::reduceAll;
-  using Teuchos::REDUCE_MIN;
-  using std::endl;
   typedef typename CrsMatrixType::scalar_type ST;
   typedef typename CrsMatrixType::global_ordinal_type GO;
   typedef typename ArrayView<const GO>::size_type size_type;
@@ -280,8 +205,7 @@ compareCrsMatrixValues (const CrsMatrixType& A_orig,
   typedef typename STS::magnitudeType MT;
   typedef Teuchos::ScalarTraits<MT> STM;
 
-  Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
-
+  OSTab tab (out);
   //
   // Are my local matrices equal?
   //
@@ -313,23 +237,21 @@ compareCrsMatrixValues (const CrsMatrixType& A_orig,
     //
     // Merge repeated values in each set of indices and values.
     //
-
     typename Array<GO>::iterator indOrigIter = indOrig.begin ();
     typename Array<ST>::iterator valOrigIter = valOrig.begin ();
     typename Array<GO>::iterator indOrigEnd = indOrig.end ();
     typename Array<ST>::iterator valOrigEnd = valOrig.end ();
-    merge2 (indOrigEnd, valOrigEnd, indOrigIter, indOrigEnd, valOrigIter, valOrigEnd);
+    Tpetra::merge2 (indOrigEnd, valOrigEnd, indOrigIter, indOrigEnd, valOrigIter, valOrigEnd);
 
     typename Array<GO>::iterator indIter = ind.begin ();
     typename Array<ST>::iterator valIter = val.begin ();
     typename Array<GO>::iterator indEnd = ind.end ();
     typename Array<ST>::iterator valEnd = val.end ();
-    merge2 (indEnd, valEnd, indIter, indEnd, valIter, valEnd);
+    Tpetra::merge2 (indEnd, valEnd, indIter, indEnd, valIter, valEnd);
 
     //
     // Compare the merged sets of entries.
     //
-
     indOrigIter = indOrig.begin ();
     indIter = ind.begin ();
     valOrigIter = valOrig.begin ();
@@ -382,9 +304,6 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
                       const std::string& mapInFile,
                       const std::string& matrixInFile)
 {
-  using Teuchos::Comm;
-  using Teuchos::OSTab;
-  using Teuchos::RCP;
   typedef double ST;
   typedef int LO;
   typedef long GO;
@@ -394,9 +313,6 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
   const bool tolerant = false;
-  // Whether to print copious debugging output to stderr when doing
-  // Matrix Market input and output.
-  const bool debug = false;
 
   bool result = true; // current Boolean result; reused below
   bool success = true; // used by TEST_EQUALITY
@@ -407,21 +323,24 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
   RCP<const Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
+  const int myRank = comm->getRank ();
 
   out << "Reading the (row) Map" << endl;
   RCP<const map_type> rowMap =
     reader_type::readMapFile (mapInFile, comm, node, tolerant, debug);
 
-  out << "Writing the Map" << endl;
-  writer_type::writeMapFile (mapOutFile, *rowMap);
+  if (mapOutFile != "") {
+    out << "Writing the Map" << endl;
+    writer_type::writeMapFile (mapOutFile, *rowMap);
 
-  out << "Reading the written Map back in" << endl;
-  RCP<const map_type> rowMap_out =
-    reader_type::readMapFile (mapOutFile, comm, node, tolerant, debug);
+    out << "Reading the written Map back in" << endl;
+    RCP<const map_type> rowMap_out =
+      reader_type::readMapFile (mapOutFile, comm, node, tolerant, debug);
 
-  out << "Comparing the two Maps" << endl;
-  result = rowMap->isSameAs (*rowMap_out);
-  TEST_EQUALITY( result, true );
+    out << "Comparing the two Maps" << endl;
+    result = rowMap->isSameAs (*rowMap_out);
+    TEST_EQUALITY( result, true );
+  }
 
   out << "Reading the CrsMatrix" << endl;
   const bool callFillComplete = true;
@@ -432,20 +351,57 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
     reader_type::readSparseFile (matrixInFile,
                                  rowMap, colMap, domainMap, rangeMap,
                                  callFillComplete, tolerant, debug);
-
+  RCP<std::ostream> matrixOutStream;
+  if (matrixOutFile == "") {
+    if (myRank == 0) {
+      out << "Process 0: No CrsMatrix output file provided; storing output in "
+        "memory." << endl << "WARNING: This may run out of memory if the input "
+        "file is large, since we have to store two copies of the matrix's data "
+        "in memory at once." << endl;
+      matrixOutStream = rcp (new std::ostringstream);
+    }
+  } else {
+    if (myRank == 0) {
+      out << "Opening CrsMatrix output file \"" << matrixOutFile
+          << "\" on Process 0 only" << endl;
+      matrixOutStream = rcp (new std::ofstream (matrixOutFile.c_str ()));
+    }
+  }
+  out << "Executing barrier to ensure no deadlock" << endl;
+  comm->barrier ();
   out << "Writing the CrsMatrix" << endl;
-  writer_type::writeSparseFile (matrixOutFile, A_in, debug);
+  writer_type::writeSparse (*matrixOutStream, A_in, debug);
 
   out << "Reading the written CrsMatrix back in" << endl;
+  RCP<std::istream> matrixInStream;
+  if (matrixOutFile == "") {
+    if (myRank == 0) {
+      // We have to store two copies of the output in memory, so that
+      // we can construct the input stream from the output stream.
+      RCP<std::ostringstream> matOss =
+        rcp_dynamic_cast<std::ostringstream> (matrixOutStream, true);
+      matrixInStream = rcp (new std::istringstream (matOss->str ()));
+      matrixOutStream = null;
+    }
+  } else {
+    if (myRank == 0) {
+      out << "Process 0: Closing CrsMatrix output file" << endl;
+      matrixOutStream = null;
+      out << "Process 0: Reopening CrsMatrix output file \""
+          << matrixOutFile << "\"" << endl;
+      matrixInStream = rcp (new std::ifstream (matrixOutFile.c_str ()));
+    }
+  }
+
   RCP<crs_matrix_type> A_out =
-    reader_type::readSparseFile (matrixOutFile,
-                                 rowMap, colMap, domainMap, rangeMap,
-                                 callFillComplete, tolerant, debug);
+    reader_type::readSparse (*matrixInStream,
+                             rowMap, colMap, domainMap, rangeMap,
+                             callFillComplete, tolerant, debug);
 
   out << "Test the two matrices for exact equality of structure and values" << endl;
   result = compareCrsMatrix<crs_matrix_type> (*A_in, *A_out, out);
   {
-    OSTab tab (rcpFromRef (out));
+    OSTab tab (out);
     out << "- Matrices are " << (result ? "" : "NOT ") << "equal" << endl;
   }
   TEST_EQUALITY( result, true );
@@ -459,102 +415,6 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
 }
 
 } // namespace (anonymous)
-
-
-TEUCHOS_UNIT_TEST( MatrixMarket, Merge2 )
-{
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::toString;
-  using std::endl;
-  typedef Array<int>::size_type size_type;
-  const size_type origNumEntries = 8;
-
-  Array<int> ind (origNumEntries);
-  ind[0] =  0;
-  ind[1] =  1;
-  ind[2] =  1;
-  ind[3] =  3;
-  ind[4] = -1;
-  ind[5] = -1;
-  ind[6] = -1;
-  ind[7] =  0;
-  Array<int> indCopy = ind; // deep copy
-
-  Array<double> val (origNumEntries);
-  val[0] =  42.0;
-  val[1] =  -4.0;
-  val[2] =  -3.0;
-  val[3] =   1.5;
-  val[4] =   1.0;
-  val[5] =   2.0;
-  val[6] =   3.0;
-  val[7] = 100.0;
-  Array<double> valCopy = val; // deep copy
-
-  const int expNumEntries = 5;
-  const int    indExp[] = { 0,    1,   3,  -1,     0  };
-  const double valExp[] = {42.0, -7.0, 1.5, 6.0, 100.0};
-
-  // Test merge2 with default merge policy (add).
-  {
-    Array<int>::iterator indEnd = ind.end ();
-    Array<double>::iterator valEnd = val.end ();
-    merge2 (indEnd, valEnd, ind.begin (), indEnd, val.begin (), valEnd);
-
-    const size_type newIndLen = indEnd - ind.begin ();
-    const size_type newValLen = valEnd - val.begin ();
-
-    TEST_EQUALITY( newIndLen, expNumEntries );
-    TEST_EQUALITY( newValLen, expNumEntries );
-
-    const bool indEq = std::equal (ind.begin (), indEnd, indExp);
-    const bool valEq = std::equal (val.begin (), valEnd, valExp);
-
-    TEST_EQUALITY( indEq, true );
-    TEST_EQUALITY( valEq, true );
-
-    if (! valEq) {
-      out << "Input value range: " << toString (valCopy ()) << endl;
-      out << "Expected output: "
-          << toString (ArrayView<const double> ((const double*) valExp, expNumEntries))
-          << endl;
-      out << "Actual output: " << toString (val.view (0, newValLen)) << endl;
-      Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
-    }
-  }
-
-  ind = indCopy; // deep copy; restore original values
-  val = valCopy; // deep copy; restore original values
-
-  // Test merge2 with custom merge policy (also add).
-  {
-    Array<int>::iterator indEnd = ind.end ();
-    Array<double>::iterator valEnd = val.end ();
-    merge2 (indEnd, valEnd, ind.begin (), indEnd, val.begin (), valEnd, std::plus<double> ());
-
-    const size_type newIndLen = indEnd - ind.begin ();
-    const size_type newValLen = valEnd - val.begin ();
-
-    TEST_EQUALITY( newIndLen, expNumEntries );
-    TEST_EQUALITY( newValLen, expNumEntries );
-
-    const bool indEq = std::equal (ind.begin (), indEnd, indExp);
-    const bool valEq = std::equal (val.begin (), valEnd, valExp);
-
-    TEST_EQUALITY( indEq, true );
-    TEST_EQUALITY( valEq, true );
-
-    if (! valEq) {
-      out << "Input value range: " << toString (valCopy ()) << endl;
-      out << "Expected output: "
-          << toString (ArrayView<const double> ((const double*) valExp, expNumEntries))
-          << endl;
-      out << "Actual output: " << toString (val.view (0, newValLen)) << endl;
-      Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
-    }
-  }
-}
 
 
 TEUCHOS_UNIT_TEST( MatrixMarket, CrsMatrixFileTest )

@@ -53,6 +53,7 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_CoordinatesTransferFactory_decl.hpp"
+#include "MueLu_Utilities.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
@@ -66,6 +67,8 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory for coordinates generation");
     validParamList->set< RCP<const FactoryBase> >("Aggregates",     Teuchos::null, "Factory for coordinates generation");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",      Teuchos::null, "Generating factory of the coarse map");
+    validParamList->set< int >                   ("write start",    -1, "first level at which coordinates should be written to file");
+    validParamList->set< int >                   ("write end",      -1, "last level at which coordinates should be written to file");
 
     return validParamList;
   }
@@ -82,6 +85,10 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     GetOStream(Runtime0, 0) << "Transferring coordinates" << std::endl;
+
+    const ParameterList  & pL = GetParameterList();
+    int                 writeStart = pL.get< int >("write start");
+    int                 writeEnd   = pL.get< int >("write end");
 
     RCP<Aggregates>     aggregates = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
     RCP<MultiVector>    fineCoords = Get< RCP<MultiVector> >(fineLevel, "Coordinates");
@@ -139,6 +146,14 @@ namespace MueLu {
     }
 
     Set<RCP<MultiVector> >(coarseLevel, "Coordinates", coarseCoords);
+    if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd) {
+      std::ostringstream buf;
+      buf << coarseLevel.GetLevelID();
+      std::string fileName = "coordinates_level_" + buf.str() + ".m";
+      Utils::Write(fileName,*coarseCoords);
+      fileName = "coordinatesMap_level_" + buf.str() + ".m";
+      Utils::Write(fileName,*(coarseCoords->getMap()));
+    }
 
   } // Build
 

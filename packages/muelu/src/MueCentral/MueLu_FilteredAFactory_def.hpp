@@ -101,7 +101,7 @@ namespace MueLu {
     // Calculate max entries per row
     RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries(), Xpetra::StaticProfile);
 
-    Array<GO>   newInds;
+    Array<LO>   newInds;
     Array<SC>   newVals;
     Array<char> filter(blkSize*G->GetImportMap()->getNodeNumElements(), 0);
 
@@ -120,7 +120,7 @@ namespace MueLu {
         ArrayView<const SC> oldVals;
         A->getLocalRowView(row, oldInds, oldVals);
 
-        diagIndex = (size_t)(-1);
+        diagIndex = as<size_t>(-1);
         diagExtra = Teuchos::ScalarTraits<SC>::zero();
 
         newInds.resize(oldInds.size());
@@ -159,7 +159,7 @@ namespace MueLu {
         for (size_t k = 0; k < blkSize; k++)
           filter[indsG[j]*blkSize+k] = 0;
     }
-    RCP<ParameterList> fillCompleteParams(new ParameterList);;
+    RCP<ParameterList> fillCompleteParams(new ParameterList);
     fillCompleteParams->set("No Nonlocal Changes", true);
     filteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
 

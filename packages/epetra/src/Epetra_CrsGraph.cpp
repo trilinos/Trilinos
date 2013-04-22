@@ -2005,6 +2005,12 @@ int Epetra_CrsGraph::OptimizeStorage() {
   SetIndicesAreContiguous(true); // Can no longer dynamically add or remove indices
   CrsGraphData_->StorageOptimized_ = true;
 
+/*
+#if defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
+  All_IndicesPlus1(); // see if preemptively calling this improves Multiply timing.
+#endif
+*/
+
   return(0);
 }
 
@@ -2903,6 +2909,37 @@ void Epetra_CrsGraph::ComputeIndexState() {
   CrsGraphData_->IndicesAreLocal_ = (allIndicesAreLocal==1); // If indices are local on one PE, should be local on all
   CrsGraphData_->IndicesAreGlobal_ = (allIndicesAreGlobal==1);  // If indices are global on one PE should be local on all
 }
+
+//==============================================================================
+#if defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
+int *Epetra_CrsGraph::All_IndicesPlus1() const {
+  // This functionality is needed because MKL "sparse matrix" "dense matrix"
+  // functions do not work with column-based dense storage and zero-based
+  // sparse storage.  So add "1" to indices and save duplicate data.  This means
+  // we will use one-based indices.  This does not affect sparse-matrix and vector
+  // operations.
+
+  int* ptr = 0;
+  if (!StorageOptimized()) {
+    throw ReportError("Epetra_CrsGraph: int *All_IndicesPlus1() cannot be called when StorageOptimized()==false", -1);
+  }
+  else {
+    Epetra_IntSerialDenseVector& vec = CrsGraphData_->data->All_IndicesPlus1_;
+
+    if(!vec.Length()) {
+      int* indices = All_Indices();
+	  vec.Size(CrsGraphData_->data->All_Indices_.Length());
+	  ptr = vec.Values();
+      for(int i = 0; i < CrsGraphData_->NumMyNonzeros_; ++i)
+		  ptr[i] = indices[i] + 1;
+	}
+	else {
+	  ptr = vec.Values();
+	}
+  }
+  return ptr;
+}
+#endif // defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
 
 //==============================================================================
 void Epetra_CrsGraph::Print (ostream& os) const {
