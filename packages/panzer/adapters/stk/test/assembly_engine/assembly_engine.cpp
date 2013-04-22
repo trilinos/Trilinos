@@ -350,7 +350,6 @@ namespace panzer {
     RCP<panzer::TpetraLinearObjContainer<double,int,int> > globalCont 
        = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<double,int,int> >(tGlobal);
 
-    globalCont->get_A()->fillComplete();
     Teuchos::RCP<const Tpetra::Operator<double,int,int> > baseOp = globalCont->get_A();
     Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace = Thyra::createVectorSpace<double>(baseOp->getRangeMap());
     Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace = Thyra::createVectorSpace<double>(baseOp->getDomainMap());

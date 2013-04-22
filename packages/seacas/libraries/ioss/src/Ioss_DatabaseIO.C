@@ -443,6 +443,15 @@ namespace Ioss {
     informationRecords.push_back(info);
   }
 
+  void DatabaseIO::add_qa_record(const std::string &code, const std::string &code_qa,
+				 const std::string &date, const std::string &time)
+  {
+    qaRecords.push_back(code);
+    qaRecords.push_back(code_qa);
+    qaRecords.push_back(date);
+    qaRecords.push_back(time);
+  }
+
   void DatabaseIO::set_block_omissions(const std::vector<std::string> &omissions)
   {
     blockOmissions.assign(omissions.begin(), omissions.end());
@@ -585,7 +594,7 @@ namespace {
     if (single_proc_only) {
       all_sizes.push_back(field.get_size());
     } else {
-      util.gather(field.get_size(), all_sizes);
+      util.gather((int64_t)field.get_size(), all_sizes);
     }
 
     if (util.parallel_rank() == 0 || single_proc_only) {

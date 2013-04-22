@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,17 +34,17 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
 #ifndef TPETRA_VECTOR_DEF_HPP
 #define TPETRA_VECTOR_DEF_HPP
 
+#include <Kokkos_DefaultArithmetic.hpp>
 #include <Kokkos_NodeTrace.hpp>
-
-#include "Tpetra_MultiVector.hpp"
+#include <Tpetra_MultiVector.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_Vector_decl.hpp"
@@ -53,7 +53,7 @@
 namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut) 
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut)
     : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,1,zeroOut) {
   }
 
@@ -64,14 +64,14 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(
-                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
+                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
                               const ArrayRCP<Scalar> &view, EPrivateHostViewConstructor /* dummy */)
   : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,view,view.size(),1,HOST_VIEW_CONSTRUCTOR) {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(
-                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
+                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
                               const ArrayRCP<Scalar> &view, EPrivateComputeViewConstructor /* dummy */)
   : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,view,view.size(),1,COMPUTE_VIEW_CONSTRUCTOR) {
   }
@@ -116,7 +116,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
         "Tpetra::Vector::dots(): Vectors do not have compatible Maps:" << std::endl
-        << "this->getMap(): " << std::endl << *this->getMap() 
+        << "this->getMap(): " << std::endl << *this->getMap()
         << "a.getMap(): " << std::endl << *a.getMap() << std::endl);
 #else
     TEUCHOS_TEST_FOR_EXCEPTION( this->getLocalLength() != a.getLocalLength(), std::runtime_error,
@@ -193,7 +193,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*weights.getMap()), std::runtime_error,
         "Tpetra::Vector::normWeighted(): Vectors do not have compatible Maps:" << std::endl
-        << "this->getMap(): " << std::endl << *this->getMap() 
+        << "this->getMap(): " << std::endl << *this->getMap()
         << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
 #else
     TEUCHOS_TEST_FOR_EXCEPTION( this->getLocalLength() != weights.getLocalLength(), std::runtime_error,
@@ -238,7 +238,7 @@ namespace Tpetra {
     Teuchos::OSTab tab(out);
     if (vl != VERB_NONE) {
       // VERB_LOW and higher prints description()
-      if (myImageID == 0) out << this->description() << std::endl; 
+      if (myImageID == 0) out << this->description() << std::endl;
       for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
         if (myImageID == imageCtr) {
           if (vl != VERB_LOW) {
@@ -250,11 +250,11 @@ namespace Tpetra {
                 RCP<Node> node = this->lclMV_.getNode();
                 KOKKOS_NODE_TRACE("Vector::describe()")
                 ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
-                                                               this->getLocalLength(), 
+                                                               this->getLocalLength(),
                                                                MVT::getValues(this->lclMV_) );
                 // VERB_EXTREME prints values
                 for (size_t i=0; i<this->getLocalLength(); ++i) {
-                  out << setw(width) << this->getMap()->getGlobalElement(i) 
+                  out << setw(width) << this->getMap()->getGlobalElement(i)
                       << ": "
                       << myview[i] << endl;
                 }

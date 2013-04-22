@@ -130,10 +130,13 @@ void AZ_compute_residual(double b[], double x[], double r[],
 
   /**************************** execution begins ******************************/
 
+  AZ_START_TIMER( "AztecOO: Operation Op*x", matvecID );
+
   N = Amat->data_org[AZ_N_internal] + Amat->data_org[AZ_N_border];
 
   Amat->matvec(x, r, Amat, proc_config);
 
+  AZ_STOP_TIMER( matvecID );
 
   for(i = 0; i < N; i++) r[i] = b[i] - r[i];
 

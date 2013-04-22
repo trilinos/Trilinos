@@ -105,6 +105,7 @@ namespace {
   void transfer_elemsets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
   void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region, bool debug);
 
   template <typename T>
   void transfer_fields(const std::vector<T*>& entities,
@@ -130,6 +131,7 @@ namespace {
 
   void transfer_properties(Ioss::GroupingEntity *ige,
 			   Ioss::GroupingEntity *oge);
+  void transfer_qa_info(Ioss::Region &in, Ioss::Region &out);
 
   void transform_fields(Ioss::GroupingEntity *ige,
 			Ioss::GroupingEntity *oge,
@@ -483,7 +485,8 @@ namespace {
 
     // Get all properties of input database...
     transfer_properties(&region, &output_region);
-
+    transfer_qa_info(region, output_region);
+    
     transfer_nodeblock(region, output_region, globals.debug);
 
 #ifdef HAVE_MPI
@@ -511,6 +514,8 @@ namespace {
 
     transfer_sidesets(region, output_region, globals.debug);
     transfer_commsets(region, output_region, globals.debug);
+
+    transfer_coordinate_frames(region, output_region, globals.debug);
 
     if (globals.debug) OUTPUT << "END STATE_DEFINE_MODEL... " << '\n';
     output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
@@ -972,6 +977,17 @@ namespace {
     if (debug) OUTPUT << '\n';
   }
 
+  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  {
+    Ioss::CoordinateFrameContainer      cf = region.get_coordinate_frames();
+    Ioss::CoordinateFrameContainer::const_iterator i = cf.begin();
+    while (i != cf.end()) {
+      output_region.add(*i);
+      ++i;
+    }
+    if (debug) OUTPUT << '\n';
+  }
+
   void transfer_fields(Ioss::GroupingEntity *ige,
 		       Ioss::GroupingEntity *oge,
 		       Ioss::Field::RoleType role,
@@ -1128,6 +1144,17 @@ namespace {
     assert(data.size() >= isize);
     ige->get_field_data(field_name, &data[0], isize);
     oge->put_field_data(field_name, &data[0], isize);
+  }
+
+  void transfer_qa_info(Ioss::Region &in,
+			Ioss::Region &out)
+  {
+    out.add_information_records(in.get_information_records());
+
+    const std::vector<std::string> &qa = in.get_qa_records();
+    for (size_t i=0; i < qa.size(); i+=4) {
+      out.add_qa_record(qa[i+0], qa[i+1], qa[i+2], qa[i+3]);
+    }
   }
 
   void transfer_properties(Ioss::GroupingEntity *ige,

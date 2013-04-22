@@ -411,7 +411,9 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, adjustDirichlet)
    TEST_ASSERT(!Teuchos::is_null(t_sys->get_A()));
 
    t_sys->get_f()->putScalar(-3.0); // put some garbage in the systems
+   t_sys->get_A()->resumeFill();
    t_sys->get_A()->setAllToScalar(-3.0);
+   t_sys->get_A()->fillComplete();
 
    // there are 3 cases for adjustDirichlet
    //   1. Local set only for GID
@@ -446,7 +448,9 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, adjustDirichlet)
       TEUCHOS_ASSERT(false);
 
    // run test for conditions
+   la_factory->beginFill(*ghosted_sys);
    la_factory->adjustForDirichletConditions(*ghosted_0,*ghosted_1,*ghosted_sys);
+   la_factory->endFill(*ghosted_sys);
 
    std::size_t sz = t_sys->get_A()->getNodeMaxNumRowEntries();
    std::size_t numEntries = 0;

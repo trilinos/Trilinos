@@ -107,7 +107,7 @@ namespace panzer_stk {
 
     template <typename T>
     Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
-    { return Teuchos::rcp(new panzer::ResponseEvaluatorFactory_Functional<T>(comm)); }
+    { return Teuchos::rcp(new panzer::ResponseEvaluatorFactory_Functional<T,int,int>(comm)); }
   };
 
   TEUCHOS_UNIT_TEST(volumetric_side_response, test_wkst)

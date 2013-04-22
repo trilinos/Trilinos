@@ -56,6 +56,27 @@
 
 namespace panzer {
 
+class FunctionalScatterBase {
+public:
+   virtual void scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
+                                 panzer::Traits::EvalData workset, 
+                                 Teuchos::ArrayRCP<double> & dgdx) const = 0;
+};
+ 
+template <typename LO,typename GO>
+class FunctionalScatter : public FunctionalScatterBase {
+public:
+   FunctionalScatter(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer)
+     : globalIndexer_(globalIndexer) {}
+
+   void scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
+                         panzer::Traits::EvalData workset, 
+                         Teuchos::ArrayRCP<double> & dgdx) const;
+private:
+ 
+   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+};
+
 /** This class handles responses with values aggregated
   * on each finite element cell.
   */
@@ -65,7 +86,10 @@ class ResponseScatterEvaluator_Functional : public PHX::EvaluatorWithBaseImpl<Tr
 public:
 
   //! A constructor with concrete arguments instead of a parameter list.
-  ResponseScatterEvaluator_Functional(const std::string & name,const CellData & cd);
+  ResponseScatterEvaluator_Functional(const std::string & name,const CellData & cd,
+                                      const Teuchos::RCP<FunctionalScatterBase> & functionalScatter);
+  ResponseScatterEvaluator_Functional(const std::string & integrandName,const std::string & responseName,const CellData & cd,
+                                      const Teuchos::RCP<FunctionalScatterBase> & functionalScatter);
 
   void postRegistrationSetup(typename Traits::SetupData d,
                              PHX::FieldManager<Traits>& fm);
@@ -82,6 +106,7 @@ private:
 
   Teuchos::RCP<PHX::FieldTag> scatterHolder_; // dummy target
   PHX::MDField<ScalarT,panzer::Cell> cellIntegral_; // holds cell integrals
+  Teuchos::RCP<FunctionalScatterBase> scatterObj_;
 };
 
 }

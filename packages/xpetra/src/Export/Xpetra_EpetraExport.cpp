@@ -58,7 +58,7 @@ namespace Xpetra {
   }
   //
 
-  ArrayView< const int > EpetraExport::getExportImageIDs() const { XPETRA_MONITOR("EpetraExport::getExportImageIDs"); return ArrayView<const int> (export_->ExportPIDs(),export_->NumExportIDs()); }
+  ArrayView< const int > EpetraExport::getExportPIDs() const { XPETRA_MONITOR("EpetraExport::getExportImageIDs"); return ArrayView<const int> (export_->ExportPIDs(),export_->NumExportIDs()); }
 
   ArrayView< const int > EpetraExport::getPermuteFromLIDs() const {
     XPETRA_MONITOR("EpetraExport::getPermuteFromLIDs");

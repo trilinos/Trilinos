@@ -98,23 +98,45 @@ int main(int argc, char *argv[]) {
   //   Galeri Parameters   //
   //***********************//
 
-  GO nx,ny,nz;
-  nx=30; ny=30; nz=30;
+  GO nx, ny, nz;
+  int mx, my, mz;
   double stretchx, stretchy, stretchz, h, delta;
-  h=0.01; delta=2.0;
-  stretchx=h; stretchy=h; stretchz=h;
   int PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR;
-  PMLXL=10; PMLXR=10; PMLYL=10; PMLYR=10; PMLZL=10; PMLZR=10;
   double omega, shift;
-  omega=20.0*M_PI;
-  shift=0.5;
+
+  std::ifstream inputfile;
+  inputfile.open("helm3D.xml");
+  inputfile >> nx       >> ny       >> nz ;
+  if(comm->getRank()==0)
+    std::cout<<"nx: "<<nx<<"  ny: "<<ny<<"  nz: "<<nz<<std::endl;
+  inputfile >> stretchx >> stretchy >> stretchz ;
+  if(comm->getRank()==0)
+    std::cout<<"stretchx: "<<stretchx<<"  stretchy: "<<stretchy<<"  stretchz: "<<stretchz<<std::endl;
+  inputfile >> h        >> delta ;
+  if(comm->getRank()==0)
+    std::cout<<"h: "<<h<<"  delta: "<<delta<<std::endl;
+  inputfile >> PMLXL    >> PMLXR ;
+  if(comm->getRank()==0)
+    std::cout<<"PMLXL: "<<PMLXL<<"  PMLXR: "<<PMLXR<<std::endl;
+  inputfile >> PMLYL    >> PMLYR ;
+  if(comm->getRank()==0)
+    std::cout<<"PMLYL: "<<PMLYL<<"  PMLYR: "<<PMLYR<<std::endl;
+  inputfile >> PMLZL    >> PMLZR ;
+  if(comm->getRank()==0)
+    std::cout<<"PMLZL: "<<PMLZL<<"  PMLZR: "<<PMLZR<<std::endl;
+  inputfile >> omega    >> shift ;
+  if(comm->getRank()==0)
+    std::cout<<"omega: "<<omega<<"  shift: "<<shift<<std::endl;
+  inputfile >> mx       >> my       >> mz ;
+  if(comm->getRank()==0)
+    std::cout<<"mx: "<<mx<<"  my: "<<my<<"  mz: "<<mz<<std::endl;
 
   Galeri::Xpetra::Parameters<GO> matrixParameters_laplace  (clp, nx, ny, nz, "HelmholtzFEM3D", 0, stretchx, stretchy, stretchz,
-							    h, delta, 0,     0,     0,     0,     0,     0,     0.0,   shift);
+							    h, delta, 0,     0,     0,     0,     0,     0,     0.0,   0.0,   mx,   my,   mz  );
   Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "HelmholtzFEM3D", 0, stretchx, stretchy, stretchz,
-							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
+							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0,   mx,   my,   mz  );
   Galeri::Xpetra::Parameters<GO> matrixParameters_shift    (clp, nx, ny, nz, "HelmholtzFEM3D", 0, stretchx, stretchy, stretchz,
-							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
+							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift, mx,   my,   mz  );
   Xpetra::Parameters             xpetraParameters(clp);
 
   //****************************************//

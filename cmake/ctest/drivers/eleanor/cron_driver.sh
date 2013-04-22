@@ -21,8 +21,12 @@ export TDD_CTEST_TEST_TYPE=Nightly
 # Machine specific environment
 #
 
-export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
+export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80"
+export http_proxy="http://wwwproxy.sandia.gov:80"
 export TDD_FORCE_CMAKE_INSTALL=0
+
+source /usr/local/intel/Compiler/11.1/064/bin/iccvars.sh intel64
+source /usr/local/intel/Compiler/11.1/064/mkl/tools/environment/mklvarsem64t.sh
 
 # Machine independent cron_driver:
 #

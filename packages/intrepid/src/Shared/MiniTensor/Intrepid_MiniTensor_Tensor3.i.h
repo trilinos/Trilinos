@@ -101,6 +101,32 @@ Tensor3<T>::operator()(Index const i, Index const j, Index const k)
   return e[i * N * N + j * N + k];
 }
 
+//
+// Linear access to components
+// \param i the index
+//
+template<typename T>
+inline
+T const &
+Tensor3<T>::operator[](Index const i) const
+{
+  assert(i < integer_power(get_dimension(), order()));
+  return e[i];
+}
+
+//
+// Linear access to components
+// \param i the index
+//
+template<typename T>
+inline
+T &
+Tensor3<T>::operator[](Index const i)
+{
+  assert(i < integer_power(get_dimension(), order()));
+  return e[i];
+}
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Tensor3_i_h

@@ -48,6 +48,13 @@
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Map.hpp>
 
+// FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
+#ifdef HAVE_MPI
+#  include "mpi.h"
+#endif // HAVE_MPI
+// FIXME (mfh 16 Apr 2013) GIANT HACK ABOVE
+
+
 namespace Tpetra {
   namespace Details {
     template<class LO, class GO, class NT>
@@ -274,19 +281,65 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(! map->isContiguous (), std::invalid_argument,
         Teuchos::typeName (*this) << " constructor: Map is not contiguous.");
 
-      // Make room for the min global ID on each proc, plus one
-      // entry at the end for the max cap.
-      allMinGIDs_ = arcp<GO>(comm->getSize () + 1);
+      const int numProcs = comm->getSize ();
+
+      // Make room for the min global ID on each process, plus one
+      // entry at the end for the "max cap."
+      allMinGIDs_ = arcp<GO> (numProcs + 1);
       // Get my process' min global ID.
       GO minMyGID = map->getMinGlobalIndex ();
-      // Gather all of the min global IDs into the first getSize()
+      // Gather all of the min global IDs into the first numProcs
       // entries of allMinGIDs_.
-      Teuchos::gatherAll<int, GO> (*comm, 1, &minMyGID, comm->getSize (),
-                                   allMinGIDs_.getRawPtr ());
+
+      // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
+      //
+      // The purpose of this giant hack is that gatherAll appears to
+      // interpret the "receive count" argument differently than
+      // MPI_Allgather does.  Matt Bettencourt reports Valgrind issues
+      // (memcpy with overlapping data) with MpiComm<int>::gatherAll,
+      // which could relate either to this, or to OpenMPI.
+#ifdef HAVE_MPI
+      MPI_Datatype rawMpiType = MPI_INT;
+      bool useRawMpi = true;
+      if (typeid (GO) == typeid (int)) {
+        rawMpiType = MPI_INT;
+      } else if (typeid (GO) == typeid (long)) {
+        rawMpiType = MPI_LONG;
+      } else {
+        useRawMpi = false;
+      }
+      if (useRawMpi) {
+        using Teuchos::rcp_dynamic_cast;
+        using Teuchos::MpiComm;
+        RCP<const MpiComm<int> > mpiComm =
+          rcp_dynamic_cast<const MpiComm<int> > (comm);
+        // It could be a SerialComm instead, even in an MPI build, so
+        // be sure to check.
+        if (! comm.is_null ()) {
+          MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+          const int err =
+            MPI_Allgather (&minMyGID, 1, rawMpiType,
+                           allMinGIDs_.getRawPtr (), 1, rawMpiType,
+                           rawMpiComm);
+          TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+            "Tpetra::DistributedContiguousDirectory: MPI_Allgather failed");
+        } else {
+          gatherAll<int, GO> (*comm, 1, &minMyGID, numProcs, allMinGIDs_.getRawPtr ());
+        }
+      } else {
+        gatherAll<int, GO> (*comm, 1, &minMyGID, numProcs, allMinGIDs_.getRawPtr ());
+      }
+#else // NOT HAVE_MPI
+      gatherAll<int, GO> (*comm, 1, &minMyGID, numProcs, allMinGIDs_.getRawPtr ());
+#endif // HAVE_MPI
+      // FIXME (mfh 16 Apr 2013) GIANT HACK ABOVE
+
+      //gatherAll<int, GO> (*comm, 1, &minMyGID, numProcs, allMinGIDs_.getRawPtr ());
+
       // Put the max cap at the end.  Adding one lets us write loops
       // over the global IDs with the usual strict less-than bound.
-      allMinGIDs_[comm->getSize ()] = map->getMaxAllGlobalIndex()
-                                      + Teuchos::OrdinalTraits<GO>::one();
+      allMinGIDs_[numProcs] = map->getMaxAllGlobalIndex ()
+        + Teuchos::OrdinalTraits<GO>::one ();
     }
 
     template<class LO, class GO, class NT>
@@ -627,8 +680,8 @@ namespace Tpetra {
         }
       }
 
-      ArrayRCP<GO> sendGIDs;
-      ArrayRCP<int> sendImages;
+      Array<GO> sendGIDs;
+      Array<int> sendImages;
       distor.createFromRecvs (globalIDs, dirImages (), sendGIDs, sendImages);
       const size_t numSends = sendGIDs.size ();
 
@@ -672,7 +725,7 @@ namespace Tpetra {
         // "PID" means "process ID" (a.k.a. "node ID," a.k.a. "rank").
         LO curLID;
         typename Array<global_size_t>::iterator exportsIter = exports.begin();
-        typename ArrayRCP<GO>::const_iterator gidIter = sendGIDs.begin();
+        typename Array<GO>::const_iterator gidIter = sendGIDs.begin();
         for ( ; gidIter != sendGIDs.end(); ++gidIter) {
           // Don't use as() here (see above note).
           *exportsIter++ = static_cast<global_size_t> (*gidIter);

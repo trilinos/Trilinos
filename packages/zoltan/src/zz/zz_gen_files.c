@@ -422,8 +422,9 @@ int gen_geom, int gen_graph, int gen_hg)
      *  6. character data may be upper or lower case. 
      */
 
-    Zoltan_Print_Sync_Start(zz->Communicator, 0); 
     sprintf(full_fname, "%s.mtxp", fname);  /* matrixmarket plus */
+
+    Zoltan_Print_Sync_Start(zz->Communicator, 0); 
     if (zz->Proc == 0)
       fp = fopen(full_fname, "w");
     else
@@ -461,7 +462,6 @@ int gen_geom, int gen_graph, int gen_hg)
     eptr = edgeIds;
     vptr = vtxIds;
 
-    fseek(fp, 0, SEEK_END);
     for (i=0; i<nEdges; i++){
       for (j=0; j<edgeSize[i]; j++){
         fprintf(fp, ZOLTAN_ID_SPEC " " ZOLTAN_ID_SPEC " 1.0 %d\n",
@@ -471,7 +471,9 @@ int gen_geom, int gen_graph, int gen_hg)
       eptr += lenGID;
     }
     fflush(fp);
+    fclose(fp);
     Zoltan_Print_Sync_End(zz->Communicator, 0); 
+    MPI_Barrier(zz->Communicator);
 
     /* Each proc prints its vertices and vertex weights. */
 
@@ -480,7 +482,7 @@ int gen_geom, int gen_graph, int gen_hg)
     vptr = global_ids;
     wptr = float_vwgt;
 
-    fseek(fp, 0, SEEK_END);
+    fp = fopen(full_fname, "a");
 
     if (zz->Proc == 0){
       fprintf(fp, 
@@ -498,7 +500,9 @@ int gen_geom, int gen_graph, int gen_hg)
       vptr += lenGID;
     }
     fflush(fp);
+    fclose(fp);
     Zoltan_Print_Sync_End(zz->Communicator, 0); 
+    MPI_Barrier(zz->Communicator);
 
     /* Each proc prints its edge weights. */
 
@@ -509,7 +513,7 @@ int gen_geom, int gen_graph, int gen_hg)
       eptr = eWgtIds;
       wptr = eWgts;
 
-      fseek(fp, 0, SEEK_END);
+      fp = fopen(full_fname, "a");
 
       if (zz->Proc == 0){
         fprintf(fp, 
@@ -528,11 +532,10 @@ int gen_geom, int gen_graph, int gen_hg)
       }
 
       fflush(fp);
+      fclose(fp);
       Zoltan_Print_Sync_End(zz->Communicator, 0); 
+      MPI_Barrier(zz->Communicator);
     }
-
-    fclose(fp);
-    MPI_Barrier(zz->Communicator);
   }
 
 End:

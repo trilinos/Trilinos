@@ -17,7 +17,6 @@ scatterResponse()
   double glbValue = 0.0;
 
   // do global summation
-  // eComm_.SumAll(&locValue,&glbValue,1);
   Teuchos::reduceAll(*this->getComm(), Teuchos::REDUCE_SUM, static_cast<Thyra::Ordinal>(1), &locValue,&glbValue);
 
   value = glbValue;
@@ -33,6 +32,29 @@ scatterResponse()
 
     this->getThyraVector()[0] = glbValue;
   }
+}
+
+template < >
+void Response_Functional<panzer::Traits::Jacobian>::
+scatterResponse() 
+{
+  Teuchos::RCP<Thyra::VectorBase<double> > dgdx_unique = getDerivative();
+   
+  Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(uniqueContainer_)->set_f_th(dgdx_unique);
+  linObjFactory_->ghostToGlobalContainer(*ghostedContainer_,*uniqueContainer_,LinearObjContainer::F);
+}
+
+// Do nothing unless derivatives are actually required
+template <typename EvalT>
+void Response_Functional<EvalT>::
+setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & soln_vs) { }
+
+// derivatives are required for 
+template < >
+void Response_Functional<panzer::Traits::Jacobian>::
+setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & soln_vs) 
+{ 
+  setDerivativeVectorSpace(soln_vs);
 }
 
 }

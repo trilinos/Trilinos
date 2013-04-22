@@ -97,15 +97,16 @@ struct HostViewRemap ;
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 8 >
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostParallelLaunch< HostViewRemap >( *this ); }
+    { HostThreadWorker::execute(); }
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( output.dimension_0() );
@@ -120,20 +121,23 @@ struct HostViewRemap< OutputView , InputView , 8 >
     for ( Host::size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
       output(i0,i1,i2,i3,i4,i5,i6,i7) = input(i0,i1,i2,i3,i4,i5,i6,i7);
     }}}}}}}}
+
+    end_barrier( this_thread );
   }
 };
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 7 >
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostParallelLaunch< HostViewRemap >( *this ); }
+    { HostThreadWorker::execute(); }
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( output.dimension_0() );
@@ -147,20 +151,23 @@ struct HostViewRemap< OutputView , InputView , 7 >
     for ( Host::size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
       output(i0,i1,i2,i3,i4,i5,i6) = input(i0,i1,i2,i3,i4,i5,i6);
     }}}}}}}
+
+    end_barrier( this_thread );
   }
 };
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 6 >
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostParallelLaunch< HostViewRemap >( *this ); }
+    { HostThreadWorker::execute(); }
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( output.dimension_0() );
@@ -173,20 +180,23 @@ struct HostViewRemap< OutputView , InputView , 6 >
     for ( Host::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
       output(i0,i1,i2,i3,i4,i5) = input(i0,i1,i2,i3,i4,i5);
     }}}}}}
+
+    end_barrier( this_thread );
   }
 };
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 5 >
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostParallelLaunch< HostViewRemap >( *this ); }
+    { HostThreadWorker::execute(); }
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( output.dimension_0() );
@@ -198,20 +208,23 @@ struct HostViewRemap< OutputView , InputView , 5 >
     for ( Host::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
       output(i0,i1,i2,i3,i4) = input(i0,i1,i2,i3,i4);
     }}}}}
+
+    end_barrier( this_thread );
   }
 };
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 4 >
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostParallelLaunch< HostViewRemap >( *this ); }
+    { HostThreadWorker::execute(); }
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( output.dimension_0() );
@@ -222,20 +235,23 @@ struct HostViewRemap< OutputView , InputView , 4 >
     for ( Host::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
       output(i0,i1,i2,i3) = input(i0,i1,i2,i3);
     }}}}
+
+    end_barrier( this_thread );
   }
 };
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 3 >
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostParallelLaunch< HostViewRemap >( *this ); }
+    { HostThreadWorker::execute(); }
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( output.dimension_0() );
@@ -245,20 +261,23 @@ struct HostViewRemap< OutputView , InputView , 3 >
     for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
       output(i0,i1,i2) = input(i0,i1,i2);
     }}}
+
+    end_barrier( this_thread );
   }
 };
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 2 >
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostParallelLaunch< HostViewRemap >( *this ); }
+    { HostThreadWorker::execute(); }
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( output.dimension_0() );
@@ -267,20 +286,23 @@ struct HostViewRemap< OutputView , InputView , 2 >
     for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
       output(i0,i1) = input(i0,i1);
     }}
+
+    end_barrier( this_thread );
   }
 };
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 1 >
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostParallelLaunch< HostViewRemap >( *this ); }
+    { HostThreadWorker::execute(); }
 
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( output.dimension_0() );
@@ -288,6 +310,8 @@ struct HostViewRemap< OutputView , InputView , 1 >
     for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
       output(i0) = input(i0);
     }
+
+    end_barrier( this_thread );
   }
 };
 

@@ -101,6 +101,9 @@ static nthread_counter_t request_count;
 
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
+extern trios_buffer_queue_t rdma_target_bq;
+extern trios_buffer_queue_t rdma_get_bq;
+extern trios_buffer_queue_t rdma_put_bq;
 
 /**
  *   @addtogroup rpc_ptl_impl
@@ -910,316 +913,6 @@ complete:
 }
 
 
-
-//#ifdef HAVE_TRIOS_PORTALS
-///**
-// * @brief Wait for any request to complete.
-// *
-// * A request is not complete unless we receive the short
-// * result.
-// *
-// */
-//int nssi_waitany(
-//        nssi_request **req_array,
-//        nssi_size size,
-//        int timeout,
-//        int *which,
-//        int *remote_rc)
-//{
-//    int rc=NSSI_OK;
-//    ptl_job_t *ptl_job=NULL;
-//
-//    int i;
-//
-//    ptl_handle_eq_t *eq_handles;
-//
-//    /* initialize which */
-//    *which = -1;
-//
-//    /* allocate handles */
-//    eq_handles = (ptl_handle_eq_t *)malloc(size * sizeof(ptl_handle_eq_t));
-//
-//
-//    /* check the request status of each request */
-//    for (i=0; i<size; i++) {
-//        if (req_array[i]->status != NSSI_PROCESSING_REQUEST) {
-//            *which = i;
-//            goto complete;
-//        }
-//    }
-//
-//
-//    /* setup the event queue array */
-//    for (i=0; i<size; i++) {
-//        eq_handles[i] = req_array[i]->short_result_hdl.eq_h;
-//    }
-//
-//    /* if the request status is not complete, we need to do some work */
-//    ptl_job = nssi_create_ptl_job(PTL_JOB_PUT_TARGET, eq_handles, size, timeout);
-//    if (ptl_job == NULL) {
-//        rc = NSSI_ENOMEM;
-//        goto complete;
-//    }
-//
-//    nssi_job_submit(ptl_job);
-//    log_debug(rpc_debug_level, "calling nssi_job_wait");
-//    nssi_job_wait(ptl_job);
-//
-//    if (ptl_job->result == NSSI_ETIMEDOUT) {
-//        rc = ptl_job->result;
-//        log_debug(rpc_debug_level, "NSSI_ERR_TIMEOUT, rc==%d", rc);
-//        *which = ptl_job->which;
-////        req_array[*which]->status = NSSI_REQUEST_ERROR;
-//        goto complete;
-//    }
-//    if (ptl_job->result != NSSI_OK) {
-//        log_error(rpc_debug_level, "portals job failed");
-//        rc = ptl_job->result;
-////        req_array[*which]->status = NSSI_REQUEST_ERROR;
-//        goto complete;
-//    }
-//
-//    *which = ptl_job->which;
-//
-//    log_debug(rpc_debug_level,"received short result");
-//
-//    /* we are now ready to process the result */
-//    req_array[*which]->status = NSSI_PROCESSING_RESULT;
-//    rc = process_result((char *)ptl_job->event.md.start + ptl_job->event.offset, req_array[*which]);
-//    if (rc != NSSI_OK) {
-//        log_fatal(rpc_debug_level,"unable to process result");
-//        return rc;
-//    }
-//
-//    if (req_array[*which]->use_long_args) {
-//        log_debug(rpc_debug_level,"req_array[*which]->args_eq_h == %d", req_array[*which]->long_args_hdl.eq_h);
-//
-//        /* Now we need to clean up the long arguments (if they were used) */
-//        rc = cleanup_long_args(req_array[*which], timeout);
-//        if (rc != NSSI_OK) {
-//            log_error(rpc_debug_level, "failed to cleanup long args");
-//        }
-//    }
-//
-//    /* release the event queue for the short result */
-//    log_debug(rpc_debug_level, "unpinning req_array[*which]->short_result_hdl");
-//    nssi_ptl_unpin_memory(&req_array[*which]->short_result_hdl);
-////    log_debug(rpc_debug_level,"freeing req_array[*which]->short_result_hdl.eq_h==%d...", req_array[*which]->short_result_hdl.eq_h);
-////    rc = nssi_PtlEQFree(req_array[*which]->short_result_hdl.eq_h);
-////    if (rc != PTL_OK) {
-////        log_error(rpc_debug_level, "failed to free short result EQ");
-////        rc=NSSI_EBADRPC;
-////        goto complete;
-////    }
-//
-//    /* If the request has data associated with it, the data should
-//     * be transferred by now (server would not have sent result).
-//     * We need to unlink the MD and free the event queue.
-//     */
-//    if (req_array[*which]->data != NULL) {
-//        /* Unlink the MD for the data */
-//        log_debug(rpc_debug_level, "unpinning req_array[*which]->data_hdl");
-//        nssi_ptl_unpin_memory(&req_array[*which]->data_hdl);
-////        log_debug(rpc_debug_level, "unlinking req_array[*which]->data_hdl.md_h: %d", req_array[*which]->data_hdl.md_h);
-////        rc = nssi_PtlMDUnlink(req_array[*which]->data_hdl.md_h);
-////        if (rc != PTL_OK) {
-////            log_error(rpc_debug_level, "failed to unlink data MD");
-////            rc=NSSI_EBADRPC;
-////            goto complete;
-////        }
-////
-////        /* free the EQ for the data */
-////        log_debug(rpc_debug_level, "freeing req_array[*which]->data_hdl.eq_h: %d", req_array[*which]->data_hdl.eq_h);
-////        rc = nssi_PtlEQFree(req_array[*which]->data_hdl.eq_h);
-////        if (rc != PTL_OK) {
-////            log_error(rpc_debug_level, "failed to free data EQ");
-////            log_error(rpc_debug_level, "failed to free data EQ: %d", rc);
-////            rc=NSSI_EBADRPC;
-////            goto complete;
-////        }
-//    }
-//
-//
-//complete:
-//
-//    if (ptl_job) {
-//        /* free the memory for the short result buffer */
-//        if (ptl_job->event.md.start) {
-//            free(ptl_job->event.md.start);
-//        }
-//        nssi_destroy_ptl_job (ptl_job);
-//    }
-//
-//    /* at this point, the status should either be complete or error */
-//    free(eq_handles);
-//
-//    /* check for an error in this code */
-//    if (rc != NSSI_OK) {
-//        return rc;
-//    }
-//
-//    /* check for an error */
-//    if (req_array[*which]->status == NSSI_REQUEST_ERROR) {
-//        *remote_rc = req_array[*which]->error_code;
-//        return rc;
-//    }
-//
-//    /* call the callback function associated with the request */
-//    log_debug(rpc_debug_level, "calling callback for wait(): op=%d", req_array[*which]->opcode);
-//    if (req_array[*which]->callback) {
-//        req_array[*which]->callback(req_array[*which]);
-//    }
-//
-//    /* check for completion */
-//    if (req_array[*which]->status == NSSI_REQUEST_COMPLETE) {
-//        log_debug(rpc_debug_level,"waitany finished");
-//        *remote_rc = NSSI_OK;
-//        return rc;
-//    }
-//
-//    /* this should only execute if something went wrong */
-//    log_fatal(rpc_debug_level,"invalid request status %d",req_array[*which]->status);
-//    return NSSI_EBADRPC;
-//
-//}
-//#endif
-//
-//#ifdef HAVE_TRIOS_INFINIBAND
-///**
-// * @brief Wait for any request to complete.
-// *
-// * A request is not complete unless we receive the short
-// * result.
-// *
-// */
-//int nssi_waitany(
-//        nssi_request **req_array,
-//        nssi_size size,
-//        int timeout,
-//        int *which,
-//        int *remote_rc)
-//{
-//    int rc=NSSI_OK;
-//    nssi_ib_job_t *job=NULL;
-//
-//    int i;
-//
-////    struct nssi_ib_message_header *hdrs=NULL;
-//
-//    /* initialize which */
-//    *which = -1;
-//
-////    /* allocate headers */
-////    hdrs = (struct nssi_ib_message_header *)calloc(size, sizeof(struct nssi_ib_message_header));
-//
-//
-//    /* check the request status of each request */
-//    for (i=0; i<size; i++) {
-//        if (req_array[i]->status != NSSI_PROCESSING_REQUEST) {
-//            *which = i;
-//            goto complete;
-//        }
-//    }
-//
-//
-////    /* setup the event queue array */
-////    for (i=0; i<size; i++) {
-////        memcpy(&(hdrs[i]), req_array[i]->ib_msg_hdr, sizeof(struct nssi_ib_message_header));
-////    }
-//
-//    /* if the request status is not complete, we need to do some work */
-//    job = nssi_create_ib_job_list(NSSI_JOB_RESPONSE, timeout, req_array, size);
-//    if (job == NULL) {
-//        rc = NSSI_ENOMEM;
-//        goto complete;
-//    }
-//
-//    nssi_ib_job_submit(job);
-//    log_debug(rpc_debug_level, "calling nssi_ib_job_wait");
-//    nssi_ib_job_wait(job);
-//
-//    if (job->result == NSSI_ETIMEDOUT) {
-//        rc = job->result;
-//        log_debug(rpc_debug_level, "NSSI_ERR_TIMEOUT, rc==%d", rc);
-//        *which = job->which;
-//        goto complete;
-//    }
-//    if (job->result != NSSI_OK) {
-//        log_error(rpc_debug_level, "IB job failed");
-//        rc = job->result;
-//        goto complete;
-//    }
-//
-//    *which = job->which;
-//
-//    log_debug(rpc_debug_level,"received short result");
-//
-//    /* we are now ready to process the result */
-//    req_array[*which]->status = NSSI_PROCESSING_RESULT;
-//    rc = process_result((char *)job->short_result, req_array[*which]);
-//    if (rc != NSSI_OK) {
-//        log_fatal(rpc_debug_level,"unable to process result");
-//        return rc;
-//    }
-//
-//    if (req_array[*which]->use_long_args) {
-//        /* Now we need to clean up the long arguments (if they were used) */
-//        rc = cleanup_long_args(req_array[*which], timeout);
-//        if (rc != NSSI_OK) {
-//            log_error(rpc_debug_level, "failed to cleanup long args");
-//            return NSSI_EBADRPC;
-//        }
-//    }
-//
-//    /* If the request has data associated with it, the data should
-//     * be transferred by now (server would not have sent result).
-//     */
-//    if (req_array[*which]->data != NULL) {
-//        cleanup_data_mr(req_array[*which]);
-//    }
-//
-//
-//complete:
-//
-//    if (job) {
-//        nssi_destroy_ib_job(job);
-//    }
-//
-////    /* at this point, the status should either be complete or error */
-////    free(hdrs);
-//
-//    /* check for an error in this code */
-//    if (rc != NSSI_OK) {
-//        return rc;
-//    }
-//
-//    /* check for an error */
-//    if (req_array[*which]->status == NSSI_REQUEST_ERROR) {
-//        *remote_rc = req_array[*which]->error_code;
-//        return rc;
-//    }
-//
-//    /* call the callback function associated with the request */
-//    log_debug(rpc_debug_level, "calling callback for wait(): op=%d", req_array[*which]->opcode);
-//    if (req_array[*which]->callback) {
-//        req_array[*which]->callback(req_array[*which]);
-//    }
-//
-//    /* check for completion */
-//    if (req_array[*which]->status == NSSI_REQUEST_COMPLETE) {
-//        log_debug(rpc_debug_level,"waitany finished");
-//        *remote_rc = NSSI_OK;
-//        return rc;
-//    }
-//
-//    /* this should only execute if something went wrong */
-//    log_fatal(rpc_debug_level,"invalid request status %d",req_array[*which]->status);
-//    return NSSI_EBADRPC;
-//
-//}
-//#endif
-
-
 /**
  * @brief Wait for a request to complete.
  *
@@ -1336,11 +1029,22 @@ cleanup:
      * We need to unlink the MD and free the event queue.
      */
     if (req->data != NULL) {
-        log_debug(debug_level, "Unregister memory for data");
-        rc=NNTI_unregister_memory(&req->data_hdl);
-        if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed unregistering data: %s",
-                    nnti_err_str(rc));
+        if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= req->data_size)) {
+            /* copy the RDMA buffer contents into the user buffer.
+             * we can't tell if the server op was get or put.
+             * if it was get, then this is a waste of time.
+             * if it was put, then this is required.
+             */
+            memcpy(req->data, NNTI_BUFFER_C_POINTER(req->bulk_data_hdl), req->data_size);
+            trios_buffer_queue_push(&rdma_target_bq, req->bulk_data_hdl);
+        } else {
+            log_debug(debug_level, "Unregister memory for data");
+            rc=NNTI_unregister_memory(req->bulk_data_hdl);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed unregistering data: %s",
+                        nnti_err_str(rc));
+            }
         }
     }
 
@@ -1675,25 +1379,41 @@ int nssi_call_rpc(
 
     if (data_size > 0) {
 
-        log_debug (debug_level, "Registering data buffer (size=%d)", data_size);
-        trios_start_timer(call_time);
-        rc=NNTI_register_memory(
-                &transports[svc->transport_id],
-                (char *)data,
-                data_size,
-                1,
-                (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
-                &svc->svc_host,
-                &request->data_hdl);
-        trios_stop_timer("NNTI_register_memory - data", call_time);
-        if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed registering data: %s",
-                    nnti_err_str(rc));
-            goto cleanup;
+        if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= data_size)) {
+            log_debug(rpc_debug_level, "using buffer queue for TARGET buffer");
+            request->bulk_data_hdl=trios_buffer_queue_pop(&rdma_target_bq);
+            assert(request->bulk_data_hdl);
+            /* copy the user buffer contents into RDMA buffer */
+            memcpy(NNTI_BUFFER_C_POINTER(request->bulk_data_hdl), (char *)data, data_size);
+        } else {
+            log_debug(rpc_debug_level, "using user buffer for TARGET buffer");
+            log_debug (debug_level, "Registering data buffer (size=%d)", data_size);
+            request->bulk_data_hdl=&request->bulk_data;
+            trios_start_timer(call_time);
+            rc=NNTI_register_memory(
+                    &transports[svc->transport_id],
+                    (char *)data,
+                    data_size,
+                    1,
+                    (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
+                    &svc->svc_host,
+                    request->bulk_data_hdl);
+            trios_stop_timer("NNTI_register_memory - data", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed registering data: %s",
+                        nnti_err_str(rc));
+                goto cleanup;
+            }
         }
-        header.data_addr=request->data_hdl;
+        header.data_addr=*request->bulk_data_hdl;
 
-        log_debug(rpc_debug_level, "Registered long args buffer");
+        if (logging_debug(rpc_debug_level)) {
+            fprint_NNTI_buffer(logger_get_file(), "request->bulk_data_hdl",
+                    "nssi_call_rpc", request->bulk_data_hdl);
+        }
+
+        log_debug(rpc_debug_level, "Registered data buffer");
     }
 
     if (nssi_config.use_buffer_queue) {
@@ -1812,7 +1532,12 @@ cleanup:
 
     if (rc != NSSI_OK) {
         if (data_size > 0) {
-            NNTI_unregister_memory(&request->data_hdl);
+            if ((nssi_config.use_buffer_queue) &&
+                (nssi_config.rdma_buffer_queue_buffer_size >= data_size)) {
+                trios_buffer_queue_push(&rdma_target_bq, request->bulk_data_hdl);
+            } else {
+                NNTI_unregister_memory(request->bulk_data_hdl);
+            }
         }
         if (nssi_config.use_buffer_queue) {
             trios_buffer_queue_push(&recv_bq, request->short_result_hdl);

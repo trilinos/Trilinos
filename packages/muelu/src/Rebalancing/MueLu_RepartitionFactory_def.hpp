@@ -78,11 +78,14 @@ namespace MueLu {
  RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set<int>                     ("startLevel",             1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
-    validParamList->set<LO>                      ("minRowsPerProcessor", 1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
-    validParamList->set<double>                  ("nonzeroImbalance",     1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
-    validParamList->set<bool>                    ("fixedOrder",         false, "Use sorting of recv PIDs to force reproducibility");
-    // validParamList->set<GO>                   ("minNnzPerProcessor",    -1, "Minimum number of nonzeros over all processes. If any process falls below this, repartitioning is initiated."); // FIXME: Unused; LO instead of GO?
+    validParamList->set<int>        ("startLevel",                   1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
+    validParamList->set<LO>         ("minRowsPerProcessor",       1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
+    validParamList->set<double>     ("nonzeroImbalance",           1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by "
+                                                                        "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
+    validParamList->set<bool>       ("fixedOrder",                true, "Use sorting of recv PIDs to force reproducibility");
+    // FIXME: Unused; LO instead of GO?
+    // validParamList->set<GO>         ("minNnzPerProcessor",          -1, "Minimum number of nonzeros over all processes. If any process falls below this, repartitioning is initiated.");
+    validParamList->set<std::string>("adjustNumPartitions",     "none", "Algorithm for adjusting number of partitions (none|2k)");
 
     {
       std::stringstream docDiffusiveHeuristic;
@@ -227,6 +230,16 @@ namespace MueLu {
       }
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
+
+      std::string adjustment = pL.get<std::string>("adjustNumPartitions");
+      if (adjustment == "2k") {
+        GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
+
+        int i2 = Teuchos::as<int>(floor(log(numPartitions)/log(2)));
+        numPartitions = Teuchos::as<int>(std::pow(2.,i2));
+
+        GetOStream(Runtime0,0) << "Adjusting number of partitions using \"2k\" algorithm to " << numPartitions << std::endl;
+      }
 
       Set(currentLevel, "number of partitions", numPartitions);
     }

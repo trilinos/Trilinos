@@ -138,11 +138,6 @@ namespace MueLu {
 
     //@}
 
-    //! @name internal print methods.
-    static std::string PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag);
-
-    static std::string PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag);
-
   private:
 
     //! @name internal plausibility check methods

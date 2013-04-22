@@ -141,9 +141,12 @@ namespace MueLu {
 
       }
 
-      if(checkAc_) CheckMainDiagonal(Ac);
-      GetOStream(Statistics0, 0) << PrintMatrixInfo(*Ac, "Ac");
-      GetOStream(Statistics0, 0) << PrintLoadBalancingInfo(*Ac, "Ac");
+      if (checkAc_)
+        CheckMainDiagonal(Ac);
+
+      RCP<ParameterList> params = rcp(new ParameterList());;
+      params->set("printLoadBalancingInfo", true);
+      GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*Ac, "Ac", params);
 
       Set(coarseLevel, "A", Ac);
       Set(coarseLevel, "RAP Pattern", Ac);
@@ -158,43 +161,6 @@ namespace MueLu {
         (*it)->CallBuild(coarseLevel);
       }
     }
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintMatrixInfo(const Matrix& Ac, const std::string& msgTag) {
-    std::stringstream ss(std::stringstream::out);
-    ss << msgTag
-       << " # global rows = "      << Ac.getGlobalNumRows()
-       << ", estim. global nnz = " << Ac.getGlobalNumEntries()
-       << std::endl;
-    return ss.str();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintLoadBalancingInfo(const Matrix& Ac, const std::string& msgTag) {
-    std::stringstream ss(std::stringstream::out);
-
-    RCP<const Teuchos::Comm<int> > comm = Ac.getRowMap()->getComm();
-    GO numActiveProcesses = comm->getSize(), numProcessesWithData = 0;
-
-    // aggregate data
-    GO  numMyNnz = Ac.getNodeNumEntries(),     minNnz,     maxNnz;
-    GO numMyRows = Ac.getNodeNumRows(),    minNumRows, maxNumRows;
-    maxAll(comm,                                       numMyNnz, maxNnz);
-    maxAll(comm,                                      numMyRows, maxNumRows);
-    sumAll(comm, (GO)((numMyRows > 0) ?         1 :          0), numProcessesWithData);
-    minAll(comm, (GO)(( numMyNnz > 0) ?  numMyNnz :     maxNnz), minNnz);
-    minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
-
-    double   avgNumRows = Ac.getGlobalNumRows() / numProcessesWithData;
-    double nnzImbalance = ((double) maxNnz) / minNnz;
-
-    ss << msgTag << " # active processes = "   << numActiveProcesses << std::endl;
-    ss << msgTag << " # rows per proc: min = " << minNumRows << ", avg  = "  << avgNumRows << ", max  = "  << maxNumRows << std::endl;
-    ss << msgTag << " nonzero imbalance = "    << nnzImbalance << std::endl;
-
-    return ss.str();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

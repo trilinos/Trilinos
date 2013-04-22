@@ -125,34 +125,25 @@ public:
    *  Initialize with the number of thread gangs
    *  and number of thread workers per gang.
    *  All worker threads of a gang will occupy the same NUMA node.
-   *  The total number of threads = gang_count * worker_count.
+   *  The total number of threads = gang_topo.first * gang_topo.second.
    *
-   * \pre gang_count   <= node_count
-   * \pre worker_count <= node_core_count OR node_core_count == 0
+   *  The core topology must be less than or equal to hwloc::get_core_topology().
+   *  If core topology is not input then the full hwloc::get_core_topology() is used.
    */
+  static void initialize( const std::pair<unsigned,unsigned> gang_topo ,
+                          const std::pair<unsigned,unsigned> core_topo =
+                                std::pair<unsigned,unsigned>(0,0) );
+
+  inline
   static void initialize( const size_type gang_count ,
-                          const size_type worker_count );
+                          const size_type worker_count )
+  {
+    initialize( std::pair<unsigned,unsigned>( gang_count , worker_count ) );
+  }
 
-  /** \brief  Detect (if possible) the gang X gang_worker capacity.
-   *          Return zero if cannot be detected.
-   *
-   *  A "gang" of threads has strong memory affinity;
-   *  e.g., sharing a NUMA region or some level of cache memory.
-   *
-   *  If this capacity cannot be detected then one is returned.
-   */
-  static size_type detect_gang_capacity();
+  static void resize_reduce_scratch( unsigned );
 
-  /** \brief  The hardware can efficiently support up to
-   *  'gang_worker_capacity' threads per gang.
-   *
-   *  If this capacity cannot be detected then zero is returned.
-   */
-  static size_type detect_gang_worker_capacity();
-
-  //! An alignment size for arrays
-  static size_type detect_cache_line_size();
-
+  static void * root_reduce_scratch();
   //@}
 };
 
@@ -161,10 +152,7 @@ public:
 } // namespace KokkosArray
 
 #include <Host/KokkosArray_Host_View.hpp>
-
 #include <Host/KokkosArray_Host_Parallel.hpp>
-#include <Host/KokkosArray_Host_ParallelFor.hpp>
-#include <Host/KokkosArray_Host_ParallelReduce.hpp>
 
 #endif /* #define KOKKOSARRAY_HOST_HPP */
 

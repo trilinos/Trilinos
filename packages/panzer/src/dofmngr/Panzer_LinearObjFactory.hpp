@@ -222,6 +222,9 @@ public:
    Teuchos::RCP<PHX::Evaluator<Traits> > buildScatterInitialCondition(const Teuchos::ParameterList & pl) const
    { return Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(scatterInitialConditionManager_->template getAsBase<EvalT>()->clone(pl)); }
 
+   virtual void beginFill(LinearObjContainer & loc) const {}
+   virtual void endFill(LinearObjContainer & loc) const {}
+
 private:
    typedef PHX::TemplateManager<typename Traits::EvalTypes,
                                 panzer::CloneableEvaluator,

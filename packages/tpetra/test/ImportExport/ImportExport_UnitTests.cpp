@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -52,6 +52,7 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+#include <iterator>
 
 namespace {
 
@@ -108,7 +109,7 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ImportExport, basic, Ordinal ) {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -119,7 +120,7 @@ namespace {
                                           target = createContigMap<Ordinal,Ordinal>(INVALID, 5,comm);
     // create Import object
     RCP<const Import<Ordinal> > importer = Tpetra::createImport<Ordinal>(source, target);
-    
+
     Ordinal same = importer->getNumSameIDs();
     Ordinal permute = importer->getNumPermuteIDs();
     Ordinal remote = importer->getNumRemoteIDs();
@@ -155,7 +156,7 @@ namespace {
                                           tmap = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,neighbors(),0,comm) );
     for (size_t tnum=0; tnum < 2; ++tnum) {
       RCP<MV> mvMine, mvWithNeighbors;
-      // for tnum=0, these are contiguously allocated multivectors 
+      // for tnum=0, these are contiguously allocated multivectors
       // for tnum=1, these are non-contiguous views of multivectors
       if (tnum == 0) {
         mvMine = rcp(new MV(smap,numVectors));
@@ -212,7 +213,7 @@ namespace {
           TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),2,static_cast<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
         }
       }
-      // export values, test 
+      // export values, test
       mvMine->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
       mvMine->doExport(*mvWithNeighbors,*exporter,ADD);
       if (myImageID == 0 || myImageID == numImages-1) {
@@ -261,7 +262,7 @@ namespace {
                                           tmap = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,neighbors(),0,comm) );
     for (size_t tnum=0; tnum < 2; ++tnum) {
       RCP<MV> mvMine, mvWithNeighbors;
-      // for tnum=0, these are contiguously allocated multivectors 
+      // for tnum=0, these are contiguously allocated multivectors
       // for tnum=1, these are non-contiguous views of multivectors
       if (tnum == 0) {
         mvMine = rcp(new MV(smap,numVectors));
@@ -318,7 +319,7 @@ namespace {
           TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),2,static_cast<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
         }
       }
-      // export values, test 
+      // export values, test
       mvMine->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
       mvMine->doExport(*mvWithNeighbors,*importer,ADD);
       if (myImageID == 0 || myImageID == numImages-1) {
@@ -335,7 +336,7 @@ namespace {
       }
       success &= local_success;
     }
-    // 
+    //
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );

@@ -162,6 +162,9 @@ public:
   void
   describe (std::ostream &out,
             const EVerbosityLevel verbLevel = verbLevel_default) const;
+
+  //! Destructor (marked virtual for memory safety of derived classes).
+  virtual ~Describable ();
 };
 
 

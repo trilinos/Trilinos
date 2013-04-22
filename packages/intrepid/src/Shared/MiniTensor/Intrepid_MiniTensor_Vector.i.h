@@ -322,6 +322,32 @@ Vector<T>::operator()(Index const i)
 }
 
 //
+// Linear access to components
+// \param i the index
+//
+template<typename T>
+inline
+T const &
+Vector<T>::operator[](Index const i) const
+{
+  assert(i < integer_power(get_dimension(), order()));
+  return e[i];
+}
+
+//
+// Linear access to components
+// \param i the index
+//
+template<typename T>
+inline
+T &
+Vector<T>::operator[](Index const i)
+{
+  assert(i < integer_power(get_dimension(), order()));
+  return e[i];
+}
+
+//
 // R^N copy assignment
 // \param v the values of its components are copied to this vector
 //

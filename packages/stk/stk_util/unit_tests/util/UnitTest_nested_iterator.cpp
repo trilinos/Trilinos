@@ -50,7 +50,8 @@ STKUNIT_UNIT_TEST ( nested_iterator, vector_vector_int)
     int count = 0;
     for(; itr != end; ++itr) {
       *itr *= 3;
-      STKUNIT_EXPECT_EQUAL(++count*3,*itr);
+      ++count;
+      STKUNIT_EXPECT_EQUAL(count*3,*itr);
     }
   }
 
@@ -86,7 +87,8 @@ STKUNIT_UNIT_TEST ( nested_iterator, vector_vector_int_nonconst_to_const)
   {
     int count = 0;
     for(; const_itr != end; ++const_itr) {
-      STKUNIT_EXPECT_EQUAL(++count,*const_itr);
+      ++count;
+      STKUNIT_EXPECT_EQUAL(count,*const_itr);
     }
   }
 
@@ -131,7 +133,8 @@ STKUNIT_UNIT_TEST ( nested_iterator, list_vector_int)
     int count = 0;
     for(; itr != end; ++itr) {
       *itr *= 3;
-      STKUNIT_EXPECT_EQUAL(++count*3,*itr);
+      ++count;
+      STKUNIT_EXPECT_EQUAL(count*3,*itr);
     }
   }
 

@@ -58,6 +58,7 @@ template< typename AScalarType ,
 struct Multiply< CrsMatrix<AScalarType,Host> ,
                  View<VScalarType*,LayoutType,Host > ,
                  View<VScalarType*,LayoutType,Host > >
+  : public HostThreadWorker
 {
   typedef Host                             device_type ;
   typedef typename device_type::size_type  size_type ;
@@ -112,7 +113,7 @@ public:
             const vector_type & y )
     : m_A( A ), m_x( x ), m_y( y )
   {
-    HostParallelLaunch< Multiply >( *this );
+    HostThreadWorker::execute();
   }
 };
 

@@ -52,6 +52,7 @@ namespace Ioss {
   class SideBlock;
   class NodeSet;
   class CommSet;
+  class CoordinateFrame;
 
   typedef std::vector<NodeBlock*>    NodeBlockContainer;
   typedef std::vector<EdgeBlock*>    EdgeBlockContainer;
@@ -67,6 +68,8 @@ namespace Ioss {
   typedef std::vector<CommSet*>      CommSetContainer;
   typedef std::vector<double>        StateTimeContainer;
 
+  typedef std::vector<CoordinateFrame> CoordinateFrameContainer;
+  
   typedef std::map<std::string, std::string, std::less<std::string> > AliasMap;
   typedef AliasMap::value_type IOAliasValuePair;
 
@@ -127,6 +130,7 @@ namespace Ioss {
     bool add(FaceSet      *set);
     bool add(ElementSet   *set);
     bool add(CommSet      *set);
+    bool add(const CoordinateFrame &set);
 
     const NodeBlockContainer&    get_node_blocks() const;
     const EdgeBlockContainer&    get_edge_blocks() const;
@@ -138,6 +142,7 @@ namespace Ioss {
     const FaceSetContainer&      get_facesets() const;
     const ElementSetContainer&   get_elementsets() const;
     const CommSetContainer&      get_commsets() const;
+    const CoordinateFrameContainer&  get_coordinate_frames() const;
 
     // Retrieve the Grouping Entity with the specified name.
     // Returns NULL if the entity does not exist
@@ -154,6 +159,8 @@ namespace Ioss {
     FaceSet*        get_faceset(const std::string& name) const;
     ElementSet*     get_elementset(const std::string& name) const;
     CommSet*        get_commset(const std::string& name) const;
+
+    const CoordinateFrame& get_coordinate_frame(int64_t id) const;
 
     // Add the name 'alias' as an alias for the databae entity with the
     // name 'db_name'. Returns true if alias added; false if problems
@@ -200,6 +207,10 @@ namespace Ioss {
     void add_information_records(const std::vector<std::string> &info);
     void add_information_record(const std::string &info);
     
+    const std::vector<std::string> &get_qa_records() const;
+    void add_qa_record(const std::string &code, const std::string &code_qa,
+		       const std::string &date="", const std::string &time="");
+
   protected:
     int64_t internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
@@ -225,6 +236,8 @@ namespace Ioss {
     
     SideSetContainer      sideSets;
     CommSetContainer      commSets;
+    CoordinateFrameContainer coordinateFrames;
+    
     mutable StateTimeContainer stateTimes;
 
     int currentState;
@@ -248,4 +261,11 @@ inline void Ioss::Region::add_information_records(const std::vector<std::string>
 inline void Ioss::Region::add_information_record(const std::string &info)
 { return get_database()->add_information_record(info); }
     
+inline void Ioss::Region::add_qa_record(const std::string &code, const std::string &code_qa,
+					const std::string &date, const std::string &time)
+{ return get_database()->add_qa_record(code, code_qa, date, time); }
+
+inline const std::vector<std::string> &Ioss::Region::get_qa_records() const
+{ return get_database()->get_qa_records(); }
+
 #endif

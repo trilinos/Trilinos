@@ -237,7 +237,7 @@ namespace MueLu {
     Teuchos::RCP<Vector> diagPVec = VectorFactory::Build(permPmatrix->getRowMap(),true);
     permPmatrix->getLocalDiagCopy(*diagPVec);
     Teuchos::ArrayRCP< const Scalar > diagPVecData = diagPVec->getData(0);
-    LocalOrdinal lNumRowPermutations = 0;
+    GlobalOrdinal lNumRowPermutations = 0;
     GlobalOrdinal gNumRowPermutations = 0;
     for(size_t i = 0; i<diagPVec->getMap()->getNodeNumElements(); ++i) {
       if(diagPVecData[i] == 0.0) {
@@ -246,14 +246,14 @@ namespace MueLu {
     }
 
     // sum up all entries in multipleColRequests over all processors
-    sumAll(diagPVec->getMap()->getComm(), (LocalOrdinal)lNumRowPermutations, gNumRowPermutations);
+    sumAll(diagPVec->getMap()->getComm(), lNumRowPermutations, gNumRowPermutations);
 
     //// count column permutations
     // count zeros on diagonal in Q^T -> number of column permutations
     Teuchos::RCP<Vector> diagQTVec = VectorFactory::Build(permQTmatrix->getRowMap(),true);
     permQTmatrix->getLocalDiagCopy(*diagQTVec);
     Teuchos::ArrayRCP< const Scalar > diagQTVecData = diagQTVec->getData(0);
-    LocalOrdinal lNumColPermutations = 0;
+    GlobalOrdinal lNumColPermutations = 0;
     GlobalOrdinal gNumColPermutations = 0;
     for(size_t i = 0; i<diagQTVec->getMap()->getNodeNumElements(); ++i) {
       if(diagQTVecData[i] == 0.0) {
@@ -262,7 +262,7 @@ namespace MueLu {
     }
 
     // sum up all entries in multipleColRequests over all processors
-    sumAll(diagQTVec->getMap()->getComm(), (LocalOrdinal)lNumColPermutations, gNumColPermutations);
+    sumAll(diagQTVec->getMap()->getComm(), lNumColPermutations, gNumColPermutations);
 
     currentLevel.Set("#RowPermutations", gNumRowPermutations, genFactory/*this*/);
     currentLevel.Set("#ColPermutations", gNumColPermutations, genFactory/*this*/);

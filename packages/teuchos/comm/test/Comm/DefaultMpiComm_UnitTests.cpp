@@ -482,7 +482,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, ReadySend, Ordinal, Packet )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordinal, Packet )
 {
-
   using Teuchos::as;
   using Teuchos::rcpFromRef;
   using Teuchos::outArg;
@@ -491,6 +490,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
   using Teuchos::wait;
   using Teuchos::SerialComm;
   using Teuchos::rcp_dynamic_cast;
+  using std::endl;
   typedef Teuchos::ScalarTraits<Packet> PT;
   typedef typename PT::magnitudeType PacketMag;
   typedef Teuchos::ScalarTraits<PacketMag> PMT;
@@ -521,6 +521,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
   RCP<Teuchos::CommRequest<Ordinal> > recvRequest;
   RCP<Teuchos::CommRequest<Ordinal> > sendRequest;
 
+  out << "Exchanging messages" << endl;
+
   if (procRank == 0) {
     // Create copy of data to make sure that persisting relationship is
     // maintained!
@@ -533,6 +535,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
       *comm, rcpFromRef(output_data), 0);
   }
 
+  out << "Waiting for messages" << endl;
+
   if (procRank == 0) {
     wait( *comm, outArg(sendRequest) );
   }
@@ -542,6 +546,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
 
   TEST_EQUALITY_CONST( sendRequest, Teuchos::null );
   TEST_EQUALITY_CONST( recvRequest, Teuchos::null );
+
+  out << "Testing message correctness" << endl;
 
   if (procRank == numProcs-1) {
     TEST_EQUALITY( output_data, input_data );
@@ -555,13 +561,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
   int globalSuccess_int = -1;
   reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-
 }
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Ordinal, Packet )
 {
-
   using Teuchos::as;
   using Teuchos::rcpFromRef;
   using Teuchos::outArg;
@@ -574,6 +578,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   using Teuchos::broadcast;
   using Teuchos::SerialComm;
   using Teuchos::rcp_dynamic_cast;
+  using std::cerr;
+  using std::endl;
   typedef Teuchos::ScalarTraits<Packet> PT;
   typedef typename PT::magnitudeType PacketMag;
   typedef Teuchos::ScalarTraits<PacketMag> PMT;
@@ -595,6 +601,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   const int numSendRecv = 4;
   const int sendLen = 3;
 
+  cerr << "Creating data" << endl;
+
   const ArrayRCP<Packet> origInputData = arcp<Packet>(numSendRecv*sendLen);
   const ArrayRCP<Packet> origOutputData = arcp<Packet>(numSendRecv*sendLen);
   {
@@ -610,6 +618,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
       }
     }
   }
+  cerr << "Broadcasting data" << endl;
   broadcast<Ordinal, Packet>( *comm, 0, origInputData() );
 
   const ArrayRCP<Packet> inputData = arcpClone<Packet>(origInputData());
@@ -617,6 +626,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
 
   Array<RCP<Teuchos::CommRequest<Ordinal> > > recvRequests;
   Array<RCP<Teuchos::CommRequest<Ordinal> > > sendRequests;
+
+  cerr << "Exchanging data" << endl;
 
   // Send from proc 0 to proc numProcs-1
   if (procRank == 0) {
@@ -647,12 +658,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
     }
   }
 
+  cerr << "Waiting on messages" << endl;
+
   if (procRank == 0) {
     waitAll( *comm, sendRequests() );
   }
   if (procRank == numProcs-1) {
     waitAll( *comm, recvRequests() );
   }
+
+  cerr << "Testing received data" << endl;
 
   if (!sendRequests.empty()) {
     for (int i = 0; i < numSendRecv; ++i) {

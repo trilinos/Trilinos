@@ -48,6 +48,7 @@
 #include <tokenize.h>
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <functional>
@@ -58,6 +59,7 @@
 #include <utility>
 #include <vector>
 
+#include "Ioss_CoordinateFrame.h"
 #include "Ioss_CommSet.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
@@ -305,6 +307,9 @@ namespace {
     delete [] names;
   }
 
+  void add_coordinate_frames(int exoid, Ioss::Region *region);
+  void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames);
+  
   std::string get_entity_name(int exoid, ex_entity_type type, int64_t id,
                               const std::string &basename, int length)
   {
@@ -651,11 +656,29 @@ namespace Ioex {
 
   void DatabaseIO::put_qa()
   {
-    static char qa_temp[4][MAX_STR_LENGTH+1];
-    static char *qa[1][4] =
-    {{qa_temp[0],qa_temp[1],qa_temp[2],qa_temp[3]}};
+    struct qa_element {
+      char *qa_record[1][4];
+    };
+    
+    size_t num_qa_records = qaRecords.size()/4;
 
-    Ioss::Utils::time_and_date(qa[0][3], qa[0][2], MAX_STR_LENGTH);
+    qa_element *qa = new qa_element[num_qa_records+1];
+    for (int i=0; i < num_qa_records+1; i++) {
+      for (int j=0; j < 4; j++) {
+	qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
+      }
+    }
+
+    int j = 0;
+    for (int i=0; i < num_qa_records; i++) {
+      std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+      std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+      std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+      std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+    }
+
+    Ioss::Utils::time_and_date(qa[num_qa_records].qa_record[0][3],
+			       qa[num_qa_records].qa_record[0][2], MAX_STR_LENGTH);
 
     std::string codename = "unknown";
     std::string version  = "unknown";
@@ -667,14 +690,25 @@ namespace Ioex {
       version = get_region()->get_property("code_version").get_string();
     }
 
-    std::strncpy(qa[0][0], codename.c_str(), MAX_STR_LENGTH);
-    std::strncpy(qa[0][1], version.c_str(),  MAX_STR_LENGTH);
-    qa[0][0][MAX_STR_LENGTH] = '\0';
-    qa[0][1][MAX_STR_LENGTH] = '\0';
+    char buffer[MAX_STR_LENGTH+1];
+    std::strncpy(buffer, codename.c_str(), MAX_STR_LENGTH);
+    buffer[MAX_STR_LENGTH] = '\0';
+    std::strcpy(qa[num_qa_records].qa_record[0][0], buffer);
 
-    int ierr = ex_put_qa(get_file_pointer(), 1, qa);
+    std::strncpy(buffer, version.c_str(), MAX_STR_LENGTH);
+    buffer[MAX_STR_LENGTH] = '\0';
+    std::strcpy(qa[num_qa_records].qa_record[0][1], buffer);
+    
+    int ierr = ex_put_qa(get_file_pointer(), num_qa_records+1, qa[0].qa_record);
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+    for (int i=0; i < num_qa_records+1; i++) {
+      for (int j=0; j < 4; j++) {
+	delete [] qa[i].qa_record[0][j];
+      }
+    }
+    delete [] qa;
   }
 
   void DatabaseIO::put_info()
@@ -819,8 +853,6 @@ namespace Ioex {
 
     m_groupCount[EX_SIDE_SET] = info.num_side_sets;
 
-
-
     if (nodeCount == 0) {
       std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
       IOSS_WARNING << "No nodes were found in the model, file '" << decoded_filename << "'";
@@ -856,10 +888,41 @@ namespace Ioex {
     }
 
     Ioss::Region *this_region = get_region();
+
+    // See if any coordinate frames exist on mesh.  If so, define them on region.
+    add_coordinate_frames(get_file_pointer(), this_region);
+    
     this_region->property_add(Ioss::Property(std::string("title"), info.title));
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
                                              spatialDimension));
 
+    // Get QA records from database and add to qaRecords...
+    int num_qa = ex_inquire_int(get_file_pointer(), EX_INQ_QA);    
+    if (num_qa > 0) {
+      struct qa_element {
+	char *qa_record[1][4];
+      };
+    
+      qa_element *qa = new qa_element[num_qa];
+      for (int i=0; i < num_qa; i++) {
+	for (int j=0; j < 4; j++) {
+	  qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
+	}
+      }
+
+      ex_get_qa(get_file_pointer(), qa[0].qa_record);
+      for (int i=0; i < num_qa; i++) {
+        add_qa_record(qa[i].qa_record[0][0], qa[i].qa_record[0][1], qa[i].qa_record[0][2], qa[i].qa_record[0][3]);
+      }
+      for (int i=0; i < num_qa; i++) {
+	for (int j=0; j < 4; j++) {
+	  delete [] qa[i].qa_record[0][j];
+	}
+      }
+      delete [] qa;
+
+    }
+    
     // Get information records from database and add to informationRecords...
     int num_info = ex_inquire_int(get_file_pointer(), EX_INQ_INFO);    
     if (num_info > 0) {
@@ -2676,25 +2739,25 @@ namespace Ioex {
 	    // undecomposed mesh file.  This is ONLY provided for backward-
 	    // compatibility and should not be used unless absolutely required.
             else if (field.get_name() == "implicit_ids") {
-	      // If not parallel, then this is just 1..node_count
-	      // If parallel, then it is the data in the ex_get_id_map created by nem_spread.
-	      if (isParallel) {
-		int error = ex_get_id_map(get_file_pointer(), EX_NODE_MAP, data);
-		if (error < 0)
-		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      } else {
-		if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-		  int64_t *idata = static_cast<int64_t*>(data);
-		  for (int64_t i=0; i < nodeCount; i++) {
-		    idata[i] = i+1;
-		  }
-		} else {
-		  int *idata = static_cast<int*>(data);
-		  for (int64_t i=0; i < nodeCount; i++) {
-		    idata[i] = i+1;
-		  }
-		}
-	      }
+              // If not parallel, then this is just 1..node_count
+              // If parallel, then it is the data in the ex_get_id_map created by nem_spread.
+              if (isParallel) {
+                int error = ex_get_id_map(get_file_pointer(), EX_NODE_MAP, data);
+                if (error < 0)
+                  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+              } else {
+                if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+                  int64_t *idata = static_cast<int64_t*>(data);
+                  for (int64_t i=0; i < nodeCount; i++) {
+                    idata[i] = i+1;
+                  }
+                } else {
+                  int *idata = static_cast<int*>(data);
+                  for (int64_t i=0; i < nodeCount; i++) {
+                    idata[i] = i+1;
+                  }
+                }
+              }
             }
 
             else if (field.get_name() == "connectivity") {
@@ -2830,6 +2893,28 @@ namespace Ioex {
               // Map the local ids in this element block
               // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
               get_map(EX_ELEM_BLOCK).map_implicit_data(data, field, num_to_get, eb->get_offset());
+            }
+            else if (field.get_name() == "implicit_ids") {
+              // If not parallel, then this is just one..element_count
+              // If parallel, then it is the data in the ex_get_id_map created by nem_spread.
+              size_t eb_offset_plus_one = eb->get_offset() + 1;
+              if (isParallel) {
+                int error = ex_get_partial_id_map(get_file_pointer(), EX_ELEM_MAP, eb_offset_plus_one, my_element_count, data);
+                if (error < 0)
+                  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+              } else {
+                if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+                  int64_t *idata = static_cast<int64_t*>(data);
+                  for (int64_t i=0; i < my_element_count; i++) {
+                    idata[i] = eb_offset_plus_one + i;
+                  }
+                } else {
+                  int *idata = static_cast<int*>(data);
+                  for (int64_t i=0; i < my_element_count; i++) {
+                    idata[i] = eb_offset_plus_one + i;
+                  }
+                }
+              }
             }
             else if (field.get_name() == "skin") {
               // This is (currently) for the skinned body. It maps the
@@ -4324,8 +4409,11 @@ namespace Ioex {
               }
             } else if (field.get_name() == "ids") {
               handle_element_ids(eb, data, num_to_get);
-
-            } else if (field.get_name() == "skin") {
+            }
+            else if (field.get_name() == "implicit_ids") {
+              // Do nothing, input only field.
+            }
+            else if (field.get_name() == "skin") {
               // This is (currently) for the skinned body. It maps the
               // side element on the skin to the original element/local
               // side number.  It is a two component field, the first
@@ -5868,6 +5956,8 @@ namespace Ioex {
         if (ierr < 0)
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
+	// Write coordinate frame data...
+	write_coordinate_frames(get_file_pointer(), get_region()->get_coordinate_frames());
       }
     }
 
@@ -6485,40 +6575,62 @@ namespace Ioex {
         // Get the attribute names. May not exist or may be blank...
         char **names = get_exodus_names(attribute_count, maximumNameLength);
         int64_t id = block->get_property("id").get_int();
-        {
-          Ioss::SerializeIO	serializeIO__(this);
-          if (block->get_property("entity_count").get_int() != 0) {
-            int ierr = ex_get_attr_names(get_file_pointer(), entity_type, id, &names[0]);
-            if (ierr < 0)
-              exodus_error(get_file_pointer(), __LINE__, myProcessor);
-          }
-        }
-
-        // Sync names across processors...
-        if (isParallel) {
-          std::vector<char> cname(attribute_count * (maximumNameLength+1));
-          if (block->get_property("entity_count").get_int() != 0) {
-            for (int i=0; i < attribute_count; i++) {
-              std::memcpy(&cname[i*(maximumNameLength+1)], names[i], maximumNameLength+1);
-            }
-          }
-          util().attribute_reduction(attribute_count * (maximumNameLength+1), TOPTR(cname));
-          for (int i=0; i < attribute_count; i++) {
-            std::memcpy(names[i], &cname[i*(maximumNameLength+1)], maximumNameLength+1);
-          }
-        }
-
-        // Convert to lowercase.
-	bool attributes_named = true;
-        for (int i=0; i < attribute_count; i++) {
-          fix_bad_name(names[i]);
-          Ioss::Utils::fixup_name(names[i]);
-	  if (names[i][0] == '\0' || names[i][0] == ' ' || !std::isalnum(names[i][0])) {
-	    attributes_named = false;
-	  }
-        }
-
+	
+	// Some older applications do not want to used named
+	// attributes; in this case, just create a field for each
+	// attribute named "attribute_1", "attribute_2", ..., "attribute_#"
+	// This is controlled by the database property
+	// "IGNORE_ATTRIBUTE_NAMES"
         char field_suffix_separator = get_field_separator();
+	bool attributes_named = true; // Possibly reset below; note that even if ignoring
+				      // attribute names, they are still 'named'
+
+	if (properties.exists("IGNORE_ATTRIBUTE_NAMES")) {
+	  field_suffix_separator = ' '; // Do not combine into a
+					 // higher-order storage type.
+	  
+	  for (int i=0; i < attribute_count; i++) {
+	    int writ = std::snprintf(names[i], maximumNameLength+1, "attribute_%d", i+1);
+	    if (writ > maximumNameLength)
+	      names[i][maximumNameLength] = '\0';
+	  }
+	}
+	else {
+	  // Use attribute names if they exist.
+	  {
+	    Ioss::SerializeIO	serializeIO__(this);
+	    if (block->get_property("entity_count").get_int() != 0) {
+	      int ierr = ex_get_attr_names(get_file_pointer(), entity_type, id, &names[0]);
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	    }
+	  }
+
+	  // Sync names across processors...
+	  if (isParallel) {
+	    std::vector<char> cname(attribute_count * (maximumNameLength+1));
+	    if (block->get_property("entity_count").get_int() != 0) {
+	      for (int i=0; i < attribute_count; i++) {
+		std::memcpy(&cname[i*(maximumNameLength+1)], names[i], maximumNameLength+1);
+	      }
+	    }
+	    util().attribute_reduction(attribute_count * (maximumNameLength+1), TOPTR(cname));
+	    for (int i=0; i < attribute_count; i++) {
+	      std::memcpy(names[i], &cname[i*(maximumNameLength+1)], maximumNameLength+1);
+	    }
+	  }
+	  
+	  // Convert to lowercase.
+	  attributes_named = true;
+	  for (int i=0; i < attribute_count; i++) {
+	    fix_bad_name(names[i]);
+	    Ioss::Utils::fixup_name(names[i]);
+	    if (names[i][0] == '\0' || names[i][0] == ' ' || !std::isalnum(names[i][0])) {
+	      attributes_named = false;
+	    }
+	  }
+	}
+
         if (attributes_named) {
           std::vector<Ioss::Field> attributes;
           get_fields(my_element_count, names, attribute_count,
@@ -7620,6 +7732,67 @@ namespace Ioex {
             side_map[name_topo] = 999;
           }
         }
+      }
+    }
+
+    template <typename INT>
+    void internal_add_coordinate_frames(int exoid, Ioss::Region *region, INT /*dummy*/)
+    {
+      // Query number of coordinate frames...
+      int nframes = 0;
+      ex_get_coordinate_frames(exoid, &nframes, NULL, NULL, NULL);
+
+      if (nframes > 0) {
+	std::vector<char> tags(nframes);
+	std::vector<double> coord(nframes*9);
+	std::vector<INT>  ids(nframes);
+	ex_get_coordinate_frames(exoid, &nframes, TOPTR(ids), TOPTR(coord), TOPTR(tags));
+
+	for (int i=0; i<nframes; i++) {
+	  Ioss::CoordinateFrame cf(ids[i], tags[i], &coord[9*i]);
+	  region->add(cf);
+	}
+      }
+    }
+
+    void add_coordinate_frames(int exoid, Ioss::Region *region)
+    {
+      if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+	internal_add_coordinate_frames(exoid, region, (int64_t)0);
+      }
+      else {
+	internal_add_coordinate_frames(exoid, region, (int)0);
+      }
+    }
+
+    template <typename INT>
+    void internal_write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames, INT /*dummy*/)
+    {
+      // Query number of coordinate frames...
+      int nframes = (int)frames.size();
+      if (nframes > 0) {
+	std::vector<char> tags(nframes);
+	std::vector<double> coordinates(nframes*9);
+	std::vector<INT>  ids(nframes);
+
+	for (size_t i=0; i < frames.size(); i++) {
+	  ids[i]  = frames[i].id();
+	  tags[i] = frames[i].tag();
+	  const double *coord = frames[i].coordinates();
+	  for (size_t j=0; j < 9; j++) {
+	    coordinates[9*i+j] = coord[j];
+	  }
+	}
+	ex_put_coordinate_frames(exoid, nframes, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
+      }
+    }
+
+    void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames) {
+      if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+	internal_write_coordinate_frames(exoid, frames, (int64_t)0);
+      }
+      else {
+	internal_write_coordinate_frames(exoid, frames, (int)0);
       }
     }
 

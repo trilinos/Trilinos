@@ -187,6 +187,9 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, Constructor1, M, LO, GO )
   {
+    // test constructor for Xpetra::StridedMaps
+    // indexBase = 0
+
     // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
@@ -217,6 +220,9 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, Constructor2, M, LO, GO )
   {
+    // test constructor for Xpetra::StridedMaps
+    // indexBase = 0
+
     // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
@@ -249,6 +255,56 @@ namespace {
     TEST_EQUALITY_CONST( map3.getFixedBlockSize(), 2 );
     TEST_EQUALITY_CONST( map3.isStrided(), false );
     TEST_EQUALITY_CONST( map3.isBlocked(), true );
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, Constructor3, M, LO, GO )
+  {
+    // test constructor for Xpetra::StridedMaps
+    // indexBase = 1111
+
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    // constructor calls: (num global elements, index base)
+    GO indexBase = 1111;
+    global_size_t numGlobalElements = 10 * numImages;
+    size_t numLocalElements = 10;
+    std::vector<size_t> stridedInfo(1,1);
+
+    M map(numGlobalElements, numLocalElements, indexBase, stridedInfo, comm);
+    TEST_EQUALITY_CONST( map.getFixedBlockSize(), 1 );
+    TEST_EQUALITY_CONST( map.isStrided(), false );
+    TEST_EQUALITY_CONST( map.isBlocked(), false );
+    TEST_EQUALITY_CONST( map.getIndexBase(), indexBase );
+    TEST_EQUALITY_CONST( map.getMinAllGlobalIndex(), indexBase);
+    TEST_EQUALITY_CONST( map.getMaxAllGlobalIndex(), indexBase + Teuchos::as<GO>(numGlobalElements) - 1);
+
+    numGlobalElements = 33 * numImages;
+    numLocalElements = 33;
+    stridedInfo.clear();
+    stridedInfo.push_back(2);
+    stridedInfo.push_back(1);
+
+    M map2(numGlobalElements, numLocalElements, indexBase, stridedInfo, comm);
+    TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 3 );
+    TEST_EQUALITY_CONST( map2.isStrided(), true );
+    TEST_EQUALITY_CONST( map2.isBlocked(), true );
+    TEST_EQUALITY_CONST( map2.getIndexBase(), indexBase );
+    TEST_EQUALITY_CONST( map2.getMinAllGlobalIndex(), indexBase);
+    TEST_EQUALITY_CONST( map2.getMaxAllGlobalIndex(), indexBase + Teuchos::as<GO>(numGlobalElements) - 1);
+
+    numGlobalElements = 20 * numImages;
+    numLocalElements = 20;
+    stridedInfo.clear();
+    stridedInfo.push_back(2);
+    M map3(numGlobalElements, numLocalElements, indexBase, stridedInfo, comm);
+    TEST_EQUALITY_CONST( map3.getFixedBlockSize(), 2 );
+    TEST_EQUALITY_CONST( map3.isStrided(), false );
+    TEST_EQUALITY_CONST( map3.isBlocked(), true );
+    TEST_EQUALITY_CONST( map3.getIndexBase(), indexBase );
+    TEST_EQUALITY_CONST( map3.getMinAllGlobalIndex(), indexBase);
+    TEST_EQUALITY_CONST( map3.getMaxAllGlobalIndex(), indexBase + Teuchos::as<GO>(numGlobalElements) - 1);
   }
 
   ////
@@ -331,6 +387,54 @@ namespace {
     TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, StridedPartConstructor3, M, LO, GO )
+  {
+    // indexBase = 1111
+
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    GO indexBase = 1111;
+
+    // constructor calls: (num global elements, index base)
+    global_size_t numGlobalElements = 120 * numImages;
+    size_t numLocalElements = 120;
+    std::vector<size_t> stridedInfo;
+    stridedInfo.push_back(3);
+    stridedInfo.push_back(4);
+    stridedInfo.push_back(5);
+
+    M map(numGlobalElements, indexBase ,stridedInfo, comm, 0);
+    TEST_EQUALITY_CONST( map.getFixedBlockSize(), 12 );
+    TEST_EQUALITY_CONST( map.isStrided(), true );
+    TEST_EQUALITY_CONST( map.isBlocked(), true );
+    TEST_EQUALITY_CONST( map.getMinAllGlobalIndex(), indexBase );
+    TEST_EQUALITY_CONST( map.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalElements) + indexBase - 10 );
+    TEST_EQUALITY_CONST( map.isContiguous(), false);
+    TEST_EQUALITY_CONST( map.getNodeNumElements() % 3 , 0);
+    TEST_EQUALITY_CONST( map.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
+
+    M map2(numGlobalElements, indexBase ,stridedInfo, comm, 1);
+    TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 12 );
+    TEST_EQUALITY_CONST( map2.isStrided(), true );
+    TEST_EQUALITY_CONST( map2.isBlocked(), true );
+    TEST_EQUALITY_CONST( map2.getMinAllGlobalIndex(), 3 + indexBase );
+    TEST_EQUALITY_CONST( map2.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalElements) + indexBase - 6 );
+    TEST_EQUALITY_CONST( map2.isContiguous(), false);
+    TEST_EQUALITY_CONST( map2.getNodeNumElements() % 4 , 0);
+    TEST_EQUALITY_CONST( map2.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
+
+    M map3(numGlobalElements, indexBase ,stridedInfo, comm, 2);
+    TEST_EQUALITY_CONST( map3.getFixedBlockSize(), 12 );
+    TEST_EQUALITY_CONST( map3.isStrided(), true );
+    TEST_EQUALITY_CONST( map3.isBlocked(), true );
+    TEST_EQUALITY_CONST( map3.getMinAllGlobalIndex(), 7 + indexBase);
+    TEST_EQUALITY_CONST( map3.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalElements) + indexBase - 1 );
+    TEST_EQUALITY_CONST( map3.isContiguous(), false);
+    TEST_EQUALITY_CONST( map3.getNodeNumElements() % 5 , 0);
+    TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
+  }
+
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
   {
@@ -379,6 +483,56 @@ namespace {
     TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, StridedPartConstructorOffsetPlusIndexBase, M, LO, GO )
+  {
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+
+    GO offset = 111;
+    GO indexBase = 89;
+
+    // constructor calls: (num global elements, index base)
+    global_size_t numGlobalElements = 120 * numImages;
+    size_t numLocalElements = 120;
+    std::vector<size_t> stridedInfo;
+    stridedInfo.push_back(3);
+    stridedInfo.push_back(4);
+    stridedInfo.push_back(5);
+
+    M map(numGlobalElements, indexBase, stridedInfo, comm, 0, offset);
+    TEST_EQUALITY_CONST( map.getFixedBlockSize(), 12 );
+    TEST_EQUALITY_CONST( map.isStrided(), true );
+    TEST_EQUALITY_CONST( map.isBlocked(), true );
+    TEST_EQUALITY_CONST( map.getMinAllGlobalIndex(), indexBase + offset );
+    TEST_EQUALITY_CONST( map.getMaxAllGlobalIndex(), indexBase + offset + Teuchos::as<GO>(numGlobalElements) - 10 );
+    TEST_EQUALITY_CONST( map.isContiguous(), false);
+    TEST_EQUALITY_CONST( map.getNodeNumElements() % 3 , 0);
+    TEST_EQUALITY_CONST( map.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
+
+    M map2(numGlobalElements, indexBase ,stridedInfo, comm, 1, offset);
+    TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 12 );
+    TEST_EQUALITY_CONST( map2.isStrided(), true );
+    TEST_EQUALITY_CONST( map2.isBlocked(), true );
+    TEST_EQUALITY_CONST( map2.getMinAllGlobalIndex(), indexBase + offset + 3 );
+    TEST_EQUALITY_CONST( map2.getMaxAllGlobalIndex(), indexBase + offset + Teuchos::as<GO>(numGlobalElements) - 6 );
+    TEST_EQUALITY_CONST( map2.isContiguous(), false);
+    TEST_EQUALITY_CONST( map2.getNodeNumElements() % 4 , 0);
+    TEST_EQUALITY_CONST( map2.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
+
+    M map3(numGlobalElements, indexBase ,stridedInfo, comm, 2, offset);
+    TEST_EQUALITY_CONST( map3.getFixedBlockSize(), 12 );
+    TEST_EQUALITY_CONST( map3.isStrided(), true );
+    TEST_EQUALITY_CONST( map3.isBlocked(), true );
+    TEST_EQUALITY_CONST( map3.getMinAllGlobalIndex(), indexBase + offset + 7 );
+    TEST_EQUALITY_CONST( map3.getMaxAllGlobalIndex(), indexBase + offset + Teuchos::as<GO>(numGlobalElements) - 1 );
+    TEST_EQUALITY_CONST( map3.isContiguous(), false);
+    TEST_EQUALITY_CONST( map3.getNodeNumElements() % 5 , 0);
+    TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
+  }
+
+
   //
   // INSTANTIATIONS
   //
@@ -398,17 +552,23 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor2, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor3, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor3, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorOffsetPlusIndexBase, M, LO, GO )
       //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor3, M, LO, GO )
 #   else
 #     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor3, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor3, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorOffsetPlusIndexBase, M, LO, GO )
 #   endif // HAVE_TPETRA_DEBUG
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
@@ -431,17 +591,23 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor2, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor3, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor3, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorOffsetPlusIndexBase, M, LO, GO )
       //JG TODO FAILED: TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor3, M, LO, GO )
 #    else
 #     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor3, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor3, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorOffsetPlusIndexBase, M, LO, GO )
 #    endif // HAVE_TPETRA_DEBUG
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \

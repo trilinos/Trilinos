@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -114,9 +114,13 @@ protected:
   RCP<const VectorBase<Scalar> > colImpl(Ordinal j) const;
   /** \brief . */
   RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);
-//  /** \brief . */
-//  RCP<MultiVectorBase<Scalar> >
-//  nonconstContigSubViewImpl( const Range1D& colRng );
+
+  /** \brief . */
+  RCP<const MultiVectorBase<Scalar> >
+  contigSubViewImpl( const Range1D& colRng ) const;
+  /** \brief . */
+  RCP<MultiVectorBase<Scalar> >
+  nonconstContigSubViewImpl( const Range1D& colRng );
 //  /** \brief . */
 //  RCP<const MultiVectorBase<Scalar> >
 //  nonContigSubViewImpl( const ArrayView<const int> &cols ) const;
@@ -136,9 +140,9 @@ protected:
     const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     ) const;
   //@}
-  
+
 private:
-  
+
   // ///////////////////////////////////////
   // Private data members
 
@@ -156,7 +160,7 @@ private:
     const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
     const RCP<TpetraMultiVector_t> &tpetraMultiVector
     );
-  
+
 };
 
 

@@ -44,18 +44,28 @@
 
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Range1D.hpp>
-#include <Kokkos_DefaultArithmetic.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DistObject.hpp"
-#include "Tpetra_Map.hpp"
 #include "Tpetra_ViewAccepter.hpp"
+#include <Kokkos_MultiVector.hpp>
+#include <Teuchos_BLAS_types.hpp>
 
+namespace Kokkos {
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  // forward declaration of DefaultArithmetic
+  template<class KokkosMultiVectorType>
+  class DefaultArithmetic;
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+} // namespace Kokkos
 
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Vector, needed to prevent circular inclusions
   template<class S, class LO, class GO, class N> class Vector;
+
+  // forward declaration of Map
+  template<class LO, class GO, class N> class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class MultiVector
@@ -796,7 +806,7 @@ namespace Tpetra {
     //@{
 
     //! A simple one-line description of this object.
-    std::string description() const;
+    virtual std::string description() const;
 
     /// \brief Print the object with the given verbosity level to a FancyOStream.
     ///
@@ -826,10 +836,10 @@ namespace Tpetra {
     ///   part of the multivector.  This will print out as many rows
     ///   of data as the global number of rows in the multivector, so
     ///   beware.
-    void
+    virtual void
     describe (Teuchos::FancyOStream& out,
-              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const;
     //@}
 
     /// \brief Remove processes owning zero rows from the Map and their communicator.
@@ -945,7 +955,7 @@ namespace Tpetra {
 
     /// \brief Whether data redistribution between \c sourceObj and this object is legal.
     ///
-    /// This method is called in \c DistObject::doTransfer() to check
+    /// This method is called in DistObject::doTransfer() to check
     /// whether data redistribution between the two objects is legal.
     bool
     checkSizes (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj);
@@ -955,6 +965,9 @@ namespace Tpetra {
                     size_t numSameIDs,
                     const ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const ArrayView<const LocalOrdinal>& permuteFromLIDs);
+
+    //! Number of packets to send per LID
+    virtual size_t constantNumberOfPackets () const;
 
     void
     packAndPrepare (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj,

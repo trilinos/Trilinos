@@ -48,7 +48,7 @@ public:
 
    Teuchos::RCP<std::vector<panzer::Traits::Residual::ScalarT> > getNonconstCoords()
    { return coords; }
-    
+
 private:
    // hide these methods
    Response_IPCoordinates();

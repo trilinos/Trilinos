@@ -543,8 +543,10 @@ you can run thousands of unit tests in a single exectuable in a fraction of
 a second.
 
 <li> Don't bother writing you own simple UnitTestMain.cpp like above, just include the standard
-one <tt>teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp</tt> in your
-PACKAGE_ADD_EXECUTABLE_AND_TEST(...) CMake macro.
+one <tt>teuchos/core/test/UnitTest/Teuchos_StandardUnitTestMain.cpp</tt> in your
+PACKAGE_ADD_EXECUTABLE_AND_TEST(...) CMake macro.  If you are using a TriBITS build in a downstream package, you can just use the global CMake varible <tt>${TEUCHOS_STD_UNIT_TEST_MAIN}</tt>.
+
+<li> For parallel tests (using MPI), you can turn on automatic reductions across processes of pass/fail.  To enable this by default for your unit tests, use the standard main source file <tt>teuchos/comm/test/UnitTesting/Teuchos_StandardParallelUnitTestMain.cpp</tt> and see the option <tt>Teuchos::UnitTestRepository::setGloballyReduceTestResult()</tt>.  If you are using a TriBITS build in a downstream package, you can just use the global CMake varible <tt>${TEUCHOS_STD_PARALLEL__UNIT_TEST_MAIN}</tt>.
 
 <li> When doing Test-Driven Development (TDD), write a single unit
 test at a time (fail, pass, refactor) and constantly be rebuilding and
@@ -559,7 +561,7 @@ $ find . -name "*" -exec grep -l 'TEUCHOS_UNIT_TEST' {} \;
 
 Just open a bunch of those files and see how people use these unit testing tools.
 
-Search packages like Teuchos and Tpetra first since these are the most numerous
+Search packages like Teuchos, Tpetra, and Thyra first since these are the most numerous
 and mature unit testing examples you will find in Trilinos.
 
 </ul>

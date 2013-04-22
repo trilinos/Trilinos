@@ -61,14 +61,20 @@ namespace Details
 template<typename KeyType, typename ValueType>
 int
 HashTable<KeyType, ValueType>:: hashFunc( const KeyType key ) {
+#ifdef TPETRA_USE_MURMUR_HASH
     uint32_t k;
     MurmurHash3_x86_32((void *)&key, sizeof(KeyType),
                           1, (void *)&k);
     return (int) (k%Size_);
-    // Epetra's version of hash, keeping it here for testing temporarily
-    //int intkey = (int) ((key & 0x000000007fffffffLL) +
-       //((key & 0x7fffffff80000000LL) >> 31));
-    //return (int) ((Seed_ ^ intkey)%Size_);
+#else
+    // Epetra's version of hash, using it as default as we have observed
+    // this is much faster than murmur hash. However, this is not a good
+    // hash function for all data sets. For our typical use case, this is good.
+    // Use murmur if the maps are sparse.
+    int intkey = (int) ((key & 0x000000007fffffffLL) +
+       ((key & 0x7fffffff80000000LL) >> 31));
+    return (int) ((Seed_ ^ intkey)%Size_);
+#endif
 }
 
 template<typename KeyType, typename ValueType>

@@ -121,7 +121,7 @@ namespace Xpetra {
     ArrayView< const LocalOrdinal > getExportLIDs() const;
 
     //! List of processes to which entries will be sent.
-    ArrayView< const int > getExportImageIDs() const;
+    ArrayView< const int > getExportPIDs() const;
 
     //! The Source Map used to construct this Import object.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { XPETRA_MONITOR("EpetraImport::getSourceMap"); return toXpetra(import_->SourceMap()); }

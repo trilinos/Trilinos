@@ -42,12 +42,12 @@
 #ifndef TPETRA_MULTIVECTOR_DEF_HPP
 #define TPETRA_MULTIVECTOR_DEF_HPP
 
+#include <Kokkos_DefaultArithmetic.hpp>
 #include <Kokkos_NodeTrace.hpp>
-
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_as.hpp>
-
-#include "Tpetra_Vector.hpp"
+#include <Tpetra_Util.hpp>
+#include <Tpetra_Vector.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_MultiVector_decl.hpp"
@@ -566,6 +566,14 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  constantNumberOfPackets () const {
+    return this->getNumVectors ();
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   packAndPrepare (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & sourceObj,
@@ -584,6 +592,10 @@ namespace Tpetra {
     // This cast should always succeed, since checkSizes() does the cast.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
 
+    // We don't need numExportPacketsPerLID; forestall "unused
+    // variable" compile warnings.
+    (void) numExportPacketsPerLID;
+
     /* The layout in the export for MultiVectors is as follows:
        exports = { all of the data from row exportLIDs.front() ;
                    ....
@@ -591,12 +603,6 @@ namespace Tpetra {
       This doesn't have the best locality, but is necessary because
       the data for a Packet (all data associated with an LID) is
       required to be contiguous. */
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      as<int> (numExportPacketsPerLID.size ()) != exportLIDs.size (),
-      std::runtime_error, "Tpetra::MultiVector::packAndPrepare(): size of num"
-      "ExportPacketsPerLID buffer should be the same as exportLIDs.  numExport"
-      "PacketsPerLID.size() = " << numExportPacketsPerLID.size() << ", but "
-      "exportLIDs.size() = " << exportLIDs.size() << ".");
 
     const size_t numCols = sourceMV.getNumVectors ();
     const size_t stride = MVT::getStride (sourceMV.lclMV_);
@@ -604,26 +610,46 @@ namespace Tpetra {
     // Setting constantNumPackets to a nonzero value signals that
     // all packets have the same number of entries.
     constantNumPackets = numCols;
-    exports.resize (numCols * exportLIDs.size ());
-    typename Array<Scalar>::iterator expptr;
-    expptr = exports.begin();
+
+    const size_type numExportLIDs = exportLIDs.size ();
+    const size_type newExportsSize = numCols * numExportLIDs;
+    if (exports.size () != newExportsSize) {
+      exports.resize (newExportsSize);
+    }
 
     ArrayView<const Scalar> srcView = sourceMV.cview_ ();
-    const size_type numExportLIDs = exportLIDs.size ();
-    if (sourceMV.isConstantStride ()) {
-      for (size_type k = 0; k < numExportLIDs; ++k) {
-        const size_t localRow = as<size_t> (exportLIDs[k]);
-        for (size_t j = 0; j < numCols; ++j) {
-          *expptr++ = srcView[localRow + j*stride];
+    if (numCols == 1) { // special case for one column only
+      // MultiVector always represents a single column with constant
+      // stride, but it doesn't hurt to implement both cases anyway.
+      if (sourceMV.isConstantStride ()) {
+        for (size_type k = 0; k < numExportLIDs; ++k) {
+          exports[k] = srcView[exportLIDs[k]];
+        }
+      }
+      else {
+        const size_t offset = sourceMV.whichVectors_[0] * stride;
+        for (size_type k = 0; k < numExportLIDs; ++k) {
+          exports[k] = srcView[exportLIDs[k] + offset];
         }
       }
     }
-    else {
-      ArrayView<const size_t> srcWhichVectors = sourceMV.whichVectors_ ();
-      for (size_type k = 0; k < numExportLIDs; ++k) {
-        const size_t localRow = as<size_t> (exportLIDs[k]);
-        for (size_t j = 0; j < numCols; ++j) {
-          *expptr++ = srcView[localRow + srcWhichVectors[j]*stride];
+    else { // the source MultiVector has multiple columns
+      typename Array<Scalar>::iterator expptr = exports.begin ();
+      if (sourceMV.isConstantStride ()) {
+        for (size_type k = 0; k < numExportLIDs; ++k) {
+          const size_t localRow = as<size_t> (exportLIDs[k]);
+          for (size_t j = 0; j < numCols; ++j) {
+            *expptr++ = srcView[localRow + j*stride];
+          }
+        }
+      }
+      else {
+        ArrayView<const size_t> srcWhichVectors = sourceMV.whichVectors_ ();
+        for (size_type k = 0; k < numExportLIDs; ++k) {
+          const size_t localRow = as<size_t> (exportLIDs[k]);
+          for (size_t j = 0; j < numCols; ++j) {
+            *expptr++ = srcView[localRow + srcWhichVectors[j]*stride];
+          }
         }
       }
     }
@@ -644,7 +670,12 @@ namespace Tpetra {
     using Teuchos::as;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
     typedef typename ArrayView<const LocalOrdinal>::size_type size_type;
-    const char tfecfFuncName[] = "unpackAndCombine()";
+    const char tfecfFuncName[] = "unpackAndCombine";
+
+    // We don't need numPacketsPerLID; forestall "unused variable"
+    // compile warnings.
+    (void) numPacketsPerLID;
+
     /* The layout in the export for MultiVectors is as follows:
        imports = { all of the data from row exportLIDs.front() ;
                    ....
@@ -652,6 +683,9 @@ namespace Tpetra {
       This doesn't have the best locality, but is necessary because
       the data for a Packet (all data associated with an LID) is
       required to be contiguous. */
+
+    const size_t numVecs = getNumVectors ();
+
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       as<size_t> (imports.size()) != getNumVectors()*importLIDs.size(),
@@ -661,25 +695,21 @@ namespace Tpetra {
       << " != getNumVectors()*importLIDs.size() = " << getNumVectors() << "*"
       << importLIDs.size() << " = " << getNumVectors() * importLIDs.size()
       << ".");
-#endif
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       as<size_t> (constantNumPackets) == as<size_t> (0), std::runtime_error,
       ": constantNumPackets input argument must be nonzero.");
 
-    const size_t myStride = MVT::getStride (lclMV_);
-    const size_t numVecs  = getNumVectors();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (numPacketsPerLID.size ()) != as<size_t> (importLIDs.size ()),
-      std::runtime_error,
-      ": numPacketsPerLID must have the same length as importLIDs.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       as<size_t> (numVecs) != as<size_t> (constantNumPackets),
       std::runtime_error, ": constantNumPackets must equal numVecs.");
+#endif // HAVE_TPETRA_DEBUG
 
-    if (numVecs > 0 && importLIDs.size()) {
+    if (numVecs > 0 && importLIDs.size () > 0) {
       typename ArrayView<const Scalar>::iterator impptr = imports.begin ();
       ArrayView<Scalar> destView = ncview_ ();
       const size_type numImportLIDs = importLIDs.size ();
+      const size_t myStride = MVT::getStride (lclMV_);
 
       // NOTE (mfh 10 Mar 2012) If you want to implement custom
       // combine modes, start editing here.  Also, if you trust

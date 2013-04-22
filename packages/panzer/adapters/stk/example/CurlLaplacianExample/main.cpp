@@ -445,7 +445,6 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   typedef panzer::TpetraLinearObjContainer<double,int,int> LOC;
 
   LOC & tp_container = Teuchos::dyn_cast<LOC>(container);
-  tp_container.get_A()->fillComplete(); // where does this go?
 
   // do stuff
   // Wrap the linear problem to solve in a Belos::LinearProblem

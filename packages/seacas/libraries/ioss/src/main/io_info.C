@@ -44,6 +44,7 @@
 #include <vector>
 
 #include "Ioss_CommSet.h"
+#include "Ioss_CoordinateFrame.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_EdgeBlock.h"
@@ -74,7 +75,7 @@
 #include <xdmf/Ioxf_Initializer.h>
 #endif
 
-#define OUTPUT std::cerr
+#define OUTPUT std::cout
 
 // ========================================================================
 
@@ -97,6 +98,7 @@ namespace {
 
   void info_sidesets(Ioss::Region &region, const Info::Interface &interface, bool summary);
   void info_commsets(Ioss::Region &region, bool summary);
+  void info_coordinate_frames(Ioss::Region &region, bool summary);
 
   void info_fields(Ioss::GroupingEntity *ige,
 		   Ioss::Field::RoleType role,
@@ -222,7 +224,7 @@ namespace {
 
     info_sidesets(region,     interface, summary);
     info_commsets(region,     summary);
-
+    info_coordinate_frames(region, summary);
     if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
       std::pair<int, double> state_time_max = region.get_max_time();
       std::pair<int, double> state_time_min = region.get_min_time();
@@ -247,6 +249,7 @@ namespace {
       
       info_sidesets(region,     interface, summary);
       info_commsets(region,     summary);
+      info_coordinate_frames(region, summary);
     }
     
     if (interface.compute_volume()) {
@@ -605,6 +608,30 @@ namespace {
       ++i;
     }
     OUTPUT << '\n';
+  }
+
+  void info_coordinate_frames(Ioss::Region &region, bool summary)
+  {
+    Ioss::CoordinateFrameContainer      cf = region.get_coordinate_frames();
+    Ioss::CoordinateFrameContainer::const_iterator i = cf.begin();
+
+    while (i != cf.end()) {
+      if (!summary) {
+	const double *origin = (*i).origin();
+	const double *a3pt = (*i).axis_3_point();
+	const double *p13pt = (*i).plane_1_3_point();
+	
+	OUTPUT << '\n' << "Coordinate Frame id: " << std::setw(6) << (*i).id()
+	       << ", type tag '" << (*i).tag() << "'\n"
+	       << "\tOrigin:          " << origin[0] << "\t" << origin[1] << "\t" << origin[2] << "\n"
+	       << "\tAxis 3 Point:    " << a3pt[0] << "\t" << a3pt[1] << "\t" << a3pt[2] << "\n"
+	       << "\tPlane 1-3 Point: " << p13pt[0] << "\t" << p13pt[1] << "\t" << p13pt[2] << "\n";
+      }
+      ++i;
+    }
+    if (summary) {
+      OUTPUT << " Number of coordinate frames  =" << std::setw(12) << cf.size() << "\n";
+    }
   }
 
   void info_fields(Ioss::GroupingEntity *ige,

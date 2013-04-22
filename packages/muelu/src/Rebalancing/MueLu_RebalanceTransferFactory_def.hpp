@@ -113,6 +113,9 @@ namespace MueLu {
 
     RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
 
+    RCP<ParameterList> params = rcp(new ParameterList());;
+    params->set("printLoadBalancingInfo", true);
+
     if (pL.get<std::string>("type") == "Interpolation") {
 
       RCP<Matrix> originalP = Get< RCP<Matrix> >(coarseLevel, "P");
@@ -155,6 +158,8 @@ namespace MueLu {
 
         Set(coarseLevel, "P", rebalancedP);
 
+        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
+
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
         // That is probably something for an external permutation factory
@@ -185,12 +190,14 @@ namespace MueLu {
         RCP<Matrix> rebalancedR;
         {
           SubFactoryMonitor subM(*this, "Rebalancing restriction -- fusedImport", coarseLevel);
-	  // Note: The 3rd argument says to use originalR's domain map.
+          // Note: The 3rd argument says to use originalR's domain map.
 
-	  RCP<Map> dummy;
-	  rebalancedR = MatrixFactory::Build(originalR,*rebalanceImporter,dummy,rebalanceImporter->getTargetMap());
-	}
+          RCP<Map> dummy;
+          rebalancedR = MatrixFactory::Build(originalR,*rebalanceImporter,dummy,rebalanceImporter->getTargetMap());
+        }
         Set(coarseLevel, "R", rebalancedR);
+
+        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
 
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
@@ -212,7 +219,8 @@ namespace MueLu {
           maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
 
           RCP<const Import>  coordImporter;
-          RCP<const Map> origMap = coords->getMap();
+          RCP<const Map> origMap   = coords->getMap();
+          GO             indexBase = origMap->getIndexBase();
 
           if (blkSize == 1) {
             coordImporter = rebalanceImporter;
@@ -221,13 +229,13 @@ namespace MueLu {
             // NOTE: there is an implicit assumption here: we assume that dof any node are enumerated consequently
             // Proper fix would require using decomposition similar to how we construct rebalanceImporter in the
             // RepartitionFactory
-            ArrayView<const GO>   OEntries = rebalanceImporter->getTargetMap()->getNodeElementList();
+            ArrayView<const GO> OEntries   = rebalanceImporter->getTargetMap()->getNodeElementList();
             LO                  numEntries = OEntries.size()/blkSize;
             ArrayRCP<GO> Entries(numEntries);
             for (LO i = 0; i < numEntries; i++)
-              Entries[i] = OEntries[i*blkSize]/blkSize;
+              Entries[i] = (OEntries[i*blkSize]-indexBase)/blkSize + indexBase;
 
-            RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), origMap->getIndexBase(), origMap->getComm());
+            RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), indexBase, origMap->getComm());
             coordImporter = ImportFactory::Build(origMap, targetMap);
           }
 

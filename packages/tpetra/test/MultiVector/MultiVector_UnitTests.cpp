@@ -46,6 +46,7 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
+#include <iterator>
 
 // FINISH: add test for MultiVector with a node containing zero local entries
 // FINISH: add tests for local MultiVectors
