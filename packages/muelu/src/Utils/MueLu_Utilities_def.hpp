@@ -630,21 +630,23 @@ namespace MueLu {
   } //GetMatrixDiagonal
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixOverlappedDiagonal(const Matrix &A)
-  {
-    Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);  //FIXME should this return a Vector instead?
-    RCP<Vector> diagonal = VectorFactory::Build(A.getColMap());
-    RCP<Vector> localDiag = VectorFactory::Build(A.getRowMap());
-    ArrayRCP<SC> localDiagVals = localDiag->getDataNonConst(0);
-    for (LO i=0; i<localDiagVals.size(); ++i)
+  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixOverlappedDiagonal(const Matrix &A) {
+    RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
+    RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
+    ArrayRCP<SC>   localDiagVals = localDiag->getDataNonConst(0);
+
+    Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);
+    for (LO i = 0; i < localDiagVals.size(); i++)
       localDiagVals[i] = diagVals[i];
-    localDiagVals = null;  //release view
-    diagVals = null;
-    //TODO there's a problem with the importer from the underlying Tpetra::CrsGraph
-    //TODO so right now construct an importer.
-    //diagonal->doImport(*localDiag,*(A.getCrsGraph()->getImporter()),Xpetra::INSERT);
-    RCP<const Import> importer = ImportFactory::Build(A.getRowMap(), A.getColMap());
-    diagonal->doImport(*localDiag,*importer,Xpetra::INSERT);
+    localDiagVals = diagVals = null;
+
+    // TODO there's a problem with the importer from the underlying Tpetra::CrsGraph
+    // TODO so right now construct an importer.
+    // diagonal->doImport(*localDiag, *(A.getCrsGraph()->getImporter()), Xpetra::INSERT);
+    RCP<const Import> importer = ImportFactory::Build(rowMap, colMap);
+
+    RCP<Vector> diagonal = VectorFactory::Build(colMap);
+    diagonal->doImport(*localDiag, *importer, Xpetra::INSERT);
     return diagonal;
   } //GetMatrixOverlappedDiagonal
 
