@@ -101,7 +101,7 @@ namespace MueLu {
     // Calculate max entries per row
     RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries(), Xpetra::StaticProfile);
 
-    Array<GO>   newInds;
+    Array<LO>   newInds;
     Array<SC>   newVals;
     Array<char> filter(blkSize*G->GetImportMap()->getNodeNumElements(), 0);
 
