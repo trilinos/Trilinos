@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,15 +34,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
 #ifndef TPETRA_UTIL_HPP
 #define TPETRA_UTIL_HPP
 
-/*! 
+/*!
   \file Tpetra_Util.hpp
   \brief Stand-alone utility functions and macros.
 
@@ -53,7 +53,7 @@
   Here are some of the utility functions found in this file:
   <ul>
   <li>An efficientAddOrUpdate for inserting data into an std::map.
-    
+
   <li>Functions for converting Ordinals to Scalars and for converting
   Scalars to Ordinals.
 
@@ -61,14 +61,14 @@
   output the contents of STL containers.
 
   <li>A multiple-array sort function, similar to the one found in
-  Epetra_Util.  
+  Epetra_Util.
 
-  <li>Macros for reporting efficiency warnings and synchronizing 
+  <li>Macros for reporting efficiency warnings and synchronizing
   tests for exceptions over a given communicator.
   </ul>
 */
 
-#include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream 
+#include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream
 #include <iterator>
 #include <algorithm>
 #include <Teuchos_Utils.hpp>
@@ -83,7 +83,7 @@
 ///
 /// If HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS is defined, throw an
 /// exception of type Exception, whose exception message will include
-/// \c msg (along with other useful information).  
+/// \c msg (along with other useful information).
 ///
 /// If HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS is defined, print the
 /// given message to std::cerr, along with other useful information.
@@ -132,7 +132,7 @@
 ///
 /// If HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS is defined, throw an
 /// exception of type Exception, whose exception message will include
-/// \c msg (along with other useful information).  
+/// \c msg (along with other useful information).
 ///
 /// If HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS is defined, print the
 /// given message to std::cerr, along with other useful information.
@@ -224,7 +224,7 @@
 { \
     SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm); \
 }
-#else 
+#else
 //! If TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION. Otherwise, it calls TEUCHOS_TEST_FOR_EXCEPTION
 #define SWITCHED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
@@ -246,9 +246,9 @@ namespace Tpetra {
   /// (k,v) into the std::map.  In both cases, return an iterator that
   /// points to the inserted or updated entry.
   template<typename MapType, typename KeyArgType, typename ValueArgType>
-  typename MapType::iterator efficientAddOrUpdate(MapType& m, 
-                          const KeyArgType & k, 
-                          const ValueArgType & v) 
+  typename MapType::iterator efficientAddOrUpdate(MapType& m,
+                          const KeyArgType & k,
+                          const ValueArgType & v)
   {
     typename MapType::iterator lb = m.lower_bound(k);
     if(lb != m.end() && !(m.key_comp()(k, lb->first))) {
@@ -305,7 +305,7 @@ namespace Tpetra {
     IT pivot(first+(last-first)/2);
     if(*first<=*pivot && *(last-1)<=*first) pivot=first;
     else if(*(last-1)<=*pivot && *first<= *(last-1)) pivot = last-1;
-    return pivot; 
+    return pivot;
   }
 
   /**
@@ -523,7 +523,7 @@ namespace Tpetra {
   } //end namespace SortDetails
 
 
-  /** 
+  /**
    * \brief Sort the first array, and apply the resulting permutation to the second array.
    *
    * Sort the values in the first array (represented by the exclusive
@@ -559,8 +559,8 @@ namespace Tpetra {
 #endif
   }
 
-  
-  /** 
+
+  /**
    * \brief Sort the first array, and apply the same permutation to the second
    * and third arrays.
    *
@@ -598,7 +598,170 @@ namespace Tpetra {
 #endif
   }
 
-} // namespace Tpetra
+  /// \brief Merge values in place, additively, with the same index.
+  ///
+  /// \tparam IT1 Iterator type for the range of indices
+  /// \tparam IT2 Iterator type for the range of values
+  ///
+  /// indBeg, indEnd defines a half-exclusive (does not include the
+  /// end) range of indices, and valBeg, valEnd its corresponding
+  /// range of values.  The range of values must have the same number
+  /// of entries as the range of indices.  In every nondecreasing
+  /// subsequence of indices, this method will merge values that have
+  /// the same index, by adding the values together.  When done, it
+  /// assigns the new end (exclusive) of the index range to
+  /// indResultOut, and the new end (exclusive) of the value range to
+  /// valResultOut.  (It is legal for the index range not to be
+  /// sorted, but then only nondecreasing subsequences will get
+  /// merged.)
+  ///
+  /// For example, if the indices on input are {0, 1, 1, 3, -1, -1,
+  /// -1, 0}, and their corresponding values on input are {42.0, -4.0,
+  /// -3.0, 1.5, 1.0, 2.0, 3.0}, then on exit from this function, the
+  /// indices are {0, 1, 3, -1, 0}, and the values are {42.0, -7.0,
+  /// 1.5, 6.0, 100.0}.
+  ///
+  /// On entry to the function, indResultOut may alias indEnd, and
+  /// valResultOut may alias valEnd.  For example, the following code
+  /// is legal:
+  /// \code
+  /// std::vector<int> ind (...);
+  /// std::vector<double> val (...);
+  /// // ... fill ind and val ...
+  /// std::vector<int>::iterator indEnd = ind.end ();
+  /// std::vector<int>::iterator valEnd = val.end ();
+  /// merge2 (indEnd, valEnd, ind.begin (), indEnd, val.begin (), valEnd);
+  /// \endcode
+  /// However, the following code is <i>not</i> legal, because the
+  /// return value of <tt>std::vector::end()</tt> cannot be modified:
+  /// \code
+  /// std::vector<int> ind (...);
+  /// std::vector<double> val (...);
+  /// // ... fill ind and val ...
+  /// merge2 (ind.end (), val.end (), ind.begin (), ind.end (),
+  ///         val.begin (), val.end ());
+  /// \endcode
+  template<class IT1, class IT2>
+  void
+  merge2 (IT1& indResultOut, IT2& valResultOut,
+          IT1 indBeg, IT1 indEnd,
+          IT2 valBeg, IT2 valEnd)
+  {
+    if (indBeg == indEnd) {
+      indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
+      valResultOut = valBeg; // It's allowed for valResultOut to alias valEnd
+    }
+    else {
+      IT1 indResult = indBeg;
+      IT2 valResult = valBeg;
+      if (indBeg != indEnd) {
+        ++indBeg;
+        ++valBeg;
+        while (indBeg != indEnd) {
+          if (*indResult == *indBeg) { // adjacent column indices equal
+            *valResult += *valBeg; // merge entries by adding their values together
+          } else { // adjacent column indices not equal
+            *(++indResult) = *indBeg; // shift over the index
+            *(++valResult) = *valBeg; // shift over the value
+          }
+          ++indBeg;
+          ++valBeg;
+        }
+        ++indResult; // exclusive end of merged result
+        ++valResult; // exclusive end of merged result
+        indEnd = indResult;
+        valEnd = valResult;
+      }
+      indResultOut = indResult;
+      valResultOut = valResult;
+    }
+  }
 
+  /// \brief Merge values in place with the same index, using any
+  ///   associative binary function.
+  ///
+  /// \tparam IT1 Iterator type for the range of indices
+  /// \tparam IT2 Iterator type for the range of values
+  /// \tparam BinaryFunction The type of a function that takes two
+  ///   values and returns another value.
+  ///
+  /// indBeg, indEnd defines a half-exclusive (does not include the
+  /// end) range of indices, and valBeg, valEnd its corresponding
+  /// range of values.  The range of values must have the same number
+  /// of entries as the range of indices.  In every nondecreasing
+  /// subsequence of indices, this method will merge values that have
+  /// the same index, by using the given binary function.  When done,
+  /// it assigns the new end (exclusive) of the index range to
+  /// indResultOut, and the new end (exclusive) of the value range to
+  /// valResultOut.  (It is legal for the index range not to be
+  /// sorted, but then only nondecreasing subsequences will get
+  /// merged.)
+  ///
+  /// For example, if the indices on input are {0, 1, 1, 3, -1, -1,
+  /// -1, 0}, their corresponding values on input are {42.0, -4.0,
+  /// -3.0, 1.5, 1.0, 2.0, 3.0}, and the binary function is an
+  /// instance of <tt>std::plus<double></tt>, then on exit from this
+  /// function, the indices are {0, 1, 3, -1, 0}, and the values are
+  /// {42.0, -7.0, 1.5, 6.0, 100.0}.
+  ///
+  /// On entry to the function, indResultOut may alias indEnd, and
+  /// valResultOut may alias valEnd.  For example, the following code
+  /// is legal:
+  /// \code
+  /// std::vector<int> ind (...);
+  /// std::vector<double> val (...);
+  /// // ... fill ind and val ...
+  /// std::vector<int>::iterator indEnd = ind.end ();
+  /// std::vector<int>::iterator valEnd = val.end ();
+  /// merge2 (indEnd, valEnd, ind.begin (), indEnd,
+  ///         val.begin (), valEnd, std::plus<double> ());
+  /// \endcode
+  /// However, the following code is <i>not</i> legal, because the
+  /// return value of <tt>std::vector::end()</tt> cannot be modified:
+  /// \code
+  /// std::vector<int> ind (...);
+  /// std::vector<double> val (...);
+  /// // ... fill ind and val ...
+  /// merge2 (ind.end (), val.end (), ind.begin (), ind.end (),
+  ///         val.begin (), val.end (), std::plus<double> ());
+  /// \endcode
+  template<class IT1, class IT2, class BinaryFunction>
+  void
+  merge2 (IT1& indResultOut, IT2& valResultOut,
+          IT1 indBeg, IT1 indEnd,
+          IT2 valBeg, IT2 valEnd,
+          BinaryFunction f)
+  {
+    if (indBeg == indEnd) {
+      indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
+      valResultOut = valBeg; // It's allowed for valResultOut to alias valEnd
+    }
+    else {
+      IT1 indResult = indBeg;
+      IT2 valResult = valBeg;
+      if (indBeg != indEnd) {
+        ++indBeg;
+        ++valBeg;
+        while (indBeg != indEnd) {
+          if (*indResult == *indBeg) { // adjacent column indices equal
+            *valResult = f (*valResult, *valBeg); // merge entries via values
+          } else { // adjacent column indices not equal
+            *(++indResult) = *indBeg; // shift over the index
+            *(++valResult) = *valBeg; // shift over the value
+          }
+          ++indBeg;
+          ++valBeg;
+        }
+        ++indResult; // exclusive end of merged result
+        ++valResult; // exclusive end of merged result
+        indEnd = indResult;
+        valEnd = valResult;
+      }
+      indResultOut = indResult;
+      valResultOut = valResult;
+    }
+  }
+
+} // namespace Tpetra
 
 #endif // TPETRA_UTIL_HPP

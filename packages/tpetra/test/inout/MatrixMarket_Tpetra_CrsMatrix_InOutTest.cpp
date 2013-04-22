@@ -41,7 +41,7 @@
 
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_Util.hpp> // sort2
+#include <Tpetra_Util.hpp> // sort2, merge2
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 
@@ -312,76 +312,6 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::
   return globalEqual == 1;
 }
 
-template<class IT1, class IT2>
-void
-merge2 (IT1& indResultOut, IT2& valResultOut, IT1 indBeg, IT1 indEnd, IT2 valBeg, IT2 valEnd)
-{
-  if (indBeg == indEnd) {
-    indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
-    valResultOut = valBeg; // It's allowed for valResultOut to alias valEnd
-  }
-  else {
-    IT1 indResult = indBeg;
-    IT2 valResult = valBeg;
-    if (indBeg != indEnd) {
-      ++indBeg;
-      ++valBeg;
-      while (indBeg != indEnd) {
-        if (*indResult == *indBeg) { // adjacent column indices equal
-          *valResult += *valBeg; // merge entries by adding their values together
-        } else { // adjacent column indices not equal
-          *(++indResult) = *indBeg; // shift over the index
-          *(++valResult) = *valBeg; // shift over the value
-        }
-        ++indBeg;
-        ++valBeg;
-      }
-      ++indResult; // exclusive end of merged result
-      ++valResult; // exclusive end of merged result
-      indEnd = indResult;
-      valEnd = valResult;
-    }
-    indResultOut = indResult;
-    valResultOut = valResult;
-  }
-}
-
-template<class IT1, class IT2, class BinaryFunction>
-void
-merge2 (IT1& indResultOut, IT2& valResultOut,
-        IT1 indBeg, IT1 indEnd,
-        IT2 valBeg, IT2 valEnd,
-        BinaryFunction f)
-{
-  if (indBeg == indEnd) {
-    indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
-    valResultOut = valBeg; // It's allowed for valResultOut to alias valEnd
-  }
-  else {
-    IT1 indResult = indBeg;
-    IT2 valResult = valBeg;
-    if (indBeg != indEnd) {
-      ++indBeg;
-      ++valBeg;
-      while (indBeg != indEnd) {
-        if (*indResult == *indBeg) { // adjacent column indices equal
-          *valResult = f (*valResult, *valBeg); // merge entries by adding their values together
-        } else { // adjacent column indices not equal
-          *(++indResult) = *indBeg; // shift over the index
-          *(++valResult) = *valBeg; // shift over the value
-        }
-        ++indBeg;
-        ++valBeg;
-      }
-      ++indResult; // exclusive end of merged result
-      ++valResult; // exclusive end of merged result
-      indEnd = indResult;
-      valEnd = valResult;
-    }
-    indResultOut = indResult;
-    valResultOut = valResult;
-  }
-}
 
 // Input matrices must be fill complete, and all four of their Maps
 // (row, column, domain, and range) must be the same.
@@ -443,13 +373,13 @@ compareCrsMatrixValues (const CrsMatrixType& A_orig,
     typename Array<ST>::iterator valOrigIter = valOrig.begin ();
     typename Array<GO>::iterator indOrigEnd = indOrig.end ();
     typename Array<ST>::iterator valOrigEnd = valOrig.end ();
-    merge2 (indOrigEnd, valOrigEnd, indOrigIter, indOrigEnd, valOrigIter, valOrigEnd);
+    Tpetra::merge2 (indOrigEnd, valOrigEnd, indOrigIter, indOrigEnd, valOrigIter, valOrigEnd);
 
     typename Array<GO>::iterator indIter = ind.begin ();
     typename Array<ST>::iterator valIter = val.begin ();
     typename Array<GO>::iterator indEnd = ind.end ();
     typename Array<ST>::iterator valEnd = val.end ();
-    merge2 (indEnd, valEnd, indIter, indEnd, valIter, valEnd);
+    Tpetra::merge2 (indEnd, valEnd, indIter, indEnd, valIter, valEnd);
 
     //
     // Compare the merged sets of entries.
