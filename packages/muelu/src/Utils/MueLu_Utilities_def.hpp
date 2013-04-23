@@ -748,6 +748,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(std::string const & fileName, Matrix const & Op) {
+    std::string mapfile = "rowmap_" + fileName;
+    Write( mapfile,*(Op.getRowMap()));
     CrsMatrixWrap const & crsOp = dynamic_cast<CrsMatrixWrap const &>(Op);
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
@@ -835,6 +837,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(std::string const & fileName, const MultiVector& x) {
+    std::string mapfile = "map_" + fileName;
+    Write( mapfile,*(x.getMap()));
     RCP<const MultiVector> tmp_Vec = rcpFromRef(x);
 #ifdef HAVE_MUELU_EPETRAEXT
     const RCP<const EpetraMultiVector> &tmp_EVec = rcp_dynamic_cast<const EpetraMultiVector>(tmp_Vec);

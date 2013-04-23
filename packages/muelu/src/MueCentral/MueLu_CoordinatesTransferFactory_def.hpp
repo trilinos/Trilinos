@@ -146,13 +146,17 @@ namespace MueLu {
     }
 
     Set<RCP<MultiVector> >(coarseLevel, "Coordinates", coarseCoords);
+    if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd) {
+      std::ostringstream buf;
+      buf << fineLevel.GetLevelID();
+      std::string fileName = "coordinates_level_" + buf.str() + ".m";
+      Utils::Write(fileName,*fineCoords);
+    }
     if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd) {
       std::ostringstream buf;
       buf << coarseLevel.GetLevelID();
       std::string fileName = "coordinates_level_" + buf.str() + ".m";
       Utils::Write(fileName,*coarseCoords);
-      fileName = "coordinatesMap_level_" + buf.str() + ".m";
-      Utils::Write(fileName,*(coarseCoords->getMap()));
     }
 
   } // Build
