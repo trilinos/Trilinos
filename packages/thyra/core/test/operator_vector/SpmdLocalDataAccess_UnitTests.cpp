@@ -134,6 +134,11 @@ createProcDimVS()
 //
 
 
+//
+// Test getLocalSubVectorView
+//
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, basic,
   Scalar )
 {
@@ -162,6 +167,46 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, basic,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubVectorView,
   basic)
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, empty_p0,
+  Scalar )
+{
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    createZeroEleProcVS<Scalar>(g_localDim);
+  const RCP<const Teuchos::Comm<Ordinal> > comm = vs->getComm();
+  const int procRank = comm->getRank();
+  PRINT_VAR(procRank);
+  const int numProcs = comm->getSize();
+  PRINT_VAR(numProcs);
+  const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
+  const Scalar val = as<Scalar>(1.5);
+  PRINT_VAR(val);
+  assign<Scalar>(v.ptr(), val);
+  out << "*** Test that we get the view correctly including an empty view on p0 ...\n";
+  RTOpPack::ConstSubVectorView<Scalar> lsv = 
+    getLocalSubVectorView<Scalar>(v);
+  if (procRank == 0) {
+    TEST_EQUALITY_CONST(lsv.subDim(), 0);
+    TEST_EQUALITY_CONST(lsv.values(), null);
+  }
+  else {
+    TEST_EQUALITY(lsv.subDim(), g_localDim);
+  }
+  TEST_EQUALITY_CONST(lsv.stride(), 1);
+  for (int k = 0; k < lsv.subDim(); ++k) {
+    TEST_EQUALITY(lsv[k], val);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubVectorView,
+  empty_p0)
+
+
+//
+// Test getNonconstLocalSubVectorView
+//
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, basic,
