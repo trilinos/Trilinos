@@ -56,6 +56,7 @@
 
 #include "Sacado_ELRFad_Expression.hpp"
 #include "Sacado_dummy_arg.hpp"
+#include<ostream>
 
 namespace Sacado {
 

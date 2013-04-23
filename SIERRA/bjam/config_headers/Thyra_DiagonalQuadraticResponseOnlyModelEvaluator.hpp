@@ -1,2 +1,0 @@
-#include "Thyra_DiagonalQuadraticResponseOnlyModelEvaluator_decl.hpp"
-#include "Thyra_DiagonalQuadraticResponseOnlyModelEvaluator_def.hpp"

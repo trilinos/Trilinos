@@ -1,4 +1,0 @@
-
-#define HAVE_MPI
-
-#define HAVE_SHARDS_TEUCHOS

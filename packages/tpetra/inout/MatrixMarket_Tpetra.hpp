@@ -4656,6 +4656,12 @@ namespace Tpetra {
                    const std::string& matrixDescription,
                    const bool debug=false)
       {
+        using Teuchos::Comm;
+        using Teuchos::FancyOStream;
+        using Teuchos::getFancyOStream;
+        using Teuchos::null;
+        using Teuchos::RCP;
+        using Teuchos::rcpFromRef;
         using std::cerr;
         using std::endl;
         typedef scalar_type ST;
@@ -4674,6 +4680,18 @@ namespace Tpetra {
 
         RCP<const Comm<int> > comm = pMatrix->getComm();
         const int myRank = comm->getRank ();
+
+        RCP<FancyOStream> err =
+          debug ? getFancyOStream (rcpFromRef (std::cerr)) : null;
+        if (debug) {
+          std::ostringstream os;
+          os << myRank << ": writeSparse" << endl;
+          *err << os.str ();
+          comm->barrier ();
+          os << "-- " << myRank << ": past barrier" << endl;
+          *err << os.str ();
+        }
+
         // Whether to print debugging output to stderr.
         const bool debugPrint = debug && myRank == 0;
 
@@ -4684,36 +4702,43 @@ namespace Tpetra {
 
         const global_size_t numRows = rangeMap->getGlobalNumElements ();
         const global_size_t numCols = domainMap->getGlobalNumElements ();
-        if (debugPrint) {
-          cerr << "writeSparse:" << endl
-               << "-- Input sparse matrix is:"
-               << "---- " << numRows << " x " << numCols << " with "
-               << pMatrix->getGlobalNumEntries() << " entries;" << endl
-               << "---- "
-               << (pMatrix->isGloballyIndexed() ? "Globally" : "Locally")
-               << " indexed." << endl
-               << "---- Its row map has " << rowMap->getGlobalNumElements ()
-               << " elements." << endl
-               << "---- Its col map has " << colMap->getGlobalNumElements ()
-               << " elements." << endl;
+
+        if (debug && myRank == 0) {
+          std::ostringstream os;
+          os << "-- Input sparse matrix is:"
+             << "---- " << numRows << " x " << numCols << " with "
+             << pMatrix->getGlobalNumEntries() << " entries;" << endl
+             << "---- "
+             << (pMatrix->isGloballyIndexed() ? "Globally" : "Locally")
+             << " indexed." << endl
+             << "---- Its row map has " << rowMap->getGlobalNumElements ()
+             << " elements." << endl
+             << "---- Its col map has " << colMap->getGlobalNumElements ()
+             << " elements." << endl;
+          *err << os.str ();
         }
         // Make the "gather" row map, where Proc 0 owns all rows and
         // the other procs own no rows.
         const size_t localNumRows = (myRank == 0) ? numRows : 0;
         RCP<node_type> node = rowMap->getNode();
+        if (debug) {
+          std::ostringstream os;
+          os << "-- " << myRank << ": making gatherRowMap" << endl;
+          *err << os.str ();
+        }
         RCP<const map_type> gatherRowMap =
-          rcp (new map_type (numRows, localNumRows,
-                             rowMap->getIndexBase (),
-                             comm, node));
+          computeGatherMap (rowMap, err, debug);
+
         // Since the matrix may in general be non-square, we need to
         // make a column map as well.  In this case, the column map
         // contains all the columns of the original matrix, because we
-        // are gathering the whole matrix onto Proc 0.
+        // are gathering the whole matrix onto Proc 0.  We call
+        // computeGatherMap to preserve the original order of column
+        // indices over all the processes.
         const size_t localNumCols = (myRank == 0) ? numCols : 0;
         RCP<const map_type> gatherColMap =
-          rcp (new map_type (numCols, localNumCols,
-                             colMap->getIndexBase (),
-                             comm, node));
+          computeGatherMap (colMap, err, debug);
+
         // Current map is the source map, gather map is the target map.
         typedef Import<LO, GO, node_type> import_type;
         import_type importer (rowMap, gatherRowMap);

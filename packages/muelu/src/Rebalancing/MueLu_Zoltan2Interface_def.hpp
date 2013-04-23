@@ -102,7 +102,6 @@ namespace MueLu {
                                "Zoltan2 does not work with Epetra at the moment. Please use Zoltan through ZoltanInterface");
 
     size_t dim       = coords->getNumVectors();
-    GO     indexBase = rowMap->getIndexBase();
     LO     blkSize   = A->GetFixedBlockSize();
 
     // Check that the number of local coordinates is consistent with the #rows in A
@@ -110,6 +109,7 @@ namespace MueLu {
                                "Coordinate vector length (" + toString(coords->getLocalLength()) << " is incompatible with number of block rows in A ("
                                + toString(rowMap->getNodeNumElements()/blkSize) + "The vector length should be the same as the number of mesh points.");
 #ifdef HAVE_MUELU_DEBUG
+    GO indexBase = rowMap->getIndexBase();
     GetOStream(Runtime0,0) << "Checking consistence of row and coordinates maps" << std::endl;
     // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
     ArrayView<const GO> rowElements    = rowMap->getNodeElementList();
