@@ -148,6 +148,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, basic,
   const Scalar val = as<Scalar>(1.5);
   PRINT_VAR(val);
   assign<Scalar>(v.ptr(), val);
+  const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
+  TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(val * vs->dim()), tol);
   out << "*** Test that we get the view correctly ...\n";
   RTOpPack::SubVectorView<Scalar> lsv = 
     getNonconstLocalSubVectorView<Scalar>(v);
@@ -162,8 +164,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, basic,
   }
   lsv = RTOpPack::SubVectorView<Scalar>();
   const Ordinal n = vs->dim();
-  TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(n*(n+1))/2,
-    as<ScalarMag>(100.0*ScalarTraits<Scalar>::eps()));
+  TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>((n*(n+1))/2), tol);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubVectorView,
