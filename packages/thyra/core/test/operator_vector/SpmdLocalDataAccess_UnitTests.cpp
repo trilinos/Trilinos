@@ -142,7 +142,7 @@ createProcRankLocalDimVS()
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, even,
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, procRankLocalDim,
   Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
@@ -171,7 +171,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, even,
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubVectorView,
-  even)
+  procRankLocalDim)
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, empty_p0,
@@ -216,7 +216,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubVectorView,
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, even,
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, procRankLocalDim,
   Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
@@ -258,7 +258,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, even,
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubVectorView,
-  even)
+  procRankLocalDim)
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, empty_p0,
@@ -301,7 +301,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubVectorView
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubMultiVectorView, even,
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubMultiVectorView, procRankLocalDim,
   Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
@@ -337,7 +337,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubMultiVectorView, even,
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubMultiVectorView,
-  even)
+  procRankLocalDim)
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubMultiVectorView, empty_p0,
@@ -386,7 +386,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubMultiVectorView,
 
 // ToDo:
 
-// Test an even construction on all processes returns the right view object
+// Test basic construction on all processes returns the right view object
 
 // Test getting data with empty procs
 
