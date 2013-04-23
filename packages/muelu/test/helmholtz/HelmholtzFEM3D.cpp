@@ -54,20 +54,10 @@
 #include <Galeri_XpetraMaps.hpp>
 
 // MueLu
-#include "MueLu.hpp"
-#include <MueLu_Level.hpp>
-#include <MueLu_BaseClass.hpp>
-#include <MueLu_Utilities.hpp>
+#include <MueLu_ShiftedLaplacian.hpp>
 #include <MueLu_UseDefaultTypesComplex.hpp>
 #include <MueLu_UseShortNames.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
-
-// Belos
-#include <BelosConfigDefs.hpp>
-#include <BelosLinearProblem.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
-#include <BelosXpetraAdapter.hpp>
-#include <BelosMueLuAdapter.hpp>
 
 typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
 typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
@@ -76,13 +66,6 @@ typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
 typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS; 
 typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
 typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
-
-typedef Belos::OperatorT<TMV>                        TOP;
-typedef Belos::OperatorTraits<SC,TMV,TOP>            TOPT;
-typedef Belos::MultiVecTraits<SC,TMV>                TMVT;
-typedef Belos::LinearProblem<SC,TMV,TOP>             TProblem;
-typedef Belos::SolverManager<SC,TMV,TOP>             TBelosSolver;
-typedef Belos::BlockGmresSolMgr<SC,TMV,TOP>          TBelosGMRES;
 
 int main(int argc, char *argv[]) {
 
@@ -185,75 +168,21 @@ int main(int argc, char *argv[]) {
       Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_shift.GetMatrixType(), map, matrixParams_shift);
   RCP<Matrix> A_shift = Pr_shift->BuildMatrix();
 
-  RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
-  nullspace->putScalar( (SC) 1.0);
- 
   comm->barrier();
 
   tm = Teuchos::null;
 
-  //************************************//
-  //   Setup Multigrid Preconditioner   //
-  //************************************//
+  //*************************************************************//
+  //   Setup Shifted Laplacian Preconditioner and Belos Solver   //
+  //*************************************************************//
 
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
-  // Factories
-  RCP<TentativePFactory>  TentPFact = rcp( new TentativePFactory );
-  RCP<SaPFactory>         Pfact     = rcp( new SaPFactory        );
-  RCP<TransPFactory>      Rfact     = rcp( new TransPFactory     );
-  RCP<RAPFactory>         Acfact    = rcp( new RAPFactory        );
-
-  // Smoother
-  RCP<SmootherPrototype> smooProto;
-  std::string ifpack2Type;
-  Teuchos::ParameterList ifpack2List;
-  ifpack2Type = "KRYLOV";
-  ifpack2List.set("krylov: iteration type",1);
-  ifpack2List.set("krylov: number of iterations",4);
-  ifpack2List.set("krylov: residual tolerance",1e-6);
-  ifpack2List.set("krylov: block size",1);
-  ifpack2List.set("krylov: zero starting solution",true);
-  ifpack2List.set("krylov: preconditioner type",3);
-  ifpack2List.set("schwarz: compute condest", false);
-  ifpack2List.set("schwarz: overlap level", 0);
-  smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type,ifpack2List) );
-  RCP<SmootherFactory> SmooFact;
-  LO maxLevels = 6;
-  if (maxLevels > 1)
-    SmooFact = rcp( new SmootherFactory(smooProto) );
-
-  // Coarse grid solver
-  RCP<SmootherPrototype> coarsestSmooProto;
-  std::string type = "";
-  Teuchos::ParameterList coarsestSmooList;
-#if defined(HAVE_AMESOS_SUPERLU)
-  coarsestSmooProto = rcp( new DirectSolver("Superlu",coarsestSmooList) );
-#else
-  coarsestSmooProto = rcp( new DirectSolver("Klu",coarsestSmooList) );
-#endif
-  RCP<SmootherFactory> coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
-
-  // Setup and Keep R's and P's
-  RCP<Hierarchy> H = rcp(new Hierarchy(A_laplace));
-  H->GetLevel(0)->Set("Nullspace",nullspace);
-  FactoryManager Manager;
-  Manager.SetFactory("P",      Pfact     );
-  Manager.SetFactory("R",      Rfact     );
-  Manager.SetFactory("A",      Acfact    );
-  Manager.SetFactory("Ptent",  TentPFact );
-  H->Keep("P",      Pfact.get()     );
-  H->Keep("R",      Rfact.get()     );
-  H->Keep("Ptent",  TentPFact.get() );
-  H->Setup(Manager, 0, maxLevels);
-
-  // Setup coarse grid operators and smoothers
-  RCP<Level> finestLevel = H->GetLevel();
-  finestLevel->Set("A", A_shift);
-  Manager.SetFactory("Smoother", SmooFact);
-  Manager.SetFactory("CoarseSolver", coarsestSmooFact);
-  H->Setup(Manager, 0, H->GetNumLevels());
-  //H->Write(-1,-1);
+  RCP<ShiftedLaplacian> SLSolver = rcp( new ShiftedLaplacian );
+  SLSolver -> setLaplacian(A_laplace);
+  SLSolver -> setHelmholtz(A_helmholtz);
+  SLSolver -> setShiftedLaplacian(A_shift);
+  SLSolver -> setup(omega);
 
   tm = Teuchos::null;
   
@@ -263,92 +192,21 @@ int main(int argc, char *argv[]) {
 
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
 
-  RCP<TVEC> X = Tpetra::createVector<SC,LO,GO,NO>(tmap);
-  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(tmap);  
+  RCP<TMV> X = Tpetra::createMultiVector<SC,LO,GO,NO>(tmap,1);
+  RCP<TMV> B = Tpetra::createMultiVector<SC,LO,GO,NO>(tmap,1);  
   X->putScalar((SC) 0.0);
   B->putScalar((SC) 0.0);
   int pointsourceid=nx*ny*nz/2+nx*ny/2+nx/2;
   if(map->isNodeGlobalElement(pointsourceid)==true) {
-    B->replaceGlobalValue(pointsourceid, (SC) 1.0);
+    B->replaceGlobalValue(pointsourceid, 0, (SC) 1.0);
   }
 
   tm = Teuchos::null;
 
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Belos Solve")));
 
-  // Define Operator and Preconditioner
-  RCP<TOP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO> (A_helmholtz) );    // Turns a Xpetra::Matrix object into a Belos operator
-  RCP<TOP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO,LMO>  (H)           );    // Turns a MueLu::Hierarchy object into a Belos operator
+  SLSolver -> solve(B,X);
 
-  // Construct a Belos LinearProblem object
-  RCP<TProblem> belosProblem = rcp(new TProblem(belosOp,X,B));
-  belosProblem->setRightPrec(belosPrec); 
-  bool set = belosProblem->setProblem();
-  if (set == false) {
-    if(comm->getRank()==0)
-      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;    
-    return EXIT_FAILURE;
-  }
-    
-  // Belos parameter list
-  int maxIts = 100;
-  double tol = 1e-6;
-  Teuchos::ParameterList belosList;
-  belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-  belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-  belosList.set("Flexible Gmres", true);         // set flexible GMRES on/off
-  belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-  belosList.set("Output Frequency",1);
-  belosList.set("Output Style",Belos::Brief);
-
-  // Create solver manager
-  RCP<TBelosSolver> solver = rcp( new TBelosGMRES(belosProblem, rcp(&belosList, false)) );
-
-  // Perform solve
-  Belos::ReturnType ret=Belos::Unconverged;
-  try {
-    ret = solver->solve();
-    if (comm->getRank() == 0)
-      std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-  }
-
-  catch(...) {
-    if (comm->getRank() == 0)
-      std::cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
-  }
-  
-  // Check convergence
-  if (ret != Belos::Converged) {
-    if (comm->getRank() == 0) std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
-  } else {
-    if (comm->getRank() == 0) std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-  }
-
-  // Compute actual residuals.
-  int numrhs=1;
-  bool badRes = false;
-  std::vector<double> actual_resids(numrhs);
-  std::vector<double> rhs_norm(numrhs);
-  RCP<TMV> resid = Tpetra::createMultiVector<SC,LO,GO,NO>(tmap, numrhs);     
-  TOPT::Apply(*belosOp, *X, *resid);
-  TMVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
-  TMVT::MvNorm(*resid, actual_resids);
-  TMVT::MvNorm(*B, rhs_norm);
-  if(comm->getRank()==0) {
-    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
-  }
-  for (int i = 0; i < numrhs; i++) {
-    double actRes = abs(actual_resids[i])/rhs_norm[i];
-    if(comm->getRank()==0) {
-      std::cout <<"Problem " << i << " : \t" << actRes <<std::endl;
-    }
-    if (actRes > tol) { badRes = true; }
-  }
-
-  // Get the number of iterations for this solve.
-  if(comm->getRank()==0)
-    std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
- 
   tm = Teuchos::null;
 
   globalTimeMonitor = Teuchos::null;

@@ -52,6 +52,7 @@ RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
 SchurComplementFactory
+ShiftedLaplacian
 SimpleSmoother
 Smoother
 SmootherBase
