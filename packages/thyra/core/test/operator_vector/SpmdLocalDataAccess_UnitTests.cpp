@@ -163,12 +163,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
     createProcRankLocalDimVS<Scalar>();
-  TEST_ASSERT(!vs->isLocallyReplicated());
   const RCP<const Teuchos::Comm<Ordinal> > comm = vs->getComm();
   const int procRank = comm->getRank();
   PRINT_VAR(procRank);
   const int numProcs = comm->getSize();
   PRINT_VAR(numProcs);
+  TEST_EQUALITY(vs->isLocallyReplicated(), numProcs==1);
   const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
   const Scalar val = as<Scalar>(1.5);
   PRINT_VAR(val);
