@@ -40,6 +40,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/static_assert.hpp>
 #include <Ioss_Utils.h>
+#include <Ioss_SerializeIO.h>
 
 #include <stk_adapt/SerializeNodeRegistry.hpp>
 
@@ -545,6 +546,7 @@ namespace stk {
       int load_balance = 1;
       std::string convert_Hex8_Tet4_24 = "Hex8_Tet4_24";
       int print_info=0;
+      int serialized_io_group_size = 0;
       int remove_original_elements = 1;
       int verify_meshes = 0;
       int number_refines = 1;
@@ -699,6 +701,7 @@ namespace stk {
 #endif
       run_environment.clp.setOption("proc_rank_field"          , &proc_rank_field          , " add an element field to show processor rank");
       run_environment.clp.setOption("remove_original_elements" , &remove_original_elements , " remove original (converted) elements (default=true)");
+      run_environment.clp.setOption("serialized_io_group_size" , &serialized_io_group_size , " set to non-zero to use this many i/o groups to minimize disk contention");
       run_environment.clp.setOption("input_geometry"           , &input_geometry           , "input geometry name");
       run_environment.clp.setOption("streaming_size"           , &streaming_size      ,
                                     "INTERNAL use only by python script streaming refinement interface:\n"
@@ -728,6 +731,21 @@ namespace stk {
       double t1   = 0.0;
       double cpu0 = 0.0;
       double cpu1 = 0.0;
+
+      if (serialized_io_group_size)
+      {
+        std::cout << "Info: found non-zero serialized_io_group_size on command-line= " 
+                              << serialized_io_group_size << std::endl;
+        if (serialized_io_group_size < 0 || serialized_io_group_size > (int)p_size || (int)p_size % serialized_io_group_size != 0)
+          {
+            if (p_rank==0) 
+              std::cout << "Error: Job requested serialized_io_group_size of " << serialized_io_group_size
+                   << " which is incompatible with MPI size= " << p_size
+                   << "... shutting down." << std::endl;
+            throw std::runtime_error("bad value for serialized_io_group_size");
+          }
+        Ioss::SerializeIO::setGroupFactor(serialized_io_group_size);
+      }
 
       if (convert.length()+enrich.length()+refine.length() == 0)
         {

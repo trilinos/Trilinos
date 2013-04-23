@@ -980,14 +980,14 @@ namespace stk
       public:
         Mimic_Encr_Percept_Edge_Adapter(Mimic_Encr_Entity_Marker & element_marker, stk::percept::PerceptMesh & pMesh, stk::adapt::UniformRefinerPatternBase & bp, stk::mesh::FieldBase * proc_rank_field=0)
         : stk::adapt::IEdgeAdapter(pMesh, bp, proc_rank_field), my_element_marker(element_marker) {}
-        virtual int mark(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
+        virtual int markEdge(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
           double *coord0, double *coord1, std::vector<int>* existing_edge_marks);
       protected:
         Mimic_Encr_Entity_Marker & my_element_marker;
       };
 
       int
-      Mimic_Encr_Percept_Edge_Adapter::mark(
+      Mimic_Encr_Percept_Edge_Adapter::markEdge(
           const stk::mesh::Entity element,
           unsigned which_edge,
           stk::mesh::Entity node0,
