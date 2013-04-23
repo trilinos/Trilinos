@@ -128,7 +128,7 @@ public:
    */
   virtual Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const = 0;
 
-  /** \brief Get a nonconst view of the local data.
+  /** \brief Get a non-const view of the local data.
    *
    * ToDo: Refactor this interface to use iterator access.
    */

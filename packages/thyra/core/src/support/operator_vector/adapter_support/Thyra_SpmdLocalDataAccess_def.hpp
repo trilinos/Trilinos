@@ -45,6 +45,7 @@
 
 #include "Thyra_SpmdLocalDataAccess_decl.hpp"
 #include "Thyra_SpmdVectorBase_def.hpp"
+#include "Thyra_SpmdMultiVectorBase_def.hpp"
 
 
 template<class Scalar>
@@ -72,8 +73,8 @@ RTOpPack::SubMultiVectorView<Scalar>
 Thyra::getNonconstLocalSubMultiVectorView(
   const RCP<MultiVectorBase<Scalar> > &vec)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
-  return RTOpPack::SubMultiVectorView<Scalar>();
+  return Teuchos::rcp_dynamic_cast<SpmdMultiVectorBase<Scalar> >(vec, true)
+    ->getNonconstLocalSubMultiVector();
 }
 
 
@@ -82,8 +83,8 @@ RTOpPack::ConstSubMultiVectorView<Scalar>
 Thyra::getLocalSubMultiVectorView(
   const RCP<const MultiVectorBase<Scalar> > &vec)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
-  return RTOpPack::ConstSubMultiVectorView<Scalar>();
+  return Teuchos::rcp_dynamic_cast<const SpmdMultiVectorBase<Scalar> >(vec, true)
+    ->getLocalSubMultiVector();
 }
 
 

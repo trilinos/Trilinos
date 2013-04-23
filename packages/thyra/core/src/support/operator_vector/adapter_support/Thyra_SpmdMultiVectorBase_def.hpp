@@ -74,6 +74,44 @@ SpmdMultiVectorBase<Scalar>::SpmdMultiVectorBase()
 {}
 
 
+template<class Scalar>
+RTOpPack::SubMultiVectorView<Scalar>
+SpmdMultiVectorBase<Scalar>::getNonconstLocalSubMultiVector()
+{
+/*
+  ArrayRCP<Scalar> localValues;
+  this->getNonconstLocalData(Teuchos::outArg(localValues));
+  return RTOpPack::SubVectorView<Scalar>(
+    localOffset_,
+    localSubDim_,
+    localValues,
+    1 // stride
+    );
+  // ToDo: Refactor to call this function directly!
+  */
+  return RTOpPack::SubMultiVectorView<Scalar>();
+}
+
+
+template<class Scalar>
+RTOpPack::ConstSubMultiVectorView<Scalar>
+SpmdMultiVectorBase<Scalar>::getLocalSubMultiVector() const
+{
+  using Teuchos::outArg;
+  ArrayRCP<const Scalar> localValues;
+  Ordinal leadingDim = -1;
+  this->getLocalData(outArg(localValues), outArg(leadingDim));
+  return RTOpPack::ConstSubMultiVectorView<Scalar>(
+    localOffset_, // globalOffset
+    localSubDim_,
+    0, // colOffset
+    numCols_,
+    localValues,
+    leadingDim
+    );
+}
+
+
 // Overridden public functions from MultiVectorAdapterBase
 
 

@@ -131,6 +131,18 @@ public:
    */
   virtual RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const = 0;
 
+  /** \brief Get a non-const view of the local data.
+   *
+   * ToDo: Refactor this interface to use iterator access.
+   */
+  RTOpPack::SubMultiVectorView<Scalar> getNonconstLocalSubMultiVector();
+
+  /** \brief Get a const view of the local data.
+   *
+   * ToDo: Refactor this interface to use iterator access.
+   */
+  RTOpPack::ConstSubMultiVectorView<Scalar> getLocalSubMultiVector() const;
+
   /** \brief Returns a non-<tt>const</tt> pointer to a Fortran-style view of
    * the local multi-vector data.
    *
