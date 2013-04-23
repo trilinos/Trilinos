@@ -91,20 +91,6 @@ using Teuchos::get_extra_data;
 
 template<class Scalar>
 RCP<const DefaultSpmdVectorSpace<Scalar> >
-createVS(const Ordinal localDim)
-{
-  const RCP<const Teuchos::Comm<Ordinal> > comm =
-    Teuchos::DefaultComm<Teuchos_Ordinal>::getComm();
-
-  RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    Thyra::defaultSpmdVectorSpace<Scalar>(comm, localDim, -1);
-
-  return vs;
-}
-
-
-template<class Scalar>
-RCP<const DefaultSpmdVectorSpace<Scalar> >
 createLocallyReplicatedVS(const Ordinal localDim)
 {
   const RCP<const Teuchos::Comm<Ordinal> > comm =
@@ -147,6 +133,20 @@ createProcRankLocalDimVS()
 }
 
 
+template<class Scalar>
+RCP<const DefaultSpmdVectorSpace<Scalar> >
+createZeroVS()
+{
+  const RCP<const Teuchos::Comm<Ordinal> > comm =
+    Teuchos::DefaultComm<Teuchos_Ordinal>::getComm();
+
+  RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    Thyra::defaultSpmdVectorSpace<Scalar>(comm, 0, -1);
+
+  return vs;
+}
+
+
 //
 // Unit Tests
 //
@@ -163,6 +163,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
     createProcRankLocalDimVS<Scalar>();
+  TEST_ASSERT(!vs->isLocallyReplicated());
   const RCP<const Teuchos::Comm<Ordinal> > comm = vs->getComm();
   const int procRank = comm->getRank();
   PRINT_VAR(procRank);
@@ -194,6 +195,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
     createZeroEleProcVS<Scalar>(g_localDim);
+  TEST_ASSERT(!vs->isLocallyReplicated());
   const RCP<const Teuchos::Comm<Ordinal> > comm = vs->getComm();
   const int procRank = comm->getRank();
   PRINT_VAR(procRank);
@@ -508,6 +510,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
     createLocallyReplicatedVS<Scalar>(g_localDim);
   TEST_EQUALITY(vs->dim(), g_localDim);
+  TEST_ASSERT(vs->isLocallyReplicated());
   const RCP<const Teuchos::Comm<Ordinal> > comm = vs->getComm();
   const Scalar val = as<Scalar>(1.5);
   PRINT_VAR(val);
@@ -566,22 +569,66 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess,
   locallyReplicated)
 
 
+//
+// Objects for a zero-sized vector space
+//
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
+  zeroVS, Scalar )
+{
+  out << "Create a locally replicated vector space ...\n";
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    createZeroVS<Scalar>();
+  TEST_ASSERT(!vs->isLocallyReplicated());
+  TEST_EQUALITY_CONST(vs->dim(), 0);
+  const RCP<const Teuchos::Comm<Ordinal> > comm = vs->getComm();
+  const Scalar val = as<Scalar>(1.5);
+  PRINT_VAR(val);
 
-// ToDo:
-
-// Test basic construction on all processes returns the right view object
-
-// Test getting data with empty procs
-
-// Test that getting a non-const view the modifying it will modify the
-// underlying V or MV object once the view is released.
-
-// Test getting data for locally replicated objects
-
-// Test that getting data from an unsized VS V or MV object returns an empty
-// view on every process.
+  out << "Test locally replicated Vector ...\n";
+  const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
+  {
+    ECHO(RTOpPack::SubVectorView<Scalar> lsv = 
+      getNonconstLocalSubVectorView<Scalar>(v));
+    TEST_EQUALITY_CONST(lsv.globalOffset(), 0);
+    TEST_EQUALITY(lsv.subDim(), 0);
+    TEST_EQUALITY_CONST(lsv.stride(), 1);
+  }
+  {
+    ECHO(RTOpPack::ConstSubVectorView<Scalar> lsv = 
+      getLocalSubVectorView<Scalar>(v));
+    TEST_EQUALITY_CONST(lsv.globalOffset(), 0);
+    TEST_EQUALITY(lsv.subDim(), 0);
+    TEST_EQUALITY_CONST(lsv.stride(), 1);
+  }
+  assign<Scalar>(v.ptr(), val);
+  TEST_EQUALITY(sum<Scalar>(*v), as<Scalar>(0.0));
+  
+  out << "Test locally replicated MultiVector ...\n";
+  const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, g_numCols);
+  {
+    ECHO(RTOpPack::SubMultiVectorView<Scalar> lsmv = 
+      getNonconstLocalSubMultiVectorView<Scalar>(mv));
+    TEST_EQUALITY(lsmv.globalOffset(), 0);
+    TEST_EQUALITY(lsmv.subDim(), 0);
+    TEST_EQUALITY(lsmv.leadingDim(), lsmv.subDim());
+    TEST_EQUALITY_CONST(lsmv.colOffset(), 0);
+    TEST_EQUALITY(lsmv.numSubCols(), g_numCols);
+  }
+  {
+    ECHO(RTOpPack::ConstSubMultiVectorView<Scalar> lsmv = 
+      getLocalSubMultiVectorView<Scalar>(mv));
+  }
+  assign<Scalar>(mv.ptr(), val);
+  for (int j = 0; j < g_numCols; ++j) {
+    TEST_EQUALITY(sum<Scalar>(*mv->col(0)), as<Scalar>(0.0));
+  }
+  
+}
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess,
+  zeroVS)
 
 
 } // namespace Thyra
