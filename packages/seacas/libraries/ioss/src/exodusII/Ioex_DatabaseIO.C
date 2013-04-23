@@ -5312,6 +5312,7 @@ namespace Ioex {
         std::vector<char> procs(entity_count * int_byte_size_api());
 
         if (type == "node") {
+	  Ioss::SerializeIO	serializeIO__(this);
           // Convert global node id to local node id and store in 'entities'
           if (int_byte_size_api() == 4) {
             int* entity_proc = static_cast<int*>(data);
@@ -5372,6 +5373,7 @@ namespace Ioex {
           }
 
         } else if (type == "side") {
+	  Ioss::SerializeIO	serializeIO__(this);
           std::vector<char> sides(entity_count * int_byte_size_api());
           if (int_byte_size_api() == 4) {
             int* entity_proc = static_cast<int*>(data);
