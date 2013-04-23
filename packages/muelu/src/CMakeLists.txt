@@ -147,6 +147,3 @@ TRIBITS_ADD_LIBRARY(
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
 #
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
