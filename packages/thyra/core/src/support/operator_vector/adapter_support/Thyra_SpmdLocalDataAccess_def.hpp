@@ -62,8 +62,8 @@ RTOpPack::ConstSubVectorView<Scalar>
 Thyra::getLocalSubVectorView(
   const RCP<const VectorBase<Scalar> > &vec)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
-  return RTOpPack::ConstSubVectorView<Scalar>();
+  return Teuchos::rcp_dynamic_cast<const SpmdVectorBase<Scalar> >(vec, true)
+    ->getLocalSubVector();
 }
 
 

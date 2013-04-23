@@ -134,7 +134,7 @@ createProcDimVS()
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, basic,
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, basic,
   Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
@@ -151,20 +151,57 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, basic,
   const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
   TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(val * vs->dim()), tol);
   out << "*** Test that we get the view correctly ...\n";
-  RTOpPack::SubVectorView<Scalar> lsv = 
-    getNonconstLocalSubVectorView<Scalar>(v);
+  RTOpPack::ConstSubVectorView<Scalar> lsv = 
+    getLocalSubVectorView<Scalar>(v);
   TEST_EQUALITY(lsv.subDim(), procRank+1);
   TEST_EQUALITY_CONST(lsv.stride(), 1);
   for (int k = 0; k < lsv.subDim(); ++k) {
     TEST_EQUALITY(lsv[k], val);
   }
-  out << "*** Test that we can change the view and it get written back ...\n";
-  for (int k = 0; k < lsv.subDim(); ++k) {
-    lsv[k] = lsv.globalOffset() + k + 1;
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubVectorView,
+  basic)
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, basic,
+  Scalar )
+{
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createProcDimVS<Scalar>();
+  const RCP<const Teuchos::Comm<Ordinal> > comm = vs->getComm();
+  const int procRank = comm->getRank();
+  PRINT_VAR(procRank);
+  const int numProcs = comm->getSize();
+  PRINT_VAR(numProcs);
+  const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
+  const Scalar val = as<Scalar>(1.5);
+  PRINT_VAR(val);
+  assign<Scalar>(v.ptr(), val);
+  const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
+  TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(val * vs->dim()), tol);
+  {
+    out << "*** Test that we get and change the nonconst view correctly ...\n";
+    RTOpPack::SubVectorView<Scalar> lsv = 
+      getNonconstLocalSubVectorView<Scalar>(v);
+    TEST_EQUALITY(lsv.subDim(), procRank+1);
+    TEST_EQUALITY_CONST(lsv.stride(), 1);
+    for (int k = 0; k < lsv.subDim(); ++k) {
+      lsv[k] = lsv.globalOffset() + k + 1;
+    }
+    const Ordinal n = vs->dim();
+    TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>((n*(n+1))/2), tol);
   }
-  lsv = RTOpPack::SubVectorView<Scalar>();
-  const Ordinal n = vs->dim();
-  TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>((n*(n+1))/2), tol);
+  {
+    out << "*** Test that we get the same values when we grab const view ...\n";
+    RTOpPack::ConstSubVectorView<Scalar> lsv = 
+      getLocalSubVectorView<Scalar>(v);
+    TEST_EQUALITY(lsv.subDim(), procRank+1);
+    TEST_EQUALITY_CONST(lsv.stride(), 1);
+    for (int k = 0; k < lsv.subDim(); ++k) {
+      TEST_EQUALITY(lsv[k], lsv.globalOffset() + k + 1);
+    }
+  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubVectorView,
@@ -204,6 +241,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, empty_p0,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubVectorView,
   empty_p0)
+
+
+
+
+
 
 
 // ToDo:
