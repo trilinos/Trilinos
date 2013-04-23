@@ -1,0 +1,2 @@
+#include "Thyra_GeneralSolveCriteriaBelosStatusTest_decl.hpp"
+#include "Thyra_GeneralSolveCriteriaBelosStatusTest_def.hpp"
