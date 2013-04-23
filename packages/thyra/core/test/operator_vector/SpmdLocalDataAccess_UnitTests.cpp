@@ -428,6 +428,56 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubMultiVecto
   procRankLocalDim)
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubMultiVectorView, empty_p0,
+  Scalar )
+{
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    createZeroEleProcVS<Scalar>(g_localDim);
+  const RCP<const Teuchos::Comm<Ordinal> > comm = vs->getComm();
+  const int procRank = comm->getRank();
+  PRINT_VAR(procRank);
+  const int numProcs = comm->getSize();
+  PRINT_VAR(numProcs);
+  const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, g_numCols);
+  const Scalar val = as<Scalar>(1.5);
+  PRINT_VAR(val);
+  assign<Scalar>(mv.ptr(), val);
+  {
+    out << "*** Test that we get and change the nonconst view correctly ...\n";
+    RTOpPack::SubMultiVectorView<Scalar> lsmv = 
+      getNonconstLocalSubMultiVectorView<Scalar>(mv);
+    if (procRank == 0) {
+      TEST_EQUALITY_CONST(lsmv.globalOffset(), 0);
+      TEST_EQUALITY_CONST(lsmv.subDim(), 0);
+      TEST_EQUALITY_CONST(lsmv.values(), null);
+    }
+    else {
+      TEST_EQUALITY(lsmv.globalOffset(), as<Ordinal>((procRank-1)*g_localDim));
+      TEST_EQUALITY(lsmv.subDim(), g_localDim);
+    }
+    TEST_EQUALITY_CONST(lsmv.colOffset(), 0);
+    TEST_EQUALITY(lsmv.leadingDim(), lsmv.subDim());
+    TEST_EQUALITY(lsmv.numSubCols(), g_numCols);
+    for (int i = 0; i < lsmv.subDim(); ++i) {
+      for (int j = 0; j < lsmv.numSubCols(); ++j) {
+        lsmv(i,j) = lsmv.globalOffset() + i + 0.1 * j;
+      }
+    }
+  }
+  {
+    out << "*** Test that we get the same values when we grab const view ...\n";
+    RTOpPack::ConstSubMultiVectorView<Scalar> lsmv = 
+      getLocalSubMultiVectorView<Scalar>(mv);
+    for (int i = 0; i < lsmv.subDim(); ++i) {
+      for (int j = 0; j < lsmv.numSubCols(); ++j) {
+        TEST_EQUALITY(lsmv(i,j), as<Scalar>(lsmv.globalOffset() + i + 0.1 * j));
+      }
+    }
+  }
+}
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubMultiVectorView,
+  empty_p0)
 
 
 // ToDo:
