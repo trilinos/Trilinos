@@ -709,10 +709,13 @@ implementation of a SPMD multi-vector.
 
 </ul>
 
-One of the big advantages of deriving concrete SPMD
-implementations from these base subclasses is that they provide automatic
-interoperability between different concrete subclasses.  This type of
-automatic interoperability is demonstrated in ???this testing program???.
+One of the big advantages of deriving concrete SPMD implementations from these
+base subclasses is that they provide automatic interoperability between
+different concrete subclasses that all derive from these interfaces..
+
+In addition, there is support software for accessing local data in SPMD
+vectors and multi-vectors described \ref
+Thyra_Op_Vec_adapters_spmd_local_data_access_grp.
 
 */
 

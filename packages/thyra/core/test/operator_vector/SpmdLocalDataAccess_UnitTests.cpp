@@ -43,14 +43,10 @@
 
 
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
-#include "Thyra_DetachedSpmdVectorView.hpp"
-#include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_SpmdLocalDataAccess.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
-#include "Thyra_VectorSpaceTester.hpp"
-#include "Thyra_VectorStdOpsTester.hpp"
-#include "Thyra_MultiVectorStdOpsTester.hpp"
-#include "RTOpPack_SPMD_apply_op_decl.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
 
@@ -119,6 +115,20 @@ createZeroEleProcVS(const Ordinal localDim)
 }
 
 
+template<class Scalar>
+RCP<const DefaultSpmdVectorSpace<Scalar> >
+createProcDimVS()
+{
+  const RCP<const Teuchos::Comm<Ordinal> > comm =
+    Teuchos::DefaultComm<Teuchos_Ordinal>::getComm();
+
+  RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    Thyra::defaultSpmdVectorSpace<Scalar>(comm, comm->getRank()+1, -1);
+
+  return vs;
+}
+
+
 //
 // Unit Tests
 //
@@ -127,14 +137,55 @@ createZeroEleProcVS(const Ordinal localDim)
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, basic,
   Scalar )
 {
-  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    createVS<Scalar>(g_localDim);
-
-  TEUCHOS_TEST_FOR_EXCEPT(true);
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createProcDimVS<Scalar>();
+  const RCP<const Teuchos::Comm<Ordinal> > comm = vs->getComm();
+  const int procRank = comm->getRank();
+  PRINT_VAR(procRank);
+  const int numProcs = comm->getSize();
+  PRINT_VAR(numProcs);
+  const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
+  const Scalar val = as<Scalar>(1.5);
+  PRINT_VAR(val);
+  assign<Scalar>(v.ptr(), val);
+  out << "*** Test that we get the view correctly ...\n";
+  RTOpPack::SubVectorView<Scalar> lsv = 
+    getNonconstLocalSubVectorView<Scalar>(v);
+  TEST_EQUALITY(lsv.subDim(), procRank+1);
+  TEST_EQUALITY_CONST(lsv.stride(), 1);
+  for (int k = 0; k < lsv.subDim(); ++k) {
+    TEST_EQUALITY(lsv[k], val);
+  }
+  out << "*** Test that we can change the view and it get written back ...\n";
+  for (int k = 0; k < lsv.subDim(); ++k) {
+    lsv[k] = lsv.globalOffset() + k + 1;
+  }
+  lsv = RTOpPack::SubVectorView<Scalar>();
+  const Ordinal n = vs->dim();
+  TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(n*(n+1))/2,
+    as<ScalarMag>(100.0*ScalarTraits<Scalar>::eps()));
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubVectorView,
   basic)
+
+
+
+// ToDo:
+
+// Test a basic construction on all processes returns the right view object
+
+// Test that getting a non-const view the modifying it will modify the
+// underlying V or MV object once the view is released.
+
+// Test that getting data from a non SPMD object throws a defined excetpion on
+// every process.
+
+// Test that getting data from an unsized VS V or MV object returns an empty
+// view on every process.
+
+// ToDo: Write a generic testing class that runs all of these unit tests on
+// any set of SPMD object to see that it does the right thing.
 
 
 } // namespace Thyra
