@@ -71,8 +71,8 @@
 #endif
 //#define FIRST_TOUCH
 //#define BINARYCUTSEARCH
-#define Zoltan_Comm
-#define enable_migration
+//#define Zoltan_Comm
+//#define enable_migration
 #define ABS(x) ((x) >= 0 ? (x) : -(x))
 
 #define LEAF_IMBALANCE_FACTOR 0.1
