@@ -78,18 +78,18 @@ template<class Scalar>
 RTOpPack::SubMultiVectorView<Scalar>
 SpmdMultiVectorBase<Scalar>::getNonconstLocalSubMultiVector()
 {
-/*
+  using Teuchos::outArg;
   ArrayRCP<Scalar> localValues;
-  this->getNonconstLocalData(Teuchos::outArg(localValues));
-  return RTOpPack::SubVectorView<Scalar>(
-    localOffset_,
+  Ordinal leadingDim = -1;
+  this->getNonconstLocalData(outArg(localValues), outArg(leadingDim));
+  return RTOpPack::SubMultiVectorView<Scalar>(
+    localOffset_, // globalOffset
     localSubDim_,
+    0, // colOffset
+    numCols_,
     localValues,
-    1 // stride
+    leadingDim
     );
-  // ToDo: Refactor to call this function directly!
-  */
-  return RTOpPack::SubMultiVectorView<Scalar>();
 }
 
 
