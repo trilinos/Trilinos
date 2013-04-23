@@ -142,8 +142,8 @@ createProcRankLocalDimVS()
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, procRankLocalDim,
-  Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess, 
+  getLocalSubVectorView_procRankLocalDim, Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
@@ -169,12 +169,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, procRankLocalDim,
     TEST_EQUALITY(lsv[k], val);
   }
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubVectorView,
-  procRankLocalDim)
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess,
+  getLocalSubVectorView_procRankLocalDim)
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, empty_p0,
-  Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
+  getLocalSubVectorView_empty_p0, Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
@@ -205,8 +205,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, empty_p0,
     TEST_EQUALITY(lsv[k], val);
   }
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubVectorView,
-  empty_p0)
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess,
+  getLocalSubVectorView_empty_p0)
 
 
 //
@@ -214,8 +214,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubVectorView,
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, procRankLocalDim,
-  Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
+  getNonconstLocalSubVectorView_procRankLocalDim, Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
@@ -255,12 +255,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, procRankLocalD
     }
   }
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubVectorView,
-  procRankLocalDim)
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess, 
+  getNonconstLocalSubVectorView_procRankLocalDim)
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, empty_p0,
-  Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
+  getNonconstLocalSubVectorView_empty_p0, Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
@@ -291,8 +291,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, empty_p0,
     TEST_EQUALITY(lsv[k], val);
   }
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubVectorView,
-  empty_p0)
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess,
+  getNonconstLocalSubVectorView_empty_p0)
 
 
 //
@@ -300,8 +300,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubVectorView
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubMultiVectorView, procRankLocalDim,
-  Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
+  getLocalSubMultiVectorView_procRankLocalDim, Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
@@ -334,12 +334,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubMultiVectorView, procRankLocalDim,
     }
   }
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubMultiVectorView,
-  procRankLocalDim)
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess,
+  getLocalSubMultiVectorView_procRankLocalDim)
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubMultiVectorView, empty_p0,
-  Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
+  getLocalSubMultiVectorView_empty_p0, Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
@@ -374,8 +374,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubMultiVectorView, empty_p0,
     }
   }
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubMultiVectorView,
-  empty_p0)
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess,
+  getLocalSubMultiVectorView_empty_p0)
 
 
 //
@@ -383,8 +383,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubMultiVectorView,
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubMultiVectorView, procRankLocalDim,
-  Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
+  getNonconstLocalSubMultiVectorView_procRankLocalDim, Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
@@ -424,12 +424,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubMultiVectorView, procRankL
     }
   }
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubMultiVectorView,
-  procRankLocalDim)
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess,
+  getNonconstLocalSubMultiVectorView_procRankLocalDim)
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubMultiVectorView, empty_p0,
-  Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
+  getNonconstLocalSubMultiVectorView_empty_p0, Scalar )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
@@ -476,8 +476,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubMultiVectorView, empty_p0,
     }
   }
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubMultiVectorView,
-  empty_p0)
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess,
+  getNonconstLocalSubMultiVectorView_empty_p0)
 
 
 // ToDo:
@@ -490,9 +490,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubMultiVecto
 // underlying V or MV object once the view is released.
 
 // Test getting data for locally replicated objects
-
-// Test that getting data from a non SPMD object throws a defined excetpion on
-// every process.
 
 // Test that getting data from an unsized VS V or MV object returns an empty
 // view on every process.
