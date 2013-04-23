@@ -3177,7 +3177,7 @@ bool migrateData(
   size_t nobj = vectors->getLocalLength();
   size_t nGlobalObj = vectors->getGlobalLength();
   partId_t myRank = comm->getRank();
-  if (nprocs < num_parts) migration_option = 0;
+  if (nprocs < num_parts) migration_option = 1;
   partId_t allocation_size = num_parts;
   if (migration_option == 1){
     allocation_size = num_parts * (nprocs + 1);
@@ -3357,18 +3357,39 @@ bool migrateData(
 
   if (migration_check_option == 0){
     scalar_t diff = 0, global_diff = 0;
+    if (migration_option == 0 )
+    {
+    
     for (partId_t i = 0; i < num_parts; ++i){
       scalar_t ideal_num = p_gno_np_global_num_coord_each_part[i] /  scalar_t(nprocs);
       diff += ABS(ideal_num -
               p_gno_np_local_num_coord_each_part_mypart[i]) /  (ideal_num);
     }
     diff /= num_parts;
-    reduceAll<int, scalar_t>(
+      reduceAll<int, scalar_t>(
         *comm, 
         Teuchos::REDUCE_SUM, 
         1, 
         &diff, 
         &global_diff);
+    }
+    else {
+      for (partId_t ii = 0; ii < nprocs; ++ii){
+        for (partId_t i = 0; i < num_parts; ++i){
+          scalar_t ideal_num = p_gno_np_global_num_coord_each_part[i] /  scalar_t(nprocs);
+          /*
+            global_diff += ABS(ideal_num -
+              p_gno_np_local_num_coord_each_part_mypart[i]) /  (ideal_num);
+          */
+          global_diff += ABS(ideal_num -
+              p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i]) /  (ideal_num);
+
+
+        }
+      }
+      global_diff /= num_parts;
+      
+    }
     global_diff /= nprocs; 
     if (myRank == 0) {
       cout << "imbalance for next iteration:" << global_diff << endl;
@@ -3693,6 +3714,9 @@ bool migrateData(
       //id is the part number, sort value is the assigned processor id.
       uSortItem<partId_t, partId_t> * part_assignment = new uSortItem<partId_t, partId_t>[num_parts];
 
+      uSortItem<partId_t, gno_t> * proc_load_sort = new uSortItem<partId_t, gno_t>[nprocs];
+
+
       for (partId_t i = 0; i < num_parts; ++i){
         part_loads[i].id = i;
         part_loads[i].val = p_gno_np_global_num_coord_each_part[i];
@@ -3717,8 +3741,16 @@ bool migrateData(
         //load of the part
         gno_t load = p_gno_np_global_num_coord_each_part[i];
 
-        //traverse all processors.
         for (partId_t ii = 0; ii < nprocs; ++ii){
+          proc_load_sort[ii].id = ii;
+          proc_load_sort[ii].val =  p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
+
+        }
+        uqsort<partId_t, gno_t>(nprocs, proc_load_sort);
+
+        //traverse all processors.
+        for (partId_t iii = 0; iii < nprocs; ++iii){
+          partId_t ii = proc_load_sort[iii].id;
           lno_t left_space = space_in_each_processor[ii] - load;
           //if enought space, assign to this part.
           if(left_space >= 0 ){
@@ -3747,7 +3779,7 @@ bool migrateData(
         //increase the send to that processor by the number of points in that part.
         sendCount[assignment] += p_gno_np_local_num_coord_each_part[i];  
       }
-
+      delete []proc_load_sort;
       //sort assignments with respect to the assigned processors.
       uqsort<partId_t, partId_t>(num_parts, part_assignment);
       //calculate the prefix sum for send buffer array.
