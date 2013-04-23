@@ -360,7 +360,8 @@ namespace Zoltan2{
         bool &force_linear,
         int &migration_check_option,
         int &migration_option,
-        T &migration_imbalance_cut_off){
+        T &migration_imbalance_cut_off, 
+        int &assignment_type){
 
       string obj;
 
@@ -425,6 +426,16 @@ namespace Zoltan2{
         migration_check_option = 0;
         //concurrentPartCount = partId_t(aa);
       }
+
+      pe = pl.getEntryPtr("assignment_type");
+      if (pe){
+        //aa = pe->getValue(&aa);
+        assignment_type = pe->getValue(&concurrentPartCount);
+      }else {
+        assignment_type = 1;
+        //concurrentPartCount = partId_t(aa);
+      }
+
 
 
 
@@ -3160,7 +3171,10 @@ bool migrateData(
   scalar_t **coords,
   int &weight_dim,
   scalar_t **weight,
-  int &multiVectorDim
+  int &multiVectorDim,
+  int assignment_type
+
+
 
     //,    lno_t *permutation
     )          // on return is num procs with left data
@@ -3177,7 +3191,7 @@ bool migrateData(
   size_t nobj = vectors->getLocalLength();
   size_t nGlobalObj = vectors->getGlobalLength();
   partId_t myRank = comm->getRank();
-  if (nprocs < num_parts) migration_option = 1;
+  if (nprocs <= num_parts) migration_option = 1;
   partId_t allocation_size = num_parts;
   if (migration_option == 1){
     allocation_size = num_parts * (nprocs + 1);
@@ -3440,7 +3454,7 @@ bool migrateData(
   out_num_part = 0;
   //int assigned_part_count = 0;
   if (1 || nobj > 0){
-    if (nprocs >= num_parts){
+    if (nprocs > num_parts){
       if(migration_option == 1){
         if(comm->getRank() == 0){
           cout << "smart migration" << endl;
@@ -3455,6 +3469,7 @@ bool migrateData(
 
         bool did_i_find_my_group = false;
 
+        partId_t next_proc_to_assign = 0;
         for (partId_t i=0; i < num_parts; i++){
           partId_t required_proc = static_cast<partId_t>(floor(0.5f + nprocs * (scalar_t (p_gno_np_global_num_coord_each_part[i]) / scalar_t(nGlobalObj))));
           if (left_proc - required_proc < min_required_for_rest){
@@ -3485,17 +3500,39 @@ bool migrateData(
 
 
           gno_t total_num_points_in_part = p_gno_np_global_num_coord_each_part[i];
-          for(partId_t ii = 0; ii < nprocs; ++ii){
-            proc_points_in_part[ii].id = ii;
+          if(assignment_type == 0){
+            //cout << "assign=0" << endl;
+            for(partId_t ii = 0; ii < nprocs; ++ii){
+              proc_points_in_part[ii].id = ii;
 
-            if (proc_part_assignments[ii] == -1){
+              if (proc_part_assignments[ii] == -1){
 
-              proc_points_in_part[ii].val = p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
+                proc_points_in_part[ii].val = p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
+              }
+              else {
+                proc_points_in_part[ii].val = -p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i] - 1;
+              }
             }
-            else {
-              proc_points_in_part[ii].val = -p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i] - 1;
+          }
+          else {
+            //cout << "assign=1" << endl;
+
+            partId_t required_proc = p_pid_np_num_procs_each_part[i];
+            partId_t last_proc_to_assign = next_proc_to_assign + required_proc;
+            for(partId_t ii = 0; ii < nprocs; ++ii){
+              proc_points_in_part[ii].id = ii;
+
+              if (ii >= next_proc_to_assign && ii < last_proc_to_assign){
+
+                proc_points_in_part[ii].val = p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
+              }
+              else {
+                proc_points_in_part[ii].val = -p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i] - 1;
+              }
             }
-            //cout << "i:" << i << " me:" << myRank << " ii:" << ii << " val:" << proc_points_in_part[ii].val << " index:" <<  ii * num_parts + i << " alloc:" << allocation_size << endl;
+            next_proc_to_assign = last_proc_to_assign;
+
+
           }
 
           env->timerStart(MACRO_TIMERS, "PQJagged Sort-" + iteration);
@@ -4003,7 +4040,8 @@ bool migration(
   float *actual_ratios,
   scalar_t *localPartWeights,
   scalar_t **partWeights,
-  scalar_t *cutCoordinates
+  scalar_t *cutCoordinates,
+  int assignment_type
   ){
   partId_t nprocs = comm->getSize();
   scalar_t *assigned_parts = NULL;
@@ -4076,7 +4114,8 @@ bool migration(
   coords,
   weight_dim,
   weight,
-  multiVectorDim
+  multiVectorDim,
+  assignment_type
 
       )
     )
@@ -4198,6 +4237,7 @@ void AlgPQJagged(
   int migration_check_option = 0;
   int migration_option = 1;
   scalar_t migration_imbalance_cut_off = 0.03;
+  int assignment_type = 0;
 
   scalar_t imbalanceTolerance;
 
@@ -4219,7 +4259,7 @@ void AlgPQJagged(
       force_linear,
       migration_check_option,
       migration_option,
-      migration_imbalance_cut_off);
+      migration_imbalance_cut_off, assignment_type);
   if (migration_check_option > 1) migration_check_option = -1;
   /*
   cout << "\nmigration_check_option:" << migration_check_option <<
@@ -4794,7 +4834,8 @@ void AlgPQJagged(
               nonRectelinearPart,
               totalPartWeights_leftClosests_rightClosests,
               partWeights,
-              cutCoordinates
+              cutCoordinates,
+              assignment_type
                 )
            )
         { 
