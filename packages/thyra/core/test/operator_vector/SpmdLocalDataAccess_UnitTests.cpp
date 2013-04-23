@@ -55,12 +55,15 @@ namespace {
 
 
 int g_localDim = 4;
+int g_numCols = 3;
 
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::UnitTestRepository::getCLP().setOption(
     "local-dim", &g_localDim, "Local dimension of each vector." );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "num-cols", &g_numCols, "Number of columns in each multi-vector." );
 }
 
 
@@ -158,6 +161,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, basic,
   out << "*** Test that we get the view correctly ...\n";
   RTOpPack::ConstSubVectorView<Scalar> lsv = 
     getLocalSubVectorView<Scalar>(v);
+  TEST_EQUALITY(lsv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
   TEST_EQUALITY(lsv.subDim(), procRank+1);
   TEST_EQUALITY_CONST(lsv.stride(), 1);
   for (int k = 0; k < lsv.subDim(); ++k) {
@@ -188,10 +192,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubVectorView, empty_p0,
   RTOpPack::ConstSubVectorView<Scalar> lsv = 
     getLocalSubVectorView<Scalar>(v);
   if (procRank == 0) {
+    TEST_EQUALITY_CONST(lsv.globalOffset(), 0);
     TEST_EQUALITY_CONST(lsv.subDim(), 0);
     TEST_EQUALITY_CONST(lsv.values(), null);
   }
   else {
+    TEST_EQUALITY(lsv.globalOffset(), as<Ordinal>((procRank-1)*g_localDim));
     TEST_EQUALITY(lsv.subDim(), g_localDim);
   }
   TEST_EQUALITY_CONST(lsv.stride(), 1);
@@ -235,7 +241,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getNonconstLocalSubVectorView, basic,
       lsv[k] = lsv.globalOffset() + k + 1;
     }
     const Ordinal n = vs->dim();
-    TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>((n*(n+1))/2), tol);
+    TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>((n*(n+1))/2.0), tol);
   }
   {
     out << "*** Test that we get the same values when we grab const view ...\n";
@@ -291,6 +297,41 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getNonconstLocalSubVectorView
 
 
 
+//
+// Test getLocalSubMultiVectorView
+//
+
+/*
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( getLocalSubMultiVectorView, basic,
+  Scalar )
+{
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createProcDimVS<Scalar>();
+  const RCP<const Teuchos::Comm<Ordinal> > comm = vs->getComm();
+  const int procRank = comm->getRank();
+  PRINT_VAR(procRank);
+  const int numProcs = comm->getSize();
+  PRINT_VAR(numProcs);
+  const RCP<MultiVectorBase<Scalar> > v = createMembers<Scalar>(vs, g_numCols);
+  const Scalar val = as<Scalar>(1.5);
+  PRINT_VAR(val);
+  assign<Scalar>(mv.ptr(), val);
+  const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
+  TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(val * vs->dim()), tol);
+  out << "*** Test that we get the view correctly ...\n";
+  RTOpPack::ConstSubMultiVectorView<Scalar> lsmv = 
+    getLocalSubMultiVectorView<Scalar>(v);
+  TEST_EQUALITY(lsmv.subDim(), procRank+1);
+  for (int k = 0; k < lsmv.subDim(); ++k) {
+    TEST_EQUALITY(lsmv[k], val);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( getLocalSubMultiVectorView,
+  basic)
+
+*/
 
 
 // ToDo:
