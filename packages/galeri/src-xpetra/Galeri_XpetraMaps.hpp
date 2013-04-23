@@ -197,7 +197,7 @@ namespace Galeri {
         my = comm->getSize()/mx;
 
         while ((mx*my) != comm->getSize())
-          my = comm->getSize()/mx--;
+          my = comm->getSize()/(--mx);
 
         list.set("mx", mx);
         list.set("my", my);
