@@ -268,6 +268,42 @@ namespace Tpetra {
     Import<LocalOrdinal,GlobalOrdinal,Node>&
     operator= (const Import<LocalOrdinal,GlobalOrdinal,Node>& Source);
 
+    /// \brief Return the union of this Import and \c rhs.
+    ///
+    /// The "union" of two Import objects is the Import whose source
+    /// Map is the same as the input Imports' source Maps, and whose
+    /// target Map is the union of the two input Imports' target Maps.
+    /// The two input Import objects must have the same source Map.
+    /// The union operation is symmetric in its two inputs.
+    ///
+    /// The communicator of \c rhs must be the same as (MPI_EQUAL) or
+    /// congruent with (MPI_CONGRUENT) this Import's communicator.
+    /// (That is, the two communicators must have the same number of
+    /// processes, and each process must have the same rank in both
+    /// communicators.)  This method must be called collectively over
+    /// that communicator.
+    ///
+    /// The Map that results from this operation does <i>not</i>
+    /// preserve the original order of global indices in either of the
+    /// two input Maps.  Instead, it sorts global indices on each
+    /// process so that owned indices occur first, in the same order
+    /// as in the source Map, and so that remote indices are sorted in
+    /// order of their sending process rank.  This makes communication
+    /// operations faster.
+    ///
+    /// This primitive is useful for adding two sparse matrices
+    /// (CrsMatrix), since its can skip over many of the steps of
+    /// creating the result matrix's column Map from scratch.
+    ///
+    /// We have to call this method "setUnion" rather than "union,"
+    /// because \c union is a reserved keyword in C++ (and C).  It
+    /// would also be reasonable to call this <tt>operator+</tt>,
+    /// though it would be a bit confusing for operator+ to return a
+    /// pointer but take a reference (or to take a pointer, but have
+    /// the left-hand side of the + expression be a reference).
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    setUnion (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
+
     //@}
     //! @name I/O Methods
     //@{
@@ -367,6 +403,15 @@ namespace Tpetra {
     /// <tt>ImportData_</tt>.
     void setupExport();
     //@}
+
+    //! Naive but correct implementation of setUnion().
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    setUnionNaiveImpl (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
+
+    //! Optimized implementation of setUnion() (NOT IMPLEMENTED YET).
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    setUnionImpl (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
+
   }; // class Import
 
   /** \brief Nonmember constructor for Import.
