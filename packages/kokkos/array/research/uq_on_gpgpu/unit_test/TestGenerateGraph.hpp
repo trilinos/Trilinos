@@ -1,4 +1,7 @@
 
+#ifndef TESTGENERATE_GRAPH_HPP
+#define TESTGENERATE_GRAPH_HPP
+
 #include <cstddef>
 #include <vector>
 
@@ -48,4 +51,6 @@ size_t generate_fem_graph( size_t N ,
 }
 
 }
+
+#endif /* #ifndef TESTGENERATE_GRAPH_HPP */
 

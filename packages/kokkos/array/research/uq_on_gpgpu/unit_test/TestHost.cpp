@@ -44,19 +44,16 @@
 #include <iostream>
 
 #include <KokkosArray_Host.hpp>
+#include <KokkosArray_hwloc.hpp>
 
-#include <KokkosArray_ProductTensor.hpp>
 #include <KokkosArray_LegendrePolynomial.hpp>
 #include <KokkosArray_SymmetricDiagonalSpec.hpp>
-#include <KokkosArray_StochasticProductTensor.hpp>
 #include <KokkosArray_BlockCrsMatrix.hpp>
 #include <KokkosArray_CrsMatrix.hpp>
 
 
 //
 
-#include <Host/KokkosArray_Host_ProductTensor.hpp>
-#include <Host/KokkosArray_Host_StochasticProductTensor.hpp>
 #include <Host/KokkosArray_Host_SymmetricDiagonalSpec.hpp>
 #include <Host/KokkosArray_Host_BlockCrsMatrix.hpp>
 #include <Host/KokkosArray_Host_CrsMatrix.hpp>
@@ -64,7 +61,6 @@
 //
 
 #include <TestBlockCrsMatrix.hpp>
-#include <TestTensorCrsMatrix.hpp>
 #include <TestStochastic.hpp>
 
 namespace unit_test {
@@ -143,32 +139,35 @@ int mainHost(bool test_flat, bool test_orig, bool test_block, bool check)
 
   KokkosArray::Host::initialize( gang_count , gang_worker_count );
 
-//  unit_test::test_dense<KokkosArray::Host>();
-//  unit_test::test_diagonal<KokkosArray::Host>();
-//  unit_test::test_other<KokkosArray::Host>();
+  typedef KokkosArray::Host device ;
 
-  unit_test::test_block_crs_matrix<KokkosArray::Host>( 1 , 2 );
-  unit_test::test_block_crs_matrix<KokkosArray::Host>( 1 , 5 );
-  unit_test::test_block_crs_matrix<KokkosArray::Host>( 2 , 1 );
-  unit_test::test_block_crs_matrix<KokkosArray::Host>( 3 , 1 );
+  //------------------------------------
+  // Quick correctness check:
 
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 1 , 2 );
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 1 , 5 );
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 2 , 1 );
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 5 , 1 );
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 5 , 5 );
+  const std::vector<int> var( 3 , 2 ); // #Stochastic variables = 3 , polynomical degree = 2
+  const int ngrid = 3 ; // 3x3x3 element grid
 
-  std::cout << "Stress tests:" << std::endl ;
+  unit_test::test_product_flat_original_matrix<  float, device>( var , ngrid , 1 , true );
+  unit_test::test_product_flat_original_matrix<  double,device>( var , ngrid , 1 , true );
 
-  unit_test::test_block_crs_matrix<KokkosArray::Host>( 10 , 8 );
-  unit_test::test_block_crs_matrix<KokkosArray::Host>( 11 , 8 );
-  unit_test::test_block_crs_matrix<KokkosArray::Host>( 12 , 10 );
-  unit_test::test_block_crs_matrix<KokkosArray::Host>( 13 , 10 );
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 100 , 10 );
+  unit_test::test_product_flat_commuted_matrix<  float, device>( var , ngrid , 1 , true );
+  unit_test::test_product_flat_commuted_matrix<  double,device>( var , ngrid , 1 , true );
+
+  unit_test::test_product_tensor_diagonal_matrix<float, device>( var , ngrid , 1 , true );
+  unit_test::test_product_tensor_diagonal_matrix<double,device>( var , ngrid , 1 , true );
+
+  unit_test::test_product_tensor_legendre< KokkosArray::CrsProductTensorLegendre< float , device > , float , float >( var , ngrid , 1 , true );
+  unit_test::test_product_tensor_legendre< KokkosArray::CrsProductTensorLegendre< double, device > , double, double>( var , ngrid , 1 , true );
+
+  unit_test::test_product_tensor_legendre< KokkosArray::SparseProductTensorLegendre< float , device > , float , float >( var , ngrid , 1 , true );
+  unit_test::test_product_tensor_legendre< KokkosArray::SparseProductTensorLegendre< double, device > , double, double>( var , ngrid , 1 , true );
+
+  //------------------------------------
 
   std::cout << std::endl << "\"Host Performance with "
             << gang_count * gang_worker_count << " threads\"" << std::endl ;
-  unit_test::performance_test_driver<Scalar,KokkosArray::Host>::run(
+
+  unit_test::performance_test_driver<Scalar,device>::run(
     test_flat, test_orig, test_block, check);
 
   KokkosArray::Host::finalize();
