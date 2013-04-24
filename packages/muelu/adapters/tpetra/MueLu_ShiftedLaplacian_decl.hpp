@@ -156,7 +156,7 @@ namespace MueLu {
     //    K + i*omega C - (alpha+i*beta)*omega^2 M
 
     double     alpha_, beta_, omega_, rshift_, ishift_;
-    vector<SC> shifts_;
+    std::vector<SC> shifts_;
 
     // Krylov solver inputs
     // iters  -> max number of iterations
