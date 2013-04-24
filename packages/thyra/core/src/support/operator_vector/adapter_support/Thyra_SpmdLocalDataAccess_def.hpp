@@ -44,8 +44,10 @@
 
 
 #include "Thyra_SpmdLocalDataAccess_decl.hpp"
-#include "Thyra_SpmdVectorBase_def.hpp"
-#include "Thyra_SpmdMultiVectorBase_def.hpp"
+#include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_SpmdMultiVectorBase.hpp"
 
 
 template<class Scalar>
@@ -53,8 +55,20 @@ RTOpPack::SubVectorView<Scalar>
 Thyra::getNonconstLocalSubVectorView(
   const RCP<VectorBase<Scalar> > &vec)
 {
-  return Teuchos::rcp_dynamic_cast<SpmdVectorBase<Scalar> >(vec, true)
-    ->getNonconstLocalSubVector();
+  const RCP<SpmdVectorBase<Scalar> > spmd_v = 
+    Teuchos::rcp_dynamic_cast<SpmdVectorBase<Scalar> >(vec);
+  if (nonnull(spmd_v)) {
+    return spmd_v->getNonconstLocalSubVector();
+  }
+  const RCP<ProductVectorBase<Scalar> > p_v = 
+    Teuchos::rcp_dynamic_cast<ProductVectorBase<Scalar> >(vec, true);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !(p_v->productSpace()->numBlocks() == 1), 
+    std::logic_error,
+    "Error, the function getNonconstLocalSubVectorView() can only return"
+    " a contiguous view of local SPMD data from a product vector with a single"
+    " block (which also must be able to give up a product view.");
+  return getNonconstLocalSubVectorView<Scalar>(p_v->getNonconstVectorBlock(0));
 }
 
 

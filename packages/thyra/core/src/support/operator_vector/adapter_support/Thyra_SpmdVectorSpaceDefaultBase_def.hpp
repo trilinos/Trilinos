@@ -138,11 +138,6 @@ bool SpmdVectorSpaceDefaultBase<Scalar>::isCompatible(
   if (nonnull(spmdVecSpc)) {
     return mapCode() == spmdVecSpc->mapCode();
   }
-
-  // Check for in-core views
-  if( this->hasInCoreView() && vecSpc.hasInCoreView() && this->dim() == vecSpc.dim() )
-    return true;
-  // 2009/05/11: rabartl: ToDo: Remove this!
   
   // Check for product vector interface
   const Ptr<const ProductVectorSpaceBase<Scalar> > pvsb =
