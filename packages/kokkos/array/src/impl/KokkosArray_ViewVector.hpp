@@ -249,7 +249,7 @@ public:
   bool is_null() const { return 0 == m_ptr_on_device ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  View() : m_ptr_on_device(0) { m_shape.N0 = 0 ; }
+  View() : m_ptr_on_device(0) { traits::shape_type::assign(m_shape,0); };
 
   KOKKOSARRAY_INLINE_FUNCTION
   ~View() { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
