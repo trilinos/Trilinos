@@ -614,6 +614,38 @@ evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const Out
    // evaluator responses
    responseLibrary_->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
    responseLibrary_->evaluate<panzer::Traits::Residual>(ae_inargs);
+
+   // evaluate response derivatives 
+   if(required_basic_dgdx(outArgs))
+     evalModel_basic_dgdx(ae_inargs,inArgs,outArgs);
+}
+
+void 
+panzer::ModelEvaluator_Epetra::
+evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const
+{
+   // optional sanity check
+   TEUCHOS_ASSERT(required_basic_dgdx(outArgs));
+
+   for(std::size_t i=0;i<g_names_.size();i++) {
+      // get "Vector" out of derivative, if its something else, throw an exception
+      EpetraExt::ModelEvaluator::Derivative deriv = outArgs.get_DgDx(i);
+      if(deriv.isEmpty())
+        continue;
+
+      Teuchos::RCP<Epetra_Vector> vec = Teuchos::rcp_dynamic_cast<Epetra_Vector>(deriv.getMultiVector(),true);
+
+      if(vec!=Teuchos::null) {
+        std::string responseName = g_names_[i];
+        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> > resp 
+            = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> >(responseLibrary_->getResponse<panzer::Traits::Jacobian>(responseName));
+        resp->setDerivative(vec);
+      }
+   }
+
+   // evaluator responses
+   responseLibrary_->addResponsesToInArgs<panzer::Traits::Jacobian>(ae_inargs);
+   responseLibrary_->evaluate<panzer::Traits::Jacobian>(ae_inargs);
 }
 
 bool panzer::ModelEvaluator_Epetra::required_basic_g(const OutArgs & outArgs) const
@@ -622,6 +654,22 @@ bool panzer::ModelEvaluator_Epetra::required_basic_g(const OutArgs & outArgs) co
    bool activeGArgs = false;
    for(int i=0;i<outArgs.Ng();i++) 
       activeGArgs |= (outArgs.get_g(i)!=Teuchos::null); 
+
+   return activeGArgs | required_basic_dgdx(outArgs);
+}
+
+bool panzer::ModelEvaluator_Epetra::required_basic_dgdx(const OutArgs & outArgs) const
+{
+   // determine if any of the outArgs are not null!
+   bool activeGArgs = false;
+   for(int i=0;i<outArgs.Ng();i++) {
+     // no derivatives are supported
+     if(outArgs.supports(OUT_ARG_DgDx,i).none())
+       continue;
+
+     // this is basically a redundant computation
+     activeGArgs |= (!outArgs.get_DgDx(i).isEmpty());
+   }
 
    return activeGArgs;
 }

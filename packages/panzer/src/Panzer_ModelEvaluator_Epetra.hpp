@@ -239,8 +239,18 @@ namespace panzer {
       */
     void evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
 
-    //! Are their required responses in the out args? g (and soon DgDx) 
+    /** handles evaluation of responses dgdx
+      *
+      * \note This method should (basically) be a no-op if <code>required_basic_dgdx(outArgs)==false</code>.
+      *       However, for efficiency this is not checked.
+      */
+    void evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
+
+    //! Are their required responses in the out args? g and DgDx
     bool required_basic_g(const OutArgs & outArgs) const;
+
+    //! Are their required responses in the out args? DgDx 
+    bool required_basic_dgdx(const OutArgs & outArgs) const;
 
     #ifdef HAVE_STOKHOS
        //! Are their required SG responses in the out args? sg
