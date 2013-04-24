@@ -419,19 +419,18 @@ def write_nodes_file(filename,aggid2nodes,nodes,dimension):
 # input: nextlevel: id for next level
 # procs: number of procs
 # file_prototype: prototype for filename of aggregation information
-def check_files_for_next_level(nextlevel,procs,file_prototype):
-  # check if coarse level node coordinates are available
-  if path.isfile("nodes"+str(nextlevel)+".txt") == False:
-    return False
-
-  for p in range(0,procs):
+def check_files_for_next_level(nextlevel, file_prototype):
+  p = 0
+  v = 1
+  while v == 1:
     filename = file_prototype
-    filename = filename.replace("%LEVEL",str(nextlevel))
-    filename = filename.replace("%PROC",str(p))
+    filename = filename.replace("%LEVEL", str(nextlevel))
+    filename = filename.replace("%PROC",  str(p))
     if path.isfile(filename) == False:
-      return False
+      break
+    p = p+1
 
-  return True
+  return p
 
 ###########
 # MAIN routine
@@ -440,17 +439,19 @@ def main(argv=None):
   numprocs = 1
   level = 0  # startlevel
 
-  # check if files for finest level are available
-  if check_files_for_next_level(0,1,"aggs_level%LEVEL_proc%PROC.out") == False:
-    print "Either no aggregation information or no \"nodes0.txt\" file found. Error."
-  else:
-    # check how many processors generated aggregation output
-    while check_files_for_next_level(0,numprocs, "aggs_level%LEVEL_proc%PROC.out") == True:
-      numprocs = numprocs + 1
-    numprocs = numprocs - 1
-    print "Aggregtaion information for " + str(numprocs) + " processors found"
+  # check if coords for finest level are available
+  if path.isfile("nodes0.txt") == False:
+    print "No \"nodes0.txt\" file found, exiting..."
+    return
 
-  while check_files_for_next_level(level,numprocs,"aggs_level%LEVEL_proc%PROC.out"):
+  v = 1
+  while v == 1:
+    numprocs = check_files_for_next_level(level,"aggs_level%LEVEL_proc%PROC.out")
+    if numprocs <= 0:
+      print "No aggregation information for level " + str(level) + " found, exiting..."
+      break
+
+    print "Aggregation information for " + str(numprocs) + " processors found"
 
     global_nodecoords,dimension = read_nodecoords_from_file("nodes"+str(level)+".txt")
 
