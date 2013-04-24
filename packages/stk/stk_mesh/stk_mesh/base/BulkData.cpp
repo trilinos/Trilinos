@@ -36,7 +36,7 @@ namespace mesh {
 
 namespace {
 
-std::vector< parallel::DistributedIndex::KeySpan>
+parallel::DistributedIndex::KeySpanVector
 convert_entity_keys_to_spans( const MetaData & meta )
 {
   // Make sure the distributed index can handle the EntityKey
@@ -53,7 +53,7 @@ convert_entity_keys_to_spans( const MetaData & meta )
 
   const size_t rank_count = meta.entity_rank_count();
 
-  std::vector< parallel::DistributedIndex::KeySpan> spans( rank_count );
+  parallel::DistributedIndex::KeySpanVector spans( rank_count );
 
   for ( size_t rank = 0 ; rank < rank_count ; ++rank ) {
     EntityKey key_min( rank , min_id );
@@ -374,9 +374,12 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
 {
   Trace_("stk::mesh::BulkData::generate_new_entities");
 
-  typedef stk::parallel::DistributedIndex::KeyType KeyType;
-  std::vector< std::vector<KeyType> >
-    requested_key_types;
+  typedef stk::parallel::DistributedIndex::KeyType       KeyType;
+  typedef stk::parallel::DistributedIndex::KeyTypeVector KeyTypeVector;
+  typedef std::vector< KeyTypeVector > RequestKeyVector;
+
+  RequestKeyVector requested_key_types;
+
   m_entities_index.generate_new_keys(requests, requested_key_types);
 
   //generating 'owned' entities
@@ -388,18 +391,18 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
 
   requested_entities.clear();
   unsigned cnt=0;
-  for (std::vector< std::vector<KeyType> >::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr) {
-    const std::vector<KeyType>& key_types = *itr;
-    for (std::vector<KeyType>::const_iterator
+  for (RequestKeyVector::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr) {
+    const KeyTypeVector& key_types = *itr;
+    for (KeyTypeVector::const_iterator
         kitr = key_types.begin(); kitr != key_types.end(); ++kitr) {
       ++cnt;
     }
   }
   requested_entities.reserve(cnt);
 
-  for (std::vector< std::vector<KeyType> >::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr) {
-    const std::vector<KeyType>& key_types = *itr;
-    for (std::vector<KeyType>::const_iterator
+  for (RequestKeyVector::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr) {
+    const KeyTypeVector & key_types = *itr;
+    for ( KeyTypeVector::const_iterator
         kitr = key_types.begin(); kitr != key_types.end(); ++kitr) {
       EntityKey key(&(*kitr));
       require_good_rank_and_id(key.rank(), key.id());

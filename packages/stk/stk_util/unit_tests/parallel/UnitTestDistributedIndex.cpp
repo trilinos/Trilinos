@@ -39,7 +39,7 @@ STKUNIT_UNIT_TEST( UnitTestDistributedIndexUpdate , testUnit )
 
 STKUNIT_UNIT_TEST( UnitTestDistributedIndexUpdateBad , testUnit )
 { UnitTestSTKParallelDistributedIndex::test_update_bad(); }
-  
+
 STKUNIT_UNIT_TEST( UnitTestDistributedIndexGenerate , testUnit )
 { UnitTestSTKParallelDistributedIndex::test_generate(); }
 
@@ -60,7 +60,7 @@ STKUNIT_UNIT_TEST( UnitTestDistributedIndexGenerateBig , testUnit )
 //   [80001..90000]
 //      etc.
 void generate_test_spans_10x10000(
-  std::vector< stk::parallel::DistributedIndex::KeySpan > & partition_spans )
+  stk::parallel::DistributedIndex::KeySpanVector & partition_spans )
 {
   enum { test_spans_count = 10 };
   enum { test_spans_size  = 10000 };
@@ -85,7 +85,7 @@ void UnitTestSTKParallelDistributedIndex::test_ctor()
   int mpi_rank = stk::parallel_machine_rank(comm);
   int mpi_size = stk::parallel_machine_size(comm);
 
-  std::vector< PDIndex::KeySpan > partition_spans ;
+  PDIndex::KeySpanVector partition_spans ;
 
   generate_test_spans_10x10000( partition_spans );
 
@@ -102,8 +102,8 @@ void UnitTestSTKParallelDistributedIndex::test_ctor()
 
   // All queries will be empty:
 
-  std::vector<PDIndex::KeyType> keys_to_query ;
-  std::vector<PDIndex::KeyProc> sharing_of_local_keys ;
+  PDIndex::KeyTypeVector keys_to_query ;
+  PDIndex::KeyProcVector sharing_of_local_keys ;
 
   di.query( sharing_of_local_keys );
 
@@ -128,7 +128,7 @@ void UnitTestSTKParallelDistributedIndex::test_ctor_bad()
 
   {
     // Throw for overlapping span
-    std::vector< PDIndex::KeySpan > partition_spans ;
+    PDIndex::KeySpanVector partition_spans ;
 
     generate_test_spans_10x10000( partition_spans );
 
@@ -140,7 +140,7 @@ void UnitTestSTKParallelDistributedIndex::test_ctor_bad()
 
   {
     // Throw for one bad span
-    std::vector< PDIndex::KeySpan > partition_spans ;
+    PDIndex::KeySpanVector partition_spans ;
 
     generate_test_spans_10x10000( partition_spans );
 
@@ -162,15 +162,15 @@ void UnitTestSTKParallelDistributedIndex::test_update()
   int mpi_rank = stk::parallel_machine_rank(comm);
   int mpi_size = stk::parallel_machine_size(comm);
 
-  std::vector< PDIndex::KeySpan > partition_spans ;
+  PDIndex::KeySpanVector partition_spans ;
 
   generate_test_spans_10x10000( partition_spans );
 
   PDIndex di( comm , partition_spans );
 
-  std::vector<PDIndex::KeyType> keys_to_add ;
-  std::vector<PDIndex::KeyType> keys_to_remove ;
-  std::vector<PDIndex::KeyProc> sharing_of_local_keys ;
+  PDIndex::KeyTypeVector keys_to_add ;
+  PDIndex::KeyTypeVector keys_to_remove ;
+  PDIndex::KeyProcVector sharing_of_local_keys ;
 
   //------------------------------
   // Update nothing:
@@ -288,15 +288,15 @@ void UnitTestSTKParallelDistributedIndex::test_update_bad()
   int mpi_rank = stk::parallel_machine_rank(comm);
   int mpi_size = stk::parallel_machine_size(comm);
 
-  std::vector< PDIndex::KeySpan > partition_spans ;
+  PDIndex::KeySpanVector partition_spans ;
 
   generate_test_spans_10x10000( partition_spans );
 
   PDIndex di( comm , partition_spans );
 
-  std::vector<PDIndex::KeyType> keys_to_add ;
-  std::vector<PDIndex::KeyType> keys_to_remove ;
-  std::vector<PDIndex::KeyProc> sharing_of_local_keys ;
+  PDIndex::KeyTypeVector keys_to_add ;
+  PDIndex::KeyTypeVector keys_to_remove ;
+  PDIndex::KeyProcVector sharing_of_local_keys ;
 
   //------------------------------
   // Invalid key on every process
@@ -326,15 +326,15 @@ void UnitTestSTKParallelDistributedIndex::test_generate()
   int mpi_rank = stk::parallel_machine_rank(comm);
   // int mpi_size = stk::parallel_machine_size(comm);
 
-  std::vector< PDIndex::KeySpan > partition_spans ;
+  PDIndex::KeySpanVector partition_spans ;
 
   generate_test_spans_10x10000( partition_spans );
 
   PDIndex di( comm , partition_spans );
 
   std::vector<size_t> requests( partition_spans.size() , size_t(0) );
-  std::vector< std::vector<PDIndex::KeyType> > generated_keys ;
-  std::vector<PDIndex::KeyProc> sharing_of_local_keys ;
+  std::vector< PDIndex::KeyTypeVector > generated_keys ;
+  PDIndex::KeyProcVector sharing_of_local_keys ;
 
   di.generate_new_keys( requests , generated_keys );
 
@@ -419,18 +419,18 @@ void UnitTestSTKParallelDistributedIndex::test_update_generate()
   int p_rank = stk::parallel_machine_rank(comm);
   int p_size = stk::parallel_machine_size(comm);
 
-  std::vector< PDIndex::KeySpan > partition_spans ;
+  PDIndex::KeySpanVector partition_spans ;
 
   generate_test_spans_10x10000( partition_spans );
 
   PDIndex di( comm , partition_spans );
 
   std::vector<size_t> requests( partition_spans.size() , size_t(0) );
-  std::vector< std::vector<PDIndex::KeyType> > generated_keys ;
-  std::vector<PDIndex::KeyProc> sharing_of_local_keys ;
+  std::vector< PDIndex::KeyTypeVector > generated_keys ;
+  PDIndex::KeyProcVector sharing_of_local_keys ;
 
-  std::vector<PDIndex::KeyType> keys_to_add ;
-  std::vector<PDIndex::KeyType> keys_to_remove ;
+  PDIndex::KeyTypeVector keys_to_add ;
+  PDIndex::KeyTypeVector keys_to_remove ;
 
   //------------------------------
   // Add ( 5 * j ) odd keys per process
@@ -513,14 +513,14 @@ void UnitTestSTKParallelDistributedIndex::test_generate_bad()
   int mpi_rank = stk::parallel_machine_rank(comm);
   int mpi_size = stk::parallel_machine_size(comm);
 
-  std::vector< PDIndex::KeySpan > partition_spans ;
+  PDIndex::KeySpanVector partition_spans ;
 
   generate_test_spans_10x10000( partition_spans );
 
   PDIndex di( comm , partition_spans );
 
   std::vector<size_t> requests( partition_spans.size() , size_t(0) );
-  std::vector< std::vector<PDIndex::KeyType> > generated_keys ;
+  std::vector< PDIndex::KeyTypeVector > generated_keys ;
   //------------------------------
 
   for ( size_t i = 0 ; i < requests.size() ; ++i ) {
@@ -558,7 +558,7 @@ void UnitTestSTKParallelDistributedIndex::test_generate_big()
   const int mpi_rank = stk::parallel_machine_rank(comm);
   const int mpi_size = stk::parallel_machine_size(comm);
 
-  std::vector< PDIndex::KeySpan > partition_spans ;
+  PDIndex::KeySpanVector partition_spans ;
 
   generate_test_spans_10x10000( partition_spans );
 
@@ -566,7 +566,7 @@ void UnitTestSTKParallelDistributedIndex::test_generate_big()
 
   std::vector<size_t> requests( partition_spans.size() , size_t(0) );
 
-  std::vector< std::vector<PDIndex::KeyType> > generated_keys ;
+  std::vector< PDIndex::KeyTypeVector > generated_keys ;
 
   //----------------------------------------
 

@@ -174,7 +174,7 @@ void BulkData::internal_update_distributed_index(
 {
   Trace_("stk::mesh::BulkData::internal_update_distributed_index");
 
-  std::vector< parallel::DistributedIndex::KeyType >
+  parallel::DistributedIndex::KeyTypeVector
     local_created_or_modified ; // only store locally owned/shared entities
 
   // Iterate over all entities known to this process, putting
@@ -198,7 +198,7 @@ void BulkData::internal_update_distributed_index(
   if (parallel_size() > 1) {
     // Retrieve data regarding which processes use the local_created_or_modified
     // including this process.
-    std::vector< parallel::DistributedIndex::KeyProc >
+    parallel::DistributedIndex::KeyProcVector
       global_created_or_modified ;
     m_entities_index.query_to_usage( local_created_or_modified ,
                                      global_created_or_modified );
@@ -211,7 +211,7 @@ void BulkData::internal_update_distributed_index(
       // Iterate over all global modifications to this entity, this vector is
       // sorted, so we're guaranteed that all modifications to a particular
       // entities will be adjacent in this vector.
-      for ( std::vector< parallel::DistributedIndex::KeyProc >::iterator
+      for ( parallel::DistributedIndex::KeyProcVector::iterator
               i =  global_created_or_modified.begin() ;
             i != global_created_or_modified.end() ; ++i ) {
 
