@@ -20,7 +20,7 @@
 
 #ifdef SIERRA_MIGRATION
 namespace {
-static const std::vector<stk::mesh::Relation> dummy_vector;
+static const stk::mesh::RelationVector dummy_vector;
 }
 
 namespace sierra {

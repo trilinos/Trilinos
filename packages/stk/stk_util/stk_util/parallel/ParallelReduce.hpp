@@ -61,6 +61,14 @@ void all_reduce_bor( ParallelMachine ,
 void all_reduce_max( ParallelMachine ,
                      const double * local , double * global , unsigned count );
 
+/** \brief  Parallel summation to all processors */
+void all_reduce_max( ParallelMachine comm ,
+                     const int64_t * local , int64_t * global , unsigned count );
+
+/** \brief  Parallel summation to all processors */
+void all_reduce_max( ParallelMachine ,
+                     const size_t * local , size_t * global , unsigned count );
+
 void all_reduce_min( ParallelMachine ,
                      const double * local , double * global , unsigned count );
 
@@ -125,7 +133,7 @@ struct Reduce {
   // Copy values into buffer:
   void copyin( WorkType & w ) const
     { Copy<N>( w.m_value , m_value ); m_next.copyin( w.m_next ); }
-      
+
   // Copy value out from buffer:
   void copyout( WorkType & w ) const
     { Copy<N>( m_value , w.m_value ); m_next.copyout( w.m_next ); }

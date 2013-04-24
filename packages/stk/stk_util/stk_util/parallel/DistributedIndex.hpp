@@ -14,6 +14,8 @@
 #include <vector>
 #include <cstddef>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/util/TrackingAllocator.hpp>
+
 
 class UnitTestSTKParallelDistributedIndex ;
 
@@ -44,9 +46,19 @@ public:
   typedef std::pair<KeyType,KeyType>  KeySpan ;
   typedef std::pair<KeyType,ProcType> KeyProc ;
 
+#ifdef STK_PROFILE_MEMORY
+  typedef std::vector<unsigned long, tracking_allocator<unsigned long, DistributedIndex> > UnsignedVector;
+  typedef std::vector<long, tracking_allocator<long, DistributedIndex> > LongVector;
+  typedef std::vector<KeySpan, tracking_allocator<KeySpan, DistributedIndex> > KeySpanVector;
+  typedef std::vector<KeyType, tracking_allocator<KeyType, DistributedIndex> > KeyTypeVector;
+  typedef std::vector<KeyProc, tracking_allocator<KeyProc, DistributedIndex> > KeyProcVector;
+#else
+  typedef std::vector<unsigned long> UnsignedVector;
+  typedef std::vector<long>    LongVector;
   typedef std::vector<KeySpan> KeySpanVector;
   typedef std::vector<KeyType> KeyTypeVector;
   typedef std::vector<KeyProc> KeyProcVector;
+#endif
 
   /*----------------------------------------*/
 
@@ -129,7 +141,7 @@ private:
   void generate_new_keys_local_planning(
     const KeyTypeVector & global_key_upper_bound ,
     const std::vector<size_t>  & requests_local ,
-          std::vector<long>    & new_requests ,
+          LongVector    & new_requests ,
           KeyTypeVector & requested_keys ,
           KeyTypeVector & contrib_keys ) const ;
 
@@ -137,8 +149,8 @@ private:
    *          other processes keys will be donated.
    */
   void generate_new_keys_global_planning(
-    const std::vector<long>    & new_request ,
-          std::vector<long>    & my_donations ) const ;
+    const LongVector    & new_request ,
+          LongVector    & my_donations ) const ;
 
   /** \brief  An internally used method to query usage of keys. */
   void query( const KeyProcVector & request ,

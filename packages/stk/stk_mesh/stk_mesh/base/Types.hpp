@@ -20,6 +20,7 @@
 
 #include <stk_util/util/PairIter.hpp>
 #include <stk_util/util/NamedPair.hpp>
+#include <stk_util/util/TrackingAllocator.hpp>
 
 #include <stk_topology/topology.hpp>
 
@@ -165,7 +166,12 @@ typedef int ( * relation_stencil_ptr )( unsigned  from_type ,
  *  -# relation identifier, and
  *  -# range entity global identifier.
  */
+#ifdef STK_PROFILE_MEMORY
+typedef std::vector<Relation, tracking_allocator<Relation,Relation> > RelationVector;
+#else
 typedef std::vector<Relation> RelationVector;
+#endif
+
 typedef PairIter< RelationVector::const_iterator > PairIterRelation ;
 
 //----------------------------------------------------------------------

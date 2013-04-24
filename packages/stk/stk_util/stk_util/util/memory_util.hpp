@@ -3,6 +3,7 @@
 
 #include <string>
 
+
 namespace stk {
 
 /*
@@ -23,6 +24,7 @@ std::string human_bytes(size_t bytes);
  *  be larger than that reported here, depending on your timing.
  */
 void get_memory_usage(size_t & now, size_t & hwm);
+
 
 }
 

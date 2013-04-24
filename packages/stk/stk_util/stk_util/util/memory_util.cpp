@@ -3,6 +3,7 @@
 #include <sstream>
 #include <fstream>
 #include <unistd.h>
+#include <iomanip>
 #include <stk_util/util/memory_util.hpp>
 
 #if defined(__APPLE__)
@@ -113,24 +114,25 @@ void get_memory_usage(size_t & now, size_t & hwm)
 #endif
 }
 
-std::string human_bytes(size_t bytes)
+std::string human_bytes(size_t arg_bytes)
 {
-  const size_t K = 1024;
-  const size_t M = K*1024;
-  const size_t G = M*1024;
+  double bytes = arg_bytes;
+  const double K = 1024;
+  const double M = K*1024;
+  const double G = M*1024;
 
   std::ostringstream out;
   if (bytes < K) {
-    out << bytes << " B";
+    out << std::setprecision(4) << bytes << " B";
   } else if (bytes < M) {
     bytes /= K;
-    out << bytes << " K";
+    out << std::setprecision(4) << bytes << " K";
   } else if (bytes < G) {
     bytes /= M;
-    out << bytes << " M";
+    out << std::setprecision(4) << bytes << " M";
   } else {
     bytes /= G;
-    out << bytes << " G";
+    out << std::setprecision(4) << bytes << " G";
   }
   return out.str();
 }

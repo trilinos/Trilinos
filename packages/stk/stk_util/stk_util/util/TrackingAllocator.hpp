@@ -2,6 +2,7 @@
 #define STK_UTIL_STK_UTIL_UTIL_TRACKING_ALLOCATOR_HPP
 
 #include <limits>
+#include <algorithm>
 #include <boost/type_traits/is_same.hpp>
 
 namespace stk {
@@ -89,9 +90,7 @@ public:
 
     ++memory_usage::num_allocations;
     memory_usage::current_memory += size;
-    memory_usage::peak_memory =   (memory_usage::peak_memory < memory_usage::current_memory)
-                                ? memory_usage::current_memory
-                                : memory_usage::peak_memory;
+    memory_usage::peak_memory =  std::max(memory_usage::peak_memory, memory_usage::current_memory);
 
     pointer ret = (pointer)(::operator new(size));
 

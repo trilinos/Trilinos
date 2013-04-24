@@ -131,7 +131,7 @@ TEST(hex_edges, hex_edges)
 
   start_time = stk::cpu_time();
 
-//  stk::mesh::create_edges(fixture.getBulkData());
+  stk::mesh::create_edges(fixture.getBulkData());
 
   double create_edges_time = stk::cpu_time() - start_time;
   double total_time = mesh_create_time + create_edges_time;

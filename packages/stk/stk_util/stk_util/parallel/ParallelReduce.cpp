@@ -29,7 +29,7 @@ void all_write_string( ParallelMachine arg_comm ,
   const int p_root = 0 ;
   const unsigned p_size = parallel_machine_size( arg_comm );
   const unsigned p_rank = parallel_machine_rank( arg_comm );
-  
+
   int result ;
 
   // Gather the send counts on root processor
@@ -59,7 +59,7 @@ void all_write_string( ParallelMachine arg_comm ,
   }
 
   const unsigned recv_size = (unsigned) recv_displ[ p_size ] ;
- 
+
   std::vector<char> buffer( recv_size );
 
   {
@@ -108,7 +108,7 @@ void all_reduce( ParallelMachine  arg_comm ,
   // MPI_Allreduce with a user defined operator,
   // use reduce/broadcast instead.
 /*
-  const int result = 
+  const int result =
     MPI_Allreduce(arg_in,arg_out,arg_len,MPI_BYTE,mpi_op,arg_comm);
 */
 
@@ -197,6 +197,38 @@ void all_reduce_max( ParallelMachine comm ,
 {
   double * tmp = const_cast<double*>( local );
   MPI_Allreduce( tmp , global , count , MPI_DOUBLE , MPI_MAX , comm );
+}
+
+void all_reduce_max( ParallelMachine comm ,
+                     const int64_t * local , int64_t * global , unsigned count )
+{
+  int64_t * tmp = const_cast<int64_t*>( local );
+  ThrowAssert(sizeof(long long) == sizeof(int64_t));
+  MPI_Allreduce( tmp , global , count , MPI_LONG_LONG , MPI_MAX , comm );
+}
+
+void all_reduce_max( ParallelMachine comm ,
+                     const size_t * local , size_t * global , unsigned count )
+{
+  size_t * tmp = const_cast<size_t*>( local );
+
+  if ( sizeof(size_t) == sizeof(unsigned) ) {
+    MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , MPI_MAX , comm );
+  }
+  else if ( sizeof(size_t) == sizeof(unsigned long) ) {
+    MPI_Allreduce( tmp , global , count , MPI_UNSIGNED_LONG , MPI_MAX , comm );
+  }
+  else {
+    unsigned long * const in  = new unsigned long[ count ];
+    unsigned long * const out = new unsigned long[ count ];
+
+    for ( unsigned i = 0 ; i < count ; ++i ) { in[i] = local[i] ; }
+    MPI_Allreduce( in , out , count , MPI_UNSIGNED_LONG , MPI_MAX , comm );
+    for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = out[i] ; }
+
+    delete[] in ;
+    delete[] out ;
+  }
 }
 
 void all_reduce_min( ParallelMachine comm ,

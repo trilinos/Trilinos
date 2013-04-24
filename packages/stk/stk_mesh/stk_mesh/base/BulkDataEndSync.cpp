@@ -23,6 +23,7 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/util/memory_util.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -708,12 +709,28 @@ void BulkData::internal_resolve_parallel_create()
 }
 
 //----------------------------------------------------------------------
+namespace {
+
+
+
+}
+//----------------------------------------------------------------------
 
 bool BulkData::modification_end()
 {
   Trace_("stk::mesh::BulkData::modification_end");
 
-  return internal_modification_end( true );
+  bool result =  internal_modification_end( true );
+
+
+#ifdef STK_PROFILE_MEMORY
+
+  profile_memory_usage<parallel::DistributedIndex>("Distribute Index", parallel(),parallel_rank());
+  profile_memory_usage<Relation>("Relation", parallel(),parallel_rank());
+
+#endif
+
+  return result;
 }
 
 #if 0

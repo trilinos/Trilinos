@@ -25,6 +25,17 @@ void print_timers(NameItr name_itr, TimerItr timer_itr, int count)
   }
 }
 
+template <typename NameItr, typename MemoryItr>
+inline
+void print_memory(NameItr name_itr, MemoryItr memory_itr, int count)
+{
+  std::cout << std::endl;
+
+  for (int i = 0; i < count; ++i, ++name_itr, ++memory_itr) {
+    std::cout << "STKPERF: " << *name_itr << ": " << *memory_itr << " (" << human_bytes(*memory_itr) << ")" << std::endl;
+  }
+}
+
 // Use this version if providing your own memory numbers
 template <typename NameItr, typename TimerItr, typename MemItr, typename MemNameItr>
 inline
@@ -32,7 +43,7 @@ void print_timers_and_memory(NameItr name_itr, TimerItr timer_itr, int timer_cou
 {
   print_timers(name_itr, timer_itr, timer_count);
 
-  print_timers(mem_name_itr, mem_itr, mem_count);
+  print_memory(mem_name_itr, mem_itr, mem_count);
 }
 
 // Prefer this version unless you are sure you are not interested in memory.

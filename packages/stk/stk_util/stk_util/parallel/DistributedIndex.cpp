@@ -423,8 +423,8 @@ void DistributedIndex::update_keys(
 {
   ThrowAssert(m_removed_keys.empty()); // do not mix
 
-  std::vector<unsigned long> count_remove( m_comm_size , (unsigned long)0 );
-  std::vector<unsigned long> count_add(    m_comm_size , (unsigned long)0 );
+  UnsignedVector count_remove( m_comm_size , (unsigned long)0 );
+  UnsignedVector count_add(    m_comm_size , (unsigned long)0 );
 
   size_t local_bad_input = 0 ;
 
@@ -634,7 +634,8 @@ void DistributedIndex::generate_new_global_key_upper_bound(
   error_msg
   << "sierra::parallel::DistributedIndex::generate_new_keys_global_counts( " ;
 
-  std::vector<unsigned long>
+
+  UnsignedVector
     local_counts( m_span_count + 1 , (unsigned long) 0 ),
     global_counts( m_span_count + 1 , (unsigned long) 0 );
 
@@ -723,7 +724,7 @@ void DistributedIndex::generate_new_global_key_upper_bound(
 void DistributedIndex::generate_new_keys_local_planning(
   const KeyTypeVector  & key_global_upper_bound ,
   const std::vector<size_t>   & requests_local ,
-        std::vector<long>     & new_request ,
+        LongVector    & new_request ,
         KeyTypeVector  & requested_keys ,
         KeyTypeVector  & contrib_keys ) const
 {
@@ -803,15 +804,15 @@ void DistributedIndex::generate_new_keys_local_planning(
 //----------------------------------------------------------------------
 
 void DistributedIndex::generate_new_keys_global_planning(
-  const std::vector<long>    & new_request ,
-        std::vector<long>    & my_donations ) const
+  const LongVector    & new_request ,
+        LongVector    & my_donations ) const
 {
   my_donations.assign( m_comm_size * m_span_count , long(0) );
 
   // Gather the global request plan for receiving and donating keys
   // Positive values for receiving, negative values for donating.
 
-  std::vector<long> new_request_global( m_comm_size * m_span_count );
+  LongVector new_request_global( m_comm_size * m_span_count );
 
 #if defined( STK_HAS_MPI )
 
@@ -841,10 +842,10 @@ void DistributedIndex::generate_new_keys_global_planning(
 
   }
   else {
-    new_request_global = new_request ;
+    new_request_global.assign(new_request.begin(),new_request.end()) ;
   }
 #else
-  new_request_global = new_request ;
+  new_request_global.assign(new_request.begin(),new_request.end()) ;
 #endif
 
   // Now have the global receive & donate plan.
@@ -908,8 +909,8 @@ void DistributedIndex::generate_new_keys(
   // Develop the plan:
 
   KeyTypeVector global_key_upper_bound ;
-  std::vector<long>    new_request ;
-  std::vector<long>    my_donations ;
+  LongVector    new_request ;
+  LongVector    my_donations ;
   KeyTypeVector contrib_keys ;
   KeyTypeVector new_keys ;
 
