@@ -128,20 +128,16 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
     }
   }
   else {
-    TEUCHOS_ASSERT(false);
-/*
     std::vector<std::size_t> local_subcell_ids, subcell_dim;
     getSideElementCascade(mesh, pb.elementBlockID(),
-  		          sideEntities,subcell_dim,local_subcell_dim,elements);
+  		          sideEntities,subcell_dim,local_subcell_ids,elements);
 
     // build local cell_ids, mapped by local side id
-    std::map<unsigned,std::vector<std::size_t> > local_cell_ids;
     for(std::size_t elm=0;elm<elements.size();++elm) {
       stk::mesh::Entity * element = elements[elm];
 	
-      local_cell_ids[local_side_ids[elm]].push_back(mesh.elementLocalId(element));
+      local_cell_ids[std::make_pair(subcell_dim[elm],local_subcell_ids[elm])].push_back(mesh.elementLocalId(element));
     }
-*/
   }
 
   // only build workset if there are elements to worry about
@@ -303,7 +299,7 @@ void getSideElementCascade(const panzer_stk::STK_Interface & mesh,
                            std::vector<std::size_t> & localSubcellIds, 
                            std::vector<stk::mesh::Entity*> & elements)
 {
-  // This is a sketch of the alogrithm, for computing the side element
+  // This is the alogrithm, for computing the side element
   // cascade. The requirements are that for a particular set of sides
   // we compute all elements and subcells where they touch the side. Note
   // that elements can be and will be repeated within this list.
@@ -354,6 +350,12 @@ void getSubcellEntities(const panzer_stk::STK_Interface & mesh,
 		        const std::vector<stk::mesh::Entity*> & entities,
 	 	        std::vector<std::vector<stk::mesh::Entity*> > & subcells)
 {
+  // exit if there is no work to do
+  if(entities.size()==0) {
+    subcells.clear();
+    return;
+  }
+ 
   int maxRankIndex = mesh.getDimension()-1;
   stk::mesh::EntityRank master_rank = entities[0]->entity_rank();
   std::vector<stk::mesh::EntityRank> ranks(mesh.getDimension()+1);

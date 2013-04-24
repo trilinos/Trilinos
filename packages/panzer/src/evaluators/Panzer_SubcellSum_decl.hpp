@@ -61,6 +61,9 @@ namespace panzer {
   * The field specified with "Sum Name" will be dimensioned as the number
   * of cells in the workset. The "Field Name" object is dimension as the number
   * of cells by the number of basis functions specified by the "Basis" object.
+  * The "Evaluate On Closure" indicates if the subcells are to use the closure
+  * index (i.e. all subcells of lesser dimension contained within a subcell) or
+  * simply sum on those fields on the subcell proper.
 
   \verbatim
     <ParameterList>
@@ -68,6 +71,7 @@ namespace panzer {
       <Parameter name="Field Name" type="string" value="<Name of field to sum>"/>
       <Parameter name="Basis" type="RCP<const PureBasis>" value="<user specified PureBasis object>"/>
       <Parameter name="Multiplier" type="double" value="<Scaling factor, default=1>"/>
+      <Parameter name="Evaluate On Closure" type="bool" value="false"/>
     </ParameterList>
   \endverbatim
   */
@@ -89,6 +93,9 @@ private:
  
   // This is used to lookup closure indices (local Ids that live on a subcell)
   Teuchos::RCP<const panzer::FieldPattern> fieldPattern_;
+  
+  // evalaute on the "closure" of the indicated sub-cells
+  bool evaluateOnClosure_;
 
 PHX_EVALUATOR_CLASS_END
 
