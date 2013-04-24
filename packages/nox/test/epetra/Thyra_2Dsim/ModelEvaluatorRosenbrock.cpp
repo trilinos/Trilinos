@@ -43,6 +43,7 @@
 #include "NOX_Common.H"
 #include "ModelEvaluatorRosenbrock.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Epetra_CrsMatrix.h"
 
 // Thyra support
