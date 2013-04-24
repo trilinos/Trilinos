@@ -602,7 +602,7 @@ of MPI or any other concrete interprocess communication protocol.
 
 \ingroup Thyra_Op_Vec_Adapters_grp
 
-\brief The \ref Thyra_Op_Vec_interfaces_code_grp define an interface
+The \ref Thyra_Op_Vec_interfaces_code_grp define an interface
 for providing ANAs with the functionality they need concerning
 application-specific scalar products without concern for how such scalar
 products are implemented or how such scalar products relate to the

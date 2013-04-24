@@ -49,13 +49,15 @@
 namespace Thyra {
 
 
-/** \defgroup Thyra_Op_Vec_adapters_spmd_local_data_access_grp Offcial utilities for accessing local data in SPMD vectors and multi-vectors.
+/** \defgroup Thyra_Op_Vec_adapters_spmd_local_data_access_grp Official utilities for accessing local data in SPMD vectors and multi-vectors.
  *
- * \ingroup Thyra_Op_Vec_adapters_Spmd_support_grp
+ * \ingroup Thyra_Op_Vec_spmd_adapters_grp
  *
- * These functions provide the standard way by which clients can get access to
- * local data in VectorBase and MultiVector base objects for the standard SPMD
- * objects.
+ * \brief These non-member helper functions provide the standard way by which
+ * clients can get access to local data in VectorBase and MultiVector base
+ * objects for the standard SPMD objects.  They are the primary
+ * interoperability mechanism for clients to get at local SPMD VectorBase and
+ * MultiVectorBase data.
  *
  * All of these views follow the constraints of the Generalized View Design
  * Pattern defined
