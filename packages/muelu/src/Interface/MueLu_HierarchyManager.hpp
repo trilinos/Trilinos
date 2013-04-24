@@ -221,7 +221,8 @@ namespace MueLu {
           RCP<Level> L = H.GetLevel(data[i]);
           if (L->IsAvailable(name)) {
             RCP<T> M = L-> template Get< RCP<T> >(name);
-            Utils::Write(fileName,*M);
+            if ( !( M.is_null() ) )
+              Utils::Write(fileName,*M);
           }
         }
       }
