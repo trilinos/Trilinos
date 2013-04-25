@@ -48,7 +48,6 @@
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"
 
-#include "Tpetra_HashTable.hpp"
 /// \file Tpetra_Map_decl.hpp
 /// \brief Declarations for the Tpetra::Map class and related nonmember constructors.
 ///
@@ -57,7 +56,12 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // Forward declaration of Directory.
   template <class LO, class GO, class N> class Directory;
-#endif
+
+  namespace Details {
+    template<class GlobalOrdinal, class LocalOrdinal>
+    class HashTable;
+  } // namespace Details
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class Map
   /// \brief Describes a parallel distribution of objects over processes.

@@ -47,9 +47,10 @@
 #ifndef TPETRA_MAP_DEF_HPP
 #define TPETRA_MAP_DEF_HPP
 
+#include <Tpetra_Directory.hpp> // must include for implicit instantiation to work
+#include <Tpetra_HashTable.hpp>
+#include <Tpetra_Util.hpp>
 #include <Teuchos_as.hpp>
-#include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
-#include "Tpetra_Util.hpp"
 #include <stdexcept>
 
 #ifdef DOXYGEN_USE_ONLY
