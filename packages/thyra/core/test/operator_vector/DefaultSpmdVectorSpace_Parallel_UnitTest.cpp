@@ -80,7 +80,7 @@ TEUCHOS_STATIC_SETUP()
     "dump-rtops", "no-dump-rtops", &g_dumpRTOps,
     "Set if RTOps are dumped or not." );
   Teuchos::UnitTestRepository::getCLP().setOption(
-    "run-simple-mv-adjoint", "run-simple-mv-adjoint", &g_emptyProcSimpleMultiVecAdjointApply,
+    "run-simple-mv-adjoint", "no-run-simple-mv-adjoint", &g_emptyProcSimpleMultiVecAdjointApply,
     "Temporary option!");
   Teuchos::UnitTestRepository::getCLP().setOption(
     "run-vec-spc-tester", "no-run-vec-spc-tester", &g_emptyProcVectorSpaceTester,
