@@ -202,11 +202,11 @@ void SpmdMultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
     locallyReplicated ? NULL : spmdSpc.getComm().get(), // comm
     pri_op, // op
     col_rng.size(), // num_cols
-    multi_vecs.size(), // multi_vecs.size()
-    multi_vecs.size() ? &sub_multi_vecs[0] : NULL, // sub_multi_vecs
-    targ_multi_vecs.size(), // targ_multi_vecs.size()
-    targ_multi_vecs.size() ? &targ_sub_multi_vecs[0] : NULL, // targ_sub_multi_vecs
-    reduct_objs.size() ? &reduct_objs_ptr[0] : 0 // reduct_objs
+    sub_multi_vecs.size(), // multi_vecs.size()
+    sub_multi_vecs.getRawPtr(), // sub_multi_vecs
+    targ_sub_multi_vecs.size(), // targ_multi_vecs.size()
+    targ_sub_multi_vecs.getRawPtr(), // targ_sub_multi_vecs
+    reduct_objs_ptr.getRawPtr() // reduct_objs
     );
 
   // Free and commit the local data
@@ -600,8 +600,8 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
       Workspace<Scalar> Y_local_final_buff(wss,Y_local.subDim()*Y_local.numSubCols(),false);
       // Perform the reduction
       Teuchos::reduceAll<Ordinal,Scalar>(
-        *comm,Teuchos::REDUCE_SUM,Y_local_final_buff.size(),Y_local_tmp.values().get(),
-        &Y_local_final_buff[0]
+        *comm, Teuchos::REDUCE_SUM, Y_local_final_buff.size(), Y_local_tmp.values().getRawPtr(),
+        Y_local_final_buff.getRawPtr()
         );
       // Load Y_local_final_buff back into Y_local
       typedef typename ArrayView<const Scalar>::const_iterator Y_local_final_buff_iter_t;
