@@ -14,6 +14,7 @@
 #include <iosfwd>
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 #include <stk_util/environment/ReportHandler.hpp>
 
@@ -23,6 +24,8 @@
 #include <stk_mesh/base/Entity.hpp>
 
 #include <stk_topology/topology.hpp>
+
+#include <stk_util/util/TrackingAllocator.hpp>
 
 //----------------------------------------------------------------------
 
@@ -94,6 +97,12 @@ private:
   friend class impl::BucketRepository;
   friend class impl::Partition;
 
+#ifdef STK_PROFILE_MEMORY
+  typedef tracking_allocator<unsigned char, FieldBase> allocator;
+#else
+  typedef std::allocator<unsigned char> allocator;
+#endif
+
   struct DataMap
   {
     typedef FieldBase::Restriction::size_type size_type ;
@@ -114,6 +123,7 @@ private:
   // beginning of field value memory.
   unsigned char* m_field_data;
   unsigned char* m_field_data_end;
+  size_t         m_field_data_size;
 
   impl::Partition    *m_partition;
 
@@ -297,7 +307,7 @@ private:
    */
   BulkData & bulk_data() const { return mesh(); }
 
-  ~Bucket() { delete [] m_field_data; }
+  ~Bucket();
 
   Bucket();
   Bucket( const Bucket & );

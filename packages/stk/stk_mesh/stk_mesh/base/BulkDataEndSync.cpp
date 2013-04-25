@@ -725,8 +725,9 @@ bool BulkData::modification_end()
 
 #ifdef STK_PROFILE_MEMORY
 
-  profile_memory_usage<parallel::DistributedIndex>("Distribute Index", parallel(),parallel_rank());
+  profile_memory_usage<parallel::DistributedIndex>("Distributed Index", parallel(),parallel_rank());
   profile_memory_usage<Relation>("Relation", parallel(),parallel_rank());
+  profile_memory_usage<FieldBase>("Fields", parallel(),parallel_rank());
 
 #endif
 
@@ -847,7 +848,9 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
   //optimize_buckets combines multiple buckets in a bucket-family into
   //a single larger bucket, and also does a sort.
   //If optimize_buckets has not been requested, still do the sort.
-  if (m_optimize_buckets) m_bucket_repository.optimize_buckets();
+
+  //if (m_optimize_buckets) m_bucket_repository.optimize_buckets();
+  if (false) m_bucket_repository.optimize_buckets();
   else m_bucket_repository.internal_sort_bucket_entities();
 
   // ------------------------------

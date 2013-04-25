@@ -87,6 +87,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_entities(arg_capacity)
   , m_field_data(NULL)
   , m_field_data_end(NULL)
+  , m_field_data_size(0)
   , m_partition(NULL)
   , m_owned(has_superset(*this, m_mesh.mesh_meta_data().locally_owned_part()))
   , m_shared(has_superset(*this, m_mesh.mesh_meta_data().globally_shared_part()))
@@ -99,8 +100,6 @@ Bucket::Bucket( BulkData & arg_mesh ,
     arg_mesh.mesh_meta_data().get_fields();
 
   const size_t num_fields = field_set.size();
-
-  size_t field_data_size = 0;
 
   if (arg_capacity != 0) {
     for ( size_t i = 0; i<num_fields; ++i) {
@@ -118,20 +117,20 @@ Bucket::Bucket( BulkData & arg_mesh ,
         num_bytes_per_entity = type_stride *
           ( field_rank ? restriction.stride( field_rank - 1 ) : 1 );
       }
-      m_field_map[i].m_base = field_data_size ;
+      m_field_map[i].m_base = m_field_data_size ;
       m_field_map[i].m_size = num_bytes_per_entity ;
       m_field_map[i].m_stride = &restriction.stride(0);
 
-      field_data_size += align( num_bytes_per_entity * m_capacity );
+      m_field_data_size += align( num_bytes_per_entity * m_capacity );
     }
 
-    m_field_map[ num_fields ].m_base  = field_data_size ;
+    m_field_map[ num_fields ].m_base  = m_field_data_size ;
     m_field_map[ num_fields ].m_size = 0 ;
     m_field_map[ num_fields ].m_stride = NULL ;
   }
 
   //allocate space for the fields
-  m_field_data = field_data_size > 0 ? new unsigned char[field_data_size] : NULL;
+  m_field_data = m_field_data_size > 0 ? allocator().allocate(m_field_data_size) : NULL;
 
   //
   //[TODO] ALAN, TODD: to investigate if memory_zero is necessary to fix valgrind
@@ -143,9 +142,15 @@ Bucket::Bucket( BulkData & arg_mesh ,
   //necessary. 8/9/2012
   //std::memset( m_field_data , 0xfff , field_data_size );
 
-  m_field_data_end = m_field_data + field_data_size;
+  m_field_data_end = m_field_data + m_field_data_size;
 }
 
+Bucket::~Bucket()
+{
+  if(m_field_data != NULL) {
+    allocator().deallocate(m_field_data,m_field_data_size);
+  }
+}
 
 
 

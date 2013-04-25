@@ -18,9 +18,10 @@ namespace detail {
 template <typename Tag = void>
 struct memory_usage
 {
-  static size_t  peak_memory;
-  static size_t  current_memory;
-  static size_t  num_allocations;
+  static size_t peak_memory;
+  static size_t current_memory;
+  static size_t num_allocations;
+  static size_t num_deallocations;
 };
 
 template <typename Tag>
@@ -32,6 +33,8 @@ size_t memory_usage<Tag>::current_memory = 0;
 template <typename Tag>
 size_t memory_usage<Tag>::num_allocations = 0;
 
+template <typename Tag>
+size_t memory_usage<Tag>::num_deallocations = 0;
 
 typedef memory_usage<void> default_memory_usage;
 
@@ -49,6 +52,7 @@ public:
   static size_t current_memory()  { return memory_usage::current_memory; }
   static size_t peak_memory()     { return memory_usage::peak_memory; }
   static size_t num_allocations() { return memory_usage::num_allocations; }
+  static size_t num_deallocations() { return memory_usage::num_deallocations; }
 
   // type definitions
   typedef T              value_type;
@@ -119,6 +123,8 @@ public:
     size_t size = num * sizeof(T);
     memory_usage::current_memory -= size;
 
+    ++memory_usage::num_deallocations;
+
     ::operator delete((void*)p);
   }
 
@@ -139,22 +145,24 @@ bool operator!=(const tracking_allocator<T1,Tag1>&, const tracking_allocator<T2,
 template <typename Tag>
 void profile_memory_usage(std::string name, ParallelMachine parallel, int parallel_rank)
 {
-  size_t memory[3];
-  size_t max_memory[3];
+  size_t memory[4];
+  size_t max_memory[4];
 
   typedef stk::detail::memory_usage<Tag> DUsage;
 
   memory[0] = DUsage::peak_memory;
   memory[1] = DUsage::current_memory;
   memory[2] = DUsage::num_allocations;
+  memory[3] = DUsage::num_deallocations;
 
-  all_reduce_max(parallel, memory, max_memory, 3);
+  all_reduce_max(parallel, memory, max_memory, 4);
 
   if (parallel_rank == 0) {
-    std::cout << "STK_PROFILE_MEMORY " << name << " per process max:" << std::endl;
-    std::cout << "             peak = " << max_memory[0] << " (" << human_bytes(max_memory[0]) << ")" << std::endl;
-    std::cout << "          current = " << max_memory[1] << " (" << human_bytes(max_memory[1]) << ")" << std::endl;
-    std::cout << "  num_allocations = " << max_memory[2] << std::endl;
+    std::cout << "STK_PROFILE_MEMORY (per process max) " << name << std::endl;
+    std::cout << "           peak = " << max_memory[0] << " (" << human_bytes(max_memory[0]) << ")" << std::endl;
+    std::cout << "        current = " << max_memory[1] << " (" << human_bytes(max_memory[1]) << ")" << std::endl;
+    std::cout << "    allocations = " << max_memory[2] << std::endl;
+    std::cout << "  deallocations = " << max_memory[3] << std::endl;
   }
 }
 
