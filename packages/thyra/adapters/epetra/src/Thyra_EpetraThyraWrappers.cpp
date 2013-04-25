@@ -771,17 +771,14 @@ Thyra::get_Epetra_MultiVector(
 {
   using Teuchos::rcpWithEmbeddedObj;
   using Teuchos::rcpFromRef;
+  using Teuchos::ptrFromRef;
+  using Teuchos::ptr_dynamic_cast;
   using Teuchos::outArg;
   ArrayRCP<double> mvData;
   Ordinal mvLeadingDim = -1;
-  SpmdMultiVectorBase<double> *mvSpmdMv = 0;
-  SpmdVectorBase<double> *mvSpmdV = 0;
-  if ((mvSpmdMv = dynamic_cast<SpmdMultiVectorBase<double>*>(&mv))) {
+  Ptr<SpmdMultiVectorBase<double> > mvSpmdMv;
+  if (nonnull(mvSpmdMv = ptr_dynamic_cast<SpmdMultiVectorBase<double> >(ptrFromRef(mv)))) {
     mvSpmdMv->getNonconstLocalData(outArg(mvData), outArg(mvLeadingDim));
-  }
-  else if ((mvSpmdV = dynamic_cast<SpmdVectorBase<double>*>(&mv))) {
-    mvSpmdV->getNonconstLocalData(outArg(mvData));
-    mvLeadingDim = mvSpmdV->spmdSpace()->localSubDim();
   }
   if (nonnull(mvData)) {
     return rcpWithEmbeddedObj(
@@ -803,17 +800,14 @@ Thyra::get_Epetra_MultiVector(
 {
   using Teuchos::rcpWithEmbeddedObj;
   using Teuchos::rcpFromRef;
+  using Teuchos::ptrFromRef;
+  using Teuchos::ptr_dynamic_cast;
   using Teuchos::outArg;
   ArrayRCP<const double> mvData;
   Ordinal mvLeadingDim = -1;
-  const SpmdMultiVectorBase<double> *mvSpmdMv = 0;
-  const SpmdVectorBase<double> *mvSpmdV = 0;
-  if ((mvSpmdMv = dynamic_cast<const SpmdMultiVectorBase<double>*>(&mv))) {
+  Ptr<const SpmdMultiVectorBase<double> > mvSpmdMv;
+  if (nonnull(mvSpmdMv = ptr_dynamic_cast<const SpmdMultiVectorBase<double> >(ptrFromRef(mv)))) {
     mvSpmdMv->getLocalData(outArg(mvData), outArg(mvLeadingDim));
-  }
-  else if ((mvSpmdV = dynamic_cast<const SpmdVectorBase<double>*>(&mv))) {
-    mvSpmdV->getLocalData(outArg(mvData));
-    mvLeadingDim = mvSpmdV->spmdSpace()->localSubDim();
   }
   if (nonnull(mvData)) {
     return rcpWithEmbeddedObj(
