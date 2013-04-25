@@ -3,6 +3,24 @@
 Release Notes for Trilinos Package Thyra
 ----------------------------------------
 
+Trilinos 11.3:
+--------------
+
+(*) Created true mix-in interoperability interface classes
+Thyra::Spmd[Multi]VectorBase.  The old node implementation classes
+Thyra::Spmd[Multi]VectorBase where renamed to
+Thyra::Spmd[Multi]VectorDefaultBase and then the public functions were
+factored out into new true mix-in interface classes
+Thyra::Spmd[Multi]VectorBase that are be base classes for
+Thyra::Spmd[Multi]VectorDefaultBase.  The class Thyra::SpmdVectorBase then
+derives from Thyra::SpmdMultiVectorBase (as every other Vector interface class
+in Thyra must derive from the equivalent MultiVector interface class or things
+just don't work in general).  This refactoring maintains backward
+compatibility of external clients of the Thyra::Spmd[Multi]VectorBase
+interfaces, but not subclasses.  Hopefully the only subclasses that exist for
+Thyra::Spmd[Multi]VectorBase live in Trilinos.  Otherwise, technically, this
+is breaking backward compatibility, but not in a very serious way.
+
 
 Trilinos 11.0:
 --------------

@@ -171,13 +171,13 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
   const Teuchos::RCP<const Teuchos::Comm<Ordinal> >
     comm = this->getComm();
 
-  int numProc = 1;
+  int numProcs = 1;
   if (nonnull(comm)) {
-    numProc = comm->getSize();
+    numProcs = comm->getSize();
   }
 
   Ordinal sumLocalSubDims = localSubDim_;
-  if (numProc > 1) {
+  if (numProcs > 1) {
     sumLocalSubDims = SVSU::computeGlobalDim(*comm, localSubDim_);
   }
 
@@ -189,12 +189,12 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
     defaultGlobalDim_ = 0;
   }
   else if (
-    numProc == 1
+    numProcs == 1
     ||
     (
-      sumLocalSubDims / numProc == globalDim
+      sumLocalSubDims / numProcs == globalDim
       &&
-      sumLocalSubDims % numProc == 0
+      sumLocalSubDims % numProcs == 0
       )
     )
   {
@@ -204,6 +204,10 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
     mapCode_ = localSubDim_;
     defaultLocalOffset_ = 0;
     defaultGlobalDim_ = localSubDim_;
+    // ToDo: Comment this back in!
+    //isLocallyReplicated_ = ( numProcs == 1 ? false : true );
+    // NOTE: If it is just one process, there is no reason to mark the space
+    // as locally replicated because there is no replication!
   }
   else {
     // This is a regular distributed vector space

@@ -477,7 +477,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
   const int numProcs = comm->getSize();
   PRINT_VAR(numProcs);
 
-  out << "*** A) Test getting nonconst view directly from SPMD MultiVector  ...\n";
+  out << "*** A) Test getting nonconst MV view directly from SPMD MultiVector  ...\n";
   {
     const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, g_numCols);
     const Scalar val = as<Scalar>(1.5);
@@ -510,7 +510,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
     }
   }
 
-  out << "*** B) Test getting nonconst view indirectly from one-block"
+  out << "*** B) Test getting nonconst MV view indirectly from one-block"
       << " Product MultiVector  ...\n";
   {
     const RCP<const VectorSpaceBase<Scalar> > pvs = 
@@ -551,8 +551,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
     }
   }
 
-  out << "*** C) Test getting nonconst view directly from SPMD Vector  ...\n";
-  if (0) {
+  out << "*** C) Test getting nonconst MV view directly from SPMD Vector  ...\n";
+  if (1) {
     const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
     const Scalar val = as<Scalar>(2.1);
     PRINT_VAR(val);
@@ -579,6 +579,43 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
       TEST_EQUALITY(lsmv.leadingDim(), lsmv.subDim());
       TEST_EQUALITY_CONST(lsmv.colOffset(), 0);
       TEST_EQUALITY_CONST(lsmv.numSubCols(), 1);
+      for (int i = 0; i < lsmv.subDim(); ++i) {
+        TEST_EQUALITY(lsmv(i,0), as<Scalar>(lsmv.globalOffset() + i));
+      }
+    }
+  }
+
+  out << "*** D) Test getting nonconst MV view indirectly from one-block"
+      << " Product MultiVector  ...\n";
+  {
+    const RCP<const VectorSpaceBase<Scalar> > pvs = 
+      productVectorSpace<Scalar>(tuple<RCP<const VectorSpaceBase<Scalar> > >(vs)());
+    const RCP<VectorBase<Scalar> > pv = createMember<Scalar>(pvs);
+    const Scalar val = as<Scalar>(1.8);
+    PRINT_VAR(val);
+    assign<Scalar>(pv.ptr(), val);
+    {
+      out << "*** D.1) Get and change the nonconst view ...\n";
+      RTOpPack::SubMultiVectorView<Scalar> lsmv = 
+        getNonconstLocalSubMultiVectorView<Scalar>(pv);
+      TEST_EQUALITY(lsmv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
+      TEST_EQUALITY(lsmv.subDim(), procRank+1);
+      TEST_EQUALITY(lsmv.leadingDim(), lsmv.subDim());
+      TEST_EQUALITY_CONST(lsmv.colOffset(), 0);
+      TEST_EQUALITY(lsmv.numSubCols(), 1);
+      for (int i = 0; i < lsmv.subDim(); ++i) {
+        lsmv(i,0) = lsmv.globalOffset() + i;
+      }
+    }
+    {
+      out << "*** D.2) Get the same values when we grab const view ...\n";
+      RTOpPack::ConstSubMultiVectorView<Scalar> lsmv = 
+        getLocalSubMultiVectorView<Scalar>(pv);
+      TEST_EQUALITY(lsmv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
+      TEST_EQUALITY(lsmv.subDim(), procRank+1);
+      TEST_EQUALITY(lsmv.leadingDim(), lsmv.subDim());
+      TEST_EQUALITY_CONST(lsmv.colOffset(), 0);
+      TEST_EQUALITY(lsmv.numSubCols(), 1);
       for (int i = 0; i < lsmv.subDim(); ++i) {
         TEST_EQUALITY(lsmv(i,0), as<Scalar>(lsmv.globalOffset() + i));
       }

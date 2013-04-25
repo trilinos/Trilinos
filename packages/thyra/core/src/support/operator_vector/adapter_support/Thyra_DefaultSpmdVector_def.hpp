@@ -44,7 +44,7 @@
 
 
 #include "Thyra_DefaultSpmdVector_decl.hpp"
-#include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_SpmdVectorDefaultBase.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
 
 
@@ -109,15 +109,18 @@ void DefaultSpmdVector<Scalar>::uninitialize(
 }
 
 
-// Overridden from SpmdVectorBase
+// Overridden from SpmdMultiVectorBase
 
 
 template<class Scalar>
 RCP<const SpmdVectorSpaceBase<Scalar> >
-DefaultSpmdVector<Scalar>::spmdSpace() const
+DefaultSpmdVector<Scalar>::spmdSpaceImpl() const
 {
   return spmdSpace_;
 }
+
+
+// Overridden from SpmdVectorBase
 
 
 template<class Scalar>

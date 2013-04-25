@@ -93,15 +93,18 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector() con
 }
 
 
-// Overridden from SpmdVectorBase
+// Overridden from SpmdMultiVectorBase
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const SpmdVectorSpaceBase<Scalar> >
-TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::spmdSpace() const
+TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::spmdSpaceImpl() const
 {
   return tpetraVectorSpace_;
 }
+
+
+// Overridden from SpmdVectorBase
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -121,6 +124,7 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalVectorDataImp
 
 
 // private
+
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template<class TpetraVector_t>

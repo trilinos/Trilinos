@@ -42,7 +42,7 @@
 #ifndef THYRA_Spmd_MULTI_VECTOR_STD_DECL_HPP
 #define THYRA_Spmd_MULTI_VECTOR_STD_DECL_HPP
 
-#include "Thyra_SpmdMultiVectorBase_decl.hpp"
+#include "Thyra_SpmdMultiVectorDefaultBase_decl.hpp"
 
 
 namespace Thyra {
@@ -65,7 +65,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
 template<class Scalar>
-class DefaultSpmdMultiVector : virtual public SpmdMultiVectorBase<Scalar> {
+class DefaultSpmdMultiVector : virtual public SpmdMultiVectorDefaultBase<Scalar> {
 public:
 
   /** @name Constructors/initializers/accessors */
@@ -161,12 +161,6 @@ public:
 
   //@}
 
-  /** @name Overridden public functions from SpmdMultiVectorBase */
-  //@{
-  /** \brief . */
-  RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
-  //@}
-
 protected:
 
   /** @name Overridden protected functions from MultiVectorBase */
@@ -189,6 +183,8 @@ protected:
 
   /** @name Overridden protected functions from SpmdMultiVectorBase */
   //@{
+  /** \brief . */
+  RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpaceImpl() const;
   /** \brief . */
   void getNonconstLocalMultiVectorDataImpl(
     const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim

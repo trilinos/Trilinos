@@ -39,11 +39,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_SPMD_MULTI_VECTOR_BASE_DEF_HPP
-#define THYRA_SPMD_MULTI_VECTOR_BASE_DEF_HPP
+#ifndef THYRA_SPMD_MULTI_VECTOR_DEFAULT_BASE_DEF_HPP
+#define THYRA_SPMD_MULTI_VECTOR_DEFAULT_BASE_DEF_HPP
 
 
-#include "Thyra_SpmdMultiVectorBase_decl.hpp"
+#include "Thyra_SpmdMultiVectorDefaultBase_decl.hpp"
 #include "Thyra_MultiVectorDefaultBase.hpp"
 #include "Thyra_MultiVectorAdapterBase.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
@@ -64,8 +64,11 @@
 namespace Thyra {
 
 
+// Constructors / initializers / accessors
+
+
 template<class Scalar>
-SpmdMultiVectorBase<Scalar>::SpmdMultiVectorBase()
+SpmdMultiVectorDefaultBase<Scalar>::SpmdMultiVectorDefaultBase()
   :in_applyOp_(false),
    globalDim_(0),
    localOffset_(-1),
@@ -74,9 +77,25 @@ SpmdMultiVectorBase<Scalar>::SpmdMultiVectorBase()
 {}
 
 
+// Overridden public functions from MultiVectorAdapterBase
+
+
+template<class Scalar>
+RCP< const ScalarProdVectorSpaceBase<Scalar> >
+SpmdMultiVectorDefaultBase<Scalar>::rangeScalarProdVecSpc() const
+{
+  return Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
+    this->spmdSpace(), true
+    );
+}
+
+
+// Overridden public functions from MultiVectorAdapterBase
+
+
 template<class Scalar>
 RTOpPack::SubMultiVectorView<Scalar>
-SpmdMultiVectorBase<Scalar>::getNonconstLocalSubMultiVector()
+SpmdMultiVectorDefaultBase<Scalar>::getNonconstLocalSubMultiVectorImpl()
 {
   using Teuchos::outArg;
   ArrayRCP<Scalar> localValues;
@@ -95,7 +114,7 @@ SpmdMultiVectorBase<Scalar>::getNonconstLocalSubMultiVector()
 
 template<class Scalar>
 RTOpPack::ConstSubMultiVectorView<Scalar>
-SpmdMultiVectorBase<Scalar>::getLocalSubMultiVector() const
+SpmdMultiVectorDefaultBase<Scalar>::getLocalSubMultiVectorImpl() const
 {
   using Teuchos::outArg;
   ArrayRCP<const Scalar> localValues;
@@ -112,24 +131,11 @@ SpmdMultiVectorBase<Scalar>::getLocalSubMultiVector() const
 }
 
 
-// Overridden public functions from MultiVectorAdapterBase
-
-
-template<class Scalar>
-RCP< const ScalarProdVectorSpaceBase<Scalar> >
-SpmdMultiVectorBase<Scalar>::rangeScalarProdVecSpc() const
-{
-  return Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
-    spmdSpace(), true
-    );
-}
-
-
 // Protected functions overridden from MultiVectorBase
 
 
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
+void SpmdMultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
   const RTOpPack::RTOpT<Scalar> &pri_op,
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
@@ -144,18 +150,18 @@ void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
 
   const Ordinal numCols = this->domain()->dim();
-  const SpmdVectorSpaceBase<Scalar> &spmdSpc = *spmdSpace();
+  const SpmdVectorSpaceBase<Scalar> &spmdSpc = *this->spmdSpace();
 
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     in_applyOp_, std::invalid_argument,
-    "SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...): Error, this method is"
+    "SpmdMultiVectorDefaultBase<>::mvMultiReductApplyOpImpl(...): Error, this method is"
     " being entered recursively which is a clear sign that one of the methods"
     " acquireDetachedView(...), releaseDetachedView(...) or commitDetachedView(...)"
     " was not implemented properly!"
     );
   apply_op_validate_input(
-    "SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...)", *this->domain(),
+    "SpmdMultiVectorDefaultBase<>::mvMultiReductApplyOpImpl(...)", *this->domain(),
     *this->range(), pri_op, multi_vecs, targ_multi_vecs, reduct_objs,
     pri_global_offset_in);
 #endif
@@ -217,7 +223,7 @@ void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
 
 
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::acquireDetachedMultiVectorViewImpl(
+void SpmdMultiVectorDefaultBase<Scalar>::acquireDetachedMultiVectorViewImpl(
   const Range1D &rowRng_in,
   const Range1D &colRng_in,
   RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
@@ -250,7 +256,7 @@ void SpmdMultiVectorBase<Scalar>::acquireDetachedMultiVectorViewImpl(
 
 
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::releaseDetachedMultiVectorViewImpl(
+void SpmdMultiVectorDefaultBase<Scalar>::releaseDetachedMultiVectorViewImpl(
   RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
   ) const
 {
@@ -269,7 +275,7 @@ void SpmdMultiVectorBase<Scalar>::releaseDetachedMultiVectorViewImpl(
 
 
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
+void SpmdMultiVectorDefaultBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
   const Range1D &rowRng_in,
   const Range1D &colRng_in,
   RTOpPack::SubMultiVectorView<Scalar> *sub_mv
@@ -307,7 +313,7 @@ void SpmdMultiVectorBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
 
 
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
+void SpmdMultiVectorDefaultBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
   RTOpPack::SubMultiVectorView<Scalar>* sub_mv
   )
 {
@@ -329,7 +335,7 @@ void SpmdMultiVectorBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
 
 
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::euclideanApply(
+void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
   const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
   const Ptr<MultiVectorBase<Scalar> > &Y,
@@ -380,21 +386,21 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   const VectorSpaceBase<Scalar>
     &Y_range = *Y->range(),
     &X_range = *X.range();
-//	std::cout << "SpmdMultiVectorBase<Scalar>::apply(...): comm = " << comm << std::endl;
+//	std::cout << "SpmdMultiVectorDefaultBase<Scalar>::apply(...): comm = " << comm << std::endl;
   TEUCHOS_TEST_FOR_EXCEPTION(
     ( globalDim_ > localSubDim_ ) && is_null(comm), std::logic_error
-    ,"SpmdMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
+    ,"SpmdMultiVectorDefaultBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
     );
   // ToDo: Write a good general validation function that I can call that will replace
   // all of these TEUCHOS_TEST_FOR_EXCEPTION(...) uses
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     real_trans(M_trans)==NOTRANS && !spmdSpc.isCompatible(Y_range), Exceptions::IncompatibleVectorSpaces
-    ,"SpmdMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
+    ,"SpmdMultiVectorDefaultBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
     );
   TEUCHOS_TEST_FOR_EXCEPTION(
     real_trans(M_trans)==TRANS && !spmdSpc.isCompatible(X_range), Exceptions::IncompatibleVectorSpaces
-    ,"SpmdMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
+    ,"SpmdMultiVectorDefaultBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
     );
 #endif
 
@@ -426,18 +432,18 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
       );
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.stop();
-  std::cout << "\nSpmdMultiVectorBase<Scalar>::apply(...): Time for getting view = " << timer.totalElapsedTime() << " seconds\n";
+  std::cout << "\nSpmdMultiVectorDefaultBase<Scalar>::apply(...): Time for getting view = " << timer.totalElapsedTime() << " seconds\n";
 #endif
 #ifdef TEUCHOS_DEBUG		
   TEUCHOS_TEST_FOR_EXCEPTION(
     real_trans(M_trans)==NOTRANS && ( M_local.numSubCols() != X_local.subDim() || X_local.numSubCols() != Y_local.numSubCols() )
     , Exceptions::IncompatibleVectorSpaces
-    ,"SpmdMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
+    ,"SpmdMultiVectorDefaultBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
     );
   TEUCHOS_TEST_FOR_EXCEPTION(
     real_trans(M_trans)==TRANS && ( M_local.subDim() != X_local.subDim() || X_local.numSubCols() != Y_local.numSubCols() )
     , Exceptions::IncompatibleVectorSpaces
-    ,"SpmdMultiVectorBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
+    ,"SpmdMultiVectorDefaultBase<Scalar>::apply(...MultiVectorBase<Scalar>...): Error!"
     );
 #endif
 
@@ -509,7 +515,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
 
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.stop();
-  std::cout << "\nSpmdMultiVectorBase<Scalar>::apply(...): Time for setting up Y_local_tmp and localBeta = " << timer.totalElapsedTime() << " seconds\n";
+  std::cout << "\nSpmdMultiVectorDefaultBase<Scalar>::apply(...): Time for setting up Y_local_tmp and localBeta = " << timer.totalElapsedTime() << " seconds\n";
 #endif
  
   //
@@ -567,7 +573,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.stop();
   std::cout
-    << "\nSpmdMultiVectorBase<Scalar>::apply(...): Time for GEMM = "
+    << "\nSpmdMultiVectorDefaultBase<Scalar>::apply(...): Time for GEMM = "
     << timer.totalElapsedTime() << " seconds\n";
 #endif
 
@@ -605,7 +611,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.stop();
   std::cout 
-    << "\nSpmdMultiVectorBase<Scalar>::apply(...): Total time = "
+    << "\nSpmdMultiVectorDefaultBase<Scalar>::apply(...): Total time = "
     << timerTotal.totalElapsedTime() << " seconds\n";
 #endif
 
@@ -616,7 +622,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
 
 
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::updateSpmdSpace()
+void SpmdMultiVectorDefaultBase<Scalar>::updateSpmdSpace()
 {
   if(globalDim_ == 0) {
     const SpmdVectorSpaceBase<Scalar> *l_spmdSpace = this->spmdSpace().get();
@@ -637,13 +643,13 @@ void SpmdMultiVectorBase<Scalar>::updateSpmdSpace()
 
 
 template<class Scalar>
-Range1D SpmdMultiVectorBase<Scalar>::validateRowRange( const Range1D &rowRng_in ) const
+Range1D SpmdMultiVectorDefaultBase<Scalar>::validateRowRange( const Range1D &rowRng_in ) const
 {
   const Range1D rowRng = Teuchos::full_range(rowRng_in,0,globalDim_-1);
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     !( 0 <= rowRng.lbound() && rowRng.ubound() < globalDim_ ), std::invalid_argument
-    ,"SpmdMultiVectorBase<Scalar>::validateRowRange(rowRng): Error, the range rowRng = ["
+    ,"SpmdMultiVectorDefaultBase<Scalar>::validateRowRange(rowRng): Error, the range rowRng = ["
     <<rowRng.lbound()<<","<<rowRng.ubound()<<"] is not "
     "in the range [0,"<<(globalDim_-1)<<"]!"
     );
@@ -653,13 +659,13 @@ Range1D SpmdMultiVectorBase<Scalar>::validateRowRange( const Range1D &rowRng_in 
 
 
 template<class Scalar>
-Range1D SpmdMultiVectorBase<Scalar>::validateColRange( const Range1D &colRng_in ) const
+Range1D SpmdMultiVectorDefaultBase<Scalar>::validateColRange( const Range1D &colRng_in ) const
 {
   const Range1D colRng = Teuchos::full_range(colRng_in,0,numCols_-1);
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     !(0 <= colRng.lbound() && colRng.ubound() < numCols_), std::invalid_argument
-    ,"SpmdMultiVectorBase<Scalar>::validateColRange(colRng): Error, the range colRng = ["
+    ,"SpmdMultiVectorDefaultBase<Scalar>::validateColRange(colRng): Error, the range colRng = ["
     <<colRng.lbound()<<","<<colRng.ubound()<<"] is not "
     "in the range [0,"<<(numCols_-1)<<"]!"
     );
@@ -671,4 +677,4 @@ Range1D SpmdMultiVectorBase<Scalar>::validateColRange( const Range1D &colRng_in 
 } // end namespace Thyra
 
 
-#endif // THYRA_SPMD_MULTI_VECTOR_BASE_DEF_HPP
+#endif // THYRA_SPMD_MULTI_VECTOR_DEFAULT_BASE_DEF_HPP

@@ -197,7 +197,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, parallelConstructGlob
   TEST_EQUALITY(vs->getComm(), comm);
   TEST_EQUALITY(vs->localOffset(), as<Ordinal>(comm->getRank()*g_localDim));
   TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));
-  TEST_EQUALITY_CONST(vs->isLocallyReplicated(), false);
+  //TEST_EQUALITY_CONST(vs->isLocallyReplicated(), false);
+  TEST_EQUALITY(vs->isLocallyReplicated(), (comm->getSize()==1));
   TEST_EQUALITY(vs->dim(), as<Ordinal>(comm->getSize()*g_localDim));
 }
 

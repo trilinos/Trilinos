@@ -46,7 +46,7 @@
 //#define THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
 
 #include "Thyra_DefaultSpmdMultiVector_decl.hpp"
-#include "Thyra_SpmdMultiVectorBase.hpp"
+#include "Thyra_SpmdMultiVectorDefaultBase.hpp"
 #include "Thyra_VectorSpaceFactoryBase.hpp"
 #include "Thyra_DefaultSpmdVector.hpp"
 #include "Teuchos_Assert.hpp"
@@ -237,20 +237,6 @@ DefaultSpmdMultiVector<Scalar>::domainScalarProdVecSpc() const
 }
 
 
-// Overridden public functions from SpmdMultiVectorBase
-
-
-template<class Scalar>
-RCP<const SpmdVectorSpaceBase<Scalar> >
-DefaultSpmdMultiVector<Scalar>::spmdSpace() const
-{
-#ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nSpmdMultiVectorStd<Scalar>::spmdSpace() const called!\n";
-#endif
-  return spmdRangeSpace_;
-}
-
-
 // Overridden protected functions from MultiVectorBase
 
 
@@ -353,6 +339,17 @@ DefaultSpmdMultiVector<Scalar>::nonconstNonContigSubViewImpl(
 
 
 // Overridden protected members from SpmdMultiVectorBase
+
+
+template<class Scalar>
+RCP<const SpmdVectorSpaceBase<Scalar> >
+DefaultSpmdMultiVector<Scalar>::spmdSpaceImpl() const
+{
+#ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
+  std::cerr << "\nSpmdMultiVectorStd<Scalar>::spmdSpace() const called!\n";
+#endif
+  return spmdRangeSpace_;
+}
 
 
 template<class Scalar>

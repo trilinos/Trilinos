@@ -43,7 +43,7 @@
 #define THYRA_DEFAULT_SPMD_VECTOR_DECL_HPP
 
 
-#include "Thyra_SpmdVectorBase_decl.hpp"
+#include "Thyra_SpmdVectorDefaultBase_decl.hpp"
 
 
 namespace Thyra {
@@ -66,7 +66,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
 template<class Scalar>
-class DefaultSpmdVector : virtual public SpmdVectorBase<Scalar> {
+class DefaultSpmdVector : virtual public SpmdVectorDefaultBase<Scalar> {
 public:
 
   /** @name Constructors/initializers */
@@ -143,11 +143,16 @@ public:
   
   //@}
 
-  /** @name Overridden from SpmdVectorBase */
+  /** @name Overridden from SpmdMultiVectorBase */
   //@{
 
   /** \brief . */
-  RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
+  RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpaceImpl() const;
+
+  //@}
+
+  /** @name Overridden from SpmdVectorBase */
+  //@{
   /** \brief . */
   void getNonconstLocalVectorDataImpl(const Ptr<ArrayRCP<Scalar> > &localValues);
   /** \brief . */

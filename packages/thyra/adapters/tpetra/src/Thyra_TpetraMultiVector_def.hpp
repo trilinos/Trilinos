@@ -108,17 +108,6 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::domainScalarProdVecSp
 }
 
 
-// Overridden public functions from SpmdMultiVectorBase
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const SpmdVectorSpaceBase<Scalar> >
-TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::spmdSpace() const
-{
-  return tpetraVectorSpace_;
-}
-
-
 // Overridden protected functions from MultiVectorBase
 
 
@@ -257,6 +246,14 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconstNonContigSubV
 
 
 // Overridden protected members from SpmdMultiVectorBase
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const SpmdVectorSpaceBase<Scalar> >
+TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::spmdSpaceImpl() const
+{
+  return tpetraVectorSpace_;
+}
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

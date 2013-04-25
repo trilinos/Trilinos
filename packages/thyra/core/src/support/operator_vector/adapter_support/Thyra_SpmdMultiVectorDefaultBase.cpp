@@ -41,16 +41,16 @@
 // @HEADER
 */
 
-#include "Thyra_SpmdMultiVectorBase_decl.hpp"
+#include "Thyra_SpmdMultiVectorDefaultBase_decl.hpp"
 
 #ifdef HAVE_THYRA_EXPLICIT_INSTANTIATION
 
-#include "Thyra_SpmdMultiVectorBase_def.hpp"
+#include "Thyra_SpmdMultiVectorDefaultBase_def.hpp"
 #include "Teuchos_ExplicitInstantiationHelpers.hpp"
 
 namespace Thyra {
 
-TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(SpmdMultiVectorBase)
+TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(SpmdMultiVectorDefaultBase)
 
 } // namespace Thyra
 
