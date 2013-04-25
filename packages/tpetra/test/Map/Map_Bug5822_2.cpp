@@ -49,9 +49,13 @@
 #include <Teuchos_TimeMonitor.hpp>
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#include "Tpetra_Map_def.hpp"
-#include "Tpetra_Directory_def.hpp"
-#include "Tpetra_HashTable_def.hpp"
+#  include "Tpetra_Map_def.hpp"
+#  include "Tpetra_Directory_def.hpp"
+#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
+#    include "Tpetra_Details_FixedHashTable_def.hpp"
+#  else
+#    include "Tpetra_HashTable_def.hpp"
+#  endif // HAVE_TPETRA_FIXED_HASH_TABLE
 #endif
 
 using Tpetra::global_size_t;

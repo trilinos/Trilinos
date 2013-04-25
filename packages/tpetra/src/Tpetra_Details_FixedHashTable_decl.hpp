@@ -78,10 +78,22 @@ namespace Details {
 template<typename KeyType, typename ValueType>
 class FixedHashTable : public Teuchos::Describable {
 public:
-  //! Constructor: Add (keys[i], i) to the hash table, for all i.
+  /// \brief Constructor: Add <tt>(keys[i], i)</tt> to the table, 
+  ///   for i = 0, 1, ..., <tt>keys.size()</tt>.
   FixedHashTable (const ArrayView<const KeyType>& keys);
-  //! Copy constructor: Makes a shallow copy of the data.
+
+  /// \brief Constructor: Add <tt>(keys[i], startingValue + i)</tt> to
+  ///   the table, for i = 0, 1, ..., <tt>keys.size()</tt>.
+  ///
+  /// This version is useful if Map wants to exclude an initial
+  /// sequence of contiguous GIDs from the table, and start with a
+  /// given LID.
+  FixedHashTable (const ArrayView<const KeyType>& keys, 
+		  const ValueType startingValue);
+
+  //! Copy constructor: Make a shallow copy of the data.
   FixedHashTable (const FixedHashTable& obj);
+
   //! Get the value corresponding to the given key.
   ValueType get (const KeyType key) const;
 
@@ -117,6 +129,12 @@ private:
   ///
   /// This is redundant, but we keep it around to speed up get().
   const std::pair<KeyType, ValueType>* rawVal_;
+
+  /// \brief Initialize: Add <tt>(keys[i], startingValue + i)</tt> to
+  ///   the table, for i = 0, 1, ..., <tt>keys.size()</tt>.
+  void
+  init (const ArrayView<const KeyType>& keys, 
+	const ValueType startingValue);
 
   //! The hash function; it returns \c int no matter the value type.
   int hashFunc (const KeyType key) const;

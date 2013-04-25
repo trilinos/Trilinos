@@ -51,6 +51,109 @@
 #include <Teuchos_as.hpp>
 #include "MurmurHash3.hpp"
 
+namespace Mine {
+  template<class T>
+  std::string toString (const T& x);
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template<>
+  std::string
+  toString<Teuchos::ArrayView<const std::pair<long long, int> > > (const Teuchos::ArrayView<const std::pair<long long, int> >& x) {
+    typedef Teuchos::ArrayView<int>::size_type size_type;
+    std::ostringstream os;
+    os << "{";
+    for (size_type k = 0; k < x.size (); ++k) {
+      const long long first = x[k].first;
+      const int second = x[k].second;
+      os << "(" << first << "," << second << ")";
+      if (k + 1 < x.size ()) {
+	os << ", ";
+      }
+    }
+    os << "}";
+    return os.str ();
+  }
+
+  template<>
+  std::string
+  toString<Teuchos::ArrayView<std::pair<long long, int> > > (const Teuchos::ArrayView<std::pair<long long, int> >& x) {
+    return Mine::toString<Teuchos::ArrayView<const std::pair<long long, int> > > (x.getConst ());
+  }
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+  template<>
+  std::string
+  toString<Teuchos::ArrayView<const std::pair<unsigned int, int> > > (const Teuchos::ArrayView<const std::pair<unsigned int, int> >& x) {
+    typedef Teuchos::ArrayView<int>::size_type size_type;
+    std::ostringstream os;
+    os << "{";
+    for (size_type k = 0; k < x.size (); ++k) {
+      const unsigned int first = x[k].first;
+      const int second = x[k].second;
+      os << "(" << first << "," << second << ")";
+      if (k + 1 < x.size ()) {
+	os << ", ";
+      }
+    }
+    os << "}";
+    return os.str ();
+  }
+
+  template<>
+  std::string
+  toString<Teuchos::ArrayView<std::pair<unsigned int, int> > > (const Teuchos::ArrayView<std::pair<unsigned int, int> >& x) {
+    return Mine::toString<Teuchos::ArrayView<const std::pair<unsigned int, int> > > (x.getConst ());
+  }
+
+  template<>
+  std::string
+  toString<Teuchos::ArrayView<const std::pair<long, int> > > (const Teuchos::ArrayView<const std::pair<long, int> >& x) {
+    typedef Teuchos::ArrayView<int>::size_type size_type;
+    std::ostringstream os;
+    os << "{";
+    for (size_type k = 0; k < x.size (); ++k) {
+      const long first = x[k].first;
+      const int second = x[k].second;
+      os << "(" << first << "," << second << ")";
+      if (k + 1 < x.size ()) {
+	os << ", ";
+      }
+    }
+    os << "}";
+    return os.str ();
+  }
+
+  template<>
+  std::string
+  toString<Teuchos::ArrayView<std::pair<long, int> > > (const Teuchos::ArrayView<std::pair<long, int> >& x) {
+    return Mine::toString<Teuchos::ArrayView<const std::pair<long, int> > > (x.getConst ());
+  }
+
+  template<>
+  std::string
+  toString<Teuchos::ArrayView<const std::pair<int, int> > > (const Teuchos::ArrayView<const std::pair<int, int> >& x) {
+    typedef Teuchos::ArrayView<int>::size_type size_type;
+    std::ostringstream os;
+    os << "{";
+    for (size_type k = 0; k < x.size (); ++k) {
+      const int first = x[k].first;
+      const int second = x[k].second;
+      os << "(" << first << "," << second << ")";
+      if (k + 1 < x.size ()) {
+	os << ", ";
+      }
+    }
+    os << "}";
+    return os.str ();
+  }
+
+  template<>
+  std::string
+  toString<Teuchos::ArrayView<std::pair<int, int> > > (const Teuchos::ArrayView<std::pair<int, int> >& x) {
+    return Mine::toString<Teuchos::ArrayView<const std::pair<int, int> > > (x.getConst ());
+  }
+} // namespace Mine
+
 
 namespace Tpetra {
 namespace Details {
@@ -67,9 +170,16 @@ int FixedHashTable<KeyType, ValueType>::hashFunc (const KeyType key) const {
   // function. However, this is not a good hash function for general
   // sets of keys.  For our typical use case, this is good.  Use
   // Murmur hash if the maps are sparse.
+  const unsigned int seed = (2654435761U);
+
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    size_ == 0, std::logic_error, "Tpetra::Details::FixedHashTable::hashFunc: "
+    "size_ == 0.  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
   const int intkey = (int) ((key & 0x000000007fffffffLL) +
-                            ((key & 0x7fffffff80000000LL) >> 31));
-  const unsigned int seed = 2654435761U;
+			    ((key & 0x7fffffff80000000LL) >> 31));
   return (int) ((seed ^ intkey) % size_);
 #endif
 }
@@ -141,6 +251,26 @@ FixedHashTable (const ArrayView<const KeyType>& keys) :
   rawPtr_ (NULL),
   rawVal_ (NULL)
 {
+  init (keys, Teuchos::as<ValueType> (0));
+}
+
+template<typename KeyType, typename ValueType>
+FixedHashTable<KeyType, ValueType>::
+FixedHashTable (const ArrayView<const KeyType>& keys,
+		const ValueType startingValue) :
+  size_ (0),
+  rawPtr_ (NULL),
+  rawVal_ (NULL)
+{
+  init (keys, startingValue);
+}
+
+template<typename KeyType, typename ValueType>
+void
+FixedHashTable<KeyType, ValueType>::
+init (const ArrayView<const KeyType>& keys,
+      const ValueType startingValue)
+{
   using Teuchos::arcp;
   using Teuchos::arcp_const_cast;
   using Teuchos::ArrayRCP;
@@ -148,6 +278,19 @@ FixedHashTable (const ArrayView<const KeyType>& keys) :
 
   const size_type numKeys = keys.size ();
   const size_type size = getRecommendedSize (as<int> (numKeys));
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    size == 0 && numKeys != 0, std::logic_error, 
+    "Tpetra::Details::FixedHashTable constructor: "
+    "getRecommendedSize(" << numKeys << ") returned zero, "
+    "even though the number of keys " << numKeys << " is nonzero.  "
+    "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+  
+  // We have to set the size_ internal state before calling the hash
+  // function, since the hash function uses it.
+  size_ = as<KeyType> (size);
+
   ArrayRCP<size_type> ptr (size + 1, 0);
   // The constructor that takes just a size argument automatically
   // fills the data.  We don't need to waste time filling it here
@@ -170,14 +313,21 @@ FixedHashTable (const ArrayView<const KeyType>& keys) :
   // Compute number of entries in each hash table position.
   for (size_type k = 0; k < numKeys; ++k) {
     const int hashVal = hashFunc (keys[k]);
-    ++ptr[hashVal];
+    // Shift over one, so that counts[j] = ptr[j+1].  See below.
+    ++ptr[hashVal+1];
   }
 
-  // Compute row offsets via prefix sum.
+  // Compute row offsets via prefix sum:
+  //
+  // ptr[i+1] = \sum_{j=0}^{i} counts[j].
+  //
+  // Thus, ptr[i+1] - ptr[i] = counts[i], so that ptr[i+1] = ptr[i] +
+  // counts[i].  If we stored counts[i] in ptr[i+1] on input, then the
+  // formula is ptr[i+1] += ptr[i].
   for (size_type i = 0; i < size; ++i) {
     ptr[i+1] += ptr[i];
   }
-  ptr[0] = 0;
+  //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
   ArrayRCP<size_type> curRowStart (size, 0);
@@ -185,23 +335,32 @@ FixedHashTable (const ArrayView<const KeyType>& keys) :
   // Fill in the hash table.
   for (size_type k = 0; k < numKeys; ++k) {
     const KeyType key = keys[k];
-    const ValueType theVal = as<ValueType> (k);
+    const ValueType theVal = startingValue + as<ValueType> (k);
     const int hashVal = hashFunc (key);
 
     const size_type offset = curRowStart[hashVal];
     const size_type curPos = ptr[hashVal] + offset;
+
     val[curPos].first = key;
     val[curPos].second = theVal;
     ++curRowStart[hashVal];
   }
 
-  // "Commit" the computed size and arrays.  Up to now, there have
-  // been no externally visible side effects.
-  size_ = as<KeyType> (size);
+  // "Commit" the computed arrays.
   ptr_ = arcp_const_cast<const size_type> (ptr);
-  val_ = arcp_const_cast<const std::pair<KeyType, ValueType> > (val);
+
+  // FIXME (mfh 25 Apr 2013) arcp_const_cast on val_ and
+  // val_.getRawPtr() both cause a hang with MPI for some reason.  Not
+  // sure what's going on.  Anyway, calling val.release(), recreating
+  // val_ by hand, and using the released raw pointer as rawVal_,
+  // seems to fix the problem.
+
+  //val_ = arcp_const_cast<const std::pair<KeyType, ValueType> > (val);
+  const std::pair<KeyType, ValueType>* valRaw = val.release ();
+  val_ = arcp<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
   rawPtr_ = ptr_.getRawPtr ();
-  rawVal_ = val_.getRawPtr ();
+  //  rawVal_ = val_.getRawPtr ();
+  rawVal_ = valRaw;
 }
 
 template<typename KeyType, typename ValueType>
@@ -220,6 +379,8 @@ FixedHashTable<KeyType, ValueType>::
 get (const KeyType key) const
 {
   const int hashVal = hashFunc (key);
+#ifdef HAVE_TPETRA_DEBUG
+
   const size_type start = ptr_[hashVal];
   const size_type end = ptr_[hashVal+1];
   for (size_type k = start; k < end; ++k) {
@@ -227,6 +388,15 @@ get (const KeyType key) const
       return val_[k].second;
     }
   }
+#else
+  const size_type start = rawPtr_[hashVal];
+  const size_type end = rawPtr_[hashVal+1];
+  for (size_type k = start; k < end; ++k) {
+    if (rawVal_[k].first == key) {
+      return rawVal_[k].second;
+    }
+  }
+#endif // HAVE_TPETRA_DEBUG
   return Teuchos::OrdinalTraits<ValueType>::invalid ();
 }
 
