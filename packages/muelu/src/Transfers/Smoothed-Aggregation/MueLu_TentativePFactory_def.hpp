@@ -348,8 +348,8 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
         if (NSDim == 1) {
           // Only one nullspace vector, so normalize by hand
           Magnitude dtemp=0;
-          for (size_t k=0; k<static_cast<size_t>(myAggSize); ++k) {
-	    Magnitude tmag = Teuchos::ScalarTraits<SC>::magnitude(localQR(k,0));
+          for (size_t k = 0; k < Teuchos::as<size_t>(myAggSize); ++k) {
+              Magnitude tmag = Teuchos::ScalarTraits<SC>::magnitude(localQR(k,0));
             dtemp += tmag*tmag;
           }
           dtemp = Teuchos::ScalarTraits<Magnitude>::squareroot(dtemp);
@@ -391,7 +391,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
            qrSolver.formQ();
            Teuchos::RCP<Teuchos::SerialDenseMatrix<LO,SC> > qFactor = qrSolver.getQ();
            for (size_t j=0; j<NSDim; j++) {
-             for (size_t i=0; i<static_cast<size_t>(myAggSize); i++) {
+             for (size_t i = 0; i < Teuchos::as<size_t>(myAggSize); i++) {
                localQR(i,j) = (*qFactor)(i,j);
              }
            }

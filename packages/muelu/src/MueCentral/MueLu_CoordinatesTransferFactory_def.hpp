@@ -108,7 +108,7 @@ namespace MueLu {
     Array<GO>           elementList(numElements);
 
     // Amalgamate the map
-    for (LO i = 0; i < static_cast<LO>(numElements); i++)
+    for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
       elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
 
     RCP<const Map> coarseCoordMap = MapFactory        ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
