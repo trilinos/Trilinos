@@ -87,7 +87,7 @@ Thyra::getLocalSubVectorView(
   TEUCHOS_TEST_FOR_EXCEPTION(
     !(p_v->productSpace()->numBlocks() == 1), 
     std::logic_error,
-    "Error, the function getNonconstLocalSubVectorView() can only return"
+    "Error, the function getLocalSubVectorView() can only return"
     " a contiguous view of local SPMD data from a product vector with a single"
     " block (which also must be able to give up a product view.");
   return getLocalSubVectorView<Scalar>(p_v->getVectorBlock(0));
@@ -97,20 +97,44 @@ Thyra::getLocalSubVectorView(
 template<class Scalar>
 RTOpPack::SubMultiVectorView<Scalar>
 Thyra::getNonconstLocalSubMultiVectorView(
-  const RCP<MultiVectorBase<Scalar> > &vec)
+  const RCP<MultiVectorBase<Scalar> > &multivec)
 {
-  return Teuchos::rcp_dynamic_cast<SpmdMultiVectorBase<Scalar> >(vec, true)
-    ->getNonconstLocalSubMultiVector();
+  const RCP<SpmdMultiVectorBase<Scalar> > spmd_mv = 
+    Teuchos::rcp_dynamic_cast<SpmdMultiVectorBase<Scalar> >(multivec);
+  if (nonnull(spmd_mv)) {
+    return spmd_mv->getNonconstLocalSubMultiVector();
+  }
+  const RCP<ProductMultiVectorBase<Scalar> > p_mv = 
+    Teuchos::rcp_dynamic_cast<ProductMultiVectorBase<Scalar> >(multivec, true);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !(p_mv->productSpace()->numBlocks() == 1), 
+    std::logic_error,
+    "Error, the function getNonconstLocalSubVectorView() can only return"
+    " a contiguous view of local SPMD data from a product vector with a single"
+    " block (which also must be able to give up a product view.");
+  return getNonconstLocalSubMultiVectorView<Scalar>(p_mv->getNonconstMultiVectorBlock(0));
 }
 
 
 template<class Scalar>
 RTOpPack::ConstSubMultiVectorView<Scalar>
 Thyra::getLocalSubMultiVectorView(
-  const RCP<const MultiVectorBase<Scalar> > &vec)
+  const RCP<const MultiVectorBase<Scalar> > &multivec)
 {
-  return Teuchos::rcp_dynamic_cast<const SpmdMultiVectorBase<Scalar> >(vec, true)
-    ->getLocalSubMultiVector();
+  const RCP<const SpmdMultiVectorBase<Scalar> > spmd_mv = 
+    Teuchos::rcp_dynamic_cast<const SpmdMultiVectorBase<Scalar> >(multivec);
+  if (nonnull(spmd_mv)) {
+    return spmd_mv->getLocalSubMultiVector();
+  }
+  const RCP<const ProductMultiVectorBase<Scalar> > p_mv = 
+    Teuchos::rcp_dynamic_cast<const ProductMultiVectorBase<Scalar> >(multivec, true);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !(p_mv->productSpace()->numBlocks() == 1), 
+    std::logic_error,
+    "Error, the function getLocalSubVectorView() can only return"
+    " a contiguous view of local SPMD data from a product vector with a single"
+    " block (which also must be able to give up a product view.");
+  return getLocalSubMultiVectorView<Scalar>(p_mv->getMultiVectorBlock(0));
 }
 
 
