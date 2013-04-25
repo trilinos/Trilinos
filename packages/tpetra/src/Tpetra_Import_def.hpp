@@ -698,7 +698,6 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef Import<LO, GO, Node> import_type;
-    typedef Map<LO, GO, Node> map_type;
 
     RCP<const map_type> srcMap = this->getSourceMap ();
     RCP<const map_type> tgtMap1 = this->getTargetMap ();
