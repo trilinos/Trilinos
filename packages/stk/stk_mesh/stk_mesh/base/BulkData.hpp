@@ -39,28 +39,6 @@
 namespace stk {
 namespace mesh {
 
-template <typename Tag>
-void profile_memory_usage(std::string name, ParallelMachine parallel, int parallel_rank)
-{
-  size_t memory[3];
-  size_t max_memory[3];
-
-  typedef stk::detail::memory_usage<Tag> DUsage;
-
-  memory[0] = DUsage::peak_memory;
-  memory[1] = DUsage::current_memory;
-  memory[2] = DUsage::num_allocations;
-
-  all_reduce_max(parallel, memory, max_memory, 3);
-
-  if (parallel_rank == 0) {
-    std::cout << "STK_PROFILE_MEMORY " << name << " per process max:" << std::endl;
-    std::cout << "             peak = " << max_memory[0] << " (" << human_bytes(max_memory[0]) << ")" << std::endl;
-    std::cout << "          current = " << max_memory[1] << " (" << human_bytes(max_memory[1]) << ")" << std::endl;
-    std::cout << "  num_allocations = " << max_memory[2] << std::endl;
-  }
-}
-
 struct EntityCommListInfo
 {
   EntityKey key;

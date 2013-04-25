@@ -1,9 +1,13 @@
 #ifndef STK_UTIL_STK_UTIL_UTIL_TRACKING_ALLOCATOR_HPP
 #define STK_UTIL_STK_UTIL_UTIL_TRACKING_ALLOCATOR_HPP
 
+#include <iostream>
+#include <iomanip>
 #include <limits>
 #include <algorithm>
 #include <boost/type_traits/is_same.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/util/memory_util.hpp>
 
 namespace stk {
 
@@ -130,6 +134,30 @@ bool operator==(const tracking_allocator<T1,Tag1>&, const tracking_allocator<T2,
 template <typename T1, typename T2, typename Tag1, typename Tag2>
 bool operator!=(const tracking_allocator<T1,Tag1>&, const tracking_allocator<T2,Tag2>&)
 { return !boost::is_same<Tag1,Tag2>::value; }
+
+
+template <typename Tag>
+void profile_memory_usage(std::string name, ParallelMachine parallel, int parallel_rank)
+{
+  size_t memory[3];
+  size_t max_memory[3];
+
+  typedef stk::detail::memory_usage<Tag> DUsage;
+
+  memory[0] = DUsage::peak_memory;
+  memory[1] = DUsage::current_memory;
+  memory[2] = DUsage::num_allocations;
+
+  all_reduce_max(parallel, memory, max_memory, 3);
+
+  if (parallel_rank == 0) {
+    std::cout << "STK_PROFILE_MEMORY " << name << " per process max:" << std::endl;
+    std::cout << "             peak = " << max_memory[0] << " (" << human_bytes(max_memory[0]) << ")" << std::endl;
+    std::cout << "          current = " << max_memory[1] << " (" << human_bytes(max_memory[1]) << ")" << std::endl;
+    std::cout << "  num_allocations = " << max_memory[2] << std::endl;
+  }
+}
+
 
 } // namespace stk
 
