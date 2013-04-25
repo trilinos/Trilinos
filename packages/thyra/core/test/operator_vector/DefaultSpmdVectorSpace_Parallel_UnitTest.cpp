@@ -62,8 +62,8 @@ int g_localDim = 4;
 bool g_show_all_tests = false;
 bool g_dump_objects = false;
 bool g_dumpRTOps = false;
-bool g_emptyProcVectorSpaceTester = false;
 bool g_emptyProcSimpleMultiVecAdjointApply = false;
+bool g_emptyProcVectorSpaceTester = false;
 
 
 TEUCHOS_STATIC_SETUP()
@@ -80,10 +80,10 @@ TEUCHOS_STATIC_SETUP()
     "dump-rtops", "no-dump-rtops", &g_dumpRTOps,
     "Set if RTOps are dumped or not." );
   Teuchos::UnitTestRepository::getCLP().setOption(
-    "run-vec-spc-tester", "no-run-vec-spc-tester", &g_emptyProcVectorSpaceTester,
+    "run-simple-mv-adjoint", "run-simple-mv-adjoint", &g_emptyProcSimpleMultiVecAdjointApply,
     "Temporary option!");
   Teuchos::UnitTestRepository::getCLP().setOption(
-    "run-simple-mv-adjoint", "run-simple-mv-adjoint", &g_emptyProcSimpleMultiVecAdjointApply,
+    "run-vec-spc-tester", "no-run-vec-spc-tester", &g_emptyProcVectorSpaceTester,
     "Temporary option!");
 }
 

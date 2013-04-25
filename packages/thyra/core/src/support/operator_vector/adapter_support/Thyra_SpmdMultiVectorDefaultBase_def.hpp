@@ -346,6 +346,7 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::Workspace;
+  using Teuchos::rcpFromPtr;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
 
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
@@ -412,7 +413,13 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.start();
 #endif
- 
+
+  const RTOpPack::SubMultiVectorView<Scalar>
+    Y_local = getNonconstLocalSubMultiVectorView<Scalar>(rcpFromPtr(Y));
+  const RTOpPack::ConstSubMultiVectorView<Scalar>
+    M_local = getLocalSubMultiVectorView<Scalar>(rcpFromRef(*this)),
+    X_local = getLocalSubMultiVectorView<Scalar>(rcpFromRef(X));
+/*
   DetachedMultiVectorView<Scalar>
     Y_local(
       *Y,
@@ -431,6 +438,7 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
       ,real_trans(M_trans)==NOTRANS ? Range1D() : Range1D(localOffset_,localOffset_+localSubDim_-1)
       ,Range1D()
       );
+*/
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.stop();
   std::cout << "\nSpmdMultiVectorDefaultBase<Scalar>::apply(...): Time for getting view = " << timer.totalElapsedTime() << " seconds\n";
@@ -498,8 +506,11 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
     if( localOffset_ == 0 ) {
       // Root process: Must copy Y_local into Y_local_tmp
       for( int j = 0; j < Y_local.numSubCols(); ++j ) {
-        Scalar *Y_local_j = Y_local.values() + Y_local.leadingDim()*j;
-        std::copy( Y_local_j, Y_local_j + Y_local.subDim(), Y_local_tmp.values() + Y_local_tmp.leadingDim()*j );
+        typedef typename ArrayRCP<const Scalar>::const_iterator Y_local_values_iter_t;
+        const Y_local_values_iter_t Y_local_j =
+          Y_local.values().begin() + Y_local.leadingDim()*j;
+        std::copy( Y_local_j, Y_local_j + Y_local.subDim(),
+          Y_local_tmp.values().begin() + Y_local_tmp.leadingDim()*j );
       }
       localBeta = beta;
     }
@@ -510,7 +521,7 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
   }
   else {
     // Local
-    Y_local_tmp = Y_local.smv(); // Shallow copy only!
+    Y_local_tmp = Y_local; // Shallow copy only!
     localBeta = beta;
   }
 
@@ -558,12 +569,12 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
       ,Y_local.numSubCols() // N
       ,real_trans(M_trans)==NOTRANS ? M_local.numSubCols() : M_local.subDim() // K
       ,alpha // ALPHA
-      ,const_cast<Scalar*>(M_local.values()) // A
+      ,const_cast<Scalar*>(M_local.values().getRawPtr()) // A
       ,std::max((int) M_local.leadingDim(),1) // LDA
-      ,const_cast<Scalar*>(X_local.values()) // B
+      ,const_cast<Scalar*>(X_local.values().getRawPtr()) // B
       ,std::max((int) X_local.leadingDim(),1) // LDB
       ,localBeta // BETA
-      ,Y_local_tmp.values().get() // C
+      ,Y_local_tmp.values().getRawPtr() // C
       ,std::max((int) Y_local_tmp.leadingDim(),1) // LDC
       );
   }
@@ -593,9 +604,13 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
         &Y_local_final_buff[0]
         );
       // Load Y_local_final_buff back into Y_local
-      const Scalar *Y_local_final_buff_ptr = &Y_local_final_buff[0];
+      typedef typename ArrayView<const Scalar>::const_iterator Y_local_final_buff_iter_t;
+      const ArrayView<const Scalar> Y_local_final_buff_av = Y_local_final_buff;
+      Y_local_final_buff_iter_t Y_local_final_buff_ptr = Y_local_final_buff_av.begin();
       for( int j = 0; j < Y_local.numSubCols(); ++j ) {
-        Scalar *Y_local_ptr = Y_local.values() + Y_local.leadingDim()*j;
+        typedef typename ArrayRCP<Scalar>::iterator Y_local_values_iter_t;
+        Y_local_values_iter_t Y_local_ptr =
+          Y_local.values().begin() + Y_local.leadingDim()*j;
         for( int i = 0; i < Y_local.subDim(); ++i ) {
           (*Y_local_ptr++) = (*Y_local_final_buff_ptr++);
         }

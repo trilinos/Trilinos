@@ -171,7 +171,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultSpmdVectorSpace_ParallelUnitTest
   SOURCES
     DefaultSpmdVectorSpace_Parallel_UnitTest.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   )
 TRIBITS_ADD_TEST(

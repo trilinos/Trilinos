@@ -112,7 +112,7 @@ getLocalSubVectorView(
 template<class Scalar>
 RTOpPack::SubMultiVectorView<Scalar>
 getNonconstLocalSubMultiVectorView(
-  const RCP<MultiVectorBase<Scalar> > &vec);
+  const RCP<MultiVectorBase<Scalar> > &multivec);
 
 
 /** \brief Return a contiguous const semi-persisting view of the local process
@@ -123,7 +123,7 @@ getNonconstLocalSubMultiVectorView(
 template<class Scalar>
 RTOpPack::ConstSubMultiVectorView<Scalar>
 getLocalSubMultiVectorView(
-  const RCP<const MultiVectorBase<Scalar> > &vec);
+  const RCP<const MultiVectorBase<Scalar> > &multivec);
 
 
 } // end namespace Thyra
