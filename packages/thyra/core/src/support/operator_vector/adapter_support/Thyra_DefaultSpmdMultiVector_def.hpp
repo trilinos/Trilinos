@@ -356,12 +356,12 @@ DefaultSpmdMultiVector<Scalar>::nonconstNonContigSubViewImpl(
 
 
 template<class Scalar>
-void DefaultSpmdMultiVector<Scalar>::getNonconstLocalDataImpl(
+void DefaultSpmdMultiVector<Scalar>::getNonconstLocalMultiVectorDataImpl(
   const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
   )
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nSpmdMultiVectorStd<Scalar>::getLocalDataImpl() called!\n";
+  std::cerr << "\nSpmdMultiVectorStd<Scalar>::getLocalMultiVectorDataImpl() called!\n";
 #endif
   *localValues = localValues_;
   *leadingDim = leadingDim_;
@@ -369,7 +369,7 @@ void DefaultSpmdMultiVector<Scalar>::getNonconstLocalDataImpl(
 
 
 template<class Scalar>
-void DefaultSpmdMultiVector<Scalar>::getLocalDataImpl(
+void DefaultSpmdMultiVector<Scalar>::getLocalMultiVectorDataImpl(
   const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
   ) const
 {

@@ -260,7 +260,7 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconstNonContigSubV
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNonconstLocalDataImpl(
+void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNonconstLocalMultiVectorDataImpl(
   const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
   )
 {
@@ -270,7 +270,7 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNonconstLocal
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalDataImpl(
+void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMultiVectorDataImpl(
   const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
   ) const
 {

@@ -158,7 +158,7 @@ public:
    * all of the <tt>ArrayRCP</tt> objects (or setting them to null).
    */
   void getNonconstLocalData(const Ptr<ArrayRCP<Scalar> > &localValues)
-    { this->getNonconstLocalDataImpl(localValues); }
+    { this->getNonconstLocalVectorDataImpl(localValues); }
 
   /** \brief Returns a <tt>const</tt> pointer to the beginning of the local
    * vector data.
@@ -178,7 +178,7 @@ public:
    * all of the <tt>ArrayRCP</tt> objects (or setting them to null).
    */
   void getLocalData(const Ptr<ArrayRCP<const Scalar> > &localValues) const
-    { this->getLocalDataImpl(localValues); }
+    { this->getLocalVectorDataImpl(localValues); }
 
   //@}
 
@@ -218,11 +218,11 @@ protected:
   //@{
 
   /** \brief Implementation of getNonconstLocalData() */
-  virtual void getNonconstLocalDataImpl(
+  virtual void getNonconstLocalVectorDataImpl(
     const Ptr<ArrayRCP<Scalar> > &localValues) = 0;
 
   /** \brief Implementation of getLocalData() */
-  virtual void getLocalDataImpl(
+  virtual void getLocalVectorDataImpl(
     const Ptr<ArrayRCP<const Scalar> > &localValues) const = 0;
 
   //@}

@@ -170,7 +170,7 @@ public:
     const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     )
     {
-      getNonconstLocalDataImpl(localValues, leadingDim);
+      getNonconstLocalMultiVectorDataImpl(localValues, leadingDim);
     }
 
   /** \brief Returns a <tt>const</tt> pointer to a Fortran-style view of the
@@ -197,7 +197,7 @@ public:
     const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     ) const
     {
-      getLocalDataImpl(localValues, leadingDim);
+      getLocalMultiVectorDataImpl(localValues, leadingDim);
     }
 
   //@}
@@ -216,12 +216,12 @@ protected:
   //@{
 
   /** \brief Virtual implementation for getNonconstLocalData(). */
-  virtual void getNonconstLocalDataImpl(
+  virtual void getNonconstLocalMultiVectorDataImpl(
     const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     ) = 0;
 
   /** \brief Virtual implementation for getLocalData(). */
-  virtual void getLocalDataImpl(
+  virtual void getLocalMultiVectorDataImpl(
     const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     ) const = 0;
 

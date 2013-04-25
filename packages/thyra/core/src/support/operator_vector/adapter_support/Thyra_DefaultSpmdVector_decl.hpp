@@ -149,9 +149,9 @@ public:
   /** \brief . */
   RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
   /** \brief . */
-  void getNonconstLocalDataImpl(const Ptr<ArrayRCP<Scalar> > &localValues);
+  void getNonconstLocalVectorDataImpl(const Ptr<ArrayRCP<Scalar> > &localValues);
   /** \brief . */
-  void getLocalDataImpl(const Ptr<ArrayRCP<const Scalar> > &localValues) const;
+  void getLocalVectorDataImpl(const Ptr<ArrayRCP<const Scalar> > &localValues) const;
 
   //@}
 

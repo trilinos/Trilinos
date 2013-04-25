@@ -132,11 +132,11 @@ protected:
   /** @name Overridden protected functions from SpmdMultiVectorBase */
   //@{
   /** \brief . */
-  void getNonconstLocalDataImpl(
+  void getNonconstLocalMultiVectorDataImpl(
     const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     );
   /** \brief . */
-  void getLocalDataImpl(
+  void getLocalMultiVectorDataImpl(
     const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     ) const;
   //@}

@@ -121,7 +121,7 @@ DefaultSpmdVector<Scalar>::spmdSpace() const
 
 
 template<class Scalar>
-void DefaultSpmdVector<Scalar>::getNonconstLocalDataImpl(
+void DefaultSpmdVector<Scalar>::getNonconstLocalVectorDataImpl(
   const Ptr<ArrayRCP<Scalar> > &localValues )
 {
   *localValues = localValues_;
@@ -129,7 +129,7 @@ void DefaultSpmdVector<Scalar>::getNonconstLocalDataImpl(
 
 
 template<class Scalar>
-void DefaultSpmdVector<Scalar>::getLocalDataImpl(
+void DefaultSpmdVector<Scalar>::getLocalVectorDataImpl(
   const Ptr<ArrayRCP<const Scalar> > &localValues ) const
 {
   *localValues = localValues_;

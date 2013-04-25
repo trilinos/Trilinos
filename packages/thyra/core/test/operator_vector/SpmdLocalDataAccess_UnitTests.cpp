@@ -552,7 +552,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
   }
 
   out << "*** C) Test getting nonconst view directly from SPMD Vector  ...\n";
-  {
+  if (0) {
     const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
     const Scalar val = as<Scalar>(2.1);
     PRINT_VAR(val);
