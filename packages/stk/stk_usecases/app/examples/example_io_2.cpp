@@ -368,8 +368,7 @@ namespace app {
 	  }
 	}
 
-	const stk::mesh::Field<double, stk::mesh::ElementNode> *df_field =
-	  stk::io::get_distribution_factor_field(*fb_part);
+	const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*fb_part);
 	if (df_field != NULL) {
 	  stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
 	}

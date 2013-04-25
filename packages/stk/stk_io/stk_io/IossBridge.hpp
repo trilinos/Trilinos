@@ -261,13 +261,13 @@ void field_data_to_ioss(const stk::mesh::FieldBase *field,
  *	factors for the specified part 'p'. Returns NULL if there is
  *	no such field.
  */
-const mesh::Field<double, mesh::ElementNode> *get_distribution_factor_field(const mesh::Part &p);
+const mesh::FieldBase *get_distribution_factor_field(const mesh::Part &p);
 
 /** Defines the stk::mesh::Field which contains the distribution
  *	factors for the specified part 'p'.
  */
 void set_distribution_factor_field(mesh::Part &p,
-                                   const mesh::Field<double, mesh::ElementNode> &df_field);
+                                   const mesh::FieldBase &df_field);
 
 /** Returns the Ioss::Field::RoleType of the mesh::Field 'f'.
  *	This must have earlier been defined using

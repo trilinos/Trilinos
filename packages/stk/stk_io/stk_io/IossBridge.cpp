@@ -812,7 +812,7 @@ void define_side_block(const stk::mesh::BulkData &bulk,
   assert(sset->get_side_block(part.name()) == NULL);
   sset->add(side_block);
 
-  const mesh::Field<double, mesh::ElementNode> *df = get_distribution_factor_field(part);
+  const mesh::FieldBase *df = get_distribution_factor_field(part);
   if (df != NULL) {
     int nodes_per_side = side_topology.num_nodes();
     std::string storage_type = "Real[";
@@ -1237,7 +1237,7 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
     throw std::runtime_error( msg.str() );
   }
 
-  const mesh::Field<double, mesh::ElementNode> *df = get_distribution_factor_field(*part);
+  const mesh::FieldBase *df = get_distribution_factor_field(*part);
   if (df != NULL) {
     field_data_to_ioss(df, sides, &io, "distribution_factors", Ioss::Field::MESH);
   }
@@ -1294,7 +1294,6 @@ void output_node_block(Ioss::NodeBlock &nb,
     nb.put_field_data("owning_processor", owning_processor);
   }
 
-  /// \todo REFACTOR Need a better way to indicate which field is the coordinate field.
   const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
   const mesh::FieldBase *coord_field = bulk.coordinate_field();
   assert(coord_field != NULL);
@@ -1560,13 +1559,17 @@ bool is_part_io_part(stk::mesh::Part &part)
   return NULL != part.attribute<Ioss::GroupingEntity>();
 }
 
-const stk::mesh::Field<double, stk::mesh::ElementNode> *get_distribution_factor_field(const stk::mesh::Part &p)
+// TODO: NOTE: The use of "FieldBase" here basically eliminates the use of the attribute
+// for any other fieldbase.  This is just being done now for a proof-of-concept for use
+// in the framework-based stk-mesh handoff to a stk-based stk-mesh...  If this looks promising,
+// then need to wrap it in a different classs...
+const stk::mesh::FieldBase *get_distribution_factor_field(const stk::mesh::Part &p)
 {
-  return p.attribute<stk::mesh::Field<double, stk::mesh::ElementNode> >();
+  return p.attribute<stk::mesh::FieldBase>();
 }
 
 void set_distribution_factor_field(stk::mesh::Part &p,
-                                   const stk::mesh::Field<double, stk::mesh::ElementNode> &df_field)
+                                   const stk::mesh::FieldBase &df_field)
 {
   stk::mesh::MetaData &m = mesh::MetaData::get(p);
   m.declare_attribute_no_delete(p,&df_field);
