@@ -66,6 +66,7 @@
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"

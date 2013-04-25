@@ -2,6 +2,7 @@
 #define __Panzer_ResponseMESupport_Default_impl_hpp__
 
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
 
 #include "Epetra_LocalMap.h"
 #include "Epetra_Map.h"

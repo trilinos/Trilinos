@@ -2,6 +2,7 @@
 #define __Panzer_Response_Functional_impl_hpp__
 
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 #include "Epetra_LocalMap.h"
 
