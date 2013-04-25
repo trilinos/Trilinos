@@ -42,8 +42,9 @@
 */
 
 
-#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_SpmdLocalDataAccess.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
@@ -83,6 +84,7 @@ using Teuchos::null;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::get_extra_data;
+using Teuchos::tuple;
 
 
 #define PRINT_VAR(varName) \
@@ -169,21 +171,43 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
   const int numProcs = comm->getSize();
   PRINT_VAR(numProcs);
   TEST_EQUALITY(vs->isLocallyReplicated(), numProcs==1);
-  const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
-  const Scalar val = as<Scalar>(1.5);
-  PRINT_VAR(val);
-  assign<Scalar>(v.ptr(), val);
-  const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
-  TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(val * vs->dim()), tol);
-  out << "*** Test that we get the view correctly ...\n";
-  RTOpPack::ConstSubVectorView<Scalar> lsv = 
-    getLocalSubVectorView<Scalar>(v);
-  TEST_EQUALITY(lsv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
-  TEST_EQUALITY(lsv.subDim(), procRank+1);
-  TEST_EQUALITY_CONST(lsv.stride(), 1);
-  for (int k = 0; k < lsv.subDim(); ++k) {
-    TEST_EQUALITY(lsv[k], val);
+
+  out << "*** A) Get view directly through an SPMD Vector object ...\n";
+  {
+    const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
+    const Scalar val = as<Scalar>(1.5);
+    PRINT_VAR(val);
+    assign<Scalar>(v.ptr(), val);
+    const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
+    TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(val * vs->dim()), tol);
+    RTOpPack::ConstSubVectorView<Scalar> lsv = 
+      getLocalSubVectorView<Scalar>(v);
+    TEST_EQUALITY(lsv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
+    TEST_EQUALITY(lsv.subDim(), procRank+1);
+    TEST_EQUALITY_CONST(lsv.stride(), 1);
+    for (int k = 0; k < lsv.subDim(); ++k) {
+      TEST_EQUALITY(lsv[k], val);
+    }
   }
+
+  out << "*** B) Get view indirectly through a product vector with one block ...\n";
+  {
+    const RCP<const VectorSpaceBase<Scalar> > pvs = 
+      productVectorSpace<Scalar>(tuple<RCP<const VectorSpaceBase<Scalar> > >(vs)());
+    const RCP<VectorBase<Scalar> > pv = createMember<Scalar>(pvs);
+    const Scalar val = as<Scalar>(1.7);
+    PRINT_VAR(val);
+    assign<Scalar>(pv.ptr(), val);
+    RTOpPack::ConstSubVectorView<Scalar> lsv = 
+      getLocalSubVectorView<Scalar>(pv);
+    TEST_EQUALITY(lsv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
+    TEST_EQUALITY(lsv.subDim(), procRank+1);
+    TEST_EQUALITY_CONST(lsv.stride(), 1);
+    for (int k = 0; k < lsv.subDim(); ++k) {
+      TEST_EQUALITY(lsv[k], val);
+    }
+  }
+
 }
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess,
   getLocalSubVectorView_procRankLocalDim)
@@ -242,35 +266,76 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
   PRINT_VAR(procRank);
   const int numProcs = comm->getSize();
   PRINT_VAR(numProcs);
-  const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
-  const Scalar val = as<Scalar>(1.5);
-  PRINT_VAR(val);
-  assign<Scalar>(v.ptr(), val);
-  const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
-  TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(val * vs->dim()), tol);
+
+  out << "*** A) Test that we get and change the nonconst view"
+      << " directly through an SPMD Vector ...\n";
   {
-    out << "*** Test that we get and change the nonconst view correctly ...\n";
-    RTOpPack::SubVectorView<Scalar> lsv = 
-      getNonconstLocalSubVectorView<Scalar>(v);
-    TEST_EQUALITY(lsv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
-    TEST_EQUALITY(lsv.subDim(), procRank+1);
-    TEST_EQUALITY_CONST(lsv.stride(), 1);
-    for (int k = 0; k < lsv.subDim(); ++k) {
-      lsv[k] = lsv.globalOffset() + k + 1;
+    const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
+    const Scalar val = as<Scalar>(1.5);
+    PRINT_VAR(val);
+    assign<Scalar>(v.ptr(), val);
+    const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
+    TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(val * vs->dim()), tol);
+    {
+      out << "*** A.1) Get the non-const view and set the local elements ...\n";
+      RTOpPack::SubVectorView<Scalar> lsv = 
+        getNonconstLocalSubVectorView<Scalar>(v);
+      TEST_EQUALITY(lsv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
+      TEST_EQUALITY(lsv.subDim(), procRank+1);
+      TEST_EQUALITY_CONST(lsv.stride(), 1);
+      for (int k = 0; k < lsv.subDim(); ++k) {
+        lsv[k] = lsv.globalOffset() + k + 1;
+      }
+      const Ordinal n = vs->dim();
+      TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>((n*(n+1))/2.0), tol);
     }
-    const Ordinal n = vs->dim();
-    TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>((n*(n+1))/2.0), tol);
+    {
+      out << "*** A.2) Get the const view and check the local elemetns ...\n";
+      RTOpPack::ConstSubVectorView<Scalar> lsv = 
+        getLocalSubVectorView<Scalar>(v);
+      TEST_EQUALITY(lsv.subDim(), procRank+1);
+      TEST_EQUALITY_CONST(lsv.stride(), 1);
+      for (int k = 0; k < lsv.subDim(); ++k) {
+        TEST_EQUALITY(lsv[k], lsv.globalOffset() + k + 1);
+      }
+    }
   }
+
+  out << "*** B) Test that we get and change the nonconst view"
+      << " indirectly through a product vector with one block ...\n";
   {
-    out << "*** Test that we get the same values when we grab const view ...\n";
-    RTOpPack::ConstSubVectorView<Scalar> lsv = 
-      getLocalSubVectorView<Scalar>(v);
-    TEST_EQUALITY(lsv.subDim(), procRank+1);
-    TEST_EQUALITY_CONST(lsv.stride(), 1);
-    for (int k = 0; k < lsv.subDim(); ++k) {
-      TEST_EQUALITY(lsv[k], lsv.globalOffset() + k + 1);
+    const RCP<const VectorSpaceBase<Scalar> > pvs = 
+      productVectorSpace<Scalar>(tuple<RCP<const VectorSpaceBase<Scalar> > >(vs)());
+    const RCP<VectorBase<Scalar> > pv = createMember<Scalar>(pvs);
+    const Scalar val = as<Scalar>(1.7);
+    PRINT_VAR(val);
+    assign<Scalar>(pv.ptr(), val);
+    const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
+    {
+      out << "*** B.1) Get the non-const view and set the local elements ...\n";
+      RTOpPack::SubVectorView<Scalar> lsv = 
+        getNonconstLocalSubVectorView<Scalar>(pv);
+      TEST_EQUALITY(lsv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
+      TEST_EQUALITY(lsv.subDim(), procRank+1);
+      TEST_EQUALITY_CONST(lsv.stride(), 1);
+      for (int k = 0; k < lsv.subDim(); ++k) {
+        lsv[k] = lsv.globalOffset() + k + 1;
+      }
+      const Ordinal n = vs->dim();
+      TEST_FLOATING_EQUALITY(sum<Scalar>(*pv), as<Scalar>((n*(n+1))/2.0), tol);
+    }
+    {
+      out << "*** B.2) Get the const view and check the local elemetns ...\n";
+      RTOpPack::ConstSubVectorView<Scalar> lsv = 
+        getLocalSubVectorView<Scalar>(pv);
+      TEST_EQUALITY(lsv.subDim(), procRank+1);
+      TEST_EQUALITY_CONST(lsv.stride(), 1);
+      for (int k = 0; k < lsv.subDim(); ++k) {
+        TEST_EQUALITY(lsv[k], lsv.globalOffset() + k + 1);
+      }
     }
   }
+
 }
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SpmdLocalDataAccess, 
   getNonconstLocalSubVectorView_procRankLocalDim)
