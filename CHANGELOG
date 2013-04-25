@@ -1,0 +1,15 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 11.2 Changelog                                             #
+#                                                                             #
+###############################################################################
+
+Release update 11.2.3 April 25, 2013
+
+1. EpetraExt - Fix reindexing with the row and column GID set is not the same.
+
+1. EpetraExt - Fixed singleton filter to not generate a separate linear problem
+               if no singletons are detected.
+
+3. Intrepid  - MiniTensor: Fixed coeffcients of Pade Approximant for the
+               exponential.
