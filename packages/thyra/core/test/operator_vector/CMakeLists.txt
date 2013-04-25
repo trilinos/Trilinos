@@ -167,15 +167,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DefaultSpmdVectorSpace_ParallelUnitTest
+TRIBITS_ADD_EXECUTABLE(
+  DefaultSpmdVectorSpaceParallelUnitTests
   SOURCES
-    DefaultSpmdVectorSpace_Parallel_UnitTest.cpp
+    DefaultSpmdVectorSpace_Parallel_UnitTests.cpp
     ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
-  STANDARD_PASS_OUTPUT
   )
-TRIBITS_ADD_TEST(
-  DefaultSpmdVectorSpace_ParallelUnitTest
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 2
+FOREACH(NUM_MPI_PROCS ${NUM_MPI_PROCS_SET})
+  TRIBITS_ADD_TEST(
+    DefaultSpmdVectorSpaceParallelUnitTests
+    COMM mpi
+    NUM_MPI_PROCS ${NUM_MPI_PROCS}
+    STANDARD_PASS_OUTPUT	
   )
+ENDFOREACH()
