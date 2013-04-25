@@ -49,6 +49,7 @@
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_apply_op_helper.hpp"
+#include "Thyra_SpmdLocalDataAccess.hpp"
 #include "RTOpPack_SPMD_apply_op.hpp"
 #include "RTOp_parallel_helpers.h"
 #include "Teuchos_Workspace.hpp"
@@ -146,6 +147,7 @@ void SpmdMultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
 
   using Teuchos::dyn_cast;
   using Teuchos::Workspace;
+  using Teuchos::rcpFromPtr;
 
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
 
@@ -182,11 +184,12 @@ void SpmdMultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
   Workspace<RTOpPack::SubMultiVectorView<Scalar> >
     targ_sub_multi_vecs(wss,targ_multi_vecs.size());
   for(int k = 0; k < multi_vecs.size(); ++k ) {
-    multi_vecs[k]->acquireDetachedView(local_rng, col_rng, &sub_multi_vecs[k]);
+    sub_multi_vecs[k] = getLocalSubMultiVectorView<Scalar>(rcpFromPtr(multi_vecs[k]));
     sub_multi_vecs[k].setGlobalOffset(localOffset_+pri_global_offset_in);
   }
   for(int k = 0; k < targ_multi_vecs.size(); ++k ) {
-    targ_multi_vecs[k]->acquireDetachedView(local_rng, col_rng, &targ_sub_multi_vecs[k]);
+    targ_sub_multi_vecs[k] =
+      getNonconstLocalSubMultiVectorView<Scalar>(rcpFromPtr(targ_multi_vecs[k]));
     targ_sub_multi_vecs[k].setGlobalOffset(localOffset_+pri_global_offset_in);
   }
   Workspace<RTOpPack::ReductTarget*> reduct_objs_ptr(wss, reduct_objs.size());
@@ -208,12 +211,10 @@ void SpmdMultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
 
   // Free and commit the local data
   for(int k = 0; k < multi_vecs.size(); ++k ) {
-    sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
-    multi_vecs[k]->releaseDetachedView( &sub_multi_vecs[k] );
+    sub_multi_vecs[k] = RTOpPack::ConstSubMultiVectorView<Scalar>();
   }
   for(int k = 0; k < targ_multi_vecs.size(); ++k ) {
-    targ_sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
-    targ_multi_vecs[k]->commitDetachedView( &targ_sub_multi_vecs[k] );
+    targ_sub_multi_vecs[k] = RTOpPack::SubMultiVectorView<Scalar>();
   }
 
   // Flag that we are leaving applyOp()
