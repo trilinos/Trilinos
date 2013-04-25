@@ -106,9 +106,9 @@ TEST(hex_edges, hex_edges)
   mesh_dims[1]=5; //num_elems_y
   mesh_dims[2]=5; //num_elems_z
 #else
-  mesh_dims[0]=90; //num_elems_x
-  mesh_dims[1]=90; //num_elems_y
-  mesh_dims[2]=90*numprocs; //num_elems_z
+  mesh_dims[0]=50; //num_elems_x
+  mesh_dims[1]=50; //num_elems_y
+  mesh_dims[2]=50*numprocs; //num_elems_z
 #endif
 
   std::ostringstream oss;
@@ -146,12 +146,18 @@ TEST(hex_edges, hex_edges)
     std::cout<< "num elems: "<<mesh_counts[stk::topology::ELEMENT_RANK]<<std::endl;
   }
 
+  size_t now=0, hwm=0;
+  stk::get_memory_usage(now,hwm);
+  size_t global_hwm=0;
+  MPI_Allreduce(&hwm, &global_hwm, 1, MPI_LONG_LONG, MPI_MAX, fixture.getBulkData().parallel());
+
   if (proc == 0) {
     static const int NUM_TIMERS = 3;
     const double timers[NUM_TIMERS] = {mesh_create_time, create_edges_time, total_time};
     const char* timer_names[NUM_TIMERS] = {"Create mesh", "Create edges", "Total time"};
 
     stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
+    std::cout<<"Global HWM: "<<stk::human_bytes(global_hwm)<<std::endl;
   }
 }
 
