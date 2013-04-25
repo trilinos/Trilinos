@@ -538,10 +538,49 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
       out << "*** B.2) Get the same values when we grab const view ...\n";
       RTOpPack::ConstSubMultiVectorView<Scalar> lsmv = 
         getLocalSubMultiVectorView<Scalar>(pmv);
+      TEST_EQUALITY(lsmv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
+      TEST_EQUALITY(lsmv.subDim(), procRank+1);
+      TEST_EQUALITY(lsmv.leadingDim(), lsmv.subDim());
+      TEST_EQUALITY_CONST(lsmv.colOffset(), 0);
+      TEST_EQUALITY(lsmv.numSubCols(), g_numCols);
       for (int i = 0; i < lsmv.subDim(); ++i) {
         for (int j = 0; j < lsmv.numSubCols(); ++j) {
           TEST_EQUALITY(lsmv(i,j), as<Scalar>(lsmv.globalOffset() + i + 0.1 * j));
         }
+      }
+    }
+  }
+
+  out << "*** C) Test getting nonconst view directly from SPMD Vector  ...\n";
+  {
+    const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs);
+    const Scalar val = as<Scalar>(2.1);
+    PRINT_VAR(val);
+    assign<Scalar>(v.ptr(), val);
+    {
+      out << "*** C.1) Get and change the nonconst MV view ...\n";
+      RTOpPack::SubMultiVectorView<Scalar> lsmv = 
+        getNonconstLocalSubMultiVectorView<Scalar>(v);
+      TEST_EQUALITY(lsmv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
+      TEST_EQUALITY(lsmv.subDim(), procRank+1);
+      TEST_EQUALITY(lsmv.leadingDim(), lsmv.subDim());
+      TEST_EQUALITY_CONST(lsmv.colOffset(), 0);
+      TEST_EQUALITY_CONST(lsmv.numSubCols(), 1);
+      for (int i = 0; i < lsmv.subDim(); ++i) {
+        lsmv(i,0) = lsmv.globalOffset() + i;
+      }
+    }
+    {
+      out << "*** C.2) Get the same values when we grab const MV view ...\n";
+      RTOpPack::ConstSubMultiVectorView<Scalar> lsmv = 
+        getLocalSubMultiVectorView<Scalar>(v);
+      TEST_EQUALITY(lsmv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
+      TEST_EQUALITY(lsmv.subDim(), procRank+1);
+      TEST_EQUALITY(lsmv.leadingDim(), lsmv.subDim());
+      TEST_EQUALITY_CONST(lsmv.colOffset(), 0);
+      TEST_EQUALITY_CONST(lsmv.numSubCols(), 1);
+      for (int i = 0; i < lsmv.subDim(); ++i) {
+        TEST_EQUALITY(lsmv(i,0), as<Scalar>(lsmv.globalOffset() + i));
       }
     }
   }
