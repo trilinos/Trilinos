@@ -67,7 +67,7 @@ namespace Mine {
       const int second = x[k].second;
       os << "(" << first << "," << second << ")";
       if (k + 1 < x.size ()) {
-	os << ", ";
+        os << ", ";
       }
     }
     os << "}";
@@ -92,7 +92,7 @@ namespace Mine {
       const int second = x[k].second;
       os << "(" << first << "," << second << ")";
       if (k + 1 < x.size ()) {
-	os << ", ";
+        os << ", ";
       }
     }
     os << "}";
@@ -116,7 +116,7 @@ namespace Mine {
       const int second = x[k].second;
       os << "(" << first << "," << second << ")";
       if (k + 1 < x.size ()) {
-	os << ", ";
+        os << ", ";
       }
     }
     os << "}";
@@ -140,7 +140,7 @@ namespace Mine {
       const int second = x[k].second;
       os << "(" << first << "," << second << ")";
       if (k + 1 < x.size ()) {
-	os << ", ";
+        os << ", ";
       }
     }
     os << "}";
@@ -179,7 +179,7 @@ int FixedHashTable<KeyType, ValueType>::hashFunc (const KeyType key) const {
 #endif // HAVE_TPETRA_DEBUG
 
   const int intkey = (int) ((key & 0x000000007fffffffLL) +
-			    ((key & 0x7fffffff80000000LL) >> 31));
+                            ((key & 0x7fffffff80000000LL) >> 31));
   return (int) ((seed ^ intkey) % size_);
 #endif
 }
@@ -257,7 +257,7 @@ FixedHashTable (const ArrayView<const KeyType>& keys) :
 template<typename KeyType, typename ValueType>
 FixedHashTable<KeyType, ValueType>::
 FixedHashTable (const ArrayView<const KeyType>& keys,
-		const ValueType startingValue) :
+                const ValueType startingValue) :
   size_ (0),
   rawPtr_ (NULL),
   rawVal_ (NULL)
@@ -280,13 +280,13 @@ init (const ArrayView<const KeyType>& keys,
   const size_type size = getRecommendedSize (as<int> (numKeys));
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
-    size == 0 && numKeys != 0, std::logic_error, 
+    size == 0 && numKeys != 0, std::logic_error,
     "Tpetra::Details::FixedHashTable constructor: "
     "getRecommendedSize(" << numKeys << ") returned zero, "
     "even though the number of keys " << numKeys << " is nonzero.  "
     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
-  
+
   // We have to set the size_ internal state before calling the hash
   // function, since the hash function uses it.
   size_ = as<KeyType> (size);
@@ -357,7 +357,8 @@ init (const ArrayView<const KeyType>& keys,
 
   //val_ = arcp_const_cast<const std::pair<KeyType, ValueType> > (val);
   const std::pair<KeyType, ValueType>* valRaw = val.release ();
-  val_ = arcp<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
+  val_ = ArrayRCP<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
+  //val_ = arcp<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
   rawPtr_ = ptr_.getRawPtr ();
   //  rawVal_ = val_.getRawPtr ();
   rawVal_ = valRaw;
