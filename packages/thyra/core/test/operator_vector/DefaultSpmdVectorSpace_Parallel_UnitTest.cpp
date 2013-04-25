@@ -44,6 +44,7 @@
 
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedSpmdVectorView.hpp"
+#include "Thyra_SpmdLocalDataAccess.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
@@ -59,17 +60,23 @@ namespace {
 
 
 int g_localDim = 4;
+int g_numCols1 = 2;
+int g_numCols2 = 2;
 bool g_show_all_tests = false;
 bool g_dump_objects = false;
 bool g_dumpRTOps = false;
-bool g_emptyProcSimpleMultiVecAdjointApply = false;
-bool g_emptyProcVectorSpaceTester = false;
+bool g_emptyProcSimpleMultiVecAdjointApply = true;
+bool g_emptyProcVectorSpaceTester = true;
 
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::UnitTestRepository::getCLP().setOption(
     "local-dim", &g_localDim, "Local dimension of each vector." );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "num-cols-1", &g_numCols1, "" );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "num-cols-2", &g_numCols2, "" );
   Teuchos::UnitTestRepository::getCLP().setOption(
     "show-all-tests", "no-show-all-tests", &g_show_all_tests,
     "Set if all tests are shown or not." );
@@ -97,6 +104,7 @@ using Teuchos::as;
 using Teuchos::null;
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::Array;
 using Teuchos::get_extra_data;
 using Thyra::VectorSpaceBase;
 using Thyra::VectorBase;
@@ -236,32 +244,37 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcSim
   Scalar )
 {
   if (g_emptyProcSimpleMultiVecAdjointApply) {
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
-  const Ordinal localDim = g_localDim;
-  PRINT_VAR(localDim);
-  const Ordinal numCols = 1;
-  PRINT_VAR(numCols);
-  const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    createZeroEleProcVS<Scalar>(localDim);
-  const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, numCols);
-  const Scalar val1 = 1.0;
-  PRINT_VAR(val1);
-  ECHO(assign<Scalar>(mv.ptr(), val1));
-  out << "mv = " << *mv;
-  ECHO(const RCP<VectorBase<Scalar> > y = createMember<Scalar>(mv->range()));
-  ECHO(const RCP<VectorBase<Scalar> > x = createMember<Scalar>(mv->range()));
-  const Scalar val2 = 1.0;
-  PRINT_VAR(val2);
-  ECHO(assign<Scalar>(x.ptr(), val2));
-  out << "x = " << *x;
-  ECHO(apply<Scalar>(*mv, Thyra::CONJTRANS, *x, y.ptr()));
-  out << "y = " << *y;
-  TEST_FLOATING_EQUALITY(
-    Thyra::sum<Scalar>(*y),
-    as<Scalar>(val1 * val2 * numCols * g_localDim * (vs->getComm()->getSize()-1)),
-    as<ScalarMag>(10.0*SMT::eps())
-    );
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+    typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+    const Ordinal localDim = g_localDim;
+    PRINT_VAR(localDim);
+    const Ordinal numCols1 = g_numCols1;
+    const Ordinal numCols2= g_numCols2;
+    PRINT_VAR(numCols1);
+    PRINT_VAR(numCols2);
+    const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+      createZeroEleProcVS<Scalar>(localDim);
+    const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, numCols1);
+    const Scalar val1 = 2.0;
+    PRINT_VAR(val1);
+    ECHO(assign<Scalar>(mv.ptr(), val1));
+    out << "mv = " << *mv;
+    ECHO(const RCP<MultiVectorBase<Scalar> > Y = createMembers<Scalar>(mv->domain(), numCols2));
+    ECHO(const RCP<MultiVectorBase<Scalar> > X = createMembers<Scalar>(mv->range(), numCols2));
+    const Scalar val2 = 3.0;
+    PRINT_VAR(val2);
+    ECHO(assign<Scalar>(X.ptr(), val2));
+    out << "X = " << *X;
+    ECHO(apply<Scalar>(*mv, Thyra::CONJTRANS, *X, Y.ptr()));
+    out << "Y = " << *Y;
+    RTOpPack::ConstSubMultiVectorView<Scalar> Y_smvv =
+      Thyra::getLocalSubMultiVectorView<Scalar>(Y);
+    for (int i = 0; i < numCols1; ++i) {
+      for (int j = 0; j < numCols2; ++j) {
+        out << "i = " << i << ", j = " << j << ": ";
+        TEST_EQUALITY(Y_smvv(i,j), as<Scalar>(val1 * val2 * vs->dim()));
+      }
+    }
   }
   else {
     out << "Skipping test because g_emptyProcSimpleMultiVecAdjointApply == false!\n";

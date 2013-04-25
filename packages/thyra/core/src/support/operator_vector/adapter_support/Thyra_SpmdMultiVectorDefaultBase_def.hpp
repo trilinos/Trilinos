@@ -383,6 +383,7 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
 
   // Get the Spmd communicator
   const RCP<const Teuchos::Comm<Ordinal> > comm = spmdSpc.getComm();
+  const int procRank = (nonnull(comm) ? comm->getRank() : 0 );
 
 #ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar>
@@ -503,7 +504,7 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
       Teuchos::arcpFromArrayView(Y_local_tmp_store()),
       Y_local.subDim() // leadingDim == subDim (columns are adjacent)
       );
-    if( localOffset_ == 0 ) {
+    if (procRank == 0) {
       // Root process: Must copy Y_local into Y_local_tmp
       for( int j = 0; j < Y_local.numSubCols(); ++j ) {
         typedef typename ArrayRCP<const Scalar>::const_iterator Y_local_values_iter_t;
