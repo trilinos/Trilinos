@@ -413,9 +413,11 @@ std::string FixedHashTable<KeyType, ValueType>::description() const {
 }
 
 template <typename KeyType, typename ValueType>
-void FixedHashTable<KeyType, ValueType>::describe(
- Teuchos::FancyOStream &out,
- const Teuchos::EVerbosityLevel verbLevel) const {
+void
+FixedHashTable<KeyType, ValueType>::
+describe (Teuchos::FancyOStream &out,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{
   using std::endl;
   using std::setw;
   using Teuchos::OSTab;
@@ -436,7 +438,7 @@ void FixedHashTable<KeyType, ValueType>::describe(
     out << this->description() << endl;
   }
   else {  // MEDIUM, HIGH or EXTREME
-    out << "FixedHashTable: {" << endl;
+    out << "FixedHashTable:" << endl;
     {
       OSTab tab1 (rcpFromRef (out));
 
@@ -444,23 +446,22 @@ void FixedHashTable<KeyType, ValueType>::describe(
       if (label != "") {
         out << "label: " << label << endl;
       }
-      out << "Template parameters: {" << endl;
+      out << "Template parameters:" << endl;
       {
         OSTab tab2 (rcpFromRef (out));
         out << "KeyType: " << TypeNameTraits<KeyType>::name () << endl
-            << "ValueType" << TypeNameTraits<ValueType>::name () << endl;
+            << "ValueType: " << TypeNameTraits<ValueType>::name () << endl;
       }
 
-      const size_type tableSize = ptr_.size ();
+      const size_type tableSize = size_;
       const size_type numKeys = val_.size ();
 
-      out << "}" << endl << "Table parameters: {" << endl;
+      out << "Table parameters:" << endl;
       {
         OSTab tab2 (rcpFromRef (out));
         out << "numKeys: " << numKeys << endl
             << "tableSize: " << tableSize << endl;
       }
-      out << "}" << endl;
 
       if (vl >= VERB_EXTREME) {
         out << "Contents: ";
@@ -472,20 +473,21 @@ void FixedHashTable<KeyType, ValueType>::describe(
             OSTab tab2 (rcpFromRef (out));
             for (size_type i = 0; i < tableSize; ++i) {
               OSTab tab3 (rcpFromRef (out));
+              out << "[";
               for (size_type k = ptr_[i]; k < ptr_[i+1]; ++k) {
                 out << "(" << val_[k].first << "," << val_[k].second << ")";
                 if (k + 1 < ptr_[i+1]) {
                   out << ", ";
                 }
               }
-              out << endl;
+              out << "]" << endl;
             } // for each table position i
           }
           out << "]" << endl;
         } // The table contains entries
       } // vl >= VERB_EXTREME
     }
-    out << "}" << endl;
+    out << endl;
   } // if vl > VERB_LOW
 }
 
