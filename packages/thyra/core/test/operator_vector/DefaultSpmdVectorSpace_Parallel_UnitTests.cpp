@@ -56,7 +56,7 @@
 #include "Teuchos_DefaultComm.hpp"
 
 
-namespace {
+namespace Thyra {
 
 
 int g_localDim = 4;
@@ -120,12 +120,12 @@ typedef Thyra::Ordinal Ordinal;
 
 template<class Scalar>
 RCP<const DefaultSpmdVectorSpace<Scalar> >
-createZeroEleProcVS(const Ordinal localSize)
+createZeroEleProcVS(const Ordinal localSize, const int rootRank = 0)
 {
   const RCP<const Teuchos::Comm<Ordinal> > comm =
     Teuchos::DefaultComm<Teuchos_Ordinal>::getComm();
 
-  const Ordinal thisLocalSize = comm->getRank()==0 ? 0 : localSize;
+  const Ordinal thisLocalSize = comm->getRank()==rootRank ? 0 : localSize;
   RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
     Thyra::defaultSpmdVectorSpace<Scalar>(comm, thisLocalSize, -1);
 
@@ -266,14 +266,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parall
   emptyProcSimpleMultiVecAdjointApply )
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, emptyProcVectorSpaceTester,
-  Scalar )
+template<class Scalar>
+void emptyProcVectorSpaceTester(const int rootRank, FancyOStream &out, bool &success)
 {
-
   const Ordinal localDim = g_localDim;
   PRINT_VAR(localDim);
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    createZeroEleProcVS<Scalar>(localDim);
+    createZeroEleProcVS<Scalar>(localDim, rootRank);
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType  ScalarMag;
@@ -307,10 +306,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, emptyProcVectorSpaceT
   TEST_ASSERT(multiVectorStdOpsTester.checkStdOps(*vs, &out));
 
   RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
+}
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, emptyProc0VectorSpaceTester,
+  Scalar )
+{
+  emptyProcVectorSpaceTester<Scalar>(0, out, success);
 }
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
-  emptyProcVectorSpaceTester )
+  emptyProc0VectorSpaceTester )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, emptyProc1VectorSpaceTester,
+  Scalar )
+{
+  emptyProcVectorSpaceTester<Scalar>(1, out, success);
+}
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
+  emptyProc1VectorSpaceTester )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, emptyProcLastVectorSpaceTester,
+  Scalar )
+{
+  emptyProcVectorSpaceTester<Scalar>(1, out, success);
+}
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
+  emptyProcLastVectorSpaceTester )
 
 
 // ToDo:
@@ -320,5 +343,4 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
 // Test a vector space with the wrong size global dim.
 
 
-
-} // namespace
+} // namespace Thyra
