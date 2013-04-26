@@ -75,11 +75,6 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL),
     tempMat_(NULL)
-#ifdef EPETRA_HAVE_OMP
-#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
-	, overlap_(false)
-#endif
-#endif
 {
   myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
@@ -110,11 +105,6 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL),
     tempMat_(NULL)
-#ifdef EPETRA_HAVE_OMP
-#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
-	, overlap_(false)
-#endif
-#endif
 {
   myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
@@ -146,11 +136,6 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL),
     tempMat_(NULL)
-#ifdef EPETRA_HAVE_OMP
-#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
-	, overlap_(false)
-#endif
-#endif
 {
   myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
@@ -182,11 +167,6 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL),
     tempMat_(NULL)
-#ifdef EPETRA_HAVE_OMP
-#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
-	, overlap_(false)
-#endif
-#endif
 {
   myFirstRow_ = rowMap.MinMyGID64();
   myNumRows_ = rowMap.NumMyElements();
@@ -216,11 +196,6 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL),
     tempMat_(NULL)
-#ifdef EPETRA_HAVE_OMP
-#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
-	, overlap_(false)
-#endif
-#endif
 {
   myFirstRow_ = RowMap().MinMyGID64();
   myNumRows_ = RowMap().NumMyElements();
@@ -229,13 +204,7 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
               const Epetra_FECrsGraph& graph,
-              bool ignoreNonLocalEntries
-#ifdef EPETRA_HAVE_OMP
-#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
-              , bool overlap
-#endif
-#endif
-              )
+              bool ignoreNonLocalEntries)
   : Epetra_CrsMatrix(CV, graph),
     myFirstRow_(0),
     myNumRows_(0),
@@ -257,11 +226,6 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     colMap_(NULL),
     exporter_(NULL),
     tempMat_(NULL)
-#ifdef EPETRA_HAVE_OMP
-#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
-	, overlap_(overlap)
-#endif
-#endif
 {
   myFirstRow_ = RowMap().MinMyGID64();
   myNumRows_ = RowMap().NumMyElements();
@@ -288,11 +252,6 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(const Epetra_FECrsMatrix& src)
    colMap_(NULL),
    exporter_(NULL),
     tempMat_(NULL)
-#ifdef EPETRA_HAVE_OMP
-#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
-	, overlap_(src.overlap_)
-#endif
-#endif
 {
   operator=(src);
 }
@@ -346,12 +305,6 @@ Epetra_FECrsMatrix& Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix& src)
 #endif
 
   nonlocalCoefs_= src.nonlocalCoefs_;
-
-#ifdef EPETRA_HAVE_OMP
-#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
-  overlap_ = src.overlap_;
-#endif
-#endif
 
   return( *this );
 }
@@ -1167,7 +1120,7 @@ int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
     else {
 #ifdef EPETRA_HAVE_OMP
 #ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
-    	if (! overlap_) {
+    	if (! ignoreNonLocalEntries_) {
 #endif
 #endif
           err = InputNonlocalGlobalValues(rows[i], numCols, cols,
