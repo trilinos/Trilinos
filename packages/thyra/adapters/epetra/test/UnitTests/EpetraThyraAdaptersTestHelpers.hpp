@@ -41,15 +41,18 @@
 // @HEADER
 */
 
+#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Epetra_SerialComm.h"
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
+#include "Teuchos_as.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_as.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
 
 
 namespace {
@@ -62,10 +65,29 @@ namespace {
 using Teuchos::as;
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::Ptr;
+using Teuchos::outArg;
 using Teuchos::Array;
+using Teuchos::Comm;
+typedef Teuchos_Ordinal Ordinal;
 
 
-const int g_localDim = 4; // ToDo: Make variable!
+int g_localDim = 4;
+bool g_dumpAll = false;
+bool g_show_all_tests = false;
+
+
+TEUCHOS_STATIC_SETUP()
+{
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "local-dim", &g_localDim, "Local dimension of each vector." );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "show-all-tests", "no-show-all-tests", &g_show_all_tests,
+    "Set if all tests are shown or not." );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "dump-all", "no-dump-all", &g_dumpAll,
+    "Dump lots of data" );
+}
 
 
 RCP<const Epetra_Comm> getEpetraComm()
@@ -75,6 +97,21 @@ RCP<const Epetra_Comm> getEpetraComm()
 #else
   return rcp(new Epetra_SerialComm());
 #endif
+}
+
+
+void createEpetraVsAndMap(const Thyra::Ordinal localDim_in,
+  const Ptr<RCP<const Thyra::VectorSpaceBase<double> > > &vs,
+  const Ptr<RCP<const Epetra_Map> > &epetra_map,
+  const int emptyProcRootRank = -1
+  )
+{
+  const RCP<const Epetra_Comm> epetra_comm = getEpetraComm();
+  const RCP<const Comm<Ordinal> > comm = Thyra::create_Comm(epetra_comm);
+  const int procRank = comm->getRank();
+  const Thyra::Ordinal localDim = (procRank == emptyProcRootRank ? 0 : localDim_in);
+  *epetra_map = rcp(new Epetra_Map(as<int>(localDim), 0, *epetra_comm));
+  *vs =  Thyra::create_VectorSpace(*epetra_map);
 }
 
 

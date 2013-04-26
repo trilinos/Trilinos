@@ -41,7 +41,6 @@
 // @HEADER
 */
 
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
@@ -61,16 +60,12 @@ namespace {
 
 TEUCHOS_UNIT_TEST( get_Epetra_MultiVector, singleBlockProductVector )
 {
-  using Teuchos::Comm;
-  typedef Teuchos_Ordinal Ordinal;
-  using Thyra::VectorSpaceBase;
-  using Thyra::MultiVectorBase;
+using Thyra::VectorSpaceBase;
+using Thyra::MultiVectorBase;
 
-  const RCP<const Epetra_Comm> epetra_comm = getEpetraComm();
-  const RCP<const Comm<Ordinal> > comm = Thyra::create_Comm(epetra_comm);
-  
-  const RCP<const Epetra_Map> epetra_map = rcp(new Epetra_Map(g_localDim, 0, *epetra_comm));
-  const RCP<const VectorSpaceBase<double> > vs =  Thyra::create_VectorSpace(epetra_map);
+  RCP<const VectorSpaceBase<double> > vs;
+  RCP<const Epetra_Map> epetra_map;
+  createEpetraVsAndMap(g_localDim, outArg(vs), outArg(epetra_map));
 
   const RCP<const VectorSpaceBase<double> > pvs = Thyra::productVectorSpace(vs, 1);
 

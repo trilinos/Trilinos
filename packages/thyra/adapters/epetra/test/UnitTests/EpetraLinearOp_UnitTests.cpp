@@ -58,17 +58,6 @@
 namespace {
 
 
-bool g_dumpAll = false;
-const int g_dim = 4;
-
-
-TEUCHOS_STATIC_SETUP()
-{
-  Teuchos::UnitTestRepository::getCLP().setOption(
-    "dump-all", "no-dump-all", &g_dumpAll,
-    "Dump lots of data" );
-}
-
 
 } // namespace
 
@@ -311,6 +300,8 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, rectangular )
   const RCP<const LinearOpBase<double> > epetraOp = epetraLinearOp(epetraCrsM);
 
   LinearOpTester<double> linearOpTester;
+  linearOpTester.show_all_tests(g_show_all_tests);
+  linearOpTester.dump_all(g_dumpAll);
   updateSuccess(linearOpTester.check(*epetraOp, inOutArg(out)), success);
    
 }
