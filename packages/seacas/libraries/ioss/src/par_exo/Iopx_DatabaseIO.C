@@ -240,34 +240,6 @@ namespace {
     return omitted;
   }
 
-  int64_t get_side_offset(const Ioss::SideBlock *sb)
-  {
-    // And yet another idiosyncracy of sidesets...
-    // The side of an element (especially shells) can be
-    // either a face or an edge in the same sideset.  The
-    // ordinal of an edge is (local_edge_number+#faces) on the
-    // database, but needs to be (local_edge_number) for
-    // Sierra...
-    //
-    // If the sideblock has a "parent_element_topology" and a
-    // "topology", then we can determine whether to offset the
-    // side ordinals...
-
-    const Ioss::ElementTopology *side_topo   = sb->topology();
-    const Ioss::ElementTopology *parent_topo = sb->parent_element_topology();
-    int64_t side_offset = 0;
-    if (side_topo && parent_topo) {
-      int side_topo_dim = side_topo->parametric_dimension();
-      int elem_topo_dim = parent_topo->parametric_dimension();
-      int elem_spat_dim = parent_topo->spatial_dimension();
-
-      if (side_topo_dim+1 < elem_spat_dim && side_topo_dim < elem_topo_dim) {
-        side_offset = parent_topo->number_faces();
-      }
-    }
-    return side_offset;
-  }
-
   void get_connectivity_data(int exoid, void *data, ex_entity_type type, ex_entity_id id, int position)
   {
     int ierr = 0;
@@ -2907,7 +2879,7 @@ namespace Iopx {
           // numbers.
 
           // See if edges or faces...
-          int64_t side_offset = get_side_offset(fb);
+          int64_t side_offset = Ioss::Utils::get_side_offset(fb);
 
 
           if (fb->owner()->block_count() == 1) {
@@ -4854,7 +4826,7 @@ namespace Iopx {
           // Allocate space for local side number and element numbers
           // numbers.
           // See if edges or faces...
-          size_t side_offset = get_side_offset(fb);
+          size_t side_offset = Ioss::Utils::get_side_offset(fb);
 
           size_t index = 0;
 
@@ -4906,7 +4878,7 @@ namespace Iopx {
           // The element_id passed in is the local id.
 
           // See if edges or faces...
-          size_t side_offset = get_side_offset(fb);
+          size_t side_offset = Ioss::Utils::get_side_offset(fb);
 
           size_t index = 0;
           if (field.get_type() == Ioss::Field::INTEGER) {

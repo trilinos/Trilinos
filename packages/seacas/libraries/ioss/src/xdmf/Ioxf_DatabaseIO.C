@@ -1518,6 +1518,9 @@ namespace Ioxf {
 	  // The element_id passed in is the global id; we need to
 	  // output the local id.
 
+	  // See if edges or faces...
+	  size_t side_offset = Ioss::Utils::get_side_offset(fb);
+
 	  // Allocate space for local side number and element numbers
 	  // numbers.
 	  std::vector<int> element(num_to_get);
