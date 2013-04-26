@@ -285,13 +285,13 @@ namespace MueLu {
 
     MultiVector *Coords = (MultiVector*) data;
 
-    if (dim != (int) Coords->getNumVectors()) {
+    if (dim != Teuchos::as<int>(Coords->getNumVectors())) {
       //FIXME I'm assuming dim should be 1, 2, or 3 coming in?!
       *ierr = ZOLTAN_FATAL;
       return;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(numObjectIDs != static_cast<int>(Coords->getLocalLength()), Exceptions::Incompatible, "Length of coordinates must be the same as the number of objects");
+    TEUCHOS_TEST_FOR_EXCEPTION(numObjectIDs != Teuchos::as<int>(Coords->getLocalLength()), Exceptions::Incompatible, "Length of coordinates must be the same as the number of objects");
 
     ArrayRCP<ArrayRCP<const SC> > CoordsData(dim);
     for (int j = 0; j < dim; ++j)

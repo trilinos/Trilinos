@@ -51,6 +51,7 @@ fi
 
 echo "
 -DTrilinos_EXCLUDE_PACKAGES=CTrilinos
+-DTrilinos_UNENABLE_ENABLED_PACKAGES=ON
 " > COMMON.config
 
 #

@@ -55,6 +55,9 @@
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
 
+#include "Thyra_SpmdVectorBase.hpp"
+#include "Teuchos_ArrayRCP.hpp"
+
 namespace panzer {
 
 template <typename LO,typename GO>

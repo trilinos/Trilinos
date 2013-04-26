@@ -168,7 +168,7 @@ namespace Belos { // should go to Belos or Xpetra?
                        const Teuchos::Range1D& index)
     {
       // FIXME (mfh 11 Jan 2011) Should check for overflowing int!
-      const int numCols = static_cast<int> (mv.getNumVectors());
+      const int numCols = Teuchos::as<int> (mv.getNumVectors());
       const bool validRange = index.size() > 0 &&
         index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange)
@@ -225,7 +225,7 @@ namespace Belos { // should go to Belos or Xpetra?
                const Teuchos::Range1D& index)
     {
       // FIXME (mfh 11 Jan 2011) Should check for overflowing int!
-      const int numCols = static_cast<int> (mv.getNumVectors());
+      const int numCols = Teuchos::as<int> (mv.getNumVectors());
       const bool validRange = index.size() > 0 &&
         index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange)
@@ -418,7 +418,7 @@ namespace Belos { // should go to Belos or Xpetra?
         // fair to assume that the number of vectors won't overflow int,
         // since the typical use case of multivectors involves few
         // columns, but it's friendly to check just in case.
-        const size_t maxInt = static_cast<size_t> (Teuchos::OrdinalTraits<int>::max());
+        const size_t maxInt = Teuchos::as<size_t> (Teuchos::OrdinalTraits<int>::max());
       const bool overflow = maxInt < A.getNumVectors() && maxInt < mv.getNumVectors();
       if (overflow)
         {
@@ -434,8 +434,8 @@ namespace Belos { // should go to Belos or Xpetra?
                              "vector 'mv' (a size_t) overflows int.");
         }
       // We've already validated the static casts above.
-      const int numColsA = static_cast<int> (A.getNumVectors());
-      const int numColsMv = static_cast<int> (mv.getNumVectors());
+      const int numColsA = Teuchos::as<int> (A.getNumVectors());
+      const int numColsMv = Teuchos::as<int> (mv.getNumVectors());
       // 'index' indexes into mv; it's the index set of the target.
       const bool validIndex = index.lbound() >= 0 && index.ubound() < numColsMv;
       // We can't take more columns out of A than A has.
@@ -501,7 +501,7 @@ namespace Belos { // should go to Belos or Xpetra?
         // fair to assume that the number of vectors won't overflow int,
         // since the typical use case of multivectors involves few
         // columns, but it's friendly to check just in case.
-        const size_t maxInt = static_cast<size_t> (Teuchos::OrdinalTraits<int>::max());
+        const size_t maxInt = Teuchos::as<size_t> (Teuchos::OrdinalTraits<int>::max());
       const bool overflow = maxInt < A.getNumVectors() && maxInt < mv.getNumVectors();
       if (overflow)
         {
@@ -517,8 +517,8 @@ namespace Belos { // should go to Belos or Xpetra?
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
         }
       // We've already validated the static casts above.
-      const int numColsA = static_cast<int> (A.getNumVectors());
-      const int numColsMv = static_cast<int> (mv.getNumVectors());
+      const int numColsA = Teuchos::as<int> (A.getNumVectors());
+      const int numColsMv = Teuchos::as<int> (mv.getNumVectors());
       if (numColsA > numColsMv)
         {
           std::ostringstream os;

@@ -342,9 +342,9 @@ UNIT_TEST_GROUP(int, long)
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 
 // Macros don't like spaces in their arguments.
-typedef long long long_long_type;
+// typedef long long long_long_type;
 
-UNIT_TEST_GROUP(int, long_long_type)
+// UNIT_TEST_GROUP(int, long_long_type)
 
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 

@@ -65,6 +65,7 @@
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 
 #ifdef HAVE_STOKHOS
    #include "Stokhos_EpetraVectorOrthogPoly.hpp"

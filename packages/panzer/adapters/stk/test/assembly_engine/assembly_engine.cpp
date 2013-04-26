@@ -90,6 +90,7 @@ using Teuchos::rcp;
 #include "Thyra_TpetraVectorSpace.hpp"
 
 #include "Thyra_LinearOpTester.hpp"
+#include "Thyra_TestingTools.hpp"
 
 #include <cstdio> // for get char
 

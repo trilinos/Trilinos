@@ -326,7 +326,7 @@ namespace MueLu {
             std::set<GO>        filter;        // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
 
             LO numRows = 0;
-            for (LO id = 0; id < static_cast<LO>(numElements); id++) {
+            for (LO id = 0; id < Teuchos::as<LO>(numElements); id++) {
               GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
               if (filter.find(amalgID) == filter.end()) {
                 elementList[numRows++] = amalgID;

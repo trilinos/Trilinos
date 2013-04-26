@@ -108,7 +108,7 @@ namespace MueLu {
     Array<GO>           elementList(numElements);
 
     // Amalgamate the map
-    for (LO i = 0; i < static_cast<LO>(numElements); i++)
+    for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
       elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
 
     RCP<const Map> coarseCoordMap = MapFactory        ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
@@ -149,13 +149,13 @@ namespace MueLu {
     if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd) {
       std::ostringstream buf;
       buf << fineLevel.GetLevelID();
-      std::string fileName = "coordinates_level_" + buf.str() + ".m";
+      std::string fileName = "coordinates_before_rebalance_level_" + buf.str() + ".m";
       Utils::Write(fileName,*fineCoords);
     }
     if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd) {
       std::ostringstream buf;
       buf << coarseLevel.GetLevelID();
-      std::string fileName = "coordinates_level_" + buf.str() + ".m";
+      std::string fileName = "coordinates_before_rebalance_level_" + buf.str() + ".m";
       Utils::Write(fileName,*coarseCoords);
     }
 

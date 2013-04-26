@@ -164,7 +164,7 @@ namespace MueLu {
 
     } else if (algo == "rcb") {
       params.set("algorithm",             "rcb");
-      params.set("num_global_parts",      static_cast<int>(numParts));
+      params.set("num_global_parts",      Teuchos::as<int>(numParts));
     }
 
     params.set("partitioning_approach",   "partition");

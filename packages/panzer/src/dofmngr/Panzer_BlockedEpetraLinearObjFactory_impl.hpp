@@ -56,6 +56,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 using Teuchos::RCP;
 

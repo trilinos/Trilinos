@@ -53,7 +53,7 @@
 #include <Zoltan2_AlgRCB_methods.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Metric.hpp>             // won't need thiss
-
+#include <Tpetra_Distributor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <new>          // ::operator new[]
 
@@ -3863,52 +3863,80 @@ bool migrateData(
   gno_t numMyNewGnos = 0;
   ArrayRCP<gno_t> recvBuf;
   
-  if (all2alloption == 0){
-    try{
-      AlltoAllv<gno_t>(*comm, *env,
-          sendBuf(), sendCount(),
-          recvBuf, recvCount());
-    }
-    Z2_FORWARD_EXCEPTIONS
-      for (int i=0; i < nprocs; i++){
-        numMyNewGnos += recvCount[i];
+  if (all2alloption == 2) {
+      partId_t *partIds = new partId_t[nobj];
+      partId_t *p = partIds;
+
+      for (int i = 0; i < nprocs; ++i){
+          lno_t sendC = sendCount[i];
+          for (int ii = 0; ii < sendC; ++ii){
+              *(p++) = i;
+          }
       }
-  }
-  else {
 
-    partId_t *partIds = new partId_t[nobj];
-    partId_t *p = partIds;
+      env->timerStart(MACRO_TIMERS, "PQJagged PlanCreating-" + iteration);
+      Tpetra::Distributor distributor(comm);
 
-    for (int i = 0; i < nprocs; ++i){
-      lno_t sendC = sendCount[i];
-      for (int ii = 0; ii < sendC; ++ii){
-        *(p++) = i;
+      ArrayView<const partId_t> pIds( partIds, nobj);
+      numMyNewGnos = distributor.createFromSends(pIds);
+      env->timerStop(MACRO_TIMERS, "PQJagged PlanCreating-" + iteration);
+
+      if (numMyNewGnos!=distributor.getTotalReceiveLength())
+          fprintf(stderr, "UVC: SOMETHING is wrong %d != %d\n", numMyNewGnos, distributor.getTotalReceiveLength());
+      ArrayRCP<gno_t> recvBuf2(distributor.getTotalReceiveLength());
+      //recvBuf.reserve(distributor.getTotalReceiveLength());
+      distributor.doPostsAndWaits<gno_t>(sendBuf(), 1, recvBuf2());
+      recvBuf = recvBuf2;
+      delete []partIds;
+
+  } else if (all2alloption == 1){
+      partId_t *partIds = new partId_t[nobj];
+      partId_t *p = partIds;
+
+      for (int i = 0; i < nprocs; ++i){
+          lno_t sendC = sendCount[i];
+          for (int ii = 0; ii < sendC; ++ii){
+              *(p++) = i;
+          }
       }
-    }
-  ZOLTAN_COMM_OBJ *plan = NULL;     /* pointer for communication object */
- 
-  
-  MPI_Comm mpi_comm = Teuchos2MPI (comm);
-  lno_t incoming = 0;
-  int message_tag = 7859;
-  int ierr = Zoltan_Comm_Create(&plan, nobj, partIds, mpi_comm, message_tag,
-                        &incoming);
-  
-  gno_t *recieves  = new gno_t [incoming];
+      ZOLTAN_COMM_OBJ *plan = NULL;     /* pointer for communication object */
+      
+      
+      MPI_Comm mpi_comm = Teuchos2MPI (comm);
+      lno_t incoming = 0;
+      int message_tag = 7859;
 
-
-  message_tag++;
-  ierr = Zoltan_Comm_Do(plan, message_tag, (char *) sendBuf.getRawPtr(), 
-                        sizeof(gno_t),
-                        (char *) recieves);
-
-  ierr = Zoltan_Comm_Destroy(&plan);
-  ArrayView<gno_t> rec(recieves, incoming);
-  recvBuf = arcpFromArrayView(rec);
-  numMyNewGnos = incoming;
-  delete []partIds;
-  
+      env->timerStart(MACRO_TIMERS, "PQJagged PlanCreating-" + iteration);
+      int ierr = Zoltan_Comm_Create(&plan, nobj, partIds, mpi_comm, message_tag,
+                                    &incoming);
+      env->timerStop(MACRO_TIMERS, "PQJagged PlanCreating-" + iteration);
+      
+      gno_t *recieves  = new gno_t [incoming];
+      
+      
+      message_tag++;
+      ierr = Zoltan_Comm_Do(plan, message_tag, (char *) sendBuf.getRawPtr(), 
+                            sizeof(gno_t),
+                            (char *) recieves);
+      
+      ierr = Zoltan_Comm_Destroy(&plan);
+      ArrayView<gno_t> rec(recieves, incoming);
+      recvBuf = arcpFromArrayView(rec);
+      numMyNewGnos = incoming;
+      delete []partIds;      
+  } else {
+      try{
+          AlltoAllv<gno_t>(*comm, *env,
+                           sendBuf(), sendCount(),
+                           recvBuf, recvCount());
+      }
+      Z2_FORWARD_EXCEPTIONS
+          for (int i=0; i < nprocs; i++){
+              numMyNewGnos += recvCount[i];
+          }
   }
+
+
 
   env->timerStop(MACRO_TIMERS, "PQJagged AlltoAll-" + iteration);
    
