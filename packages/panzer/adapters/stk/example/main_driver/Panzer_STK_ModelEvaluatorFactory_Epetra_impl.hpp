@@ -60,7 +60,9 @@
 #include "Panzer_BlockedDOFManagerFactory.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
+#include "Panzer_ThyraObjContainer.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_InitialCondition_Builder.hpp"
 #include "Panzer_ResponseUtilities.hpp"
@@ -148,6 +150,7 @@ namespace panzer_stk {
 	p.set<int>("Default Integration Order",-1);
 	p.set<std::string>("Field Order","");
 	p.set<bool>("Use DOFManager FEI",false);
+	p.set<bool>("Use Tpetra",false);
 	p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
@@ -231,6 +234,8 @@ namespace panzer_stk {
     std::string field_order  = assembly_params.get<std::string>("Field Order"); // control nodal ordering of unknown
                                                                                    // global IDs in linear system
     bool use_dofmanager_fei  = assembly_params.get<bool>("Use DOFManager FEI"); // use FEI if true, otherwise use internal dof manager
+    bool useTpetra = assembly_params.get<bool>("Use Tpetra");
+
     // this is weird...we are accessing the solution control to determine if things are transient
     // it is backwards!
     bool is_transient  = solncntl_params.get<std::string>("Piro Solver") == "Rythmos" ? true : false;
@@ -372,6 +377,18 @@ namespace panzer_stk {
 
        linObjFactory = bloLinObjFactory;
     }
+    else if(useTpetra) {
+       // use a flat DOF manager
+
+       panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+       globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
+       Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
+       globalIndexer = dofManager;
+        
+       TEUCHOS_ASSERT(!useDiscreteAdjoint); // safety check
+       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,int>(mpi_comm,dofManager));
+    }
     else {
        // use a flat DOF manager
 
@@ -477,7 +494,7 @@ namespace panzer_stk {
 
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me;
     Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me;
-    if(!blockedAssembly) {
+    if(!blockedAssembly && !useTpetra) {
       ep_me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,linObjFactory, p_names, global_data, is_transient));
       if (is_transient) {
         t_init = this->getInitialTime(p.sublist("Initial Conditions").sublist("Transient Parameters"), *mesh);
@@ -513,16 +530,10 @@ namespace panzer_stk {
                                                  phx_ic_field_managers);
 
       Teuchos::RCP<panzer::LinearObjContainer> loc = linObjFactory->buildLinearObjContainer();
-      if(!blockedAssembly) {
-        Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(loc);
-        eloc->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(ep_me->get_x_init()));
-      }
-      else {
-        Teuchos::RCP<panzer::BlockedEpetraLinearObjContainer> bloc = Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjContainer>(loc);
+      Teuchos::RCP<panzer::ThyraObjContainer<double> > tloc = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc);
         
-        Thyra::ModelEvaluatorBase::InArgs<double> nomValues = thyra_me->getNominalValues();
-        bloc->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()));
-      }
+      Thyra::ModelEvaluatorBase::InArgs<double> nomValues = thyra_me->getNominalValues();
+      tloc->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()));
       
       panzer::evaluateInitialCondition(*wkstContainer, phx_ic_field_managers, loc, 0.0);
 

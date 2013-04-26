@@ -24,6 +24,16 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     SET(${PROJECT_NAME}_ENABLE_ForTrilinos OFF)
   ENDIF()
 
+  IF ("${${PROJECT_NAME}_ENABLE_PyTrilinos}" STREQUAL "" AND NOT BUILD_SHARED_LIBS)
+    MESSAGE(
+      "\n***"
+      "\n*** Warning: Setting ${PROJECT_NAME}_ENABLE_PyTrilinos=OFF"
+      " because BUILD_SHARED_LIBS=OFF!"
+      "\n***\n"
+      )
+    SET(${PROJECT_NAME}_ENABLE_PyTrilinos OFF)
+  ENDIF()
+
   IF (NOT EXISTS "${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota")
     MESSAGE("-- " "  Setting ${PROJECT_NAME}_ENABLE_TriKota=OFF"
       " because '${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota' does not exit!")

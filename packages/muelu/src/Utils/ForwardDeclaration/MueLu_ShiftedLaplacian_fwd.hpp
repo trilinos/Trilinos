@@ -1,9 +1,9 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//           Panzer: A partial differential equation assembly
-//       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,49 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
+// Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
+//
 // ***********************************************************************
+//
 // @HEADER
+#ifndef MUELU_SHIFTEDLAPLACIAN_FWD_HPP
+#define MUELU_SHIFTEDLAPLACIAN_FWD_HPP
 
-#ifndef USER_APP_RYTHMOS_OBSERVER_FACTORY_HPP
-#define USER_APP_RYTHMOS_OBSERVER_FACTORY_HPP
 
-#include "Panzer_config.hpp"
 
-#include "Panzer_STK_RythmosObserverFactory.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
-#include "Panzer_ResponseLibrary.hpp"
-#include "Panzer_Traits.hpp"
 
-// Individual Observers
-#include "user_app_RythmosObserver_EpetraToExodus.hpp"
-
-namespace user_app {
-
-  class RythmosObserverFactory_Epetra : public panzer_stk::RythmosObserverFactory {
-
-  public:
-    RythmosObserverFactory_Epetra(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary)
-       : stkIOResponseLibrary_(stkIOResponseLibrary) {}
-
-    bool useNOXObserver() const { return false; }
-    
-    Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
-    buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			 const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & dof_manager,
-			 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof) const
-    {
-      Teuchos::RCP<user_app::RythmosObserver_EpetraToExodus> observer = Teuchos::rcp(new user_app::RythmosObserver_EpetraToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
-      return observer;
-    }
-
-  private:
-    //! Store STK IO response library...be careful, it will be modified externally
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary_;
-
-  };
-
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class ShiftedLaplacian;
 }
 
+#ifndef MUELU_SHIFTEDLAPLACIAN_SHORT
+#define MUELU_SHIFTEDLAPLACIAN_SHORT
 #endif
+
+
+
+#endif // MUELU_SHIFTEDLAPLACIAN_FWD_HPP

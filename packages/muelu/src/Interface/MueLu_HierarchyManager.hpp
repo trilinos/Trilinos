@@ -61,6 +61,8 @@
 
 #include "MueLu_Level.hpp"
 
+#include "MueLu_Utilities.hpp"
+
 namespace MueLu {
 
   // This class stores the configuration of a Hierarchy.
@@ -159,7 +161,12 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
-    }
+
+      WriteData<Matrix>(H,matricesToPrint_,"A");
+      WriteData<Matrix>(H,prolongatorsToPrint_,"P");
+      WriteData<Matrix>(H,restrictorsToPrint_,"R");
+
+    } //SetupHierarchy
 
     //@}
 
@@ -199,8 +206,28 @@ namespace MueLu {
     Xpetra::global_size_t maxCoarseSize_;
     MsgType               verbosity_;
     int                   graphOutputLevel_;
+    Teuchos::Array<int>   matricesToPrint_;
+    Teuchos::Array<int>   prolongatorsToPrint_;
+    Teuchos::Array<int>   restrictorsToPrint_;
 
   private:
+
+    template<class T>
+    void WriteData(Hierarchy & H, Teuchos::Array<int> const &data, std::string const &name) const {
+      for (int i=0; i<data.size(); ++i) {
+        std::ostringstream buf; buf << data[i];
+        std::string fileName = name + "_" + buf.str() + ".m";
+        if (data[i] < H.GetNumLevels()) {
+          RCP<Level> L = H.GetLevel(data[i]);
+          if (L->IsAvailable(name)) {
+            RCP<T> M = L-> template Get< RCP<T> >(name);
+            if ( !( M.is_null() ) )
+              Utils::Write(fileName,*M);
+          }
+        }
+      }
+    } //WriteData
+
     // Levels
     Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level. The last levelManager is used for all the remaining levels.
     RCP<FactoryManagerBase>         coarsestLevelManager_; // coarsest level manager

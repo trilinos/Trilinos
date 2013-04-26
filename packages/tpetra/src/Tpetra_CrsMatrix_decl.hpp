@@ -1946,9 +1946,9 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef typename CrsMatrixType::local_ordinal_type LocalOrdinal;
-    typedef typename CrsMatrixType::global_ordinal_type GlobalOrdinal;
-    typedef typename CrsMatrixType::node_type Node;
+    typedef typename CrsMatrixType::local_ordinal_type LO;
+    typedef typename CrsMatrixType::global_ordinal_type GO;
+    typedef typename CrsMatrixType::node_type NT;
     typedef Map<typename CrsMatrixType::local_ordinal_type,
       typename CrsMatrixType::global_ordinal_type,
       typename CrsMatrixType::node_type> map_type;
@@ -1966,11 +1966,11 @@ namespace Tpetra {
     Teuchos::RCP<const map_type> targetMap = reverseMode? importer.getSourceMap() : importer.getTargetMap();
 
     // Pre-count the nonzeros to allow a build w/ Static Profile
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(sourceMap);
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(targetMap);
+    Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec(sourceMap);
+    Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec(targetMap);
     ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
     for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
-      nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
+      nnzPerRow[i] = Teuchos::as<LO>(sourceMatrix->getNumEntriesInLocalRow(i));
     if(reverseMode) targetNnzPerRowVec.doExport(sourceNnzPerRowVec,importer,Tpetra::ADD);
     else targetNnzPerRowVec.doImport(sourceNnzPerRowVec,importer,Tpetra::INSERT);
 
@@ -2069,9 +2069,9 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef typename CrsMatrixType::local_ordinal_type LocalOrdinal;
-    typedef typename CrsMatrixType::global_ordinal_type GlobalOrdinal;
-    typedef typename CrsMatrixType::node_type Node;
+    typedef typename CrsMatrixType::local_ordinal_type LO;
+    typedef typename CrsMatrixType::global_ordinal_type GO;
+    typedef typename CrsMatrixType::node_type NT;
     typedef Map<typename CrsMatrixType::local_ordinal_type,
       typename CrsMatrixType::global_ordinal_type,
       typename CrsMatrixType::node_type> map_type;
@@ -2089,11 +2089,11 @@ namespace Tpetra {
     Teuchos::RCP<const map_type> targetMap = reverseMode? exporter.getSourceMap() : exporter.getTargetMap();
     
     // Pre-count the nonzeros to allow a build w/ Static Profile
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sourceNnzPerRowVec(sourceMap);
-    Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> targetNnzPerRowVec(targetMap);
+    Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec(sourceMap);
+    Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec(targetMap);
     ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
     for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
-      nnzPerRow[i] = Teuchos::as<LocalOrdinal>(sourceMatrix->getNumEntriesInLocalRow(i));
+      nnzPerRow[i] = Teuchos::as<LO>(sourceMatrix->getNumEntriesInLocalRow(i));
 
     if(reverseMode) targetNnzPerRowVec.doImport(sourceNnzPerRowVec,exporter,Tpetra::INSERT);
     else targetNnzPerRowVec.doExport(sourceNnzPerRowVec,exporter,Tpetra::ADD);

@@ -130,7 +130,7 @@ namespace Xpetra {
           nStridedOffset += stridingInfo[j];
         }
 
-        size_t numMyBlockDofs = stridingInfo[stridedBlockId] / map->getFixedBlockSize() * map->getNodeNumElements();
+        size_t numMyBlockDofs = (stridingInfo[stridedBlockId] * map->getNodeNumElements()) / map->getFixedBlockSize();
         std::vector<GlobalOrdinal> subBlockDofGids(numMyBlockDofs);
 
         // TODO fill vector with dofs

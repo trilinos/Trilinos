@@ -131,6 +131,7 @@ namespace {
 
   void transfer_properties(Ioss::GroupingEntity *ige,
 			   Ioss::GroupingEntity *oge);
+  void transfer_qa_info(Ioss::Region &in, Ioss::Region &out);
 
   void transform_fields(Ioss::GroupingEntity *ige,
 			Ioss::GroupingEntity *oge,
@@ -484,7 +485,8 @@ namespace {
 
     // Get all properties of input database...
     transfer_properties(&region, &output_region);
-
+    transfer_qa_info(region, output_region);
+    
     transfer_nodeblock(region, output_region, globals.debug);
 
 #ifdef HAVE_MPI
@@ -1142,6 +1144,17 @@ namespace {
     assert(data.size() >= isize);
     ige->get_field_data(field_name, &data[0], isize);
     oge->put_field_data(field_name, &data[0], isize);
+  }
+
+  void transfer_qa_info(Ioss::Region &in,
+			Ioss::Region &out)
+  {
+    out.add_information_records(in.get_information_records());
+
+    const std::vector<std::string> &qa = in.get_qa_records();
+    for (size_t i=0; i < qa.size(); i+=4) {
+      out.add_qa_record(qa[i+0], qa[i+1], qa[i+2], qa[i+3]);
+    }
   }
 
   void transfer_properties(Ioss::GroupingEntity *ige,

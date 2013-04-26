@@ -1,27 +1,27 @@
 // ***********************************************************************
-// 
+//
 //      Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 
 #ifndef IFPACK2_DETAILS_CHEBYSHEV_DECL_HPP
@@ -44,7 +44,7 @@ namespace Ifpack2 {
 /// \brief Ifpack2 implementation details
 ///
 /// This namespace contains implementation details of Ifpack2.
-/// It is <i>not</i> meant for users.  Users should not rely on 
+/// It is <i>not</i> meant for users.  Users should not rely on
 /// anything in this namespace.
 namespace Details {
 /// \class Chebyshev
@@ -85,21 +85,21 @@ template<class ScalarType, class MV, class MAT>
 class Chebyshev : public Teuchos::Describable {
 public:
   //! \name Typedefs
-  //@{ 
+  //@{
   typedef ScalarType ST;
   typedef Teuchos::ScalarTraits<ScalarType> STS;
   typedef typename STS::magnitudeType MT;
   typedef Tpetra::Operator<typename MV::scalar_type,
-			   typename MV::local_ordinal_type,
-			   typename MV::global_ordinal_type,
-			   typename MV::node_type> OP;
+                           typename MV::local_ordinal_type,
+                           typename MV::global_ordinal_type,
+                           typename MV::node_type> OP;
   typedef Tpetra::Vector<typename MV::scalar_type,
-			 typename MV::local_ordinal_type,
-			 typename MV::global_ordinal_type,
-			 typename MV::node_type> V;
+                         typename MV::local_ordinal_type,
+                         typename MV::global_ordinal_type,
+                         typename MV::node_type> V;
   typedef Tpetra::Map<typename MV::local_ordinal_type,
-		      typename MV::global_ordinal_type,
-		      typename MV::node_type> map_type;
+                      typename MV::global_ordinal_type,
+                      typename MV::node_type> map_type;
   //@}
 
   /// Constructor that takes a sparse matrix and sets default parameters.
@@ -229,7 +229,7 @@ public:
   /// You must call this method before calling apply(),
   /// - if you have not yet called this method,
   /// - if the matrix (either its values or its structure) has changed, or
-  /// - any time after you call setParameters(). 
+  /// - any time after you call setParameters().
   ///
   /// Users have the option to supply the left scaling vector D_inv
   /// and estimates of the min and max eigenvalues of D_inv * A as
@@ -284,19 +284,19 @@ public:
 
   //@}
   //! \name Implementation of Teuchos::Describable
-  //@{ 
+  //@{
 
   //! A single-line description of the Chebyshev solver.
   std::string description() const;
 
   //! Print a description of the Chebyshev solver to \c out.
-  void 
-  describe (Teuchos::FancyOStream& out, 
-	    const Teuchos::EVerbosityLevel verbLevel = 
-	    Teuchos::Describable::verbLevel_default) const;
+  void
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
   //@}
 private:
-  //! \name The sparse matrix, and other related data.
+  //! \name The sparse matrix, and data related to its diagonal.
   //@{
 
   Teuchos::RCP<const MAT> A_; //!< The sparse matrix A.
@@ -308,10 +308,24 @@ private:
   /// as userInvDiag_), we compute this each time compute() is called.
   /// This ensures that compute() will respect changes to the values
   /// of the matrix.
-  /// 
+  ///
   /// If the user <i>has</i> supplied the inverse diagonal elements,
   /// compute() sets this to point to userInvDiag_.
   Teuchos::RCP<const V> D_;
+
+  /// \brief Precomputed offsets of local diagonal entries of the matrix.
+  ///
+  /// These are only used if the matrix has a const ("static") graph.
+  /// In that case, the offsets of the diagonal entries will never
+  /// change, even if the values of the diagonal entries change.
+  Teuchos::ArrayRCP<size_t> diagOffsets_;
+
+  /// \brief Whether we have precomputed offsets of diagonal entries.
+  ///
+  /// We need this flag because it is not enough just to test if
+  /// diagOffsets_ has size zero.  It is perfectly legitimate for the
+  /// matrix to have zero rows on the calling process.
+  bool savedDiagOffsets_;
 
   //@}
   //! \name Cached computed data
@@ -325,7 +339,7 @@ private:
   Teuchos::RCP<MV> W_;
 
   /// Estimate that we compute for maximum eigenvalue of A.
-  /// compute() will always recompute this. 
+  /// compute() will always recompute this.
   /// This is set to NaN if it hasn't been computed yet.
   ST computedLambdaMax_;
   /// Estimate that we compute for minimum eigenvalue of A.
@@ -339,10 +353,10 @@ private:
 
   /// Estimate for maximum eigenvalue of A.
   /// This is the value actually used by ifpackApplyImpl().
-  ST lambdaMaxForApply_; 
+  ST lambdaMaxForApply_;
   /// Estimate for minimum eigenvalue of A.
   /// This is the value actually used by ifpackApplyImpl().
-  ST lambdaMinForApply_; 
+  ST lambdaMinForApply_;
   /// Estimate for ratio of max to min eigenvalue of A.
   /// This is the ratio actually used by ifpackApplyImpl().
   ST eigRatioForApply_;
@@ -356,14 +370,14 @@ private:
   Teuchos::RCP<const V> userInvDiag_;
   /// User-provided estimate for maximum eigenvalue of A.
   /// This is NaN if the user did not provide this.
-  ST userLambdaMax_; 
+  ST userLambdaMax_;
   /// User-provided estimate for minimum eigenvalue of A.
   /// This is NaN if the user did not provide this.
-  ST userLambdaMin_; 
+  ST userLambdaMin_;
   /// User-provided estimate for ratio of max to min eigenvalue of A.
   /// Not necessarily equal to userLambdaMax_ / userLambdaMin_.
-  ST userEigRatio_;  
-  /// Minimum allowed value on the diagonal of the matrix.  
+  ST userEigRatio_;
+  /// Minimum allowed value on the diagonal of the matrix.
   /// When computing the inverse diagonal, values less than this in
   /// magnitude are replaced with 1.
   ST minDiagVal_;
@@ -394,7 +408,7 @@ private:
 
   /// \brief Set V and W to temporary multivectors with the same Map as X.
   ///
-  /// \param V [out] 
+  /// \param V [out]
   /// \param W [out]
   /// \param X [in] Multivector, whose Map to use when making V and W.
   ///
@@ -406,13 +420,13 @@ private:
   /// the multivector V with the typedef V (for Tpetra::Vector).
   void
   makeTempMultiVectors (Teuchos::RCP<MV>& V1,
-			Teuchos::RCP<MV>& W,
-			const MV& X);
+                        Teuchos::RCP<MV>& W,
+                        const MV& X);
 
   //! R = B - Op(A) * X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
-  static void 
-  computeResidual (MV& R, const MV& B, const MAT& A, const MV& X, 
-		   const Teuchos::ETransp mode = Teuchos::NO_TRANS);
+  static void
+  computeResidual (MV& R, const MV& B, const MAT& A, const MV& X,
+                   const Teuchos::ETransp mode = Teuchos::NO_TRANS);
 
   /// \brief Z = D_inv * R, = D \ R.
   ///
@@ -428,8 +442,15 @@ private:
   /// \param Z [out] Result of multiplying the diagonal matrix D_inv with R.
   static void solve (MV& Z, const ST alpha, const V& D_inv, const MV& R);
 
-  //! Compute the inverse diagonal of the matrix, as a range Map vector.
-  Teuchos::RCP<V> makeInverseDiagonal (const MAT& A) const;
+  /// \brief Compute the inverse diagonal of the matrix, as a range Map vector.
+  ///
+  /// \param A [in] The sparse matrix for which to compute the inverse
+  ///   diagonal.
+  /// \param useDiagOffsets [in] If true, use previously computed
+  ///   offsets of diagonal entries (diagOffsets_) to speed up
+  ///   extracting the diagonal entries of the sparse matrix A.
+  Teuchos::RCP<V>
+  makeInverseDiagonal (const MAT& A, const bool useDiagOffsets=false) const;
 
   /// Return a range Map copy of the vector D.
   ///
@@ -457,13 +478,13 @@ private:
   ///   the same distribution as B.
   void
   textbookApplyImpl (const MAT& A,
-		     const MV& B,
-		     MV& X,
-		     const int numIters,
-		     const ST lambdaMax,
-		     const ST lambdaMin,
-		     const ST eigRatio,
-		     const V& D_inv) const;
+                     const MV& B,
+                     MV& X,
+                     const int numIters,
+                     const ST lambdaMax,
+                     const ST lambdaMin,
+                     const ST eigRatio,
+                     const V& D_inv) const;
 
   /// \brief Solve AX=B for X with Chebyshev iteration with left
   ///   diagonal scaling, imitating Ifpack's implementation.
@@ -489,13 +510,13 @@ private:
   ///   the same distribution as b.
   void
   ifpackApplyImpl (const MAT& A,
-		   const MV& B,
-		   MV& X,
-		   const int numIters,
-		   const ST lambdaMax,
-		   const ST lambdaMin,
-		   const ST eigRatio,
-		   const V& D_inv);
+                   const MV& B,
+                   MV& X,
+                   const int numIters,
+                   const ST lambdaMax,
+                   const ST lambdaMin,
+                   const ST eigRatio,
+                   const V& D_inv);
 
   /// \brief Use numIters power method iterations to estimate the
   ///   maximum eigenvalue of A*D_inv.
@@ -539,7 +560,7 @@ private:
                    const ST lambdaMax,
                    const ST lambdaMin,
                    const ST eigRatio,
-                   const V& D_inv) 
+                   const V& D_inv)
           {
             const ST zero = Teuchos::as<ST> (0);
             const ST one = Teuchos::as<ST> (1);

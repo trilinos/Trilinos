@@ -48,7 +48,7 @@ namespace Ioss {
     // Assignment operator
     // Copy constructor
     
-    enum MinMax {DO_MAX, DO_MIN};
+    enum MinMax {DO_MAX, DO_MIN, DO_SUM};
 
     /*! 
      * Returns 'true' if 'name' is defined in the environment.
@@ -99,21 +99,17 @@ namespace Ioss {
     void global_count(const IntVector &local_counts, IntVector &global_counts) const;
     void global_count(const Int64Vector &local_counts, Int64Vector &global_counts) const;
 
-    int  global_minmax(int  local_minmax, MinMax which) const;
-    double global_minmax(double local_minmax, MinMax which) const;
-    unsigned int  global_minmax(unsigned int local_minmax, MinMax which) const;
-    void global_array_minmax(std::vector<int> &local_minmax,  MinMax which) const;
-    void global_array_minmax(std::vector<int64_t> &local_minmax,  MinMax which) const;
-    void global_array_minmax(std::vector<double> &local_minmax,  MinMax which) const;
-    void global_array_minmax(std::vector<unsigned int> &local_minmax,  MinMax which) const;
-    void global_array_minmax(int *local_minmax, size_t count, MinMax which) const;
-    void global_array_minmax(int64_t *local_minmax, size_t count, MinMax which) const;
-    void global_array_minmax(unsigned int *local_minmax, size_t count, MinMax which) const;
-    void global_array_minmax(double *local_minmax, size_t count, MinMax which) const;
-    void gather(int my_value, std::vector<int> &result) const;
-    void gather(int64_t my_value, std::vector<int64_t> &result) const;
-    void gather(std::vector<int> &my_values, std::vector<int> &result) const;
-    void gather(std::vector<int64_t> &my_values, std::vector<int64_t> &result) const;
+    template <typename T>
+      T global_minmax(T local_minmax, MinMax which) const;
+    template <typename T>
+      void global_array_minmax(std::vector<T> &local_minmax,  MinMax which) const;
+    template <typename T>
+      void global_array_minmax(T *local_minmax, size_t count, MinMax which) const;
+
+    template <typename T>
+      void gather(T my_value, std::vector<T> &result) const;
+    template <typename T>
+      void gather(std::vector<T> &my_values, std::vector<T> &result) const;
 
   private:
     MPI_Comm communicator_;

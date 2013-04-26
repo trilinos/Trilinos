@@ -46,7 +46,7 @@
     \brief A MPI utilities class, providing methods for initializing,
         finalizing, and querying the global MPI session
 */
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_ArrayView.hpp"
 
 
 namespace Teuchos {
@@ -84,15 +84,21 @@ namespace Teuchos {
 /// it in your libraries without needing to know whether users have
 /// called MPI_Init() yet.
 ///
-/// This class even works if you have not built Trilinos with MPI
-/// support.  In that case, it behaves as if MPI_COMM_WORLD had one
-/// process, which is always the calling process.  Thus, you can use
-/// this class to insulate your code from needing to know about MPI.
-/// You don't even have to include mpi.h, as long as your code doesn't
-/// directly use MPI routines or types.  Teuchos implements wrappers
-/// for MPI communicators (see Comm and its subclasses) which allow
-/// you to use a subset of MPI functionality without needing to
-/// include mpi.h or depend on MPI in any way.
+/// This class even works if you have not built Trilinos with MPI support.  In
+/// that case, it behaves as if MPI_COMM_WORLD had one process, which is
+/// always the calling process.  Thus, you can use this class to insulate your
+/// code from needing to know about MPI.  You don't even have to include
+/// mpi.h, as long as your code doesn't directly use MPI routines or types.
+/// Teuchos implements wrappers for MPI communicators (see the Comm class and
+/// its subclasses in the TeuchosComm subpackage) which allow you to use a
+/// very very small subset of MPI functionality without needing to include
+/// mpi.h or depend on MPI in any way.
+///
+/// This class also contains the the most minimal of other members that are
+/// needed for only the most simplistic of tasks needed by other TeuchosCore
+/// software.  For example, you can do a barrier or sum an int across
+/// processes.  These are needed by the most basic operations involving output
+/// or determiing success or failure across processes for unit tests.
 class TEUCHOSCORE_LIB_DLL_EXPORT GlobalMPISession
 {
 public:
@@ -103,16 +109,14 @@ public:
   /** \brief Calls <tt>MPI_Init()</tt> if MPI is enabled.
    *
    * \param argc [in] Address of the argument passed into
-   *   <tt>main(argc,argv)</tt>.  Same as the first argument of
-   *   MPI_Init().
+   * <tt>main(argc,argv)</tt>.  Same as the first argument of MPI_Init().
    *
    * \param argv [in] Address of the argument passed into
-   *   <tt>main(argc,argv)</tt>.  Same as the second argument of
-   *   MPI_Init().
+   * <tt>main(argc,argv)</tt>.  Same as the second argument of MPI_Init().
    *
    * \param out [in] If <tt>out!=NULL</tt>, then a small message on each
-   *            processor will be printed to this stream.  The default is
-   *            <tt>&std::cout</tt>.
+   * processor will be printed to this stream.  The default is
+   * <tt>&std::cout</tt>.
    *
    * If the option <tt>--teuchos-suppress-startup-banner</tt> is found, the
    * this option will be removed from <tt>argv[]</tt> before being passed to
@@ -121,12 +125,11 @@ public:
    *
    * If Teuchos was <i>not</i> built with MPI support, the constructor
    * just prints a startup banner (unless the banner was suppressed --
-   * see previous paragraph).  You can always use this class, whether
-   * or not Teuchos was built with MPI.
+   * see previous paragraph).
    *
    * \warning This constructor can only be called once per executable.
-   *   Otherwise, an error is printed to <tt>*out</tt> and an
-   *   std::exception will be thrown!
+   * Otherwise, an error is printed to <tt>*out</tt> and an std::exception
+   * will be thrown!
    */
   GlobalMPISession( int* argc, char*** argv, std::ostream *out = &std::cout );
 
@@ -165,6 +168,26 @@ public:
    */
   static int getNProc();
 
+  /** \brief Perform a barrier so that all processes line up.
+   */
+  static void barrier();
+
+  /** \brief Sum a set of integers across processes.
+   *
+   * \param localVal [in] Value on local process to sum across processes.
+   */
+  static int sum(int localVal);
+
+  /** \brief Global all-to-all of a set of integers across processes.
+   *
+   * \param localVal [in] Value on local process to pass to all processes.
+   *
+   * \param allVals [out] Array (length getNProc()) that gives the value of
+   * localVal for each process.  On output, allVals[k] is localVal for process
+   * k.
+   */
+  static void allGather(int localVal, const ArrayView<int> &allVals);
+
   //@}
 
 private:
@@ -175,6 +198,8 @@ private:
   static int nProc_;
 
   static void initialize( std::ostream *out );
+
+  static void justInTimeInitialize();
 
 };
 

@@ -75,7 +75,7 @@
 #include <xdmf/Ioxf_Initializer.h>
 #endif
 
-#define OUTPUT std::cerr
+#define OUTPUT std::cout
 
 // ========================================================================
 

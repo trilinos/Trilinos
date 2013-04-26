@@ -67,7 +67,14 @@ IF(TPL_ENABLE_MKL)
 
   IF(Epetra_ENABLE_MKL_SPARSE)
     INCLUDE_DIRECTORIES(${TPL_MKL_INCLUDE_DIRS})
+
+    TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_DISABLE_MKL_SPARSE_MM
+      Epetra_DISABLE_MKL_SPARSE_MM
+      "If option is turned on, MKL matrix-matrix functions will not be used for sparse operations in Epetra.  This does not affect the usage of MKL matrix-vector functions."
+      OFF )
+
   ENDIF()
+
 ELSE()
   IF(Epetra_ENABLE_MKL_SPARSE)
     MESSAGE(FATAL_ERROR "Epetra_ENABLE_MKL_SPARSE requires that MKL TPL be enabled.  Either enable the TPL or do not enable Epetra_ENABLE_MKL_SPARSE.")

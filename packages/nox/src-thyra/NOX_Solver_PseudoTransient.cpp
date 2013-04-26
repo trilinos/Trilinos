@@ -65,6 +65,7 @@
 // This relies explicitly on thyra
 #include "NOX_Thyra_Group.H"
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_ModelEvaluatorBase.hpp"
 
 NOX::Solver::PseudoTransient::

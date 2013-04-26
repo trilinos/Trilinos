@@ -1,13 +1,13 @@
 /*
-//@HEADER
-// ************************************************************************
-// 
-//    KokkosArray: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-// 
+// @HEADER
+// ***********************************************************************
+//
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,41 +35,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact H. Carter Edwards (hcedwar@sandia.gov)
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
-//@HEADER
+// @HEADER
 */
 
-#ifndef KOKKOSARRAY_HOST_STOCHASTICPRODUCTTENSOR_HPP
-#define KOKKOSARRAY_HOST_STOCHASTICPRODUCTTENSOR_HPP
+#include "Tpetra_Details_FixedHashTable.hpp"
 
-namespace KokkosArray {
-namespace Impl {
+#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-template< typename ValueType , class PolynomialType ,
-          template< unsigned , typename , class > class TensorType >
-class Multiply< StochasticProductTensor< ValueType, PolynomialType, Host , TensorType > , void , void >
-{
-public:
-  typedef Host                    device_type ;
-  typedef device_type::size_type  size_type ;
-  typedef StochasticProductTensor< ValueType, PolynomialType, device_type , TensorType > block_type ;
+#include "Tpetra_ETIHelperMacros.h"
+#include "Tpetra_Details_FixedHashTable_def.hpp"
 
-  template< typename MatrixValue , typename VectorValue >
-  static void apply( const block_type  & block ,
-                     const MatrixValue *       a ,
-                     const VectorValue * const x ,
-                           VectorValue * const y )
-  {
-    typedef Multiply< typename block_type::tensor_type > tensor_multiply ;
+namespace Tpetra {
+namespace Details {
 
-    tensor_multiply::apply( block.tensor() , a , x , y );
-  }
-};
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-} // namespace Impl
-} // namespace KokkosArray
+  TPETRA_INSTANTIATE_LG(TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_DEFAULTNODE)
 
-#endif /* #ifndef KOKKOSARRAY_HOST_STOCHASTICPRODUCTTENSOR_HPP */
+} // namespace Details
+} // namespace Tpetra
 
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

@@ -204,7 +204,7 @@ namespace MueLu {
     std::vector<GlobalOrdinal> numMyMultColRequests(numProcs,0);
     std::vector<GlobalOrdinal> numGlobalMultColRequests(numProcs,0);
     numMyMultColRequests[myRank] = localMultColRequests;
-    Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,numProcs,&numMyMultColRequests[0],&numGlobalMultColRequests[0]);
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,numProcs,&numMyMultColRequests[0],&numGlobalMultColRequests[0]);
 
     // communicate multipleColRequests entries to all processors
     int nMyOffset = 0;
@@ -221,7 +221,7 @@ namespace MueLu {
     }
 
     // template ordinal, package (double)
-    Teuchos::reduceAll<int,GlobalOrdinal>(*comm, Teuchos::REDUCE_MAX, (int) globalMultColRequests,&procMultRequestedColIds[0],&global_procMultRequestedColIds[0]);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, Teuchos::as<int>(globalMultColRequests), &procMultRequestedColIds[0], &global_procMultRequestedColIds[0]);
 
     // loop over global_procOverlappingWeights and eliminate wrong entries...
     for (size_t k = 0; k<global_procMultRequestedColIds.size(); k++) {
@@ -236,7 +236,7 @@ namespace MueLu {
         MyWeightForColId[myRank] = 0.0;
       }
 
-      Teuchos::reduceAll<int,Scalar>(*comm,Teuchos::REDUCE_MAX,numProcs,&MyWeightForColId[0],&GlobalWeightForColId[0]);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numProcs, &MyWeightForColId[0], &GlobalWeightForColId[0]);
 
       if(gColVec->getMap()->isNodeGlobalElement(globColId)) {
         // note: 2 procs could have the same weight for a column index.
@@ -474,7 +474,7 @@ namespace MueLu {
 
   GlobalOrdinal global_cntFreeColIdx = 0;
   LocalOrdinal  local_cntFreeColIdx = cntFreeColIdx;
-  sumAll(comm, (LocalOrdinal)local_cntFreeColIdx, global_cntFreeColIdx);
+  sumAll(comm, Teuchos::as<GlobalOrdinal>(local_cntFreeColIdx), global_cntFreeColIdx);
 #ifdef DEBUG_OUTPUT
   std::cout << "global # of empty column idx entries in Qperm: " << global_cntFreeColIdx << std::endl;
 #endif
@@ -485,7 +485,7 @@ namespace MueLu {
     // 1) count how many unused column ids are left
     GlobalOrdinal global_cntUnusedColIdx = 0;
     LocalOrdinal  local_cntUnusedColIdx = cntUnusedColIdx;
-    sumAll(comm, (LocalOrdinal)local_cntUnusedColIdx, global_cntUnusedColIdx);
+    sumAll(comm, Teuchos::as<GlobalOrdinal>(local_cntUnusedColIdx), global_cntUnusedColIdx);
 #ifdef DEBUG_OUTPUT
     std::cout << "global # of unused column idx: " << global_cntUnusedColIdx << std::endl;
 #endif
@@ -494,7 +494,7 @@ namespace MueLu {
     std::vector<LocalOrdinal> local_UnusedColIdxOnProc (numProcs);
     std::vector<LocalOrdinal> global_UnusedColIdxOnProc(numProcs);
     local_UnusedColIdxOnProc[myRank] = local_cntUnusedColIdx;
-    Teuchos::reduceAll<int,LocalOrdinal>(*comm,Teuchos::REDUCE_MAX,numProcs,&local_UnusedColIdxOnProc[0],&global_UnusedColIdxOnProc[0]);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numProcs, &local_UnusedColIdxOnProc[0], &global_UnusedColIdxOnProc[0]);
 
 #ifdef DEBUG_OUTPUT
     std::cout << "PROC " << myRank << " global num unused indices per proc: ";
@@ -515,7 +515,7 @@ namespace MueLu {
       local_UnusedColIdxVector[k] = qUnusedGColIdx.front();
       qUnusedGColIdx.pop();
     }
-    Teuchos::reduceAll<int,GlobalOrdinal>(*comm,Teuchos::REDUCE_MAX,(int)global_cntUnusedColIdx,&local_UnusedColIdxVector[0],&global_UnusedColIdxVector[0]);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, Teuchos::as<int>(global_cntUnusedColIdx), &local_UnusedColIdxVector[0], &global_UnusedColIdxVector[0]);
 #ifdef DEBUG_OUTPUT
     std::cout << "PROC " << myRank << " global UnusedGColIdx: ";
     for (size_t ljk = 0; ljk < global_UnusedColIdxVector.size(); ++ljk) {
@@ -531,7 +531,7 @@ namespace MueLu {
     std::vector<LocalOrdinal> local_EmptyColIdxOnProc (numProcs);
     std::vector<LocalOrdinal> global_EmptyColIdxOnProc(numProcs);
     local_EmptyColIdxOnProc[myRank] = local_cntFreeColIdx;
-    Teuchos::reduceAll<int,LocalOrdinal>(*comm,Teuchos::REDUCE_MAX,numProcs,&local_EmptyColIdxOnProc[0],&global_EmptyColIdxOnProc[0]);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numProcs, &local_EmptyColIdxOnProc[0], &global_EmptyColIdxOnProc[0]);
 
 #ifdef DEBUG_OUTPUT
     std::cout << "PROC " << myRank << " global num of needed column indices: ";
@@ -659,7 +659,7 @@ namespace MueLu {
   }
 
   // sum up all entries in multipleColRequests over all processors
-  sumAll(diagPVec->getMap()->getComm(), (LocalOrdinal)lNumRowPermutations, gNumRowPermutations);
+  sumAll(diagPVec->getMap()->getComm(), Teuchos::as<GlobalOrdinal>(lNumRowPermutations), gNumRowPermutations);
 
   //// count column permutations
   // count zeros on diagonal in Q^T -> number of column permutations
@@ -675,7 +675,7 @@ namespace MueLu {
   }
 
   // sum up all entries in multipleColRequests over all processors
-  sumAll(diagQTVec->getMap()->getComm(), (LocalOrdinal)lNumColPermutations, gNumColPermutations);
+  sumAll(diagQTVec->getMap()->getComm(), Teuchos::as<GlobalOrdinal>(lNumColPermutations), gNumColPermutations);
 
   currentLevel.Set("#RowPermutations", gNumRowPermutations, genFactory/*this*/);
   currentLevel.Set("#ColPermutations", gNumColPermutations, genFactory/*this*/);

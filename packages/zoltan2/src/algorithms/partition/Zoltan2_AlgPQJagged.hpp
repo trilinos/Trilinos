@@ -53,11 +53,14 @@
 #include <Zoltan2_AlgRCB_methods.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Metric.hpp>             // won't need thiss
-
+#include <Tpetra_Distributor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <new>          // ::operator new[]
 
+#include "zoltan_comm_cpp.h"
+
 #include <bitset>
+
 
 #define EPS_SCALE 1
 #define LEAST_SIGNIFICANCE 0.0001
@@ -67,9 +70,8 @@
 #include <omp.h>
 #endif
 //#define FIRST_TOUCH
-
 //#define BINARYCUTSEARCH
-
+//#define Zoltan_Comm
 //#define enable_migration
 #define ABS(x) ((x) >= 0 ? (x) : -(x))
 
@@ -81,6 +83,7 @@
 //#define mpi_communication
 
 #define KCUTOFF 0.80
+#define forceMigration 1500000
 #define Z2_DEFAULT_CON_PART_COUNT 16
 
 namespace Teuchos{
@@ -357,7 +360,8 @@ namespace Zoltan2{
         bool &force_linear,
         int &migration_check_option,
         int &migration_option,
-        T &migration_imbalance_cut_off){
+        T &migration_imbalance_cut_off, 
+        int &assignment_type){
 
       string obj;
 
@@ -422,6 +426,16 @@ namespace Zoltan2{
         migration_check_option = 0;
         //concurrentPartCount = partId_t(aa);
       }
+
+      pe = pl.getEntryPtr("assignment_type");
+      if (pe){
+        //aa = pe->getValue(&aa);
+        assignment_type = pe->getValue(&concurrentPartCount);
+      }else {
+        assignment_type = 1;
+        //concurrentPartCount = partId_t(aa);
+      }
+
 
 
 
@@ -747,7 +761,7 @@ namespace Zoltan2{
         scalar_t &minCoordinate,
         scalar_t &maxCoordinate,
         scalar_t &totalWeight
-
+        ,RCP<Comm<int> > &problemComm
         ){
 
 
@@ -786,8 +800,10 @@ namespace Zoltan2{
 #endif
           scalar_t myMin, myMax;
 
+
           myMin=myMax
             =pqJagged_coordinates[partitionedPointPermutations[coordinateBegin]];
+
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
@@ -799,6 +815,8 @@ namespace Zoltan2{
           }
           max_min_array[myId] = myMin;
           max_min_array[myId + numThreads] = myMax;
+
+
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp barrier
@@ -813,6 +831,9 @@ namespace Zoltan2{
               if(max_min_array[i] < minCoordinate) minCoordinate = max_min_array[i];
             }
           }
+
+
+
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single nowait
 #endif
@@ -2347,6 +2368,7 @@ void getChunksFromCoordinates(
     lno_t *newpartitionedPointPermutations,
     lno_t *totalCounts,
     partId_t *partIds //,
+    ,bool migration_check
     //bool useBinarySearch
     ){
 
@@ -2355,6 +2377,7 @@ void getChunksFromCoordinates(
       //size_t total_part_count = noCuts + partNo;
       scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
 
+    if (migration_check == true) allowNonRectelinearPart = false;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel
 #endif
@@ -2434,7 +2457,7 @@ void getChunksFromCoordinates(
             //cout << "on: " << pp << ":" << p << " cut:" << p << endl;
 
             if(allowNonRectelinearPart && myRatios[p] > _EPSILON * EPS_SCALE){
-              //cout << "p:" << p << endl;
+              //cout << "pa:" << p << endl;
               scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
               myRatios[p] -= w;
               if(myRatios[p] < 0 && p < noCuts - 1 && ABS(cutCoordinates[p+1] - cutCoordinates[p]) < _EPSILON){
@@ -2854,6 +2877,9 @@ RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_initial_m
     scalar_t **coords,
     int weight_dim, 
     scalar_t **weight,
+#ifdef migrate_gid
+    scalar_t *mappedGnos,
+#endif
     int pqJagged_multiVectorDim
     ){
   typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
@@ -2875,7 +2901,7 @@ RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_initial_m
 
   for (int i=0;  i < weight_dim; ++i){
     int j = i + coord_dim;
-    if (j >= pqJagged_multiVectorDim) break;
+    if (j >= pqJagged_multiVectorDim - 1) break;
     //cout << "setting j:" << j << endl;
     if(numLocalPoints > 0){
       Teuchos::ArrayView<const scalar_t> a(weight[i], numLocalPoints);
@@ -2886,6 +2912,16 @@ RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_initial_m
     }
 
   }
+#ifdef migrate_gid
+  if(numLocalPoints > 0){
+    //cout << "writing :" << weight_dim + coord_dim << endl;
+    Teuchos::ArrayView<const scalar_t> a(mappedGnos, numLocalPoints);
+    coordView[pqJagged_multiVectorDim - 1] = a;
+  } else{
+    Teuchos::ArrayView<const scalar_t> a;
+    coordView[pqJagged_multiVectorDim - 1] = a;
+  }
+#endif
   RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmVector = 
     RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >(
         new Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>( mp, coordView.view(0, pqJagged_multiVectorDim), pqJagged_multiVectorDim));
@@ -2907,6 +2943,9 @@ RCP<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_multi_vector(
     scalar_t **coords,
     int weight_dim, 
     scalar_t **weight,
+#ifdef migrate_gid
+    scalar_t *mappedGnos,
+#endif
     scalar_t *assigned_parts, 
     int &multiVectorDim,
     RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > old_mvector
@@ -2930,8 +2969,12 @@ RCP<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_multi_vector(
   for (int i=0; i < weight_dim; i++){
 
     int j = i + coord_dim;
-    if (j >= multiVectorDim ) break;
-    //cout << "setting j:" << j << endl;
+#ifdef migrate_gid
+    if (j >= multiVectorDim - 1) break;
+#endif
+#ifndef migrate_gid
+    if (j >= multiVectorDim) break;
+#endif
     if(numLocalPoints > 0){
       Teuchos::ArrayView<const scalar_t> a(weight[i], numLocalPoints);
       coordView[j] = a;
@@ -2941,7 +2984,18 @@ RCP<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_multi_vector(
     }
   }
   //cout << "weightdim:" << weight_dim << endl;
+#ifdef migrate_gid
 
+  if(numLocalPoints > 0){
+    //cout << "writing :" << weight_dim + coord_dim << endl;
+    Teuchos::ArrayView<const scalar_t> a(mappedGnos, numLocalPoints);
+    coordView[multiVectorDim - 1] = a;
+  } else{
+    Teuchos::ArrayView<const scalar_t> a;
+    coordView[multiVectorDim - 1] = a;
+  }
+  //multiVectorDim += 1;
+#endif
   if (assigned_parts){
     if(numLocalPoints > 0){
       //cout << "writing :" << weight_dim + coord_dim << endl;
@@ -2952,12 +3006,12 @@ RCP<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_multi_vector(
       coordView[multiVectorDim] = a;
     }
     multiVectorDim += 1;
-
   }
   RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmVector = RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >(
       new Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>( mp, coordView.view(0, multiVectorDim), multiVectorDim));
 
   RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
+
   return tmVector;
 }
 
@@ -2965,43 +3019,65 @@ RCP<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_multi_vector(
 
 template <typename gno_t, typename lno_t,typename scalar_t, typename node_t>
 void get_multi_vector(
+    RCP<Comm<int> > &pcomm,
+    
     RCP<Comm<int> > &comm,
     lno_t &numLocalPoints, gno_t &numGlobalPoints,
     int coord_dim, 
     scalar_t **coords,
     int weight_dim, 
     scalar_t **weight,
+#ifdef migrate_gid
+    scalar_t *&mappedGnos,
+#endif
     scalar_t *&assigned_parts
     ,RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > coordsConst
     ,partId_t out_num_parts, lno_t *&permutations, 
     lno_t *part_begins
-    ,partId_t num_parts, int pqJagged_multiVectorDim
+    ,partId_t num_parts, int pqJagged_multiVectorDim,
+    string iteration
     ){
   //numLocalPoints =  coordsConst->getData(0).size();
 
   //numGlobalPoints = coordsConst->getGlobalLength ();
   //Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(coord_dim + weight_dim + 1);
+//  if (iteration != "0")
+//  cout <<"me:" <<pcomm->getRank() << " start - outnumparts:" << out_num_parts << endl;
+
   for (int i=0; i < coord_dim; i++){
     ArrayRCP< const scalar_t >  coord = coordsConst->getData(i);
     coords[i] =(scalar_t *) coord.getRawPtr();
   }
+//  if (iteration != "0")
+//  cout <<"me:" <<pcomm->getRank() << " then - outnumparts:" << out_num_parts << endl;
 
   for (int i=0; i < weight_dim; i++){
+#ifdef migrate_gid
+    if (i + coord_dim >= pqJagged_multiVectorDim - 1) break;
+#endif
+#ifndef migrate_gid
     if (i + coord_dim >= pqJagged_multiVectorDim) break;
+#endif
     //cout << "reading:" << i+ coord_dim << endl;
     ArrayRCP< const scalar_t >  wgts = coordsConst->getData(i+ coord_dim);
     weight[i] = (scalar_t *) wgts.getRawPtr();
   }
+
+#ifdef migrate_gid
+  mappedGnos =  (scalar_t *)  coordsConst->getData(pqJagged_multiVectorDim - 1).getRawPtr();
+#endif
+
+  
   if (assigned_parts){
+    
     assigned_parts = (scalar_t *)coordsConst->getData /*getData*/(pqJagged_multiVectorDim).getRawPtr();
   }
-  //cout <<"me:" <<comm->getRank() << " outnumparts:" << out_num_parts << endl;
+
   if (out_num_parts == 1){
     for(lno_t i = 0; i < numLocalPoints; ++i){
       permutations[i] = i;
     }
     part_begins[0] = numLocalPoints;
-
   }
   else {
     //cout <<"me:" <<comm->getRank() << " outnumparts bigger than 1:" << out_num_parts << endl;
@@ -3022,12 +3098,19 @@ void get_multi_vector(
     lno_t prev_index = 0;
     for(partId_t i = 0; i < num_parts; ++i){
       if(counts[i] > 0)  {
+         //cout << "me:" <<comm->getRank() <<  " p:" << i <<" prev_index:"<< prev_index << " :count:" <<  counts[i] << endl; 
+
         part_begins[p] =  prev_index + counts[i];
         prev_index += counts[i];
         part_shifts[i] = p++;
 
       }
       //counts[i] += counts[i-1];
+    }
+    partId_t assigned_count = p - 1;
+    //cout << "p:" << p << " nump:" << num_parts << " out:" << out_num_parts << endl;
+    for (;p < num_parts; ++p){
+      part_begins[p] =  part_begins[assigned_count ];
     }
     for(partId_t i = 0; i < out_num_parts; ++i){
       counts[i] = part_begins[i];
@@ -3049,17 +3132,16 @@ void get_multi_vector(
     delete[]part_shifts;
 
   }
-
-
 }
 
 #define MIGRATIONIMBALANCE 0.03
 template <typename mvector_t, typename gno_t, typename partId_t>
 bool migrateData(
+    RCP<Comm<int> > &pcomm,
     const RCP<const Environment> &env,
     RCP<Comm<int> > &comm,
     partId_t *&lrflags,
-    RCP<mvector_t> &vectors,    // on return is the new data
+    RCP<const mvector_t> &vectors,    // on return is the new data
     partId_t *p_pid_np_num_procs_each_part,
     partId_t *p_pid_np_work_num_procs_each_part,
     partId_t num_parts,
@@ -3071,15 +3153,34 @@ bool migrateData(
     partId_t *ids, partId_t &groupSize,
     partId_t &out_num_part,
     partId_t &partIndexBegin, partId_t futurePartIndex, 
-    int migration_option,
+    int all2alloption,
     int migration_check_option,
     scalar_t migration_imbalance_cut_off,
-    string iteration
+    string iteration,
+
+  bool pqJagged_uniformWeights,
+  scalar_t *coordWeights,
+  bool allowNonRectelinearPart,
+  float **nonRectelinearRatios,
+  float *actual_ratios,
+  scalar_t *localPartWeights,
+  scalar_t **partWeights,
+  scalar_t *cutCoordinates
+  ,scalar_t *&assigned_parts,
+  int &coord_dim,
+  scalar_t **coords,
+  int &weight_dim,
+  scalar_t **weight,
+  int &multiVectorDim,
+  int assignment_type
+
+
+
     //,    lno_t *permutation
     )          // on return is num procs with left data
 {
 
-
+  int migration_option = 1;
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
 
@@ -3090,7 +3191,7 @@ bool migrateData(
   size_t nobj = vectors->getLocalLength();
   size_t nGlobalObj = vectors->getGlobalLength();
   partId_t myRank = comm->getRank();
-  if (nprocs < num_parts) migration_option = 0;
+  if (nprocs <= num_parts) migration_option = 1;
   partId_t allocation_size = num_parts;
   if (migration_option == 1){
     allocation_size = num_parts * (nprocs + 1);
@@ -3125,19 +3226,138 @@ bool migrateData(
 
   }
 
+  //needs:
+  //bool pqJagged_uniformWeights,
+  //scalar_t *coordWeights,
+  //bool allowNonRectelinearPart,
+  //float **nonRectelinearRatios,
+  //float **actual_ratios,
+  //scalar_t **localPartWeights,
+  //scalar_t **partWeights,
+  //scalar_t *cutCoordinates,
 
   memset(p_gno_np_local_num_coord_each_part_actual, 0, sizeof(gno_t)*allocation_size);
-  for (size_t i=0; i < nobj; i++){
-    ++p_gno_np_local_num_coord_each_part[(lrflags[i]+1)/2];
-  }
-  if (migration_option == 1){
+
+///////////////
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp parallel
+#endif
+      {
+        int me = 0;
+        int noThreads = 1;
+#ifdef HAVE_ZOLTAN2_OMP
+        me = omp_get_thread_num();
+        noThreads = omp_get_num_threads();
+#endif
+
+        //lno_t *myStarts = coordinate_starts[me];
+        //lno_t *myEnds = coordinate_ends[me];
+        float *myRatios = NULL;
+        scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
+        partId_t noCuts = num_parts - 1; 
+
+        if (allowNonRectelinearPart){
+          
+          myRatios = nonRectelinearRatios[me];
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp for
+#endif
+          for (partId_t i = 0; i < noCuts; ++i){
+            float r = actual_ratios[i];
+
+            //cout << "real i:" << i << " :" << r << " " << endl;
+            scalar_t leftWeight = r * (localPartWeights[i * 2 + 1] - localPartWeights[i * 2]);
+            for(int ii = 0; ii < noThreads; ++ii){
+              if(leftWeight > _EPSILON){
+
+                scalar_t ithWeight = partWeights[ii][i * 2 + 1] - partWeights[ii][i * 2 ];
+                if(ithWeight < leftWeight){
+                  nonRectelinearRatios[ii][i] = ithWeight;
+                }
+                else {
+                  nonRectelinearRatios[ii][i] = leftWeight ;
+                }
+                leftWeight -= ithWeight;
+              }
+              else {
+                nonRectelinearRatios[ii][i] = 0;
+              }
+            }
+          }
+
+
+          if(noCuts > 0){
+            for (partId_t i = noCuts - 1; i > 0 ; --i){          if(ABS(cutCoordinates[i] - cutCoordinates[i -1]) < _EPSILON){
+              myRatios[i] -= myRatios[i - 1] ;
+            }
+            //cout << "i:" << i << " :" << myRatios[i] << " ";
+            myRatios[i] = int ((myRatios[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL) / scalar_t(SIGNIFICANCE_MUL);
+            }
+          }
+          /*
+
+             for (partId_t i = 0; i < noCuts; ++i){
+             cout << "r i:" << i << " :" <<  myRatios[i] << " " << endl;
+             }
+           */
+
+        }
+
+#ifdef HAVE_ZOLTAN2_OMP
+#pragma omp for
+#endif
+      for (size_t i=0; i < nobj; i++){
+          partId_t pp = lrflags[i];
+          partId_t p = pp / 2;
+
+          if(pp % 2 == 1){
+            if(allowNonRectelinearPart && myRatios[p] > _EPSILON * EPS_SCALE){
+              //cout << "pa:" << p << endl;
+              scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
+
+              myRatios[p] -= w;
+              if(myRatios[p] < 0 && p < noCuts - 1 && ABS(cutCoordinates[p+1] - cutCoordinates[p]) < _EPSILON){
+                myRatios[p + 1] += myRatios[p];
+              }
+              lrflags[i] = pp - 1;
+            }
+            else{
+              //scalar_t currentCut = cutCoordinates[p];
+              //TODO:currently cannot divide 1 line more than 2 parts.
+              //bug cannot be divided, therefore this part should change.
+              //cout << "p:" << p+1 << endl;
+              lrflags[i] = pp + 1;
+
+
+            }
+
+          }
+          ++p_gno_np_local_num_coord_each_part[(lrflags[i])/2];
+      } 
+
+
+    }
+/*
+  scalar_t *&assigned_parts,
+  int &coord_dim,
+  scalar_t **coords,
+  int &weight_dim,
+  scalar_t **weight,
+  int &multiVectorDim,
+
+*/
+
+
+  
+   if (migration_option == 1){
     memcpy (p_gno_np_local_num_coord_each_part_mypart,
         p_gno_np_local_num_coord_each_part, 
         sizeof(gno_t) * (num_parts) );
   }
 
 
-
+  env->timerStart(MACRO_TIMERS, "PQJagged ReduceAll-" + iteration);
+  
   try{
     reduceAll<int, gno_t>(
         *comm, 
@@ -3147,73 +3367,98 @@ bool migrateData(
         p_gno_np_global_num_coord_each_part_actual);
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
+  env->timerStop(MACRO_TIMERS, "PQJagged ReduceAll-" + iteration);
+
   if (migration_check_option == 0){
     scalar_t diff = 0, global_diff = 0;
+    if (migration_option == 0 )
+    {
+    
     for (partId_t i = 0; i < num_parts; ++i){
       scalar_t ideal_num = p_gno_np_global_num_coord_each_part[i] /  scalar_t(nprocs);
       diff += ABS(ideal_num -
               p_gno_np_local_num_coord_each_part_mypart[i]) /  (ideal_num);
     }
     diff /= num_parts;
-    reduceAll<int, scalar_t>(
+      reduceAll<int, scalar_t>(
         *comm, 
         Teuchos::REDUCE_SUM, 
         1, 
         &diff, 
         &global_diff);
+    }
+    else {
+      for (partId_t ii = 0; ii < nprocs; ++ii){
+        for (partId_t i = 0; i < num_parts; ++i){
+          scalar_t ideal_num = p_gno_np_global_num_coord_each_part[i] /  scalar_t(nprocs);
+          /*
+            global_diff += ABS(ideal_num -
+              p_gno_np_local_num_coord_each_part_mypart[i]) /  (ideal_num);
+          */
+          global_diff += ABS(ideal_num -
+              p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i]) /  (ideal_num);
+
+
+        }
+      }
+      global_diff /= num_parts;
+      
+    }
     global_diff /= nprocs; 
     if (myRank == 0) {
       cout << "imbalance for next iteration:" << global_diff << endl;
     }
+
+
+
     if(global_diff <= migration_imbalance_cut_off){
       delete []p_gno_np_local_num_coord_each_part_actual;
       delete []p_gno_np_work_local_num_coord_each_part_actual;
       delete []p_gno_np_global_num_coord_each_part_actual;
+
       return false;
     }
     
   }
-    /*
-       if (myRank == 0){
-       for(int i = 0; i < allocation_size; ++i){
-       cout << "i:" << i << " p_gno_np_local_num_coord_each_part:" << p_gno_np_local_num_coord_each_part_actual[i] << endl;
-       cout << "i:" << i << " p_gno_np_global_num_coord_each_part_actual:" << p_gno_np_global_num_coord_each_part_actual[i] << endl;
 
-       }
-       }
 
-       comm->barrier();
-     */
-    /*
-       partId_t left_proc = nprocs;
-       partId_t min_required_for_rest = num_parts - 1;
-       for (partId_t i=0; i < num_parts; i++){
-
-       partId_t required_proc = static_cast<partId_t>(floor(0.5f + nprocs * (scalar_t (p_gno_np_global_num_coord_each_part[i]) / scalar_t(nGlobalObj))));
-
-    //cout << "i:" << i << " gnp:" << p_gno_np_global_num_coord_each_part[i] << " lnp:" << p_gno_np_local_num_coord_each_part[i] << " nG:" << nGlobalObj << " nproc:" << nprocs << endl;
-    //cout << "i:" << i << " required:" << required_proc << endl;
-
-    if (left_proc - required_proc < min_required_for_rest){
-    required_proc = left_proc - (min_required_for_rest);
+  if (nprocs < num_parts){
+    assigned_parts = new scalar_t[nobj];
+    for (lno_t i = 0; i < nobj; ++i){
+      assigned_parts[i] = scalar_t (lrflags[i]);
     }
-    --min_required_for_rest;
-    p_pid_np_num_procs_each_part[i] = required_proc;
-    //cout << "i:" << i << " required:" << required_proc << endl;
-    }
-     */
-    //cout << "i4" << endl;
+
+    vectors = create_multi_vector <gno_t,lno_t,scalar_t,node_t>(
+        comm,
+        nGlobalObj,
+        nobj,
+        coord_dim,
+        coords,
+        weight_dim,
+        weight,
+#ifdef migrate_gid
+        mappedGnos,
+#endif
+        assigned_parts, multiVectorDim,
+        vectors
+        );
+
+  }
+
     ///////////////////////////////////////////////////////
     // Get a list of my new global numbers.
 
-    Array<lno_t> sendCount(nprocs, 0);
+  Array<lno_t> sendCount(nprocs, 0);
   Array<lno_t> recvCount(nprocs, 0);
   Array<gno_t> sendBuf(nobj, 0);
   out_num_part = 0;
   //int assigned_part_count = 0;
   if (1 || nobj > 0){
-    if (nprocs >= num_parts){
+    if (nprocs > num_parts){
       if(migration_option == 1){
+        if(comm->getRank() == 0){
+          cout << "smart migration" << endl;
+        }
 
         partId_t *part_assign_begins = new partId_t [num_parts];
         partId_t *proc_chains = new partId_t [nprocs];
@@ -3224,6 +3469,7 @@ bool migrateData(
 
         bool did_i_find_my_group = false;
 
+        partId_t next_proc_to_assign = 0;
         for (partId_t i=0; i < num_parts; i++){
           partId_t required_proc = static_cast<partId_t>(floor(0.5f + nprocs * (scalar_t (p_gno_np_global_num_coord_each_part[i]) / scalar_t(nGlobalObj))));
           if (left_proc - required_proc < min_required_for_rest){
@@ -3254,20 +3500,45 @@ bool migrateData(
 
 
           gno_t total_num_points_in_part = p_gno_np_global_num_coord_each_part[i];
-          for(partId_t ii = 0; ii < nprocs; ++ii){
-            proc_points_in_part[ii].id = ii;
+          if(assignment_type == 0){
+            //cout << "assign=0" << endl;
+            for(partId_t ii = 0; ii < nprocs; ++ii){
+              proc_points_in_part[ii].id = ii;
 
-            if (proc_part_assignments[ii] == -1){
+              if (proc_part_assignments[ii] == -1){
 
-              proc_points_in_part[ii].val = p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
+                proc_points_in_part[ii].val = p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
+              }
+              else {
+                proc_points_in_part[ii].val = -p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i] - 1;
+              }
             }
-            else {
-              proc_points_in_part[ii].val = -p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i] - 1;
-            }
-            //cout << "i:" << i << " me:" << myRank << " ii:" << ii << " val:" << proc_points_in_part[ii].val << " index:" <<  ii * num_parts + i << " alloc:" << allocation_size << endl;
           }
-          uqsort<partId_t, partId_t>(nprocs, proc_points_in_part);
+          else {
+            //cout << "assign=1" << endl;
 
+            partId_t required_proc = p_pid_np_num_procs_each_part[i];
+            partId_t last_proc_to_assign = next_proc_to_assign + required_proc;
+            for(partId_t ii = 0; ii < nprocs; ++ii){
+              proc_points_in_part[ii].id = ii;
+
+              if (ii >= next_proc_to_assign && ii < last_proc_to_assign){
+
+                proc_points_in_part[ii].val = p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
+              }
+              else {
+                proc_points_in_part[ii].val = -p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i] - 1;
+              }
+            }
+            next_proc_to_assign = last_proc_to_assign;
+
+
+          }
+
+          env->timerStart(MACRO_TIMERS, "PQJagged Sort-" + iteration);
+          uqsort<partId_t, partId_t>(nprocs, proc_points_in_part);
+          env->timerStop(MACRO_TIMERS, "PQJagged Sort-" + iteration);
+          
           partId_t required_proc_count =  p_pid_np_num_procs_each_part[i];
 
 
@@ -3385,6 +3656,9 @@ bool migrateData(
         delete []_sendCount_psum;
         delete []sendCount_copy;
       } else { 
+        if(comm->getRank() == 0){
+          cout << "easy migration" << endl;
+        }
 
         partId_t left_proc = nprocs;
         partId_t min_required_for_rest = num_parts - 1;
@@ -3477,6 +3751,9 @@ bool migrateData(
       //id is the part number, sort value is the assigned processor id.
       uSortItem<partId_t, partId_t> * part_assignment = new uSortItem<partId_t, partId_t>[num_parts];
 
+      uSortItem<partId_t, gno_t> * proc_load_sort = new uSortItem<partId_t, gno_t>[nprocs];
+
+
       for (partId_t i = 0; i < num_parts; ++i){
         part_loads[i].id = i;
         part_loads[i].val = p_gno_np_global_num_coord_each_part[i];
@@ -3501,8 +3778,16 @@ bool migrateData(
         //load of the part
         gno_t load = p_gno_np_global_num_coord_each_part[i];
 
-        //traverse all processors.
         for (partId_t ii = 0; ii < nprocs; ++ii){
+          proc_load_sort[ii].id = ii;
+          proc_load_sort[ii].val =  p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
+
+        }
+        uqsort<partId_t, gno_t>(nprocs, proc_load_sort);
+
+        //traverse all processors.
+        for (partId_t iii = 0; iii < nprocs; ++iii){
+          partId_t ii = proc_load_sort[iii].id;
           lno_t left_space = space_in_each_processor[ii] - load;
           //if enought space, assign to this part.
           if(left_space >= 0 ){
@@ -3531,7 +3816,7 @@ bool migrateData(
         //increase the send to that processor by the number of points in that part.
         sendCount[assignment] += p_gno_np_local_num_coord_each_part[i];  
       }
-
+      delete []proc_load_sort;
       //sort assignments with respect to the assigned processors.
       uqsort<partId_t, partId_t>(num_parts, part_assignment);
       //calculate the prefix sum for send buffer array.
@@ -3559,7 +3844,6 @@ bool migrateData(
 
       }
 
-      //cout << "partIndexBegin:" << partIndexBegin << " futurePartIndex:" << futurePartIndex << endl;
 
       delete []part_assignment;
       delete []part_loads;
@@ -3573,80 +3857,113 @@ bool migrateData(
 
     }
 
-    /*
-       ArrayView<const gno_t> gnoList = vectors->getMap()->getNodeElementList();
-       for (size_t i=0; i < nobj; i++){
-       partId_t p = (lrflags[i]+1)/2;
-       gno_t to_send = gnoList[i];
-       sendBuf[--p_gno_np_local_num_coord_each_part[p]] = to_send;
-       }
-     */
-    /*
-       for (size_t i=0; i < nobj; i++){
-       cout << "me:" << myRank << " i:" << i << " sf:" << sendBuf[i] << endl;   
-       }
-     */
-    /*
-       for (size_t i=0; i < nobj; i++){
-       cout << "me:" << comm->getRank() <<" i:" << i << " ssb:" << sendBuf[i] << endl;
-       }
-     */
   }
 
-  //cout << "i6" << endl;
-  ArrayRCP<gno_t> recvBuf;/*
-                             for (size_t i=0; i < nobj; i++){
-                             cout << "me:" << myRank << " i:" << i << " sf:" << sendBuf[i] << endl;   
-                             }*/
-  try{
-    AlltoAllv<gno_t>(*comm, *env,
-        sendBuf(), sendCount(),
-        recvBuf, recvCount());
-  }
-  Z2_FORWARD_EXCEPTIONS
-    //cout << "me:" << comm->getRank() << " send:" << sendCount() << " rec:" << recvCount() << endl;
+  env->timerStart(MACRO_TIMERS, "PQJagged AlltoAll-" + iteration);
+  gno_t numMyNewGnos = 0;
+  ArrayRCP<gno_t> recvBuf;
+  
+  if (all2alloption == 2) {
+      partId_t *partIds = new partId_t[nobj];
+      partId_t *p = partIds;
 
-    sendCount.clear();
+      for (int i = 0; i < nprocs; ++i){
+          lno_t sendC = sendCount[i];
+          for (int ii = 0; ii < sendC; ++ii){
+              *(p++) = i;
+          }
+      }
+
+      env->timerStart(MACRO_TIMERS, "PQJagged PlanCreating-" + iteration);
+      Tpetra::Distributor distributor(comm);
+
+      ArrayView<const partId_t> pIds( partIds, nobj);
+      numMyNewGnos = distributor.createFromSends(pIds);
+      env->timerStop(MACRO_TIMERS, "PQJagged PlanCreating-" + iteration);
+
+      if (numMyNewGnos!=distributor.getTotalReceiveLength())
+          fprintf(stderr, "UVC: SOMETHING is wrong %d != %d\n", numMyNewGnos, distributor.getTotalReceiveLength());
+      ArrayRCP<gno_t> recvBuf2(distributor.getTotalReceiveLength());
+      //recvBuf.reserve(distributor.getTotalReceiveLength());
+      distributor.doPostsAndWaits<gno_t>(sendBuf(), 1, recvBuf2());
+      recvBuf = recvBuf2;
+      delete []partIds;
+
+  } else if (all2alloption == 1){
+      partId_t *partIds = new partId_t[nobj];
+      partId_t *p = partIds;
+
+      for (int i = 0; i < nprocs; ++i){
+          lno_t sendC = sendCount[i];
+          for (int ii = 0; ii < sendC; ++ii){
+              *(p++) = i;
+          }
+      }
+      ZOLTAN_COMM_OBJ *plan = NULL;     /* pointer for communication object */
+      
+      
+      MPI_Comm mpi_comm = Teuchos2MPI (comm);
+      lno_t incoming = 0;
+      int message_tag = 7859;
+
+      env->timerStart(MACRO_TIMERS, "PQJagged PlanCreating-" + iteration);
+      int ierr = Zoltan_Comm_Create(&plan, nobj, partIds, mpi_comm, message_tag,
+                                    &incoming);
+      env->timerStop(MACRO_TIMERS, "PQJagged PlanCreating-" + iteration);
+      
+      gno_t *recieves  = new gno_t [incoming];
+      
+      
+      message_tag++;
+      ierr = Zoltan_Comm_Do(plan, message_tag, (char *) sendBuf.getRawPtr(), 
+                            sizeof(gno_t),
+                            (char *) recieves);
+      
+      ierr = Zoltan_Comm_Destroy(&plan);
+      ArrayView<gno_t> rec(recieves, incoming);
+      recvBuf = arcpFromArrayView(rec);
+      numMyNewGnos = incoming;
+      delete []partIds;      
+  } else {
+      try{
+          AlltoAllv<gno_t>(*comm, *env,
+                           sendBuf(), sendCount(),
+                           recvBuf, recvCount());
+      }
+      Z2_FORWARD_EXCEPTIONS
+          for (int i=0; i < nprocs; i++){
+              numMyNewGnos += recvCount[i];
+          }
+  }
+
+
+
+  env->timerStop(MACRO_TIMERS, "PQJagged AlltoAll-" + iteration);
+   
+  sendCount.clear();
   sendBuf.clear();
   ///////////////////////////////////////////////////////
   // Migrate the multivector of data.
-  gno_t numMyNewGnos = 0;
-  for (int i=0; i < nprocs; i++){
-    numMyNewGnos += recvCount[i];
-    //cout << "me:" << comm->getRank() << " i:" << i << " recvCount[i]:" << recvCount[i] << endl;
-  }
-
+  ///////////////////////////////////////////////////////
 
   recvCount.clear();
 
-  RCP<const mvector_t> newMultiVector;
-  RCP<const mvector_t> constInput = rcp_const_cast<const mvector_t>(vectors);
+
+
+  env->timerStart(MACRO_TIMERS, "PQJagged Actual_Migration-" + iteration);
 
   try{
-    env->timerStart(MACRO_TIMERS, "PQJagged Actual_Migration-" + iteration);
     
-    newMultiVector = XpetraTraits<mvector_t>::doMigration(
-        constInput, numMyNewGnos, recvBuf.getRawPtr());
-    env->timerStop(MACRO_TIMERS, "PQJagged Actual_Migration-" + iteration);
+    vectors = XpetraTraits<mvector_t>::doMigration(
+        vectors, numMyNewGnos, recvBuf.getRawPtr());
     
   }
   Z2_FORWARD_EXCEPTIONS
-
-    vectors = rcp_const_cast<mvector_t>(newMultiVector);
+  env->timerStop(MACRO_TIMERS, "PQJagged Actual_Migration-" + iteration);
 
   delete []p_gno_np_local_num_coord_each_part_actual;
   delete []p_gno_np_work_local_num_coord_each_part_actual;
   delete []p_gno_np_global_num_coord_each_part_actual;
-  /*
-     comm->barrier();
-     cout << "DONE" << endl;
-     cout << "me:" <<  comm->getRank()  << " group:" << groupSize << endl;
-     for (int i= 0; i < groupSize; ++i){
-     cout << "me:"<< comm->getRank() << " i:" << i << " id:" << ids[i] << endl;
-     }
-
-     comm->barrier();
-   */
   return true;
 }
 template <typename mvector_t, typename lno_t, typename gno_t, typename part_id>
@@ -3656,7 +3973,7 @@ void create_sub_communicatior(
     RCP<Comm<int> > &comm,
     partId_t groupSize, 
     partId_t *ids, 
-    RCP <mvector_t> &mvector,
+    RCP <const mvector_t> &mvector,
     int multiVectorDim,
     lno_t &numLocalCoords,
     gno_t &numGlobalCoords
@@ -3698,7 +4015,7 @@ void create_sub_communicatior(
   ArrayRCP<const ArrayView<const scalar_t> > subVectors =
     arcp(avSubList, 0, multiVectorDim);
 
-  RCP<mvector_t> subMvector;
+  RCP<const mvector_t> subMvector;
 
   try{
     subMvector = rcp(new mvector_t(
@@ -3715,6 +4032,7 @@ void create_sub_communicatior(
 
 template <typename gno_t, typename lno_t,typename scalar_t, typename node_t, typename partId_t>
 bool migration(
+    RCP<Comm<int> > &pcomm,
     const RCP<const Environment> &env,
     RCP<Comm<int> > &comm,
     RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > &mvector, 
@@ -3726,6 +4044,9 @@ bool migration(
     scalar_t **coords,
     int weight_dim,
     scalar_t **weight,
+#ifdef migrate_gid
+    scalar_t *&mappedGnos,
+#endif
     partId_t * &assigned_parts_,
     partId_t num_parts,
     partId_t &out_num_part,
@@ -3737,8 +4058,19 @@ bool migration(
     int migration_option, 
     int migration_check_option,
     scalar_t migration_imbalance_cut_off,
-    string iteration){
+    string iteration,
 
+
+  bool pqJagged_uniformWeights,
+  scalar_t *coordWeights,
+  bool allowNonRectelinearPart,
+  float **nonRectelinearRatios,
+  float *actual_ratios,
+  scalar_t *localPartWeights,
+  scalar_t **partWeights,
+  scalar_t *cutCoordinates,
+  int assignment_type
+  ){
   partId_t nprocs = comm->getSize();
   scalar_t *assigned_parts = NULL;
   int multiVectorDim = pqJagged_multiVectorDim;
@@ -3746,12 +4078,16 @@ bool migration(
 
   typedef RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >  tmv;
   typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mvector_t;
+  /*
+  tmv mvector1 (mvector);
+
   if (nprocs < num_parts){
     assigned_parts = new scalar_t[numLocalPoints];
     for (lno_t i = 0; i < numLocalPoints; ++i){
       assigned_parts[i] = scalar_t (assigned_parts_[i]);
     }
-    mvector = create_multi_vector <gno_t,lno_t,scalar_t,node_t>(
+
+    mvector1 = create_multi_vector <gno_t,lno_t,scalar_t,node_t>(
         comm,
         numGlobalPoints,
         numLocalPoints,
@@ -3759,43 +4095,30 @@ bool migration(
         coords,
         weight_dim,
         weight,
+#ifdef migrate_gid
+        mappedGnos,
+#endif
         assigned_parts, multiVectorDim,
         mvector
         );
 
   }
-  RCP<mvector_t> mvMigration = rcp_const_cast<mvector_t>(mvector);
-  /*
-     for (int i = 0; i < 5; ++i){
-     cout << "me:" << comm->getRank() << " i:" << i << " coords:" << coords[0][i]  << endl;
-     if(weight_dim){
-     cout << "me:" << comm->getRank() << " i:" << i << " w:" << weight[0][i]  << endl;
-     }
-     }
-   */    
+*/
+
   partId_t *p_pid_np_num_procs_each_part = new partId_t[num_parts];
   partId_t *p_pid_np_work_num_procs_each_part = new partId_t[num_parts];
-  /*
-     gno_t *p_gno_np_local_num_coord_each_part = new gno_t[num_parts];
-     gno_t *p_gno_np_work_local_num_coord_each_part = new gno_t[num_parts];
-     gno_t *p_gno_np_global_num_coord_each_part  = new gno_t[num_parts];
-   */
   partId_t *ids = new partId_t[nprocs];
   partId_t groupSize = 0;
   if (
-  !migrateData <mvector_t, gno_t, partId_t>(
+  !migrateData <mvector_t, gno_t, partId_t>( 
+      pcomm,
       env,
       comm,
       assigned_parts_,
-      mvMigration,
+      mvector,
       p_pid_np_num_procs_each_part,
       p_pid_np_work_num_procs_each_part,
       num_parts,
-      /*
-         p_gno_np_local_num_coord_each_part,
-         p_gno_np_work_local_num_coord_each_part,
-         p_gno_np_global_num_coord_each_part,
-       */
       ids, groupSize,
       out_num_part//, permutation
       ,partIndexBegin, 
@@ -3803,7 +4126,25 @@ bool migration(
       migration_option,
       migration_check_option,
       migration_imbalance_cut_off,
-      iteration
+      iteration,
+
+  pqJagged_uniformWeights,
+  coordWeights,
+  allowNonRectelinearPart,
+  nonRectelinearRatios,
+  actual_ratios,
+  localPartWeights,
+  partWeights,
+  cutCoordinates
+
+  ,assigned_parts,
+  coord_dim,
+  coords,
+  weight_dim,
+  weight,
+  multiVectorDim,
+  assignment_type
+
       )
     )
    {
@@ -3811,57 +4152,56 @@ bool migration(
      delete []assigned_parts;
      delete []p_pid_np_num_procs_each_part;
      delete []p_pid_np_work_num_procs_each_part;
+  
      return false;
   }
-  
-
   delete []assigned_parts;
   delete []p_pid_np_num_procs_each_part;
   delete []p_pid_np_work_num_procs_each_part;
 
-  /*
-     delete []p_gno_np_local_num_coord_each_part;
-     delete []p_gno_np_work_local_num_coord_each_part;
-     delete []p_gno_np_global_num_coord_each_part;
-   */
-  /*
-     for (int i= 0; i < groupSize; ++i){
-     cout << "me:"<< comm->getRank() << " i:" << i << " id:" << ids[i] << endl;
-     }
-     comm->barrier();
-   */
-  //cout << "me:" <<comm->getRank() << " create sub" << endl;
   create_sub_communicatior<mvector_t, lno_t, gno_t, partId_t>(
       env,comm,
       groupSize, 
       ids,
-      mvMigration, multiVectorDim,numLocalPoints,
+      mvector, multiVectorDim,numLocalPoints,
       numGlobalPoints
       );
 
+
+
   if (prev_num_local != numLocalPoints){
     //cout << "reallocating:" << prev_num_local << " now:" << numLocalPoints << endl;
-    delete []assigned_parts_;
-    assigned_parts_ = new partId_t[numLocalPoints];
+      delete []assigned_parts_;
+      assigned_parts_ = new partId_t[numLocalPoints];
     delete []permutation;
     delete []old_permutation;
+#ifdef migrate_gid
+    //delete [] mappedGnos;
+    mappedGnos = new scalar_t [numLocalPoints];
+#endif
     old_permutation = new lno_t[numLocalPoints];
     permutation = new lno_t[numLocalPoints];
   }
 
-  mvector = rcp_const_cast<const mvector_t>(mvMigration);
-  get_multi_vector<gno_t,lno_t,scalar_t,node_t>(
+
+  get_multi_vector<gno_t,lno_t,scalar_t,node_t>(pcomm,
       comm,
       numLocalPoints, numGlobalPoints,
       coord_dim,
       coords,
       weight_dim,
       weight,
+#ifdef migrate_gid
+      mappedGnos,
+#endif
       assigned_parts,
       mvector, 
       out_num_part, permutation,
       part_begins,
-      num_parts,pqJagged_multiVectorDim);
+      num_parts,pqJagged_multiVectorDim, iteration);
+
+
+
   return true;
 }
 
@@ -3905,10 +4245,7 @@ void AlgPQJagged(
      }
      */
     env->timerStart(MACRO_TIMERS, "PQJagged Total");
-
-  int migration_check_option = 0;
-  int migration_option = 1;
-  scalar_t migration_imbalance_cut_off = 0.03;
+    env->timerStart(MACRO_TIMERS, "PQJagged Total2");
   // 0 - for decision
   // > 0 - for force migration
   // < 0 - for avoid migration
@@ -3924,6 +4261,12 @@ void AlgPQJagged(
 
   std::bitset<NUM_RCB_PARAMS> params;
   int numTestCuts = 5;
+
+  int migration_check_option = 0;
+  int migration_option = 1;
+  scalar_t migration_imbalance_cut_off = 0.03;
+  int assignment_type = 0;
+
   scalar_t imbalanceTolerance;
 
   multiCriteriaNorm mcnorm;
@@ -3944,7 +4287,7 @@ void AlgPQJagged(
       force_linear,
       migration_check_option,
       migration_option,
-      migration_imbalance_cut_off);
+      migration_imbalance_cut_off, assignment_type);
   if (migration_check_option > 1) migration_check_option = -1;
   /*
   cout << "\nmigration_check_option:" << migration_check_option <<
@@ -3996,8 +4339,10 @@ void AlgPQJagged(
 
   const partId_t *partNo = pl.getPtr<Array <partId_t> >("pqParts")->getRawPtr();
   int partArraySize = pl.getPtr<Array <partId_t> >("pqParts")->size() - 1;
-
+  
+  partId_t reduceAllCount = 0;
   for (int i = 0; i < partArraySize; ++i){
+    reduceAllCount += totalPartCount;
     totalPartCount *= partNo[i];
     if(partNo[i] > maxPartNo) maxPartNo = partNo[i];
   }
@@ -4051,7 +4396,7 @@ void AlgPQJagged(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-  for(size_t i = 0; i < numLocalCoords; ++i){
+  for(size_t i = 0; i < static_cast<size_t>(numLocalCoords); ++i){
     partitionedPointCoordinates[i] = i;
   }
 
@@ -4238,8 +4583,15 @@ void AlgPQJagged(
 
   //create multivector based on the coordinates, weights, and multivectordim
 #ifdef enable_migration
-
+#ifdef migrate_gid
+  scalar_t *mappedGnos =  allocMemory<scalar_t> (numLocalCoords);
+  for(int i = 0; i < numLocalCoords; ++i){
+    mappedGnos[i] = scalar_t (pqJagged_gnos[i]);
+  }
+  pqJagged_multiVectorDim += 1;
+#endif
   typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mvector_t;
+  
   RCP<const mvector_t> mvector = 
     create_initial_multi_vector <gno_t,lno_t,scalar_t,node_t>(
         comm,
@@ -4249,12 +4601,15 @@ void AlgPQJagged(
         pqJagged_coordinates,//coords,
         weightDim, //weight_dim,
         pqJagged_weights,  //weight,
+#ifdef migrate_gid
+        mappedGnos,
+#endif
         pqJagged_multiVectorDim// multiVectorDim
         );
-
-#endif
+  int worldSize = comm->getSize();
   //int myRank = comm->getRank();
-  //int worldSize = comm->getSize();
+#endif
+  
 
   scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
   partId_t partIndexBegin = 0;
@@ -4262,6 +4617,9 @@ void AlgPQJagged(
   bool is_data_migrated = false;
   for (int i = 0; i < partArraySize; ++i){
     if(partNo[i] == 1) continue;
+#ifdef enable_migration
+    long reduceAllPop = reduceAllCount * worldSize;
+#endif
     int coordInd = i % coordDim;
     string istring = toString<int>(i);
     futurePartNumbers /= partNo[i];
@@ -4328,9 +4686,13 @@ void AlgPQJagged(
             localMinMaxTotal[kk], //min coordinate
             localMinMaxTotal[kk + concurrentPart], //max coordinate
             localMinMaxTotal[kk + 2*concurrentPart] //total weight);
+            ,problemComm
         );
       }
+
       pqJagged_getGlobalMinMaxTotalCoord<scalar_t>(comm,env, concurrentPart, localMinMaxTotal, globalMinMaxTotal);
+
+
 
       //env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring +"_min_max");
 
@@ -4395,6 +4757,7 @@ void AlgPQJagged(
         }
       }
 
+
       //cout << "partId:" << partIds[0] << endl;
       //env->timerStart(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_1d");
       // Determine cut lines for k parts here.
@@ -4432,6 +4795,7 @@ void AlgPQJagged(
           useBinarySearch, // istring,
           partIds
             );
+    bool migration_check = false;
 
 
       //env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_1d");
@@ -4442,7 +4806,7 @@ void AlgPQJagged(
       //}
       //
 #ifdef enable_migration
-      if (migration_check_option >= 0 && nprocs > 1 && currentPartitionCount == 1)      {
+      if (futurePartNumbers > 1 && migration_check_option >= 0 && nprocs > 1 && currentPartitionCount == 1)      {
         /*
            template <typename gno_t, typename lno_t,typename scalar_t, typename node_t, typename partId_t>
            void migration(
@@ -4460,10 +4824,14 @@ void AlgPQJagged(
            lno_t *permutation, lno_t *part_begins)
          */
         env->timerStart(MACRO_TIMERS, "PQJagged Problem_Migration-" + istring);
-        
+        int mco = migration_check_option;
+        if (reduceAllPop >= forceMigration ){
+          mco = 1;
+        }
         partId_t num_parts = partNo[i];
         if (
-            migration<gno_t, lno_t, scalar_t, node_t, partId_t>(        
+            migration<gno_t, lno_t, scalar_t, node_t, partId_t>(   
+              problemComm,
               env, comm, 
               mvector, pqJagged_multiVectorDim,
               numGlobalCoords,//numGlobalPoints,
@@ -4472,6 +4840,9 @@ void AlgPQJagged(
               pqJagged_coordinates, //outout will be modified.
               weightDim,
               pqJagged_weights,// output will be modified.
+#ifdef migrate_gid
+              mappedGnos,
+#endif
               partIds, num_parts,
               currentPartitionCount, //output 
               newpartitionedPointCoordinates, //output
@@ -4480,30 +4851,40 @@ void AlgPQJagged(
               ,partIndexBegin,
               futurePartNumbers, 
               migration_option, 
-              migration_check_option,
+              mco, //migration_check_option,
               migration_imbalance_cut_off,
-              istring
-              )
+              istring,
+
+              pqJagged_uniformWeights[0],
+              pqJagged_weights[0],
+              allowNonRectelinearPart,
+              nonRectRatios,
+              nonRectelinearPart,
+              totalPartWeights_leftClosests_rightClosests,
+              partWeights,
+              cutCoordinates,
+              assignment_type
+                )
            )
-        { /*
-          if(comm->getRank() == 0)
-          cout <<"i:" << i << " migration is done" << endl;
-          */
+        { 
+
           is_migrated_in_current = true;
           is_data_migrated = true;
           env->timerStop(MACRO_TIMERS, "PQJagged Problem_Migration-" + istring);
+          reduceAllCount /= num_parts;
 
           break;
 
         }
         else {
-          /*
-          if(comm->getRank() == 0)
-          cout << "i:" << i << " migration is not done" << endl;
-          */
+//          cout <<"me:" <<problemComm->getRank()<< " me2:" << comm->getRank() << " i:" << i << " migration is not done" << endl;
+//          cout  <<"me:" <<problemComm->getRank()<< " me2:" << comm->getRank() << pqJagged_coordinates[0][0] << endl;
           env->timerStop(MACRO_TIMERS, "PQJagged Problem_Migration-" + istring);
 
           is_migrated_in_current = false;
+          migration_check = true;
+          
+
         }
         //cout << "numGlobal:" << numGlobalCoords << " numLocal:" << numLocalCoords << endl;
         //break;
@@ -4534,6 +4915,7 @@ void AlgPQJagged(
             pws[ii] = partWeights[ii] +  (2 * (partNo[i] - 1) + 1) * kk;
           }
 
+
           // Rewrite the indices based on the computed cuts.
           getChunksFromCoordinates<lno_t,scalar_t>(
               partNo[i],
@@ -4561,8 +4943,10 @@ void AlgPQJagged(
 
               newpartitionedPointCoordinates,
               outTotalCounts + currentOut + kk * (partNo[i]),partIds//,
+              ,migration_check
               //useBinarySearch
               );
+
         }
         //env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning_" + istring + "_chunks");
         cutCoordinates += (partNo[i] - 1) * concurrentPart;
@@ -4591,6 +4975,7 @@ void AlgPQJagged(
     partitionedPointCoordinates = newpartitionedPointCoordinates;
     newpartitionedPointCoordinates = tmp;
     if(!is_migrated_in_current){
+      reduceAllCount -= currentPartitionCount;
       currentPartitionCount *= partNo[i];
     }
     freeArray<lno_t>(inTotalCounts);
@@ -4600,7 +4985,6 @@ void AlgPQJagged(
   } // Partitioning is done
 
   env->timerStop(MACRO_TIMERS, "PQJagged Problem_Partitioning");
-
   env->timerStart(MACRO_TIMERS, "PQJagged Part_Assignment");
   /*
      partId_t *partIds = NULL;
@@ -4610,29 +4994,32 @@ void AlgPQJagged(
      partId = arcp(partIds, 0, numLocalCoords, true);
      }
    */
-
+#ifdef debug_setparts
+  string fname = toString<int>(problemComm->getRank());
+  fname = fname   + ".print";
+  FILE *f = fopen(fname.c_str(), "w");
+#endif
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
   for(partId_t i = 0; i < currentPartitionCount/*totalPartCount*/;++i){
-    //cout << "i:" << i << endl;
+    //cout << "me:" << problemComm->getRank() << " i:" << i << endl;
     lno_t begin = 0;
     lno_t end = inTotalCounts[i];
     //cout << "end:" << end << endl;
     if(i > 0) begin = inTotalCounts[i -1];
     //scalar_t pw = 0;
-    //cout << "me:" << problemComm->getRank() << " part:" << i << " begin:" << begin << " end:" << end << " count:" << end - begin << endl;
+    //cout << "me:" << problemComm->getRank() << " part:" << i << " begin:" << begin << " end:" << end << " count:" << end - begin << " nlocal:" << numLocalCoords << endl;
     /*
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
      */
     for (lno_t ii = begin; ii < end; ++ii){
-
       lno_t k = partitionedPointCoordinates[ii];
       partIds[k] = i + partIndexBegin;
-      //cout << "me:" << problemComm->getRank() << " setting: k:" << i + partIndexBegin << endl; 
+      //cout << "me:" << problemComm->getRank() << " setting:"<<k << " k:" << i + partIndexBegin << endl; 
       //pw += pqJagged_weights[0][k];
       /*
          cout << "part of coordinate:";
@@ -4642,55 +5029,85 @@ void AlgPQJagged(
          cout << i;
          cout << endl;
        */
+#ifdef debug_setparts
+      fprintf(f, "setting %d with coords: %lf %lf %lf to part %d\n", k, pqJagged_coordinates[0][k],  pqJagged_coordinates[1][k], pqJagged_coordinates[
+][k], partIds[k]);
+#endif
 
     }
+    
     //cout << "part:" << i + partIndexBegin << " pw:" << pw << endl;
     //cout << "me:" << problemComm->getRank() << " part:" << i << " begin:" << begin << " end:" << end << " count:" << end - begin << endl;
 
-  }  
-  env->timerStop(MACRO_TIMERS, "PQJagged Part_Assignment");
+  }
 
-#ifdef freeDebug
-
-  problemComm->barrier();
-  cout << "-1" << endl;    
-  problemComm->barrier();
+#ifdef debug_setparts
+  fclose(f); 
 #endif
-
+  env->timerStop(MACRO_TIMERS, "PQJagged Part_Assignment");
   ArrayRCP<const gno_t> gnoList;
   if(!is_data_migrated){
     if(numLocalCoords > 0){
       gnoList = arcpFromArrayView(pqJagged_gnos);
     }
+    else {
+    }
   }
 #ifdef enable_migration
   else {
-
+#ifdef migrate_gid
+    gno_t *actualgnos = new gno_t[numLocalCoords];
+    for(int i = 0; i < numLocalCoords; ++i){
+      actualgnos[i] = gno_t (mappedGnos[i]);
+      //cout <<"me " << problemComm->getRank()<<  " gno_t is " << mappedGnos[i]  << " p:"<<partIds[i]
+        //<< " w:" <<  pqJagged_weights[0][i]
+        << endl;
+    }
+    ArrayView<gno_t> rec(actualgnos,numLocalCoords);
+    gnoList = arcpFromArrayView(rec);
+#endif    
+#ifndef migrate_gid
     gnoList = 
       arcpFromArrayView(mvector->getMap()->getNodeElementList());
+#endif
   }
 #endif
+  env->timerStop(MACRO_TIMERS, "PQJagged Total2");
+
   env->timerStart(MACRO_TIMERS, "PQJagged Solution_Part_Assignment");
+  partId = arcp(partIds, 0, numLocalCoords, true);
+/*
+  for(int i = 0; i < numLocalCoords; ++i){
+      cout  <<"Final me " << problemComm->getRank() 
+            <<  " gno_t  " << gnoList[i]  
+            << " p:"<<partId[i]
+            //<< " w:" <<  pqJagged_weights[0][i]
+            << endl;
+  
 
-#ifdef freeDebug
+  }
+*/
 
-  problemComm->barrier();
-  cout << "0" << endl;    
-  problemComm->barrier();
+
+
+#ifdef migrate_gid
+  solution->setParts(gnoList, partId,true);
 #endif
 
-  partId = arcp(partIds, 0, numLocalCoords, true);
+#ifndef migrate_gid
   if (is_data_migrated){
     solution->setParts(gnoList, partId,false);
+
   }
   else {
-
+    //if(numLocalCoords > 0)
     solution->setParts(gnoList, partId,true);
   }
+#endif
   env->timerStop(MACRO_TIMERS, "PQJagged Solution_Part_Assignment");
 
-
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Free");
+
   /*
      if(comm->getRank() == 0){
      for(partId_t i = 0; i < totalPartCount - 1;++i){
@@ -4699,45 +5116,19 @@ void AlgPQJagged(
      }
    */
 
-#ifdef freeDebug
-
-  problemComm->barrier();
-  cout << "1" << endl;    
-  problemComm->barrier();
-#endif
-
   for(int i = 0; i < numThreads; ++i){
     //    freeArray<lno_t>(coordinate_starts[i]);
     //    freeArray<lno_t>(coordinate_ends[i]);
     freeArray<lno_t>(partPointCounts[i]);
   }
-#ifdef freeDebug
-
-  problemComm->barrier();
-  cout << "2" << endl;    
-  problemComm->barrier();
-#endif
 
   freeArray<lno_t *>(partPointCounts);
 
-#ifdef freeDebug
-
-  problemComm->barrier();
-  cout << "3" << endl;    
-  problemComm->barrier();
-#endif
 
   //freeArray<lno_t>(coordinate_linked_list);
   //freeArray<lno_t *>(coordinate_starts);
   //freeArray<lno_t *>(coordinate_ends);
   freeArray<double *> (pws);
-
-#ifdef freeDebug
-
-  problemComm->barrier();
-  cout << "4" << endl;    
-  problemComm->barrier();
-#endif
 
   if(allowNonRectelinearPart){
     freeArray<float>(nonRectelinearPart);
@@ -4746,90 +5137,45 @@ void AlgPQJagged(
     }
     freeArray<float *>(nonRectRatios);
   }
+
   freeArray<partId_t>(myNonDoneCount);
-#ifdef freeDebug
-  cout << "me:" << problemComm->getRank() << " 5:" << endl;
-  problemComm->barrier();
-#endif
+
   freeArray<scalar_t>(cutWeights);
-#ifdef freeDebug
-  cout << "me:" << problemComm->getRank() << " 6:" << endl;
-  problemComm->barrier();
-#endif
+
   freeArray<scalar_t>(globalCutWeights);
-#ifdef freeDebug
-  cout << "me:" << problemComm->getRank() << " 7:" << endl;
-  problemComm->barrier();
-#endif
+
   freeArray<scalar_t>(max_min_array);
-#ifdef freeDebug
-  problemComm->barrier();
-  cout << "me:" << problemComm->getRank() << " 8:" << endl;
-  problemComm->barrier();
-#endif
+
   freeArray<lno_t>(outTotalCounts);
-#ifdef freeDebug
-  problemComm->barrier();
-  cout << "me:" << problemComm->getRank() << " 9:" << endl;
-  problemComm->barrier();
-#endif
+
   freeArray<lno_t>(partitionedPointCoordinates);
-#ifdef freeDebug
-  problemComm->barrier();
-  cout << "me:" << problemComm->getRank() << " 10:" << endl;
-  problemComm->barrier();
-#endif
+
   freeArray<lno_t>(newpartitionedPointCoordinates);
-#ifdef freeDebug
-  problemComm->barrier();
-  cout << "me:" << problemComm->getRank() << " 11:" << endl;
-  problemComm->barrier();
-#endif
+
   freeArray<scalar_t>(allCutCoordinates);
-#ifdef freeDebug
-  problemComm->barrier();
-  cout << "me:" << problemComm->getRank() << " 12:" << endl;
-  problemComm->barrier();
-#endif
+
   freeArray<scalar_t *>(pqJagged_coordinates);
-#ifdef freeDebug
-  problemComm->barrier();
-  cout << "me:" << problemComm->getRank() << " 13:" << endl;
-  problemComm->barrier();
-#endif
+
   freeArray<scalar_t *>(pqJagged_weights);
-#ifdef freeDebug
-  problemComm->barrier();
-  cout << "me:" << problemComm->getRank() << " 14:" << endl;
-  problemComm->barrier();
-#endif
+
   freeArray<bool>(pqJagged_uniformParts);
-#ifdef freeDebug
 
-  problemComm->barrier();
-  cout << "me:" << problemComm->getRank() << " 15:" << endl;
-  problemComm->barrier();
-#endif
   freeArray<scalar_t> (localMinMaxTotal);
-#ifdef freeDebug
 
-  problemComm->barrier();
-  cout << "me:" << problemComm->getRank() << " 16:" << endl;
-  problemComm->barrier();
-#endif
   freeArray<scalar_t> (globalMinMaxTotal);
-#ifdef freeDebug
-  problemComm->barrier();
-  cout << "me:" << problemComm->getRank() << " 17:" << endl;
-  problemComm->barrier();
-  cout << "6:" << endl;
-#endif 
+
   freeArray<scalar_t *>(pqJagged_partSizes);
+
   freeArray<bool>(pqJagged_uniformWeights);
+
   freeArray<scalar_t>(cutCoordinatesWork);
+
   freeArray<scalar_t>(targetPartWeightRatios);
+
   freeArray<scalar_t>(cutUpperBounds);
+
   freeArray<scalar_t>(cutLowerBounds);
+
 
   freeArray<scalar_t>(cutLowerWeight);
   freeArray<scalar_t>(cutUpperWeight);
@@ -4851,6 +5197,9 @@ void AlgPQJagged(
 
   env->timerStop(MACRO_TIMERS, "PQJagged Problem_Free");
   env->timerStop(MACRO_TIMERS, "PQJagged Total");
+
+
+
 #endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }
 
@@ -4861,3 +5210,4 @@ void AlgPQJagged(
 
 
 #endif
+

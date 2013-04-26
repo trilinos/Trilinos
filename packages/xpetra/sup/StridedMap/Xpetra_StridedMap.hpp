@@ -106,9 +106,13 @@ namespace Xpetra {
     //! @name Constructor/Destructor Methods
     //@{
 
+    // FIXME FIXME FIXME
+    // Do we need both offset and indexBase? If we do, we need to set up indexBase properly
     StridedMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset)
     {
+      indexBase_ = indexBase;
+
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() == 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingInfo.size() = 0?");
       //TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
 
@@ -117,26 +121,31 @@ namespace Xpetra {
     StridedMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset)
     {
+      indexBase_ = indexBase;
+
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() == 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingInfo.size() = 0?");
       //TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
       //TEUCHOS_TEST_FOR_EXCEPTION(numLocalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numLocalElements.");
 
     }
 
-    StridedMap(std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId, GlobalOrdinal offset = 0)
+    StridedMap(std::vector<size_t>& stridingInfo, GlobalOrdinal indexBase, LocalOrdinal stridedBlockId, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset)
     {
+      indexBase_ = indexBase;
     }
 
     StridedMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId)
     {
+      indexBase_ = indexBase;
+
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() == 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: stridingInfo.size() = 0?");
       TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId < -1, Exceptions::RuntimeError, "StridedMap::StridedMap: stridedBlockId must not be smaller than -1.");
 
       // the following tests are not valid if stridedBlockId != 1
-      if(stridedBlockId == -1) {
-        TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
+      if (stridedBlockId == -1) {
+        TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements  % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
         TEUCHOS_TEST_FOR_EXCEPTION(elementList.size() % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of elementList.size().");
       } else {
         // numGlobalElements can be -1! FIXME
@@ -147,7 +156,7 @@ namespace Xpetra {
       // calculate offset_
 
       // find minimum GID over all procs
-      GlobalOrdinal minGidOnCurProc = 99999;  // TODO use scalar traits for max possible gid.
+      GlobalOrdinal minGidOnCurProc = 999999;  // TODO use scalar traits for max possible gid.
       for(Teuchos_Ordinal k=0; k<elementList.size(); ++k) { // TODO fix occurence of Teuchos_Ordinal
         if(elementList[k] < minGidOnCurProc) minGidOnCurProc = elementList[k];
       }
@@ -161,7 +170,7 @@ namespace Xpetra {
       const GlobalOrdinal goStridedOffset = Teuchos::as<GlobalOrdinal>(nStridedOffset);
 
       // adapt offset_
-      offset_ -= goStridedOffset;
+      offset_ -= goStridedOffset - indexBase_;  // TODO check me
     }
 
     //! Destructor.
@@ -172,34 +181,31 @@ namespace Xpetra {
     //! @name Access functions for striding data
     //@{
 
-    std::vector<size_t> getStridingData() const { return stridingInfo_; }
+    std::vector<size_t> getStridingData() const             { return stridingInfo_; }
 
-    void setStridingData(std::vector<size_t> stridingInfo) { stridingInfo_ = stridingInfo; }
+    void setStridingData(std::vector<size_t> stridingInfo)  { stridingInfo_ = stridingInfo; }
 
     size_t getFixedBlockSize() const {
-      // sum up size of all strided blocks (= number of dofs per node)
       size_t blkSize = 0;
-      std::vector<size_t>::const_iterator it;
-      for(it = stridingInfo_.begin(); it != stridingInfo_.end(); ++it) {
+      for (std::vector<size_t>::const_iterator it = stridingInfo_.begin(); it != stridingInfo_.end(); ++it)
         blkSize += *it;
-      }
       return blkSize;
     }
 
     /// returns strided block id of the dofs stored in this map
     /// or -1 if full strided map is stored in this map
-    LocalOrdinal getStridedBlockId() const { return stridedBlockId_; }
+    LocalOrdinal getStridedBlockId() const                  { return stridedBlockId_; }
 
     /// returns true, if this is a strided map (i.e. more than 1 strided blocks)
-    bool isStrided() { return stridingInfo_.size() > 1 ? true : false; }
+    bool isStrided()                                        { return stridingInfo_.size() > 1 ? true : false; }
 
     /// returns true, if this is a blocked map (i.e. more than 1 dof per node)
     /// either strided or just 1 block per node
-    bool isBlocked() { return getFixedBlockSize() > 1 ? true : false; }
+    bool isBlocked()                                        { return getFixedBlockSize() > 1 ? true : false; }
 
-    GlobalOrdinal getOffset() const { return offset_; }
+    GlobalOrdinal getOffset() const                         { return offset_; }
 
-    void setOffset( GlobalOrdinal offset ) { offset_ = offset; }
+    void setOffset(GlobalOrdinal offset)                    { offset_ = offset; }
 
     // returns number of strided block id which gid belongs to.
     size_t GID2StridingBlockId( GlobalOrdinal gid ) const {
@@ -256,11 +262,12 @@ namespace Xpetra {
     virtual bool CheckConsistency() = 0;
 
   protected:
-    std::vector<size_t> stridingInfo_;   //!< vector with size of strided blocks (dofs)
-    LocalOrdinal stridedBlockId_;        //!< member variable denoting which dofs are stored in map
-                                         // stridedBlock == -1: the full map (with all strided block dofs)
-                                         // stridedBlock >  -1: only dofs of strided block with index "stridedBlockId" are stored in this map
-    GlobalOrdinal offset_;		 //!< offset for gids in map (default = 0).
+    std::vector<size_t> stridingInfo_;      //!< vector with size of strided blocks (dofs)
+    LocalOrdinal        stridedBlockId_;    //!< member variable denoting which dofs are stored in map
+                                            // stridedBlock == -1: the full map (with all strided block dofs)
+                                            // stridedBlock  > -1: only dofs of strided block with index "stridedBlockId" are stored in this map
+    GlobalOrdinal       offset_;		    //!< offset for gids in map (default = 0)
+    GlobalOrdinal       indexBase_;     //!< index base for the strided map (default = 0)
 
   }; // StridedMap class
 

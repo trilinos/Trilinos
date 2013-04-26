@@ -132,6 +132,8 @@
 
 /* #undef Epetra_ENABLE_CASK */
 
+/* #undef Epetra_ENABLE_MKL_SPARSE */
+
 /* Define if you want to have long long (64 bit) global indices only. */
 /* #undef EPETRA_NO_32BIT_GLOBAL_INDICES */
 

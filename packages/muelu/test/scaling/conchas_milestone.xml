@@ -72,6 +72,11 @@
 
     <ParameterList name="myTransferCoordinatesFact">
       <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
+      <!-- to specify which level's coordinates to write to file -->
+      <!--
+      <Parameter name="write start"                         type="int"    value="0"/>
+      <Parameter name="write end"                           type="int"    value="3"/>
+      -->
     </ParameterList>
 
     <ParameterList name="myRAPFact">
@@ -186,6 +191,15 @@
     <Parameter name="numDesiredLevel"                       type="int"      value="10"/> <!-- Max number of levels -->
     <Parameter name="maxCoarseSize"                         type="int"      value="1000"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/> <!--None, Low, Medium, High, Extreme -->
+
+    <!-- to specify which level's matrices to write to file -->
+    <!--
+    <ParameterList name="DataToWrite">
+       <Parameter name="Matrices"          type="string"   value="{0,1}"/>
+       <Parameter name="Prolongators"      type="string"   value="{1,2}"/>
+       <Parameter name="Restrictors"       type="string"   value="{1,2}"/>
+    </ParameterList>
+    -->
 
     <ParameterList name="AllButCoarsestLevel">
       <Parameter name="startLevel"                          type="int"      value="0"/>

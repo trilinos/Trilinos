@@ -106,6 +106,11 @@ public:
   virtual void broadcast(
     const int rootRank, const Ordinal bytes, char buffer[]
     ) const;
+  //! Gather values from all processes to the root process.
+  virtual void
+  gather (const Ordinal sendBytes, const char sendBuffer[],
+          const Ordinal recvBytes, char recvBuffer[],
+          const int root) const;
   /** \brief . */
   virtual void gatherAll(
     const Ordinal sendBytes, const char sendBuffer[]
@@ -288,6 +293,26 @@ void SerialComm<Ordinal>::gatherAll(
   TEUCHOS_TEST_FOR_EXCEPT(!(sendBytes==recvBytes));
 #endif
   std::copy(sendBuffer,sendBuffer+sendBytes,recvBuffer);
+}
+
+
+template<typename Ordinal>
+void
+SerialComm<Ordinal>::gather (const Ordinal sendBytes,
+                             const char sendBuffer[],
+                             const Ordinal recvBytes,
+                             char recvBuffer[],
+                             const int root) const
+{
+  (void) sendBytes;  // to remove "unused parameter" warning
+  (void) recvBytes;
+  (void) sendBuffer;
+  (void) recvBuffer;
+  (void) root;
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPT(!(sendBytes==recvBytes));
+#endif
+  std::copy (sendBuffer, sendBuffer + sendBytes, recvBuffer);
 }
 
 

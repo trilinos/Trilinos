@@ -269,6 +269,7 @@ GLOBAL_SET(Tpetra_ETI_NODES   ${Tpetra_ETI_NODES})
 # Exclude files for source package.
 #
 
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 TRIBITS_EXCLUDE_FILES(
   doc/CodingGuidelines
   doc/TpetraDesign

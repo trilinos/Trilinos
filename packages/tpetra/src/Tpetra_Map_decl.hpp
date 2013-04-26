@@ -48,7 +48,14 @@
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"
 
-#include "Tpetra_HashTable.hpp"
+// mfh 25 Apr 2013: Define HAVE_TPETRA_FIXED_HASH_TABLE to use the
+// fixed-size hash table variant for global-to-local index lookups.
+// This option is off by default.
+
+// #ifndef HAVE_TPETRA_FIXED_HASH_TABLE
+// #  define HAVE_TPETRA_FIXED_HASH_TABLE 1
+// #endif // HAVE_TPETRA_FIXED_HASH_TABLE
+
 /// \file Tpetra_Map_decl.hpp
 /// \brief Declarations for the Tpetra::Map class and related nonmember constructors.
 ///
@@ -57,7 +64,19 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // Forward declaration of Directory.
   template <class LO, class GO, class N> class Directory;
-#endif
+
+#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
+  namespace Details {
+    template<class GlobalOrdinal, class LocalOrdinal>
+    class FixedHashTable;
+  } // namespace Details
+#  else
+  namespace Details {
+    template<class GlobalOrdinal, class LocalOrdinal>
+    class HashTable;
+  } // namespace Details
+#  endif // HAVE_TPETRA_FIXED_HASH_TABLE
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class Map
   /// \brief Describes a parallel distribution of objects over processes.
@@ -753,8 +772,13 @@ namespace Tpetra {
     /// describe(), may invoke \c getNodeElementList().
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
 
+#ifdef HAVE_TPETRA_FIXED_HASH_TABLE
+    //! Type of the table that maps global IDs to local IDs.
+    typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
+#else
     //! Type of the table that maps global IDs to local IDs.
     typedef Details::HashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
+#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
     /// \brief A mapping from global IDs to local IDs.
     ///

@@ -146,15 +146,13 @@ evaluateFields(typename Traits::EvalData workset)
 { 
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
-   std::vector<GO> GIDs;
    std::vector<LO> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<const LOC> tpetraContainer = tpetraContainer_;
-   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer->get_f(); 
+   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f(); 
    Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -166,12 +164,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs,blockId); 
-
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = r->getMap()->getLocalElement(GIDs[i]);
+      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
       // loop over each field to be scattered
       for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -237,9 +230,8 @@ void panzer::ScatterResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
-  // globalIndexer_ = d.globalIndexer_;
-
   fieldIds_.resize(scatterFields_.size());
+
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
@@ -283,10 +275,8 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<LOC> tpetraContainer 
-         = Teuchos::rcp_dynamic_cast<LOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer->get_f(); 
-   Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer->get_A();
+   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f(); 
+   Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer_->get_A();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets" may be expensive.  However the
@@ -297,15 +287,9 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs,blockId); 
 
-      // caculate the local IDs for this element
-      rLIDs.resize(GIDs.size());
-      cLIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++) {
-         rLIDs[i] = Jac->getRowMap()->getLocalElement(GIDs[i]);
-         cLIDs[i] = Jac->getColMap()->getLocalElement(GIDs[i]);
-      }
+      rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+      cLIDs = rLIDs;
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -327,7 +311,6 @@ evaluateFields(typename Traits::EvalData workset)
             
             for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
                jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
-            // TEUCHOS_ASSERT_EQUALITY(jacRow.size(),GIDs.size());
     
             // Sum Jacobian
             Jac->sumIntoLocalValues(row, cLIDs, jacRow);

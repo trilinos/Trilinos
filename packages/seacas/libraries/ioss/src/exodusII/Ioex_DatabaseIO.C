@@ -656,11 +656,29 @@ namespace Ioex {
 
   void DatabaseIO::put_qa()
   {
-    static char qa_temp[4][MAX_STR_LENGTH+1];
-    static char *qa[1][4] =
-    {{qa_temp[0],qa_temp[1],qa_temp[2],qa_temp[3]}};
+    struct qa_element {
+      char *qa_record[1][4];
+    };
+    
+    size_t num_qa_records = qaRecords.size()/4;
 
-    Ioss::Utils::time_and_date(qa[0][3], qa[0][2], MAX_STR_LENGTH);
+    qa_element *qa = new qa_element[num_qa_records+1];
+    for (int i=0; i < num_qa_records+1; i++) {
+      for (int j=0; j < 4; j++) {
+	qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
+      }
+    }
+
+    int j = 0;
+    for (int i=0; i < num_qa_records; i++) {
+      std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+      std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+      std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+      std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+    }
+
+    Ioss::Utils::time_and_date(qa[num_qa_records].qa_record[0][3],
+			       qa[num_qa_records].qa_record[0][2], MAX_STR_LENGTH);
 
     std::string codename = "unknown";
     std::string version  = "unknown";
@@ -672,14 +690,25 @@ namespace Ioex {
       version = get_region()->get_property("code_version").get_string();
     }
 
-    std::strncpy(qa[0][0], codename.c_str(), MAX_STR_LENGTH);
-    std::strncpy(qa[0][1], version.c_str(),  MAX_STR_LENGTH);
-    qa[0][0][MAX_STR_LENGTH] = '\0';
-    qa[0][1][MAX_STR_LENGTH] = '\0';
+    char buffer[MAX_STR_LENGTH+1];
+    std::strncpy(buffer, codename.c_str(), MAX_STR_LENGTH);
+    buffer[MAX_STR_LENGTH] = '\0';
+    std::strcpy(qa[num_qa_records].qa_record[0][0], buffer);
 
-    int ierr = ex_put_qa(get_file_pointer(), 1, qa);
+    std::strncpy(buffer, version.c_str(), MAX_STR_LENGTH);
+    buffer[MAX_STR_LENGTH] = '\0';
+    std::strcpy(qa[num_qa_records].qa_record[0][1], buffer);
+    
+    int ierr = ex_put_qa(get_file_pointer(), num_qa_records+1, qa[0].qa_record);
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+    for (int i=0; i < num_qa_records+1; i++) {
+      for (int j=0; j < 4; j++) {
+	delete [] qa[i].qa_record[0][j];
+      }
+    }
+    delete [] qa;
   }
 
   void DatabaseIO::put_info()
@@ -867,6 +896,33 @@ namespace Ioex {
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
                                              spatialDimension));
 
+    // Get QA records from database and add to qaRecords...
+    int num_qa = ex_inquire_int(get_file_pointer(), EX_INQ_QA);    
+    if (num_qa > 0) {
+      struct qa_element {
+	char *qa_record[1][4];
+      };
+    
+      qa_element *qa = new qa_element[num_qa];
+      for (int i=0; i < num_qa; i++) {
+	for (int j=0; j < 4; j++) {
+	  qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
+	}
+      }
+
+      ex_get_qa(get_file_pointer(), qa[0].qa_record);
+      for (int i=0; i < num_qa; i++) {
+        add_qa_record(qa[i].qa_record[0][0], qa[i].qa_record[0][1], qa[i].qa_record[0][2], qa[i].qa_record[0][3]);
+      }
+      for (int i=0; i < num_qa; i++) {
+	for (int j=0; j < 4; j++) {
+	  delete [] qa[i].qa_record[0][j];
+	}
+      }
+      delete [] qa;
+
+    }
+    
     // Get information records from database and add to informationRecords...
     int num_info = ex_inquire_int(get_file_pointer(), EX_INQ_INFO);    
     if (num_info > 0) {
@@ -2683,25 +2739,25 @@ namespace Ioex {
 	    // undecomposed mesh file.  This is ONLY provided for backward-
 	    // compatibility and should not be used unless absolutely required.
             else if (field.get_name() == "implicit_ids") {
-	      // If not parallel, then this is just 1..node_count
-	      // If parallel, then it is the data in the ex_get_id_map created by nem_spread.
-	      if (isParallel) {
-		int error = ex_get_id_map(get_file_pointer(), EX_NODE_MAP, data);
-		if (error < 0)
-		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      } else {
-		if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-		  int64_t *idata = static_cast<int64_t*>(data);
-		  for (int64_t i=0; i < nodeCount; i++) {
-		    idata[i] = i+1;
-		  }
-		} else {
-		  int *idata = static_cast<int*>(data);
-		  for (int64_t i=0; i < nodeCount; i++) {
-		    idata[i] = i+1;
-		  }
-		}
-	      }
+              // If not parallel, then this is just 1..node_count
+              // If parallel, then it is the data in the ex_get_id_map created by nem_spread.
+              if (isParallel) {
+                int error = ex_get_id_map(get_file_pointer(), EX_NODE_MAP, data);
+                if (error < 0)
+                  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+              } else {
+                if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+                  int64_t *idata = static_cast<int64_t*>(data);
+                  for (int64_t i=0; i < nodeCount; i++) {
+                    idata[i] = i+1;
+                  }
+                } else {
+                  int *idata = static_cast<int*>(data);
+                  for (int64_t i=0; i < nodeCount; i++) {
+                    idata[i] = i+1;
+                  }
+                }
+              }
             }
 
             else if (field.get_name() == "connectivity") {
@@ -2837,6 +2893,28 @@ namespace Ioex {
               // Map the local ids in this element block
               // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
               get_map(EX_ELEM_BLOCK).map_implicit_data(data, field, num_to_get, eb->get_offset());
+            }
+            else if (field.get_name() == "implicit_ids") {
+              // If not parallel, then this is just one..element_count
+              // If parallel, then it is the data in the ex_get_id_map created by nem_spread.
+              size_t eb_offset_plus_one = eb->get_offset() + 1;
+              if (isParallel) {
+                int error = ex_get_partial_id_map(get_file_pointer(), EX_ELEM_MAP, eb_offset_plus_one, my_element_count, data);
+                if (error < 0)
+                  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+              } else {
+                if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+                  int64_t *idata = static_cast<int64_t*>(data);
+                  for (int64_t i=0; i < my_element_count; i++) {
+                    idata[i] = eb_offset_plus_one + i;
+                  }
+                } else {
+                  int *idata = static_cast<int*>(data);
+                  for (int64_t i=0; i < my_element_count; i++) {
+                    idata[i] = eb_offset_plus_one + i;
+                  }
+                }
+              }
             }
             else if (field.get_name() == "skin") {
               // This is (currently) for the skinned body. It maps the
@@ -4331,8 +4409,11 @@ namespace Ioex {
               }
             } else if (field.get_name() == "ids") {
               handle_element_ids(eb, data, num_to_get);
-
-            } else if (field.get_name() == "skin") {
+            }
+            else if (field.get_name() == "implicit_ids") {
+              // Do nothing, input only field.
+            }
+            else if (field.get_name() == "skin") {
               // This is (currently) for the skinned body. It maps the
               // side element on the skin to the original element/local
               // side number.  It is a two component field, the first
@@ -5231,6 +5312,7 @@ namespace Ioex {
         std::vector<char> procs(entity_count * int_byte_size_api());
 
         if (type == "node") {
+	  Ioss::SerializeIO	serializeIO__(this);
           // Convert global node id to local node id and store in 'entities'
           if (int_byte_size_api() == 4) {
             int* entity_proc = static_cast<int*>(data);
@@ -5291,6 +5373,7 @@ namespace Ioex {
           }
 
         } else if (type == "side") {
+	  Ioss::SerializeIO	serializeIO__(this);
           std::vector<char> sides(entity_count * int_byte_size_api());
           if (int_byte_size_api() == 4) {
             int* entity_proc = static_cast<int*>(data);

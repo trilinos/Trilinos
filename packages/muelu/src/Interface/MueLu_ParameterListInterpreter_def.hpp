@@ -166,12 +166,27 @@ namespace MueLu {
       if (hieraList.isParameter("dependencyOutputLevel"))
         this->graphOutputLevel_ = hieraList.get<int>("dependencyOutputLevel");
 
+      if (hieraList.isSublist("DataToWrite")) {
+        //TODO We should be able to specify any data.  If it exists, write it.
+        //TODO This would requires something like std::set<dataName,Array<int> >
+        Teuchos::ParameterList foo = hieraList.sublist("DataToWrite");
+        std::string dataName = "Matrices";
+        if (foo.isParameter(dataName))
+          this->matricesToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo,dataName);
+        dataName = "Prolongators";
+        if (foo.isParameter(dataName))
+          this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo,dataName);
+        dataName = "Restrictors";
+        if (foo.isParameter(dataName))
+          this->restrictorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo,dataName);
+      }
+
 
       // Get level configuration
       for (Teuchos::ParameterList::ConstIterator param = hieraList.begin(); param != hieraList.end(); ++param) {
         const std::string & paramName  = hieraList.name(param);
 
-        if (hieraList.isSublist(paramName)) {
+        if (paramName != "DataToWrite" && hieraList.isSublist(paramName)) {
           Teuchos::ParameterList levelList = hieraList.sublist(paramName); // copy because list temporally modified (remove 'id')
 
           int startLevel = 0;       if(levelList.isParameter("startLevel"))      { startLevel      = levelList.get<int>("startLevel");      levelList.remove("startLevel"); }

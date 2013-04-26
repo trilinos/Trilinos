@@ -115,6 +115,7 @@ namespace panzer {
     Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
     Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
     Teuchos::RCP<const Epetra_Map> get_g_map(int l) const;
+
     InArgs createInArgs() const;
     OutArgs createOutArgs() const;
     void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
@@ -238,8 +239,18 @@ namespace panzer {
       */
     void evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
 
-    //! Are their required responses in the out args? g (and soon DgDx) 
+    /** handles evaluation of responses dgdx
+      *
+      * \note This method should (basically) be a no-op if <code>required_basic_dgdx(outArgs)==false</code>.
+      *       However, for efficiency this is not checked.
+      */
+    void evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
+
+    //! Are their required responses in the out args? g and DgDx
     bool required_basic_g(const OutArgs & outArgs) const;
+
+    //! Are their required responses in the out args? DgDx 
+    bool required_basic_dgdx(const OutArgs & outArgs) const;
 
     #ifdef HAVE_STOKHOS
        //! Are their required SG responses in the out args? sg
@@ -344,25 +355,45 @@ namespace panzer {
                                 "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
                                 "has already been added to the model evaluator!");
 
-     // check that at least there is a response value
-     Teuchos::RCP<panzer::ResponseBase> respBase = responseLibrary_->getResponse<panzer::Traits::Residual>(responseName);
-     TEUCHOS_TEST_FOR_EXCEPTION(respBase==Teuchos::null,std::logic_error,
-                                "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
-                                "has no residual type! Not sure what is going on!");
+     // handle panzer::Traits::Residual
+     {
+       // check that at least there is a response value
+       Teuchos::RCP<panzer::ResponseBase> respBase = responseLibrary_->getResponse<panzer::Traits::Residual>(responseName);
+       TEUCHOS_TEST_FOR_EXCEPTION(respBase==Teuchos::null,std::logic_error,
+                                  "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                                  "has no residual type! Not sure what is going on!");
+  
+       // check that the response supports interactions with the model evaluator
+       Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(respBase);
+       TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
+                                  "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                                  "resulted in bad cast to panzer::ResponseMESupportBase<Residual>, the type of the response is incompatible!");
+  
+       // set the response in the model evaluator
+       Teuchos::RCP<const Epetra_Map> eMap = resp->getMap();
+       g_map_.push_back(eMap);
+  
+       // lets be cautious and set a vector on the response
+       resp->setVector(Teuchos::rcp(new Epetra_Vector(*eMap)));
+     }
 
-     // check that the response supports interactions with the model evaluator
-     Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(respBase);
-     TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
-                                "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
-                                "resulted in bad cast to panzer::ResponseMESupportBase, the type of the response is incompatible!");
+     // handle panzer::Traits::Jacobian (do a quick safety check, response is null or appropriate for jacobian)
+     Teuchos::RCP<panzer::ResponseBase> respJacBase = responseLibrary_->getResponse<panzer::Traits::Jacobian>(responseName);
+     if(respJacBase!=Teuchos::null) {
+       typedef panzer::Traits::Jacobian RespEvalT;
 
-     // set the response in the model evaluator
-     Teuchos::RCP<const Epetra_Map> eMap = resp->getMap();
-     g_map_.push_back(eMap);
+       // check that the response supports interactions with the model evaluator
+       Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
+       TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
+                                  "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                                  "resulted in bad cast to panzer::ResponseMESupportBase<Jacobian>, the type of the response is incompatible!");
+
+       // setup the vector (register response as epetra)
+       if(resp->supportsDerivative())
+         resp->setDerivative(resp->buildEpetraDerivative());
+     }
+
      g_names_.push_back(responseName);
-
-     // lets be cautious and set a vector on the response
-     resp->setVector(Teuchos::rcp(new Epetra_Vector(*eMap)));
 
      return g_names_.size()-1;
   }

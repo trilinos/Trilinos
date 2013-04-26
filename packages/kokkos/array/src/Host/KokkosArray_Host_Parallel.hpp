@@ -188,7 +188,7 @@ public:
   void execute_on_thread( HostThread & thread ) const
   {
 #if defined( __INTEL_COMPILER )
-    enum { vectorize = is_same<WorkSpec,VectorParallel>::value && 1 < HostSpace::WORK_ALIGN };
+    enum { vectorize = is_same<WorkSpec,VectorParallel>::value && 1 < HostSpace::WORK_ALIGNMENT };
 #else
     enum { vectorize = 0 };
 #endif
@@ -421,7 +421,7 @@ public:
 #pragma simd vectorlength(work_align)
 #pragma ivdep
       for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-        m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() , iwork & mask_align ) );
+        m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() , iwork & work_mask ) );
       }
 
       m_reduce.template join< HostSpace::WORK_ALIGNMENT >( this_thread.reduce_data() );

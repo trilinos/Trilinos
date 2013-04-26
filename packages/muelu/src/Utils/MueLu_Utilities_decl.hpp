@@ -324,9 +324,18 @@ namespace MueLu {
 
     /*! @brief Save matrix to file in Matrix Market format.
      TODO Move this to Xpetra?
-   */
+    */
    static void Write(std::string const & fileName, Matrix const & Op); //Write
+
+    /*! @brief Save vector to file in Matrix Market format.
+     TODO Move this to Xpetra?
+    */
    static void Write(std::string const & fileName, const MultiVector& x); // Write
+
+    /*! @brief Save map to file in Matrix Market format.
+     TODO Move this to Xpetra?
+    */
+   static void Write(std::string const & fileName, const Map& M); // Write
 
    //! @brief Read matrix from file in Matrix Market format.
    static Teuchos::RCP<Matrix> Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm);

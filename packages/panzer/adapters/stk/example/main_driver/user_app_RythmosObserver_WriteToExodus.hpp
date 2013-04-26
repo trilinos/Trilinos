@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef USER_APP_RYTHMOS_OBSERVER_EPETRA_TO_EXODUS_HPP
-#define USER_APP_RYTHMOS_OBSERVER_EPETRA_TO_EXODUS_HPP
+#ifndef USER_APP_RYTHMOS_OBSERVER_WRITE_TO_EXODUS_HPP
+#define USER_APP_RYTHMOS_OBSERVER_WRITE_TO_EXODUS_HPP
 
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_IntegrationObserverBase.hpp"
@@ -51,20 +51,18 @@
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
-#include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
 #include "Panzer_STK_Utilities.hpp"
 
 namespace user_app {
 
-  class RythmosObserver_EpetraToExodus : 
+  class RythmosObserver_WriteToExodus : 
     public Rythmos::IntegrationObserverBase<double> {
 
   public:
     
-    RythmosObserver_EpetraToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+    RythmosObserver_WriteToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 				   const Teuchos::RCP<panzer::UniqueGlobalIndexerBase>& dof_manager,
 				   const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
                                    const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library) :
@@ -80,15 +78,12 @@ namespace user_app {
       panzer_stk::RespFactorySolnWriter_Builder builder;
       builder.mesh = mesh;
       m_response_library->addResponse("Main Field Output",eBlocks,builder);
-
-      // used block LOF, or epetra LOF
-      m_isEpetraLOF = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(m_lof)!=Teuchos::null;
     }
     
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     cloneIntegrationObserver() const
     {
-      return Teuchos::rcp(new RythmosObserver_EpetraToExodus(m_mesh, m_dof_manager, m_lof,m_response_library));
+      return Teuchos::rcp(new RythmosObserver_WriteToExodus(m_mesh, m_dof_manager, m_lof,m_response_library));
     }
 
     void resetIntegrationObserver(const Rythmos::TimeRange<double> &integrationTimeDomain)
@@ -111,18 +106,11 @@ namespace user_app {
       // initialize the ghosted container
       m_lof->initializeGhostedContainer(panzer::LinearObjContainer::X,*ae_inargs.ghostedContainer_);
 
-      Teuchos::MpiComm<int> comm = m_lof->getComm();
-      if(m_isEpetraLOF) {
+      {
          // initialize the x vector
-         const Teuchos::RCP<panzer::EpetraLinearObjContainer> epGlobalContainer
-            = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_,true);
-         epGlobalContainer->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(solution));
-      }
-      else {
-         // initialize the x vector
-         const Teuchos::RCP<panzer::BlockedEpetraLinearObjContainer> blkGlobalContainer
-            = Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjContainer>(ae_inargs.container_,true);
-         blkGlobalContainer->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(solution));
+         const Teuchos::RCP<panzer::ThyraObjContainer<double> > thyraContainer
+            = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(ae_inargs.container_,true);
+         thyraContainer->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(solution));
       }
 
       m_response_library->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
@@ -137,9 +125,6 @@ namespace user_app {
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_dof_manager;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lof;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
-
-    bool m_isEpetraLOF;
-
   };
 
 }

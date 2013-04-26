@@ -42,6 +42,7 @@
 
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 
+#include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"

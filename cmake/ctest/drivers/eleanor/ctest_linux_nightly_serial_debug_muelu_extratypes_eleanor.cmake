@@ -80,6 +80,10 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DSuperLU_INCLUDE_DIRS=/home/jhu/Software/SuperLU_4.3/SRC"
   "-DSuperLU_LIBRARY_DIRS=/home/jhu/Software/SuperLU_4.3/lib"
   "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
+
+  "-DTPL_BLAS_LIBRARIES:STRING=-L/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t -L/usr/local/intel/Compiler/11.1/064/lib/intel64 -L/usr/lib64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread"
+  "-DTPL_LAPACK_LIBRARIES:STRING=-L/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t -L/usr/local/intel/Compiler/11.1/064/lib/intel64 -L/usr/lib64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread"
+
 )
 
 #

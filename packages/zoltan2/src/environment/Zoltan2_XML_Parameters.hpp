@@ -238,6 +238,10 @@
     id=\"38\" name=\"migration_option\" type=\"int\" validatorId=\"38\" value=\"1\" \
     docString=\"Migration option, 0 for decision depending on the imbalance, 1 for forcing migration, 2 for avoiding migration\" \
     /> \
+   <Parameter  \
+    id=\"39\" name=\"assignment_type\" type=\"int\" validatorId=\"39\" value=\"1\" \
+    docString=\"Migration processor assignment type, 0 for assignning procs with respect to weight, otherwise for assigning procs with respect to closeness\" \
+    /> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
         <String integralValue=\"0\" stringDoc=\"no assertions will be performed\" stringValue=\"no_assertions\"/> \
@@ -445,6 +449,7 @@
       <Validator defaultParameterName=\"parallel_part_calculation_count\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"33\"/> \
       <Validator defaultParameterName=\"migration_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"37\"/> \
       <Validator defaultParameterName=\"migration_option\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"38\"/> \
+      <Validator defaultParameterName=\"assignment_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"39\"/> \
     </Validators> \
   </ParameterList>"
 

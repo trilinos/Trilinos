@@ -3380,7 +3380,7 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 
     return;
   }
-#endif // FORTRAN_DISABLED
+#endif // FORTRAN_DISABLED etc
   int NumCols = NumMyCols();
   for(int i = 0; i < NumCols; i++) 
     y[i] = 0.0; // Initialize y for transpose multiply
@@ -3429,19 +3429,30 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int NumVectors) const {
 
-#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK) || (defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM))
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
 
     if (LDX!=0 && LDY!=0) {
-#ifndef Epetra_ENABLE_CASK
-    int izero = 0;
-    EPETRA_DCRSMM_F77(&izero, &NumMyRows_, &NumMyRows_, values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
-#else
+#if defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
+    int * IndicesPlus1 = Graph().All_IndicesPlus1();
+    char transa = 'n';
+    int NumRows = NumMyRows_;
+    int NumCols = NumMyCols();
+    double alpha = 1, beta = 0;
+    // MKL should ignore '/'. G = General, C = 0-based indexing, F = 1-based.
+    // 1-based is used because X and Y are column-oriented and MKL does not
+    // do 0-based and column-oriented.
+    char matdescra[6] = "G//F/";
+    mkl_dcsrmm(&transa, &NumRows, &NumVectors, &NumCols, &alpha, matdescra, values, IndicesPlus1, IndexOffset, IndexOffset + 1, *X, &LDX, &beta, *Y, &LDY);
+#elif defined(Epetra_ENABLE_CASK)
     cask_csr_dgesmm_new(0, 1.0, NumMyRows_, NumMyRows_,  NumVectors,
                     IndexOffset, Indices, values, *X, LDX, 0.0,  *Y, LDY,cask);
+#else
+    int izero = 0;
+    EPETRA_DCRSMM_F77(&izero, &NumMyRows_, &NumMyRows_, values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
 #endif
     return;
     }
@@ -3469,7 +3480,7 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
   else if (!StorageOptimized() && !Graph().StorageOptimized()) {
 #else
   if (!StorageOptimized() && !Graph().StorageOptimized()) {
-#endif
+#endif // FORTRAN_DISABLED etc
 
     int* NumEntriesPerRow = Graph().NumIndicesPerRow();
     int** Indices = Graph().Indices();
@@ -3520,25 +3531,35 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
 void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, int NumVectors)  const{
 
   int NumCols = NumMyCols();
-#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK) || (defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM))
   if (StorageOptimized() && Graph().StorageOptimized()) {
     if (LDX!=0 && LDY!=0) {
       double * values = All_Values_;
       int * Indices = Graph().All_Indices();
       int * IndexOffset = Graph().IndexOffset();
-
-#ifndef Epetra_ENABLE_CASK
-      int ione = 1;
-      EPETRA_DCRSMM_F77(&ione, &NumMyRows_, &NumCols, values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
-#else
+#if defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
+      int * IndicesPlus1 = Graph().All_IndicesPlus1();
+      char transa = 't';
+      int NumRows = NumMyRows_;
+      int NumCols = NumMyCols();
+      double alpha = 1, beta = 0;
+      // MKL should ignore '/'. G = General, C = 0-based indexing, F = 1-based.
+      // 1-based is used because X and Y are column-oriented and MKL does not
+      // do 0-based and column-oriented.
+      char matdescra[6] = "G//F/";
+      mkl_dcsrmm(&transa, &NumRows, &NumVectors, &NumCols, &alpha, matdescra, values, IndicesPlus1, IndexOffset, IndexOffset + 1, *X, &LDX, &beta, *Y, &LDY);
+#elif defined(Epetra_ENABLE_CASK)
       cask_csr_dgesmm_new(1, 1.0, NumMyRows_, NumCols,  NumVectors,
                           IndexOffset, Indices, values, *X, LDX, 0.0,
                           *Y, LDY, cask);
+#else
+      int ione = 1;
+      EPETRA_DCRSMM_F77(&ione, &NumMyRows_, &NumCols, values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
 #endif
       return;
     }
   }
-#endif
+#endif // FORTRAN_DISABLED etc
   for (int k=0; k<NumVectors; k++) 
     for (int i=0; i < NumCols; i++) 
       Y[k][i] = 0.0; // Initialize y for transpose multiply
@@ -3619,9 +3640,9 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
     char transa = Trans ? 't' : 'n';
     int m = NumMyRows_;
     double alpha = 1;
-    // G = General, C = 0-based indexing. '/' should be ignored by MKL
+    // T = Triangular, C = 0-based indexing. '/' should be ignored by MKL
     char matdescra[6] = {'T', Upper ? 'U' : 'L', UnitDiagonal ? 'U' : 'N', 'C', '/', '\0'};
-	mkl_dcsrsv(&transa, &m, &alpha, matdescra, values, Indices, IndexOffset, IndexOffset + 1, xp, yp);
+    mkl_dcsrsv(&transa, &m, &alpha, matdescra, values, Indices, IndexOffset, IndexOffset + 1, xp, yp);
 #elif defined(Epetra_ENABLE_CASK)
     cask_csr_dtrsv_new( iupper, itrans, udiag, nodiag, 0, xysame, NumMyRows_,
                     NumMyRows_, IndexOffset, Indices, values, xp, yp, cask);
@@ -3736,25 +3757,38 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
     double * values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
-#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK) || (defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM))
     if (LDX!=0 && LDY!=0 && ((UnitDiagonal && NoDiagonal()) || (!UnitDiagonal && !NoDiagonal()))) {
+
+#if !defined(Epetra_ENABLE_MKL_SPARSE) || defined(Epetra_DISABLE_MKL_SPARSE_MM)
       int iupper = Upper ? 1:0;
       int itrans = Trans ? 1:0;
       int udiag =  UnitDiagonal ? 1:0;
       int nodiag = NoDiagonal() ? 1:0;
       int xysame = (Xp==Yp) ? 1:0;
+#endif
 
-#ifndef Epetra_ENABLE_CASK
-      EPETRA_DCRSSM_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, values, Indices, IndexOffset, 
-       *Xp, &LDX, *Yp, &LDY, &xysame, &NumVectors);
-#else
+#if defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
+      int * IndicesPlus1 = Graph().All_IndicesPlus1();
+      char transa = Trans ? 't' : 'n';
+      int NumRows = NumMyRows_;
+      double alpha = 1;
+      // T = Triangular, C = 0-based indexing, F = 1-based. '/' should be ignored by MKL.
+      // 1-based is used because X and Y are column-oriented and MKL does not
+      // do 0-based and column-oriented.
+      char matdescra[6] = {'T', Upper ? 'U' : 'L', UnitDiagonal ? 'U' : 'N', 'F', '/', '\0'};
+      mkl_dcsrsm(&transa, &NumRows, &NumVectors, &alpha, matdescra, values, IndicesPlus1, IndexOffset, IndexOffset + 1, *Xp, &LDX, *Yp, &LDY);
+#elif defined(Epetra_ENABLE_CASK)
       cask_csr_dtrsm( iupper, itrans, udiag, nodiag, 0, xysame,  NumMyRows_, 
                       NumMyRows_, NumVectors, IndexOffset, Indices, values, 
                       *Xp, LDX, *Yp, LDY);
+#else
+      EPETRA_DCRSSM_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, values, Indices, IndexOffset, 
+       *Xp, &LDX, *Yp, &LDY, &xysame, &NumVectors);
 #endif
       return;
     }
-#endif
+#endif // FORTRAN_DISABLED etc
     if(!Trans) {   
       if(Upper) {   
   j0 = 1;

@@ -17,6 +17,9 @@
 
 #include "Panzer_ResponseMESupport_Default.hpp"
 #include "Panzer_GlobalEvaluationData.hpp"
+#include "Panzer_ThyraObjFactory.hpp"
+#include "Panzer_ThyraObjContainer.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
 
 namespace panzer {
@@ -30,8 +33,22 @@ class Response_Functional : public ResponseMESupport_Default<EvalT> {
 public:
    typedef typename EvalT::ScalarT ScalarT;
 
-   Response_Functional(const std::string & responseName,MPI_Comm comm)
-     : ResponseMESupport_Default<EvalT>(responseName,comm), value(0.0) {}
+   Response_Functional(const std::string & responseName,MPI_Comm comm,const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & linObjFact=Teuchos::null)
+     : ResponseMESupport_Default<EvalT>(responseName,comm), value(0.0), linObjFactory_(linObjFact)
+   {
+     if(linObjFactory_!=Teuchos::null) {
+       // requires thyra object factory
+       thyraObjFactory_ = Teuchos::rcp_dynamic_cast<const panzer::ThyraObjFactory<double> >(linObjFactory_,true);
+       setSolnVectorSpace(thyraObjFactory_->getThyraDomainSpace());
+
+       // build a ghosted container, with a solution vector
+       uniqueContainer_ = linObjFactory_->buildLinearObjContainer();
+       ghostedContainer_ = linObjFactory_->buildGhostedLinearObjContainer();
+
+       // set ghosted container (work space for assembly)
+       linObjFactory_->initializeGhostedContainer(panzer::LinearObjContainer::F,*ghostedContainer_);
+     }
+   }
 
    //! provide direct access, this thing is pretty simple
    ScalarT value;
@@ -49,11 +66,24 @@ public:
 
    //! Is the vector distributed (or replicated)
    virtual bool vectorIsDistributed() const { return false; }
+
+   //! Get ghosted responses (this will be filled by the evaluator)
+   Teuchos::RCP<Thyra::VectorBase<double> > getGhostedVector() const
+   { return Teuchos::rcp_dynamic_cast<const ThyraObjContainer<double> >(ghostedContainer_)->get_f_th(); }
     
 private:
+   //! Set solution vector space
+   void setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & soln_vs);
+
    // hide these methods
    Response_Functional();
    Response_Functional(const Response_Functional &);
+
+   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory_;
+   Teuchos::RCP<const panzer::ThyraObjFactory<double> > thyraObjFactory_;
+
+   Teuchos::RCP<LinearObjContainer> uniqueContainer_;
+   Teuchos::RCP<LinearObjContainer> ghostedContainer_;
 };
 
 }

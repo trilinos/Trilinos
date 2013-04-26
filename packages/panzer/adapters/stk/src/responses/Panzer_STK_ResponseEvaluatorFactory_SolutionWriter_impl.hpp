@@ -223,6 +223,16 @@ scaleField(const std::string & fieldName,double fieldScalar)
   fieldToScalar_[fieldName] = fieldScalar;
 }
 
+template <typename EvalT>
+bool ResponseEvaluatorFactory_SolutionWriter<EvalT>::
+typeSupported() const
+{
+  if(PHX::TypeString<EvalT>::value==PHX::TypeString<panzer::Traits::Residual>::value)
+    return true;
+
+  return false;
+}
+
 }
 
 #endif

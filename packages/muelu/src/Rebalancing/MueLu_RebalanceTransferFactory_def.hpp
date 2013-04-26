@@ -83,6 +83,8 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Importer",       Teuchos::null, "Factory of the importer object used for the rebalancing");
     // The value of "useSubcomm" paramter here must be the same as in RebalanceAcFactory
     validParamList->set< bool >                  ("useSubcomm",              true, "Construct subcommunicators");
+    validParamList->set< int >                   ("write start",    -1, "first level at which coordinates should be written to file");
+    validParamList->set< int >                   ("write end",      -1, "last level at which coordinates should be written to file");
 
     // TODO validation: "P" parameter valid only for type="Interpolation" and "R" valid only for type="Restriction". Like so:
     // if (paramList.isEntry("type") && paramList.get("type) == "Interpolation) {
@@ -110,6 +112,18 @@ namespace MueLu {
   void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
     const Teuchos::ParameterList & pL = GetParameterList();
+
+    int writeStart = pL.get< int >("write start");
+    int writeEnd   = pL.get< int >("write end");
+
+    if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd && IsAvailable(fineLevel, "Coordinates"))
+    {
+      std::string fileName = "coordinates_level_0.m";
+      RCP<MultiVector> fineCoords = fineLevel.Get< RCP<MultiVector> >("Coordinates");
+      if (fineCoords != Teuchos::null)
+        Utils::Write(fileName,*fineCoords);
+    }
+
 
     RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
 
@@ -219,7 +233,8 @@ namespace MueLu {
           maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
 
           RCP<const Import>  coordImporter;
-          RCP<const Map> origMap = coords->getMap();
+          RCP<const Map> origMap   = coords->getMap();
+          GO             indexBase = origMap->getIndexBase();
 
           if (blkSize == 1) {
             coordImporter = rebalanceImporter;
@@ -228,13 +243,13 @@ namespace MueLu {
             // NOTE: there is an implicit assumption here: we assume that dof any node are enumerated consequently
             // Proper fix would require using decomposition similar to how we construct rebalanceImporter in the
             // RepartitionFactory
-            ArrayView<const GO>   OEntries = rebalanceImporter->getTargetMap()->getNodeElementList();
+            ArrayView<const GO> OEntries   = rebalanceImporter->getTargetMap()->getNodeElementList();
             LO                  numEntries = OEntries.size()/blkSize;
             ArrayRCP<GO> Entries(numEntries);
             for (LO i = 0; i < numEntries; i++)
-              Entries[i] = OEntries[i*blkSize]/blkSize;
+              Entries[i] = (OEntries[i*blkSize]-indexBase)/blkSize + indexBase;
 
-            RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), origMap->getIndexBase(), origMap->getComm());
+            RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), indexBase, origMap->getComm());
             coordImporter = ImportFactory::Build(origMap, targetMap);
           }
 
@@ -245,6 +260,11 @@ namespace MueLu {
             permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
 
           Set(coarseLevel, "Coordinates", permutedCoords);
+
+          std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
+          //if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords != Teuchos::null)
+          if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
+            Utils::Write(fileName, *permutedCoords);
         }
 
         if (IsAvailable(coarseLevel, "Nullspace")) {

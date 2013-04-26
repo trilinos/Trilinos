@@ -198,7 +198,8 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
   
     int migration_check_option,
     int migration_option,
-    scalar_t migration_imbalance_cut_off
+    scalar_t migration_imbalance_cut_off,
+    int assignment_type
 
     )
 {
@@ -279,6 +280,7 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
   params.set("pqParts", pqParts);
   params.set("timer_output_stream" , "std::cout");
   params.set("num_global_parts", numParts);
+  params.set("assignment_type", assignment_type);
 
   params.set("migration_option", migration_check_option);
   params.set("migration_type", migration_option);
@@ -319,6 +321,7 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
     problem->solve();
   }
   CATCH_EXCEPTIONS("solve()")
+  //cout << "GeometricGen is done " << endl;
 
   if (comm->getRank() == 0){
 
@@ -346,11 +349,13 @@ int testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numPa
   
   int migration_check_option,
   int migration_option,
-  scalar_t migration_imbalance_cut_off
+  scalar_t migration_imbalance_cut_off,
+  int assignment_type
+
 )
 {
   //std::string fname("simple");
-  cout << "running " << fname << endl;
+  //cout << "running " << fname << endl;
 
   UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
@@ -384,9 +389,10 @@ int testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numPa
   Teuchos::ParameterList params("test params");
 
 
+  params.set("assignment_type", assignment_type);
   params.set("migration_option", migration_check_option);
   params.set("migration_type", migration_option);
-  params.set("migration_imbalance_cut_off", migration_imbalance_cut_off);
+  params.set("migration_imbalance_cut_off", double (migration_imbalance_cut_off));
 
   params.set("pqParts", pqParts);
   params.set("timer_output_stream" , "std::cout");
@@ -469,7 +475,8 @@ void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
      bool &force_binary , bool &force_linear,
   int &migration_check_option,
   int &migration_option,
-  scalar_t &migration_imbalance_cut_off){
+  scalar_t &migration_imbalance_cut_off,
+  int &assignment_type){
 
   bool isCset = false;
   bool isPset = false;
@@ -520,7 +527,14 @@ void getArgVals(int argc, char **argv,   partId_t &numParts, float &imbalance ,
         } else {
           throw "Invalid argument at " + tmp;
         }
+      } else if(identifier == "AT"){
+        if(value >=0 ){
+          assignment_type = value;
+        } else {
+          throw "Invalid argument at " + tmp;
+        }
       }
+
       else if(identifier == "MT"){
         if(value >=0 ){
           migration_option = value;
@@ -603,6 +617,7 @@ void print_usage(char *executable){
   cout << "\tMI=Migration cutoff imbalance MI=1.03. " << endl;
   cout << "\tMT=Migration type: 0 for naive migration, >0 for smarter migration (Default 1)." << endl;
   cout << "\tMO=Migration option: 0 for decision on imbalance, 1 for forcing migration, >1 for avoiding migration. (Default-2)" << endl;
+  cout << "\tAT=Processor assignment type at migration. 0-for assigning procs with respect to proc ownment, otherwise, assignment with respect to proc closeness." << endl;
 
   cout << "Example:\n" << executable << " P=2,2,2 C=8 F=simple O=0" << endl;
 }
@@ -627,6 +642,7 @@ int main(int argc, char *argv[])
   int migration_check_option = 2;
   int migration_option = 1;
   scalar_t migration_imbalance_cut_off = 1.03;
+  int assignment_type = 1;
 
   try{
     try {
@@ -634,7 +650,8 @@ int main(int argc, char *argv[])
         pqParts, opt,fname/*, paramFile*/, k, force_binary, force_linear,
   migration_check_option,
   migration_option,
-  migration_imbalance_cut_off);
+  migration_imbalance_cut_off,
+  assignment_type);
     }
     catch(std::string s){
       if(tcomm->getRank() == 0){
@@ -662,13 +679,14 @@ int main(int argc, char *argv[])
       ierr = testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, k, force_binary, force_linear,
   migration_check_option,
   migration_option,
-  migration_imbalance_cut_off);
+  migration_imbalance_cut_off,assignment_type);
       break;
     default:
       GeometricGen(tcomm, numParts, imbalance, fname, pqParts/*, paramFile*/, k, force_binary, force_linear,
   migration_check_option,
   migration_option,
-  migration_imbalance_cut_off);
+  migration_imbalance_cut_off,
+  assignment_type);
       break;
     }
 

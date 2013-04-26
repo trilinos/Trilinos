@@ -3,6 +3,7 @@
 
 #include <KokkosArray_View.hpp>
 #include <KokkosArray_Host.hpp>
+#include <KokkosArray_OpenMP.hpp>
 #include <KokkosArray_Cuda.hpp>
 #include <KokkosArray_Macros.hpp>
 #include <KokkosArray_ParallelReduce.hpp>
@@ -13,7 +14,15 @@ namespace KokkosArray {
 
 template<typename Scalar, class device>
 struct MultiVectorDynamic{
+#ifdef KOKKOS_USE_CUSPARSE
+  typedef typename KokkosArray::LayoutLeft layout;
+#else
+#ifdef KOKKOS_USE_MKL
+  typedef typename KokkosArray::LayoutRight layout;
+#else
   typedef typename device::array_layout layout;
+#endif
+#endif
   typedef typename KokkosArray::View<Scalar**  , layout, device>  type ;
   typedef typename KokkosArray::View<const Scalar**  , layout, device>  const_type ;
   typedef typename KokkosArray::View<const Scalar**  , layout, device, KokkosArray::MemoryRandomRead>  random_read_type ;

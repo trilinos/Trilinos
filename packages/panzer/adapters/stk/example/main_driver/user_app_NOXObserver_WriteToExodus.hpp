@@ -40,37 +40,28 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef USER_APP_NOX_OBSERVER_EPETRA_TO_EXODUS_HPP
-#define USER_APP_NOX_OBSERVER_EPETRA_TO_EXODUS_HPP
+#ifndef USER_APP_NOX_OBSERVER_WRITE_TO_EXODUS_HPP
+#define USER_APP_NOX_OBSERVER_WRITE_TO_EXODUS_HPP
 
 #include "NOX_Abstract_PrePostOperator.H"
 #include "Teuchos_RCP.hpp"
 
 #include "Panzer_config.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
-#include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
-#include "NOX_Epetra_Vector.H"
-#include "Epetra_Vector.h"
-#include "Epetra_MpiComm.h"
-
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
-#include "Thyra_DefaultProductVector.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-
 namespace user_app {
   
-  class NOXObserver_EpetraToExodus : public NOX::Abstract::PrePostOperator {
+  class NOXObserver_WriteToExodus : public NOX::Abstract::PrePostOperator {
     
   public:
     
-    NOXObserver_EpetraToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+    NOXObserver_WriteToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 			       const Teuchos::RCP<panzer::UniqueGlobalIndexerBase>& dof_manager,
 			       const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
                                const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library) :
@@ -88,9 +79,6 @@ namespace user_app {
       panzer_stk::RespFactorySolnWriter_Builder builder;
       builder.mesh = mesh;
       m_response_library->addResponse("Main Field Output",eBlocks,builder);
-
-      // used block LOF, or epetra LOF
-      m_isEpetraLOF = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(m_lof)!=Teuchos::null;
     }
       
     void runPreIterate(const NOX::Solver::Generic& solver)
@@ -128,19 +116,11 @@ namespace user_app {
       // initialize the ghosted container
       m_lof->initializeGhostedContainer(panzer::LinearObjContainer::X,*ae_inargs.ghostedContainer_);
 
-      // Teuchos::MpiComm<int> comm(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(ep_x->Comm()).Comm()));
-      Teuchos::MpiComm<int> comm = m_lof->getComm();
-      if(m_isEpetraLOF) {
+      {
          // initialize the x vector
-         const Teuchos::RCP<panzer::EpetraLinearObjContainer> epGlobalContainer
-            = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_,true);
-         epGlobalContainer->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(th_x));
-      }
-      else {
-         // initialize the x vector
-         const Teuchos::RCP<panzer::BlockedEpetraLinearObjContainer> blkGlobalContainer
-            = Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjContainer>(ae_inargs.container_,true);
-         blkGlobalContainer->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(th_x));
+         const Teuchos::RCP<panzer::ThyraObjContainer<double> > thyraContainer
+            = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(ae_inargs.container_,true);
+         thyraContainer->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(th_x));
       }
 
       m_response_library->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
@@ -210,8 +190,6 @@ namespace user_app {
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_dof_manager;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lof;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
-
-    bool m_isEpetraLOF;
   };
 }
 

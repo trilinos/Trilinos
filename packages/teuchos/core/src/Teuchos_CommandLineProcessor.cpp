@@ -50,10 +50,6 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 
-#ifdef HAVE_MPI
-#  include "mpi.h"
-#endif
-
 
 namespace {
 
@@ -287,9 +283,7 @@ CommandLineProcessor::parse(
         int dummy_int = 0;
         std::cin >> dummy_int;
       }
-#ifdef HAVE_MPI
-      MPI_Barrier(MPI_COMM_WORLD);
-#endif
+      GlobalMPISession::barrier();
       continue;
     }
     // Lookup the option (we had better find it!)
