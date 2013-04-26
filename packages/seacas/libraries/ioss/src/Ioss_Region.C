@@ -402,9 +402,9 @@ namespace Ioss {
     if (current_state == STATE_DEFINE_MODEL) {
       // Sort the element blocks based on the idOffset field...
       if (!get_database()->is_input()) {
-	std::stable_sort(elementBlocks.begin(), elementBlocks.end(), lessOffset);
-	std::stable_sort(faceBlocks.begin(),    faceBlocks.end(),    lessOffset);
-	std::stable_sort(edgeBlocks.begin(),    edgeBlocks.end(),    lessOffset);
+	std::sort(elementBlocks.begin(), elementBlocks.end(), lessOffset);
+	std::sort(faceBlocks.begin(),    faceBlocks.end(),    lessOffset);
+	std::sort(edgeBlocks.begin(),    edgeBlocks.end(),    lessOffset);
 
 	// Now update the block offsets based on this new order...
 	{
