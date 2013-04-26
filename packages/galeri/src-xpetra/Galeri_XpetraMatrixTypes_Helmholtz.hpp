@@ -56,6 +56,7 @@
 #include "Galeri_config.h"
 #include "Galeri_MatrixTraits.hpp"
 #include "Galeri_Problem.hpp"
+#include "Galeri_StencilProblems.hpp"
 
 namespace Galeri {
 
