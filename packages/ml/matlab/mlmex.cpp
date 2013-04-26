@@ -41,6 +41,7 @@
 #include "ml_common.h"
 #include "mlmex.h"
 
+
 #ifdef HAVE_ML_MATLAB
 /* Needed for MEX */
 using namespace Teuchos;
@@ -122,10 +123,10 @@ Epetra_CrsMatrix* epetra_setup(int Nrows, int Ncols, int* rowind,int* colptr, do
   Epetra_Map RangeMap(Nrows,0,Comm);
   Epetra_Map DomainMap(Ncols,0,Comm);
 
-  Epetra_CrsMatrix *A=new Epetra_CrsMatrix(Copy,DomainMap,0);
+  Epetra_CrsMatrix *A=new Epetra_CrsMatrix(Copy,RangeMap,0);
 
   /* Do the matrix assembly */
-  for(int i=0;i<Nrows;i++)
+  for(int i=0;i<Ncols;i++)
     for(int j=colptr[i];j<colptr[i+1];j++)
       A->InsertGlobalValues(rowind[j],1,&vals[j],&i);
   A->FillComplete(DomainMap,RangeMap);
@@ -486,12 +487,12 @@ int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, dou
 
 /**************************************************************/
 /**************************************************************/
-/************* ml_maxwell1_data_pack class functions ************/
+/************* ml_maxwell_data_pack class functions ************/
 /**************************************************************/
 /**************************************************************/
-ml_maxwell1_data_pack::ml_maxwell1_data_pack():ml_data_pack(),EdgeMatrix(NULL),GradMatrix(NULL),NodeMatrix(NULL),Prec(NULL){}
+ml_maxwell_data_pack::ml_maxwell_data_pack():ml_data_pack(),EdgeMatrix(NULL),GradMatrix(NULL),NodeMatrix(NULL),Prec(NULL){}
 
-ml_maxwell1_data_pack::~ml_maxwell1_data_pack(){
+ml_maxwell_data_pack::~ml_maxwell_data_pack(){
   delete Prec;
   delete EdgeMatrix;
   delete NodeMatrix;
@@ -502,8 +503,8 @@ ml_maxwell1_data_pack::~ml_maxwell1_data_pack(){
    ML_EPETRA_DATA_PACK passed in.
    Returns: IS_TRUE
 */
-int ml_maxwell1_data_pack::status(){
-  mexPrintf("**** Problem ID %d [Maxwell1] ****\n",id);
+int ml_maxwell_data_pack::status(){
+  mexPrintf("**** Problem ID %d [RefMaxwell] ****\n",id);
   if(EdgeMatrix) mexPrintf("Matrix: %dx%d w/ %d nnz\n",EdgeMatrix->NumGlobalRows(),EdgeMatrix->NumGlobalCols(),EdgeMatrix->NumMyNonzeros()); 
   mexPrintf(" Operator complexity = %e\n",operator_complexity);
   if(List){mexPrintf("Parameter List:\n");List->print(cout,1);}
@@ -516,7 +517,7 @@ int ml_maxwell1_data_pack::status(){
 /**************************************************************/
 /**************************************************************/
 /**************************************************************/
-int ml_maxwell1_data_pack::setup_matrix(const char * name, const mxArray * mxa, bool rewrap_ints){
+int ml_maxwell_data_pack::setup_matrix(const char * name, const mxArray * mxa, bool rewrap_ints){
   if(!strcmp("EdgeMatrix",name)) EdgeMatrix=epetra_setup_from_prhs(mxa,rewrap_ints);
   else if(!strcmp("GradMatrix",name)) GradMatrix=epetra_setup_from_prhs(mxa,rewrap_ints);
   else if(!strcmp("NodeMatrix",name)) NodeMatrix=epetra_setup_from_prhs(mxa,rewrap_ints);
@@ -527,20 +528,42 @@ int ml_maxwell1_data_pack::setup_matrix(const char * name, const mxArray * mxa, 
 /**************************************************************/
 /**************************************************************/
 /**************************************************************/
-int ml_maxwell1_data_pack::setup_preconditioner(){
-  SetDefaults("maxwell",*List);
- 
+int ml_maxwell_data_pack::setup_preconditioner(){
+  // Don't overwrite what the user sent in.
+  SetDefaultsRefMaxwell(*List,false);
+
+  // Copy over the overall ML output, since cell arrays don't handle mixed lists well.
+  Teuchos::ParameterList & List11_=List->sublist("refmaxwell: 11list");
+  Teuchos::ParameterList & List22_=List->sublist("refmaxwell: 22list");
+  Teuchos::ParameterList & List11c_=List11_.sublist("edge matrix free: coarse");
+  List11_.set("ML output",List->get("ML output",0));
+  List22_.set("ML output",List->get("ML output",0));
+  List11c_.set("ML output",List->get("ML output",0));
+
+  // To avoid having to grab other inputs...
+  List->set("refmaxwell: disable addon",true); 
+
   if(EdgeMatrix->NumGlobalRows() != GradMatrix->NumGlobalRows() ||
      NodeMatrix->NumGlobalRows() != GradMatrix->NumGlobalCols()){
+    printf("Global: EdgeMatrix = %dx%d[%d] NodeMatrix=%dx%d[%d] GradMatrix=%dx%d[%d]\n",
+	   EdgeMatrix->NumGlobalRows(),EdgeMatrix->NumGlobalCols(),EdgeMatrix->NumGlobalNonzeros(),
+	   NodeMatrix->NumGlobalRows(),NodeMatrix->NumGlobalCols(),NodeMatrix->NumGlobalNonzeros(),
+	   GradMatrix->NumGlobalRows(),GradMatrix->NumGlobalCols(),GradMatrix->NumGlobalNonzeros());    
+    mexErrMsgTxt("Error: Matrix mismatch\n");
     operator_complexity=-1;
     return IS_FALSE;
   }
  
   /* Build Hierarchy */
-  Prec=new MultiLevelPreconditioner(*EdgeMatrix, *GradMatrix, *NodeMatrix, *List);  
+#ifdef ENABLE_MS_MATRIX
+  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*EdgeMatrix,*NodeMatrix,*EdgeMatrix,*List);
+#else
+  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*NodeMatrix,*EdgeMatrix,*List);
+#endif
 
   /* Pull Operator Complexity */
-  operator_complexity = Prec->GetML_Aggregate()->operator_complexity / Prec->GetML_Aggregate()->fine_complexity;
+  operator_complexity=-1;
+    //  operator_complexity = Prec->GetML_Aggregate()->operator_complexity / Prec->GetML_Aggregate()->fine_complexity;
   
   return IS_TRUE;
 }
@@ -559,7 +582,7 @@ int ml_maxwell1_data_pack::setup_preconditioner(){
    iters   - number of iterations taken [O]
    Returns: IS_TRUE if solve was succesful, IS_FALSE otherwise
 */
-int ml_maxwell1_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*x,int &iters){
+int ml_maxwell_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*x,int &iters){
   return epetra_solve(List,TPL,EdgeMatrix,Prec,b,x,iters);
 }/*end solve*/
 
@@ -899,7 +922,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
   static ml_data_pack_list* PROBS=0;
   ml_data_pack *D=0;
   bool rewrap_ints=false;
-  ml_maxwell1_data_pack * Dhat=0;
+  ml_maxwell_data_pack * Dhat=0;
 
   
   /* Sanity Check Input */
@@ -967,7 +990,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     else List=new Teuchos::ParameterList;
 
     /* Setup matrices*/
-    Dhat=new ml_maxwell1_data_pack();
+    Dhat=new ml_maxwell_data_pack();
     Dhat->List=List;    
     
     Dhat->setup_matrix("EdgeMatrix",prhs[1],rewrap_ints);
@@ -982,7 +1005,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     /* Set return value(s) */
     plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
     id=(int*)mxGetData(plhs[0]);id[0]=rv;
-    if(nlhs>1) plhs[1]=mxCreateDoubleScalar(D->operator_complexity);
+    if(nlhs>1) plhs[1]=mxCreateDoubleScalar(Dhat->operator_complexity);
 
     
     /* Lock so we can keep the memory for the heirarchy */

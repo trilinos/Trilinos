@@ -29,6 +29,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "AztecOO.h"
 
+#include "ml_RefMaxwell.h"
 
 #ifdef HAVE_ML_MATLAB
 #include "mex.h"
@@ -155,10 +156,10 @@ private:
 };
 
 
-class ml_maxwell1_data_pack:public ml_data_pack{
+class ml_maxwell_data_pack:public ml_data_pack{
 public:
-  ml_maxwell1_data_pack();
-  ~ml_maxwell1_data_pack();
+  ml_maxwell_data_pack();
+  ~ml_maxwell_data_pack();
   
   /* setup - sets up an ml_data_pack object
      Parameters:
@@ -191,7 +192,7 @@ public:
   int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x,int &iters);  
 
   /* GetPreconditioner - returns a pointer to the preconditioner */     
-  ML_Epetra::MultiLevelPreconditioner* GetPreconditioner(){return Prec;}
+  ML_Epetra::RefMaxwellPreconditioner* GetPreconditioner(){return Prec;}
   
   
 private:
@@ -200,7 +201,9 @@ private:
 
 
   Epetra_CrsMatrix *EdgeMatrix, *GradMatrix, *NodeMatrix;
-  ML_Epetra::MultiLevelPreconditioner *Prec;
+  //  ML_Epetra::MultiLevelPreconditioner *Prec;
+  ML_Epetra::RefMaxwellPreconditioner *Prec;
+
 };
 
 #endif
