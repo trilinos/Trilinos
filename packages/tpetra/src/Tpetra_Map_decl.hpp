@@ -52,9 +52,9 @@
 // fixed-size hash table variant for global-to-local index lookups.
 // This option is off by default.
 
-// #ifndef HAVE_TPETRA_FIXED_HASH_TABLE
-// #  define HAVE_TPETRA_FIXED_HASH_TABLE 1
-// #endif // HAVE_TPETRA_FIXED_HASH_TABLE
+#ifndef HAVE_TPETRA_FIXED_HASH_TABLE
+#  define HAVE_TPETRA_FIXED_HASH_TABLE 1
+#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
 /// \file Tpetra_Map_decl.hpp
 /// \brief Declarations for the Tpetra::Map class and related nonmember constructors.
