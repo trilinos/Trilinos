@@ -187,8 +187,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs) const
 {
-/*
-   typedef BlockedEpetraLinearObjContainer BLOC;
+   typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
 
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
@@ -196,18 +195,14 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    using Thyra::PhysicallyBlockedLinearOpBase;
    using Thyra::VectorBase;
    using Thyra::ProductVectorBase;
-   using Thyra::get_Epetra_Vector;
-   using Thyra::get_Epetra_Operator;
 
    std::size_t blockDim = gidProviders_.size();
 
    // first cast to block LOCs
-   const BLOC & b_localBCRows = Teuchos::dyn_cast<const BLOC>(localBCRows); 
-   const BLOC & b_globalBCRows = Teuchos::dyn_cast<const BLOC>(globalBCRows); 
-   BLOC & b_ghosted = Teuchos::dyn_cast<BLOC>(ghostedObjs); 
+   const BTLOC & b_localBCRows = Teuchos::dyn_cast<const BTLOC>(localBCRows); 
+   const BTLOC & b_globalBCRows = Teuchos::dyn_cast<const BTLOC>(globalBCRows); 
+   BTLOC & b_ghosted = Teuchos::dyn_cast<BTLOC>(ghostedObjs); 
 
-   // TEUCHOS_ASSERT(b_ghosted.get_A()!=Teuchos::null);
-   // TEUCHOS_ASSERT(b_ghosted.get_f()!=Teuchos::null);
    TEUCHOS_ASSERT(b_localBCRows.get_x()!=Teuchos::null);
    TEUCHOS_ASSERT(b_globalBCRows.get_x()!=Teuchos::null);
 
@@ -226,16 +221,16 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
 
    for(std::size_t i=0;i<blockDim;i++) {
       // grab epetra vector
-      RCP<const Epetra_Vector> e_local_bcs = get_Epetra_Vector(*getGhostedMap(i),local_bcs->getVectorBlock(i));
-      RCP<const Epetra_Vector> e_global_bcs = get_Epetra_Vector(*getGhostedMap(i),global_bcs->getVectorBlock(i));
+      RCP<const VectorType> t_local_bcs = rcp_dynamic_cast<const ThyraVector>(local_bcs->getVectorBlock(i),true)->getConstTpetraVector();
+      RCP<const VectorType> t_global_bcs = rcp_dynamic_cast<const ThyraVector>(global_bcs->getVectorBlock(i),true)->getConstTpetraVector();
 
       // pull out epetra values
       RCP<VectorBase<ScalarT> > th_f = (f==Teuchos::null) ? Teuchos::null : f->getNonconstVectorBlock(i);
-      RCP<Epetra_Vector> e_f;
+      RCP<VectorType> t_f;
       if(th_f==Teuchos::null)
-        e_f = Teuchos::null;
+        t_f = Teuchos::null;
       else
-        e_f = get_Epetra_Vector(*getGhostedMap(i),th_f);
+        t_f = rcp_dynamic_cast<ThyraVector>(th_f,true)->getTpetraVector();
 
       for(std::size_t j=0;j<blockDim;j++) {
 
@@ -243,19 +238,20 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
          RCP<LinearOpBase<ScalarT> > th_A = (A== Teuchos::null)? Teuchos::null : A->getNonconstBlock(i,j);
  
          // don't do anyting if opertor is null
-         RCP<Epetra_CrsMatrix> e_A;
+         RCP<CrsMatrixType> t_A;
          if(th_A==Teuchos::null)
-            e_A = Teuchos::null;
-         else 
-            e_A = rcp_dynamic_cast<Epetra_CrsMatrix>(get_Epetra_Operator(*th_A),true);
+            t_A = Teuchos::null;
+         else {
+            RCP<OperatorType> t_A_op = rcp_dynamic_cast<ThyraLinearOp>(th_A,true)->getTpetraOperator();
+            t_A = rcp_dynamic_cast<CrsMatrixType>(t_A_op,true);
+         }
 
          // adjust Block operator
-         adjustForDirichletConditions(*e_local_bcs,*e_global_bcs,e_f.ptr(),e_A.ptr());
+         adjustForDirichletConditions(*t_local_bcs,*t_global_bcs,t_f.ptr(),t_A.ptr());
 
-         e_f = Teuchos::null; // this is so we only adjust it once on the first pass
+         t_f = Teuchos::null; // this is so we only adjust it once on the first pass
       }
    }
-*/
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -265,47 +261,61 @@ adjustForDirichletConditions(const VectorType & local_bcs,
                              const Teuchos::Ptr<VectorType> & f,
                              const Teuchos::Ptr<CrsMatrixType> & A) const
 {
-/*
    if(f==Teuchos::null && A==Teuchos::null)
       return;
 
-   TEUCHOS_ASSERT(local_bcs.MyLength()==global_bcs.MyLength());
-   for(int i=0;i<local_bcs.MyLength();i++) {
-      if(global_bcs[i]==0.0)
+   Teuchos::ArrayRCP<ScalarT> f_array = f!=Teuchos::null ? f->get1dViewNonConst() : Teuchos::null;
+
+   Teuchos::ArrayRCP<const ScalarT> local_bcs_array = local_bcs.get1dView();
+   Teuchos::ArrayRCP<const ScalarT> global_bcs_array = global_bcs.get1dView();
+
+   A->resumeFill();
+
+   TEUCHOS_ASSERT(local_bcs.getLocalLength()==global_bcs.getLocalLength());
+   for(std::size_t i=0;i<local_bcs.getLocalLength();i++) {
+      if(global_bcs_array[i]==0.0)
          continue;
 
-      int numEntries = 0;
-      ScalarT * values = 0;
-      int * indices = 0;
+      std::size_t numEntries = 0;
+      std::size_t sz = A->getNumEntriesInLocalRow(i);
+      Teuchos::Array<LocalOrdinalT> indices(sz);
+      Teuchos::Array<ScalarT> values(sz);
 
-      if(local_bcs[i]==0.0) { 
+      if(local_bcs_array[i]==0.0) { 
          // this boundary condition was NOT set by this processor
 
          // if they exist put 0.0 in each entry
          if(!Teuchos::is_null(f))
-            (*f)[i] = 0.0;
+            f_array[i] = 0.0;
          if(!Teuchos::is_null(A)) {
-            A->ExtractMyRowView(i,numEntries,values,indices);
-            for(int c=0;c<numEntries;c++) 
+            A->getLocalRowCopy(i,indices,values,numEntries);
+
+            for(std::size_t c=0;c<numEntries;c++) 
                values[c] = 0.0;
+
+            A->replaceLocalValues(i,indices,values);
          }
       }
       else {
          // this boundary condition was set by this processor
 
-         ScalarT scaleFactor = global_bcs[i];
+         ScalarT scaleFactor = global_bcs_array[i];
 
          // if they exist scale linear objects by scale factor
          if(!Teuchos::is_null(f))
-            (*f)[i] /= scaleFactor;
+            f_array[i] /= scaleFactor;
          if(!Teuchos::is_null(A)) {
-            A->ExtractMyRowView(i,numEntries,values,indices);
-            for(int c=0;c<numEntries;c++) 
+            A->getLocalRowCopy(i,indices,values,numEntries);
+
+            for(std::size_t c=0;c<numEntries;c++) 
                values[c] /= scaleFactor;
+
+            A->replaceLocalValues(i,indices,values);
          }
       }
    }
-*/
+
+   A->fillComplete(A->getDomainMap(),A->getRangeMap());
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>

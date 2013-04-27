@@ -60,8 +60,8 @@
 #include "Panzer_CloneableEvaluator.hpp"
 
 #include "Panzer_GatherOrientation.hpp"
-// #include "Panzer_GatherSolution_BlockedEpetra.hpp"
-// #include "Panzer_ScatterResidual_BlockedEpetra.hpp"
+#include "Panzer_GatherSolution_BlockedTpetra.hpp"
+#include "Panzer_ScatterResidual_BlockedTpetra.hpp"
 // #include "Panzer_ScatterDirichletResidual_BlockedEpetra.hpp"
 // #include "Panzer_ScatterInitialCondition_BlockedEpetra.hpp"
 #include "Panzer_ThyraObjFactory.hpp"
@@ -132,20 +132,17 @@ public:
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
-   // { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(blockedDOFManager_)); }
-   { return Teuchos::null; }
+   { return Teuchos::rcp(new ScatterResidual_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
-   // { return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(blockedDOFManager_)); }
-   { return Teuchos::null; }
+   { return Teuchos::rcp(new GatherSolution_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherOrientation() const
-   // { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,std::pair<int,int> >(blockProvider_)); }
-   { return Teuchos::null; }
+   { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,std::pair<int,GlobalOrdinalT> >(blockProvider_)); }
 
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>
