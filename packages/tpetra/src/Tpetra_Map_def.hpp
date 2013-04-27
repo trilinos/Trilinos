@@ -50,9 +50,6 @@
 #include <Tpetra_Directory.hpp> // must include for implicit instantiation to work
 #ifdef HAVE_TPETRA_FIXED_HASH_TABLE
 #  include <Tpetra_Details_FixedHashTable.hpp>
-#  ifdef HAVE_TPETRA_DEBUG
-#    include <Tpetra_HashTable.hpp>
-#  endif // HAVE_TPETRA_DEBUG
 #else
 #  include <Tpetra_HashTable.hpp>
 #endif // HAVE_TPETRA_FIXED_HASH_TABLE
