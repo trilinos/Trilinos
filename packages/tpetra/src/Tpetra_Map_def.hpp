@@ -720,11 +720,22 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
 
+#ifdef HAVE_TPETRA_DEBUG
+    // In a debug build, bail out with an exception if the two
+    // communicators don't have the same numbers of processes.
+    // This is explicitly forbidden by the public documentation.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getComm ()->getSize () != map.getComm ()->getSize (),
+      std::invalid_argument, "Tpetra::Map::isCompatibile: The two Maps' "
+      "communicators must have the same numbers of processes in order to call "
+      "this method.");
+#endif // HAVE_TPETRA_DEBUG
+
     // Do both Maps have the same number of elements, both globally
     // and on the calling process?
     int locallyCompat = 0;
     if (getGlobalNumElements() != map.getGlobalNumElements() ||
-          getNodeNumElements() != map.getNodeNumElements()) {
+        getNodeNumElements() != map.getNodeNumElements()) {
       locallyCompat = 0; // NOT compatible on this process
     }
     else {
@@ -744,6 +755,16 @@ namespace Tpetra {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
+
+#ifdef HAVE_TPETRA_DEBUG
+    // In a debug build, bail out with an exception if the two
+    // communicators don't have the same numbers of processes.
+    // This is explicitly forbidden by the public documentation.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getComm ()->getSize () != map.getComm ()->getSize (),
+      std::invalid_argument, "Tpetra::Map::isSameAs: The two Maps' communicators"
+      "must have the same numbers of processes in order to call this method.");
+#endif // HAVE_TPETRA_DEBUG
 
     if (this == &map) {
       // If the input Map is the same object (has the same address) as
