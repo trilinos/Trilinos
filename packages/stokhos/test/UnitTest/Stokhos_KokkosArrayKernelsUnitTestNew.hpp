@@ -163,10 +163,10 @@ namespace KokkosArrayKernelsUnitTest {
     Teuchos::Array<int> perm, inv_perm;
 
     // Can't be a constructor because MPI will not be initialized
-    void setup() {
+    void setup(int p_ = 5, int d_ = 2) {
 
-      p = 5;
-      d = 2;
+      p = p_;
+      d = d_;
       nGrid = 5;
       rel_tol = 1e-12;
       abs_tol = 1e-12;
@@ -247,6 +247,7 @@ namespace KokkosArrayKernelsUnitTest {
 
             double v = generate_matrix_coefficient<double>(
               fem_length , stoch_length , iRowFEM , iColFEM , i );
+            //double v = 1.0;
             A->ReplaceGlobalValues(iRowFEM, 1, &v, &iColFEM);
           }
         }
@@ -266,6 +267,7 @@ namespace KokkosArrayKernelsUnitTest {
         for (int iColStoch=0 ; iColStoch < stoch_length; ++iColStoch ) {
           (*sg_x)[iColStoch][iColFEM] = generate_vector_coefficient<double>(
             fem_length , stoch_length , iColFEM , iColStoch );
+          //(*sg_x)[iColStoch][iColFEM] = 1.0;
         }
       }
       sg_y->init(0.0);
@@ -357,7 +359,8 @@ namespace KokkosArrayKernelsUnitTest {
           bool s = diff < tol;
           if (!s) {
             out << "y_expected[" << block << "][" << i << "] - "
-                << "y(" << b << "," << i << ") == "
+                << "y(" << b << "," << i << ") = " << (*sg_y)[block][i] << " - "
+                << y(b,i) << " == "
                 << diff << " < " << tol << " : failed"
                 << std::endl;
           }

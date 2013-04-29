@@ -57,13 +57,14 @@
 #include "Stokhos_Host_FlatSparse3Tensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor_kji.hpp"
 #include "Stokhos_Host_LexicographicBlockSparse3Tensor.hpp"
+#include "Stokhos_Host_LinearSparse3Tensor.hpp"
 
 namespace unit_test {
 
 template<typename Scalar>
 struct performance_test_driver<Scalar,KokkosArray::Host> {
 
-  static void run(bool test_flat, bool test_orig, bool test_deg, 
+  static void run(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
                   bool test_block, bool symmetric, bool mkl) {
     typedef KokkosArray::Host Device;
 
@@ -120,6 +121,14 @@ struct performance_test_driver<Scalar,KokkosArray::Host> {
       }
     }
 
+    // Just polynomial methods compared against original
+    if (test_lin) {
+      nGrid = 64 ;
+      nIter = 20 ;
+      performance_test_driver_linear<Scalar,Device,Stokhos::DefaultSparseMatOps>(
+        5 ,  50 , 5 , nGrid , nIter , test_block , symmetric );
+    }
+
     //------------------------------
   }
 
@@ -128,12 +137,13 @@ struct performance_test_driver<Scalar,KokkosArray::Host> {
 }
 
 template <typename Scalar>
-int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_block, 
-             bool symmetric, bool mkl)
+int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
+             bool test_block, bool symmetric, bool mkl)
 {
   const std::pair<unsigned,unsigned> core_topo =
     KokkosArray::hwloc::get_core_topology();
-  const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+  //const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+  const size_t core_capacity = 1;
 
   const size_t gang_count = core_topo.first ;
   const size_t gang_worker_count = core_topo.second * core_capacity;
@@ -156,12 +166,12 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_block,
             << gang_count * gang_worker_count << " threads\"" << std::endl ;
 
   unit_test::performance_test_driver<Scalar,KokkosArray::Host>::run(
-    test_flat, test_orig, test_deg, test_block, symmetric, mkl);
+    test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
 
   KokkosArray::Host::finalize();
 
   return 0 ;
 }
 
-template int mainHost<float>(bool, bool, bool, bool, bool, bool);
-template int mainHost<double>(bool, bool, bool, bool, bool, bool);
+template int mainHost<float>(bool, bool, bool, bool, bool, bool, bool);
+template int mainHost<double>(bool, bool, bool, bool, bool, bool, bool);

@@ -52,6 +52,7 @@
 #include "Stokhos_FlatSparse3Tensor.hpp"
 #include "Stokhos_FlatSparse3Tensor_kji.hpp"
 #include "Stokhos_LexicographicBlockSparse3Tensor.hpp"
+#include "Stokhos_LinearSparse3Tensor.hpp"
 
 #include "Stokhos_LegendreBasis.hpp"
 #include "Stokhos_JacobiBasis.hpp"
@@ -305,6 +306,126 @@ test_lexo_block_tensor(
 
   block_vector_type x = block_vector_type( "x" , inner_length , outer_length );
   block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
+
+  typename block_vector_type::HostMirror hM =
+    KokkosArray::create_mirror( matrix.values );
+
+  for ( size_t i=0 ; i < graph_length ; ++i ) {
+    for ( size_t j = 0 ; j < inner_length ; ++j ) {
+      hM(j,i) = 1.0;
+    }
+  }
+
+  KokkosArray::deep_copy( matrix.values , hM );
+
+  //------------------------------
+  // Generate input multivector:
+
+  typename block_vector_type::HostMirror hx = KokkosArray::create_mirror( x );
+
+  for ( size_t i = 0 ; i < outer_length ; ++i ) {
+    for ( size_t j = 0 ; j < inner_length ; ++j ) {
+      hx(j,i) = 1.0 ;
+    }
+  }
+
+  KokkosArray::deep_copy( x , hx );
+
+  //------------------------------
+
+  KokkosArray::Impl::Timer clock ;
+  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
+    Stokhos::multiply( matrix , x , y );
+  }
+  Device::fence();
+
+  const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops_per_block = matrix.block.tensor().num_flops();
+  const double flops = 1.0e-9*graph_length*flops_per_block;
+
+  // std::cout << "tensor: flops = " << flops
+  //        << " time = " << seconds_per_iter << std::endl;
+
+  std::vector<double> perf(6) ;
+
+  perf[0] = outer_length * inner_length ;
+  perf[1] = seconds_per_iter ;
+  perf[2] = flops / seconds_per_iter;
+  perf[3] = matrix.block.tensor().num_non_zeros();
+  perf[4] = inner_length ;
+  perf[5] = flops_per_block;
+
+  return perf ;
+}
+
+template< typename ScalarType , class Device >
+std::vector<double>
+test_linear_tensor(
+  const std::vector<int> & var_degree ,
+  const int nGrid ,
+  const int iterCount ,
+  const bool symmetric )
+{
+  typedef ScalarType value_type ;
+  typedef KokkosArray::View< value_type** ,
+                             KokkosArray::LayoutLeft ,
+                             Device > block_vector_type ;
+
+  typedef Stokhos::LinearSparse3Tensor<value_type,Device,4> TensorType;
+  typedef Stokhos::StochasticProductTensor< value_type , TensorType , Device > tensor_type ;
+
+  typedef Stokhos::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
+  typedef typename matrix_type::graph_type graph_type ;
+
+  typedef ScalarType value_type ;
+  typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
+  typedef Stokhos::JacobiBasis<int,value_type> basis_type;
+  typedef Stokhos::LexographicLess<Stokhos::MultiIndex<int> > order_type;
+  typedef Stokhos::TotalOrderBasis<int,value_type,order_type> product_basis_type;
+  typedef Stokhos::LTBSparse3Tensor<int,value_type> Cijk_type;
+
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  using Teuchos::Array;
+
+  // Create Stochastic Galerkin basis and expansion
+  const size_t num_KL = var_degree.size();
+  Array< RCP<const abstract_basis_type> > bases(num_KL);
+  for (size_t i=0; i<num_KL; i++) {
+    if (symmetric)
+      bases[i] = Teuchos::rcp(new basis_type(var_degree[i],1.0,1.0,true));
+    else
+      bases[i] = Teuchos::rcp(new basis_type(var_degree[i],1.0,2.0,true));
+  }
+  RCP<const product_basis_type> basis =
+    rcp(new product_basis_type(
+          bases, ScalarTolerances<value_type>::sparse_cijk_tol()));
+
+  //------------------------------
+  // Generate graph for "FEM" box structure:
+
+  std::vector< std::vector<size_t> > graph ;
+
+  const size_t outer_length = nGrid * nGrid * nGrid ;
+  const size_t graph_length = unit_test::generate_fem_graph( nGrid , graph );
+
+  //------------------------------
+  // Generate CRS block-tensor matrix:
+
+  matrix_type matrix ;
+
+  matrix.block =
+    Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
+                                                             symmetric );
+  matrix.graph = KokkosArray::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+
+  const size_t inner_length         = matrix.block.tensor().dimension();
+  const size_t inner_length_aligned = matrix.block.tensor().aligned_dimension();
+
+  matrix.values = block_vector_type( "matrix" , inner_length_aligned , graph_length );
+
+  block_vector_type x = block_vector_type( "x" , inner_length_aligned , outer_length );
+  block_vector_type y = block_vector_type( "y" , inner_length_aligned , outer_length );
 
   typename block_vector_type::HostMirror hM =
     KokkosArray::create_mirror( matrix.values );
@@ -658,6 +779,84 @@ void performance_test_driver_poly_deg( const int nvar ,
       std::cout << perf_original_mat_free_block[1] / perf_lexo_sparse_3_tensor[1] << " , "
                 << perf_lexo_sparse_3_tensor[2] << " , "
                 << perf_lexo_sparse_3_tensor[5] / perf_crs_tensor[5];
+    }
+
+
+    std::cout << std::endl ;
+  }
+
+  //------------------------------
+}
+
+template< class Scalar, class Device , class SparseMatOps >
+void performance_test_driver_linear( const int minvar ,
+                                     const int maxvar ,
+                                     const int varinc ,
+                                     const int nGrid ,
+                                     const int nIter ,
+                                     const bool test_block ,
+                                     const bool symmetric )
+{
+  bool do_linear =
+    KokkosArray::Impl::is_same<Device,KokkosArray::Host>::value ;
+
+  std::cout.precision(8);
+
+  //------------------------------
+
+  std::vector< std::vector<size_t> > fem_graph ;
+  const size_t graph_length =
+    unit_test::generate_fem_graph( nGrid , fem_graph );
+  std::cout << std::endl << "\"FEM NNZ = " << graph_length << "\"" << std::endl;
+
+  std::cout << std::endl
+            << "\"#nGrid\" , "
+            << "\"#Variable\" , "
+            << "\"PolyDegree\" , "
+            << "\"#Bases\" , "
+            << "\"#TensorEntry\" , "
+            << "\"VectorSize\" , "
+            << "\"Original-Matrix-Free-Block-MXV-Time\" , "
+            << "\"Original-Matrix-Free-Block-MXV-Speedup\" , "
+            << "\"Original-Matrix-Free-Block-MXV-GFLOPS\" , "
+            << "\"Block-Crs-Tensor MXV-Speedup\" , "
+            << "\"Block-Crs-Tensor MXV-GFLOPS\" , ";
+  if (do_linear)
+    std::cout << "\"Linear-Sparse-3-Tensor MXV-Speedup\" , "
+              << "\"Linear-Sparse-3-Tensor MXV-GFLOPS\" , ";
+  std::cout << std::endl ;
+
+  for ( int nvar = minvar ; nvar <= maxvar ; nvar+=varinc ) {
+    std::vector<int> var_degree( nvar , 1 );
+
+    const std::vector<double> perf_crs_tensor =
+      test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(
+        var_degree , nGrid , nIter , symmetric );
+
+    std::vector<double> perf_linear_sparse_3_tensor;
+    if (do_linear) {
+      perf_linear_sparse_3_tensor =
+        test_linear_tensor<Scalar,Device>( var_degree , nGrid , nIter , symmetric );
+    }
+
+    const std::vector<double> perf_original_mat_free_block =
+      test_original_matrix_free_vec<Scalar,Device,SparseMatOps>(
+        var_degree , nGrid , nIter , test_block , symmetric );
+
+    std::cout << nGrid << " , "
+              << nvar << " , "
+              << 1 << " , "
+              << perf_crs_tensor[4] << " , "
+              << perf_crs_tensor[3] << " , "
+              << perf_original_mat_free_block[0] << " , "
+              << perf_original_mat_free_block[1] << " , "
+              << perf_original_mat_free_block[1] / perf_original_mat_free_block[1] << " , "
+              << perf_original_mat_free_block[2] << " , "
+              << perf_original_mat_free_block[1] / perf_crs_tensor[1] << " , "
+              << perf_crs_tensor[2] << " , ";
+    if (do_linear) {
+      std::cout << perf_original_mat_free_block[1] / perf_linear_sparse_3_tensor[1] << " , "
+                << perf_linear_sparse_3_tensor[2] << " , ";
     }
 
 

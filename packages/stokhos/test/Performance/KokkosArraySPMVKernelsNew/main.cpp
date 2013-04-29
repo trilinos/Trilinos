@@ -44,8 +44,8 @@
 #include <cstdlib>
 
 template <typename scalar>
-int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_block,
-             bool symmetric, bool mkl);
+int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
+             bool test_block, bool symmetric, bool mkl);
 
 template <typename scalar>
 int mainCuda(bool test_flat, bool test_orig, bool test_block, bool symmetric,
@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
   bool test_flat = true;
   bool test_orig = true;
   bool test_deg = false;
+  bool test_lin = false;
   bool symmetric = true;
   bool single = false;
   bool mkl = false;
@@ -94,6 +95,10 @@ int main(int argc, char *argv[])
       test_deg = true;
     else if (s == "no-deg")
       test_deg = false;
+    else if (s == "linear")
+      test_lin = true;
+    else if (s == "no-linear")
+      test_lin = false;
     else if (s == "symmetric")
       symmetric = true;
     else if (s == "no-symmetric")
@@ -121,16 +126,16 @@ int main(int argc, char *argv[])
   if (print_usage) {
     std::cout << "Usage:" << std::endl
               << "\t" << argv[0]
-              << " [no-][cuda|host|block|flat|orig|deg|symmetric] [single|double] [device device_id]"
+              << " [no-][cuda|host|block|flat|orig|deg|linear|symmetric] [single|double] [device device_id]"
               << std::endl << "Defaults are all enabled." << std::endl;
     return -1;
   }
 
   if (test_host) {
     if (single)
-      mainHost<float>(test_flat, test_orig, test_deg, test_block, symmetric, mkl);
+      mainHost<float>(test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
     else
-      mainHost<double>(test_flat, test_orig, test_deg, test_block, symmetric, mkl);
+      mainHost<double>(test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
   }
   if (test_cuda) {
     if (single)
