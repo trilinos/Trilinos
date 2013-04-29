@@ -841,26 +841,26 @@ namespace MueLu {
       sumAll(comm, arbitrateAgain, doArbitrate);
 
       GetOStream(Statistics0, 0) << "round " << numRounds << " : ";
-      int ii=0,jj=0;
+      GO ii=0, jj=0;
       if (partitionsIOwn == 1 && !gotALeftoverPartitionThisRound)
         ii=1;
       sumAll(comm, ii,jj);
       GetOStream(Statistics0, 0) << "#definitely assigned = " << jj;
-      ii=0,jj=0;
+      ii=0, jj=0;
       if (partitionsIOwn > 1) ii=1;
       sumAll(comm, ii, jj);
       GetOStream(Statistics0, 0) << ", #pids with > 1 partition =  " << jj;
       jj=0;
       maxAll(comm, partitionsIOwn, jj);
       GetOStream(Statistics0, 0) << ", max# partitions owned by single pid = " << jj;
-      int kk=0; ii=0;
+      GO kk=0; ii=0;
       if (partitionsIOwn == jj) kk=1;
       sumAll(comm, kk, ii);
       if (ii>1)
         GetOStream(Statistics0, 0) << "(by " << ii << " procs)";
       if (ii==1) {
         ii=0; kk=0;
-        if (partitionsIOwn == jj) kk=comm->getRank();
+        if (partitionsIOwn == jj) kk=Teuchos::as<GO>(comm->getRank());
         sumAll(comm, kk, ii);
         GetOStream(Statistics0, 0) << "(by pid " << ii << ")";
       }
@@ -871,7 +871,7 @@ namespace MueLu {
       if (jj==1) {
         ii=0; kk=0;
         if (gotALeftoverPartitionThisRound)
-          kk=comm->getRank();
+          kk=Teuchos::as<GO>(comm->getRank());
         sumAll(comm, kk, ii);
         GetOStream(Statistics0, 0) << " (pid " << ii << ")";
       }
