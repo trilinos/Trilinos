@@ -118,7 +118,7 @@ namespace MueLu {
 
         // Modify seed of the random algorithm used by perturbWt_->randomize()
         {
-          ST::seedrandom(static_cast<unsigned int>(MyPid*2 + (int) (11*ST::random())));
+          ST::seedrandom( Teuchos::as<unsigned int>(MyPid*47) );
           for (int i = 0; i < 10; ++i) ST::random();
         }
         //Note that we must not use perturbWt_->randomize().  This produces the same

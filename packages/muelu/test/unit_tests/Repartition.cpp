@@ -513,9 +513,9 @@ namespace MueLuTests {
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
     level.Release(*repart);
 
-    TEST_EQUALITY(partitionOwners[0],3);
+    TEST_EQUALITY(partitionOwners[0],2);
     TEST_EQUALITY(partitionOwners[1],0);
-    TEST_EQUALITY(partitionOwners[2],2);
+    TEST_EQUALITY(partitionOwners[2],3);
     TEST_EQUALITY(partitionOwners[3],1);
   } //DeterminePartitionPlacement3
 
