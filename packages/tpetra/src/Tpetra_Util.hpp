@@ -762,6 +762,31 @@ namespace Tpetra {
     }
   }
 
+  namespace Details {
+    /// \brief Whether the two communicators are congruent.
+    ///
+    /// Two communicators are <i>congruent</i> when they have the same
+    /// number of processes, and those processes occur in the same
+    /// rank order.
+    ///
+    /// If both communicators are Teuchos::MpiComm instances, this
+    /// function returns <tt>true</tt> exactly when
+    /// <tt>MPI_Comm_compare</tt> returns <tt>MPI_IDENT</tt> (the
+    /// communicators are handles for the same object) or
+    /// <tt>MPI_CONGRUENT</tt> on their MPI_Comm handles.  Any two
+    /// Teuchos::SerialComm instances are always congruent.  An
+    /// MpiComm instance is congruent to a SerialComm instance if and
+    /// only if the MpiComm has one process.  This function is
+    /// symmetric in its arguments.
+    ///
+    /// If either Teuchos::Comm instance is neither an MpiComm nor a
+    /// SerialComm, this method cannot do any better than to compare
+    /// their process counts.
+    bool
+    congruent (const Teuchos::Comm<int>& comm1,
+               const Teuchos::Comm<int>& comm2);
+  } // namespace Details
+
 } // namespace Tpetra
 
 #endif // TPETRA_UTIL_HPP
