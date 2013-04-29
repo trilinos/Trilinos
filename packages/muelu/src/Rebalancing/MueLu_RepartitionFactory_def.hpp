@@ -898,6 +898,7 @@ namespace MueLu {
     partitionOwners = procWinnerConst(); //only works if procWinner is const ...
 
     // print the grid of processors
+    /*
     GetOStream(Statistics0, 0) << "Partition distribution over cores, + indicates partition ownership" << std::endl;
     int numProc = comm->getSize();
     ArrayRCP<char> grid(numProc, '.');
@@ -921,6 +922,7 @@ namespace MueLu {
       std::string spaces(aos.begin(), aos.end());
       GetOStream(Statistics0, 0) << spaces << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
     }
+    */
 
   } //DeterminePartitionPlacement
 
