@@ -330,8 +330,6 @@ namespace Tpetra {
   private:
     //! All the data needed for executing the Import communication plan.
     RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ImportData_;
-    //! Temporary array used for initialization.
-    RCP<Array<GlobalOrdinal> > remoteGIDs_;
     //! Output stream for debug output.
     RCP<Teuchos::FancyOStream> out_;
     //! Whether to print copious debug output on each process.
@@ -371,8 +369,9 @@ namespace Tpetra {
     ///   - remoteLIDs_ (the LIDs of the GIDs that are owned by the
     ///     target Map, but not by the source Map)
     ///
-    /// It also fills in the temporary remoteGIDs_ array with the GIDs
-    /// that are owned by the target Map but not by the source Map.
+    /// It also allocates and fills in the temporary remoteGIDs array
+    /// with the GIDs that are owned by the target Map but not by the
+    /// source Map.
     ///
     /// The name for this routine comes from what it does.  It first
     /// finds the GIDs that are the same (representing elements which
@@ -386,21 +385,21 @@ namespace Tpetra {
     /// This routine does not communicate, except perhaps for the
     /// TPETRA_ABUSE_WARNING (that is only triggered if there are
     /// remote IDs but the source is not distributed).
-    void setupSamePermuteRemote();
+    void setupSamePermuteRemote (Teuchos::Array<GlobalOrdinal>& remoteGIDs);
 
     /// \brief Compute the send communication plan from the receives.
     ///
     /// This routine is called after setupSamePermuteRemote(), if the
-    /// source Map is distributed.  It uses the <tt>remoteGIDs_</tt>
+    /// source Map is distributed.  It uses the <tt>remoteGIDs</tt>
     /// temporary array that was allocated by that routine.  After
-    /// this routine completes, the <tt>remoteGIDs_</tt> array is no
+    /// this routine completes, the <tt>remoteGIDs</tt> array is no
     /// longer needed.
     ///
     /// Algorithm:
     ///
     /// 1. Identify which GIDs are in the target Map but not in the
     ///    source Map.  These correspond to required receives.  Store
-    ///    them for now in <tt>remoteGIDs_</tt>.  Find the process IDs
+    ///    them for now in <tt>remoteGIDs</tt>.  Find the process IDs
     ///    of the remote GIDs to receive.
     ///
     /// 2. Invoke Distributor's createFromRecvs() using the above
@@ -412,7 +411,8 @@ namespace Tpetra {
     ///
     /// This routine fills in the <tt>remoteLIDs_</tt> field of
     /// <tt>ImportData_</tt>.
-    void setupExport();
+    void
+    setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs);
     //@}
 
     //! Naive but correct implementation of setUnion().

@@ -82,6 +82,8 @@ namespace Tpetra {
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
+    using Teuchos::null;
+    using Teuchos::Ptr;
     using Teuchos::rcp;
     using std::endl;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
@@ -105,7 +107,9 @@ namespace Tpetra {
       *out_ << os.str ();
     }
     ImportData_ = rcp (new data_type (source, target, out_, plist));
-    setupSamePermuteRemote ();
+
+    Array<GlobalOrdinal> remoteGIDs;
+    setupSamePermuteRemote (remoteGIDs);
     if (debug_) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
@@ -114,7 +118,7 @@ namespace Tpetra {
       *out_ << os.str ();
     }
     if (source->isDistributed ()) {
-      setupExport ();
+      setupExport (remoteGIDs);
     }
     if (debug_) {
       std::ostringstream os;
@@ -125,7 +129,6 @@ namespace Tpetra {
     if (! out_.is_null ()) {
       out_->popTab ();
     }
-    remoteGIDs_ = null; // Don't need this anymore.
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -344,7 +347,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  setupSamePermuteRemote()
+  setupSamePermuteRemote (Teuchos::Array<GlobalOrdinal>& remoteGIDs)
   {
     using Teuchos::arcp;
     using Teuchos::Array;
@@ -382,7 +385,7 @@ namespace Tpetra {
       {} // third clause of 'for' does everything
     ImportData_->numSameIDs_ = numSameGids;
 
-    // Compute permuteToLIDs_, permuteFromLIDs_, remoteGIDs_, and
+    // Compute permuteToLIDs_, permuteFromLIDs_, remoteGIDs, and
     // remoteLIDs_.  The first two arrays are IDs to be permuted, and
     // the latter two arrays are IDs to be received ("imported"),
     // called "remote" IDs.
@@ -392,8 +395,6 @@ namespace Tpetra {
     // rearrange (permute) them in general.  IDs to receive are in the
     // target Map, but not the source Map.
 
-    remoteGIDs_ = rcp (new Array<GO> ());
-    Array<GO>& remoteGids = *remoteGIDs_;
     Array<LO>& permuteToLIDs = ImportData_->permuteToLIDs_;
     Array<LO>& permuteFromLIDs = ImportData_->permuteFromLIDs_;
     Array<LO>& remoteLIDs = ImportData_->remoteLIDs_;
@@ -410,7 +411,7 @@ namespace Tpetra {
         permuteToLIDs.push_back (tgtLid);
         permuteFromLIDs.push_back (srcLid);
       } else {
-        remoteGids.push_back (curTargetGid);
+        remoteGIDs.push_back (curTargetGid);
         remoteLIDs.push_back (tgtLid);
       }
     }
@@ -425,7 +426,9 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Import<LocalOrdinal,GlobalOrdinal,Node>::setupExport() {
+  void Import<LocalOrdinal,GlobalOrdinal,Node>::
+  setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs)
+  {
     using Teuchos::arcp;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -448,12 +451,12 @@ namespace Tpetra {
 
     // For each entry remoteGIDs[i], remoteProcIDs[i] will contain
     // the process ID of the process that owns that GID.
-    ArrayView<GO> remoteGIDs = (*remoteGIDs_) ();
-    Array<int> remoteProcIDs (remoteGIDs.size ());
+    ArrayView<GO> remoteGIDsView = remoteGIDs ();
+    Array<int> remoteProcIDs (remoteGIDsView.size ());
 
     // lookup == IDNotPresent means that the source Map wasn't able to
     // figure out to which processes one or more of the GIDs in the
-    // given list of remoteGIDs belong.
+    // given list of remote GIDs belong.
     //
     // The previous abuse warning said "The target Map has GIDs not
     // found in the source Map."  This statement could be confusing,
@@ -470,7 +473,7 @@ namespace Tpetra {
     // process in the target Map, which is not owned by _any_ process
     // in the source Map.
     const LookupStatus lookup =
-      source.getRemoteIndexList (remoteGIDs, remoteProcIDs ());
+      source.getRemoteIndexList (remoteGIDsView, remoteProcIDs ());
     if (debug_) {
       std::ostringstream os;
       const int myRank = source.getComm ()->getRank ();
@@ -497,18 +500,17 @@ namespace Tpetra {
       if (numInvalidRemote == totalNumRemote) {
         // all remotes are invalid; we have no remotes; we can delete the remotes
         remoteProcIDs.clear ();
-        (*remoteGIDs_).clear (); // This invalidates the view remoteGIDs
+        remoteGIDs.clear (); // This invalidates the view remoteGIDsView
         ImportData_->remoteLIDs_.clear();
       }
       else {
         // Some remotes are valid; we need to keep the valid ones.
-        // Pack and resize remoteProcIDs, remoteGIDs_, and
-        // remoteLIDs_.
+        // Pack and resize remoteProcIDs, remoteGIDs, and remoteLIDs_.
         size_type numValidRemote = 0;
 #ifdef HAVE_TPETRA_DEBUG
-        ArrayView<GlobalOrdinal> remoteGIDsPtr = remoteGIDs;
+        ArrayView<GlobalOrdinal> remoteGIDsPtr = remoteGIDsView;
 #else
-        GlobalOrdinal* const remoteGIDsPtr = remoteGIDs.getRawPtr ();
+        GlobalOrdinal* const remoteGIDsPtr = remoteGIDsView.getRawPtr ();
 #endif // HAVE_TPETRA_DEBUG
         for (size_type r = 0; r < totalNumRemote; ++r) {
           // Pack in all the valid remote PIDs and GIDs.
@@ -528,21 +530,21 @@ namespace Tpetra {
           << ".  Please report this bug to the Tpetra developers.");
 
         remoteProcIDs.resize (numValidRemote);
-        (*remoteGIDs_).resize (numValidRemote);
+        remoteGIDs.resize (numValidRemote);
         ImportData_->remoteLIDs_.resize (numValidRemote);
       }
       // Revalidate the view after clear or resize.
-      remoteGIDs = (*remoteGIDs_)();
+      remoteGIDsView = remoteGIDs ();
     }
 
     // Sort remoteProcIDs in ascending order, and apply the resulting
-    // permutation to remoteGIDs_ and remoteLIDs_.  This ensures that
-    // remoteProcIDs[i], remoteGIDs_[i], and remoteLIDs_[i] all refer
+    // permutation to remoteGIDs and remoteLIDs_.  This ensures that
+    // remoteProcIDs[i], remoteGIDs[i], and remoteLIDs_[i] all refer
     // to the same thing.
-    sort3 (remoteProcIDs.begin(),
-           remoteProcIDs.end(),
-           remoteGIDs.begin(),
-           ImportData_->remoteLIDs_.begin());
+    sort3 (remoteProcIDs.begin (),
+           remoteProcIDs.end (),
+           remoteGIDsView.begin (),
+           ImportData_->remoteLIDs_.begin ());
 
     // Call the Distributor's createFromRecvs() method to turn the
     // remote GIDs and their owning processes into a send-and-receive
@@ -550,7 +552,7 @@ namespace Tpetra {
     // exportGIDs and exportProcIDs_ are output arrays which are
     // allocated by createFromRecvs().
     Array<GO> exportGIDs;
-    ImportData_->distributor_.createFromRecvs (remoteGIDs ().getConst (),
+    ImportData_->distributor_.createFromRecvs (remoteGIDsView ().getConst (),
                                                remoteProcIDs, exportGIDs,
                                                ImportData_->exportPIDs_);
 
