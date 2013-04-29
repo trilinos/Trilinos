@@ -840,6 +840,7 @@ namespace MueLu {
       else                                                      arbitrateAgain=0;
       sumAll(comm, arbitrateAgain, doArbitrate);
 
+#     ifdef HAVE_MUELU_DEBUG
       GetOStream(Statistics0, 0) << "round " << numRounds << " : ";
       GO ii=0, jj=0;
       if (partitionsIOwn == 1 && !gotALeftoverPartitionThisRound)
@@ -877,6 +878,7 @@ namespace MueLu {
       }
       comm->barrier();
       GetOStream(Statistics0, 0) << std::endl;
+#     endif
 
     } //while (doArbitrate)
     m2 = Teuchos::null;
