@@ -107,10 +107,9 @@ void createEpetraVsAndMap(const Thyra::Ordinal localDim_in,
   )
 {
   const RCP<const Epetra_Comm> epetra_comm = getEpetraComm();
-  const RCP<const Comm<Ordinal> > comm = Thyra::create_Comm(epetra_comm);
-  const int procRank = comm->getRank();
+  const int procRank = epetra_comm->MyPID();
   const Thyra::Ordinal localDim = (procRank == emptyProcRootRank ? 0 : localDim_in);
-  *epetra_map = rcp(new Epetra_Map(as<int>(localDim), 0, *epetra_comm));
+  *epetra_map = rcp(new Epetra_Map(-1, as<int>(localDim), 0, *epetra_comm));
   *vs =  Thyra::create_VectorSpace(*epetra_map);
 }
 

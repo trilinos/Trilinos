@@ -44,6 +44,7 @@
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorSpaceTester.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "EpetraThyraAdaptersTestHelpers.hpp"
 
@@ -52,13 +53,53 @@
 
 namespace {
 
+using Teuchos::ptrFromRef;
+
 
 //
 // Unit Tests
 //
 
 
-TEUCHOS_UNIT_TEST( get_Epetra_MultiVector, singleBlockProductVector )
+TEUCHOS_UNIT_TEST( EpetraThyraWrappers, vectorSpaceTester )
+{
+  using Thyra::VectorSpaceBase;
+  using Thyra::MultiVectorBase;
+  
+  RCP<const VectorSpaceBase<double> > vs;
+  RCP<const Epetra_Map> epetra_map;
+  createEpetraVsAndMap(g_localDim, outArg(vs), outArg(epetra_map));
+  
+  Thyra::VectorSpaceTester<double> vectorSpaceTester;
+  const double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
+  vectorSpaceTester.warning_tol((0.1)*tol);
+  vectorSpaceTester.error_tol(tol);
+  vectorSpaceTester.show_all_tests(true);
+  vectorSpaceTester.dump_all(true);
+  TEST_ASSERT(vectorSpaceTester.check(*vs, &out));
+}
+
+
+TEUCHOS_UNIT_TEST( EpetraThyraWrappers, vectorSpaceTester_empty_p0 )
+{
+  using Thyra::VectorSpaceBase;
+  using Thyra::MultiVectorBase;
+  
+  RCP<const VectorSpaceBase<double> > vs;
+  RCP<const Epetra_Map> epetra_map;
+  createEpetraVsAndMap(g_localDim, outArg(vs), outArg(epetra_map), 0);
+  
+  Thyra::VectorSpaceTester<double> vectorSpaceTester;
+  const double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
+  vectorSpaceTester.warning_tol((0.1)*tol);
+  vectorSpaceTester.error_tol(tol);
+  vectorSpaceTester.show_all_tests(true);
+  vectorSpaceTester.dump_all(true);
+  TEST_ASSERT(vectorSpaceTester.check(*vs, &out));
+}
+
+
+TEUCHOS_UNIT_TEST( EpetraThyraWrappers, get_Epetra_MultiVector_singleBlockProductVector )
 {
 using Thyra::VectorSpaceBase;
 using Thyra::MultiVectorBase;
