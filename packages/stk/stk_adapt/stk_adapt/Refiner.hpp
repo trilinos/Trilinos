@@ -176,6 +176,15 @@ namespace stk {
       bool
       getNeedsRemesh() { return m_needsRemesh; }
 
+      /// for tri/tet local refinement, set this to true for much better
+      /// unrefinement behavior (elements are unrefined in order they were
+      /// refined which leads to less locking behavior)
+      void
+      setDoLevelBasedUnrefinement(bool doLevelBasedUnrefinement) { m_doLevelBasedUnrefinement = doLevelBasedUnrefinement; }
+
+      bool
+      getDoLevelBasedUnrefinement() { return m_doLevelBasedUnrefinement; }
+
 
 #if  defined(STK_PERCEPT_HAS_GEOMETRY)
 
@@ -213,12 +222,20 @@ namespace stk {
 
       NodeRegistry& getNodeRegistry() { return *m_nodeRegistry; }
       percept::PerceptMesh& getMesh() { return m_eMesh; }
-    protected:
 
       //============= unrefine
-      void
-      preUnrefine(ElementUnrefineCollection& elements_to_unref);
 
+    public:
+      void
+      preUnrefine(ElementUnrefineCollection& elements_to_unref, stk::mesh::EntityRank rank);
+
+      void
+      remeshDuringRefine(stk::mesh::EntityRank rank);
+
+      void
+      replaceNodeRegistryOwnership(ElementUnrefineCollection& elements_to_delete, stk::mesh::EntityRank rank);
+
+    protected:
       void
       filterUnrefSet(ElementUnrefineCollection& elements_to_unref);
 
@@ -406,6 +423,7 @@ namespace stk {
       BlockNamesType m_rbar_names;
 #endif
       bool m_needsRemesh;
+      bool m_doLevelBasedUnrefinement;
     };
 
 

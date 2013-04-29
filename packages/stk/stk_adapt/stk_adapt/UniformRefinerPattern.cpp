@@ -120,6 +120,16 @@ namespace stk {
           throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations parent_elem is null");
         }
 
+      stk::mesh::FieldBase *refine_level = eMesh.get_field("refine_level");
+      if (refine_level)
+        {
+          double *fdata_new = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(refine_level) , newElement );
+          double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(refine_level) , parent_elem );
+          if (fdata && fdata_new)
+            fdata_new[0] = fdata[0] + 1.0;
+          //std::cout << "fdata= " << fdata << " fdata_new= " << fdata_new[0] << std::endl;
+        }
+
       const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
       stk::mesh::Entity family_tree = stk::mesh::Entity();
       mesh::PairIterRelation parent_to_family_tree_relations = parent_elem.relations(FAMILY_TREE_RANK);
@@ -322,6 +332,7 @@ namespace stk {
       for (unsigned ifld = 0; ifld < nfields; ifld++)
         {
           stk::mesh::FieldBase *field = fields[ifld];
+          if (field->name()=="refine_level") continue;
           int field_dimension = -1;
 
           stk::mesh::EntityRank field_rank = stk::mesh::MetaData::NODE_RANK;

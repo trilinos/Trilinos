@@ -71,6 +71,8 @@ namespace stk {
     template<typename T> class Histograms;
 
     typedef mesh::Field<double>                          ScalarFieldType ;
+    typedef mesh::Field<int>                             ScalarIntFieldType ;
+    typedef mesh::Field<unsigned>                        ScalarUnsignedFieldType ;
     typedef mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
 
     static const unsigned EntityRankEnd = 6;
@@ -600,6 +602,7 @@ namespace stk {
       bool isParentElement( const stk::mesh::Entity element, bool check_for_family_tree=true);
 
       stk::mesh::Entity getGrandParent(stk::mesh::Entity element, bool check_for_family_tree=true);
+      bool hasGrandChildren(stk::mesh::Entity parent, bool check_for_family_tree=true);
       bool hasGreatGrandChildren(stk::mesh::Entity gp, bool check_for_family_tree=true);
 
       /// is element a parent at the leaf level (either there is only one level, and it's a parent, or

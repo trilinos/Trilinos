@@ -328,6 +328,26 @@ namespace stk
         return (1 + 0*d01 + 0*d01p + 0*v01dotn)*std::abs(dot_0 - dot_1);
       }
 
+      static int shock_diff1(stk::mesh::FieldBase* nodal_refine_field, percept::PerceptMesh& eMesh,
+                               stk::mesh::Entity node0, stk::mesh::Entity node1, double *coord0, double *coord1, PlaneShock& shock, double shock_displacement)
+      {
+        shock.setCurrentPlanePoint(shock_displacement);
+        double *plane_point = shock.plane_point;
+        double *plane_normal = shock.plane_normal;
+
+        if (distance(coord0, coord1) < 1./200.)
+          return DO_UNREFINE;
+
+        double dot_0 = plane_dot_product(plane_point, plane_normal, coord0);
+        double dot_1 = plane_dot_product(plane_point, plane_normal, coord1);
+
+        if (dot_0*dot_1 < 0) 
+          return DO_REFINE;
+        else
+          return DO_UNREFINE;
+
+      }
+
       // This can be used as an edge or element-based predicate
 
       struct ShockBasedRefinePredicate : public IEdgeBasedAdapterPredicate, IElementBasedAdapterPredicate {
@@ -416,6 +436,90 @@ namespace stk
                 {
                   mark |= DO_UNREFINE;
                 }
+            }
+          return mark;
+        }
+
+        //double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
+        //return m_selector(entity) && fdata[0] > 0;
+      };
+
+      // This can be used as an edge or element-based predicate
+
+      struct ShockBasedRefinePredicate1 : public IEdgeBasedAdapterPredicate, IElementBasedAdapterPredicate {
+
+        percept::PerceptMesh& m_eMesh;
+        stk::mesh::FieldBase * m_nodal_refine_field;
+        PlaneShock m_shock;
+        double m_shock_displacement;
+        double m_shock_diff_criterion;
+
+        ShockBasedRefinePredicate1(stk::mesh::FieldBase* nodal_refine_field, percept::PerceptMesh& eMesh, stk::mesh::Selector* selector, stk::mesh::FieldBase *field, double tolerance,
+                                  PlaneShock shock, double shock_displacement=0, double shock_diff_criterion=0.4) :
+          IEdgeBasedAdapterPredicate(selector, field, tolerance),
+          IElementBasedAdapterPredicate(selector, field, tolerance),
+          m_eMesh(eMesh),m_nodal_refine_field(nodal_refine_field),
+          m_shock(shock), m_shock_displacement(shock_displacement),
+          m_shock_diff_criterion(shock_diff_criterion) {}
+
+
+        /// Element-based: Return DO_NOTHING, DO_REFINE, DO_UNREFINE or sum of these
+        int operator()(const stk::mesh::Entity element)
+        {
+          if (0 == m_eb_selector || (*m_eb_selector)(element))
+            {
+
+              const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+              int spatialDimension = m_eMesh.get_spatial_dim();
+              CellTopology cell_topo(cell_topo_data);
+              const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+
+              VectorFieldType* coordField = m_eMesh.get_coordinates_field();
+
+              unsigned numSubDimNeededEntities = 0;
+              numSubDimNeededEntities = cell_topo_data->edge_count;
+
+              unsigned ref_count=0, unref_count=0;
+              for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
+                {
+                  stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
+                  stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
+                  double * const coord0 = stk::mesh::field_data( *coordField , node0 );
+                  double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+                  double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
+                  double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
+
+                  int markInfo = this->operator()(element, iSubDimOrd, node0, node1, dcoord0, dcoord1, 0);
+                  bool do_ref = markInfo & DO_REFINE;
+                  if (do_ref)
+                    {
+                      ++ref_count;
+                    }
+                  bool do_unref = markInfo & DO_UNREFINE;
+                  if (!do_ref && do_unref)
+                    {
+                      ++unref_count;
+                    }
+                }
+              if (ref_count == numSubDimNeededEntities)
+                return DO_REFINE;
+              if (unref_count == numSubDimNeededEntities)
+                return DO_UNREFINE;
+            }
+
+          return DO_NOTHING;
+        }
+
+        /// Return DO_NOTHING, DO_REFINE, DO_UNREFINE or sum of these
+        int operator()(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
+                        double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
+        {
+          int mark=0;
+          if (0 == m_selector || (*m_selector)(element))
+            {
+
+              // refine check
+              mark = shock_diff1(m_nodal_refine_field, m_eMesh, node0, node1, coord0, coord1, m_shock, m_shock_displacement);
             }
           return mark;
         }

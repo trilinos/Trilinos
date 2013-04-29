@@ -5131,7 +5131,9 @@ namespace stk {
           return false;
         }
       else
-        return true;
+        {
+          return true;
+        }
     }
 
     // either has no family tree or is a child
@@ -5145,7 +5147,8 @@ namespace stk {
         }
       else
         {
-          return isChildElement(element, true);
+          return !isParentElement(element, true);
+          //return isChildElement(element, true);
         }
     }
 
@@ -5236,6 +5239,25 @@ namespace stk {
                       if (hasGreatGrandChildren && greatGrandChildren.size())
                         return true;
                     }
+                }
+            }
+        }
+      return false;
+    }
+
+    bool PerceptMesh::hasGrandChildren(stk::mesh::Entity parent, bool check_for_family_tree)
+    {
+      std::vector<stk::mesh::Entity> children;
+      bool hasChildren = getChildren(parent, children, check_for_family_tree, false);
+      if (hasChildren && children.size())
+        {
+          for (unsigned ic=0; ic < children.size(); ic++)
+            {
+              std::vector<stk::mesh::Entity> grandChildren;
+              bool hasGrandChildren = getChildren(children[ic], grandChildren, check_for_family_tree, false);
+              if (hasGrandChildren && grandChildren.size())
+                {
+                  return true;
                 }
             }
         }

@@ -40,7 +40,8 @@ namespace stk {
       m_doSmoothGeometry(true),
       m_removeGeometryBlocks(false),
       m_fixAllBlockBoundaries(false),
-      m_needsRemesh(true)
+      m_needsRemesh(true),
+      m_doLevelBasedUnrefinement(false)
     {
       bp.setSubPatterns(m_breakPattern, eMesh);
       m_nodeRegistry = new NodeRegistry (m_eMesh);
@@ -64,7 +65,8 @@ namespace stk {
       m_doSmoothGeometry(true),
       m_removeGeometryBlocks(false),
       m_fixAllBlockBoundaries(false),
-      m_needsRemesh(true)
+      m_needsRemesh(true),
+      m_doLevelBasedUnrefinement(false)
     {
       m_nodeRegistry = new NodeRegistry (m_eMesh);
       m_nodeRegistry->initialize();
