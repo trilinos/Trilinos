@@ -746,6 +746,23 @@ namespace Tpetra {
     /// variants) and computeReceives().
     int getTag (const int pathTag) const;
 
+    /// \brief Initialize using the specified communicator and ParameterList.
+    ///
+    /// This method is only meant to be called by the constructor.
+    ///
+    /// \param comm [in] Communicator used by the Distributor.
+    /// \param plist [in/out] List of parameters controlling how the
+    ///   Distributor performs communication.  Must be nonnull.
+    ///   Please see the class documentation for a list of all
+    ///   accepted parameters and their default values.
+    ///
+    /// This method doesn't actually set up the distribution pattern.
+    /// You need to call one of the "gather / scatter 'constructors'"
+    /// to do that.
+    void
+    init (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
     /// \brief Compute receive info from sends.
     ///
     /// This method computes numReceives_, lengthsFrom_, imagesFrom_,

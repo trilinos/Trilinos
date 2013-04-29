@@ -121,25 +121,17 @@ namespace Tpetra {
   }
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-
-  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
-    : comm_(comm)
-    , out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
-    , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (barrierBetween_default)
-    , debug_ (tpetraDistributorDebugDefault)
-    , numExports_(0)
-    , selfMessage_(false)
-    , numSends_(0)
-    , maxSendLength_(0)
-    , numReceives_(0)
-    , totalReceiveLength_(0)
-    , useDistinctTags_ (useDistinctTags_default)
+  void
+  Distributor::init (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                     const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
-    using Teuchos::rcp;
-
     this->setVerbLevel (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_NONE);
     this->setOStream (out_);
+    if (! plist.is_null ()) {
+      // The input parameters may override the above verbosity level
+      // setting, if there is a "VerboseObject" sublist.
+      this->setParameterList (plist);
+    }
 
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     makeTimers ();
@@ -154,137 +146,99 @@ namespace Tpetra {
     }
   }
 
-  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+    : comm_ (comm)
+    , out_  (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
+    , sendType_ (Details::DISTRIBUTOR_SEND)
+    , barrierBetween_ (barrierBetween_default)
+    , debug_ (tpetraDistributorDebugDefault)
+    , numExports_ (0)
+    , selfMessage_ (false)
+    , numSends_ (0)
+    , maxSendLength_ (0)
+    , numReceives_ (0)
+    , totalReceiveLength_ (0)
+    , useDistinctTags_ (useDistinctTags_default)
+  {
+    init (comm, Teuchos::null);
+  }
+
+  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out)
-    : comm_(comm)
+    : comm_ (comm)
     , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
-    , numExports_(0)
-    , selfMessage_(false)
-    , numSends_(0)
-    , maxSendLength_(0)
-    , numReceives_(0)
-    , totalReceiveLength_(0)
+    , numExports_ (0)
+    , selfMessage_ (false)
+    , numSends_ (0)
+    , maxSendLength_ (0)
+    , numReceives_ (0)
+    , totalReceiveLength_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
-    using Teuchos::rcp;
-
-    this->setVerbLevel (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_NONE);
-    this->setOStream (out_);
-
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
-    makeTimers ();
-#endif // TPETRA_DISTRIBUTOR_TIMERS
-
-    if (debug_) {
-      Teuchos::OSTab tab (out_);
-      std::ostringstream os;
-      os << comm_->getRank ()
-         << ": Distributor ctor done" << std::endl;
-      *out_ << os.str ();
-    }
+    init (comm, Teuchos::null);
   }
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : comm_(comm)
+    : comm_ (comm)
     , out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
-    , numExports_(0)
-    , selfMessage_(false)
-    , numSends_(0)
-    , maxSendLength_(0)
-    , numReceives_(0)
-    , totalReceiveLength_(0)
+    , numExports_ (0)
+    , selfMessage_ (false)
+    , numSends_ (0)
+    , maxSendLength_ (0)
+    , numReceives_ (0)
+    , totalReceiveLength_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
-    using Teuchos::rcp;
-    TEUCHOS_TEST_FOR_EXCEPTION (plist.is_null(), std::invalid_argument, "The "
-      "two-argument Distributor constructor requires that the input "
-      "RCP<ParameterList> be nonnull.  If you don't know what parameters to "
-      "set, you can either call the one-argument constructor, or supply a "
-      "nonnull but empty ParameterList.  Both of these options will set default "
-      "parameters.");
-
-    this->setVerbLevel (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_NONE);
-    this->setOStream (out_);
-    // The input parameters may override the above verbosity level
-    // setting, if there is a "VerboseObject" sublist.
-    this->setParameterList (plist);
-
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
-    makeTimers ();
-#endif // TPETRA_DISTRIBUTOR_TIMERS
-
-    if (debug_) {
-      Teuchos::OSTab tab (out_);
-      std::ostringstream os;
-      os << comm_->getRank ()
-         << ": Distributor ctor done" << std::endl;
-      *out_ << os.str ();
-    }
+    init (comm, plist);
   }
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : comm_(comm)
+    : comm_ (comm)
     , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
-    , numExports_(0)
-    , selfMessage_(false)
-    , numSends_(0)
-    , maxSendLength_(0)
-    , numReceives_(0)
-    , totalReceiveLength_(0)
+    , numExports_ (0)
+    , selfMessage_ (false)
+    , numSends_ (0)
+    , maxSendLength_ (0)
+    , numReceives_ (0)
+    , totalReceiveLength_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
-    using Teuchos::rcp;
-    TEUCHOS_TEST_FOR_EXCEPTION (plist.is_null(), std::invalid_argument, "The "
-      "two-argument Distributor constructor requires that the input "
-      "RCP<ParameterList> be nonnull.  If you don't know what parameters to "
-      "set, you can either call the one-argument constructor, or supply a "
-      "nonnull but empty ParameterList.  Both of these options will set default "
-      "parameters.");
-
-    this->setVerbLevel (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_NONE);
-    this->setOStream (out_);
-    // The input parameters may override the above verbosity level
-    // setting, if there is a "VerboseObject" sublist.
-    this->setParameterList (plist);
-
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
-    makeTimers ();
-#endif // TPETRA_DISTRIBUTOR_TIMERS
-
-    if (debug_) {
-      Teuchos::OSTab tab (out_);
-      std::ostringstream os;
-      os << comm_->getRank ()
-         << ": Distributor ctor done" << std::endl;
-      *out_ << os.str ();
-    }
+    init (comm, plist);
   }
 
   Distributor::Distributor (const Distributor & distributor)
-    : comm_(distributor.comm_)
+    : comm_ (distributor.comm_)
     , out_ (distributor.out_)
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
     , debug_ (distributor.debug_)
-    , numExports_(distributor.numExports_)
-    , selfMessage_(distributor.selfMessage_)
-    , numSends_(distributor.numSends_)
-    , maxSendLength_(distributor.maxSendLength_)
-    , numReceives_(distributor.numReceives_)
-    , totalReceiveLength_(distributor.totalReceiveLength_)
-    , reverseDistributor_(distributor.reverseDistributor_)
+    , numExports_ (distributor.numExports_)
+    , selfMessage_ (distributor.selfMessage_)
+    , numSends_ (distributor.numSends_)
+    , imagesTo_ (distributor.imagesTo_)
+    , startsTo_ (distributor.startsTo_)
+    , lengthsTo_ (distributor.lengthsTo_)
+    , maxSendLength_ (distributor.maxSendLength_)
+    , indicesTo_ (distributor.indicesTo_)
+    , numReceives_ (distributor.numReceives_)
+    , totalReceiveLength_ (distributor.totalReceiveLength_)
+    , lengthsFrom_ (distributor.lengthsFrom_)
+    , imagesFrom_ (distributor.imagesFrom_)
+    , startsFrom_ (distributor.startsFrom_)
+    , indicesFrom_ (distributor.indicesFrom_)
+    , reverseDistributor_ (distributor.reverseDistributor_)
     , useDistinctTags_ (distributor.useDistinctTags_)
   {
     using Teuchos::ParameterList;
