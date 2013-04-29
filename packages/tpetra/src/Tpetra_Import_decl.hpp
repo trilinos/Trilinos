@@ -340,10 +340,21 @@ namespace Tpetra {
     //! @name Initialization helper functions (called by the constructor)
     //@{
 
-    //==============================================================================
-    // sets up numSameIDs_, numPermuteIDs_, and numRemoteIDs_
-    // these variables are already initialized to 0 by the ImportExportData ctr.
-    // also sets up permuteToLIDs_, permuteFromLIDs_, and remoteLIDs_
+    /// \brief Initialize the Import.  Called by all constructors.
+    ///
+    /// \param source [in] The source distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This may be a
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param plist [in/out] List of parameters.  Currently passed
+    ///   directly to the Distributor that implements communication.
+    ///   If this is Teuchos::null, it is not used.
+    void
+    init (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
+          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Compute the necessary receives for the Import.
     ///

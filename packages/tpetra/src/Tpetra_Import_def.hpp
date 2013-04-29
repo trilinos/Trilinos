@@ -59,6 +59,7 @@ namespace {
 } // namespace (anonymous)
 
 namespace Tpetra {
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Import<LocalOrdinal,GlobalOrdinal,Node>::
@@ -75,102 +76,11 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,
-          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target) :
-    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
-    debug_ (tpetraImportDebugDefault)
-  {
-    using Teuchos::rcp;
-    using std::endl;
-    typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
-
-    if (! out_.is_null ()) {
-      out_->pushTab ();
-    }
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor" << endl;
-      *out_ << os.str ();
-    }
-    ImportData_ = rcp (new data_type (source, target, out_));
-    setupSamePermuteRemote ();
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor: setupSamePermuteRemote done" << endl;
-      *out_ << os.str ();
-    }
-    if (source->isDistributed ()) {
-      setupExport ();
-    }
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor: done" << endl;
-      *out_ << os.str ();
-    }
-    if (! out_.is_null ()) {
-      out_->popTab ();
-    }
-    remoteGIDs_ = null; // Don't need these anymore.
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,
-          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target,
-          const RCP<Teuchos::FancyOStream>& out) :
-    out_ (out),
-    debug_ (tpetraImportDebugDefault)
-  {
-    using Teuchos::rcp;
-    using std::endl;
-    typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
-
-    if (! out_.is_null ()) {
-      out_->pushTab ();
-    }
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor" << endl;
-      *out_ << os.str ();
-    }
-    ImportData_ = rcp (new data_type (source, target, out_));
-    setupSamePermuteRemote ();
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor: "
-         << "setupSamePermuteRemote done" << endl;
-      *out_ << os.str ();
-    }
-    if (source->isDistributed ()) {
-      setupExport ();
-    }
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor: done" << endl;
-      *out_ << os.str ();
-    }
-    if (! out_.is_null ()) {
-      out_->popTab ();
-    }
-    remoteGIDs_ = null; // Don't need these anymore.
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,
-          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target,
-          const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
-    debug_ (tpetraImportDebugDefault)
+  init (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+        const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
     using Teuchos::rcp;
     using std::endl;
@@ -218,60 +128,48 @@ namespace Tpetra {
     remoteGIDs_ = null; // Don't need this anymore.
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  Import (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
+          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target) :
+    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
+    debug_ (tpetraImportDebugDefault)
+  {
+    init (source, target, Teuchos::null);
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,
-          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target,
+  Import (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
+          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+          const RCP<Teuchos::FancyOStream>& out) :
+    out_ (out),
+    debug_ (tpetraImportDebugDefault)
+  {
+    init (source, target, Teuchos::null);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
+          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
+    debug_ (tpetraImportDebugDefault)
+  {
+    init (source, target, plist);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
+          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
           const RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     out_ (out),
     debug_ (tpetraImportDebugDefault)
   {
-    using Teuchos::rcp;
-    using std::endl;
-    typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
-
-    // Read "Debug" parameter from the input ParameterList.
-    bool debug = tpetraImportDebugDefault;
-    if (! plist.is_null ()) {
-      try {
-        debug = plist->get<bool> ("Debug");
-      } catch (Teuchos::Exceptions::InvalidParameter&) {}
-    }
-    debug_ = debug;
-
-    if (! out_.is_null ()) {
-      out_->pushTab ();
-    }
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor" << endl;
-      *out_ << os.str ();
-    }
-    ImportData_ = rcp (new data_type (source, target, out_, plist));
-    setupSamePermuteRemote ();
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor: "
-         << "setupSamePermuteRemote done" << endl;
-      *out_ << os.str ();
-    }
-    if (source->isDistributed ()) {
-      setupExport ();
-    }
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor: done" << endl;
-      *out_ << os.str ();
-    }
-    if (! out_.is_null ()) {
-      out_->popTab ();
-    }
-    remoteGIDs_ = null; // Don't need this anymore.
+    init (source, target, plist);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
