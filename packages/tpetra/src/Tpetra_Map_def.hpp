@@ -746,69 +746,75 @@ namespace Tpetra {
     using Teuchos::reduceAll;
 
     if (this == &map) {
-      // we assume that this is globally coherent
-      // if they are the same object, then they are equivalent maps
+      // If the input Map is the same object (has the same address) as
+      // *this, then the Maps are the same.  We assume that if this
+      // holds on one process, then it holds on all processes.
       return true;
     }
 
-    // check all other globally coherent properties
-    // if they do not share each of these properties, then they cannot be
-    // equivalent maps
-    if ( (getMinAllGlobalIndex()   != map.getMinAllGlobalIndex())   ||
-         (getMaxAllGlobalIndex()   != map.getMaxAllGlobalIndex())   ||
-         (getGlobalNumElements() != map.getGlobalNumElements()) ||
-         (isDistributed()       != map.isDistributed())       ||
-         (getIndexBase()        != map.getIndexBase())         )  {
+    // Check all other known properties that are the same on all
+    // processes.  If the two Maps do not share any of these
+    // properties, then they cannot be the same.
+    if (getMinAllGlobalIndex () != map.getMinAllGlobalIndex () ||
+        getMaxAllGlobalIndex () != map.getMaxAllGlobalIndex () ||
+        getGlobalNumElements () != map.getGlobalNumElements () ||
+        isDistributed () != map.isDistributed () ||
+        getIndexBase () != map.getIndexBase ()) {
       return false;
     }
 
     // If we get this far, we need to check local properties and the
-    // communicate same-ness across all nodes
+    // communicate same-ness across all processes
     // we prefer local work over communication, ergo, we will perform all
     // comparisons and conduct a single communication
     int isSame_lcl = 1;
 
-    // check number of entries owned by this node
-    if (getNodeNumElements() != map.getNodeNumElements()) {
+    // The two communicators must have the same number of processes,
+    // with process ranks occurring in the same order.
+    if (! Details::congruent (*comm_, * (map.getComm ()))) {
       isSame_lcl = 0;
     }
 
-    // check the identity of the entries owned by this node
-    // only do this if we haven't already determined not-same-ness
+    // Check the number of entries owned by this process.
+    if (getNodeNumElements () != map.getNodeNumElements ()) {
+      isSame_lcl = 0;
+    }
+
+    // Check that the entries owned by this process in both Maps are
+    // the same.  Only do this if we haven't already determined that
+    // the Maps aren't the same.
     if (isSame_lcl == 1) {
-      // if they are contiguous, we can check the ranges easily
-      // if they are not contiguous, we must check the individual LID -> GID mappings
-      // the latter approach is valid in either case, but the former is faster
-      if (isContiguous() && map.isContiguous()) {
-        if ( (getMinGlobalIndex() != map.getMinGlobalIndex()) ||
-             (getMaxGlobalIndex() != map.getMaxGlobalIndex()) ){
+      // If the Maps are contiguous, we can check the ranges easily by
+      // looking at the min and max GID on this process.  Otherwise,
+      // we'll compare their GID lists.
+      if (isContiguous () && map.isContiguous ()) {
+        if (getMinGlobalIndex () != map.getMinGlobalIndex () ||
+            getMaxGlobalIndex() != map.getMaxGlobalIndex()) {
           isSame_lcl = 0;
         }
       }
       else {
-        // FIXME (mfh 20 Feb 2013) Calling getNodeElementList() is
-        // unnecessary if the Map has contiguous GIDs.  It also forces
-        // the Map to create and cache the GID list.
-
-        /* Note: std::equal requires that the latter range is as large as the former.
-         * We know the ranges have equal length, because they have the same number of
-         * local entries.
-         * However, we only know that lgMap_ has been filled for the Map that is not
-         * contiguous (one is potentially contiguous.) Calling getNodeElementList()
-         * will create it. */
-        Teuchos::ArrayView<const GlobalOrdinal> ge1, ge2;
-        ge1 =     getNodeElementList();
-        ge2 = map.getNodeElementList();
-        if (! std::equal (ge1.begin(), ge1.end(), ge2.begin())) {
+        // We could be more clever here to avoid calling
+        // getNodeElementList() on either of the two Maps has
+        // contiguous GIDs.  For now, we call it regardless of whether
+        // the Map is contiguous, as long as one of the Maps is not
+        // contiguous.
+        //
+        // std::equal requires that the latter range is as large as
+        // the former.  We know the ranges have equal length, because
+        // they have the same number of local entries.
+        Teuchos::ArrayView<const GlobalOrdinal> ge1 =     getNodeElementList ();
+        Teuchos::ArrayView<const GlobalOrdinal> ge2 = map.getNodeElementList ();
+        if (! std::equal (ge1.begin (), ge1.end (), ge2.begin ())) {
           isSame_lcl = 0;
         }
       }
     }
 
-    // now, determine if we detected not-same-ness on any node
-    int isSame_gbl;
+    // Return true if and only if all processes report "same-ness."
+    int isSame_gbl = 0;
     reduceAll<int, int> (*comm_, REDUCE_MIN, isSame_lcl, outArg (isSame_gbl));
-    return (isSame_gbl == 1);
+    return isSame_gbl == 1;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
