@@ -5,6 +5,10 @@ Release Notes for Trilinos Package Tpetra
 Trilinos 11.4:
 --------------
 
+* Performance improvements to fillComplete (CrsGraph and CrsMatrix)
+
+* Performance improvements to Map's global-to-local index conversions
+
 * MPI performance optimizations
 
 Methods that perform communication between (MPI) processes do less

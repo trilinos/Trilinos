@@ -48,13 +48,14 @@
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"
 
-// mfh 25 Apr 2013: Define HAVE_TPETRA_FIXED_HASH_TABLE to use the
-// fixed-size hash table variant for global-to-local index lookups.
-// This option is off by default.
+// mfh 27 Apr 2013: If HAVE_TPETRA_FIXED_HASH_TABLE is defined (which
+// it is by default), then Map will used the fixed-structure hash
+// table variant for global-to-local index lookups.  Otherwise, it
+// will use the dynamic-structure hash table variant.
 
-// #ifndef HAVE_TPETRA_FIXED_HASH_TABLE
-// #  define HAVE_TPETRA_FIXED_HASH_TABLE 1
-// #endif // HAVE_TPETRA_FIXED_HASH_TABLE
+#ifndef HAVE_TPETRA_FIXED_HASH_TABLE
+#  define HAVE_TPETRA_FIXED_HASH_TABLE 1
+#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
 /// \file Tpetra_Map_decl.hpp
 /// \brief Declarations for the Tpetra::Map class and related nonmember constructors.

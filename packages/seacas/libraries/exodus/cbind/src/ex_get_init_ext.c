@@ -95,33 +95,23 @@ int ex_get_init_ext (int   exoid,
 
   exerrval = 0; /* clear error code */
 
-  if ((status = nc_inq_att(exoid, NC_GLOBAL, ATT_TITLE, &title_type, &title_len)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-	    "Error: failed to inquire title in file id %d", exoid);
-    ex_err("ex_get_init_ext",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  /* Check title length to avoid overrunning clients memory space; include trailing null */
-  if (title_len > MAX_LINE_LENGTH) {
-    char *title = malloc(title_len+1);
-    if ((status = nc_get_att_text(exoid, NC_GLOBAL, ATT_TITLE, title)) == NC_NOERR) {
-      strncpy(info->title, title, MAX_LINE_LENGTH+1);
-      info->title[MAX_LINE_LENGTH] = '\0';
-    }
-    free(title);
-  } else {
-    status = nc_get_att_text(exoid, NC_GLOBAL, ATT_TITLE, info->title);
-    info->title[title_len] = '\0';
-  }
-  if (status != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-            "Error: failed to get title in file id %d", exoid);
-    ex_err("ex_get_init_ext",errmsg,exerrval);
-    return (EX_FATAL);
-  }
+  info->num_dim = 0;
+  info->num_nodes = 0;
+  info->num_edge = 0;
+  info->num_edge_blk = 0;
+  info->num_face = 0;
+  info->num_face_blk = 0;
+  info->num_elem = 0;
+  info->num_elem_blk = 0;
+  info->num_node_sets = 0;
+  info->num_edge_sets = 0;
+  info->num_face_sets = 0;
+  info->num_side_sets = 0;
+  info->num_elem_sets = 0;
+  info->num_node_maps = 0;
+  info->num_edge_maps = 0;
+  info->num_face_maps = 0;
+  info->num_elem_maps = 0;
 
   {
     size_t tmp;
@@ -160,6 +150,34 @@ int ex_get_init_ext (int   exoid,
   /* Edge and face blocks are also optional (for backwards compatability) */
   if (ex_get_dim_value(exoid,"edge blocks",DIM_NUM_ED_BLK,dimid,&info->num_edge_blk) != EX_NOERR) return EX_FATAL;
   if (ex_get_dim_value(exoid,"face blocks",DIM_NUM_FA_BLK,dimid,&info->num_face_blk) != EX_NOERR) return EX_FATAL;
+
+  if ((status = nc_inq_att(exoid, NC_GLOBAL, ATT_TITLE, &title_type, &title_len)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+	    "Error: failed to inquire title in file id %d", exoid);
+    ex_err("ex_get_init_ext",errmsg,exerrval);
+    return (EX_FATAL);
+  }
+
+  /* Check title length to avoid overrunning clients memory space; include trailing null */
+  if (title_len > MAX_LINE_LENGTH) {
+    char *title = malloc(title_len+1);
+    if ((status = nc_get_att_text(exoid, NC_GLOBAL, ATT_TITLE, title)) == NC_NOERR) {
+      strncpy(info->title, title, MAX_LINE_LENGTH+1);
+      info->title[MAX_LINE_LENGTH] = '\0';
+    }
+    free(title);
+  } else {
+    status = nc_get_att_text(exoid, NC_GLOBAL, ATT_TITLE, info->title);
+    info->title[title_len] = '\0';
+  }
+  if (status != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to get title in file id %d", exoid);
+    ex_err("ex_get_init_ext",errmsg,exerrval);
+    return (EX_FATAL);
+  }
 
   return (EX_NOERR);
 }

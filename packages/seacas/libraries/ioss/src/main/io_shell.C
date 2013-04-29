@@ -518,6 +518,7 @@ namespace {
     transfer_coordinate_frames(region, output_region, globals.debug);
 
     if (globals.debug) OUTPUT << "END STATE_DEFINE_MODEL... " << '\n';
+    output_region.synchronize_id_and_name(&region, true);
     output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
 
     OUTPUT << "Maximum Field size = " << max_field_size << " bytes.\n";

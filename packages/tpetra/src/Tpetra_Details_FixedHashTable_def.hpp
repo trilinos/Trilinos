@@ -51,109 +51,6 @@
 #include <Teuchos_as.hpp>
 #include "MurmurHash3.hpp"
 
-namespace Mine {
-  template<class T>
-  std::string toString (const T& x);
-
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  template<>
-  std::string
-  toString<Teuchos::ArrayView<const std::pair<long long, int> > > (const Teuchos::ArrayView<const std::pair<long long, int> >& x) {
-    typedef Teuchos::ArrayView<int>::size_type size_type;
-    std::ostringstream os;
-    os << "{";
-    for (size_type k = 0; k < x.size (); ++k) {
-      const long long first = x[k].first;
-      const int second = x[k].second;
-      os << "(" << first << "," << second << ")";
-      if (k + 1 < x.size ()) {
-        os << ", ";
-      }
-    }
-    os << "}";
-    return os.str ();
-  }
-
-  template<>
-  std::string
-  toString<Teuchos::ArrayView<std::pair<long long, int> > > (const Teuchos::ArrayView<std::pair<long long, int> >& x) {
-    return Mine::toString<Teuchos::ArrayView<const std::pair<long long, int> > > (x.getConst ());
-  }
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
-
-  template<>
-  std::string
-  toString<Teuchos::ArrayView<const std::pair<unsigned int, int> > > (const Teuchos::ArrayView<const std::pair<unsigned int, int> >& x) {
-    typedef Teuchos::ArrayView<int>::size_type size_type;
-    std::ostringstream os;
-    os << "{";
-    for (size_type k = 0; k < x.size (); ++k) {
-      const unsigned int first = x[k].first;
-      const int second = x[k].second;
-      os << "(" << first << "," << second << ")";
-      if (k + 1 < x.size ()) {
-        os << ", ";
-      }
-    }
-    os << "}";
-    return os.str ();
-  }
-
-  template<>
-  std::string
-  toString<Teuchos::ArrayView<std::pair<unsigned int, int> > > (const Teuchos::ArrayView<std::pair<unsigned int, int> >& x) {
-    return Mine::toString<Teuchos::ArrayView<const std::pair<unsigned int, int> > > (x.getConst ());
-  }
-
-  template<>
-  std::string
-  toString<Teuchos::ArrayView<const std::pair<long, int> > > (const Teuchos::ArrayView<const std::pair<long, int> >& x) {
-    typedef Teuchos::ArrayView<int>::size_type size_type;
-    std::ostringstream os;
-    os << "{";
-    for (size_type k = 0; k < x.size (); ++k) {
-      const long first = x[k].first;
-      const int second = x[k].second;
-      os << "(" << first << "," << second << ")";
-      if (k + 1 < x.size ()) {
-        os << ", ";
-      }
-    }
-    os << "}";
-    return os.str ();
-  }
-
-  template<>
-  std::string
-  toString<Teuchos::ArrayView<std::pair<long, int> > > (const Teuchos::ArrayView<std::pair<long, int> >& x) {
-    return Mine::toString<Teuchos::ArrayView<const std::pair<long, int> > > (x.getConst ());
-  }
-
-  template<>
-  std::string
-  toString<Teuchos::ArrayView<const std::pair<int, int> > > (const Teuchos::ArrayView<const std::pair<int, int> >& x) {
-    typedef Teuchos::ArrayView<int>::size_type size_type;
-    std::ostringstream os;
-    os << "{";
-    for (size_type k = 0; k < x.size (); ++k) {
-      const int first = x[k].first;
-      const int second = x[k].second;
-      os << "(" << first << "," << second << ")";
-      if (k + 1 < x.size ()) {
-        os << ", ";
-      }
-    }
-    os << "}";
-    return os.str ();
-  }
-
-  template<>
-  std::string
-  toString<Teuchos::ArrayView<std::pair<int, int> > > (const Teuchos::ArrayView<std::pair<int, int> >& x) {
-    return Mine::toString<Teuchos::ArrayView<const std::pair<int, int> > > (x.getConst ());
-  }
-} // namespace Mine
-
 
 namespace Tpetra {
 namespace Details {
@@ -413,9 +310,11 @@ std::string FixedHashTable<KeyType, ValueType>::description() const {
 }
 
 template <typename KeyType, typename ValueType>
-void FixedHashTable<KeyType, ValueType>::describe(
- Teuchos::FancyOStream &out,
- const Teuchos::EVerbosityLevel verbLevel) const {
+void
+FixedHashTable<KeyType, ValueType>::
+describe (Teuchos::FancyOStream &out,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{
   using std::endl;
   using std::setw;
   using Teuchos::OSTab;
@@ -436,7 +335,7 @@ void FixedHashTable<KeyType, ValueType>::describe(
     out << this->description() << endl;
   }
   else {  // MEDIUM, HIGH or EXTREME
-    out << "FixedHashTable: {" << endl;
+    out << "FixedHashTable:" << endl;
     {
       OSTab tab1 (rcpFromRef (out));
 
@@ -444,23 +343,22 @@ void FixedHashTable<KeyType, ValueType>::describe(
       if (label != "") {
         out << "label: " << label << endl;
       }
-      out << "Template parameters: {" << endl;
+      out << "Template parameters:" << endl;
       {
         OSTab tab2 (rcpFromRef (out));
         out << "KeyType: " << TypeNameTraits<KeyType>::name () << endl
-            << "ValueType" << TypeNameTraits<ValueType>::name () << endl;
+            << "ValueType: " << TypeNameTraits<ValueType>::name () << endl;
       }
 
-      const size_type tableSize = ptr_.size ();
+      const size_type tableSize = size_;
       const size_type numKeys = val_.size ();
 
-      out << "}" << endl << "Table parameters: {" << endl;
+      out << "Table parameters:" << endl;
       {
         OSTab tab2 (rcpFromRef (out));
         out << "numKeys: " << numKeys << endl
             << "tableSize: " << tableSize << endl;
       }
-      out << "}" << endl;
 
       if (vl >= VERB_EXTREME) {
         out << "Contents: ";
@@ -472,20 +370,21 @@ void FixedHashTable<KeyType, ValueType>::describe(
             OSTab tab2 (rcpFromRef (out));
             for (size_type i = 0; i < tableSize; ++i) {
               OSTab tab3 (rcpFromRef (out));
+              out << "[";
               for (size_type k = ptr_[i]; k < ptr_[i+1]; ++k) {
                 out << "(" << val_[k].first << "," << val_[k].second << ")";
                 if (k + 1 < ptr_[i+1]) {
                   out << ", ";
                 }
               }
-              out << endl;
+              out << "]" << endl;
             } // for each table position i
           }
           out << "]" << endl;
         } // The table contains entries
       } // vl >= VERB_EXTREME
     }
-    out << "}" << endl;
+    out << endl;
   } // if vl > VERB_LOW
 }
 

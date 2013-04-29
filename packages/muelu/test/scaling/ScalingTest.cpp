@@ -464,7 +464,6 @@ int main(int argc, char *argv[]) {
   { // some debug output
     // print out content of levels
     std::cout << "FINAL CONTENT of multigrid levels" << std::endl;
-    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     for(LO l = 0; l < H->GetNumLevels(); l++) {
       RCP<Level> coarseLevel = H->GetLevel(l);
       coarseLevel->print(*out);

@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -60,7 +60,7 @@ namespace Details
 
 template<typename KeyType, typename ValueType>
 int
-HashTable<KeyType, ValueType>:: hashFunc( const KeyType key ) {
+HashTable<KeyType, ValueType>::hashFunc( const KeyType key ) {
 #ifdef TPETRA_USE_MURMUR_HASH
     uint32_t k;
     MurmurHash3_x86_32((void *)&key, sizeof(KeyType),
@@ -79,7 +79,7 @@ HashTable<KeyType, ValueType>:: hashFunc( const KeyType key ) {
 
 template<typename KeyType, typename ValueType>
 int
-HashTable<KeyType, ValueType>:: getRecommendedSize( const int size ) {
+HashTable<KeyType, ValueType>::getRecommendedSize( const int size ) {
    // A large list of prime numbers.
    // Based on a recommendation by Andres Valloud in hash forums.
    //  There are only enough primes here so that between any number N and 2*N,
@@ -141,95 +141,94 @@ HashTable<KeyType, ValueType>:: getRecommendedSize( const int size ) {
 
 template<typename KeyType, typename ValueType>
 HashTable<KeyType, ValueType>::
-  HashTable( const int size, const unsigned int seed )
+HashTable( const int size, const unsigned int seed )
   : Container_(NULL),
     Seed_(seed)
-  {
+{
   TEUCHOS_TEST_FOR_EXCEPTION(size < 0, std::runtime_error,
-    "HashTable : ERROR, size cannot be less than zero");
+                             "HashTable : ERROR, size cannot be less than zero");
 
-    Size_ = getRecommendedSize(size);
-    Container_ = new Node * [Size_];
-    for( KeyType i = 0; i < Size_; ++i ) Container_[i] = NULL;
+  Size_ = getRecommendedSize(size);
+  Container_ = new Node * [Size_];
+  for( KeyType i = 0; i < Size_; ++i ) Container_[i] = NULL;
 #ifdef HAVE_TEUCHOS_DEBUG
-    maxc_ = 0;
-    nc_ = 0;
+  maxc_ = 0;
+  nc_ = 0;
 #endif
-  }
+}
 
 template<typename KeyType, typename ValueType>
 HashTable<KeyType, ValueType>::
-  HashTable( const HashTable & obj )
+HashTable( const HashTable & obj )
   : Container_(NULL),
     Size_(obj.Size_),
     Seed_(obj.Seed_)
-  {
+{
 #ifdef HAVE_TEUCHOS_DEBUG
-    maxc_ = 0;
-    nc_ = 0;
+  maxc_ = 0;
+  nc_ = 0;
 #endif
-    Container_ = new Node * [Size_];
-    for( KeyType i = 0; i < Size_; ++i ) Container_[i] = NULL;
-    for( KeyType i = 0; i < Size_; ++i ) {
-      Node * ptr = obj.Container_[i];
-      while( ptr ) { add( ptr->Key, ptr->Value ); ptr = ptr->Ptr; }
-    }
+  Container_ = new Node * [Size_];
+  for( KeyType i = 0; i < Size_; ++i ) Container_[i] = NULL;
+  for( KeyType i = 0; i < Size_; ++i ) {
+    Node * ptr = obj.Container_[i];
+    while( ptr ) { add( ptr->Key, ptr->Value ); ptr = ptr->Ptr; }
   }
+}
 
 template<typename KeyType, typename ValueType>
-HashTable<KeyType, ValueType>::
-  ~HashTable() {
-    Node * ptr1;
-    Node * ptr2;
-    for( KeyType i = 0; i < Size_; ++i ) {
-      ptr1 = Container_[i];
-      while( ptr1 ) { ptr2 = ptr1; ptr1 = ptr1->Ptr; delete ptr2; }
-    }
-
-    delete [] Container_;
+HashTable<KeyType, ValueType>::~HashTable() {
+  Node * ptr1;
+  Node * ptr2;
+  for( KeyType i = 0; i < Size_; ++i ) {
+    ptr1 = Container_[i];
+    while( ptr1 ) { ptr2 = ptr1; ptr1 = ptr1->Ptr; delete ptr2; }
   }
+
+  delete [] Container_;
+}
 
 template<typename KeyType, typename ValueType>
 void
 HashTable<KeyType, ValueType>::
-  add( const KeyType key, const ValueType value ) {
-    int v = hashFunc(key);
-    Node * n1 = Container_[v];
-    Container_[v] = new Node(key,value,n1);
-  }
+add( const KeyType key, const ValueType value ) {
+  int v = hashFunc(key);
+  Node * n1 = Container_[v];
+  Container_[v] = new Node(key,value,n1);
+}
 
 template<typename KeyType, typename ValueType>
 ValueType
 HashTable<KeyType, ValueType>::
-  get( const KeyType key ) {
-    Node * n = Container_[ hashFunc(key) ];
+get( const KeyType key ) {
+  Node * n = Container_[ hashFunc(key) ];
 
 #ifdef HAVE_TEUCHOS_DEBUG
-    int k = 0;
+  int k = 0;
 #endif
 
-    while( n && (n->Key != key) ){
-         n = n->Ptr;
+  while( n && (n->Key != key) ){
+    n = n->Ptr;
 #ifdef HAVE_TEUCHOS_DEBUG
-         ((k+1 > maxc_) ? maxc_ = k+1 : 0) ;
-         k++;
+    ((k+1 > maxc_) ? maxc_ = k+1 : 0) ;
+    k++;
 #endif
-    }
-
-#ifdef HAVE_TEUCHOS_DEBUG
-    if (k != 0) nc_++;
-#endif
-    if( n ) return n->Value;
-    else    return -1;
   }
+
+#ifdef HAVE_TEUCHOS_DEBUG
+  if (k != 0) nc_++;
+#endif
+  if( n ) return n->Value;
+  else    return -1;
+}
 
 template <typename KeyType, typename ValueType>
 std::string HashTable<KeyType, ValueType>::description() const {
   std::ostringstream oss;
-  oss << "HashTable<" 
-      << Teuchos::TypeNameTraits<KeyType>::name() << "," 
+  oss << "HashTable<"
+      << Teuchos::TypeNameTraits<KeyType>::name() << ","
       << Teuchos::TypeNameTraits<ValueType>::name() << "> "
-      << "{ Size_: " << Size_ << " }"; 
+      << "{ Size_: " << Size_ << " }";
   return oss.str();
 }
 
@@ -259,66 +258,66 @@ void HashTable<KeyType, ValueType>::describe(
   else {  // MEDIUM, HIGH or EXTREME
     out << "HashTable: {" << endl;
     {
-      OSTab tab1 (rcpFromRef (out));	
+      OSTab tab1 (rcpFromRef (out));
 
       const std::string label = this->getObjectLabel ();
       if (label != "") {
-	out << "label: " << label << endl;
+        out << "label: " << label << endl;
       }
       out << "Template parameters: {" << endl;
       {
-	OSTab tab2 (rcpFromRef (out));
-	out << "KeyType: " << TypeNameTraits<KeyType>::name () << endl
-	    << "ValueType" << TypeNameTraits<ValueType>::name () << endl;
+        OSTab tab2 (rcpFromRef (out));
+        out << "KeyType: " << TypeNameTraits<KeyType>::name () << endl
+            << "ValueType" << TypeNameTraits<ValueType>::name () << endl;
       }
       out << "}" << endl << "Table parameters: {" << endl;
       {
-	OSTab tab2 (rcpFromRef (out));
-	out << "Size_: " << Size_ << endl;
+        OSTab tab2 (rcpFromRef (out));
+        out << "Size_: " << Size_ << endl;
       }
       out << "}" << endl;
 #ifdef HAVE_TEUCHOS_DEBUG
       out << "Debug info: {" << endl;
       {
-	OSTab tab2 (rcpFromRef (out));
-	out << "Maximum number of collisions for any key: " << maxc_ << endl
-	    << "Total number of collisions: " << nc_ << endl;
+        OSTab tab2 (rcpFromRef (out));
+        out << "Maximum number of collisions for any key: " << maxc_ << endl
+            << "Total number of collisions: " << nc_ << endl;
       }
       out << "}" << endl;
 #endif // HAVE_TEUCHOS_DEBUG
 
       if (vl >= VERB_EXTREME) {
-	out << "Contents: ";
-	if (Container_ == NULL || Size_ == 0) {
-	  out << "[]" << endl;
-	} else {
-	  out << "[" << endl;
-	  {
-	    OSTab tab2 (rcpFromRef (out));
-	    for (KeyType i = 0; i < Size_; ++i) {
-	      Node* curNode = Container_[i];
-	      if (curNode == NULL) {
-		out << "NULL";
-	      } else { // curNode != NULL
-		// Print all the buckets at the current table position i.
-		out << "[";
-		// Print the first bucket.
-		out << "[" << curNode->Key << "," << curNode->Value << "]";
-		curNode = curNode->Ptr;
-		// Print the remaining buckets, if there are any.
-		while (curNode != NULL) {
-		  out << ", [" << curNode->Key << "," << curNode->Value << "]";
-		  curNode = curNode->Ptr;
-		}
-		out << "]" << endl;
-	      } // if curNode == or != NULL
-	      if (i + 1 < Size_) {
-		out << ", ";
-	      }
-	    } // for each table position i
-	  }
-	  out << "]" << endl;
-	} // The table contains entries
+        out << "Contents: ";
+        if (Container_ == NULL || Size_ == 0) {
+          out << "[]" << endl;
+        } else {
+          out << "[" << endl;
+          {
+            OSTab tab2 (rcpFromRef (out));
+            for (KeyType i = 0; i < Size_; ++i) {
+              Node* curNode = Container_[i];
+              if (curNode == NULL) {
+                out << "NULL";
+              } else { // curNode != NULL
+                // Print all the buckets at the current table position i.
+                out << "[";
+                // Print the first bucket.
+                out << "[" << curNode->Key << "," << curNode->Value << "]";
+                curNode = curNode->Ptr;
+                // Print the remaining buckets, if there are any.
+                while (curNode != NULL) {
+                  out << ", [" << curNode->Key << "," << curNode->Value << "]";
+                  curNode = curNode->Ptr;
+                }
+                out << "]" << endl;
+              } // if curNode == or != NULL
+              if (i + 1 < Size_) {
+                out << ", ";
+              }
+            } // for each table position i
+          }
+          out << "]" << endl;
+        } // The table contains entries
       } // vl >= VERB_EXTREME
     }
     out << "}" << endl;
@@ -334,7 +333,7 @@ void HashTable<KeyType, ValueType>::describe(
 // classes.  This is because HashTable performs global-to-local
 // lookup, and the convention in templated C++ lookup tables (such as
 // std::map) is <KeyType, ValueType>.
-// 
+//
 // This macro must be explanded within the Tpetra::Details namespace.
 #define TPETRA_HASHTABLE_INSTANT_DEFAULTNODE(LO,GO) \
   template class HashTable< GO , LO >;                         \

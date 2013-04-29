@@ -424,15 +424,15 @@ namespace MueLu {
         RCP<const Map> origMap;
         if (implicitTranspose_) {
           origMap   = P->getDomainMap();
-          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(),false); //no need to initialize
-          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());       //should be initialized to zero
+          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(), false); // no need to initialize
+          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());        // should be initialized to zero
           P->apply(*residual, *coarseRhs, Teuchos::TRANS,    one, zero);
 
         } else {
           RCP<Matrix> R = Coarse->Get< RCP<Matrix> >("R");
           origMap   = R->getRangeMap();
-          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(),false); //no need to initialize
-          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());       //should be initialized to zero
+          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(), false); // no need to initialize
+          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());        // should be initialized to zero
           R->apply(*residual, *coarseRhs, Teuchos::NO_TRANS, one, zero);
         }
 
@@ -442,9 +442,7 @@ namespace MueLu {
           coarseRhs->replaceMap(Ac->getRangeMap());
           coarseX  ->replaceMap(Ac->getDomainMap());
 
-          if (coarseX != Teuchos::null) {
-            //coarseX has been initialized to zero already by MultiVectorFactory::Build
-
+          {
             hl = Teuchos::null; // stop timing this level
             Iterate(*coarseRhs, 1, *coarseX, true, Cycle, startLevel+1);
             // ^^ zero initial guess

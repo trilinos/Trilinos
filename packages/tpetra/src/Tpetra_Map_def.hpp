@@ -357,6 +357,7 @@ namespace Tpetra {
     uniform_ (false)
   {
     using Teuchos::arcp;
+    using Teuchos::ArrayView;
     using Teuchos::as;
     using Teuchos::broadcast;
     using Teuchos::outArg;
@@ -369,6 +370,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef global_size_t GST;
+    typedef typename ArrayView<const GO>::size_type size_type;
     const GST GSTI = Teuchos::OrdinalTraits<GST>::invalid ();
 
     // The user has specified the distribution of elements over the
@@ -473,16 +475,47 @@ namespace Tpetra {
     minMyGID_ = indexBase_;
     maxMyGID_ = indexBase_;
 #ifdef HAVE_TPETRA_FIXED_HASH_TABLE
-    glMap_ = rcp (new global_to_local_table_type (entryList));
     if (numLocalElements_ > 0) {
+      // Find contiguous GID range, with the restriction that the
+      // beginning of the range starts with the first entry.  While
+      // doing so, fill in the LID -> GID table.
       lgMap_ = arcp<GO> (numLocalElements_);
-      minMyGID_ = entryList[0];
-      maxMyGID_ = entryList[0];
-      for (size_t i = 0; i < numLocalElements_; ++i) {
+      firstContiguousGID_ = entryList[0];
+      lastContiguousGID_ = firstContiguousGID_+1;
+      lgMap_[0] = firstContiguousGID_;
+      size_t i = 1;
+      for ( ; i < numLocalElements_; ++i) {
         const GO curGid = entryList[i];
         const LO curLid = as<LO> (i);
 
+        if (lastContiguousGID_ != curGid) break;
+
+        // Add the entry to the LID->GID table only after we know that
+        // the current GID is in the initial contiguous sequence, so
+        // that we don't repeat adding it in the first iteration of
+        // the loop below over the remaining noncontiguous GIDs.
+        lgMap_[curLid] = curGid;
+        ++lastContiguousGID_;
+      }
+      --lastContiguousGID_;
+
+      // [firstContiguousGID_, lastContigousGID_] is the initial
+      // sequence of contiguous GIDs.  We can start the min and max
+      // GID using this range.
+      minMyGID_ = firstContiguousGID_;
+      maxMyGID_ = lastContiguousGID_;
+
+      // Compute the GID -> LID lookup table, _not_ including the
+      // initial sequence of contiguous GIDs.
+      ArrayView<const GO> nonContigEntries =
+        entryList (as<size_type> (i), entryList.size () - as<size_type> (i));
+      glMap_ = rcp (new global_to_local_table_type (nonContigEntries, as<LO> (i)));
+
+      for ( ; i < numLocalElements_; ++i) {
+        const GO curGid = entryList[i];
+        const LO curLid = as<LO> (i);
         lgMap_[curLid] = curGid; // LID -> GID table
+
         // While iterating through entryList, we compute its
         // (process-local) min and max elements.
         if (curGid < minMyGID_) {
@@ -492,6 +525,14 @@ namespace Tpetra {
           maxMyGID_ = curGid;
         }
       }
+    }
+    else {
+      // This insures tests for GIDs in the range
+      // [firstContiguousGID_, lastContiguousGID_] fail for processes
+      // with no local elements.
+      firstContiguousGID_ = indexBase_+1;
+      lastContiguousGID_ = indexBase_;
+      glMap_ = rcp (new global_to_local_table_type (entryList)); // is empty
     }
 #else
     glMap_ = rcp (new global_to_local_table_type (numLocalElements_));
@@ -516,10 +557,9 @@ namespace Tpetra {
         }
       }
     }
-#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
-    // Find contiguous GID range, with the restriction that the beginning
-    // of the range starts with the first entry
+    // Find contiguous GID range, with the restriction that the
+    // beginning of the range starts with the first entry.
     if (numLocalElements_ > 0) {
       firstContiguousGID_ = lgMap_[as<LO>(0)];
       lastContiguousGID_ = firstContiguousGID_+1;
@@ -533,10 +573,11 @@ namespace Tpetra {
     else {
       // This insures tests for GIDs in the range
       // [firstContiguousGID_, lastContiguousGID_] fail for processes
-      // with no local elements
+      // with no local elements.
       firstContiguousGID_ = indexBase_+1;
       lastContiguousGID_ = indexBase_;
     }
+#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
     // Compute the min and max of all processes' GIDs.  If
     // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_
@@ -621,11 +662,9 @@ namespace Tpetra {
       return Teuchos::as<LocalOrdinal>(globalIndex - firstContiguousGID_);
     }
     else {
-      LocalOrdinal i = glMap_->get(globalIndex);
-      if (i == -1) {
-        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-      }
-      return i;
+      // This returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid()
+      // if the given global index is not in the table.
+      return glMap_->get (globalIndex);
     }
   }
 

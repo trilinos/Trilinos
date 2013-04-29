@@ -680,13 +680,15 @@ namespace MueLu {
     hashTable = rcp(new Teuchos::Hashtable<GO, GO>(numPartitions + numPartitions/2));
     Teuchos::Hashtable<GO, GO>& htref = *hashTable;
 
+    //decomposition is a vector such that decomposition[i] is the partition that local row i belongs to
+    //numPartitions is the global # of partitions
     ArrayRCP<const GO> decompEntries;
     if (decomposition->getLocalLength() > 0)
       decompEntries = decomposition->getData(0);
     bool flag=false;
     assert(decompEntries.size() == nnzPerRow.size());
     for (int i=0; i<decompEntries.size(); ++i) {
-      if (decompEntries[i] >= numPartitions) flag = true;
+      if (decompEntries[i] >= numPartitions) flag = true; //error checking (see exception test below)
       if (htref.containsKey(decompEntries[i])) {
         GO count = htref.get(decompEntries[i]);
         count += nnzPerRow[i];
@@ -697,6 +699,7 @@ namespace MueLu {
     }
 
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: arrayify", currentLevel));
+    //error checking FIXME skip the maxall and just throw already
     int problemPid;
     maxAll(comm, (flag ? mypid : -1), problemPid);
     std::ostringstream buf; buf << problemPid;
@@ -708,6 +711,7 @@ namespace MueLu {
     htref.arrayify(allPartitionsIContributeTo, localNnzPerPartition);
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build target map", currentLevel));
     //map in which all pids have all partition numbers as GIDs.
+    //this map has duplicated GIDs, obviously
     //FIXME this next map ctor can be a real time hog in parallel
     Array<GO> allPartitions;
     allPartitions.reserve(numPartitions);
@@ -777,6 +781,8 @@ namespace MueLu {
           globalWeightVecData[ allPartitionsIContributeTo[i] ] = localNnzPerPartition[i];
       } else {
         //this process already owns a partition, so record only the #nonzeros in that partition as weights
+        for (int i=0; i<globalWeightVecData.size(); ++i)
+          globalWeightVecData[i] = 0.0;
         bool noLocalDofsInMyPartition=true;
         for (int i=0; i<allPartitionsIContributeTo.size(); ++i) {
           if (allPartitionsIContributeTo[i] == myPartitionNumber) {
@@ -833,6 +839,44 @@ namespace MueLu {
       if (partitionsIOwn > 1 || gotALeftoverPartitionThisRound) arbitrateAgain=1;
       else                                                      arbitrateAgain=0;
       sumAll(comm, arbitrateAgain, doArbitrate);
+
+      GetOStream(Statistics0, 0) << "round " << numRounds << " : ";
+      int ii=0,jj=0;
+      if (partitionsIOwn == 1 && !gotALeftoverPartitionThisRound)
+        ii=1;
+      sumAll(comm, ii,jj);
+      GetOStream(Statistics0, 0) << "#definitely assigned = " << jj;
+      ii=0,jj=0;
+      if (partitionsIOwn > 1) ii=1;
+      sumAll(comm, ii, jj);
+      GetOStream(Statistics0, 0) << ", #pids with > 1 partition =  " << jj;
+      jj=0;
+      maxAll(comm, partitionsIOwn, jj);
+      GetOStream(Statistics0, 0) << ", max# partitions owned by single pid = " << jj;
+      int kk=0; ii=0;
+      if (partitionsIOwn == jj) kk=1;
+      sumAll(comm, kk, ii);
+      if (ii>1)
+        GetOStream(Statistics0, 0) << "(by " << ii << " procs)";
+      if (ii==1) {
+        ii=0; kk=0;
+        if (partitionsIOwn == jj) kk=comm->getRank();
+        sumAll(comm, kk, ii);
+        GetOStream(Statistics0, 0) << "(by pid " << ii << ")";
+      }
+      ii=0,jj=0;
+      if (gotALeftoverPartitionThisRound) ii=1;
+      sumAll(comm, ii, jj);
+      GetOStream(Statistics0, 0) << ", #pids assigned leftover =  " << jj;
+      if (jj==1) {
+        ii=0; kk=0;
+        if (gotALeftoverPartitionThisRound)
+          kk=comm->getRank();
+        sumAll(comm, kk, ii);
+        GetOStream(Statistics0, 0) << " (pid " << ii << ")";
+      }
+      comm->barrier();
+      GetOStream(Statistics0, 0) << std::endl;
 
     } //while (doArbitrate)
     m2 = Teuchos::null;

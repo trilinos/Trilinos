@@ -180,8 +180,8 @@ int main(int argc, char *argv[]) {
 
   RCP<ShiftedLaplacian> SLSolver = rcp( new ShiftedLaplacian );
   SLSolver -> setLaplacian(A_laplace);
-  SLSolver -> setHelmholtz(A_helmholtz);
-  SLSolver -> setShiftedLaplacian(A_shift);
+  SLSolver -> setProblemMatrix(A_helmholtz);
+  SLSolver -> setPreconditioningMatrix(A_shift);
   SLSolver -> setup(omega);
 
   tm = Teuchos::null;

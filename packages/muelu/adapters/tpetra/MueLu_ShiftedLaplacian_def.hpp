@@ -71,19 +71,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPa
   blksize_        =  List.get<int>              (  "muelu: block size"            );
   FGMRESoption_   =  List.get<bool>             (  "muelu: fgmres on/off"         );
   tol_            =  List.get<double>           (  "muelu: residual tolerance"    );
-  alpha_          =  List.get<double>           (  "muelu: alpha"                 );
-  beta_           =  List.get<double>           (  "muelu: beta"                  );
   omega_          =  List.get<double>           (  "muelu: omega"                 );
-  rshift_         =  List.get<double>           (  "muelu: real shift"            );
-  ishift_         =  List.get<double>           (  "muelu: imag shift"            );
-
-}
-
-// Preprocessing
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillmatrices() {
-
-  GridTransfersExist_=false;
 
 }
 
@@ -97,19 +85,19 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLa
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setHelmholtz(RCP<Matrix> A) {
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setProblemMatrix(RCP<Matrix> A) {
 
   A_=A;
-  HelmholtzOperatorSet_=true;
+  ProblemMatrixSet_=true;
   GridTransfersExist_=false;
 
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setShiftedLaplacian(RCP<Matrix> S) {
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPreconditioningMatrix(RCP<Matrix> P) {
 
-  S_=S;
-  ShiftedLaplacianSet_=true;
+  P_=P;
+  PreconditioningMatrixSet_=true;
   GridTransfersExist_=false;
 
 }
@@ -148,6 +136,39 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setco
 
 }
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setProblemShifts(Scalar ashift1, Scalar ashift2) {
+
+  ashift1_=ashift1;
+  ashift2_=ashift2;
+
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPreconditioningShifts(Scalar pshift1, Scalar pshift2) {
+
+  pshift1_=pshift1;
+  pshift2_=pshift2;
+
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLevelShifts(vector<Scalar> levelshifts) {
+
+  levelshifts_=levelshifts;
+  numLevels_=levelshifts_.size();
+  LevelShiftsSet_=true;
+  VariableShift_=true;
+
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setTolerance(double tol) {
+
+  tol_=tol;
+
+}
+
 // setup for new frequency
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup(const double omega) {
@@ -171,6 +192,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
       ifpack2List_.set("krylov: block size",1);
       ifpack2List_.set("krylov: zero starting solution",true);
       ifpack2List_.set("krylov: preconditioner type",3);
+      // must use FGMRES for GMRES smoothing
+      FGMRESoption_=true;
     }
     else if(Smoother_=="schwarz") {
       // Additive Schwarz smoother
@@ -223,6 +246,9 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     else if(StiffMatrixSet_==true) {
       Hierarchy_ = rcp( new Hierarchy(K_) );
     }
+    else {
+      Hierarchy_ = rcp( new Hierarchy(P_) );
+    }
     Manager_ = rcp( new FactoryManager );
 
     Manager_   -> SetFactory("P", Pfact_);
@@ -241,43 +267,61 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
 
   }
 
-  // determine shifts for RAPShiftFactory
   double omega2 = omega*omega;
-  shifts_.clear();
-  SC shift1(alpha_,beta_);
-  shifts_.push_back(-shift1*omega2);
-  for(int i=0; i<numLevels_; i++) {
-    double newalpha=alpha_+((double) i)*rshift_;
-    double newbeta=beta_+((double) i)*ishift_;
-    SC newshift(newalpha,newbeta);
-    shifts_.push_back(-newshift*omega2);
-  }
-  Acshift_->SetShifts(shifts_);
 
   // Add operators together to make Helmholtz and shifted Laplace operators
-  SC ii(0.0,1.0);
-  if(DampMatrixSet_==true) {
-    MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_, false, (SC) 1.0, C_, (SC) ii*omega);
-  }
-  if(HelmholtzOperatorSet_==false) {
-    MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_, false, (SC) 1.0, M_, false, (SC) -omega2,        A_ );
+  if(ProblemMatrixSet_==false) {
+    if(DampMatrixSet_==true) {
+      RCP<Matrix> auxK;
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, C_, false, ashift1_*omega,  auxK );
+      auxK->fillComplete();
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(auxK, false, (SC) 1.0, M_, false, ashift2_*omega2, A_   );
+    }
+    else {
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, M_, false, ashift2_*omega2, A_   );
+    }
     A_->fillComplete();
   }
-  if(ShiftedLaplacianSet_==false) {
-    MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_, false, (SC) 1.0, M_, false, (SC) -shift1*omega2, S_ );
-    S_->fillComplete();
+  if(PreconditioningMatrixSet_==false) {
+    if(DampMatrixSet_==true) {
+      RCP<Matrix> auxK;
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, C_, false, pshift1_*omega,  auxK );
+      auxK->fillComplete();
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(auxK, false, (SC) 1.0, M_, false, pshift2_*omega2, P_   );
+    }
+    else {
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, M_, false, pshift2_*omega2, P_   );
+    }
+    P_->fillComplete();
   }
 
   if(VariableShift_==true) {
+    RCP<Matrix> auxK;
+    if(DampMatrixSet_==true) {
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, C_, false, pshift1_*omega,  auxK );
+      auxK->fillComplete();
+    }
+    else {
+      auxK=K_;
+    }
+    // determine shifts for RAPShiftFactory
+    if(LevelShiftsSet_==true) {
+      std::vector<SC> auxshifts;
+      auxshifts.resize(numLevels_);
+      for(int i=0; i<numLevels_; i++) {
+	auxshifts[i]=levelshifts_[i]*omega2;
+      }
+      Acshift_->SetShifts(auxshifts);
+    }
     // Set factories for smoothing and coarse grid
     Manager_   -> SetFactory("Smoother", smooFact_);
     Manager_   -> SetFactory("CoarseSolver", coarsestSmooFact_);
     Manager_   -> SetFactory("A", Acshift_);
     Manager_   -> SetFactory("K", Acshift_);
     Manager_   -> SetFactory("M", Acshift_);
-    Hierarchy_ -> GetLevel(0)->Set("A", S_);
-    Hierarchy_ -> GetLevel(0)->Set("K", K_);
-    Hierarchy_ -> GetLevel(0)->Set("M", M_);
+    Hierarchy_ -> GetLevel(0)->Set("A", P_  );
+    Hierarchy_ -> GetLevel(0)->Set("K", auxK);
+    Hierarchy_ -> GetLevel(0)->Set("M", M_  );
     Hierarchy_ -> Setup(*Manager_, 0, Hierarchy_ -> GetNumLevels());
   }
   else {
@@ -285,7 +329,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     Manager_   -> SetFactory("Smoother", smooFact_);
     Manager_   -> SetFactory("CoarseSolver", coarsestSmooFact_);
     Manager_   -> SetFactory("A", Acfact_);
-    Hierarchy_ -> GetLevel(0)->Set("A", S_);
+    Hierarchy_ -> GetLevel(0)->Set("A", P_);
     Hierarchy_ -> Setup(*Manager_, 0, Hierarchy_ -> GetNumLevels());    
   }
 

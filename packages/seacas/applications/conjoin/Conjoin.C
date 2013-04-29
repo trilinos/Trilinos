@@ -740,7 +740,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
 
     // read in and write out the time step information
     error += ex_get_time(id, global_times[time_step].localStepNumber+1,   &time_val);
-    SMART_ASSERT(time_val == global_times[time_step].timeValue);
+    SMART_ASSERT(time_val == global_times[time_step].timeValue)(time_step)(time_val)(global_times[time_step].timeValue);
     error += ex_put_time(ExodusFile::output(), time_step_out, &time_val);
 
     if (global_vars.count(OUT) > 0) {

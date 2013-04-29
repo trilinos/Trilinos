@@ -10,6 +10,7 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   04/26/2013 - Adding Maxwell1 support
    10/04/2012 - Some minor code cleanup and the memory bugfix.
    04/26/2011 - Bug fixed for error tolerance for ISINT checks. Removing gratuitous prints.
    07/31/2010 - Code cleanup, adding ability to get out AztecOO iteration counts.
@@ -36,35 +37,13 @@
 #include <stdio.h>
 #include <string.h>
 
-/* Needed for ML - Horked from the examples/AdaptiveSA.cpp.  Thanks, Marzio!*/
 #include "ml_config.h"
 #include "ml_common.h"
-#ifdef HAVE_ML_MLAPI
+#include "mlmex.h"
 
-/* MLAPI Headers */
-#include "MLAPI_Space.h"
-#include "MLAPI_Operator.h"
-#include "MLAPI_MultiVector.h"
-#include "MLAPI_Expressions.h"
-#include "MLAPI_MultiLevelAdaptiveSA.h"
-#include "MLAPI_DistributedMatrix.h"
-#include "MLAPI_Krylov.h"
-
-
-/* ML_Epetra Headers */
-#include "ml_include.h"
-#include "ml_MultiLevelPreconditioner.h"
-#include "Epetra_SerialComm.h"
-#include "Epetra_Map.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "Teuchos_ParameterList.hpp"
-#include "AztecOO.h"
 
 #ifdef HAVE_ML_MATLAB
 /* Needed for MEX */
-#include "mex.h"
-
 using namespace Teuchos;
 using namespace ML_Epetra;
 using namespace MLAPI;
@@ -82,7 +61,7 @@ extern void _main();
 #define MLMEX_ERROR -1
 
 /* Mode Info */
-typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP, MODE_STATUS, MODE_AGGREGATE, MODE_ERROR} MODE_TYPE;
+typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP, MODE_STATUS, MODE_AGGREGATE, MODE_SETUP_MAXWELL, MODE_ERROR} MODE_TYPE;
 
 /* MLMEX Teuchos Parameters*/
 #define MLMEX_INTERFACE "mlmex: interface"
@@ -121,128 +100,128 @@ void csc_print(int n,int *rowind,int* colptr, double* vals){
 /**************************************************************/
 /**************************************************************/
 /**************************************************************/
-/* The big classes of data */
-class ml_data_pack;
-class ml_data_pack{
-public:
-  ml_data_pack();
-  virtual ~ml_data_pack();
+/* Epetra utility functions */
 
-  /* setup - sets up an ml_data_pack object
-     Parameters:
-     N       - Number of unknowns [I]
-     rowind  - Row indices of matrix (CSC format) [I]
-     colptr  - Column indices of matrix (CSC format) [I]
-     vals    - Nonzero values of matrix (CSC format) [I]
-     Returns: IS_TRUE if setup was succesful, IS_FALSE otherwise
-  */
-  virtual int setup(int N,int* rowind,int* colptr, double* vals)=0;
+/* mwIndex_to_int - does a data copy and wraps mwIndex's to ints, in the case
+   where they're not the same size.  This routine allocates memory
+   WARNING: This does not address overflow.
+   Parameters:
+   N         - Number of unknowns in array [I]
+   mwi_array - Array of mwIndex objects [I]
+   Return value: mwIndex objects cast down to ints
+*/
+int* mwIndex_to_int(int N, mwIndex* mwi_array){
+  int i,*rv = new int[N];
+  for(i=0;i<N;i++)
+    rv[i] = (int)mwi_array[i];  
+  return rv;
+}
 
-  /* status - reports (to stdout) the status of the object
-     Returns: IS_TRUE 
-  */
-  virtual int status()=0;
+/*******************************/
+Epetra_CrsMatrix* epetra_setup(int Nrows, int Ncols, int* rowind,int* colptr, double* vals) {
+  Epetra_SerialComm Comm;
+  Epetra_Map RangeMap(Nrows,0,Comm);
+  Epetra_Map DomainMap(Ncols,0,Comm);
 
-  /* solve - Given two Teuchos lists, one in the ml_data_pack, and one of
-     solve-time options, this routine calls the relevant solver and returns the solution.
-     Parameters:
-     TPL     - Teuchos list of solve-time options [I]
-     N       - Number of unknowns [I]
-     b       - RHS vector [I]
-     x       - solution vector [O]
-     iters   - number of iterations taken [O]
-     returns: IS_TRUE if sucessful, IS_FALSE otherwise.
-  */
-  virtual int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x, int &iters)=0;  
-public:
-  int id;
-  Teuchos::ParameterList *List;
-  double operator_complexity;  
-  ml_data_pack *next;
-};
+  Epetra_CrsMatrix *A=new Epetra_CrsMatrix(Copy,RangeMap,0);
 
-class mlapi_data_pack:public ml_data_pack{
-public:
-  mlapi_data_pack();
-  ~mlapi_data_pack();
+  /* Do the matrix assembly */
+  for(int i=0;i<Ncols;i++)
+    for(int j=colptr[i];j<colptr[i+1];j++)
+      A->InsertGlobalValues(rowind[j],1,&vals[j],&i);
+  A->FillComplete(DomainMap,RangeMap);
 
-  /* setup - sets up an ml_data_pack object
-     Parameters:
-     N       - Number of unknowns [I]
-     rowind  - Row indices of matrix (CSC format) [I]
-     colptr  - Column indices of matrix (CSC format) [I]
-     vals    - Nonzero values of matrix (CSC format) [I]
-     Returns: IS_TRUE if setup was succesful, IS_FALSE otherwise
-  */
-  int setup(int N,int* rowind,int* colptr, double* vals);
+  return A;
+}
 
-  /* status - reports (to stdout) the status of the object
-     Returns: IS_TRUE 
-  */
-  int status();
+/*******************************/
+Epetra_CrsMatrix * epetra_setup_from_prhs(const mxArray * mxa, bool rewrap_ints){
+  int *colptr, *rowind;
+  double * vals=mxGetPr(mxa);
 
+  int nr=mxGetM(mxa);
+  int nc=mxGetN(mxa);
 
-  /* solve - Given two Teuchos lists, one in the ml_data_pack, and one of
-     solve-time options, this routine calls the relevant solver and returns the solution.
-     Parameters:
-     TPL     - Teuchos list of solve-time options [I]
-     N       - Number of unknowns [I]
-     b       - RHS vector [I]
-     x       - solution vector [O]
-     iters   - number of iterations taken [O] (NOT IMPLEMENTED)
-     returns: IS_TRUE if sucessful, IS_FALSE otherwise.
-  */
-  int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x, int &iters);  
+  if(rewrap_ints){
+    colptr=mwIndex_to_int(nc+1,mxGetJc(mxa));
+    rowind=mwIndex_to_int(colptr[nc],mxGetIr(mxa));
+  }
+  else{
+    rowind=(int*)mxGetIr(mxa);
+    colptr=(int*)mxGetJc(mxa);
+  }
 
-private:
-  Space * FineSpace;
-  DistributedMatrix * A;
-  MultiLevelAdaptiveSA *Prec;
-};
+  Epetra_CrsMatrix * A=epetra_setup(nr,nc,rowind,colptr,vals);
 
+  if(rewrap_ints){
+    delete [] rowind;
+    delete [] colptr;
+  }
+  return A;
+}    
 
-class ml_epetra_data_pack:public ml_data_pack{
-public:
-  ml_epetra_data_pack();
-  ~ml_epetra_data_pack();
+/*******************************/
+int epetra_solve(Teuchos::ParameterList *SetupList, Teuchos::ParameterList *TPL, Epetra_CrsMatrix *A, Epetra_Operator * Prec, 
+			       double*b, double*x,int &iters){
 
-  /* setup - sets up an ml_data_pack object
-     Parameters:
-     N       - Number of unknowns [I]
-     rowind  - Row indices of matrix (CSC format) [I]
-     colptr  - Column indices of matrix (CSC format) [I]
-     vals    - Nonzero values of matrix (CSC format) [I]
-     Returns: IS_TRUE if setup was succesful, IS_FALSE otherwise
-  */
-  int setup(int N,int* rowind,int* colptr, double* vals);
+  int i, N=A->NumMyRows();
+  Epetra_Vector LHS(A->RowMap());
+  Epetra_Vector RHS(A->RowMap());
 
-  /* status - reports (to stdout) the status of the object
-     Returns: IS_TRUE 
-  */
-  int status();
+  /* Fill LHS/RHS */
+  LHS.PutScalar(0);
+  for(i=0;i<N;i++) RHS[i]=b[i];
 
-  /* solve - Given two Teuchos lists, one in the ml_data_pack, and one of
-     solve-time options, this routine calls the relevant solver and returns the solution.
-     Parameters:
-     TPL     - Teuchos list of solve-time options [I]
-     N       - Number of unknowns [I]
-     b       - RHS vector [I]
-     x       - solution vector [O]
-     iters   - number of iterations taken [O]
-     returns: IS_TRUE if sucessful, IS_FALSE otherwise.
-  */
-  int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x,int &iters);  
+  /* Create the new Teuchos List */
+  Teuchos::ParameterList tmp=*SetupList;
+  tmp.setParameters(*TPL);
 
-  /* GetPreconditioner - returns a pointer to the preconditioner */     
-  MultiLevelPreconditioner* GetPreconditioner(){return Prec;}
+  /* Define Problem / Solver */
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+  AztecOO solver(Problem);
+  solver.SetPrecOperator(Prec);
+
+  /* Get solver options from Teuchos list */
+  int    NumIters = tmp.get("krylov: max iterations", 1550);
+  double Tol      = tmp.get("krylov: tolerance", 1e-9);
+  string type     = tmp.get("krylov: type", "gmres");
+  int    output   = tmp.get("krylov: output level",10);
+  int    kspace   = tmp.get("krylov: kspace",30);
+  string conv     = tmp.get("krylov: conv", "r0");  
+
+  /* Set solver options - Solver type*/
+  if (type == "cg") solver.SetAztecOption(AZ_solver, AZ_cg);
+  else if (type == "cg_condnum") solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
+  else if (type == "gmres") solver.SetAztecOption(AZ_solver, AZ_gmres);
+  else if (type == "gmres_condnum") solver.SetAztecOption(AZ_solver, AZ_gmres_condnum);
+  else if (type == "fixed point") solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
+  //  else ML_THROW("krylov: type has incorrect value (" + type + ")", -1);
   
+  /* Set solver options - Convergence Criterion*/
+  if(conv == "r0") solver.SetAztecOption(AZ_conv,AZ_r0);
+  else if(conv == "rhs") solver.SetAztecOption(AZ_conv,AZ_rhs);
+  else if(conv == "Anorm") solver.SetAztecOption(AZ_conv,AZ_Anorm);
+  else if(conv == "noscaled") solver.SetAztecOption(AZ_conv,AZ_noscaled);
+  else if(conv == "sol") solver.SetAztecOption(AZ_conv,AZ_sol);
+  //  else ML_THROW("krylov: conv has incorrect value (" + conv + ")",-1);
+
+  /* Set solver options - other */
+  solver.SetAztecOption(AZ_output, output);
+  solver.SetAztecOption(AZ_kspace, kspace);
+
+  /* Do the solve */
+  solver.Iterate(NumIters, Tol);
+
+  /* Fill Solution */
+  for(i=0;i<N;i++) x[i]=LHS[i];
   
-private:
-  Epetra_Comm *Comm;
-  Epetra_Map *Map;
-  Epetra_CrsMatrix * A;
-  MultiLevelPreconditioner *Prec;
-};
+  /* Solver Output */
+  iters=solver.NumIters();
+  return IS_TRUE;
+}/*end solve*/
+
+
+
 
 
 /**************************************************************/
@@ -302,6 +281,14 @@ protected:
 /**************************************************************/
 ml_data_pack::ml_data_pack():id(MLMEX_ERROR),List(NULL),operator_complexity(MLMEX_ERROR),next(NULL){}
 ml_data_pack::~ml_data_pack(){if(List) delete List;}
+
+
+
+
+/**************************************************************/
+/**************************************************************/
+/**************************************************************/
+
 
 
 /**************************************************************/
@@ -431,10 +418,8 @@ int mlapi_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*
 /************* ml_epetra_data_pack class functions ************/
 /**************************************************************/
 /**************************************************************/
-ml_epetra_data_pack::ml_epetra_data_pack():ml_data_pack(),Comm(NULL),Map(NULL),A(NULL),Prec(NULL){}
+ml_epetra_data_pack::ml_epetra_data_pack():ml_data_pack(),A(NULL),Prec(NULL){}
 ml_epetra_data_pack::~ml_epetra_data_pack(){
-  if(Comm) delete Comm;
-  if(Map)  delete Map;
   if(A)    delete A;
   if(Prec) delete Prec;
 }/*end destructor*/
@@ -466,19 +451,8 @@ int ml_epetra_data_pack::status(){
    Returns: IS_TRUE if setup was succesful, IS_FALSE otherwise
 */
 int ml_epetra_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
-  int i,j;
-
-  /* Epetra Setup */
-  Comm= new Epetra_SerialComm;
-  Map=new Epetra_Map(N,0,*Comm);
-  A=new Epetra_CrsMatrix(Copy,*Map,0);
-  
-  /* Do the matrix assembly */
-  for(i=0;i<N;i++)
-    for(j=colptr[i];j<colptr[i+1];j++)
-      A->InsertGlobalValues(rowind[j],1,&vals[j],&i);
-  //NTS: Redo with block assembly, remembering to transpose
-  A->FillComplete();
+  /* Matrix Fill */
+  A=epetra_setup(N,N,rowind,colptr,vals);
 
   /* Allocate Memory */
   Prec=new MultiLevelPreconditioner(*A, *List,false);  
@@ -507,66 +481,111 @@ int ml_epetra_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
    Returns: IS_TRUE if solve was succesful, IS_FALSE otherwise
 */
 int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*x,int &iters){
-  int i;
-  Epetra_Vector LHS(*Map);
-  Epetra_Vector RHS(*Map);
+  return epetra_solve(List,TPL,A,Prec,b,x,iters);
+}/*end solve*/
 
-  /* Fill LHS/RHS */
-  LHS.PutScalar(0);
-  for(i=0;i<N;i++) RHS[i]=b[i];
 
-  /* Create the new Teuchos List */
-  Teuchos::ParameterList tmp=*(List);
-  tmp.setParameters(*TPL);
-#ifdef VERBOSE_OUTPUT
-  tmp.print(cout,0,true);
+/**************************************************************/
+/**************************************************************/
+/************* ml_maxwell_data_pack class functions ************/
+/**************************************************************/
+/**************************************************************/
+ml_maxwell_data_pack::ml_maxwell_data_pack():ml_data_pack(),EdgeMatrix(NULL),GradMatrix(NULL),NodeMatrix(NULL),Prec(NULL){}
+
+ml_maxwell_data_pack::~ml_maxwell_data_pack(){
+  delete Prec;
+  delete EdgeMatrix;
+  delete NodeMatrix;
+  delete GradMatrix;
+}/*end destructor*/
+
+/* ml_epetra_data_pack_status - This function does a status query on the
+   ML_EPETRA_DATA_PACK passed in.
+   Returns: IS_TRUE
+*/
+int ml_maxwell_data_pack::status(){
+  mexPrintf("**** Problem ID %d [RefMaxwell] ****\n",id);
+  if(EdgeMatrix) mexPrintf("Matrix: %dx%d w/ %d nnz\n",EdgeMatrix->NumGlobalRows(),EdgeMatrix->NumGlobalCols(),EdgeMatrix->NumMyNonzeros()); 
+  mexPrintf(" Operator complexity = %e\n",operator_complexity);
+  if(List){mexPrintf("Parameter List:\n");List->print(cout,1);}
+  mexPrintf("\n");
+  return IS_TRUE;
+}/*end status*/
+
+
+
+/**************************************************************/
+/**************************************************************/
+/**************************************************************/
+int ml_maxwell_data_pack::setup_matrix(const char * name, const mxArray * mxa, bool rewrap_ints){
+  if(!strcmp("EdgeMatrix",name)) EdgeMatrix=epetra_setup_from_prhs(mxa,rewrap_ints);
+  else if(!strcmp("GradMatrix",name)) GradMatrix=epetra_setup_from_prhs(mxa,rewrap_ints);
+  else if(!strcmp("NodeMatrix",name)) NodeMatrix=epetra_setup_from_prhs(mxa,rewrap_ints);
+  else return IS_FALSE;
+  return IS_TRUE;
+}
+
+/**************************************************************/
+/**************************************************************/
+/**************************************************************/
+int ml_maxwell_data_pack::setup_preconditioner(){
+  // Don't overwrite what the user sent in.
+  SetDefaultsRefMaxwell(*List,false);
+
+  // Copy over the overall ML output, since cell arrays don't handle mixed lists well.
+  Teuchos::ParameterList & List11_=List->sublist("refmaxwell: 11list");
+  Teuchos::ParameterList & List22_=List->sublist("refmaxwell: 22list");
+  Teuchos::ParameterList & List11c_=List11_.sublist("edge matrix free: coarse");
+  List11_.set("ML output",List->get("ML output",0));
+  List22_.set("ML output",List->get("ML output",0));
+  List11c_.set("ML output",List->get("ML output",0));
+
+  // To avoid having to grab other inputs...
+  List->set("refmaxwell: disable addon",true); 
+
+  if(EdgeMatrix->NumGlobalRows() != GradMatrix->NumGlobalRows() ||
+     NodeMatrix->NumGlobalRows() != GradMatrix->NumGlobalCols()){
+    printf("Global: EdgeMatrix = %dx%d[%d] NodeMatrix=%dx%d[%d] GradMatrix=%dx%d[%d]\n",
+	   EdgeMatrix->NumGlobalRows(),EdgeMatrix->NumGlobalCols(),EdgeMatrix->NumGlobalNonzeros(),
+	   NodeMatrix->NumGlobalRows(),NodeMatrix->NumGlobalCols(),NodeMatrix->NumGlobalNonzeros(),
+	   GradMatrix->NumGlobalRows(),GradMatrix->NumGlobalCols(),GradMatrix->NumGlobalNonzeros());    
+    mexErrMsgTxt("Error: Matrix mismatch\n");
+    operator_complexity=-1;
+    return IS_FALSE;
+  }
+ 
+  /* Build Hierarchy */
+#ifdef ENABLE_MS_MATRIX
+  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*EdgeMatrix,*NodeMatrix,*EdgeMatrix,*List);
+#else
+  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*NodeMatrix,*EdgeMatrix,*List);
 #endif
 
-  /* Define Problem / Solver */
-  Epetra_LinearProblem Problem(A, &LHS, &RHS);
-  AztecOO solver(Problem);
-  solver.SetPrecOperator(Prec);
-
-  /* Get solver options from Teuchos list */
-  int    NumIters = tmp.get("krylov: max iterations", 1550);
-  double Tol      = tmp.get("krylov: tolerance", 1e-9);
-  string type     = tmp.get("krylov: type", "gmres");
-  int    output   = tmp.get("krylov: output level",10);
-  int    kspace   = tmp.get("krylov: kspace",30);
-  string conv     = tmp.get("krylov: conv", "r0");  
-
-  /* Set solver options - Solver type*/
-  if (type == "cg") solver.SetAztecOption(AZ_solver, AZ_cg);
-  else if (type == "cg_condnum") solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
-  else if (type == "gmres") solver.SetAztecOption(AZ_solver, AZ_gmres);
-  else if (type == "gmres_condnum") solver.SetAztecOption(AZ_solver, AZ_gmres_condnum);
-  else if (type == "fixed point") solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
-  //  else ML_THROW("krylov: type has incorrect value (" + type + ")", -1);
+  /* Pull Operator Complexity */
+  operator_complexity=-1;
+    //  operator_complexity = Prec->GetML_Aggregate()->operator_complexity / Prec->GetML_Aggregate()->fine_complexity;
   
-  /* Set solver options - Convergence Criterion*/
-  if(conv == "r0") solver.SetAztecOption(AZ_conv,AZ_r0);
-  else if(conv == "rhs") solver.SetAztecOption(AZ_conv,AZ_rhs);
-  else if(conv == "Anorm") solver.SetAztecOption(AZ_conv,AZ_Anorm);
-  else if(conv == "noscaled") solver.SetAztecOption(AZ_conv,AZ_noscaled);
-  else if(conv == "sol") solver.SetAztecOption(AZ_conv,AZ_sol);
-  //  else ML_THROW("krylov: conv has incorrect value (" + conv + ")",-1);
-
-  /* Set solver options - other */
-  solver.SetAztecOption(AZ_output, output);
-  solver.SetAztecOption(AZ_kspace, kspace);
-
-  /* Do the solve */
-  solver.Iterate(NumIters, Tol);
-
-  /* Fill Solution */
-  for(i=0;i<N;i++) x[i]=LHS[i];
-  
-  /* Solver Output */
-  iters=solver.NumIters();
-
-
   return IS_TRUE;
+}
+
+
+/**************************************************************/
+/**************************************************************/
+/**************************************************************/
+/* ml_epetra_data_pack::solve - Given two Teuchos lists, one in the ml_epetra_data_pack, and one of
+   solve-time options, this routine calls the relevant solver and returns the solution.
+   Parameters:
+   TPL     - Teuchos list of solve-time options [I]
+   N       - Number of unknowns [I]
+   b       - RHS vector [I]
+   x       - solution vector [O]
+   iters   - number of iterations taken [O]
+   Returns: IS_TRUE if solve was succesful, IS_FALSE otherwise
+*/
+int ml_maxwell_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*x,int &iters){
+  return epetra_solve(List,TPL,EdgeMatrix,Prec,b,x,iters);
 }/*end solve*/
+
 
 
 
@@ -721,7 +740,12 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
 
   switch ((MODE_TYPE)modes[0]){
   case MODE_SETUP:
-    if(nrhs>1&&mxIsSparse(prhs[1])) rv=MODE_SETUP;
+    if(nrhs>1&&mxIsSparse(prhs[1])) {
+      if(nrhs>3 && mxIsSparse(prhs[2]) && mxIsSparse(prhs[3]))
+	rv=MODE_SETUP_MAXWELL;
+      else
+	rv=MODE_SETUP;
+    }
     else mexErrMsgTxt("Error: Invalid input for setup\n");    
     break;
   case MODE_SOLVE:
@@ -877,23 +901,6 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
 }/*end build_teuchos_list*/
 
 
-/**************************************************************/
-/**************************************************************/
-/**************************************************************/
-/* mwIndex_to_int - does a data copy and wraps mwIndex's to ints, in the case
-   where they're not the same size.  This routine allocates memory
-   WARNING: This does not address overflow.
-   Parameters:
-   N         - Number of unknowns in array [I]
-   mwi_array - Array of mwIndex objects [I]
-   Return value: mwIndex objects cast down to ints
-*/
-int* mwIndex_to_int(int N, mwIndex* mwi_array){
-  int i,*rv = new int[N];
-  for(i=0;i<N;i++)
-    rv[i] = (int)mwi_array[i];  
-  return rv;
-}
 
 
 /**************************************************************/
@@ -912,9 +919,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
   string intf;
   Teuchos::ParameterList* List;
   MODE_TYPE mode;
-  static ml_data_pack_list* PROBS=NULL;
-  ml_data_pack *D=NULL;
+  static ml_data_pack_list* PROBS=0;
+  ml_data_pack *D=0;
   bool rewrap_ints=false;
+  ml_maxwell_data_pack * Dhat=0;
+
   
   /* Sanity Check Input */
   mode=sanity_check(nrhs,prhs);
@@ -973,7 +982,35 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     /* Lock so we can keep the memory for the heirarchy */
     mexLock();
     break;
+  case MODE_SETUP_MAXWELL:
+    if(!PROBS) PROBS=new ml_data_pack_list;
+    
+    /* Teuchos List*/
+    if(nrhs>4) List=build_teuchos_list(nrhs-4,&(prhs[4]));
+    else List=new Teuchos::ParameterList;
 
+    /* Setup matrices*/
+    Dhat=new ml_maxwell_data_pack();
+    Dhat->List=List;    
+    
+    Dhat->setup_matrix("EdgeMatrix",prhs[1],rewrap_ints);
+    Dhat->setup_matrix("NodeMatrix",prhs[2],rewrap_ints);
+    Dhat->setup_matrix("GradMatrix",prhs[3],rewrap_ints);
+
+    Dhat->setup_preconditioner();
+
+    /* Add this problem to the list */
+    rv=PROBS->add(Dhat);
+
+    /* Set return value(s) */
+    plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
+    id=(int*)mxGetData(plhs[0]);id[0]=rv;
+    if(nlhs>1) plhs[1]=mxCreateDoubleScalar(Dhat->operator_complexity);
+
+    
+    /* Lock so we can keep the memory for the heirarchy */
+    mexLock();
+    break;
   case MODE_SOLVE:
     /* Are there problems set up? */
     if(!PROBS) mexErrMsgTxt("Error: No problems set up, cannot solve.\n");    
@@ -1097,6 +1134,4 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
 #else
 #error "Do not have MATLAB"
 #endif
-#else
-#error "Do not have MLAPI"
-#endif
+

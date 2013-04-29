@@ -56,8 +56,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_Utilities_fwd.hpp>
-#include <MueLu_UseDefaultTypesComplex.hpp>
-#include <MueLu_UseShortNames.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
 #include <MueLu_CoupledRBMFactory.hpp>
 #include <MueLu_RAPShiftFactory.hpp>
@@ -70,15 +68,6 @@
 #include <BelosXpetraAdapter.hpp>
 #include <BelosMueLuAdapter.hpp>
 
-typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
-typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
-typedef Belos::OperatorT<TMV>                        TOP;
-typedef Belos::OperatorTraits<SC,TMV,TOP>            TOPT;
-typedef Belos::MultiVecTraits<SC,TMV>                TMVT;
-typedef Belos::LinearProblem<SC,TMV,TOP>             BelosLinearProblem;
-typedef Belos::SolverManager<SC,TMV,TOP>             BelosSolverManager;
-typedef Belos::BlockGmresSolMgr<SC,TMV,TOP>          BelosGMRES;
-
 namespace MueLu {
 
   //! @brief Shifted Laplacian Helmholtz solver
@@ -88,21 +77,32 @@ namespace MueLu {
     solvers in Belos.
   */
 
-  template<class Scalar = std::complex<double>, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class ShiftedLaplacian : public BaseClass {
 
 #undef MUELU_SHIFTEDLAPLACIAN_SHORT
 #include "MueLu_UseShortNames.hpp"
-
+    
+    typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
+    typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
+    typedef Belos::OperatorT<TMV>                        TOP;
+    typedef Belos::OperatorTraits<SC,TMV,TOP>            TOPT;
+    typedef Belos::MultiVecTraits<SC,TMV>                TMVT;
+    typedef Belos::LinearProblem<SC,TMV,TOP>             BelosLinearProblem;
+    typedef Belos::SolverManager<SC,TMV,TOP>             BelosSolverManager;
+    typedef Belos::BlockGmresSolMgr<SC,TMV,TOP>          BelosGMRES;
+    
   public:
 
     //! Constructors
     ShiftedLaplacian()
       : Problem_("acoustic"), numPDEs_(1), Smoother_("gmres"), Aggregation_("coupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(500),
-	alpha_(1.0), beta_(0.5), omega_(2.0*M_PI), rshift_(0.0), ishift_(0.0), iters_(100), tol_(1.0e-4), blksize_(1), FGMRESoption_(true),
+	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0),
+	iters_(100), tol_(1.0e-4), blksize_(1), FGMRESoption_(true),
 	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
-	LaplaceOperatorSet_(false), HelmholtzOperatorSet_(false), ShiftedLaplacianSet_(false),
-	StiffMatrixSet_(false), MassMatrixSet_(false), DampMatrixSet_(false)
+	LaplaceOperatorSet_(false), ProblemMatrixSet_(false), PreconditioningMatrixSet_(false),
+	StiffMatrixSet_(false), MassMatrixSet_(false), DampMatrixSet_(false),
+	LevelShiftsSet_(false)
     { }
 
     // Destructor
@@ -111,17 +111,18 @@ namespace MueLu {
     // Input
     void setParameters(const Teuchos::ParameterList List);
 
-    // If matrix is not in xpetra form...
-    void fillmatrices();
-
     // Xpetra matrices
     void setLaplacian(RCP<Matrix> L);
-    void setHelmholtz(RCP<Matrix> A);
-    void setShiftedLaplacian(RCP<Matrix> S);
+    void setProblemMatrix(RCP<Matrix> A);
+    void setPreconditioningMatrix(RCP<Matrix> P);
     void setstiff(RCP<Matrix> K);
     void setmass(RCP<Matrix> M);
     void setdamp(RCP<Matrix> C);
     void setcoords(RCP<MultiVector> Coords);
+    void setProblemShifts(Scalar ashift1, Scalar ashift2);
+    void setPreconditioningShifts(Scalar pshift1, Scalar pshift2);
+    void setLevelShifts(vector<Scalar> levelshifts);
+    void setTolerance(double tol);
 
     // when only the mass matrix term is updated with a new frequency
     void setup(const double omega);
@@ -146,17 +147,17 @@ namespace MueLu {
     int numLevels_, coarseGridSize_;
 
     // Shifted Laplacian parameters
-    // alpha -> real shift of mass matrix term
-    // beta  -> complex shift of mass matrix term (starting value)
-    // shift -> difference in complex shift between levels
-    // For stiffness matrix K, damping matrix C, mass matrix M,
-    // the original operator is
-    //    K + i*omega C - omega^2 M
-    // Shifted operator takes the form
-    //    K + i*omega C - (alpha+i*beta)*omega^2 M
+    // To be compatible with both real and complex scalar types,
+    // problem and preconditioning matrices are constructed in the following way:
+    //    A=K + ashift1*omega C + ashift2*omega^2 M
+    //    P=K + pshift1*omega C + pshift2*omega^2 M
+    // where K, C, and M are the stiffness, damping, and mass matrices, and
+    // ashift1, ashift2, pshift1, pshift2 are user-defined scalar values.
 
-    double     alpha_, beta_, omega_, rshift_, ishift_;
-    std::vector<SC> shifts_;
+    double     omega_;
+    SC         ashift1_, ashift2_;
+    SC         pshift1_, pshift2_;
+    vector<SC> levelshifts_;
 
     // Krylov solver inputs
     // iters  -> max number of iterations
@@ -171,11 +172,17 @@ namespace MueLu {
     // flags for setup
     bool GridTransfersExist_;
     bool UseLaplacian_, VariableShift_;
-    bool LaplaceOperatorSet_, HelmholtzOperatorSet_, ShiftedLaplacianSet_;
-    bool StiffMatrixSet_, MassMatrixSet_, DampMatrixSet_;
+    bool LaplaceOperatorSet_, ProblemMatrixSet_, PreconditioningMatrixSet_;
+    bool StiffMatrixSet_, MassMatrixSet_, DampMatrixSet_, LevelShiftsSet_;
 
     // Xpetra matrices
-    RCP<Matrix>                     K_, C_, M_, L_, A_, S_;
+    // K_ -> stiffness matrix
+    // C_ -> damping matrix
+    // M_ -> mass matrix
+    // L_ -> Laplacian
+    // A_ -> Problem matrix
+    // P_ -> Preconditioning matrix
+    RCP<Matrix>                     K_, C_, M_, L_, A_, P_;
     RCP<MultiVector>                Coords_;
 
     // Multigrid Hierarchy and Factory Manager
