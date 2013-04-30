@@ -47,13 +47,46 @@
 #include "Thyra_VectorSpaceTester.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "EpetraThyraAdaptersTestHelpers.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
 
 
 namespace {
 
+
 using Teuchos::ptrFromRef;
+
+
+void runVectorSpaceTesterTest(const int emptyProc, 
+  Teuchos::FancyOStream &out, bool &success)
+{
+  using Thyra::VectorSpaceBase;
+  using Thyra::MultiVectorBase;
+  
+  RCP<const VectorSpaceBase<double> > vs;
+  RCP<const Epetra_Map> epetra_map;
+  createEpetraVsAndMap(g_localDim, outArg(vs), outArg(epetra_map), emptyProc);
+  const int numProcs = epetra_map->Comm().NumProc();
+
+  if (emptyProc >= numProcs) {
+    out << "emptyProc = " << emptyProc << " >= numProcs = " << numProcs
+        << ": Skipping this test case!\n";
+    return;
+  }
+
+  const Ordinal dimMultiplier = (emptyProc < 0 ? numProcs : numProcs-1);
+  
+  TEST_EQUALITY(vs->dim(), g_localDim * dimMultiplier);
+  
+  Thyra::VectorSpaceTester<double> vectorSpaceTester;
+  const double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
+  vectorSpaceTester.warning_tol((0.1)*tol);
+  vectorSpaceTester.error_tol(tol);
+  vectorSpaceTester.show_all_tests(g_show_all_tests);
+  vectorSpaceTester.dump_all(g_dumpAll);
+  TEST_ASSERT(vectorSpaceTester.check(*vs, &out));
+}
 
 
 //
@@ -63,39 +96,25 @@ using Teuchos::ptrFromRef;
 
 TEUCHOS_UNIT_TEST( EpetraThyraWrappers, vectorSpaceTester )
 {
-  using Thyra::VectorSpaceBase;
-  using Thyra::MultiVectorBase;
-  
-  RCP<const VectorSpaceBase<double> > vs;
-  RCP<const Epetra_Map> epetra_map;
-  createEpetraVsAndMap(g_localDim, outArg(vs), outArg(epetra_map));
-  
-  Thyra::VectorSpaceTester<double> vectorSpaceTester;
-  const double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
-  vectorSpaceTester.warning_tol((0.1)*tol);
-  vectorSpaceTester.error_tol(tol);
-  vectorSpaceTester.show_all_tests(true);
-  vectorSpaceTester.dump_all(true);
-  TEST_ASSERT(vectorSpaceTester.check(*vs, &out));
+  runVectorSpaceTesterTest(-1, out, success);
 }
 
 
 TEUCHOS_UNIT_TEST( EpetraThyraWrappers, vectorSpaceTester_empty_p0 )
 {
-  using Thyra::VectorSpaceBase;
-  using Thyra::MultiVectorBase;
-  
-  RCP<const VectorSpaceBase<double> > vs;
-  RCP<const Epetra_Map> epetra_map;
-  createEpetraVsAndMap(g_localDim, outArg(vs), outArg(epetra_map), 0);
-  
-  Thyra::VectorSpaceTester<double> vectorSpaceTester;
-  const double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
-  vectorSpaceTester.warning_tol((0.1)*tol);
-  vectorSpaceTester.error_tol(tol);
-  vectorSpaceTester.show_all_tests(true);
-  vectorSpaceTester.dump_all(true);
-  TEST_ASSERT(vectorSpaceTester.check(*vs, &out));
+  runVectorSpaceTesterTest(0, out, success);
+}
+
+
+TEUCHOS_UNIT_TEST( EpetraThyraWrappers, vectorSpaceTester_empty_p1 )
+{
+  runVectorSpaceTesterTest(1, out, success);
+}
+
+
+TEUCHOS_UNIT_TEST( EpetraThyraWrappers, vectorSpaceTester_empty_pLast )
+{
+  runVectorSpaceTesterTest(Teuchos::GlobalMPISession::getNProc()-1, out, success);
 }
 
 
