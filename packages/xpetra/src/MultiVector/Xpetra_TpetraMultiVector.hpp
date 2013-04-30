@@ -68,22 +68,20 @@ namespace Xpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> & toTpetra(MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &);
-  //
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of TpetraVector, needed to prevent circular inclusions
-  template<class S, class LO, class GO, class N> class TpetraVector;
+  //  template<class S, class LO, class GO, class N> class TpetraMultiVector;
 #endif
 
+
+  // Because we aren't including the header...
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
 
-  //
-  //
-  //
 
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class TpetraMultiVector
@@ -114,6 +112,7 @@ namespace Xpetra {
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors)
       : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), ArrayOfPtrs, NumVectors))) {  }
 
+    
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~TpetraMultiVector() {  }
 
@@ -345,6 +344,17 @@ namespace Xpetra {
       return *tX.getTpetra_MultiVector();
   }
   //
+
+
+  // Things we actually need
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec)
+  {return rcp(new MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > >(vec));}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec)
+  {return rcp(new MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > >(vec));}
+
 } // Xpetra namespace
 
 // Following header file inculsion is needed for the dynamic_cast to TpetraVector in elementWiseMultiply (because we cannot dynamic_cast if target is not a complete type)

@@ -104,9 +104,6 @@ namespace Xpetra {
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
     EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors);
     
-    //! Build from an Epetra_MultiVector
-    EpetraMultiVector(RCP<Epetra_MultiVector> &vec):vec_(vec){ }
-
     //! MultiVector destructor.
     virtual ~EpetraMultiVector() { }
 
