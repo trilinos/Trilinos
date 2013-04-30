@@ -236,7 +236,7 @@ private:
 };
 #endif
 
-//#ifdef __AVX__
+#ifdef __AVX__
 template <>
 class TinyVec<double,4,true> {
 public:
@@ -351,7 +351,7 @@ public:
 private:
   __m256d v;
 };
-//#endif
+#endif
 
 } // namespace Stokhos
 
