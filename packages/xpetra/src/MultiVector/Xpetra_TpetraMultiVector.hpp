@@ -349,11 +349,11 @@ namespace Xpetra {
   // Things we actually need
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec)
-  {return rcp(new MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > >(vec));}
+  {return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec));}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec)
-  {return rcp(new MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > >(vec));}
+  {return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec));}
 
 } // Xpetra namespace
 
