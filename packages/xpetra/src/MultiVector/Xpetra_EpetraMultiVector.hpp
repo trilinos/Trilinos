@@ -73,6 +73,12 @@ namespace Xpetra {
   //   template<class S, class LO, class GO, class N> class EpetraVector;
   // #endif
 
+  RCP<MultiVector<double, int, int> > toXpetra(RCP<Epetra_MultiVector> vec);
+
+  //  RCP<const MultiVector<double,int, int > > toXpetra(RCP<const Epetra_MultiVector> > vec);
+
+
+
   class EpetraMultiVector
     : public virtual MultiVector<double, int, int>
   {
@@ -97,6 +103,9 @@ namespace Xpetra {
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
     EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors);
+    
+    //! Build from an Epetra_MultiVector
+    EpetraMultiVector(RCP<Epetra_MultiVector> &vec):vec_(vec){ }
 
     //! MultiVector destructor.
     virtual ~EpetraMultiVector() { }

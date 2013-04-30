@@ -226,6 +226,9 @@ namespace Xpetra {
   }
   //
 
+  RCP<MultiVector<double, int, int> > toXpetra(RCP<Epetra_MultiVector> vec){
+    return rcp(new EpetraMultiVector(vec));
+  }
 
 
 } // namespace Xpetra
