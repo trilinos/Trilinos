@@ -344,7 +344,7 @@ namespace MueLu {
     /*! @brief Read vector from file in Matrix Market format.
      TODO Move this to Xpetra?
     */
-    static RCP<MultiVector> Read(std::string const & fileName,RCP<const Map> &map);
+    static RCP<MultiVector> Read(std::string const & fileName,const RCP<const Map> &map);
 
 
     static void PauseForDebugger();
