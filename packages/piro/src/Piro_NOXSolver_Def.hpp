@@ -416,7 +416,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
           }
 
           if (Teuchos::nonnull(minus_dxdp_mv)) {
-            assign(minus_dxdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+            Thyra::assign(minus_dxdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 
             const Thyra::SolveCriteria<Scalar> defaultSolveCriteria;
             const Thyra::SolveStatus<Scalar> solveStatus =
