@@ -80,6 +80,8 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
    // build and register the gather/scatter evaluators with 
    // the base class.
    this->buildGatherScatterEvaluators(*this);
+
+   tComm_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(*comm).Comm())));
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -96,6 +98,8 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
    // build and register the gather/scatter evaluators with 
    // the base class.
    this->buildGatherScatterEvaluators(*this);
+
+   tComm_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(*comm).Comm())));
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -114,6 +118,8 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > &
    // build and register the gather/scatter evaluators with 
    // the base class.
    this->buildGatherScatterEvaluators(*this);
+
+   tComm_ = Teuchos::rcp(new Teuchos::MpiComm<int>(rawMpiComm_));
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -324,7 +330,7 @@ template <typename Traits,typename LocalOrdinalT>
 Teuchos::MpiComm<int> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getComm() const
 {
-   return Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(*getEpetraComm()).Comm()));
+   return *tComm_;
 }
 
 template <typename Traits,typename LocalOrdinalT>
