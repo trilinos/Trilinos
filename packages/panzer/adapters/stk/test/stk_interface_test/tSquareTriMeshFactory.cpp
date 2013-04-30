@@ -88,6 +88,13 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshFactory, defaults)
 
    int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
    int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+   int mpi_numprocs = -1;
+   MPI_Comm_size(MPI_COMM_WORLD, &mpi_numprocs);
+   int mpi_rank = -1;
+   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+   TEST_EQUALITY(numprocs,mpi_numprocs);
+   TEST_EQUALITY(rank,mpi_rank);
 }
 
 }

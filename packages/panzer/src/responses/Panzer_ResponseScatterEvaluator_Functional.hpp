@@ -58,7 +58,9 @@ namespace panzer {
 
 class FunctionalScatterBase {
 public:
-   virtual void scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
+  virtual ~FunctionalScatterBase() {}
+
+  virtual void scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
                                  panzer::Traits::EvalData workset, 
                                  Teuchos::ArrayRCP<double> & dgdx) const = 0;
 };

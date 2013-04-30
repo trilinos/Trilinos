@@ -83,7 +83,7 @@ PHX_POST_REGISTRATION_SETUP(Product,worksets,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Product,workset)
 { 
-  for (std::size_t i = 0; i < product.size(); ++i) {
+  for (typename PHX::MDField<ScalarT>::size_type i = 0; i < product.size(); ++i) {
     product[i] = 1.0;
     for (std::size_t j = 0; j < values.size(); ++j)
       product[i] *= (values[j])[i];
