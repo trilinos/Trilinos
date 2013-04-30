@@ -65,8 +65,8 @@ namespace Galeri {
     using Teuchos::RCP;
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-    RCP<Problem<Map,Matrix,MultiVector> > BuildProblem(const std::string &MatrixType, const RCP<const Map>& map, Teuchos::ParameterList& list) {
-      RCP<Problem<Map,Matrix,MultiVector> > P;
+    RCP<Problem_Helmholtz<Map,Matrix,MultiVector> > BuildProblem_Helmholtz(const std::string &MatrixType, const RCP<const Map>& map, Teuchos::ParameterList& list) {
+      RCP<Problem_Helmholtz<Map,Matrix,MultiVector> > P;
 
       if (MatrixType == "Helmholtz1D")
         P.reset(new Helmholtz1DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));

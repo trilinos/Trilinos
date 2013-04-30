@@ -55,8 +55,6 @@
 #include <Teuchos_ArrayView.hpp>
 #include "Galeri_config.h"
 #include "Galeri_MatrixTraits.hpp"
-#include "Galeri_Problem.hpp"
-#include "Galeri_StencilProblems.hpp"
 
 namespace Galeri {
 
@@ -151,6 +149,72 @@ namespace Galeri {
 
     } //TriDiag_Helmholtz
 
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
+    std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> >
+    TriDiag_Helmholtz_Pair(const Teuchos::RCP<const Map> & map, const GlobalOrdinal nx,
+			   const double h, const double omega, const Scalar shift) {
+
+      Teuchos::RCP<Matrix> ktx = MatrixTraits<Map,Matrix>::Build(map, 3);
+      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 1);
+      LocalOrdinal NumMyElements = map->getNodeNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = map->getComm();
+      GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
+      GlobalOrdinal NumEntries;
+      LocalOrdinal nnz=2;
+      std::vector<Scalar> Values(nnz);
+      std::vector<GlobalOrdinal> Indices(nnz);
+      Scalar one = (Scalar) 1.0;
+      Scalar two = (Scalar) 2.0;
+      comm->barrier();
+      if (comm->getRank() == 0) {
+        std::cout << "starting global insert" << std::endl;
+      }
+      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
+      timer->start(true);
+      for (LocalOrdinal i = 0; i < NumMyElements; ++i) {
+	if (MyGlobalElements[i] == 0) {
+	  // off-diagonal for first row
+	  Indices[0] = 1;
+	  NumEntries = 1;
+	  Values[0] = -one;
+	}
+	else if (MyGlobalElements[i] == NumGlobalElements - 1) {
+	  // off-diagonal for last row
+	  Indices[0] = NumGlobalElements - 2;
+	  NumEntries = 1;
+	  Values[0] = -one;
+	}
+	else {
+	  // off-diagonal for internal row
+	  Indices[0] = MyGlobalElements[i] - 1;
+	  Indices[1] = MyGlobalElements[i] + 1;
+	  Values[0] = -one;
+	  Values[1] = -one;
+	  NumEntries = 2;
+	}
+	// put the off-diagonal entries
+	// Xpetra wants ArrayViews (sigh)
+	Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
+	Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
+	ktx->insertGlobalValues(MyGlobalElements[i], iv, av);
+	// Put in the diagonal entry
+	mtx->insertGlobalValues(MyGlobalElements[i],
+				Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
+				Teuchos::tuple<Scalar>(h*h) );
+      }
+      timer->stop();
+      timer = rcp(new Teuchos::Time("TriDiag fillComplete"));
+      timer->start(true);
+      ktx->fillComplete();
+      mtx->fillComplete();
+      timer->stop();
+      std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > system;
+      system=std::make_pair(ktx,mtx);
+      return system;
+
+    } //TriDiag_Helmholtz
+
     /* ****************************************************************************************************** *
      *    Helmholtz 2D
      * ****************************************************************************************************** */
@@ -234,6 +298,92 @@ namespace Galeri {
       mtx->fillComplete();
 
       return mtx;
+
+    } //Cross2D_Helmholtz
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
+    std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> >
+    Cross2D_Helmholtz_Pair(const Teuchos::RCP<const Map> & map,
+		      const GlobalOrdinal nx,      const GlobalOrdinal ny,
+		      const double h,              const double delta,
+		      const int PMLgridptsx_left,  const int PMLgridptsx_right,
+		      const int PMLgridptsy_left,  const int PMLgridptsy_right,
+                      const double omega,          const Scalar shift) {
+
+      Teuchos::RCP<Matrix> ktx = MatrixTraits<Map,Matrix>::Build(map, 5);
+      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 1);
+      LocalOrdinal NumMyElements = map->getNodeNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+      GlobalOrdinal left, right, lower, upper, center;
+      LocalOrdinal nnz=5;
+      std::vector<Scalar> Values(nnz);
+      std::vector<GlobalOrdinal> Indices(nnz);
+
+      double LBx, RBx, LBy, RBy, Dx, Dy;
+      Scalar sx_left, sx_center, sx_right;
+      Scalar sy_left, sy_center, sy_right;
+      // Calculate some parameters
+      Dx = ((double) nx-1)*h;
+      Dy = ((double) ny-1)*h;
+      LBx = ((double) PMLgridptsx_left)*h;
+      RBx = Dx-((double) PMLgridptsx_right)*h;
+      LBy = ((double) PMLgridptsy_left)*h;
+      RBy = Dy-((double) PMLgridptsy_right)*h;
+
+      for (LocalOrdinal i = 0; i < NumMyElements; ++i)  {
+
+        size_t numEntries = 0;
+        center = MyGlobalElements[i];
+        GetNeighboursCartesian2d(center, nx, ny, left, right, lower, upper);
+	GetPMLvalues(center, nx, ny, h, delta,
+		     Dx, Dy, LBx, RBx, LBy, RBy,
+		     sx_left, sx_center, sx_right,
+		     sy_left, sy_center, sy_right);
+
+	if (left != -1) {
+	  Indices[numEntries] = left;
+	  Values [numEntries] = -(sy_center/sx_center + sy_center/sx_left)/2.0;
+	  numEntries++;
+	}
+	if (right != -1) {
+	  Indices[numEntries] = right;
+	  Values [numEntries] = -(sy_center/sx_center + sy_center/sx_right)/2.0;
+	  numEntries++;
+	}
+	if (lower != -1) {
+	  Indices[numEntries] = lower;
+	  Values [numEntries] = -(sx_center/sy_center + sx_center/sy_left)/2.0;
+	  numEntries++;
+	}
+	if (upper != -1) {
+	  Indices[numEntries] = upper;
+	  Values [numEntries] = -(sx_center/sy_center + sx_center/sy_right)/2.0;
+	  numEntries++;
+	}
+
+	// diagonal
+	Scalar z = (Scalar) 0.0;
+	for (size_t j = 0; j < numEntries; j++)
+	  z -= Values[j];
+
+	Indices[numEntries] = center;
+	Values [numEntries] = z;
+	numEntries++;
+
+	Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0], numEntries);
+	Teuchos::ArrayView<Scalar>        av(&Values[0],  numEntries);
+	ktx->insertGlobalValues(center, iv, av);
+	mtx->insertGlobalValues(center,
+				Teuchos::tuple<GlobalOrdinal>(center),
+				Teuchos::tuple<Scalar>(h*h*sx_center*sy_center) );
+
+      }
+
+      ktx->fillComplete();
+      mtx->fillComplete();
+      std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > system;
+      system=std::make_pair(ktx,mtx);
+      return system;
 
     } //Cross2D_Helmholtz
 
@@ -337,6 +487,109 @@ namespace Galeri {
       mtx->fillComplete();
 
       return mtx;
+
+    } //Cross3D_Helmholtz
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
+    std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> >
+    Cross3D_Helmholtz_Pair(const Teuchos::RCP<const Map> & map,
+			   const GlobalOrdinal nx,      const GlobalOrdinal ny,        const GlobalOrdinal nz,
+			   const double h,              const double delta,
+			   const int PMLgridptsx_left,  const int PMLgridptsx_right,
+			   const int PMLgridptsy_left,  const int PMLgridptsy_right,
+			   const int PMLgridptsz_left,  const int PMLgridptsz_right,
+			   const double omega,          const Scalar shift) {
+
+      Teuchos::RCP<Matrix> ktx = MatrixTraits<Map,Matrix>::Build(map, 7);
+      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 1);
+
+      LocalOrdinal                               NumMyElements = map->getNodeNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+
+      GlobalOrdinal left, right, bottom, top, front, back, center;
+      std::vector<Scalar> Values(7);
+      std::vector<GlobalOrdinal> Indices(7);
+
+      double LBx, RBx, LBy, RBy, LBz, RBz, Dx, Dy, Dz;
+      Scalar sx_left, sx_center, sx_right;
+      Scalar sy_left, sy_center, sy_right;
+      Scalar sz_left, sz_center, sz_right;
+      // Calculate some parameters
+      Dx = ((double) nx-1)*h;
+      Dy = ((double) ny-1)*h;
+      Dz = ((double) nz-1)*h;
+      LBx = ((double) PMLgridptsx_left)*h;
+      RBx = Dx-((double) PMLgridptsx_right)*h;
+      LBy = ((double) PMLgridptsy_left)*h;
+      RBy = Dy-((double) PMLgridptsy_right)*h;
+      LBz = ((double) PMLgridptsz_left)*h;
+      RBz = Dz-((double) PMLgridptsz_right)*h;
+
+      for (GlobalOrdinal i = 0; i < NumMyElements; ++i) {
+
+        size_t numEntries = 0;
+        center = MyGlobalElements[i];
+        GetNeighboursCartesian3d(center, nx, ny, nz, left, right, front, back, bottom, top);
+	GetPMLvalues(center, nx, ny, nz, h, delta, Dx, Dy, Dz,
+		     LBx, RBx, LBy, RBy, LBz, RBz,
+		     sx_left, sx_center, sx_right,
+		     sy_left, sy_center, sy_right,
+		     sz_left, sz_center, sz_right);
+
+	if (left != -1) {
+	  Indices[numEntries] = left;
+	  Values [numEntries] = -(sy_center*sz_center/sx_center + sy_center*sz_center/sx_left)/2.0;
+	  numEntries++;
+	}
+	if (right != -1) {
+	  Indices[numEntries] = right;
+	  Values [numEntries] = -(sy_center*sz_center/sx_center + sy_center*sz_center/sx_right)/2.0;
+	  numEntries++;
+	}
+	if (front != -1) {
+	  Indices[numEntries] = front;
+	  Values [numEntries] = -(sx_center*sz_center/sy_center + sx_center*sz_center/sy_right)/2.0;
+	  numEntries++;
+	}
+	if (back != -1) {
+	  Indices[numEntries] = back;
+	  Values [numEntries] = -(sx_center*sz_center/sy_center + sx_center*sz_center/sy_left)/2.0;
+	  numEntries++;
+	}
+	if (bottom != -1) {
+	  Indices[numEntries] = bottom;
+	  Values [numEntries] = -(sx_center*sy_center/sz_center + sx_center*sy_center/sz_left)/2.0;
+	  numEntries++;
+	}
+	if (top != -1) {
+	  Indices[numEntries] = top;
+	  Values [numEntries] = -(sx_center*sy_center/sz_center + sx_center*sy_center/sz_right)/2.0;
+	  numEntries++;
+	}
+
+	// diagonal
+	Scalar z = (Scalar) 0.0;
+	for (size_t j = 0; j < numEntries; j++)
+	  z -= Values[j];
+
+	Indices[numEntries] = center;
+	Values [numEntries] = z;
+	numEntries++;
+
+	Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0], numEntries);
+	Teuchos::ArrayView<Scalar>        av(&Values[0],  numEntries);
+	ktx->insertGlobalValues(center, iv, av);
+	mtx->insertGlobalValues(center,
+				Teuchos::tuple<GlobalOrdinal>(center),
+				Teuchos::tuple<Scalar>(h*h*sx_center*sy_center*sz_center) );
+
+      }
+
+      ktx->fillComplete();
+      mtx->fillComplete();
+      std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > system;
+      system=std::make_pair(ktx,mtx);
+      return system;
 
     } //Cross3D_Helmholtz
 

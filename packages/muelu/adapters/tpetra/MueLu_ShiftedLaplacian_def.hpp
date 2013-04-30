@@ -184,14 +184,14 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
 
     // choose smoother
     if(Smoother_=="gmres") {
-      // Krylov smoother with Schwarz inner preconditioning
+      // Krylov smoother
       ifpack2Type_ = "KRYLOV";
       ifpack2List_.set("krylov: iteration type",1);
-      ifpack2List_.set("krylov: number of iterations",5);
+      ifpack2List_.set("krylov: number of iterations",10);
       ifpack2List_.set("krylov: residual tolerance",1e-6);
       ifpack2List_.set("krylov: block size",1);
       ifpack2List_.set("krylov: zero starting solution",true);
-      ifpack2List_.set("krylov: preconditioner type",3);
+      ifpack2List_.set("krylov: preconditioner type",0);
       // must use FGMRES for GMRES smoothing
       FGMRESoption_=true;
     }
@@ -281,6 +281,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
       MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, M_, false, ashift2_*omega2, A_   );
     }
     A_->fillComplete();
+    ProblemMatrixSet_=true;
   }
   if(PreconditioningMatrixSet_==false) {
     if(DampMatrixSet_==true) {
@@ -293,6 +294,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
       MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, M_, false, pshift2_*omega2, P_   );
     }
     P_->fillComplete();
+    PreconditioningMatrixSet_=true;
   }
 
   if(VariableShift_==true) {
@@ -304,7 +306,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     else {
       auxK=K_;
     }
-    // determine shifts for RAPShiftFactory
+    // determine shifts for RAPShiftFactory - scale by frequency
     if(LevelShiftsSet_==true) {
       std::vector<SC> auxshifts;
       auxshifts.resize(numLevels_);

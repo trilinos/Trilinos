@@ -194,7 +194,10 @@ void Krylov<MatrixType,PrecType>::initialize() {
   belosList_ = Teuchos::rcp( new Teuchos::ParameterList("GMRES") );
   belosList_->set("Maximum Iterations",Iterations_);
   belosList_->set("Convergence Tolerance",ResidualTolerance_);
-  if(PreconditionerType_==1) { 
+  if(PreconditionerType_==0) {
+    // no preconditioner
+  }
+  else if(PreconditionerType_==1) { 
     ifpack2_prec_=Teuchos::rcp( new Relaxation<MatrixType>(A_) );
   }
   else if(PreconditionerType_==2) {
@@ -208,8 +211,10 @@ void Krylov<MatrixType,PrecType>::initialize() {
   else if(PreconditionerType_==4) {
     ifpack2_prec_=Teuchos::rcp( new Chebyshev<MatrixType>(A_) );
   }
-  ifpack2_prec_->initialize();
-  ifpack2_prec_->setParameters(params_);
+  if(PreconditionerType_>0) {
+    ifpack2_prec_->initialize();
+    ifpack2_prec_->setParameters(params_);
+  }
   belosProblem_ = 
     Teuchos::rcp( new Belos::LinearProblem<belos_scalar_type,
 		  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
@@ -245,8 +250,10 @@ void Krylov<MatrixType,PrecType>::compute() {
     initialize();
   }
   Time_.start(true);
-  ifpack2_prec_->compute();
-  belosProblem_->setLeftPrec(ifpack2_prec_);
+  if(PreconditionerType_>0) {
+    ifpack2_prec_->compute();
+    belosProblem_->setLeftPrec(ifpack2_prec_);
+  }
   IsComputed_ = true;
   ++NumCompute_;
   Time_.stop();

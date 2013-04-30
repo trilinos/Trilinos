@@ -50,7 +50,7 @@
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include "Galeri_Problem.hpp"
+#include "Galeri_Problem_Helmholtz.hpp"
 #include "Galeri_MultiVectorTraits.hpp"
 #include "Galeri_XpetraUtils.hpp"
 
@@ -61,11 +61,11 @@ namespace Galeri {
   namespace Xpetra {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-    class HelmholtzFEM2DProblem : public Problem<Map,Matrix,MultiVector> {
+    class HelmholtzFEM2DProblem : public Problem_Helmholtz<Map,Matrix,MultiVector> {
 
     public:
 
-      HelmholtzFEM2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) {
+      HelmholtzFEM2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem_Helmholtz<Map,Matrix,MultiVector>(list, map) {
 
 	// parameters
 	hx_          = list.get("stretchx", 1.0);
@@ -106,7 +106,8 @@ namespace Galeri {
 
       }
 
-      Teuchos::RCP<Matrix>      BuildMatrix();
+      Teuchos::RCP<Matrix>                                     BuildMatrix();
+      std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> >  BuildMatrices();
 
     private:
 
@@ -172,8 +173,6 @@ namespace Galeri {
       }
 
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, (2*px_+1)*(2*py_+1)*numDofPerNode);
-      SC one = Teuchos::ScalarTraits<SC>::one();
-      SC zero = Teuchos::ScalarTraits<SC>::zero();
       SC cpxshift(1.0,shift_);
 
       // iterate over elements
@@ -225,6 +224,95 @@ namespace Galeri {
 
       this->A_->fillComplete();
       return this->A_;
+
+    }
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > HelmholtzFEM2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrices() {
+      using Teuchos::SerialDenseMatrix;
+
+      BuildMesh();
+
+      const size_t numDofPerNode   = 1;
+      const size_t numNodesPerElem = (px_+1)*(py_+1);
+      const size_t numDofPerElem   = numNodesPerElem * numDofPerNode;
+
+      TEUCHOS_TEST_FOR_EXCEPTION(elements[0].size() != numNodesPerElem, std::logic_error, "Incorrect number of element vertices");
+
+      // Compute quadrature points/rules
+      std::vector<Point>  quadPoints;
+      std::vector<double> quadWeights;
+      BuildPoints(quadPoints, quadWeights);
+
+      // Compute basis function values and derivatives at each quadrature point
+      std::vector< vector<double> > vals, dxs, dys;
+      vals.resize(quadPoints.size());
+      dxs.resize(quadPoints.size());
+      dys.resize(quadPoints.size());
+      for(int i=0; i<quadPoints.size(); i++) {
+	EvalBasis(quadPoints[i], vals[i], dxs[i], dys[i]);
+      }
+
+      this->K_ = MatrixTraits<Map,Matrix>::Build(this->Map_, (2*px_+1)*(2*py_+1)*numDofPerNode);
+      this->M_ = MatrixTraits<Map,Matrix>::Build(this->Map_, (2*px_+1)*(2*py_+1)*numDofPerNode);
+
+      // iterate over elements
+      for (size_t i = 0; i < elements.size(); i++) {
+	
+        SerialDenseMatrix<LO,SC> KE(numDofPerElem, numDofPerElem);
+        SerialDenseMatrix<LO,SC> ME(numDofPerElem, numDofPerElem);
+
+	// element domain is [shiftx,shiftx+hx] x [shifty,shifty+hy]
+        std::vector<LO>& elemNodes = elements[i];
+	double shiftx = nodes[elemNodes[0]].x;
+	double shifty = nodes[elemNodes[0]].y;
+
+	// evaluate PML values at quadrature points for this element
+	std::vector<SC> stretchx, stretchy;
+	EvalStretch(shiftx, shifty, quadPoints, stretchx, stretchy);
+
+        // Evaluate the stiffness matrix for the element
+        for (size_t j = 0; j < quadPoints.size(); j++) {
+	  Scalar sx=stretchx[j];
+	  Scalar sy=stretchy[j];
+	  double qdwt=quadWeights[j];
+	  std::vector<double> curvals=vals[j];
+	  std::vector<double> curdxs=dxs[j];
+	  std::vector<double> curdys=dys[j];
+	  Scalar mass = qdwt*sx*sy;
+	  Scalar pml1 = qdwt*sy/sx;
+	  Scalar pml2 = qdwt*sx/sy;
+	  for(int m=0; m<numDofPerElem; m++) {
+	    for(int n=0; n<numDofPerElem; n++) {
+	      KE[m][n] += pml1*curdxs[m]*curdxs[n] + pml2*curdys[m]*curdys[n];
+	      ME[m][n] += mass*curvals[m]*curvals[n];
+	    }
+	  }
+        }
+
+	Teuchos::Array<GO> elemDofs(numDofPerElem);
+	for (size_t j = 0; j < numDofPerElem; j++) {
+	  elemDofs[j] = local2Global_[elemNodes[j]];
+	  if(local2Global_[elemNodes[j]]>9999) {
+	    std::cout<<"index "<<local2Global_[elemNodes[j]]<<std::endl;
+	  }	    
+	}
+
+        // Insert KE and ME into the global matrices
+        for (size_t j = 0; j < numDofPerElem; j++) {
+          if (this->Map_->isNodeGlobalElement(elemDofs[j])) {
+            this->K_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
+            this->M_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(ME[j], numDofPerElem));
+	  }
+	}
+
+      }
+
+      this->K_->fillComplete();
+      this->M_->fillComplete();
+      std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > system;
+      system=std::make_pair(this->K_,this->M_);
+      return system;
 
     }
 

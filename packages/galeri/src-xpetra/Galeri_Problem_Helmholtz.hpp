@@ -44,8 +44,8 @@
 //
 // @HEADER
 
-#ifndef GALERI_PROBLEM_HPP
-#define GALERI_PROBLEM_HPP
+#ifndef GALERI_PROBLEM_HELMHOLTZ_HPP
+#define GALERI_PROBLEM_HELMHOLTZ_HPP
 
 #include <Teuchos_RCP.hpp>
 
@@ -67,18 +67,19 @@ namespace Galeri {
     typedef size_t DirBC;
 
     template<typename Map, typename Matrix, typename MultiVector>
-    class Problem : public Teuchos::Describable {
+    class Problem_Helmholtz : public Teuchos::Describable {
     public:
-      Problem(Teuchos::ParameterList& list) : list_(list) {
+      Problem_Helmholtz(Teuchos::ParameterList& list) : list_(list) {
         SetBoundary();
       };
-      Problem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : list_(list) {
+      Problem_Helmholtz(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : list_(list) {
         Map_ = map;
         SetBoundary();
       };
-      virtual ~Problem() { }
+      virtual ~Problem_Helmholtz() { }
 
       virtual Teuchos::RCP<Matrix> BuildMatrix() = 0;
+      virtual std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > BuildMatrices() = 0;
       virtual Teuchos::RCP<MultiVector> BuildCoords() {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Coordinates construction is not implemented for this problem");
       }
@@ -89,6 +90,8 @@ namespace Galeri {
       // Get methods
       Teuchos::RCP<const Map>         getMap()       const { return Map_; }
       Teuchos::RCP<const Matrix>      getMatrix()    const { return A_; }
+      Teuchos::RCP<const Matrix>      getStiff()     const { return K_; }
+      Teuchos::RCP<const Matrix>      getMass()      const { return M_; }
       Teuchos::RCP<const MultiVector> getNullspace() const { return Nullspace_; }
       Teuchos::RCP<const MultiVector> getCoords()    const { return Coords_; }
 
@@ -98,7 +101,7 @@ namespace Galeri {
     protected:
       Teuchos::ParameterList&   list_;
       Teuchos::RCP<const Map>   Map_;
-      Teuchos::RCP<Matrix>      A_;
+      Teuchos::RCP<Matrix>      A_, K_, M_;
       Teuchos::RCP<MultiVector> Nullspace_;
       Teuchos::RCP<MultiVector> Coords_;
 
@@ -120,4 +123,4 @@ namespace Galeri {
 
 } // namespace Galeri
 
-#endif // GALERI_PROBLEM_HPP
+#endif // GALERI_PROBLEM_HELMHOLTZ_HPP

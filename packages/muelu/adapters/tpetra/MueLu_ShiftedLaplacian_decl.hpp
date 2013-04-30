@@ -149,8 +149,8 @@ namespace MueLu {
     // Shifted Laplacian parameters
     // To be compatible with both real and complex scalar types,
     // problem and preconditioning matrices are constructed in the following way:
-    //    A=K + ashift1*omega C + ashift2*omega^2 M
-    //    P=K + pshift1*omega C + pshift2*omega^2 M
+    //    A = K + ashift1*omega*C + (ashift2*omega^2)*M
+    //    P = K + pshift1*omega*C + (pshift2*omega^2)*M
     // where K, C, and M are the stiffness, damping, and mass matrices, and
     // ashift1, ashift2, pshift1, pshift2 are user-defined scalar values.
 

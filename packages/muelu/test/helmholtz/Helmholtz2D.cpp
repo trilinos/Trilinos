@@ -114,8 +114,6 @@ int main(int argc, char *argv[]) {
 							    h, delta, 0,     0,     0,     0,     0,     0,     0.0,   0.0  );
   Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
 							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0  );
-  Galeri::Xpetra::Parameters<GO> matrixParameters_shift    (clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
-							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
   Xpetra::Parameters             xpetraParameters(clp);
 
 
@@ -151,19 +149,17 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList matrixParams_laplace   = matrixParameters_laplace.GetParameterList();
   Teuchos::ParameterList matrixParams_helmholtz = matrixParameters_helmholtz.GetParameterList();
-  Teuchos::ParameterList matrixParams_shift     = matrixParameters_shift.GetParameterList();
 
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr_laplace =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_laplace.GetMatrixType(), map, matrixParams_laplace);
+  RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_laplace =
+      Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_laplace.GetMatrixType(), map, matrixParams_laplace);
   RCP<Matrix> A_laplace = Pr_laplace->BuildMatrix();
 
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr_helmholtz =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_helmholtz.GetMatrixType(), map, matrixParams_helmholtz);
-  RCP<Matrix> A_helmholtz = Pr_helmholtz->BuildMatrix();
-
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr_shift =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_shift.GetMatrixType(), map, matrixParams_shift);
-  RCP<Matrix> A_shift = Pr_shift->BuildMatrix();
+  RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_helmholtz =
+      Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_helmholtz.GetMatrixType(), map, matrixParams_helmholtz);
+  RCP<Matrix> Kmat, Mmat;
+  std::pair< RCP<Matrix>, RCP<Matrix> > system = Pr_helmholtz->BuildMatrices();
+  Kmat = system.first;
+  Mmat = system.second;
  
   comm->barrier();
 
@@ -177,8 +173,20 @@ int main(int argc, char *argv[]) {
 
   RCP<ShiftedLaplacian> SLSolver = rcp( new ShiftedLaplacian );
   SLSolver -> setLaplacian(A_laplace);
-  SLSolver -> setProblemMatrix(A_helmholtz);
-  SLSolver -> setPreconditioningMatrix(A_shift);
+  SLSolver -> setstiff(Kmat);
+  SLSolver -> setmass(Mmat);
+  // determine shifts for RAPShiftFactory
+  std::vector<SC> shifts;
+  int maxLevels=5;
+  for(int i=0; i<maxLevels; i++) {
+    double alpha=1.0;
+    double beta=shift+((double) i)*0.2;
+    SC curshift(alpha,beta);
+    shifts.push_back(-curshift);
+  }
+  SLSolver -> setLevelShifts(shifts);
+  SLSolver -> setProblemShifts((SC) 0.0, (SC) -1.0);
+  SLSolver -> setPreconditioningShifts((SC) 0.0, (SC) shifts[0]);
   SLSolver -> setup(omega);
 
   tm = Teuchos::null;
