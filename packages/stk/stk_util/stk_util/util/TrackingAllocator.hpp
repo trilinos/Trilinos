@@ -2,6 +2,7 @@
 #define STK_UTIL_STK_UTIL_UTIL_TRACKING_ALLOCATOR_HPP
 
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 #include <limits>
 #include <algorithm>
@@ -158,11 +159,13 @@ void profile_memory_usage(std::string name, ParallelMachine parallel, int parall
   all_reduce_max(parallel, memory, max_memory, 4);
 
   if (parallel_rank == 0) {
-    std::cout << "STK_PROFILE_MEMORY (per process max) " << name << std::endl;
-    std::cout << "           peak = " << max_memory[0] << " (" << human_bytes(max_memory[0]) << ")" << std::endl;
-    std::cout << "        current = " << max_memory[1] << " (" << human_bytes(max_memory[1]) << ")" << std::endl;
-    std::cout << "    allocations = " << max_memory[2] << std::endl;
-    std::cout << "  deallocations = " << max_memory[3] << std::endl;
+    std::ostringstream oss;
+    oss << "STK_PROFILE_MEMORY (per process max) " << name << std::endl;
+    oss << "           peak = " << max_memory[0] << " (" << human_bytes(max_memory[0]) << ")" << std::endl;
+    oss << "        current = " << max_memory[1] << " (" << human_bytes(max_memory[1]) << ")" << std::endl;
+    oss << "    allocations = " << max_memory[2] << std::endl;
+    oss << "  deallocations = " << max_memory[3] << std::endl;
+    std::cout<<oss.str();
   }
 }
 

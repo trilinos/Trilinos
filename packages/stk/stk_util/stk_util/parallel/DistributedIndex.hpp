@@ -97,9 +97,10 @@ public:
    *          FIRST: Remove this process' participation in the existing keys.
    *          SECOND: Add this process' participation in the new keys.
    */
-  void update_keys( const KeyTypeVector & add_new_keys , const KeyTypeVector & remove_existing_keys );
+  void update_keys( KeyTypeVector::const_iterator  add_new_keys_begin, KeyTypeVector::const_iterator  add_new_keys_end ,
+                    KeyTypeVector::const_iterator remove_existing_keys_begin, KeyTypeVector::const_iterator remove_existing_keys_end);
 
-  void update_keys( const KeyTypeVector & add_new_keys );
+  void update_keys( KeyTypeVector::const_iterator add_new_keys_begin, KeyTypeVector::const_iterator add_new_keys_end);
 
   void register_removed_key( KeyType removed_key )
   { m_removed_keys.push_back(removed_key); }
@@ -125,6 +126,11 @@ public:
   void generate_new_keys(
     const std::vector<size_t>                 & requests ,
           std::vector< KeyTypeVector > & requested_keys );
+
+  void print_sizes() const
+  {
+     std::cout<<"proc "<<m_comm_rank<<", m_key_usage.size(): "<<m_key_usage.size()<<", capacity: "<<m_key_usage.capacity()<<std::endl;
+  }
 
 private:
 

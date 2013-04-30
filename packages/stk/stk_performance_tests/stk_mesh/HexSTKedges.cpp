@@ -102,9 +102,9 @@ TEST(hex_edges, hex_edges)
   MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 
 #ifndef NDEBUG
-  mesh_dims[0]=5; //num_elems_x
-  mesh_dims[1]=5; //num_elems_y
-  mesh_dims[2]=5; //num_elems_z
+  mesh_dims[0]=50; //num_elems_x
+  mesh_dims[1]=50; //num_elems_y
+  mesh_dims[2]=50; //num_elems_z
 #else
   mesh_dims[0]=50; //num_elems_x
   mesh_dims[1]=50; //num_elems_y

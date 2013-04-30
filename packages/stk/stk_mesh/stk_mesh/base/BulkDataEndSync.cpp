@@ -180,6 +180,21 @@ void BulkData::internal_update_distributed_index(
 
   // Iterate over all entities known to this process, putting
   // modified shared/owned entities in local_created_or_modified.
+  size_t num_created_or_modified = 0;
+  for ( impl::EntityRepository::iterator
+        i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i ) {
+
+    Entity entity = i->second ;
+
+    if ( entity.state() != Unchanged &&
+         in_owned_closure( entity , m_parallel_rank ) ) {
+      // Has been changed and is in owned closure, may be shared
+      ++num_created_or_modified;
+    }
+  }
+
+  local_created_or_modified.reserve(num_created_or_modified);
+
   for ( impl::EntityRepository::iterator
         i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i ) {
 
@@ -192,9 +207,23 @@ void BulkData::internal_update_distributed_index(
     }
   }
 
-  // Update distributed index. Note that the DistributedIndex only
-  // tracks ownership and sharing information.
-  m_entities_index.update_keys( local_created_or_modified );
+  {
+    // Update distributed index. Note that the DistributedIndex only
+    // tracks ownership and sharing information.
+    const size_t num_batches = 1;
+    parallel::DistributedIndex::KeyTypeVector::const_iterator begin = local_created_or_modified.begin();
+    parallel::DistributedIndex::KeyTypeVector::const_iterator end = begin+num_created_or_modified/num_batches;
+
+    for(size_t i=0; i<num_batches-1; ++i) {
+      m_entities_index.update_keys( begin, end );
+
+      begin = end;
+      end = begin + num_created_or_modified/num_batches;
+    }
+
+    end = local_created_or_modified.end();
+    m_entities_index.update_keys( begin, end );
+  }
 
   if (parallel_size() > 1) {
     // Retrieve data regarding which processes use the local_created_or_modified

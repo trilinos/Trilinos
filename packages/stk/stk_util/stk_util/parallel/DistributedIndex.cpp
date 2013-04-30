@@ -93,7 +93,7 @@ inline void unpack_with_proc_recv_buffer( const CommAll& all, const DistributedI
 
 //----------------------------------------------------------------------
 
-enum { DISTRIBUTED_INDEX_CHUNK_BITS = 12 }; ///< Each chunk is 4096 keys
+enum { DISTRIBUTED_INDEX_CHUNK_BITS = 8 }; ///< Each chunk is 256 keys
 
 enum { DISTRIBUTED_INDEX_CHUNK_SIZE =
        size_t(1) << DISTRIBUTED_INDEX_CHUNK_BITS };
@@ -407,19 +407,27 @@ struct RemoveKeyProc {
 
 }
 
-void DistributedIndex::update_keys( const KeyTypeVector & add_new_keys )
+void DistributedIndex::update_keys( KeyTypeVector::const_iterator add_new_keys_begin,
+                                    KeyTypeVector::const_iterator add_new_keys_end )
 {
   KeyTypeVector removed_keys;
   removed_keys.swap(m_removed_keys);
 
   sort_unique(removed_keys);
 
-  update_keys(add_new_keys, removed_keys);
+//  profile_memory_usage<DistributedIndex>("before update_keys", m_comm, m_comm_rank);
+
+  update_keys(add_new_keys_begin, add_new_keys_end, removed_keys.begin(), removed_keys.end());
+
+//  profile_memory_usage<DistributedIndex>("after update_keys", m_comm, m_comm_rank);
+
 }
 
 void DistributedIndex::update_keys(
-  const KeyTypeVector & add_new_keys ,
-  const KeyTypeVector & remove_existing_keys )
+  KeyTypeVector::const_iterator add_new_keys_begin ,
+  KeyTypeVector::const_iterator add_new_keys_end ,
+  KeyTypeVector::const_iterator remove_existing_keys_begin,
+  KeyTypeVector::const_iterator remove_existing_keys_end )
 {
   ThrowAssert(m_removed_keys.empty()); // do not mix
 
@@ -431,8 +439,8 @@ void DistributedIndex::update_keys(
   // Iterate over keys being removed and keep a count of keys being removed
   // from other processes
   for ( KeyTypeVector::const_iterator
-        i = remove_existing_keys.begin();
-        i != remove_existing_keys.end(); ++i ) {
+        i = remove_existing_keys_begin;
+        i != remove_existing_keys_end; ++i ) {
     const ProcType p = to_which_proc( *i );
     if ( m_comm_size <= p ) {
       // Key is not within one of the span:
@@ -446,8 +454,8 @@ void DistributedIndex::update_keys(
   // Iterate over keys being added and keep a count of keys being added
   // to other processes
   for ( KeyTypeVector::const_iterator
-        i = add_new_keys.begin();
-        i != add_new_keys.end(); ++i ) {
+        i = add_new_keys_begin;
+        i != add_new_keys_end; ++i ) {
     const ProcType p = to_which_proc( *i );
     if ( p == m_comm_size ) {
       // Key is not within one of the span:
@@ -476,8 +484,6 @@ void DistributedIndex::update_keys(
     }
   }
 
-//  std::cout<<"max_add proc "<<m_comm_rank<<", max_add: "<<max_add<<std::endl;
-
   // Allocate buffers and perform a global OR of error_flag
   const bool symmetry_flag = false ;
   const bool error_flag = 0 < local_bad_input ;
@@ -490,7 +496,7 @@ void DistributedIndex::update_keys(
 
     if ( 0 < local_bad_input ) {
       msg << "stk::parallel::DistributedIndex::update_keys ERROR Given "
-          << local_bad_input << " of " << add_new_keys.size()
+          << local_bad_input << " of " << (add_new_keys_end - add_new_keys_begin)
           << " add_new_keys outside of any span" ;
     }
 
@@ -508,8 +514,8 @@ void DistributedIndex::update_keys(
 
   // Pack the removed keys for each process
   for ( KeyTypeVector::const_iterator
-        i = remove_existing_keys.begin();
-        i != remove_existing_keys.end(); ++i ) {
+        i = remove_existing_keys_begin;
+        i != remove_existing_keys_end; ++i ) {
     const ProcType p = to_which_proc( *i );
     if ( p != m_comm_rank ) {
       all.send_buffer( p ).pack<KeyType>( *i );
@@ -518,8 +524,8 @@ void DistributedIndex::update_keys(
 
   // Pack the added keys for each process
   for ( KeyTypeVector::const_iterator
-        i = add_new_keys.begin();
-        i != add_new_keys.end(); ++i ) {
+        i = add_new_keys_begin;
+        i != add_new_keys_end; ++i ) {
     const ProcType p = to_which_proc( *i );
     if ( p != m_comm_rank ) {
       all.send_buffer( p ).pack<KeyType>( *i );
@@ -533,8 +539,8 @@ void DistributedIndex::update_keys(
   // Remove for local keys
 
   for ( KeyTypeVector::const_iterator
-        i = remove_existing_keys.begin();
-        i != remove_existing_keys.end(); ++i ) {
+        i = remove_existing_keys_begin;
+        i != remove_existing_keys_end; ++i ) {
     const ProcType p = to_which_proc( *i );
     if ( p == m_comm_rank ) {
       RemoveKeyProc::mark( m_key_usage , KeyProc( *i , p ) );
@@ -569,49 +575,29 @@ void DistributedIndex::update_keys(
   // Append for local keys
 
   // Add new_keys going to this proc to local_key_usage
-  KeyProcVector local_key_usage ;
-  local_key_usage.reserve(add_new_keys.size());
+  KeyProcVector new_key_usage ;
+  new_key_usage.reserve(add_new_keys_end - add_new_keys_begin);
   for ( KeyTypeVector::const_iterator
-        i = add_new_keys.begin();
-        i != add_new_keys.end(); ++i ) {
+        i = add_new_keys_begin;
+        i != add_new_keys_end; ++i ) {
 
     const ProcType p = to_which_proc( *i );
     if ( p == m_comm_rank ) {
-      local_key_usage.push_back( KeyProc( *i , p ) );
+      new_key_usage.push_back( KeyProc( *i , p ) );
     }
   }
 
-  // Merge local_key_usage and m_key_usage into temp_key
-  KeyProcVector temp_key ;
-  temp_key.reserve(local_key_usage.size() + m_key_usage.size());
-  std::sort( local_key_usage.begin(), local_key_usage.end() );
-  std::merge( m_key_usage.begin(),
-              m_key_usage.end(),
-              local_key_usage.begin(),
-              local_key_usage.end(),
-              std::back_inserter(temp_key) );
-
   // Unpack and append for remote keys:
-  KeyProcVector remote_key_usage ;
 
-  unpack_with_proc_recv_buffer(all, m_comm_size, remote_key_usage);
+  unpack_with_proc_recv_buffer(all, m_comm_size, new_key_usage);
 
-  std::sort( remote_key_usage.begin(), remote_key_usage.end() );
+  std::sort( new_key_usage.begin(), new_key_usage.end() );
 
-  m_key_usage.clear();
-  m_key_usage.reserve(temp_key.size() + remote_key_usage.size());
-
-  // Merge temp_key and remote_key_usage into m_key_usage, so...
-  //   m_key_usage = local_key_usage + remote_key_usage + m_key_usage(orig)
-  std::merge( temp_key.begin(),
-              temp_key.end(),
-              remote_key_usage.begin(),
-              remote_key_usage.end(),
-              std::back_inserter(m_key_usage) );
+  m_key_usage.insert(m_key_usage.end(), new_key_usage.begin(), new_key_usage.end());
+  std::sort(m_key_usage.begin(), m_key_usage.end());
 
   // Unique m_key_usage
-  m_key_usage.erase(std::unique( m_key_usage.begin(),
-                                 m_key_usage.end()),
+  m_key_usage.erase(std::unique( m_key_usage.begin(), m_key_usage.end()),
                     m_key_usage.end() );
 
   // Check invariant that m_key_usage is sorted

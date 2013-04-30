@@ -100,7 +100,7 @@ public:
   /** Size, in bytes, of the buffer remaining to be processed.
    *  Equal to 'capacity() - size()'.  A negative result
    *  indicates either the buffer is not allocated or an
-   *  overflow has occured.  An overflow will have thrown
+   *  overflow has occurred.  An overflow will have thrown
    *  an exception.
    */
   ptrdiff_t remaining() const ;
