@@ -340,6 +340,13 @@ namespace MueLu {
    //! @brief Read matrix from file in Matrix Market format.
    static Teuchos::RCP<Matrix> Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm);
 
+
+    /*! @brief Read vector from file in Matrix Market format.
+     TODO Move this to Xpetra?
+    */
+    static RCP<MultiVector> Read(std::string const & fileName,RCP<const Map> &map);
+
+
     static void PauseForDebugger();
 
 

@@ -61,15 +61,16 @@
 #include <EpetraExt_MatrixMatrix.h>
 #include <EpetraExt_RowMatrixOut.h>
 #include <EpetraExt_MultiVectorOut.h>
-#include <Epetra_RowMatrixTransposer.h>
 #include <EpetraExt_CrsMatrixIn.h>
+#include <EpetraExt_MultiVectorIn.h>
 #include <Xpetra_EpetraUtils.hpp>
+#include <Xpetra_EpetraMultiVector.hpp>
 #endif // HAVE_MUELU_EPETRAEXT
 
 #ifdef HAVE_MUELU_TPETRA
-#include <TpetraExt_MatrixMatrix.hpp>
-#include <Tpetra_RowMatrixTransposer.hpp>
 #include <MatrixMarket_Tpetra.hpp>
+#include <Tpetra_RowMatrixTransposer.hpp>
+#include <TpetraExt_MatrixMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #endif // HAVE_MUELU_TPETRA
@@ -784,6 +785,38 @@ namespace MueLu {
 
   } //Write
 
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(std::string const & fileName,  RCP<const Map> & map){   
+    Xpetra::UnderlyingLib lib = map.lib();
+
+    if (lib == Xpetra::UseEpetra) {
+#     if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+      Epetra_MultiVector * MV;
+      EpetraExt::MatrixMarketFileToMultiVector(fileName.c_str(),toEpetra(map),MV);
+      return Xpetra::toXpetra(rcp(MV));
+#     else
+      throw(Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support."));
+#     endif
+    } 
+    else if (lib == Xpetra::UseTpetra) {      
+#ifdef HAVE_MUELU_TPETRA
+      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
+
+      return Xpetra::toXpetra(reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),map));
+#     else
+      throw(Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support."));
+#     endif
+    } 
+    else {
+      throw(Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra."));
+    }
+    
+    return Teuchos::null;  
+  }
+
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm)
   {
@@ -798,7 +831,7 @@ namespace MueLu {
       if (rv != 0) {
         std::ostringstream buf;
         buf << rv;
-        std::string msg = "EpetraExt::MatlabFileToCrsMatrix return value of " + buf.str();
+        std::string msg = "EpetraExt::MatrixMarketFileToCrsMatrix return value of " + buf.str();
         throw(Exceptions::RuntimeError(msg));
       }
       RCP<Epetra_CrsMatrix> tmpA = rcp(A);
