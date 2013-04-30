@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
 
       // Perform solve
       sprintf(timerName,"Reuse: Solve i=%d j=%d",i,j);
-      timer = globalTimeMonitor->getNewTimer(timerName);
+      timer = TimeMonitor::getNewTimer(timerName);
       timer->start();
       Belos::ReturnType ret=Belos::Unconverged;
       ret = solver->solve();
