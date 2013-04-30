@@ -50,6 +50,8 @@
 #include "Thyra_DefaultInverseLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TestForException.hpp"
