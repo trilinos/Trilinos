@@ -377,6 +377,16 @@ Tensor4<typename Promote<S, T>::type>
 tensor(Tensor<S> const & A, Tensor<T> const & B);
 
 ///
+/// 2nd-order tensor 2nd-order tensor tensor product
+/// \param A 2nd-order tensor
+/// \param B 2nd-order tensor
+/// \return \f$ C_{ijkl} = A_{ik} B_{jl} \f$
+///
+template<typename S, typename T>
+Tensor4<typename Promote<S, T>::type>
+tensor2(Tensor<S> const & A, Tensor<T> const & B);
+
+///
 /// 4th-order tensor 2nd-order tensor dot product
 /// \param A 4th-order tensor
 /// \param B 2nd-order tensor
@@ -420,7 +430,7 @@ t_dot(Tensor<S> const & A, Tensor4<T> const & B);
 /// 4th-order tensor 2nd-order tensor dot product
 /// \param A 4th-order tensor
 /// \param B 2nd-order tensor
-/// \return \f$ C = A \cdot B := C_{ijkl} = A_{ijpk} B_{pl} \f$
+/// \return \f$ C = A \cdot B := C_{ijkl} = A_{ijpl} B_{pk} \f$
 ///
 template<typename S, typename T>
 Tensor4<typename Promote<S, T>::type>
@@ -430,7 +440,7 @@ dot2(Tensor4<T> const & A, Tensor<S> const & B);
 /// 4th-order tensor 2nd-order tensor transpose dot product
 /// \param A 4th-order tensor
 /// \param B 2nd-order tensor
-/// \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijpk} B_{lp} \f$
+/// \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijpl} B_{kp} \f$
 ///
 template<typename S, typename T>
 Tensor4<typename Promote<S, T>::type>
@@ -440,7 +450,7 @@ dot2_t(Tensor4<T> const & A, Tensor<S> const & B);
 /// 2nd-order tensor 4th-order tensor dot product
 /// \param A 2nd-order tensor
 /// \param B 4th-order tensor
-/// \return \f$ C = A \cdot B := C_{ijkl} = A_{ip} B_{jpkl} \f$
+/// \return \f$ C = A \cdot B := C_{ijkl} = A_{jp} B_{ipkl} \f$
 ///
 template<typename S, typename T>
 Tensor4<typename Promote<S, T>::type>
@@ -450,7 +460,7 @@ dot2(Tensor<S> const & A, Tensor4<T> const & B);
 /// 2nd-order tensor transpose 4th-order tensor dot product
 /// \param A 2nd-order tensor
 /// \param B 4th-order tensor
-/// \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pi} B_{jpkl} \f$
+/// \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pj} B_{ipkl} \f$
 ///
 template<typename S, typename T>
 Tensor4<typename Promote<S, T>::type>
