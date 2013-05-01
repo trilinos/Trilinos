@@ -48,6 +48,8 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
 
+#include <Teuchos_Time.hpp>
+
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
@@ -87,8 +89,6 @@ int main(int argc, char *argv[]) {
 
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>                            map_type;
-  typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
-  typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;
   typedef Teuchos::OrdinalTraits<Tpetra::global_size_t> TOT;
   typedef Teuchos::OrdinalTraits<LocalOrdinal> TOTLO;
 
@@ -115,6 +115,7 @@ int main(int argc, char *argv[]) {
   bool printTimings = true;         clp.setOption("timings", "notimings",  &printTimings, "print timings to screen");
   int first_matrix = 0;             clp.setOption("firstMatrix", &first_matrix, "first matrix in the sequence to use");
   int last_matrix = 1;              clp.setOption("lastMatrix",  &last_matrix,  "last matrix in the sequence to use");
+  string do_reuse_str = "none";     clp.setOption("doReuse", &do_reuse_str, "if you want to try reuse");
 
   string matrixName;
 
@@ -125,6 +126,13 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
+
+  int do_reuse=0;
+  if(!strcmp(do_reuse_str.c_str(),"none")) do_reuse=0;
+  else if(!strcmp(do_reuse_str.c_str(),"simple")) do_reuse=1;
+  else if(!strcmp(do_reuse_str.c_str(),"fast")) do_reuse=2;
+  else return EXIT_FAILURE;
+
 
   RCP<Matrix> Aprecond, Amatvec;
   RCP<MultiVector> rhs;
@@ -143,10 +151,12 @@ int main(int argc, char *argv[]) {
   int ArraySize = last_matrix-first_matrix+1;
   Array<Array<int>    > iteration_counts(ArraySize);
   Array<Array<double> > iteration_times(ArraySize);
+  Array<Array<double> > setup_times(ArraySize);
   
   for(int i=0; i< ArraySize; i++) {
     iteration_counts[i].resize(ArraySize);
     iteration_times[i].resize(ArraySize);
+    setup_times[i].resize(ArraySize);
   }
 
 
@@ -184,7 +194,15 @@ int main(int argc, char *argv[]) {
     H->GetLevel(0)->Set("A", Aprecond);
     H->GetLevel(0)->Set("Nullspace", nullspace);
     H->IsPreconditioner(true);
-    mueLuFactory.SetupHierarchy(*H);
+
+    if(do_reuse==2) {
+      // Flag some things as keepers.
+      H->GetLevel(0)->Keep("AP Pattern",mueLuFactory.GetFactoryManager(0)->GetFactory("A").get());
+      //      H->GetLevel(0)->Keep("RAP Pattern",mueLuFactory.GetFactoryManager(0)->GetFactory("A").get());
+    }
+
+    mueLuFactory.SetupHierarchy(*H);    
+
 
     Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
     tm=Teuchos::null;
@@ -201,12 +219,25 @@ int main(int argc, char *argv[]) {
       }
       else 
 	Amatvec = Aprecond;
-
+      Amatvec->SetFixedBlockSize(2);
 
       // Preconditioner update
       sprintf(timerName,"Reuse: Preconditioner Update i=%d",i);
       tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
       // No-op at present
+
+      if(do_reuse==0 && j!=i) {
+	// No reuse: Do a full recompute
+	H->GetLevel(0)->Set("A", Amatvec);
+	mueLuFactory.SetupHierarchy(*H);
+      }
+      else if(do_reuse==2 && j!=i) {
+	// "Fast" reuse
+	// NTS: At the moment, this is equivalent to a full recompute
+	H->GetLevel(0)->Set("A", Amatvec);
+	mueLuFactory.SetupHierarchy(*H);
+      }
+
       tm = Teuchos::null;
 
       // Load the RHS
@@ -287,6 +318,14 @@ int main(int argc, char *argv[]) {
 	printf("%10.2f ",iteration_times[i][j]);
       printf("\n");
     }
+
+   printf("************************* Setup Times ***********************\n");
+    for(int i=0; i< ArraySize; i++) {
+      for(int j=0; j< ArraySize; j++) 
+	printf("%10.2f ",setup_times[i][j]);
+      printf("\n");
+    }
+
 
   }
 
