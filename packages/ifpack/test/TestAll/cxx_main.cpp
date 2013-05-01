@@ -49,6 +49,7 @@
 #include "Ifpack_Amesos.h"
 #include "Ifpack_Utils.h"
 #include "Ifpack_Chebyshev.h"
+#include "Ifpack_Krylov.h"
 
 template <class T>
 bool Test(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix, Teuchos::ParameterList& List)
@@ -129,6 +130,11 @@ int main(int argc, char *argv[])
   int TestPassed = true;
 
   if (!Test<Ifpack_Chebyshev>(Matrix,List)) 
+  {
+    TestPassed = false;
+  }
+
+  if (!Test<Ifpack_Krylov>(Matrix,List))
   {
     TestPassed = false;
   }

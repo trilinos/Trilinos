@@ -51,6 +51,7 @@
 #endif
 
 #include "Ifpack_Chebyshev.h"
+#include "Ifpack_Krylov.h"
 #include "Ifpack_IHSS.h"
 #include "Ifpack_SORa.h"
 
@@ -103,6 +104,7 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
   ,SILU
 #endif
   ,CHEBYSHEV
+  ,KRYLOV
   ,IHSS
   ,SORA
 };
@@ -142,6 +144,7 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
   ,"SILU"
 #endif
   ,"Chebyshev"
+  ,"Krylov"
   ,"IHSS"
   ,"SORa"
 };
@@ -181,6 +184,7 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
   ,true // SuperLU's Supernodal ILUTP
 #endif
   ,false // CHEBYSHEV
+  ,true  // KRYLOV
   ,true  // IHSS
   ,true  // SORa
 };
@@ -271,6 +275,8 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
 #endif
     case CHEBYSHEV:
       return(new Ifpack_Chebyshev(Matrix));
+    case KRYLOV:
+      return(new Ifpack_Krylov(Matrix));
 #ifdef HAVE_IFPACK_EPETRAEXT
     case IHSS:
       return(new Ifpack_IHSS(Matrix));  
