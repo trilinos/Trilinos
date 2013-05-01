@@ -175,7 +175,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
   //------------------------------
   // Update nothing:
 
-  di.update_keys( keys_to_add , keys_to_remove );
+  di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() );
 
   STKUNIT_EXPECT_TRUE( di.m_key_usage.empty() );
 
@@ -186,7 +186,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
   keys_to_add.push_back( partition_spans[0].first + 1 );
   keys_to_add.push_back( partition_spans[1].first + 2 + mpi_rank );
 
-  di.update_keys( keys_to_add , keys_to_remove );
+  di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() );
 
   di.query( sharing_of_local_keys );
 
@@ -201,7 +201,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
   //------------------------------
   // Repeat the update, should result in no changes.
 
-  di.update_keys( keys_to_add , keys_to_remove );
+  di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() );
 
   di.query( sharing_of_local_keys );
 
@@ -216,7 +216,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
 
   keys_to_remove.push_back( partition_spans[0].second );
 
-  di.update_keys( keys_to_add , keys_to_remove );
+  di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() );
 
   di.query( sharing_of_local_keys );
 
@@ -230,7 +230,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
 
   keys_to_remove.push_back( partition_spans[0].first + 1 );
 
-  di.update_keys( keys_to_add , keys_to_remove );
+  di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() );
 
   di.query( sharing_of_local_keys );
 
@@ -245,7 +245,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
   keys_to_add.push_back( partition_spans[0].first + 1 );
   keys_to_add.push_back( partition_spans[0].first + 2 );
 
-  di.update_keys( keys_to_add , keys_to_remove );
+  di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() );
 
   di.query( sharing_of_local_keys );
 
@@ -265,7 +265,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
     keys_to_add.push_back( partition_spans[2].first );
   }
 
-  di.update_keys( keys_to_add , keys_to_remove );
+  di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() );
 
   di.query( sharing_of_local_keys );
 
@@ -303,7 +303,7 @@ void UnitTestSTKParallelDistributedIndex::test_update_bad()
 
   keys_to_add.push_back( partition_spans[0].second + 1 + mpi_rank );
 
-  STKUNIT_ASSERT_THROW( di.update_keys( keys_to_add , keys_to_remove ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() ), std::runtime_error );
 
   //------------------------------
 
@@ -312,7 +312,7 @@ void UnitTestSTKParallelDistributedIndex::test_update_bad()
     keys_to_add.push_back( partition_spans[0].second + 1 );
   }
 
-  STKUNIT_ASSERT_THROW( di.update_keys( keys_to_add , keys_to_remove ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() ), std::runtime_error );
 }
 
 //----------------------------------------------------------------------
@@ -450,7 +450,7 @@ void UnitTestSTKParallelDistributedIndex::test_update_generate()
     }
   }
 
-  di.update_keys( keys_to_add , keys_to_remove );
+  di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() );
 
   //------------------------------
   // Request 20 new keys per process per span
