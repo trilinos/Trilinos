@@ -71,7 +71,7 @@ namespace Xpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of TpetraVector, needed to prevent circular inclusions
-  //  template<class S, class LO, class GO, class N> class TpetraVector;
+  template<class S, class LO, class GO, class N> class TpetraVector;
 #endif
 
 
@@ -369,7 +369,7 @@ namespace Xpetra {
 
     // XPETRA_DYNAMIC_CAST won't take TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
     // as an argument, hence the following typedef.
-    typedef Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> tpv;
+    typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> tpv;
     XPETRA_DYNAMIC_CAST(const tpv, A, tA, "Xpetra::TpetraMultiVectorMatrix->multiply() only accept Xpetra::TpetraMultiVector as input arguments.");
     XPETRA_DYNAMIC_CAST(const TpetraMultiVector, B, tB, "Xpetra::TpetraMultiVectorMatrix->multiply() only accept Xpetra::TpetraMultiVector as input arguments.");
     vec_->elementWiseMultiply(scalarAB, *tA.getTpetra_Vector(), *tB.getTpetra_MultiVector(), scalarThis);
