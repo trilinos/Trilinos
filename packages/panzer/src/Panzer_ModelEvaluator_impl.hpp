@@ -62,6 +62,8 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #include "Tpetra_CrsMatrix.hpp"
 
