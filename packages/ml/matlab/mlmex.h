@@ -60,13 +60,16 @@ public:
      solve-time options, this routine calls the relevant solver and returns the solution.
      Parameters:
      TPL     - Teuchos list of solve-time options [I]
-     N       - Number of unknowns [I]
+     A       - The matrix to solve with (may not be the one the preconditioned was used for)
      b       - RHS vector [I]
      x       - solution vector [O]
      iters   - number of iterations taken [O]
      returns: IS_TRUE if sucessful, IS_FALSE otherwise.
   */
-  virtual int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x, int &iters)=0;  
+  virtual int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix * A, double*b, double*x, int &iters)=0;  
+
+  /* Gets the stored Epetra_CrsMatrix if we're in Epetra mode */
+  virtual Epetra_CrsMatrix * GetMatrix()=0;
 public:
   int id;
   Teuchos::ParameterList *List;
@@ -108,6 +111,9 @@ public:
   int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x, int &iters);  
 
 private:
+  int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix * A, double*b, double*x, int &iters) {return 0;}
+  Epetra_CrsMatrix * GetMatrix() {return 0;}
+
   MLAPI::Space * FineSpace;
   MLAPI::DistributedMatrix * A;
   MLAPI::MultiLevelAdaptiveSA *Prec;
@@ -138,17 +144,19 @@ public:
      solve-time options, this routine calls the relevant solver and returns the solution.
      Parameters:
      TPL     - Teuchos list of solve-time options [I]
-     N       - Number of unknowns [I]
+     A       - The matrix to solve with (may not be the one the preconditioned was used for)
      b       - RHS vector [I]
      x       - solution vector [O]
      iters   - number of iterations taken [O]
      returns: IS_TRUE if sucessful, IS_FALSE otherwise.
   */
-  int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x,int &iters);  
+  int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix * Amat, double*b, double*x,int &iters);  
 
   /* GetPreconditioner - returns a pointer to the preconditioner */     
   ML_Epetra::MultiLevelPreconditioner* GetPreconditioner(){return Prec;}
-  
+
+  /*GetMatrix - Returns a pointer to the matrix */
+  Epetra_CrsMatrix * GetMatrix(){return A;}
   
 private:
   Epetra_CrsMatrix * A;
@@ -183,17 +191,19 @@ public:
      solve-time options, this routine calls the relevant solver and returns the solution.
      Parameters:
      TPL     - Teuchos list of solve-time options [I]
-     N       - Number of unknowns [I]
+     A       - The matrix to solve with (may not be the one the preconditioned was used for)
      b       - RHS vector [I]
      x       - solution vector [O]
      iters   - number of iterations taken [O]
      returns: IS_TRUE if sucessful, IS_FALSE otherwise.
   */
-  int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x,int &iters);  
+  int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix *Amat, double*b, double*x,int &iters);  
 
   /* GetPreconditioner - returns a pointer to the preconditioner */     
   ML_Epetra::RefMaxwellPreconditioner* GetPreconditioner(){return Prec;}
-  
+
+  /*GetMatrix - Returns a pointer to the matrix */
+  Epetra_CrsMatrix * GetMatrix(){return EdgeMatrix;}  
   
 private:
   // Disabled
