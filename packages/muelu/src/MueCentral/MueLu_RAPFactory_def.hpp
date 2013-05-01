@@ -70,7 +70,6 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Prolongator factory");
     validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Restrictor factory");
     validParamList->set< RCP<const FactoryBase> >("AP Pattern",     Teuchos::null, "AP pattern factory");
-
     return validParamList;
   }
 
@@ -108,7 +107,7 @@ namespace MueLu {
       RCP<Matrix> AP;
 
       // Reuse pattern if available (multiple solve)
-      if (IsAvailable(coarseLevel, "AP Pattern"))
+      if (coarseLevel.IsAvailable("AP Pattern"))
         AP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
 
       {
@@ -123,9 +122,9 @@ namespace MueLu {
 
       RCP<Matrix> Ac;
 
-      // Reuse pattern if available (multiple solve)
-      //     if (IsAvailable(coarseLevel, "RAP Pattern"))
-      // Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
+      // Reuse coarse matrix memory if available (multiple solve)
+      if (coarseLevel.IsAvailable("RAP Pattern"))
+	Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
 
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
