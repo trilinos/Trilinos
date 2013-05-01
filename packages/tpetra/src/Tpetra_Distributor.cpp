@@ -275,6 +275,62 @@ namespace Tpetra {
     }
   }
 
+  void Distributor::swap (Distributor& rhs) {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+
+    std::swap (comm_, rhs.comm_);
+    std::swap (out_, rhs.out_);
+    std::swap (sendType_, rhs.sendType_);
+    std::swap (barrierBetween_, rhs.barrierBetween_);
+    std::swap (debug_, rhs.debug_);
+    std::swap (numExports_, rhs.numExports_);
+    std::swap (selfMessage_, rhs.selfMessage_);
+    std::swap (numSends_, rhs.numSends_);
+    std::swap (imagesTo_, rhs.imagesTo_);
+    std::swap (startsTo_, rhs.startsTo_);
+    std::swap (lengthsTo_, rhs.lengthsTo_);
+    std::swap (maxSendLength_, rhs.maxSendLength_);
+    std::swap (indicesTo_, rhs.indicesTo_);
+    std::swap (numReceives_, rhs.numReceives_);
+    std::swap (totalReceiveLength_, rhs.totalReceiveLength_);
+    std::swap (lengthsFrom_, rhs.lengthsFrom_);
+    std::swap (imagesFrom_, rhs.imagesFrom_);
+    std::swap (startsFrom_, rhs.startsFrom_);
+    std::swap (indicesFrom_, rhs.indicesFrom_);
+    std::swap (reverseDistributor_, rhs.reverseDistributor_);
+    std::swap (useDistinctTags_, rhs.useDistinctTags_);
+
+    // Swap verbosity levels.
+    const Teuchos::EVerbosityLevel lhsVerb = this->getVerbLevel ();
+    const Teuchos::EVerbosityLevel rhsVerb = rhs.getVerbLevel ();
+    this->setVerbLevel (rhsVerb);
+    rhs.setVerbLevel (lhsVerb);
+
+    // Swap output streams.  We've swapped out_ above, but we have to
+    // tell the parent class VerboseObject about the swap.
+    this->setOStream (out_);
+    rhs.setOStream (rhs.out_);
+
+    // Swap parameter lists.  If they are the same object, make a deep
+    // copy first, so that modifying one won't modify the other one.
+    RCP<ParameterList> lhsList = this->getNonconstParameterList ();
+    RCP<ParameterList> rhsList = rhs.getNonconstParameterList ();
+    if (lhsList.getRawPtr () == rhsList.getRawPtr () && ! rhsList.is_null ()) {
+      rhsList = parameterList (*rhsList);
+    }
+    if (! rhsList.is_null ()) {
+      this->setMyParamList (rhsList);
+    }
+    if (! lhsList.is_null ()) {
+      rhs.setMyParamList (lhsList);
+    }
+
+    // We don't need to swap timers, because all instances of
+    // Distributor use the same timers.
+  }
+
   Distributor::~Distributor()
   {
     // We shouldn't have any outstanding communication requests at

@@ -415,6 +415,26 @@ namespace Tpetra {
     setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs);
     //@}
 
+
+    /// \brief "Expert" constructor that includes all the Import's data.
+    ///
+    /// This is useful for implementing setUnion() efficiently.
+    /// Arguments passed in as nonconst references (including
+    /// Teuchos::Array objects and the Distributor) are invalidated on
+    /// exit.  This lets this constructor exploit their swap() methods
+    /// so that it doesn't have to copy them.
+    Import (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+            const size_t numSameIDs,
+            Teuchos::Array<LocalOrdinal>& permuteToLIDs,
+            Teuchos::Array<LocalOrdinal>& permuteFromLIDs,
+            Teuchos::Array<LocalOrdinal>& remoteLIDs,
+            Teuchos::Array<LocalOrdinal>& exportLIDs,
+            Teuchos::Array<int>& exportPIDs,
+            Distributor& distributor,
+            const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+
     //! Naive but correct implementation of setUnion().
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     setUnionNaiveImpl (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
@@ -422,7 +442,6 @@ namespace Tpetra {
     //! Optimized implementation of setUnion() (NOT IMPLEMENTED YET).
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     setUnionImpl (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
-
   }; // class Import
 
   /** \brief Nonmember constructor for Import.

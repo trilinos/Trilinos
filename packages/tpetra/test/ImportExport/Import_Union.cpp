@@ -48,6 +48,7 @@
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Import.hpp>
 #include <Tpetra_Map.hpp>
+#include <Tpetra_Vector.hpp>
 
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -79,12 +80,17 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ImportUnion, ContigPlusContig, LocalOrdinalType, GlobalOrdinalType )
   {
+    using Teuchos::getFancyOStream;
+    using Teuchos::FancyOStream;
+    using Teuchos::rcpFromRef;
+    //using std::cerr;
     //typedef double ST;
     typedef LocalOrdinalType LO;
     typedef GlobalOrdinalType GO;
     typedef Kokkos::SerialNode NT;
     typedef Tpetra::Map<LO, GO, NT> map_type;
     typedef Tpetra::Import<LO, GO, NT> import_type;
+    typedef Tpetra::Vector<double, LO, GO, NT> vector_type;
     typedef typename Array<GO>::size_type size_type;
 
     out << "Tpetra::Import::setUnion test" << endl;
@@ -98,49 +104,58 @@ namespace {
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
-    const GO n1 = 5;
-    const GO n2 = 10;
-
+    const GO n = 10;
     // Let r = comm->getRank() and P = comm->getSize().  Then:
     //
-    // Target Map 1: indexBase + {min(n1*r - 1, 0), ..., max(n1*r + n1, n1*P - 1)}.
-    // Target Map 2: indexBase + {min(n2*r - 2, 0), ..., max(n2*r + n2, n2*P - 2)}.
-    // Source Map (for both): indexBase + {0, ..., max(n1*r + n1 - 1, n1*P - 1)}.
+    // Source Map (for both): indexBase + {n*r, ..., n*r + n - 1}.
+    // Target Map 1: indexBase + {max(n*r - 1, 0), ..., min(n*r + n, n*P - 1)}.
+    // Target Map 2: indexBase + {max(n*r - 2, 0), ..., min(n*r + n + 1, n*P - 1)}.
+    //
+    // Expected union target Map happens to be target Map 2 in this
+    // case, except that the "remote" GIDs go at the end of the GID
+    // list on each process.
 
     Array<GO> srcMapGids;
-    for (GO k = 0; k < std::max (n1*myRank + n1, n1*numProcs); ++k) {
+    for (GO k = n * myRank; k < std::min (n*myRank + n, n*numProcs); ++k) {
       srcMapGids.push_back (indexBase + k);
     }
     Array<GO> tgtMap1Gids;
     // WARNING (mfh 24 Apr 2013) This ONLY works if GO is signed.
-    for (GO k = std::max (as<GO> (n1*myRank - 1), as<GO> (0));
-         k < std::min (as<GO> (n1*myRank + n1 + 1), as<GO> (n1*numProcs));
-         ++k) {
+    for (GO k = std::max (n*myRank - 1, as<GO> (0));
+         k < std::min (n*myRank + n + 1, n*numProcs); ++k) {
       tgtMap1Gids.push_back (indexBase + k);
     }
     Array<GO> tgtMap2Gids;
-    // WARNING (mfh 24 Apr 2013) This ONLY works if GO is signed.
-    for (size_type k = std::max (as<GO> (n2*myRank - 1), as<GO> (0));
-         k < std::min (as<GO> (n2*myRank + n2 + 1), as<GO> (n2*numProcs));
-         ++k) {
+    for (GO k = std::max (n*myRank - 2, as<GO> (0));
+         k < std::min (n*myRank + n + 2, n*numProcs); ++k) {
       tgtMap2Gids.push_back (indexBase + k);
     }
-    Array<GO> unionMapGids;
-    Array<GO> tgtMap1GidsCopy (tgtMap1Gids.begin (), tgtMap1Gids.end ());
-    Array<GO> tgtMap2GidsCopy (tgtMap2Gids.begin (), tgtMap2Gids.end ());
 
-    std::sort (tgtMap1GidsCopy.begin (), tgtMap1GidsCopy.end ());
-    std::sort (tgtMap2GidsCopy.begin (), tgtMap2GidsCopy.end ());
-    std::set_union (tgtMap1GidsCopy.begin (), tgtMap1GidsCopy.end (),
-                    tgtMap2GidsCopy.begin (), tgtMap2GidsCopy.end (),
-                    std::back_inserter (unionMapGids));
+    Array<GO> unionTgtMapGids;
+    // Non-remote GIDs first.
+    for (GO k = n * myRank; k < std::min (n*myRank + n, n*numProcs); ++k) {
+      unionTgtMapGids.push_back (indexBase + k);
+    }
+    // Remote GIDs last.
+    if (n * myRank - 2 >= 0) {
+      unionTgtMapGids.push_back (n * myRank - 2);
+    }
+    if (n * myRank - 1 >= 0) {
+      unionTgtMapGids.push_back (n * myRank - 1);
+    }
+    if (n * myRank + n < n*numProcs) {
+      unionTgtMapGids.push_back (n * myRank + n);
+    }
+    if (n * myRank + n + 1 < n*numProcs) {
+      unionTgtMapGids.push_back (n * myRank + n + 1);
+    }
 
     out << "Making the Maps" << endl;
 
     RCP<const map_type> srcMap (new map_type (INVALID, srcMapGids (), indexBase, comm, node));
-    RCP<const map_type> tgtMap1 (new map_type (INVALID, tgtMap1GidsCopy (), indexBase, comm, node));
-    RCP<const map_type> tgtMap2 (new map_type (INVALID, tgtMap2GidsCopy (), indexBase, comm, node));
-    RCP<const map_type> expectedUnionMap (new map_type (INVALID, unionMapGids (), indexBase, comm, node));
+    RCP<const map_type> tgtMap1 (new map_type (INVALID, tgtMap1Gids (), indexBase, comm, node));
+    RCP<const map_type> tgtMap2 (new map_type (INVALID, tgtMap2Gids (), indexBase, comm, node));
+    RCP<const map_type> expectedUnionMap (new map_type (INVALID, unionTgtMapGids (), indexBase, comm, node));
 
     out << "Making the Import objects" << endl;
 
@@ -156,11 +171,54 @@ namespace {
 
     out << "Running tests" << endl;
 
+    // RCP<FancyOStream> cerrWrapped = getFancyOStream (rcpFromRef (cerr));
+
+    // cerr << "Target Map of setUnion (first, second) result:" << endl;
+    // unionImp1->getTargetMap ()->describe (*cerrWrapped, Teuchos::VERB_EXTREME);
+
+    // cerr << "Expected Target Map:" << endl;
+    // expectedUnionImp->getTargetMap ()->describe (*cerrWrapped, Teuchos::VERB_EXTREME);
+
+    out << "Testing whether target Map (1,2) is same as expected target Map" << endl;
     const bool targetMapSame1 = expectedUnionMap->isSameAs (* (unionImp1->getTargetMap ()));
     TEST_EQUALITY( targetMapSame1, true );
 
+    out << "Testing whether target Map (2,1) is same as expected target Map" << endl;
     const bool targetMapSame2 = expectedUnionMap->isSameAs (* (unionImp2->getTargetMap ()));
     TEST_EQUALITY( targetMapSame2, true );
+
+    vector_type x (srcMap);
+    vector_type y_expected (expectedUnionMap);
+    vector_type y_actual_12 (unionImp1->getTargetMap ());
+    vector_type y_actual_21 (unionImp2->getTargetMap ());
+
+    x.randomize ();
+    y_expected.putScalar (0.0);
+    y_actual_12.putScalar (0.0);
+    y_actual_21.putScalar (0.0);
+
+    y_expected.doImport (x, *expectedUnionImp, Tpetra::ADD);
+    y_actual_12.doImport (x, *unionImp1, Tpetra::ADD);
+    y_actual_21.doImport (x, *unionImp2, Tpetra::ADD);
+
+    out << "Testing whether union Import (1,2) works like expected Union Import with a Vector" << endl;
+    {
+      vector_type z_12 (y_expected);
+      z_12.update (1.0, y_actual_12, -1.0);
+      const double z_12_norm = z_12.norm2 ();
+      out << "||y_expected - y_actual_12||_2 = " << z_12_norm << endl;
+      TEST_EQUALITY( z_12_norm, 0.0 );
+    }
+    out << "Testing whether union Import (2,1) works like expected Union Import with a Vector" << endl;
+    {
+      vector_type z_21 (y_expected);
+      z_21.update (1.0, y_actual_21, -1.0);
+      const double z_21_norm = z_21.norm2 ();
+      out << "||y_expected - y_actual_21||_2 = " << z_21_norm << endl;
+      TEST_EQUALITY( z_21_norm, 0.0 );
+    }
+
+    out << "Test whether the Imports actually represent the same communication pattern" << endl;
 
     const bool numSameIDsSame1 = unionImp1->getNumSameIDs () == expectedUnionImp->getNumSameIDs ();
     TEST_EQUALITY( numSameIDsSame1, true );
@@ -335,7 +393,7 @@ namespace {
 #define UNIT_TEST_GROUP(LOCAL_ORDINAL, GLOBAL_ORDINAL) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ImportUnion, ContigPlusContig, LOCAL_ORDINAL, GLOBAL_ORDINAL )
 
-UNIT_TEST_GROUP(int, int)
+//UNIT_TEST_GROUP(int, int)
 
 UNIT_TEST_GROUP(int, long)
 
