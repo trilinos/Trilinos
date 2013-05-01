@@ -83,6 +83,7 @@ using std::endl;
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp;
+  using Teuchos::Time;
   using Teuchos::TimeMonitor;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
