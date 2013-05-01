@@ -134,6 +134,9 @@ int main(int argc, char *argv[])
     TestPassed = false;
   }
 
+  List = DefaultList;
+  List.set("krylov: tolerance", 1e-14);
+  List.set("krylov: iterations", 100);
   if (!Test<Ifpack_Krylov>(Matrix,List))
   {
     TestPassed = false;
