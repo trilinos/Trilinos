@@ -155,7 +155,7 @@ namespace MueLuTests {
         partitionThisDofBelongsTo[2] = 0;           //           1
         partitionThisDofBelongsTo[3] = 0;           //           1          3
         partitionThisDofBelongsTo[4] = 0;           //           1
-        partitionThisDofBelongsTo[5] = 1;           //           5          6
+        partitionThisDofBelongsTo[5] = 1;           //           5          5
         partitionThisDofBelongsTo[0] = 2;           //           1
         partitionThisDofBelongsTo[1] = 2;           //           1          2
         break;
