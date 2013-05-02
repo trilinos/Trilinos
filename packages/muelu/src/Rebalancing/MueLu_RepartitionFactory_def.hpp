@@ -846,8 +846,7 @@ namespace MueLu {
 #     ifdef HAVE_MUELU_DEBUG
       GetOStream(Statistics0, 0) << "round " << numRounds << " : ";
       GO ii=0, jj=0;
-      if (partitionsIOwn == 1 && !gotALeftoverPartitionThisRound)
-        ii=1;
+      if (partitionsIOwn == 1) ii=1;
       sumAll(comm, ii,jj);
       GetOStream(Statistics0, 0) << "#definitely assigned = " << jj;
       ii=0, jj=0;
@@ -867,17 +866,6 @@ namespace MueLu {
         if (partitionsIOwn == jj) kk=Teuchos::as<GO>(comm->getRank());
         sumAll(comm, kk, ii);
         GetOStream(Statistics0, 0) << "(by pid " << ii << ")";
-      }
-      ii=0,jj=0;
-      if (gotALeftoverPartitionThisRound) ii=1;
-      sumAll(comm, ii, jj);
-      GetOStream(Statistics0, 0) << ", #pids assigned leftover =  " << jj;
-      if (jj==1) {
-        ii=0; kk=0;
-        if (gotALeftoverPartitionThisRound)
-          kk=Teuchos::as<GO>(comm->getRank());
-        sumAll(comm, kk, ii);
-        GetOStream(Statistics0, 0) << " (pid " << ii << ")";
       }
       comm->barrier();
       GetOStream(Statistics0, 0) << std::endl;
