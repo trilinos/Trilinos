@@ -210,18 +210,8 @@ void BulkData::internal_update_distributed_index(
   {
     // Update distributed index. Note that the DistributedIndex only
     // tracks ownership and sharing information.
-    const size_t num_batches = 1;
     parallel::DistributedIndex::KeyTypeVector::const_iterator begin = local_created_or_modified.begin();
-    parallel::DistributedIndex::KeyTypeVector::const_iterator end = begin+num_created_or_modified/num_batches;
-
-    for(size_t i=0; i<num_batches-1; ++i) {
-      m_entities_index.update_keys( begin, end );
-
-      begin = end;
-      end = begin + num_created_or_modified/num_batches;
-    }
-
-    end = local_created_or_modified.end();
+    parallel::DistributedIndex::KeyTypeVector::const_iterator end = local_created_or_modified.end();
     m_entities_index.update_keys( begin, end );
   }
 
