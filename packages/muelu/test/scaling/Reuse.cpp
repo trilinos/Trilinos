@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     if(do_reuse==2) {
       // Flag some things as keepers.
       H->GetLevel(0)->Keep("AP Pattern",mueLuFactory.GetFactoryManager(0)->GetFactory("A").get());
-      //      H->GetLevel(0)->Keep("RAP Pattern",mueLuFactory.GetFactoryManager(0)->GetFactory("A").get());
+      H->GetLevel(0)->Keep("RAP Pattern",mueLuFactory.GetFactoryManager(0)->GetFactory("A").get());
     }
 
     mueLuFactory.SetupHierarchy(*H);    

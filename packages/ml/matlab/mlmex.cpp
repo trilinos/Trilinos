@@ -10,7 +10,8 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
-   04/26/2013 - Adding Maxwell1 support
+   05/01/2013 - Adding reuse support.
+   04/26/2013 - Adding Maxwell2 support
    10/04/2012 - Some minor code cleanup and the memory bugfix.
    04/26/2011 - Bug fixed for error tolerance for ISINT checks. Removing gratuitous prints.
    07/31/2010 - Code cleanup, adding ability to get out AztecOO iteration counts.
@@ -61,7 +62,7 @@ extern void _main();
 #define MLMEX_ERROR -1
 
 /* Mode Info */
-typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP, MODE_STATUS, MODE_AGGREGATE, MODE_SETUP_MAXWELL, MODE_ERROR} MODE_TYPE;
+typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP, MODE_STATUS, MODE_AGGREGATE, MODE_SETUP_MAXWELL, MODE_SOLVE_NEWMATRIX, MODE_ERROR} MODE_TYPE;
 
 /* MLMEX Teuchos Parameters*/
 #define MLMEX_INTERFACE "mlmex: interface"
@@ -266,7 +267,6 @@ public:
   */  
   int status_all();
 
-  
 protected:
   int num_probs;
   /* Note: This list is sorted */
@@ -281,14 +281,6 @@ protected:
 /**************************************************************/
 ml_data_pack::ml_data_pack():id(MLMEX_ERROR),List(NULL),operator_complexity(MLMEX_ERROR),next(NULL){}
 ml_data_pack::~ml_data_pack(){if(List) delete List;}
-
-
-
-
-/**************************************************************/
-/**************************************************************/
-/**************************************************************/
-
 
 
 /**************************************************************/
@@ -474,14 +466,14 @@ int ml_epetra_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
    solve-time options, this routine calls the relevant solver and returns the solution.
    Parameters:
    TPL     - Teuchos list of solve-time options [I]
-   N       - Number of unknowns [I]
+   A       - The matrix to solve with (may not be the one the preconditioned was used for)
    b       - RHS vector [I]
    x       - solution vector [O]
    iters   - number of iterations taken [O]
    Returns: IS_TRUE if solve was succesful, IS_FALSE otherwise
 */
-int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*x,int &iters){
-  return epetra_solve(List,TPL,A,Prec,b,x,iters);
+int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, Epetra_CrsMatrix *Amat, double*b, double*x,int &iters){
+  return epetra_solve(List,TPL,Amat,Prec,b,x,iters);
 }/*end solve*/
 
 
@@ -576,14 +568,15 @@ int ml_maxwell_data_pack::setup_preconditioner(){
    solve-time options, this routine calls the relevant solver and returns the solution.
    Parameters:
    TPL     - Teuchos list of solve-time options [I]
-   N       - Number of unknowns [I]
+
+   A       - The matrix to solve with (may not be the one the preconditioned was used for)
    b       - RHS vector [I]
    x       - solution vector [O]
    iters   - number of iterations taken [O]
    Returns: IS_TRUE if solve was succesful, IS_FALSE otherwise
 */
-int ml_maxwell_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*x,int &iters){
-  return epetra_solve(List,TPL,EdgeMatrix,Prec,b,x,iters);
+int ml_maxwell_data_pack::solve(Teuchos::ParameterList *TPL, Epetra_CrsMatrix * Amat, double*b, double*x,int &iters){
+  return epetra_solve(List,TPL,Amat,Prec,b,x,iters);
 }/*end solve*/
 
 
@@ -749,7 +742,11 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
     else mexErrMsgTxt("Error: Invalid input for setup\n");    
     break;
   case MODE_SOLVE:
-    if(nrhs>3&&mxIsNumeric(prhs[1])&&mxIsSparse(prhs[2])&&mxIsNumeric(prhs[3])) rv=MODE_SOLVE;
+    if(nrhs>2&&mxIsNumeric(prhs[1])&&!mxIsSparse(prhs[2])&&mxIsNumeric(prhs[2])) rv=MODE_SOLVE;
+    else mexErrMsgTxt("Error: Invalid input for solve\n");
+    break;
+  case MODE_SOLVE_NEWMATRIX:
+    if(nrhs>3&&mxIsNumeric(prhs[1])&&mxIsSparse(prhs[2])&&mxIsNumeric(prhs[3])) rv=MODE_SOLVE_NEWMATRIX;
     else mexErrMsgTxt("Error: Invalid input for solve\n");
     break;
   case MODE_CLEANUP:
@@ -923,7 +920,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
   ml_data_pack *D=0;
   bool rewrap_ints=false;
   ml_maxwell_data_pack * Dhat=0;
-
+  Epetra_CrsMatrix * A;
   
   /* Sanity Check Input */
   mode=sanity_check(nrhs,prhs);
@@ -1022,6 +1019,47 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
         
     /* Pull Problem Size */
     nr=mxGetM(prhs[2]);
+    A = D->GetMatrix();
+
+    /* Pull RHS */
+    b=mxGetPr(prhs[2]);
+
+    /* Teuchos List*/
+    if(nrhs>4) List=build_teuchos_list(nrhs-3,&(prhs[3]));
+    else List=new Teuchos::ParameterList;
+    
+    /* Allocate Solution Space */
+    plhs[0]=mxCreateDoubleMatrix(nr,1,mxREAL);
+    x=mxGetPr(plhs[0]);
+    
+    /* Sanity Check Matrix / RHS */
+    if(nr!=A->NumMyRows() || A->NumMyRows() != A->NumMyCols())
+      mexErrMsgTxt("Error: Size Mismatch in Input\n");
+
+    /* Run Solver */  
+    D->solve(List,A,b,x,iters);
+    
+    /* Output Iteration Count */
+    if(nlhs>1){
+      plhs[1]=mxCreateDoubleScalar((double)iters);
+    }
+
+    /* Cleanup */
+    A=0; // we don't own this
+    delete List;
+
+    break;
+  case MODE_SOLVE_NEWMATRIX:
+    /* Are there problems set up? */
+    if(!PROBS) mexErrMsgTxt("Error: No problems set up, cannot solve.\n");    
+
+    /* Get the Problem Handle */
+    id=(int*)mxGetData(prhs[1]);
+    D=PROBS->find(id[0]);
+    if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");    
+        
+    /* Pull Problem Size */
+    nr=mxGetM(prhs[2]);
     nc=mxGetN(prhs[2]);
     
     /* Pull RHS */
@@ -1039,8 +1077,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     if(nr != nc || nr != (int)mxGetM(prhs[2]))
       mexErrMsgTxt("Error: Size Mismatch in Input\n");
 
+    // Grab the input matrix
+    A=epetra_setup_from_prhs(prhs[2],rewrap_ints);
+
     /* Run Solver */  
-    D->solve(List,nr,b,x,iters);
+    D->solve(List,A,b,x,iters);
     
     /* Output Iteration Count */
     if(nlhs>1){
@@ -1049,8 +1090,8 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
 
     /* Cleanup */
     delete List;
+    delete A;
     break;
-    
   case MODE_CLEANUP:
     if(PROBS && nrhs==1){
       /* Cleanup all problems */

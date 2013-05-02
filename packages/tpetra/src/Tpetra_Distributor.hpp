@@ -228,6 +228,13 @@ namespace Tpetra {
     //! Destructor (virtual for memory safety).
     virtual ~Distributor ();
 
+    /// \brief Swap the contents of rhs with those of *this.
+    ///
+    /// This is useful in Import's setUnion() method.  It avoids the
+    /// overhead of copying arrays, since it can use std::swap on the
+    /// arrays.
+    void swap (Distributor& rhs);
+
     //@}
     //! @name Implementation of ParameterListAcceptorDefaultBase
     //@{
@@ -299,9 +306,9 @@ namespace Tpetra {
     /// \param exportNodeIDs [out] The ranks of the processes that
     ///   will get the exported IDs in \c exportIDs.
     ///
-    /// The \c exportGIDs and \c exportNodeIDs arrays are allocated by
+    /// The \c exportGIDs and \c exportNodeIDs arrays are resized by
     /// the Distributor, which is why they are passed in as a nonconst
-    /// reference to an ArrayRCP.  They may be null on entry.
+    /// Array reference.
     template <class Ordinal>
     void
     createFromRecvs (const ArrayView<const Ordinal>& remoteIDs,
@@ -783,9 +790,10 @@ namespace Tpetra {
     /// \param importIDs [in] GIDs to receive by my process.
     /// \param importNodeIDs [in] Process IDs from which to receive by
     ///   my process.
-    /// \param exportIDs [out] GIDs to send by my process.
+    /// \param exportIDs [out] GIDs to send by my process.  Resized if
+    ///   necessary.
     /// \param exportNodeIDs [out] Process IDs to which to send by my
-    ///   process.
+    ///   process.  Resized if necessary.
     template <class Ordinal>
     void computeSends (const ArrayView<const Ordinal> &importIDs,
                        const ArrayView<const int> &importNodeIDs,
