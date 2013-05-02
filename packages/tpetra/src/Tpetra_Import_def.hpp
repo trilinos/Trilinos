@@ -1202,6 +1202,28 @@ namespace Tpetra {
     }
 #endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
 
+    // Find the union target Map's index base, which must also be the
+    // union target Map's global min GID.  Thus, by definition, it
+    // must be the minimum of the two input target Maps' index bases.
+    // We already know these, so we don't have to do another
+    // all-reduce to find it.
+    const GO indexBaseUnion =
+      std::min (tgtMap1->getIndexBase (), tgtMap2->getIndexBase ());
+
+#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+    cerr << myRank << "Creating union target Map" << endl;
+#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+
+    // Create the union target Map.
+    //
+    // FIXME (mfh 01 May 2013) It would be handy to have a Map
+    // constructor that takes the global min and max GIDs; that would
+    // obviate the need for Map to compute them (with an all-reduce).
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    RCP<const map_type> unionTgtMap =
+      rcp (new map_type (INVALID, unionTgtGIDs (), indexBaseUnion,
+                         comm, srcMap->getNode ()));
+
     // Thus far, we have computed the following in the union Import:
     //   - numSameIDs
     //   - numPermuteIDs and permuteFromLIDs
@@ -1214,6 +1236,52 @@ namespace Tpetra {
     // in the source Map.  However, this makes it tricky to create the
     // Distributor object.  For now, I'll just create the Distributor
     // in the usual way.
+
+#if 0
+    {
+      const size_type numExportIDs1 = this->getNumExportIDs ();
+      ArrayView<const LO> exportLIDs1 = this->getExportLIDs ();
+      ArrayView<const LO> exportPIDs1 = this->getExportPIDs ();
+
+      const size_type numExportIDs2 = rhs.getNumExportIDs ();
+      ArrayView<const LO> exportLIDs2 = rhs.getExportLIDs ();
+      ArrayView<const LO> exportPIDs2 = rhs.getExportPIDs ();
+
+      // We have to keep the export LIDs in PID-sorted order, then
+      // merge them.  So, first key-value merge (LID,PID) pairs,
+      // treating PIDs as values, merging values by replacement.
+      // Then, sort the (LID,PID) pairs again by PID.
+
+      // Sort (LID,PID) pairs by LID for the later merge.
+      sort2 (exportLIDs1.begin (), exportLIDs1.end (),
+             exportPIDs1.begin (), exportPIDs1.end ());
+      sort2 (exportLIDs2.begin (), exportLIDs2.end (),
+             exportPIDs2.begin (), exportPIDs2.end ());
+
+      // Merge export (LID,PID) pairs.  In this merge operation, the
+      // LIDs are the "keys" and the PIDs their "values."  We combine
+      // the "values" (PIDs) in the pairs by replacement, rather than
+      // by adding them together.
+      //
+      // FIXME (mfh 01 May 2013) This keyValueMerge operation doesn't
+      // exist yet.
+      Array<int> exportPIDsUnion;
+      keyValueMerge (exportLIDs1.begin (), exportLIDs1.end (),
+                     exportPIDs1.begin (), exportPIDs1.end (),
+                     exportLIDs2.begin (), exportLIDs2.end (),
+                     exportPIDs2.begin (), exportPIDs2.end (),
+                     std::back_inserter (exportLIDsUnion),
+                     std::back_inserter (exportPIDsUnion),
+                     replace<int> ());
+
+      // Resort the merged (LID,PID) pairs by PID.
+      sort2 (exportPIDsUnion.begin (), exportPIDsUnion.end (),
+             exportLIDsUnion.begin (), exportLIDsUnion.end ());
+
+      Distributor distributor (comm);
+      (void) distributor.createFromSends (exportPIDsUnion ().getConst ());
+    }
+#endif // 0
 
     // Call the Distributor's createFromRecvs() method to turn the
     // remote GIDs and their owning processes into a send-and-receive
@@ -1261,24 +1329,6 @@ namespace Tpetra {
       cerr << os.str ();
     }
 #endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-    // Find the union target Map's index base, which must also be the
-    // union target Map's global min GID.  Thus, by definition, it
-    // must be the minimum of the two input target Maps' index bases.
-    // We already know these, so we don't have to do another
-    // all-reduce to find it.
-    const GO indexBaseUnion =
-      std::min (tgtMap1->getIndexBase (), tgtMap2->getIndexBase ());
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    cerr << myRank << "Creating union target Map" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-    // Create the union target Map.
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-    RCP<const map_type> unionTgtMap =
-      rcp (new map_type (INVALID, unionTgtGIDs (), indexBaseUnion,
-                         comm, srcMap->getNode ()));
 
 #ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
     comm->barrier ();
