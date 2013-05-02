@@ -137,6 +137,9 @@ int main(int argc, char *argv[])
   List = DefaultList;
   List.set("krylov: tolerance", 1e-14);
   List.set("krylov: iterations", 100);
+  List.set("krylov: preconditioner", 2);
+  List.set("krylov: block size", 9);
+  List.set("krylov: number of sweeps", 2);
   if (!Test<Ifpack_Krylov>(Matrix,List))
   {
     TestPassed = false;

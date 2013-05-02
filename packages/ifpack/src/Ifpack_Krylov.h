@@ -33,6 +33,10 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Ifpack_PointRelaxation.h"
+#include "Ifpack_BlockRelaxation.h"
+#include "Ifpack_SparseContainer.h"
+#include "Ifpack_Amesos.h"
 #ifdef HAVE_IFPACK_AZTECOO
 #include "AztecOO.h"
 #endif
@@ -300,8 +304,14 @@ private:
   double Tolerance_;
   //! Solver - 0 for CG, 1 for GMRES
   int SolverType_;
-  //! Preconditioner
+  //! Preconditioner - 0 for none, 1 for Jacobi, 2 for GS, 3 for SGS
   int PreconditionerType_;
+  //! Number of GS or Jacobi sweeps
+  int NumSweeps_;
+  //! Block Size (for block relaxation)
+  int BlockSize_;
+  //! Damping parameter for inner preconditioner
+  double DampingParameter_;
   //! If true, use the tranpose of \c Matrix_.
   bool UseTranspose_;
   //! Contains the estimated condition number
@@ -332,9 +342,13 @@ private:
   //! If \c true, the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
 
+  // Aztec solver
 #ifdef HAVE_IFPACK_AZTECOO
   Teuchos::RCP<AztecOO> AztecSolver_;
 #endif
+
+  // Inner preconditioner
+  Teuchos::RCP<Ifpack_Preconditioner> IfpackPrec_;
 
 };
 

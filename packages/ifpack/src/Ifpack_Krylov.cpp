@@ -39,6 +39,10 @@
 #include "Ifpack_Krylov.h"
 #include "Ifpack_Utils.h"
 #include "Ifpack_Condest.h"
+#include "Ifpack_PointRelaxation.h"
+#include "Ifpack_BlockRelaxation.h"
+#include "Ifpack_SparseContainer.h"
+#include "Ifpack_Amesos.h"
 #ifdef HAVE_IFPACK_AZTECOO
 #include "AztecOO.h"
 #endif
@@ -67,6 +71,9 @@ Ifpack_Krylov(Epetra_Operator* Operator) :
   Tolerance_(1e-6),
   SolverType_(1),
   PreconditionerType_(0),
+  NumSweeps_(0),
+  BlockSize_(1),
+  DampingParameter_(1.0),
   UseTranspose_(false),
   Condest_(-1.0),
   ComputeCondest_(false),
@@ -106,6 +113,9 @@ Ifpack_Krylov(Epetra_RowMatrix* Operator) :
   Tolerance_(1e-6),
   SolverType_(1),
   PreconditionerType_(0),
+  NumSweeps_(0),
+  BlockSize_(1),
+  DampingParameter_(1.0),
   UseTranspose_(false),
   Condest_(-1.0),
   ComputeCondest_(false),
@@ -128,6 +138,9 @@ int Ifpack_Krylov::SetParameters(Teuchos::ParameterList& List)
   Tolerance_            = List.get("krylov: tolerance",Tolerance_);
   SolverType_           = List.get("krylov: solver",SolverType_);
   PreconditionerType_   = List.get("krylov: preconditioner",PreconditionerType_);
+  NumSweeps_            = List.get("krylov: number of sweeps",NumSweeps_);
+  BlockSize_            = List.get("krylov: block size",BlockSize_);
+  DampingParameter_     = List.get("krylov: damping parameter",DampingParameter_);
   ZeroStartingSolution_ = List.get("krylov: zero starting solution",ZeroStartingSolution_);
   SetLabel();
   return(0);
@@ -216,6 +229,7 @@ int Ifpack_Krylov::Compute()
   Time_->ResetStartTime();
 
 #ifdef HAVE_IFPACK_AZTECOO
+  // setup Aztec solver
   AztecSolver_ = Teuchos::rcp( new AztecOO );
   AztecSolver_ -> SetUserOperator(&*Operator_);
   if(SolverType_==0) {
@@ -225,6 +239,31 @@ int Ifpack_Krylov::Compute()
     AztecSolver_ -> SetAztecOption(AZ_solver, AZ_gmres);
   }
   AztecSolver_ -> SetAztecOption(AZ_output, AZ_none);
+  // setup preconditioner
+  Teuchos::ParameterList List;
+  List.set("relaxation: damping factor", DampingParameter_);
+  List.set("relaxation: sweeps",NumSweeps_);
+  if(PreconditionerType_==0)      { }
+  else if(PreconditionerType_==1) { List.set("relaxation: type", "Jacobi"                ); }
+  else if(PreconditionerType_==2) { List.set("relaxation: type", "Gauss-Seidel"          ); }
+  else if(PreconditionerType_==3) { List.set("relaxation: type", "symmetric Gauss-Seidel"); }
+  if(BlockSize_==1) {
+    IfpackPrec_ = Teuchos::rcp( new Ifpack_PointRelaxation(&*Matrix_) );
+  }
+  else {
+    IfpackPrec_ = Teuchos::rcp( new Ifpack_BlockRelaxation< Ifpack_SparseContainer< Ifpack_Amesos > > (&*Matrix_) );
+    int NumRows;
+    if(IsRowMatrix_==true) {  NumRows = Matrix_->NumMyRows();                                }
+    else                   {  NumRows = Operator_->OperatorDomainMap().NumGlobalElements();  }
+    List.set("partitioner: type", "linear");
+    List.set("partitioner: local parts", NumRows/BlockSize_);
+  }
+  if(PreconditionerType_>0) {
+    IfpackPrec_ -> SetParameters(List);
+    IfpackPrec_ -> Initialize();
+    IfpackPrec_ -> Compute();
+    AztecSolver_ -> SetPrecOperator(&*IfpackPrec_);
+  }
 #else
   cout << "You need to configure IFPACK with support for AztecOO" << endl;
   cout << "to use this preconditioner. This may require --enable-aztecoo" << endl;
@@ -253,6 +292,8 @@ ostream& Ifpack_Krylov::Print(ostream & os) const
     os << "Number of iterations                 = " << Iterations_ << endl;
     os << "Residual Tolerance                   = " << Tolerance_ << endl;
     os << "Solver type (O for CG, 1 for GMRES)  = " << SolverType_ << endl;
+    os << "Preconditioner type                  = " << PreconditionerType_ << endl;
+    os << "(0 for none, 1 for Jacobi, 2 for GS, 3 for SGS )" << endl;
     os << "Condition number estimate            = " << Condest() << endl;
     os << "Global number of rows                = " << Operator_->OperatorRangeMap().NumGlobalElements() << endl;
     if (ZeroStartingSolution_) 
