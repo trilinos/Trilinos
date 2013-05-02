@@ -33,6 +33,9 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
 #include "Teuchos_RefCountPtr.hpp"
+#ifdef HAVE_IFPACK_AZTECOO
+#include "AztecOO.h"
+#endif
 
 namespace Teuchos {
   class ParameterList;
@@ -46,6 +49,10 @@ class Epetra_Time;
 class Epetra_Vector;
 class Epetra_Operator;
 class Epetra_RowMatrix;
+#ifdef HAVE_IFPACK_AZTECOO
+class AztecOO;
+#endif
+
 
 #ifdef HAVE_IFPACK_EPETRAEXT
 class EpetraExt_PointToBlockDiagPermute;
@@ -324,6 +331,10 @@ private:
   Teuchos::RefCountPtr<Epetra_Time> Time_;
   //! If \c true, the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
+
+#ifdef HAVE_IFPACK_AZTECOO
+  Teuchos::RCP<AztecOO> AztecSolver_;
+#endif
 
 };
 

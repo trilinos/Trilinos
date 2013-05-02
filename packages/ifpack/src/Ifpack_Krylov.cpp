@@ -39,7 +39,9 @@
 #include "Ifpack_Krylov.h"
 #include "Ifpack_Utils.h"
 #include "Ifpack_Condest.h"
+#ifdef HAVE_IFPACK_AZTECOO
 #include "AztecOO.h"
+#endif
 
 #ifdef HAVE_IFPACK_EPETRAEXT
 #include "Epetra_CrsMatrix.h"
@@ -213,6 +215,23 @@ int Ifpack_Krylov::Compute()
 
   Time_->ResetStartTime();
 
+#ifdef HAVE_IFPACK_AZTECOO
+  AztecSolver_ = Teuchos::rcp( new AztecOO );
+  AztecSolver_ -> SetUserOperator(&*Operator_);
+  if(SolverType_==0) {
+    AztecSolver_ -> SetAztecOption(AZ_solver, AZ_cg);
+  }
+  else {
+    AztecSolver_ -> SetAztecOption(AZ_solver, AZ_gmres);
+  }
+  AztecSolver_ -> SetAztecOption(AZ_output, AZ_none);
+#else
+  cout << "You need to configure IFPACK with support for AztecOO" << endl;
+  cout << "to use this preconditioner. This may require --enable-aztecoo" << endl;
+  cout << "in your configure script." << endl;
+  IFPACK_CHK_ERR(-1);
+#endif
+
   // reset values
   IsComputed_ = false;
   Condest_ = -1.0;
@@ -308,25 +327,21 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  Epetra_MultiVector Xcopy = X;
-  Epetra_MultiVector Zeros = Y;
+  Teuchos::RCP<Epetra_MultiVector> Xcopy = Teuchos::rcp( new Epetra_MultiVector(X) );
   if(ZeroStartingSolution_==true) {
-    Zeros.PutScalar(0.0);
+    Y.PutScalar(0.0);
   }
-  
-  Epetra_LinearProblem LinearProblem(&*Operator_,&Zeros,&Xcopy);
-  // Set solver options
-  AztecOO AztecSolver(LinearProblem);
-  if(SolverType_==0) {
-    AztecSolver.SetAztecOption(AZ_solver, AZ_cg);
-  }
-  else {
-    AztecSolver.SetAztecOption(AZ_solver, AZ_gmres);
-  }
-  AztecSolver.SetAztecOption(AZ_output, AZ_none);
-  AztecSolver.Iterate(Iterations_,Tolerance_);
-  AztecSolver.GetLHS();
-  Y=Zeros;
+
+#ifdef HAVE_IFPACK_AZTECOO
+  AztecSolver_ -> SetLHS(&Y);
+  AztecSolver_ -> SetRHS(&*Xcopy);
+  AztecSolver_ -> Iterate(Iterations_,Tolerance_);
+#else
+  cout << "You need to configure IFPACK with support for AztecOO" << endl;
+  cout << "to use this preconditioner. This may require --enable-aztecoo" << endl;
+  cout << "in your configure script." << endl;
+  IFPACK_CHK_ERR(-1);
+#endif
 
   // Flops are updated in each of the following. 
   ++NumApplyInverse_;
