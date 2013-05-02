@@ -204,11 +204,11 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="Epetra" type="LR"/>
-    <Dependency name="Triutils" type="ILR"/>
+    <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Xpetra" type="ITO"/>
-    <Dependency name="AztecOO" type="LR"/>
+    <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="TO"/>
     <Dependency name="Amesos" type="LO"/>
     <EmailAddresses>
