@@ -894,7 +894,8 @@ namespace MueLu {
     GO ii=0, numAlreadyOwned=0;
     if (myPartitionNumber > -1)
       ii=1;
-    MPI_Reduce(&ii, &numAlreadyOwned, 1, MPI_INT, MPI_SUM, 0,*rawMpiComm);
+    //MPI_Reduce(&ii, &numAlreadyOwned, 1, MPI_INT, MPI_SUM, 0,*rawMpiComm);
+    sumAll(comm, ii, numAlreadyOwned);
     GetOStream(Statistics0, 0) << "Number of initial arbitration rounds = " << numRounds
                                << ", number partitions assigned = "
                                << numAlreadyOwned << std::endl;
@@ -903,59 +904,49 @@ namespace MueLu {
     // clean up phase
     ///////////////////////////////////////////
 
-    // 1) all pids send the partition# they own to pid 0.  if they don't own one, send -1
-    Array<int> allAssignedPartitions;
-    if (comm->getRank() == Teuchos::as<int>(0))
-      allAssignedPartitions = Array<int>(comm->getSize());
+    // 1) all pids get global snapshot of partition #s and their owners
+    Array<int> allAssignedPartitions(comm->getSize());
     int pn = Teuchos::as<int>(myPartitionNumber);  
-    MPI_Gather(&pn, 1, MPI_INT,
-               allAssignedPartitions.getRawPtr(), 1, MPI_INT,
-               0,*rawMpiComm);
+    MPI_Allgather(&pn, 1, MPI_INT,
+                  allAssignedPartitions.getRawPtr(), 1, MPI_INT,
+                  *rawMpiComm);
     //at this point, allAssignedPartitions[i] = partition number owned by pid i
 
-    // 2) pid 0 assigns unowned partitions to lowest pids who don't already own a partition.
+    // 2) Assign unowned partitions to lowest pids who don't already own a partition.
     for (int i=0; i<numPartitions; ++i)
       partitionOwners.push_back(-1);
 
     int numAdditionalOwners=0;
-    if (comm->getRank() == 0) {
-      std::vector<int> owningPids;
-      std::vector<int> eligiblePids;
-      eligiblePids.reserve(comm->getSize()-numAlreadyOwned);
-      for (int i=0; i<allAssignedPartitions.size(); ++i) {
-        if (allAssignedPartitions[i] != -1) {
-          partitionOwners[allAssignedPartitions[i]] = i;
-        } else { //TODO once we have at least numPartitions-numAlreadyOwned PIDs, we can break
-          eligiblePids.push_back(i);
+    std::vector<int> owningPids;
+    std::vector<int> eligiblePids;
+    eligiblePids.reserve(comm->getSize()-numAlreadyOwned);
+    for (int i=0; i<allAssignedPartitions.size(); ++i) {
+      if (allAssignedPartitions[i] != -1) {
+        partitionOwners[allAssignedPartitions[i]] = i;
+      } else { //TODO once we have at least numPartitions-numAlreadyOwned PIDs, we can break
+        eligiblePids.push_back(i);
+      }
+    }
+
+    //if all partitions are already owned, then skip this step.
+    if (numAlreadyOwned < numPartitions) {
+      int next=0;
+      for (int i=0; i<partitionOwners.size(); ++i) {
+        if (partitionOwners[i] == -1) {
+          partitionOwners[i] = eligiblePids[next++];
+          allAssignedPartitions[partitionOwners[i]] = i;
+          numAdditionalOwners++;
         }
       }
+    }
 
-      //if all partitions are already owned, then skip this step.
-      if (numAlreadyOwned < numPartitions) {
-        int next=0;
-        for (int i=0; i<partitionOwners.size(); ++i) {
-          if (partitionOwners[i] == -1) {
-            partitionOwners[i] = eligiblePids[next++];
-            allAssignedPartitions[partitionOwners[i]] = i;
-            numAdditionalOwners++;
-          }
-        }
-      }
-
-      TEUCHOS_TEST_FOR_EXCEPTION((numAlreadyOwned + numAdditionalOwners) != numPartitions, Exceptions::RuntimeError,
-                                 "Diffusive clean up phase failed to assign owners to " +
-                                 Teuchos::toString(numPartitions-numAlreadyOwned-numAdditionalOwners) + " partitions");
-    } //if (comm->getRank() == 0)
+    TEUCHOS_TEST_FOR_EXCEPTION((numAlreadyOwned + numAdditionalOwners) != numPartitions, Exceptions::RuntimeError,
+                               "Diffusive clean up phase failed to assign owners to " +
+                               Teuchos::toString(numPartitions-numAlreadyOwned-numAdditionalOwners) + " partitions");
 
     GetOStream(Statistics0, 0) << "Clean up phase: assigned " << numAdditionalOwners << " additional partitions." << std::endl;
 
-    // 3) pid 0 sends ownership info back to all pids.
-
-    MPI_Scatter(allAssignedPartitions.getRawPtr(), 1, MPI_INT,
-               &pn, 1, MPI_INT,
-               0,*rawMpiComm);
-    myPartitionNumber = pn;
-    MPI_Bcast(partitionOwners.getRawPtr(), numPartitions, MPI_INT, 0,*rawMpiComm);
+    myPartitionNumber = allAssignedPartitions[mypid];
 
     int numPartitionOwners=0;
     for (int i=0; i<partitionOwners.size(); ++i)
