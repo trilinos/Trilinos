@@ -196,14 +196,7 @@ int main(int argc, char *argv[]) {
     H->GetLevel(0)->Set("Nullspace", nullspace);
     H->IsPreconditioner(true);
 
-    if(do_reuse==2) {
-      // Flag some things as keepers.
-      H->GetLevel(0)->Keep("AP Pattern",mueLuFactory.GetFactoryManager(0)->GetFactory("A").get());
-      H->GetLevel(0)->Keep("RAP Pattern",mueLuFactory.GetFactoryManager(0)->GetFactory("A").get());
-    }
-
     mueLuFactory.SetupHierarchy(*H);    
-
 
     Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
     tm=Teuchos::null;
@@ -227,6 +220,10 @@ int main(int argc, char *argv[]) {
       tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
       // No-op at present
 
+      
+      sprintf(timerName,"Reuse: Setup i=%d j=%d",i,j);
+      timer = TimeMonitor::getNewTimer(timerName);
+      timer->start();
       if(do_reuse==0 && j!=i) {
 	// No reuse: Do a full recompute
 	H->GetLevel(0)->Set("A", Amatvec);
@@ -234,10 +231,12 @@ int main(int argc, char *argv[]) {
       }
       else if(do_reuse==2 && j!=i) {
 	// "Fast" reuse
-	// NTS: At the moment, this is equivalent to a full recompute
+	// NTS: This isn't quite a real recompute yet.
 	H->GetLevel(0)->Set("A", Amatvec);
 	mueLuFactory.SetupHierarchy(*H);
       }
+      setup_times[i-first_matrix][j-first_matrix]=timer->stop();
+      timer=Teuchos::null;
 
       tm = Teuchos::null;
 

@@ -66,10 +66,13 @@ namespace MueLu {
   RCP<const ParameterList> RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
-    validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Prolongator factory");
-    validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Restrictor factory");
-    validParamList->set< RCP<const FactoryBase> >("AP Pattern",     Teuchos::null, "AP pattern factory");
+    validParamList->set< RCP<const FactoryBase> >("A",               Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    validParamList->set< RCP<const FactoryBase> >("P",               Teuchos::null, "Prolongator factory");
+    validParamList->set< RCP<const FactoryBase> >("R",               Teuchos::null, "Restrictor factory");
+    validParamList->set< RCP<const FactoryBase> >("AP Pattern",      Teuchos::null, "AP pattern factory");
+    validParamList->set< RCP<const FactoryBase> >("RAP Pattern",     Teuchos::null, "RAP pattern factory");
+    validParamList->set< bool >(                  "Keep AP Pattern", false,         "Keep the AP pattern (for reuse)");
+    validParamList->set< bool >(                  "Keep RAP Pattern",false,         "Keep the RAP pattern (for reuse)");
     return validParamList;
   }
 
@@ -93,6 +96,13 @@ namespace MueLu {
     {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
+      // Set "Keeps" from params
+      const Teuchos::ParameterList & mylist = GetParameterList();
+      if(mylist.isParameter("Keep AP Pattern") && mylist.get<bool>("Keep AP Pattern"))
+	coarseLevel.Keep("AP Pattern",this);
+      if(mylist.isParameter("Keep RAP Pattern") && mylist.get<bool>("Keep RAP Pattern"))
+	coarseLevel.Keep("RAP Pattern",this);
+
       //
       // Inputs: A, P
       //
@@ -107,14 +117,15 @@ namespace MueLu {
       RCP<Matrix> AP;
 
       // Reuse pattern if available (multiple solve)
-      if (coarseLevel.IsAvailable("AP Pattern"))
+      if (coarseLevel.IsAvailable("AP Pattern",this)){
+	GetOStream(Runtime0, 0) << "Ac: Using previous AP pattern"<<std::endl;
         AP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
+      }
 
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
         AP = Utils::Multiply(*A, false, *P, false, AP);
-        Set(coarseLevel, "AP Pattern", AP);
-
+	Set(coarseLevel, "AP Pattern", AP);
         // Utils::Write("AP.dat", AP);
       }
 
@@ -123,8 +134,10 @@ namespace MueLu {
       RCP<Matrix> Ac;
 
       // Reuse coarse matrix memory if available (multiple solve)
-      if (coarseLevel.IsAvailable("RAP Pattern"))
+      if (coarseLevel.IsAvailable("RAP Pattern",this)) {
+	GetOStream(Runtime0, 0) << "Ac: Using previous RAP pattern"<<std::endl;
 	Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
+      }
 
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
@@ -160,6 +173,7 @@ namespace MueLu {
         (*it)->CallBuild(coarseLevel);
       }
     }
+
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
