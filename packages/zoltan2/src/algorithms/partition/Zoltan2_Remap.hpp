@@ -61,16 +61,17 @@ static long measure_stays(
   int *idx,
   partId_t *adj,
   long *wgt,
-  partId_t nGlobalParts
+  partId_t nGlobalParts,
+  partId_t maxPartsWithEdges
 )
 {
 // Return the weight of objects staying with a given remap.
 // If remap is NULL, compute weight of objects staying with given partition
   long staying = 0;
-  for (partId_t i = 0; i < nGlobalParts; i++) {
+  for (partId_t i = 0; i < maxPartsWithEdges; i++) {
     partId_t k = (remap ? remap[i] : i);
-    for (int j = idx[i]; j < idx[i+1]; j++) {
-      if (adj[j] == k) {
+    for (partId_t j = idx[i]; j < idx[i+1]; j++) {
+      if (k == (adj[j]-maxPartsWithEdges)) {
         staying += wgt[j];
         break;
       }
@@ -197,7 +198,6 @@ static void RemapParts(
     for (size_t i = 0; i < len; i++) {
       edges[parts[i]]++;                // TODO Use obj size instead of count
       if (parts[i] == me) lstaying++;    // TODO Use obj size instead of count
-cout << me << " edge " << parts[i] << " cnt " << edges[parts[i]] << " lstaying " << lstaying << endl;
     }
   }
   else {
@@ -207,11 +207,9 @@ cout << me << " edge " << parts[i] << " cnt " << edges[parts[i]] << " lstaying "
 
   Teuchos::reduceAll<int, long>(*comm, Teuchos::REDUCE_SUM, 1,
                                 &lstaying, &gstaying);
-  cout << me << " lstaying = " << lstaying << " gstaying = " << gstaying << endl;
 //TODO  if (gstaying == Adapter::getGlobalNumObjs()) return;  // Nothing to do
 
-  partId_t *remap = new partId_t[nGlobalParts];
-  for (partId_t i = 0; i < nGlobalParts; i++) remap[i] = -1;
+  partId_t *remap = NULL;
 
   int nedges = edges.size();
 
@@ -306,35 +304,52 @@ cout << me << " edge " << parts[i] << " cnt " << edges[parts[i]] << " lstaying "
 //SYM      }
 //SYM    }
 
-    cout << "IDX ";
-    for (partId_t i = 0; i < tnVtx; i++) cout << idx[i] << " ";
-    cout << endl;
+//KDD    cout << "IDX ";
+//KDD    for (partId_t i = 0; i < tnVtx; i++) cout << idx[i] << " ";
+//KDD    cout << endl;
 
-    cout << "ADJ ";
-    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << adj[i] << " ";
-    cout << endl;
+//KDD    cout << "ADJ ";
+//KDD    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << adj[i] << " ";
+//KDD    cout << endl;
 
-    cout << "WGT ";
-    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << wgt[i] << " ";
-    cout << endl;
+//KDD    cout << "WGT ";
+//KDD    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << wgt[i] << " ";
+//KDD    cout << endl;
 
     // Perform matching on the graph
     partId_t *match = new partId_t[tnVtx];
     for (partId_t i = 0; i < tnVtx; i++) match[i] = i;
     partId_t nmatches = matching(idx, adj, wgt, tnVtx, match);
 
-    cout << "After matching:  " << nmatches << " found" << endl;
-    if (tnVtx < 40) 
-      for (partId_t i = 0; i < tnVtx; i++)
-        cout << "match[" << i << "] = " << match[i] << endl;
+//KDD    cout << "After matching:  " << nmatches << " found" << endl;
+//KDD    for (partId_t i = 0; i < tnVtx; i++)
+//KDD      cout << "match[" << i << "] = " << match[i] 
+//KDD           << ((match[i] != i && 
+//KDD               (i < maxPartsWithEdges && match[i] != i+maxPartsWithEdges)) 
+//KDD                  ? " *" : " ")
+//KDD           << endl;
+
+    // See whether there were nontrivial changes in the matching.
+    bool nontrivial = false;
+    if (nmatches) {
+      for (partId_t i = 0; i < maxPartsWithEdges; i++) {
+        if ((match[i] != i) && (match[i] != (i+maxPartsWithEdges))) {
+          nontrivial = true;
+          break;
+        }
+      }
+    }
 
     // Process the matches
-    bool *used = new bool[nGlobalParts];
-    for (partId_t i = 0; i < nGlobalParts; i++) used[i] = false;
-    if (nmatches) {
+    if (nontrivial) {
+      remap = new partId_t[nGlobalParts];
+      for (partId_t i = 0; i < nGlobalParts; i++) remap[i] = -1;
+
+      bool *used = new bool[nGlobalParts];
+      for (partId_t i = 0; i < nGlobalParts; i++) used[i] = false;
 
       // First, process all matched parts
-      for (partId_t i = 0; i < nGlobalParts; i++) {
+      for (partId_t i = 0; i < maxPartsWithEdges; i++) {
         partId_t tmp = i + maxPartsWithEdges;
         if (match[tmp] != tmp) {
           remap[i] = match[tmp];
@@ -358,16 +373,17 @@ cout << me << " edge " << parts[i] << " cnt " << edges[parts[i]] << " lstaying "
         remap[i] = uidx;
         used[uidx] = true;
       }
+      delete [] used;
     }
-
     delete [] match;
-    delete [] used;
 
-    long newgstaying = measure_stays(remap, idx, adj, wgt, nGlobalParts);
+    long newgstaying = measure_stays(remap, idx, adj, wgt, nGlobalParts,
+                                     maxPartsWithEdges);
     doRemap = (newgstaying > gstaying);
     cout << "gstaying " << gstaying << " measure(input) "
-         << measure_stays(NULL, idx, adj, wgt, nGlobalParts)
+         << measure_stays(NULL, idx, adj, wgt, nGlobalParts, maxPartsWithEdges)
          << " newgstaying " << newgstaying
+         << " nontrivial " << nontrivial
          << " doRemap " << doRemap << endl;
   }
   delete [] idx;
@@ -378,6 +394,7 @@ cout << me << " edge " << parts[i] << " cnt " << edges[parts[i]] << " lstaying "
   Teuchos::broadcast<int, int>(*comm, 0, 1, &doRemap);
 
   if (doRemap) {
+    if (me != 0) remap = new partId_t[nGlobalParts];
     Teuchos::broadcast<int, partId_t>(*comm, 0, nGlobalParts, remap);
     for (size_t i = 0; i < len; i++) {
       parts[i] = remap[parts[i]];
