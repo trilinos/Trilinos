@@ -66,29 +66,28 @@ namespace MueLu {
   RCP<const ParameterList> RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A",               Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
-    validParamList->set< RCP<const FactoryBase> >("P",               Teuchos::null, "Prolongator factory");
-    validParamList->set< RCP<const FactoryBase> >("R",               Teuchos::null, "Restrictor factory");
-    validParamList->set< RCP<const FactoryBase> >("AP Pattern",      Teuchos::null, "AP pattern factory");
-    validParamList->set< RCP<const FactoryBase> >("RAP Pattern",     Teuchos::null, "RAP pattern factory");
-    validParamList->set< bool >(                  "Keep AP Pattern", false,         "Keep the AP pattern (for reuse)");
-    validParamList->set< bool >(                  "Keep RAP Pattern",false,         "Keep the RAP pattern (for reuse)");
+    validParamList->set< RCP<const FactoryBase> >("A",                Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    validParamList->set< RCP<const FactoryBase> >("P",                Teuchos::null, "Prolongator factory");
+    validParamList->set< RCP<const FactoryBase> >("R",                Teuchos::null, "Restrictor factory");
+    validParamList->set< RCP<const FactoryBase> >("AP Pattern",       Teuchos::null, "AP pattern factory");
+    validParamList->set< RCP<const FactoryBase> >("RAP Pattern",      Teuchos::null, "RAP pattern factory");
+    validParamList->set< bool >(                  "Keep AP Pattern",  false,         "Keep the AP pattern (for reuse)");
+    validParamList->set< bool >(                  "Keep RAP Pattern", false,         "Keep the RAP pattern (for reuse)");
+
     return validParamList;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    if (implicitTranspose_ == false) {
+    if (implicitTranspose_ == false)
       Input(coarseLevel, "R");
-    }
 
     Input(fineLevel,   "A");
     Input(coarseLevel, "P");
 
     // call DeclareInput of all user-given transfer factories
-    for(std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it!=transferFacts_.end(); ++it) {
+    for (std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it)
       (*it)->CallDeclareInput(coarseLevel);
-    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -97,11 +96,11 @@ namespace MueLu {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
       // Set "Keeps" from params
-      const Teuchos::ParameterList & mylist = GetParameterList();
-      if(mylist.isParameter("Keep AP Pattern") && mylist.get<bool>("Keep AP Pattern"))
-	coarseLevel.Keep("AP Pattern",this);
-      if(mylist.isParameter("Keep RAP Pattern") && mylist.get<bool>("Keep RAP Pattern"))
-	coarseLevel.Keep("RAP Pattern",this);
+      const Teuchos::ParameterList& pL = GetParameterList();
+      if (pL.isParameter("Keep AP Pattern")  && pL.get<bool>("Keep AP Pattern"))
+        coarseLevel.Keep("AP Pattern", this);
+      if (pL.isParameter("Keep RAP Pattern") && pL.get<bool>("Keep RAP Pattern"))
+        coarseLevel.Keep("RAP Pattern", this);
 
       //
       // Inputs: A, P
@@ -117,26 +116,26 @@ namespace MueLu {
       RCP<Matrix> AP;
 
       // Reuse pattern if available (multiple solve)
-      if (coarseLevel.IsAvailable("AP Pattern",this)){
-	GetOStream(Runtime0, 0) << "Ac: Using previous AP pattern"<<std::endl;
+      if (coarseLevel.IsAvailable("AP Pattern", this)){
+        GetOStream(Runtime0, 0) << "Ac: Using previous AP pattern"<<std::endl;
         AP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
       }
 
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
         AP = Utils::Multiply(*A, false, *P, false, AP);
-	Set(coarseLevel, "AP Pattern", AP);
-        // Utils::Write("AP.dat", AP);
+        Set(coarseLevel, "AP Pattern", AP);
       }
 
-      bool doOptimizedStorage = !checkAc_; // Optimization storage option. If not modifying matrix later (inserting local values), allow optimization of storage.  This is necessary for new faster Epetra MM kernels.
+      bool doOptimizedStorage = !checkAc_; // Optimization storage option. If not modifying matrix later (inserting local values), allow optimization of storage.
+                                           // This is necessary for new faster Epetra MM kernels.
 
       RCP<Matrix> Ac;
 
       // Reuse coarse matrix memory if available (multiple solve)
-      if (coarseLevel.IsAvailable("RAP Pattern",this)) {
-	GetOStream(Runtime0, 0) << "Ac: Using previous RAP pattern"<<std::endl;
-	Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
+      if (coarseLevel.IsAvailable("RAP Pattern", this)) {
+        GetOStream(Runtime0, 0) << "Ac: Using previous RAP pattern" << std::endl;
+        Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
       }
 
       if (implicitTranspose_) {
@@ -179,37 +178,44 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheckMainDiagonal(RCP<Matrix> & Ac) const {
     // plausibility check: no zeros on diagonal
-    LO lZeroDiags = 0;
     RCP<Vector> diagVec = VectorFactory::Build(Ac->getRowMap());
     Ac->getLocalDiagCopy(*diagVec);
+
+    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+
+    LO lZeroDiags = 0;
     Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
-    for (size_t r=0; r<Ac->getRowMap()->getNodeNumElements(); r++) {
-      if(diagVal[r]==0.0) {
+    for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
+      if (diagVal[r] == zero) {
         lZeroDiags++;
-        if(repairZeroDiagonals_) {
-          GlobalOrdinal grid = Ac->getRowMap()->getGlobalElement(r);
-          LocalOrdinal lcid = Ac->getColMap()->getLocalElement(grid);
-          Teuchos::ArrayRCP<LocalOrdinal> indout(1,lcid);
-          Teuchos::ArrayRCP<Scalar> valout(1,Teuchos::ScalarTraits<Scalar>::one());
-          Ac->insertLocalValues(r, indout.view(0,indout.size()), valout.view(0,valout.size()));
+
+        if (repairZeroDiagonals_) {
+          GO grid = Ac->getRowMap()->getGlobalElement(r);
+          LO lcid = Ac->getColMap()->getLocalElement(grid);
+          Teuchos::ArrayRCP<LO> indout(1, lcid);
+          Teuchos::ArrayRCP<SC> valout(1, one);
+
+          Ac->insertLocalValues(r, indout.view(0, indout.size()), valout.view(0, valout.size()));
         }
       }
     }
 
-    if(IsPrint(Warnings0)) {
+    if (IsPrint(Warnings0)) {
       const RCP<const Teuchos::Comm<int> > & comm = Ac->getRowMap()->getComm();
-      GO lZeroDiagsGO = lZeroDiags; /* LO->GO conversion */
-      GO gZeroDiags = 0;
+      GO lZeroDiagsGO = Teuchos::as<GO>(lZeroDiags); /* LO->GO conversion */
+      GO gZeroDiags   = 0;
       sumAll(comm, lZeroDiagsGO, gZeroDiags);
-      if(repairZeroDiagonals_) GetOStream(Warnings0,0) << "RAPFactory (WARNING): repaired " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
-      else                     GetOStream(Warnings0,0) << "RAPFactory (WARNING): found "    << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
+      if (repairZeroDiagonals_) GetOStream(Warnings0,0) << "RAPFactory (WARNING): repaired " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
+      else                      GetOStream(Warnings0,0) << "RAPFactory (WARNING): found "    << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
     }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddTransferFactory(const RCP<const FactoryBase>& factory) {
     // check if it's a TwoLevelFactoryBase based transfer factory
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast, "MueLu::RAPFactory::AddTransferFactory: Transfer factory is not derived from TwoLevelFactoryBase. This is very strange. (Note: you can remove this exception if there's a good reason for)");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast,
+                               "MueLu::RAPFactory::AddTransferFactory: Transfer factory is not derived from TwoLevelFactoryBase. "
+                               "This is very strange. (Note: you can remove this exception if there's a good reason for)");
     TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_, Exceptions::RuntimeError, "MueLu::RAPFactory::AddTransferFactory: Factory is being added after we have already declared input");
     transferFacts_.push_back(factory);
   }
