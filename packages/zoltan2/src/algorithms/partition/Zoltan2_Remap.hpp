@@ -60,7 +60,7 @@ static size_t measure_stays(
   partId_t *remap,
   int *idx,
   partId_t *adj,
-  size_t *wgt,
+  long *wgt,
   partId_t nGlobalParts
 )
 {
@@ -83,7 +83,7 @@ static size_t measure_stays(
 static partId_t matching(
   int *idx,
   partId_t *adj,
-  size_t *wgt,
+  long *wgt,
   partId_t tnVtx,
   partId_t *match
 )
@@ -189,14 +189,14 @@ static void RemapParts(
 
   // Prepare to receive edges on rank 0
   partId_t *adj;
-  size_t *wgt;
+  long *wgt;
   if (me == 0) {
     adj = new partId_t[2*idx[np]];  // need 2x space to symmetrize later
-    wgt = new size_t[2*idx[np]];  // need 2x space to symmetrize later
+    wgt = new long[2*idx[np]];  // need 2x space to symmetrize later
   }
 
   Teuchos::gatherv<int, partId_t>(bufv, cnt, adj, sizes, idx, 0, *comm);
-  Teuchos::gatherv<int, size_t>(bufw, cnt, wgt, sizes, idx, 0, *comm);
+  Teuchos::gatherv<int, long>(bufw, cnt, wgt, sizes, idx, 0, *comm);
   delete [] bufv;
   delete [] bufw;
 
