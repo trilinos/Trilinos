@@ -1313,8 +1313,10 @@ template <typename Adapter>
     parts_ = partList;
   }
 
+#ifdef READY_FOR_REMAP
   // Now that parts_ info is back on home process, remap the parts.
   Zoltan2::RemapParts<Adapter>(parts_, nGlobalParts_, comm_);
+#endif
 
   // Now determine which process gets each object, if not one-to-one.
 
