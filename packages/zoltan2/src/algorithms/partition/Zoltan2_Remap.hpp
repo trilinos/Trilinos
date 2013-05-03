@@ -89,15 +89,14 @@ static size_t measure_stays(
 #include <vector>
 #include <algorithm>
 
-// typedef int partId_t;
-
+// This struct should be local to matching(), but compiler complains.
 typedef struct {
   partId_t i;
   partId_t j;
   size_t val;
-} triplet;
+} triplet; // edge (i,j,val)
 
-static bool mycompare(triplet a, triplet b)
+static bool compare_triplets(triplet a, triplet b)
 {
   return (a.val > b.val); // descending order
 }
@@ -114,13 +113,12 @@ static partId_t matching(
   partId_t nmatch=0;
   std::vector<triplet> edges(idx[tnVtx]);
 
-  // Make vector of triplets
+  // Make vector of triplets (edges)
   size_t k=0;
   for (int i=0; i<tnVtx; i++){
     for (int jj=idx[i]; jj<idx[i+1]; jj++){
       int j = adj[jj];
       if (i<=j){ // We only need each edge once.
-        // std::cout << "edge (" << i << ", " << adj[jj] << ", " << wgt[k] << ")" << std::endl;
         edges[k].i = i;
         edges[k].j = j;
         edges[k].val = wgt[k];
@@ -129,8 +127,8 @@ static partId_t matching(
     }
   }
 
-  // Sort triplets
-  std::sort (edges.begin(), edges.end(), mycompare); 
+  // Sort edges by weight
+  std::sort (edges.begin(), edges.end(), compare_triplets); 
 
   // Greedy loop over sorted edges
   // std::cout << "After sort:" << std::endl;
