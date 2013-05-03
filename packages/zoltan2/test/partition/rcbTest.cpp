@@ -48,6 +48,7 @@
     \todo add more cases to this test.
 */
 
+#include <Zoltan2_config.h>
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_BasicCoordinateInput.hpp>
 #include <Zoltan2_XpetraMultiVectorInput.hpp>
@@ -69,53 +70,69 @@ typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
     \todo check the solution, visualize it somehow
 */
 
-void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm)
+void testFromDataFile(
+  const RCP<const Teuchos::Comm<int> > & comm,
+  int nParts,
+  string &filename
+)
 {
-  std::string fname("USAir97");
+  int me = comm->getRank();
+  if (me == 0)
+    cout << "Parallel partitioning of " << filename << ".mtx: "
+         << nParts << " parts." << endl;
+
+  std::string fname(filename);
   UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
   RCP<tMVector_t> coords = uinput.getCoordinates();
+  if (me == 0)
+    cout << "Multivector length = " << coords->getGlobalLength()
+         << " Num vectors = " << coords->getNumVectors() << endl;
 
   RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
 
-#if 0
-  int dim = coords->getNumVectors();
-  scalar_t *x=NULL, *y=NULL, *z=NULL;
-  x = coords->getDataNonConst(0).getRawPtr();
-
-  if (dim > 1){
-    y = coords->getDataNonConst(1).getRawPtr();
-    if (dim > 2)
-      z = coords->getDataNonConst(2).getRawPtr();
-  }
-
-  typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
-  inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
-#else
   typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
   inputAdapter_t ia(coordsConst);
-#endif
-   
+  if (me == 0)
+    cout << "Adapter constructed" << endl;
+
   Teuchos::ParameterList params("test params");
+  params.set("debug_level", "basic_status");
+  params.set("num_global_parts", nParts);
+  params.set("algorithm", "rcb");
+  params.set("imbalance_tolerance", 1.1);
   params.set("bisection_num_test_cuts", 7);
 
-#ifdef HAVE_ZOLTAN2_MPI                   
+#ifdef HAVE_ZOLTAN2_MPI
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
     MPI_COMM_WORLD);
 #else
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
+  if (me == 0)
+    cout << "Problem constructed" << endl;
+
 
   problem.solve();
+  if (me == 0)
+    cout << "Problem solved" << endl;
+
+  if (coordsConst->getGlobalLength() < 40) {
+    int len = coordsConst->getLocalLength();
+    const zoltan2_partId_t *zparts = problem.getSolution().getPartList();
+    const gno_t *zgids = problem.getSolution().getIdList(); 
+    for (int i = 0; i < len; i++)
+      cout << me << " gid " << zgids[i] << " part " << zparts[i] << endl;
+  }
 
   if (comm->getRank() == 0)
     problem.printMetrics(cout);
 }
 
-void serialTest()
+void serialTest(int numParts)
 {
-  int numParts = 8;
   int numCoords = 1000;
+  numParts *= 8;
 
   cout << "Serial partitioning: " << numParts << " parts." << endl;
 
@@ -127,12 +144,12 @@ void serialTest()
   ArrayRCP<gno_t> globalIds(ids, 0, numCoords, true);
 
   Array<ArrayRCP<scalar_t> > randomCoords(3);
-  UserInputForTests::getRandomData(555, numCoords, 0, 10, 
+  UserInputForTests::getRandomData(555, numCoords, 0, 10,
     randomCoords.view(0,3));
 
   typedef Zoltan2::BasicCoordinateInput<myTypes_t> inputAdapter_t;
 
-  inputAdapter_t ia(numCoords, ids, 
+  inputAdapter_t ia(numCoords, ids,
     randomCoords[0].getRawPtr(), randomCoords[1].getRawPtr(),
      randomCoords[2].getRawPtr(), 1,1,1);
 
@@ -143,13 +160,13 @@ void serialTest()
   params.set("imbalance_tolerance", 1.1);
   params.set("bisection_num_test_cuts", 7);
 
-#ifdef HAVE_ZOLTAN2_MPI                   
+#ifdef HAVE_ZOLTAN2_MPI
   Zoltan2::PartitioningProblem<inputAdapter_t> serialProblem(
     &ia, &params, MPI_COMM_SELF);
 #else
   Zoltan2::PartitioningProblem<inputAdapter_t> serialProblem(&ia, &params);
 #endif
- 
+
   serialProblem.solve();
 
   serialProblem.printMetrics(cout);
@@ -198,13 +215,21 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
   int rank = tcomm->getRank();
+  int nParts = tcomm->getSize();
+  string filename = "USAir97";
+
+  // Read run-time options.
+  Teuchos::CommandLineProcessor cmdp (false, false);
+  cmdp.setOption("nparts", &nParts, "Number of parts.");
+  cmdp.setOption("file", &filename, "Name of the Matrix Market file to read");
+  cmdp.parse(argc, argv);
 
   //meshCoordinatesTest(tcomm);
 
-  testFromDataFile(tcomm);
+  testFromDataFile(tcomm, nParts, filename);
 
   if (rank == 0)
-    serialTest();
+    serialTest(nParts);
 
   if (rank == 0)
     std::cout << "PASS" << std::endl;
