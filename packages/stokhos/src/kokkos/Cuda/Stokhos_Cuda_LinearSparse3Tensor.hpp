@@ -66,7 +66,6 @@ public:
                              KokkosArray::LayoutLeft ,
                              KokkosArray::Cuda > vector_type ;
 
-  /*
   class ApplyKernel {
   public:
 
@@ -84,9 +83,6 @@ public:
     {
       // Number of bases in the stochastic system:
       const size_type dim = m_A.block.dimension();
-      // const size_type rem = dim % 32;
-      // const size_type dim_align = rem > 0 ? dim + rem : dim ;
-      const size_type dim_align = dim;
 
       const size_type nid = blockDim.x * blockDim.y ;
       const size_type tid = threadIdx.x + blockDim.x * threadIdx.y ;
@@ -101,8 +97,8 @@ public:
       const size_type iBlockEntryEnd = m_A.graph.row_map[ blockIdx.x + 1 ];
 
       // Read tensor entries
-      const TensorScalar c0 = m_A.block.tensor().value(0);
-      const TensorScalar c1 = m_A.block.tensor().value(1);
+      const TensorScalar c0 = m_A.block.value(0);
+      const TensorScalar c1 = m_A.block.value(1);
 
       // Zero y
       for ( size_type i = tid ; i < dim ; i += nid ) {
@@ -120,13 +116,13 @@ public:
         const VectorScalar * const x = & m_x(        0 , iBlockColumn );
         const MatrixScalar * const A = & m_A.values( 0 , iBlockEntry );
 
-        const VectorScalar a0 = a[0];
+        const VectorScalar a0 = A[0];
         const MatrixScalar x0 = x[0];
-        y0 += c0*a0*x0;
+        y0 -= 2.0*c0*a0*x0;
 
         // Loop over rows of stochastic block
         for ( size_type i = tid ; i < dim ; i += nid) {
-          const MatrixScalar ai = a[i];
+          const MatrixScalar ai = A[i];
           const VectorScalar xi = x[i];
           sh_y[i] += c1*(a0*xi + ai*x0);
           y0  += c1*ai*xi;
@@ -134,20 +130,27 @@ public:
 
       }
 
-      __syncthreads(); // wait for X and A to be used.
-
-      // Reduction of 'y0' within 'CudaTraits::WarpSize'
-
       sh_y0[ tid ] = y0 ;
+      __syncthreads();
 
-      if ( threadIdx.x + 16 < KokkosArray::Impl::CudaTraits::WarpSize ) sh_t[tid] += sh_t[tid+16];
-      if ( threadIdx.x +  8 < KokkosArray::Impl::CudaTraits::WarpSize ) sh_t[tid] += sh_t[tid+ 8];
-      if ( threadIdx.x +  4 < KokkosArray::Impl::CudaTraits::WarpSize ) sh_t[tid] += sh_t[tid+ 4];
-      if ( threadIdx.x +  2 < KokkosArray::Impl::CudaTraits::WarpSize ) sh_t[tid] += sh_t[tid+ 2];
-      if ( threadIdx.x +  1 < KokkosArray::Impl::CudaTraits::WarpSize ) sh_t[tid] += sh_t[tid+ 1];
+      // Reduction of 'y0' across warps
+      size_type warp = blockDim.y >> 1;
+      while (warp >= 1) {
+        if ( threadIdx.y + warp < blockDim.y ) 
+          sh_y0[tid] += sh_y0[tid+warp*blockDim.x];
+        __syncthreads();
+        warp >>= 1;
+      }
+
+      // Reduction of 'y0' within warp
+      if ( threadIdx.x + 16 < blockDim.x ) sh_y0[tid] += sh_y0[tid+16];
+      if ( threadIdx.x +  8 < blockDim.x ) sh_y0[tid] += sh_y0[tid+ 8];
+      if ( threadIdx.x +  4 < blockDim.x ) sh_y0[tid] += sh_y0[tid+ 4];
+      if ( threadIdx.x +  2 < blockDim.x ) sh_y0[tid] += sh_y0[tid+ 2];
+      if ( threadIdx.x +  1 < blockDim.x ) sh_y0[tid] += sh_y0[tid+ 1];
 
       if ( threadIdx.x == 0 )
-        sh_y[iyInner] += sh_t[tid];
+        sh_y[0] += sh_y0[0];
 
       __syncthreads();
 
@@ -157,7 +160,6 @@ public:
       }
     }
   };
-  */
 
 
   //------------------------------------
@@ -166,21 +168,21 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    /*
     const size_type num_spatial_rows = A.graph.row_map.dimension_0() - 1 ;
     const size_type num_stoch_rows = A.block.dimension();
 
     const size_type warp_size = KokkosArray::Impl::CudaTraits::WarpSize;
-    const size_type max_warp =
-      KokkosArray::Impl::cuda_internal_maximum_warp_count();
-    const size_type nWarp = std::min(num_stoch_rows / warp_size, max_warp);
+    // const size_type max_warp =
+    //   KokkosArray::Impl::cuda_internal_maximum_warp_count();
+    // const size_type nWarp = std::min(num_stoch_rows / warp_size, max_warp);
+    const size_type nWarp = 16;
     const dim3 dBlock( warp_size , nWarp , 1 );
     const dim3 dGrid( num_spatial_rows , 1 , 1 );
 
     const size_type shmem =
       sizeof(VectorScalar) * (num_stoch_rows + dBlock.x*dBlock.y);
 
-#if 0
+#if 1
 
     std::cout << "Multiply< BlockCrsMatrix< LinearSparse3Tensor ... > >::apply"
               << std::endl
@@ -195,7 +197,6 @@ public:
     KokkosArray:: Impl::cuda_parallel_launch_local_memory<<< dGrid , dBlock , shmem >>>
       ( ApplyKernel( A , x , y ) );
     //cudaProfilerStop();
-    */
   }
 };
 

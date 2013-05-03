@@ -306,87 +306,6 @@ namespace KokkosArrayKernelsUnitTest {
     return success;
   }
 
-  template< typename ScalarType , class Device >
-  bool test_linear_tensor(const UnitTestSetup& setup,
-                          Teuchos::FancyOStream& out) {
-    typedef ScalarType value_type ;
-    typedef int ordinal_type;
-    typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft ,
-                               Device > block_vector_type ;
-    typedef Stokhos::LinearSparse3Tensor<value_type,Device,4> TensorType;
-    typedef Stokhos::StochasticProductTensor< value_type , TensorType , Device > tensor_type ;
-
-    typedef Stokhos::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
-    typedef typename matrix_type::graph_type graph_type ;
-
-    // Build tensor
-    matrix_type matrix ;
-
-    const bool symmetric = true;
-    matrix.block =
-      Stokhos::create_stochastic_product_tensor< TensorType >( *setup.basis,
-                                                               symmetric );
-    int aligned_stoch_length = matrix.block.tensor().aligned_dimension();
-
-    //------------------------------
-    // Generate input multivector:
-
-    block_vector_type x =
-      block_vector_type( "x" , aligned_stoch_length , setup.fem_length );
-    block_vector_type y =
-      block_vector_type( "y" , aligned_stoch_length , setup.fem_length );
-
-    typename block_vector_type::HostMirror hx =
-      KokkosArray::create_mirror( x );
-
-    for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
-      for ( int iColStoch = 0 ; iColStoch < setup.stoch_length ; ++iColStoch ) {
-        hx(iColStoch,iColFEM) =
-          generate_vector_coefficient<ScalarType>(
-            setup.fem_length , setup.stoch_length , iColFEM , iColStoch );
-        //hx(iColStoch,iColFEM) = 1.0;
-      }
-    }
-
-    KokkosArray::deep_copy( x , hx );
-
-    //------------------------------
-
-    matrix.graph = KokkosArray::create_crsarray<graph_type>(
-      std::string("test crs graph") , setup.fem_graph );
-
-    matrix.values = block_vector_type(
-      "matrix" , aligned_stoch_length , setup.fem_graph_length );
-
-    typename block_vector_type::HostMirror hM =
-      KokkosArray::create_mirror( matrix.values );
-
-    for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
-      for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < setup.fem_graph[iRowFEM].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
-        const int iColFEM = setup.fem_graph[iRowFEM][iRowEntryFEM] ;
-
-        for ( int k = 0 ; k < setup.stoch_length ; ++k ) {
-          hM(k,iEntryFEM) =
-            generate_matrix_coefficient<ScalarType>(
-              setup.fem_length , setup.stoch_length , iRowFEM , iColFEM , k );
-          //hM(k,iEntryFEM) = 1.0;
-        }
-      }
-    }
-
-    KokkosArray::deep_copy( matrix.values , hM );
-
-    //------------------------------
-
-    Stokhos::multiply( matrix , x , y );
-
-    typename block_vector_type::HostMirror hy = KokkosArray::create_mirror( y );
-    KokkosArray::deep_copy( hy , y );
-
-    bool success = setup.test_commuted_no_perm(hy, out);
-    //bool success = true;
-    return success;
-  }
 }
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, LexoBlockTensor_Host ) {
@@ -402,7 +321,7 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, LinearTensor_Host ) {
 
   UnitTestSetup s;
   s.setup(1, 10);
-  success = test_linear_tensor<Scalar,Device>(s, out);
+  success = test_linear_tensor<Scalar,Device,4>(s, out);
 }
 
 int main( int argc, char* argv[] ) {
