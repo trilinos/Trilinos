@@ -162,7 +162,7 @@ template <typename Adapter>
 static void RemapParts(
   ArrayRCP<partId_t> &parts, // Array of computed part assignments; one per obj
   partId_t nGlobalParts,       // Requested number of parts
-  RCP<Comm<int> > &comm        // the Problem's communicator
+  RCP<const Comm<int> > &comm        // the Problem's communicator
 )
 {
   typedef typename Adapter::lno_t lno_t;
@@ -197,6 +197,7 @@ static void RemapParts(
     for (size_t i = 0; i < len; i++) {
       edges[parts[i]]++;                // TODO Use obj size instead of count
       if (parts[i] == me) lstaying++;    // TODO Use obj size instead of count
+cout << me << " edge " << parts[i] << " cnt " << edges[parts[i]] << " lstaying " << lstaying << endl;
     }
   }
   else {
@@ -257,8 +258,10 @@ static void RemapParts(
   partId_t *adj = NULL;
   long *wgt = NULL;
   if (me == 0) {
-    adj = new partId_t[2*idx[np]];  // need 2x space to symmetrize later
-    wgt = new long[2*idx[np]];  // need 2x space to symmetrize later
+//SYM    adj = new partId_t[2*idx[np]];  // need 2x space to symmetrize later
+//SYM    wgt = new long[2*idx[np]];  // need 2x space to symmetrize later
+    adj = new partId_t[idx[np]];
+    wgt = new long[idx[np]];
   }
 
   Teuchos::gatherv<int, partId_t>(bufv, cnt, adj, sizes, idx, 0, *comm);
@@ -273,34 +276,47 @@ static void RemapParts(
   if (me == 0) {
     // We have the "LHS" vertices of the bipartite graph; need to create
     // "RHS" vertices and add symmetric edges.
-    for (int i = 0; i < np; i++)
-      sizes[i] = 0;  // Reuse of sizes array assumes nGlobalParts <= np
+//SYM    for (int i = 0; i < np; i++)
+//SYM      sizes[i] = 0;  // Reuse of sizes array assumes nGlobalParts <= np
 
     for (int i = 0; i < idx[np]; i++) {
-      sizes[adj[i]]++;  // Number of edges with adj[i] as target
+//SYM      sizes[adj[i]]++;  // Number of edges with adj[i] as target
       adj[i] += maxPartsWithEdges;  // New RHS vertex number;
-                                        // offset by num LHS vertices
+                                    // offset by num LHS vertices
     }
 
     // Build idx for RHS vertices
     partId_t tnVtx = maxPartsWithEdges + nGlobalParts;  // total # vertices
     for (partId_t i = maxPartsWithEdges; i < tnVtx; i++) {
-      idx[i+1] = idx[i] + sizes[i-maxPartsWithEdges];
+//SYM      idx[i+1] = idx[i] + sizes[i-maxPartsWithEdges];
+      idx[i+1] = idx[i];  // No edges for RHS vertices
     }
 
-    // Add edges from RHS vertices to LHS vertices
-    for (int i = 0; i < np; i++)
-      sizes[i] = 0;  // Reuse of sizes array assumes nGlobalParts <= np
+//SYM    // Add edges from RHS vertices to LHS vertices
+//SYM    for (int i = 0; i < np; i++)
+//SYM      sizes[i] = 0;  // Reuse of sizes array assumes nGlobalParts <= np
+//SYM
+//SYM    for (partId_t i = 0; i < maxPartsWithEdges; i++) {
+//SYM      for (int j = idx[i]; j < idx[i+1]; j++) {
+//SYM        partId_t tgt = adj[j];
+//SYM        partId_t stgt = tgt - maxPartsWithEdges;
+//SYM        adj[idx[tgt]+sizes[stgt]] = i;
+//SYM        wgt[idx[tgt]+sizes[stgt]] = wgt[j+1];
+//SYM        sizes[stgt]++;
+//SYM      }
+//SYM    }
 
-    for (partId_t i = 0; i < maxPartsWithEdges; i++) {
-      for (int j = idx[i]; j < idx[i+1]; j++) {
-        partId_t tgt = adj[j];
-        partId_t stgt = tgt - maxPartsWithEdges;
-        adj[idx[tgt]+sizes[stgt]] = i;
-        wgt[idx[tgt]+sizes[stgt]] = wgt[j+1];
-        sizes[stgt]++;
-      }
-    }
+    cout << "IDX ";
+    for (partId_t i = 0; i < tnVtx; i++) cout << idx[i] << " ";
+    cout << endl;
+
+    cout << "ADJ ";
+    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << adj[i] << " ";
+    cout << endl;
+
+    cout << "WGT ";
+    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << wgt[i] << " ";
+    cout << endl;
 
     // Perform matching on the graph
     partId_t *match = new partId_t[tnVtx];
