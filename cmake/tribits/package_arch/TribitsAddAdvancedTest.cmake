@@ -89,6 +89,7 @@ INCLUDE(PrintVar)
 #     [HOSTTYPE <hosttype1> <hosttype2> ...]
 #     [XHOSTTYPE <hosttype1> <hosttype2> ...]
 #     [FINAL_PASS_REGULAR_EXPRESSION <regex> | FINAL_FAIL_REGULAR_EXPRESSION <regex>]
+#     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
 #     )
 #
 # Each and every atomic test or command needs to pass (as defined below) in
@@ -236,6 +237,10 @@ INCLUDE(PrintVar)
 #     If specified, then the output for the test command will not be echoed to
 #     the output for the entire test command.
 #
+#   ENVIRONMENT <var1>=<value1> <var2>=<value2> ...
+#
+#     If passed in, set the environment varaibles before calling the test.
+#
 # By default, an atomic test line is assumed to pass if the executable returns
 # a non-zero value.  However, a test case can also be defined to pass based
 # on:
@@ -321,7 +326,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
      #prefix
      PARSE
      #lists
-     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT"
+     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT"
      #options
      "FAIL_FAST"
      ${ARGN}
@@ -641,6 +646,10 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   
     IF (PARSE_TIMEOUT)
       SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES TIMEOUT ${PARSE_TIMEOUT})
+    ENDIF()
+
+    IF (PARSE_ENVIRONMENT)
+      SET_PROPERTY(TEST ${TEST_NAME} PROPERTY ENVIRONMENT ${PARSE_ENVIRONMENT})
     ENDIF()
 
   ENDIF()
