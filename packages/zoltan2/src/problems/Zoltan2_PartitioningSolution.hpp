@@ -52,6 +52,7 @@
 
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
+#include <Zoltan2_Remap.hpp>
 
 #include <cmath>
 #include <algorithm>
@@ -1311,6 +1312,9 @@ template <typename Adapter>
 
     parts_ = partList;
   }
+
+  // Now that parts_ info is back on home process, remap the parts.
+  Zoltan2::RemapParts<Adapter>(parts_, nGlobalParts_, comm_);
 
   // Now determine which process gets each object, if not one-to-one.
 

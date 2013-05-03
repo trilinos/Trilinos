@@ -5089,10 +5089,6 @@ void AlgPQJagged(
 */
 
 
-#ifdef KDDREMAP
-  Zoltan2::RemapParts<Adapter>(partId, numGlobalParts, comm);
-#endif
-
 
 #ifdef migrate_gid
   solution->setParts(gnoList, partId,true);

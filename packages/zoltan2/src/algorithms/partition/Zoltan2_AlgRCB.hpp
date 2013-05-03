@@ -55,7 +55,6 @@
 #include <Zoltan2_Exceptions.hpp>
 
 #include <Teuchos_ParameterList.hpp>
-#include <Zoltan2_Remap.hpp>
 
 namespace Zoltan2{
 
@@ -558,7 +557,6 @@ void AlgRCB(
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
-  Zoltan2::RemapParts<Adapter>(partId, numGlobalParts, problemComm);
   solution->setParts(gnoList, partId, false);
 #endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }
