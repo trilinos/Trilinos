@@ -84,20 +84,23 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     DEPLIBS muelu xpetra muelu-adapters
     )
 
-  # not very elegant. The best would probably to make Reuse.cpp work fo both Epetra and Tpetra
+  # not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
   IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     TRIBITS_ADD_EXECUTABLE(
-      Reuse  #TODO: Suffix Int/LongInt when done in the source code
+      Reuse
       SOURCES Reuse.cpp
       COMM serial mpi
       DEPLIBS muelu xpetra muelu-adapters galeri
+    )
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(Reuse_cp
+      SOURCE_FILES reuse.xml
     )
   ENDIF()
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ScalingTestParamList_cp
     SOURCE_FILES scalingTest.xml coupled.xml uncoupled.xml emin.xml isotropicPoisson.xml conchas_milestone.xml
-    )
+   )
 
 ENDIF()
 
