@@ -558,7 +558,7 @@ void AlgRCB(
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
-  Zoltan2::RemapParts<Adapter>(partId, numGlobalParts, comm);
+  Zoltan2::RemapParts<Adapter>(partId, numGlobalParts, problemComm);
   solution->setParts(gnoList, partId, false);
 #endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }

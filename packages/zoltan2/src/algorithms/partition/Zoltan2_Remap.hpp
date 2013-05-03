@@ -82,8 +82,8 @@ static long measure_stays(
 ////////////////////////////////////////////////////////////////////
 //
 // Greedy algorithm for maximum-weight matching.
-// This is an 1/2-approximation, but requires a sort. 
-// We could also use the Path Growing Algorithm by 
+// This is an 1/2-approximation, but requires a sort.
+// We could also use the Path Growing Algorithm by
 // Drake & Hogardy, which runs in linear time.
 
 #include <vector>
@@ -128,7 +128,7 @@ static partId_t matching(
   }
 
   // Sort edges by weight
-  std::sort (edges.begin(), edges.end(), compare_triplets); 
+  std::sort (edges.begin(), edges.end(), compare_triplets);
 
   // Greedy loop over sorted edges
   // std::cout << "After sort:" << std::endl;
@@ -173,6 +173,13 @@ static void RemapParts(
   partId_t me = comm->getRank();
   int np = comm->getSize();
 
+  if (np < nGlobalParts) {
+    if (me == 0)
+      cout << "Remapping not yet supported for "
+           << "num_global_parts " << nGlobalParts
+           << " > num procs " << np << endl;
+    return;
+  }
   // Build edges of a bipartite graph with nGlobalParts vertices in each set.
   // Weight edge[parts[i]] by the number of objects that are going from
   // this rank to parts[i].
@@ -198,7 +205,8 @@ static void RemapParts(
   }
 
   Teuchos::reduceAll<int, long>(*comm, Teuchos::REDUCE_SUM, 1,
-                                  &lstaying, &gstaying);
+                                &lstaying, &gstaying);
+  cout << me << " lstaying = " << lstaying << " gstaying = " << gstaying << endl;
 //TODO  if (gstaying == Adapter::getGlobalNumObjs()) return;  // Nothing to do
 
   partId_t *remap = new partId_t[nGlobalParts];
@@ -223,27 +231,31 @@ static void RemapParts(
   if (me == 0) {
     idx[0] = 0;
     for (int i = 0; i < np; i++) {
-      idx[i+1] += sizes[i];
+      idx[i+1] = idx[i] + sizes[i];
       if (sizes[i]) maxPartsWithEdges = i;
     }
     maxPartsWithEdges++;
   }
 
   // prepare to send edges
-  partId_t *bufv = new partId_t[nedges];
-  long *bufw = new long[nedges];
-  // Create buffer with edges (me, part[i]) and weight edges[parts[i]].
   int cnt = 0;
-  for (std::map<partId_t, long>::iterator it = edges.begin();
-       it != edges.end(); it++) {
-    bufv[cnt] = it->first;  // target part
-    bufw[cnt] = it->second; // weight
-    cnt++;
+  partId_t *bufv = NULL;
+  long *bufw = NULL;
+  if (nedges) {
+    bufv = new partId_t[nedges];
+    bufw = new long[nedges];
+    // Create buffer with edges (me, part[i]) and weight edges[parts[i]].
+    for (std::map<partId_t, long>::iterator it = edges.begin();
+         it != edges.end(); it++) {
+      bufv[cnt] = it->first;  // target part
+      bufw[cnt] = it->second; // weight
+      cnt++;
+    }
   }
 
   // Prepare to receive edges on rank 0
-  partId_t *adj;
-  long *wgt;
+  partId_t *adj = NULL;
+  long *wgt = NULL;
   if (me == 0) {
     adj = new partId_t[2*idx[np]];  // need 2x space to symmetrize later
     wgt = new long[2*idx[np]];  // need 2x space to symmetrize later
@@ -294,6 +306,11 @@ static void RemapParts(
     partId_t *match = new partId_t[tnVtx];
     for (partId_t i = 0; i < tnVtx; i++) match[i] = i;
     partId_t nmatches = matching(idx, adj, wgt, tnVtx, match);
+
+    cout << "After matching:  " << nmatches << " found" << endl;
+    if (tnVtx < 40) 
+      for (partId_t i = 0; i < tnVtx; i++)
+        cout << "match[" << i << "] = " << match[i] << endl;
 
     // Process the matches
     bool *used = new bool[nGlobalParts];
