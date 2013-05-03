@@ -80,6 +80,29 @@ static size_t measure_stays(
 }
 
 ////////////////////////////////////////////////////////////////////
+//
+// Greedy algorithm for maximum-weight matching.
+// This is an 1/2-approximation, but requires a sort. 
+// We could also use the Path Growing Algorithm by 
+// Drake & Hogardy, which runs in linear time.
+
+#include <vector>
+#include <algorithm>
+
+// typedef int partId_t;
+
+typedef struct {
+  partId_t i;
+  partId_t j;
+  size_t val;
+} triplet;
+
+static bool mycompare(triplet a, triplet b)
+{
+  return (a.val > b.val); // descending order
+}
+
+
 static partId_t matching(
   int *idx,
   partId_t *adj,
@@ -88,9 +111,42 @@ static partId_t matching(
   partId_t *match
 )
 {
-  // TODO:  Add Erik's code here
-  return 1;
+  partId_t nmatch=0;
+  std::vector<triplet> edges(idx[tnVtx]);
+
+  // Make vector of triplets
+  size_t k=0;
+  for (int i=0; i<tnVtx; i++){
+    for (int jj=idx[i]; jj<idx[i+1]; jj++){
+      int j = adj[jj];
+      if (i<=j){ // We only need each edge once.
+        // std::cout << "edge (" << i << ", " << adj[jj] << ", " << wgt[k] << ")" << std::endl;
+        edges[k].i = i;
+        edges[k].j = j;
+        edges[k].val = wgt[k];
+      }
+      k++;
+    }
+  }
+
+  // Sort triplets
+  std::sort (edges.begin(), edges.end(), mycompare); 
+
+  // Greedy loop over sorted edges
+  // std::cout << "After sort:" << std::endl;
+  for (std::vector<triplet>::iterator it=edges.begin(); it!=edges.end(); ++it){
+    // std::cout << "edge (" << it->i << ", " << it->j << ", " << it->val << ")" << std::endl
+;
+
+    if ((match[it->i] == it->i) && (match[it->j] == it->j )){
+      match[it->i] = it->j;
+      match[it->j] = it->i;
+      nmatch++;
+    }
+  }
+  return nmatch;
 }
+
 
 ////////////////////////////////////////////////////////////////////
 // Remap a new part assignment vector for maximum overlap with an input
