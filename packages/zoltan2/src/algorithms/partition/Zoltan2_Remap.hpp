@@ -56,7 +56,7 @@ namespace Zoltan2 {
 
 
 ////////////////////////////////////////////////////////////////////
-static size_t measure_stays(
+static long measure_stays(
   partId_t *remap,
   int *idx,
   partId_t *adj,
@@ -66,7 +66,7 @@ static size_t measure_stays(
 {
 // Return the weight of objects staying with a given remap.
 // If remap is NULL, compute weight of objects staying with given partition
-  size_t staying = 0;
+  long staying = 0;
   for (partId_t i = 0; i < nGlobalParts; i++) {
     partId_t k = (remap ? remap[i] : i);
     for (int j = idx[i]; j < idx[i+1]; j++) {
@@ -93,7 +93,7 @@ static size_t measure_stays(
 typedef struct {
   partId_t i;
   partId_t j;
-  size_t val;
+  long val;
 } triplet; // edge (i,j,val)
 
 static bool compare_triplets(triplet a, triplet b)
@@ -181,10 +181,10 @@ static void RemapParts(
   // TODO We use the count of objects to move; should change to SIZE of objects
   // to move; need SIZE function in Adapter.
 
-  std::map<partId_t, size_t> edges;
-  size_t lstaying = 0;  // Total num of local objects staying if we keep the
-                        // current mapping. TODO:  change to SIZE of local objs
-  size_t gstaying = 0;  // Total num of objects staying in the current partition
+  std::map<partId_t, long> edges;
+  long lstaying = 0;  // Total num of local objects staying if we keep the
+                      // current mapping. TODO:  change to SIZE of local objs
+  long gstaying = 0;  // Total num of objects staying in the current partition
 
   if (me < nGlobalParts) {
     for (size_t i = 0; i < len; i++) {
@@ -197,7 +197,7 @@ static void RemapParts(
     // No need to include in the matching.
   }
 
-  Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
+  Teuchos::reduceAll<int, long>(*comm, Teuchos::REDUCE_SUM, 1,
                                   &lstaying, &gstaying);
 //TODO  if (gstaying == Adapter::getGlobalNumObjs()) return;  // Nothing to do
 
@@ -231,10 +231,10 @@ static void RemapParts(
 
   // prepare to send edges
   partId_t *bufv = new partId_t[nedges];
-  size_t *bufw = new size_t[nedges];
+  long *bufw = new long[nedges];
   // Create buffer with edges (me, part[i]) and weight edges[parts[i]].
   int cnt = 0;
-  for (std::map<partId_t, size_t>::iterator it = edges.begin();
+  for (std::map<partId_t, long>::iterator it = edges.begin();
        it != edges.end(); it++) {
     bufv[cnt] = it->first;  // target part
     bufw[cnt] = it->second; // weight
@@ -330,7 +330,7 @@ static void RemapParts(
     delete [] match;
     delete [] used;
 
-    size_t newgstaying = measure_stays(remap, idx, adj, wgt, nGlobalParts);
+    long newgstaying = measure_stays(remap, idx, adj, wgt, nGlobalParts);
     doRemap = (newgstaying > gstaying);
     cout << "gstaying " << gstaying << " measure(input) "
          << measure_stays(NULL, idx, adj, wgt, nGlobalParts)
