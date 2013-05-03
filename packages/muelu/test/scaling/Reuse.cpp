@@ -220,6 +220,10 @@ int main(int argc, char *argv[]) {
       tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
       // No-op at present
 
+      
+      sprintf(timerName,"Reuse: Setup i=%d j=%d",i,j);
+      timer = TimeMonitor::getNewTimer(timerName);
+      timer->start();
       if(do_reuse==0 && j!=i) {
 	// No reuse: Do a full recompute
 	H->GetLevel(0)->Set("A", Amatvec);
@@ -231,6 +235,8 @@ int main(int argc, char *argv[]) {
 	H->GetLevel(0)->Set("A", Amatvec);
 	mueLuFactory.SetupHierarchy(*H);
       }
+      setup_times[i-first_matrix][j-first_matrix]=timer->stop();
+      timer=Teuchos::null;
 
       tm = Teuchos::null;
 
