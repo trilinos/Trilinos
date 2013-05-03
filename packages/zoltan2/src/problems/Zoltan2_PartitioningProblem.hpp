@@ -541,6 +541,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   }
   Z2_FORWARD_EXCEPTIONS;
 
+#ifdef KDDKDD_SHOULD_NEVER_CHANGE_PROBLEMCOMM
 #ifdef HAVE_ZOLTAN2_MPI
 
   // The algorithm may have changed the communicator.  Change it back.
@@ -551,6 +552,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
+#endif
 #endif
 
   if (metricsRequested_){
