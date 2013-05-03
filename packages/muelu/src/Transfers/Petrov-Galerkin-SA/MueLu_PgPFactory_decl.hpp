@@ -98,6 +98,8 @@ namespace MueLu {
     //! @name Set methods.
     //@{
 
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
     //! Change view of diagonal.
     void SetDiagonalView(std::string const& diagView);
 
@@ -149,13 +151,7 @@ namespace MueLu {
   private:
 
     //! Factory parameters
-    std::string diagonalView_;
-
-    //! minimization norm
-    MinimizationNorm min_norm_;
-
-    //! flag: reuse row based omegas from prolongator for restriction operator
-    bool bReUseRowBasedOmegas_;
+    std::string diagonalView_; // TODO do we need this?
   };
 
 } //namespace MueLu
