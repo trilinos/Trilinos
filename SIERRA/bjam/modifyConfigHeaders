@@ -14,6 +14,19 @@ for file in $filelist; do
   sed -i '/FortranCInterface_/d' ${name}_fcs.${ext}
 done
 
+echo '#if ! (defined (__IBMCPP__) || defined(__IBMC__))' >>  Teuchos_config.h
+echo '#else' >>  Teuchos_config.h
+echo '# define HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN' >>  Teuchos_config.h
+echo '# define HAVE_SLAPY2_PROBLEM' >>  Teuchos_config.h
+echo '# define HAVE_SLAPY2_DOUBLE_RETURN' >>  Teuchos_config.h
+echo '# define HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM' >>  Teuchos_config.h
+echo '#endif' >>  Teuchos_config.h
+sed -i '/HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN/d' Teuchos_config_fcs.h
+sed -i '/HAVE_SLAPY2_PROBLEM/d' Teuchos_config_fcs.h
+sed -i '/HAVE_SLAPY2_DOUBLE_RETURN/d' Teuchos_config_fcs.h
+sed -i '/HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM/d' Teuchos_config_fcs.h
+
+
 sed -i '/FINITE_VALUE_HAVE_GLOBAL_ISINF/d' NOX_Config_fcs.h
 sed -i '/FINITE_VALUE_HAVE_STD_ISINF/d' NOX_Config_fcs.h
 sed -i '/FINITE_VALUE_HAVE_GLOBAL_ISNAN/d' NOX_Config_fcs.h
