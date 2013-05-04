@@ -58,7 +58,6 @@ namespace {
   // Default value of Import's "Debug" parameter.
   const bool tpetraImportDebugDefault = false;
 
-
 #ifdef TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
   /// \class project1st
   /// \brief Binary function that returns its first argument.
@@ -1312,11 +1311,11 @@ namespace Tpetra {
     // are LIDs in the source Map.  Then, use the export PIDs to
     // initialize the Distributor via createFromSends.
 
-    const size_type numExportIDs1 = this->getNumExportIDs ();
+    // const size_type numExportIDs1 = this->getNumExportIDs ();
     ArrayView<const LO> exportLIDs1 = this->getExportLIDs ();
     ArrayView<const LO> exportPIDs1 = this->getExportPIDs ();
 
-    const size_type numExportIDs2 = rhs.getNumExportIDs ();
+    // const size_type numExportIDs2 = rhs.getNumExportIDs ();
     ArrayView<const LO> exportLIDs2 = rhs.getExportLIDs ();
     ArrayView<const LO> exportPIDs2 = rhs.getExportPIDs ();
 
@@ -1325,27 +1324,45 @@ namespace Tpetra {
     // as values, merging values by replacement.  Then, sort the
     // (LID,PID) pairs again by PID.
 
-    // Sort (LID,PID) pairs by LID for the later merge.
-    sort2 (exportLIDs1.begin (), exportLIDs1.end (),
-           exportPIDs1.begin (), exportPIDs1.end ());
-    sort2 (exportLIDs2.begin (), exportLIDs2.end (),
-           exportPIDs2.begin (), exportPIDs2.end ());
+    // Sort (LID,PID) pairs by LID for the later merge, and make
+    // each sequence unique by LID.
+    Array<LO> exportLIDs1Copy (exportLIDs1.begin (), exportLIDs1.end ());
+    Array<int> exportPIDs1Copy (exportLIDs1.begin (), exportLIDs1.end ());
+    sort2 (exportLIDs1Copy.begin (), exportLIDs1Copy.end (),
+           exportPIDs1Copy.begin ());
+    typename ArrayView<LO>::iterator exportLIDs1_end = exportLIDs1Copy.end ();
+    typename ArrayView<LO>::iterator exportPIDs1_end = exportPIDs1Copy.end ();
+    merge2 (exportLIDs1_end, exportPIDs1_end,
+            exportLIDs1Copy.begin (), exportLIDs1_end,
+            exportPIDs1Copy.begin (), exportPIDs1_end,
+            project1st<LO, LO> ());
+
+    Array<LO> exportLIDs2Copy (exportLIDs2.begin (), exportLIDs2.end ());
+    Array<int> exportPIDs2Copy (exportLIDs2.begin (), exportLIDs2.end ());
+    sort2 (exportLIDs2Copy.begin (), exportLIDs2Copy.end (),
+           exportPIDs2Copy.begin ());
+    typename ArrayView<LO>::iterator exportLIDs2_end = exportLIDs2Copy.end ();
+    typename ArrayView<LO>::iterator exportPIDs2_end = exportPIDs2Copy.end ();
+    merge2 (exportLIDs2_end, exportPIDs2_end,
+            exportLIDs2Copy.begin (), exportLIDs2_end,
+            exportPIDs2Copy.begin (), exportPIDs2_end,
+            project1st<LO, LO> ());
 
     // Merge export (LID,PID) pairs.  In this merge operation, the
     // LIDs are the "keys" and the PIDs their "values."  We combine
     // the "values" (PIDs) in the pairs by replacement, rather than
     // by adding them together.
-    keyValueMerge (exportLIDs1.begin (), exportLIDs1.end (),
-                   exportPIDs1.begin (), exportPIDs1.end (),
-                   exportLIDs2.begin (), exportLIDs2.end (),
-                   exportPIDs2.begin (), exportPIDs2.end (),
+    keyValueMerge (exportLIDs1Copy.begin (), exportLIDs1Copy.end (),
+                   exportPIDs1Copy.begin (), exportPIDs1Copy.end (),
+                   exportLIDs2Copy.begin (), exportLIDs2Copy.end (),
+                   exportPIDs2Copy.begin (), exportPIDs2Copy.end (),
                    std::back_inserter (exportLIDsUnion),
                    std::back_inserter (exportPIDsUnion),
                    project1st<int, int> ());
 
     // Resort the merged (LID,PID) pairs by PID.
     sort2 (exportPIDsUnion.begin (), exportPIDsUnion.end (),
-           exportLIDsUnion.begin (), exportLIDsUnion.end ());
+           exportLIDsUnion.begin ());
 
     // Initialize the Distributor.  Using createFromSends instead of
     // createFromRecvs avoids the initialization and use of a
