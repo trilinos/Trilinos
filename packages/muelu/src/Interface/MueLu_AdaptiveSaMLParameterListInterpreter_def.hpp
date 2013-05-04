@@ -94,9 +94,9 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "coarse: max size",                         int,                 128,       maxCoarseSize);
 
     MUELU_READ_PARAM(paramList, "aggregation: type",                std::string,         "Uncoupled",       agg_type);
-    MUELU_READ_PARAM(paramList, "aggregation: threshold",                double,                 0.0,       agg_threshold);
+    //MUELU_READ_PARAM(paramList, "aggregation: threshold",                double,                 0.0,       agg_threshold);
     MUELU_READ_PARAM(paramList, "aggregation: damping factor",           double, (double)4/(double)3,       agg_damping);
-    MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",            int,                   1,       agg_smoothingsweeps);
+    //MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",            int,                   1,       agg_smoothingsweeps);
     MUELU_READ_PARAM(paramList, "aggregation: nodes per aggregate",         int,                   1,       minPerAgg);
 
     MUELU_READ_PARAM(paramList, "null space: type",                 std::string,   "default vectors",       nullspaceType);
