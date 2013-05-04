@@ -53,9 +53,67 @@
 #include <Tpetra_Export.hpp>
 #include <Teuchos_as.hpp>
 
+
 namespace {
   // Default value of Import's "Debug" parameter.
   const bool tpetraImportDebugDefault = false;
+
+
+#ifdef TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
+  /// \class project1st
+  /// \brief Binary function that returns its first argument.
+  /// \tparam Arg1 Type of the first argument, and type of the
+  ///   return value.
+  /// \tparam Arg2 Type of the second argument.  It may differ from
+  ///   the type of the first argument.
+  ///
+  /// This function object is actually an SGI extension to the STL.
+  /// We can't count on it living in the std namespace, but it's
+  /// useful, so we define it here.
+  ///
+  /// If you apply <tt>using namespace std;</tt> to the global
+  /// namespace, and if your STL implementation includes project1st,
+  /// it will cause collisions with this definition.  We recommend for
+  /// this and other reasons not to state <tt>using namespace
+  /// std;</tt> in the global namespace.
+  template<class Arg1, class Arg2>
+  class project1st : public std::binary_function<Arg1, Arg2, Arg1> {
+  public:
+    typedef Arg1 first_argument_type;
+    typedef Arg2 second_argument_type;
+    typedef Arg1 result_type;
+    Arg1 operator () (const Arg1& x, const Arg2& ) const {
+      return x;
+    }
+  };
+
+  /// \class project2nd
+  /// \brief Binary function that returns its second argument.
+  /// \tparam Arg1 Type of the first argument.
+  /// \tparam Arg2 Type of the second argument, and type of the return
+  ///   value.  It may differ from the type of the first argument.
+  ///
+  /// This function object is actually an SGI extension to the STL.
+  /// We can't count on it living in the std namespace, but it's
+  /// useful, so we define it here.
+  ///
+  /// If you apply <tt>using namespace std;</tt> to the global
+  /// namespace, and if your STL implementation includes project1st,
+  /// it will cause collisions with this definition.  We recommend for
+  /// this and other reasons not to state <tt>using namespace
+  /// std;</tt> in the global namespace.
+  template<class Arg1, class Arg2>
+  class project2nd : public std::binary_function<Arg1, Arg2, Arg2> {
+  public:
+    typedef Arg1 first_argument_type;
+    typedef Arg2 second_argument_type;
+    typedef Arg2 result_type;
+    Arg2 operator () (const Arg1& , const Arg2& y) const {
+      return y;
+    }
+  };
+#endif // TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
+
 } // namespace (anonymous)
 
 namespace Tpetra {
@@ -1224,71 +1282,6 @@ namespace Tpetra {
       rcp (new map_type (INVALID, unionTgtGIDs (), indexBaseUnion,
                          comm, srcMap->getNode ()));
 
-    // Thus far, we have computed the following in the union Import:
-    //   - numSameIDs
-    //   - numPermuteIDs and permuteFromLIDs
-    //   - numRemoteIDs, remoteGIDs, remoteLIDs, and remotePIDs
-    //
-    // Now it's time to compute the export IDs.  We could do this
-    // cleverly, without communication, by merging the lists of
-    // (export LID, export PID) pairs from the two input Import
-    // objects.  The export LIDs in both input Import objects are LIDs
-    // in the source Map.  However, this makes it tricky to create the
-    // Distributor object.  For now, I'll just create the Distributor
-    // in the usual way.
-
-#if 0
-    {
-      const size_type numExportIDs1 = this->getNumExportIDs ();
-      ArrayView<const LO> exportLIDs1 = this->getExportLIDs ();
-      ArrayView<const LO> exportPIDs1 = this->getExportPIDs ();
-
-      const size_type numExportIDs2 = rhs.getNumExportIDs ();
-      ArrayView<const LO> exportLIDs2 = rhs.getExportLIDs ();
-      ArrayView<const LO> exportPIDs2 = rhs.getExportPIDs ();
-
-      // We have to keep the export LIDs in PID-sorted order, then
-      // merge them.  So, first key-value merge (LID,PID) pairs,
-      // treating PIDs as values, merging values by replacement.
-      // Then, sort the (LID,PID) pairs again by PID.
-
-      // Sort (LID,PID) pairs by LID for the later merge.
-      sort2 (exportLIDs1.begin (), exportLIDs1.end (),
-             exportPIDs1.begin (), exportPIDs1.end ());
-      sort2 (exportLIDs2.begin (), exportLIDs2.end (),
-             exportPIDs2.begin (), exportPIDs2.end ());
-
-      // Merge export (LID,PID) pairs.  In this merge operation, the
-      // LIDs are the "keys" and the PIDs their "values."  We combine
-      // the "values" (PIDs) in the pairs by replacement, rather than
-      // by adding them together.
-      //
-      // FIXME (mfh 01 May 2013) This keyValueMerge operation doesn't
-      // exist yet.
-      Array<int> exportPIDsUnion;
-      keyValueMerge (exportLIDs1.begin (), exportLIDs1.end (),
-                     exportPIDs1.begin (), exportPIDs1.end (),
-                     exportLIDs2.begin (), exportLIDs2.end (),
-                     exportPIDs2.begin (), exportPIDs2.end (),
-                     std::back_inserter (exportLIDsUnion),
-                     std::back_inserter (exportPIDsUnion),
-                     replace<int> ());
-
-      // Resort the merged (LID,PID) pairs by PID.
-      sort2 (exportPIDsUnion.begin (), exportPIDsUnion.end (),
-             exportLIDsUnion.begin (), exportLIDsUnion.end ());
-
-      Distributor distributor (comm);
-      (void) distributor.createFromSends (exportPIDsUnion ().getConst ());
-    }
-#endif // 0
-
-    // Call the Distributor's createFromRecvs() method to turn the
-    // remote GIDs and their owning processes into a send-and-receive
-    // communication plan.  remoteGIDsUnion and remotePIDsUnion are
-    // input; exportGIDsUnion and exportPIDsUnion are output arrays
-    // which are allocated by createFromRecvs().
-
 #ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
     if (myRank == 0) {
       cerr << endl;
@@ -1299,38 +1292,92 @@ namespace Tpetra {
     cerr << myRank << ": Computing export IDs and Distributor" << endl;
 #endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
 
+    // Thus far, we have computed the following in the union Import:
+    //   - numSameIDs
+    //   - numPermuteIDs and permuteFromLIDs
+    //   - numRemoteIDs, remoteGIDs, remoteLIDs, and remotePIDs
+    //
+    // Now it's time to compute the export IDs and initialize the
+    // Distributor.
+
     Array<GO> exportGIDsUnion;
+    Array<LO> exportLIDsUnion;
     Array<int> exportPIDsUnion;
-    Distributor distributor (comm);
+    Distributor distributor (comm, this->out_);
+
+#ifdef TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
+    // Compute the export IDs without communication, by merging the
+    // lists of (export LID, export PID) pairs from the two input
+    // Import objects.  The export LIDs in both input Import objects
+    // are LIDs in the source Map.  Then, use the export PIDs to
+    // initialize the Distributor via createFromSends.
+
+    const size_type numExportIDs1 = this->getNumExportIDs ();
+    ArrayView<const LO> exportLIDs1 = this->getExportLIDs ();
+    ArrayView<const LO> exportPIDs1 = this->getExportPIDs ();
+
+    const size_type numExportIDs2 = rhs.getNumExportIDs ();
+    ArrayView<const LO> exportLIDs2 = rhs.getExportLIDs ();
+    ArrayView<const LO> exportPIDs2 = rhs.getExportPIDs ();
+
+    // We have to keep the export LIDs in PID-sorted order, then merge
+    // them.  So, first key-value merge (LID,PID) pairs, treating PIDs
+    // as values, merging values by replacement.  Then, sort the
+    // (LID,PID) pairs again by PID.
+
+    // Sort (LID,PID) pairs by LID for the later merge.
+    sort2 (exportLIDs1.begin (), exportLIDs1.end (),
+           exportPIDs1.begin (), exportPIDs1.end ());
+    sort2 (exportLIDs2.begin (), exportLIDs2.end (),
+           exportPIDs2.begin (), exportPIDs2.end ());
+
+    // Merge export (LID,PID) pairs.  In this merge operation, the
+    // LIDs are the "keys" and the PIDs their "values."  We combine
+    // the "values" (PIDs) in the pairs by replacement, rather than
+    // by adding them together.
+    keyValueMerge (exportLIDs1.begin (), exportLIDs1.end (),
+                   exportPIDs1.begin (), exportPIDs1.end (),
+                   exportLIDs2.begin (), exportLIDs2.end (),
+                   exportPIDs2.begin (), exportPIDs2.end (),
+                   std::back_inserter (exportLIDsUnion),
+                   std::back_inserter (exportPIDsUnion),
+                   project1st<int, int> ());
+
+    // Resort the merged (LID,PID) pairs by PID.
+    sort2 (exportPIDsUnion.begin (), exportPIDsUnion.end (),
+           exportLIDsUnion.begin (), exportLIDsUnion.end ());
+
+    // Initialize the Distributor.  Using createFromSends instead of
+    // createFromRecvs avoids the initialization and use of a
+    // temporary Distributor object.
+    (void) distributor.createFromSends (exportPIDsUnion ().getConst ());
+#else // NOT TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
+
+    // Call the Distributor's createFromRecvs() method to turn the
+    // remote GIDs and their owning processes into a send-and-receive
+    // communication plan.  remoteGIDsUnion and remotePIDsUnion are
+    // input; exportGIDsUnion and exportPIDsUnion are output arrays
+    // which are allocated by createFromRecvs().
     distributor.createFromRecvs (remoteGIDsUnion.getConst (),
                                  remotePIDsUnion ().getConst (),
                                  exportGIDsUnion, exportPIDsUnion);
+
+    // Find the (source Map) LIDs corresponding to the export GIDs.
+    const size_type numExportIDsUnion = exportGIDsUnion.size ();
+    exportLIDsUnion.resize (numExportIDsUnion);
+    for (size_type k = 0; k < numExportIDsUnion; ++k) {
+      exportLIDsUnion[k] = srcMap->getLocalElement (exportGIDsUnion[k]);
+    }
+#endif // TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
 
 #ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
     {
       std::ostringstream os;
       os << myRank << ": exportGIDsUnion: " << toString (exportGIDsUnion ()) << endl;
       os << myRank << ": exportPIDsUnion: " << toString (exportPIDsUnion ()) << endl;
-      cerr << os.str ();
-    }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-    // Find the (source Map) LIDs corresponding to the export GIDs.
-    const size_type numExportIDsUnion = exportGIDsUnion.size ();
-    Array<LO> exportLIDsUnion (numExportIDsUnion);
-    for (size_type k = 0; k < numExportIDsUnion; ++k) {
-      exportLIDsUnion[k] = srcMap->getLocalElement (exportGIDsUnion[k]);
-    }
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    {
-      std::ostringstream os;
       os << myRank << ": exportLIDsUnion: " << toString (exportLIDsUnion ()) << endl;
       cerr << os.str ();
     }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
     comm->barrier ();
     cerr << "Creating union Import" << endl;
 #endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
