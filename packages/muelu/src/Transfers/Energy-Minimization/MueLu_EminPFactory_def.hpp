@@ -30,7 +30,11 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Nullspace",   Teuchos::null, "Generating factory for the nullspace");
     validParamList->set< RCP<const FactoryBase> >("Constraint",  Teuchos::null, "Generating factory for constraints");
     validParamList->set< int >                   ("Niterations",             3, "Number of iterations of the internal iterative method");
-
+    validParamList->set< int >                   ("Reuse Niterations",             1, "Number of iterations of the internal iterative method");
+    validParamList->set< RCP<Matrix           > >("P0",           Teuchos::null, "Initial guess at P");
+    validParamList->set< bool >                  ("Keep P0",      false, "Keep an initial P0 (for reuse)");
+    validParamList->set< RCP<Constraint       > >("Constraint0",   Teuchos::null, "Initial Constraint");
+    validParamList->set< bool >                  ("Keep Constraint0", false, "Keep an initial Constraint (for reuse)");
     return validParamList;
   }
 
@@ -51,18 +55,52 @@ namespace MueLu {
   void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator minimization", coarseLevel);
 
-    RCP<Matrix>      A          = Get< RCP<Matrix> >     (fineLevel,   "A");
-    RCP<MultiVector> B          = Get< RCP<MultiVector> >(fineLevel,   "Nullspace");
-    RCP<Matrix>      P0         = Get< RCP<Matrix> >     (coarseLevel, "P");
-    RCP<Constraint>  X          = Get< RCP<Constraint> > (coarseLevel, "Constraint");
-
     const ParameterList & pL = GetParameterList();
 
+    // Set keep flags
+    if(pL.isParameter("Keep P0") && pL.get<bool>("Keep P0"))
+	coarseLevel.Keep("P0",this);
+    if(pL.isParameter("Keep Constraint0") && pL.get<bool>("Keep Constraint0"))
+	coarseLevel.Keep("Constraint0",this);
+
+    // Reuse
+    int Niterations;
+    
+    // Get A, B
+    RCP<Matrix>      A          = Get< RCP<Matrix> >     (fineLevel,   "A");
+    RCP<MultiVector> B          = Get< RCP<MultiVector> >(fineLevel,   "Nullspace");
+
+    // Get P0 or make P
+    RCP<Matrix>      P0;
+    if(coarseLevel.IsAvailable("P0",this)) { 
+      P0 = coarseLevel.Get<RCP<Matrix> >("P0",this);
+      Niterations = pL.get<int>("Reuse Niterations");
+      GetOStream(Runtime0, 0) << "EminPFactory: Reusing P0"<<std::endl;
+
+    }
+    else {
+      P0 = Get< RCP<Matrix> >(coarseLevel, "P");
+      Niterations = pL.get<int>("Niterations");
+    }
+
+    // Get Constraint0 or make Constraint
+    RCP<Constraint>  X;
+    if(coarseLevel.IsAvailable("Constraint0",this)) {
+      X = coarseLevel.Get<RCP<Constraint> >("Constraint0",this);
+      GetOStream(Runtime0, 0) << "EminPFactory: Reusing Constraint0"<<std::endl;
+    }
+    else {
+      X = Get< RCP<Constraint> > (coarseLevel, "Constraint");
+    }
+
+
     RCP<Matrix>      P;
-    CGSolver EminSolver(pL.get<int>("Niterations"));
+    CGSolver EminSolver(Niterations);
     EminSolver.Iterate(*A, *X, *P0, *B, P);
 
+    Set(coarseLevel, "Constraint0", X);
     Set(coarseLevel, "P", P);
+    Set(coarseLevel, "P0",P);
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);

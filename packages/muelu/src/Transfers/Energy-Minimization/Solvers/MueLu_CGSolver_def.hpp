@@ -90,7 +90,8 @@ namespace MueLu {
     // Initial P0 would only be used for multiplication
     X = rcp_const_cast<Matrix>(rcpFromRef(P0));
 
-    tmpAP = Utils::Multiply(*A, false, *X, false, true, false);
+    //    tmpAP = Utils::Multiply(*A, false, *X, false, true, false);
+    tmpAP = Utils::Multiply(*A, false, *X, false,true, true);
     C.Apply(*tmpAP, *T);
 
     // R_0 = -A*X_0
@@ -114,7 +115,9 @@ namespace MueLu {
 
     for (size_t k = 0; k < nIts_; k++) {
       // AP = constrain(A*P)
-      tmpAP = Utils::Multiply(*A, false, *P, false, true, false);
+      //      tmpAP = Utils::Multiply(*A, false, *P, false, true, false);
+      if(k==0)   tmpAP = Utils::Multiply(*A, false, *P, false, true, true);
+      else tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP,true, true);
       C.Apply(*tmpAP, *T);
       AP = T;
 

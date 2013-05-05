@@ -301,8 +301,8 @@ int main(int argc, char *argv[]) {
   globalTimeMonitor = Teuchos::null;
   
   if (printTimings)
-    TimeMonitor::summarize(comm.ptr(), std::cout, false, true, false, Teuchos::Union);
-  
+    //    TimeMonitor::summarize(comm.ptr(), std::cout, false, true, false, Teuchos::Union);
+    TimeMonitor::summarize(comm.ptr(), std::cout);
  
   if(!mypid) {
     printf("************************* Iteration Counts ***********************\n");
