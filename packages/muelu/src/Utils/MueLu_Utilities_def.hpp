@@ -275,7 +275,8 @@ namespace MueLu {
                                                                           bool transposeB,
                                                                           RCP< Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > C_in,
                                                                           bool doFillComplete,
-                                                                          bool doOptimizeStorage) {
+                                                                          bool doOptimizeStorage,
+                                                                          bool allowMLMultiply) {
 
     RCP<Matrix> C;
 
@@ -287,7 +288,7 @@ namespace MueLu {
 
     // Optimization using ML Multiply when available
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_ML)
-    if (B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
+    if (allowMLMultiply && B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
 
       if (!transposeA && !transposeB) {
         RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(rcpFromRef(A)); // TODO: do conversion without RCPs.
@@ -400,33 +401,33 @@ namespace MueLu {
     int N_send = 0;
     int flag   = 0;
     for (int i=0; i<getrow_comm->N_neighbors; i++)
-      {
-        N_rcvd += (getrow_comm->neighbors)[i].N_rcv;
-        N_send += (getrow_comm->neighbors)[i].N_send;
-        if ( ((getrow_comm->neighbors)[i].N_rcv !=0) &&
-             ((getrow_comm->neighbors)[i].rcv_list != NULL) ) flag = 1;
-      }
+    {
+      N_rcvd += (getrow_comm->neighbors)[i].N_rcv;
+      N_send += (getrow_comm->neighbors)[i].N_send;
+      if ( ((getrow_comm->neighbors)[i].N_rcv !=0) &&
+           ((getrow_comm->neighbors)[i].rcv_list != NULL) ) flag = 1;
+    }
     // For some unknown reason, ML likes to have stuff one larger than
     // neccessary...
     std::vector<double> dtemp(N_local + N_rcvd + 1); // "double" vector for comm function
     std::vector<int>    cmap (N_local + N_rcvd + 1); // vector for gids
     for (int i=0; i<N_local; ++i)
-      {
-        cmap[i] = B.DomainMap().GID(i);
-        dtemp[i] = (double) cmap[i];
-      }
+    {
+      cmap[i] = B.DomainMap().GID(i);
+      dtemp[i] = (double) cmap[i];
+    }
     ML_cheap_exchange_bdry(&dtemp[0],getrow_comm,N_local,N_send,comm_AB); // do communication
     if (flag) // process received data
+    {
+      int count = N_local;
+      const int neighbors = getrow_comm->N_neighbors;
+      for (int i=0; i< neighbors; i++)
       {
-        int count = N_local;
-        const int neighbors = getrow_comm->N_neighbors;
-        for (int i=0; i< neighbors; i++)
-          {
-            const int nrcv = getrow_comm->neighbors[i].N_rcv;
-            for (int j=0; j<nrcv; j++)
-              cmap[getrow_comm->neighbors[i].rcv_list[j]] = (int) dtemp[count++];
-          }
+        const int nrcv = getrow_comm->neighbors[i].N_rcv;
+        for (int j=0; j<nrcv; j++)
+          cmap[getrow_comm->neighbors[i].rcv_list[j]] = (int) dtemp[count++];
       }
+    }
     else
       for (int i=0; i<N_local+N_rcvd; ++i) cmap[i] = (int)dtemp[i];
     dtemp.clear();  // free double array
@@ -446,36 +447,36 @@ namespace MueLu {
     // int guessnpr = A.MaxNumEntries()*B.MaxNumEntries();
     int educatedguess = 0;
     for (int i=0; i<myrowlength; ++i)
-      {
-        // get local row
-        ML_get_matrix_row(ml_AtimesB,1,&i,&allocated,&bindx,&val,&rowlength,0);
-        if (rowlength>educatedguess) educatedguess = rowlength;
-      }
+    {
+      // get local row
+      ML_get_matrix_row(ml_AtimesB,1,&i,&allocated,&bindx,&val,&rowlength,0);
+      if (rowlength>educatedguess) educatedguess = rowlength;
+    }
 
     // allocate our result matrix and fill it
     RCP<Epetra_CrsMatrix> result
-      = rcp(new Epetra_CrsMatrix(::Copy,A.RangeMap(),gcmap,educatedguess,false));
+        = rcp(new Epetra_CrsMatrix(::Copy,A.RangeMap(),gcmap,educatedguess,false));
 
     std::vector<int> gcid(educatedguess);
     for (int i=0; i<myrowlength; ++i)
+    {
+      const int grid = rowmap.GID(i);
+      // get local row
+      ML_get_matrix_row(ml_AtimesB,1,&i,&allocated,&bindx,&val,&rowlength,0);
+      if (!rowlength) continue;
+      if ((int)gcid.size() < rowlength) gcid.resize(rowlength);
+      for (int j=0; j<rowlength; ++j)
       {
-        const int grid = rowmap.GID(i);
-        // get local row
-        ML_get_matrix_row(ml_AtimesB,1,&i,&allocated,&bindx,&val,&rowlength,0);
-        if (!rowlength) continue;
-        if ((int)gcid.size() < rowlength) gcid.resize(rowlength);
-        for (int j=0; j<rowlength; ++j)
-          {
-            gcid[j] = gcmap.GID(bindx[j]);
-            if (gcid[j]<0) throw(Exceptions::RuntimeError("Error: cannot find gcid!"));
-          }
-        int err = result->InsertGlobalValues(grid,rowlength,val,&gcid[0]);
-        if (err!=0 && err!=1) {
-	  std::ostringstream errStr;
-	  errStr << "Epetra_CrsMatrix::InsertGlobalValues returned err=" << err;
-	  throw Exceptions::RuntimeError (errStr.str ());
-	}
+        gcid[j] = gcmap.GID(bindx[j]);
+        if (gcid[j]<0) throw(Exceptions::RuntimeError("Error: cannot find gcid!"));
       }
+      int err = result->InsertGlobalValues(grid,rowlength,val,&gcid[0]);
+      if (err!=0 && err!=1) {
+        std::ostringstream errStr;
+        errStr << "Epetra_CrsMatrix::InsertGlobalValues returned err=" << err;
+        throw Exceptions::RuntimeError (errStr.str ());
+      }
+    }
     // free memory
     if (bindx) ML_free(bindx);
     if (val) ML_free(val);

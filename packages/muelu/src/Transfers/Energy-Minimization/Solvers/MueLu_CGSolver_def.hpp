@@ -70,6 +70,10 @@ namespace MueLu {
 
     RCP<Matrix> X, P, R, Z, AP;
     RCP<Matrix> newX, tmpAP;
+#ifndef TWO_ARG_MATRIX_ADD
+    RCP<Matrix> newR, newP;
+#endif
+
     SC oldRZ, newRZ, alpha, beta, app;
 
     bool useTpetra = (A->getRowMap()->lib() == Xpetra::UseTpetra);
@@ -86,7 +90,8 @@ namespace MueLu {
     // Initial P0 would only be used for multiplication
     X = rcp_const_cast<Matrix>(rcpFromRef(P0));
 
-    tmpAP = Utils::Multiply(*A, false, *X, false, true, false);
+    //    tmpAP = Utils::Multiply(*A, false, *X, false, true, false);
+    tmpAP = Utils::Multiply(*A, false, *X, false,true, true);
     C.Apply(*tmpAP, *T);
 
     // R_0 = -A*X_0
@@ -110,7 +115,9 @@ namespace MueLu {
 
     for (size_t k = 0; k < nIts_; k++) {
       // AP = constrain(A*P)
-      tmpAP = Utils::Multiply(*A, false, *P, false, true, false);
+      //      tmpAP = Utils::Multiply(*A, false, *P, false, true, false);
+      if(k==0)   tmpAP = Utils::Multiply(*A, false, *P, false, true, true);
+      else tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP,true, true);
       C.Apply(*tmpAP, *T);
       AP = T;
 
@@ -126,23 +133,30 @@ namespace MueLu {
 
       // alpha = (R_k, Z_k)/(A*P_k, P_k)
       alpha = oldRZ / app;
-      std::cout << "emin: alpha = " << alpha << std::endl;
+      this->GetOStream(Runtime1,1) << "alpha = " << alpha << std::endl;
 
       // X_{k+1} = X_k + alpha*P_k
-#if 0
-      Utils2::TwoMatrixAdd(P, false, alpha, X, one);
-#else
+#ifndef TWO_ARG_MATRIX_ADD
       newX = Teuchos::null;
       Utils2::TwoMatrixAdd(P, false, alpha, X, false, Teuchos::ScalarTraits<Scalar>::one(), newX);
       newX->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       X.swap(newX);
+#else
+      Utils2::TwoMatrixAdd(P, false, alpha, X, one);
 #endif
 
       if (k == nIts_ - 1)
         break;
 
       // R_{k+1} = R_k - alpha*A*P_k
+#ifndef TWO_ARG_MATRIX_ADD
+      newR = Teuchos::null;
+      Utils2::TwoMatrixAdd(AP, false, -alpha, R, false, Teuchos::ScalarTraits<Scalar>::one(), newR);
+      newR->fillComplete(P0.getDomainMap(), P0.getRangeMap());
+      R.swap(newR);
+#else
       Utils2::TwoMatrixAdd(AP, false, -alpha, R, one);
+#endif
 
       // Z_{k+1} = M^{-1} R_{k+1}
       Z = MatrixFactory::BuildCopy(R);
@@ -153,7 +167,14 @@ namespace MueLu {
       beta = newRZ / oldRZ;
 
       // P_{k+1} = Z_{k+1} + beta*P_k
+#ifndef TWO_ARG_MATRIX_ADD
+      newP = Teuchos::null;
+      Utils2::TwoMatrixAdd(P, false, beta, Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
+      newP->fillComplete(P0.getDomainMap(), P0.getRangeMap());
+      P.swap(newP);
+#else
       Utils2::TwoMatrixAdd(Z, false, one, P, beta);
+#endif
 
       oldRZ = newRZ;
     }

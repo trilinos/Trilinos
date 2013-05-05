@@ -184,8 +184,9 @@ namespace MueLu {
                                 const Matrix & B,
                                 bool transposeB,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage = true) {
-      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, callFillCompleteOnResult, doOptimizeStorage);
+                                bool doOptimizeStorage        = true,
+                                bool allowMLMultiply          = true) {
+      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, callFillCompleteOnResult, doOptimizeStorage, allowMLMultiply);
 
     }
 
@@ -215,7 +216,8 @@ namespace MueLu {
                                 bool transposeB,
                                 RCP<Matrix> C_in,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage = true);
+                                bool doOptimizeStorage        = true,
+                                bool allowMLMultiply          = true);
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply
@@ -235,8 +237,8 @@ namespace MueLu {
     */
     static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(RCP<BlockedCrsMatrix> const &A, bool transposeA,
                                                         RCP<BlockedCrsMatrix> const &B, bool transposeB,
-                                                        bool doFillComplete=true,
-                                                        bool doOptimizeStorage=true);
+                                                        bool doFillComplete    = true,
+                                                        bool doOptimizeStorage = true);
 
     /*! @brief Helper function to calculate B = alpha*A + beta*B.
 

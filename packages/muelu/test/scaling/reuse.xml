@@ -54,6 +54,46 @@
       <Parameter name="P"                                   type="string" value="myTentativePFact"/>
     </ParameterList>
 
+
+    <!-- For SA -->
+    <!--ParameterList name="myProlongatorFact">
+      <Parameter name="factory"                             type="string" value="SaPFactory"/>
+      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
+    </ParameterList-->
+
+
+    <!-- For Emin -->
+    <ParameterList name="mySmoothFact">
+      <Parameter name="factory" type="string" value="SaPFactory"/>
+      <Parameter name="P" type="string" value="myTentativePFact"/>
+    </ParameterList>
+
+    <ParameterList name="myPatternFact">
+      <Parameter name="factory" type="string" value="PatternFactory"/>
+      <Parameter name="P" type="string" value="mySmoothFact"/>
+    </ParameterList>
+
+    <ParameterList name="myConstraintFact">
+      <Parameter name="factory" type="string" value="ConstraintFactory"/>
+      <Parameter name="Ppattern" type="string" value="myPatternFact"/>
+      <Parameter name="CoarseNullspace" type="string" value="myTentativePFact"/>
+    </ParameterList>
+
+    <ParameterList name="myProlongatorFact">
+      <Parameter name="factory"  type="string" value="EminPFactory"/>
+      <Parameter name="P" type="string" value="myTentativePFact"/>
+      <Parameter name="Constraint" type="string" value="myConstraintFact"/>
+      <Parameter name="Niterations" type="int" value="3"/>
+      <Parameter name="Reuse Niterations" type="int" value="1"/>
+      <Parameter name="Keep P0" type="bool" value="true"/>
+      <Parameter name="Keep Constraint0" type="bool" value="true"/>
+    </ParameterList>
+
+
+
+
+
+
     <ParameterList name="myRestrictionFact">
       <Parameter name="factory"                             type="string" value="TransPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
@@ -67,41 +107,12 @@
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string" value="myRestrictionFact"/>
+      <Parameter name="Keep AP Pattern"                     type="bool" value="true"/>
+      <Parameter name="Keep RAP Pattern"                    type="bool" value="true"/>
       <ParameterList name="TransferFactories">
         <!--Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"-->
         <!-- <Parameter name="Visualization"                     type="string" value="myAggExportFact"/> -->
       </ParameterList>
-    </ParameterList>
-
-
-    <!-- For SA -->
-    <!--ParameterList name="myProlongatorFact">
-      <Parameter name="factory"                             type="string" value="SaPFactory"/>
-      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
-    </ParameterList-->
-
-
-    <!-- For Emin -->
-    <ParameterList name="myPatternFact">
-      <Parameter name="factory" type="string" value="PatternFactory"/>
-      <Parameter name="P" type="string" value="mySmoothFact"/>
-    </ParameterList>
-
-    <ParameterList name="mySmoothFact">
-      <Parameter name="factory" type="string" value="SaPFactory"/>
-      <Parameter name="P" type="string" value="myTentativePFact"/>
-    </ParameterList>
-
-    <ParameterList name="myConstraintFact">
-      <Parameter name="factory" type="string" value="ConstraintFactory"/>
-      <Parameter name="Ppattern" type="string" value="myPatternFact"/>
-      <Parameter name="CoarseNullspace" type="string" value="myTentativePFact"/>
-    </ParameterList>
-
-    <ParameterList name="myProlongatorFact">
-      <Parameter name="factory"  type="string" value="EminPFactory"/>
-      <Parameter name="P" type="string" value="myTentativePFact"/>
-      <Parameter name="Constraint" type="string" value="myConstraintFact"/>
     </ParameterList>
 
 

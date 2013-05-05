@@ -7,6 +7,9 @@ Release Notes for TriBITS
 Trilinos 11.3:
 --------------
 
+(*) Added ENVIRONMENT env1=val1 env2=val2 ... argument to TRIBITS_ADD_TEST(),
+TRIBITS_ADD_ADVANCED_TEST(), and TRIBITS_ADD_EXECUTABLE_AND_TEST().
+
 (*) Fixed the generation of headers for explicit instantation system for
 subpackages: Now subpackages that use the macro
 TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS() to generate XXX.hpp header files with

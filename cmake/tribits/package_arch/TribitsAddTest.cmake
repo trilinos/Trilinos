@@ -82,6 +82,7 @@ INCLUDE(TribitsAddTestHelpers)
 #       | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
 #     [FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
 #     [WILL_FAIL]
+#     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
 #     )
 #  
 # The arguments to the function are as followes:
@@ -253,6 +254,10 @@ INCLUDE(TribitsAddTestHelpers)
 #
 #     If passed in, then the pass/fail criteria will be inverted.
 #
+#   ENVIRONMENT <var1>=<value1> <var2>=<value2> ...
+#
+#     If passed in, set the environment varaibles before calling the test.
+#
 # NOTES:
 #
 # 1) The test can be disabled by setting the variable
@@ -288,7 +293,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
      #prefix
      PARSE
      #lists
-     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT"
+     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT"
      #options
      "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;CREATE_WORKING_DIR"
      ${ARGN}
