@@ -52,13 +52,16 @@
 
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
-#include <Zoltan2_Remap.hpp>
 
 #include <cmath>
 #include <algorithm>
 #include <vector>
 
 namespace Zoltan2 {
+
+long measure_stays(partId_t *, int *, partId_t *, long *, partId_t, partId_t);
+partId_t matching(int *, partId_t *, long *, partId_t, partId_t *);
+
 
 /*! \brief A PartitioningSolution is a solution to a partitioning problem.
 
@@ -306,6 +309,21 @@ public:
   void setParts(ArrayRCP<const gno_t> &gnoList, 
     ArrayRCP<partId_t> &partList, bool dataDidNotMove);
   
+  ////////////////////////////////////////////////////////////////////
+  
+  /*! \brief Remap a new partition for maximum overlap with an input partition.
+   *
+   * Assumptions for this version:
+   * input part assignment == processor rank for every local object.
+   * assuming nGlobalParts <= num ranks
+   * TODO:  Write a version that takes the input part number as input;
+   *        this change requires input parts in adapters to be provided in
+   *        the Adapter.
+   * TODO:  For repartitioning, compare to old remapping results; see Zoltan1.
+   */
+
+  void RemapParts();
+
   ////////////////////////////////////////////////////////////////////
   // Results that may be queried by the user, by migration methods,
   // or by metric calculation methods.
@@ -1313,10 +1331,12 @@ template <typename Adapter>
     parts_ = partList;
   }
 
-#ifdef READY_FOR_REMAP
   // Now that parts_ info is back on home process, remap the parts.
-  Zoltan2::RemapParts<Adapter>(parts_, nGlobalParts_, comm_);
-#endif
+  int doRemap = 0;
+  const Teuchos::ParameterEntry *pe = 
+                 env_->getParameters().getEntryPtr("remap_parts");
+  if (pe) doRemap = pe->getValue(&doRemap);
+  if (doRemap) RemapParts();
 
   // Now determine which process gets each object, if not one-to-one.
 
@@ -1778,6 +1798,258 @@ template <typename Adapter>
     }
   }
 }
+
+////////////////////////////////////////////////////////////////////
+// Remap a new part assignment vector for maximum overlap with an input
+// part assignment.
+//
+// Assumptions for this version:
+//   input part assignment == processor rank for every local object.
+//   assuming nGlobalParts_ <= num ranks
+// TODO:  Write a version that takes the input part number as input;
+//        this change requires input parts in adapters to be provided in
+//        the Adapter.
+// TODO:  For repartitioning, compare to old remapping results; see Zoltan1.
+
+template <typename Adapter>
+void PartitioningSolution<Adapter>::RemapParts()
+{
+  size_t len = parts_.size();
+
+  partId_t me = comm_->getRank();
+  int np = comm_->getSize();
+
+  if (np < nGlobalParts_) {
+    if (me == 0)
+      cout << "Remapping not yet supported for "
+           << "num_global_parts " << nGlobalParts_
+           << " > num procs " << np << endl;
+    return;
+  }
+  // Build edges of a bipartite graph with nGlobalParts_ vertices in each set.
+  // Weight edge[parts_[i]] by the number of objects that are going from
+  // this rank to parts_[i].
+  // We use a map, assuming the number of unique parts in the parts_ array
+  // is small to keep the binary search efficient.
+  // TODO We use the count of objects to move; should change to SIZE of objects
+  // to move; need SIZE function in Adapter.
+
+  std::map<partId_t, long> edges;
+  long lstaying = 0;  // Total num of local objects staying if we keep the
+                      // current mapping. TODO:  change to SIZE of local objs
+  long gstaying = 0;  // Total num of objects staying in the current partition
+
+  if (me < nGlobalParts_) {
+    for (size_t i = 0; i < len; i++) {
+      edges[parts_[i]]++;                // TODO Use obj size instead of count
+      if (parts_[i] == me) lstaying++;    // TODO Use obj size instead of count
+    }
+  }
+  else {
+    // If me >= nGlobalPart, all of me's data has to move to new part #.
+    // No need to include in the matching.
+  }
+
+  Teuchos::reduceAll<int, long>(*comm_, Teuchos::REDUCE_SUM, 1,
+                                &lstaying, &gstaying);
+//TODO  if (gstaying == Adapter::getGlobalNumObjs()) return;  // Nothing to do
+
+  partId_t *remap = NULL;
+
+  int nedges = edges.size();
+
+  // Accumulate on rank 0:  2* (number of edges on each rank)
+  int *idx = NULL;
+  int *sizes = NULL;
+  if (me == 0) {
+    idx = new int[np+nGlobalParts_+1];
+    sizes = new int[np];
+  }
+  if (np > 1)
+    Teuchos::gather<int, int>(&nedges, 1, sizes, 1, 0, *comm_);
+  else
+    sizes[0] = nedges;
+
+  // prefix sum to build the idx array
+  partId_t maxPartsWithEdges = 0;
+  if (me == 0) {
+    idx[0] = 0;
+    for (int i = 0; i < np; i++) {
+      idx[i+1] = idx[i] + sizes[i];
+      if (sizes[i]) maxPartsWithEdges = i;
+    }
+    maxPartsWithEdges++;
+  }
+
+  // prepare to send edges
+  int cnt = 0;
+  partId_t *bufv = NULL;
+  long *bufw = NULL;
+  if (nedges) {
+    bufv = new partId_t[nedges];
+    bufw = new long[nedges];
+    // Create buffer with edges (me, part[i]) and weight edges[parts_[i]].
+    for (std::map<partId_t, long>::iterator it = edges.begin();
+         it != edges.end(); it++) {
+      bufv[cnt] = it->first;  // target part
+      bufw[cnt] = it->second; // weight
+      cnt++;
+    }
+  }
+
+  // Prepare to receive edges on rank 0
+  partId_t *adj = NULL;
+  long *wgt = NULL;
+  if (me == 0) {
+//SYM    adj = new partId_t[2*idx[np]];  // need 2x space to symmetrize later
+//SYM    wgt = new long[2*idx[np]];  // need 2x space to symmetrize later
+    adj = new partId_t[idx[np]];
+    wgt = new long[idx[np]];
+  }
+
+  Teuchos::gatherv<int, partId_t>(bufv, cnt, adj, sizes, idx, 0, *comm_);
+  Teuchos::gatherv<int, long>(bufw, cnt, wgt, sizes, idx, 0, *comm_);
+  delete [] bufv;
+  delete [] bufw;
+
+  // Now have constructed graph on rank 0.
+  // Call the matching algorithm
+
+  int doRemap;
+  if (me == 0) {
+    // We have the "LHS" vertices of the bipartite graph; need to create
+    // "RHS" vertices and add symmetric edges.
+//SYM    for (int i = 0; i < np; i++)
+//SYM      sizes[i] = 0;  // Reuse of sizes array assumes nGlobalParts_ <= np
+
+    for (int i = 0; i < idx[np]; i++) {
+//SYM      sizes[adj[i]]++;  // Number of edges with adj[i] as target
+      adj[i] += maxPartsWithEdges;  // New RHS vertex number;
+                                    // offset by num LHS vertices
+    }
+
+    // Build idx for RHS vertices
+    partId_t tnVtx = maxPartsWithEdges + nGlobalParts_;  // total # vertices
+    for (partId_t i = maxPartsWithEdges; i < tnVtx; i++) {
+//SYM      idx[i+1] = idx[i] + sizes[i-maxPartsWithEdges];
+      idx[i+1] = idx[i];  // No edges for RHS vertices
+    }
+
+//SYM    // Add edges from RHS vertices to LHS vertices
+//SYM    for (int i = 0; i < np; i++)
+//SYM      sizes[i] = 0;  // Reuse of sizes array assumes nGlobalParts_ <= np
+//SYM
+//SYM    for (partId_t i = 0; i < maxPartsWithEdges; i++) {
+//SYM      for (int j = idx[i]; j < idx[i+1]; j++) {
+//SYM        partId_t tgt = adj[j];
+//SYM        partId_t stgt = tgt - maxPartsWithEdges;
+//SYM        adj[idx[tgt]+sizes[stgt]] = i;
+//SYM        wgt[idx[tgt]+sizes[stgt]] = wgt[j+1];
+//SYM        sizes[stgt]++;
+//SYM      }
+//SYM    }
+
+//KDD    cout << "IDX ";
+//KDD    for (partId_t i = 0; i < tnVtx; i++) cout << idx[i] << " ";
+//KDD    cout << endl;
+
+//KDD    cout << "ADJ ";
+//KDD    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << adj[i] << " ";
+//KDD    cout << endl;
+
+//KDD    cout << "WGT ";
+//KDD    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << wgt[i] << " ";
+//KDD    cout << endl;
+
+    // Perform matching on the graph
+    partId_t *match = new partId_t[tnVtx];
+    for (partId_t i = 0; i < tnVtx; i++) match[i] = i;
+    partId_t nmatches = Zoltan2::matching(idx, adj, wgt, tnVtx, match);
+
+//KDD    cout << "After matching:  " << nmatches << " found" << endl;
+//KDD    for (partId_t i = 0; i < tnVtx; i++)
+//KDD      cout << "match[" << i << "] = " << match[i] 
+//KDD           << ((match[i] != i && 
+//KDD               (i < maxPartsWithEdges && match[i] != i+maxPartsWithEdges)) 
+//KDD                  ? " *" : " ")
+//KDD           << endl;
+
+    // See whether there were nontrivial changes in the matching.
+    bool nontrivial = false;
+    if (nmatches) {
+      for (partId_t i = 0; i < maxPartsWithEdges; i++) {
+        if ((match[i] != i) && (match[i] != (i+maxPartsWithEdges))) {
+          nontrivial = true;
+          break;
+        }
+      }
+    }
+
+    // Process the matches
+    if (nontrivial) {
+      remap = new partId_t[nGlobalParts_];
+      for (partId_t i = 0; i < nGlobalParts_; i++) remap[i] = -1;
+
+      bool *used = new bool[nGlobalParts_];
+      for (partId_t i = 0; i < nGlobalParts_; i++) used[i] = false;
+
+      // First, process all matched parts
+      for (partId_t i = 0; i < maxPartsWithEdges; i++) {
+        partId_t tmp = i + maxPartsWithEdges;
+        if (match[tmp] != tmp) {
+          remap[i] = match[tmp];
+          used[match[tmp]] = true;
+        }
+      }
+
+      // Second, process unmatched parts; keep same part number if possible
+      for (partId_t i = 0; i < nGlobalParts_; i++) {
+        if (remap[i] > -1) continue;
+        if (!used[i]) {
+          remap[i] = i;
+          used[i] = true;
+        }
+      }
+
+      // Third, process unmatched parts; give them the next unused part
+      for (partId_t i = 0, uidx = 0; i < nGlobalParts_; i++) {
+        if (remap[i] > -1) continue;
+        while (used[uidx]) uidx++;
+        remap[i] = uidx;
+        used[uidx] = true;
+      }
+      delete [] used;
+    }
+    delete [] match;
+
+    long newgstaying = Zoltan2::measure_stays(remap, idx, adj, wgt,
+                                              nGlobalParts_, maxPartsWithEdges);
+    doRemap = (newgstaying > gstaying);
+    cout << "gstaying " << gstaying << " measure(input) "
+         << Zoltan2::measure_stays(NULL, idx, adj, wgt,
+                                   nGlobalParts_, maxPartsWithEdges)
+         << " newgstaying " << newgstaying
+         << " nontrivial " << nontrivial
+         << " doRemap " << doRemap << endl;
+  }
+  delete [] idx;
+  delete [] sizes;
+  delete [] adj;
+  delete [] wgt;
+
+  Teuchos::broadcast<int, int>(*comm_, 0, 1, &doRemap);
+
+  if (doRemap) {
+    if (me != 0) remap = new partId_t[nGlobalParts_];
+    Teuchos::broadcast<int, partId_t>(*comm_, 0, nGlobalParts_, remap);
+    for (size_t i = 0; i < len; i++) {
+      parts_[i] = remap[parts_[i]];
+    }
+  }
+
+  delete [] remap;  // TODO May want to keep for repartitioning as in Zoltan
+}
+
 
 }  // namespace Zoltan2
 

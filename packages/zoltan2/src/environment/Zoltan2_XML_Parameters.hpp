@@ -242,6 +242,10 @@
     id=\"39\" name=\"assignment_type\" type=\"int\" validatorId=\"39\" value=\"1\" \
     docString=\"Migration processor assignment type, 0 for assignning procs with respect to weight, otherwise for assigning procs with respect to closeness\" \
     /> \
+   <Parameter  \
+    id=\"40\" name=\"remap_parts\" type=\"string\" validatorId=\"40\" value=\"no\" \
+    docString='  remap part numbers to minimize migration between old and new partitions' \
+    /> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
         <String integralValue=\"0\" stringDoc=\"no assertions will be performed\" stringValue=\"no_assertions\"/> \
@@ -450,6 +454,16 @@
       <Validator defaultParameterName=\"migration_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"37\"/> \
       <Validator defaultParameterName=\"migration_option\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"38\"/> \
       <Validator defaultParameterName=\"assignment_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"39\"/> \
+      <Validator defaultParameterName=\"remap_parts\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"40\"> \
+        <String integralValue=\"1\" stringValue=\"true\"/> \
+        <String integralValue=\"1\" stringValue=\"yes\"/> \
+        <String integralValue=\"1\" stringValue=\"1\"/> \
+        <String integralValue=\"1\" stringValue=\"on\"/> \
+        <String integralValue=\"0\" stringValue=\"false\"/> \
+        <String integralValue=\"0\" stringValue=\"no\"/> \
+        <String integralValue=\"0\" stringValue=\"0\"/> \
+        <String integralValue=\"0\" stringValue=\"off\"/> \
+      </Validator> \
     </Validators> \
   </ParameterList>"
 

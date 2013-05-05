@@ -73,7 +73,8 @@ typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
 void testFromDataFile(
   const RCP<const Teuchos::Comm<int> > & comm,
   int nParts,
-  string &filename
+  string &filename,
+  bool doRemap
 )
 {
   int me = comm->getRank();
@@ -102,6 +103,7 @@ void testFromDataFile(
   params.set("algorithm", "rcb");
   params.set("imbalance_tolerance", 1.1);
   params.set("bisection_num_test_cuts", 7);
+  if (doRemap) params.set("remap_parts", "yes");
 
 #ifdef HAVE_ZOLTAN2_MPI
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
@@ -129,7 +131,7 @@ void testFromDataFile(
     problem.printMetrics(cout);
 }
 
-void serialTest(int numParts)
+void serialTest(int numParts, bool doRemap)
 {
   int numCoords = 1000;
   numParts *= 8;
@@ -159,6 +161,7 @@ void serialTest(int numParts)
   params.set("algorithm", "rcb");
   params.set("imbalance_tolerance", 1.1);
   params.set("bisection_num_test_cuts", 7);
+  if (doRemap) params.set("remap_parts", "yes");
 
 #ifdef HAVE_ZOLTAN2_MPI
   Zoltan2::PartitioningProblem<inputAdapter_t> serialProblem(
@@ -216,20 +219,22 @@ int main(int argc, char *argv[])
   RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
   int rank = tcomm->getRank();
   int nParts = tcomm->getSize();
+  bool doRemap = false;
   string filename = "USAir97";
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
-  cmdp.setOption("nparts", &nParts, "Number of parts.");
   cmdp.setOption("file", &filename, "Name of the Matrix Market file to read");
+  cmdp.setOption("nparts", &nParts, "Number of parts.");
+  cmdp.setOption("remap", "no-remap", &doRemap, "Remap part numbers.");
   cmdp.parse(argc, argv);
 
   //meshCoordinatesTest(tcomm);
 
-  testFromDataFile(tcomm, nParts, filename);
+  testFromDataFile(tcomm, nParts, filename, doRemap);
 
   if (rank == 0)
-    serialTest(nParts);
+    serialTest(nParts, doRemap);
 
   if (rank == 0)
     std::cout << "PASS" << std::endl;
