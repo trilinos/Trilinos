@@ -134,6 +134,8 @@
 
 /* #undef Epetra_ENABLE_MKL_SPARSE */
 
+/* #undef Epetra_DISABLE_MKL_SPARSE_MM */
+
 /* Define if you want to have long long (64 bit) global indices only. */
 /* #undef EPETRA_NO_32BIT_GLOBAL_INDICES */
 
