@@ -46,6 +46,7 @@ SET(HEADERS ${HEADERS}
   Ifpack_Condest.h
   Ifpack.h
   Ifpack_DiagPreconditioner.h
+  Ifpack_DynamicFactory.h
   Ifpack_PointRelaxation.h
   Ifpack_BlockRelaxation.h
   Ifpack_Container.h
@@ -106,6 +107,7 @@ SET(SOURCES ${SOURCES}
   Ifpack_PointRelaxation.cpp
   Ifpack_Condest.cpp
   Ifpack.cpp
+  Ifpack_DynamicFactory.cpp
   Ifpack_DenseContainer.cpp
   Ifpack_LocalFilter.cpp
   Ifpack_NodeFilter.cpp
