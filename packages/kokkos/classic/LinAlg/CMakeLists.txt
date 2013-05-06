@@ -44,6 +44,8 @@ APPEND_SET(HEADERS
     # MKL helper class; doesn't depend on MKL library.
     Kokkos_Mkl_MatrixDescriptor.hpp
     # raw sequential and OpenMP kernels
+    Kokkos_Raw_addSparseMatrices_decl.hpp
+    Kokkos_Raw_addSparseMatrices_def.hpp
     Kokkos_Raw_SparseMatVec_decl.hpp
     Kokkos_Raw_SparseMatVec_def.hpp
     Kokkos_Raw_SparseTriangularSolve_decl.hpp
