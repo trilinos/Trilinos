@@ -192,9 +192,6 @@ int nthread_unlock(
     fflush(logger_get_file());
 #endif
 
-    /* yield to other threads */
-    usleep(0);
-
     return(rc);
 }
 
