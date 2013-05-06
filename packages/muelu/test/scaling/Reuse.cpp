@@ -107,7 +107,8 @@ int main(int argc, char *argv[]) {
 
   std::string xmlFileName  = "reuse.xml"; clp.setOption("xml",                   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'reuse.xml'");
   std::string matrixPrefix = "jac";       clp.setOption("matrix",               &matrixPrefix, "prefix for matrix file names.  Default = 'jac'");
-  std::string rhsPrefix    = "rhs";       clp.setOption("rhs" ,                 &matrixPrefix, "prefix for rhs file names.  Default = 'rhs'");
+  bool        binary       = false;       clp.setOption("binary", "nobinary",         &binary, "matrix files are binary. Default = false");
+  std::string rhsPrefix    = "rhs";       clp.setOption("rhs" ,                    &rhsPrefix, "prefix for rhs file names. Default = 'rhs'");
   bool        printTimings = true;        clp.setOption("timings", "notimings", &printTimings, "print timings to screen");
   int         first_matrix = 0;           clp.setOption("firstMatrix",          &first_matrix, "first matrix in the sequence to use");
   int         last_matrix  = 1;           clp.setOption("lastMatrix",            &last_matrix, "last matrix in the sequence to use");
@@ -142,7 +143,7 @@ int main(int argc, char *argv[]) {
   typedef Belos::OperatorT<MV> OP;
 
   // Stats tracking
-  int ArraySize = last_matrix-first_matrix+1;
+  int ArraySize = last_matrix - first_matrix + 1;
   Array<Array<int>    > iteration_counts(ArraySize);
   Array<Array<double> > iteration_times(ArraySize);
   Array<Array<double> > setup_times(ArraySize);
@@ -162,9 +163,14 @@ int main(int argc, char *argv[]) {
     sprintf(matrixFileName,"%s%d.mm", matrixPrefix.c_str(), i);
 
     // Load the matrix
-    if (!mypid)
-      std::cout << "Loading matrix... " << matrixFileName << endl;
-    Aprecond = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm);
+    if (!mypid) std::cout << "Loading matrix \"" << matrixFileName << "\"... ";
+    try {
+      Aprecond = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
+      if (!mypid) std::cout << "done" << std::endl;
+    } catch (...) {
+      if (!mypid) std::cout << "failed" << std::endl;
+      return 1;
+    }
     Aprecond->SetFixedBlockSize(numPDEs);
 
     // Build the nullspace
@@ -179,13 +185,13 @@ int main(int argc, char *argv[]) {
 
     // Build the preconditioner
     if (!mypid)
-      std::cout << "Building preconditioner... " << matrixFileName << endl;
+      std::cout << "Building preconditioner \"" << matrixFileName << "\" ..." << std::endl;
     sprintf(timerName, "Reuse: Preconditioner Setup i=%d", i);
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
 
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
     H->SetDefaultVerbLevel(MueLu::Extreme);
-    H->GetLevel(0)->Set("A", Aprecond);
+    H->GetLevel(0)->Set("A",         Aprecond);
     H->GetLevel(0)->Set("Nullspace", nullspace);
     H->IsPreconditioner(true);
 
@@ -201,9 +207,14 @@ int main(int argc, char *argv[]) {
 
       if (j != i) {
         // Load the matrix
-        if (!mypid)
-          std::cout << "Loading matrix " << matrixFileName << endl;
-        Amatvec = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm);
+        if (!mypid) std::cout << "Loading matrix \"" << matrixFileName << "\"...";
+        try {
+          Amatvec = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
+          if (!mypid) std::cout << "done" << std::endl;
+        } catch (...) {
+          if (!mypid) std::cout << "failed" << std::endl;
+          return 1;
+        }
 
       } else {
         Amatvec = Aprecond;
@@ -242,7 +253,7 @@ int main(int argc, char *argv[]) {
 
       // Load the RHS
       if (!mypid)
-        std::cout << "Loading rhs " << rhsFileName<<endl;
+        std::cout << "Loading rhs " << rhsFileName << std::endl;
       rhs = Utils::Read(string(rhsFileName), Amatvec->getRowMap());
 
       // Create an LHS

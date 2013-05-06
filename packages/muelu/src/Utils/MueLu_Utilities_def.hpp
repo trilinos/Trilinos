@@ -788,7 +788,7 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(std::string const & fileName,  const RCP<const Map> & map){   
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(std::string const & fileName,  const RCP<const Map> & map){
     Xpetra::UnderlyingLib lib = map->lib();
 
     if (lib == Xpetra::UseEpetra) {
@@ -799,14 +799,14 @@ namespace MueLu {
 #     else
       throw(Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support."));
 #     endif
-    } 
-    else if (lib == Xpetra::UseTpetra) {      
+    }
+    else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
       typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
       typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
       typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
       typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> multivector_type;
-      
+
       RCP<const map_type> temp = toTpetra(map);
       RCP<multivector_type> TMV=reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
       RCP<MultiVector> rmv = Xpetra::toXpetra(TMV);
@@ -814,61 +814,87 @@ namespace MueLu {
 #     else
       throw(Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support."));
 #     endif
-    } 
+    }
     else {
       throw(Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra."));
     }
-    
-    return Teuchos::null;  
+
+    return Teuchos::null;
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm)
-  {
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary) {
+    if (binary == false) {
+      // Matrix Market file format (ASCII)
+      if (lib == Xpetra::UseEpetra) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+        Epetra_CrsMatrix *eA;
+        const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(comm);
+        int rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), *epcomm, eA);
+        if (rv != 0)
+          throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + toString(rv));
 
-    if (lib == Xpetra::UseEpetra) {
+        RCP<Epetra_CrsMatrix> tmpA = rcp(eA);
+        RCP<Matrix>           A    = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tmpA);
 
-#     if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-
-      Epetra_CrsMatrix *A;
-      const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(comm);
-      int rv = EpetraExt::MatrixMarketFileToCrsMatrix( fileName.c_str(), *epcomm, A);
-      if (rv != 0) {
-        std::ostringstream buf;
-        buf << rv;
-        std::string msg = "EpetraExt::MatrixMarketFileToCrsMatrix return value of " + buf.str();
-        throw(Exceptions::RuntimeError(msg));
-      }
-      RCP<Epetra_CrsMatrix> tmpA = rcp(A);
-      RCP<Matrix> rcpA = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tmpA);
-      return rcpA;
-#     else
-      throw(Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support."));
-#     endif
-
-    } else if (lib == Xpetra::UseTpetra) {
-
+        return A;
+#else
+        throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
+#endif
+      } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
-      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
+        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+        typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
-      RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-      bool callFillComplete = true;
-      RCP<sparse_matrix_type> tpA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
-      if (tpA.is_null())
-        throw(Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null."));
-      RCP<TpetraCrsMatrix> tmpA1 = rcp(new TpetraCrsMatrix(tpA) );
-      RCP<CrsMatrix> tmpA2 = rcp_implicit_cast<CrsMatrix>(tmpA1);
-      RCP<Matrix> returnA = rcp( new CrsMatrixWrap(tmpA2) );
-      return returnA;
+        RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
+        bool callFillComplete = true;
 
-#     else
-      throw(Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support."));
-#     endif
+        RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
+        if (tA.is_null())
+          throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
 
+        RCP<TpetraCrsMatrix> tmpA1 = rcp(new TpetraCrsMatrix(tA));
+        RCP<CrsMatrix>       tmpA2 = rcp_implicit_cast<CrsMatrix>(tmpA1);
+        RCP<Matrix>          A     = rcp(new CrsMatrixWrap(tmpA2));
+
+        return A;
+#else
+        throwExceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
+      } else {
+        throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+      }
     } else {
-        throw(Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra."));
+      // Custom file format (binary)
+      std::ifstream ifs(fileName.c_str(), std::ios::binary);
+      TEUCHOS_TEST_FOR_EXCEPTION(!ifs.good(), Exceptions::RuntimeError, "Can not read \"" << fileName << "\"");
+      int m, n, nnz;
+      ifs.read(reinterpret_cast<char*>(&m),   sizeof(m));
+      ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
+      ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
+
+      GO indexBase = 0;
+      RCP<Map>    map = MapFactory   ::Build(lib, m, indexBase, comm);
+      RCP<Matrix> A   = MatrixFactory::Build(map, 1);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
+
+      Teuchos::Array<GO>     inds;
+      Teuchos::Array<double> vals;
+      for (int i = 0; i < m; i++) {
+        int row, rownnz;
+        ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
+        ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
+        inds.resize(rownnz);
+        vals.resize(rownnz);
+        for (int j = 0; j < rownnz; j++) ifs.read(reinterpret_cast<char*>(&inds[0]+j), sizeof(inds[j]));
+        for (int j = 0; j < rownnz; j++) ifs.read(reinterpret_cast<char*>(&vals[0]+j), sizeof(vals[j]));
+        A->insertGlobalValues(row, inds, vals);
+      }
+      A->fillComplete();
+      return A;
     }
 
     return Teuchos::null;
