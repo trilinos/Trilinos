@@ -119,7 +119,12 @@ namespace MueLu {
         // Modify seed of the random algorithm used by perturbWt_->randomize()
         {
           ST::seedrandom( Teuchos::as<unsigned int>(MyPid*47) );
+#ifdef __APPLE__
+          //Teuchos::ScalarTraits calls random on Apple platforms, so reduce # of calls by one here.
+          for (int i = 0; i < 9; ++i) ST::random();
+#else
           for (int i = 0; i < 10; ++i) ST::random();
+#endif
         }
         //Note that we must not use perturbWt_->randomize().  This produces the same
         //local random vector on each processor.  The whole point of the weights
