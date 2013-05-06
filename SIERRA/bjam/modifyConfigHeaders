@@ -15,7 +15,6 @@ for file in $filelist; do
 done
 
 echo '#if ! (defined (__IBMCPP__) || defined(__IBMC__))' >>  Teuchos_config.h
-echo '#else' >>  Teuchos_config.h
 echo '# define HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN' >>  Teuchos_config.h
 echo '# define HAVE_SLAPY2_PROBLEM' >>  Teuchos_config.h
 echo '# define HAVE_SLAPY2_DOUBLE_RETURN' >>  Teuchos_config.h
