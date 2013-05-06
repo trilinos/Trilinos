@@ -52,6 +52,7 @@
 
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
+#include <Zoltan2_Remap.hpp>
 
 #include <cmath>
 #include <algorithm>
@@ -59,7 +60,7 @@
 
 namespace Zoltan2 {
 
-long measure_stays(partId_t *, int *, partId_t *, long *, partId_t, partId_t);
+//long measure_stays(partId_t *, int *, partId_t *, long *, partId_t, partId_t);
 partId_t matching(int *, partId_t *, long *, partId_t, partId_t *);
 
 
