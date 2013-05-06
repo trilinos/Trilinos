@@ -186,20 +186,77 @@ addSparseMatrices (OffsetType*& ptrResult,
     // the number of entries in each row.  We'll do this in place in the
     // row offsets array.  This may be done safely in parallel.  Doing
     // so would first-touch initialize ptrOut.
-    ptrOut[0] = 0;
-    for (OrdinalType i = 0; i < numRows; ++i) {
-      ptrOut[i+1] = countMergedRowEntries (ptr1, ind1, ptr2, ind2, i);
+
+    if (alpha == STS::zero ()) {
+      if (beta == STS::zero ()) {
+        // Special case: alpha == 0, beta == 0.
+        // The resulting sum has zero entries.
+        std::fill (ptrOut, ptrOut + numRows + 1, Teuchos::as<OffsetType> (0));
+        ptrResult = ptrOut;
+        indResult = NULL;
+        valResult = NULL;
+        return;
+      } else { // alpha == 0, beta != 0
+        // Just copy the second matrix, suitably scaled, into the output.
+        memcpy (ptrOut, ptr2, (numRows+1) * sizeof (OffsetType));
+        const OffsetType numEntries = ptr2[numRows];
+        indOut = new OrdinalType [numEntries];
+        memcpy (indOut, ind2, numEntries * sizeof (OrdinalType));
+        valOut = new ScalarType [numEntries];
+        if (beta == STS::one ()) {
+          memcpy (valOut, val2, numEntries * sizeof (ScalarType));
+        } else { // beta != 1
+          for (OrdinalType k = 0; k < numEntries; ++k) {
+            valOut[k] = beta * val2[k];
+          }
+        }
+        ptrResult = ptrOut;
+        indResult = indOut;
+        valResult = valOut;
+        return;
+      }
     }
-    // Sum-scan to compute row offsets.
-    // This may be parallelized via e.g., TBB's parallel_scan().
-    for (OrdinalType i = 1; i < numRows; ++i) {
-      ptrOut[i+1] += ptrOut[i];
+    else if (beta == STS::zero ()) { // alpha != 0, beta == 0
+      // Just copy the first matrix into the output.
+      memcpy (ptrOut, ptr1, (numRows+1) * sizeof (OffsetType));
+      const OffsetType numEntries = ptr1[numRows];
+      indOut = new OrdinalType [numEntries];
+      memcpy (indOut, ind1, numEntries * sizeof (OrdinalType));
+      valOut = new ScalarType [numEntries];
+      if (alpha == STS::one ()) {
+        memcpy (valOut, val1, numEntries * sizeof (ScalarType));
+      } else { // alpha != 1
+        for (OrdinalType k = 0; k < numEntries; ++k) {
+          valOut[k] = alpha * val1[k];
+        }
+      }
+      ptrResult = ptrOut;
+      indResult = indOut;
+      valResult = valOut;
+      return;
+    }
+    else { // alpha != 0 and beta != 0
+      ptrOut[0] = 0;
+      for (OrdinalType i = 0; i < numRows; ++i) {
+        ptrOut[i+1] = countMergedRowEntries (ptr1, ind1, ptr2, ind2, i);
+      }
+      // Sum-scan to compute row offsets.
+      // This may be parallelized via e.g., TBB's parallel_scan().
+      for (OrdinalType i = 1; i < numRows; ++i) {
+        ptrOut[i+1] += ptrOut[i];
+      }
     }
   } catch (...) {
     if (ptrOut != NULL) {
       delete [] ptrOut;
-      throw;
     }
+    if (indOut != NULL) {
+      delete [] indOut;
+    }
+    if (valOut != NULL) {
+      delete [] valOut;
+    }
+    throw;
   }
   //
   // Allocate storage for indices and values.
@@ -211,9 +268,10 @@ addSparseMatrices (OffsetType*& ptrResult,
     indOut = new OrdinalType [numEntries];
     valOut = new ScalarType [numEntries];
 
-    // Merge and add the matrices.  This may be done safely in parallel,
-    // since all the arrays have correct sizes and writes to different
-    // rows are independent.
+    // Merge and add the matrices.  This may be done safely in
+    // parallel, since all the arrays have correct sizes and writes to
+    // different rows are independent.  We've also already tested for
+    // the special cases alpha == 0 and/or beta == 0.
     if (alpha == STS::one () && beta == STS::one ()) {
       for (OrdinalType i = 0; i < numRows; ++i) {
         (void) mergeRows (ptrOut, indOut, valOut,
