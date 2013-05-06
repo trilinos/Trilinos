@@ -264,7 +264,7 @@ namespace Kokkos {
   /// \tparam Ordinal The type of (local) column indices in the sparse matrix.
   /// \tparam Node The Kokkos Node type.
   template <class Scalar, class Ordinal, class Node>
-  class CuspOps : public Teuchos::Describable.hpp {
+  class CuspOps : public Teuchos::Describable {
   public:
     //@{
     //! @name Typedefs and structs
@@ -314,6 +314,19 @@ namespace Kokkos {
 
     //! Constructor accepting and retaining a node object.
     CuspOps(const RCP<Node> &node);
+
+    /// \brief "Sum constructor": compute *this = alpha*A + beta*B.
+    ///
+    /// The resulting matrix shares the Node instance and copies the
+    /// parameters of the matrix A.
+    CuspOps (const Scalar& alpha,
+             const CuspOps<Scalar, Ordinal, Node, Allocator>& A,
+             const Scalar& beta,
+             const CuspOps<Scalar, Ordinal, Node, Allocator>& B)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "CuspOps: sum constructor not implemented.");
+    }
 
     //! Destructor
     ~CuspOps();
@@ -476,6 +489,18 @@ namespace Kokkos {
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "CuspOps: gaussSeidel not implemented");
+    }
+
+    /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
+    ///
+    /// This method may choose to reuse storage of <tt>*this</tt>.
+    void
+    addInPlace (const Scalar& alpha,
+                const CuspOps<Scalar, Ordinal, Node, Allocator>& A,
+                const Scalar& beta)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "CuspOps: addInPlace not implemented");
     }
     //@}
 

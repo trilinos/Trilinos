@@ -685,6 +685,19 @@ namespace Kokkos {
     //! Constructor accepting and retaining a node object.
     CUSPARSEOps(const RCP<Node> &node);
 
+    /// \brief "Sum constructor": compute *this = alpha*A + beta*B.
+    ///
+    /// The resulting matrix shares the Node instance and copies the
+    /// parameters of the matrix A.
+    CUSPARSEOps (const Scalar& alpha,
+                 const CUSPARSEOps<Scalar, Ordinal, Node, Allocator>& A,
+                 const Scalar& beta,
+                 const CUSPARSEOps<Scalar, Ordinal, Node, Allocator>& B)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "CUSPARSEOps: sum constructor not implemented.");
+    }
+
     //! Destructor
     ~CUSPARSEOps();
 
@@ -856,6 +869,18 @@ namespace Kokkos {
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "CUSPARSEOps: gaussSeidel not implemented");
+    }
+
+    /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
+    ///
+    /// This method may choose to reuse storage of <tt>*this</tt>.
+    void
+    addInPlace (const Scalar& alpha,
+                const AltSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                const Scalar& beta)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "CUSPARSEOps: addInPlace not implemented");
     }
     //@}
 
