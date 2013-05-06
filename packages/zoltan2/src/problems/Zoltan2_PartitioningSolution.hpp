@@ -60,7 +60,7 @@
 
 namespace Zoltan2 {
 
-//long measure_stays(partId_t *, int *, partId_t *, long *, partId_t, partId_t);
+long measure_stays(partId_t *, int *, partId_t *, long *, partId_t, partId_t);
 partId_t matching(int *, partId_t *, long *, partId_t, partId_t *);
 
 

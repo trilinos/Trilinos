@@ -56,6 +56,7 @@ namespace Zoltan2 {
 
 
 ////////////////////////////////////////////////////////////////////
+#if 0
 static long measure_stays(
   partId_t *remap,
   int *idx,
@@ -404,6 +405,7 @@ static void RemapParts(
   delete [] remap;  // TODO May want to keep for repartitioning as in Zoltan
 }
 
+#endif
 
 }
 
