@@ -582,6 +582,76 @@ TEUCHOS_UNIT_TEST( KokkosRaw, AddSparseMatrices )
     }
   }
 
+  out << "Test alpha = 0, beta = 0" << endl;
+  {
+    const ScalarType alpha = Teuchos::as<ST> (0);
+    const ScalarType beta = Teuchos::as<ST> (0);
+    OffsetType* ptrOut = NULL;
+    OrdinalType* indOut = NULL;
+    ScalarType* valOut = NULL;
+    Kokkos::Raw::addSparseMatrices<OffsetType, OrdinalType, ScalarType> (
+      ptrOut, indOut, valOut,
+      alpha, ptr1, ind1, val1,
+      beta, ptr2, ind2, val2,
+      numRows);
+    MT maxDiff = STM::zero ();
+    try {
+      ArrayView<const OffsetType> ptr1_view (const_cast<const OffsetType*> (ptr1), numRows+1);
+      const OffsetType numEntries1 = ptr1_view[numRows];
+      ArrayView<const OrdinalType> ind1_view (const_cast<const OrdinalType*> (ind1), numEntries1);
+      ArrayView<const ScalarType> val1_view (const_cast<const ScalarType*> (val1), numEntries1);
+
+      ArrayView<const OffsetType> ptr2_view (const_cast<const OffsetType*> (ptr2), numRows+1);
+      const OffsetType numEntries2 = ptr2_view[numRows];
+      ArrayView<const OrdinalType> ind2_view (const_cast<const OrdinalType*> (ind2), numEntries2);
+      ArrayView<const ScalarType> val2_view (const_cast<const ScalarType*> (val2), numEntries2);
+
+      ArrayView<const OffsetType> ptrOut_view (const_cast<const OffsetType*> (ptrOut), numRows+1);
+      const OffsetType numEntriesOut = ptrOut_view[numRows];
+      ArrayView<const OrdinalType> indOut_view (const_cast<const OrdinalType*> (indOut), numEntriesOut);
+      ArrayView<const ScalarType> valOut_view (const_cast<const ScalarType*> (valOut), numEntriesOut);
+
+      maxDiff = testAddSparseMatrices<OffsetType, OrdinalType, ST> (
+        ptrOut_view, indOut_view, valOut_view,
+        alpha, ptr1_view, ind1_view, val1_view,
+        beta, ptr2_view, ind2_view, val2_view,
+        numRows, numCols, out);
+    } catch (...) {
+      if (ptrOut != NULL) {
+        delete [] ptrOut;
+      }
+      if (indOut != NULL) {
+        delete [] indOut;
+      }
+      if (valOut != NULL) {
+        delete [] valOut;
+      }
+      throw;
+    }
+
+    out << "maxDiff: " << maxDiff << endl;
+
+    // The error bound is an upper bound for each row.  The sum of the
+    // two test matrices contains at most three entries per row.
+    // Thus, computing each entry of the vector resulting from
+    // multiplying the sum by the vector of all ones (which is what
+    // the test does) involves a sum of at most three nonzero values.
+    // This is a generous upper bound, since alpha = 0 and beta = 0 in
+    // this case.  Multiply this by 10 to allow for a bit more error.
+    const bool notTooBad = (maxDiff < Teuchos::as<ST> (30) * STS::eps ());
+    TEST_EQUALITY_CONST( notTooBad, true );
+
+    if (ptrOut != NULL) {
+      delete [] ptrOut;
+    }
+    if (indOut != NULL) {
+      delete [] indOut;
+    }
+    if (valOut != NULL) {
+      delete [] valOut;
+    }
+  }
+
   out << "Freeing test matrices' memory" << endl;
   if (ptr1 != NULL) {
     delete [] ptr1;
