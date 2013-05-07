@@ -43,6 +43,9 @@
 #ifndef PIRO_EPETRA_PERFORMSOLVE_HPP
 #define PIRO_EPETRA_PERFORMSOLVE_HPP
 
+//! \file Piro_Epetra_PerformSolve.hpp
+//! \brief Drivers for evaluating the responses and sensitivities of a solved Epetra-basd model.
+
 #include "EpetraExt_ModelEvaluator.h"
 
 #include "Teuchos_RCP.hpp"
@@ -56,17 +59,27 @@ namespace Piro {
 
 namespace Epetra {
 
-void PerformSolve(
-    const EpetraExt::ModelEvaluator &piroSolver,
-    Teuchos::ParameterList &solveParams,
-    Teuchos::Array<Teuchos::RCP<const Epetra_Vector> > &responses,
-    Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Epetra_MultiVector> > > &sensitivities);
+//! \name Top-level Solve drivers
 
+//@{
+//! \brief Evaluates the solved model and returns specified responses and sensitivities.
+//! \details Returns the requested responses and optionally the corresponding sensitivities with respect to all parameters.
+//!          This version accepts pointers to non-<tt>const</tt> objects.
 void PerformSolve(
     const EpetraExt::ModelEvaluator &piroSolver,
     Teuchos::ParameterList &solveParams,
     Teuchos::Array<Teuchos::RCP<Epetra_Vector> > &responses,
     Teuchos::Array<Teuchos::Array<Teuchos::RCP<Epetra_MultiVector> > > &sensitivities);
+
+//! \brief Evaluates the solved model and returns specified responses and sensitivities.
+//! \details Returns the requested responses and optionally the corresponding sensitivities with respect to all parameters.
+//!          This version accepts pointers to <tt>const</tt>-qualified objects.
+void PerformSolve(
+    const EpetraExt::ModelEvaluator &piroSolver,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<const Epetra_Vector> > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Epetra_MultiVector> > > &sensitivities);
+//@}
 
 } // namespace Epetra
 
