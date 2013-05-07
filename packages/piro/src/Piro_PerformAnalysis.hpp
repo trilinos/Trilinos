@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,12 +36,15 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
 #ifndef PIRO_PERFORMANALYSIS
 #define PIRO_PERFORMANALYSIS
+
+//! \file Piro_PerformAnalysis.hpp
+//! \brief Drivers for performing analysis of a solved model.
 
 #include "Piro_ConfigDefs.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -51,43 +54,55 @@
 
 namespace Piro {
 
-  //! Top level function for performing analysis of a solved model.
-  //! This function calls one of the following methods.
+  //! \name Top-level Analysis driver
+  //@{
+  //! \brief Performs analysis of a solved model.
+  //! \details This function calls one of the package-specific drivers.
   int PerformAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& analysisParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& result
      );
+  //@}
 
-  //! Function that calls MOOCHO for analysis
+  //! \name Package-specific Analysis drivers called by the top-level driver
+  //@{
+  //! \brief Performs analysis of a solved model using MOOCHO.
+  //! \details Requires that the MOOCHO package is available.
   int PerformMoochoAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& moochoParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
 
-  //! Function that calls Dakota via TriKota for analysis
+  //! \brief Performs analysis of a solved model using Dakota via %TriKota.
+  //! \details Requires that the %TriKota package is available.
   int PerformDakotaAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& dakotaParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
 
-  //! Function that calls Optipack for analysis
+  //! \brief Performs analysis of a solved model using Optipack.
+  //! \details Requires that the MOOCHO package is available.
   int PerformOptiPackAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& optipackParams,
      Teuchos::ParameterList& globipackParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
+  //@}
 
-  //! Valid parameters for the list sent to PerformAnalysis 
+  //! \name Analysis driver parameter list validation
+  //@{
+  //! Valid parameters for the list sent to PerformAnalysis
   Teuchos::RCP<const Teuchos::ParameterList>
     getValidPiroAnalysisParameters();
 
-  //! Valid parameters for the list sent to PerformDakotaAnalysis 
+  //! Valid parameters for the list sent to PerformDakotaAnalysis
   Teuchos::RCP<const Teuchos::ParameterList>
     getValidPiroAnalysisDakotaParameters();
+  //@}
 }
 
 #endif //PIRO_PERFORMANALYSIS

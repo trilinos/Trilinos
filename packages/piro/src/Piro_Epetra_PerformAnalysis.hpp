@@ -43,6 +43,9 @@
 #ifndef PIRO_EPETRA_PERFORMANALYSIS_HPP
 #define PIRO_EPETRA_PERFORMANALYSIS_HPP
 
+//! \file Piro_Epetra_PerformAnalysis.hpp
+//! \brief Drivers for performing analysis of an Epetra-based solved model.
+
 #include "EpetraExt_ModelEvaluator.h"
 
 #include "Teuchos_RCP.hpp"
@@ -54,10 +57,15 @@ namespace Piro {
 
 namespace Epetra {
 
+//! \name Top-level Analysis driver
+//@{
+//! \brief Performs analysis of an Epetra-based solved model.
+//! \details This function calls one of the package-specific drivers (See Piro_PerformAnalysis.hpp).
 int PerformAnalysis(
     EpetraExt::ModelEvaluator &piroModel,
     Teuchos::ParameterList &analysisParams,
     Teuchos::RCP<Epetra_Vector> &p);
+//@}
 
 } // namespace Epetra
 
