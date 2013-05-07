@@ -3164,7 +3164,7 @@ bool migrateData(
   float **nonRectelinearRatios,
   float *actual_ratios,
   scalar_t *localPartWeights,
-  scalar_t **partWeights,
+  double **partWeights,
   scalar_t *cutCoordinates
   ,scalar_t *&assigned_parts,
   int &coord_dim,
@@ -3188,7 +3188,7 @@ bool migrateData(
   //int migration_option = 1;
 
   partId_t nprocs = comm->getSize();
-  size_t nobj = vectors->getLocalLength();
+  lno_t nobj = vectors->getLocalLength();
   size_t nGlobalObj = vectors->getGlobalLength();
   partId_t myRank = comm->getRank();
   if (nprocs <= num_parts) migration_option = 1;
@@ -3306,7 +3306,7 @@ bool migrateData(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-      for (size_t i=0; i < nobj; i++){
+      for (lno_t i=0; i < nobj; i++){
           partId_t pp = lrflags[i];
           partId_t p = pp / 2;
 
@@ -3634,7 +3634,7 @@ bool migrateData(
           sendCount_copy[i] = sendCount[i]; 
         }
         ArrayView<const gno_t> gnoList = vectors->getMap()->getNodeElementList();
-        for (size_t i=0; i < nobj; i++){
+        for (lno_t i=0; i < nobj; i++){
           partId_t p = (lrflags[i]+1)/2;
           gno_t to_send = gnoList[i];
           partId_t proc_to_sent = part_assign_begins[p];
@@ -3724,7 +3724,7 @@ bool migrateData(
         }
         out_num_part = 1;
         ArrayView<const gno_t> gnoList = vectors->getMap()->getNodeElementList();
-        for (size_t i=0; i < nobj; i++){
+        for (lno_t i=0; i < nobj; i++){
           partId_t p = (lrflags[i]+1)/2;
           gno_t to_send = gnoList[i];
           sendBuf[--p_gno_np_local_num_coord_each_part[p]] = to_send;
@@ -3849,7 +3849,7 @@ bool migrateData(
       delete []part_loads;
       delete []space_in_each_processor;
       ArrayView<const gno_t> gnoList = vectors->getMap()->getNodeElementList();
-      for (size_t i=0; i < nobj; i++){
+      for (lno_t i=0; i < nobj; i++){
         partId_t p = (lrflags[i]+1)/2;
         gno_t to_send = gnoList[i];
         sendBuf[--p_gno_np_local_num_coord_each_part[p]] = to_send;
@@ -3880,9 +3880,10 @@ bool migrateData(
       ArrayView<const partId_t> pIds( partIds, nobj);
       numMyNewGnos = distributor.createFromSends(pIds);
       env->timerStop(MACRO_TIMERS, "PQJagged PlanCreating-" + iteration);
-
+/*
       if (numMyNewGnos!=distributor.getTotalReceiveLength())
           fprintf(stderr, "UVC: SOMETHING is wrong %d != %d\n", numMyNewGnos, distributor.getTotalReceiveLength());
+*/
       ArrayRCP<gno_t> recvBuf2(distributor.getTotalReceiveLength());
       //recvBuf.reserve(distributor.getTotalReceiveLength());
       distributor.doPostsAndWaits<gno_t>(sendBuf(), 1, recvBuf2());
@@ -3911,8 +3912,11 @@ bool migrateData(
                                     &incoming);
       env->timerStop(MACRO_TIMERS, "PQJagged PlanCreating-" + iteration);
       
-      gno_t *recieves  = new gno_t [incoming];
       
+      ArrayRCP<gno_t> recvBuf2(incoming);
+      gno_t *recieves  = recvBuf2.getRawPtr();
+      //gno_t *recieves  = new gno_t [incoming];
+
       
       message_tag++;
       ierr = Zoltan_Comm_Do(plan, message_tag, (char *) sendBuf.getRawPtr(), 
@@ -3920,10 +3924,12 @@ bool migrateData(
                             (char *) recieves);
       
       ierr = Zoltan_Comm_Destroy(&plan);
-      ArrayView<gno_t> rec(recieves, incoming);
-      recvBuf = arcpFromArrayView(rec);
+      //ArrayView<gno_t> rec(recieves, incoming);
+      //recvBuf = arcpFromArrayView(rec);
       numMyNewGnos = incoming;
-      delete []partIds;      
+      recvBuf = recvBuf2;
+      delete []partIds;
+
   } else {
       try{
           AlltoAllv<gno_t>(*comm, *env,
@@ -4067,7 +4073,7 @@ bool migration(
   float **nonRectelinearRatios,
   float *actual_ratios,
   scalar_t *localPartWeights,
-  scalar_t **partWeights,
+  double **partWeights,
   scalar_t *cutCoordinates,
   int assignment_type
   ){
@@ -4152,7 +4158,7 @@ bool migration(
      delete []assigned_parts;
      delete []p_pid_np_num_procs_each_part;
      delete []p_pid_np_work_num_procs_each_part;
-  
+     delete []ids;
      return false;
   }
   delete []assigned_parts;
@@ -4167,7 +4173,7 @@ bool migration(
       numGlobalPoints
       );
 
-
+  delete []ids;
 
   if (prev_num_local != numLocalPoints){
     //cout << "reallocating:" << prev_num_local << " now:" << numLocalPoints << endl;
