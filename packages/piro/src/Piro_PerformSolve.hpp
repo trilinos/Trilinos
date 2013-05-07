@@ -56,10 +56,11 @@
 
 namespace Piro {
 
-//! \name Top-level Solve drivers
+//! \name Top-level Thyra solve drivers
 //@{
 //! \brief Evaluates the solved model and returns the first response.
-//! \details Returns the first (i.e. with index 0) reponse.
+//! \details .
+//! \ingroup Piro_Thyra_solve_driver_grp
 template <typename Scalar>
 void PerformSolve(
     const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
@@ -67,6 +68,7 @@ void PerformSolve(
 
 //! \brief Evaluates the solved model and returns the specified response.
 //! \details Returns the specified (first by default) response.
+//! \ingroup Piro_Thyra_solve_driver_grp
 template <typename Scalar>
 void PerformSolve(
     const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
@@ -75,6 +77,7 @@ void PerformSolve(
 
 //! \brief Evaluates the solved model and returns the specified response and sensitivity.
 //! \details Returns the specified (first by default) response and optionally the corresponding sensitivity with respect to the first parameter.
+//! \ingroup Piro_Thyra_solve_driver_grp
 template <typename Scalar>
 void PerformSolve(
     const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
@@ -85,6 +88,7 @@ void PerformSolve(
 //! \brief Evaluates the solved model and returns specified responses and sensitivities.
 //! \details Returns the requested responses and optionally the corresponding sensitivities with respect to all parameters.
 //!          This version accepts pointers to non-<tt>const</tt> objects.
+//! \ingroup Piro_Thyra_solve_driver_grp
 template <typename Scalar>
 void PerformSolve(
     const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
@@ -95,6 +99,7 @@ void PerformSolve(
 //! \brief Evaluates the solved model and returns specified responses and sensitivities.
 //! \details Returns the requested responses and optionally the corresponding sensitivities with respect to all parameters.
 //!          This version accepts pointers to <tt>const</tt>-qualified objects.
+//! \ingroup Piro_Thyra_solve_driver_grp
 template <typename Scalar>
 void PerformSolve(
     const Thyra::ResponseOnlyModelEvaluatorBase<Scalar> &piroModel,
@@ -103,10 +108,12 @@ void PerformSolve(
     Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > > > &sensitivities);
 //@}
 
-//! \name Top-level Solve drivers that do not statically check that the model is of the response-only variety
+//! \name Other Thyra solve drivers
+//! \brief The drivers do not statically check that the model is of the response-only variety.
 //@{
 //! \brief Evaluates the solved model and returns the first response.
 //! \details Returns the first (i.e. with index 0) reponse.
+//! \ingroup Piro_Thyra_solve_driver_grp
 template <typename Scalar>
 void PerformSolveBase(
     const Thyra::ModelEvaluator<Scalar> &piroModel,
@@ -114,6 +121,7 @@ void PerformSolveBase(
 
 //! \brief Evaluates the solved model and returns the specified response.
 //! \details Returns the specified (first by default) response.
+//! \ingroup Piro_Thyra_solve_driver_grp
 template <typename Scalar>
 void PerformSolveBase(
     const Thyra::ModelEvaluator<Scalar> &piroModel,
@@ -122,6 +130,7 @@ void PerformSolveBase(
 
 //! \brief Evaluates the solved model and returns the specified response and sensitivity.
 //! \details Returns the specified (first by default) response and optionally the corresponding sensitivity with respect to the first parameter.
+//! \ingroup Piro_Thyra_solve_driver_grp
 template <typename Scalar>
 void PerformSolveBase(
     const Thyra::ModelEvaluator<Scalar> &piroModel,
@@ -132,6 +141,7 @@ void PerformSolveBase(
 //! \brief Evaluates the solved model and returns specified responses and sensitivities.
 //! \details Returns the requested responses and optionally the corresponding sensitivities with respect to all parameters.
 //!          This version accepts pointers to non-<tt>const</tt> objects.
+//! \ingroup Piro_Thyra_solve_driver_grp
 template <typename Scalar>
 void PerformSolveBase(
     const Thyra::ModelEvaluator<Scalar> &piroModel,
@@ -142,6 +152,7 @@ void PerformSolveBase(
 //! \brief Evaluates the solved model and returns specified responses and sensitivities.
 //! \details Returns the requested responses and optionally the corresponding sensitivities with respect to all parameters.
 //!          This version accepts pointers to <tt>const</tt>-qualified objects.
+//! \ingroup Piro_Thyra_solve_driver_grp
 template <typename Scalar>
 void PerformSolveBase(
     const Thyra::ModelEvaluator<Scalar> &piroModel,

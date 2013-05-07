@@ -59,12 +59,14 @@ namespace Piro {
 
 namespace Epetra {
 
-//! \name Top-level Solve drivers
+//! \name Top-level Epetra solve drivers
 
 //@{
 //! \brief Evaluates the solved model and returns specified responses and sensitivities.
 //! \details Returns the requested responses and optionally the corresponding sensitivities with respect to all parameters.
 //!          This version accepts pointers to non-<tt>const</tt> objects.
+//! \sa The \link Piro::PerformSolve Thyra version\endlink of the driver
+//! \ingroup Piro_Epetra_solve_driver_grp
 void PerformSolve(
     const EpetraExt::ModelEvaluator &piroSolver,
     Teuchos::ParameterList &solveParams,
@@ -74,6 +76,8 @@ void PerformSolve(
 //! \brief Evaluates the solved model and returns specified responses and sensitivities.
 //! \details Returns the requested responses and optionally the corresponding sensitivities with respect to all parameters.
 //!          This version accepts pointers to <tt>const</tt>-qualified objects.
+//! \sa The \link Piro::PerformSolve Thyra version\endlink of the driver
+//! \ingroup Piro_Epetra_solve_driver_grp
 void PerformSolve(
     const EpetraExt::ModelEvaluator &piroSolver,
     Teuchos::ParameterList &solveParams,

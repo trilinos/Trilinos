@@ -57,10 +57,13 @@ namespace Piro {
 
 namespace Epetra {
 
-//! \name Top-level Analysis driver
+//! \name Top-level Epetra analysis driver
 //@{
 //! \brief Performs analysis of an Epetra-based solved model.
-//! \details This function calls one of the package-specific drivers (See Piro_PerformAnalysis.hpp).
+//! \details This function can either call one of the \link Piro_Thyra_analysis_driver_grp package-specific drivers\endlink
+//!          or perform a \link Piro_Epetra_solve_driver_grp forward solve\endlink.
+//! \sa The \link Piro::PerformAnalysis Thyra version\endlink of the driver
+//! \ingroup Piro_Epetra_analysis_driver_grp
 int PerformAnalysis(
     EpetraExt::ModelEvaluator &piroModel,
     Teuchos::ParameterList &analysisParams,

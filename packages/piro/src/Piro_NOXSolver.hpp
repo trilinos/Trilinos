@@ -55,8 +55,9 @@
 
 namespace Piro {
 
-/** \brief Thyra-based Model Evaluator for NOX solves */
-
+/** \brief Thyra-based Model Evaluator for NOX solves
+ *  \ingroup Piro_Thyra_solver_grp
+ * */
 template <typename Scalar>
 class NOXSolver
     : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>

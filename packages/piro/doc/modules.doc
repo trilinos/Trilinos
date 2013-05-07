@@ -1,0 +1,32 @@
+/*!
+
+\defgroup Piro_solver_grp Piro solvers
+
+\defgroup Piro_Thyra_solver_grp Thyra-based Piro solvers
+\ingroup Piro_solver_grp
+
+\defgroup Piro_Epetra_solver_grp Epetra-based Piro solvers
+\ingroup Piro_solver_grp
+
+
+\defgroup Piro_driver_grp Piro drivers
+
+\defgroup Piro_solve_driver_grp Piro solve drivers
+\ingroup Piro_driver_grp
+
+\defgroup Piro_Thyra_solve_driver_grp Thyra-based solve drivers
+\ingroup Piro_solve_driver_grp
+
+\defgroup Piro_Epetra_solve_driver_grp Epetra-based solve drivers
+\ingroup Piro_solve_driver_grp
+
+\defgroup Piro_analysis_driver_grp Piro analysis drivers
+\ingroup Piro_driver_grp
+
+\defgroup Piro_Thyra_analysis_driver_grp Thyra-based analysis drivers
+\ingroup Piro_analysis_driver_grp
+
+\defgroup Piro_Epetra_analysis_driver_grp Epetra-based analysis drivers
+\ingroup Piro_analysis_driver_grp
+
+*/
