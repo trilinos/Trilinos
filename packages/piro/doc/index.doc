@@ -46,13 +46,13 @@ located near present day Socorro, New Mexico.
 capabilities in Trilinos. It requires that the application
 code present itself using the ModelEvaluator interface
 abstraction (either the Thyra or EpetraExt version).
-The %Piro solvers can be constructed using just an instance of
+The different \link Piro_solver_grp Piro solvers\endlink can be constructed using just an instance of
 <tt>Thyra::ModelEvaluator</tt> (or <tt>EpetraExt::ModelEvaluator</tt>)
-and a <tt>Teuchos::ParameterList</tt>, and then
-can be solved with a single <tt>evalModel</tt> call.
-Alternatively, these solvers can be constructed via
-a \link Piro::SolverFactory factory\endlink for Thyra-based models,
-or its Epetra \link Piro::Epetra::SolverFactory counterpart\endlink.
+and a <tt>Teuchos::ParameterList</tt>,
+either directly or via a \link Piro::SolverFactory factory\endlink for Thyra-based models
+(and the Epetra \link Piro::Epetra::SolverFactory counterpart\endlink) for added flexibility.
+Once created, the resulting solved models can be evaluated with a single <tt>evalModel</tt> call,
+or alternatively via the \link Piro_solve_driver_grp forward solve routines\endlink included in %Piro.
 
 The nonlinear analysis tools that are (or will be) wrapped
 by %Piro include:
@@ -87,6 +87,9 @@ and UQ algorithms. In Trilinos, these include:
 through the adapters and build system of the %TriKota package.
 </ul>
 
+%Piro provides convenient \link Piro_analysis_driver_grp driver routines\endlink
+that perform the analysis of a ResponseOnlyModelEvaluator (including %Piro solved models)
+using any of those package.
 
 \section piro_use Piro Use Case
 
@@ -98,7 +101,7 @@ taking a solution vector and parameters as input, and producing
 a residual vector, Jacobian, and response (interpreted as an objective function).
 <li> Construct this model, and use it and a parameter list
 (specified in an XML file) to construct a \link Piro::Epetra::NOXSolver NOXSolver\endlink.
-<li> Call the \link Piro::Epetra::PerformAnalysis analysis driver\endlink
+<li> Call the \link Piro::Epetra::PerformAnalysis analysis routine\endlink
 with this solver and a parameter list to perform optimization of this model.
 <li> Add support for time dependence to your model, construct
 the \link Piro::Epetra::RythmosSolver RythmosSolver\endlink instead,
