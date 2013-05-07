@@ -66,7 +66,7 @@ namespace Tpetra {
   /// \struct RowInfo
   /// \brief Allocation information for a locally owned row in a
   ///   CrsGraph or CrsMatrix
-  ///  
+  ///
   /// A RowInfo instance identifies a locally owned row uniquely by
   /// its local index, and contains other information useful for
   /// inserting entries into the row.  It is the return value of
@@ -752,27 +752,57 @@ namespace Tpetra {
      */
     size_t getNodeNumDiags() const;
 
-    //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
-    /** Undefined if isFillActive().
-     */
+    /// \brief Maximum number of entries in all rows over all processes.
+    ///
+    /// \note Undefined if isFillActive().
+    ///
+    /// \note This is the same as the result of a global maximum of
+    ///   getNodeMaxNumRowEntries() over all processes.  That may not
+    ///   necessarily mean what you think it does if some rows of the
+    ///   matrix are owned by multiple processes.  In particular, some
+    ///   processes might only own some of the entries in a particular
+    ///   row.  This method only counts the number of entries in each
+    ///   row that a process owns, not the total number of entries in
+    ///   the row over all processes.
     size_t getGlobalMaxNumRowEntries() const;
 
-    //! \brief Returns the maximum number of entries across all rows/columns on this node.
+    //! \brief Maximum number of entries in all rows owned by the calling process.
     /** Undefined if isFillActive().
      */
     size_t getNodeMaxNumRowEntries() const;
 
-    //! \brief Indicates whether the graph has a well-defined column map.
+    /// \brief Whether the graph has a column Map.
+    ///
+    /// A CrsGraph has a column Map either because it was given to its
+    /// constructor, or because it was constructed in fillComplete().
+    /// Calling fillComplete() always makes a column Map if the graph
+    /// does not already have one.
+    ///
+    /// A column Map lets the graph
+    ///
+    ///   - use local indices for storing entries in each row, and
+    ///   - compute an Import from the domain Map to the column Map.
+    ///
+    /// The latter is mainly useful for a graph associated with a
+    /// CrsMatrix.
     bool hasColMap() const;
 
-    //! \brief Indicates whether the graph is lower triangular.
-    /** Undefined if isFillActive().
-     */
+    /// \brief Whether the graph is locally lower triangular.
+    ///
+    /// \pre <tt>! isFillActive()</tt>.
+    ///   If fill is active, this method's behavior is undefined.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
     bool isLowerTriangular() const;
 
-    //! \brief Indicates whether the graph is upper triangular.
-    /** Undefined if isFillActive().
-     */
+    /// \brief Whether the graph is locally upper triangular.
+    ///
+    /// \pre <tt>! isFillActive()</tt>.
+    ///   If fill is active, this method's behavior is undefined.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
     bool isUpperTriangular() const;
 
     //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
@@ -1031,11 +1061,11 @@ namespace Tpetra {
     template<class T>
     size_t
     filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds,
-				  const ArrayView<T>& vals) const;
+                                  const ArrayView<T>& vals) const;
     template<class T>
     size_t
     filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
-				 const ArrayView<T>& vals) const;
+                                 const ArrayView<T>& vals) const;
 
     /// \brief Insert indices into the given row.
     ///
@@ -1061,20 +1091,20 @@ namespace Tpetra {
     ///   will store the input indices as global indices.  Otherwise,
     ///   if <tt>I == LocalIndices</tt>, this method will store the
     ///   input indices as local indices.
-    size_t 
-    insertIndices (const RowInfo& rowInfo, 
-		   const SLocalGlobalViews& newInds,
-		   const ELocalGlobal lg,
-		   const ELocalGlobal I);
+    size_t
+    insertIndices (const RowInfo& rowInfo,
+                   const SLocalGlobalViews& newInds,
+                   const ELocalGlobal lg,
+                   const ELocalGlobal I);
 
     template<class Scalar>
     void
     insertIndicesAndValues (const RowInfo& rowInfo,
                             const SLocalGlobalViews& newInds,
-			    const ArrayView<Scalar>& oldRowVals,
+                            const ArrayView<Scalar>& oldRowVals,
                             const ArrayView<const Scalar>& newRowVals,
-			    const ELocalGlobal lg,
-			    const ELocalGlobal I);
+                            const ELocalGlobal lg,
+                            const ELocalGlobal I);
     void
     insertGlobalIndicesImpl (const LocalOrdinal myRow,
                              const ArrayView<const GlobalOrdinal> &indices);

@@ -284,7 +284,7 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
 
   params.set("migration_option", migration_check_option);
   params.set("migration_type", migration_option);
-  params.set("migration_imbalance_cut_off", migration_imbalance_cut_off);
+  params.set("migration_imbalance_cut_off", double(migration_imbalance_cut_off));
 
   params.set("algorithm", "multijagged");
   //params.set("algorithm", "rcb");
@@ -340,6 +340,7 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
     delete [] coords[i];
     delete [] coords;
   }
+  delete problem;
   return 0;
 }
 

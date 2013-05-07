@@ -36,6 +36,7 @@
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_BlockRelaxation.h"
 #include "Ifpack_SparseContainer.h"
+#include "Ifpack_DenseContainer.h"
 #include "Ifpack_Amesos.h"
 #ifdef HAVE_IFPACK_AZTECOO
 #include "AztecOO.h"

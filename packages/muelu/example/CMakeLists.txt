@@ -8,7 +8,6 @@ ADD_SUBDIRECTORY(NativeInterface)
 ADD_SUBDIRECTORY(MultipleSolve)
 
 ADD_SUBDIRECTORY(Misc/Aggregation)
-ADD_SUBDIRECTORY(Misc/MatrixVectorChecker)
 ADD_SUBDIRECTORY(Misc/MultipleFactoryManager)
 
 IF (${PACKAGE_NAME}_ENABLE_Ifpack)
