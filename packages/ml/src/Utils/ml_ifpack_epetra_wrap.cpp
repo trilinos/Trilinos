@@ -15,7 +15,7 @@
 #include "Epetra_Time.h"
 #include "ml_ifpack.h"
 #include "ml_ifpack_wrap.h"
-#include "Ifpack.h"
+#include "Ifpack_DynamicFactory.h"
 #include "Ifpack_Chebyshev.h"
 #ifdef rst_dump
 #include "ml_Ifpack_ML.h"
@@ -188,7 +188,7 @@ namespace ML_Epetra{
 	   << Sweeps << ",omega=" << omega <<  ")" <<std::endl;
     }
     	
-    Ifpack Factory;
+    Ifpack_DynamicFactory Factory;
     SmootherP_ = Factory.Create(MyIfpackType,const_cast<Epetra_CrsMatrix*>(Acrs),IfpackOverlap);
     if (SmootherP_ == 0) return 0;
     SmootherP_->SetParameters(IFPACKList);
@@ -219,7 +219,7 @@ namespace ML_Epetra{
 	   << Sweeps << ",omega=" << omega << ")" <<std::endl;
     }
 
-    Ifpack Factory;
+    Ifpack_DynamicFactory Factory;
     SmootherP_ = Factory.Create(MyIfpackType,const_cast<Epetra_CrsMatrix*>(Acrs),IfpackOverlap);
     if (SmootherP_ == 0) return 0;
     SmootherP_->SetParameters(IFPACKList);
@@ -266,7 +266,7 @@ namespace ML_Epetra{
 	   << ",abs. threshold=" << MyIfpackAT << std::endl;
     }
 
-    Ifpack Factory;
+    Ifpack_DynamicFactory Factory;
     SmootherP_ = Factory.Create(SmooType,const_cast<Epetra_RowMatrix*>(Arow),IfpackOverlap);
     if (SmootherP_ == 0) return 0;
     SmootherP_->SetParameters(IFPACKList);
@@ -289,7 +289,7 @@ namespace ML_Epetra{
       if(IFPACKList.get("sora: use global damping",false))
 	std::cout << printMsg << "global damping enabled"<<std::endl;
     }
-    Ifpack Factory;
+    Ifpack_DynamicFactory Factory;
     SmootherP_ = Factory.Create(SmooType,const_cast<Epetra_RowMatrix*>(Arow),IfpackOverlap);
     if (SmootherP_ == 0) return 0;
     SmootherP_->SetParameters(IFPACKList);

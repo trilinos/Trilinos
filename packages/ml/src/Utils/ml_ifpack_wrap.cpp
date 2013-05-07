@@ -23,7 +23,7 @@
 // converter from ML_Operator to Epetra_RowMatrix (only wraps)
 #include "ml_RowMatrix.h"
 // IFPACK factory class
-#include "Ifpack.h"
+#include "Ifpack_DynamicFactory.h"
 #include "Ifpack_Chebyshev.h"
 
 using namespace ML_Epetra;
@@ -214,7 +214,7 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
 
     // we enter the IFPACK world through the factory only
     if (hasRows == 1) {
-      Ifpack Factory;
+      Ifpack_DynamicFactory Factory;
       Ifpack_Preconditioner* Prec;
 
       // create the preconditioner

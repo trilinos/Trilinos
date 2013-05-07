@@ -56,7 +56,8 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList, int 
     List.validateParameters (*validList, depth, Teuchos::VALIDATE_USED_ENABLED, 
 			     Teuchos::VALIDATE_DEFAULTS_DISABLED);
   }
-  catch(InvalidParameterName &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
+  // Radu: I think ML should allow parameters that it doesn't recognize
+  catch(InvalidParameterName &excpt)  {/*rv=false; cout<<excpt.what()<<endl;*/}
   catch(InvalidParameterType &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
   catch(InvalidParameterValue &excpt) {rv=false; std::cout<<excpt.what()<<std::endl;}
   catch(...) {rv=false;}
