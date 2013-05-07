@@ -128,45 +128,94 @@ makeSharingProviderFunctor(const Teuchos::RCP<T> &instance)
 
 //! \endcond
 
+/*! \brief Handle for auxiliary object factories
+ *
+ *  A Provider is a smart handle that offers functor (function object) and value semantics
+ *  as well as several implicit conversions as a convenience to manipulate objects that implement the ProviderBase interface.
+ *
+ *  It is essentially a thin wrapper around <tt>Teuchos::RCP<ProviderBase<T>></tt>.
+ *
+ *  The solver factory Piro::Epetra::SolverFactory uses \link Provider Providers\endlink
+ *  as sources of auxiliary objects for the different %Piro solvers.
+ */
 template <typename T>
 class Provider : public ProviderFunctorBase<T> {
 public:
+  //! \name Constructors
+  //@{
+  //! \brief Constructs a Provider that returns null pointers.
   Provider() :
     ptr_(Teuchos::rcp(new ProviderImpl<T, NullProviderFunctor<T> >))
   {}
 
+  //! \brief Constructs an uninitialized Provider.
+  //! \details A valid Provider \e must be assigned to <tt>*this</tt> before Provider::operator() is called.
+  //!          This constructor exists mostly for debugging purposes and its use is discouraged.
+  //!          The \link Provider::Provider() default constructor \endlink should be preferred in most cases.
   /* implicit */ Provider(Teuchos::ENull) :
     ptr_(Teuchos::null)
   {}
 
-  /* implicit */ Provider(const Teuchos::RCP<ProviderBase<T> > &ptr) :
-    ptr_(ptr)
-  {}
-
+  //! \brief Constructs a Provider returning an already existing instance.
+  //! \details The template parameter \c U must refer to a type that can be converted to \c T.
   template <typename U>
   /* implicit */ Provider(const Teuchos::RCP<U> &instance) :
     ptr_(Teuchos::rcp(new ProviderImpl<T, SharingProviderFunctor<T> >(makeSharingProviderFunctor<T>(instance))))
   {}
 
+  //! \brief Constructs a Provider from a function object.
+  //! \details The template parameter \c P must refer to a copy-constructible function object type
+  //!          such that the following code is valid
+  //!          \code Teuchos::RCP<T> instance = p(params); \endcode
+  //!          where \c params denotes a variable of type <tt>Teuchos::RCP<Teuchos::ParameterList><tt/>.
   template <typename P>
   /* implicit */ Provider(const P &p) :
     ptr_(Teuchos::rcp(new ProviderImpl<T, P>(p)))
   {}
 
-  bool nonnull() const { return ptr_.nonnull(); }
-  bool is_null() const { return ptr_.is_null(); }
+  //! \brief Constructs a Provider handle that wraps the provided implementation.
+  /* implicit */ Provider(const Teuchos::RCP<ProviderBase<T> > &ptr_in) :
+    ptr_(ptr_in)
+  {}
+  //@}
 
-  Teuchos::RCP<const ProviderBase<T> > ptr() const { return ptr_; }
-  Teuchos::RCP<ProviderBase<T> > ptr() { return ptr_; }
 
+  //! \name Core functionality
+  //@{
+  //! \brief Returns an instance of a subclass of the type T.
+  //! \details \pre <tt>!this->is_null()</tt>
   Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) {
     return ptr_->getInstance(params);
   }
+  //@}
+
+  //! \name Validity check
+  //@{
+  //! \brief Checks that the Provider has been initialized
+  bool nonnull() const { return ptr_.nonnull(); }
+
+  //! \brief Checks whether the Provider has been left uninitialized
+  bool is_null() const { return ptr_.is_null(); }
+  //@}
+
+  //! \name Access to internals
+  //@{
+  //! \brief Returns a <tt>const</tt> pointer to the internal implementation.
+  Teuchos::RCP<const ProviderBase<T> > ptr() const { return ptr_; }
+
+  //! \brief Returns a non-<tt>const</tt> pointer to the internal implementation.
+  Teuchos::RCP<ProviderBase<T> > ptr() { return ptr_; }
+  //@}
 
 private:
   Teuchos::RCP<ProviderBase<T> > ptr_;
 };
 
+//! \name Check handle validity
+//@{
+
+//! \brief Returns \c true if the handle is initialized.
+//! \relates Provider
 template <typename T>
 inline
 bool nonnull(const Provider<T> &h)
@@ -174,12 +223,16 @@ bool nonnull(const Provider<T> &h)
   return h.nonnull();
 }
 
+//! \brief Returns \c true if the argument is uninitialized.
+//! \relates Provider
 template <typename T>
 inline
 bool is_null(const Provider<T> &h)
 {
   return h.is_null();
 }
+
+//@}
 
 } // namespace Piro
 
