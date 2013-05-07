@@ -373,10 +373,19 @@ namespace MueLuTests {
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
     level.Release(*repart);
 
+#ifdef __APPLE__
+    // These results depend on tie-breaking by random weights.  As std::rand is implementation specific (and so different on Apples),
+    // the results are different (but still valid) on Apples.
+    TEST_EQUALITY(partitionOwners[0],2);
+    TEST_EQUALITY(partitionOwners[1],1);
+    TEST_EQUALITY(partitionOwners[2],3);
+    TEST_EQUALITY(partitionOwners[3],0);
+#else
     TEST_EQUALITY(partitionOwners[0],2);
     TEST_EQUALITY(partitionOwners[1],3);
     TEST_EQUALITY(partitionOwners[2],1);
     TEST_EQUALITY(partitionOwners[3],0);
+#endif
   } //DeterminePartitionPlacement2
 
   // -----------------------------------------------------------------------
