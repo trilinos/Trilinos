@@ -226,8 +226,12 @@ int main(int argc, char *argv[]) {
       timer->start();
       if(do_reuse==0 && j!=i) {
 	// No reuse: Do a full recompute
+	H = mueLuFactory.CreateHierarchy();
+	H->SetDefaultVerbLevel(MueLu::Extreme);
 	H->GetLevel(0)->Set("A", Amatvec);
-	mueLuFactory.SetupHierarchy(*H);
+	H->GetLevel(0)->Set("Nullspace", nullspace);
+	H->IsPreconditioner(true);
+	mueLuFactory.SetupHierarchy(*H); 
       }
       else if(do_reuse==2 && j!=i) {
 	// "Fast" reuse
