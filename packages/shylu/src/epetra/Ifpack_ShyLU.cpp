@@ -170,6 +170,11 @@ int Ifpack_ShyLU::Initialize()
                                                     "Relative Threshold");
     }
 
+    slu_config_.schurPreconditioner = List_.get<string>("Schur Preconditioner",
+    													"ILU stand-alone");
+    slu_config_.silent_subiter = List_.get<bool>("Silent subiterations",
+    											 true);
+
     slu_config_.inner_tolerance =  Teuchos::getParameter<double>(List_,
                                                 "Inner Solver Tolerance");
     slu_config_.inner_maxiters =  Teuchos::getParameter<int>(List_,

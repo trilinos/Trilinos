@@ -65,6 +65,8 @@
 #include "shylu_util.h"
 #include <EpetraExt_Reindex_LinearProblem2.h>
 
+#include <Ifpack_DynamicFactory.h>
+
 int create_matrices
 (
     Epetra_CrsMatrix *A,    // i/p: A matrix
@@ -918,21 +920,35 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     }
     else if (config->schurSolver == "AztecOO-Exact")
     {
-        data->schur_prec = Teuchos::RCP<AmesosSchurOperator> (new
-                                     AmesosSchurOperator(Sbar.getRawPtr()));
-        data->schur_prec->Initialize();
-        data->schur_prec->Compute();
+    	if (config->libName == "AztecOO") {
+    		data->innersolver = new AztecOO();
+    	}
+    	std::string schurPrec = config->schurPreconditioner;
 
         int err = data->innersolver->SetUserOperator
                     (data->schur_op.get());
         assert (err == 0);
+
+    	Ifpack_DynamicFactory IfpackFactory;
+    	data->schur_prec = Teuchos::rcp<Ifpack_Preconditioner>
+    				(IfpackFactory.Create(schurPrec,
+					 Sbar.getRawPtr(), 0, false));
+
+        data->schur_prec->Initialize();
+        data->schur_prec->Compute();
 
         err = data->innersolver->SetPrecOperator
                     (data->schur_prec.get());
         assert (err == 0);
 
         data->innersolver->SetAztecOption(AZ_solver, AZ_gmres);
+
+        if (config->silent_subiter) {
+        	data->innersolver->SetAztecOption(AZ_output, AZ_none);
+        }
+
         data->innersolver->SetMatrixName(999);
+
     }
     else if (config->schurSolver == "AztecOO-Inexact")
     {

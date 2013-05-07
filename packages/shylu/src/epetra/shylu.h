@@ -48,7 +48,8 @@
 #include "Epetra_MultiVector.h" 
 #include "Epetra_LinearProblem.h" 
 #include "Epetra_SerialComm.h"
-#include "Amesos_BaseSolver.h" 
+#include "Amesos_BaseSolver.h"
+#include "Ifpack_Preconditioner.h"
 #include "AztecOO.h"
 #include "Isorropia_EpetraProber.hpp"
 
@@ -85,7 +86,7 @@ typedef struct
     Teuchos::RCP<Epetra_LinearProblem> OrigLP2;   // Local problem to solve D
 	Teuchos::RCP<EpetraExt::ViewTransform<Epetra_LinearProblem> > ReIdx_LP2;
 	Amesos_BaseSolver *dsolver;  // Local Subdomain solver
-    Teuchos::RCP<AmesosSchurOperator> schur_prec;
+    Teuchos::RCP<Ifpack_Preconditioner> schur_prec;
     Teuchos::RCP<ShyLU_Probing_Operator> schur_op;
     int lmax;                    // May be this is optimizing too much
     int rmax;                    // May be this is optimizing too much
@@ -110,6 +111,8 @@ typedef struct
     string schurSolver;         // Solver for the Schur complement
     string schurAmesosSolver;   // Amesos solver for the Schur complement
     string diagonalBlockSolver; // Solver to use to factorize the diagonal blocks
+    string schurPreconditioner; // Preconditioner for the inner iterations on Sbar (AztecOO-Exact)
+    bool silent_subiter;
     int sep_type;
     int debug_level;
     //DebugManager dm;
