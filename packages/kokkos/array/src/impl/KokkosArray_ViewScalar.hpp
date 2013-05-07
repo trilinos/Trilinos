@@ -71,10 +71,6 @@ template<>
 struct ViewAssignment< LayoutScalar , void , void >
 {
   template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION static
-  size_t allocation_count( const View<T,L,D,M,LayoutScalar> & ) { return 1 ; }
-
-  template< class T , class L , class D , class M >
   ViewAssignment( View<T,L,D,M,LayoutScalar> & dst ,
                   typename enable_if< (
                     is_same< typename ViewTraits<T,L,D,M>::memory_traits ,
@@ -212,8 +208,7 @@ public:
   explicit
   View( const std::string & label ) : m_ptr_on_device(0) { alloc( *this , label ); }
 
-  KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::value_type * ptr_on_device() const { return m_ptr_on_device ; }
+  //------------------------------------
 
   KOKKOSARRAY_INLINE_FUNCTION
   bool is_null() const { return 0 == m_ptr_on_device ; }
@@ -256,6 +251,14 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       return *m_ptr_on_device ;
     }
+
+  //------------------------------------
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::value_type * ptr_on_device() const { return m_ptr_on_device ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::size_type capacity() const { return 1 ; }
 };
 
 } /* namespace KokkosArray */

@@ -63,7 +63,7 @@ struct ViewInitialize< View< DataType , LayoutType , OpenMP , ManagedType , Spec
 
   static void apply( const view_type & view )
   {
-    const size_t work_count = ViewAssignment< Specialize >::allocation_count( view );
+    const size_t work_count = view.capacity();
 
 #pragma omp parallel
     {

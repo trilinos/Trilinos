@@ -395,11 +395,8 @@ void deep_copy( const View<DT,DL,DD,DM,Spec> & dst ,
 
   if ( dst != src ) {
 
-    const size_t n_dst = sizeof(typename dst_traits::scalar_type) *
-                         Impl::ViewAssignment< Spec >::allocation_count( dst );
-
-    const size_t n_src = sizeof(typename src_traits::scalar_type) *
-                         Impl::ViewAssignment< Spec >::allocation_count( src );
+    const size_t n_dst = sizeof(typename dst_traits::scalar_type) * dst.capacity();
+    const size_t n_src = sizeof(typename src_traits::scalar_type) * src.capacity();
 
     Impl::assert_counts_are_equal( n_dst , n_src );
     Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
@@ -691,7 +688,6 @@ create_mirror( const View<T,L,D,M,S> & view )
 //----------------------------------------------------------------------------
 
 #include <impl/KokkosArray_ViewScalar.hpp>
-#include <impl/KokkosArray_ViewVector.hpp>
 #include <impl/KokkosArray_ViewDefault.hpp>
 #include <impl/KokkosArray_ViewTileLeft.hpp>
 

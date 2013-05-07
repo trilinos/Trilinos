@@ -72,18 +72,6 @@ struct ViewSpecialize< ScalarType , ScalarType ,
 template<>
 struct ViewAssignment< LayoutTileLeftFast , void , void >
 {
-  template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION static
-  size_t allocation_count( const View<T,L,D,M,LayoutTileLeftFast> & dst )
-  {
-    typedef typename ViewTraits<T,L,D,M>::array_layout layout ;
-
-    return
-      layout::N0 * layout::N1 * 
-         ( ( dst.m_shape.N0 + layout::N0 - 1 ) / layout::N0 ) *
-         ( ( dst.m_shape.N1 + layout::N1 - 1 ) / layout::N1 );
-  }
-
 private:
 
   template< class DT , class DL , class DD , class DM >
@@ -95,13 +83,11 @@ private:
 
     ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
-    const size_t count = allocation_count( dst );
-
     dst.m_ptr_on_device = (typename DstViewType::value_type *)
       memory_space::allocate( label ,
                               typeid(typename DstViewType::value_type) ,
                               sizeof(typename DstViewType::value_type) ,
-                              count );
+                              dst.capacity() );
 
     ViewInitialize< DstViewType >::apply( dst );
   }
@@ -354,6 +340,15 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   size_t global_to_local_tile_index_1( const iType & global_i1 ) const
     { return global_i1 & MASK_1 ; }
+
+
+  //------------------------------------
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::size_type capacity() const
+  {
+    return ( m_tile_N0 * ( ( m_shape.N1 + MASK_1 ) >> SHIFT_1 ) ) << ( SHIFT_0 + SHIFT_1 );
+  }
 };
 
 } /* namespace KokkosArray */

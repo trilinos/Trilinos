@@ -298,19 +298,6 @@ struct CudaTexture {};
 
 #if defined( CUDA_VERSION ) && ( 500 <= CUDA_VERSION )
 
-/** \brief  Replace LayoutVector specialization */
-template< typename ScalarType , class RankDynamic >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutLeft , unsigned_<1> , RankDynamic ,
-                       CudaSpace , MemoryRandomRead >
-{ typedef CudaTexture type ; };
-
-template< typename ScalarType , class RankDynamic >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutRight , unsigned_<1> , RankDynamic ,
-                       CudaSpace , MemoryRandomRead >
-{ typedef CudaTexture type ; };
-
 /** \brief  Replace LayoutDefault specialization */
 template< typename ScalarType , class Rank , class RankDynamic >
 struct ViewSpecialize< const ScalarType , const ScalarType ,
@@ -366,40 +353,8 @@ struct ViewAssignment< CudaTexture , CudaTexture , void >
 
 
 template<>
-struct ViewAssignment< CudaTexture , LayoutVector , void >
-{
-  template< class DT , class DL , class DD , class DM ,
-            class ST , class SL , class SD , class SM >
-  inline
-  ViewAssignment(       View<DT,DL,DD,DM,CudaTexture> & dst ,
-                  const View<ST,SL,SD,SM,LayoutVector> & src ,
-                  const typename enable_if<(
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
-                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
-                  )>::type * = 0 )
-  {
-    typedef View<DT,DL,DD,DM,CudaTexture> DstViewType ;
-
-    typedef typename DstViewType::shape_type  shape_type ;
-    typedef typename DstViewType::scalar_type scalar_type ;
-
-    dst.m_texture = CudaTextureFetch< scalar_type >( src.m_ptr_on_device );
-    dst.m_stride  = 1 ; // Unused for vector specialization
-
-    shape_type::assign( dst.m_shape, src.m_shape.N0 );
-  }
-};
-
-template<>
 struct ViewAssignment< CudaTexture , LayoutDefault , void >
 {
-  typedef LayoutDefault Specialize ;
-
   /** \brief Assign compatible views */
 
   template< class DT , class DL , class DD , class DM ,
@@ -446,13 +401,12 @@ class View< T , L , D , M , Impl::CudaTexture >
   : public ViewTraits< T , L , D , M >
 {
 public:
-	typedef ViewTraits< T , L , D , M > traits ;
+
+  typedef ViewTraits< T , L , D , M > traits ;
+
 private:
 
   template< class , class , class > friend class Impl::ViewAssignment ;
-  friend class Impl::PhysicalLayout;
-
-
 
   Impl::CudaTextureFetch<typename traits::scalar_type > m_texture ;
   typename traits::shape_type           m_shape ;
@@ -488,11 +442,7 @@ public:
   typename traits::size_type dimension( const iType & i ) const
     { return Impl::dimension( m_shape , i ); }
 
-  KOKKOSARRAY_INLINE_FUNCTION
-  bool is_null() const { return 0 == m_texture.ptr ; }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::scalar_type * ptr_on_device() const { return m_texture.ptr ; }
+  //------------------------------------
 
   View() : m_texture(), m_stride(0)
    { traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0); }
@@ -525,7 +475,32 @@ public:
     }
 
   //------------------------------------
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  bool is_null() const { return 0 == m_texture.ptr ; }
+
+  //------------------------------------
   // Rank = 1 access operators:
+
+  template < typename iType0 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper< traits , LayoutLeft , 1 , iType0 >::type operator[]
+    ( const iType0 & i0 )
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      return m_texture[ i0 ];
+    }
+
+  template < typename iType0 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper< traits , LayoutRight , 1 , iType0 >::type operator[]
+    ( const iType0 & i0 )
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      return m_texture[ i0 ];
+    }
 
   template < typename iType0 >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -794,6 +769,11 @@ public:
                         i2 + m_shape.N2 * (
                         i1 )))))) + i0 * m_stride ];
     }
+
+  //------------------------------------
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::scalar_type * ptr_on_device() const { return m_texture.ptr ; }
 };
 
 } /* namespace KokkosArray */

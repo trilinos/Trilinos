@@ -55,7 +55,7 @@ template< class T , class L , class D , class M , class S >
 size_t allocation_count( const KokkosArray::View<T,L,D,M,S> & view )
 {
   const size_t card  = KokkosArray::Impl::cardinality_count( view.shape() );
-  const size_t alloc = KokkosArray::Impl::ViewAssignment<S>::allocation_count( view );
+  const size_t alloc = view.capacity();
 
   return card <= alloc ? alloc : 0 ;
 }
