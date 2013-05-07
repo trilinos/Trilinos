@@ -809,7 +809,7 @@ namespace stk {
                      m_anded_selector.get());
 
       // Now handle all non-nodeblock parts...
-      const stk::mesh::PartVector & all_parts = meta_data().get_mesh_parts();
+      const stk::mesh::PartVector &all_parts = meta_data().get_parts();
       for ( stk::mesh::PartVector::const_iterator
           ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 
@@ -1036,7 +1036,7 @@ namespace stk {
                                  region->get_node_blocks()[0],
                                  Ioss::Field::TRANSIENT, add_all_fields);
 
-        const stk::mesh::PartVector & all_parts = meta_data().get_mesh_parts();
+        const stk::mesh::PartVector &all_parts = meta_data().get_parts();
         for ( stk::mesh::PartVector::const_iterator
             ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 

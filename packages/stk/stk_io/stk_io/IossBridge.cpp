@@ -1089,7 +1089,7 @@ void define_output_db(Ioss::Region & io_region ,
   const mesh::PartVector *parts = NULL;
   mesh::PartVector all_parts_sorted;
 
-  const mesh::PartVector & all_parts = meta_data.get_mesh_parts();
+  const mesh::PartVector & all_parts = meta_data.get_parts();
   // sort parts so they go out the same on all processors (srk: this was induced by streaming refine)
   if (sort_stk_parts) {
     all_parts_sorted = all_parts;
