@@ -19,7 +19,7 @@ At this point, any expectations of documentation, full algorithmic
 coverage, and backward-compatibility should be limited.
 </em>
 
-%Piro Keywords:  Nonlinear Sovlers, Time Integration, Optimization,
+%Piro Keywords:  Nonlinear Solvers, Time Integration, Optimization,
    UQ, Continuation, Multi-Physics Coupling, Network Solvers
 
 \section piro_intro Introduction
@@ -27,17 +27,17 @@ coverage, and backward-compatibility should be limited.
 %Piro is the top-level, unifying package of the Embedded Nonlinear
 Analysis Capability area. The main purpose of the package is to
 provide driver classes for the common uses of Trilinos nonlinear
-analysis tools. These drivers all can be constructed similarly,
-with a ModelEvaluator and a ParameterList, to make it simple to
-switch between different types of analysis. They also all inherit
-from the same base classes (reponse-only model evaluators) so
-that the resulting analysis can in turn driven by non-intrusive
-analysis routines.
+analysis tools. These so-called <em>Solvers</em> all can be constructed similarly,
+with a <em>Model Evaluator</em> and a parameter list, to make it simple to
+switch between different types of analysis.
+As <em>Reponse-Only Model Evaluators</em>, they also all derive
+from the same base classes so that the resulting analysis
+can in turn be driven by non-intrusive analysis routines.
 
-The name %Piro is an acronym for "Paramters In -- Responses Out,"
+The name %Piro is an acronym for "Parameters In -- Responses Out,"
 which is a Tarzan-grammar description of the abstraction for
 a solved forward problem.
-It also is the name of a Native American Peublo originally
+It also is the name of a Native American Pueblo originally
 located near present day Socorro, New Mexico.
 
 \section piro_overview Piro Description
@@ -46,9 +46,13 @@ located near present day Socorro, New Mexico.
 capabilities in Trilinos. It requires that the application
 code present itself using the ModelEvaluator interface
 abstraction (either the Thyra or EpetraExt version).
-The %Piro solvers can be constructed using just the
-ModelEvaluator and a Teuchos::ParameterList, and then
-can be solved with a single "evalModel" call.
+The %Piro solvers can be constructed using just an instance of
+<tt>Thyra::ModelEvaluator</tt> (or <tt>EpetraExt::ModelEvaluator</tt>)
+and a <tt>Teuchos::ParameterList</tt>, and then
+can be solved with a single <tt>evalModel</tt> call.
+Alternatively, these solvers can be constructed via
+a \link Piro::SolverFactory factory\endlink for Thyra-based models,
+or its Epetra \link Piro::Epetra::SolverFactory counterpart\endlink.
 
 The nonlinear analysis tools that are (or will be) wrapped
 by %Piro include:
@@ -89,16 +93,16 @@ through the adapters and build system of the %TriKota package.
 To get concrete, here is a typical use case (which can be seen
 in the test directory).
 <ul>
-<li> Wrap your application code in an EpetraExt::ModelEvaluator,
+<li> Wrap your application code in an <tt>EpetraExt::ModelEvaluator</tt>,
 taking a solution vector and parameters as input, and producing
-a residual vector, Jacobian, and response (objective function).
+a residual vector, Jacobian, and response (interpreted as an objective function).
 <li> Construct this model, and use it and a parameter list
-(specified in an XML file) to construct a Piro::Epetra::NOXSolver
-<li> Call the Piro::Epetra::Analyze method with this solver and
-a parameter list to perform optimization of this model.
+(specified in an XML file) to construct a \link Piro::Epetra::NOXSolver NOXSolver\endlink.
+<li> Call the \link Piro::Epetra::PerformAnalysis analysis driver\endlink
+with this solver and a parameter list to perform optimization of this model.
 <li> Add support for time dependence to your model, construct
-the RythmosSovler instead, and repeat optimization for transient
-application.
+the \link Piro::Epetra::RythmosSolver RythmosSolver\endlink instead,
+and repeat optimization for transient application.
 </ul>
 
 \section piro_me  Model Evaluator Confusion
