@@ -63,15 +63,6 @@
 
 #include "EpetraExt_ModelEvaluator.h"
 
-/** \brief Epetra-based Model Evaluator subclass for Charon!
- *
- * This class will support a wide number of different types of abstract
- * problem types that will allow NOX, LOCA, Rythmos, Aristos, and MOOCHO to
- * solve different types of problems with Charon.
- * 
- * ToDo: Finish documentation!
- */
-
 namespace Piro {
 namespace Epetra {
 

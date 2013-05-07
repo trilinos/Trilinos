@@ -65,15 +65,14 @@
 
 #include "EpetraExt_ModelEvaluator.h"
 
+namespace Piro {
+namespace Epetra {
+
 /** \brief Epetra-based NOX Solver
  *
- * This class will 
- * 
  * ToDo: Finish documentation!
  */
 
-namespace Piro {
-namespace Epetra {
 class NOXSolver
     : public EpetraExt::ModelEvaluator
 {

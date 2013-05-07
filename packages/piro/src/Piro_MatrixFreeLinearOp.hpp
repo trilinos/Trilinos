@@ -48,6 +48,8 @@
 #include "Thyra_ModelEvaluatorBase.hpp"
 #include "Thyra_VectorBase.hpp"
 
+namespace Piro {
+
 /** \brief This class implements a matrix-free Jacobian linear operator
  * based on finite difference.
  *
@@ -62,8 +64,6 @@
  * that appear in the definition of the Jacobian operator:
  * W = alpha * (Df/ Dx_dot) + beta * (Df / Dx)
  */
-
-namespace Piro {
 
 template <typename Scalar>
 class MatrixFreeLinearOp : public Thyra::LinearOpDefaultBase<Scalar>

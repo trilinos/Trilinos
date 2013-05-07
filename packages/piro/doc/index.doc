@@ -1,4 +1,4 @@
-/*! \mainpage Piro: Strategy package for embedded analysis capabilitites
+/*! \mainpage %Piro: Strategy package for embedded analysis capabilitites
 \htmlonly
 \endhtmlonly
 
@@ -13,18 +13,18 @@
 
 <em>
 \section piro_disclaimer  Disclaimer for Beta-Release in Trilinos 11.2
-Piro is an immature package that was released for the
+%Piro is an immature package that was released for the
 first time as part of Trilinos 10.2 in March-April 2010.
 At this point, any expectations of documentation, full algorithmic
 coverage, and backward-compatibility should be limited.
 </em>
 
-Piro Keywords:  Nonlinear Sovlers, Time Integration, Optimization,
+%Piro Keywords:  Nonlinear Sovlers, Time Integration, Optimization,
    UQ, Continuation, Multi-Physics Coupling, Network Solvers
 
 \section piro_intro Introduction
 
-Piro is the top-level, unifying package of the Embedded Nonlinear
+%Piro is the top-level, unifying package of the Embedded Nonlinear
 Analysis Capability area. The main purpose of the package is to
 provide driver classes for the common uses of Trilinos nonlinear
 analysis tools. These drivers all can be constructed similarly,
@@ -34,7 +34,7 @@ from the same base classes (reponse-only model evaluators) so
 that the resulting analysis can in turn driven by non-intrusive
 analysis routines.
 
-The name Piro is an acronym for "Paramters In -- Responses Out,"
+The name %Piro is an acronym for "Paramters In -- Responses Out,"
 which is a Tarzan-grammar description of the abstraction for
 a solved forward problem.
 It also is the name of a Native American Peublo originally
@@ -42,16 +42,16 @@ located near present day Socorro, New Mexico.
 
 \section piro_overview Piro Description
 
-Piro attempts to unify the usage of the nonlinear analysis
+%Piro attempts to unify the usage of the nonlinear analysis
 capabilities in Trilinos. It requires that the application
 code present itself using the ModelEvaluator interface
 abstraction (either the Thyra or EpetraExt version).
-The Piro solvers can be constructed using just the
+The %Piro solvers can be constructed using just the
 ModelEvaluator and a Teuchos::ParameterList, and then
 can be solved with a single "evalModel" call.
 
 The nonlinear analysis tools that are (or will be) wrapped
-by Piro include:
+by %Piro include:
 <ul>
 <li>NOX: Nonlinear Solver
 <li>LOCA: Continuation and Bifurcation Analysis Solver
@@ -72,15 +72,15 @@ responses as output (hence the PIRO acronym). In general,
 it may also produce gradients of the response with respect
 to the parameters, and, in the future, Hessians.
 
-As a ResponseOnlyModelEvaluator, any Piro solver will
+As a ResponseOnlyModelEvaluator, any %Piro solver will
 satisfy the interface for non-intrusive optimization
 and UQ algorithms. In Trilinos, these include:
 <ul>
 <li>OptiPack: Distributed memory optimization algorithms with line searches
 <li>MOOCHO: Distributed memory SQP methods with constraints
-<li>Dakota via TriKota: The entire Dakota framework
+<li>Dakota via %TriKota: The entire Dakota framework
 (developed at Sandia independently from Trilinos) is available
-through the adapters and build system of the TriKota package.
+through the adapters and build system of the %TriKota package.
 </ul>
 
 
@@ -103,10 +103,10 @@ application.
 
 \section piro_me  Model Evaluator Confusion
 
-The design of Piro leads to confusion, because the ModelEvaluator
+The design of %Piro leads to confusion, because the ModelEvaluator
 is the interface abstraction at two levels. The full ModelEvaluator
 (that takes a statevector as input and returns a residual) is the
-abstraction around the users application. The Piro Solvers (typically
+abstraction around the users application. The %Piro Solvers (typically
 nonlinear or transient) eliminate the statevector so that the residual
 is satisfied, and present themselves as a ModelEvaluator as well
 (in this case, the ResponseOnly variety) for non-intrusive algorithms.
@@ -120,10 +120,10 @@ and not just two.
 
 \section piro_help Piro Contacts
 
-Piro is developed by Andy Salinger, Roscoe Bartlett, Todd Coffey,
+%Piro is developed by Andy Salinger, Roscoe Bartlett, Todd Coffey,
 Roger Pawlowski, and Eric Phipps. Much of the code is adapted from
 tests and examples for NOX, LOCA, Rythmos, Stokhos, MOOCHO,
-OptiPack, and TriKota, and was developed and matured in the Albany
-application code before being library-ized into Piro.
+OptiPack, and %TriKota, and was developed and matured in the Albany
+application code before being library-ized into %Piro.
 
 */
