@@ -57,6 +57,8 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
 
+#include "Kokkos_Raw_addSparseMatrices_decl.hpp"
+#include "Kokkos_Raw_addSparseMatrices_def.hpp"
 #include "Kokkos_Raw_SparseMatVec_decl.hpp"
 #include "Kokkos_Raw_SparseMatVec_def.hpp"
 #include "Kokkos_Raw_SparseTriangularSolve_decl.hpp"
@@ -1099,6 +1101,15 @@ namespace Kokkos {
     AltSparseOps (const Teuchos::RCP<Node>& node,
                   Teuchos::ParameterList& plist);
 
+    /// \brief "Sum constructor": compute *this = alpha*A + beta*B.
+    ///
+    /// The resulting matrix shares the Node instance and copies the
+    /// parameters of the matrix A.
+    AltSparseOps (const Scalar& alpha,
+                  const AltSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                  const Scalar& beta,
+                  const AltSparseOps<Scalar, Ordinal, Node, Allocator>& B);
+
     //! Destructor
     ~AltSparseOps();
 
@@ -1416,6 +1427,14 @@ namespace Kokkos {
                  const MultiVector<Scalar,Node> &D,
                  const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
                  const enum ESweepDirection direction = Forward) const;
+
+    /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
+    ///
+    /// This method may choose to reuse storage of <tt>*this</tt>.
+    void
+    addInPlace (const Scalar& alpha,
+                const AltSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                const Scalar& beta);
     //@}
 
   private:
@@ -1636,6 +1655,126 @@ namespace Kokkos {
     matVecVariant_ = getIntegralValue<EMatVecVariant> (params, varParamName);
     unroll_ = params.get<bool> (unrollParamName);
     firstTouchAllocation_ = params.get<bool> (firstTouchParamName);
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  AltSparseOps (const Scalar& alpha,
+                const AltSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                const Scalar& beta,
+                const AltSparseOps<Scalar, Ordinal, Node, Allocator>& B) :
+    node_ (A.node_),
+    tri_uplo_ (A.tri_uplo_ == B.tri_uplo_ ? A.tri_uplo_ : Teuchos::UNDEF_TRI),
+    unit_diag_ (Teuchos::NON_UNIT_DIAG),
+    matVecVariant_ (A.matVecVariant_),
+    unroll_ (A.unroll_),
+    firstTouchAllocation_ (A.firstTouchAllocation_),
+    numRows_ (A.numRows_),
+    numCols_ (A.numCols_),
+    isInitialized_ (false), // Provisionally
+    isEmpty_ (true),        // Provisionally
+    hasEmptyRows_ (true)    // Provisionally
+  {
+    using Teuchos::ArrayRCP;
+    // Make sure that users only specialize AltSparseOps for Kokkos
+    // Node types that are host Nodes (vs. device Nodes, such as GPU
+    // Nodes).
+    Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A.numRows_ != B.numRows_ || A.numCols_ != B.numCols_,
+      std::invalid_argument, "Kokkos::AltSparseOps sum constructor: "
+      << std::endl << "The dimensions of the input matrices A and B must be "
+      "the same.  " << std::endl << "A is " << A.numRows_ << " x " << A.numCols_
+      << " and B is " << B.numRows_ << " x " << B.numCols_ << ".");
+
+    size_t* ptrRaw = NULL;
+    Ordinal* indRaw = NULL;
+    Scalar* valRaw = NULL;
+    Raw::addSparseMatrices (ptrRaw, indRaw, valRaw,
+                            alpha, A.ptr_.getRawPtr (), A.ind_.getRawPtr (), A.val_.getRawPtr (),
+                            beta, B.ptr_.getRawPtr (), B.ind_.getRawPtr (), B.val_.getRawPtr (),
+                            A.numRows_);
+
+    ArrayRCP<const size_t> ptr (const_cast<const size_t*> (ptrRaw), A.numRows_);
+    const size_t numEntries = ptr[A.numRows_];
+    ArrayRCP<const Ordinal> ind (const_cast<const Ordinal*> (indRaw), numEntries);
+    ArrayRCP<const Scalar> val (const_cast<const Scalar*> (valRaw), numEntries);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(firstTouchAllocation_, std::logic_error,
+      "Kokkos::AltSparseOps sum constructor: First-touch allocation not "
+      "implemented for sparse matrix add.");
+
+    // "Commit" the changes.
+    ptr_ = ptr;
+    ind_ = ind;
+    val_ = val;
+
+    isInitialized_ = true;
+    isEmpty_ = (numEntries == 0) ? true : false;
+    // FIXME (mfh 06 May 2013) Check if there are empty rows.
+    // This only matters when using the FOR_IF mat-vec variant.
+    hasEmptyRows_ = false;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      matVecVariant_ == FOR_IF, std::logic_error, "Kokkos::AltSparseOps sum "
+      "constructor: Does not currently work for matVecVariant_ == FOR_IF.");
+  }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  void
+  AltSparseOps<Scalar, Ordinal, Node, Allocator>::
+  addInPlace (const Scalar& alpha,
+              const AltSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+              const Scalar& beta)
+  {
+    using Teuchos::ArrayRCP;
+
+    tri_uplo_ = (A.tri_uplo_ == tri_uplo_) ? A.tri_uplo_ : Teuchos::UNDEF_TRI;
+    unit_diag_ = Teuchos::NON_UNIT_DIAG;
+    numRows_ = A.numRows_;
+    numCols_ = A.numCols_;
+    isInitialized_ = false; // Provisionally
+    isEmpty_ = true;        // Provisionally
+    hasEmptyRows_ = true;   // Provisionally
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A.numRows_ != numRows_ || A.numCols_ != numCols_,
+      std::invalid_argument, "Kokkos::AltSparseOps::addInPlace: " << std::endl
+      << "The dimensions of the input matrices A and *this must be the same."
+      << std::endl << "A is " << A.numRows_ << " x " << A.numCols_
+      << " and *this is " << numRows_ << " x " << numCols_ << ".");
+
+    // FIXME (mfh 06 May 2013) Write an in-place sum kernel.
+    size_t* ptrRaw = NULL;
+    Ordinal* indRaw = NULL;
+    Scalar* valRaw = NULL;
+    Raw::addSparseMatrices (ptrRaw, indRaw, valRaw,
+                            alpha, A.ptr_.getRawPtr (), A.ind_.getRawPtr (), A.val_.getRawPtr (),
+                            beta, ptr_.getRawPtr (), ind_.getRawPtr (), val_.getRawPtr (),
+                            A.numRows_);
+
+    ArrayRCP<const size_t> ptr (const_cast<const size_t*> (ptrRaw), A.numRows_);
+    const size_t numEntries = ptr[A.numRows_];
+    ArrayRCP<const Ordinal> ind (const_cast<const Ordinal*> (indRaw), numEntries);
+    ArrayRCP<const Scalar> val (const_cast<const Scalar*> (valRaw), numEntries);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(firstTouchAllocation_, std::logic_error,
+      "Kokkos::AltSparseOps sum constructor: First-touch allocation not "
+      "implemented for sparse matrix add.");
+
+    // "Commit" the changes.
+    ptr_ = ptr;
+    ind_ = ind;
+    val_ = val;
+
+    isInitialized_ = true;
+    isEmpty_ = (numEntries == 0) ? true : false;
+    // FIXME (mfh 06 May 2013) Check if there are empty rows.
+    // This only matters when using the FOR_IF mat-vec variant.
+    hasEmptyRows_ = false;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      matVecVariant_ == FOR_IF, std::logic_error, "Kokkos::AltSparseOps sum "
+      "constructor: Does not currently work for matVecVariant_ == FOR_IF.");
   }
 
   template <class Scalar, class Ordinal, class Node, class Allocator>

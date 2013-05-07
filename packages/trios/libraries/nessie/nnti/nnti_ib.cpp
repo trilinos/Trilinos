@@ -73,7 +73,16 @@
 #include <map>
 #include <deque>
 
-
+#ifdef HAVE_TRIOS_HPCTOOLKIT
+#include <hpctoolkit.h>
+#define SAMPLING_IS_ACTIVE() hpctoolkit_sampling_is_active()
+#define SAMPLING_STOP() hpctoolkit_sampling_stop()
+#define SAMPLING_START() hpctoolkit_sampling_start()
+#else
+#define SAMPLING_IS_ACTIVE() 0
+#define SAMPLING_STOP()
+#define SAMPLING_START()
+#endif
 
 #include "nnti_ib.h"
 #include "nnti_utils.h"
@@ -491,6 +500,335 @@ static wr_pool_t sendrecv_wr_pool;
 static nnti_ib_config config;
 
 
+/* ---------------- Wrappers to protect HPCToolkit issues ---------- */
+static
+void ibv_ack_cq_events_wrapper(struct ibv_cq *cq, unsigned int nevents)
+{
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    ibv_ack_cq_events(cq, nevents);
+    if (sampling) SAMPLING_START();
+
+    return;
+}
+static
+struct ibv_pd *ibv_alloc_pd_wrapper(struct ibv_context *context)
+{
+    struct ibv_pd *pd=NULL;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    pd=ibv_alloc_pd(context);
+    if (sampling) SAMPLING_START();
+
+    return pd;
+}
+static
+int ibv_close_device_wrapper(struct ibv_context *context)
+{
+    int rc=0;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_close_device(context);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+struct ibv_comp_channel *ibv_create_comp_channel_wrapper(struct ibv_context *context)
+{
+    struct ibv_comp_channel *channel=NULL;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    channel=ibv_create_comp_channel(context);
+    if (sampling) SAMPLING_START();
+
+    return channel;
+}
+static
+struct ibv_cq *ibv_create_cq_wrapper(struct ibv_context *context, int cqe,
+                             void *cq_context,
+                             struct ibv_comp_channel *channel,
+                             int comp_vector)
+{
+    struct ibv_cq *cq=NULL;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    cq=ibv_create_cq(context, cqe, cq_context, channel, comp_vector);
+    if (sampling) SAMPLING_START();
+
+    return cq;
+}
+static
+struct ibv_qp *ibv_create_qp_wrapper(struct ibv_pd *pd,
+                             struct ibv_qp_init_attr *qp_init_attr)
+{
+    struct ibv_qp *qp=NULL;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    qp=ibv_create_qp(pd, qp_init_attr);
+    if (sampling) SAMPLING_START();
+
+    return qp;
+}
+static
+struct ibv_srq *ibv_create_srq_wrapper(struct ibv_pd *pd,
+                               struct ibv_srq_init_attr *srq_init_attr)
+{
+    struct ibv_srq *srq=NULL;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    srq=ibv_create_srq(pd, srq_init_attr);
+    if (sampling) SAMPLING_START();
+
+    return srq;
+}
+static
+int ibv_dealloc_pd_wrapper(struct ibv_pd *pd)
+{
+    int rc=0;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_dealloc_pd(pd);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+int ibv_dereg_mr_wrapper(struct ibv_mr *mr)
+{
+    int rc=0;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_dereg_mr(mr);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+int ibv_destroy_comp_channel_wrapper(
+        struct ibv_comp_channel *channel)
+{
+    int rc;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_destroy_comp_channel(channel);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+int ibv_destroy_cq_wrapper(
+        struct ibv_cq *cq)
+{
+    int rc;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_destroy_cq(cq);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+int ibv_destroy_qp_wrapper(struct ibv_qp *qp)
+{
+    int rc=0;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_destroy_qp(qp);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+int ibv_destroy_srq_wrapper(
+        struct ibv_srq *srq)
+{
+    int rc;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_destroy_srq(srq);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+void ibv_free_device_list_wrapper(struct ibv_device **list)
+{
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    ibv_free_device_list(list);
+    if (sampling) SAMPLING_START();
+
+    return;
+}
+static
+int ibv_get_cq_event_wrapper(struct ibv_comp_channel *channel,
+                             struct ibv_cq **cq,
+                             void **cq_context)
+{
+    int rc;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_get_cq_event(channel, cq, cq_context);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+struct ibv_device **ibv_get_device_list_wrapper(int *num_devices)
+{
+    struct ibv_device **dev=NULL;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    dev=ibv_get_device_list(num_devices);
+    if (sampling) SAMPLING_START();
+
+    return dev;
+}
+static
+int ibv_modify_qp_wrapper(struct ibv_qp *qp,
+                  struct ibv_qp_attr *attr,
+                  int attr_mask)
+{
+    int rc=0;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_modify_qp(qp, attr, attr_mask);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+struct ibv_context *ibv_open_device_wrapper(struct ibv_device *device)
+{
+    struct ibv_context *context=NULL;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    context=ibv_open_device(device);
+    if (sampling) SAMPLING_START();
+
+    return context;
+}
+static
+int ibv_poll_cq_wrapper(struct ibv_cq *cq, int num_entries, struct ibv_wc *wc)
+{
+    int rc=0;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_poll_cq(cq, num_entries, wc);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+int ibv_post_send_wrapper(struct ibv_qp *qp,
+                  struct ibv_send_wr *wr,
+                  struct ibv_send_wr **bad_wr)
+{
+    int rc=0;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_post_send(qp, wr, bad_wr);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+int ibv_post_srq_recv_wrapper(struct ibv_srq *srq,
+                      struct ibv_recv_wr *recv_wr,
+                      struct ibv_recv_wr **bad_recv_wr)
+{
+    int rc=0;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_post_srq_recv(srq,  recv_wr, bad_recv_wr);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+int ibv_query_device_wrapper(struct ibv_context *context,
+                     struct ibv_device_attr *device_attr)
+{
+    int rc=0;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_query_device(context, device_attr);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+int ibv_query_port_wrapper(struct ibv_context *context, uint8_t port_num,
+                   struct ibv_port_attr *port_attr)
+{
+    int rc=0;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_query_port(context, port_num, port_attr);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+struct ibv_mr *ibv_reg_mr_wrapper(struct ibv_pd *pd, void *addr,
+                          size_t length, int access)
+{
+    struct ibv_mr *mr=NULL;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    mr=ibv_reg_mr(pd, addr, length, access);
+    if (sampling) SAMPLING_START();
+
+    return mr;
+}
+static
+int ibv_req_notify_cq_wrapper(struct ibv_cq *cq, int solicited_only)
+{
+    int rc=0;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=ibv_req_notify_cq(cq, solicited_only);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+static
+const char *ibv_wc_status_str_wrapper(enum ibv_wc_status status)
+{
+    const char *str=NULL;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    str=ibv_wc_status_str(status);
+    if (sampling) SAMPLING_START();
+
+    return str;
+}
+
 
 
 /**
@@ -596,7 +934,7 @@ NNTI_result_t NNTI_ib_init (
         struct ibv_device *dev=get_ib_device();
 
         /* open the device */
-        transport_global_data.ctx = ibv_open_device(dev);
+        transport_global_data.ctx = ibv_open_device_wrapper(dev);
         if (!transport_global_data.ctx) {
             log_error(nnti_debug_level, "ibv_open_device failed");
             return NNTI_EIO;
@@ -605,7 +943,7 @@ NNTI_result_t NNTI_ib_init (
         transport_global_data.nic_port = 1;
 
         /* get the lid and verify port state */
-        rc = ibv_query_port(transport_global_data.ctx, transport_global_data.nic_port, &dev_port_attr);
+        rc = ibv_query_port_wrapper(transport_global_data.ctx, transport_global_data.nic_port, &dev_port_attr);
         if (rc) {
             log_error(nnti_debug_level, "ibv_query_port failed");
             return NNTI_EIO;
@@ -619,7 +957,7 @@ NNTI_result_t NNTI_ib_init (
         }
 
         /* Query the device for the max_ requests and such */
-        rc = ibv_query_device(transport_global_data.ctx, &dev_attr);
+        rc = ibv_query_device_wrapper(transport_global_data.ctx, &dev_attr);
         if (rc) {
             log_error(nnti_debug_level, "ibv_query_device failed");
             return NNTI_EIO;
@@ -635,7 +973,7 @@ NNTI_result_t NNTI_ib_init (
         transport_global_data.qp_count = dev_attr.max_qp_wr/2;
 
         /* Allocate a Protection Domain (global) */
-        transport_global_data.pd = ibv_alloc_pd(transport_global_data.ctx);
+        transport_global_data.pd = ibv_alloc_pd_wrapper(transport_global_data.ctx);
         if (!transport_global_data.pd) {
             log_error(nnti_debug_level, "ibv_alloc_pd failed");
             return NNTI_EIO;
@@ -1257,7 +1595,7 @@ NNTI_result_t NNTI_ib_send (
     nthread_unlock(&nnti_wr_wrhash_lock);
 
     trios_start_timer(call_time);
-    if (ibv_post_send(wr->qp, &wr->sq_wr, &bad_wr)) {
+    if (ibv_post_send_wrapper(wr->qp, &wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
         rc=NNTI_EIO;
     }
@@ -1380,7 +1718,7 @@ NNTI_result_t NNTI_ib_put (
     nthread_unlock(&nnti_wr_wrhash_lock);
 
     trios_start_timer(call_time);
-    if (ibv_post_send(wr->qp, &wr->sq_wr, &bad_wr)) {
+    if (ibv_post_send_wrapper(wr->qp, &wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
         rc=NNTI_EIO;
     }
@@ -1509,7 +1847,7 @@ NNTI_result_t NNTI_ib_get (
     nthread_unlock(&nnti_wr_wrhash_lock);
 
     trios_start_timer(call_time);
-    if (ibv_post_send(wr->qp, &wr->sq_wr, &bad_wr)) {
+    if (ibv_post_send_wrapper(wr->qp, &wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
         rc=NNTI_EIO;
     }
@@ -1627,7 +1965,7 @@ NNTI_result_t NNTI_ib_wait (
 
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
-            ibv_rc = ibv_poll_cq(cq, 1, &wc);
+            ibv_rc = ibv_poll_cq_wrapper(cq, 1, &wc);
             trios_stop_timer("NNTI_ib_wait - ibv_poll_cq", call_time);
             if (ibv_rc < 0) {
                 log_debug(debug_level, "ibv_poll_cq failed: %d", ibv_rc);
@@ -1881,7 +2219,7 @@ NNTI_result_t NNTI_ib_waitany (
 
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
-            ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
+            ibv_rc = ibv_poll_cq_wrapper(transport_global_data.data_cq, 1, &wc);
             trios_stop_timer("NNTI_ib_waitany - ibv_poll_cq", call_time);
             if (ibv_rc < 0) {
                 log_debug(debug_level, "ibv_poll_cq failed: %d", ibv_rc);
@@ -1891,13 +2229,13 @@ NNTI_result_t NNTI_ib_waitany (
 
             if (ibv_rc > 0) {
                 log_debug(debug_level, "got wc from cq=%p", transport_global_data.data_cq);
-                log_debug(debug_level, "polling status is %s", ibv_wc_status_str(wc.status));
+                log_debug(debug_level, "polling status is %s", ibv_wc_status_str_wrapper(wc.status));
 
                 print_wc(&wc, false);
 
                 if (wc.status != IBV_WC_SUCCESS) {
                     log_error(debug_level, "Failed status %s (%d) for wr_id %lu",
-                            ibv_wc_status_str(wc.status),
+                            ibv_wc_status_str_wrapper(wc.status),
                             wc.status, wc.wr_id);
                     nnti_rc=NNTI_EIO;
                     break;
@@ -2123,7 +2461,7 @@ NNTI_result_t NNTI_ib_waitall (
 
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
-            ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
+            ibv_rc = ibv_poll_cq_wrapper(transport_global_data.data_cq, 1, &wc);
             trios_stop_timer("NNTI_ib_waitany - ibv_poll_cq", call_time);
             if (ibv_rc < 0) {
                 log_debug(debug_level, "ibv_poll_cq failed: %d", ibv_rc);
@@ -2133,13 +2471,13 @@ NNTI_result_t NNTI_ib_waitall (
 
             if (ibv_rc > 0) {
                 log_debug(debug_level, "got wc from cq=%p", transport_global_data.data_cq);
-                log_debug(debug_level, "polling status is %s", ibv_wc_status_str(wc.status));
+                log_debug(debug_level, "polling status is %s", ibv_wc_status_str_wrapper(wc.status));
 
                 print_wc(&wc, false);
 
                 if (wc.status != IBV_WC_SUCCESS) {
                     log_error(debug_level, "Failed status %s (%d) for wr_id %lu",
-                            ibv_wc_status_str(wc.status),
+                            ibv_wc_status_str_wrapper(wc.status),
                             wc.status, wc.wr_id);
                     nnti_rc=NNTI_EIO;
                     break;
@@ -2292,17 +2630,17 @@ NNTI_result_t NNTI_ib_fini (
     transport_global_data.listen_addr=0;
     transport_global_data.listen_port=0;
 
-    ibv_destroy_comp_channel(transport_global_data.data_comp_channel);
-    ibv_destroy_cq(transport_global_data.data_cq);
-    ibv_destroy_srq(transport_global_data.data_srq);
+    ibv_destroy_comp_channel_wrapper(transport_global_data.data_comp_channel);
+    ibv_destroy_cq_wrapper(transport_global_data.data_cq);
+    ibv_destroy_srq_wrapper(transport_global_data.data_srq);
 
-    ibv_destroy_comp_channel(transport_global_data.req_comp_channel);
-    ibv_destroy_cq(transport_global_data.req_cq);
-    ibv_destroy_srq(transport_global_data.req_srq);
+    ibv_destroy_comp_channel_wrapper(transport_global_data.req_comp_channel);
+    ibv_destroy_cq_wrapper(transport_global_data.req_cq);
+    ibv_destroy_srq_wrapper(transport_global_data.req_srq);
 
-    ibv_dealloc_pd(transport_global_data.pd);
+    ibv_dealloc_pd_wrapper(transport_global_data.pd);
 
-    ibv_close_device(transport_global_data.ctx);
+    ibv_close_device_wrapper(transport_global_data.ctx);
 
     nthread_lock_fini(&nnti_ib_lock);
 
@@ -2327,12 +2665,12 @@ static NNTI_result_t setup_request_channel(void)
 {
     int flags;
 
-    transport_global_data.req_comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
+    transport_global_data.req_comp_channel = ibv_create_comp_channel_wrapper(transport_global_data.ctx);
     if (!transport_global_data.req_comp_channel) {
         log_error(nnti_debug_level, "ibv_create_comp_channel failed");
         return NNTI_EIO;
     }
-    transport_global_data.req_cq = ibv_create_cq(
+    transport_global_data.req_cq = ibv_create_cq_wrapper(
             transport_global_data.ctx,
             transport_global_data.cqe_count,
             NULL,
@@ -2350,13 +2688,13 @@ static NNTI_result_t setup_request_channel(void)
     attr.attr.max_wr = transport_global_data.srq_count;
     attr.attr.max_sge = 1;
 
-    transport_global_data.req_srq = ibv_create_srq(transport_global_data.pd, &attr);
+    transport_global_data.req_srq = ibv_create_srq_wrapper(transport_global_data.pd, &attr);
     if (!transport_global_data.req_srq)  {
         log_error(nnti_debug_level, "ibv_create_srq failed");
         return NNTI_EIO;
     }
 
-    if (ibv_req_notify_cq(transport_global_data.req_cq, 0)) {
+    if (ibv_req_notify_cq_wrapper(transport_global_data.req_cq, 0)) {
         log_error(nnti_debug_level, "ibv_req_notify_cq failed");
         return NNTI_EIO;
     }
@@ -2390,12 +2728,12 @@ static NNTI_result_t setup_data_channel(void)
 {
     int flags;
 
-    transport_global_data.data_comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
+    transport_global_data.data_comp_channel = ibv_create_comp_channel_wrapper(transport_global_data.ctx);
     if (!transport_global_data.data_comp_channel) {
         log_error(nnti_debug_level, "ibv_create_comp_channel failed");
         return NNTI_EIO;
     }
-    transport_global_data.data_cq = ibv_create_cq(
+    transport_global_data.data_cq = ibv_create_cq_wrapper(
             transport_global_data.ctx,
             transport_global_data.cqe_count,
             NULL,
@@ -2413,13 +2751,13 @@ static NNTI_result_t setup_data_channel(void)
     attr.attr.max_wr  = transport_global_data.srq_count;
     attr.attr.max_sge = 1;
 
-    transport_global_data.data_srq = ibv_create_srq(transport_global_data.pd, &attr);
+    transport_global_data.data_srq = ibv_create_srq_wrapper(transport_global_data.pd, &attr);
     if (!transport_global_data.data_srq)  {
         log_error(nnti_debug_level, "ibv_create_srq failed");
         return NNTI_EIO;
     }
 
-    if (ibv_req_notify_cq(transport_global_data.data_cq, 0)) {
+    if (ibv_req_notify_cq_wrapper(transport_global_data.data_cq, 0)) {
         log_error(nnti_debug_level, "ibv_req_notify_cq failed");
         return NNTI_EIO;
     }
@@ -2469,11 +2807,11 @@ static int register_memory(
     trios_stop_timer("mlock", callTime);
 
     trios_start_timer(callTime);
-    mr = ibv_reg_mr(transport_global_data.pd, buf, len, access);
+    mr = ibv_reg_mr_wrapper(transport_global_data.pd, buf, len, access);
     if (!mr) {
         if (errno == EFAULT) {
             log_debug(nnti_debug_level, "ibv_reg_mr failed with EFAULT.  trying to register with IBV_ACCESS_REMOTE_READ.");
-            mr = ibv_reg_mr(transport_global_data.pd, buf, len, IBV_ACCESS_REMOTE_READ);
+            mr = ibv_reg_mr_wrapper(transport_global_data.pd, buf, len, IBV_ACCESS_REMOTE_READ);
             if (!mr) {
                 log_error(nnti_debug_level, "failed to register memory region with IBV_ACCESS_REMOTE_READ: %s", strerror(errno));
                 return(errno);
@@ -2512,7 +2850,7 @@ static int register_ack(ib_work_request *wr)
     trios_stop_timer("mlock", callTime);
 
     trios_start_timer(callTime);
-    mr = ibv_reg_mr(transport_global_data.pd, &wr->ack, len, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+    mr = ibv_reg_mr_wrapper(transport_global_data.pd, &wr->ack, len, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
     if (!mr) {
         log_error(nnti_debug_level, "failed to register memory region");
         perror("errno");
@@ -2537,7 +2875,7 @@ static int unregister_memory(ib_memory_handle *hdl)
     log_debug(nnti_debug_level, "enter");
 
     trios_start_timer(callTime);
-    ibv_rc=ibv_dereg_mr(hdl->mr);
+    ibv_rc=ibv_dereg_mr_wrapper(hdl->mr);
     if (ibv_rc != 0) {
         log_error(nnti_debug_level, "deregistering the memory buffer failed");
     }
@@ -2558,7 +2896,7 @@ static int unregister_ack(ib_work_request *wr)
 
     if (wr->ack_mr!=NULL) {
         trios_start_timer(callTime);
-        ibv_rc=ibv_dereg_mr(wr->ack_mr);
+        ibv_rc=ibv_dereg_mr_wrapper(wr->ack_mr);
         if (ibv_rc != 0) {
             log_error(nnti_debug_level, "deregistering the ACK buffer failed");
         }
@@ -2589,7 +2927,7 @@ static void send_ack (
                       wr->ack_sq_wr.wr.rdma.rkey,
             (void *)  wr->ack_sq_wr.wr.rdma.remote_addr);
 
-    if (ibv_post_send(wr->qp, &wr->ack_sq_wr, &bad_wr)) {
+    if (ibv_post_send_wrapper(wr->qp, &wr->ack_sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
     }
 
@@ -2944,7 +3282,7 @@ static NNTI_result_t post_recv_work_request(
     wr->rq_wr.num_sge=1;
 
     if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
-        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        ibv_rc=ibv_post_srq_recv_wrapper(srq, &wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
@@ -2955,7 +3293,7 @@ static NNTI_result_t post_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
-        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        ibv_rc=ibv_post_srq_recv_wrapper(srq, &wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
@@ -3034,7 +3372,7 @@ static NNTI_result_t post_ack_recv_work_request(
     wr->rq_wr.num_sge=1;
 
     if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
-        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        ibv_rc=ibv_post_srq_recv_wrapper(srq, &wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
@@ -3045,7 +3383,7 @@ static NNTI_result_t post_ack_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
-        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        ibv_rc=ibv_post_srq_recv_wrapper(srq, &wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
@@ -3102,7 +3440,7 @@ static NNTI_result_t repost_recv_work_request(
     }
 
     if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
-        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        ibv_rc=ibv_post_srq_recv_wrapper(srq, &wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
@@ -3113,7 +3451,7 @@ static NNTI_result_t repost_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
-        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        ibv_rc=ibv_post_srq_recv_wrapper(srq, &wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
@@ -3167,7 +3505,7 @@ static NNTI_result_t repost_ack_recv_work_request(
     }
 
     if ((wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
-        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        ibv_rc=ibv_post_srq_recv_wrapper(srq, &wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
@@ -3178,7 +3516,7 @@ static NNTI_result_t repost_ack_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
-        ibv_rc=ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr);
+        ibv_rc=ibv_post_srq_recv_wrapper(srq, &wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
                     &wr->rq_wr, bad_wr, strerror(ibv_rc));
@@ -3547,7 +3885,7 @@ static void transition_qp_to_ready(
             IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ;
     attr.pkey_index = 0;
     attr.port_num = transport_global_data.nic_port;
-    if (ibv_modify_qp(qp, &attr, mask)) {
+    if (ibv_modify_qp_wrapper(qp, &attr, mask)) {
         log_error(nnti_debug_level, "failed to modify qp to INIT state");
     }
 
@@ -3569,7 +3907,7 @@ static void transition_qp_to_ready(
     attr.rq_psn = 0;
     attr.dest_qp_num = peer_qpn;
     attr.min_rnr_timer = 31;
-    if (ibv_modify_qp(qp, &attr, mask)) {
+    if (ibv_modify_qp_wrapper(qp, &attr, mask)) {
         log_error(nnti_debug_level, "failed to modify qp from INIT to RTR state");
     }
 
@@ -3588,7 +3926,7 @@ static void transition_qp_to_ready(
     attr.timeout = 24;  /* 4.096us * 2^24 */
     attr.retry_cnt = 7;
     attr.rnr_retry = 7;
-    if (ibv_modify_qp(qp, &attr, mask)) {
+    if (ibv_modify_qp_wrapper(qp, &attr, mask)) {
         log_error(nnti_debug_level, "failed to modify qp from RTR to RTS state");
     }
 
@@ -3617,7 +3955,7 @@ static void transition_qp_to_error(
     /* Transition QP to Error */
     memset(&attr, 0, sizeof(attr));
     attr.qp_state = IBV_QPS_ERR;
-    if (ibv_modify_qp(qp, &attr, IBV_QP_STATE)) {
+    if (ibv_modify_qp_wrapper(qp, &attr, IBV_QP_STATE)) {
         log_error(nnti_debug_level, "failed to modify qp to ERROR state");
     }
 }
@@ -3778,7 +4116,7 @@ static int new_client_connection(
     att.qp_type          = IBV_QPT_RC;
 
     trios_start_timer(callTime);
-    c->req_qp.qp = ibv_create_qp(transport_global_data.pd, &att);
+    c->req_qp.qp = ibv_create_qp_wrapper(transport_global_data.pd, &att);
     if (!c->req_qp.qp) {
         log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
     }
@@ -3799,11 +4137,11 @@ static int new_client_connection(
     att.cap.max_recv_sge = 1;
     att.cap.max_send_sge = 1;
     att.qp_type          = IBV_QPT_RC;
-    c->data_qp.qp = ibv_create_qp(transport_global_data.pd, &att);
+    c->data_qp.qp = ibv_create_qp_wrapper(transport_global_data.pd, &att);
     if (!c->data_qp.qp) {
         log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
     }
-    if (ibv_req_notify_cq(transport_global_data.data_cq, 0)) {
+    if (ibv_req_notify_cq_wrapper(transport_global_data.data_cq, 0)) {
         log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
     }
     c->data_qp.qpn     = c->data_qp.qp->qp_num;
@@ -3870,7 +4208,7 @@ static int new_server_connection(
     att.qp_type          = IBV_QPT_RC;
 
     trios_start_timer(callTime);
-    c->req_qp.qp = ibv_create_qp(transport_global_data.pd, &att);
+    c->req_qp.qp = ibv_create_qp_wrapper(transport_global_data.pd, &att);
     if (!c->req_qp.qp) {
         log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
     }
@@ -3891,11 +4229,11 @@ static int new_server_connection(
     att.cap.max_recv_sge = 1;
     att.cap.max_send_sge = 1;
     att.qp_type          = IBV_QPT_RC;
-    c->data_qp.qp = ibv_create_qp(transport_global_data.pd, &att);
+    c->data_qp.qp = ibv_create_qp_wrapper(transport_global_data.pd, &att);
     if (!c->data_qp.qp) {
         log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
     }
-    if (ibv_req_notify_cq(transport_global_data.data_cq, 0)) {
+    if (ibv_req_notify_cq_wrapper(transport_global_data.data_cq, 0)) {
         log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
     }
 
@@ -4280,7 +4618,7 @@ static NNTI_result_t wr_pool_register(
     trios_stop_timer("mlock", callTime);
 
     trios_start_timer(callTime);
-    mr = ibv_reg_mr(
+    mr = ibv_reg_mr_wrapper(
             transport_global_data.pd,
             &wr->ack,
             len,
@@ -4310,7 +4648,7 @@ static NNTI_result_t wr_pool_deregister(
 
     if (wr->ack_mr!=NULL) {
         trios_start_timer(callTime);
-        ibv_rc=ibv_dereg_mr(wr->ack_mr);
+        ibv_rc=ibv_dereg_mr_wrapper(wr->ack_mr);
         if (ibv_rc != 0) {
             log_error(nnti_debug_level, "deregistering the ACK buffer failed");
         }
@@ -4559,12 +4897,12 @@ static void close_connection(ib_connection *c)
 
     if (c->peer_name) free(c->peer_name);
     if (c->req_qp.qp) {
-        rc=ibv_destroy_qp(c->req_qp.qp);
+        rc=ibv_destroy_qp_wrapper(c->req_qp.qp);
         if (rc < 0)
             log_error(nnti_debug_level, "failed to destroy QP");
     }
     if (c->data_qp.qp) {
-        rc=ibv_destroy_qp(c->data_qp.qp);
+        rc=ibv_destroy_qp_wrapper(c->data_qp.qp);
         if (rc < 0)
             log_error(nnti_debug_level, "failed to destroy QP");
     }
@@ -4619,11 +4957,14 @@ static NNTI_result_t check_for_waiting_connection()
                 conn->peer_name,
                 conn->peer_addr,
                 conn->peer_port);
+
+        conn->peer=peer;
+
         insert_conn_qpn(conn->req_qp.qpn, conn);
         insert_conn_qpn(conn->data_qp.qpn, conn);
         insert_conn_peer(&peer, conn);
 
-        log_debug(LOG_ALL, "Allocating new connection count=%d", ++connection_count);
+        log_debug(nnti_debug_level, "Allocating new connection count=%d", ++connection_count);
 
         transition_connection_to_ready(s, conn);
 //        nthread_unlock(&nnti_ib_lock);
@@ -4671,14 +5012,14 @@ static struct ibv_device *get_ib_device(void)
     struct ibv_device **dev_list;
     int dev_count=0;
 
-    dev_list = ibv_get_device_list(&dev_count);
+    dev_list = ibv_get_device_list_wrapper(&dev_count);
     if (dev_count == 0)
         return NULL;
     if (dev_count > 1) {
                 log_debug(nnti_debug_level, "found %d devices, defaulting the dev_list[0] (%p)", dev_count, dev_list[0]);
     }
     dev = dev_list[0];
-    ibv_free_device_list(dev_list);
+    ibv_free_device_list_wrapper(dev_list);
 
     return dev;
 }
@@ -4691,7 +5032,7 @@ static void print_wc(const struct ibv_wc *wc, bool force)
             wc->opcode,
             wc->wc_flags,
             wc->status,
-            ibv_wc_status_str(wc->status),
+            ibv_wc_status_str_wrapper(wc->status),
             wc->wr_id,
             wc->vendor_err,
             wc->byte_len,
@@ -4704,7 +5045,7 @@ static void print_wc(const struct ibv_wc *wc, bool force)
             wc->opcode,
             wc->wc_flags,
             wc->status,
-            ibv_wc_status_str(wc->status),
+            ibv_wc_status_str_wrapper(wc->status),
             wc->wr_id,
             wc->vendor_err,
             wc->byte_len,
@@ -4717,7 +5058,7 @@ static void print_wc(const struct ibv_wc *wc, bool force)
             wc->opcode,
             wc->wc_flags,
             wc->status,
-            ibv_wc_status_str(wc->status),
+            ibv_wc_status_str_wrapper(wc->status),
             wc->wr_id,
             wc->vendor_err,
             wc->byte_len,
@@ -4772,9 +5113,9 @@ static NNTI_result_t poll_comp_channel(
     log_debug(nnti_debug_level, "completion channel poll complete - %d event(s) waiting", my_pollfd.revents);
 
 try_again:
-    if (ibv_get_cq_event(comp_channel, &ev_cq, &ev_ctx) == 0) {
+    if (ibv_get_cq_event_wrapper(comp_channel, &ev_cq, &ev_ctx) == 0) {
         log_debug(nnti_debug_level, "got event from comp_channel for cq=%p", ev_cq);
-        ibv_ack_cq_events(ev_cq, 1);
+        ibv_ack_cq_events_wrapper(ev_cq, 1);
         log_debug(nnti_debug_level, "ACKed event on cq=%p", ev_cq);
         rc = NNTI_OK;
     } else {
@@ -4801,7 +5142,7 @@ try_again:
     }
 
 cleanup:
-    if (ibv_req_notify_cq(cq, 0)) {
+    if (ibv_req_notify_cq_wrapper(cq, 0)) {
         log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
         rc = NNTI_EIO;
     }

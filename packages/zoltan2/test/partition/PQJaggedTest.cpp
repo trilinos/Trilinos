@@ -410,6 +410,7 @@ int testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numPa
     params.set("force_linear_search", "no");
   }
 
+  params.set("remap_parts", "yes");
   params.set("num_global_parts", numParts);
   params.set("algorithm", "multijagged");
   params.set("compute_metrics", "true");
@@ -434,6 +435,15 @@ int testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numPa
 
   //const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
       //problem.getSolution();
+
+  if (coordsConst->getGlobalLength() < 40) {
+    int len = coordsConst->getLocalLength();
+    const zoltan2_partId_t *zparts = problem->getSolution().getPartList();
+    const gno_t *zgids = problem->getSolution().getIdList();
+    for (int i = 0; i < len; i++)
+      cout << comm->getRank() 
+           << " gid " << zgids[i] << " part " << zparts[i] << endl;
+  }
 
   if (comm->getRank() == 0){
     problem->printMetrics(cout);

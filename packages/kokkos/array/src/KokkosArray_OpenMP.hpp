@@ -127,6 +127,7 @@ private:
 } // namespace KokkosArray
 
 #include <OpenMP/KokkosArray_OpenMP_Parallel.hpp>
+#include <OpenMP/KokkosArray_OpenMP_View.hpp>
 
 #endif /* #define KOKKOSARRAY_OPENMP_HPP */
 

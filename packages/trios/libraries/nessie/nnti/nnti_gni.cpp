@@ -2006,6 +2006,7 @@ NNTI_result_t NNTI_gni_wait (
 
     nthread_lock(&gni_mem_hdl->wr_queue_lock);
 
+    log_debug(nnti_debug_level, "work request queue has %d entries", gni_mem_hdl->wr_queue->size());
     if (gni_mem_hdl->wr_queue->empty()) {
         log_debug(nnti_ee_debug_level, "work request queue is empty");
         nnti_rc=NNTI_ENOENT;
@@ -5478,6 +5479,8 @@ static int check_for_waiting_connection()
                 conn->peer_ptag,
                 conn->peer_cookie,
                 conn->peer_instance);
+
+        conn->peer=peer;
 
         insert_conn_peer(&peer, conn);
         insert_conn_instance(conn->peer_instance, conn);

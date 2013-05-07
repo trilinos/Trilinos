@@ -344,6 +344,12 @@ int main(int argc, char *argv[])
 
     log_debug(debug_level, "%d: Starting xfer-service test", rank);
 
+#ifdef TRIOS_ENABLE_COMMSPLITTER
+    if (args.transport == NSSI_RPC_MPI) {
+        MPI_Pcontrol(0);
+    }
+#endif
+
     /**
      * Since this test can be run as a server, client, or both, we need to play some fancy
      * MPI games to get the communicators working correctly.  If we're executing as both
@@ -370,15 +376,19 @@ int main(int argc, char *argv[])
         MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
     }
     else {
-        if (args.client_flag)
+        if (args.client_flag) {
             color=1;
-        else if (args.server_flag)
+            log_debug(debug_level, "rank=%d is a client", rank);
+        }
+        else if (args.server_flag) {
             color=0;
+            log_debug(debug_level, "rank=%d is a server", rank);
+        }
         else {
             log_error(debug_level, "Must be either a client or a server");
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
-        MPI_Comm_dup(MPI_COMM_WORLD, &comm);
+        MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
     }
 
     MPI_Comm_rank(comm, &splitrank);

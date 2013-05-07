@@ -151,8 +151,14 @@ namespace MueLu {
       if (factoryName == "SaPFactory") {
         return  Build2<SaPFactory>(paramList, factoryMapIn);
       }
+      if (factoryName == "PgPFactory") {
+        return  Build2<PgPFactory>(paramList, factoryMapIn);
+      }
       if (factoryName == "TransPFactory") {
         return Build2<TransPFactory>(paramList, factoryMapIn);
+      }
+      if (factoryName == "GenericRFactory") {
+        return Build2<GenericRFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "RAPFactory") {
         return BuildRAPFactory(paramList, factoryMapIn);

@@ -45,22 +45,22 @@ SET(SOURCES "")
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_GLOB(HEADERS ${DIR}/algorithms/order/*.hpp)
-APPEND_GLOB(HEADERS ${DIR}/algorithms/order/*.cpp)
+APPEND_GLOB(SOURCES ${DIR}/algorithms/order/*.cpp)
 
 APPEND_GLOB(HEADERS ${DIR}/algorithms/partition/*.hpp)
-APPEND_GLOB(HEADERS ${DIR}/algorithms/partition/*.cpp)
+APPEND_GLOB(SOURCES ${DIR}/algorithms/partition/*.cpp)
 
 APPEND_GLOB(HEADERS ${DIR}/environment/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/environment/*.cpp)
 
 APPEND_GLOB(HEADERS ${DIR}/input/*.hpp)
-APPEND_GLOB(HEADERS ${DIR}/input/*.cpp)
+APPEND_GLOB(SOURCES ${DIR}/input/*.cpp)
 
 APPEND_GLOB(HEADERS ${DIR}/models/*.hpp)
-APPEND_GLOB(HEADERS ${DIR}/models/*.cpp)
+APPEND_GLOB(SOURCES ${DIR}/models/*.cpp)
 
 APPEND_GLOB(HEADERS ${DIR}/problems/*.hpp)
-APPEND_GLOB(HEADERS ${DIR}/problems/*.cpp)
+APPEND_GLOB(SOURCES ${DIR}/problems/*.cpp)
 
 APPEND_GLOB(HEADERS ${DIR}/util/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/util/*.cpp)

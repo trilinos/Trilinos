@@ -68,7 +68,20 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PgPFactory()
-    : diagonalView_("current"), min_norm_(DINVANORM), bReUseRowBasedOmegas_(false) {
+    : diagonalView_("current") {
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
+    validParamList->set< MinimizationNorm >      ("Minimization norm", DINVANORM,  "Norm to be minimized.");
+    validParamList->set< bool >                  ("ReUseRowBasedOmegas", false,    "Reuse omegas for prolongator for restrictor (default: false).");
+    // validParamList->set                       ("Diagonal view",      "current", "Diagonal view used during the prolongator smoothing process");
+
+    return validParamList;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -77,10 +90,16 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetMinimizationMode(MinimizationNorm minnorm) { min_norm_ = minnorm; }
+  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetMinimizationMode(MinimizationNorm minnorm) {
+    SetParameter("Minimization norm", ParameterEntry(minnorm)); // revalidate
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MueLu::MinimizationNorm PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMinimizationMode() { return min_norm_; }
+  MueLu::MinimizationNorm PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMinimizationMode() {
+    //return min_norm_;
+    const ParameterList & pL = GetParameterList();
+    return pL.get<MueLu::MinimizationNorm>("Minimization norm");
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDiagonalView() {
@@ -112,7 +131,9 @@ namespace MueLu {
      * PgPFactory.Build for prolongation mode calculates RowBasedOmega for prolongation operator
      * PgPFactory.Build for restriction mode calculates RowBasedOmega for restriction operator
      */
-    if( bReUseRowBasedOmegas_ == true && restrictionMode_ == true ) {
+    const ParameterList & pL = GetParameterList();
+    bool bReUseRowBasedOmegas = pL.get<bool>("ReUseRowBasedOmegas");
+    if( bReUseRowBasedOmegas == true && restrictionMode_ == true ) {
       coarseLevel.DeclareInput("RowBasedOmega", this, this); // RowBasedOmega is calculated by this PgPFactory and requested by this PgPFactory
     }
   }
@@ -151,7 +172,9 @@ namespace MueLu {
 
     Teuchos::RCP<Vector > RowBasedOmega = Teuchos::null;
 
-    if(restrictionMode_ == false || bReUseRowBasedOmegas_ == false) {
+    const ParameterList & pL = GetParameterList();
+    bool bReUseRowBasedOmegas = pL.get<bool>("ReUseRowBasedOmegas");
+    if(restrictionMode_ == false || bReUseRowBasedOmegas == false) {
       // if in prolongation mode: calculate row based omegas
       // if in restriction mode: calculate omegas only if row based omegas are not used from prolongation mode
       ComputeRowBasedOmega(fineLevel, coarseLevel, A, Ptent, DinvAP0, RowBasedOmega);
@@ -236,7 +259,10 @@ namespace MueLu {
     Teuchos::RCP<Vector > Numerator = Teuchos::null;
     Teuchos::RCP<Vector > Denominator = Teuchos::null;
 
-    switch (min_norm_)
+    const ParameterList & pL = GetParameterList();
+    MinimizationNorm min_norm = pL.get<MinimizationNorm>("Minimization norm");
+
+    switch (min_norm)
       {
       case ANORM: {
         // MUEMAT mode (=paper)
@@ -358,7 +384,7 @@ namespace MueLu {
       maxAll(A->getRowMap()->getComm(), max_local, max_all);
 
       GetOStream(MueLu::Statistics1, 0) << "PgPFactory: smoothed aggregation (scheme: ";
-      switch (min_norm_)
+      switch (min_norm)
         {
         case ANORM:     { GetOStream(MueLu::Statistics1, 0) << "Anorm)"     << std::endl;   }   break;
         case L2NORM:    { GetOStream(MueLu::Statistics1, 0) << "L2norm)"    << std::endl;   }   break;
@@ -678,112 +704,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReUseDampingParameters(bool bReuse) {
-    bReUseRowBasedOmegas_ = bReuse;
+    SetParameter("ReUseRowBasedOmegas", ParameterEntry(bReuse));
   }
-
-#if 0
-  case ANORM: {
-    // MUEMAT mode (=paper)
-    // Minimize with respect to the (A)' A norm.
-    // Need to be smart here to avoid the construction of A' A
-    //
-    //                   diag( P0' (A' A) D^{-1} A P0)
-    //   omega =   ------------------------------------------
-    //             diag( P0' A' D^{-1}' ( A'  A) D^{-1} A P0)
-    //
-    // expensive, since we have to recalculate AP0 due to the lack of an explicit scaling routine for DinvAP0
-
-    // calculate A * Ptent
-    bool doFillComplete=true;
-    bool optimizeStorage=false;
-    RCP<Matrix> AP0 = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
-
-    // compute A * D^{-1} * A * P0
-    RCP<Matrix> ADinvAP0 = Utils::Multiply(*A, false, *DinvAPtent, false, doFillComplete, optimizeStorage);
-
-    Numerator = MultiplyAll(AP0, ADinvAP0, GID2localgid);
-    Denominator = MultiplySelfAll(ADinvAP0, GID2localgid);
-  }
-  break;
-  case L2NORM: {
-    // ML mode 1 (cheapest)
-    // Minimize with respect to L2 norm
-    //                  diag( P0' D^{-1} A P0)
-    //   omega =   -----------------------------
-    //             diag( P0' A' D^{-1}' D^{-1} A P0)
-    //
-    Numerator = MultiplyAll(Ptent, DinvAPtent, GID2localgid);
-    Denominator = MultiplySelfAll(DinvAPtent, GID2localgid);
-  }
-  break;
-  case DINVANORM: {
-    // ML mode 2
-    // Minimize with respect to the (D^{-1} A)' D^{-1} A norm.
-    // Need to be smart here to avoid the construction of A' A
-    //
-    //                   diag( P0' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
-    //   omega =   --------------------------------------------------------
-    //             diag( P0' A' D^{-1}' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
-    //
-
-    // compute D^{-1} * A * D^{-1} * A * P0
-    bool doFillComplete=true;
-    bool optimizeStorage=false;
-    RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAPtent, false, doFillComplete, optimizeStorage);
-    Utils::MyOldScaleMatrix(DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
-
-    Numerator = MultiplyAll(DinvAPtent, DinvADinvAP0, GID2localgid);
-    Denominator = MultiplySelfAll(DinvADinvAP0, GID2localgid);
-  }
-  break;
-  case ATDINVTPLUSDINVANORM: {
-    // ML mode 3 (most expensive)
-    //             diag( P0' ( A'D' + DA) D A P0)
-    //   omega =   -----------------------------
-    //             diag( P0'A'D' ( A'D' + DA) D A P0)
-    //
-    //             diag( DinvAP0'DinvAP0 + P0'DinvADinvAP0)
-    //         =   -----------------------------
-    //                2*diag( DinvADinvAP0'DinvAP0)
-    //
-    //
-
-    // compute D^{-1} * A * D^{-1} * A * P0
-    bool doFillComplete=true;
-    bool optimizeStorage=false;
-    RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAPtent, false, doFillComplete, optimizeStorage);
-    Utils::MyOldScaleMatrix(DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
-
-    Numerator = MultiplyAll(Ptent, DinvADinvAP0, GID2localgid);
-    RCP<Teuchos::Array<Scalar> > Numerator2= MultiplySelfAll(DinvAPtent, GID2localgid);
-    TEUCHOS_TEST_FOR_EXCEPTION(Numerator->size() != Numerator2->size(), Exceptions::RuntimeError, "PgPFactory::ComputeRowBasedOmegas: size of Numerator and Numerator2 different. Error");
-    for(size_t i=0; i<Teuchos::as<size_t>(Numerator->size()); i++)
-      (*Numerator)[i] += (*Numerator2)[i];
-    Denominator = MultiplyAll(DinvAPtent, DinvADinvAP0, GID2localgid);
-    for(size_t i=0; i<Teuchos::as<size_t>(Denominator->size()); i++)
-      (*Denominator)[i] *= 2.;
-
-  }
-  break;
-
-  /////////////////// DEBUG: check for zeros in denominator
-  size_t zeros_in_denominator = 0;
-  for(size_t i=0; i<Teuchos::as<size_t>(Denominator->size()); i++)
-    {
-      if((*Denominator)[i] == Teuchos::ScalarTraits<Scalar>::zero()) zeros_in_denominator ++;
-    }
-  if(zeros_in_denominator>Teuchos::ScalarTraits<Scalar>::zero())
-    GetOStream(Warnings0, 0) << "Found " << zeros_in_denominator<< " zeros in Denominator. very suspicious!" << std::endl;
-
-  /////////////////// build ColBasedOmegas
-  RCP<Teuchos::ArrayRCP<Scalar> > ColBasedOmegas = Teuchos::rcp(new Teuchos::ArrayRCP<Scalar>(Numerator->size(), Teuchos::ScalarTraits<Scalar>::zero()));
-  for(size_t i=0; i<Teuchos::as<size_t>(Numerator->size()); i++)
-    {
-      (*ColBasedOmegas)[i] = (*Numerator)[i]/(*Denominator)[i];
-      if((*ColBasedOmegas)[i] < Teuchos::ScalarTraits<Scalar>::zero())
-        (*ColBasedOmegas)[i] = Teuchos::ScalarTraits<Scalar>::zero();
-    }
-#endif // if 0
 
 } //namespace MueLu
 

@@ -47,6 +47,8 @@
 
 #include "Teuchos_RCP.hpp"
 
+namespace Piro {
+
 /** \brief Decorator class that creates a Jacobian (W) operator
  * using matrix-free directional derivatives.
  *
@@ -57,8 +59,6 @@
  * This class supports time-dependent problems (characterized by x_dot != null)
  * and uses the input values of the alpha and beta coefficients.
  */
-
-namespace Piro {
 
 template <typename Scalar>
 class MatrixFreeDecorator : public Thyra::ModelEvaluatorDelegatorBase<Scalar>

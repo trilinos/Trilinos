@@ -460,6 +460,15 @@ namespace Kokkos {
     ///   don't keep it around.  (This saves a bit of memory.)
     DefaultHostSparseOps(const RCP<Node> &node, Teuchos::ParameterList& params);
 
+    /// \brief "Sum constructor": compute *this = alpha*A + beta*B.
+    ///
+    /// The resulting matrix shares the Node instance and copies the
+    /// parameters of the matrix A.
+    DefaultHostSparseOps (const Scalar& alpha,
+                          const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                          const Scalar& beta,
+                          const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& B);
+
     //! Destructor
     ~DefaultHostSparseOps();
 
@@ -551,35 +560,35 @@ namespace Kokkos {
               // extreme verbosity mode.
               out << "ptrs: [";
               if (big_ptrs_.size() > 0) {
-		for (size_type i = 0; i < big_ptrs_.size (); ++i) {
-		  out << big_ptrs_[i];
-		  if (i + 1 < big_ptrs_.size ()) {
-		    out << ", ";
-		  }
-		}
+                for (size_type i = 0; i < big_ptrs_.size (); ++i) {
+                  out << big_ptrs_[i];
+                  if (i + 1 < big_ptrs_.size ()) {
+                    out << ", ";
+                  }
+                }
               }
               else {
-		for (size_type i = 0; i < sml_ptrs_.size (); ++i) {
-		  out << sml_ptrs_[i];
-		  if (i + 1 < sml_ptrs_.size ()) {
-		    out << ", ";
-		  }
-		}
+                for (size_type i = 0; i < sml_ptrs_.size (); ++i) {
+                  out << sml_ptrs_[i];
+                  if (i + 1 < sml_ptrs_.size ()) {
+                    out << ", ";
+                  }
+                }
               }
               out << "]" << endl << "inds_: [";
-	      for (size_type i = 0; i < inds_.size (); ++i) {
-		out << inds_[i];
-		if (i + 1 < inds_.size ()) {
-		  out << ", ";
-		}
-	      }
+              for (size_type i = 0; i < inds_.size (); ++i) {
+                out << inds_[i];
+                if (i + 1 < inds_.size ()) {
+                  out << ", ";
+                }
+              }
               out << "]" << endl << "vals_: [";
-	      for (size_type i = 0; i < vals_.size (); ++i) {
-		out << vals_[i];
-		if (i + 1 < vals_.size ()) {
-		  out << ", ";
-		}
-	      }
+              for (size_type i = 0; i < vals_.size (); ++i) {
+                out << vals_[i];
+                if (i + 1 < vals_.size ()) {
+                  out << ", ";
+                }
+              }
               out << "]" << endl;
             } // vl >= VERB_EXTREME
           } // if is initialized
@@ -837,6 +846,14 @@ namespace Kokkos {
                  const MultiVector<Scalar,Node> &D,
                  const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
                  const enum ESweepDirection direction = Forward) const;
+
+    /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
+    ///
+    /// This method may choose to reuse storage of <tt>*this</tt>.
+    void
+    addInPlace (const Scalar& alpha,
+                const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                const Scalar& beta);
     //@}
 
   protected:
@@ -965,6 +982,40 @@ namespace Kokkos {
     // Kokkos Node types that are host Nodes (vs. device Nodes, such
     // as GPU Nodes).
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
+  }
+
+  template<class Scalar, class Ordinal, class Node, class Allocator>
+  DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  DefaultHostSparseOps (const Scalar& alpha,
+                        const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                        const Scalar& beta,
+                        const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& B)
+  {
+    // Make sure that users only specialize DefaultHostSparseOps for
+    // Kokkos Node types that are host Nodes (vs. device Nodes, such
+    // as GPU Nodes).
+    Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
+
+    (void) alpha;
+    (void) A;
+    (void) beta;
+    (void) B;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::"
+      "DefaultHostSparseOps: sum constructor not implemented.");
+  }
+
+  template<class Scalar, class Ordinal, class Node, class Allocator>
+  void
+  DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  addInPlace (const Scalar& alpha,
+              const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+              const Scalar& beta)
+  {
+    (void) alpha;
+    (void) A;
+    (void) beta;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::"
+      "DefaultHostSparseOps::addInPlace: Not implemented.");
   }
 
   template<class Scalar, class Ordinal, class Node, class Allocator>
