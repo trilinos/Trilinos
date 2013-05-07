@@ -150,7 +150,9 @@ public:
     ptr_(Teuchos::rcp(new ProviderImpl<T, P>(p)))
   {}
 
+  bool nonnull() const { return ptr_.nonnull(); }
   bool is_null() const { return ptr_.is_null(); }
+
   Teuchos::RCP<const ProviderBase<T> > ptr() const { return ptr_; }
   Teuchos::RCP<ProviderBase<T> > ptr() { return ptr_; }
 
@@ -164,16 +166,16 @@ private:
 
 template <typename T>
 inline
-bool is_null(const Provider<T> &h)
+bool nonnull(const Provider<T> &h)
 {
-  return h.is_null();
+  return h.nonnull();
 }
 
 template <typename T>
 inline
-bool nonnull(const Provider<T> &h)
+bool is_null(const Provider<T> &h)
 {
-  return !is_null(h);
+  return h.is_null();
 }
 
 } // namespace Piro
