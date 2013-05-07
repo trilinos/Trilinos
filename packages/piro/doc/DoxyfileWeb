@@ -10,7 +10,7 @@
 # provided with reasonable default behavior, leave intact the above
 # @INCLUDE. To modify the default behavior, simply include below the
 # option you would like to overwrite (or use += to append more to the
-# default). 
+# default).
 #
 # To reference the documentation of another package with a doxygen tag
 # file, include something like the following:
@@ -22,20 +22,20 @@
 # path from your Doxyfile to the "html/" directory corresponding to that
 # tag file.)
 #
-# - To view the explanation of an option, run 
+# - To view the explanation of an option, run
 #
 #     doxygen -g COMMENTED_DOXYFILE_NAME
 #     (open COMMENTED_DOXYFILE_NAME)
 #
 #   or visit http://www.stack.nl/~dimitri/doxygen/config.html
 #
-# - To use this Doxyfile locally to generate your documentation and 
+# - To use this Doxyfile locally to generate your documentation and
 #   iteratively develop it:
 #
 #     (document your source)
 #     cd Trilinos/packages/YOUR_PACKAGE/doc
 #     (modify this Doxyfile as needed)
-#     doxygen DoxyfileWeb 
+#     doxygen DoxyfileWeb
 #     (open Trilinos/packages/YOUR_PACKAGE/doc/html/index.html)
 #
 ############################################################################
@@ -43,6 +43,8 @@
 PROJECT_NAME           = Piro
 
 INPUT                  = index.doc namespaces.doc ../src
+
+EXCLUDE_PATTERNS       = *_Def.hpp
 
 EXAMPLE_PATH           = ../test
 

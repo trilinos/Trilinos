@@ -52,6 +52,8 @@
 
 namespace Piro {
 
+//! \cond DETAILS
+
 template <typename T, typename Functor>
 class ProviderImpl : public ProviderBase<T> {
 public:
@@ -124,6 +126,7 @@ makeSharingProviderFunctor(const Teuchos::RCP<T> &instance)
   return SharingProviderFunctor<T>(instance);
 }
 
+//! \endcond
 
 template <typename T>
 class Provider : public ProviderFunctorBase<T> {
