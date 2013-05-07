@@ -170,7 +170,10 @@ typedef struct {
 
     bool use_alps_ptag;
 
-    bool use_wr_pool;
+    bool     use_wr_pool;
+    uint32_t wr_pool_initial_size;
+    uint32_t wr_pool_max_size;
+    bool     wr_pool_create_if_empty;
 
     bool use_rdma_target_ack;
     bool use_rdma_events;
@@ -542,7 +545,7 @@ static gni_work_request *get_wr_wrhash(const uint32_t bufhash);
 static gni_work_request *del_wr_wrhash(gni_work_request *victim);
 static void print_wrhash_map(void);
 
-static NNTI_result_t wr_pool_init(uint32_t pool_size);
+static NNTI_result_t wr_pool_init(void);
 static gni_work_request *wr_pool_target_pop(void);
 static gni_work_request *wr_pool_initiator_pop(void);
 static void wr_pool_target_push(gni_work_request *wr);
@@ -988,7 +991,7 @@ NNTI_result_t NNTI_gni_init (
         transport_global_data.cq_list[1]=transport_global_data.mem_cq_hdl;
 
         if (config.use_wr_pool) {
-            rc=wr_pool_init(100);
+            rc=wr_pool_init();
             if (rc!=NNTI_OK) {
                 log_error(nnti_debug_level, "wr_pool_init(): %d", rc);
                 goto cleanup;
@@ -5184,7 +5187,7 @@ static NNTI_result_t wr_pool_deregister(
 
     return(NNTI_OK);
 }
-static NNTI_result_t wr_pool_init(uint32_t pool_size)
+static NNTI_result_t wr_pool_init(void)
 {
     NNTI_result_t  rc=NNTI_OK;
     uint32_t i;
@@ -5192,7 +5195,7 @@ static NNTI_result_t wr_pool_init(uint32_t pool_size)
 
     log_debug(nnti_debug_level, "enter");
 
-    for (i=0;i<pool_size;i++) {
+    for (i=0;i<config.wr_pool_initial_size;i++) {
         wr=(gni_work_request *)malloc(sizeof(gni_work_request));
         memset(wr, 0, sizeof(gni_work_request));
         assert(wr);
@@ -7044,6 +7047,9 @@ static void config_init(nnti_gni_config *c)
 {
     c->use_alps_ptag                    =true;
     c->use_wr_pool                      =false;
+    c->wr_pool_initial_size             =50;
+    c->wr_pool_max_size                 =1000;
+    c->wr_pool_create_if_empty          =false;
     c->use_rdma_target_ack              =false;
     c->use_rdma_events                  =false;
     c->use_rdma_fence                   =false;
@@ -7079,6 +7085,42 @@ static void config_get_from_env(nnti_gni_config *c)
         }
     } else {
         log_debug(nnti_debug_level, "TRIOS_NNTI_USE_WR_POOL is undefined.  using c->use_wr_pool default");
+    }
+    if ((env_str=getenv("TRIOS_NNTI_WR_POOL_INITIAL_SIZE")) != NULL) {
+        errno=0;
+        uint32_t initial_size=strtoul(env_str, NULL, 0);
+        if (errno == 0) {
+            log_debug(nnti_debug_level, "setting c->wr_pool_initial_size to %lu", initial_size);
+            c->wr_pool_initial_size=initial_size;
+        } else {
+            log_debug(nnti_debug_level, "TRIOS_NNTI_WR_POOL_INITIAL_SIZE value conversion failed (%s).  using c->wr_pool_initial_size default.", strerror(errno));
+        }
+    } else {
+        log_debug(nnti_debug_level, "TRIOS_NNTI_WR_POOL_INITIAL_SIZE is undefined.  using c->wr_pool_initial_size default");
+    }
+    if ((env_str=getenv("TRIOS_NNTI_WR_POOL_MAX_SIZE")) != NULL) {
+        errno=0;
+        uint32_t max_size=strtoul(env_str, NULL, 0);
+        if (errno == 0) {
+            log_debug(nnti_debug_level, "setting c->wr_pool_max_size to %lu", max_size);
+            c->wr_pool_max_size=max_size;
+        } else {
+            log_debug(nnti_debug_level, "TRIOS_NNTI_WR_POOL_MAX_SIZE value conversion failed (%s).  using c->wr_pool_max_size default.", strerror(errno));
+        }
+    } else {
+        log_debug(nnti_debug_level, "TRIOS_NNTI_WR_POOL_MAX_SIZE is undefined.  using c->wr_pool_max_size default");
+    }
+    if ((env_str=getenv("TRIOS_NNTI_WR_POOL_CREATE_IF_EMPTY")) != NULL) {
+        if ((!strcasecmp(env_str, "TRUE")) ||
+            (!strcmp(env_str, "1"))) {
+            log_debug(nnti_debug_level, "setting c->wr_pool_create_if_empty to TRUE");
+            c->wr_pool_create_if_empty=true;
+        } else {
+            log_debug(nnti_debug_level, "setting c->wr_pool_create_if_empty to FALSE");
+            c->wr_pool_create_if_empty=false;
+        }
+    } else {
+        log_debug(nnti_debug_level, "TRIOS_NNTI_WR_POOL_CREATE_IF_EMPTY is undefined.  using c->wr_pool_create_if_empty default");
     }
     if ((env_str=getenv("TRIOS_NNTI_USE_RDMA_TARGET_ACK")) != NULL) {
         if ((!strcasecmp(env_str, "TRUE")) ||
