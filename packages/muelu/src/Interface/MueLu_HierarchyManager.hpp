@@ -135,7 +135,7 @@ namespace MueLu {
 
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
-      RCP<Level> l = H.GetLevel(0);
+      RCP<Level>  l  = H.GetLevel(0);
       RCP<Matrix> Op = l->Get<RCP<Matrix> >("A");
       SetupMatrix(*Op);
       SetupExtra(H);
@@ -152,7 +152,7 @@ namespace MueLu {
       int  lastLevelID = numDesiredLevel_ - 1;
       bool isLastLevel = false;
 
-      while(!isLastLevel) {
+      while (!isLastLevel) {
         bool r = H.Setup(levelID,
                          LvlMngr(levelID-1, lastLevelID),
                          LvlMngr(levelID,   lastLevelID),
@@ -162,9 +162,9 @@ namespace MueLu {
         levelID++;
       }
 
-      WriteData<Matrix>(H,matricesToPrint_,"A");
-      WriteData<Matrix>(H,prolongatorsToPrint_,"P");
-      WriteData<Matrix>(H,restrictorsToPrint_,"R");
+      WriteData<Matrix>(H, matricesToPrint_,     "A");
+      WriteData<Matrix>(H, prolongatorsToPrint_, "P");
+      WriteData<Matrix>(H, restrictorsToPrint_,  "R");
 
     } //SetupHierarchy
 

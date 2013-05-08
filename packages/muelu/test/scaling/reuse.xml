@@ -142,10 +142,11 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="numDesiredLevel"                       type="int"      value="2"/> <!-- Max number of levels -->
-    <Parameter name="maxCoarseSize"                         type="int"      value="500"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="numDesiredLevel"                       type="int"      value="2"/>         <!-- Max number of levels -->
+    <Parameter name="maxCoarseSize"                         type="int"      value="500"/>       <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
-    <Parameter name="dependencyOutputLevel"                 type="int"      value="0"/>
+    <Parameter name="reuse"                                 type="bool"     value="true"/>      <!-- Allow factories to call Build method multiple times -->
+    <!-- <Parameter name="dependencyOutputLevel"                 type="int"      value="0"/> -->
 
     <ParameterList name="AllButCoarsestLevel">
       <Parameter name="startLevel"                          type="int"      value="0"/>
