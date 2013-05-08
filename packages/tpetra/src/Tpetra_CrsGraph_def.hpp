@@ -1085,11 +1085,12 @@ namespace Tpetra {
         std::copy(new_linds.begin(), new_linds.end(), lind_view.begin()+rowinfo.numEntries);
       }
       else if (I == GlobalIndices) {
-        // not needed yet
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::CrsGraph::"
           "insertIndices: the case where the input indices are local and the "
-          "indices to write are global (lg=LocalIndices, I=GlobalIndices) has "
-          "not yet been implemented.");
+          "indices to write are global (lg=LocalIndices, I=GlobalIndices) is "
+          "not implemented, because it does not make sense." << std::endl <<
+          "If you have correct local column indices, that means the graph has "
+          "a column Map.  In that case, you should be storing local indices.");
       }
     }
     numRowEntries_[rowinfo.localRow] += numNewInds;
