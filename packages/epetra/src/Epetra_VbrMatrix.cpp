@@ -811,6 +811,7 @@ int Epetra_VbrMatrix::CopyMat(double * A, int LDA, int NumRows, int NumCols,
   double * ptr2;
 
   if (LDB<NumRows) EPETRA_CHK_ERR(-1); // Stride of B is not large enough
+  if (LDA<NumRows) EPETRA_CHK_ERR(-1); // Stride of A is not large enough
 
   if (SumInto) { // Add to existing values
     for (j=0; j<NumCols; j++) {
@@ -851,8 +852,8 @@ int Epetra_VbrMatrix::FillComplete(const Epetra_BlockMap& domain_map,
     EPETRA_CHK_ERR(Graph_->MakeIndicesLocal(domain_map, range_map));
   }
 
-  SortEntries();  // Sort column entries from smallest to largest
-  MergeRedundantEntries(); // Get rid of any redundant index values
+  EPETRA_CHK_ERR(SortEntries());  // Sort column entries from smallest to largest
+  EPETRA_CHK_ERR(MergeRedundantEntries()); // Get rid of any redundant index values
 
   if(!StaticGraph()) {
     EPETRA_CHK_ERR(Graph_->FillComplete(domain_map, range_map));
@@ -948,25 +949,32 @@ int Epetra_VbrMatrix::MergeRedundantEntries()
       int curEntry =0;
       Epetra_SerialDenseMatrix* curBlkEntry = Entries[0];
       for (int k=1; k<NumEntries; k++) {
-  if (Indices[k]==Indices[k-1]) {
-    CopyMat(Entries[k]->A(), Entries[k]->LDA(), RowDim, Entries[k]->N(),
-      curBlkEntry->A(), curBlkEntry->LDA(), SumInto);
-  }
-  else {
-    CopyMat(curBlkEntry->A(), curBlkEntry->LDA(), RowDim, curBlkEntry->N(),
-      Entries[curEntry]->A(), Entries[curEntry]->LDA(), false);
-    curEntry++;
-    curBlkEntry = Entries[k];
-  }
+        if (Indices[k]==Indices[k-1]) {
+          if (curBlkEntry->M() != Entries[curEntry]->M() ||
+              curBlkEntry->N() != Entries[curEntry]->N() ||
+              curBlkEntry->LDA() != Entries[curEntry]->LDA()) {
+            std::cerr << "Epetra_VbrMatrix ERROR, two dense-matrix contributions to the same column-index have different sizes: ("<<curBlkEntry->M()<<"x"<<curBlkEntry->N()<<") and ("<<Entries[curEntry]->M()<<"x"<<Entries[curEntry]->N()<<")"<<std::endl;
+            EPETRA_CHK_ERR(-1);
+          }
+
+          CopyMat(Entries[k]->A(), Entries[k]->LDA(), RowDim, Entries[k]->N(),
+              curBlkEntry->A(), curBlkEntry->LDA(), SumInto);
+        }
+        else {
+          CopyMat(curBlkEntry->A(), curBlkEntry->LDA(), RowDim, curBlkEntry->N(),
+              Entries[curEntry]->A(), Entries[curEntry]->LDA(), false);
+          curEntry++;
+          curBlkEntry = Entries[k];
+        }
       }
-      CopyMat(curBlkEntry->A(), curBlkEntry->LDA(), RowDim, curBlkEntry->N(),
-        Entries[curEntry]->A(), Entries[curEntry]->LDA(), false);
+
+      EPETRA_CHK_ERR(CopyMat(curBlkEntry->A(), curBlkEntry->LDA(), RowDim, curBlkEntry->N(),
+            Entries[curEntry]->A(), Entries[curEntry]->LDA(), false));
     }
   }
-    
+
   EPETRA_CHK_ERR(Graph_->RemoveRedundantIndices()); // Remove redundant indices and then return
   return(0);
-
 }
 
 //==========================================================================
