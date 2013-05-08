@@ -66,22 +66,25 @@ namespace KokkosArray {
  */
 
 template< class DataType ,
-          class LayoutType ,
-          class DeviceType  = LayoutType ,
-          typename SizeType = typename DeviceType::size_type >
+          class Arg1Type ,
+          class Arg2Type = void ,
+          typename SizeType = typename ViewTraits< DataType* , Arg1Type , Arg2Type , void >::size_type >
 class CrsArray {
 private:
 
-  typedef DataType view_data_type[] ;
+  typedef ViewTraits< DataType* , Arg1Type , Arg2Type , void > traits ;
 
 public:
-  typedef CrsArray< DataType , LayoutType , Host , SizeType > HostMirror ;
+
   typedef DataType                                            data_type ;
-  typedef LayoutType                                          layout_type ;
-  typedef DeviceType                                          device_type ;
+  typedef typename traits::array_layout                       array_layout ;
+  typedef typename traits::device_type                        device_type ;
   typedef SizeType                                            size_type ;
-  typedef View< const size_type[], layout_type, device_type > row_map_type ;
-  typedef View< view_data_type ,   layout_type, device_type > entries_type ;
+
+  typedef CrsArray< DataType , Arg1Type , Arg2Type , SizeType > crsarray_type ;
+  typedef CrsArray< DataType , array_layout , Host , SizeType > HostMirror ;
+  typedef View< const size_type* , array_layout, device_type >  row_map_type ;
+  typedef View<       DataType*  , array_layout, device_type >  entries_type ;
 
   entries_type entries ;
   row_map_type row_map ;
@@ -115,38 +118,30 @@ public:
 //----------------------------------------------------------------------------
 
 template< class CrsArrayType , class InputSizeType >
-CrsArray< typename CrsArrayType::data_type ,
-          typename CrsArrayType::layout_type ,
-          typename CrsArrayType::device_type ,
-          typename CrsArrayType::size_type >
+typename CrsArrayType::crsarray_type
 create_crsarray( const std::string & label ,
                  const std::vector< InputSizeType > & input );
 
 template< class CrsArrayType , class InputSizeType >
-CrsArray< typename CrsArrayType::data_type ,
-          typename CrsArrayType::layout_type ,
-          typename CrsArrayType::device_type ,
-          typename CrsArrayType::size_type >
+typename CrsArrayType::crsarray_type
 create_crsarray( const std::string & label ,
                  const std::vector< std::vector< InputSizeType > > & input );
 
 //----------------------------------------------------------------------------
 
 template< class DataType ,
-          class LayoutType ,
-          class DeviceType ,
+          class Arg1Type ,
+          class Arg2Type ,
           typename SizeType >
-typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
-create_mirror_view(
-  const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input );
+typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
+create_mirror_view( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & input );
 
 template< class DataType ,
-          class LayoutType ,
-          class DeviceType ,
+          class Arg1Type ,
+          class Arg2Type ,
           typename SizeType >
-typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
-create_mirror(
-  const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input );
+typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
+create_mirror( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & input );
 
 } // namespace KokkosArray
 

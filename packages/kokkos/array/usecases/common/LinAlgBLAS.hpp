@@ -103,20 +103,19 @@ namespace KokkosArray {
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
           typename ScalarY /* Allow mix of const and non-const */ ,
-          class Layout ,
-          class Device ,
+          class L , class D ,
           class MX /* Allow any management type */ ,
           class MY /* Allow any management type */ >
 inline
 double dot( const size_t n ,
-            const View< ScalarX * , Layout , Device , MX > & x ,
-            const View< ScalarY * , Layout , Device , MY > & y ,
+            const View< ScalarX * , L , D , MX > & x ,
+            const View< ScalarY * , L , D , MY > & y ,
             comm::Machine machine )
 {
   double global_result = 0 ;
   double local_result = 0 ;
 
-  Impl::Dot< ScalarX , Layout , Device >( n , x , y , local_result );
+  Impl::Dot< ScalarX , L , D >( n , x , y , local_result );
 
   MPI_Allreduce( & local_result , & global_result , 1 ,
                  MPI_DOUBLE , MPI_SUM , machine.mpi_comm );
@@ -128,19 +127,18 @@ double dot( const size_t n ,
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
           typename ScalarY /* Allow mix of const and non-const */ ,
-          class Layout ,
-          class Device ,
+          class L , class D ,
           class MX /* Allow any management type */ ,
           class MY /* Allow any management type */ >
 inline
 double dot( const size_t n ,
-            const View< ScalarX * , Layout , Device , MX > & x ,
-            const View< ScalarY * , Layout , Device , MY > & y ,
+            const View< ScalarX * , L , D , MX > & x ,
+            const View< ScalarY * , L , D , MY > & y ,
             comm::Machine )
 {
   double global_result = 0 ;
 
-  Impl::Dot< ScalarX , Layout , Device >( n , x , y , global_result );
+  Impl::Dot< ScalarX , L , D >( n , x , y , global_result );
 
   return global_result ;
 }
@@ -152,18 +150,17 @@ double dot( const size_t n ,
 #if defined( HAVE_MPI )
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
-          class Layout ,
-          class Device ,
+          class L , class D ,
           class MX /* Allow any management type */ >
 inline
 double dot( const size_t n ,
-            const View< ScalarX * , Layout , Device , MX > & x ,
+            const View< ScalarX * , L , D , MX > & x ,
             comm::Machine machine )
 {
   double global_result = 0 ;
   double local_result = 0 ;
 
-  Impl::Dot1< ScalarX , Layout , Device >( n , x , local_result );
+  Impl::Dot1< ScalarX , L , D >( n , x , local_result );
 
   MPI_Allreduce( & local_result , & global_result , 1 ,
                  MPI_DOUBLE , MPI_SUM , machine.mpi_comm );
@@ -174,17 +171,16 @@ double dot( const size_t n ,
 #else
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
-          class Layout ,
-          class Device ,
+          class L , class D ,
           class MX /* Allow any management type */ >
 inline
 double dot( const size_t n ,
-            const View< ScalarX * , Layout , Device , MX > & x ,
+            const View< ScalarX * , L , D , MX > & x ,
             comm::Machine )
 {
   double global_result = 0 ;
 
-  Impl::Dot1< ScalarX , Layout , Device >( n , x , global_result );
+  Impl::Dot1< ScalarX , L , D >( n , x , global_result );
 
   return global_result ;
 }
@@ -194,12 +190,11 @@ double dot( const size_t n ,
 //----------------------------------------------------------------------------
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
-          class Layout ,
-          class Device ,
+          class L , class D ,
           class MX /* Allow any management type */ >
 inline
 double norm2( const size_t n ,
-              const View< ScalarX * , Layout , Device , MX > & x ,
+              const View< ScalarX * , L , D , MX > & x ,
               comm::Machine machine )
 {
   return std::sqrt( dot( n , x , machine ) );
@@ -209,26 +204,26 @@ double norm2( const size_t n ,
 
 template< typename ScalarA ,
           typename ScalarX ,
-          class Layout ,
-          class Device ,
+          class L ,
+          class D ,
           class MX >
 void scale( const size_t n ,
             const ScalarA & alpha ,
-            const View< ScalarX * , Layout , Device , MX > & x )
+            const View< ScalarX * , L , D , MX > & x )
 {
-  Impl::Scale< ScalarA , ScalarX , Layout , Device >( n , alpha , x );
+  Impl::Scale< ScalarA , ScalarX , L , D >( n , alpha , x );
 }
 
 template< typename ScalarA ,
           typename ScalarX ,
-          class Layout ,
-          class Device ,
+          class L ,
+          class D ,
           class MX >
 void fill( const size_t n ,
            const ScalarA & alpha ,
-           const View< ScalarX * , Layout , Device , MX > & x )
+           const View< ScalarX * , L , D , MX > & x )
 {
-  Impl::Fill< ScalarA , ScalarX , Layout , Device >( n , alpha , x );
+  Impl::Fill< ScalarA , ScalarX , L , D >( n , alpha , x );
 }
 
 //----------------------------------------------------------------------------
@@ -236,16 +231,16 @@ void fill( const size_t n ,
 template< typename ScalarA ,
           typename ScalarX ,
           typename ScalarY ,
-          class Layout ,
-          class Device ,
+          class L ,
+          class D ,
           class MX ,
           class MY >
 void axpy( const size_t n ,
            const ScalarA & alpha ,
-           const View< ScalarX *, Layout , Device , MX > & x ,
-           const View< ScalarY *, Layout , Device , MY > & y )
+           const View< ScalarX *, L , D , MX > & x ,
+           const View< ScalarY *, L , D , MY > & y )
 {
-  Impl::AXPY< ScalarA, ScalarX, ScalarY , Layout , Device >( n, alpha, x, y );
+  Impl::AXPY< ScalarA, ScalarX, ScalarY , L , D >( n, alpha, x, y );
 }
 
 //----------------------------------------------------------------------------
@@ -253,16 +248,16 @@ void axpy( const size_t n ,
 template< typename ScalarX ,
           typename ScalarB ,
           typename ScalarY ,
-          class Layout ,
-          class Device ,
+          class L ,
+          class D ,
           class MX ,
           class MY >
 void xpby( const size_t n ,
-           const View< ScalarX *, Layout , Device , MX > & x ,
+           const View< ScalarX *, L , D , MX > & x ,
            const ScalarB & beta ,
-           const View< ScalarY *, Layout , Device , MY > & y )
+           const View< ScalarY *, L , D , MY > & y )
 {
-  Impl::XPBY< ScalarX, ScalarB, ScalarY , Layout , Device >( n, x, beta, y );
+  Impl::XPBY< ScalarX, ScalarB, ScalarY , L , D >( n, x, beta, y );
 }
 
 //----------------------------------------------------------------------------
@@ -273,16 +268,16 @@ template< typename ScalarA ,
           typename ScalarB ,
           typename ScalarY ,
           typename ScalarW ,
-          class Layout , class Device ,
+          class L , class D ,
           class MX , class MY , class MW >
 void waxpby( const size_t n ,
              const ScalarA & alpha ,
-             const View< ScalarX * , Layout , Device , MX > & x ,
+             const View< ScalarX * , L , D , MX > & x ,
              const ScalarB & beta ,
-             const View< ScalarY * , Layout , Device , MY > & y ,
-             const View< ScalarW * , Layout , Device , MW > & w )
+             const View< ScalarY * , L , D , MY > & y ,
+             const View< ScalarW * , L , D , MW > & w )
 {
-  Impl::WAXPBY<ScalarA,ScalarX,ScalarB,ScalarY,ScalarW,Layout,Device>
+  Impl::WAXPBY<ScalarA,ScalarX,ScalarB,ScalarY,ScalarW,L,D>
     ( n , alpha , x , beta , y , w );
 }
 
@@ -294,27 +289,24 @@ void waxpby( const size_t n ,
 namespace KokkosArray {
 namespace Impl {
 
-template< typename Scalar , class Layout , class DeviceType >
+template< typename Scalar , class L , class D >
 struct Dot
 {
 private:
 
-  typedef View< const Scalar*, Layout, DeviceType , MemoryUnmanaged >  vector_const_type ;
+  typedef View< const Scalar*, L, D, MemoryUnmanaged >  vector_const_type ;
 
   const vector_const_type x ;
   const vector_const_type y ;
 
 public:
 
-  typedef DeviceType  device_type ; // Manycore device
+  typedef typename vector_const_type::device_type  device_type ; // Manycore device
   typedef double      value_type ;  // Reduction value
 
-  template< typename ScalarX , typename ScalarY , class MX , class MY >
+  template< class ArgX , class ArgY >
   inline
-  Dot( const size_t n ,
-       const View< ScalarX * , Layout , DeviceType , MX > & arg_x ,
-       const View< ScalarY * , Layout , DeviceType , MY > & arg_y ,
-       double & result )
+  Dot( const size_t n , const ArgX & arg_x , const ArgY & arg_y , double & result )
     : x( arg_x ), y( arg_y )
   {
     result = vector_parallel_reduce( n , *this );
@@ -337,25 +329,23 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename Scalar , class Layout , class DeviceType >
+template< typename Scalar , class L , class D >
 struct Dot1
 {
 private:
 
-  typedef View< const Scalar*, Layout, DeviceType , MemoryUnmanaged >  vector_const_type ;
+  typedef View< const Scalar*, L, D , MemoryUnmanaged >  vector_const_type ;
 
   const vector_const_type x ;
 
 public:
 
-  typedef DeviceType  device_type ; // Manycore device
+  typedef typename vector_const_type::device_type  device_type ; // Manycore device
   typedef double      value_type ;  // Reduction value
 
-  template< typename ScalarX , class MX >
+  template< class ArgX >
   inline
-  Dot1( const size_t n ,
-        const View< ScalarX * , Layout , DeviceType , MX > & arg_x ,
-        double & result )
+  Dot1( const size_t n , const ArgX & arg_x , double & result )
     : x( arg_x )
   {
     result = vector_parallel_reduce( n , *this );
@@ -384,20 +374,24 @@ template < typename ScalarA ,
            typename ScalarB ,
            typename ScalarY ,
            typename ScalarW ,
-           class Layout , class DeviceType >
+           class L , class D >
 struct WAXPBY
 {
 private:
 
-  const View<       ScalarW *, Layout , DeviceType , MemoryUnmanaged >  w ;
-  const View< const ScalarX *, Layout , DeviceType , MemoryUnmanaged >  x ;
-  const View< const ScalarY *, Layout , DeviceType , MemoryUnmanaged >  y ;
+  typedef View<       ScalarW *, L , D , MemoryUnmanaged > ViewW ;
+  typedef View< const ScalarX *, L , D , MemoryUnmanaged > ViewX ;
+  typedef View< const ScalarY *, L , D , MemoryUnmanaged > ViewY ;
+
+  const ViewW    w ;
+  const ViewX    x ;
+  const ViewY    y ;
   const ScalarA  alpha ;
   const ScalarB  beta ;
 
 public:
 
-  typedef DeviceType  device_type ;
+  typedef typename ViewW::device_type  device_type ;
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -406,14 +400,14 @@ public:
     w(inode) = alpha * x(inode) + beta * y(inode);
   }
 
-  template< class MX , class MY , class MW >
+  template< class ArgX , class ArgY , class ArgW >
   inline
   WAXPBY( const size_t  n ,
           const ScalarA & arg_alpha ,
-          const View< ScalarX *, Layout , DeviceType , MX > & arg_x ,
+          const ArgX    & arg_x ,
           const ScalarB & arg_beta ,
-          const View< ScalarY *, Layout , DeviceType , MY > & arg_y ,
-          const View< ScalarW *, Layout , DeviceType , MW > & arg_w )
+          const ArgY    & arg_y ,
+          const ArgW    & arg_w )
     : w( arg_w ), x( arg_x ), y( arg_y )
     , alpha( arg_alpha ), beta( arg_beta )
   {
@@ -425,28 +419,27 @@ public:
 
 template < typename ScalarB ,
            typename ScalarW ,
-           class Layout , class DeviceType >
+           class L , class D >
 struct Scale
 {
 private:
 
-  const View< ScalarW *, Layout , DeviceType , MemoryUnmanaged >  w ;
+  typedef View< ScalarW *, L , D , MemoryUnmanaged >  ViewW ;
+  const ViewW    w ;
   const ScalarB  beta ;
 
 public:
 
-  typedef DeviceType  device_type ;
+  typedef typename ViewW::device_type  device_type ;
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const iType & i ) const
   { w(i) *= beta ; }
 
-  template< class MW >
+  template< class ArgW >
   inline
-  Scale( const size_t  n ,
-         const ScalarB & arg_beta ,
-         const View< ScalarW * , Layout , DeviceType , MW > & arg_w )
+  Scale( const size_t n , const ScalarB & arg_beta , const ArgW & arg_w )
     : w( arg_w )
     , beta( arg_beta )
   {
@@ -456,28 +449,27 @@ public:
 
 template < typename ScalarB ,
            typename ScalarW ,
-           class Layout , class DeviceType >
+           class L , class D >
 struct Fill
 {
 private:
 
-  const View< ScalarW *, Layout , DeviceType , MemoryUnmanaged >  w ;
+  typedef View< ScalarW *, L , D , MemoryUnmanaged >  ViewW ;
+  const ViewW    w ;
   const ScalarB  beta ;
 
 public:
 
-  typedef DeviceType  device_type ;
+  typedef typename ViewW::device_type  device_type ;
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const iType & i ) const
   { w(i) = beta ; }
 
-  template< class MW >
+  template< class ArgW >
   inline
-  Fill( const size_t  n ,
-        const ScalarB & arg_beta ,
-        const View< ScalarW * , Layout , DeviceType , MW > & arg_w )
+  Fill( const size_t n , const ScalarB & arg_beta , const ArgW & arg_w )
     : w( arg_w )
     , beta( arg_beta )
   {
@@ -490,30 +482,33 @@ public:
 template < typename ScalarA ,
            typename ScalarX ,
            typename ScalarW ,
-           class Layout , class DeviceType >
+           class L , class D >
 struct AXPY
 {
 private:
 
-  const View<       ScalarW *, Layout , DeviceType , MemoryUnmanaged >  w ;
-  const View< const ScalarX *, Layout , DeviceType , MemoryUnmanaged >  x ;
+  typedef View<       ScalarW *, L , D , MemoryUnmanaged >  ViewW ;
+  typedef View< const ScalarX *, L , D , MemoryUnmanaged >  ViewX ;
+
+  const ViewW    w ;
+  const ViewX    x ;
   const ScalarA  alpha ;
 
 public:
 
-  typedef DeviceType  device_type ;
+  typedef typename ViewW::device_type  device_type ;
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const iType & i ) const
   { w(i) += alpha * x(i); }
 
-  template< class MX , class MW >
+  template< class ArgX , class ArgW >
   inline
   AXPY( const size_t  n ,
         const ScalarA & arg_alpha ,
-        const View< ScalarX *, Layout , DeviceType , MX > & arg_x ,
-        const View< ScalarW *, Layout , DeviceType , MW > & arg_w )
+        const ArgX    & arg_x ,
+        const ArgW    & arg_w )
     : w( arg_w ), x( arg_x )
     , alpha( arg_alpha )
   {
@@ -523,31 +518,34 @@ public:
 
 template< typename ScalarX ,
           typename ScalarB ,
-          typename ScalarY ,
-          class Layout , class DeviceType >
+          typename ScalarW ,
+          class L , class D >
 struct XPBY
 {
 private:
 
-  const View<       ScalarY *, Layout , DeviceType , MemoryUnmanaged >  w ;
-  const View< const ScalarX *, Layout , DeviceType , MemoryUnmanaged >  x ;
+  typedef View<       ScalarW *, L , D , MemoryUnmanaged >  ViewW ;
+  typedef View< const ScalarX *, L , D , MemoryUnmanaged >  ViewX ;
+
+  const ViewW    w ;
+  const ViewX    x ;
   const ScalarB  beta ;
 
 public:
 
-  typedef DeviceType  device_type ;
+  typedef typename ViewW::device_type  device_type ;
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const iType & i ) const
   { w(i) = x(i) + beta * w(i); }
 
-  template< class MX , class MW >
+  template< class ArgX , class ArgW >
   inline
   XPBY( const size_t  n ,
-        const View< ScalarX *, Layout , DeviceType , MX > & arg_x ,
+        const ArgX    & arg_x ,
         const ScalarB & arg_beta ,
-        const View< ScalarY *, Layout , DeviceType , MW > & arg_w )
+        const ArgW    & arg_w )
     : w( arg_w ), x( arg_x )
     , beta( arg_beta )
   {

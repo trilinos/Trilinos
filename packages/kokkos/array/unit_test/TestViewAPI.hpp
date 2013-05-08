@@ -792,8 +792,7 @@ public:
   static void run_test_mirror()
   {
     typedef KokkosArray::View< int , host > view_type ;
-    typedef typename view_type::HostMirror view_host_type ;
-    typedef typename KokkosArray::Impl::StaticAssertSame< view_type , view_host_type >::type mirror_type ;
+    typedef typename view_type::HostMirror mirror_type ;
     view_type a("a");
     mirror_type am = KokkosArray::create_mirror_view(a);
     mirror_type ax = KokkosArray::create_mirror(a);

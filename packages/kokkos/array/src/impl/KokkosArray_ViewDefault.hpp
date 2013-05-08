@@ -50,7 +50,6 @@
 namespace KokkosArray {
 namespace Impl {
 
-struct PhysicalLayout;
 struct LayoutDefault ;
 
 template< typename ScalarType , class Rank , class RankDynamic , class MemorySpace , class MemoryTraits >
@@ -670,13 +669,16 @@ struct EnableViewOper< Traits , OperLayout , OperRank ,
 
 namespace KokkosArray {
 
-template< class DataType , class LayoutType , class DeviceType , class MemoryTraits >
-class View< DataType , LayoutType , DeviceType , MemoryTraits , Impl::LayoutDefault >
-  : public ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >
+template< class DataType ,
+          class Arg1Type ,
+          class Arg2Type ,
+          class Arg3Type >
+class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::LayoutDefault >
+  : public ViewTraits< DataType , Arg1Type , Arg2Type, Arg3Type >
 {
 public:
 
-  typedef ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits > traits ;
+  typedef ViewTraits< DataType , Arg1Type , Arg2Type, Arg3Type > traits ;
 
 private:
 
@@ -692,13 +694,14 @@ private:
 public:
 
   typedef View< typename traits::const_data_type ,
-                typename traits::layout_type ,
+                typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,
-                typename traits::layout_type ,
-                Host > HostMirror ;
+                typename traits::array_layout ,
+                Host ,
+                void > HostMirror ;
 
   //------------------------------------
   // Shape

@@ -417,13 +417,14 @@ public:
   typedef Impl::CudaTexture specialize ;
 
   typedef View< typename traits::const_data_type ,
-                typename traits::layout_type ,
+                typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,
-                typename traits::layout_type ,
-                Host, MemoryRandomRead > HostMirror ;
+                typename traits::array_layout ,
+                Host ,
+                void > HostMirror ;
 
   enum { Rank = traits::rank };
 

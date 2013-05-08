@@ -78,18 +78,6 @@ struct ViewAssignment<LayoutEmbedArray,void,void>
 {
   typedef LayoutEmbedArray Specialize ;
 
-  template< class T , class L , class D , class M >
-  KOKKOSARRAY_INLINE_FUNCTION static
-  size_t allocation_count( const View<T,L,D,M,Specialize> & dst )
-  {
-    typedef ViewTraits<T,L,D,M> traits ;
-
-    return is_same< typename traits::array_layout , LayoutLeft >::value
-      ? ( dst.m_stride   * dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 *
-          dst.m_shape.N4 * dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 )
-      : ( dst.m_shape.N0 * dst.m_stride );
-  }
-
 private:
 
   template< class T , class L , class D , class M >
@@ -115,10 +103,8 @@ private:
     typedef typename DstViewType::scalar_type   scalar_type ;
     typedef typename DstViewType::memory_space  memory_space ;
 
-    const size_t count = allocation_count( dst );
-
     dst.m_ptr_on_device = (scalar_type *)
-      memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , count );
+      memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , dst.capacity() );
 
     ViewInitialize< DstViewType >::apply( dst );
   }
@@ -277,15 +263,15 @@ struct EnableArrayViewOper<
 
 namespace KokkosArray {
 
-template< class DataType , class LayoutType , class DeviceType , class MemoryTraits >
-class View< DataType , LayoutType , DeviceType , MemoryTraits , Impl::LayoutEmbedArray >
-  : public ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >
+template< class DataType , class Arg1Type , class Arg2Type , class Arg3Type >
+class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::LayoutEmbedArray >
+  : public ViewTraits< DataType , Arg1Type , Arg2Type , Arg3Type >
 {
 private:
 
   template< class , class , class > friend class Impl::ViewAssignment ;
 
-  typedef ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits > traits ;
+  typedef ViewTraits< DataType , Arg1Type , Arg2Type , Arg3Type > traits ;
 
   typedef Impl::ViewAssignment<Impl::LayoutEmbedArray> alloc ;
   typedef Impl::ViewAssignment<Impl::LayoutEmbedArray,Impl::LayoutEmbedArray> assign ;
@@ -307,12 +293,12 @@ public:
   typedef Impl::LayoutEmbedArray specialize ;
 
   typedef View< typename traits::const_data_type ,
-                typename traits::layout_type ,
+                typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,
-                typename traits::layout_type ,
+                typename traits::array_layout ,
                 Host > HostMirror ;
 
   enum { Rank = traits::rank };
@@ -374,9 +360,6 @@ public:
     : m_ptr_on_device(0)
     { alloc( *this, label, n0, n1, n2, n3, n4, n5, n6, n7 ); }
 
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::scalar_type * ptr_on_device() const { return m_ptr_on_device ; }
 
   //------------------------------------
 
@@ -938,6 +921,20 @@ public:
                                  m_shape.N2 * m_shape.N3 *
                                  m_shape.N4 * m_shape.N5 * m_shape.N6 );
     }
+
+  //------------------------------------
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::scalar_type * ptr_on_device() const { return m_ptr_on_device ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::size_type capacity() const
+  {
+    return Impl::is_same< typename traits::array_layout , LayoutLeft >::value
+      ? ( m_stride   * m_shape.N1 * m_shape.N2 * m_shape.N3 *
+          m_shape.N4 * m_shape.N5 * m_shape.N6 * m_shape.N7 )
+      : ( m_shape.N0 * m_stride );
+  }
 };
 
 } // namespace KokkosArray

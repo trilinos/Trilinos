@@ -137,15 +137,16 @@ struct ViewAssignment< LayoutScalar , LayoutScalar , void >
 
 namespace KokkosArray {
 
-template< class DataType , class LayoutType , class DeviceType , class MemoryTraits >
-class View< DataType , LayoutType , DeviceType , MemoryTraits , Impl::LayoutScalar >
-  : public ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits >
+template< class DataType , class Arg1Type , class Arg2Type , class Arg3Type >
+class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::LayoutScalar >
+  : public ViewTraits< DataType , Arg1Type , Arg2Type , Arg3Type >
 {
 private:
 
   template< class , class , class > friend class Impl::ViewAssignment ;
 
-  typedef ViewTraits< DataType , LayoutType , DeviceType , MemoryTraits > traits ;
+  typedef ViewTraits< DataType , Arg1Type , Arg2Type , Arg3Type > traits ;
+
   typedef Impl::ViewAssignment< Impl::LayoutScalar > alloc ;
   typedef Impl::ViewAssignment< Impl::LayoutScalar ,
                                 Impl::LayoutScalar > assign ;
@@ -155,13 +156,14 @@ private:
 public:
 
   typedef View< typename traits::const_data_type,
-                typename traits::layout_type,
+                typename traits::array_layout,
                 typename traits::device_type,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,
-                typename traits::layout_type ,
-                Host > HostMirror ;
+                typename traits::array_layout ,
+                Host ,
+                void > HostMirror ;
 
   enum { Rank = 0 };
 

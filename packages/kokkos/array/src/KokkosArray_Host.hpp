@@ -63,7 +63,6 @@ public:
 
   typedef Host                  type ;
   typedef Host                  device_type ;
-  typedef Host                  layout_type ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
   typedef LayoutRight           array_layout ;
