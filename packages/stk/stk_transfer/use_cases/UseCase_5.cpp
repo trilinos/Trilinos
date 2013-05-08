@@ -25,11 +25,15 @@ int main(int argc, char **argv)
   stk::diag::Timer timer_point_to_point(" Point To Point", timer);
   use_case::timerSet().setEnabledTimerMask(use_case::TIMER_ALL);
 
+  bool status = true;
 
   enum {           DIM = 3  };
   enum { FROMNUMPOINTS = 100  };
   enum {   TONUMPOINTS = 100  };
-  stk::ParallelMachine comm(stk::parallel_machine_init(&argc, &argv));
+
+  use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
+
+  stk::ParallelMachine comm = use_case_environment.m_comm;
  
   typedef stk::transfer::Transfer::MDArray MDArray;
 
@@ -55,7 +59,11 @@ int main(int argc, char **argv)
 
   {
     stk::diag::TimeBlock __timer_point_to_point(timer_point_to_point);
-    transfer.PointToPoint(ToValues, ToPoints, FromValues, FromPoints, comm);
+    try {
+      transfer.PointToPoint(ToValues, ToPoints, FromValues, FromPoints, comm);
+    } catch (...) {
+      status = status && false;
+    } 
   }
 
   bool success = true;
@@ -77,7 +85,8 @@ int main(int argc, char **argv)
   stk::diag::printTimersTable(std::cout, timer, 
         stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME, false, comm);
 
-  if (success) std::cout <<" Success " <<std::endl;
-  else         std::cout <<" Failure " <<std::endl;
-  return success ? 0 : 1;
+
+  const bool collective_result = use_case::print_status(comm, status);
+  const int return_code = collective_result ? 0 : -1;
+  return return_code;
 }

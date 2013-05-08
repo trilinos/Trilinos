@@ -23,7 +23,7 @@ public:
 
   struct Hints {
     Hints() : 
-      Tolerance(.1), 
+      Tolerance      (0.1), 
       ExpansionFactor(1.5){};
     double Tolerance;
     double ExpansionFactor;
