@@ -1171,11 +1171,12 @@ namespace Tpetra {
     //! Whether duplicate column indices in each row have been merged.
     bool isMerged () const;
 
-    //! Set indicesAreSorted_ to merged.  (Just set the Boolean.)
-    void setSorted (bool sorted);
-
-    //! Set noRedundancies_ to merged.  (Just set the Boolean.)
-    void setMerged (bool merged);
+    /// \brief Report that we made a local modification to its structure.
+    ///
+    /// Call this after making a local change to the graph's
+    /// structure.  Changing the structure locally invalidates the "is
+    /// sorted" and "is merged" states.
+    void setLocallyModified ();
 
     //! Sort the column indices in all the rows.
     void sortAllIndices ();
@@ -1444,10 +1445,18 @@ namespace Tpetra {
     bool indicesAreLocal_;
     bool indicesAreGlobal_;
     bool fillComplete_;
+    //! Whether the graph is locally lower triangular.
     bool lowerTriangular_;
+    //! Whether the graph is locally upper triangular.
     bool upperTriangular_;
+    //! Whether the graph's indices are sorted in each row, on this process.
     bool indicesAreSorted_;
+    /// \brief Whether the graph's indices are non-redundant (merged)
+    ///   in each row, on this process.
     bool noRedundancies_;
+    //! Whether this process has computed local constants.
+    bool haveLocalConstants_;
+    //! Whether all processes have computed global constants.
     bool haveGlobalConstants_;
 
     //! Nonlocal data given to insertGlobalValues or sumIntoGlobalValues.
