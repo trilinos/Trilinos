@@ -690,9 +690,9 @@ namespace Kokkos {
     /// The resulting matrix shares the Node instance and copies the
     /// parameters of the matrix A.
     CUSPARSEOps (const Scalar& alpha,
-                 const CUSPARSEOps<Scalar, Ordinal, Node, Allocator>& A,
+                 const CUSPARSEOps<Scalar, Node>& A,
                  const Scalar& beta,
-                 const CUSPARSEOps<Scalar, Ordinal, Node, Allocator>& B)
+                 const CUSPARSEOps<Scalar, Node>& B)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "CUSPARSEOps: sum constructor not implemented.");
@@ -876,7 +876,7 @@ namespace Kokkos {
     /// This method may choose to reuse storage of <tt>*this</tt>.
     void
     addInPlace (const Scalar& alpha,
-                const AltSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                const CUSPARSEOps<Scalar, Node>& A,
                 const Scalar& beta)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
