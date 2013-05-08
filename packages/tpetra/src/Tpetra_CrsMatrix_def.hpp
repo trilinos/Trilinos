@@ -1228,14 +1228,15 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   getView (RowInfo rowinfo) const
   {
-    ArrayView<const Scalar> view;
     if (values1D_ != null && rowinfo.allocSize > 0) {
-      view = values1D_(rowinfo.offset1D,rowinfo.allocSize);
+      return values1D_(rowinfo.offset1D,rowinfo.allocSize);
     }
     else if (values2D_ != null) {
-      view = values2D_[rowinfo.localRow]();
+      return values2D_[rowinfo.localRow]();
     }
-    return view;
+    else {
+      return ArrayView<Scalar> ();
+    }
   }
 
 
@@ -1246,14 +1247,15 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   getViewNonConst (RowInfo rowinfo)
   {
-    ArrayView<Scalar> view;
     if (values1D_ != null && rowinfo.allocSize > 0) {
-      view = values1D_(rowinfo.offset1D,rowinfo.allocSize);
+      return values1D_(rowinfo.offset1D,rowinfo.allocSize);
     }
     else if (values2D_ != null) {
-      view = values2D_[rowinfo.localRow]();
+      return values2D_[rowinfo.localRow]();
     }
-    return view;
+    else {
+      return ArrayView<Scalar> ();
+    }
   }
 
 
