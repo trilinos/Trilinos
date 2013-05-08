@@ -41,6 +41,8 @@ void Transfer::PointToPoint(      MDArray &ToValues,
     std::cerr <<__FILE__<<":"<<__LINE__<< " Inconsistant domain data. "<<std::endl;
   if (ToPoints.dimension(0) != ToValues.dimension(0)) 
     std::cerr <<__FILE__<<":"<<__LINE__<< " Inconsistant range data. "<<std::endl;
+  if (ToValues.dimension(1) != FromValues.dimension(1)) 
+    std::cerr <<__FILE__<<":"<<__LINE__<< " Inconsistant value data. "<<std::endl;
 
   BoundingBox::Data radius = Tolerance;
   if (3==Dim) {

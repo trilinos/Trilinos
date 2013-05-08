@@ -264,7 +264,8 @@ void linear_interpolation (MDArray &ToValues,
                     const MDArray &ToPoints,
                     const MDArray &FromPoints,
                     const stk::ParallelMachine  comm) {
-  const unsigned numValues = ToValues.size();
+  const unsigned numValues = ToValues.dimension(0);
+  const unsigned numFields = ToValues.dimension(1);
   for (unsigned i=0; i<numValues; ++i)  {
     MDArray Corners(DIM+1,DIM);
     for (unsigned j=0; j<DIM+1; ++j) {
@@ -284,23 +285,25 @@ void linear_interpolation (MDArray &ToValues,
     else std::cerr<<__FILE__<<":"<<__LINE__<<" Only 3D supported."<<std::endl;
 
     std::vector<double> Values(DIM+1);
-    for (unsigned j=0; j<DIM+1; ++j) {
-      const unsigned c = RangeToDomain[4*i+j].second.ident;
-      Values[j] = FromValues(c,0);
+    for (unsigned f=0; f<numFields; ++f)  {
+      for (unsigned j=0; j<DIM+1; ++j) {
+        const unsigned c = RangeToDomain[4*i+j].second.ident;
+        Values[j] = FromValues(c,f);
+      }
+      // So, we have choosen corner 0 as the base of the span
+      // vectors and determined local (or parametric)
+      // coordinates of the target point in the span vector
+      // coordinate system.  These are stored in S. S is
+      // dimension DIM and there are DIM+1 corner values.
+      // The scalar used to scale the value at corner 0 
+      // is 1-sum(S).
+      double T=1;
+      for (unsigned j=0; j<DIM; ++j) T -= S[j];
+      double interpolated_value = T * Values[0];
+      for (unsigned j=0; j<DIM; ++j)
+        interpolated_value += S[j] * Values[j+1]; 
+      ToValues(i,f) = interpolated_value; 
     }
-    // So, we have choosen corner 0 as the base of the span
-    // vectors and determined local (or parametric)
-    // coordinates of the target point in the span vector
-    // coordinate system.  These are stored in S. S is
-    // dimension DIM and there are DIM+1 corner values.
-    // The scalar used to scale the value at corner 0 
-    // is 1-sum(S).
-    double T=1;
-    for (unsigned j=0; j<DIM; ++j) T -= S[j];
-    double interpolated_value = T * Values[0];
-    for (unsigned j=0; j<DIM; ++j)
-      interpolated_value += S[j] * Values[j+1]; 
-    ToValues[i] = interpolated_value; 
   }
 }
 
