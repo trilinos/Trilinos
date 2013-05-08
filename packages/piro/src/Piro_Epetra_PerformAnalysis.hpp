@@ -43,9 +43,6 @@
 #ifndef PIRO_EPETRA_PERFORMANALYSIS_HPP
 #define PIRO_EPETRA_PERFORMANALYSIS_HPP
 
-//! \file Piro_Epetra_PerformAnalysis.hpp
-//! \brief Drivers for performing analysis of an Epetra-based solved model.
-
 #include "EpetraExt_ModelEvaluator.h"
 
 #include "Teuchos_RCP.hpp"

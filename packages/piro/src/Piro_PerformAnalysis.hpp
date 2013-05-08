@@ -43,9 +43,6 @@
 #ifndef PIRO_PERFORMANALYSIS
 #define PIRO_PERFORMANALYSIS
 
-//! \file Piro_PerformAnalysis.hpp
-//! \brief Drivers for performing analysis of a solved model.
-
 #include "Piro_ConfigDefs.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"

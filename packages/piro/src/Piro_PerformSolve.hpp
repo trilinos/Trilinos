@@ -43,9 +43,6 @@
 #ifndef PIRO_PERFORMSOLVE_HPP
 #define PIRO_PERFORMSOLVE_HPP
 
-//! \file Piro_PerformSolve.hpp
-//! \brief Drivers for evaluating the responses and sensitivities of a solved model.
-
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorBase.hpp"

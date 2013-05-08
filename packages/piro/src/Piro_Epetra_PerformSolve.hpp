@@ -43,9 +43,6 @@
 #ifndef PIRO_EPETRA_PERFORMSOLVE_HPP
 #define PIRO_EPETRA_PERFORMSOLVE_HPP
 
-//! \file Piro_Epetra_PerformSolve.hpp
-//! \brief Drivers for evaluating the responses and sensitivities of a solved Epetra-basd model.
-
 #include "EpetraExt_ModelEvaluator.h"
 
 #include "Teuchos_RCP.hpp"
