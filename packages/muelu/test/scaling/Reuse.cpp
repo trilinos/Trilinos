@@ -132,11 +132,8 @@ int main(int argc, char *argv[]) {
   RCP<Matrix> Aprecond, Amatvec;
   RCP<MultiVector> rhs;
 
-  RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
-  RCP<TimeMonitor> tm, tm2;// = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
+  RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time"))), tm;
   RCP<Time> timer;
-
-  ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
 
   // Operator and Multivector type that will be used with Belos
   typedef MultiVector          MV;
@@ -154,8 +151,12 @@ int main(int argc, char *argv[]) {
     setup_times[i]     .resize(ArraySize);
   }
 
+  ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
+
   SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
   for (int i = first_matrix; i <= last_matrix; i++) {
+    if (!mypid) std::cout << "==================================================================" << std::endl;
+
     char matrixFileName[80];
     char rhsFileName[80];
     char timerName[80];
@@ -163,7 +164,7 @@ int main(int argc, char *argv[]) {
     sprintf(matrixFileName,"%s%d.mm", matrixPrefix.c_str(), i);
 
     // Load the matrix
-    if (!mypid) std::cout << "Loading matrix \"" << matrixFileName << "\"... ";
+    if (!mypid) std::cout << "[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
     try {
       Aprecond = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
       if (!mypid) std::cout << "done" << std::endl;
@@ -184,10 +185,9 @@ int main(int argc, char *argv[]) {
       data0[k+0] = data1[k+1] = one;
 
     // Build the preconditioner
-    if (!mypid)
-      std::cout << "Building preconditioner \"" << matrixFileName << "\" ..." << std::endl;
+    if (!mypid) std::cout << "[" << i << "] Building preconditioner \"" << matrixFileName << "\" ..." << std::endl;
     sprintf(timerName, "Reuse: Preconditioner Setup i=%d", i);
-    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
 
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
     H->SetDefaultVerbLevel(MueLu::Extreme);
@@ -202,12 +202,14 @@ int main(int argc, char *argv[]) {
 
     // Loop over all future matrices
     for (int j = i; j <= last_matrix; j++) {
+      if (!mypid) std::cout << "------------------------------------------------------------------" << std::endl;
+
       sprintf(matrixFileName, "%s%d.mm", matrixPrefix.c_str(), j);
       sprintf(rhsFileName,    "%s%d.mm", rhsPrefix.c_str(),    j);
 
       if (j != i) {
         // Load the matrix
-        if (!mypid) std::cout << "Loading matrix \"" << matrixFileName << "\"...";
+        if (!mypid) std::cout << "[" << j << "]<-[" << i << "] Loading matrix \"" << matrixFileName << "\"...";
         try {
           Amatvec = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
           if (!mypid) std::cout << "done" << std::endl;
@@ -223,7 +225,7 @@ int main(int argc, char *argv[]) {
 
       // Preconditioner update
       sprintf(timerName, "Reuse: Preconditioner Update i=%d", i);
-      tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
       // No-op at present
 
       sprintf(timerName, "Reuse: Setup i=%d j=%d", i, j);
@@ -231,10 +233,12 @@ int main(int argc, char *argv[]) {
       timer->start();
       if (do_reuse == 0 && j != i) {
         // No reuse: Do a full recompute
+        if (!mypid) std::cout << "[" << j << "]<-[" << i << "] Building preconditioner \"" << matrixFileName << "\" ..." << std::endl;
+
         H = mueLuFactory.CreateHierarchy();
 
         H->SetDefaultVerbLevel(MueLu::Extreme);
-        H->GetLevel(0)->Set("A", Amatvec);
+        H->GetLevel(0)->Set("A",         Amatvec);
         H->GetLevel(0)->Set("Nullspace", nullspace);
         H->IsPreconditioner(true);
 
@@ -243,6 +247,8 @@ int main(int argc, char *argv[]) {
       } else if (do_reuse == 2 && j != i) {
         // "Fast" reuse
         // NTS: This isn't quite a real recompute yet.
+        if (!mypid) std::cout << "[" << j << "]<-[" << i << "] Updating preconditioner \"" << matrixFileName << "\" ..." << std::endl;
+
         H->GetLevel(0)->Set("A", Amatvec);
         mueLuFactory.SetupHierarchy(*H);
       }
@@ -253,7 +259,7 @@ int main(int argc, char *argv[]) {
 
       // Load the RHS
       if (!mypid)
-        std::cout << "Loading rhs " << rhsFileName << std::endl;
+        std::cout << "[" << j << "] Loading rhs " << rhsFileName << std::endl;
       rhs = Utils::Read(string(rhsFileName), Amatvec->getRowMap());
 
       // Create an LHS
@@ -304,8 +310,8 @@ int main(int argc, char *argv[]) {
         if (!mypid) std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
       }
 
-    }//end j
-  }// end i
+    } //end j
+  } // end i
 
   globalTimeMonitor = Teuchos::null;
 
