@@ -212,6 +212,9 @@ void trios_buffer_queue_push(
 
     if (nthread_lock(&bq->mutex)) log_warn(bq_debug_level, "failed to get lock");
     if (bq->queue.size() < bq->max_size) {
+        /* when buffers are popped, the size could be reduced to avoid transferring more bytes than necessary */
+        log_debug(bq_debug_level, "reset buffer size to bq->buffer_size");
+        NNTI_BUFFER_SIZE(buffer)=bq->buffer_size;
         log_debug(bq_debug_level, "returning buffer to queue");
         bq->queue.push_front(buffer);
     } else {

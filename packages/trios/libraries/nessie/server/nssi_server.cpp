@@ -1220,6 +1220,7 @@ int nssi_get_data(
         log_debug(rpc_debug_level, "using buffer queue for GET buffer");
         rpc_msg_hdl=trios_buffer_queue_pop(&rdma_get_bq);
         assert(rpc_msg_hdl);
+        NNTI_BUFFER_SIZE(rpc_msg_hdl)=len;
     } else {
         log_debug(rpc_debug_level, "using user buffer for GET buffer");
         trios_start_timer(call_time);
@@ -1325,6 +1326,7 @@ extern int nssi_put_data(
         log_debug(rpc_debug_level, "using buffer queue for PUT buffer");
         rpc_msg_hdl=trios_buffer_queue_pop(&rdma_put_bq);
         assert(rpc_msg_hdl);
+        NNTI_BUFFER_SIZE(rpc_msg_hdl)=len;
         /* copy the user buffer contents into RDMA buffer */
         memcpy(NNTI_BUFFER_C_POINTER(rpc_msg_hdl), buf, len);
     } else {

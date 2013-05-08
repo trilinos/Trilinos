@@ -1384,6 +1384,7 @@ int nssi_call_rpc(
             log_debug(rpc_debug_level, "using buffer queue for TARGET buffer");
             request->bulk_data_hdl=trios_buffer_queue_pop(&rdma_target_bq);
             assert(request->bulk_data_hdl);
+            NNTI_BUFFER_SIZE(request->bulk_data_hdl)=data_size;
             /* copy the user buffer contents into RDMA buffer */
             memcpy(NNTI_BUFFER_C_POINTER(request->bulk_data_hdl), (char *)data, data_size);
         } else {
