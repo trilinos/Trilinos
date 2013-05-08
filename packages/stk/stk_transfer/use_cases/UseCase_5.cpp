@@ -82,8 +82,8 @@ int main(int argc, char **argv)
     }
   }
   timer.stop();
-  stk::diag::printTimersTable(std::cout, timer, 
-        stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME, false, comm);
+//stk::diag::printTimersTable(std::cout, timer, 
+//      stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME, false, comm);
 
 
   const bool collective_result = use_case::print_status(comm, status);

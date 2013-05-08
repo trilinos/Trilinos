@@ -7,8 +7,8 @@
 /*------------------------------------------------------------------------*/
 
 
-#ifndef Transfer_hpp
-#define Transfer_hpp
+#ifndef STK_Transfer_hpp
+#define STK_Transfer_hpp
 
 #include <Intrepid_FieldContainer.hpp>
 #include <stk_mesh/base/Comm.hpp>
