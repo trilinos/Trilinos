@@ -37,40 +37,8 @@
 # ************************************************************************
 # @HEADER
 
-MESSAGE("PROJECT_NAME = ${PROJECT_NAME}")
-MESSAGE("${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
 
-SET( CMAKE_MODULE_PATH
-  "${${PROJECT_NAME}_TRIBITS_DIR}/utils"
-  "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch"
-  )
-
-INCLUDE(TribitsAdjustPackageEnables)
-INCLUDE(TribitsProcessTplsLists)
-INCLUDE(UnitTestHelpers)
-INCLUDE(GlobalSet)
-
-
-#####################################################################
-#
-# Helper macros for unit tests
-#
-#####################################################################
-
-
-MACRO(UNITTEST_HELPER_READ_AND_PROESS_PACKAGES)
-
-  TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${PROJECT_NAME} ".")
-  TRIBITS_PROCESS_TPLS_LISTS(${PROJECT_NAME} ".")
-  TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${EXTRA_REPO_NAME} ${EXTRA_REPO_DIR})
-  TRIBITS_PROCESS_TPLS_LISTS(${EXTRA_REPO_NAME} ${EXTRA_REPO_DIR})
-  TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
-  SET_DEFAULT(${PROJECT_NAME}_ENABLE_ALL_PACKAGES OFF)
-  SET_DEFAULT(${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF)
-  SET(DO_PROCESS_MPI_ENABLES ON) # Should not be needed but CMake is not working!
-  TRIBITS_ADJUST_PACKAGE_ENABLES(TRUE)
- 
-ENDMACRO()
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsAdjustPackageEnablesHelpers.cmake)
 
 
 #####################################################################
@@ -724,40 +692,6 @@ ENDFUNCTION()
 GLOBAL_SET(UNITTEST_OVERALL_PASS TRUE)
 GLOBAL_SET(UNITTEST_OVERALL_NUMPASSED 0)
 GLOBAL_SET(UNITTEST_OVERALL_NUMRUN 0)
-
-# Set common/base options
-
-SET(PROJECT_SOURCE_DIR "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch/UnitTests/MockTrilinos")
-PRINT_VAR(PROJECT_SOURCE_DIR)
-SET(REPOSITORY_DIR ".")
-PRINT_VAR(REPOSITORY_DIR)
-
-# Set the mock project name last to override the outer project
-SET(PROJECT_NAME "Trilinos")
-
-SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  Teuchos             packages/teuchos                PS
-  RTOp                packages/rtop                   PS
-  )
-
-SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
-  MPI            cmake/TPLs/    PS
-  BLAS           cmake/TPLs/    PS
-  LAPACK         cmake/TPLs/    PS
-  Boost          cmake/TPLs/    SS
-  )
-
-SET(EXTRA_REPO_NAME extraRepoTwoPackages)
-SET(EXTRA_REPO_DIR extraRepoTwoPackages)
-
-INCLUDE(${PROJECT_SOURCE_DIR}/${EXTRA_REPO_NAME}/PackagesList.cmake)
-
-SET(${EXTRA_REPO_NAME}_TPLS_FINDMODS_CLASSIFICATIONS)
-
-SET(${PROJECT_NAME}_ALL_REPOSITORIES "." "${EXTRA_REPO_NAME}")
-
-SET( ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES ON )
-
 
 #
 # Run the unit tests

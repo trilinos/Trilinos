@@ -46,6 +46,11 @@ INCLUDE(PrintVar)
 INCLUDE(AppendSet)
 INCLUDE(ParseVariableArguments)
 
+###
+### WARNING: See "NOTES TO DEVELOPERS" at the bottom of the file
+### TribitsPackageMacros.cmake!
+###
+
 
 #
 # TRIBITS_ADD_EXECUTABLE(...): Function that adds a test/example executable.
