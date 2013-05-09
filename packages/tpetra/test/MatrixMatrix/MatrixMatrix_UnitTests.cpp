@@ -48,6 +48,7 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Tpetra_Import.hpp"
+#include "Tpetra_Export.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -177,22 +178,53 @@ null_add_test (const CrsMatrixType& A,
   using Teuchos::RCP;
   using std::endl;
   typedef typename CrsMatrixType::scalar_type scalar_type;
+  typedef typename CrsMatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename CrsMatrixType::global_ordinal_type global_ordinal_type;
+  typedef typename CrsMatrixType::node_type node_type;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
   const scalar_type one = STS::one ();
 
   out << "  Computing Frobenius norm of the expected result C" << endl;
   add_test_results toReturn;
   toReturn.correctNorm = C.getFrobeniusNorm ();
 
-  out << "  Calling 3-arg Add" << endl;
-  RCP<CrsMatrixType> C_computed;
-  Tpetra::MatrixMatrix::Add (A, AT, one, B, BT, one, C_computed);
+  out << "  Calling 3-arg add" << endl;
+  RCP<const map_type> domainMap = BT ? B.getRangeMap () : B.getDomainMap ();
+  RCP<const map_type> rangeMap = BT ? B.getDomainMap () : B.getRangeMap ();
+  RCP<CrsMatrixType> C_computed =
+    Tpetra::MatrixMatrix::add (one, AT, A, one, BT, B,
+                               domainMap, rangeMap, Teuchos::null);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    C_computed.is_null (), std::logic_error, "3-arg add returned null.");
+
+  RCP<CrsMatrixType> C_exported;
+  if (! C_computed->getRowMap ()->isSameAs (* (C.getRowMap ()))) {
+    // Export C_computed to C's row Map, so we can compare the two.
+    export_type exp (C_computed->getRowMap (), C.getRowMap ());
+    C_exported =
+      Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType> (C_computed, exp,
+                                                             C.getDomainMap (),
+                                                             C.getRangeMap ());
+  } else {
+    C_exported = C_computed;
+  }
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    C_computed.is_null (), std::logic_error,
-    "C matrix of 3-arg Add is null on output.");
+    ! C_exported->getRowMap ()->isSameAs (* (C.getRowMap ())),
+    std::logic_error,
+    "Sorry, C_exported and C have different row Maps.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! C_exported->getDomainMap ()->isSameAs (* (C.getDomainMap ())),
+    std::logic_error,
+    "Sorry, C_exported and C have different domain Maps.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! C_exported->getRangeMap ()->isSameAs (* (C.getRangeMap ())),
+    std::logic_error,
+    "Sorry, C_exported and C have different range Maps.");
 
-  toReturn.computedNorm = C_computed->getFrobeniusNorm ();
+  toReturn.computedNorm = C_exported->getFrobeniusNorm ();
   toReturn.epsilon = STS::magnitude (toReturn.correctNorm - toReturn.computedNorm);
   return toReturn;
 }
@@ -320,7 +352,6 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       // don't think anyone ever exercised the case where C is null on
       // input before.  I'm disabling this test for now until I have a
       // chance to fix that case.
-#if 0
       if (verbose) {
         out << "Running 3-argument add test (null C on input) for "
             << currentSystem.name() << endl;
@@ -337,7 +368,6 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       out << "\tCorrect Norm: " << results.correctNorm << endl;
       out << "\tComputed norm: " << results.computedNorm << endl;
       out << "\tEpsilon: " << results.epsilon << endl;
-#endif //
 
       B = Reader<Matrix_t >::readSparseFile(B_file, comm, node, false);
 

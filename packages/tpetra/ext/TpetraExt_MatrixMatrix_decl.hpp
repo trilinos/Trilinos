@@ -123,6 +123,42 @@ void Add(
 /// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
 ///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
 ///
+/// \pre If A and B are both fill complete, then they must have the
+///   same domain and range Maps.
+///
+/// \param scalarA [in] Scalar multiplier for A in the sum.
+/// \param transposeA [in] If true, use the transpose of A.
+/// \param A [in] The first input matrix.
+///
+/// \param scalarB [in] Scalar multiplier for B in the sum.
+/// \param transposeB [in] If true, use the transpose of B.
+/// \param B [in] The second input matrix.
+///
+/// \param domainMap [in] Domain Map of C.
+/// \param rangeMap [in] Range Map of C.
+/// \param params [in/out] Same as the parameters of RowMatrix::add.
+///
+/// For \c domainMap and \c rangeMap, see the documentation of
+/// RowMatrix::add.
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class SpMatOps >
+Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
+add (const Scalar& alpha,
+     const bool transposeA,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
+     const Scalar& beta,
+     const bool transposeB,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap=Teuchos::null,
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap=Teuchos::null,
+     const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null);
+
+/// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
+///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
+///
 /// \pre Both input matrices A and B must be fill complete.  That is,
 ///   their fillComplete() method must have been called at least once,
 ///   without an intervening call to resumeFill().

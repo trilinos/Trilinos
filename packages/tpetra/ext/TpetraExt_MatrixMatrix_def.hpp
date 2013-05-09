@@ -225,6 +225,7 @@ void Multiply(
 
 }
 
+
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -292,6 +293,103 @@ void Add(
     }
   }
 }
+
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class SpMatOps >
+Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
+add (const Scalar& alpha,
+     const bool transposeA,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
+     const Scalar& beta,
+     const bool transposeB,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap,
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap,
+     const Teuchos::RCP<Teuchos::ParameterList>& params)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_implicit_cast;
+  typedef RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_matrix_type;
+  typedef RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> transposer_type;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! A.isFillComplete () || ! B.isFillComplete (), std::invalid_argument,
+    "Tpetra::MatrixMatrix::add: A and B must both be fill complete.");
+
+#ifdef HAVE_TPETRA_DEBUG
+  // The matrices don't have domain or range Maps unless they are fill complete.
+  if (A.isFillComplete () && B.isFillComplete ()) {
+    const bool domainMapsSame =
+      (! transposeA && ! transposeB && ! A.getDomainMap ()->isSameAs (* (B.getDomainMap ()))) ||
+      (! transposeA && transposeB && ! A.getDomainMap ()->isSameAs (* (B.getRangeMap ()))) ||
+      (transposeA && ! transposeB && ! A.getRangeMap ()->isSameAs (* (B.getDomainMap ())));
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      domainMapsSame, std::invalid_argument,
+      "Tpetra::MatrixMatrix::add: The domain Maps of Op(A) and Op(B) are not the same.");
+
+    const bool rangeMapsSame =
+      (! transposeA && ! transposeB && ! A.getRangeMap ()->isSameAs (* (B.getRangeMap ()))) ||
+      (! transposeA && transposeB && ! A.getRangeMap ()->isSameAs (* (B.getDomainMap ()))) ||
+      (transposeA && ! transposeB && ! A.getDomainMap ()->isSameAs (* (B.getRangeMap ())));
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rangeMapsSame, std::invalid_argument,
+      "Tpetra::MatrixMatrix::add: The range Maps of Op(A) and Op(B) are not the same.");
+  }
+#endif // HAVE_TPETRA_DEBUG
+
+  // Form the explicit transpose of A if necessary.
+  RCP<const crs_matrix_type> Aprime;
+  if (transposeA) {
+    transposer_type theTransposer (rcpFromRef (A));
+    Aprime = theTransposer.createTranspose ();
+  } else {
+    Aprime = rcpFromRef (A);
+  }
+
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(Aprime.is_null (), std::logic_error,
+    "Tpetra::MatrixMatrix::Add: Failed to compute Op(A).  "
+    "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+  // Form the explicit transpose of B if necessary.
+  RCP<const crs_matrix_type> Bprime;
+  if (transposeB) {
+    transposer_type theTransposer (rcpFromRef (B));
+    Bprime = theTransposer.createTranspose ();
+  } else {
+    Bprime = rcpFromRef (B);
+  }
+
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(Bprime.is_null (), std::logic_error,
+    "Tpetra::MatrixMatrix::Add: Failed to compute Op(B).  "
+    "Please report this bug to the Tpetra developers.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! Aprime->isFillComplete () || ! Bprime->isFillComplete (), std::invalid_argument,
+    "Tpetra::MatrixMatrix::add: Aprime and Bprime must both be fill complete.  "
+    "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+
+  RCP<row_matrix_type> C =
+    Bprime->add (alpha, *rcp_implicit_cast<const row_matrix_type> (Aprime),
+                 beta, domainMap, rangeMap, params);
+  // FIXME (mfh 09 May 2013) This cast won't work if SpMatOps is not the default.
+  return rcp_dynamic_cast<crs_matrix_type> (C);
+}
+
+
+
 
 template <class Scalar,
           class LocalOrdinal,
@@ -1029,7 +1127,7 @@ void import_and_extract_views(
     SCALAR scalarB, \
     RCP<CrsMatrix< SCALAR , LO , GO , NODE > > C); \
   \
-  template  \
+  template \
   void MatrixMatrix::Add( \
     const CrsMatrix<SCALAR, LO, GO, NODE>& A, \
     bool transposeA, \
@@ -1037,6 +1135,18 @@ void import_and_extract_views(
     CrsMatrix<SCALAR, LO, GO, NODE>& B, \
     SCALAR scalarB ); \
   \
+  template \
+  Teuchos::RCP<CrsMatrix< SCALAR , LO , GO , NODE > > \
+  MatrixMatrix::add (const SCALAR & alpha, \
+                     const bool transposeA, \
+                     const CrsMatrix< SCALAR , LO , GO , NODE >& A, \
+                     const SCALAR & beta, \
+                     const bool transposeB, \
+                     const CrsMatrix< SCALAR , LO , GO , NODE >& B, \
+                     const Teuchos::RCP<const Map< LO , GO , NODE > >& domainMap, \
+                     const Teuchos::RCP<const Map< LO , GO , NODE > >& rangeMap, \
+                     const Teuchos::RCP<Teuchos::ParameterList>& params); \
+\
 
 
 #endif // TPETRA_MATRIXMATRIX_DEF_HPP
