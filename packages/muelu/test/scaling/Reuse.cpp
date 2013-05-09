@@ -332,22 +332,22 @@ int main(int argc, char *argv[]) {
   if (!mypid) {
     printf("************************* Iteration Counts ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
-      for (int j = 0; j < ArraySize; j++)
-        printf("%3d ", iteration_counts[i][j]);
+      for (int j = 0; j < i;         j++) printf("     ");
+      for (int j = i; j < ArraySize; j++) printf("%3d ", iteration_counts[i][j]);
       printf(";\n");
     }
 
     printf("************************* Iteration Times ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
-      for (int j = 0; j < ArraySize; j++)
-        printf("%10.2f ", iteration_times[i][j]);
+      for (int j = 0; j < i;         j++) printf("        ");
+      for (int j = i; j < ArraySize; j++) printf("%7.2f ", iteration_times[i][j]);
       printf(";\n");
     }
 
     printf("************************* Setup Times ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
-      for (int j = 0; j < ArraySize; j++)
-        printf("%10.2f ", setup_times[i][j]);
+      for (int j = 0; j < i;         j++) printf("        ");
+      for (int j = i; j < ArraySize; j++) printf("%7.2f ", setup_times[i][j]);
       printf(";\n");
     }
   }
