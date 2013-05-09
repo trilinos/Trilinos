@@ -354,6 +354,26 @@ namespace Intrepid {
   operator<<(std::ostream & os, Tensor<T> const & A);
 
   ///
+  /// Extract a row as a vector
+  /// \param A tensor
+  /// \param i index of row
+  /// \return \f$ v = A(i,:) \f$
+  ///
+  template<typename T>
+  Vector<T>
+  row(Tensor<T> const & A, Index const i);
+
+  ///
+  /// Extract a column as a vector
+  /// \param A tensor
+  /// \param j index of column
+  /// \return \f$ v = A(:,j) \f$
+  ///
+  template<typename T>
+  Vector<T>
+  col(Tensor<T> const & A, Index const j);
+
+  ///
   /// Tensor vector product v = A u
   /// \param A tensor
   /// \param u vector

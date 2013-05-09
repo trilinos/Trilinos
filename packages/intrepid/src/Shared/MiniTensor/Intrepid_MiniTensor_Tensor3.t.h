@@ -424,10 +424,7 @@ operator/(Tensor3<T> const & A, S const & s)
 }
 
 //
-// 3rd-order tensor vector product
-// \param A 3rd-order tensor
-// \param u vector
-// \return \f$ A u \f$
+// \return \f$ B = A \cdot u := B_{ij} = A_{ijp} u_p \f$
 //
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>
@@ -441,16 +438,16 @@ dot(Tensor3<T> const & A, Vector<S> const & u)
   Tensor<typename Promote<S, T>::type>
   B(N);
 
-  for (Index j = 0; j < N; ++j) {
-    for (Index k = 0; k < N; ++k) {
+  for (Index i = 0; i < N; ++i) {
+    for (Index j = 0; j < N; ++j) {
 
       typename Promote<S, T>::type
       s = 0.0;
 
-      for (Index i = 0; i < N; ++i) {
-        s += A(i,j,k) * u(i);
+      for (Index p = 0; p < N; ++p) {
+        s += A(i,j,p) * u(p);
       }
-      B(j,k) = s;
+      B(i,j) = s;
     }
   }
 
@@ -458,10 +455,7 @@ dot(Tensor3<T> const & A, Vector<S> const & u)
 }
 
 //
-// vector 3rd-order tensor product
-// \param A 3rd-order tensor
-// \param u vector
-// \return \f$ u A \f$
+// \return \f$ B = u \cdot A := B_{ij} = u_p A{pij} \f$
 //
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>
@@ -481,8 +475,8 @@ dot(Vector<S> const & u, Tensor3<T> const & A)
       typename Promote<S, T>::type
       s = 0.0;
 
-      for (Index k = 0; k < N; ++k) {
-        s += A(i,j,k) * u(k);
+      for (Index p = 0; p < N; ++p) {
+        s += u(p) * A(p,i,j);
       }
       B(i,j) = s;
     }
@@ -493,10 +487,7 @@ dot(Vector<S> const & u, Tensor3<T> const & A)
 
 
 //
-// 3rd-order tensor vector product2 (contract 2nd index)
-// \param A 3rd-order tensor
-// \param u vector
-// \return \f$ A u \f$
+// \return \f$ B = A \cdot u := B_{ij} = A_{ipj} u_p \f$
 //
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>
@@ -511,15 +502,15 @@ dot2(Tensor3<T> const & A, Vector<S> const & u)
   B(N);
 
   for (Index i = 0; i < N; ++i) {
-    for (Index k = 0; k < N; ++k) {
+    for (Index j = 0; j < N; ++j) {
 
       typename Promote<S, T>::type
       s = 0.0;
 
-      for (Index j = 0; j < N; ++j) {
-        s += A(i,j,k) * u(j);
+      for (Index p = 0; p < N; ++p) {
+        s += A(i,p,j) * u(p);
       }
-      B(i,k) = s;
+      B(i,j) = s;
     }
   }
 
@@ -527,10 +518,7 @@ dot2(Tensor3<T> const & A, Vector<S> const & u)
 }
 
 //
-// vector 3rd-order tensor product2 (contract 2nd index)
-// \param A 3rd-order tensor
-// \param u vector
-// \return \f$ u A \f$
+// \return \f$ B = u \cdot A := B_{ij} = u_p A_{ipj} \f$
 //
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>
@@ -577,21 +565,101 @@ dot(Tensor3<T> const & A, Tensor<S> const & B)
 ///
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
-dot(Tensor<S> const & A, Tensor3<T> const & B);
+dot(Tensor<S> const & A, Tensor3<T> const & B)
+{
+  Index const
+  N = A.get_dimension();
+
+  assert(B.get_dimension() == N);
+
+  Tensor3<typename Promote<S, T>::type>
+  C(N);
+
+  for (Index i = 0; i < N; ++i) {
+    for (Index k = 0; k < N; ++k) {
+      for (Index j = 0; j < N; ++j) {
+
+        typename Promote<S, T>::type
+        s = 0.0;
+
+        for (Index p = 0; p < N; ++p) {
+          s += A(i,p) * B(p,j,k);
+        }
+        C(i,j,k) = s;
+      }
+    }
+  }
+
+  return C;
+}
 
 ///
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
 ///
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
-dot2(Tensor3<T> const & A, Tensor<S> const & B);
+dot2(Tensor3<T> const & A, Tensor<S> const & B)
+{
+  Index const
+  N = A.get_dimension();
+
+  assert(B.get_dimension() == N);
+
+  Tensor3<typename Promote<S, T>::type>
+  C(N);
+
+  for (Index i = 0; i < N; ++i) {
+    for (Index k = 0; k < N; ++k) {
+      for (Index j = 0; j < N; ++j) {
+
+        typename Promote<S, T>::type
+        s = 0.0;
+
+        for (Index p = 0; p < N; ++p) {
+          s += A(i,p,j) * B(p,k);
+        }
+        C(i,j,k) = s;
+      }
+    }
+  }
+
+  return C;
+}
+
 
 ///
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
 ///
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
-dot2(Tensor<S> const & A, Tensor3<T> const & B);
+dot2(Tensor<S> const & A, Tensor3<T> const & B)
+{
+  Index const
+  N = A.get_dimension();
+
+  assert(B.get_dimension() == N);
+
+  Tensor3<typename Promote<S, T>::type>
+  C(N);
+
+  for (Index i = 0; i < N; ++i) {
+    for (Index k = 0; k < N; ++k) {
+      for (Index j = 0; j < N; ++j) {
+
+        typename Promote<S, T>::type
+        s = 0.0;
+
+        for (Index p = 0; p < N; ++p) {
+          s += A(i,p) * B(j,p,k);
+        }
+        C(i,j,k) = s;
+      }
+    }
+  }
+
+  return C;
+}
+
 
 //
 // 3rd-order tensor input
