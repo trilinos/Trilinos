@@ -64,7 +64,6 @@ public:
 
   typedef OpenMP                type ;
   typedef OpenMP                device_type ;
-  typedef OpenMP                layout_type ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
   typedef LayoutRight           array_layout ;

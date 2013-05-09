@@ -786,6 +786,8 @@ namespace Tpetra {
   ///   the value type.  For addition, use std::plus with template
   ///   parameter equal to the value type.
   ///
+  /// \return Number of (key,value) pairs in the merged sequence.
+  ///
   /// \warning For now, this function requires that the two input
   ///   sequences be made unique by key.  Later, we plan to relax that
   ///   requirement.
@@ -823,6 +825,28 @@ namespace Tpetra {
     std::copy (valBeg2, valEnd2, valOut);
   }
 
+  template<class KeyInputIterType>
+  size_t
+  keyMergeCount (KeyInputIterType keyBeg1, KeyInputIterType keyEnd1,
+                 KeyInputIterType keyBeg2, KeyInputIterType keyEnd2)
+  {
+    size_t count = 0;
+    while (keyBeg1 != keyEnd1 && keyBeg2 != keyEnd2) {
+      if (*keyBeg1 < *keyBeg2) {
+        ++keyBeg1;
+      } else if (*keyBeg1 > *keyBeg2) {
+        ++keyBeg2;
+      } else { // *keyBeg1 == *keyBeg2
+        ++keyBeg1;
+        ++keyBeg2;
+      }
+      ++count;
+    }
+    // At most one of the two sequences will be nonempty.
+    count += static_cast<size_t> (keyEnd1 - keyBeg1) +
+      static_cast<size_t> (keyEnd2 - keyBeg2);
+    return count;
+  }
 
   namespace Details {
     /// \brief Whether the two communicators are congruent.

@@ -753,7 +753,7 @@ namespace Tpetra {
 
     /// \brief Perform a fillComplete on a matrix that already has data.
     ///
-    /// The matrux must already have filled local 1-D storage
+    /// The matrix must already have filled local 1-D storage
     /// (lclInds1D_ and rowPtrs_ for the graph, and values1D_ in the
     /// matrix).  If the matrix has been constructed in any other way,
     /// this method will throw an exception.  This routine is needed
@@ -1961,7 +1961,7 @@ namespace Tpetra {
     bool reverseMode = false;
     if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
 
-    // Cache the maps 
+    // Cache the maps
     Teuchos::RCP<const map_type> sourceMap = reverseMode? importer.getTargetMap() : importer.getSourceMap();
     Teuchos::RCP<const map_type> targetMap = reverseMode? importer.getSourceMap() : importer.getTargetMap();
 
@@ -2084,10 +2084,10 @@ namespace Tpetra {
     bool reverseMode = false;
     if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
 
-    // Cache the maps 
+    // Cache the maps
     Teuchos::RCP<const map_type> sourceMap = reverseMode? exporter.getTargetMap() : exporter.getSourceMap();
     Teuchos::RCP<const map_type> targetMap = reverseMode? exporter.getSourceMap() : exporter.getTargetMap();
-    
+
     // Pre-count the nonzeros to allow a build w/ Static Profile
     Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec(sourceMap);
     Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec(targetMap);

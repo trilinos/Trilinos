@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -48,7 +48,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "TpetraExt_MMHelpers.hpp"
 
-/*! \file Tpetra_MatrixMatrix_decl.hpp 
+/*! \file Tpetra_MatrixMatrix_decl.hpp
 
     The declarations for the class Tpetra::MMMultiMultiply and related non-member constructors.
  */
@@ -81,7 +81,7 @@ namespace MatrixMatrix {
            trivial to know which maps to use for the domain- and range-maps.)
 
      */
-template <class Scalar, 
+template <class Scalar,
            class LocalOrdinal,
            class GlobalOrdinal,
            class Node,
@@ -107,7 +107,7 @@ void Multiply(
     @param scalarB Input, scalar multiplier for matrix B.
 
      */
-template <class Scalar, 
+template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node,
@@ -119,22 +119,34 @@ void Add(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
   Scalar scalarB );
 
-    /** Given CrsMatrix objects A and B, form the sum C = a*A + b*B
 
-    @param A Input, must already have had 'FillComplete()' called.
-    @param transposeA Input, whether to use transpose of matrix A.
-    @param scalarA Input, scalar multiplier for matrix A.
-    @param B Input, must already have had 'FillComplete()' called.
-    @param transposeB Input, whether to use transpose of matrix B.
-    @param scalarB Input, scalar multiplier for matrix B.
-    @param C Result. On entry to this method, C can be NULL or a pointer
-             to an unfilled or filled matrix. If C is NULL then a new
-             object is allocated and must be deleted by the user.
-             If C is not NULL and FillComplete has already been called then the sparsity pattern is assumed to be fixed and compatible  with the sparsity of A+B. If FillComplete has not been called then the sum is completed and the function
-             returns without calling FillComplete on C.
-
-     */
-template <class Scalar, 
+/// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
+///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
+///
+/// \pre Both input matrices A and B must be fill complete.  That is,
+///   their fillComplete() method must have been called at least once,
+///   without an intervening call to resumeFill().
+///
+/// \param A [in] The first input matrix.
+/// \param transposeA [in] If true, use the transpose of A.
+/// \param scalarA [in] Scalar multiplier for A in the sum.
+///
+/// \param B [in] The second input matrix.
+/// \param transposeB [in] If true, use the transpose of B.
+/// \param scalarB [in] Scalar multiplier for B in the sum.
+///
+/// \param C [in/out] On entry, C may be either null or a valid
+///   matrix.  If C is null on input, this function will allocate a
+///   new CrsMatrix to contain the sum.  If C is not null and is fill
+///   complete, then this function assumes that the sparsity pattern
+///   of the sum is fixed and compatible with the sparsity pattern of
+///   A + B.  If C is not null and is not fill complete, then this
+///   function returns without calling fillComplete on C.
+///
+/// \warning The case where C == null on input does not actually work.
+///   In order for it to work, we would need to change the interface
+///   of this function to pass in C as a Ptr<RCP<CrsMatrix> >.
+template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node,
@@ -147,24 +159,24 @@ void Add(
   bool transposeB,
   Scalar scalarB,
   RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > C);
-} //End Namespace MatrixMatrxix
+} // namespace MatrixMatrix
 
 namespace MMdetails{
 
-template<class Scalar, 
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node, 
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node,
          class SpMatOps>
 void mult_A_B(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview, 
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview, 
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool onlyCalculateStructure=false);
 
 template<class Scalar,
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
+         class LocalOrdinal,
+         class GlobalOrdinal,
          class Node,
          class SpMatOps>
 void import_and_extract_views(
@@ -173,13 +185,13 @@ void import_and_extract_views(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview);
 
 template<class Scalar,
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
+         class LocalOrdinal,
+         class GlobalOrdinal,
          class Node,
          class SpMatOps>
 void setMaxNumEntriesPerRow(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview);
-  
+
 }//end namespace MMdetails
 
 } // end of Tpetra namespace

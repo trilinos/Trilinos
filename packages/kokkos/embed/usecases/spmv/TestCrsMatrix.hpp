@@ -73,7 +73,7 @@ public:
   typedef ValueType  value_type ;
 
   View< value_type * , LayoutRight , device_type >   values ;
-  CrsArray< int , device_type , device_type , int >  graph ;
+  CrsArray< int , device_type , void , int >  graph ;
 };
 
 
@@ -84,7 +84,7 @@ public:
   typedef Array<ScalarType,N>  value_type ;
 
   View< value_type * , LayoutRight , device_type >   values ;
-  CrsArray< int , device_type , device_type , int >  graph ;
+  CrsArray< int , device_type , void , int >  graph ;
 };
 
 

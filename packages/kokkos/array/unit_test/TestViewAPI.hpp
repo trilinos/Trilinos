@@ -70,7 +70,7 @@ struct TestViewOperator
   static const unsigned N = 100 ;
   static const unsigned D = 3 ;
 
-  typedef KokkosArray::View< T[][D] , device_type > view_type ;
+  typedef KokkosArray::View< T*[D] , device_type > view_type ;
 
   const view_type v1 ;
   const view_type v2 ;
@@ -781,19 +781,18 @@ public:
          N3 = 7 };
 
   typedef KokkosArray::View< T , device > dView0 ;
-  typedef KokkosArray::View< T[] , device > dView1 ;
-  typedef KokkosArray::View< T[][N1] , device > dView2 ;
-  typedef KokkosArray::View< T[][N1][N2] , device > dView3 ;
-  typedef KokkosArray::View< T[][N1][N2][N3] , device > dView4 ;
-  typedef KokkosArray::View< const T[][N1][N2][N3] , device > const_dView4 ;
+  typedef KokkosArray::View< T* , device > dView1 ;
+  typedef KokkosArray::View< T*[N1] , device > dView2 ;
+  typedef KokkosArray::View< T*[N1][N2] , device > dView3 ;
+  typedef KokkosArray::View< T*[N1][N2][N3] , device > dView4 ;
+  typedef KokkosArray::View< const T*[N1][N2][N3] , device > const_dView4 ;
 
-  typedef KokkosArray::View< T[][N1][N2][N3], device, KokkosArray::MemoryUnmanaged > dView4_unmanaged ;
+  typedef KokkosArray::View< T*[N1][N2][N3], device, KokkosArray::MemoryUnmanaged > dView4_unmanaged ;
 
   static void run_test_mirror()
   {
     typedef KokkosArray::View< int , host > view_type ;
-    typedef typename view_type::HostMirror view_host_type ;
-    typedef typename KokkosArray::Impl::StaticAssertSame< view_type , view_host_type >::type mirror_type ;
+    typedef typename view_type::HostMirror mirror_type ;
     view_type a("a");
     mirror_type am = KokkosArray::create_mirror_view(a);
     mirror_type ax = KokkosArray::create_mirror(a);
@@ -962,14 +961,14 @@ public:
 
   static void run_test_vector()
   {
-    enum { Length = 1000 , Count = 8 };
+    static const unsigned Length = 1000 , Count = 8 ;
 
-    typedef KokkosArray::View< T[] , KokkosArray::LayoutRight, host > vector_right_type ;
-    typedef KokkosArray::View< T[] , KokkosArray::LayoutLeft , host > vector_type ;
+    typedef KokkosArray::View< T* , KokkosArray::LayoutRight, host > vector_right_type ;
+    typedef KokkosArray::View< T* , KokkosArray::LayoutLeft , host > vector_type ;
     typedef KokkosArray::View< T** , KokkosArray::LayoutLeft , host > multivector_type ;
 
-    typedef KokkosArray::View< const T[] , KokkosArray::LayoutRight, host > const_vector_right_type ;
-    typedef KokkosArray::View< const T[] , KokkosArray::LayoutLeft , host > const_vector_type ;
+    typedef KokkosArray::View< const T* , KokkosArray::LayoutRight, host > const_vector_right_type ;
+    typedef KokkosArray::View< const T* , KokkosArray::LayoutLeft , host > const_vector_type ;
     typedef KokkosArray::View< const T** , KokkosArray::LayoutLeft , host > const_multivector_type ;
 
     multivector_type mv = multivector_type( "mv" , Length , Count );
@@ -1013,6 +1012,21 @@ public:
     const_multivector_type cmv( mv );
     typename multivector_type::const_type cmvX( cmv );
     typename const_multivector_type::const_type ccmvX( cmv );
+
+    vector_type a( "a" , 10 , Length );
+    vector_type b = a ;
+    ASSERT_TRUE( a.dimension_0() == 10 && a.capacity() == Length );
+    ASSERT_TRUE( b.dimension_0() == 10 && b.capacity() == Length );
+    a.resize( 12 );
+    ASSERT_TRUE( a.dimension_0() == 12 && a.capacity() == Length );
+    ASSERT_TRUE( b.dimension_0() == 10 && b.capacity() == Length );
+    a.resize( Length );
+    ASSERT_TRUE( a.dimension_0() == Length && a.capacity() == Length );
+    ASSERT_TRUE( b.dimension_0() == 10     && b.capacity() == Length );
+    a.resize( 0 );
+    ASSERT_TRUE( a.dimension_0() ==  0 && a.capacity() == Length );
+    ASSERT_TRUE( b.dimension_0() == 10 && b.capacity() == Length );
+    ASSERT_FALSE( a.resize( Length + 1 ) );
   }
 };
 
