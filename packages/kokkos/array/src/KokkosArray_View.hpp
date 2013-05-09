@@ -182,84 +182,22 @@ class ViewTraits< DataType , ArrayLayout , DeviceType ,
   ) >::type >
   : public ViewTraits< DataType , ArrayLayout , DeviceType , MemoryManaged > {};
 
-} // namespace KokkosArray
-
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-namespace KokkosArray {
-namespace Impl {
-
-template< class DstViewType >
-struct ViewInitialize { static void apply( const DstViewType & ) {} };
-
-template< class DstViewSpecialize , class SrcViewSpecialize = void , class Enable = void >
-struct ViewAssignment ;
-
-/** \brief  View specialization mapping of view traits to a specialization tag */
-
-//----------------------------------------------------------------------------
-/** \brief  Value is compatible for reference assignment: */
-
-template< class DstView , class SrcView ,
-          class DstValueType  = typename DstView::value_type ,
-          class DstValueSpace = typename DstView::memory_space ,
-          class SrcValueType  = typename SrcView::value_type ,
-          class SrcValueSpace = typename SrcView::memory_space >
-struct ValueCompatible ;
-
-template< class DstView , class SrcView , class ValueType , class ValueSpace >
-struct ValueCompatible< DstView , SrcView ,
-                        ValueType , ValueSpace ,
-                        ValueType , ValueSpace >
-{
-  typedef ValueType type ;
-  enum { value = true };
-};
-
-template< class DstView , class SrcView , class ValueType , class ValueSpace >
-struct ValueCompatible< DstView , SrcView ,
-                        const ValueType , ValueSpace ,
-                              ValueType , ValueSpace >
-{
-  typedef ValueType type ;
-  enum { value = true };
-};
-
-//----------------------------------------------------------------------------
-/** \brief  View tracking increment/decrement only happens when
- *          view memory is managed and executing in the host space.
+/** \brief  View to array of data.
+ *
+ *  Options for template arguments:
+ *
+ *    View< DataType , Device >
+ *    View< DataType , Device ,        MemoryTraits >
+ *    View< DataType , Device , void , MemoryTraits >
+ *
+ *    View< DataType , Layout , Device >
+ *    View< DataType , Layout , Device , MemoryTraits >
  */
-template< class ViewTraits ,
-          class MemorySpace  = typename ViewTraits::memory_space ,
-          class MemoryTraits = typename ViewTraits::memory_traits ,
-          class ExecSpec     = KokkosArray::ExecutionSpace >
-struct ViewTracking {
-  KOKKOSARRAY_INLINE_FUNCTION static void increment( const void * ) {}
-  KOKKOSARRAY_INLINE_FUNCTION static void decrement( const void * ) {}
-};
-
-template< class ViewTraits , class MemorySpace , class MemoryTraits >
-struct ViewTracking< ViewTraits , MemorySpace , MemoryTraits ,
-          typename enable_if< MemoryTraits::managed , HostSpace >::type >
-{
-  KOKKOSARRAY_INLINE_FUNCTION static void increment( const void * ptr )
-    { MemorySpace::increment( ptr ); }
-
-  KOKKOSARRAY_INLINE_FUNCTION static void decrement( const void * ptr )
-    { MemorySpace::decrement( ptr ); }
-};
-
-} // namespace Impl
-} // namespace KokkosArray
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace KokkosArray {
 
 template< class DataType ,
-          class Arg1Type ,        /* DeviceType or ArrayLayout */
+          class Arg1Type ,        /* ArrayLayout or DeviceType */
           class Arg2Type = void , /* DeviceType or MemoryTraits */
           class Arg3Type = void , /* MemoryTraits */
           class Specialize =
@@ -286,6 +224,8 @@ operator == ( const View<LT,LL,LD,LM,LS> & lhs ,
                    typename rhs_traits::array_layout >::value &&
     Impl::is_same< typename lhs_traits::memory_space ,
                    typename rhs_traits::memory_space >::value &&
+    Impl::is_same< typename lhs_traits::specialize ,
+                   typename rhs_traits::specialize >::value &&
     lhs.ptr_on_device() == rhs.ptr_on_device() &&
     lhs.shape()         == rhs.shape() ;
 }
@@ -335,7 +275,24 @@ void deep_copy( const View<DT,DL,DD,DM,Spec> & dst ,
   }
 }
 
+} // namespace KokkosArray
+
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+namespace Impl {
+
+template< class DstViewSpecialize , class SrcViewSpecialize = void , class Enable = void >
+struct ViewAssignment ;
+
+} // namespace Impl
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
 
 template< class DstViewType ,
           class T , class L , class D , class M , class S ,
@@ -352,8 +309,6 @@ subview( const View<T,L,D,M,S> & src ,
                 typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -378,8 +333,6 @@ subview( const View<T,L,D,M,S> & src ,
                 typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -406,8 +359,6 @@ subview( const View<T,L,D,M,S> & src ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
 
-  typedef View<T,L,D,M,S> src_type ;
-
   dst_type dst ;
 
   Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2 );
@@ -433,8 +384,6 @@ subview( const View<T,L,D,M,S> & src ,
                 typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -464,8 +413,6 @@ subview( const View<T,L,D,M,S> & src ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
 
-  typedef View<T,L,D,M,S> src_type ;
-
   dst_type dst ;
 
   Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4 );
@@ -494,8 +441,6 @@ subview( const View<T,L,D,M,S> & src ,
                 typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -527,8 +472,6 @@ subview( const View<T,L,D,M,S> & src ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
 
-  typedef View<T,L,D,M,S> src_type ;
-
   dst_type dst ;
 
   Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6 );
@@ -559,8 +502,6 @@ subview( const View<T,L,D,M,S> & src ,
                 typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -616,8 +557,8 @@ create_mirror( const View<T,L,D,M,S> & view )
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#include <impl/KokkosArray_ViewScalar.hpp>
 #include <impl/KokkosArray_ViewDefault.hpp>
+#include <impl/KokkosArray_ViewScalar.hpp>
 #include <impl/KokkosArray_ViewTileLeft.hpp>
 
 //----------------------------------------------------------------------------
