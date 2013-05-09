@@ -98,6 +98,7 @@ struct EnvData
       m_shutdownRequested(false),
       m_inputFileRequired(true),
       m_checkSubCycle(false),
+      m_isZapotec(false),
       m_worldComm(MPI_COMM_NULL),
       m_parallelComm(MPI_COMM_NULL),
       m_parallelSize(-1),
@@ -149,6 +150,7 @@ struct EnvData
   bool			m_shutdownRequested;
   bool                  m_inputFileRequired;
   bool                  m_checkSubCycle;
+  bool                  m_isZapotec;
 
   MPI_Comm		m_worldComm;
 
@@ -234,6 +236,16 @@ void set_input_file_required(bool value)
 void set_check_subcycle(bool value)
 {
     EnvData::instance().m_checkSubCycle = value;
+}
+
+void set_zapotec(bool value)
+{
+    EnvData::instance().m_isZapotec = value;
+}
+
+bool is_zapotec()
+{
+    return EnvData::instance().m_isZapotec;
 }
 
 

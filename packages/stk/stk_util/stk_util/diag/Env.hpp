@@ -272,6 +272,19 @@ std::string getInputFileName();
 void set_check_subcycle(bool value);
 
 /**
+ * @brief Function <b>set_zapotec<b> sets whether this code is
+ * zaptoec.  The default behavior corresponds to false.
+ * Send all function-related hate mail to Arne Gullerud.
+ */
+void set_zapotec(bool value);
+
+/**
+ * @brief Function <b>is_zapotec<b> returns whether this code is
+ * zaptoec. Send all function-related hate mail to Arne Gullerud.
+ */
+bool is_zapotec();
+
+/**
  * @ingroup EnvRuntimeInformationDetail
  * @brief Function <b>architecture</b> returns the platform executing this product.
  * This is obtained during startup by searching for a file which contains this
