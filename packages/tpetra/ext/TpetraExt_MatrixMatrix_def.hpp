@@ -307,20 +307,53 @@ void Add(
   Scalar scalarB,
   RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > C)
 {
+  using Teuchos::as;
   using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcpFromRef;
   using Teuchos::tuple;
+  using std::endl;
+  typedef typename ArrayView<const Scalar>::size_type size_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+  typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+  typedef RowGraph<LocalOrdinal, GlobalOrdinal, Node> row_graph_type;
+  typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_graph_type;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_matrix_type;
   typedef RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> transposer_type;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
+    "Tpetra::MatrixMatrix::Add: The case C == null does not actually work.  "
+    "Fixing this will require an interface change.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! A.isFillComplete () || ! B.isFillComplete (), std::invalid_argument,
     "Tpetra::MatrixMatrix::Add: Both input matrices must be fill complete "
     "before calling this function.");
+
+#ifdef HAVE_TPETRA_DEBUG
+  {
+    const bool domainMapsSame =
+      (! transposeA && ! transposeB && ! A.getDomainMap ()->isSameAs (* (B.getDomainMap ()))) ||
+      (! transposeA && transposeB && ! A.getDomainMap ()->isSameAs (* (B.getRangeMap ()))) ||
+      (transposeA && ! transposeB && ! A.getRangeMap ()->isSameAs (* (B.getDomainMap ())));
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      domainMapsSame, std::invalid_argument,
+      "Tpetra::MatrixMatrix::Add: The domain Maps of Op(A) and Op(B) are not the same.");
+
+    const bool rangeMapsSame =
+      (! transposeA && ! transposeB && ! A.getRangeMap ()->isSameAs (* (B.getRangeMap ()))) ||
+      (! transposeA && transposeB && ! A.getRangeMap ()->isSameAs (* (B.getDomainMap ()))) ||
+      (transposeA && ! transposeB && ! A.getDomainMap ()->isSameAs (* (B.getRangeMap ())));
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rangeMapsSame, std::invalid_argument,
+      "Tpetra::MatrixMatrix::Add: The range Maps of Op(A) and Op(B) are not the same.");
+  }
+#endif // HAVE_TPETRA_DEBUG
 
   // Form the explicit transpose of A if necessary.
   RCP<const crs_matrix_type> Aprime;
@@ -331,6 +364,12 @@ void Add(
     Aprime = rcpFromRef (A);
   }
 
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(Aprime.is_null (), std::logic_error,
+    "Tpetra::MatrixMatrix::Add: Failed to compute Op(A).  "
+    "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
   // Form the explicit transpose of B if necessary.
   RCP<const crs_matrix_type> Bprime;
   if (transposeB) {
@@ -340,15 +379,197 @@ void Add(
     Bprime = rcpFromRef (B);
   }
 
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(Bprime.is_null (), std::logic_error,
+    "Tpetra::MatrixMatrix::Add: Failed to compute Op(B).  "
+    "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
   // Allocate or zero the entries of the result matrix.
   if (! C.is_null ()) {
     C->setAllToScalar (STS::zero ());
   } else {
+#if 0
+    // If Aprime and Bprime have the same row Map, and if C is null,
+    // we can optimize construction and fillComplete of C.  For now,
+    // we just check pointer equality, to avoid the all-reduce in
+    // isSameAs.  It may be worth that all-reduce to check, however.
+    //if (Aprime->getRowMap ().getRawPtr () == Bprime->getRowMap ().getRawPtr ()) {
+    if (Aprime->getRowMap ()->isSameAs (* (Bprime->getRowMap ())) {
+      RCP<const map_type> rowMap = Aprime->getRowMap ();
+
+      RCP<const crs_graph_type> A_graph =
+        rcp_dynamic_cast<const crs_graph_type> (Aprime->getGraph (), true);
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(A_graph.is_null (), std::logic_error,
+        "Tpetra::MatrixMatrix::Add: Graph of Op(A) is null.  "
+        "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+      RCP<const crs_graph_type> B_graph =
+        rcp_dynamic_cast<const crs_graph_type> (Bprime->getGraph (), true);
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(B_graph.is_null (), std::logic_error,
+        "Tpetra::MatrixMatrix::Add: Graph of Op(B) is null.  "
+        "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+      RCP<const map_type> A_colMap = A_graph->getColMap ();
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(A_colMap.is_null (), std::logic_error,
+        "Tpetra::MatrixMatrix::Add: Column Map of Op(A) is null.  "
+        "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+      RCP<const map_type> B_colMap = B_graph->getColMap ();
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(B_colMap.is_null (), std::logic_error,
+        "Tpetra::MatrixMatrix::Add: Column Map of Op(B) is null.  "
+        "Please report this bug to the Tpetra developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(A_graph->getImporter ().is_null (),
+        std::logic_error,
+        "Tpetra::MatrixMatrix::Add: Op(A)'s Import is null.  "
+        "Please report this bug to the Tpetra developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(B_graph->getImporter ().is_null (),
+        std::logic_error,
+        "Tpetra::MatrixMatrix::Add: Op(B)'s Import is null.  "
+        "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+      // Compute the (column Map and) Import of the matrix sum.
+      RCP<const import_type> sumImport =
+        A_graph->getImporter ()->setUnion (* (B_graph->getImporter ()));
+      RCP<const map_type> C_colMap = sumImport->getTargetMap ();
+
+      // First, count the number of entries in each row.  Then, go
+      // back over the rows again, and compute the actual sum.
+      // Remember that C may have a different column Map than Aprime
+      // or Bprime, so its local indices may be different.  That's why
+      // we have to convert from local to global indices.
+
+      ArrayView<const LocalOrdinal> A_local_ind;
+      Array<GlobalOrdinal> A_global_ind;
+      ArrayView<const LocalOrdinal> B_local_ind;
+      Array<GlobalOrdinal> B_global_ind;
+
+      const size_t localNumRows = rowMap->getNodeNumElements ();
+      ArrayRCP<size_t> numEntriesPerRow (localNumRows);
+      // Compute the max number of entries in any row of A+B on this
+      // process, so that we won't have to resize temporary arrays.
+      size_t maxNumEntriesPerRow = 0;
+      for (size_t localRow = 0; localRow < localNumRows; ++localRow) {
+        // Get view of current row of A_graph, in its local indices.
+        A_graph->getLocalRowView (as<LocalOrdinal> (localRow), A_local_ind);
+        const size_type A_numEnt = A_local_ind.size ();
+        if (A_numEnt > A_global_ind.size ()) {
+          A_global_ind.resize (A_numEnt);
+        }
+        // Convert A's local indices to global indices.
+        for (size_type k = 0; k < A_numEnt; ++k) {
+          A_global_ind[k] = A_colMap->getGlobalElement (A_local_ind[k]);
+        }
+
+        // Get view of current row of B_graph, in its local indices.
+        B_graph->getLocalRowView (as<LocalOrdinal> (localRow), B_local_ind);
+        const size_type B_numEnt = B_local_ind.size ();
+        if (B_numEnt > B_global_ind.size ()) {
+          B_global_ind.resize (B_numEnt);
+        }
+        // Convert B's local indices to global indices.
+        for (size_type k = 0; k < B_numEnt; ++k) {
+          B_global_ind[k] = B_colMap->getGlobalElement (B_local_ind[k]);
+        }
+
+        // Count the number of entries in the merged row of A + B.
+        const size_t curNumEntriesPerRow =
+          keyMergeCount (A_global_ind.begin (), A_global_ind.end (),
+                         B_global_ind.begin (), B_global_ind.end ());
+        numEntriesPerRow[localRow] = curNumEntriesPerRow;
+        maxNumEntriesPerRow = std::max (maxNumEntriesPerRow, curNumEntriesPerRow);
+      }
+
+      // Create C, using the sum column Map and number of entries per
+      // row that we computed above.  Having the exact number of
+      // entries per row lets us use static profile, making it valid
+      // to call expertStaticFillComplete.
+      C = rcp (new crs_matrix_type (rowMap, C_colMap, numEntriesPerRow, StaticProfile));
+
+      // Go back through the rows and actually compute the sum.  We
+      // don't ever have to resize A_global_ind or B_global_ind below,
+      // since we've already done it above.
+      ArrayView<const Scalar> A_val;
+      ArrayView<const Scalar> B_val;
+
+      Array<LocalOrdinal> AplusB_local_ind (maxNumEntriesPerRow);
+      Array<GlobalOrdinal> AplusB_global_ind (maxNumEntriesPerRow);
+      Array<Scalar> AplusB_val (maxNumEntriesPerRow);
+
+      for (size_t localRow = 0; localRow < localNumRows; ++localRow) {
+        // Get view of current row of A, in A's local indices.
+        Aprime->getLocalRowView (as<LocalOrdinal> (localRow), A_local_ind, A_val);
+        // Convert A's local indices to global indices.
+        for (size_type k = 0; k < A_local_ind.size (); ++k) {
+          A_global_ind[k] = A_colMap->getGlobalElement (A_local_ind[k]);
+        }
+
+        // Get view of current row of B, in B's local indices.
+        Bprime->getLocalRowView (as<LocalOrdinal> (localRow), B_local_ind, B_val);
+        // Convert B's local indices to global indices.
+        for (size_type k = 0; k < B_local_ind.size (); ++k) {
+          B_global_ind[k] = B_colMap->getGlobalElement (B_local_ind[k]);
+        }
+
+        const size_t curNumEntries = numEntriesPerRow[localRow];
+        ArrayView<LocalOrdinal> C_local_ind = AplusB_local_ind (0, curNumEntries);
+        ArrayView<GlobalOrdinal> C_global_ind = AplusB_global_ind (0, curNumEntries);
+        ArrayView<Scalar> C_val = AplusB_val (0, curNumEntries);
+
+        // Sum the entries in the current row of A plus B.
+        keyValueMerge (A_global_ind.begin (), A_global_ind.end (),
+                       A_val.begin (), A_val.end (),
+                       B_global_ind.begin (), B_global_ind.end (),
+                       B_val.begin (), B_val.end (),
+                       C_global_ind.begin (), C_val.begin (),
+                       std::plus<Scalar> ());
+        // Convert the sum's global indices into C's local indices.
+        for (size_type k = 0; k < as<size_type> (numEntriesPerRow[localRow]); ++k) {
+          C_local_ind[k] = C_colMap->getLocalElement (C_global_ind[k]);
+        }
+        // Give the current row sum to C.
+        C->replaceLocalValues (localRow, C_local_ind, C_val);
+      }
+
+      // Use "expert static fill complete" to bypass construction of
+      // the Import and Export (if applicable) object(s).
+      RCP<const map_type> domainMap = A_graph->getDomainMap ();
+      RCP<const map_type> rangeMap = A_graph->getRangeMap ();
+      C->expertStaticFillComplete (domainMap, rangeMap, sumImport, A_graph->getExporter ());
+
+      return; // Now we're done!
+    }
+    else {
+      // FIXME (mfh 08 May 2013) When I first looked at this method, I
+      // noticed that C was being given the row Map of Aprime (the
+      // possibly transposed version of A).  Is this what we want?
+      C = rcp (new crs_matrix_type (Aprime->getRowMap (), null));
+    }
+
+#else
     // FIXME (mfh 08 May 2013) When I first looked at this method, I
     // noticed that C was being given the row Map of Aprime (the
     // possibly transposed version of A).  Is this what we want?
-    C = rcp (new crs_matrix_type (Aprime->getRowMap (), null));
+    C = rcp (new crs_matrix_type (Aprime->getRowMap (), 0));
+#endif // 0
   }
+
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(Aprime.is_null (), std::logic_error,
+    "Tpetra::MatrixMatrix::Add: At this point, Aprime is null.  "
+    "Please report this bug to the Tpetra developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION(Bprime.is_null (), std::logic_error,
+    "Tpetra::MatrixMatrix::Add: At this point, Bprime is null.  "
+    "Please report this bug to the Tpetra developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
+    "Tpetra::MatrixMatrix::Add: At this point, C is null.  "
+    "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
 
   Array<RCP<const crs_matrix_type> > Mat =
     tuple<RCP<const crs_matrix_type> > (Aprime, Bprime);
@@ -365,7 +586,18 @@ void Add(
     // has the same row Map as C, because both sumIntoGlobalValues and
     // insertGlobalValues allow summing resp. inserting into nonowned
     // rows of C.
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(Mat[k].is_null (), std::logic_error,
+      "Tpetra::MatrixMatrix::Add: At this point, curRowMap is null.  "
+      "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
     RCP<const map_type> curRowMap = Mat[k]->getRowMap ();
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(curRowMap.is_null (), std::logic_error,
+      "Tpetra::MatrixMatrix::Add: At this point, curRowMap is null.  "
+      "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
     const size_t localNumRows = Mat[k]->getNodeNumRows ();
     for (size_t i = 0; i < localNumRows; ++i) {
       const GlobalOrdinal globalRow = curRowMap->getGlobalElement (i);

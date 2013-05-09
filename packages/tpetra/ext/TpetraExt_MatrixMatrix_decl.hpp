@@ -142,6 +142,10 @@ void Add(
 ///   of the sum is fixed and compatible with the sparsity pattern of
 ///   A + B.  If C is not null and is not fill complete, then this
 ///   function returns without calling fillComplete on C.
+///
+/// \warning The case where C == null on input does not actually work.
+///   In order for it to work, we would need to change the interface
+///   of this function to pass in C as a Ptr<RCP<CrsMatrix> >.
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -155,7 +159,7 @@ void Add(
   bool transposeB,
   Scalar scalarB,
   RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > C);
-} //End Namespace MatrixMatrxix
+} // namespace MatrixMatrix
 
 namespace MMdetails{
 
