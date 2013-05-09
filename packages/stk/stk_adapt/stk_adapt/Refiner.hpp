@@ -209,7 +209,7 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destro
       void check_sidesets_1(std::string msg);
       void check_sidesets_2(std::string msg);
       void fix_side_sets_1();
-      void fix_side_sets_2();
+      void fix_side_sets_2(bool allow_not_found=false);
       //void fix_side_sets_3(bool checkParentChild, SidePartMap& side_part_map);
 
       /// determine side part to elem part relations
@@ -258,7 +258,10 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destro
       void removeFamilyTrees(SetOfEntities& family_trees_to_be_removed);
 
 
-      void getSideElemsToBeRemoved(SetOfEntities& children_to_be_removed, SetOfEntities& side_elem_set_to_be_removed, SetOfEntities& family_trees_to_be_removed, SetOfEntities& parent_side_elements);
+      void getSideParentsToBeRemeshed(SetOfEntities& children_to_be_removed, SetOfEntities& parent_side_elements);
+
+      void getSideElemsToBeRemoved(NodeSetType& deleted_nodes,
+                                   SetOfEntities& children_to_be_removed, SetOfEntities& side_elem_set_to_be_removed, SetOfEntities& family_trees_to_be_removed, SetOfEntities& parent_side_elements);
 
       void removeChildElements(SetOfEntities& children_to_be_removed);
 
@@ -330,6 +333,12 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destro
       /// =========>  Overrides  end
 
 
+
+      bool
+      sharesElementFace(stk::mesh::Entity side_elem);
+
+      void
+      remove_dangling_sidesets();
 
       void
       removeFamilyTrees();

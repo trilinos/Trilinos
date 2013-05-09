@@ -13,6 +13,7 @@
 
 #define DEBUG_UNREF 0
 #define DEBUG_UNREF_1 0
+#define DEBUG_UNREF_2 0
 
 namespace stk {
   namespace adapt {
@@ -22,6 +23,62 @@ namespace stk {
     // ====================================================================================================
     // ====================================================================================================
     // ====================================================================================================
+
+    void Refiner::remove_dangling_sidesets()
+    {
+      SetOfEntities sides_to_delete(*m_eMesh.get_bulk_data());
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.side_rank() );
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          stk::mesh::Bucket & bucket = **k ;
+          const unsigned num_entity_in_bucket = bucket.size();
+          for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+            {
+              stk::mesh::Entity side = bucket[ientity];
+              if (!sharesElementFace(side))
+                sides_to_delete.insert(side);
+            }
+        }
+
+      const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
+      SetOfEntities family_trees(*m_eMesh.get_bulk_data());
+      for (SetOfEntities::iterator siter=sides_to_delete.begin(); siter != sides_to_delete.end(); ++siter)
+        {
+          stk::mesh::Entity side = *siter;
+
+          while (true)
+            {
+              percept::MyPairIterRelation rels (m_eMesh, side, FAMILY_TREE_RANK);
+              if (!rels.size())
+                break;
+              stk::mesh::Entity to_rel = rels[0].entity();
+              family_trees.insert(to_rel);
+              stk::mesh::RelationIdentifier to_id = rels[0].relation_ordinal();
+
+              bool del = m_eMesh.get_bulk_data()->destroy_relation( to_rel, side, to_id);
+              if (!del)
+                throw std::runtime_error("remove_dangling_sidesets:: destroy_relation failed 4");
+            }
+
+          if ( ! m_eMesh.get_bulk_data()->destroy_entity( side ) )
+            {
+              throw std::runtime_error("remove_dangling_sidesets error 4 - couldn't delete");
+            }
+        }
+      for (SetOfEntities::iterator fiter=family_trees.begin(); fiter != family_trees.end(); fiter++)
+        {
+          stk::mesh::Entity family_tree = *fiter;
+          percept::MyPairIterRelation rels (m_eMesh, family_tree, m_eMesh.side_rank());
+          if (rels.size() == 1)
+            {
+              if ( ! m_eMesh.get_bulk_data()->destroy_entity( family_tree ) )
+                {
+                  throw std::runtime_error("remove_dangling_sidesets error 4.1 - couldn't delete family_tree");
+                }
+            }
+        }
+
+    }
 
     static void getLevels(PerceptMesh& eMesh, unsigned rank, int& min_level, int& max_level)
     {
@@ -412,11 +469,13 @@ namespace stk {
     }
 
 
-    void Refiner::getSideElemsToBeRemoved(SetOfEntities& children_to_be_removed, SetOfEntities& side_elem_set_to_be_removed, SetOfEntities& family_trees_to_be_removed, SetOfEntities& parent_side_elements)
+    void Refiner::getSideElemsToBeRemoved(NodeSetType& deleted_nodes,
+                                          SetOfEntities& children_to_be_removed, SetOfEntities& side_elem_set_to_be_removed, SetOfEntities& family_trees_to_be_removed, SetOfEntities& parent_side_elements)
     {
       if (getIgnoreSideSets()) return;
 
       const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
+
       for(SetOfEntities::iterator child_it = children_to_be_removed.begin();
           child_it != children_to_be_removed.end(); ++child_it)
         {
@@ -459,6 +518,35 @@ namespace stk {
                 stk::mesh::Entity parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
                 parent_side_elements.insert(parent);
                 family_trees_to_be_removed.insert(family_tree);
+              }
+            }
+        }
+    }
+
+    void Refiner::getSideParentsToBeRemeshed(SetOfEntities& parents_to_be_remeshed, SetOfEntities& parent_side_elements)
+    {
+      if (getIgnoreSideSets()) return;
+
+      //const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
+
+      for(SetOfEntities::iterator parent_it = parents_to_be_remeshed.begin();
+          parent_it != parents_to_be_remeshed.end(); ++parent_it)
+        {
+          stk::mesh::Entity parent = *parent_it;
+
+          //           if (m_eMesh.hasFamilyTree(parent) && !m_eMesh.isChildWithoutNieces(child))
+          //             throw std::logic_error("error 34");
+
+          // add sideset elements to list to be removed (and their family tree info)
+          percept::MyPairIterRelation side_relations (m_eMesh, parent, m_eMesh.side_rank());
+          for (unsigned jside = 0; jside < side_relations.size(); jside++)
+            {
+              stk::mesh::Entity side_element = side_relations[jside].entity();
+
+              if (0 == m_eMesh.numChildren(side_element))
+              {
+                parent_side_elements.insert(side_element);
+                //family_trees_to_be_removed.insert(family_tree);
               }
             }
         }
@@ -604,7 +692,7 @@ namespace stk {
 
                   if (!m_eMesh.isGhostElement(parent))
                     {
-#if DEBUG_UNREF
+#if DEBUG_UNREF_2
                       //std::cout << "P["<< m_eMesh.get_rank() << "] parent.owner_rank() = " << parent.owner_rank() << std::endl;
                       std::cout << "tmp Parent to be remeshed = ";
                       m_eMesh.print_entity(std::cout, parent);
@@ -807,6 +895,8 @@ namespace stk {
                     }
                 }
 
+              all_side_sets_ok=true;
+
               if (!all_siblings_in_unref_set) {
                 ++num_all_siblings_in_unref_set;
               }
@@ -852,6 +942,7 @@ namespace stk {
                 const percept::MyPairIterRelation elem_nodes (m_eMesh, element,  stk::mesh::MetaData::NODE_RANK);
 
                 if (!doTest || (elem_nodes.size() && m_eMesh.isLeafElement(element)) )
+                  //if (!doTest || elem_nodes.size())
                   {
                     bool in_unref_set = elements_to_unref.find( element ) != elements_to_unref.end();
                     //bool isGhostElement = m_eMesh.isGhostElement(element);
@@ -862,7 +953,7 @@ namespace stk {
                           {
                             stk::mesh::Entity node = elem_nodes[inode].entity();
                             kept_nodes.insert(node);
-#if DEBUG_UNREF
+#if DEBUG_UNREF_2
                             std::cout << "tmp kept node: " << *node << " ";
                             m_eMesh.print_entity(std::cout, *node);
 #endif
@@ -904,7 +995,7 @@ namespace stk {
                 if (!in_kept_nodes_set)
                   {
                     deleted_nodes.insert(node);
-#if DEBUG_UNREF
+#if DEBUG_UNREF_2
                     std::cout << "tmp deleted node: " << *node << " ";
                     m_eMesh.print_entity(std::cout, *node);
 #endif
@@ -1043,8 +1134,12 @@ namespace stk {
           m_nodeRegistry->clear_element_owner_data(children_to_be_removed_with_ghosts);
 
           // get the corresponding side elements from the children->side relations
-          getSideElemsToBeRemoved(children_to_be_removed, side_elem_set_to_be_removed, side_elem_family_trees_to_be_removed,
+          // FIXME - this is to be deprecated, but leaving it in for now
+#if 0
+          getSideElemsToBeRemoved(deleted_nodes,
+                                  children_to_be_removed, side_elem_set_to_be_removed, side_elem_family_trees_to_be_removed,
                                   parent_side_elements);
+#endif
 
           // first have to delete the family tree (higher ranks have to be deleted first)
           removeFamilyTrees(family_trees_to_be_removed);
@@ -1052,11 +1147,19 @@ namespace stk {
           // remove children
           removeChildElements(children_to_be_removed);
 
+          // FIXME - this is to be deprecated, but leaving it in for now
+#if 0
           // for sideset elements, remove their family trees first
           removeFamilyTrees(side_elem_family_trees_to_be_removed);
 
           // remove sideset elements
           removeSideElements(side_elem_set_to_be_removed, children_to_be_removed);
+#endif
+
+          // reconnect and remove any dangling side elements
+          fix_side_sets_2(true);
+
+          getSideParentsToBeRemeshed(parent_elements, parent_side_elements);
 
           // remesh the holes left by removing child elems (quad/hex hanging node doesn't need this)
           if (m_needsRemesh)
@@ -1076,7 +1179,9 @@ namespace stk {
 
           set_active_part();
 
-          fixElementSides1();
+          //remove_dangling_sidesets();
+
+          fix_side_sets_2();
         }
 
       //if (1)  std::cout << "P["<< m_eMesh.get_rank() << "] unrefineTheseElements modification_end start..." << std::endl;

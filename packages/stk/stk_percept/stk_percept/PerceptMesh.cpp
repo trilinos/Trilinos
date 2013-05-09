@@ -5167,8 +5167,8 @@ namespace stk {
         }
       else
         {
-          return !isParentElement(element, true);
-          //return isChildElement(element, true);
+          //return !isParentElement(element, true);
+          return isChildElement(element, true);
         }
     }
 
@@ -5239,6 +5239,19 @@ namespace stk {
         return stk::mesh::Entity();
     }
 
+
+    unsigned PerceptMesh::numChildren(stk::mesh::Entity gp)
+    {
+      if (!hasFamilyTree(gp)) return 0;
+
+      std::vector<stk::mesh::Entity> children;
+      bool hasChildren = getChildren(gp, children, true, false);
+      if (hasChildren && children.size())
+        {
+          return children.size();
+        }
+      return 0;
+    }
 
     bool PerceptMesh::hasGreatGrandChildren(stk::mesh::Entity gp, bool check_for_family_tree)
     {

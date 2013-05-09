@@ -488,11 +488,8 @@ namespace stk
                     std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
                   }
 
-                //breaker.deleteParentElements();
                 eMesh.save_as(output_files_loc+"tmp_cyl_sidesets_moving_shock_"+post_fix[p_size]+".e");
-                //exit(123);
 
-                //breaker.getNodeRegistry().init_entity_repo();
                 for (int iunref_pass=0; iunref_pass < num_unref_passes; iunref_pass++)
                   {
                     std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass <<  std::endl;
@@ -501,9 +498,7 @@ namespace stk
                     std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
                   }
 
-//                 breaker.deleteParentElements();
                  eMesh.save_as(output_files_loc+"tmp_cyl_sidesets_moving_shock_"+post_fix[p_size]+".e");
-                 //exit(123);
 
                 if (delete_parents && istep == num_time_steps-1)
                   {
@@ -525,7 +520,7 @@ namespace stk
                 eMesh.save_as(output_files_loc+"cyl_sidesets_final_moving_shock_"+post_fix[p_size]+"_unrefAll_pass_"+toString(iunref)+".e."+toString(num_time_steps) );
               }
 
-            if (0)
+            if (1)
               breaker.deleteParentElements();
             std::cout << "moving_shock final number elements= " << eMesh.get_number_elements() << std::endl;
             eMesh.save_as(output_files_loc+"cyl_sidesets_final_unrefed_moving_shock_"+post_fix[p_size]+".e."+toString(num_time_steps) );

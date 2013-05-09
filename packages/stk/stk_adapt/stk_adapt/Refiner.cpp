@@ -2740,7 +2740,7 @@ namespace stk {
 
     // fast reconnector
     void Refiner::
-    fix_side_sets_2()
+    fix_side_sets_2(bool allow_not_found)
     {
       EXCEPTWATCH;
 
@@ -2809,6 +2809,8 @@ namespace stk {
                 }
             }
         }
+
+      SetOfEntities sides_to_delete(*m_eMesh.get_bulk_data());
 
       // now add back all found side to element relations
       for (unsigned side_rank_iter = side_rank_iter_begin; side_rank_iter <= side_rank_iter_end; side_rank_iter++)
@@ -2988,23 +2990,71 @@ namespace stk {
 
               if (!found)
                 {
-                  std::cout << "ERROR: side = " << side << " side-is-leaf? " << m_eMesh.isLeafElement(side) << std::endl;
-                  m_eMesh.print(side);
-                  stk::mesh::PartVector side_parts;
-                  side.bucket().supersets(side_parts);
-                  for (unsigned isp = 0; isp < side_parts.size(); isp++)
+                  if (allow_not_found)
                     {
-                      std::cout << "side parts= " << side_parts[isp]->name() << std::endl;
+                      sides_to_delete.insert(side);
                     }
+                  else
+                    {
+                      std::cout << "ERROR: side = " << side << " side-is-leaf? " << m_eMesh.isLeafElement(side) << std::endl;
+                      m_eMesh.print(side);
+                      stk::mesh::PartVector side_parts;
+                      side.bucket().supersets(side_parts);
+                      for (unsigned isp = 0; isp < side_parts.size(); isp++)
+                        {
+                          std::cout << "side parts= " << side_parts[isp]->name() << std::endl;
+                        }
 #if 0
-                  stk::mesh::PartVector elem_parts;
-                  elem.bucket().supersets(elem_parts);
-                  for (unsigned isp = 0; isp < elem_parts.size(); isp++)
-                    {
-                      std::cout << "elem parts= " << elem_parts[isp]->name() << std::endl;
-                    }
+                      stk::mesh::PartVector elem_parts;
+                      elem.bucket().supersets(elem_parts);
+                      for (unsigned isp = 0; isp < elem_parts.size(); isp++)
+                        {
+                          std::cout << "elem parts= " << elem_parts[isp]->name() << std::endl;
+                        }
 #endif
-                  throw std::runtime_error("fix_side_sets_2 error 2");
+                      throw std::runtime_error("fix_side_sets_2 error 2");
+                    }
+                }
+            }
+        }
+
+      if (allow_not_found)
+        {
+          const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
+          SetOfEntities family_trees(*m_eMesh.get_bulk_data());
+          for (SetOfEntities::iterator siter=sides_to_delete.begin(); siter != sides_to_delete.end(); ++siter)
+            {
+              stk::mesh::Entity side = *siter;
+
+              while (true)
+                {
+                  percept::MyPairIterRelation rels (m_eMesh, side, FAMILY_TREE_RANK);
+                  if (!rels.size())
+                    break;
+                  stk::mesh::Entity to_rel = rels[0].entity();
+                  family_trees.insert(to_rel);
+                  stk::mesh::RelationIdentifier to_id = rels[0].relation_ordinal();
+
+                  bool del = m_eMesh.get_bulk_data()->destroy_relation( to_rel, side, to_id);
+                  if (!del)
+                    throw std::runtime_error("fix_side_sets_2:: destroy_relation failed 4");
+                }
+
+              if ( ! m_eMesh.get_bulk_data()->destroy_entity( side ) )
+                {
+                  throw std::runtime_error("fix_side_sets_2 error 4 - couldn't delete");
+                }
+            }
+          for (SetOfEntities::iterator fiter=family_trees.begin(); fiter != family_trees.end(); fiter++)
+            {
+              stk::mesh::Entity family_tree = *fiter;
+              percept::MyPairIterRelation rels (m_eMesh, family_tree, m_eMesh.side_rank());
+              if (rels.size() == 1)
+                {
+                  if ( ! m_eMesh.get_bulk_data()->destroy_entity( family_tree ) )
+                    {
+                      throw std::runtime_error("fix_side_sets_2 error 4.1 - couldn't delete family_tree");
+                    }
                 }
             }
         }
@@ -3196,6 +3246,63 @@ namespace stk {
             }
           return false;
         }
+    }
+
+    bool Refiner::sharesElementFace( stk::mesh::Entity side_elem)
+    {
+      EXCEPTWATCH;
+
+      percept::MyPairIterRelation side_nodes(m_eMesh, side_elem, m_eMesh.node_rank());
+      for (unsigned jj=0; jj < side_nodes.size(); jj++)
+        {
+          stk::mesh::Entity node = side_nodes[jj].entity();
+          percept::MyPairIterRelation node_elements(m_eMesh, node, m_eMesh.element_rank());
+          for (unsigned ii=0; ii < node_elements.size(); ii++)
+            {
+              stk::mesh::Entity element = node_elements[ii].entity();
+
+              shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+              unsigned element_nsides = (unsigned)element_topo.getSideCount();
+
+              // special case for shells
+              int topoDim = UniformRefinerPatternBase::getTopoDim(element_topo);
+
+              bool isShell = false;
+              if (topoDim < (int)element.entity_rank())
+                {
+                  isShell = true;
+                }
+              int spatialDim = m_eMesh.get_spatial_dim();
+              if (spatialDim == 3 && isShell && side_elem.entity_rank() == m_eMesh.edge_rank())
+                {
+                  element_nsides = (unsigned) element_topo.getEdgeCount();
+                }
+
+              int permIndex = -1;
+              int permPolarity = 1;
+
+              unsigned k_element_side = 0;
+
+              // try search
+              for (unsigned j_element_side = 0; j_element_side < element_nsides; j_element_side++)
+                {
+                  m_eMesh.element_side_permutation(element, side_elem, j_element_side, permIndex, permPolarity, false, false);
+                  if (permIndex >= 0)
+                    {
+                      k_element_side = j_element_side;
+                      break;
+                    }
+                }
+
+              //if (!isShell && ( permPolarity < 0))
+              //  return false;
+              if (permIndex >= 0)
+                {
+                  return true;
+                }
+            }
+        }
+      return false;
     }
 
     void Refiner::

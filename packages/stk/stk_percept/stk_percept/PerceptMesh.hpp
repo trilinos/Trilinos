@@ -601,6 +601,8 @@ namespace stk {
       /// if the element is a parent at any level, return true
       bool isParentElement( const stk::mesh::Entity element, bool check_for_family_tree=true);
 
+      unsigned numChildren(stk::mesh::Entity gp);
+
       stk::mesh::Entity getGrandParent(stk::mesh::Entity element, bool check_for_family_tree=true);
       bool hasGrandChildren(stk::mesh::Entity parent, bool check_for_family_tree=true);
       bool hasGreatGrandChildren(stk::mesh::Entity gp, bool check_for_family_tree=true);
