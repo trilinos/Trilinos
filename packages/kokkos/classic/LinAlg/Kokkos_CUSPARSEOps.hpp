@@ -1454,7 +1454,255 @@ namespace Kokkos {
   }
 
 
+  // Partial specialization for Scalar=void.  It omits instance
+  // methods relating to Scalar, and methods relating to allocating a
+  // matrix.
+  template <class Node>
+  class CUSPARSEOps<void, Node> : public Teuchos::Describable {
+  public:
+    //@{
+    //! @name Typedefs and structs
 
+    //! The type of the individual entries of the sparse matrix.
+    typedef void    scalar_type;
+    //! The type of the (local) indices describing the structure of the sparse matrix.
+    typedef int     ordinal_type;
+    //! The Kokkos Node type.
+    typedef Node    node_type;
+    //! The type of this object, the sparse operator object
+    typedef CUSPARSEOps<void, Node> sparse_ops_type;
+
+    /// \brief Typedef for local graph class.
+    ///
+    /// CUSPARSEOps does not support arbitrary Ordinal types.  This is
+    /// why this class' other_type typedef has a default definition
+    /// which results in a compile error if used.  The graph<int,N>
+    /// specialization (see below) is defined.
+    template <class O, class N>
+    struct graph {
+      // This will raise a compile error if the given ordinal type O is not supported.
+      typedef typename O::this_ordinal_not_supported_by_cusparse graph_type;
+    };
+
+    //! Partial specialization of graph<O,N> for O=int.
+    template <class N>
+    struct graph<int,N> {
+      typedef CUSPARSECrsGraph<N> graph_type;
+    };
+
+    /// \brief Typedef for local matrix class.
+    ///
+    /// CUSPARSEOps does not support arbitrary Ordinal types.  This is
+    /// why this class' other_type typedef has a default definition
+    /// which results in a compile error if used.  The matrix<S,int,N>
+    /// specialization (see below) is defined.
+    template <class S, class O, class N>
+    struct matrix {
+      // This will raise a compile error if the given ordinal type O is not supported.
+      typedef typename O::this_ordinal_not_supported_by_cusparse matrix_type;
+    };
+
+    //! Partial specialization of matrix<S,O,N> for O=int.
+    template <class S, class N>
+    struct matrix<S,int,N> {
+      typedef CUSPARSECrsMatrix<S,N> matrix_type;
+    };
+
+    /// \brief Sparse operations type for a different scalar type.
+    ///
+    /// The bind_scalar struct defines the type responsible for sparse
+    /// operations for a scalar type S2, which may be different from
+    /// \c Scalar.
+    ///
+    /// Use by Tpetra CrsMatrix to bind a potentially "void" scalar
+    /// type to the appropriate scalar.
+    ///
+    /// This always specifies a specialization of \c
+    /// CUSPARSEOps, regardless of the scalar type S2.
+    ///
+    /// \tparam S2 A scalar type possibly different from \c Scalar.
+    template <class S2>
+    struct bind_scalar {
+      typedef CUSPARSEOps<S2,Node> other_type;
+    };
+
+    //@}
+    //! @name Constructors/Destructor
+    //@{
+
+    //! Constructor accepting and retaining a node object.
+    CUSPARSEOps(const RCP<Node> &node) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "CUSPARSEOps: Not allowed to instantiate this class for Scalar=void.");
+    }
+
+    //! Destructor
+    ~CUSPARSEOps() {}
+
+    //@}
+    //! \name Implementation of Teuchos::Describable
+    //@{
+
+    //! One-line description of this instance.
+    std::string description () const {
+      using Teuchos::TypeNameTraits;
+      std::ostringstream os;
+      os << "Kokkos::CUSPARSEOps<"
+         << "Scalar=void"
+         << ", Node=" << TypeNameTraits<Node>::name()
+         << ">";
+      return os.str();
+    }
+
+    //@}
+    //! @name Accessor routines.
+    //@{
+
+    //! The Kokkos Node with which this object was instantiated.
+    RCP<Node> getNode() const {
+      // You're not allowed to instantiate CUSPARSEOps with
+      // Scalar=void.  We return null just so that this method has a
+      // sensible return value.
+      return Teuchos::null;
+    }
+
+    //@}
+    //! @name Initialization of graph and matrix
+    //@{
+
+    //! \brief Allocate and initialize the storage for the matrix values.
+    static ArrayRCP<size_t>
+    allocRowPtrs (const RCP<Node> &node,
+                  const ArrayView<const size_t> &rowPtrs)
+    {
+      // alloc page-locked ("pinned") memory on the host,
+      // specially allocated and specially deallocated
+      CUDANodeHostPinnedDeallocator<size_t> dealloc;
+      ArrayRCP<size_t> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
+      ptrs[0] = 0;
+      std::partial_sum( numEntriesPerRow.getRawPtr(),
+                        numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(),
+                        ptrs.begin()+1 );
+      return ptrs;
+    }
+
+    //! Allocate and initialize the storage for a sparse graph.
+    template <class T>
+    static ArrayRCP<T>
+    allocStorage (const RCP<Node> &node,
+                  const ArrayView<const size_t> &ptrs)
+    {
+      // alloc page-locked ("pinned") memory on the host,
+      // specially allocated and specially deallocated
+      const int totalNumEntries = *(rowPtrs.end()-1);
+      CUDANodeHostPinnedDeallocator<T> dealloc;
+      ArrayRCP<T> buf = dealloc.alloc(totalNumEntries);
+      std::fill(buf.begin(), buf.end(), Teuchos::ScalarTraits<T>::zero() );
+      return buf;
+    }
+
+    static void
+    finalizeGraph (Teuchos::EUplo uplo,
+                   Teuchos::EDiag diag,
+                   CUSPARSECrsGraph<Node> &graph,
+                   const RCP<ParameterList> &params)
+    {
+      const size_t CUDA_MAX_INT = 2147483647;
+      const std::string prefix("finalizeGraph()");
+      RCP<Node> node = graph.getNode();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        graph.isInitialized() == false,
+        std::runtime_error, prefix << ": graph has not yet been initialized.");
+      // diag: have to allocate and indicate
+      ArrayRCP<int>    devinds, devptrs;
+      ArrayRCP<const int>    hostinds = graph.getIndices();
+      ArrayRCP<const size_t> hostptrs = graph.getPointers();
+      const int numRows = graph.getNumRows();
+      // set description
+      graph.setMatDesc(uplo,diag);
+      // allocate and initialize data
+      if (diag == Teuchos::UNIT_DIAG) {
+        // CUSPARSE, unfortunately, always assumes that the diagonal
+        // entries are present in the storage.  Therefore, this flag
+        // only specifies whether they are considered or not; they are
+        // assumed to be present, and neglecting them will result in
+        // incorrect behavior (causing the adjacent entry to be
+        // neglected instead).  However, our API doesn't give us
+        // explicit diagonal entries if diag == Teuchos::UNIT_DIAG;
+        // this adaptor must therefore allocate space for them.
+        // Furthermore, because there is no support in our API or
+        // CUSPARSE to ignore them on multiply, we must set the values
+        // of the explicit diagonals to zero (making them effectively
+        // ignored on multiply)
+        const size_t numnz = hostinds.size() + numRows;
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          numnz > CUDA_MAX_INT, std::runtime_error,
+          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than "
+          << CUDA_MAX_INT << " non-zeros.");
+
+        devptrs = node->template allocBuffer<int>( numRows+1 );
+        if (numnz) devinds = node->template allocBuffer<int>( numnz );
+        ArrayRCP<int> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
+        ArrayRCP<int> h_devinds = node->viewBufferNonConst(WriteOnly, numnz,     devinds);
+        for (int r=0; r < numRows; ++r) {
+          h_devptrs[r] = (int)(hostptrs[r]+r);
+          if (uplo == Teuchos::LOWER_TRI) {
+            // copy the explicit entries, then set the last one manually
+            std::copy (hostinds.begin()+hostptrs[r],
+                       hostinds.begin()+hostptrs[r+1],
+                       h_devinds.begin()+h_devptrs[r]);
+            h_devinds[hostptrs[r+1]+r+1-1] = r;
+          }
+          else {
+            // set the first entry, then skip it in the copy
+            h_devinds[h_devptrs[r]] = r;
+            std::copy (hostinds.begin()+hostptrs[r],
+                       hostinds.begin()+hostptrs[r+1],
+                       h_devinds.begin()+h_devptrs[r]+1);
+          }
+        }
+        h_devptrs[numRows] = (int)(hostptrs[numRows]+numRows);
+        // copy back
+        h_devptrs = null;
+        h_devinds = null;
+      }
+      else {
+        // our format == their format; just allocate and copy
+        const size_t numnz = hostinds.size();
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          numnz > CUDA_MAX_INT, std::runtime_error,
+          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than "
+          << CUDA_MAX_INT << " non-zeros.");
+
+        devptrs = node->template allocBuffer<int>( numRows+1 );
+        ArrayRCP<int> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
+        std::copy( hostptrs.begin(), hostptrs.end(), h_devptrs.begin() );
+        h_devptrs = null;
+        if (numnz) {
+          devinds = node->template allocBuffer<int>( numnz );
+          node->copyToBuffer( numnz, hostinds(), devinds );
+        }
+      }
+      // set the data
+      graph.setDeviceData(devptrs,devinds);
+    }
+
+    //@}
+
+  private:
+    //! Copy constructor (protected and unimplemented)
+    CUSPARSEOps(const CUSPARSEOps& source);
+
+    //! The Kokkos Node instance given to this object's constructor.
+    RCP<Node> node_;
+
+    int numRows_, numCols_, numNZ_;
+    bool isInitialized_;
+
+    ArrayRCP<const int> rowPtrs_, colInds_;
+    RCP<cusparseMatDescr_t>          matdescr_;
+    RCP<cusparseSolveAnalysisInfo_t> aiNoTrans_, aiTrans_, aiConjTrans_;
+  };
 
 } // namespace Kokkos
 
