@@ -335,30 +335,37 @@ int main(int argc, char *argv[]) {
     printf("************************* Iteration Counts ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
       for (int j = 0; j < i;         j++) printf("    ");
-      for (int j = i; j < ArraySize; j++) printf("%3d ", iteration_counts[i][j]);
-      printf(";\n");
+      for (int j = i; j < ArraySize; j++) {
+        if (STS::isnaninf(setup_times[i][j])) {
+          if (i == j)
+            printf("   -");
+          break;
+        }
+        printf(" %3d", iteration_counts[i][j]);
+      }
+      printf("\n");
     }
 
     printf("************************* Iteration Times ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
       for (int j = 0; j < i;         j++) printf("        ");
       for (int j = i; j < ArraySize; j++) {
-        if (setup_times[i][j] == STS::nan())
+        if (STS::isnaninf(setup_times[i][j]))
           break;
-        printf("%7.2f ", iteration_times[i][j]);
+        printf(" %7.2f", iteration_times[i][j]);
       }
-      printf(";\n");
+      printf("\n");
     }
 
     printf("************************* Setup Times ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
       for (int j = 0; j < i;         j++) printf("        ");
       for (int j = i; j < ArraySize; j++) {
-        if (setup_times[i][j] == STS::nan())
+        if (STS::isnaninf(setup_times[i][j]))
           break;
-        printf("%7.2f ", setup_times[i][j]);
+        printf(" %7.2f", setup_times[i][j]);
       }
-      printf(";\n");
+      printf("\n");
     }
   }
 
