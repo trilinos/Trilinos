@@ -164,7 +164,7 @@
       <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
       <!-- <Parameter name="Aggregates"                          type="string"   value="UserAggregationFact"/> -->
-      <Parameter name="Nullspace"                           type="string"   value="myRestrictorFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="myTentativePFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
     </ParameterList>
 
