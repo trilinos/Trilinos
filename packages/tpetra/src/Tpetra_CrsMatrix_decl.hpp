@@ -58,45 +58,6 @@
 #include "Tpetra_Vector.hpp"
 
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-namespace Tpetra {
-  // Struct representing an i,j,v triplet.
-  //
-  // CrsMatrix uses this struct to communicate nonlocal sparse matrix
-  // entries in its globalAssemble() method.
-  template <class Ordinal, class Scalar>
-  struct CrsIJV {
-    CrsIJV();
-    CrsIJV(Ordinal row, Ordinal col, const Scalar &val);
-    Ordinal i,j;
-    Scalar  v;
-
-    /// \brief Comparison operator for Tpetra::CrsIJV objects.
-    ///
-    /// Comparison operator for sparse matrix entries stored as (i,j,v)
-    /// triples.  Defining this lets Tpetra::CrsMatrix use std::sort to
-    /// sort CrsIJV instances.
-    bool operator< (const CrsIJV<Ordinal, Scalar>& rhs) const;
-  };
-}
-
-namespace Teuchos {
-  // SerializationTraits specialization for CrsIJV, using
-  // DirectSerialization.  This lets Teuchos::Comm send and receive
-  // CrsIJV instances.
-  //
-  // NOTE (mfh 16 Dec 2012): This won't work if Scalar does not
-  // support direct serialization ("just taking the address").  The
-  // usual Scalar types (float, double, dd_real, qd_real, or
-  // std::complex<T> for any of these types) _do_ support direct
-  // serialization.
-  template <typename Ordinal, typename Scalar>
-  class SerializationTraits<int,Tpetra::CrsIJV<Ordinal,Scalar> >
-  : public DirectSerializationTraits<int,Tpetra::CrsIJV<Ordinal,Scalar> >
-  {};
-}
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 namespace Tpetra {
 
   //! \brief Sparse matrix that presents a compressed sparse row interface.

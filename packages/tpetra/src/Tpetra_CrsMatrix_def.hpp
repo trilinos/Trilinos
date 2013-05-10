@@ -57,44 +57,99 @@ namespace Tpetra {
   //
   namespace Details {
     /// \struct AbsMax
-    /// \brief Functor that implements Tpetra::ABSMAX CombineMode.
+    /// \brief Functor for the the ABSMAX CombineMode of Import and Export operations.
+    /// \tparam Scalar Same as the Scalar template parameter of CrsMatrix.
+    ///
+    /// \warning This is an implementation detail of CrsMatrix.  Users
+    ///   must not rely on this class.  It may disappear or its
+    ///   interface may change at any time.
     ///
     /// \tparam Scalar Same as the Scalar template parameter of CrsMatrix.
     template<class Scalar>
     struct AbsMax {
+      //! Return the maximum of the magnitudes (absolute values) of x and y.
       Scalar operator() (const Scalar& x, const Scalar& y) {
         typedef Teuchos::ScalarTraits<Scalar> STS;
-
         return std::max (STS::magnitude (x), STS::magnitude (y));
       }
     };
+
+    /// \struct CrsIJV
+    /// \brief Struct representing a sparse matrix entry as an i,j,v triplet.
+    /// \tparam Ordinal Same as the GlobalOrdinal template parameter of CrsMatrix.
+    /// \tparam Scalar Same as the Scalar template parameter of CrsMatrix.
+    ///
+    /// \warning This is an implementation detail of CrsMatrix.  Users
+    ///   must not rely on this class.  It may disappear or its
+    ///   interface may change at any time.
+    ///
+    /// CrsMatrix uses this struct to communicate nonlocal sparse
+    /// matrix entries in its globalAssemble() method.
+    template <class Ordinal, class Scalar>
+    struct CrsIJV {
+      /// \brief Default constructor
+      ///
+      /// This constructor sets the row and column indices to
+      /// <tt>Teuchos::OrdinalTraits<Ordinal>::invalid()</tt>, as a
+      /// clear sign that they were not initialized.
+      CrsIJV () :
+        i (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
+        j (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
+        v (Teuchos::ScalarTraits<Scalar>::zero ())
+      {}
+
+      /// \brief Standard constructor
+      ///
+      /// \param row [in] (Global) row index
+      /// \param col [in] (Global) column index
+      /// \param val [in] Value of matrix entry
+      CrsIJV (Ordinal row, Ordinal col, const Scalar &val) :
+        i (row), j (col), v (val)
+      {}
+
+      /// \brief Comparison operator
+      ///
+      /// Comparison operator for sparse matrix entries stored as
+      /// (i,j,v) triples.  Defining this lets Tpetra::CrsMatrix use
+      /// std::sort to sort CrsIJV instances.
+      bool operator< (const CrsIJV<Ordinal, Scalar>& rhs) const {
+        // FIXME (mfh 10 May 2013): This is what I found when I moved
+        // this operator out of the std namespace to be an instance
+        // method of CrsIJV.  It's a little odd to me that it doesn't
+        // include the column index in the sort order (for the usual
+        // lexicographic sort).  It doesn't really matter because
+        // CrsMatrix will sort rows by column index anyway, but it's
+        // still odd.
+        return this->i < rhs.i;
+      }
+
+      Ordinal i; //!< (Global) row index
+      Ordinal j; //!< (Global) column index
+      Scalar  v; //!< Value of matrix entry
+    };
+
   } // namespace Details
+} // namespace Tpetra
 
-  template <class Ordinal, class Scalar>
-  CrsIJV<Ordinal,Scalar>::CrsIJV() :
-    i (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
-    j (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
-    v (Teuchos::ScalarTraits<Scalar>::zero ())
-  {}
+namespace Teuchos {
+  // SerializationTraits specialization for Tpetra::Details::CrsIJV.
+  //
+  // Tpetra::Details::CrsIJV can be serialized using
+  // DirectSerialization.  This lets Comm send and receive instances
+  // of this class.
+  //
+  // NOTE (mfh 16 Dec 2012): This won't work if Scalar does not
+  // support direct serialization ("just taking the address").  The
+  // usual Scalar types (float, double, dd_real, qd_real, or
+  // std::complex<T> for any of these types) _do_ support direct
+  // serialization.
+  template <typename Ordinal, typename Scalar>
+  class SerializationTraits<int, Tpetra::Details::CrsIJV<Ordinal, Scalar> >
+    : public DirectSerializationTraits<int, Tpetra::Details::CrsIJV<Ordinal, Scalar> >
+  {};
+} // namespace Teuchos
 
-  template <class Ordinal, class Scalar>
-  CrsIJV<Ordinal,Scalar>::
-  CrsIJV (Ordinal row, Ordinal col, const Scalar &val) :
-    i (row), j (col), v (val)
-  {}
-
-  template <class Ordinal, class Scalar>
-  bool CrsIJV<Ordinal, Scalar>::
-  operator< (const CrsIJV<Ordinal,Scalar>& rhs) const {
-    // FIXME (mfh 10 May 2013): This is what I found when I moved this
-    // operator out of the std namespace to be an instance method of
-    // CrsIJV.  It's a little odd to me that it doesn't include the
-    // column index in the sort order (for the usual lexicographic
-    // sort).  It doesn't really matter because CrsMatrix will sort
-    // rows by column index anyway, but it's still odd.
-    return this->i < rhs.i;
-  }
-
+namespace Tpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
@@ -2013,7 +2068,7 @@ namespace Tpetra {
     // we know how many we're sending to already
     // form a contiguous list of all data to be sent
     // track the number of entries for each ID
-    Array<CrsIJV<GlobalOrdinal,Scalar> > IJVSendBuffer;
+    Array<Details::CrsIJV<GlobalOrdinal,Scalar> > IJVSendBuffer;
     Array<size_t> sendSizes(sendIDs.size(), 0);
     size_t numSends = 0;
     for (typename Array<pair<int,GlobalOrdinal> >::const_iterator IdAndRow = IdsAndRows.begin();
@@ -2029,7 +2084,7 @@ namespace Tpetra {
       // copy data for row into contiguous storage
       for (NLRITER jv = nonlocals_[row].begin(); jv != nonlocals_[row].end(); ++jv)
       {
-        IJVSendBuffer.push_back( CrsIJV<GlobalOrdinal,Scalar>(row,jv->first,jv->second) );
+        IJVSendBuffer.push_back( Details::CrsIJV<GlobalOrdinal,Scalar>(row,jv->first,jv->second) );
         sendSizes[numSends]++;
       }
     }
@@ -2075,7 +2130,7 @@ namespace Tpetra {
     // NOW SEND/RECEIVE ALL ROW DATA
     ////////////////////////////////////////////////////////////////////////////////////
     // from the size info, build the ArrayViews into IJVSendBuffer
-    Array<ArrayView<CrsIJV<GlobalOrdinal,Scalar> > > sendBuffers(numSends,null);
+    Array<ArrayView<Details::CrsIJV<GlobalOrdinal,Scalar> > > sendBuffers(numSends,null);
     {
       size_t cur = 0;
       for (size_t s=0; s<numSends; ++s) {
@@ -2087,15 +2142,15 @@ namespace Tpetra {
     for (size_t s=0; s < numSends ; ++s)
     {
       // we'll fake the memory management, because all communication will be local to this method and the scope of our data
-      ArrayRCP<CrsIJV<GlobalOrdinal,Scalar> > tmparcp = arcp(sendBuffers[s].getRawPtr(),0,sendBuffers[s].size(),false);
-      sendRequests.push_back( Teuchos::isend<int,CrsIJV<GlobalOrdinal,Scalar> >(*getComm(),tmparcp,sendIDs[s]) );
+      ArrayRCP<Details::CrsIJV<GlobalOrdinal,Scalar> > tmparcp = arcp(sendBuffers[s].getRawPtr(),0,sendBuffers[s].size(),false);
+      sendRequests.push_back( Teuchos::isend<int,Details::CrsIJV<GlobalOrdinal,Scalar> >(*getComm(),tmparcp,sendIDs[s]) );
     }
     // calculate amount of storage needed for receives
     // setup pointers for the receives as well
     size_t totalRecvSize = std::accumulate(recvSizes.begin(),recvSizes.end(),0);
-    Array<CrsIJV<GlobalOrdinal,Scalar> > IJVRecvBuffer(totalRecvSize);
+    Array<Details::CrsIJV<GlobalOrdinal,Scalar> > IJVRecvBuffer(totalRecvSize);
     // from the size info, build the ArrayViews into IJVRecvBuffer
-    Array<ArrayView<CrsIJV<GlobalOrdinal,Scalar> > > recvBuffers(numRecvs,null);
+    Array<ArrayView<Details::CrsIJV<GlobalOrdinal,Scalar> > > recvBuffers(numRecvs,null);
     {
       size_t cur = 0;
       for (size_t r=0; r<numRecvs; ++r) {
@@ -2107,7 +2162,7 @@ namespace Tpetra {
     for (size_t r=0; r < numRecvs ; ++r)
     {
       // we'll fake the memory management, because all communication will be local to this method and the scope of our data
-      ArrayRCP<CrsIJV<GlobalOrdinal,Scalar> > tmparcp = arcp(recvBuffers[r].getRawPtr(),0,recvBuffers[r].size(),false);
+      ArrayRCP<Details::CrsIJV<GlobalOrdinal,Scalar> > tmparcp = arcp(recvBuffers[r].getRawPtr(),0,recvBuffers[r].size(),false);
       recvRequests.push_back( Teuchos::ireceive(*getComm(),tmparcp,recvIDs[r]) );
     }
     // perform waits
@@ -2131,12 +2186,12 @@ namespace Tpetra {
     //       it also requires restoring the data, which may make it not worth the trouble.
 
     if (this->isStaticGraph ()) {
-      for (typename Array<CrsIJV<GlobalOrdinal,Scalar> >::const_iterator ijv = IJVRecvBuffer.begin(); ijv != IJVRecvBuffer.end(); ++ijv) {
+      for (typename Array<Details::CrsIJV<GlobalOrdinal,Scalar> >::const_iterator ijv = IJVRecvBuffer.begin(); ijv != IJVRecvBuffer.end(); ++ijv) {
         sumIntoGlobalValues (ijv->i, tuple (ijv->j), tuple (ijv->v));
       }
     }
     else { // Dynamic graph; can use insertGlobalValues ()
-      for (typename Array<CrsIJV<GlobalOrdinal,Scalar> >::const_iterator ijv = IJVRecvBuffer.begin(); ijv != IJVRecvBuffer.end(); ++ijv) {
+      for (typename Array<Details::CrsIJV<GlobalOrdinal,Scalar> >::const_iterator ijv = IJVRecvBuffer.begin(); ijv != IJVRecvBuffer.end(); ++ijv) {
         try {
           insertGlobalValues(ijv->i, tuple(ijv->j), tuple(ijv->v));
         }
