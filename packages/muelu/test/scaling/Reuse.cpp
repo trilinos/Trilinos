@@ -85,6 +85,8 @@ int main(int argc, char *argv[]) {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
+  typedef Teuchos::ScalarTraits<SC> STS;
+
   //
   // MPI initialization using Teuchos
   //
@@ -149,7 +151,7 @@ int main(int argc, char *argv[]) {
 
   ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
 
-  SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+  SC zero = STS::zero(), one = STS::one();
   for (int i = first_matrix; i <= last_matrix; i++) {
     cout << "==================================================================" << std::endl;
 
@@ -320,7 +322,7 @@ int main(int argc, char *argv[]) {
 
     } //end j
     for (; j <= last_matrix; j++)
-      setup_times[i-first_matrix][j-first_matrix] = Teuchos::ScalarTraits<SC>::nan();
+      setup_times[i-first_matrix][j-first_matrix] = STS::nan();
   } // end i
 
   globalTimeMonitor = Teuchos::null;
@@ -332,7 +334,7 @@ int main(int argc, char *argv[]) {
   if (!mypid) {
     printf("************************* Iteration Counts ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
-      for (int j = 0; j < i;         j++) printf("     ");
+      for (int j = 0; j < i;         j++) printf("    ");
       for (int j = i; j < ArraySize; j++) printf("%3d ", iteration_counts[i][j]);
       printf(";\n");
     }
@@ -340,14 +342,22 @@ int main(int argc, char *argv[]) {
     printf("************************* Iteration Times ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
       for (int j = 0; j < i;         j++) printf("        ");
-      for (int j = i; j < ArraySize; j++) printf("%7.2f ", iteration_times[i][j]);
+      for (int j = i; j < ArraySize; j++) {
+        if (setup_times[i][j] == STS::nan())
+          break;
+        printf("%7.2f ", iteration_times[i][j]);
+      }
       printf(";\n");
     }
 
     printf("************************* Setup Times ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
       for (int j = 0; j < i;         j++) printf("        ");
-      for (int j = i; j < ArraySize; j++) printf("%7.2f ", setup_times[i][j]);
+      for (int j = i; j < ArraySize; j++) {
+        if (setup_times[i][j] == STS::nan())
+          break;
+        printf("%7.2f ", setup_times[i][j]);
+      }
       printf(";\n");
     }
   }
