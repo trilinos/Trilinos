@@ -51,11 +51,17 @@
 #endif
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-//! Comparison operator for Tpetra::CrsIJV objects, used by Tpetra::CrsMatrix
+namespace std {
+
 template <class Ordinal, class Scalar>
-bool std::operator<(const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1, const Tpetra::CrsIJV<Ordinal,Scalar> &ijv2) {
+bool
+operator< (const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1,
+           const Tpetra::CrsIJV<Ordinal,Scalar> &ijv2)
+{
   return ijv1.i < ijv2.i;
 }
+
+} // namespace std
 #endif
 
 namespace Tpetra {

@@ -90,10 +90,15 @@ namespace Teuchos {
 }
 
 namespace std {
-  // Comparison operator for i,j,v sparse matrix entries.  Defining
-  // this lets CrsMatrix use std::sort to sort CrsIJV instances.
+  /// \brief Comparison operator for Tpetra::CrsIJV objects.
+  ///
+  /// Comparison operator for sparse matrix entries stored as (i,j,v)
+  /// triples.  Defining this lets Tpetra::CrsMatrix use std::sort to
+  /// sort CrsIJV instances.
   template <class Ordinal, class Scalar>
-  bool operator<(const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1, const Tpetra::CrsIJV<Ordinal,Scalar> &ijv2);
+  bool
+  operator< (const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1,
+             const Tpetra::CrsIJV<Ordinal,Scalar> &ijv2);
 }
 #endif
 
