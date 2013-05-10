@@ -371,7 +371,7 @@ private:
   Bucket * last_bucket_in_partition_impl() const;
 
   template <typename T>
-  void modify_connectivity(T& callable, Bucket* other_bucket);
+  void modify_connectivity(T& callable, Bucket* other_bucket = NULL);
 
 };
 
@@ -578,7 +578,7 @@ ConnectivityType Bucket::connectivity_type(EntityRank rank) const
 
 template <typename T>
 inline
-void Bucket::modify_connectivity(T& callable, Bucket* other_bucket = NULL)
+void Bucket::modify_connectivity(T& callable, Bucket* other_bucket)
 {
   switch(m_node_kind) {
   case FIXED_CONNECTIVITY:   callable(*this, m_fixed_node_connectivity,   other_bucket == NULL ? NULL : &other_bucket->m_fixed_node_connectivity);   break;
