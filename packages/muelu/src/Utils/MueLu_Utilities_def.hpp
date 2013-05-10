@@ -283,9 +283,9 @@ namespace MueLu {
 
     // Preconditions
     if (!A.isFillComplete())
-      throw(Exceptions::RuntimeError("A is not fill-completed"));
+      throw Exceptions::RuntimeError("A is not fill-completed") ;
     if (!B.isFillComplete())
-      throw(Exceptions::RuntimeError("B is not fill-completed"));
+      throw Exceptions::RuntimeError("B is not fill-completed") ;
 
     // Optimization using ML Multiply when available
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_ML)
@@ -862,7 +862,7 @@ namespace MueLu {
 
         return A;
 #else
-        throwExceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+        throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
 #endif
       } else {
         throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");

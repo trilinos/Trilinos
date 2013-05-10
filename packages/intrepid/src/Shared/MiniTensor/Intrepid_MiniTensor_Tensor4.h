@@ -300,7 +300,7 @@ identity_3(Index const N);
 /// 4th-order tensor vector dot product
 /// \param A 4th-order tensor
 /// \param u vector
-/// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijk}=A_{ijkl}u_{l} \f$
+/// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijk}=A_{ijkp} u_{p} \f$
 ///
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
@@ -310,7 +310,7 @@ dot(Tensor4<T> const & A, Vector<S> const & u);
 /// vector 4th-order tensor dot product
 /// \param A 4th-order tensor
 /// \param u vector
-/// \return 3rd-order tensor \f$ B = u \cdot A := B_{jkl}=u_{i} A_{ijkl} \f$
+/// \return 3rd-order tensor \f$ u dot A \f$ as \f$ B_{ijk}=u_{p} A_{pijk} \f$
 ///
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
@@ -320,7 +320,7 @@ dot(Vector<S> const & u, Tensor4<T> const & A);
 /// 4th-order tensor vector dot2 product
 /// \param A 4th-order tensor
 /// \param u vector
-/// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijl}=A_{ijkl}u_{k} \f$
+/// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijk} = A_{ijpk} u_{p} \f$
 ///
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
@@ -330,7 +330,7 @@ dot2(Tensor4<T> const & A, Vector<S> const & u);
 /// vector 4th-order tensor dot2 product
 /// \param A 4th-order tensor
 /// \param u vector
-/// \return 3rd-order tensor \f$ B = u \cdot A := B_{ikl}=u_{j}A_{ijkl} \f$
+/// \return 3rd-order tensor \f$ u dot2 A \f$ as \f$ B_{ijk}=u_{p} A_{ipjk} \f$
 ///
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
@@ -340,7 +340,7 @@ dot2(Vector<S> const & u, Tensor4<T> const & A);
 /// 4th-order tensor 2nd-order tensor double dot product
 /// \param A 4th-order tensor
 /// \param B 2nd-order tensor
-/// \return 2nd-order tensor \f$ C = A : B := C_{ij}=A_{ijkl}B_{kl} \f$
+/// \return 2nd-order tensor \f$ C = A : B := C_{ij} = A_{ijpq} B_{pq} \f$
 ///
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>
@@ -350,7 +350,7 @@ dotdot(Tensor4<T> const & A, Tensor<S> const & B);
 /// 2nd-order tensor 4th-order tensor double dot product
 /// \param B 2nd-order tensor
 /// \param A 4th-order tensor
-/// \return 2nd-order tensor \f$ C = B : A := C_{kl}=A_{ijkl}B_{ij} \f$
+/// \return 2nd-order tensor \f$ C = B : A := C_{ij} = B_{pq} A_{pqij} \f$
 ///
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>
@@ -360,7 +360,7 @@ dotdot(Tensor<S> const & B, Tensor4<T> const & A);
 /// 4th-order tensor 4th-order tensor double dot product
 /// \param A 4th-order tensor
 /// \param B 4th-order tensor
-/// \return \f$ C = A : B := C_{ijkl} = A_{ijmn} B{mnkl} \f$
+/// \return 2nd-order tensor \f$ C = A : B := C_{ij} = A_{ijpq} B_{pq} \f$
 ///
 template<typename S, typename T>
 Tensor4<typename Promote<S, T>::type>

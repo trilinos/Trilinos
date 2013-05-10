@@ -42,7 +42,6 @@ namespace MueLu {
   void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel,   "A");
     Input(fineLevel,   "Nullspace");
-    // FIXME: we should not request for P or Constraint if we reuse stuff
     Input(coarseLevel, "P");
     Input(coarseLevel, "Constraint");
   }

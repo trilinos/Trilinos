@@ -11,6 +11,7 @@ int main(int argc, char* argv[]) {
     ifstream ifs(argv[1]);
     ofstream ofs(argv[2], std::ios::binary);
 
+    std::cout << "Reading matrix \"" << argv[1] << "\"" << std::endl;
     // Skip %% MatrixMarket header
     char line[256];
     ifs.getline(line, 256);
@@ -48,6 +49,7 @@ int main(int argc, char* argv[]) {
         ofs.write(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
         for (int k = 0; k < rownnz; k++) ofs.write(reinterpret_cast<char*>(&inds[0] + k), sizeof(inds[k]));
         for (int k = 0; k < rownnz; k++) ofs.write(reinterpret_cast<char*>(&vals[0] + k), sizeof(vals[k]));
+
     }
 
     return 0;

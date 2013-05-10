@@ -198,6 +198,8 @@ private:
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 
+  bool preserveDiagonal_;
+
   ScatterDirichletResidual_Epetra();
 };
 

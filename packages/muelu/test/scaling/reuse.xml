@@ -54,6 +54,12 @@
       <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
     </ParameterList>
 
+    <ParameterList name="UserAggregationFact">
+      <Parameter name="factory"                             type="string" value="UserAggregationFactory"/>
+      <Parameter name="filePrefix"                          type="string" value="bdata/agg"/>
+      <Parameter name="fileExt"                             type="string" value="txt"/>
+    </ParameterList>
+
     <ParameterList name="myAggExportFact">
       <Parameter name="factory"                             type="string" value="AggregationExportFactory"/>
       <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
@@ -156,6 +162,7 @@
       <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
+      <!-- <Parameter name="Aggregates"                          type="string"   value="UserAggregationFact"/> -->
       <Parameter name="Nullspace"                           type="string"   value="myRestrictorFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
     </ParameterList>

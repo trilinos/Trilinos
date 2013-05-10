@@ -43,31 +43,70 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_USERAGGREGATIONFACTORY_DECL_HPP_
+#define MUELU_USERAGGREGATIONFACTORY_DECL_HPP_
 
 
-#include "MueLu_ExplicitInstantiation.hpp"
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
 
-#include "MueLu_FilteredAFactory_def.hpp"
+#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_UserAggregationFactory_fwd.hpp"
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-template class MueLu::FilteredAFactory<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-#endif
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_Exceptions.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
-# ifdef HAVE_TEUCHOS_LONG_LONG_INT
-template class MueLu::FilteredAFactory<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-# else
-# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
-# endif
-#endif
+namespace MueLu {
 
-#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
-# ifdef HAVE_TEUCHOS_COMPLEX
-#include <complex>
-template class MueLu::FilteredAFactory<std::complex<double>, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-# else
-# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
-# endif
-#endif
+template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+class UserAggregationFactory : public SingleLevelFactoryBase {
+#undef MUELU_USERAGGREGATIONFACTORY_SHORT
+#include "MueLu_UseShortNamesOrdinal.hpp"
 
+public:
+  //! @name Constructors/Destructors.
+  //@{
 
+  //! Constructor.
+  UserAggregationFactory() { };
+
+  //! Destructor.
+  virtual ~UserAggregationFactory() { }
+
+  RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
+  //@}
+
+  //! @name Set/get methods.
+  //@{
+
+  // Options shared by all aggregation algorithms
+
+  //! Input
+  //@{
+
+  void DeclareInput(Level &currentLevel) const;
+
+  //@}
+
+  //! @name Build methods.
+  //@{
+
+  /*! @brief Build aggregates. */
+  void Build(Level &currentLevel) const;
+
+  //@}
+
+private:
+}; // class UserAggregationFactory
+
+}
+
+#define MUELU_USERAGGREGATIONFACTORY_SHORT
+#endif /* MUELU_USERAGGREGATIONFACTORY_DECL_HPP_ */

@@ -98,7 +98,7 @@ namespace MueLu {
       // Set "Keeps" from params
       const Teuchos::ParameterList& pL = GetParameterList();
       if (pL.isParameter("Keep AP Pattern")  && pL.get<bool>("Keep AP Pattern"))
-        coarseLevel.Keep("AP Pattern", this);
+        coarseLevel.Keep("AP Pattern",  this);
       if (pL.isParameter("Keep RAP Pattern") && pL.get<bool>("Keep RAP Pattern"))
         coarseLevel.Keep("RAP Pattern", this);
 
@@ -159,7 +159,7 @@ namespace MueLu {
       params->set("printLoadBalancingInfo", true);
       GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*Ac, "Ac", params);
 
-      Set(coarseLevel, "A", Ac);
+      Set(coarseLevel, "A",           Ac);
       Set(coarseLevel, "RAP Pattern", Ac);
     }
 

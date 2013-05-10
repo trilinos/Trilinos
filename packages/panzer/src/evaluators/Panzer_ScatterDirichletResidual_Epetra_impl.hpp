@@ -226,6 +226,7 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")
+   , preserveDiagonal_(false)
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -258,6 +259,9 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 
   if (p.isType<std::string>("Global Data Key"))
      globalDataKey_ = p.get<std::string>("Global Data Key");
+
+  if (p.isType<bool>("Preserve Diagonal"))
+     preserveDiagonal_ = p.get<bool>("Preserve Diagonal");
 
   this->setName(scatterName+" Scatter Residual (Jacobian)");
 }
@@ -375,8 +379,14 @@ evaluateFields(typename Traits::EvalData workset)
 
                Jac->ExtractMyRowView(lid,numEntries,rowValues,rowIndices);
 
-               for(int i=0;i<numEntries;i++)
-                  rowValues[i] = 0.0;
+               for(int i=0;i<numEntries;i++) {
+                  if(preserveDiagonal_) {
+                    if(lid!=rowIndices[i])
+                      rowValues[i] = 0.0;
+                  }
+                  else
+                    rowValues[i] = 0.0;
+               }
             }
  
             int basisId = basisIdMap[basis];
@@ -391,13 +401,15 @@ evaluateFields(typename Traits::EvalData workset)
             // loop over the sensitivity indices: all DOFs on a cell
             std::vector<double> jacRow(scatterField.size(),0.0);
     
-            for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex) {
-               jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
-            }
-            TEUCHOS_ASSERT(jacRow.size()==GIDs.size());
+            if(!preserveDiagonal_) {
+              // this is the default case
+              for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
+                 jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
+              TEUCHOS_ASSERT(jacRow.size()==GIDs.size());
     
-            int err = Jac->ReplaceGlobalValues(gid, scatterField.size(), &jacRow[0],&GIDs[0]);
-            TEUCHOS_ASSERT(err==0); 
+              int err = Jac->ReplaceGlobalValues(gid, scatterField.size(), &jacRow[0],&GIDs[0]);
+              TEUCHOS_ASSERT(err==0); 
+            }
          }
       }
    }

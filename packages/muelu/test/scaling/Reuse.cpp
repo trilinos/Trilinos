@@ -77,9 +77,6 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
 
-using std::cout;
-using std::endl;
-
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp;
@@ -87,6 +84,8 @@ int main(int argc, char *argv[]) {
   using Teuchos::TimeMonitor;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
+
+  typedef Teuchos::ScalarTraits<SC> STS;
 
   //
   // MPI initialization using Teuchos
@@ -96,7 +95,9 @@ int main(int argc, char *argv[]) {
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int mypid = comm->getRank();
 
-  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(cout));
+  Teuchos::FancyOStream& cout = *fancy;
+  cout.setOutputToRootOnly(0);
 
   //
   // Parameters
@@ -129,9 +130,6 @@ int main(int argc, char *argv[]) {
   else return EXIT_FAILURE;
 
 
-  RCP<Matrix> Aprecond, Amatvec;
-  RCP<MultiVector> rhs;
-
   RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time"))), tm;
   RCP<Time> timer;
 
@@ -153,9 +151,9 @@ int main(int argc, char *argv[]) {
 
   ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
 
-  SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+  SC zero = STS::zero(), one = STS::one();
   for (int i = first_matrix; i <= last_matrix; i++) {
-    if (!mypid) std::cout << "==================================================================" << std::endl;
+    cout << "==================================================================" << std::endl;
 
     char matrixFileName[80];
     char rhsFileName[80];
@@ -164,12 +162,13 @@ int main(int argc, char *argv[]) {
     sprintf(matrixFileName,"%s%d.mm", matrixPrefix.c_str(), i);
 
     // Load the matrix
-    if (!mypid) std::cout << "[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
+    RCP<Matrix> Aprecond;
+    cout << "[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
     try {
       Aprecond = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
-      if (!mypid) std::cout << "done" << std::endl;
+      cout << "done" << std::endl;
     } catch (...) {
-      if (!mypid) std::cout << "failed" << std::endl;
+      cout << "failed" << std::endl;
       return 1;
     }
     Aprecond->SetFixedBlockSize(numPDEs);
@@ -185,7 +184,7 @@ int main(int argc, char *argv[]) {
       data0[k+0] = data1[k+1] = one;
 
     // Build the preconditioner
-    if (!mypid) std::cout << "[" << i << "] Building preconditioner \"" << matrixFileName << "\" ..." << std::endl;
+    cout << "[" << i << "] Building preconditioner \"" << matrixFileName << "\" ..." << std::endl;
     sprintf(timerName, "Reuse: Preconditioner Setup i=%d", i);
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
 
@@ -195,26 +194,33 @@ int main(int argc, char *argv[]) {
     H->GetLevel(0)->Set("Nullspace", nullspace);
     H->IsPreconditioner(true);
 
+    sprintf(timerName, "Reuse: Setup i=%d j=%d", i, i);
+    timer = TimeMonitor::getNewTimer(timerName);
+    timer->start();
     mueLuFactory.SetupHierarchy(*H);
+    setup_times[i-first_matrix][i-first_matrix] = timer->stop();
+    timer = Teuchos::null;
 
     Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
     tm = Teuchos::null;
 
     // Loop over all future matrices
-    for (int j = i; j <= last_matrix; j++) {
-      if (!mypid) std::cout << "------------------------------------------------------------------" << std::endl;
+    int j = i;
+    for (; j <= last_matrix; j++) {
+      cout << "------------------------------------------------------------------" << std::endl;
 
       sprintf(matrixFileName, "%s%d.mm", matrixPrefix.c_str(), j);
       sprintf(rhsFileName,    "%s%d.mm", rhsPrefix.c_str(),    j);
 
+      RCP<Matrix> Amatvec;
       if (j != i) {
         // Load the matrix
-        if (!mypid) std::cout << "[" << j << "]<-[" << i << "] Loading matrix \"" << matrixFileName << "\"...";
+        cout << "[" << j << "]<-[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
         try {
           Amatvec = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
-          if (!mypid) std::cout << "done" << std::endl;
+          cout << "done" << std::endl;
         } catch (...) {
-          if (!mypid) std::cout << "failed" << std::endl;
+          cout << "failed" << std::endl;
           return 1;
         }
 
@@ -233,7 +239,7 @@ int main(int argc, char *argv[]) {
       timer->start();
       if (do_reuse == 0 && j != i) {
         // No reuse: Do a full recompute
-        if (!mypid) std::cout << "[" << j << "]<-[" << i << "] Building preconditioner \"" << matrixFileName << "\" ..." << std::endl;
+        cout << "[" << j << "]<-[" << i << "] Building preconditioner \"" << matrixFileName << "\" ..." << std::endl;
 
         H = mueLuFactory.CreateHierarchy();
 
@@ -247,7 +253,7 @@ int main(int argc, char *argv[]) {
       } else if (do_reuse == 2 && j != i) {
         // "Fast" reuse
         // NTS: This isn't quite a real recompute yet.
-        if (!mypid) std::cout << "[" << j << "]<-[" << i << "] Updating preconditioner \"" << matrixFileName << "\" ..." << std::endl;
+        cout << "[" << j << "]<-[" << i << "] Updating preconditioner \"" << matrixFileName << "\" ..." << std::endl;
 
         H->GetLevel(0)->Set("A", Amatvec);
         mueLuFactory.SetupHierarchy(*H);
@@ -258,9 +264,8 @@ int main(int argc, char *argv[]) {
       tm = Teuchos::null;
 
       // Load the RHS
-      if (!mypid)
-        std::cout << "[" << j << "] Loading rhs " << rhsFileName << std::endl;
-      rhs = Utils::Read(string(rhsFileName), Amatvec->getRowMap());
+      cout << "[" << j << "] Loading rhs " << rhsFileName << std::endl;
+      RCP<MultiVector> rhs = Utils::Read(string(rhsFileName), Amatvec->getRowMap());
 
       // Create an LHS
       RCP<Vector> X = VectorFactory::Build(Amatvec->getRowMap());
@@ -293,52 +298,74 @@ int main(int argc, char *argv[]) {
       timer = TimeMonitor::getNewTimer(timerName);
       timer->start();
       Belos::ReturnType ret = Belos::Unconverged;
-      ret = solver->solve();
+      try {
+        ret = solver->solve();
+
+      } catch(...) {
+        cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+      }
       double my_time = timer->stop();
       timer = Teuchos::null;
 
       // Get the number of iterations for this solve.
-      if (comm->getRank() == 0)
-        std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-      iteration_counts[i-first_matrix][j-first_matrix] = solver->getNumIters();
-      iteration_times [i-first_matrix][j-first_matrix] = my_time;
 
       // Check convergence
       if (ret != Belos::Converged) {
-        if (!mypid) std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+        cout << "ERROR  :  Belos did not converge! " << std::endl;
+        break;
       } else {
-        if (!mypid) std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+        cout << "SUCCESS:  Belos converged!" << std::endl;
+        cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+        iteration_counts[i-first_matrix][j-first_matrix] = solver->getNumIters();
+        iteration_times [i-first_matrix][j-first_matrix] = my_time;
       }
 
     } //end j
+    for (; j <= last_matrix; j++)
+      setup_times[i-first_matrix][j-first_matrix] = STS::nan();
   } // end i
 
   globalTimeMonitor = Teuchos::null;
 
   if (printTimings)
-    // TimeMonitor::summarize(comm.ptr(), std::cout, false, true, false, Teuchos::Union);
-    TimeMonitor::summarize(comm.ptr(), std::cout);
+    // TimeMonitor::summarize(comm.ptr(), cout, false, true, false, Teuchos::Union);
+    TimeMonitor::summarize(comm.ptr(), cout);
 
-  if(!mypid) {
+  if (!mypid) {
     printf("************************* Iteration Counts ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
-      for (int j = 0; j < ArraySize; j++)
-        printf("%3d ", iteration_counts[i][j]);
-      printf(";\n");
+      for (int j = 0; j < i;         j++) printf("    ");
+      for (int j = i; j < ArraySize; j++) {
+        if (STS::isnaninf(setup_times[i][j])) {
+          if (i == j)
+            printf("   -");
+          break;
+        }
+        printf(" %3d", iteration_counts[i][j]);
+      }
+      printf("\n");
     }
 
     printf("************************* Iteration Times ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
-      for (int j = 0; j < ArraySize; j++)
-        printf("%10.2f ", iteration_times[i][j]);
-      printf(";\n");
+      for (int j = 0; j < i;         j++) printf("        ");
+      for (int j = i; j < ArraySize; j++) {
+        if (STS::isnaninf(setup_times[i][j]))
+          break;
+        printf(" %7.2f", iteration_times[i][j]);
+      }
+      printf("\n");
     }
 
     printf("************************* Setup Times ***********************\n");
     for (int i = 0; i < ArraySize; i++) {
-      for (int j = 0; j < ArraySize; j++)
-        printf("%10.2f ", setup_times[i][j]);
-      printf(";\n");
+      for (int j = 0; j < i;         j++) printf("        ");
+      for (int j = i; j < ArraySize; j++) {
+        if (STS::isnaninf(setup_times[i][j]))
+          break;
+        printf(" %7.2f", setup_times[i][j]);
+      }
+      printf("\n");
     }
   }
 

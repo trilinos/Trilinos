@@ -74,6 +74,10 @@ typedef MueLu::UncoupledAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,Loc
 typedef MueLu::UncoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UncoupledAggregationFactory;
 #endif
 
+#ifdef MUELU_USERAGGREGATIONFACTORY_SHORT
+typedef MueLu::UserAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UserAggregationFactory;
+#endif
+
 #ifdef MUELU_ZOLTAN2INTERFACE_SHORT
 typedef MueLu::Zoltan2Interface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Zoltan2Interface;
 #endif
