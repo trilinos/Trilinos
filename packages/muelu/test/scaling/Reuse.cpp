@@ -218,50 +218,38 @@ int main(int argc, char *argv[]) {
         cout << "[" << j << "]<-[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
         try {
           Amatvec = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
+          Amatvec->SetFixedBlockSize(numPDEs);
+
           cout << "done" << std::endl;
         } catch (...) {
           cout << "failed" << std::endl;
           return 1;
         }
 
+        // Preconditioner update
+        sprintf(timerName, "Reuse: Preconditioner Update i=%d", i);
+        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
+        // No-op at present
+
+        sprintf(timerName, "Reuse: Setup i=%d j=%d", i, j);
+        timer = TimeMonitor::getNewTimer(timerName);
+        timer->start();
+        if (do_reuse == 2 && j != i) {
+          // "Fast" reuse
+          // NTS: This isn't quite a real recompute yet.
+          cout << "[" << j << "]<-[" << i << "] Updating preconditioner \"" << matrixFileName << "\" ..." << std::endl;
+
+          H->GetLevel(0)->Set("A", Amatvec);
+          mueLuFactory.SetupHierarchy(*H);
+        }
+        setup_times[i-first_matrix][j-first_matrix] = timer->stop();
+        timer = Teuchos::null;
+
+        tm = Teuchos::null;
+
       } else {
         Amatvec = Aprecond;
       }
-      Amatvec->SetFixedBlockSize(numPDEs);
-
-      // Preconditioner update
-      sprintf(timerName, "Reuse: Preconditioner Update i=%d", i);
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
-      // No-op at present
-
-      sprintf(timerName, "Reuse: Setup i=%d j=%d", i, j);
-      timer = TimeMonitor::getNewTimer(timerName);
-      timer->start();
-      if (do_reuse == 0 && j != i) {
-        // No reuse: Do a full recompute
-        cout << "[" << j << "]<-[" << i << "] Building preconditioner \"" << matrixFileName << "\" ..." << std::endl;
-
-        H = mueLuFactory.CreateHierarchy();
-
-        H->SetDefaultVerbLevel(MueLu::Extreme);
-        H->GetLevel(0)->Set("A",         Amatvec);
-        H->GetLevel(0)->Set("Nullspace", nullspace);
-        H->IsPreconditioner(true);
-
-        mueLuFactory.SetupHierarchy(*H);
-
-      } else if (do_reuse == 2 && j != i) {
-        // "Fast" reuse
-        // NTS: This isn't quite a real recompute yet.
-        cout << "[" << j << "]<-[" << i << "] Updating preconditioner \"" << matrixFileName << "\" ..." << std::endl;
-
-        H->GetLevel(0)->Set("A", Amatvec);
-        mueLuFactory.SetupHierarchy(*H);
-      }
-      setup_times[i-first_matrix][j-first_matrix] = timer->stop();
-      timer = Teuchos::null;
-
-      tm = Teuchos::null;
 
       // Load the RHS
       cout << "[" << j << "] Loading rhs " << rhsFileName << std::endl;
@@ -320,6 +308,10 @@ int main(int argc, char *argv[]) {
         iteration_times [i-first_matrix][j-first_matrix] = my_time;
       }
 
+      if (do_reuse == 0) {
+        j++;
+        break;
+      }
     } //end j
     for (; j <= last_matrix; j++)
       setup_times[i-first_matrix][j-first_matrix] = STS::nan();
