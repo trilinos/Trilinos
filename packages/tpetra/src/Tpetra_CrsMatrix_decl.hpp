@@ -70,6 +70,13 @@ namespace Tpetra {
     CrsIJV(Ordinal row, Ordinal col, const Scalar &val);
     Ordinal i,j;
     Scalar  v;
+
+    /// \brief Comparison operator for Tpetra::CrsIJV objects.
+    ///
+    /// Comparison operator for sparse matrix entries stored as (i,j,v)
+    /// triples.  Defining this lets Tpetra::CrsMatrix use std::sort to
+    /// sort CrsIJV instances.
+    bool operator< (const CrsIJV<Ordinal, Scalar>& rhs) const;
   };
 }
 
@@ -88,19 +95,7 @@ namespace Teuchos {
   : public DirectSerializationTraits<int,Tpetra::CrsIJV<Ordinal,Scalar> >
   {};
 }
-
-namespace std {
-  /// \brief Comparison operator for Tpetra::CrsIJV objects.
-  ///
-  /// Comparison operator for sparse matrix entries stored as (i,j,v)
-  /// triples.  Defining this lets Tpetra::CrsMatrix use std::sort to
-  /// sort CrsIJV instances.
-  template <class Ordinal, class Scalar>
-  bool
-  operator< (const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1,
-             const Tpetra::CrsIJV<Ordinal,Scalar> &ijv2);
-}
-#endif
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 

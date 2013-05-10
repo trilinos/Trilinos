@@ -50,19 +50,6 @@
   #include "Tpetra_CrsMatrix_decl.hpp"
 #endif
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-namespace std {
-
-template <class Ordinal, class Scalar>
-bool
-operator< (const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1,
-           const Tpetra::CrsIJV<Ordinal,Scalar> &ijv2)
-{
-  return ijv1.i < ijv2.i;
-}
-
-} // namespace std
-#endif
 
 namespace Tpetra {
   //
@@ -84,13 +71,28 @@ namespace Tpetra {
   } // namespace Details
 
   template <class Ordinal, class Scalar>
-  CrsIJV<Ordinal,Scalar>::CrsIJV() {}
+  CrsIJV<Ordinal,Scalar>::CrsIJV() :
+    i (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
+    j (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
+    v (Teuchos::ScalarTraits<Scalar>::zero ())
+  {}
 
   template <class Ordinal, class Scalar>
-  CrsIJV<Ordinal,Scalar>::CrsIJV(Ordinal row, Ordinal col, const Scalar &val) {
-    i = row;
-    j = col;
-    v = val;
+  CrsIJV<Ordinal,Scalar>::
+  CrsIJV (Ordinal row, Ordinal col, const Scalar &val) :
+    i (row), j (col), v (val)
+  {}
+
+  template <class Ordinal, class Scalar>
+  bool CrsIJV<Ordinal, Scalar>::
+  operator< (const CrsIJV<Ordinal,Scalar>& rhs) const {
+    // FIXME (mfh 10 May 2013): This is what I found when I moved this
+    // operator out of the std namespace to be an instance method of
+    // CrsIJV.  It's a little odd to me that it doesn't include the
+    // column index in the sort order (for the usual lexicographic
+    // sort).  It doesn't really matter because CrsMatrix will sort
+    // rows by column index anyway, but it's still odd.
+    return this->i < rhs.i;
   }
 
   template <class Scalar,
