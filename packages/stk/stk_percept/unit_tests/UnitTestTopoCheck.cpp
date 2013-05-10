@@ -637,7 +637,7 @@ void use_encr_case_1_generate_mesh(
             mesh::Entity const elem = mesh.get_entity( stk::mesh::MetaData::ELEMENT_RANK, elem_id );
 
 
-            if (!topoVerifier.isTopologyBad(elem))
+            if (!topoVerifier.isTopologyBad(mesh, elem))
             {
               std::cout << "no bad element and bad element expected" << "\n";
               std::cout.flush();

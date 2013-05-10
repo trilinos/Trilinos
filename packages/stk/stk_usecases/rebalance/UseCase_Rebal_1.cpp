@@ -74,7 +74,7 @@ bool test_unequal_weights( stk::ParallelMachine pm )
           for ( unsigned i = 0 ; i < l ; ++i ) {
             const stk::mesh::EntityId elem_id = 1 + nslabs + i + j*ngx + k*ngx*ny;
             stk::mesh::Entity elem = bulk.get_entity(element_rank, elem_id);
-            double * const e_weight = stk::mesh::field_data( weight_field , elem );
+            double * const e_weight = bulk.field_data( weight_field , elem );
             *e_weight = double(ngx) / double(l);
           }
         }

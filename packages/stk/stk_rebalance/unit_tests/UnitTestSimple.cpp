@@ -37,47 +37,50 @@ enum { nx = 2, ny = 2 };
 
 class MockPartition : public stk::rebalance::Partition
 {
-  public:
+public:
 
-    enum BALANCE_TEST_STEP
-      { FIRST,
-        SECOND,
-        THIRD   };
+  enum BALANCE_TEST_STEP
+  { FIRST,
+    SECOND,
+    THIRD   };
 
   MockPartition( stk::mesh::MetaData & fmd, stk::mesh::BulkData & bd ) :
-      stk::rebalance::Partition(bd.parallel()),
-      m_fem_meta(fmd),
-      m_bulk_data(bd),
-      m_step(FIRST)
-    {  }
+    stk::rebalance::Partition(bd.parallel()),
+    m_fem_meta(fmd),
+    m_bulk_data(bd),
+    m_step(FIRST)
+  {  }
 
-    ~MockPartition() { }
+  ~MockPartition() { }
 
-    void set_balance_step(BALANCE_TEST_STEP step)
-    { m_step = step; }
+  void set_balance_step(BALANCE_TEST_STEP step)
+  { m_step = step; }
 
-    void set_mesh_info ( const std::vector<stk::mesh::Entity> &mesh_entities,
-                         const VectorField   * nodal_coord_ref,
-                         const ScalarField   * elem_weight_ref)
-    { total_number_entities_ = mesh_entities.size(); }
+  void set_mesh_info ( stk::mesh::BulkData& mesh,
+                       const std::vector<stk::mesh::Entity> &mesh_entities,
+                       const VectorField   * nodal_coord_ref,
+                       const ScalarField   * elem_weight_ref)
+  { total_number_entities_ = mesh_entities.size(); }
 
   unsigned num_elems() const
   { return total_number_entities_; }
 
-    void determine_new_partition(bool &RebalancingNeeded)
-    { RebalancingNeeded = (m_bulk_data.parallel_size() > 1); }
+  void determine_new_partition(bool &RebalancingNeeded)
+  { RebalancingNeeded = (m_bulk_data.parallel_size() > 1); }
 
-    int get_new_partition(std::vector<stk::mesh::EntityProc> &new_partition);
+  int get_new_partition(std::vector<stk::mesh::EntityProc> &new_partition);
 
-    bool partition_dependents_needed() const
-    { return false; /* I handle both element and dependent node partitioning */ }
+  bool partition_dependents_needed() const
+  { return false; /* I handle both element and dependent node partitioning */ }
 
-  private:
+  virtual void notify_mod_cycle(const stk::mesh::BulkData& mesh) {}
 
-    unsigned total_number_entities_;
-    stk::mesh::MetaData & m_fem_meta;
-    stk::mesh::BulkData & m_bulk_data;
-    BALANCE_TEST_STEP m_step;
+private:
+
+  unsigned total_number_entities_;
+  stk::mesh::MetaData & m_fem_meta;
+  stk::mesh::BulkData & m_bulk_data;
+  BALANCE_TEST_STEP m_step;
 };
 
 int
@@ -241,7 +244,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
         stk::mesh::Entity e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , e );
+        double * const e_weight = bulk_data.field_data( weight_field , e );
         *e_weight = 1.0;
       }
     }
@@ -277,7 +280,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
       {
         stk::mesh::EntityId elem = 1 + iy * nx ;
         stk::mesh::Entity e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , e );
+        double * const e_weight = bulk_data.field_data( weight_field , e );
         *e_weight = -2.0;
       }
     }

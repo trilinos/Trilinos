@@ -84,6 +84,14 @@ void MetaData::assign_cell_topology(
   ThrowRequireMsg(cell_topology.getCellTopologyData(), "bad topology in MetaData::assign_cell_topology");
 }
 
+void MetaData::set_mesh_on_fields(BulkData* bulk)
+{
+  const FieldVector& fields = get_fields();
+  for(size_t i=0; i<fields.size(); ++i) {
+    fields[i]->set_mesh(bulk);
+  }
+}
+
 MetaData & MetaData::get( const BulkData & bulk_data) {
   return bulk_data.meta_data();
 }
@@ -92,15 +100,7 @@ MetaData & MetaData::get( const Bucket & bucket) {
   return MetaData::get(BulkData::get(bucket));
 }
 
-MetaData & MetaData::get( const Entity entity) {
-  return MetaData::get(BulkData::get(entity));
-}
-
-MetaData & MetaData::/**
- * @author H. Carter Edwards
- */
-
-get( const Ghosting & ghost) {
+MetaData & MetaData::get( const Ghosting & ghost) {
   return MetaData::get(BulkData::get(ghost));
 }
 //----------------------------------------------------------------------
@@ -118,8 +118,8 @@ std::ostream &
 print_entity_key( std::ostream & os , const MetaData & meta_data ,
                   const EntityKey & key )
 {
-  const unsigned type   = entity_rank(key);
-  const EntityId id = entity_id(key);
+  const unsigned type   = key.rank();
+  const EntityId id = key.id();
   return print_entity_id( os , meta_data , type , id );
 }
 
@@ -357,26 +357,6 @@ void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
 }
 
 //----------------------------------------------------------------------
-
-FieldBase *
-MetaData::declare_field_base(
-  const std::string & arg_name ,
-  const DataTraits  & arg_traits ,
-  unsigned            arg_rank ,
-  const shards::ArrayDimTag * const * arg_dim_tags ,
-  unsigned            arg_num_states )
-{
-  require_not_committed();
-
-  return m_field_repo.declare_field(
-                arg_name,
-                arg_traits,
-                arg_rank,
-                arg_dim_tags,
-                arg_num_states,
-                this
-               );
-}
 
 void MetaData::declare_field_restriction(
   FieldBase      & arg_field ,
@@ -867,11 +847,6 @@ get_cell_topology(
   return cell_topology ;
 }
 
-CellTopology get_cell_topology(const Entity entity)
-{
-  return get_cell_topology(entity.bucket());
-}
-
 
 stk::topology get_topology( CellTopology shards_topology, int spatial_dimension)
 {
@@ -1029,6 +1004,9 @@ FieldBase* MetaData::get_field( const std::string& name ) const
   }
   return NULL;
 }
+
+CellTopology get_cell_topology(Entity entity)
+{ return get_cell_topology(entity.bucket()); }
 
 } // namespace mesh
 } // namespace stk

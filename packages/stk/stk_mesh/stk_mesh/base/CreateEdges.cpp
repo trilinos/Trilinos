@@ -18,14 +18,11 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 
-
 #include <boost/array.hpp>
 #include <boost/unordered_map.hpp>
 
 namespace stk {
 namespace mesh {
-
-
 
 namespace {
 
@@ -82,7 +79,6 @@ struct create_edge_impl
 {
   typedef void result_type;
 
-
   create_edge_impl(   size_t               & next_edge
                     , edge_map_type        & edge_map
                     , shared_edge_map_type & shared_edge_map
@@ -105,27 +101,29 @@ struct create_edge_impl
 
     add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( EdgeTopology::value )));
 
-
     boost::array<Entity,Topology::num_nodes> elem_nodes;
     EntityVector edge_nodes(EdgeTopology::num_nodes);
     EntityKeyVector edge_node_keys(EdgeTopology::num_nodes);
 
     for (size_t ielem=0, eelem=m_bucket.size(); ielem<eelem; ++ielem) {
-      Entity elem = m_bucket[ielem];
       {
-        PairIterRelation nodes = elem.node_relations();
+        Entity const *nodes = m_bucket.begin_node_entities(ielem);
         const int num_nodes = Topology::num_nodes;
         for (int n=0; n<num_nodes; ++n) {
-          elem_nodes[n] = nodes[n].entity();
+          elem_nodes[n] = nodes[n];
         }
       }
 
-      PairIterRelation elem_edges = elem.relations(stk::topology::EDGE_RANK);
-
       std::vector<bool> edge_exist(Topology::num_edges,false);
-
-      for (; !elem_edges.empty(); ++elem_edges) {
-        edge_exist[elem_edges->relation_ordinal()] = true;
+      const int num_edges = m_bucket.num_edges(ielem);
+      Entity const *edge_entity = m_bucket.begin_edge_entities(ielem);
+      ConnectivityOrdinal const *edge_ords = m_bucket.begin_edge_ordinals(ielem);
+      for (int i=0 ; i < num_edges ; ++i)
+      {
+        if (mesh.is_valid(edge_entity[i]))
+        {
+          edge_exist[edge_ords[i]] = true;
+        }
       }
 
       for (unsigned e=0; e < Topology::num_edges; ++e) {
@@ -135,7 +133,7 @@ struct create_edge_impl
         Topology::edge_nodes(elem_nodes, e, edge_nodes.begin());
 
         //sort edge nodes into lexicographical smallest permutation
-        if (edge_nodes[1].key() < edge_nodes[0].key()) {
+        if (EntityLess(mesh)(edge_nodes[1], edge_nodes[0])) {
           std::swap(edge_nodes[0], edge_nodes[1]);
         }
 
@@ -151,23 +149,24 @@ struct create_edge_impl
           for (int n=0; n<num_edge_nodes; ++n) {
             Entity node = edge_nodes[n];
             mesh.declare_relation(edge,node,n);
-            shared_edge = shared_edge && node.bucket().shared();
+            shared_edge = shared_edge && mesh.bucket(node).shared();
           }
           if (shared_edge) {
             shared_edge_type sedge;
             sedge.topology = EdgeTopology::value;
             for (int n=0; n<num_edge_nodes; ++n) {
-              sedge.nodes[n] = edge_nodes[n].key();
+              sedge.nodes[n] = mesh.entity_key(edge_nodes[n]);
             }
-            sedge.local_key   = edge.key();
-            sedge.global_key  = edge.key();
+            const EntityKey &edge_key = mesh.entity_key(edge);
+            sedge.local_key   = edge_key;
+            sedge.global_key  = edge_key;
             m_shared_edge_map.push_back( sedge );
           }
         }
         else {
           edge = iedge->second;
         }
-        mesh.declare_relation(elem,edge,e);
+        mesh.declare_relation(m_bucket[ielem], edge, e);
       }
     }
   }
@@ -189,7 +188,6 @@ struct connect_face_impl
 {
   typedef void result_type;
 
-
   connect_face_impl(  edge_map_type & edge_map
                     , Bucket        & bucket
                   )
@@ -209,21 +207,24 @@ struct connect_face_impl
     EntityVector edge_nodes(EdgeTopology::num_nodes);
 
     for (size_t iface=0, eface=m_bucket.size(); iface<eface; ++iface) {
-      Entity face = m_bucket[iface];
       {
-        PairIterRelation nodes = face.node_relations();
+        Entity const *nodes = m_bucket.begin_node_entities(iface);
         const int num_nodes = Topology::num_nodes;
         for (int n=0; n<num_nodes; ++n) {
-          face_nodes[n] = nodes[n].entity();
+          face_nodes[n] = nodes[n];
         }
       }
 
-      PairIterRelation face_edges = face.relations(stk::topology::EDGE_RANK);
-
       std::vector<bool> edge_exist(Topology::num_edges,false);
-
-      for (; !face_edges.empty(); ++face_edges) {
-        edge_exist[face_edges->relation_ordinal()] = true;
+      const int num_edges = m_bucket.num_edges(iface);
+      Entity const * edge_entity = m_bucket.begin_edge_entities(iface);
+      ConnectivityOrdinal const *edge_ords = m_bucket.begin_edge_ordinals(iface);
+      for (int i=0 ; i < num_edges ; ++i)
+      {
+        if (mesh.is_valid(edge_entity[i]))
+        {
+          edge_exist[edge_ords[i]] = true;
+        }
       }
 
       for (unsigned e=0; e < Topology::num_edges; ++e) {
@@ -233,7 +234,7 @@ struct connect_face_impl
         Topology::edge_nodes(face_nodes, e, edge_nodes.begin());
 
         //sort edge nodes into lexicographical smallest permutation
-        if (edge_nodes[1] < edge_nodes[0]) {
+        if (EntityLess(mesh)(edge_nodes[1], edge_nodes[0])) {
           std::swap(edge_nodes[0], edge_nodes[1]);
         }
 
@@ -243,7 +244,7 @@ struct connect_face_impl
         ThrowAssert(iedge != m_edge_map.end());
 
         Entity edge = iedge->second;
-        mesh.declare_relation(face,edge,e);
+        mesh.declare_relation(m_bucket[iface], edge, e);
       }
     }
   }
@@ -260,7 +261,7 @@ struct connect_face_impl
 
 } //namespace
 
-void update_shared_edges_global_ids( BulkData & mesh, shared_edge_map_type & shared_edge_map, impl::EntityRepository & entity_repo)
+void update_shared_edges_global_ids( BulkData & mesh, shared_edge_map_type & shared_edge_map)
 {
   //sort the edges for ease of lookup
   std::sort(shared_edge_map.begin(), shared_edge_map.end());
@@ -336,16 +337,12 @@ void update_shared_edges_global_ids( BulkData & mesh, shared_edge_map_type & sha
   }
 
   //update the entity keys
-
-
   for (size_t i=0, e=shared_edge_map.size(); i<e; ++i) {
     if (shared_edge_map[i].global_key != shared_edge_map[i].local_key) {
-      entity_repo.update_entity_key(shared_edge_map[i].global_key, shared_edge_map[i].local_key);
+      mesh.internal_change_entity_key(shared_edge_map[i].local_key, shared_edge_map[i].global_key, mesh.get_entity(shared_edge_map[i].local_key));
     }
   }
-
 }
-
 
 
 void create_edges( BulkData & mesh, const Selector & element_selector )
@@ -372,10 +369,10 @@ void create_edges( BulkData & mesh, const Selector & element_selector )
 
           for (size_t j=0, je=b.size(); j<je; ++j) {
             Entity edge = b[j];
-            PairIterRelation nodes_rel = edge.node_relations();
+            Entity const *nodes_rel = b.begin_node_entities(j);
 
             for (unsigned n=0; n<num_nodes; ++n) {
-              edge_nodes[n] = nodes_rel[n].entity();
+              edge_nodes[n] = nodes_rel[n];
             }
 
             edge_map[edge_nodes] = edge;
@@ -419,7 +416,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector )
     }
 
     //update global ids of shared edges
-    update_shared_edges_global_ids( mesh, shared_edge_map, mesh.m_entity_repo );
+    update_shared_edges_global_ids( mesh, shared_edge_map );
   }
 
   mesh.modification_end();

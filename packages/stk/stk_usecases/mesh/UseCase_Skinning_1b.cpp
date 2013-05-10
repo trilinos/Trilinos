@@ -33,7 +33,7 @@ void destroy_entity_and_create_particles(
 {
   const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
-  const unsigned p_rank = fixture.m_bulk_data.parallel_rank();
+  const int p_rank = fixture.m_bulk_data.parallel_rank();
 
   fixture.m_bulk_data.modification_begin();
   const stk::mesh::EntityRank particle_rank = element_rank;
@@ -50,7 +50,7 @@ void destroy_entity_and_create_particles(
 
   if ( ! new_particles.empty() ) {
     // Get node relations
-    stk::mesh::PairIterRelation relations = elem.relations();
+    stk::mesh::Entity const * relations = fixture.m_bulk_data.begin_node_entities(elem);
 
     std::vector<stk::mesh::Part*> add_parts;
     add_parts.push_back(&skin_part);
@@ -61,21 +61,27 @@ void destroy_entity_and_create_particles(
       fixture.m_bulk_data.change_entity_parts( new_particles[i],
                                                add_parts );
       // copy fields from nodes to particles
-      fixture.m_bulk_data.copy_entity_fields( (relations[i].entity()),
+      fixture.m_bulk_data.copy_entity_fields( (relations[i]),
                                               new_particles[i] );
     }
   }
 
   // delete element and entities in closure that have been orphaned
   if ( elem.is_valid() ) {
-    stk::mesh::PairIterRelation relations = elem.relations();
+
     stk::mesh::EntityVector downward_relations;
 
-    for (; relations.first != relations.second;) {
-      --relations.second;
-      stk::mesh::Entity current_entity = (relations.second->entity());
+    for (stk::mesh::EntityRank irank = stk::topology::END_RANK;
+          irank != stk::topology::BEGIN_RANK;)
+    {
+      --irank;
 
-      downward_relations.push_back(current_entity);
+      stk::mesh::Entity const * relations = fixture.m_bulk_data.begin_entities(elem, irank);
+      int num_rels = fixture.m_bulk_data.num_connectivity(elem, irank);
+      for (int j = num_rels - 1; j >= 0; --j) {
+        stk::mesh::Entity current_entity = relations[j];
+        downward_relations.push_back(current_entity);
+      }
     }
 
     fixture.m_bulk_data.destroy_entity( elem );
@@ -86,10 +92,11 @@ void destroy_entity_and_create_particles(
         itr != downward_relations.end(); ++itr) {
       stk::mesh::Entity current_entity = *itr;
 
-      if (current_entity.relations(element_rank).empty()) {
+      if (fixture.m_bulk_data.num_connectivity(current_entity, element_rank) == 0) {
         fixture.m_bulk_data.destroy_entity( current_entity );
       }
     }
+
   }
 
   fixture.m_bulk_data.modification_end();

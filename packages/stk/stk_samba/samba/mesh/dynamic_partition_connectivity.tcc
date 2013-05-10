@@ -400,7 +400,6 @@ private:
 
   void add_lower_helper(partition_offset from, entity_key to, connectivity_ordinal ordinal, connectivity_orientation orientation)
   {
-
 #ifndef NDEBUG
     unsigned num_ordinals = 0;
     switch(ToEntityRank::value)

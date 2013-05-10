@@ -174,7 +174,7 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
     buckets.clear();
 
     // sort and unique the universal nodes
-    std::sort(universal_entities.begin(), universal_entities.end(), stk::mesh::EntityLess());
+    std::sort(universal_entities.begin(), universal_entities.end(), stk::mesh::EntityLess(bulk_data));
     std::vector<Entity>::iterator new_end = std::unique(universal_entities.begin(), universal_entities.end(), stk::mesh::EntityEqual());
     universal_entities.erase(new_end, universal_entities.end());
 
@@ -251,7 +251,7 @@ void UnitTestStkMeshBulkModification::test_all_local_elements()
 
     // universal entities should now have all the universal nodes and elements
     // sort and uniq the universal nodes/elements
-    std::sort(universal_entities.begin(), universal_entities.end(), stk::mesh::EntityLess());
+    std::sort(universal_entities.begin(), universal_entities.end(), stk::mesh::EntityLess(bulk_data));
     std::vector<Entity>::iterator new_end = std::unique(universal_entities.begin(), universal_entities.end(), stk::mesh::EntityEqual());
     universal_entities.erase(new_end, universal_entities.end());
 
@@ -328,7 +328,7 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   // pack entities for sizing
   for (std::vector<Entity>::const_iterator
           ep = entities.begin() ; ep != entities.end() ; ++ep ) {
-    all.send_buffer().pack<stk::mesh::EntityKey>(ep->key());
+    all.send_buffer().pack<stk::mesh::EntityKey>(bulk_data.entity_key(*ep));
   }
 
   all.allocate_buffer();
@@ -336,7 +336,7 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   // pack for real
   for (std::vector<Entity>::const_iterator
          ep = entities.begin() ; ep != entities.end() ; ++ep ) {
-    all.send_buffer().pack<stk::mesh::EntityKey>(ep->key());
+    all.send_buffer().pack<stk::mesh::EntityKey>(bulk_data.entity_key(*ep));
   }
 
   all.communicate();
@@ -351,13 +351,13 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
     Entity e = bulk_data.get_entity(k);
     // If a proc is not aware of a key, that means it has no relationship
     // with that entity, so it can ignore it.
-    if (e.is_valid()) {
+    if (bulk_data.is_valid(e)) {
       entities.push_back(e);
     }
   }
 
   // sort and unique entities
-  std::sort(entities.begin(), entities.end(), stk::mesh::EntityLess());
+  std::sort(entities.begin(), entities.end(), stk::mesh::EntityLess(bulk_data));
   std::vector<Entity>::iterator new_end = std::unique(entities.begin(), entities.end(), stk::mesh::EntityEqual());
   entities.erase(new_end, entities.end());
 

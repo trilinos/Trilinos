@@ -149,7 +149,7 @@ namespace stk {
       int& type = ret.second;
       if (m_boundarySelector)
         {
-          if ((*m_boundarySelector)(node_ptr))
+          if ((*m_boundarySelector)(node_ptr.bucket()))
             {
               fixed=true;
               type=MS_ON_BOUNDARY;

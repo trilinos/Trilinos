@@ -215,9 +215,9 @@ namespace stk {
       get_number_elements_locally_owned();
 
       /// parallel rank
-      unsigned get_rank() { return stk::parallel_machine_rank(m_comm); }
-      unsigned get_parallel_rank() { return stk::parallel_machine_rank(m_comm); }
-      unsigned get_parallel_size() { return stk::parallel_machine_size(m_comm); }
+      int get_rank() { return stk::parallel_machine_rank(m_comm); }
+      int get_parallel_rank() { return stk::parallel_machine_rank(m_comm); }
+      int get_parallel_size() { return stk::parallel_machine_size(m_comm); }
       stk::ParallelMachine parallel() {return m_comm;}
 
       /// print a node, edge, element, etc; optionally pass in a field to dump data associated with the entity
@@ -689,11 +689,11 @@ namespace stk {
 
       double edge_length_ave(const stk::mesh::Entity entity, mesh::FieldBase* coord_field = 0, double* min_edge_length=0, double* max_edge_length=0,  const CellTopologyData * topology_data_in = 0);
 
-      static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
-                                       Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);
+      static
+      void findMinMaxEdgeLength(stk::mesh::BulkData& bulk, const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
+                                Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);
 
-      static void
-      element_side_nodes( const mesh::Entity elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<mesh::Entity>& side_node_entities );
+      void element_side_nodes( const mesh::Entity elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<mesh::Entity>& side_node_entities );
 
       void
       element_side_permutation(const mesh::Entity element, const mesh::Entity side, unsigned iSubDimOrd,
@@ -828,7 +828,50 @@ namespace stk {
 
     }; // class PerceptMesh
 
+    class MyPairIterRelation {
 
+      unsigned m_size;
+      const stk::mesh::Entity *m_entities;
+      const stk::mesh::ConnectivityOrdinal *m_ordinals;
+
+      MyPairIterRelation();
+      MyPairIterRelation(const MyPairIterRelation& mp);
+      MyPairIterRelation(unsigned size, const stk::mesh::Entity *entities, const stk::mesh::ConnectivityOrdinal *ordinals ) :
+        m_size ( size), m_entities(entities), m_ordinals(ordinals) {}
+
+    public:
+      MyPairIterRelation(PerceptMesh& eMesh, stk::mesh::Entity entity, stk::mesh::EntityRank entity_rank) :
+        m_size ( eMesh.get_bulk_data()->num_connectivity(entity, entity_rank)),
+        m_entities ( eMesh.get_bulk_data()->begin_entities(entity, entity_rank) ),
+        m_ordinals ( eMesh.get_bulk_data()->begin_ordinals(entity, entity_rank) )
+      {}
+
+      MyPairIterRelation(const stk::mesh::BulkData& bulk_data, stk::mesh::Entity entity, stk::mesh::EntityRank entity_rank) :
+        m_size ( bulk_data.num_connectivity(entity, entity_rank)),
+        m_entities ( bulk_data.begin_entities(entity, entity_rank) ),
+        m_ordinals ( bulk_data.begin_ordinals(entity, entity_rank) )
+      {}
+
+      struct MyRelation {
+        stk::mesh::Entity m_entity;
+        stk::mesh::ConnectivityOrdinal m_ordinal;
+        inline stk::mesh::Entity entity() const { return m_entity; }
+        inline stk::mesh::ConnectivityOrdinal relation_ordinal() const { return m_ordinal; }
+      };
+
+      MyPairIterRelation& operator=(const MyPairIterRelation& mp) {
+        m_size  = mp.m_size;
+        m_entities = mp.m_entities;
+        m_ordinals = mp.m_ordinals;
+        return *this;
+      }
+
+      inline const unsigned size() const { return m_size;}
+      inline const MyRelation operator[](int i) const {
+        MyRelation mr = { m_entities[i], m_ordinals[i] };
+        return mr;
+      }
+    };
 
     class MeshTransformer : public GenericFunction
     {
@@ -898,12 +941,12 @@ namespace stk {
           mesh::Entity elem = bucket[iElemInBucketOrd] ;
 
           if (0) std::cout << "elemOfBucket= " << elem << std::endl;
-          const mesh::PairIterRelation elem_nodes = elem.relations( mesh::MetaData::NODE_RANK );
+          stk::mesh::Entity const* elem_nodes = bucket.begin_node_entities(elem.bucket_ordinal());
 
           // FIXME: fill field data (node coordinates)
           for (unsigned iNodeOrd = 0; iNodeOrd < numNodes; iNodeOrd++)
             {
-              mesh::Entity node = elem_nodes[iNodeOrd].entity();
+              mesh::Entity node = elem_nodes[iNodeOrd];
               double * node_coord_data = PerceptMesh::field_data( field , node);
 
               for (unsigned iDOFOrd = 0; iDOFOrd < dataStride; iDOFOrd++)
@@ -933,13 +976,15 @@ namespace stk {
           dataStride = r.dimension() ;
         }
       //std::cout << "element dataStride= " << dataStride << std::endl;
-      const mesh::PairIterRelation element_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
-      unsigned numNodes = element_nodes.size();
+      const stk::mesh::BulkData & mesh = stk::mesh::BulkData::get(element);
+      stk::mesh::Entity const* element_nodes = mesh.begin_node_entities(element);
+
+      unsigned numNodes = mesh.num_nodes(element);
 
       unsigned iCell = 0;
       for (unsigned iNodeOrd = 0; iNodeOrd < numNodes; iNodeOrd++)
         {
-          mesh::Entity node = element_nodes[iNodeOrd].entity();
+          mesh::Entity node = element_nodes[iNodeOrd];
           double * node_coord_data = PerceptMesh::field_data( field , node);
 
           for (unsigned iDOFOrd = 0; iDOFOrd < dataStride; iDOFOrd++)

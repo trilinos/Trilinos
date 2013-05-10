@@ -144,7 +144,7 @@ struct stk_entity_rep_hash : public std::unary_function< EntityKey, std::size_t 
   inline std::size_t
   operator()(const EntityKey& x) const
   {
-    return (std::size_t)(x.raw_key());
+    return (std::size_t)(x);
   }
 };
 
@@ -157,7 +157,7 @@ namespace Teuchos {
 template<>
 int hashCode(const EntityKey& x)
 {
-  return (int)(x.raw_key());
+  return (int)(x);
 }
 
 }
@@ -184,7 +184,7 @@ struct eastl_stk_entity_rep_hash : public eastl::unary_function< EntityKey, std:
   inline std::size_t
   operator()(const EntityKey& x) const
   {
-    return (std::size_t)(x.raw_key());
+    return (std::size_t)(x);
   }
 };
 #endif
@@ -197,7 +197,7 @@ struct google_stk_entity_rep_hash : public google::is_integral< EntityKey >
   inline std::size_t
   operator()(const EntityKey& x) const
   {
-    return (std::size_t)(x.raw_key());
+    return (std::size_t)(x);
   }
 };
 #endif
@@ -208,7 +208,7 @@ struct rdestl_stk_entity_rep_hash : public rde::hash< EntityKey >
   inline std::size_t
   operator()(const EntityKey& x) const
   {
-    return (std::size_t)(x.raw_key());
+    return (std::size_t)(x);
   }
 };
 #endif

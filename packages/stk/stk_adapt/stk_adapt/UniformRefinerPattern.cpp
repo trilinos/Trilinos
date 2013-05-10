@@ -132,7 +132,7 @@ namespace stk {
 
       const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
       stk::mesh::Entity family_tree = stk::mesh::Entity();
-      mesh::PairIterRelation parent_to_family_tree_relations = parent_elem.relations(FAMILY_TREE_RANK);
+      percept::MyPairIterRelation parent_to_family_tree_relations (eMesh, parent_elem, FAMILY_TREE_RANK);
       // if this is the first time the parent_elem has been visited, or if the parent_elem is the child of another parent,
       //   (at level 0 only, which is what isChildElement checks), then we need to add a new family tree
 
@@ -170,7 +170,8 @@ namespace stk {
           // from->to
           eMesh.get_bulk_data()->declare_relation(family_tree, parent_elem, FAMILY_TREE_PARENT);
           //eMesh.get_bulk_data()->declare_relation( parent_elem, *family_tree, ptft_size-1);
-          parent_to_family_tree_relations = parent_elem.relations(FAMILY_TREE_RANK);
+          percept::MyPairIterRelation new_ptf(eMesh,parent_elem,FAMILY_TREE_RANK);
+          parent_to_family_tree_relations = new_ptf;
 
         }
 
@@ -210,7 +211,7 @@ namespace stk {
       // error check
       if (1)
         {
-          mesh::PairIterRelation family_tree_relations = family_tree.relations(parent_elem.entity_rank());
+          percept::MyPairIterRelation family_tree_relations (eMesh, family_tree, parent_elem.entity_rank());
           for (unsigned i = 1; i < family_tree_relations.size(); i++)
             {
               if (family_tree_relations[i].relation_ordinal() == (ordinal + 1))
@@ -234,13 +235,15 @@ namespace stk {
       if (workaround_shared_node_issue)
         {
 
-          mesh::PairIterRelation parent_elem_nodes = parent_elem.relations( stk::mesh::MetaData::NODE_RANK );
+          std::set<stk::mesh::Entity, stk::mesh::EntityLess> to_add(stk::mesh::EntityLess(*eMesh.get_bulk_data()));
+
+          percept::MyPairIterRelation parent_elem_nodes (eMesh, parent_elem,  stk::mesh::MetaData::NODE_RANK );
           for (unsigned i = 0; i < parent_elem_nodes.size(); i++)
             {
               if (! eMesh.get_bulk_data()->in_shared(parent_elem_nodes[i].entity().key())) continue;
 
               bool found = false;
-              mesh::PairIterRelation ft_nodes = family_tree.relations( stk::mesh::MetaData::NODE_RANK );
+              percept::MyPairIterRelation ft_nodes (eMesh, family_tree,  stk::mesh::MetaData::NODE_RANK );
               for (unsigned j = 0; j < ft_nodes.size(); j++)
                 {
                   if (ft_nodes[j].entity() == parent_elem_nodes[i].entity())
@@ -251,11 +254,13 @@ namespace stk {
                 }
               if (!found)
                 {
-                  eMesh.get_bulk_data()->declare_relation(family_tree, parent_elem_nodes[i].entity(), ft_nodes.size());
+                  to_add.insert(parent_elem_nodes[i].entity());
+                  VERIFY_OP_ON(eMesh.get_bulk_data()->in_index_range(parent_elem_nodes[i].entity()), ==, true, "parent_elem_nodes bad");
+                  //eMesh.get_bulk_data()->declare_relation(family_tree, parent_elem_nodes[i].entity(), ft_nodes.size());
                 }
             }
 
-          stk::mesh::PairIterRelation child_elem_nodes = newElement.relations( stk::mesh::MetaData::NODE_RANK );
+          percept::MyPairIterRelation child_elem_nodes (eMesh, newElement,  stk::mesh::MetaData::NODE_RANK );
           if (child_elem_nodes.size() == 0)
             {
               throw std::runtime_error("child_elem has no nodes");
@@ -265,7 +270,7 @@ namespace stk {
               if (!eMesh.get_bulk_data()->in_shared(child_elem_nodes[i].entity().key())) continue;
 
               bool found = false;
-              mesh::PairIterRelation ft_nodes = family_tree.relations( stk::mesh::MetaData::NODE_RANK );
+              percept::MyPairIterRelation ft_nodes (eMesh, family_tree,  stk::mesh::MetaData::NODE_RANK );
               for (unsigned j = 0; j < ft_nodes.size(); j++)
                 {
                   if (ft_nodes[j].entity() == child_elem_nodes[i].entity())
@@ -276,7 +281,10 @@ namespace stk {
                 }
               if (!found)
                 {
-                  eMesh.get_bulk_data()->declare_relation(family_tree, child_elem_nodes[i].entity(), ft_nodes.size());
+                  to_add.insert(child_elem_nodes[i].entity());
+                  VERIFY_OP_ON(eMesh.get_bulk_data()->in_index_range(child_elem_nodes[i].entity()), ==, true, "child_elem_nodes bad");
+                  //eMesh.get_bulk_data()->declare_relation(family_tree, child_elem_nodes[i].entity(), ft_nodes.size());
+
                 }
             }
 
@@ -286,13 +294,13 @@ namespace stk {
               unsigned parent_elem_ft_level_0 = eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, parent_elem);
               stk::mesh::Entity family_tree_level_0 = parent_to_family_tree_relations[parent_elem_ft_level_0].entity();
 
-              stk::mesh::PairIterRelation ft_level_0_nodes = family_tree_level_0.relations( stk::mesh::MetaData::NODE_RANK );
+              percept::MyPairIterRelation ft_level_0_nodes (eMesh, family_tree_level_0,  stk::mesh::MetaData::NODE_RANK );
               for (unsigned i = 0; i < ft_level_0_nodes.size(); i++)
                 {
                   if (!eMesh.get_bulk_data()->in_shared(ft_level_0_nodes[i].entity().key())) continue;
 
                   bool found = false;
-                  mesh::PairIterRelation ft_nodes = family_tree.relations( stk::mesh::MetaData::NODE_RANK );
+                  percept::MyPairIterRelation ft_nodes (eMesh, family_tree,  stk::mesh::MetaData::NODE_RANK );
                   for (unsigned j = 0; j < ft_nodes.size(); j++)
                     {
                       if (ft_nodes[j].entity() == ft_level_0_nodes[i].entity())
@@ -303,10 +311,25 @@ namespace stk {
                     }
                   if (!found)
                     {
-                      eMesh.get_bulk_data()->declare_relation(family_tree, ft_level_0_nodes[i].entity(), ft_nodes.size());
+                      VERIFY_OP_ON(eMesh.get_bulk_data()->in_index_range(ft_level_0_nodes[i].entity()), ==, true, "ft_level_0_nodes bad 0");
+                      //eMesh.get_bulk_data()->declare_relation(family_tree, ft_level_0_nodes[i].entity(), ft_nodes.size());
+                      to_add.insert(ft_level_0_nodes[i].entity());
                     }
                 }
             }
+
+          // add nodes to family_tree
+          {
+            percept::MyPairIterRelation ft_nodes (eMesh, family_tree,  stk::mesh::MetaData::NODE_RANK );
+            unsigned ftns=ft_nodes.size();
+
+            std::vector<stk::mesh::Entity> to_add_vec(to_add.begin(), to_add.end());
+
+            for (unsigned ita=0; ita < to_add_vec.size(); ita++)
+              {
+                eMesh.get_bulk_data()->declare_relation(family_tree, to_add_vec[ita], ftns+ita);
+              }
+          }
 
         }
 
@@ -401,7 +424,7 @@ namespace stk {
 
       for (unsigned higher_order_rank = parent.entity_rank()+1u; higher_order_rank <= stk::mesh::MetaData::ELEMENT_RANK; higher_order_rank++)
         {
-          stk::mesh::PairIterRelation parent_to_elem_rels = parent.relations(higher_order_rank);
+          percept::MyPairIterRelation parent_to_elem_rels (eMesh, parent, higher_order_rank);
           VERIFY_OP_ON(parent_to_elem_rels.size(), <=, 1, "UniformRefinerPatternBase::findSideRelations bad number of side to elem relations");
           if (parent_to_elem_rels.size() == 0)
             {
@@ -490,7 +513,7 @@ namespace stk {
 
       if (permIndex >= 0)
         {
-          mesh::PairIterRelation rels = side_elem.relations(eMesh.element_rank());
+          percept::MyPairIterRelation rels (eMesh, side_elem, eMesh.element_rank());
 
           // special case for shells
           if (isShell)
@@ -498,7 +521,7 @@ namespace stk {
               // FIXME for 2D
               if (side_elem.entity_rank() == eMesh.face_rank())
                 {
-                  stk::mesh::PairIterRelation elem_sides = element.relations(side_elem.entity_rank());
+                  percept::MyPairIterRelation elem_sides (eMesh, element, side_elem.entity_rank());
                   unsigned elem_sides_size= elem_sides.size();
                   if (debug) std::cout << "tmp srk found shell, elem_sides_size= " << elem_sides_size << std::endl;
                   if (elem_sides_size == 1)
@@ -513,7 +536,7 @@ namespace stk {
             }
 
           int exists=0;
-          stk::mesh::PairIterRelation elem_sides = element.relations(side_elem.entity_rank());
+          percept::MyPairIterRelation elem_sides (eMesh, element, side_elem.entity_rank());
           unsigned elem_sides_size= elem_sides.size();
           unsigned rel_id = 0;
           for (unsigned iside=0; iside < elem_sides_size; iside++)

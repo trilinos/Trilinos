@@ -204,9 +204,9 @@ void build_node_axis_bbox(stk::mesh::Part &part,
   for (size_t i = 0; i < num_entities; ++i) {
     AxisAlignedBoundingBox3D   domain;
     ct_assert(sizeof(domain.key.ident) >= sizeof(stk::mesh::EntityKey));
-    domain.key.ident = entities[i].key();
+    domain.key.ident = bulk_data.entity_key(entities[i]);
 
-    double *fld_data = (double*)stk::mesh::field_data(*coordinates, entities[i]);
+    double *fld_data = (double*)bulk_data.field_data(*coordinates, entities[i]);
     assert(fld_data != NULL);
 
     domain.set_box(fld_data);
@@ -239,12 +239,12 @@ void build_axis_bbox(stk::mesh::Part &part,
   for (size_t i = 0; i < num_entities; ++i) {
     AxisAlignedBoundingBox3D   domain;
     ct_assert(sizeof(domain.key.ident) >= sizeof(stk::mesh::EntityKey));
-    domain.key.ident = entities[i].key();
+    domain.key.ident = bulk_data.entity_key(entities[i]);
 
-    const stk::mesh::PairIterRelation entity_nodes = entities[i].relations(NODE_RANK);
-    assert(static_cast<int>(entity_nodes.size()) == nodes_per_entity);
+    stk::mesh::Node const * entity_nodes = bulk_data.begin_nodes(entities[i]);
+    assert(static_cast<int>(bulk_data.num_nodes(entities[i])) == nodes_per_entity);
 
-    double *fld_data = (double*)stk::mesh::field_data(*coordinates, entity_nodes[0].entity());
+    double *fld_data = (double*)bulk_data.field_data(*coordinates, entity_nodes[0]);
     assert(fld_data != NULL);
 
     AxisAlignedBoundingBox3D::Data bbox[6];
@@ -257,7 +257,7 @@ void build_axis_bbox(stk::mesh::Part &part,
     bbox[5] = fld_data[2];
 
     for (int j = 1; j < nodes_per_entity; ++j) {
-      fld_data = (double*)stk::mesh::field_data(*coordinates, entity_nodes[j].entity());
+      fld_data = (double*)bulk_data.field_data(*coordinates, entity_nodes[j]);
       assert(fld_data != NULL);
       bbox[0] = fld_data[0] < bbox[0] ? fld_data[0] : bbox[0];
       bbox[1] = fld_data[1] < bbox[1] ? fld_data[1] : bbox[1];
@@ -290,9 +290,9 @@ void build_node_cent_bbox(stk::mesh::Part &part,
   for (size_t i = 0; i < num_entities; ++i) {
     PointBoundingBox3D   p;
     ct_assert(sizeof(p.key.ident) >= sizeof(stk::mesh::EntityKey));
-    p.key.ident = entities[i].key();
+    p.key.ident = bulk_data.entity_key(entities[i]);
 
-    double *fld_data = (double*)stk::mesh::field_data(*coordinates, entities[i]);
+    double *fld_data = (double*)bulk_data.field_data(*coordinates, entities[i]);
     assert(fld_data != NULL);
 
     p.set_center(fld_data);
@@ -316,16 +316,16 @@ void build_cent_bbox(stk::mesh::Part &part,
   for (size_t i = 0; i < num_entities; ++i) {
     PointBoundingBox3D   p;
     ct_assert(sizeof(p.key.ident) >= sizeof(stk::mesh::EntityKey));
-    p.key.ident = entities[i].key();
+    p.key.ident = bulk_data.entity_key(entities[i]);
 
     p.center[0] = 0;
     p.center[1] = 0;
     p.center[2] = 0;
 
-    const stk::mesh::PairIterRelation entity_nodes = entities[i].relations(NODE_RANK);
-    const size_t nodes_per_entity = entity_nodes.size();
+    stk::mesh::Node const *entity_nodes = bulk_data.begin_nodes(entities[i]);
+    const size_t nodes_per_entity = bulk_data.num_nodes(entities[i]);
     for (size_t j = 0; j < nodes_per_entity; ++j) {
-      double *fld_data = (double*)stk::mesh::field_data(*coordinates, entity_nodes[j].entity());
+      double *fld_data = (double*)bulk_data.field_data(*coordinates, entity_nodes[j]);
       assert(fld_data != NULL);
       p.center[0] += fld_data[0];
       p.center[1] += fld_data[1];

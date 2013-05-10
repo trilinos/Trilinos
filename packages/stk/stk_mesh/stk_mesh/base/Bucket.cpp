@@ -18,11 +18,14 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
 
 //----------------------------------------------------------------------
+namespace stk {
+namespace mesh {
+
 namespace {
+
 inline unsigned align( size_t nb )
 {
   enum { BYTE_ALIGN = 16 };
@@ -30,12 +33,125 @@ inline unsigned align( size_t nb )
   if ( gap ) { nb += BYTE_ALIGN - gap ; }
   return nb ;
 }
-}//namespace anonymous
 
-//----------------------------------------------------------------------
+// TODO: When we get C++11, use lambdas instead of these functors
 
-namespace stk {
-namespace mesh {
+struct CheckSizeFunctor
+{
+  template <typename Connectivity>
+  void operator()(Bucket& bucket, Connectivity& connectivity, Connectivity*)
+  { ThrowAssert(bucket.size() == static_cast<size_t>(connectivity.size())); }
+};
+
+struct AddEntityFunctor
+{
+  template <typename Connectivity>
+  void operator()(Bucket&, Connectivity& connectivity, Connectivity*)
+  { connectivity.add_entity(); }
+};
+
+struct RemoveEntityFunctor
+{
+  template <typename Connectivity>
+  void operator()(Bucket&, Connectivity& connectivity, Connectivity*)
+  { connectivity.remove_entity(); }
+};
+
+struct DeclareRelationFunctor
+{
+  DeclareRelationFunctor(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal,
+                         Permutation permutation)
+    : m_bucket_ordinal(bucket_ordinal),
+      m_to(to),
+      m_ordinal(ordinal),
+      m_permutation(permutation),
+      m_modified(false)
+  {}
+
+  template <typename Connectivity>
+  void operator()(Bucket& bucket, Connectivity& connectivity, Connectivity*)
+  {
+    BulkData &mesh = bucket.mesh();
+    EntityRank to_rank = mesh.entity_rank(m_to);
+
+    if ( (Connectivity::target_rank == static_cast<EntityRank>(stk::topology::INVALID_RANK) &&
+          to_rank > static_cast<EntityRank>(stk::topology::ELEMENT_RANK)) ||
+         to_rank == Connectivity::target_rank) {
+      ThrowAssert(!m_modified);
+      m_modified = connectivity.add_connectivity(m_bucket_ordinal, m_to, m_ordinal, m_permutation);
+    }
+  }
+
+  unsigned m_bucket_ordinal;
+  Entity m_to;
+  ConnectivityOrdinal m_ordinal;
+  Permutation m_permutation;
+  bool m_modified;
+};
+
+struct DestroyRelationFunctor
+{
+  DestroyRelationFunctor(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal)
+    : m_bucket_ordinal(bucket_ordinal),
+      m_to(to),
+      m_ordinal(ordinal),
+      m_modified(false)
+  {}
+
+  template <typename Connectivity>
+  void operator()(Bucket& bucket, Connectivity& connectivity, Connectivity*)
+  {
+    if ( (Connectivity::target_rank == static_cast<EntityRank>(stk::topology::INVALID_RANK) &&
+          bucket.mesh().entity_rank(m_to) > static_cast<EntityRank>(stk::topology::ELEMENT_RANK)) ||
+         bucket.mesh().entity_rank(m_to) == Connectivity::target_rank) {
+      ThrowAssert(!m_modified);
+      m_modified = connectivity.remove_connectivity(m_bucket_ordinal, m_to, m_ordinal);
+    }
+  }
+
+  unsigned m_bucket_ordinal;
+  Entity m_to;
+  ConnectivityOrdinal m_ordinal;
+  bool m_modified;
+};
+
+struct MoveEntityFunctor
+{
+  template <typename Connectivity>
+  void operator()(Bucket&, Connectivity& connectivity, Connectivity* old_connectivity)
+  { old_connectivity->move_entity(connectivity); }
+};
+
+struct SwapEntityFunctor
+{
+  SwapEntityFunctor(unsigned old_ordinal, unsigned new_ordinal) : m_old_ordinal(old_ordinal), m_new_ordinal(new_ordinal) {}
+
+  template <typename Connectivity>
+  void operator()(Bucket& bucket, Connectivity& connectivity, Connectivity* old_connectivity)
+  { old_connectivity->swap(m_old_ordinal, connectivity, m_new_ordinal); }
+
+  unsigned m_old_ordinal;
+  unsigned m_new_ordinal;
+};
+
+template <typename FixedConnectivity>
+void setup_connectivity(stk::topology bucket_topology,
+                        EntityRank from_rank,
+                        EntityRank to_rank,
+                        ConnectivityType& conn_type,
+                        FixedConnectivity& fixed_conn,
+                        const ConnectivityMap& conn_map)
+{
+  if (bucket_topology != stk::topology::END_TOPOLOGY && bucket_topology.num_sub_topology(to_rank) > 0 && conn_map(from_rank, to_rank) == FIXED_CONNECTIVITY) {
+    fixed_conn.set_num_connectivity(bucket_topology.num_sub_topology(to_rank));
+    conn_type = FIXED_CONNECTIVITY;
+  }
+  else if (from_rank > stk::topology::ELEMENT_RANK || to_rank > stk::topology::ELEMENT_RANK || conn_map(from_rank, to_rank) != INVALID_CONNECTIVITY_TYPE) {
+    conn_type = DYNAMIC_CONNECTIVITY;
+  }
+}
+
+} //namespace anonymous
 
 //----------------------------------------------------------------------
 
@@ -74,8 +190,9 @@ bool BucketLess::operator()( const unsigned * lhs ,
 Bucket::Bucket( BulkData & arg_mesh ,
                 EntityRank arg_entity_rank,
                 const std::vector<unsigned> & arg_key,
-                size_t arg_capacity
-        )
+                size_t arg_capacity,
+                const ConnectivityMap& connectivity_map
+                )
   : m_mesh(arg_mesh)
   , m_entity_rank(arg_entity_rank)
   , m_topology()
@@ -83,76 +200,48 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_capacity(arg_capacity)
   , m_size(0)
   , m_bucket(NULL)
-  , m_field_map( m_mesh.mesh_meta_data().get_fields().size()+1)
+  , m_bucket_id(static_cast<unsigned>(-1))
+  , m_nodes_per_entity(0)
+// TODO: ALL THESE VECTORS REPRESENT A SERIOUS PERFORMANCE PROBLEM
   , m_entities(arg_capacity)
-  , m_field_data(NULL)
-  , m_field_data_end(NULL)
-  , m_field_data_size(0)
+  , m_owner_ranks(arg_capacity)
   , m_partition(NULL)
+  , m_node_kind(INVALID_CONNECTIVITY_TYPE)
+  , m_edge_kind(INVALID_CONNECTIVITY_TYPE)
+  , m_face_kind(INVALID_CONNECTIVITY_TYPE)
+  , m_element_kind(INVALID_CONNECTIVITY_TYPE)
+  , m_fixed_node_connectivity()
+  , m_fixed_edge_connectivity()
+  , m_fixed_face_connectivity()
+  , m_fixed_element_connectivity()
+  , m_dynamic_node_connectivity(arg_entity_rank, &m_mesh)
+  , m_dynamic_edge_connectivity(arg_entity_rank, &m_mesh)
+  , m_dynamic_face_connectivity(arg_entity_rank, &m_mesh)
+  , m_dynamic_element_connectivity(arg_entity_rank, &m_mesh)
+  , m_dynamic_other_connectivity(arg_entity_rank, &m_mesh)
   , m_owned(has_superset(*this, m_mesh.mesh_meta_data().locally_owned_part()))
   , m_shared(has_superset(*this, m_mesh.mesh_meta_data().globally_shared_part()))
 {
-  //calculate the size of the field_data
+  ThrowAssertMsg(arg_capacity != 0, "Buckets should never have zero capacity");
 
   m_topology = get_topology( get_cell_topology(*this), m_mesh.mesh_meta_data().spatial_dimension() );
 
-  const std::vector< FieldBase * > & field_set =
-    arg_mesh.mesh_meta_data().get_fields();
-
-  const size_t num_fields = field_set.size();
-
-  if (arg_capacity != 0) {
-    for ( size_t i = 0; i<num_fields; ++i) {
-      const FieldBase  & field = * field_set[i] ;
-      unsigned num_bytes_per_entity = 0 ;
-
-      const FieldBase::Restriction & restriction =
-        find_restriction( field, arg_entity_rank, &m_key[1], &m_key[1]+(m_key[0]-1), PartOrdLess());
-
-      if ( restriction.dimension() > 0 ) { // Exists
-
-        const unsigned type_stride = field.data_traits().stride_of ;
-        const unsigned field_rank  = field.rank();
-
-        num_bytes_per_entity = type_stride *
-          ( field_rank ? restriction.stride( field_rank - 1 ) : 1 );
-      }
-      m_field_map[i].m_base = m_field_data_size ;
-      m_field_map[i].m_size = num_bytes_per_entity ;
-      m_field_map[i].m_stride = &restriction.stride(0);
-
-      m_field_data_size += align( num_bytes_per_entity * m_capacity );
-    }
-
-    m_field_map[ num_fields ].m_base  = m_field_data_size ;
-    m_field_map[ num_fields ].m_size = 0 ;
-    m_field_map[ num_fields ].m_stride = NULL ;
+  if (m_topology != stk::topology::END_TOPOLOGY) {
+    m_nodes_per_entity = m_topology.num_nodes();
   }
 
-  //allocate space for the fields
-  m_field_data = m_field_data_size > 0 ? allocator().allocate(m_field_data_size) : NULL;
+  setup_connectivity(m_topology, arg_entity_rank, stk::topology::NODE_RANK, m_node_kind, m_fixed_node_connectivity, connectivity_map);
+  setup_connectivity(m_topology, arg_entity_rank, stk::topology::EDGE_RANK, m_edge_kind, m_fixed_edge_connectivity, connectivity_map);
+  setup_connectivity(m_topology, arg_entity_rank, stk::topology::FACE_RANK, m_face_kind, m_fixed_face_connectivity, connectivity_map);
+  setup_connectivity(m_topology, arg_entity_rank, stk::topology::ELEMENT_RANK, m_element_kind, m_fixed_element_connectivity, connectivity_map);
 
-  //
-  //[TODO] ALAN, TODD: to investigate if memory_zero is necessary to fix valgrind
-  //issues in the following regression test:
-  //adagio_rtest/presto/super_elem_rigid_body/super_elem_rigid_body.test|np1_explicit_reverseMPC
-  //memory_zero(m_field_data, field_data_size);
-  //ABW UPDATE: found and fixed bug in strumento/src/element/SuperElementHandler.C
-  //which was reading past end of field, so this memory_zero is no longer
-  //necessary. 8/9/2012
-  //std::memset( m_field_data , 0xfff , field_data_size );
-
-  m_field_data_end = m_field_data + m_field_data_size;
+  m_mesh.new_bucket_callback(m_entity_rank, &m_key[1], &m_key[1]+(m_key[0]-1), m_capacity);
 }
 
 Bucket::~Bucket()
 {
-  if(m_field_data != NULL) {
-    allocator().deallocate(m_field_data,m_field_data_size);
-  }
+  m_mesh.destroy_bucket_callback(m_entity_rank, m_bucket_id, m_capacity);
 }
-
-
 
 bool Bucket::member( const Part & part ) const
 {
@@ -218,6 +307,14 @@ bool Bucket::member_any( const OrdinalVector & parts ) const
   }
   return ! result_none ;
 }
+
+#ifdef STK_MESH_BACKWARDS_COMPATIBILITY
+unsigned char* Bucket::field_data_location(const FieldBase& field) const
+{
+  return reinterpret_cast<unsigned char*>(mesh().field_data(field, *this, 0));
+}
+#endif
+
 
 //----------------------------------------------------------------------
 
@@ -288,37 +385,6 @@ void Bucket::supersets( OrdinalVector & ps ) const
 
 //----------------------------------------------------------------------
 
-bool field_data_valid( const FieldBase & f ,
-                       const Bucket & k ,
-                       unsigned ord ,
-                       const char * required_by )
-{
-  const MetaData * const k_mesh_meta_data = & MetaData::get(k);
-  const MetaData * const f_mesh_meta_data = & MetaData::get(f);
-  const bool ok_mesh_meta_data  = k_mesh_meta_data == f_mesh_meta_data ;
-  const bool ok_ord     = ord < k.size() ;
-  const bool exists     = ok_mesh_meta_data && ok_ord &&
-                          NULL != field_data( f , k.begin() );
-
-  if ( required_by && ! exists ) {
-    std::ostringstream msg_begin ;
-    msg_begin << "For args: " ;
-    msg_begin << f << " , " ;
-    msg_begin << k << " , " ;
-    msg_begin << ord << " , " ;
-    msg_begin << required_by ;
-    msg_begin << "; operation FAILED with " ;
-    ThrowErrorMsgIf( ! ok_mesh_meta_data,
-                     msg_begin.str() << " different MetaData");
-    ThrowErrorMsgIf( ! ok_ord, msg_begin.str() <<
-                     " Ordinal " <<  ord << " >= " << " size " << k.size());
-    ThrowErrorMsg( msg_begin.str() << " no data");
-  }
-
-  return exists ;
-}
-
-//----------------------------------------------------------------------
 bool Bucket::assert_correct() const {
   // test equivalent() method
   const Bucket* bucket = this;
@@ -355,13 +421,14 @@ std::ostream &
 print( std::ostream & os , const std::string & indent , const Bucket & bucket )
 {
   const MetaData & mesh_meta_data = MetaData::get(bucket);
+  const BulkData & mesh = BulkData::get(bucket);
   const std::string & entity_rank_name =
     mesh_meta_data.entity_rank_names()[ bucket.entity_rank() ];
 
   const std::pair<const unsigned *, const unsigned *>
     part_ids = bucket.superset_part_ordinals();
 
-  os << "Bucket(" << std::endl << indent << "Part intersection {" ;
+  os << "Bucket(size = " << bucket.size() << std::endl << indent << "Part intersection {" ;
 
   for ( const unsigned * i = part_ids.first ; i < part_ids.second ; ++i ) {
     const Part & part = mesh_meta_data.get_part( *i );
@@ -371,7 +438,7 @@ print( std::ostream & os , const std::string & indent , const Bucket & bucket )
   os << " }" << std::endl << indent << entity_rank_name << " members {" ;
 
   for ( unsigned j = 0 ; j < bucket.size() ; ++j ) {
-    const EntityId id = bucket[j].identifier();
+    const EntityId id = mesh.identifier(bucket[j]);
     os << " " << id ;
   }
   os << " } )" << std::endl ;
@@ -380,44 +447,54 @@ print( std::ostream & os , const std::string & indent , const Bucket & bucket )
 }
 
 
-namespace {
-
-void memory_copy( unsigned char * dst , const unsigned char * src , unsigned n )
-{ std::memcpy( dst , src , n ); }
-
-
-void memory_zero( unsigned char * dst , unsigned n )
-{ std::memset( dst , 0 , n ); }
-
-} // namespace
-
-//----------------------------------------------------------------------
-
-void Bucket::update_state()
+struct EntityRankLess
 {
-  const MetaData & meta = MetaData::get(m_mesh);
-  const std::vector<FieldBase*> & field_set = meta.get_fields();
-
-  for ( unsigned i = 0 ; i < field_set.size() ; ) {
-
-    DataMap * const tmp = &m_field_map[0] + i ;
-    const FieldBase & field = * field_set[i] ;
-    const unsigned num_state = field.number_of_states();
-    i += num_state ;
-
-    if ( 1 < num_state && tmp->m_size ) {
-      unsigned offset[ MaximumFieldStates ] ;
-
-      offset[0] = tmp[num_state-1].m_base;
-      for ( unsigned j = 1 ; j < num_state ; ++j ) {
-        offset[j] = tmp[j-1].m_base ;
-      }
-
-      for ( unsigned j = 0 ; j < num_state ; ++j ) {
-        tmp[j].m_base = offset[j] ;
-      }
-    }
+  inline bool operator()(Entity entity, EntityRank rank) const {
+    return m_mesh.entity_rank(entity) < rank;
   }
+
+  inline bool operator()(EntityRank rank, Entity entity) const {
+    return rank < m_mesh.entity_rank(entity);
+  }
+
+  const BulkData &m_mesh;
+};
+
+size_t Bucket::get_others_begin_index(unsigned bucket_ordinal, EntityRank rank) const
+{
+  Entity const * const ents_begin = m_dynamic_other_connectivity.begin_entities(bucket_ordinal);
+  Entity const * const ents_end = m_dynamic_other_connectivity.end_entities(bucket_ordinal);
+
+  EntityRankLess cmp = {m_mesh};
+  Entity const *probe = ents_begin;
+  probe = std::lower_bound(probe, ents_end, rank, cmp);
+
+  return probe - ents_begin;
+}
+
+size_t Bucket::get_others_end_index(unsigned bucket_ordinal, EntityRank rank) const
+{
+  Entity const * const ents_begin = m_dynamic_other_connectivity.begin_entities(bucket_ordinal);
+  Entity const * const ents_end = m_dynamic_other_connectivity.end_entities(bucket_ordinal);
+
+  EntityRankLess cmp = {m_mesh};
+  Entity const *probe = ents_begin;
+  probe = std::upper_bound(probe, ents_end, rank, cmp);
+
+  return probe - ents_begin;
+}
+
+size_t Bucket::get_others_index_count(unsigned bucket_ordinal, EntityRank rank) const
+{
+  Entity const * const ents_begin = m_dynamic_other_connectivity.begin_entities(bucket_ordinal);
+  Entity const * const ents_end = m_dynamic_other_connectivity.end_entities(bucket_ordinal);
+
+  EntityRankLess cmp = {m_mesh};
+  Entity const *probe = ents_begin;
+  Entity const *const saved_lower = std::lower_bound(probe, ents_end, rank, cmp);
+  probe = std::upper_bound(probe, ents_end, rank, cmp);
+
+  return probe - saved_lower;
 }
 
 //----------------------------------------------------------------------
@@ -474,73 +551,180 @@ void Bucket::set_first_bucket_in_partition( Bucket * first_bucket )
 
 //----------------------------------------------------------------------
 
-Bucket::DataMap * Bucket::get_field_map()
+void Bucket::initialize_slot(unsigned ordinal, Entity entity)
 {
-  return &m_field_map[0];
+  m_entities[ordinal]    = entity;
+  m_owner_ranks[ordinal] = 0;
+  if (mesh().is_valid(entity)) {
+    mesh().set_state(entity, Created);
+  }
 }
 
-//----------------------------------------------------------------------
-
-void Bucket::initialize_fields( unsigned i_dst )
+void Bucket::internal_move_entity(Entity entity, unsigned to_ordinal)
 {
-  const std::vector<FieldBase*> & field_set =
-    MetaData::get(m_mesh).get_fields();
+  Entity replaced_entity = (*this)[to_ordinal];
 
-  unsigned char * const p = m_field_data;
-  const DataMap *       i = &m_field_map[0];
-  const DataMap * const e = i + field_set.size();
+  Bucket & src_bucket = mesh().bucket(entity);
+  const unsigned src_ordinal = mesh().bucket_ordinal(entity);
 
-  for (std::vector<FieldBase*>::const_iterator field_iter=field_set.begin() ;
-       i != e ; ++i, ++field_iter ) {
+  std::swap(m_entities[to_ordinal], src_bucket.m_entities[src_ordinal]);
+  std::swap(m_owner_ranks[to_ordinal], src_bucket.m_owner_ranks[src_ordinal]);
 
-    if (i->m_size == 0) {
-      continue;
-    }
+  mesh().set_mesh_index(entity, this, to_ordinal);
+  if (mesh().is_valid(replaced_entity)) {
+    mesh().set_mesh_index(replaced_entity, &src_bucket, src_ordinal);
+  }
 
-    const unsigned char* init_val = reinterpret_cast<const unsigned char*>((*field_iter)->get_initial_value());
-    if (init_val != NULL) {
-      memory_copy( p + i->m_base + i->m_size * i_dst , init_val, i->m_size );
+  m_mesh.copy_entity_fields_callback(m_entity_rank, m_bucket_id, to_ordinal,
+                              m_entity_rank, src_bucket.m_bucket_id, src_ordinal);
+}
+
+void Bucket::add_entity(Entity entity)
+{
+  ThrowAssert(m_size < m_capacity);
+  ThrowAssert(mesh().is_valid(entity));
+  ThrowAssert(!mesh().is_valid(m_entities[m_size]));
+  ThrowAssert(mesh().bucket_ptr(entity) == NULL);
+  ThrowAssert(entity.key().rank() == m_entity_rank);
+
+  initialize_slot(m_size, entity);
+
+  mesh().set_mesh_index(entity, this, m_size);
+
+  ++m_size;
+
+  AddEntityFunctor functor;
+  modify_connectivity(functor);
+}
+
+void Bucket::add_entity()
+{
+  initialize_slot(m_size, Entity());
+
+  ++m_size;
+
+  AddEntityFunctor functor;
+  modify_connectivity(functor);
+}
+
+bool Bucket::destroy_relation(Entity e_from, Entity e_to, const RelationIdentifier local_id )
+{
+  const unsigned from_bucket_ordinal = mesh().bucket_ordinal(e_from);
+  DestroyRelationFunctor functor(from_bucket_ordinal, e_to, static_cast<ConnectivityOrdinal>(local_id));
+  modify_connectivity(functor);
+
+  return functor.m_modified;
+}
+
+bool Bucket::declare_relation(unsigned bucket_ordinal, Entity e_to, const ConnectivityOrdinal ordinal, Permutation permutation )
+{
+  DeclareRelationFunctor functor(bucket_ordinal, e_to, ordinal, permutation);
+  modify_connectivity(functor);
+
+  return functor.m_modified;
+}
+
+void Bucket::remove_entity(bool due_to_move)
+{
+  ThrowAssert(m_size > 0);
+
+  --m_size;
+  initialize_slot(m_size, Entity());
+
+  if (!due_to_move) {
+    RemoveEntityFunctor functor;
+    modify_connectivity(functor);
+  }
+}
+
+void Bucket::move_entity(Entity entity)
+{
+  ThrowAssert(m_size < m_capacity);
+  ThrowAssert(mesh().is_valid(entity));
+  ThrowAssert(!mesh().is_valid(m_entities[m_size]));
+  ThrowAssert(mesh().bucket_ptr(entity) != NULL);
+  ThrowAssert(mesh().bucket_ptr(entity) != this);
+  ThrowAssert(mesh().bucket_ordinal(entity) == mesh().bucket(entity).size() - 1); // needs to come from the end
+  ThrowAssert(entity.key().rank() == m_entity_rank);
+
+  Bucket* old_bucket = mesh().bucket_ptr(entity);
+  internal_move_entity(entity, m_size);
+
+  ++m_size;
+
+  // Unfortunately, we had to copy/paste modify_connectivity to allow dynamic->fixed moves
+  switch(m_node_kind) {
+  case FIXED_CONNECTIVITY:
+    if (old_bucket->m_node_kind == FIXED_CONNECTIVITY) {
+      old_bucket->m_fixed_node_connectivity.move_entity(m_fixed_node_connectivity);
     }
     else {
-      memory_zero( p + i->m_base + i->m_size * i_dst , i->m_size );
+      ThrowAssert(old_bucket->m_node_kind != INVALID_CONNECTIVITY_TYPE);
+      old_bucket->m_dynamic_node_connectivity.move_to_fixed(m_fixed_node_connectivity);
     }
+    break;
+  case DYNAMIC_CONNECTIVITY: old_bucket->m_dynamic_node_connectivity.move_entity(m_dynamic_node_connectivity);  break;
+  default: break;
   }
+
+  switch(m_edge_kind) {
+  case FIXED_CONNECTIVITY:
+    if (old_bucket->m_edge_kind == FIXED_CONNECTIVITY) {
+      old_bucket->m_fixed_edge_connectivity.move_entity(m_fixed_edge_connectivity);
+    }
+    else {
+      ThrowAssert(old_bucket->m_edge_kind != INVALID_CONNECTIVITY_TYPE);
+      old_bucket->m_dynamic_edge_connectivity.move_to_fixed(m_fixed_edge_connectivity);
+    }
+    break;
+  case DYNAMIC_CONNECTIVITY: old_bucket->m_dynamic_edge_connectivity.move_entity(m_dynamic_edge_connectivity); break;
+  default: break;
+  }
+
+  switch(m_face_kind) {
+  case FIXED_CONNECTIVITY:
+    if (old_bucket->m_face_kind == FIXED_CONNECTIVITY) {
+      old_bucket->m_fixed_face_connectivity.move_entity(m_fixed_face_connectivity);
+    }
+    else {
+      ThrowAssert(old_bucket->m_face_kind != INVALID_CONNECTIVITY_TYPE);
+      old_bucket->m_dynamic_face_connectivity.move_to_fixed(m_fixed_face_connectivity);
+    }
+    break;
+  case DYNAMIC_CONNECTIVITY: old_bucket->m_dynamic_face_connectivity.move_entity(m_dynamic_face_connectivity); break;
+  default: break;
+  }
+
+  switch(m_element_kind) {
+  case FIXED_CONNECTIVITY:
+    if (old_bucket->m_element_kind == FIXED_CONNECTIVITY) {
+      old_bucket->m_fixed_element_connectivity.move_entity(m_fixed_element_connectivity);
+    }
+    else {
+      ThrowAssert(old_bucket->m_element_kind != INVALID_CONNECTIVITY_TYPE);
+      old_bucket->m_dynamic_element_connectivity.move_to_fixed(m_fixed_element_connectivity);
+    }
+    break;
+  case DYNAMIC_CONNECTIVITY: old_bucket->m_dynamic_element_connectivity.move_entity(m_dynamic_element_connectivity); break;
+  default: break;
+  }
+
+  old_bucket->m_dynamic_other_connectivity.move_entity(m_dynamic_other_connectivity);
 }
 
-void Bucket::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src )
+void Bucket::replace_entity(unsigned new_ordinal, Entity entity)
 {
-  const std::vector<FieldBase*> & field_set =
-    MetaData::get(m_mesh).get_fields();
+  ThrowAssert(new_ordinal < m_capacity);
+  ThrowAssert(mesh().is_valid(entity));
+  ThrowAssert(mesh().bucket_ptr(entity) != NULL);
+  ThrowAssert(entity.key().rank() == m_entity_rank);
 
-  unsigned char * const s = k_src.m_field_data;
-  unsigned char * const d = m_field_data;
-  const DataMap *       j = &(k_src.m_field_map[0]);
-  const DataMap *       i = &m_field_map[0];
-  const DataMap * const e = i + field_set.size();
 
-  for (std::vector<FieldBase*>::const_iterator field_iter=field_set.begin() ;
-       i != e ; ++i , ++j, ++field_iter ) {
+  const MeshIndex old_index = m_mesh.mesh_index(entity);
+  internal_move_entity(entity, new_ordinal);
 
-    if ( i->m_size ) {
-      if ( j->m_size ) {
-        ThrowAssertMsg( i->m_size == j->m_size,
-            "Incompatible field sizes: " << i->m_size << " != " << j->m_size );
-
-        memory_copy( d + i->m_base + i->m_size * i_dst ,
-                     s + j->m_base + j->m_size * i_src , i->m_size );
-      }
-      else {
-        const unsigned char* init_val = reinterpret_cast<const unsigned char*>((*field_iter)->get_initial_value());
-        if (init_val != NULL) {
-          memory_copy( d + i->m_base + i->m_size * i_dst ,
-                       init_val, i->m_size );
-        }
-        else {
-          memory_zero( d + i->m_base + i->m_size * i_dst , i->m_size );
-        }
-      }
-    }
-  }
+  SwapEntityFunctor functor(old_index.bucket_ordinal, new_ordinal);
+  modify_connectivity(functor, old_index.bucket);
 }
 
 void Bucket::parent_topology( EntityRank parent_rank, std::vector<stk::topology> & parent_topologies) const
@@ -564,8 +748,22 @@ void Bucket::parent_topology( EntityRank parent_rank, std::vector<stk::topology>
   parent_topologies.erase(end,parent_topologies.end());
 }
 
+void Bucket::check_size_invariant() const
+{
+#ifndef NDEBUG
+//  for (size_t i = 0; i < m_entities.size(); ++i) {
+//    if (i < m_size) {
+//      ThrowAssert(mesh().is_valid(m_entities[i]));
+//    }
+//    else {
+//      ThrowAssert(!mesh().is_valid(m_entities[i]));
+//    }
+//  }
 
+  CheckSizeFunctor functor;
+  const_cast<Bucket*>(this)->modify_connectivity(functor);
+#endif
+}
 
 } // namespace mesh
 } // namespace stk
-

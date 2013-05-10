@@ -47,7 +47,7 @@ void get_entities( const BulkData & mesh , EntityRank entity_rank ,
     }
   }
 
-  std::sort(entities.begin(), entities.end(), EntityLess());
+  std::sort(entities.begin(), entities.end(), EntityLess(mesh));
 }
 
 BucketVectorEntityIteratorRange get_entities( EntityRank entity_rank, const BulkData& mesh )
@@ -95,7 +95,9 @@ void get_selected_entities( const Selector & selector ,
     }
   }
 
-  std::sort(entities.begin(), entities.end(), EntityLess());
+  if (input_buckets.size() > 0) {
+    std::sort(entities.begin(), entities.end(), EntityLess(input_buckets[0]->mesh()));
+  }
 }
 
 #if 0

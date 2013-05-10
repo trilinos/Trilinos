@@ -1494,8 +1494,8 @@ namespace stk {
             emitter << YAML::Value;          YAML_ERRCHECK;
             emitter << YAML::Flow;           YAML_ERRCHECK;
             emitter << YAML::BeginSeq;       YAML_ERRCHECK;
-            emitter << stk::mesh::entity_rank(value_entity_key);
-            emitter << stk::mesh::entity_id(value_entity_key);
+            emitter << value_entity_key.rank();
+            emitter << value_entity_key.id();
             for (unsigned ii = 0; ii < nodeIds_onSE.size(); ii++)
               {
                 //emitter << (int)nodeIds_onSE[ii]->identifier();      YAML_ERRCHECK;
@@ -1549,7 +1549,6 @@ namespace stk {
 
                   stk::mesh::EntityId value_tuple_0_quantum;
                   NodeIdsOnSubDimEntityType value_tuple_0;
-                  //stk::mesh::EntityKey::raw_key_type value_tuple_1;
 
                   //typedef boost::tuple<NodeIdsOnSubDimEntityType, stk::mesh::EntityKey> SubDimCellData;
                   SubDimCellData value; // nodeId_elementOwnderId = (*iter).second;
@@ -1588,7 +1587,7 @@ namespace stk {
                   int iseq=0;
                   const YAML::Node& valSeq = it.second();
                   stk::mesh::EntityRank rank;
-                  stk::mesh::EntityKey::raw_key_type id;
+                  size_t id;
                   for(YAML::Iterator itv=valSeq.begin();itv!=valSeq.end();++itv,++iseq) {
                     if (iseq == 0)
                       {
@@ -1600,8 +1599,8 @@ namespace stk {
                         stk::mesh::EntityKey entityKey(rank,id);
                         if (DEBUG_YAML) std::cout << "s_r value_tuple_1= " << rank << " " << id << std::endl;
                         value_entity_key = stk::mesh::EntityKey(rank,id);
-                        if (DEBUG_YAML) std::cout << "s_r owning element rank= " << stk::mesh::entity_rank(value.get<SDC_DATA_OWNING_ELEMENT_KEY>())
-                                                  << " owning element id= " << stk::mesh::entity_id(value.get<SDC_DATA_OWNING_ELEMENT_KEY>())
+                        if (DEBUG_YAML) std::cout << "s_r owning element rank= " << value.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank()
+                                                  << " owning element id= " << value.get<SDC_DATA_OWNING_ELEMENT_KEY>().id()
                                                   << std::endl;
                       }
                     else

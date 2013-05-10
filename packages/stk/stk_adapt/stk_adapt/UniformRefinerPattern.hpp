@@ -642,7 +642,7 @@ namespace stk {
         int fieldStride = output_pts.dimension(1);
         unsigned *null_u = 0;
 
-        stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::MetaData::NODE_RANK);
+        percept::MyPairIterRelation elem_nodes ( m_eMesh, element,  mesh::MetaData::NODE_RANK);
         double xi = input_param_coords(0, 0);
 
         // FIXME assumes {-1,0,1} element parametric coords
@@ -671,7 +671,7 @@ namespace stk {
         int fieldStride = output_pts.dimension(1);
         unsigned *null_u = 0;
 
-        stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::MetaData::NODE_RANK);
+        percept::MyPairIterRelation elem_nodes (m_eMesh, element, mesh::MetaData::NODE_RANK);
         MDArray basis_val(elem_nodes.size(), 1);
         //std::cout << "tmp fieldStride= " << fieldStride << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
 
@@ -794,7 +794,7 @@ namespace stk {
                 std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
                 std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
                 std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_hex20      = " << topo_key_hex20 << " cell_topo= " << cell_topo.getName() << std::endl;
-                stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::MetaData::NODE_RANK);
+                percept::MyPairIterRelation elem_nodes (m_eMesh, element, mesh::MetaData::NODE_RANK);
 
 
                 PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
@@ -829,7 +829,7 @@ namespace stk {
               }
           }
 
-        stk::mesh::PairIterRelation new_elem_nodes = newElement.relations(mesh::MetaData::NODE_RANK);
+        percept::MyPairIterRelation new_elem_nodes (m_eMesh, newElement, mesh::MetaData::NODE_RANK);
         for (unsigned i_new_node = 0; i_new_node < new_elem_nodes.size(); i_new_node++)
           {
             unsigned childNodeIdx = child_nodes[i_new_node];
@@ -949,7 +949,7 @@ namespace stk {
         static vector<quadratic_type> elems(NumNewElements_Enrich);
 
         shards::CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+        const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
         std::vector<stk::mesh::Part*> add_parts;
         std::vector<stk::mesh::Part*> remove_parts;
@@ -1131,7 +1131,7 @@ namespace stk {
         static std::vector<unsigned> vector_sdcell_global_baseline(4);
         static std::vector<unsigned> subCell_from_element(4);
 
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::MetaData::NODE_RANK);
+        const percept::MyPairIterRelation elem_nodes (m_eMesh, element, mesh::MetaData::NODE_RANK);
 
         const unsigned * inodes = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].node;
         int num_subcell_verts = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology->vertex_count;
@@ -1270,7 +1270,7 @@ namespace stk {
         //  isLinearElement = true;
         //std::cout << "tmp cell_topo= " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
 
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+        const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
         int topoDim = cell_topo.getDimension();
         //unsigned cell_topo_key = fromTopoKey;

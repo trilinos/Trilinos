@@ -17,8 +17,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_mesh/diag/EntityKey.hpp>
-
 #include <stk_io/MeshReadWriteUtils.hpp>
 #include <init/Ionit_Initializer.h>
 

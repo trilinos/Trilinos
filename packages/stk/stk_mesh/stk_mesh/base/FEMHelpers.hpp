@@ -55,17 +55,12 @@ Entity declare_element_edge( BulkData & mesh ,
                                const unsigned local_side_id ,
                                Part * part = NULL );
 
-/** \brief  Determine the polarity of the local side,
- *          more efficient if the local_side_id is known.
- */
-bool element_side_polarity( const Entity elem ,
-                            const Entity side , int local_side_id = -1 );
-
 /** \brief  Create (or find) an element side.
  *
  *  The element must be a member of a Part with a CellTopology.
  */
-Entity declare_element_side( Entity elem ,
+Entity declare_element_side( BulkData & mesh ,
+                               Entity elem ,
                                Entity side ,
                                const unsigned local_side_id ,
                                Part * part = NULL );
@@ -76,7 +71,8 @@ Entity declare_element_side( Entity elem ,
  *
  *  The element must be a member of a Part with a CellTopology.
  */
-Entity declare_element_edge( Entity elem ,
+Entity declare_element_edge( BulkData & mesh ,
+                               Entity elem ,
                                Entity edge ,
                                const unsigned local_edge_id ,
                                Part * part = NULL );
@@ -102,7 +98,7 @@ Part &declare_part(MetaData& meta_data, const std::string &name) {
  * \param use_reverse_polarity
  * \return CellTopologyData * of the requested subcell
  */
-const CellTopologyData * get_subcell_nodes(
+const CellTopologyData * get_subcell_nodes(const BulkData& mesh,
     const Entity entity ,
     EntityRank         subcell_rank ,
     unsigned           subcell_identifier ,
@@ -113,7 +109,7 @@ const CellTopologyData * get_subcell_nodes(
  *          local id of the subcell that contains those nodes in the
  *          correct orientation.
  */
-int get_entity_subcell_id( const Entity entity ,
+int get_entity_subcell_id( const BulkData& mesh, const Entity entity ,
                            const EntityRank          subcell_rank,
                            const CellTopologyData  * side_topology,
                            const EntityVector      & side_nodes );
@@ -146,19 +142,6 @@ void get_parts_with_topology(stk::mesh::BulkData& mesh,
     }
   }
 }
-
-inline
-unsigned get_spatial_dimension(const Entity entity)
-{
-  // expose some dot-chain to ensure everything inlined
-  return entity.bucket().mesh().mesh_meta_data().spatial_dimension();
-}
-
-/* The Fmwk uses an enum to identify nodes, edges, faces and elements. The
-   toolkit is similar, but the the toolkit rank depends on the spatial
-   dimension. For 3D parts they are identical. With 2D, the element rank is
-   2 (not 3). etc.
-*/
 
 /** \} */
 

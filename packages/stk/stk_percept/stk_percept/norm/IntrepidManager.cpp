@@ -582,7 +582,8 @@ namespace stk
       MDArray cellWorkset(numCells, numNodes, cellDim);
 
       /// FIXME -- fill cellWorkset
-      const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+      const MyPairIterRelation elem_nodes(bulkData, element, stk::mesh::MetaData::NODE_RANK );
+
 
       for (unsigned iCell = 0; iCell < numCells; iCell++)
         {

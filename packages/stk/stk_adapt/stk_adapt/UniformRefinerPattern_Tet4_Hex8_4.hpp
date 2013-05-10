@@ -127,7 +127,7 @@ namespace stk {
         static stk::mesh::EntityId elems[4][8];
 
         shards::CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+        const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
 
         // FIXME - maybe the computation of node coorinates should go in the calling code?

@@ -33,6 +33,7 @@ void AlgorithmInterface::apply_one(
   get_involved_parts( union_part_vector, bucket, parts );
 
   if ( run_it ) {
+
     if ( 0 < m_maximum_entity_count ) {
       for ( mesh::Bucket::iterator j = bucket.begin(); j != bucket.end() ; ) {
         mesh::Bucket::iterator e = j ;
@@ -42,12 +43,12 @@ void AlgorithmInterface::apply_one(
         else {
           e += m_maximum_entity_count ;
         }
-        apply( j , e , parts , reduce );
+        apply(bucket.mesh(), j , e , parts , reduce );
         j = e ;
       }
     }
     else {
-      apply( bucket.begin() , bucket.end() , parts , reduce );
+      apply(bucket.mesh(), bucket.begin() , bucket.end() , parts , reduce );
     }
   }
 }
@@ -75,7 +76,7 @@ public:
                 void * reduce ) const ;
  
   AlgorithmRunnerNonThread() {}
-  ~AlgorithmRunnerNonThread() {}
+  virtual ~AlgorithmRunnerNonThread() {}
 };
 
 void AlgorithmRunnerNonThread::run_alg(

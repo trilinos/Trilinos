@@ -1,8 +1,9 @@
-#include <sierra/io/array_mesh_fixture.hpp>
-#include <sierra/mesh/fixture/array_mesh_hex_fixture.hpp>
+#include <sierra/mesh/array_mesh/array_mesh.hpp>
+#include <sierra/io/array_mesh_reader.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_util/environment/CPUTime.hpp>
+#include <stk_util/util/memory_util.hpp>
 
 #include <stk_performance_test_includes/calculate_centroid.hpp>
 
@@ -87,12 +88,17 @@ STKUNIT_UNIT_TEST(array_mesh, gather_centroid_hex_elem_genmesh)
   std::string file_name = oss.str();
   std::string mesh_type("generated");
 
-  sierra::mesh::io::array_mesh_fixture fixture(MPI_COMM_WORLD, mesh_type, file_name);
+  bool create_upward_connectivity = true;
+  sierra::mesh::array_mesh mesh(create_upward_connectivity);
+  sierra::mesh::io::array_mesh_reader reader(MPI_COMM_WORLD, mesh_type, file_name, mesh);
+
+  std::vector<double> mesh_coords;
+  reader.read_nodal_field(mesh_coords, "mesh_model_coordinates");
 
   double end_time = stk::cpu_time() - start_time;
 
-  std::cout << "\tNum Nodes: " << fixture.m_mesh.get_num_nodes()<<std::endl;
-  std::cout << "\tNum Elements: " << fixture.m_mesh.get_num_elements() << std::endl;
+  std::cout << "\tNum Nodes: " << mesh.get_num_nodes()<<std::endl;
+  std::cout << "\tNum Elements: " << mesh.get_num_elements() << std::endl;
   std::cout << "Time to create hex mesh: " << end_time << std::endl;
 
   std::vector<double> avg_centroid(3,0);
@@ -104,7 +110,7 @@ STKUNIT_UNIT_TEST(array_mesh, gather_centroid_hex_elem_genmesh)
   const int spatial_dim = 3;
   const int num_iters = 100;
   for(int t=0; t<num_iters; ++t) {
-    array_mesh_gather(fixture.m_mesh, fixture.m_coords, avg_centroid);
+    array_mesh_gather(mesh, mesh_coords, avg_centroid);
 
     for(int d=0; d<spatial_dim; ++d) {
       EXPECT_LT(std::abs(avg_centroid[d]/num_elems - expected), tolerance);
@@ -119,4 +125,9 @@ STKUNIT_UNIT_TEST(array_mesh, gather_centroid_hex_elem_genmesh)
 
   double test_time = end_time - start_time;
   std::cout << "Time to compute centroids ("<<num_iters<<" iters): " << test_time << std::endl;
+
+  size_t now = 0;
+  size_t hwm = 0;
+  stk::get_memory_usage(now, hwm);
+  std::cout<<"Memory high-water-mark: "<<stk::human_bytes(hwm)<<std::endl;
 }

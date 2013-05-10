@@ -219,7 +219,7 @@ mesh_traits<stk::mesh::BulkData>::entity_rank
 get_entity_rank( mesh_traits<stk::mesh::BulkData>::entity_key entity,
                  const stk::mesh::BulkData & mesh )
 {
-  return entity.entity_rank();
+  return mesh.entity_rank(entity);
 }
 
 // Generic API:  Get buckets associated with a selector.

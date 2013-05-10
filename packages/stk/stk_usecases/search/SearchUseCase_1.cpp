@@ -27,7 +27,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_mesh/diag/EntityKey.hpp>
 
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>

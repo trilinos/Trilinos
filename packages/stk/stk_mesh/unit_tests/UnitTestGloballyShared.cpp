@@ -13,8 +13,6 @@
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
 
-namespace {
-
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Entity;
@@ -85,21 +83,23 @@ STKUNIT_UNIT_TEST( UnitTestGloballyShared, keyhole_3x1 )
     STKUNIT_ASSERT_TRUE( element_1.is_valid() );
     STKUNIT_ASSERT_TRUE( element_2.is_valid() );
     STKUNIT_ASSERT_TRUE( element_3.is_valid() );
-    STKUNIT_EXPECT_EQUAL( 0u, element_1.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, element_2.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 0u, element_3.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 0, element_1.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1, element_2.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 0, element_3.owner_rank() );
     // Verify global sharing of edges on element_1 and element_3
     // element_1:  edge_1 should be globally shared
     // element_3:  edge_3 should be globally shared
-    stk::mesh::PairIterRelation element_1_edge_relations = element_1.relations(stk::topology::EDGE_RANK);
-    STKUNIT_ASSERT_EQUAL( 4u, element_1_edge_relations.size() );
-    Entity element_1_edge_1 = element_1_edge_relations[1].entity();
+    stk::mesh::Entity const* element_1_edge_relations = mesh.begin_edge_entities(element_1);
+    const int num_element_1_edges = mesh.num_edges(element_1);
+    STKUNIT_ASSERT_EQUAL( 4, num_element_1_edges );
+    Entity element_1_edge_1 = element_1_edge_relations[1];
     STKUNIT_ASSERT_TRUE( element_1_edge_1.is_valid() );
     STKUNIT_EXPECT_TRUE( mesh.in_shared(element_1_edge_1.key()) );
 
-    stk::mesh::PairIterRelation element_3_edge_relations = element_3.relations(stk::topology::EDGE_RANK);
-    STKUNIT_ASSERT_EQUAL( 4u, element_3_edge_relations.size() );
-    Entity element_3_edge_3 = element_3_edge_relations[3].entity();
+    stk::mesh::Entity const* element_3_edge_relations = mesh.begin_edge_entities(element_3);
+    const int num_element_3_edges = mesh.num_edges(element_3);
+    STKUNIT_ASSERT_EQUAL( 4, num_element_3_edges );
+    Entity element_3_edge_3 = element_3_edge_relations[3];
     STKUNIT_ASSERT_TRUE( element_3_edge_3.is_valid() );
     STKUNIT_EXPECT_TRUE( mesh.in_shared(element_3_edge_3.key()) );
 
@@ -111,27 +111,28 @@ STKUNIT_UNIT_TEST( UnitTestGloballyShared, keyhole_3x1 )
     STKUNIT_ASSERT_TRUE( element_1.is_valid() );
     STKUNIT_ASSERT_TRUE( element_2.is_valid() );
     STKUNIT_ASSERT_TRUE( element_3.is_valid() );
-    STKUNIT_EXPECT_EQUAL( 0u, element_1.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, element_2.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 0u, element_3.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 0, element_1.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1, element_2.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 0, element_3.owner_rank() );
     // Verify global sharing of edges on element_2
     // element_2:  edge_0 and edge_2 should _not be_ globally shared
     //             edge_1 and edge_3 should _be_ globally shared
-    stk::mesh::PairIterRelation element_2_edge_relations = element_2.relations(stk::topology::EDGE_RANK);
-    STKUNIT_ASSERT_EQUAL( 4u, element_2_edge_relations.size() );
+    stk::mesh::Entity const* element_2_edge_relations = mesh.begin_edge_entities(element_2);
+    const int num_element_2_edges = mesh.num_edges(element_2);
+    STKUNIT_ASSERT_EQUAL( 4, num_element_2_edges );
 
-    Entity element_2_edge_0 = element_2_edge_relations[0].entity();
+    Entity element_2_edge_0 = element_2_edge_relations[0];
     STKUNIT_ASSERT_TRUE( element_2_edge_0.is_valid() );
 
-    Entity element_2_edge_2 = element_2_edge_relations[2].entity();
+    Entity element_2_edge_2 = element_2_edge_relations[2];
     STKUNIT_ASSERT_TRUE( element_2_edge_2.is_valid() );
 
     STKUNIT_EXPECT_FALSE( mesh.in_shared(element_2_edge_0.key()) );
     STKUNIT_EXPECT_FALSE( mesh.in_shared(element_2_edge_2.key()) );
 
-    Entity element_2_edge_1 = element_2_edge_relations[1].entity();
+    Entity element_2_edge_1 = element_2_edge_relations[1];
     STKUNIT_ASSERT_TRUE( element_2_edge_1.is_valid() );
-    Entity element_2_edge_3 = element_2_edge_relations[3].entity();
+    Entity element_2_edge_3 = element_2_edge_relations[3];
     STKUNIT_ASSERT_TRUE( element_2_edge_3.is_valid() );
 
     STKUNIT_EXPECT_TRUE( mesh.in_shared(element_2_edge_1.key()) );
@@ -247,8 +248,8 @@ STKUNIT_UNIT_TEST( UnitTestGloballyShared, constraints_element_2x1 )
   if (p_rank == 0) {
     STKUNIT_ASSERT_TRUE( element_1.is_valid() );
     STKUNIT_ASSERT_TRUE( element_2.is_valid() );
-    STKUNIT_EXPECT_EQUAL( 0u, constraint_1.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, constraint_2.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 0, constraint_1.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1, constraint_2.owner_rank() );
 
     STKUNIT_EXPECT_TRUE( mesh.in_shared(element_1.key()) );
     STKUNIT_EXPECT_TRUE( mesh.in_shared(element_2.key()) );
@@ -256,8 +257,8 @@ STKUNIT_UNIT_TEST( UnitTestGloballyShared, constraints_element_2x1 )
   else if (p_rank == 1) {
     STKUNIT_ASSERT_TRUE( element_1.is_valid() );
     STKUNIT_ASSERT_TRUE( element_2.is_valid() );
-    STKUNIT_EXPECT_EQUAL( 0u, constraint_1.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, constraint_2.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 0, constraint_1.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1, constraint_2.owner_rank() );
 
     STKUNIT_EXPECT_TRUE( mesh.in_shared(element_1.key()) );
     STKUNIT_EXPECT_TRUE( mesh.in_shared(element_2.key()) );
@@ -267,6 +268,3 @@ STKUNIT_UNIT_TEST( UnitTestGloballyShared, constraints_element_2x1 )
     STKUNIT_EXPECT_TRUE( !element_2.is_valid() );
   }
 }
-
-
-} // end namespace

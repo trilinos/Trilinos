@@ -21,22 +21,18 @@ void verify_declare_element_side(
     const unsigned local_side_id
     )
 {
-  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
+  const CellTopologyData * const elem_top = get_cell_topology(mesh.bucket(elem)).getCellTopologyData();
 
   const CellTopologyData * const side_top =
     ( elem_top && local_side_id < elem_top->side_count )
     ? elem_top->side[ local_side_id ].topology : NULL ;
 
-  ThrowErrorMsgIf( &mesh != & BulkData::get(elem),
-    "For elem " << print_entity_key(elem) <<
-    ", Bulkdata for 'elem' and mesh are different");
-
   ThrowErrorMsgIf( elem_top && local_side_id >= elem_top->side_count,
-    "For elem " << print_entity_key(elem) << ", local_side_id " << local_side_id << ", " <<
+    "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<
     "local_side_id exceeds " << elem_top->name << ".side_count = " << elem_top->side_count );
 
   ThrowErrorMsgIf( side_top == NULL,
-    "For elem " << print_entity_key(elem) << ", local_side_id " << local_side_id << ", " <<
+    "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<
     "No element topology found");
 }
 
@@ -46,22 +42,18 @@ void verify_declare_element_edge(
     const unsigned local_edge_id
     )
 {
-  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
+  const CellTopologyData * const elem_top = get_cell_topology( mesh.bucket(elem) ).getCellTopologyData();
 
   const CellTopologyData * const edge_top =
     ( elem_top && local_edge_id < elem_top->edge_count )
     ? elem_top->edge[ local_edge_id ].topology : NULL ;
 
-  ThrowErrorMsgIf( &mesh != & BulkData::get(elem),
-    "For elem " << print_entity_key(elem) <<
-    ", Bulkdata for 'elem' and mesh are different");
-
   ThrowErrorMsgIf( elem_top && local_edge_id >= elem_top->edge_count,
-    "For elem " << print_entity_key(elem) << ", local_edge_id " << local_edge_id << ", " <<
+    "For elem " << mesh.identifier(elem) << ", local_edge_id " << local_edge_id << ", " <<
     "local_edge_id exceeds " << elem_top->name << ".edge_count = " << elem_top->edge_count );
 
   ThrowErrorMsgIf( edge_top == NULL,
-    "For elem " << print_entity_key(elem) << ", local_edge_id " << local_edge_id << ", " <<
+    "For elem " << mesh.identifier(elem) << ", local_edge_id " << local_edge_id << ", " <<
     "No element topology found");
 }
 
@@ -90,7 +82,7 @@ Entity declare_element( BulkData & mesh ,
   for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
     //declare node if it doesn't already exist
     Entity node = mesh.get_entity( node_rank , node_id[i]);
-    if ( !node.is_valid() ) {
+    if ( !mesh.is_valid(node) ) {
       node = mesh.declare_entity( node_rank , node_id[i], empty );
     }
 
@@ -100,24 +92,23 @@ Entity declare_element( BulkData & mesh ,
 }
 
 Entity declare_element_side(
+  BulkData & mesh,
   Entity elem ,
   Entity side,
   const unsigned local_side_id ,
   Part * part )
 {
-  BulkData & mesh = BulkData::get(side);
-
   verify_declare_element_side(mesh, elem, local_side_id);
 
-  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
+  const CellTopologyData * const elem_top = get_cell_topology( mesh.bucket(elem) ).getCellTopologyData();
 
   ThrowErrorMsgIf( elem_top == NULL,
-      "Element[" << elem.identifier() << "] has no defined topology" );
+      "Element[" << mesh.identifier(elem) << "] has no defined topology" );
 
   const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
 
   ThrowErrorMsgIf( side_top == NULL,
-      "Element[" << elem.identifier() << "], local_side_id = " <<
+      "Element[" << mesh.identifier(elem) << "], local_side_id = " <<
       local_side_id << ", side has no defined topology" );
 
   const unsigned * const side_node_map = elem_top->side[ local_side_id ].node ;
@@ -130,10 +121,11 @@ Entity declare_element_side(
 
   mesh.declare_relation( elem , side , local_side_id );
 
-  PairIterRelation rel = elem.relations( MetaData::NODE_RANK );
+  Entity const *elem_nodes = mesh.begin_node_entities(elem);
 
-  for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
-    Entity node = rel[ side_node_map[i] ].entity();
+  for ( unsigned i = 0 ; i < side_top->node_count ; ++i )
+  {
+    Entity node = elem_nodes[ side_node_map[i] ];
     mesh.declare_relation( side , node , i );
   }
 
@@ -141,24 +133,21 @@ Entity declare_element_side(
 }
 
 Entity declare_element_edge(
+  BulkData & mesh ,
   Entity elem ,
   Entity edge,
   const unsigned local_edge_id ,
   Part * part )
 {
-  BulkData & mesh = BulkData::get(edge);
-
-  //  verify_declare_element_edge(mesh, elem, local_edge_id);
-
-  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
+  const CellTopologyData * const elem_top = get_cell_topology(mesh.bucket(elem)).getCellTopologyData();
 
   ThrowErrorMsgIf( elem_top == NULL,
-      "Element[" << elem.identifier() << "] has no defined topology" );
+      "Element[" << mesh.identifier(elem) << "] has no defined topology" );
 
   const CellTopologyData * const edge_top = elem_top->edge[ local_edge_id ].topology;
 
   ThrowErrorMsgIf( edge_top == NULL,
-      "Element[" << elem.identifier() << "], local_edge_id = " <<
+      "Element[" << mesh.identifier(elem) << "], local_edge_id = " <<
       local_edge_id << ", edge has no defined topology" );
 
   const unsigned * const edge_node_map = elem_top->edge[ local_edge_id ].node ;
@@ -171,10 +160,11 @@ Entity declare_element_edge(
 
   mesh.declare_relation( elem , edge , local_edge_id );
 
-  PairIterRelation rel = elem.relations( MetaData::NODE_RANK );
+  Entity const *elem_nodes = mesh.begin_node_entities(elem);
 
-  for ( unsigned i = 0 ; i < edge_top->node_count ; ++i ) {
-    Entity node = rel[ edge_node_map[i] ].entity();
+  for ( unsigned i = 0 ; i < edge_top->node_count ; ++i )
+  {
+    Entity node = elem_nodes[ edge_node_map[i] ];
     mesh.declare_relation( edge , node , i );
   }
 
@@ -190,20 +180,20 @@ Entity declare_element_side(
 {
   verify_declare_element_side(mesh, elem, local_side_id);
 
-  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
+  const CellTopologyData * const elem_top = get_cell_topology(mesh.bucket(elem)).getCellTopologyData();
 
   ThrowErrorMsgIf( elem_top == NULL,
-      "Element[" << elem.identifier() << "] has no defined topology");
+      "Element[" << mesh.identifier(elem) << "] has no defined topology");
 
   const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
 
   ThrowErrorMsgIf( side_top == NULL,
-		   "Element[" << elem.identifier() << "], local_side_id = " <<
+		   "Element[" << mesh.identifier(elem) << "], local_side_id = " <<
 		   local_side_id << ", side has no defined topology" );
 
   PartVector empty_parts ;
   Entity side = mesh.declare_entity( side_top->dimension , global_side_id, empty_parts );
-  return declare_element_side( elem, side, local_side_id, part);
+  return declare_element_side(mesh, elem, side, local_side_id, part);
 }
 
 Entity declare_element_edge(
@@ -215,26 +205,24 @@ Entity declare_element_edge(
 {
   verify_declare_element_edge(mesh, elem, local_edge_id);
 
-  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
+  const CellTopologyData * const elem_top = get_cell_topology(mesh.bucket(elem) ).getCellTopologyData();
 
   ThrowErrorMsgIf( elem_top == NULL,
-      "Element[" << elem.identifier() << "] has no defined topology");
+      "Element[" << mesh.identifier(elem) << "] has no defined topology");
 
 
   const CellTopologyData * const edge_top = elem_top->edge[ local_edge_id ].topology;
 
   ThrowErrorMsgIf( edge_top == NULL,
-      "Element[" << elem.identifier() << "], local_edge_id = " <<
+      "Element[" << mesh.identifier(elem) << "], local_edge_id = " <<
       local_edge_id << ", edge has no defined topology" );
 
   PartVector empty_parts ;
   Entity edge = mesh.declare_entity( edge_top->dimension , global_edge_id, empty_parts );
-  return declare_element_edge( elem, edge, local_edge_id, part);
+  return declare_element_edge(mesh, elem, edge, local_edge_id, part);
 }
 
-
-
-const CellTopologyData * get_subcell_nodes(const Entity entity ,
+const CellTopologyData * get_subcell_nodes(const BulkData& mesh, const Entity entity ,
                                            EntityRank subcell_rank ,
                                            unsigned subcell_identifier ,
                                            EntityVector & subcell_nodes)
@@ -242,7 +230,7 @@ const CellTopologyData * get_subcell_nodes(const Entity entity ,
   subcell_nodes.clear();
 
   // get cell topology
-  const CellTopologyData* celltopology = get_cell_topology(entity).getCellTopologyData();
+  const CellTopologyData* celltopology = get_cell_topology(mesh.bucket(entity)).getCellTopologyData();
 
   //error checking
   {
@@ -270,20 +258,20 @@ const CellTopologyData * get_subcell_nodes(const Entity entity ,
   const unsigned* subcell_node_local_ids =
     celltopology->subcell[subcell_rank][subcell_identifier].node;
 
-  const EntityRank node_rank = MetaData::NODE_RANK;
-  PairIterRelation node_relations = entity.relations(node_rank);
-
+  Entity const *node_relations = mesh.begin_node_entities(entity);
   subcell_nodes.reserve(num_nodes_in_subcell);
 
-  for (int i = 0; i < num_nodes_in_subcell; ++i ) {
-    subcell_nodes.push_back( node_relations[subcell_node_local_ids[i]].entity() );
+  for (int i = 0; i < num_nodes_in_subcell; ++i )
+  {
+    subcell_nodes.push_back( node_relations[subcell_node_local_ids[i]] );
   }
 
   return subcell_topology;
 }
 
 
-int get_entity_subcell_id( const Entity entity ,
+int get_entity_subcell_id( const BulkData& mesh,
+                           const Entity entity ,
                            const EntityRank subcell_rank,
                            const CellTopologyData * subcell_topology,
                            const std::vector<Entity>& subcell_nodes )
@@ -297,15 +285,13 @@ int get_entity_subcell_id( const Entity entity ,
   }
 
   // get topology of elem
-  const CellTopologyData* entity_topology = get_cell_topology(entity).getCellTopologyData();
+  const CellTopologyData* entity_topology = get_cell_topology(mesh.bucket(entity)).getCellTopologyData();
   if (entity_topology == NULL) {
     return INVALID_SIDE;
   }
 
   // get nodal relations for entity
-  const EntityRank node_rank = MetaData::NODE_RANK;
-  PairIterRelation relations = entity.relations(node_rank);
-
+  Entity const *node_rels = mesh.begin_node_entities(entity);
   const int num_permutations = subcell_topology->permutation_count;
 
   // Iterate over the subcells of entity...
@@ -336,8 +322,7 @@ int get_entity_subcell_id( const Entity entity ,
 
           bool all_match = true;
           for (unsigned j = 0 ; j < num_nodes; ++j ) {
-            if (subcell_nodes[j] !=
-                relations[subcell_node_map[perm_node[j]]].entity()) {
+            if (subcell_nodes[j] != node_rels[subcell_node_map[perm_node[j]]]) {
               all_match = false;
               break;
             }
@@ -355,47 +340,6 @@ int get_entity_subcell_id( const Entity entity ,
   return INVALID_SIDE;
 }
 
-bool element_side_polarity( const Entity elem ,
-                            const Entity side , int local_side_id )
-{
-  // 09/14/10:  TODO:  tscoffe:  Will this work in 1D?
-  const bool is_side = side.entity_rank() != MetaData::EDGE_RANK;
-  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
-
-  const unsigned side_count = ! elem_top ? 0 : (
-                                is_side ? elem_top->side_count
-                                        : elem_top->edge_count );
-
-  ThrowErrorMsgIf( elem_top == NULL,
-                   "For Element[" << elem.identifier() << "], element has no defined topology");
-
-  ThrowErrorMsgIf( local_side_id < 0 || static_cast<int>(side_count) <= local_side_id,
-    "For Element[" << elem.identifier() << "], " <<
-    "side: " << print_entity_key(side) << ", " <<
-    "local_side_id = " << local_side_id <<
-    " ; unsupported local_side_id");
-
-  const CellTopologyData * const side_top =
-    is_side ? elem_top->side[ local_side_id ].topology
-            : elem_top->edge[ local_side_id ].topology ;
-
-  const unsigned * const side_map =
-    is_side ? elem_top->side[ local_side_id ].node
-            : elem_top->edge[ local_side_id ].node ;
-
-  const PairIterRelation elem_nodes = elem.relations( MetaData::NODE_RANK );
-  const PairIterRelation side_nodes = side.relations( MetaData::NODE_RANK );
-
-  const unsigned n = side_top->node_count;
-  bool good = false ;
-  for ( unsigned i = 0 ; !good && i < n ; ++i ) {
-    good = true;
-    for ( unsigned j = 0; good && j < n ; ++j ) {
-      good = side_nodes[(j+i)%n].entity() == elem_nodes[ side_map[j] ].entity();
-    }
-  }
-  return good ;
-}
 
 }
 }

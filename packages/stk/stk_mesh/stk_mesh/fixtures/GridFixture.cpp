@@ -95,7 +95,6 @@ void GridFixture::generate_grid()
 
       unsigned face_id = quad_face_ids[i];
       unsigned row = (face_id - 1) / num_nodes_per_quad;
-
       Entity face = m_bulk_data.declare_entity(element_rank, face_id, face_parts);
 
       unsigned node_id = num_quad_faces + face_id + row;

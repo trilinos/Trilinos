@@ -42,8 +42,7 @@ void add_connectivities(stk::linsys::LinearSystemInterface& ls,
   int field_id = dof_mapper.get_field_id(field);
 
   stk::mesh::Entity first_entity = *(part_buckets[0]->begin());
-  stk::mesh::PairIterRelation rel = first_entity.relations(connected_entity_rank);
-  int num_connected = rel.second - rel.first;
+  int num_connected = mesh_bulk.num_connectivity(first_entity,connected_entity_rank);
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
 
@@ -62,13 +61,16 @@ void add_connectivities(stk::linsys::LinearSystemInterface& ls,
     stk::mesh::Bucket::iterator
       b_iter = part_buckets[i]->begin(),
       b_end  = part_buckets[i]->end();
-    for(; b_iter != b_end; ++b_iter) {
+    stk::mesh::Ordinal e_bordinal = 0;
+    for(; b_iter != b_end; ++b_iter, ++e_bordinal) {
       stk::mesh::Entity entity = *b_iter;
-      rel = entity.relations(connected_entity_rank);
-      for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
-        connected_ids[j] = rel.first->entity().identifier();
+
+      stk::mesh::Entity const * rel = part_buckets[i]->begin_entities(e_bordinal, connected_entity_rank);
+      int num_rels = part_buckets[i]->num_connectivity(e_bordinal, connected_entity_rank);
+      for(int j=0; j < num_rels; ++j) {
+        connected_ids[j] = mesh_bulk.identifier(rel[j]);
       }
-      int conn_id = entity.identifier();
+      int conn_id = mesh_bulk.identifier(entity);
       matgraph->initConnectivity(block_id, conn_id, &connected_ids[0]);
     }
   }
@@ -197,7 +199,7 @@ void copy_vector_to_mesh( fei::Vector & vec,
 
     stk::mesh::Entity entity = mesh_bulk_data.get_entity(ent_type, ent_id);
 
-    void * data = stk::mesh::field_data(*field,entity);
+    void * data = mesh_bulk_data.field_data(*field, entity);
 
     if(!(field->type_is<double>()) || data == NULL) {
       std::ostringstream oss;

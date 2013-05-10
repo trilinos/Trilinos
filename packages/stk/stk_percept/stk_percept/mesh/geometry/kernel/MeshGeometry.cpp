@@ -416,7 +416,7 @@ void MeshGeometry::snap_node
     // greatly reduce the number of iterations the projection code has to do.
     double edge_length_ave=0.0;
     // get edge lengths
-    stk::mesh::PairIterRelation node_elements = node.relations(eMesh->element_rank());
+    const MyPairIterRelation node_elements(*eMesh, node, eMesh->element_rank() );
     for(unsigned ii=0; ii < node_elements.size(); ii++)
     {
       edge_length_ave += eMesh->edge_length_ave(node_elements[ii].entity());

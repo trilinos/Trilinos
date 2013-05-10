@@ -48,10 +48,12 @@ DiagWriterParser & theDiagWriterParser()
 DiagWriterParser::DiagWriterParser()
   : stk::diag::WriterParser()
 {
-  mask("entity", (unsigned long) (LOG_ENTITY), "Display entity diagnostic information");
-  mask("bucket", (unsigned long) (LOG_BUCKET), "Display bucket diagnostic information");
-  mask("part",   (unsigned long) (LOG_PART),   "Display bucket diagnostic information");
-  mask("field",  (unsigned long) (LOG_FIELD),  "Display bucket diagnostic information");
+  mask("entity",       (unsigned long) (LOG_ENTITY),       "Display entity diagnostic information");
+  mask("bucket",       (unsigned long) (LOG_BUCKET),       "Display bucket diagnostic information");
+  mask("part",         (unsigned long) (LOG_PART),         "Display part diagnostic information");
+  mask("field",        (unsigned long) (LOG_FIELD),        "Display field diagnostic information");
+  mask("partition",    (unsigned long) (LOG_PARTITION),    "Display partition diagnostic information");
+  mask("connectivity", (unsigned long) (LOG_CONNECTIVITY), "Display connectivity diagnostic information");
 }
 
 namespace {
@@ -93,51 +95,6 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Part& part)
   return writer << "Part[" << part.name() << ", " << part.mesh_meta_data_ordinal() << "]";
 }
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity entity)
-{
-  // Get bucket of entity
-  Bucket* bucket = entity.bucket_ptr();
-
-  EntityKey key = entity.key();
-  if (bucket) {
-    MetaData& meta_data = MetaData::get(*bucket);
-    Part &   owned  = meta_data.locally_owned_part();
-    Part &   shared = meta_data.globally_shared_part();
-    std::string ownership_info = "unregistered";
-    if (bucket->member(owned)) {
-      ownership_info = "owned";
-    }
-    else if (bucket->member(shared)) {
-      ownership_info = "shared";
-    }
-    else if (bucket->size() == 0) {
-      ownership_info = "marked deleted";
-    }
-    else {
-      ownership_info = "ghosted";
-    }
-
-    writer << "Entity[key:" << print_entity_key(meta_data, key) <<
-      ", ownership:" << ownership_info <<
-      ", log:" << log_to_str(entity.state()) <<
-      ", owner:" << entity.owner_rank();
-
-    writer << ", COMM: ";
-    PairIterEntityComm comm_itr = BulkData::get(entity).entity_comm(entity.key());
-    for ( ; !comm_itr.empty(); ++comm_itr ) {
-      writer << "(ghost:" << comm_itr->ghost_id << ", proc:" << comm_itr->proc << ") ";
-    }
-  }
-  else {
-    std::ostringstream out;
-    out << "(rank:" << key.rank() << ",id:" << key.id() << ")";
-
-    writer << "Entity[key:" << out.str() << "(NEW ENTITY)";
-  }
-
-  return writer << "]";
-}
-
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityKey& key)
 {
   return writer << "Entity[rank:" << key.rank() << ", id:" << key.id() << "]";
@@ -145,7 +102,7 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityKey& key)
 
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entity_proc)
 {
-  return writer << "EntityProc[entity:" << entity_proc.first << ", proc: " << entity_proc.second << "]";
+  return writer << "EntityProc[entity:" << entity_proc.first.local_offset() << ", proc: " << entity_proc.second << "]";
 }
 
 } // namespace mesh

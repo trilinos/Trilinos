@@ -114,7 +114,7 @@ namespace stk {
  *
  * @return			an <b>unsigned int</b> ...
  */
-unsigned parallel_machine_size( ParallelMachine parallel_machine );
+int parallel_machine_size( ParallelMachine parallel_machine );
 
 /**
  * @brief Member function <b>parallel_machine_rank</b> ...
@@ -123,7 +123,7 @@ unsigned parallel_machine_size( ParallelMachine parallel_machine );
  *
  * @return			an <b>unsigned int</b> ...
  */
-unsigned parallel_machine_rank( ParallelMachine parallel_machine );
+int parallel_machine_rank( ParallelMachine parallel_machine );
 
 /**
  * @brief Member function <b>parallel_machine_barrier</b> ...

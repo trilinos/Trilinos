@@ -24,15 +24,16 @@ namespace {
 
 const EntityRank NODE_RANK = MetaData::NODE_RANK;
 
-void filter_superimposed_entities(const Entity entity, EntityVector & entities)
+void filter_superimposed_entities(const BulkData& mesh, const Entity entity, EntityVector & entities)
 {
   // Get the node entities for the nodes that make up the entity, we'll
   // use this to check for superimposed entities
-  PairIterRelation irel = entity.relations(NODE_RANK);
   EntityVector entity_nodes;
-  entity_nodes.reserve(irel.size());
-  for ( ; !irel.empty(); ++irel ) {
-    entity_nodes.push_back(irel->entity());
+  entity_nodes.reserve(mesh.num_nodes(entity));
+  Entity const *rels_itr = mesh.begin_node_entities(entity);
+  Entity const *rels_end = mesh.end_node_entities(entity);
+  for ( ; rels_itr != rels_end; ++rels_itr ) {
+    entity_nodes.push_back(*rels_itr);
   }
   std::sort(entity_nodes.begin(), entity_nodes.end());
 
@@ -41,23 +42,27 @@ void filter_superimposed_entities(const Entity entity, EntityVector & entities)
   EntityVector current_nodes;
   current_nodes.resize(num_nodes_in_orig_entity);
   EntityVector::iterator itr = entities.begin();
-  while ( itr != entities.end() ) {
+  while ( itr != entities.end() )
+  {
     Entity current_entity = *itr;
-    PairIterRelation relations = current_entity.relations(NODE_RANK);
+    size_t num_node_rels = mesh.num_nodes(current_entity);
 
     if (current_entity == entity) {
       // Superimposed with self by definition
       itr = entities.erase(itr);
     }
-    else if (relations.size() != num_nodes_in_orig_entity) {
+    else if (
+        num_node_rels != num_nodes_in_orig_entity
+        ) {
       // current_entity has a different number of nodes than entity, they
       // cannot be superimposed
       ++itr;
     }
     else {
-      for (unsigned i = 0; relations.first != relations.second;
-           ++relations.first, ++i ) {
-        current_nodes[i] = relations.first->entity();
+      Entity const *node_rels = mesh.begin_node_entities(current_entity);
+      for (unsigned i = 0; i < num_node_rels; ++i)
+      {
+        current_nodes[i] = node_rels[i];
       }
       std::sort(current_nodes.begin(), current_nodes.end());
 
@@ -84,7 +89,7 @@ void filter_superimposed_entities(const Entity entity, EntityVector & entities)
  *     have the adjacent entity and the local id of the common subcell
  *     with respect to the adjacent entity.
  */
-void get_adjacent_entities( const Entity entity ,
+void get_adjacent_entities( const BulkData& mesh,  const Entity entity ,
                             EntityRank subcell_rank ,
                             unsigned subcell_identifier ,
                             std::vector< EntitySideComponent> & adjacent_entities)
@@ -93,7 +98,7 @@ void get_adjacent_entities( const Entity entity ,
 
   // Get nodes that make up the subcell we're looking at
   EntityVector subcell_nodes;
-  const CellTopologyData * subcell_topology = get_subcell_nodes(entity,
+  const CellTopologyData * subcell_topology = get_subcell_nodes(mesh, entity,
                                                                 subcell_rank,
                                                                 subcell_identifier,
                                                                 subcell_nodes);
@@ -103,13 +108,13 @@ void get_adjacent_entities( const Entity entity ,
   // with the same rank that have a relation to all of these nodes
   EntityVector potentially_adjacent_entities;
 
-  get_entities_through_relations(subcell_nodes,
-                                 entity.entity_rank(),
+  get_entities_through_relations(mesh, subcell_nodes,
+                                 mesh.entity_rank(entity),
                                  potentially_adjacent_entities);
 
   // We don't want to include entities that are superimposed with
   // the input entity
-  filter_superimposed_entities(entity, potentially_adjacent_entities);
+  filter_superimposed_entities(mesh, entity, potentially_adjacent_entities);
 
   // Add the local ids, from the POV of the adj entitiy, to the return value.
   // Reverse the nodes so that the adjacent entity has them in the positive
@@ -118,7 +123,7 @@ void get_adjacent_entities( const Entity entity ,
 
   for (EntityVector::const_iterator eitr = potentially_adjacent_entities.begin();
        eitr != potentially_adjacent_entities.end(); ++eitr) {
-    int local_subcell_num = get_entity_subcell_id(*eitr,
+    int local_subcell_num = get_entity_subcell_id(mesh, *eitr,
                                                   subcell_rank,
                                                   subcell_topology,
                                                   subcell_nodes);
@@ -144,26 +149,25 @@ void boundary_analysis(const BulkData& bulk_data,
     std::lower_bound(entities_closure.begin(),
                      entities_closure.end(),
                      EntityKey(closure_rank, 0),
-                     EntityLess());
+                     EntityLess(bulk_data));
 
   // iterate over all the entities in the closure up to the iterator we computed above
-  for ( ; itr != entities_closure.end() && itr->entity_rank() == closure_rank; ++itr) {
+  for ( ; itr != entities_closure.end() && bulk_data.entity_rank(*itr) == closure_rank; ++itr) {
     // some temporaries for clarity
     std::vector<EntitySideComponent > adjacent_entities;
     Entity curr_entity = *itr;
-    const CellTopologyData* celltopology = get_cell_topology(curr_entity).getCellTopologyData();
+    const CellTopologyData* celltopology = get_cell_topology(bulk_data.bucket(curr_entity)).getCellTopologyData();
     if (celltopology == NULL) {
       continue;
     }
 
     unsigned subcell_rank = closure_rank == MetaData::ELEMENT_RANK ? bulk_data.mesh_meta_data().side_rank() : closure_rank - 1;
-    PairIterRelation relations = curr_entity.relations(NODE_RANK);
 
     // iterate over the subcells of the current entity
     for (unsigned nitr = 0; nitr < celltopology->subcell_count[subcell_rank]; ++nitr) {
       // find the entities (same rank as subcell) adjacent to this subcell
       unsigned subcell_identifier = nitr;
-      get_adjacent_entities(curr_entity,
+      get_adjacent_entities(bulk_data, curr_entity,
                             subcell_rank,
                             subcell_identifier,
                             adjacent_entities);
@@ -198,14 +202,14 @@ void boundary_analysis(const BulkData& bulk_data,
           std::binary_search(entities_closure.begin(),
                              entities_closure.end(),
                              neighbor,
-                             EntityLess());
+                             EntityLess(bulk_data));
 
         if (neighbor_is_in_closure) {
           continue;
         }
 
         // if neighbor or curr_entity is locally-used, add it to keeper
-        if ( locally_used( neighbor.bucket()) || locally_used( curr_entity.bucket() ) ) {
+        if ( locally_used( bulk_data.bucket(neighbor)) || locally_used( bulk_data.bucket(curr_entity) ) ) {
           EntitySide keeper;
           keeper.inside.entity = curr_entity;
           keeper.inside.side_ordinal = subcell_identifier;

@@ -175,6 +175,12 @@ public:
                       const mesh::PartVector & selected_parts ,
                       void * reduce_inout ) const = 0 ;
 
+  virtual void apply( const mesh::BulkData &mesh,
+                      mesh::Bucket::iterator i ,
+                      mesh::Bucket::iterator j ,
+                      const mesh::PartVector & selected_parts ,
+                      void * reduce_inout ) const = 0 ;
+
   virtual ~AlgorithmInterface();
 
   //void apply_one( const mesh::Selector          & selector ,
@@ -217,10 +223,20 @@ private:
 public:
   const Algorithm & m_alg ;
 
-  void apply( mesh::Bucket::iterator i ,
-              mesh::Bucket::iterator j ,
-              const mesh::PartVector & parts, void * reduce ) const
-  { m_alg.apply( i , j ); }
+  virtual void apply( mesh::Bucket::iterator i ,
+                      mesh::Bucket::iterator j ,
+                      const mesh::PartVector & parts, void * reduce ) const
+  {
+    // m_alg.apply( i , j );
+    ThrowErrorMsg("AlgorithmWrapper::apply(..) without Bucket or BulkData is beyond deprecated.");
+  }
+
+  virtual void apply( const mesh::BulkData &mesh,
+                      mesh::Bucket::iterator i ,
+                      mesh::Bucket::iterator j ,
+                      const mesh::PartVector & selected_parts ,
+                      void * reduce_inout ) const
+  { m_alg.apply(mesh, i, j); }
 
   explicit AlgorithmWrapper( const Algorithm & alg )
     : AlgorithmInterface( alg.maximum_entity_count ), m_alg( alg ) {}
@@ -234,10 +250,21 @@ private:
 public:
   const Algorithm & m_alg ;
 
-  void apply( mesh::Bucket::iterator i ,
-              mesh::Bucket::iterator j ,
-              const mesh::PartVector & selected_parts , void * reduce ) const
-  { m_alg.apply( i , j , selected_parts ); }
+  virtual void apply( mesh::Bucket::iterator i ,
+                      mesh::Bucket::iterator j ,
+                      const mesh::PartVector & selected_parts ,
+                      void * reduce ) const
+  {
+    // m_alg.apply( i , j , selected_parts );
+    ThrowErrorMsg("AlgorithmWrapperParts::apply(..) without Bucket or BulkData is beyond deprecated.");
+  }
+
+  virtual void apply( const mesh::BulkData &mesh,
+                      mesh::Bucket::iterator i ,
+                      mesh::Bucket::iterator j ,
+                      const mesh::PartVector & selected_parts ,
+                      void * reduce_inout ) const
+  { m_alg.apply( mesh, i , j , selected_parts ); }
 
   explicit AlgorithmWrapperParts( const Algorithm & alg )
     : AlgorithmInterface( alg.maximum_entity_count ), m_alg( alg ) {}
@@ -250,7 +277,7 @@ public:
 
   const Algorithm & m_alg ;
 
-  void init( void * reduce_out ) const
+  virtual void init( void * reduce_out ) const
   { m_alg.init( (reduce_type *) reduce_out ); }
 
   void join( void * reduce_inout , const void * reduce_in ) const
@@ -259,11 +286,21 @@ public:
                 (const reduce_type *) reduce_in );
   }
 
-  void apply( mesh::Bucket::iterator i ,
+  virtual void apply( mesh::Bucket::iterator i ,
               mesh::Bucket::iterator j ,
               const mesh::PartVector & parts, void * reduce_inout ) const
   {
-    m_alg.apply( i , j , (reduce_type*) reduce_inout );
+    // m_alg.apply( i , j , (reduce_type*) reduce_inout );
+    ThrowErrorMsg("AlgorithmWrapperReduce::apply(..) without Bucket or BulkData is beyond deprecated.");
+  }
+
+  virtual void apply( const mesh::BulkData &mesh,
+                      mesh::Bucket::iterator i ,
+                      mesh::Bucket::iterator j ,
+                      const mesh::PartVector & selected_parts ,
+                      void * reduce_inout ) const
+  {
+    m_alg.apply(mesh, i, j, (reduce_type*) reduce_inout );
   }
 
   explicit AlgorithmWrapperReduce( const Algorithm & alg )
@@ -279,7 +316,7 @@ public:
 
   const Algorithm & m_alg ;
 
-  void init( void * reduce_out ) const
+  virtual void init( void * reduce_out ) const
   {
     m_alg.init( (reduce_type *) reduce_out );
   }
@@ -290,12 +327,21 @@ public:
                 (const reduce_type *) reduce_in );
   }
 
-  void apply( mesh::Bucket::iterator i ,
+  virtual void apply( mesh::Bucket::iterator i ,
               mesh::Bucket::iterator j ,
               const mesh::PartVector & selected_parts ,
               void * reduce_inout ) const
   {
     m_alg.apply( i , j , selected_parts , (reduce_type*) reduce_inout );
+  }
+
+  virtual void apply( const mesh::BulkData &mesh,
+                      mesh::Bucket::iterator i ,
+                      mesh::Bucket::iterator j ,
+                      const mesh::PartVector & selected_parts ,
+                      void * reduce_inout ) const
+  {
+    m_alg.apply(mesh, i, j, selected_parts, (reduce_type*) reduce_inout );
   }
 
   explicit AlgorithmWrapperPartsReduce( const Algorithm & alg )

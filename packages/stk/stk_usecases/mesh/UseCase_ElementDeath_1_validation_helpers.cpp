@@ -190,7 +190,7 @@ EntityVector entities_to_be_killed(
       itr != entity_ids_to_kill.end(); ++itr) {
     stk::mesh::Entity temp = mesh.get_entity(entity_rank, *itr);
     //select the entity only if the current process in the owner
-    if (temp.is_valid() && temp.owner_rank() == mesh.parallel_rank()) {
+    if (temp.is_valid() && mesh.parallel_owner_rank(temp) == mesh.parallel_rank()) {
       entities_to_kill.push_back(temp);
     }
   }
@@ -536,17 +536,32 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
   for (std::vector<entity_side>::const_iterator itr = live_sides.begin();
       itr != live_sides.end(); ++itr) {
     stk::mesh::Entity entity = mesh.get_entity(element_rank, itr->entity_id);
-    if (entity.is_valid()) {
+    if (mesh.is_valid(entity)) {
       //make sure the side exist
-      const unsigned side_ordinal = itr->side_ordinal;
-      stk::mesh::PairIterRelation existing_sides = entity.relations(side_rank);
+      const int side_ordinal = itr->side_ordinal;
 
-      for (; existing_sides.first != existing_sides.second &&
-          existing_sides.first->relation_ordinal() != side_ordinal ;
-          ++existing_sides.first);
+      //      for (; existing_sides.first != existing_sides.second &&
+      //          existing_sides.first->relation_ordinal() != side_ordinal ;
+      //          ++existing_sides.first);
+      //
+      //      //reached the end or side is not live
+      //      if (existing_sides.first == existing_sides.second
+      //          || !select_live(mesh.bucket(existing_sides.first->entity())) )
+      //      {
+      //        return false;
+      //      }
+      stk::mesh::Entity const* existing_sides = mesh.begin_entities(entity,side_rank);
+      stk::mesh::ConnectivityOrdinal const *existing_side_ordinals = mesh.begin_ordinals(entity, side_rank);
+      int num_sides = mesh.num_connectivity(entity, side_rank);
 
-      //reached the end or side is not live
-      if (existing_sides.first == existing_sides.second  || !select_live( existing_sides.first->entity()) )
+      int probe = 0;
+      for (;
+          (probe < num_sides)
+              && (!existing_sides[probe].is_local_offset_valid()
+                  || (existing_side_ordinals[probe] != static_cast<unsigned>(side_ordinal)));
+          ++probe);
+
+      if ((probe >= num_sides) || !select_live(mesh.bucket(existing_sides[probe])) )
       {
         return false;
       }
@@ -559,18 +574,35 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
     stk::mesh::Entity entity = mesh.get_entity(element_rank, itr->entity_id);
     //select the entity only if the current process in the owner
     // TODO fix the aura to correctly ghost the sides
-    if (entity.is_valid() && entity.owner_rank() == mesh.parallel_rank()) {
+    if (mesh.is_valid(entity) && entity.owner_rank() == mesh.parallel_rank()) {
     //if (entity != NULL) {
       //make sure the side exist
-      const unsigned side_ordinal = itr->side_ordinal;
-      stk::mesh::PairIterRelation existing_sides = entity.relations(side_rank);
+      int side_ordinal = itr->side_ordinal;
 
-      for (; existing_sides.first != existing_sides.second &&
-          existing_sides.first->relation_ordinal() != side_ordinal ;
-          ++existing_sides.first);
+      //      stk::mesh::PairIterRelation existing_sides = mesh.relations(entity, side_rank);
+      //
+      //      for (; existing_sides.first != existing_sides.second &&
+      //          existing_sides.first->relation_ordinal() != side_ordinal ;
+      //          ++existing_sides.first);
+      //
+      //      //reached the end or side is not dead
+      //      if (existing_sides.first == existing_sides.second
+      //          || !select_dead( mesh.bucket(existing_sides.first->entity())) )
+      //      {
+      //        return false;
+      //      }
+      stk::mesh::Entity const* existing_sides = mesh.begin_entities(entity,side_rank);
+      stk::mesh::ConnectivityOrdinal const *existing_side_ordinals = mesh.begin_ordinals(entity, side_rank);
+      int num_sides = mesh.num_connectivity(entity, side_rank);
 
-      //reached the end or side is not dead
-      if (existing_sides.first == existing_sides.second || !select_dead( existing_sides.first->entity()) )
+      int probe = 0;
+      for (;
+          (probe < num_sides)
+              && (!existing_sides[probe].is_local_offset_valid()
+                  || (existing_side_ordinals[probe] != static_cast<unsigned>(side_ordinal)));
+          ++probe);
+
+      if ((probe >= num_sides) || !select_dead(mesh.bucket(existing_sides[probe])) )
       {
         return false;
       }

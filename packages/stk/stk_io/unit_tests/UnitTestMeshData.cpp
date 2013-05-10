@@ -213,8 +213,8 @@ STKUNIT_UNIT_TEST( MeshData, large_mesh_test )
     for ( int k = 0 ; k < length ; ++k ) {
       // get element
       stk::mesh::Entity elem = b[k];
-      stk::mesh::PairIterRelation elem_node_rels = elem.relations(stk::mesh::MetaData::NODE_RANK);
-      STKUNIT_EXPECT_EQ( 8u, elem_node_rels.size());
+      size_t num_elem_node_rels = bulk_data.count_valid_connectivity(elem, stk::topology::NODE_RANK);
+      STKUNIT_EXPECT_EQ( 8u, num_elem_node_rels);
     }
   }
 }

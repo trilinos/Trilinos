@@ -91,7 +91,7 @@ void disabled_unit_test()
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
         stk::mesh::Entity n = bulk_data.get_entity( NODE_RANK, nid );
-        double * const coord = stk::mesh::field_data( coord_field , n );
+        double * const coord = bulk_data.field_data( coord_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -167,7 +167,7 @@ void disabled_unit_test()
     stk::mesh::Selector selector1 = fem_meta.universal_part();
 
     get_selected_entities(selector1, bulk_data.buckets(element_rank), entities);
-    bool result = stk::rebalance::verify_dependent_ownership(NODE_RANK, entities);
+    bool result = stk::rebalance::verify_dependent_ownership(bulk_data, NODE_RANK, entities);
     STKUNIT_ASSERT( result );
   }
 }

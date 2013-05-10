@@ -12,7 +12,7 @@ namespace stk {
       int spatialDimension = m_eMesh.get_spatial_dim();
 
       CellTopology cell_topo(cell_topo_data);
-      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+      const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
       VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
@@ -80,7 +80,7 @@ namespace stk {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
       int spatialDimension = m_eMesh.get_spatial_dim();
       CellTopology cell_topo(cell_topo_data);
-      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+      const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
       VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
@@ -112,7 +112,7 @@ namespace stk {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
       CellTopology cell_topo(cell_topo_data);
-      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+      const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
       int spatialDimension = m_eMesh.get_spatial_dim();
       VectorFieldType* coordField = m_eMesh.get_coordinates_field();
@@ -146,7 +146,7 @@ namespace stk {
 
     ElementUnrefineCollection IEdgeAdapter::buildUnrefineList()
     {
-      ElementUnrefineCollection elements_to_unref;
+      ElementUnrefineCollection elements_to_unref(*m_eMesh.get_bulk_data());
 
       const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
@@ -168,7 +168,7 @@ namespace stk {
                 if (isParent)
                   continue;
 
-                const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+                const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
                 if (elem_nodes.size())
                   {

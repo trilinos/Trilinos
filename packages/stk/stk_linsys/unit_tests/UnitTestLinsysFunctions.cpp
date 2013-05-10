@@ -211,7 +211,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
   stk::mesh::Entity bc_node = bulk_data.get_entity(NODE_RANK, local_nodes[0].identifier());
 
-  stk::mesh::FieldTraits<ScalarField>::data_type* bc_node_data = stk::mesh::field_data(*temperature_field, bc_node);
+  stk::mesh::FieldTraits<ScalarField>::data_type* bc_node_data = bulk_data.field_data(*temperature_field, bc_node);
 
   bool bc_node_data_is_correct = std::abs(bc_node_data[0] - 9.0) < 1.e-13;
   STKUNIT_ASSERT( bc_node_data_is_correct );

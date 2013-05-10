@@ -35,26 +35,29 @@ namespace {
 
 // Given an entity, if it's a ghost, insert the closure of the entity
 // into work_list.
-void insert_closure_ghost( Entity const entity ,
-                           const unsigned proc_local ,
+void insert_closure_ghost(const BulkData& mesh, Entity const entity ,
+                           const int proc_local ,
                            std::set<EntityKey> & work_list )
 {
-  if ( ! in_owned_closure( entity , proc_local ) ) {
+  if ( ! in_owned_closure( mesh, entity , proc_local ) ) {
     // This entity is a ghost, put it on the work_list
     // along with all ghosts in its closure
 
-    const bool was_inserted = work_list.insert(entity.key()).second;
+    const bool was_inserted = work_list.insert(mesh.entity_key(entity)).second;
 
     if ( was_inserted ) {
       // This ghost entity is new to the list, traverse its closure.
 
-      const unsigned entity_rank = entity.entity_rank();
+      const unsigned erank = mesh.entity_rank(entity);
 
       // Recurse over downward relations
-      for ( PairIterRelation
-            irel = entity.relations() ; ! irel.empty() ; ++irel ) {
-        if ( irel->entity_rank() < entity_rank ) {
-          insert_closure_ghost( irel->entity() , proc_local ,work_list );
+      for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
+      {
+        Entity const *irels_j = mesh.begin_entities(entity, irank);
+        Entity const *irels_e = mesh.end_entities(entity, irank);
+        for (; irels_j != irels_e; ++irels_j)
+        {
+          insert_closure_ghost(mesh, *irels_j, proc_local, work_list);
         }
       }
     }
@@ -63,22 +66,27 @@ void insert_closure_ghost( Entity const entity ,
 
 // Given an entity, insert the closures of every entity that has this entity
 // in its closure. Only ghosts will be inserted.
-void insert_transitive_ghost( Entity const entity ,
-                              const unsigned proc_local ,
+void insert_transitive_ghost(const BulkData& mesh, Entity const entity ,
+                              const int proc_local ,
                               std::set<EntityKey> & work_list )
 {
-  insert_closure_ghost( entity , proc_local , work_list );
+  insert_closure_ghost(mesh, entity , proc_local , work_list );
 
   // Transitive:
   // If this entity is a member of another entity's closure
   // then that other entity is part of the traversal.
 
-  const unsigned entity_rank = entity.entity_rank();
+  const unsigned erank = mesh.entity_rank(entity);
 
   // Recurse over upward relations
-  for ( PairIterRelation rel = entity.relations(); ! rel.empty() ; ++rel ) {
-    if ( entity_rank < rel->entity_rank() ) {
-      insert_transitive_ghost( rel->entity() , proc_local , work_list );
+  const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+  for (EntityRank irank = erank + 1; irank < end_rank; ++irank)
+  {
+    Entity const *irels_j = mesh.begin_entities(entity, irank);
+    Entity const *irels_e = mesh.end_entities(entity, irank);
+    for (; irels_j != irels_e; ++irels_j)
+    {
+      insert_transitive_ghost(mesh, *irels_j , proc_local , work_list );
     }
   }
 }
@@ -89,10 +97,11 @@ void insert_transitive_ghost( Entity const entity ,
 // entity in send_entry. All these entities will be sent to the same proc as
 // the original send_entry.
 void insert_closure_send(
+  const BulkData &mesh,
   const EntityProc                  send_entry ,
   std::set<EntityProc,EntityLess> & send_list )
 {
-  ThrowRequireMsg( send_entry.first.is_valid(),
+  ThrowRequireMsg( mesh.is_valid(send_entry.first),
                    "Cannot send destroyed entity");
 
   std::pair< std::set<EntityProc,EntityLess>::iterator , bool >
@@ -101,15 +110,19 @@ void insert_closure_send(
   if ( result.second ) {
     // First time this entity was inserted into the send_list.
 
-    const unsigned erank  = send_entry.first.entity_rank();
-    PairIterRelation irel = send_entry.first.relations();
+    const unsigned erank  = mesh.entity_rank(send_entry.first);
+    const Bucket &ebucket = mesh.bucket(send_entry.first);
+    const Ordinal ebordinal = mesh.bucket_ordinal(send_entry.first);
 
     // Recurse over downward relations
-    for ( ; ! irel.empty() ; ++irel ) {
-      if ( irel->entity_rank() < erank ) {
-        const EntityProc rel_send_entry( irel->entity(), send_entry.second );
-
-        insert_closure_send( rel_send_entry , send_list );
+    for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
+    {
+      Entity const *rels_itr = ebucket.begin_entities(ebordinal, irank);
+      Entity const *rels_end= ebucket.end_entities(ebordinal, irank);
+      for (; rels_itr != rels_end; ++rels_itr)
+      {
+        const EntityProc rel_send_entry( *rels_itr, send_entry.second );
+        insert_closure_send(mesh, rel_send_entry , send_list );
       }
     }
   }
@@ -117,24 +130,34 @@ void insert_closure_send(
 
 //----------------------------------------------------------------------
 
-bool member_of_owned_closure( const Entity e , const unsigned p_rank )
+bool member_of_owned_closure(const BulkData& mesh, const Entity e , const int p_rank )
 {
-  bool result = p_rank == e.owner_rank();
+  bool result = p_rank == mesh.parallel_owner_rank(e);
 
-  const unsigned entity_rank = e.entity_rank();
+  const unsigned erank = mesh.entity_rank(e);
+  const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
 
   // Any higher ranking entities locally owned?
-  for ( PairIterRelation
-        irel = e.relations(); ! result && ! irel.empty() ; ++irel ) {
-    result = entity_rank  <  irel->entity_rank() &&
-             p_rank == irel->entity().owner_rank();
+  for (EntityRank irank = erank + 1; irank < end_rank; ++irank)
+  {
+    Entity const *irels_j = mesh.begin_entities(e, irank);
+    Entity const *irels_e = mesh.end_entities(e, irank);
+    for ( ; !result && (irels_j != irels_e); ++irels_j)
+    {
+      result =  p_rank == mesh.parallel_owner_rank( *irels_j );
+    }
   }
 
   // Any higher ranking entity member of an owned closure?
-  for ( PairIterRelation
-        irel = e.relations(); ! result && ! irel.empty() ; ++irel ) {
-    result = entity_rank < irel->entity_rank() &&
-             member_of_owned_closure( irel->entity() , p_rank );
+  for (EntityRank irank = erank + 1; irank < end_rank; ++irank)
+  {
+    Entity const *irels_j = mesh.begin_entities(e, irank);
+    Entity const *irels_e = mesh.end_entities(e, irank);
+    for ( ; !result && (irels_j != irels_e); ++irels_j)
+    {
+      // irank < erank due to loop initialization
+      result = member_of_owned_closure(mesh, *irels_j , p_rank );
+    }
   }
 
   return result ;
@@ -148,9 +171,8 @@ void clean_and_verify_parallel_change(
   const BulkData & mesh ,
   std::vector<EntityProc> & local_change )
 {
-  const MetaData      & meta   = MetaData::get(mesh);
-  const unsigned        p_rank = mesh.parallel_rank();
-  const unsigned        p_size = mesh.parallel_size();
+  const int             p_rank = mesh.parallel_rank();
+  const int             p_size = mesh.parallel_size();
   const ParallelMachine p_comm = mesh.parallel();
 
   size_t error_count = 0 ;
@@ -161,7 +183,7 @@ void clean_and_verify_parallel_change(
   {
     std::vector<EntityProc>::iterator i = local_change.begin() ,
                                       j = local_change.end() ;
-    std::sort( i , j , EntityLess() );
+    std::sort( i , j , EntityLess(mesh) );
     i = std::unique( i , j );
     local_change.erase( i , j );
   }
@@ -170,17 +192,17 @@ void clean_and_verify_parallel_change(
         i = local_change.begin() ; i != local_change.end() ; ++i ) {
     std::vector<EntityProc>::iterator next = i+1 ;
     Entity const entity    = i->first ;
-    const unsigned new_owner = i->second ;
+    const int new_owner = i->second ;
 
     // Verification:
     // 1) Cannot change the ownership of an entity you do not own
     // 2) New owner must exist
     // 3) Cannot grant ownership to two different owners
 
-    const bool bad_null = !entity.is_valid();
+    const bool bad_null = !mesh.is_valid(entity);
 
     // Cannot change the ownership of an entity you do not own
-    const bool bad_process_not_entity_owner = ! bad_null && entity.owner_rank() != p_rank ;
+    const bool bad_process_not_entity_owner = ! bad_null && mesh.parallel_owner_rank(entity) != p_rank ;
 
     // New owner must exist
     const bool bad_new_owner_does_not_exist = p_size <= new_owner ;
@@ -197,7 +219,7 @@ void clean_and_verify_parallel_change(
 
       error_msg << "  P" << p_rank << ": " ;
       if ( bad_null ) { error_msg << " NULL ENTITY" ; }
-      else { print_entity_key( error_msg , meta , entity.key() ); }
+      else { error_msg << mesh.identifier(entity); }
       if ( bad_process_not_entity_owner ) { error_msg << " NOT_CURRENT_OWNER" ; }
       if ( bad_new_owner_does_not_exist ) {
         error_msg << " BAD_NEW_OWNER( " << new_owner << " )" ;
@@ -243,11 +265,11 @@ void generate_parallel_change( const BulkData & mesh ,
                                      std::vector<EntityProc> & shared_change ,
                                      std::vector<EntityProc> & ghosted_change )
 {
-  const unsigned p_size = mesh.parallel_size();
+  const int p_size = mesh.parallel_size();
 
   CommAll comm( mesh.parallel() );
 
-  std::vector<unsigned> procs ;
+  std::vector<int> procs ;
 
   // pack and communicate change owner information to all
   // processes that know about the entity
@@ -255,14 +277,14 @@ void generate_parallel_change( const BulkData & mesh ,
     for ( std::vector<EntityProc>::const_iterator
           ip = local_change.begin() ; ip != local_change.end() ; ++ip ) {
       Entity entity      = ip->first ;
-      unsigned new_owner = ip->second;
-      mesh.comm_procs( entity.key() , procs );
-      for ( std::vector<unsigned>::iterator
+      int new_owner = ip->second;
+      mesh.comm_procs( mesh.entity_key(entity) , procs );
+      for ( std::vector<int>::iterator
             j = procs.begin() ; j != procs.end() ; ++j )
       {
         comm.send_buffer( *j )
-          .pack<EntityKey>( entity.key() )
-          .pack<unsigned>(  new_owner );
+          .pack<EntityKey>( mesh.entity_key(entity) )
+          .pack<int>(  new_owner );
       }
     }
     if (phase == 0) { // allocation phase
@@ -275,17 +297,17 @@ void generate_parallel_change( const BulkData & mesh ,
 
   // unpack communicated owner information into the
   // ghosted and shared change vectors.
-  for ( unsigned ip = 0 ; ip < p_size ; ++ip ) {
+  for ( int ip = 0 ; ip < p_size ; ++ip ) {
     CommBuffer & buf = comm.recv_buffer( ip );
     while ( buf.remaining() ) {
       EntityProc entry ;
       EntityKey key ;
       buf.unpack<EntityKey>( key )
-         .unpack<unsigned>( entry.second );
+         .unpack<int>( entry.second );
 
       entry.first = mesh.get_entity( key );
 
-      if ( mesh.in_receive_ghost( entry.first.key() ) ) {
+      if ( mesh.in_receive_ghost( mesh.entity_key(entry.first) ) ) {
         ghosted_change.push_back( entry );
       }
       else {
@@ -294,8 +316,8 @@ void generate_parallel_change( const BulkData & mesh ,
     }
   }
 
-  std::sort( shared_change.begin() , shared_change.end() , EntityLess() );
-  std::sort( ghosted_change.begin() , ghosted_change.end() , EntityLess() );
+  std::sort( shared_change.begin() , shared_change.end() , EntityLess(mesh) );
+  std::sort( ghosted_change.begin() , ghosted_change.end() , EntityLess(mesh) );
 }
 
 }
@@ -309,8 +331,8 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   DiagIf(LOG_ENTITY, "arg_change: " << arg_change);
 
   const MetaData  & meta = m_mesh_meta_data ;
-  const unsigned  p_rank = m_parallel_rank ;
-  const unsigned  p_size = m_parallel_size ;
+  const int       p_rank = m_parallel_rank ;
+  const int       p_size = m_parallel_size ;
   ParallelMachine p_comm = m_parallel_machine ;
 
   //------------------------------
@@ -342,13 +364,12 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   // Request that all ghost entities in the closure of the ghost be deleted.
 
   typedef std::set<EntityProc,EntityLess> EntityProcSet;
-  typedef std::set<Entity ,EntityLess> EntitySet;
 
   // Compute the closure of all the locally changing entities
-  EntityProcSet send_closure ;
+  std::set<EntityProc,EntityLess> send_closure(EntityLess(*this)) ;
   for ( std::vector<EntityProc>::iterator
         i = local_change.begin() ; i != local_change.end() ; ++i ) {
-    insert_closure_send( *i , send_closure );
+    insert_closure_send(*this, *i , send_closure );
   }
 
   // Calculate all the ghosts that are impacted by the set of ownership
@@ -360,17 +381,17 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 
     for ( std::vector<EntityProc>::const_iterator
           i = ghosted_change.begin() ; i != ghosted_change.end() ; ++i ) {
-      insert_transitive_ghost( i->first , m_parallel_rank , modified_ghosts );
+      insert_transitive_ghost(*this, i->first , m_parallel_rank , modified_ghosts );
     }
 
     for ( std::vector<EntityProc>::const_iterator
           i = shared_change.begin() ; i != shared_change.end() ; ++i ) {
-      insert_transitive_ghost( i->first , m_parallel_rank , modified_ghosts );
+      insert_transitive_ghost(*this, i->first , m_parallel_rank , modified_ghosts );
     }
 
     for ( EntityProcSet::iterator
           i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
-      insert_transitive_ghost( i->first , m_parallel_rank , modified_ghosts );
+      insert_transitive_ghost(*this, i->first , m_parallel_rank , modified_ghosts );
     }
 
     // The ghosted change list will become invalid
@@ -405,18 +426,18 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 
       change_entity_parts( entity , PartVector() , owned );
 
-      const bool changed = m_entity_repo.set_entity_owner_rank( entity, i->second );
+      const bool changed = this->set_parallel_owner_rank( entity, i->second );
       if (changed) {
-        internal_change_owner_in_comm_data(entity.key(), i->second);
+        internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
     }
 
     for ( std::vector<EntityProc>::iterator
           i = shared_change.begin() ; i != shared_change.end() ; ++i ) {
       Entity entity = i->first;
-      const bool changed = m_entity_repo.set_entity_owner_rank( entity, i->second );
+      const bool changed = this->set_parallel_owner_rank( entity, i->second );
       if (changed) {
-        internal_change_owner_in_comm_data(entity.key(), i->second);
+        internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
       if ( p_rank == i->second ) { // I receive ownership
         change_entity_parts( entity , owned , PartVector() );
@@ -439,10 +460,10 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
           i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
       CommBuffer & buffer = comm.send_buffer( i->second );
       Entity entity = i->first;
-      pack_entity_info( buffer , entity );
-      pack_field_values( buffer , entity );
+      pack_entity_info(*this, buffer , entity );
+      pack_field_values(*this, buffer , entity );
 
-      if (unique_list_of_send_closure.empty() || unique_list_of_send_closure.back().key() != entity.key()) {
+      if (unique_list_of_send_closure.empty() || entity_key(unique_list_of_send_closure.back()) != entity_key(entity)) {
         unique_list_of_send_closure.push_back(entity);
       }
     }
@@ -453,19 +474,19 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
           i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
       CommBuffer & buffer = comm.send_buffer( i->second );
       Entity entity = i->first;
-      pack_entity_info( buffer , entity );
-      pack_field_values( buffer , entity );
+      pack_entity_info(*this, buffer , entity );
+      pack_field_values(*this, buffer , entity );
     }
 
     comm.communicate();
 
-    for ( unsigned p = 0 ; p < p_size ; ++p ) {
+    for ( int p = 0 ; p < p_size ; ++p ) {
       CommBuffer & buf = comm.recv_buffer(p);
       while ( buf.remaining() ) {
         PartVector parts ;
         std::vector<Relation> relations ;
         EntityKey key ;
-        unsigned  owner = ~0u ;
+        int owner = ~0u ;
 
         unpack_entity_info( buf, *this, key, owner, parts, relations );
 
@@ -488,20 +509,20 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 
         Entity entity = result.first;
 
-        m_entity_repo.log_created_parallel_copy( entity );
-
         // The entity was copied and not created.
-
-        const bool changed = m_entity_repo.set_entity_owner_rank( entity, owner );
-        if (changed) {
-          internal_change_owner_in_comm_data(entity.key(), owner);
-        }
 
         internal_change_entity_parts( entity , parts , PartVector() );
 
+        log_created_parallel_copy( entity );
+
+        const bool changed = this->set_parallel_owner_rank( entity, owner );
+        if (changed) {
+          internal_change_owner_in_comm_data(entity_key(entity), owner);
+        }
+
         declare_relation( entity , relations );
 
-        if ( ! unpack_field_values( buf , entity , error_msg ) ) {
+        if ( ! unpack_field_values(*this, buf , entity , error_msg ) ) {
           ++error_count ;
         }
       }
@@ -519,9 +540,9 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       for ( EntityVector::reverse_iterator i = unique_list_of_send_closure.rbegin() ;
             i != unique_list_of_send_closure.rend() ;
             ++i) {
-        if ( ! member_of_owned_closure( *i , p_rank ) ) {
+        if ( ! member_of_owned_closure(*this, *i , p_rank ) ) {
           ThrowRequireMsg( destroy_entity( *i ),
-                           "Failed to destroy entity " << print_entity_key(*i) );
+                           "Failed to destroy entity " << identifier(*i) );
         }
       }
     }

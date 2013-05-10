@@ -32,8 +32,6 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
-#include <stk_mesh/diag/EntityKey.hpp>
-
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search_util/stk_mesh/PrintEntityProc.hpp>
@@ -70,7 +68,7 @@ declare_scalar_field_on_all_nodes(
 struct EntityKeyDecomp {
   unsigned operator()( const unsigned p_size ,
                        const stk::mesh::EntityKey & key ) const
-    { return ( stk::mesh::entity_id( key ) >> 8 ) % p_size ; }
+    { return ( key.id() >> 8 ) % p_size ; }
 };
 
 typedef stk::util::ParallelIndex<stk::mesh::EntityKey,unsigned,EntityKeyDecomp> ParallelIndex;
@@ -89,11 +87,6 @@ template<typename T>
 std::ostream& operator<<(std::ostream& ostr, const std::vector<T> &v){
   std::copy(v.begin(), v.end(), std::ostream_iterator<T>(ostr, ", "));
   return ostr;
-}
-
-
-std::ostream &operator<<(std::ostream &os, const stk::mesh::EntityKey &entity_key) {
-  return os << "[" << entity_rank(entity_key) << ":" << entity_id(entity_key) << "]";
 }
 
 
@@ -148,7 +141,7 @@ void check_query( const std::vector< ParallelIndex::Key> &recv_global_id_vector,
   for (; r_e != r_i && p_e != p_i; ++r_i, ++p_i) {
     const stk::mesh::EntityKey ri    = *r_i;
     const stk::mesh::EntityKey pi    = p_i->first;
-    const stk::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk::mesh::EntityKey(entity_rank(pi), entity_id(pi) + 1) : (p_i+1)->first;
+    const stk::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk::mesh::EntityKey(pi.rank(), pi.id() + 1) : (p_i+1)->first;
     if (pi == pi_p1) {
       // TODO: These cerr statements should be changed to ThrowErrorMsgIf
       std::cerr
@@ -188,7 +181,7 @@ void check_query( const std::vector< ParallelIndex::Key> &recv_global_id_vector,
   }
   if (p_e != p_i) {
     const stk::mesh::EntityKey pi    = p_i->first;
-    const stk::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk::mesh::EntityKey(entity_rank(pi), entity_id(pi) + 1) : (p_i+1)->first;
+    const stk::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk::mesh::EntityKey(pi.rank(), pi.id() + 1) : (p_i+1)->first;
     if (pi == pi_p1) {
       std::cerr
         << " A send mesh node with global id "<<pi
@@ -282,8 +275,8 @@ use_case_4_driver(stk::ParallelMachine  comm,
 //     entity_key.value(i->first);
     stk::mesh::EntityKey entity_key(i->first);
 
-    const unsigned entity_rank = stk::mesh::entity_rank( entity_key);
-    const stk::mesh::EntityId entity_id = stk::mesh::entity_id( entity_key );
+    const unsigned entity_rank = entity_key.rank();
+    const stk::mesh::EntityId entity_id = entity_key.id();
     const std::string & entity_rank_name = domain_meta_data.entity_rank_name( entity_rank );
     dw().m(LOG_TRANSFER)<<" contains "<<" "<<entity_rank_name<<"["<<entity_id<<"] Proc:"<<i->second<<stk::diag::dendl;
   }
@@ -300,12 +293,12 @@ use_case_4_driver(stk::ParallelMachine  comm,
     stk::mesh::EntityKey entity_key(processor_map[i].first);
     int to_proc = processor_map[i].second;
 
-    stk::mesh::Entity entity = domain_bulk_data.get_entity(stk::mesh::entity_rank(entity_key), stk::mesh::entity_id(entity_key));
-    double *entity_coordinates = stk::mesh::field_data(domain_coordinates_field, entity);
+    stk::mesh::Entity entity = domain_bulk_data.get_entity(entity_key.rank(), entity_key.id());
+    double *entity_coordinates = domain_bulk_data.field_data(domain_coordinates_field, entity);
 
     double coord_sum = entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2];
 
-    dw().m(LOG_TRANSFER) << "Entity " << stk::mesh::entity_id(entity_key) << "," << stk::mesh::entity_rank(entity_key) << " to proc " << to_proc << dendl;
+    dw().m(LOG_TRANSFER) << "Entity " << entity_key.id() << "," << entity_key.rank() << " to proc " << to_proc << dendl;
 
     *mout[to_proc] << entity_key << coord_sum;
   }
@@ -378,19 +371,19 @@ use_case_4_driver(stk::ParallelMachine  comm,
         double coord_sum(0);
 
         while (min >> entity_key >> coord_sum) {
-          dw().m(LOG_TRANSFER) << stk::mesh::entity_id(entity_key) << "," << stk::mesh::entity_rank(entity_key) << ": " << coord_sum << dendl;
+          dw().m(LOG_TRANSFER) << entity_key.id() << "," << entity_key.rank() << ": " << coord_sum << dendl;
 
-          stk::mesh::Entity entity = range_bulk_data.get_entity(stk::mesh::entity_rank(entity_key), stk::mesh::entity_id(entity_key));
+          stk::mesh::Entity entity = range_bulk_data.get_entity(entity_key.rank(), entity_key.id());
 
-          double *entity_coordinates = stk::mesh::field_data(range_coordinates_field, entity);
+          double *entity_coordinates = range_bulk_data.field_data(range_coordinates_field, entity);
 
           if (coord_sum != entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2]) {
             static stk::MessageCode x;
 
-            stk::RuntimeDoomedDeferred(x) << "Incorrect range coordinate sum for entity " << stk::mesh::entity_id(entity_key) << " do not sum to " << coord_sum;
+            stk::RuntimeDoomedDeferred(x) << "Incorrect range coordinate sum for entity " << entity_key.id() << " do not sum to " << coord_sum;
           }
           else {
-            double *entity_coord_sum = stk::mesh::field_data(range_coord_sum_field, entity);
+            double *entity_coord_sum = range_bulk_data.field_data(range_coord_sum_field, entity);
 
             *entity_coord_sum = coord_sum;
           }
@@ -414,12 +407,12 @@ use_case_4_driver(stk::ParallelMachine  comm,
     for (size_t i = 0; i < num_entities; ++i) {
       const stk::mesh::Entity entity = entities[i];
 
-      double *entity_coordinates = stk::mesh::field_data(range_coordinates_field, entity);
-      double *entity_coord_sum = stk::mesh::field_data(range_coord_sum_field, entity);
+      double *entity_coordinates = range_bulk_data.field_data(range_coordinates_field, entity);
+      double *entity_coord_sum = range_bulk_data.field_data(range_coord_sum_field, entity);
       if (*entity_coord_sum != entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2]) {
         static stk::MessageCode x;
 
-        stk::RuntimeDoomedDeferred(x) << "Incorrect or missing coordinate sum of entity " << stk::mesh::entity_id(entity.key()) << " do not sum to " << entity_coord_sum;
+        stk::RuntimeDoomedDeferred(x) << "Incorrect or missing coordinate sum of entity " << entity.key().id() << " do not sum to " << entity_coord_sum;
       }
     }
   }

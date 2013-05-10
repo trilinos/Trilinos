@@ -152,7 +152,7 @@ namespace stk {
             for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
               {
                 stk::mesh::Entity element = bucket[iElement];
-                stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+                percept::MyPairIterRelation elem_nodes (eMesh, element, stk::mesh::MetaData::NODE_RANK);
                 for (unsigned inode=0; inode < elem_nodes.size(); inode++)
                   {
                     stk::mesh::Entity node = elem_nodes[inode].entity();
@@ -1469,7 +1469,6 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size <= 3)
           {
-
             // start_demo_local_refiner_break_tri_to_tri_2
 
             const unsigned n = 2;
@@ -1600,7 +1599,7 @@ namespace stk {
         SetRefineField(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {}
         virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
-          const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+          const percept::MyPairIterRelation elem_nodes (m_eMesh, element,  stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           double *f_data = PerceptMesh::field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
@@ -1637,7 +1636,7 @@ namespace stk {
         SetUnrefineField(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {}
         virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
-          const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+          const percept::MyPairIterRelation elem_nodes (m_eMesh, element,  stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           double *f_data = PerceptMesh::field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
@@ -1744,7 +1743,7 @@ namespace stk {
 
 
 
-      static void set_node_coords(percept::PerceptMesh& eMesh, mesh::PairIterRelation& elem_nodes, double tri_coords[3][3])
+      static void set_node_coords(percept::PerceptMesh& eMesh, percept::MyPairIterRelation& elem_nodes, double tri_coords[3][3])
       {
         for (unsigned inode=0; inode < elem_nodes.size(); inode++)
           {
@@ -1986,7 +1985,7 @@ namespace stk {
             stk::mesh::Entity element = (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[0];
             std::cout << "element = " << element << std::endl;
 
-            mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+            percept::MyPairIterRelation elem_nodes (eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
 
             stk::mesh::Entity elem_nodes_vector[3];

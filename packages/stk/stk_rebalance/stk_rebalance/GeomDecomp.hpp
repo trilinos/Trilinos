@@ -93,7 +93,7 @@ public:
    * a single coordinate point for it.
    *
    */
-  static void entity_to_point( const mesh::Entity entity,
+  static void entity_to_point(const mesh::BulkData& mesh, const mesh::Entity entity,
                             const VectorField   & ref,
                             std::vector<double> & coor);
 
@@ -109,7 +109,7 @@ public:
    * The return value is the mesh entities from which the coordinates were obtained.
    */
 
-  static std::vector<mesh::Entity> entity_coordinates(const mesh::Entity entity,
+  static std::vector<mesh::Entity> entity_coordinates(const mesh::BulkData& mesh, const mesh::Entity entity,
                                                       const VectorField     & ref,
                                                       std::vector<std::vector<double> >    & coordinates);
 
@@ -127,7 +127,7 @@ public:
    *             determine a centroid.
    *
    */
-  static std::vector<std::vector<double> > compute_entity_centroid( const mesh::Entity entity,
+  static std::vector<std::vector<double> > compute_entity_centroid(const mesh::BulkData& mesh,  const mesh::Entity entity,
                                                                const VectorField   & ref,
                                                                std::vector<double> & coor);
   /** \brief Check existence of library entry name on domain library.

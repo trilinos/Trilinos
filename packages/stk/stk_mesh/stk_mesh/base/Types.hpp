@@ -27,6 +27,9 @@
 namespace stk {
 namespace mesh {
 
+struct BucketRelationTag {};
+struct DynamicBucketRelationTag {};
+
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_module
  *  \{
@@ -68,9 +71,9 @@ typedef Property< void > PropertyBase ;
  */
 
 class BulkData ; // Bulk-data of a mesh
-class Bucket ;   // Homogeneous collection of mesh entitities their field data
-class Entity ;   // Individual entity within the mesh
-union EntityKey ;
+class Bucket ;   // Homogeneous collection of mesh entitities and their field data
+union Entity ;   // Individual entity within the mesh
+struct EntityKey ;
 class Relation ; // Relation pair of local mesh entities
 class Ghosting ;
 
@@ -89,6 +92,13 @@ template< class FieldType > struct EntityArray ;
 template< class FieldType > struct BucketArray ;
 template< class FieldType > struct FieldTraits ;
 
+//MeshIndex describes an Entity's location in the mesh, specifying which bucket,
+//and the offset (ordinal) into that bucket.
+//Ultimately we want this struct to contain two ints rather than a pointer and an int...
+struct MeshIndex {
+  Bucket* bucket;
+  unsigned bucket_ordinal;
+};
 
 typedef unsigned Ordinal;
 static const Ordinal InvalidOrdinal = static_cast<Ordinal>(-1); // std::numeric_limits<PartOrdinal>::max();
@@ -107,6 +117,31 @@ static const EntityRank BaseEntityRank = 0;
 static const EntityRank InvalidEntityRank = stk::topology::INVALID_RANK;
 static const PartOrdinal InvalidPartOrdinal = InvalidOrdinal;
 static const RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;
+static const int InvalidProcessRank = -1;
+
+/**
+* Predefined identifiers for mesh object relationship types.
+*/
+struct RelationType
+{
+  enum relation_type_t
+  {
+    USES      = 0 ,
+    USED_BY   = 1 ,
+    CHILD     = 2 ,
+    PARENT    = 3 ,
+    EMBEDDED  = 0x00ff , // 4
+    CONTACT   = 0x00ff , // 5
+    AUXILIARY = 0x00ff ,
+    INVALID   = 10
+  };
+
+  RelationType(relation_type_t value = INVALID) : m_value(value) {}
+
+  operator relation_type_t() const { return m_value; }
+
+  relation_type_t m_value;
+};
 
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_bulk_data_parallel
@@ -114,10 +149,10 @@ static const RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;
  */
 
 /** \brief  Pairing of an entity with a processor rank */
-typedef std::pair<Entity ,unsigned> EntityProc ;
+typedef std::pair<Entity , int> EntityProc ;
 typedef std::vector<EntityProc>     EntityProcVec ;
 
-typedef std::pair<EntityKey, unsigned> EntityKeyProc;
+typedef std::pair<EntityKey, int> EntityKeyProc;
 
 /** \brief  Spans of a vector of entity-processor pairs are common.
  *
@@ -127,7 +162,7 @@ typedef PairIter< std::vector< EntityProc >::const_iterator >
 #ifndef SWIG
 	//NLM SWIG cannot handle this macro
 
-NAMED_PAIR( EntityCommInfo , unsigned , ghost_id , unsigned , proc )
+NAMED_PAIR( EntityCommInfo , unsigned , ghost_id , int , proc )
 
 /** \brief  Span of ( communication-subset-ordinal , process-rank ) pairs
  *          for the communication of an entity.
@@ -173,6 +208,76 @@ typedef std::vector<Relation> RelationVector;
 #endif
 
 typedef PairIter< RelationVector::const_iterator > PairIterRelation ;
+
+enum ConnectivityType
+{
+  FIXED_CONNECTIVITY,
+  DYNAMIC_CONNECTIVITY,
+  INVALID_CONNECTIVITY_TYPE
+};
+
+enum Node
+{
+  INVALID_NODE = ~0ULL
+};
+
+enum Edge
+{
+  INVALID_EDGE = ~0ULL
+};
+
+enum Face
+{
+  INVALID_FACE = ~0ULL
+};
+
+enum Element
+{
+  INVALID_ELEMENT = ~0ULL
+};
+
+enum FastIndex
+{
+  NUM_BUCKET_ORDINAL_BITS = 32ULL,
+  BUCKET_ORDINAL_MASK = ~0ULL >> (64 - NUM_BUCKET_ORDINAL_BITS),
+  INVALID_FAST_INDEX = ~0ULL
+};
+
+template <class RankType>
+RankType
+inline make_rank_id(unsigned bucket_id, unsigned bucket_ordinal)
+{
+  uint64_t val = bucket_id;
+  val = (val << NUM_BUCKET_ORDINAL_BITS) | bucket_ordinal;
+  return static_cast<RankType>(val);
+}
+
+#define EXTRACT_BUCKET_ID(idx) ((idx) >> NUM_BUCKET_ORDINAL_BITS)
+
+#define EXTRACT_BUCKET_ORDINAL(idx) ((idx) & BUCKET_ORDINAL_MASK)
+
+enum ConnectivityOrdinal
+{
+  INVALID_CONNECTIVITY_ORDINAL = ~0U
+};
+
+inline
+ConnectivityOrdinal& operator++(ConnectivityOrdinal& ord)
+{
+  ord = static_cast<ConnectivityOrdinal>(ord + 1);
+  return ord;
+}
+
+enum Permutation
+{
+  INVALID_PERMUTATION = ~0U
+};
+
+enum ConnectivityId
+{
+  INVALID_CONNECTIVITY_ID = ~0U
+};
+
 
 //----------------------------------------------------------------------
 

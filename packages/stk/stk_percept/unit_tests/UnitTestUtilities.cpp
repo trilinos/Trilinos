@@ -593,7 +593,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
   stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
     meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
-  stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
+  stk::io::field_data_from_ioss(bulk, coord_field, nodes, nb, "mesh_model_coordinates");
 }
 
 // ========================================================================
@@ -649,7 +649,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
         if (*I == "attribute" && names.size() > 1)
           continue;
         stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(*I);
-        stk::io::field_data_from_ioss(field, elements, entity, *I);
+        stk::io::field_data_from_ioss(bulk, field, elements, entity, *I);
 
       }
     }
@@ -693,7 +693,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
         meta.get_field<stk::mesh::Field<double> >("distribution_factors");
 
       if (df_field != NULL) {
-        stk::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
+        stk::io::field_data_from_ioss(bulk, df_field, nodes, entity, "distribution_factors");
       }
     }
   }
@@ -748,7 +748,7 @@ void process_surface_entity(const Ioss::SideSet* io ,
 
       const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*fb_part);
       if (df_field != NULL) {
-        stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
+        stk::io::field_data_from_ioss(bulk, df_field, sides, block, "distribution_factors");
       }
     }
   }
@@ -786,7 +786,7 @@ void get_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
   while (I != fields.end()) {
     const stk::mesh::FieldBase *f = *I; ++I;
     if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
-      stk::io::field_data_from_ioss(f, entities, io_entity, f->name());
+      stk::io::field_data_from_ioss(bulk, f, entities, io_entity, f->name());
     }
   }
 }
@@ -854,7 +854,7 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
   while (I != fields.end()) {
     const stk::mesh::FieldBase *f = *I; ++I;
     if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
-      stk::io::field_data_to_ioss(f, entities, io_entity, f->name(), filter_role);
+      stk::io::field_data_to_ioss(bulk, f, entities, io_entity, f->name(), filter_role);
     }
   }
 }
@@ -931,23 +931,25 @@ void my_test(
       // Number of elems in this bucket of elems and elem field data
 
       const int number = bucket.size();
+      ThrowAssert(number > 0);
 
       //double * elem_node_data = field_data( coord_field , bucket.begin() );
-      double * elem_centroid_data = field_data( elem_centroid_field , bucket.begin() );
+      double * elem_centroid_data = field_data( elem_centroid_field , *bucket.begin() );
 
       for ( int i = 0 ; i < number ; ++i, elem_centroid_data += 3) {
 
         mesh::Entity elem = bucket[i] ;
 
-        const mesh::PairIterRelation elem_nodes = elem.relations( mesh::MetaData::NODE_RANK );
+        unsigned num_nodes = M.num_connectivity(elem, stk::mesh::MetaData::NODE_RANK);
+        const stk::mesh::Entity *elem_nodes = M.begin_entities(elem, stk::mesh::MetaData::NODE_RANK);
 
-        if ( elem_nodes.size() == 8 ) {
+        if ( num_nodes == 8 ) {
 
           for (int ic=0; ic < 3; ic++) elem_centroid_data[ic]=0;
 
           for (int inode=0; inode < 8; inode++)
           {
-            mesh::Entity node = elem_nodes[inode].entity();
+            mesh::Entity node = elem_nodes[inode];
 
             double * const node_data = field_data(coord_field , node );
             for (int ic=0; ic < 3; ic++) {

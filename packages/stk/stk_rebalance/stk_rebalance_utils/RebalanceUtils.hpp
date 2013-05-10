@@ -48,7 +48,8 @@ namespace stk {
                       const stk::mesh::EntityRank rank,
                       const mesh::Selector      * selector=NULL);
 
-    bool verify_dependent_ownership(const stk::mesh::EntityRank & parent_rank,
+    bool verify_dependent_ownership(const mesh::BulkData & bulk_data,
+                                    const stk::mesh::EntityRank & parent_rank,
                                     stk::mesh::EntityVector & entities );
 
   } // namepsace rebalance

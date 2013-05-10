@@ -244,7 +244,7 @@ namespace stk {
       bool metric_valid = false;
       if (!topology_data) topology_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
-      const stk::mesh::PairIterRelation v_i = element.relations(eMesh.node_rank());
+      const MyPairIterRelation v_i(eMesh, element, eMesh.node_rank() );
       m_num_nodes = v_i.size();
 
       const double *x2d[3] = {0,0,0};
@@ -413,7 +413,7 @@ namespace stk {
       bool metric_valid = false;
       if (!topology_data) topology_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
-      stk::mesh::PairIterRelation v_i = element.relations(eMesh.node_rank());
+      const MyPairIterRelation v_i(eMesh, element, eMesh.node_rank() );
       m_num_nodes = v_i.size();
 
       const int indices_tri[3] = {0,1,2};

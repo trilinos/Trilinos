@@ -94,11 +94,11 @@ void separate_wedge(
     // Replace wedge's nodes with new nodes because any nodes shared with other
     // entities cannot be taken along with the separated wedge. As a
     // simplification, we simply leave all the old nodes behind.
-    stk::mesh::PairIterRelation relations = wedge.relations(NODE_RANK);
-    ThrowRequire(relations.size() == num_nodes_per_wedge);
+    ThrowAssert(static_cast<size_t>(fixture.bulk_data.num_nodes(wedge)) == num_nodes_per_wedge);
+    stk::mesh::Entity const *rel_nodes = fixture.bulk_data.begin_node_entities(wedge);
 
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
-      stk::mesh::Entity old_node = relations[ i ].entity();
+      stk::mesh::Entity old_node = rel_nodes[i];
       stk::mesh::Entity new_node = new_nodes[i];
 
       fixture.bulk_data.destroy_relation(wedge, old_node, i);
@@ -114,10 +114,10 @@ void separate_wedge(
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
       stk::mesh::Entity new_node = new_nodes[i];
       const double * const new_displacement_data =
-        stk::mesh::field_data( fixture.displacement_field.field_of_state(stk::mesh::StateNew), new_node);
+        fixture.bulk_data.field_data( fixture.displacement_field.field_of_state(stk::mesh::StateNew), new_node);
 
       const double * const old_displacement_data =
-        stk::mesh::field_data( fixture.displacement_field.field_of_state(stk::mesh::StateOld), new_node);
+        fixture.bulk_data.field_data( fixture.displacement_field.field_of_state(stk::mesh::StateOld), new_node);
 
       for (size_t k=0 ; k < spatial_dim ; ++k) {
         avg_velocity_data[k] += new_displacement_data[k] - old_displacement_data[k];
@@ -133,7 +133,7 @@ void separate_wedge(
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
       stk::mesh::Entity new_node = new_nodes[i];
       double * const velocity_data =
-        stk::mesh::field_data( velocity_field , new_node );
+        fixture.bulk_data.field_data( velocity_field , new_node );
 
       for (size_t k=0 ; k < spatial_dim ; ++k) {
         velocity_data[k] = detached_wedge_speedup_multiplier*avg_velocity_data[k];
@@ -506,13 +506,16 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
       stk::mesh::Bucket & b = **b_itr;
       for (size_t i = 0; i < b.size(); ++i) {
         stk::mesh::Entity face = b[i];
-        double *elem_node_disp = field_data(displacement, face);
+        double *elem_node_disp = fixture.bulk_data.field_data(displacement, face);
         if (elem_node_disp) {
-          stk::mesh::PairIterRelation node_rels = face.node_relations();
-          const size_t num_nodes = node_rels.size();
-          for(; !node_rels.empty(); ++node_rels) {
-            const stk::mesh::Entity node = node_rels->entity();
-            double* node_disp = stk::mesh::field_data(fixture.displacement_field, node);
+          const size_t num_nodes = b.num_nodes(i);
+
+          stk::mesh::Node const *node_rels_itr = b.begin_nodes(i);
+          stk::mesh::Node const *node_rels_end = b.end_nodes(i);
+          for ( ; node_rels_itr != node_rels_end; ++node_rels_itr)
+          {
+            const stk::mesh::Node node = *node_rels_itr;
+            double* node_disp = fixture.bulk_data.field_data(fixture.displacement_field, node);
             elem_node_disp[0] = node_disp[0];
             elem_node_disp[1] = node_disp[1];
             elem_node_disp[2] = node_disp[2];

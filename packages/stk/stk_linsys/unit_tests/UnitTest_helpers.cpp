@@ -141,10 +141,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
   stk::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
 
   int field_id = dof_mapper.get_field_id(field);
-
-  stk::mesh::Entity first_entity = *(part_buckets[0]->begin());
-  stk::mesh::PairIterRelation rel = first_entity.relations(NODE_RANK);
-  int num_nodes_per_elem = rel.second - rel.first;
+  int num_nodes_per_elem = part_buckets[0]->num_nodes(0);
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
   int pattern_id = matgraph->definePattern(num_nodes_per_elem, NODE_RANK, field_id);
@@ -181,14 +178,13 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
   fei::SharedPtr<fei::Vector> rhs = ls.get_fei_LinearSystem()->getRHS();
 
   for(size_t i=0; i<part_buckets.size(); ++i) {
-    stk::mesh::Bucket::iterator
-      b_iter = part_buckets[i]->begin(),
-             b_end  = part_buckets[i]->end();
-    for(; b_iter != b_end; ++b_iter) {
-      stk::mesh::Entity elem = *b_iter;
-      rel = elem.relations(NODE_RANK);
-      for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
-        node_ids[j] = rel.first->entity().identifier();
+    const stk::mesh::Bucket &bucket = *part_buckets[i];
+    const stk::mesh::Ordinal num_elems = bucket.size();
+    for(stk::mesh::Ordinal elem_i = 0; elem_i < num_elems; ++elem_i) {
+      stk::mesh::Entity const *elem_nodes = bucket.begin_node_entities(elem_i);
+      const int num_elem_nodes = bucket.num_nodes(elem_i);
+      for(int j = 0; j < num_elem_nodes; ++j) {
+        node_ids[j] = mesh.identifier(elem_nodes[j]);
       }
 
       matgraph->getPatternIndices(pattern_id, &node_ids[0], eqn_indices);
@@ -211,10 +207,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
   stk::mesh::get_buckets(select_owned, mesh_buckets, part_buckets);
 
   int field_id = dof_mapper.get_field_id(field);
-
-  stk::mesh::Entity first_entity = *(part_buckets[0]->begin());
-  stk::mesh::PairIterRelation rel = first_entity.relations(NODE_RANK);
-  int num_nodes_per_elem = rel.second - rel.first;
+  int num_nodes_per_elem = part_buckets[0]->num_nodes(0);
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = matrix.getMatrixGraph();
   int pattern_id = matgraph->definePattern(num_nodes_per_elem, NODE_RANK, field_id);
@@ -249,14 +242,13 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
   std::vector<int> eqn_indices(vecsize);
 
   for(size_t i=0; i<part_buckets.size(); ++i) {
-    stk::mesh::Bucket::iterator
-      b_iter = part_buckets[i]->begin(),
-             b_end  = part_buckets[i]->end();
-    for(; b_iter != b_end; ++b_iter) {
-      stk::mesh::Entity elem = *b_iter;
-      rel = elem.relations(NODE_RANK);
-      for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
-        node_ids[j] = rel.first->entity().identifier();
+    const stk::mesh::Bucket &bucket = *part_buckets[i];
+    const stk::mesh::Ordinal num_elems = bucket.size();
+    for(stk::mesh::Ordinal elem_i = 0; elem_i < num_elems; ++elem_i) {
+      stk::mesh::Entity const *elem_nodes = bucket.begin_node_entities(elem_i);
+      const int num_elem_nodes = bucket.num_nodes(elem_i);
+      for(int j = 0; j < num_elem_nodes; ++j) {
+        node_ids[j] = mesh.identifier(elem_nodes[j]);
       }
 
       matgraph->getPatternIndices(pattern_id, &node_ids[0], eqn_indices);

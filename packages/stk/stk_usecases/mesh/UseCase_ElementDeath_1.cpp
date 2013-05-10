@@ -130,6 +130,7 @@ namespace {
 
 //Finds the sides that need to be created between the live and dead entities
 void find_sides_to_be_created(
+    const stk::mesh::BulkData &mesh,
     const stk::mesh::EntitySideVector & boundary,
     const stk::mesh::Selector & select,
     std::vector<stk::mesh::EntitySideComponent> & sides,
@@ -139,6 +140,7 @@ void find_sides_to_be_created(
 //Finds entities from the closure of the entities_to_be_killed
 //that only have relations with dead entities
 void find_lower_rank_entities_to_kill(
+    const stk::mesh::BulkData &mesh,
     const stk::mesh::EntityVector & entities_closure,
     unsigned closure_rank,
     unsigned entity_rank,
@@ -217,7 +219,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     stk::mesh::Selector select_live_and_owned = select_live & select_owned;
 
     std::vector<stk::mesh::EntitySideComponent> skin;
-    find_sides_to_be_created( boundary, select_live_and_owned, skin, side_rank);
+    find_sides_to_be_created(mesh, boundary, select_live_and_owned, skin, side_rank);
 
     mesh.modification_begin();
 
@@ -243,7 +245,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
       const unsigned side_ordinal  = skin[i].side_ordinal;
       stk::mesh::Entity side   = requested_entities[i];
 
-      stk::mesh::declare_element_side(entity, side, side_ordinal);
+      stk::mesh::declare_element_side(mesh, entity, side, side_ordinal);
     }
 
     mesh.modification_end();
@@ -255,6 +257,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     for (int rank = side_rank; rank >= 0; --rank) {
       stk::mesh::EntityVector kill_list;
       find_lower_rank_entities_to_kill(
+          mesh,
           entities_closure,
           mesh_rank,
           rank,
@@ -285,6 +288,7 @@ namespace {
 
 //----------------------------------------------------------------------------------
 void find_sides_to_be_created(
+    const stk::mesh::BulkData &mesh,
     const stk::mesh::EntitySideVector & boundary,
     const stk::mesh::Selector & select,
     std::vector<stk::mesh::EntitySideComponent> & sides,
@@ -300,19 +304,24 @@ void find_sides_to_be_created(
     const stk::mesh::EntitySideComponent & outside = itr->outside;
 
     // examine the boundary of the outside of the closure.
-    if ( outside.entity.is_valid() && select(outside.entity) ) {
+    if ( mesh.is_valid(outside.entity) && select(mesh.bucket(outside.entity)) ) {
 
       //make sure the side does not already exist
-      const unsigned side_ordinal = outside.side_ordinal;
+      const int side_ordinal = outside.side_ordinal;
       const stk::mesh::Entity entity = outside.entity;
-      stk::mesh::PairIterRelation existing_sides = entity.relations(side_rank);
+      stk::mesh::Entity const *existing_sides = mesh.begin_entities(entity, side_rank);
+      int num_sides = mesh.num_connectivity(entity, side_rank);
+      stk::mesh::ConnectivityOrdinal const *existing_side_ordinals = mesh.begin_ordinals(entity, side_rank);
 
-      for (; existing_sides.first != existing_sides.second &&
-          existing_sides.first->relation_ordinal() != side_ordinal ;
-          ++existing_sides.first);
+      int side_num = 0;
+      for (;
+           (side_num < num_sides)
+               && (!existing_sides[side_num].is_local_offset_valid()
+                   || (existing_side_ordinals[side_num] != static_cast<unsigned>(side_ordinal))) ;
+           ++side_num);
 
       //reached the end -- a new side needs to be created
-      if (existing_sides.first == existing_sides.second) {
+      if (side_num == num_sides) {
         sides.push_back(outside);
       }
     }
@@ -321,6 +330,7 @@ void find_sides_to_be_created(
 
 //----------------------------------------------------------------------------------
 void find_lower_rank_entities_to_kill(
+    const stk::mesh::BulkData &mesh,
     const stk::mesh::EntityVector & entities_closure,
     unsigned mesh_rank,
     unsigned entity_rank,
@@ -333,21 +343,28 @@ void find_lower_rank_entities_to_kill(
 
   kill_list.clear();
 
+  stk::mesh::EntityLess lesser(mesh);
+
   //find the first entity in the closure
   stk::mesh::EntityVector::const_iterator itr = std::lower_bound(entities_closure.begin(),
       entities_closure.end(),
       stk::mesh::EntityKey(entity_rank, 0),
-      stk::mesh::EntityLess());
+      lesser);
 
-  const stk::mesh::EntityVector::const_iterator end = std::lower_bound(entities_closure.begin(),
-      entities_closure.end(),
-      stk::mesh::EntityKey(entity_rank+1, 0),
-      stk::mesh::EntityLess());
+  const stk::mesh::EntityVector::const_iterator end =
+      std::lower_bound(entities_closure.begin(),
+                       entities_closure.end(),
+                       stk::mesh::EntityKey(entity_rank+1, 0),
+                       lesser);
 
   for (; itr != end; ++itr) {
     stk::mesh::Entity entity = *itr;
 
-    if (select_owned(entity.bucket())) {
+    stk::mesh::Bucket *bucket_ptr = mesh.bucket_ptr(entity);
+    if (!bucket_ptr)
+      continue;
+
+    if (select_owned(*bucket_ptr)) {
       bool found_live = false;
 
       for(unsigned rank = entity_rank + 1; rank<=mesh_rank && !found_live; ++rank) {
@@ -355,11 +372,12 @@ void find_lower_rank_entities_to_kill(
           continue;
         }
 
-        stk::mesh::PairIterRelation relations_pair = entity.relations(rank);
+        stk::mesh::Entity const * relations_iter = mesh.begin_entities(entity, rank);
+        stk::mesh::Entity const * relations_end = mesh.end_entities(entity, rank);
 
-        for (; relations_pair.first != relations_pair.second && !found_live; ++relations_pair.first) {
+        for (; relations_iter != relations_end && !found_live; ++relations_iter) {
 
-          if( select_live(relations_pair.first->entity())) {
+          if( select_live(mesh.bucket(*relations_iter)) ) {
             found_live = true;
           }
         }

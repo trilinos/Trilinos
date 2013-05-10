@@ -24,6 +24,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 #include <stk_rebalance/GeomDecomp.hpp>
 
 //Forward declaration for pointer to a Zoltan structrue.
@@ -88,9 +89,12 @@ public:
    */
   struct MeshInfo {
     std::vector<mesh::Entity>      mesh_entities;
+    std::vector<mesh::EntityKey>   mesh_keys;
     const VectorField              * nodal_coord_ref ;
     const ScalarField              * elem_weight_ref;
     std::vector<unsigned>            dest_proc_ids ;
+
+    mesh::BulkData* m_mesh;
 
     /** \brief Default Constructor. */
     MeshInfo():
@@ -114,9 +118,11 @@ public:
    *                         processors. Can be NULL.
    */
 
-  virtual void set_mesh_info ( const std::vector<mesh::Entity> &mesh_entities,
+  virtual void set_mesh_info (mesh::BulkData& mesh, const std::vector<mesh::Entity> &mesh_entities,
                                const VectorField   * nodal_coord_ref,
                                const ScalarField   * elem_weight_ref=NULL);
+
+  MeshInfo& get_mesh_info() { return m_mesh_information_; }
 
   /** \brief Reset owning processor.
    *
@@ -178,7 +184,7 @@ public:
   /** \brief Various data access functions.
    */
   int globalID         (const unsigned moid) const
-  { return m_mesh_information_.mesh_entities[ moid ].identifier(); }
+  { return m_mesh_information_.m_mesh->identifier(m_mesh_information_.mesh_entities[ moid ]); }
 
   /** \brief Return the number of local ids per global ids (entities per region).*/
   unsigned num_moid() const;
@@ -304,6 +310,8 @@ public:
     return m_spatial_dimension_;
   }
 
+  virtual void notify_mod_cycle(const stk::mesh::BulkData& mesh);
+
 private:
   /** Zoltan load balancing struct       */
   struct    Zoltan_Struct *m_zoltan_id_;
@@ -330,8 +338,6 @@ private:
 
   /** \brief Register SIERRA Framework Zoltan call-back functions */
   int register_callbacks();
-
-
 };
 
 /** \} */

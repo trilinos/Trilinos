@@ -65,7 +65,7 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
   bool already_declared_fei_field = false;
 
   for(size_t i=0; i<buckets.size(); ++i) {
-    int field_data_size = stk::mesh::field_data_size( field, *buckets[i] );
+    int field_data_size = stk::mesh::field_data_size_per_entity( field, *buckets[i] );
 
     if (field_data_size == 0) continue;
 
@@ -99,7 +99,7 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
 
     //we only care about entities of the right type, and which have data for 'field'.
     if (entity_comm[i].key.rank() != ent_type) continue;
-    if (!stk::mesh::field_data_valid(field, entity_comm[i].entity)) continue;
+    if (!mesh_bulk.field_data_size(field, entity_comm[i].entity)) continue;
 
     const stk::mesh::PairIterEntityComm ec = mesh_bulk.entity_comm_sharing(entity_comm[i].key);
 

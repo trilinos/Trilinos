@@ -26,6 +26,7 @@
 #include <stk_mesh/fixtures/BoxFixture.hpp>
 #include <stk_mesh/fixtures/QuadFixture.hpp>
 #include <stk_mesh/fixtures/RingFixture.hpp>
+#include <stk_mesh/fixtures/HexFixture.hpp>
 
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <unit_tests/UnitTestRingFixture.hpp>
@@ -52,7 +53,7 @@ const EntityRank NODE_RANK = MetaData::NODE_RANK;
 
 void donate_one_element( BulkData & mesh , bool aura )
 {
-  const unsigned p_rank = mesh.parallel_rank();
+  const int p_rank = mesh.parallel_rank();
 
   Selector select_owned( MetaData::get(mesh).locally_owned_part() );
 
@@ -79,18 +80,20 @@ void donate_one_element( BulkData & mesh , bool aura )
     }
   }
 
-  STKUNIT_ASSERT( stk::mesh::entity_key_valid(node_key) );
+  STKUNIT_ASSERT( node_key.is_valid() );
 
   Entity node = mesh.get_entity(node_key);
-  STKUNIT_ASSERT( node.is_valid() );
+  STKUNIT_ASSERT( mesh.is_valid(node) );
 
-  for ( PairIterRelation rel = node.relations( 3 );
-        ! rel.empty() && !elem.is_valid() ; ++rel ) {
-    elem = rel->entity();
-    if ( elem.owner_rank() != p_rank ) { elem = Entity(); }
+  Entity const *node_elems_i = mesh.begin_element_entities(node);
+  Entity const *node_elems_e = mesh.end_element_entities(node);
+  for ( ; (node_elems_i != node_elems_e) && !mesh.is_valid(elem); ++node_elems_i)
+  {
+    elem = *node_elems_i;
+    if ( mesh.parallel_owner_rank(elem) != p_rank ) { elem = Entity(); }
   }
 
-  STKUNIT_ASSERT( elem.is_valid() );
+  STKUNIT_ASSERT( mesh.is_valid(elem) );
 
   unsigned donated_nodes = 0 ;
 
@@ -98,12 +101,15 @@ void donate_one_element( BulkData & mesh , bool aura )
   if ( 0 == p_rank ) {
     EntityProc entry ;
     entry.first = elem ;
-    entry.second = mesh.entity_comm_sharing(node.key())[0].proc;
+    entry.second = mesh.entity_comm_sharing(mesh.entity_key(node))[0].proc;
     change.push_back( entry );
-    for ( PairIterRelation
-          rel = elem.relations(0) ; ! rel.empty() ; ++rel ) {
-      if ( rel->entity().owner_rank() == p_rank ) {
-        entry.first = rel->entity();
+
+    Entity const *elem_nodes_i = mesh.begin_node_entities(elem);
+    Entity const *elem_nodes_e = mesh.end_node_entities(elem);
+    for ( ; elem_nodes_i != elem_nodes_e; ++elem_nodes_i)
+    {
+      if ( mesh.parallel_owner_rank(*elem_nodes_i) == p_rank ) {
+        entry.first = *elem_nodes_i;
         change.push_back( entry );
         ++donated_nodes ;
       }
@@ -124,7 +130,7 @@ void donate_one_element( BulkData & mesh , bool aura )
 
 void donate_all_shared_nodes( BulkData & mesh , bool aura )
 {
-  const unsigned p_rank = mesh.parallel_rank();
+  const int p_rank = mesh.parallel_rank();
 
   const Selector select_used = MetaData::get(mesh).locally_owned_part() |
                                MetaData::get(mesh).globally_shared_part() ;
@@ -149,7 +155,7 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
     Entity const node = i->entity;
     const stk::mesh::PairIterEntityComm ec = mesh.entity_comm_sharing(i->key);
 
-    if ( node.owner_rank() == p_rank && ! ec.empty() ) {
+    if ( mesh.parallel_owner_rank(node) == p_rank && ! ec.empty() ) {
       change.push_back( EntityProc( node , ec->proc ) );
     }
   }
@@ -176,8 +182,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testBulkData)
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
-  std::vector<std::string> entity_names(10);
-  for ( size_t i = 0 ; i < 10 ; ++i ) {
+  std::vector<std::string> entity_names(5);
+  for ( size_t i = 0 ; i < 5 ; ++i ) {
     std::ostringstream name ;
     name << "EntityRank" << i ;
     entity_names[i] = name.str();
@@ -198,17 +204,17 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testBulkData)
 
   std::vector<Part*> no_parts ;
 
-  Entity e[10] ;
+  Entity e[5] ;
 
   const unsigned id = bulk.parallel_rank() + 1 ;
 
   STKUNIT_ASSERT( bulk.modification_begin() );
-  for ( size_t i = 0 ; i < 10 ; ++i ) {
+  for ( size_t i = 0 ; i < 5 ; ++i ) {
     e[i] = bulk.declare_entity(  i , id , no_parts );
   }
   STKUNIT_ASSERT( bulk.modification_end() );
 
-  for ( size_t i = 0 ; i < 10 ; ++i ) {
+  for ( size_t i = 0 ; i < 5 ; ++i ) {
     STKUNIT_ASSERT( e[i] == bulk.get_entity( i , id ) );
   }
 
@@ -231,8 +237,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
   MPI_Barrier( pm );
 
   enum { nPerProc = 10 };
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const int p_rank = stk::parallel_machine_rank( pm );
+  const int p_size = stk::parallel_machine_size( pm );
   const unsigned id_total = nPerProc * p_size ;
   const unsigned id_begin = nPerProc * p_rank ;
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
@@ -267,10 +273,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
   for ( unsigned i = 0 ; i < id_total ; ++i ) {
     Entity e = bulk.get_entity( MetaData::NODE_RANK , ids[ i ] );
     if ( id_begin <= i && i < id_end ) {
-      STKUNIT_ASSERT( e.is_valid() );
+      STKUNIT_ASSERT( bulk.is_valid(e) );
     }
     else {
-      STKUNIT_ASSERT( !e.is_valid() );
+      STKUNIT_ASSERT( !bulk.is_valid(e) );
     }
   }
 
@@ -285,10 +291,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
   for ( unsigned i = 0 ; i < id_total ; ++i ) {
     Entity e = bulk.get_entity( MetaData::NODE_RANK , ids[ i ] );
     if ( id_begin <= i && i < id_end ) {
-      STKUNIT_ASSERT( e.is_valid() );
+      STKUNIT_ASSERT( bulk.is_valid(e) );
     }
     else {
-      STKUNIT_ASSERT( !e.is_valid() );
+      STKUNIT_ASSERT( !bulk.is_valid(e) );
     }
   }
 
@@ -298,14 +304,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
     // Give my last two ids to the next process
     // Get the previous process' last two ids
 
-    const unsigned p_give = ( p_rank + 1 ) % p_size ;
+    const int p_give = ( p_rank + 1 ) % p_size ;
     const unsigned id_give = id_end - 2 ;
     const unsigned id_get  = ( id_begin + id_total - 2 ) % id_total ;
 
-    STKUNIT_ASSERT( bulk.get_entity( MetaData::NODE_RANK , ids[id_give] ).is_valid() );
-    STKUNIT_ASSERT( bulk.get_entity( MetaData::NODE_RANK , ids[id_give+1] ).is_valid() );
-    STKUNIT_ASSERT( !bulk.get_entity( MetaData::NODE_RANK , ids[id_get] ).is_valid() );
-    STKUNIT_ASSERT( !bulk.get_entity( MetaData::NODE_RANK , ids[id_get+1] ).is_valid() );
+    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_give] )) );
+    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_give+1] )) );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get] )) );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get+1] )) );
 
     change.resize(2);
     change[0].first = bulk.get_entity( MetaData::NODE_RANK , ids[id_give] );
@@ -317,22 +323,22 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
     bulk.change_entity_owner( change );
     STKUNIT_ASSERT( bulk.modification_end() );
 
-    STKUNIT_ASSERT( bulk.get_entity( MetaData::NODE_RANK , ids[id_get] ).is_valid() );
-    STKUNIT_ASSERT( bulk.get_entity( MetaData::NODE_RANK , ids[id_get+1] ).is_valid() );
+    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get] )) );
+    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get+1] )) );
 
     // Entities given away are destroyed until the next modification cycle
     {
       Entity const e0 = bulk.get_entity( MetaData::NODE_RANK , ids[id_give] );
       Entity const e1 = bulk.get_entity( MetaData::NODE_RANK , ids[id_give+1] );
-      STKUNIT_ASSERT( !e0.is_valid() );
-      STKUNIT_ASSERT( !e1.is_valid() );
+      STKUNIT_ASSERT( !bulk.is_valid(e0) );
+      STKUNIT_ASSERT( !bulk.is_valid(e1) );
     }
 
     STKUNIT_ASSERT( bulk.modification_begin() );
     STKUNIT_ASSERT( bulk.modification_end() );
 
-    STKUNIT_ASSERT( !bulk.get_entity( MetaData::NODE_RANK , ids[id_give] ).is_valid() );
-    STKUNIT_ASSERT( !bulk.get_entity( MetaData::NODE_RANK , ids[id_give+1] ).is_valid() );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_give] )) );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_give+1] )) );
   }
 }
 
@@ -346,8 +352,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
 
   enum { nPerProc = 10 };
 
-  const unsigned p_size = stk::parallel_machine_size( pm );
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
+  const int p_size = stk::parallel_machine_size( pm );
+  const int p_rank = stk::parallel_machine_rank( pm );
 
   if ( 1 < p_size ) {
 
@@ -384,8 +390,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
 
     const unsigned id_get  = ( id_begin + id_total - 2 ) % id_total ;
 
-    STKUNIT_ASSERT( !bulk.get_entity( MetaData::NODE_RANK , ids[id_get] ).is_valid() );
-    STKUNIT_ASSERT( !bulk.get_entity( MetaData::NODE_RANK , ids[id_get+1] ).is_valid() );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get] )) );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get+1] )) );
 
     STKUNIT_ASSERT( bulk.modification_begin() );
 
@@ -408,10 +414,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
     if ( 1 == p_rank ) {
       Entity e0 = bulk.get_entity( MetaData::NODE_RANK , ids[id_get] );
       Entity e1 = bulk.get_entity( MetaData::NODE_RANK , ids[id_get+1] );
-      STKUNIT_ASSERT( e0.is_valid() );
-      STKUNIT_ASSERT( e1.is_valid() );
-      STKUNIT_ASSERT( 0 == e0.owner_rank() );
-      STKUNIT_ASSERT( 0 == e1.owner_rank() );
+      STKUNIT_ASSERT( bulk.is_valid(e0) );
+      STKUNIT_ASSERT( bulk.is_valid(e1) );
+      STKUNIT_ASSERT( 0 == bulk.parallel_owner_rank(e0) );
+      STKUNIT_ASSERT( 0 == bulk.parallel_owner_rank(e1) );
     }
 
     // Now test tripping the error condition
@@ -436,8 +442,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
   MPI_Barrier( pm );
 
   enum { nPerProc = 10 };
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const int p_rank = stk::parallel_machine_rank( pm );
+  const int p_size = stk::parallel_machine_size( pm );
   const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalElement = nPerProc ;
 
@@ -648,7 +654,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
       EntityProc entry ;
       entry.first = ring_mesh.m_bulk_data.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[0] );
       entry.second = 0 ;
-      STKUNIT_ASSERT_EQUAL( p_rank , entry.first.owner_rank() );
+      STKUNIT_ASSERT_EQUAL( p_rank , bulk.parallel_owner_rank(entry.first) );
       change.push_back( entry );
     }
 
@@ -687,7 +693,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
 
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
 
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const int p_size = stk::parallel_machine_size( pm );
 
   const int spatial_dimension = 3;
   MetaData meta( spatial_dimension );
@@ -787,7 +793,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
   MPI_Barrier( pm );
 
   const unsigned nPerProc = 2;
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const int p_size = stk::parallel_machine_size( pm );
 
   // this test only needs to be run w/ one processor
   if (p_size > 1) return;
@@ -814,22 +820,21 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
   stk::mesh::Entity element = elements.front();
 
   // get one of the nodes related to this element
-  PairIterRelation node_relations = element.relations( stk::mesh::BaseEntityRank );
-  STKUNIT_ASSERT( !node_relations.empty() );
-  stk::mesh::Entity node = node_relations.front().entity();
-  STKUNIT_ASSERT_EQUAL( node.entity_rank(), (unsigned) stk::mesh::BaseEntityRank );
+  STKUNIT_ASSERT(bulk.num_nodes(element) > 0);
+  stk::mesh::Entity node = *bulk.begin_node_entities(element);
+  STKUNIT_ASSERT_EQUAL( bulk.entity_rank(node), (unsigned) stk::mesh::BaseEntityRank );
 
   // make a modification to the node by changing its parts
   ring_mesh.m_bulk_data.modification_begin();
   stk::mesh::PartVector parts;
   parts.push_back( &special_part );
-  ring_mesh.m_bulk_data.change_entity_parts( node, parts );
+  bulk.change_entity_parts( node, parts );
 
   // check that the node AND it's element are marked as modified
-  STKUNIT_ASSERT_EQUAL ( node.state(), stk::mesh::Modified );
-  STKUNIT_ASSERT_EQUAL ( element.state(), stk::mesh::Modified );
+  STKUNIT_ASSERT_EQUAL ( bulk.state(node), stk::mesh::Modified );
+  STKUNIT_ASSERT_EQUAL ( bulk.state(element), stk::mesh::Modified );
 
-  STKUNIT_ASSERT ( ring_mesh.m_bulk_data.modification_end() );
+  STKUNIT_ASSERT ( bulk.modification_end() );
 }
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
@@ -852,8 +857,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
   MetaData meta_data(spatial_dim);
   meta_data.commit();
   BulkData mesh(meta_data, pm);
-  unsigned p_rank = mesh.parallel_rank();
-  unsigned p_size = mesh.parallel_size();
+  int p_rank = mesh.parallel_rank();
+  int p_size = mesh.parallel_size();
 
   // Bail if we only have one proc
   if (p_size == 1) {
@@ -911,9 +916,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
     Entity shared_node = nodes[p_rank == 0 ? nodes_per_side : 0];
     EntityId expected_id = 3;
     Part& shared_part = meta_data.globally_shared_part();
-    STKUNIT_ASSERT( has_superset(shared_node.bucket(), shared_part) );
-    STKUNIT_ASSERT_EQUAL(shared_node.identifier(), expected_id);
-    if (shared_node.owner_rank() == p_rank) {
+    STKUNIT_ASSERT( has_superset(mesh.bucket(shared_node), shared_part) );
+    STKUNIT_ASSERT_EQUAL(mesh.identifier(shared_node), expected_id);
+    if (mesh.parallel_owner_rank(shared_node) == p_rank) {
       EntityProc entry( shared_node, p_rank );
       change.push_back( entry );
     }
@@ -946,8 +951,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   MetaData meta_data(spatial_dim);
   meta_data.commit();
   BulkData mesh(meta_data, pm);
-  unsigned p_rank = mesh.parallel_rank();
-  unsigned p_size = mesh.parallel_size();
+  int p_rank = mesh.parallel_rank();
+  int p_size = mesh.parallel_size();
   const EntityRank edge_rank = MetaData::EDGE_RANK;
   const EntityRank elem_rank = MetaData::ELEMENT_RANK;
 
@@ -973,7 +978,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
 
   // If it is 2nd to last element, it is the one changing
   if (p_rank == p_size - 2) {
-    STKUNIT_ASSERT(elem_key_chg_own == elem.key());
+    STKUNIT_ASSERT(elem_key_chg_own == mesh.entity_key(elem));
   }
 
   // Create nodes
@@ -995,7 +1000,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     Entity edge = mesh.declare_entity(edge_rank,
                                        1, // id
                                        empty_parts);
-    STKUNIT_ASSERT(edge.key() == edge_key_chg_own);
+    STKUNIT_ASSERT(mesh.entity_key(edge) == edge_key_chg_own);
 
     // Add relation from elem to edge
     mesh.declare_relation( elem, edge, 1 /*rel-id*/);
@@ -1020,21 +1025,21 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     Entity changing_edge = mesh.get_entity(edge_key_chg_own);
     if (p_size == 3) {
       // Should be ghosted
-      STKUNIT_ASSERT(changing_elem.is_valid());
-      STKUNIT_ASSERT(changing_edge.is_valid());
+      STKUNIT_ASSERT(mesh.is_valid(changing_elem));
+      STKUNIT_ASSERT(mesh.is_valid(changing_edge));
 
       // Verify that the entities are ghosted
       Part& owned = meta_data.locally_owned_part();
       Part& shared = meta_data.globally_shared_part();
-      STKUNIT_ASSERT(!(changing_elem.bucket().member(owned) ||
-                       changing_elem.bucket().member(shared)));
-      STKUNIT_ASSERT(!(changing_edge.bucket().member(owned) ||
-                       changing_edge.bucket().member(shared)));
+      STKUNIT_ASSERT(!(mesh.bucket(changing_elem).member(owned) ||
+                       mesh.bucket(changing_elem).member(shared)));
+      STKUNIT_ASSERT(!(mesh.bucket(changing_edge).member(owned) ||
+                       mesh.bucket(changing_edge).member(shared)));
     }
     else {
       // Should be invalid
-      STKUNIT_ASSERT(!changing_elem.is_valid());
-      STKUNIT_ASSERT(!changing_edge.is_valid());
+      STKUNIT_ASSERT(!mesh.is_valid(changing_elem));
+      STKUNIT_ASSERT(!mesh.is_valid(changing_edge));
     }
   }
 
@@ -1051,10 +1056,18 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
       change.push_back(eproc);
     }
 
-    for (PairIterRelation i = changing_elem.relations() ; !i.empty() ; ++i) {
-      if (i->entity().owner_rank() == p_rank) {
-        EntityProc eproc(i->entity(), 0 /*new owner*/);
-        change.push_back(eproc);
+    const stk::mesh::EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+    for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+    {
+      stk::mesh::Entity const *to_i = mesh.begin_entities(changing_elem, irank);
+      stk::mesh::Entity const *to_e = mesh.end_entities(changing_elem, irank);
+      for ( ; to_i != to_e; ++to_i)
+      {
+        if (mesh.parallel_owner_rank(*to_i) == p_rank)
+        {
+          EntityProc eproc(*to_i, 0 /*new owner*/);
+          change.push_back(eproc);
+        }
       }
     }
   }
@@ -1068,13 +1081,13 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     // Get the two ghosted entities, check that they were found
     Entity changing_elem = mesh.get_entity(elem_key_chg_own);
     Entity changing_edge = mesh.get_entity(edge_key_chg_own);
-    STKUNIT_ASSERT(changing_elem.is_valid());
-    STKUNIT_ASSERT(changing_edge.is_valid());
+    STKUNIT_ASSERT(mesh.is_valid(changing_elem));
+    STKUNIT_ASSERT(mesh.is_valid(changing_edge));
 
     // Verify that the entities are ghosted
     Part& owned = meta_data.locally_owned_part();
-    STKUNIT_ASSERT( changing_elem.bucket().member(owned) );
-    STKUNIT_ASSERT( changing_edge.bucket().member(owned) );
+    STKUNIT_ASSERT( mesh.bucket(changing_elem).member(owned) );
+    STKUNIT_ASSERT( mesh.bucket(changing_edge).member(owned) );
   }
 }
 
@@ -1105,8 +1118,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   MetaData meta_data(spatial_dim, entity_rank_names);
   meta_data.commit();
   BulkData mesh(meta_data, pm);
-  unsigned p_rank = mesh.parallel_rank();
-  unsigned p_size = mesh.parallel_size();
+  int p_rank = mesh.parallel_rank();
+  int p_size = mesh.parallel_size();
 
   Part& owned  = meta_data.locally_owned_part();
   Part& shared = meta_data.globally_shared_part();
@@ -1168,19 +1181,19 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
 
   // Check that my_family_tree exists and I own it
   Entity my_family_tree = mesh.get_entity(family_tree_rank, my_family_tree_id);
-  STKUNIT_ASSERT(my_family_tree.is_valid());
-  STKUNIT_ASSERT( (p_rank) == my_family_tree.owner_rank());
+  STKUNIT_ASSERT(mesh.is_valid(my_family_tree));
+  STKUNIT_ASSERT( (p_rank) == mesh.parallel_owner_rank(my_family_tree));
 
   // Check that adjacent family-trees exist and are ghosted
   for (std::vector<EntityId>::const_iterator
        itr = family_tree_ghost_ids.begin(); itr != family_tree_ghost_ids.end(); ++itr) {
-    EntityId expected_ghosted_family_tree_id = *itr;
+    int expected_ghosted_family_tree_id = *itr;
 
     Entity expected_ghosted_family_tree = mesh.get_entity(family_tree_rank, expected_ghosted_family_tree_id);
-    STKUNIT_ASSERT(expected_ghosted_family_tree.is_valid());
-    STKUNIT_ASSERT(expected_ghosted_family_tree_id - 1 == expected_ghosted_family_tree.owner_rank());
+    STKUNIT_ASSERT(mesh.is_valid(expected_ghosted_family_tree));
+    STKUNIT_ASSERT(expected_ghosted_family_tree_id - 1 == mesh.parallel_owner_rank(expected_ghosted_family_tree));
 
-    stk::mesh::Bucket& bucket = expected_ghosted_family_tree.bucket();
+    stk::mesh::Bucket& bucket = mesh.bucket(expected_ghosted_family_tree);
     STKUNIT_ASSERT(!bucket.member(owned) && !bucket.member(shared));
   }
 }
@@ -1206,8 +1219,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
   MetaData meta_data(spatial_dim, entity_rank_names);
   meta_data.commit();
   BulkData mesh(meta_data, pm);
-  unsigned p_rank = mesh.parallel_rank();
-  unsigned p_size = mesh.parallel_size();
+  int p_rank = mesh.parallel_rank();
+  int p_size = mesh.parallel_size();
 
   if (p_size != 3) return;
 
@@ -1222,6 +1235,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
 
   EntityVector nodes;
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
+  const stk::mesh::EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
 
   // We're just going to add everything to the universal part
   stk::mesh::PartVector empty_parts;
@@ -1262,14 +1276,18 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
     {
       unsigned id=4;
       Entity node = mesh.get_entity(MetaData::NODE_RANK, id);
-      std::cout << "P[" << p_rank << "] node " << node.identifier() << " own= " << node.owner_rank() << std::endl;
+      std::cout << "P[" << p_rank << "] node " << mesh.identifier(node) << " own= " << mesh.parallel_owner_rank(node) << std::endl;
 
       {
-        PairIterRelation rels = node.relations();
-        for (unsigned i = 0; i < rels.size(); i++)
+        for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+        {
+          stk::mesh::Entity const *to_i = mesh.begin_entities(node, irank);
+          stk::mesh::Entity const *to_e = mesh.end_entities(node, irank);
+          for (; to_i != to_e; ++to_i)
           {
-            std::cout << "P[" << p_rank << "] rel = " << rels[i].entity().owner_rank() << std::endl;
+            std::cout << "P[" << p_rank << "] rel = " << mesh.parallel_owner_rank(*to_i) << std::endl;
           }
+        }
       }
     }
 
@@ -1293,48 +1311,21 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
       //
 
       {
-        PairIterRelation rels = node.relations();
-        for (unsigned i = 0; i < rels.size(); i++)
+        const stk::mesh::EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+        for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+        {
+          stk::mesh::Entity const *to_i = mesh.begin_entities(node, irank);
+          stk::mesh::Entity const *to_e = mesh.end_entities(node, irank);
+          for (; to_i != to_e; ++to_i)
           {
-            std::cout << "P[" << p_rank << "] node " << node.identifier() << " own= " << node.owner_rank() << " rel = " << rels[i].entity().owner_rank() << std::endl;
+            std::cout << "P[" << p_rank << "] node " << mesh.identifier(node) << " own= "
+                      << mesh.parallel_owner_rank(node) << " rel = " << mesh.parallel_owner_rank(*to_i) << std::endl;
+
           }
+        }
       }
     }
 
-  //exit(123);
-
-#if 0
-  //
-  // Test correctness of ghosting: Check that adjacent family-trees are ghosted on this proc
-  //
-
-  // Compute and store ids of adjacent family-trees
-  std::vector<EntityId> family_tree_ghost_ids;
-  if (p_rank > 0) {
-    family_tree_ghost_ids.push_back(my_family_tree_id - 1);
-  }
-  if (p_rank < p_size - 1) {
-    family_tree_ghost_ids.push_back(my_family_tree_id + 1);
-  }
-
-  // Check that my_family_tree exists and I own it
-  Entity my_family_tree = mesh.get_entity(family_tree_rank, my_family_tree_id);
-  STKUNIT_ASSERT(my_family_tree.is_valid());
-  STKUNIT_ASSERT( (p_rank) == my_family_tree.owner_rank());
-
-  // Check that adjacent family-trees exist and are ghosted
-  for (std::vector<EntityId>::const_iterator
-         itr = family_tree_ghost_ids.begin(); itr != family_tree_ghost_ids.end(); ++itr) {
-    EntityId expected_ghosted_family_tree_id = *itr;
-
-    Entity expected_ghosted_family_tree = mesh.get_entity(family_tree_rank, expected_ghosted_family_tree_id);
-    STKUNIT_ASSERT(expected_ghosted_family_tree.is_valid());
-    STKUNIT_ASSERT(expected_ghosted_family_tree_id - 1 == expected_ghosted_family_tree.owner_rank());
-
-    stk::mesh::Bucket& bucket = expected_ghosted_family_tree.bucket();
-    STKUNIT_ASSERT(!bucket.member(owned) && !bucket.member(shared));
-  }
-#endif
 }
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
@@ -1364,8 +1355,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
   meta_data.commit();
 
   BulkData mesh(meta_data, pm);
-  unsigned p_rank = mesh.parallel_rank();
-  unsigned p_size = mesh.parallel_size();
+  int p_rank = mesh.parallel_rank();
+  int p_size = mesh.parallel_size();
 
   // Bail unless in parallel
   if (p_size == 1) {
@@ -1410,11 +1401,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
     mesh.modification_end();
 
     // Expect that this is a shared node
-    STKUNIT_EXPECT_FALSE(mesh.entity_comm_sharing(changing_node.key()).empty());
+    STKUNIT_EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(changing_node)).empty());
 
     // Expect that part change had no impact since it was on the proc that did not end
     // up as the owner
-    STKUNIT_EXPECT_FALSE(changing_node.bucket().member(extra_node_part));
+    STKUNIT_EXPECT_FALSE(mesh.bucket(changing_node).member(extra_node_part));
 
     mesh.modification_begin();
 
@@ -1431,7 +1422,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
     mesh.modification_end();
 
     // Expect that the part change *did* have an impact
-    STKUNIT_EXPECT_TRUE(changing_node.bucket().member(extra_node_part));
+    STKUNIT_EXPECT_TRUE(mesh.bucket(changing_node).member(extra_node_part));
   }
   else {
     // On extra procs, do bare minimum
@@ -1456,7 +1447,36 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_final_modification_end)
   mesh.final_modification_end();
 
   STKUNIT_ASSERT_THROW(mesh.modification_begin(), std::logic_error );
+}
 
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
+// Testing of field_data_footprint(.)
+STKUNIT_UNIT_TEST( UnitTestingOfBulkData, test_total_field_data_footprint )
+{
+  // Test 3x1x1 HexFixture structure
+  const unsigned NX = 3;
+  const unsigned NY = 1;
+  const unsigned NZ = 1;
+  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  hf.m_fem_meta.commit();
+  hf.generate_mesh();
+
+  const stk::mesh::BulkData &mesh = hf.m_bulk_data;
+
+  // Call function we're testing
+  size_t field_data_footprint = mesh.total_field_data_footprint(stk::topology::NODE_RANK);
+
+  // Alternative computation explicitly gathers buckets.
+  size_t node_fields_footprint = 0;
+  const std::vector<stk::mesh::Bucket *> &node_buckets = mesh.buckets(stk::topology::NODE_RANK);
+  for (size_t i = 0; i < node_buckets.size(); ++i)
+  {
+    node_fields_footprint +=
+        node_buckets[i]->capacity() * mesh.field_data_size_per_entity(hf.m_coord_field, *node_buckets[i]);
+  }
+
+  STKUNIT_EXPECT_EQUAL(node_fields_footprint, field_data_footprint);
 }
 
 //----------------------------------------------------------------------
@@ -1489,8 +1509,8 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
         for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
           {
             stk::mesh::Entity entity = bucket[iEntity];
-            int * const p = stk::mesh::field_data<PressureFieldType>( pressure_field , entity );
-            stk::mesh::EntityId id=entity.identifier();
+            int * const p = eMesh.field_data( pressure_field , entity );
+            stk::mesh::EntityId id=eMesh.identifier(entity);
 
             int type=Owned;
             if (bucket.owned())
@@ -1499,7 +1519,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
               }
             else if (bucket.shared())
               {
-                p[0] = -((entity.owner_rank()+1)*100+id);
+                p[0] = -((eMesh.parallel_owner_rank(entity)+1)*100+id);
                 type=Shared;
               }
             else
@@ -1508,7 +1528,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
                 type=Ghost;
                 //std::cout << "P["<<p_rank<<"] ghost= " << p[0] << std::endl;
               }
-            out << "P["<<p_rank<<"] id= " << entity.identifier() << " p= " << p[0] << " type= " << types[type] << std::endl;
+            out << "P["<<p_rank<<"] id= " << eMesh.identifier(entity) << " p= " << p[0] << " type= " << types[type] << std::endl;
 
           }
       }
@@ -1538,8 +1558,8 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
         for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
           {
             stk::mesh::Entity entity = bucket[iEntity];
-            stk::mesh::EntityId id=entity.identifier();
-            int * const p = stk::mesh::field_data<PressureFieldType>( pressure_field , entity );
+            stk::mesh::EntityId id = eMesh.identifier(entity);
+            int * const p = eMesh.field_data( pressure_field , entity );
             int type=Owned;
             double p_e = (p_rank+1)*100+id;
             if (bucket.owned())
@@ -1548,7 +1568,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
               }
             else if (bucket.shared())
               {
-                p_e = ((entity.owner_rank()+1)*100+id);
+                p_e = ((eMesh.parallel_owner_rank(entity)+1)*100+id);
                 type = Shared;
                 if (sync_shared)
                   {
@@ -1561,12 +1581,12 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
               }
             else
               {
-                p_e = ((entity.owner_rank()+1)*100+id);
+                p_e = ((eMesh.parallel_owner_rank(entity)+1)*100+id);
                 type = Ghost;
                 if (sync_aura)
                   STKUNIT_ASSERT_EQUAL(p[0], p_e);
               }
-            out1 << "P["<<p_rank<<"] after id= " << entity.identifier() << " p= " << p[0] << " type= " << types[type] << std::endl;
+            out1 << "P["<<p_rank<<"] after id= " << eMesh.identifier(entity) << " p= " << p[0] << " type= " << types[type] << std::endl;
 
           }
       }

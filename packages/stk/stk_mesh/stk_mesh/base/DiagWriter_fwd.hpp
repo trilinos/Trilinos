@@ -19,8 +19,9 @@ enum LogMask {
   LOG_PART              = 0x00000400,
   LOG_FIELD             = 0x00000800,
   LOG_PARTITION         = 0x00001000,
+  LOG_CONNECTIVITY      = 0x00002000,
 
-  LOG_MOD_END           = 0x00002000
+  LOG_MOD_END           = 0x00004000
 };
 
 } // namespace mesh

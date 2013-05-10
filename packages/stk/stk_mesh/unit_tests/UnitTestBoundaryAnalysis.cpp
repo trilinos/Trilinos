@@ -158,7 +158,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
     closure.push_back(closure_entity);
   }
   // sort the closure (boundary analysis expects it this way)
-  std::sort(closure.begin(), closure.end(), stk::mesh::EntityLess());
+  std::sort(closure.begin(), closure.end(), stk::mesh::EntityLess(bulk_data));
 
   // Run the bounary analysis!
   stk::mesh::EntitySideVector boundary;
@@ -214,11 +214,15 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   {
     stk::mesh::EntitySide& side = *itr;
     stk::mesh::EntitySideComponent& inside_closure = side.inside;
-    stk::mesh::EntityId inside_id = inside_closure.entity.is_valid() ? inside_closure.entity.identifier() : 0;
-    stk::mesh::EntityId inside_side = inside_closure.entity.is_valid() ? inside_closure.side_ordinal : 0;
+    stk::mesh::EntityId inside_id =
+        bulk_data.is_valid(inside_closure.entity) ? bulk_data.identifier(inside_closure.entity) : 0;
+    stk::mesh::EntityId inside_side =
+        bulk_data.is_valid(inside_closure.entity) ? inside_closure.side_ordinal : 0;
     stk::mesh::EntitySideComponent& outside_closure = side.outside;
-    stk::mesh::EntityId outside_id = outside_closure.entity.is_valid() ? outside_closure.entity.identifier() : 0;
-    stk::mesh::EntityId outside_side = outside_closure.entity.is_valid() ? outside_closure.side_ordinal : 0;
+    stk::mesh::EntityId outside_id =
+        bulk_data.is_valid(outside_closure.entity) ? bulk_data.identifier(outside_closure.entity) : 0;
+    stk::mesh::EntityId outside_side =
+        bulk_data.is_valid(outside_closure.entity) ? outside_closure.side_ordinal : 0;
 
     expected_results[i] = BoundaryPair(BoundaryItem(inside_id, inside_side),
                                        BoundaryItem(outside_id, outside_side));

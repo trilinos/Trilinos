@@ -17,7 +17,7 @@ namespace mesh {
 
 class BulkData;
 class Part;
-class Entity;
+union Entity;
 
 typedef std::vector<Entity> EntityVector;
 

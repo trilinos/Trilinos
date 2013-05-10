@@ -19,6 +19,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
 #include <stk_util/environment/ReportHandler.hpp>
 
@@ -31,48 +32,47 @@ static const size_t NODE_RANK = stk::mesh::MetaData::NODE_RANK;
 namespace stk {
 namespace rebalance {
 
-std::vector<mesh::Entity> GeomDecomp::entity_coordinates(const mesh::Entity entity,
+std::vector<mesh::Entity> GeomDecomp::entity_coordinates(const mesh::BulkData& mesh,
+                                                         const mesh::Entity entity,
                                                          const VectorField            & nodal_coor,
                                                          std::vector<std::vector<double> >  & coordinates)
 {
   coordinates.clear();
   std::vector<mesh::Entity> mesh_nodes;
 
-  const mesh::EntityRank enttype   = entity.entity_rank();
+  const mesh::EntityRank enttype   = mesh.entity_rank(entity);
   if ( enttype == NODE_RANK )
   {
     throw std::runtime_error("GeomDecomp::entity_coordinates Error: Can not be called for nodal entities.");
   } else {
 
     // Loop over node relations in mesh entities
-    mesh::PairIterRelation nr   = entity.relations( NODE_RANK );
-
-    for ( ; nr.first != nr.second; ++nr.first )
+    mesh::Entity const *nodes_i = mesh.begin_node_entities(entity);
+    mesh::Entity const *nodes_e = mesh.end_node_entities(entity);
+    for ( ; nodes_i != nodes_e; ++nodes_i)
     {
-      const mesh::Relation &rel = *nr.first;
-      if (rel.entity_rank() ==  NODE_RANK) { // %fixme: need to check for USES relation
-        const mesh::Entity nent = rel.entity();
-        const unsigned ndim(field_data_size(nodal_coor, nent)/sizeof(double)); // TODO - is there a better way to get this info?
-        double * coor = mesh::field_data(nodal_coor, nent);
-        if (!coor) {
-          throw std::runtime_error("GeomDecomp::entity_coordinates Error: The coordinate field does not exist.");
-        }
-        std::vector<double> temp(ndim);
-        for ( unsigned i = 0; i < ndim; ++i ) { temp[i] = coor[i]; }
-        coordinates.push_back(temp);
-        mesh_nodes.push_back(nent);
+      const mesh::Entity nent = *nodes_i;
+
+      const unsigned ndim(mesh.field_data_size(nodal_coor, nent)/sizeof(double)); // TODO - is there a better way to get this info?
+      double * coor = mesh.field_data(nodal_coor, nent);
+      if (!coor) {
+        throw std::runtime_error("GeomDecomp::entity_coordinates Error: The coordinate field does not exist.");
       }
+      std::vector<double> temp(ndim);
+      for ( unsigned i = 0; i < ndim; ++i ) { temp[i] = coor[i]; }
+      coordinates.push_back(temp);
+      mesh_nodes.push_back(nent);
     }
   }
   return mesh_nodes;
 }
 
-std::vector<std::vector<double> > GeomDecomp::compute_entity_centroid(const mesh::Entity entity,
+std::vector<std::vector<double> > GeomDecomp::compute_entity_centroid(const mesh::BulkData& mesh, const mesh::Entity entity,
                                                                    const VectorField & nodal_coor_ref,
                                                                    std::vector<double>   & centroid)
 {
   std::vector<std::vector<double> > coordinates;
-  entity_coordinates(entity, nodal_coor_ref, coordinates);
+  entity_coordinates(mesh, entity, nodal_coor_ref, coordinates);
 
   const int ndim      = coordinates.front().size();
   const int num_nodes = coordinates.size();
@@ -130,11 +130,11 @@ void apply_rotation (std::vector<double> &coor)
 
 //: Convert a mesh entity to a single point
 //: in cartesian coordinates (x,y,z)
-void GeomDecomp::entity_to_point (const mesh::Entity entity,
+void GeomDecomp::entity_to_point(const mesh::BulkData& mesh, const mesh::Entity entity,
                                const VectorField & nodeCoord,
                                std::vector<double>           & coor)
 {
-  compute_entity_centroid(entity, nodeCoord, coor);
+  compute_entity_centroid(mesh, entity, nodeCoord, coor);
   apply_rotation (coor);
 }
 } // namespace rebalance

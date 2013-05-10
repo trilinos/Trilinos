@@ -13,7 +13,6 @@
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/WriterExt.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
-#include <stk_mesh/diag/EntityKey.hpp>
 #include <stk_search/diag/IdentProc.hpp>
 #include <stk_search_util/stk_mesh/PrintBoundingBox.hpp>
 

@@ -177,7 +177,8 @@ const stk::mesh::FieldBase *declare_ioss_field(stk::mesh::MetaData &meta,
 }
 
 template <typename T>
-void internal_field_data_from_ioss(const Ioss::Field &io_field,
+void internal_field_data_from_ioss(const stk::mesh::BulkData& mesh,
+                                   const Ioss::Field &io_field,
                                    const stk::mesh::FieldBase *field,
                                    std::vector<stk::mesh::Entity> &entities,
                                    Ioss::GroupingEntity *io_entity,
@@ -201,8 +202,8 @@ void internal_field_data_from_ioss(const Ioss::Field &io_field,
   }
 
   for (size_t i=0; i < entity_count; ++i) {
-    if (entities[i].is_valid()) {
-      T *fld_data = (T*)stk::mesh::field_data(*field, entities[i]);
+    if (mesh.is_valid(entities[i])) {
+      T *fld_data = (T*)mesh.field_data(*field, entities[i]);
       assert(fld_data != NULL);
       for(size_t j=0; j<field_component_count; ++j) {
         fld_data[j] = io_field_data[i*field_component_count+j];
@@ -212,7 +213,8 @@ void internal_field_data_from_ioss(const Ioss::Field &io_field,
 }
 
 template <typename T>
-void internal_field_data_to_ioss(const Ioss::Field &io_field,
+void internal_field_data_to_ioss(const stk::mesh::BulkData& mesh,
+                                 const Ioss::Field &io_field,
                                  const stk::mesh::FieldBase *field,
                                  std::vector<stk::mesh::Entity> &entities,
                                  Ioss::GroupingEntity *io_entity,
@@ -224,8 +226,8 @@ void internal_field_data_to_ioss(const Ioss::Field &io_field,
   std::vector<T> io_field_data(entity_count*field_component_count);
 
   for (size_t i=0; i < entity_count; ++i) {
-    if (entities[i].is_valid()) {
-      T *fld_data = (T*)stk::mesh::field_data(*field, entities[i]);
+    if (mesh.is_valid(entities[i])) {
+      T *fld_data = (T*)mesh.field_data(*field, entities[i]);
       if (fld_data != NULL) {
         for(size_t j=0; j<field_component_count; ++j) {
           io_field_data[i*field_component_count+j] = fld_data[j];
@@ -691,7 +693,8 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
   }
 }
 
-void field_data_from_ioss(const stk::mesh::FieldBase *field,
+void field_data_from_ioss(const stk::mesh::BulkData& mesh,
+                          const stk::mesh::FieldBase *field,
                           std::vector<stk::mesh::Entity> &entities,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &io_fld_name)
@@ -702,7 +705,7 @@ void field_data_from_ioss(const stk::mesh::FieldBase *field,
   if (field != NULL && io_entity->field_exists(io_fld_name)) {
 	const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
 	if (field->type_is<double>()) {
-	  internal_field_data_from_ioss(io_field, field, entities, io_entity,
+	  internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
                                     static_cast<double>(1.0));
 	} else if (field->type_is<int>()) {
 	  // Make sure the IO field type matches the STK field type.
@@ -712,21 +715,22 @@ void field_data_from_ioss(const stk::mesh::FieldBase *field,
 	      Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
 	      tmp.reset_type(Ioss::Field::INTEGER);
 	    }
-	    internal_field_data_from_ioss(io_field, field, entities, io_entity,
+	    internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
                                       static_cast<int>(1));
 	  } else {
 	    if (io_field.get_type() != Ioss::Field::INT64) {
 	      Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
 	      tmp.reset_type(Ioss::Field::INT64);
 	    }
-	    internal_field_data_from_ioss(io_field, field, entities, io_entity,
+	    internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
                                       static_cast<int64_t>(1));
 	  }
 	}
   }
 }
 
-void field_data_to_ioss(const stk::mesh::FieldBase *field,
+void field_data_to_ioss(const stk::mesh::BulkData& mesh,
+                        const stk::mesh::FieldBase *field,
                         std::vector<stk::mesh::Entity> &entities,
                         Ioss::GroupingEntity *io_entity,
                         const std::string &io_fld_name,
@@ -739,7 +743,7 @@ void field_data_to_ioss(const stk::mesh::FieldBase *field,
 	const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
 	if (io_field.get_role() == filter_role) {
 	  if (field->type_is<double>()) {
-	    internal_field_data_to_ioss(io_field, field, entities, io_entity,
+	    internal_field_data_to_ioss(mesh, io_field, field, entities, io_entity,
                                     static_cast<double>(1.0));
 	  } else if (field->type_is<int>()) {
 	    if (io_field.get_type() != Ioss::Field::INTEGER) {
@@ -747,7 +751,7 @@ void field_data_to_ioss(const stk::mesh::FieldBase *field,
 	      tmp.reset_type(Ioss::Field::INTEGER);
 	    }
 	    // FIX 64?
-	    internal_field_data_to_ioss(io_field, field, entities, io_entity,
+	    internal_field_data_to_ioss(mesh, io_field, field, entities, io_entity,
                                     static_cast<int>(1));
 	  }
 	}
@@ -1012,7 +1016,7 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
 
     size_t size = 0;
     for (size_t i=0; i < entities.size(); i++) {
-      for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm(entities[i].key()); ! ec.empty() ; ++ec ) {
+      for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm(bulk.entity_key(entities[i])); ! ec.empty() ; ++ec ) {
 	if (ec->ghost_id == 0) {
 	  size++;
 	}
@@ -1192,36 +1196,38 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
 
   std::vector<INT> elem_side_ids; elem_side_ids.reserve(num_sides*2);
 
-  stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
   for(size_t i=0; i<num_sides; ++i) {
 
     const mesh::Entity side = sides[i] ;
-    const mesh::PairIterRelation side_elem = side.relations( elem_rank );
+    mesh::Entity const *side_elem = bulk_data.begin_element_entities(side);
+    mesh::ConnectivityOrdinal const *side_ordinal = bulk_data.begin_element_ordinals(side);
 
     // Which element to use?
     // Any locally owned element that has the "correct" orientation
 
-    const size_t num_side_elem = side_elem.size();
+    const size_t num_side_elem = bulk_data.num_elements(side);
+    size_t suitable = std::numeric_limits<size_t>::max();
 
-    const mesh::Relation *rel = NULL ;
+    for ( size_t j = 0 ; (j < num_side_elem) && (suitable >= num_side_elem) ; ++j )
+    {
+      const mesh::Entity elem = side_elem[j];
 
-    for ( size_t j = 0 ; j < num_side_elem && ! rel ; ++j ) {
-      const mesh::Entity elem = side_elem[j].entity();
-
-      if ( elem.bucket().member( meta_data.locally_owned_part() ) &&
-           (num_side_elem == 1 || stk::mesh::element_side_polarity(elem, side, side_elem[j].relation_ordinal())) ) {
-        rel = &side_elem[j];
+      if ( bulk_data.bucket(elem).member( meta_data.locally_owned_part() ) &&
+           (num_side_elem == 1 || bulk_data.element_side_polarity(elem, side, side_ordinal[j])) )
+      {
+        suitable = j;
       }
     }
 
-    if (rel == NULL) { // no suitable element found
+    if (suitable >= num_side_elem)
+    {
       std::ostringstream oss;
       oss << "ERROR, no suitable element found";
       throw std::runtime_error(oss.str());
     }
 
-    elem_side_ids.push_back(rel->entity().identifier());
-    elem_side_ids.push_back(rel->relation_ordinal() + 1) ; // Ioss is 1-based, mesh is 0-based.
+    elem_side_ids.push_back(bulk_data.identifier(side_elem[suitable]));
+    elem_side_ids.push_back(side_ordinal[suitable] + 1) ; // Ioss is 1-based, mesh is 0-based.
   }
 
   const size_t num_side_written = io.put_field_data("element_side",elem_side_ids);
@@ -1239,7 +1245,7 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
 
   const mesh::FieldBase *df = get_distribution_factor_field(*part);
   if (df != NULL) {
-    field_data_to_ioss(df, sides, &io, "distribution_factors", Ioss::Field::MESH);
+    field_data_to_ioss(bulk_data, df, sides, &io, "distribution_factors", Ioss::Field::MESH);
   }
 
   const std::vector<mesh::FieldBase *> &fields = meta_data.get_fields();
@@ -1248,7 +1254,7 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
     const mesh::FieldBase *f = *I ; ++I ;
     const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
     if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
-      stk::io::field_data_to_ioss(f, sides, &io, f->name(), Ioss::Field::ATTRIBUTE);
+      stk::io::field_data_to_ioss(bulk_data, f, sides, &io, f->name(), Ioss::Field::ATTRIBUTE);
     }
   }
 }
@@ -1274,7 +1280,7 @@ void output_node_block(Ioss::NodeBlock &nb,
   std::vector<INT> node_ids; node_ids.reserve(num_nodes);
   for(size_t i=0; i<num_nodes; ++i) {
     const mesh::Entity node = nodes[i] ;
-    node_ids.push_back(node.identifier());
+    node_ids.push_back(bulk.identifier(node));
   }
 
   size_t num_ids_written = nb.put_field_data("ids", node_ids);
@@ -1289,7 +1295,7 @@ void output_node_block(Ioss::NodeBlock &nb,
   if (nb.get_database()->needs_shared_node_information()) {
     std::vector<INT> owning_processor; owning_processor.reserve(num_nodes);
     for(size_t i=0; i<num_nodes; ++i) {
-      owning_processor.push_back(nodes[i].owner_rank());
+      owning_processor.push_back(bulk.parallel_owner_rank(nodes[i]));
     }
     nb.put_field_data("owning_processor", owning_processor);
   }
@@ -1297,7 +1303,7 @@ void output_node_block(Ioss::NodeBlock &nb,
   const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
   const mesh::FieldBase *coord_field = bulk.coordinate_field();
   assert(coord_field != NULL);
-  field_data_to_ioss(coord_field, nodes, &nb, "mesh_model_coordinates", Ioss::Field::MESH);
+  field_data_to_ioss(bulk, coord_field, nodes, &nb, "mesh_model_coordinates", Ioss::Field::MESH);
 
   const std::vector<mesh::FieldBase *> &fields = meta_data.get_fields();
   std::vector<mesh::FieldBase *>::const_iterator I = fields.begin();
@@ -1305,7 +1311,7 @@ void output_node_block(Ioss::NodeBlock &nb,
     const mesh::FieldBase *f = *I ; ++I ;
     if (stk::io::is_valid_part_field(f, part_primary_entity_rank(part), part,
 				     Ioss::Field::ATTRIBUTE, false)) {
-      stk::io::field_data_to_ioss(f, nodes, &nb, f->name(), Ioss::Field::ATTRIBUTE);
+      stk::io::field_data_to_ioss(bulk, f, nodes, &nb, f->name(), Ioss::Field::ATTRIBUTE);
     }
   }
 }
@@ -1335,15 +1341,14 @@ void output_element_block(Ioss::ElementBlock *block,
   std::vector<INT> elem_ids; elem_ids.reserve(num_elems);
   std::vector<INT> connectivity; connectivity.reserve(num_elems*nodes_per_elem);
 
-  stk::mesh::EntityRank no_rank = stk::mesh::MetaData::NODE_RANK;
   for (size_t i = 0; i < num_elems; ++i) {
 
-    elem_ids.push_back(elements[i].identifier());
+    elem_ids.push_back(bulk.identifier(elements[i]));
 
-    const mesh::PairIterRelation elem_nodes = elements[i].relations(no_rank);
+    stk::mesh::Entity const * elem_nodes = bulk.begin_node_entities(elements[i]);
 
     for (size_t j = 0; j < nodes_per_elem; ++j) {
-      connectivity.push_back(elem_nodes[j].entity().identifier());
+      connectivity.push_back(bulk.identifier(elem_nodes[j]));
     }
   }
 
@@ -1368,7 +1373,7 @@ void output_element_block(Ioss::ElementBlock *block,
     if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
       const mesh::FieldBase::Restriction &res = f->restriction(elem_rank, *part);
       if (res.dimension() > 0) {
-        stk::io::field_data_to_ioss(f, elements, block, f->name(), Ioss::Field::ATTRIBUTE);
+        stk::io::field_data_to_ioss(bulk, f, elements, block, f->name(), Ioss::Field::ATTRIBUTE);
       }
     }
   }
@@ -1406,7 +1411,7 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
   std::vector<INT> node_ids; node_ids.reserve(num_nodes);
   for(size_t i=0; i<num_nodes; ++i) {
     const stk::mesh::Entity node = nodes[i] ;
-    node_ids.push_back(node.identifier());
+    node_ids.push_back(bulk.identifier(node));
   }
 
   size_t num_ids_written = ns->put_field_data("ids", node_ids);
@@ -1422,7 +1427,7 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
   if (df_field != NULL) {
     const stk::mesh::FieldBase::Restriction &res = df_field->restriction(stk::mesh::MetaData::NODE_RANK, *part);
     if (res.dimension() > 0) {
-      stk::io::field_data_to_ioss(df_field, nodes, ns, "distribution_factors", Ioss::Field::MESH);
+      stk::io::field_data_to_ioss(bulk, df_field, nodes, ns, "distribution_factors", Ioss::Field::MESH);
     }
   }
 
@@ -1434,7 +1439,7 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
     if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
       const mesh::FieldBase::Restriction &res = f->restriction(0, *part);
       if (res.dimension() > 0) {
-        stk::io::field_data_to_ioss(f, nodes, ns, f->name(), Ioss::Field::ATTRIBUTE);
+        stk::io::field_data_to_ioss(bulk, f, nodes, ns, f->name(), Ioss::Field::ATTRIBUTE);
       }
     }
   }
@@ -1466,11 +1471,11 @@ void output_communication_maps(Ioss::Region &io_region,
     ep.reserve(size*2);
 
     for (size_t i=0; i < entities.size(); i++) {
-      for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm(entities[i].key()); ! ec.empty() ; ++ec ) {
-	if (ec->ghost_id == 0) {
-	  ep.push_back(entities[i].identifier());
-	  ep.push_back(ec->proc);
-	}
+      for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm(bulk.entity_key(entities[i])); ! ec.empty() ; ++ec ) {
+        if (ec->ghost_id == 0) {
+          ep.push_back(bulk.identifier(entities[i]));
+          ep.push_back(ec->proc);
+        }
       }
     }
     io_cs->put_field_data("entity_processor", ep);

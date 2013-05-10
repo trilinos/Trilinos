@@ -32,8 +32,8 @@ namespace stk
       void build_invalid_edge_sets();
     public:
       TopologyVerifier();
-      bool isTopologyBad( mesh::Entity elem);
-      bool isTopologyBad( mesh::BulkData& mesh_bulk_data);
+      bool isTopologyBad( mesh::BulkData& bulk, mesh::Entity elem);
+      bool isTopologyBad( mesh::BulkData& bulk);
     };
 
   }//namespace percept

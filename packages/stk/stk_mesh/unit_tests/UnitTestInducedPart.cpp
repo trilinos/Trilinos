@@ -24,11 +24,6 @@ using stk::mesh::Entity;
 
 namespace {
 
-bool has_part(const Entity entity, const Part& part)
-{
-  return entity.bucket().member(part);
-}
-
 // Set up a very simple mesh with one element, one side, one node:
 // rels: E->(S1,S2)->N
 // parts: E in element_rank_part, unranked_part
@@ -78,16 +73,16 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart , verifyBasicInducedPart )
 
   // Check that directly-induced parts are induced upon relation creation
   // before modification end.
-  STKUNIT_EXPECT_TRUE(has_part(node, side_rank_part));
-  STKUNIT_EXPECT_TRUE(has_part(side1, element_rank_part));
-  STKUNIT_EXPECT_TRUE(has_part(side2, element_rank_part));
+  STKUNIT_EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
+  STKUNIT_EXPECT_TRUE(mesh.bucket(side1).member( element_rank_part));
+  STKUNIT_EXPECT_TRUE(mesh.bucket(side2).member( element_rank_part));
 
   mesh.modification_end();
 
   // Modification-end should not have changed induced parts
-  STKUNIT_EXPECT_TRUE(has_part(node, side_rank_part));
-  STKUNIT_EXPECT_TRUE(has_part(side1, element_rank_part));
-  STKUNIT_EXPECT_TRUE(has_part(side2, element_rank_part));
+  STKUNIT_EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
+  STKUNIT_EXPECT_TRUE(mesh.bucket(side1).member( element_rank_part));
+  STKUNIT_EXPECT_TRUE(mesh.bucket(side2).member( element_rank_part));
 }
 
 STKUNIT_UNIT_TEST ( UnitTestInducedPart , verifyNotTransitiveInducedPart )
@@ -98,7 +93,7 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart , verifyNotTransitiveInducedPart )
   // it's relation to the sides because induced-parts are not supposed to be
   // transitive according to the STK_Mesh domain design.
   // TODO: Are we sure we don't want induced parts to be transitive??
-  STKUNIT_EXPECT_TRUE(!has_part(node, element_rank_part));
+  STKUNIT_EXPECT_TRUE(!mesh.bucket(node).member( element_rank_part));
 }
 
 STKUNIT_UNIT_TEST ( UnitTestInducedPart, verifyInducedPartCorrectnessWhenRelationsRemoved )
@@ -108,17 +103,17 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart, verifyInducedPartCorrectnessWhenRelatio
   // Destroy one relation from element to a side, confirm that the side that lost
   // the relation no longer has the element part.
   mesh.destroy_relation(elem, side1, 0 /*rel id*/);
-  STKUNIT_EXPECT_TRUE(!has_part(side1, element_rank_part));
+  STKUNIT_EXPECT_TRUE(!mesh.bucket(side1).member( element_rank_part));
 
   // Destroy one of the relations from side to node. Confirm that node still has
   // side part due to its remaining relation.
   mesh.destroy_relation(side1, node, 0 /*rel id*/);
-  STKUNIT_EXPECT_TRUE(has_part(node, side_rank_part));
+  STKUNIT_EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
 
   // Destroy the other relations from side to node. Confirm that node no longer
   // has any induced parts.
   mesh.destroy_relation(side2, node, 0 /*rel id*/);
-  STKUNIT_EXPECT_TRUE(!has_part(node, side_rank_part));
+  STKUNIT_EXPECT_TRUE(!mesh.bucket(node).member( side_rank_part));
 }
 
 STKUNIT_UNIT_TEST ( UnitTestInducedPart , verifySupersetsOfInducedPart )
@@ -128,8 +123,8 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart , verifySupersetsOfInducedPart )
   // Check for superset/subset consistency in induced parts. If an entity is
   // induced into a part, it should also be induced into the supersets of
   // that part even if the superset parts are unranked.
-  STKUNIT_EXPECT_TRUE(has_part(side1, element_rank_superset_part));
-  STKUNIT_EXPECT_TRUE(has_part(side1, unranked_superset_part));
+  STKUNIT_EXPECT_TRUE(mesh.bucket(side1).member( element_rank_superset_part));
+  STKUNIT_EXPECT_TRUE(mesh.bucket(side1).member( unranked_superset_part));
 }
 
 }

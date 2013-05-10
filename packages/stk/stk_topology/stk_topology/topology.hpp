@@ -10,10 +10,8 @@
 
 namespace stk {
 
-
 struct topology
 {
-
   enum rank_t
   {
       BEGIN_RANK
@@ -202,7 +200,6 @@ struct topology
   BOOST_GPU_ENABLED
   std::pair<bool,unsigned> equivalent(const NodeArrayA & a, const NodeArrayB & b) const;
 
-
   /// return the permutation index which gives the lowest lexicographical ordering of the nodes
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray>
@@ -252,7 +249,6 @@ struct topology
     return 0;
 
   }
-
 
   /// what is the topology of the given sub topology
   BOOST_GPU_ENABLED
@@ -514,4 +510,3 @@ void verbose_print_topology(std::ostream &out, topology t);
 #include <stk_topology/topology.tcc>
 
 #endif //STKTOPOLOGY_TOPOLOGY_HPP
-

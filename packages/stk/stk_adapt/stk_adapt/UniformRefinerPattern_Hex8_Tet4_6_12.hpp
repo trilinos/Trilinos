@@ -136,7 +136,7 @@ namespace stk {
         vector<tet_tuple_type> new_elements(6);
 
         shards::CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+        const percept::MyPairIterRelation elem_nodes (m_eMesh, element,stk::mesh::MetaData::NODE_RANK);
 
         // for cases that have a single center node, we just compute the new node's quantities here instead of globally
         //stk::mesh::Entity node = get_bulk_data()->get_entity( Node, node_id );
@@ -157,7 +157,7 @@ namespace stk {
 
           static unsigned element_globalIds[8] = {0,0,0,0, 0,0,0,0};
           //static std::vector<unsigned> element_globalIds(8);
-          const stk::mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+          const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK );
 
           //std::cout << "tmp hex elem= " << element << std::endl;
           for (int inode=0; inode < 8; inode++)

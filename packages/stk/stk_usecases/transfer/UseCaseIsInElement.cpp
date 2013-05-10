@@ -20,7 +20,8 @@
 namespace stk {
 namespace usecase {
 
-size_t is_in_element(const VectorField *domain_coordinates,
+size_t is_in_element(const stk::mesh::BulkData &domain_mesh, const stk::mesh::BulkData &range_mesh,
+                     const VectorField *domain_coordinates,
                      const VectorField *range_coordinates,
                      const std::vector<std::pair<stk::mesh::Entity , stk::mesh::Entity> > &entity_map,
                      std::vector<std::size_t> &not_in_element)
@@ -35,11 +36,12 @@ size_t is_in_element(const VectorField *domain_coordinates,
     stk::mesh::Entity range_entity  = entity_map[i].second;
     assert(range_entity.entity_rank() == stk::mesh::MetaData::NODE_RANK);
 
-    const CellTopologyData * const cell_topo = stk::mesh::get_cell_topology(domain_entity).getCellTopologyData();
+    const CellTopologyData * const cell_topo =
+        stk::mesh::get_cell_topology(domain_mesh.bucket(domain_entity)).getCellTopologyData();
     const int nodes_per_entity = cell_topo->node_count;
 
-    const stk::mesh::PairIterRelation entity_nodes = domain_entity.relations(stk::mesh::MetaData::NODE_RANK);
-    double *domain_fld_data = static_cast<double*>(stk::mesh::field_data(*domain_coordinates, entity_nodes[0].entity()));
+    stk::mesh::Node const *entity_nodes = domain_mesh.begin_nodes(domain_entity);
+    double *domain_fld_data = static_cast<double*>(domain_mesh.field_data(*domain_coordinates, entity_nodes[0]));
     assert(domain_fld_data != NULL);
     double xmin = domain_fld_data[0];
     double ymin = domain_fld_data[1];
@@ -50,7 +52,7 @@ size_t is_in_element(const VectorField *domain_coordinates,
     double zmax = domain_fld_data[2];
 
     for (int j = 1; j < nodes_per_entity; ++j) {
-      domain_fld_data = static_cast<double*>(stk::mesh::field_data(*domain_coordinates, entity_nodes[j].entity()));
+      domain_fld_data = static_cast<double*>(domain_mesh.field_data(*domain_coordinates, entity_nodes[j]));
       assert(domain_fld_data != NULL);
       xmin = domain_fld_data[0] < xmin ? domain_fld_data[0] : xmin;
       ymin = domain_fld_data[1] < ymin ? domain_fld_data[1] : ymin;
@@ -60,7 +62,7 @@ size_t is_in_element(const VectorField *domain_coordinates,
       ymax = domain_fld_data[1] > ymax ? domain_fld_data[1] : ymax;
       zmax = domain_fld_data[2] > zmax ? domain_fld_data[2] : zmax;
     }
-    double *range_fld_data = static_cast<double*>(stk::mesh::field_data(*range_coordinates, range_entity));
+    double *range_fld_data = static_cast<double*>(range_mesh.field_data(*range_coordinates, range_entity));
     assert(range_fld_data != NULL);
     const double x=range_fld_data[0];
     const double y=range_fld_data[1];

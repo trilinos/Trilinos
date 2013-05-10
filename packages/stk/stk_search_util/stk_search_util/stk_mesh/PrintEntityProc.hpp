@@ -22,7 +22,8 @@
 
 namespace stk {
 namespace mesh {
-class Entity;
+union Entity;
+class BulkData;
 }
 
 namespace search_util {
@@ -33,8 +34,10 @@ namespace search_util {
  * verify which entity contains another entity.
  */
 void print_entity_map(stk::diag::Writer &writer,
-                      const std::vector<std::pair<stk::mesh::Entity ,
-                      stk::mesh::Entity> >& entity_map,
+                      const stk::mesh::BulkData& mesh1,
+                      const stk::mesh::BulkData& mesh2,
+                      const std::vector<std::pair<stk::mesh::Entity,
+                                                  stk::mesh::Entity> >& entity_map,
                       const std::string & relation);
 
 /**
@@ -50,6 +53,7 @@ void print_entity_map(stk::diag::Writer &writer,
  * Example output: "Share NODE 37 with processor 12"
  */
 void print_entity_proc_map(stk::diag::Writer &writer,
+                           const stk::mesh::BulkData& mesh,
                            const std::vector<stk::mesh::EntityProc>& entity_proc,
                            const std::string &action,
                            const std::string &to_from);
@@ -67,6 +71,7 @@ void print_entity_proc_map(stk::diag::Writer &writer,
  * Example output: "Share NODE 37 with processor 12"
  */
 void print_entity_proc_map(stk::diag::Writer &writer,
+                           const stk::mesh::BulkData& mesh,
                            const std::vector<stk::mesh::Entity>& entity_proc,
                            const std::string &action,
                            const std::string &to_from);

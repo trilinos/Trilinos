@@ -85,8 +85,7 @@ TEST(samba, fixed_node_connectivity)
     }
   }
 
-  //move entities bace to original partition
-
+  //move entities back to original partition
 
   tet_2_nodes_2.move_entities(tet_2_nodes, how_many);
 
@@ -103,4 +102,3 @@ TEST(samba, fixed_node_connectivity)
   }
 
 }
-

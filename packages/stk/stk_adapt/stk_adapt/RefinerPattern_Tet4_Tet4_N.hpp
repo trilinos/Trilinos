@@ -266,7 +266,7 @@ namespace stk {
         unsigned num_new_elems=0;
 
         shards::CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+        const percept::MyPairIterRelation elem_nodes (m_eMesh, element,stk::mesh::MetaData::NODE_RANK);
         //VectorFieldType* coordField = eMesh.get_coordinates_field();
 
         std::vector<stk::mesh::Part*> add_parts;

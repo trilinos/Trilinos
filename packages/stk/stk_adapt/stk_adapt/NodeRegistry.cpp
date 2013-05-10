@@ -67,7 +67,7 @@ namespace stk {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
         //CellTopology cell_topo(cell_topo_data);
-        const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+        const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
         const unsigned *  inodes = 0;
         unsigned nSubDimNodes = 0;
@@ -467,7 +467,7 @@ namespace stk {
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
 
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-            unsigned owning_elementId = stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+            unsigned owning_elementId = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
             //unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
             unsigned char owning_elementSubDimOrd = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_ORDINAL>();
             VERIFY_OP_ON(owning_elementSubDimOrd, >, 0, "hmm 2");
@@ -555,7 +555,7 @@ namespace stk {
                   }
                 else
                   {
-                    const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+                    const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
                     unsigned npts = elem_nodes.size();
                     nsz = npts;
                     nodes.resize(nsz, stk::mesh::Entity());
@@ -586,7 +586,7 @@ namespace stk {
                     stk::mesh::Entity owning_element = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, owning_elementId);
                     VERIFY_OP_ON(owning_element, !=, stk::mesh::Entity(), "hmmm");
                     std::vector<stk::mesh::Entity> side_node_entities;
-                    PerceptMesh::element_side_nodes(owning_element, owning_elementSubDimOrd, m_eMesh.face_rank(), side_node_entities);
+                    m_eMesh.element_side_nodes(owning_element, owning_elementSubDimOrd, m_eMesh.face_rank(), side_node_entities);
                     VERIFY_OP_ON(side_node_entities.size(), ==, 4, "hmmm 3");
                     for (unsigned ipts=0; ipts < side_node_entities.size(); ipts++)
                       {
@@ -933,15 +933,15 @@ namespace stk {
                   SDSEntityType nodeId = *ids;
                   stk::mesh::Entity node = nodeId;
                   found = false;
-                  stk::mesh::PairIterRelation beams = node.relations(m_eMesh.element_rank());
+                  percept::MyPairIterRelation beams (m_eMesh, node, m_eMesh.element_rank());
 
                   if (DEBUG_ADD_RBARS > 1 && !m_eMesh.get_rank())
                     {
                       for (unsigned ii=0; ii < beams.size(); ii++)
                         {
-                          if (selector(beams[ii].entity()))
+                          if (selector(beams[ii].entity().bucket()))
                             {
-                              stk::mesh::PairIterRelation beam_nodes = beams[ii].entity().relations(m_eMesh.node_rank());
+                              percept::MyPairIterRelation beam_nodes (m_eMesh, beams[ii].entity(), m_eMesh.node_rank());
                               VERIFY_OP_ON(beam_nodes.size(), ==, 2, "rbar issue");
                               std::cout << "node= " << node.identifier() << " beam_nodes[" << beams[ii].entity().identifier() << "]= { "
                                         << std::setw(20) << beam_nodes[0].entity().identifier()
@@ -954,14 +954,14 @@ namespace stk {
                   // Step 3. for all beams attached to this node that belong to the current rbar block...
                   for (unsigned ii=0; ii < beams.size(); ii++)
                     {
-                      if (selector(beams[ii].entity()))
+                      if (selector(beams[ii].entity().bucket()))
                         {
                           // Step 3a.  we found a beam in the current rbar block attached to current node
                           found = true;
 
                           attached_rbars.push_back(beams[ii].entity());
 
-                          stk::mesh::PairIterRelation beam_nodes = beams[ii].entity().relations(m_eMesh.node_rank());
+                          percept::MyPairIterRelation beam_nodes ( m_eMesh, beams[ii].entity(), m_eMesh.node_rank());
                           VERIFY_OP_ON(beam_nodes.size(), ==, 2, "rbar issue");
 
                           // Step 4. for beam nodes, find the node that is common to all rbars, the other node is current one from Step 2

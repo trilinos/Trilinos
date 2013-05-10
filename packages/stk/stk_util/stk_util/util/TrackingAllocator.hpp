@@ -164,11 +164,10 @@ void profile_memory_usage(std::string name, ParallelMachine parallel, int parall
     oss << "           peak = " << max_memory[0] << " (" << human_bytes(max_memory[0]) << ")" << std::endl;
     oss << "        current = " << max_memory[1] << " (" << human_bytes(max_memory[1]) << ")" << std::endl;
     oss << "    allocations = " << max_memory[2] << std::endl;
-    oss << "  deallocations = " << max_memory[3] << std::endl;
-    std::cout<<oss.str();
+    oss << "  deallocations = " << max_memory[3];
+    std::cout << oss.str() << std::endl;
   }
 }
-
 
 } // namespace stk
 

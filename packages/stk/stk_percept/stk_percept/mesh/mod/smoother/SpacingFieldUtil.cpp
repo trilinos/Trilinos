@@ -48,7 +48,7 @@ namespace stk {
                     double A_ = 0.0;
                     jacA(A_, m_eMesh, element, m_eMesh.get_coordinates_field(), topology_data);
 
-                    const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+                    const MyPairIterRelation elem_nodes(m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
                     unsigned num_node = elem_nodes.size();
 
                     for (unsigned inode=0; inode < num_node; inode++)
@@ -137,7 +137,7 @@ namespace stk {
       double spacing_ave=0.0;
       double *coord = stk::mesh::field_data( *static_cast<const VectorFieldType *>(m_eMesh.get_coordinates_field()) , node );
 
-      const mesh::PairIterRelation node_elems = node.relations( m_eMesh.element_rank() );
+      const MyPairIterRelation node_elems(m_eMesh, node, m_eMesh.element_rank() );
       double num_elem = 0;
 
       for (unsigned i_element = 0; i_element < node_elems.size(); i_element++)
@@ -146,7 +146,7 @@ namespace stk {
           if (!MeshSmoother::select_bucket(element.bucket(), &m_eMesh))
             continue;
 
-          if (!element_selector || (*element_selector)(element))
+          if (!element_selector || (*element_selector)(element.bucket()))
             {
               ++num_elem;
               //if (element.entity_rank() == m_eMesh.element_rank() );
@@ -159,7 +159,7 @@ namespace stk {
               jacA(A_, m_eMesh, element, m_eMesh.get_coordinates_field(), topology_data);
 
               unsigned inode = node_elems[i_element].relation_ordinal();
-              const mesh::PairIterRelation elem_nodes = element.relations( m_eMesh.node_rank() );
+              const MyPairIterRelation elem_nodes(m_eMesh, element, m_eMesh.node_rank() );
               VERIFY_OP_ON(inode, <, elem_nodes.size(), "elem_nodes 2");
               VERIFY_OP_ON(elem_nodes[inode].entity().identifier(), ==, node.identifier(), "elem_nodes 3");
 

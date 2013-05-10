@@ -91,7 +91,8 @@ namespace stk {
 
       stk::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
 
-      stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
+      const MyPairIterRelation node_elems(*m_eMesh, node, m_eMesh->element_rank() );
+
       for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
         {
           stk::mesh::Entity element = node_elems[i_elem].entity();
@@ -121,7 +122,7 @@ namespace stk {
       //int spatialDim = m_eMesh->get_spatial_dim();
       double nm=0.0;
 
-      stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
+      const MyPairIterRelation node_elems(*m_eMesh, node, m_eMesh->element_rank() );
       for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
         {
           stk::mesh::Entity element = node_elems[i_elem].entity();
@@ -282,7 +283,7 @@ namespace stk {
                     {
                       stk::mesh::Entity element = bucket[i_element];
 
-                      const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+                      const MyPairIterRelation elem_nodes(*m_eMesh, element, stk::mesh::MetaData::NODE_RANK );
                       unsigned num_node = elem_nodes.size();
 
                       double edge_length_ave = 0; // m_eMesh->edge_length_ave(element, m_coord_field_original);
@@ -302,7 +303,7 @@ namespace stk {
                                 {
                                   mesh::Entity node = elem_nodes[ inode ].entity();
 
-                                  bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+                                  bool isGhostNode = !(on_locally_owned_part(node.bucket()) || on_globally_shared_part(node.bucket()));
                                   bool node_locally_owned = (eMesh->get_rank() == node.owner_rank());
                                   bool fixed = this->get_fixed_flag(node).first;
                                   if (fixed || isGhostNode)
@@ -325,7 +326,7 @@ namespace stk {
                         {
                           mesh::Entity node = elem_nodes[ inode ].entity();
 
-                          bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+                          bool isGhostNode = !(on_locally_owned_part(node.bucket()) || on_globally_shared_part(node.bucket()));
                           //VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
                           bool node_locally_owned = (eMesh->get_rank() == node.owner_rank());
                           bool fixed = this->get_fixed_flag(node).first;
@@ -655,7 +656,7 @@ namespace stk {
                   {
                     stk::mesh::Entity element = bucket[i_element];
 
-                    const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+                    const MyPairIterRelation elem_nodes(*m_eMesh, element, stk::mesh::MetaData::NODE_RANK );
                     unsigned num_node = elem_nodes.size();
 
                     double edge_length_ave = 0; //m_eMesh->edge_length_ave(element, m_coord_field_original);
@@ -667,7 +668,7 @@ namespace stk {
                         double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
                         edge_length_ave = cg_edge_length[0];
 
-                        bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+                        bool isGhostNode = !(on_locally_owned_part(node.bucket()) || on_globally_shared_part(node.bucket()));
                         VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
                         bool fixed = this->get_fixed_flag(node).first;
                         if (fixed || isGhostNode)
@@ -720,7 +721,7 @@ namespace stk {
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
                     stk::mesh::Entity node = bucket[i_node];
-                    bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+                    bool isGhostNode = !(on_locally_owned_part(node.bucket()) || on_globally_shared_part(node.bucket()));
                     VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
                     bool fixed = this->get_fixed_flag(node).first;
                     if (fixed || isGhostNode)
@@ -840,7 +841,7 @@ namespace stk {
               std::string file = "dump_vtk_"+toString(file_i)+".vtk";
               ++file_i;
               m_eMesh->dump_vtk(node, file);
-              bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+              bool isGhostNode = !(on_locally_owned_part(node.bucket()) || on_globally_shared_part(node.bucket()));
               bool fixed = this->get_fixed_flag(node).first;
               PRINT_2(" tmp srk fixed= " << fixed << " isGhostNode= " << isGhostNode);
               if (fixed || isGhostNode)
@@ -1303,7 +1304,7 @@ namespace stk {
                   bool ng_valid=true;
 
                   {
-                    bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+                    bool isGhostNode = !(on_locally_owned_part(node.bucket()) || on_globally_shared_part(node.bucket()));
                     bool fixed = this->get_fixed_flag(node).first;
                     if (fixed || isGhostNode)
                       {
@@ -1361,7 +1362,7 @@ namespace stk {
                   {
                     stk::mesh::Entity node = bucket[i_node];
                     bool fixed = this->get_fixed_flag(node).first;
-                    bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+                    bool isGhostNode = !(on_locally_owned_part(node.bucket()) || on_globally_shared_part(node.bucket()));
                     if (fixed || isGhostNode)
                       {
                         continue;

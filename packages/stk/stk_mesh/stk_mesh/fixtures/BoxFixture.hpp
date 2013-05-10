@@ -34,8 +34,8 @@ public:
   MetaData & fem_meta () { return m_fem_meta; }
   BulkData & bulk_data () { return m_bulk_data; }
 
-  unsigned  comm_size() const { return m_comm_size; }
-  unsigned  comm_rank() const { return m_comm_rank; }
+  int  comm_size() const { return m_comm_size; }
+  int  comm_rank() const { return m_comm_rank; }
 
   typedef int BOX[3][2];
 
@@ -58,8 +58,8 @@ protected:
   MetaData m_fem_meta;
   BulkData m_bulk_data;
 
-  unsigned m_comm_rank;
-  unsigned m_comm_size;
+  int m_comm_rank;
+  int m_comm_size;
 
   BulkData::BulkDataSyncState m_previous_state;
 

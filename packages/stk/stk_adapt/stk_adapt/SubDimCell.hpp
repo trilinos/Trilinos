@@ -146,8 +146,15 @@ namespace stk {
           {
             //if (size() > max_size() ) throw std::runtime_error("SubDimCell out of range");
             base_type::insert(val);
+#ifdef __GNUC__
+#if (__GNUC__ == 4) && (__GNUC_MINOR__ == 4)
+            std::stable_sort( base_type::begin(), base_type::end(), CompareClass() );
+#else
             std::sort( base_type::begin(), base_type::end(), CompareClass() );
-
+#endif
+#else
+            std::sort( base_type::begin(), base_type::end(), CompareClass() );
+#endif
           }
         m_hash = hashCode();
       }

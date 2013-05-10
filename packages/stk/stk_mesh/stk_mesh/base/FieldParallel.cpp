@@ -27,7 +27,7 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
   unsigned shared_id = mesh.ghostings()[0]->ordinal();
 
   const unsigned parallel_size = mesh.parallel_size();
-  const unsigned parallel_rank = mesh.parallel_rank();
+  const int parallel_rank = mesh.parallel_rank();
 
   const std::vector<const FieldBase *>::const_iterator fe = fields.end();
   const std::vector<const FieldBase *>::const_iterator fb = fields.begin();
@@ -48,7 +48,7 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
     unsigned e_size = 0 ;
     for ( fi = fb ; fi != fe ; ++fi ) {
       const FieldBase & f = **fi ;
-      e_size += field_data_size( f , e );
+      e_size += mesh.field_data_size( f , e );
     }
 
     if (e_size == 0) {
@@ -88,11 +88,11 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
 
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
-        const unsigned size = field_data_size( f , e );
+        const unsigned size = mesh.field_data_size( f , e );
 
         if ( size ) {
           unsigned char * ptr =
-            reinterpret_cast<unsigned char *>(field_data( f , e ));
+            reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
 
           for ( PairIterEntityComm ec = mesh.entity_comm(i->key); !ec.empty(); ++ec ) {
 
@@ -120,11 +120,11 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
 
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
-        const unsigned size = field_data_size( f , e );
+        const unsigned size = mesh.field_data_size( f , e );
 
         if ( size ) {
           unsigned char * ptr =
-            reinterpret_cast<unsigned char *>(field_data( f , e ));
+            reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
 
           for ( PairIterEntityComm ec = mesh.entity_comm(i->key) ; ! ec.empty() ; ++ec ) {
 
@@ -147,8 +147,8 @@ void communicate_field_data(
   if ( fields.empty() ) { return; }
 
   const BulkData & mesh = BulkData::get(ghosts);
-  const unsigned parallel_size = mesh.parallel_size();
-  const unsigned parallel_rank = mesh.parallel_rank();
+  const int parallel_size = mesh.parallel_size();
+  const int parallel_rank = mesh.parallel_rank();
 
   const std::vector<const FieldBase *>::const_iterator fe = fields.end();
   const std::vector<const FieldBase *>::const_iterator fb = fields.begin();
@@ -169,7 +169,7 @@ void communicate_field_data(
     unsigned e_size = 0 ;
     for ( fi = fb ; fi != fe ; ++fi ) {
       const FieldBase & f = **fi ;
-      e_size += field_data_size( f , e );
+      e_size += mesh.field_data_size( f , e );
     }
 
     if (e_size == 0) {
@@ -208,11 +208,11 @@ void communicate_field_data(
 
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
-        const unsigned size = field_data_size( f , e );
+        const unsigned size = mesh.field_data_size( f , e );
 
         if ( size ) {
           unsigned char * ptr =
-            reinterpret_cast<unsigned char *>(field_data( f , e ));
+            reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
 
           for ( PairIterEntityComm ec = mesh.entity_comm(i->key); !ec.empty(); ++ec ) {
 
@@ -240,11 +240,11 @@ void communicate_field_data(
 
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
-        const unsigned size = field_data_size( f , e );
+        const unsigned size = mesh.field_data_size( f , e );
 
         if ( size ) {
           unsigned char * ptr =
-            reinterpret_cast<unsigned char *>(field_data( f , e ));
+            reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
 
           for ( PairIterEntityComm ec = mesh.entity_comm(i->key) ; ! ec.empty() ; ++ec ) {
 
@@ -262,6 +262,7 @@ void communicate_field_data(
 // Heterogeneity?
 
 void communicate_field_data(
+  const BulkData& mesh,
   ParallelMachine machine,
   const std::vector<EntityProc> & domain ,
   const std::vector<EntityProc> & range ,
@@ -269,8 +270,8 @@ void communicate_field_data(
 {
   if ( fields.empty() ) { return; }
 
-  const unsigned parallel_size = parallel_machine_size( machine );
-  const unsigned parallel_rank = parallel_machine_rank( machine );
+  const int parallel_size = parallel_machine_size( machine );
+  const int parallel_rank = parallel_machine_rank( machine );
   const bool     asymmetric    = & domain != & range ;
 
   const std::vector<const FieldBase *>::const_iterator fe = fields.end();
@@ -287,13 +288,13 @@ void communicate_field_data(
 
   for ( i = domain.begin() ; i != domain.end() ; ++i ) {
     Entity e = i->first;
-    const unsigned p = i->second ;
+    const int p = i->second ;
 
-    if ( asymmetric || parallel_rank == e.owner_rank() ) {
+    if ( asymmetric || parallel_rank == mesh.parallel_owner_rank(e) ) {
       unsigned e_size = 0 ;
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
-        e_size += field_data_size( f , e );
+        e_size += mesh.field_data_size( f , e );
       }
       send_size[ p ] += e_size ;
     }
@@ -301,13 +302,13 @@ void communicate_field_data(
 
   for ( i = range.begin() ; i != range.end() ; ++i ) {
     Entity e = i->first;
-    const unsigned p = i->second ;
+    const int p = i->second ;
 
-    if ( asymmetric || p == e.owner_rank() ) {
+    if ( asymmetric || p == mesh.parallel_owner_rank(e) ) {
       unsigned e_size = 0 ;
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
-        e_size += field_data_size( f , e );
+        e_size += mesh.field_data_size( f , e );
       }
       recv_size[ p ] += e_size ;
     }
@@ -327,15 +328,15 @@ void communicate_field_data(
 
   for ( i = domain.begin() ; i != domain.end() ; ++i ) {
     Entity e = i->first;
-    const unsigned p = i->second ;
+    const int p = i->second ;
 
-    if ( asymmetric || parallel_rank == e.owner_rank() ) {
+    if ( asymmetric || parallel_rank == mesh.parallel_owner_rank(e) ) {
       CommBuffer & b = sparse.send_buffer( p );
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
-        const unsigned size = field_data_size( f , e );
+        const unsigned size = mesh.field_data_size( f , e );
         if ( size ) {
-          unsigned char * ptr = reinterpret_cast<unsigned char *>(field_data( f , e ));
+          unsigned char * ptr = reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
           b.pack<unsigned char>( ptr , size );
         }
       }
@@ -350,15 +351,15 @@ void communicate_field_data(
 
   for ( i = range.begin() ; i != range.end() ; ++i ) {
     Entity e = i->first;
-    const unsigned p = i->second ;
+    const int p = i->second ;
 
-    if ( asymmetric || p == e.owner_rank() ) {
+    if ( asymmetric || p == mesh.parallel_owner_rank(e) ) {
       CommBuffer & b = sparse.recv_buffer( p );
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
-        const unsigned size = field_data_size( f , e );
+        const unsigned size = mesh.field_data_size( f , e );
         if ( size ) {
-          unsigned char * ptr = reinterpret_cast<unsigned char *>(field_data( f , e ));
+          unsigned char * ptr = reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
           b.unpack<unsigned char>( ptr , size );
         }
       }
@@ -376,7 +377,7 @@ void communicate_field_data(
 {
   const std::vector<EntityCommListInfo> & entity_comm = mesh.comm_list();
 
-  const unsigned parallel_size = mesh.parallel_size();
+  const int parallel_size = mesh.parallel_size();
 
   // Sizing for send and receive
 
@@ -390,7 +391,7 @@ void communicate_field_data(
     for ( std::vector<EntityCommListInfo>::const_iterator
           i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
       Entity e = i->entity;
-      const unsigned size = field_data_size( f , e );
+      const unsigned size = mesh.field_data_size( f , e );
       if ( size ) {
         for ( PairIterEntityComm
               ec = mesh.entity_comm(i->key) ; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
@@ -414,10 +415,10 @@ void communicate_field_data(
     for ( std::vector<EntityCommListInfo>::const_iterator
           i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
       Entity e = i->entity;
-      const unsigned size = field_data_size( f , e );
+      const unsigned size = mesh.field_data_size( f , e );
       if ( size ) {
         unsigned char * ptr =
-          reinterpret_cast<unsigned char *>(field_data( f , e ));
+          reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
         for ( PairIterEntityComm
               ec = mesh.entity_comm(i->key) ; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
           CommBuffer & b = sparse.send_buffer( ec->proc );
@@ -436,7 +437,7 @@ void communicate_field_data_verify_read( CommAll & sparse )
 {
   std::ostringstream msg ;
   int error = 0 ;
-  for ( unsigned p = 0 ; p < sparse.parallel_size() ; ++p ) {
+  for ( int p = 0 ; p < sparse.parallel_size() ; ++p ) {
     if ( sparse.recv_buffer( p ).remaining() ) {
       msg << "P" << sparse.parallel_rank()
           << " Unread data from P" << p << std::endl ;

@@ -5,8 +5,6 @@
 
 #include <samba/mesh.hpp>
 
-
-
 TEST(samba, dynamic_node_connectivity)
 {
   using namespace samba;

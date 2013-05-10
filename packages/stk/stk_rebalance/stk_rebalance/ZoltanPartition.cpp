@@ -1,4 +1,3 @@
-
 #include <vector>
 #include <string>
 #include <sstream>
@@ -25,7 +24,6 @@ using namespace stk::rebalance;
 #define STK_GEOMDECOMP_DEBUG 0
 
 namespace {
-
 
 double static_zoltan_version(const double v=0) {
   static double version=0;
@@ -361,7 +359,7 @@ void stkCallback_Centroid_Coord( void *data,
    *
    */
 
-  rebalance::GeomDecomp::entity_to_point( target_entity, coor, temp );
+  rebalance::GeomDecomp::entity_to_point(*zdata->get_mesh_info().m_mesh, target_entity, coor, temp );
 
   for (size_t i=0 ; i < nd ; i++ ) geom[ i ] = (double) temp[ i ];
 
@@ -370,30 +368,31 @@ void stkCallback_Centroid_Coord( void *data,
 
 
 
-void getNeighbors( const mesh::Entity entity,
-                   std::set<mesh::Entity> & nodes )
+void getNeighbors( const mesh::BulkData& mesh, const mesh::Entity entity,
+                   std::set<mesh::Entity> & nodes_out )
 {
-  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+  nodes_out.clear();
 
-  nodes.clear();
+  mesh::Entity const *elems_i = mesh.begin_element_entities(entity);
+  mesh::Entity const *elems_e = mesh.end_element_entities(entity);
 
-  mesh::PairIterRelation iElem = entity.relations(element_rank);
-
-  for ( ; iElem.first != iElem.second; ++iElem.first ) {
-    mesh::Entity elem = iElem.first->entity();
-    mesh::PairIterRelation iNode = elem.relations(stk::mesh::MetaData::NODE_RANK);
-    for ( ; iNode.first != iNode.second; ++iNode.first ) {
-      mesh::Entity node = iNode.first->entity();
-      if (entity != node) nodes.insert( node );
+  for ( ; elems_i != elems_e; ++elems_i)
+  {
+    mesh::Entity elem = *elems_i;
+    mesh::Entity const *nodes_i = mesh.begin_node_entities(elem);
+    mesh::Entity const *nodes_e = mesh.end_node_entities(elem);
+    for ( ; nodes_i != nodes_e; ++nodes_i)
+    {
+      if (entity != *nodes_i) nodes_out.insert( *nodes_i );
     }
   }
 }
 
-int numEdges( const mesh::Entity entity ) {
+int numEdges(const mesh::BulkData& mesh, const mesh::Entity entity ) {
 
   std::set<mesh::Entity> nodes;
 
-  getNeighbors( entity, nodes );
+  getNeighbors( mesh, entity, nodes );
   return nodes.size();
 }
 
@@ -426,7 +425,7 @@ int stkCallback_Num_Edges( void *data,
 
   const mesh::Entity target_entity = zdata->mesh_entity( lid );
 
-  return  numEdges( target_entity );
+  return  numEdges( *zdata->get_mesh_info().m_mesh, target_entity );
 
 }
 
@@ -462,12 +461,14 @@ void stkCallback_Edge_List( void *data,
     return ;
   }
 
+  const mesh::BulkData& bulk = *zdata->get_mesh_info().m_mesh;
+
   int lid = local_id[  0 ]; // Local Node ID
 
   const mesh::Entity target_entity = zdata->mesh_entity( lid );
 
   std::set<mesh::Entity> nodes;
-  getNeighbors( target_entity, nodes );
+  getNeighbors(*zdata->get_mesh_info().m_mesh, target_entity, nodes );
 
   int counter(0);
   for ( std::set<mesh::Entity>::iterator i = nodes.begin();
@@ -475,9 +476,9 @@ void stkCallback_Edge_List( void *data,
     nbor_global_id[counter*2+0] = 0; // region_id
 
     const mesh::Entity n = *i;
-    nbor_global_id[counter*2+1] = n.key().id();
+    nbor_global_id[counter*2+1] = bulk.identifier(n);
 
-    nbor_procs[counter] = n.owner_rank();
+    nbor_procs[counter] = bulk.parallel_owner_rank(n);
 
     if ( wgt_dim ) {
       ewgts[counter] = 1;
@@ -566,11 +567,14 @@ Zoltan::Zoltan(ParallelMachine pm, const unsigned ndim, Parameters & rebal_regio
 }
 
 void
-Zoltan::set_mesh_info( const std::vector<mesh::Entity> &mesh_entities,
-                          const VectorField * nodal_coord_ref,
-                          const ScalarField * elem_weight_ref)
+Zoltan::set_mesh_info( mesh::BulkData& mesh,
+                       const std::vector<mesh::Entity> &mesh_entities,
+                       const VectorField * nodal_coord_ref,
+                       const ScalarField * elem_weight_ref)
 {
   MeshInfo mesh_info;
+
+  mesh_info.m_mesh = &mesh;
 
   /* Keep track of the total number of elements. */
   m_total_number_entities_ = mesh_entities.size();
@@ -578,6 +582,11 @@ Zoltan::set_mesh_info( const std::vector<mesh::Entity> &mesh_entities,
   mesh_info.mesh_entities = mesh_entities;
   mesh_info.nodal_coord_ref = nodal_coord_ref;
   mesh_info.elem_weight_ref = elem_weight_ref;
+
+  mesh_info.mesh_keys.resize(mesh_entities.size());
+  for (size_t i = 0; i < mesh_info.mesh_keys.size(); ++i) {
+    mesh_info.mesh_keys[i] = mesh.entity_key(mesh_info.mesh_entities[i]);
+  }
 
   /** Default destination for an entity is the processor
       that already owns the entity, which is this processor.
@@ -738,7 +747,7 @@ Zoltan::entity_weight(const unsigned moid ) const
   double mo_weight = 1.0;
   if (entity_weight_ref()) {
     mo_weight = * static_cast<double *>
-      ( mesh::field_data (*entity_weight_ref(), m_mesh_information_.mesh_entities[ moid ]));
+      ( m_mesh_information_.m_mesh->field_data(*entity_weight_ref(), m_mesh_information_.mesh_entities[ moid ]));
   }
   return mo_weight;
 }
@@ -1032,4 +1041,32 @@ void Zoltan::merge_default_values(const Parameters &from,
   fill_default_values(default_values);
   to.setParameters(default_values);
   to.setParameters(from);
+}
+
+void Zoltan::notify_mod_cycle(const stk::mesh::BulkData& mesh)
+{
+  // Holding on to Entity handles across modification cycles is dangerous.
+  // To avoid potential problems, we refresh our entity handles here using
+  // their keys.
+
+  std::vector<mesh::Entity>&    mesh_entities = m_mesh_information_.mesh_entities;
+  std::vector<mesh::EntityKey>& mesh_keys     = m_mesh_information_.mesh_keys;
+
+  size_t num_lost = 0;
+  for (size_t i = 0; i < mesh_keys.size(); ++i) {
+    stk::mesh::Entity entity = mesh.get_entity(mesh_keys[i]);
+    if (mesh.is_valid(entity)) {
+      mesh_entities[i - num_lost] = entity;
+    }
+    else {
+      ++num_lost;
+      mesh_keys[i] = stk::mesh::EntityKey();
+    }
+  }
+
+  if (num_lost > 0) {
+    mesh_entities.erase(mesh_entities.end() - num_lost, mesh_entities.end());
+    std::remove(mesh_keys.begin(), mesh_keys.end(), stk::mesh::EntityKey());
+    m_total_number_entities_ -= num_lost;
+  }
 }

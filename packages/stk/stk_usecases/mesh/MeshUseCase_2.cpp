@@ -362,11 +362,20 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
         // This class has convenience functions for size and indexing.
         //   rel.size() == std::distance( rel.first , rel.second );
         //   rel[i] == *( rel.first + i );
-        stk::mesh::PairIterRelation rel = elem.relations();
+        stk::mesh::Entity const * node_rels = bulkData.begin_node_entities(elem);
+        int node_rels_size = bulkData.num_nodes(elem);
 
         // Verify that the number of nodes in this element is correct.
-        if( shards::Hexahedron<8> ::node_count != rel.size() ) {
-          std::cerr << "Error, number of relations is incorrect! It is " << rel.size()
+        if ( shards::Hexahedron<8> ::node_count != node_rels_size ){
+          std::cerr << "Error, number of node relations is incorrect! It is " << node_rels_size
+                    << std::endl;
+          result = false;
+        }
+
+        int num_rels = bulkData.count_relations(elem);
+        // Verify that the total number of relations in this element is correct.
+        if ( num_rels != node_rels_size ){
+          std::cerr << "Error, total number of relations is incorrect! It is " << num_rels
                     << std::endl;
           result = false;
         }
@@ -375,8 +384,8 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
         // have the correct relation-identifiers and
         // are members of the block.
         for ( unsigned k = 0 ; k < shards::Hexahedron<8> ::node_count ; ++k ) {
-          stk::mesh::Entity rel_node = rel[k].entity();
-          if ( node_ids[k] != rel_node.identifier() ||
+          stk::mesh::Entity rel_node = node_rels[k];
+          if ( node_ids[k] != bulkData.identifier(rel_node) ||
                ! rel_node.bucket().member(**iter_part) ) {
               std::cerr << "Error, an element's node is just plain wrong!"
                         << std::endl;
@@ -394,23 +403,24 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
 // An example of a template function for gathering (copying)
 // field data from the nodes of an element.
 template< class field_type >
-bool gather_field_data( unsigned expected_num_rel, const field_type & field ,
+bool gather_field_data( const stk::mesh::BulkData &mesh,
+                        unsigned expected_num_rel, const field_type & field ,
                         const stk::mesh::Entity entity ,
                         typename stk::mesh::FieldTraits< field_type >::data_type * dst,
                         stk::mesh::EntityRank entity_rank )
 {
   typedef typename stk::mesh::FieldTraits< field_type >::data_type T ;
 
-  stk::mesh::PairIterRelation rel = entity.relations( entity_rank );
+  stk::mesh::Entity const * rel = mesh.begin_entities(entity, entity_rank );
 
-  bool result = expected_num_rel == (unsigned) rel.size();
+  bool result = expected_num_rel == static_cast<unsigned>(mesh.num_connectivity(entity, entity_rank));
 
   if ( result ) {
     // Iterate over field data for each related entity and copy data
     // into src for one entity at a time
     T * const dst_end = dst + SpatialDim * expected_num_rel ;
     for ( ; dst < dst_end ; ++rel , dst += SpatialDim ) {
-      const T* src = field_data( field , rel->entity() );
+      const T* src = mesh.field_data( field , *rel );
       if (!src) {
         break;
       }
@@ -467,7 +477,7 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
       double elem_coord[ ElementTraits::node_count ][ SpatialDim ];
       const bool gather_result =
         gather_field_data
-        ( ElementTraits::node_count, coordinates_field , elem , & elem_coord[0][0], mesh.m_node_rank );
+        ( bulkData, ElementTraits::node_count, coordinates_field , elem , & elem_coord[0][0], mesh.m_node_rank );
 
       if ( gather_result == false ) {
         std::cerr << "Error!" << std::endl;

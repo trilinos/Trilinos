@@ -372,9 +372,12 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
 
   percept::PerceptMesh eMesh(3u);
 
-  unsigned p_size = eMesh.get_parallel_size();
-  unsigned p_rank = eMesh.get_rank();
-  Util::setRank(eMesh.get_rank());
+  // unsigned p_size = eMesh.get_parallel_size();
+  // unsigned p_rank = eMesh.get_rank();
+  // Util::setRank(eMesh.get_rank());
+  unsigned p_size = stk::parallel_machine_size(eMesh.parallel());
+  unsigned p_rank = stk::parallel_machine_rank(eMesh.parallel());
+  Util::setRank(p_rank);
 
   eMesh.new_mesh(percept::GMeshSpec(std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,1")));
 
@@ -398,22 +401,41 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
     // pick an element on the processor boundary
     unsigned elem_num_local = 1;
     unsigned elem_num_ghost = 2;
+    unsigned elem_num_local_hex20 = 3;
+    unsigned elem_num_ghost_hex20 = 4;
     if (p_size == 1)
-      elem_num_ghost = 1;
+      {
+        elem_num_ghost = elem_num_local;
+        elem_num_ghost_hex20 = elem_num_local_hex20;
+      }
 
-    stk::mesh::Entity element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
-    stk::mesh::Entity element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+    eMesh.get_bulk_data()->modification_begin();
+    if (p_size == 1)
+      {
+        eMesh.get_bulk_data()->declare_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_hex20, block_hex_20);
+      }
+    else
+      {
+        if (p_rank == 0) eMesh.get_bulk_data()->declare_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_hex20, block_hex_20);
+        if (p_rank == 1) eMesh.get_bulk_data()->declare_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost_hex20, block_hex_20);
+      }
+    eMesh.get_bulk_data()->modification_end();
+
+    stk::mesh::Entity element_local = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+    stk::mesh::Entity element_ghost = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+    stk::mesh::Entity element_local_hex20 = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_hex20);
+    stk::mesh::Entity element_ghost_hex20 = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost_hex20);
+
     if (p_rank == 1)
     {
-      element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
-      element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+      element_local = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+      element_ghost = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+      element_local_hex20 = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost_hex20);
+      element_ghost_hex20 = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_hex20);
     }
 
     dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
     dw() << "P["<<p_rank<<"] elem_num_ghost = " << elem_num_ghost << DWENDL;
-
-    stk::mesh::Entity element_local = element_local_p;
-    stk::mesh::Entity element_ghost = element_ghost_p;
 
     std::cout << "P["<<p_rank<<"] element_local = " << element_local << std::endl;
     std::cout << "P["<<p_rank<<"] element_ghost = " << element_ghost << std::endl;
@@ -558,6 +580,14 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
     const CellTopologyData *const cell_topo_data =stk::percept::PerceptMesh::get_cell_topology(block_hex_20);
     CellTopology cell_topo(cell_topo_data);
 
+    MyPairIterRelation elem_nodes(eMesh, element_local, stk::mesh::MetaData::NODE_RANK);
+    //MyPairIterRelation elem_nodes_ghost(eMesh, element_ghost, stk::mesh::MetaData::NODE_RANK);
+    for (unsigned isd = 0; isd < 8; isd++)
+    {
+      eMesh.get_bulk_data()->declare_relation(element_local_hex20, elem_nodes[isd].entity(), isd);
+      //eMesh.get_bulk_data()->declare_relation(element_ghost_hex20, elem_nodes_ghost[isd], stk::mesh::MetaData::NODE_RANK);
+    }
+
     for (unsigned isd = 0; isd < 12; isd++)
     {
       nodeRegistry.makeCentroidCoords(element_local, needed_entity_rank.first, isd);
@@ -569,7 +599,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
       //unsigned n_edge_ord = cell_topo_data->edge[isd].topology->node_count;
       //std::cout << "n_edge_ord = " << n_edge_ord << std::endl;
       edge_ord = cell_topo_data->edge[isd].node[2];
-      eMesh.get_bulk_data()->declare_relation(element_local, node, edge_ord);
+      eMesh.get_bulk_data()->declare_relation(element_local_hex20, node, edge_ord);
     }
 
     if (0)
@@ -581,7 +611,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
       }
 
     eMesh.get_bulk_data()->modification_end();
-    eMesh.print_info("After quadratic");
+    eMesh.print_info("After quadratic",2);
 
     eMesh.save_as("./cube1x1x2_hex-20.e");
     //exit(1);

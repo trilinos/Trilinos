@@ -89,7 +89,7 @@ void copy_out_flat_connectivity_and_coords(stk::mesh::BulkData& bulk, std::vecto
 
   for(size_t ib=0; ib<buckets.size(); ++ib) {
     const Bucket& b = *buckets[ib];
-    const double* data = b.field_data(coord_field, b[0]);
+    const double* data = bulk.field_data(coord_field, b, 0);
     for(size_t i=0; i<b.size(); ++i) {
       int index = b[i].local_id()*spatial_dim;
       coords[index] = *data++;

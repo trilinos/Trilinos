@@ -22,7 +22,6 @@ namespace use_cases {
 typedef Field<double,Cartesian>    VectorFieldType ;
 typedef Field<double>              ScalarFieldType ;
 
-
 } //namespace use_cases
 } //namespace mesh
 } //namespace stk

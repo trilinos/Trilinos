@@ -33,8 +33,6 @@
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_mesh/diag/EntityKey.hpp>
-
 #include <stk_search/SearchTypes.hpp>
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>

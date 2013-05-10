@@ -735,6 +735,8 @@ namespace stk {
 
     void PerceptMesh::print_entity(std::ostream& out1, const stk::mesh::Entity entity, stk::mesh::FieldBase* field)
     {
+      stk::mesh::BulkData &bulk_data = *this->get_bulk_data();
+
       if (!field) field = get_coordinates_field();
 
       std::ostringstream out;
@@ -766,13 +768,13 @@ namespace stk {
         {
           out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: \n";
 
-          const mesh::PairIterRelation elem_nodes = entity.relations( stk::mesh::MetaData::NODE_RANK );
-          unsigned num_node = elem_nodes.size();
+          stk::mesh::Entity const * const elem_nodes = bulk_data.begin_node_entities(entity);
+          unsigned num_node = bulk_data.num_nodes(entity);
           std::vector<double> min(fieldStride, 1e+30);
           std::vector<double> max(fieldStride, -1e+30);
           for (unsigned inode=0; inode < num_node; inode++)
             {
-              mesh::Entity node = elem_nodes[ inode ].entity();
+              mesh::Entity node = elem_nodes[ inode ];
 
               out << "inode= " << inode << " id= " << node.identifier() << " ";
               double *f_data = PerceptMesh::field_data(field, node);
@@ -801,6 +803,8 @@ namespace stk {
     {
       if (!field) field = get_coordinates_field();
       std::ostringstream out;
+
+      stk::mesh::BulkData &bulk_data = *get_bulk_data();
 
       if (entity.entity_rank() == stk::mesh::MetaData::NODE_RANK)
         {
@@ -837,26 +841,27 @@ namespace stk {
                     continue;
                   }
 
-                  const mesh::PairIterRelation family_tree_relations = entity.relations( (unsigned)rank );
-                  unsigned num_node = family_tree_relations.size();
-                  if (num_node) out << " |" << rank << "| ";
-                  for (unsigned inode=0; inode < num_node; inode++)
+                  stk::mesh::Entity const * const family_tree_relations = bulk_data.begin_entities(entity, rank);
+                  unsigned num_ftrs = bulk_data.num_connectivity(entity, rank);
+                  if (num_ftrs) out << " |" << rank << "| ";
+                  for (unsigned iftr=0; iftr < num_ftrs; iftr++)
                     {
-                      mesh::Entity node = family_tree_relations[ inode ].entity();
-                      out << node.identifier() << " ";
+                      mesh::Entity ftr_entity = family_tree_relations[ iftr ];
+                      out << ftr_entity.identifier() << " ";
                     }
                 }
             }
           else
             {
               std::string parent_or_child_or_none = "N";
-              if (entity.relations(FAMILY_TREE_RANK).size())
+              //if (entity.relations(FAMILY_TREE_RANK).size())
+              if ((*this).get_bulk_data()->num_connectivity(entity, FAMILY_TREE_RANK))
                 {
                   parent_or_child_or_none = (isChildElement(entity) ? "C" : "P");
                 }
               out << " PCN= " << parent_or_child_or_none << " ";
               out << " N= ";
-              const mesh::PairIterRelation elem_nodes = entity.relations( stk::mesh::MetaData::NODE_RANK );
+              const MyPairIterRelation elem_nodes(*get_bulk_data(), entity, stk::mesh::MetaData::NODE_RANK );
               unsigned num_node = elem_nodes.size();
               std::vector<double> min(fieldStride, 1e+30);
               std::vector<double> max(fieldStride, -1e+30);
@@ -988,11 +993,11 @@ namespace stk {
                               {
                                 VERIFY_OP_ON(spatial_dim, ==, 2, "hmmm");
 
-                                stk::mesh::PairIterRelation side_elems = side.relations(element_rank());
+                                const MyPairIterRelation side_elems(*get_bulk_data(), side, element_rank() );
                                 stk::mesh::Entity elem = side_elems[0].entity();
                                 const CellTopologyData * const elem_topo_data = PerceptMesh::get_cell_topology(elem);
-                                stk::mesh::PairIterRelation side_nodes = side.relations(node_rank());
-                                stk::mesh::PairIterRelation elem_nodes = elem.relations(node_rank());
+                                const MyPairIterRelation side_nodes(*get_bulk_data(), side, node_rank() );
+                                const MyPairIterRelation elem_nodes(*get_bulk_data(), elem, node_rank() );
                                 shards::CellTopology elem_topo(elem_topo_data);
                                 unsigned side_ord = side_elems[0].relation_ordinal();
 
@@ -1017,7 +1022,7 @@ namespace stk {
                             case shards::Triangle<3>::key:
                             case shards::Quadrilateral<4>::key:
                               {
-                                stk::mesh::PairIterRelation side_nodes = side.relations(node_rank());
+                                const MyPairIterRelation side_nodes(*get_bulk_data(), side, node_rank() );
                                 int nsn = side_nodes.size();
                                 for (int i = 0; i < nsn; ++i)
                                   {
@@ -1087,7 +1092,7 @@ namespace stk {
                       for (unsigned iElem = 0; iElem < num_elements_in_bucket; iElem++)
                         {
                           stk::mesh::Entity element = bucket[iElem];
-                          stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
+                          const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
                           int nen = elem_nodes.size();
                           for (int inode = 0; inode < nen; ++inode)
                             {
@@ -1567,7 +1572,7 @@ namespace stk {
       EXCEPTWATCH;
       unsigned rank = field->rank();
       double * fdata = 0;
-
+      stk::mesh::BulkData const& bulk = stk::mesh::BulkData::get(bucket);
 
       if(stride) {
         const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::MetaData::NODE_RANK, stk::mesh::MetaData::get(*field).universal_part());
@@ -1578,12 +1583,12 @@ namespace stk {
         {
         case 0:
           {
-            fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(field) , bucket.begin() );
+            fdata = bulk.field_data( *static_cast<const ScalarFieldType *>(field) , bucket, 0 );
           }
           break;
         case 1:
           {
-            fdata = stk::mesh::field_data( *static_cast<const VectorFieldType *>(field) , bucket.begin() );
+            fdata = bulk.field_data( *static_cast<const VectorFieldType *>(field) , bucket, 0 );
           }
           break;
         default:
@@ -2512,7 +2517,7 @@ namespace stk {
             selector = stk::mesh::Selector(*part);
         }
 
-      for (unsigned irank = 0u; irank < get_parallel_size(); irank++)
+      for (int irank = 0u; irank < get_parallel_size(); irank++)
         {
           if (get_rank() == irank)
             {
@@ -2827,7 +2832,7 @@ namespace stk {
       int spaceDim = get_spatial_dim();
 
       const stk::mesh::Entity elem = entity;
-      const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::MetaData::NODE_RANK );
+      const MyPairIterRelation elem_nodes(*get_bulk_data(), elem, stk::mesh::MetaData::NODE_RANK );
 
       double edge_length_ave=0.0;
       double min_edge_length = -1.0;
@@ -2868,7 +2873,7 @@ namespace stk {
 
     // static
     void PerceptMesh::
-    findMinMaxEdgeLength(const stk::mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
+    findMinMaxEdgeLength(stk::mesh::BulkData& bulkData, const stk::mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                          FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length)
     {
       const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
@@ -2883,7 +2888,7 @@ namespace stk {
         {
           stk::mesh::Entity elem = bucket[iElemInBucketOrd] ;
           if (0) std::cout << "elemOfBucket= " << elem << std::endl;
-          const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::MetaData::NODE_RANK );
+          const MyPairIterRelation elem_nodes(bulkData, elem, stk::mesh::MetaData::NODE_RANK );
           //int shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(cell_topo->name);
 
           double min_edge_length = -1.0;
@@ -2943,11 +2948,9 @@ namespace stk {
       if ( NULL == elem_top ||
            local_side_id < 0 ||
            static_cast<int>(side_count) <= local_side_id ) {
-        const stk::mesh::MetaData & meta_data = stk::mesh::MetaData::get(elem);
         std::ostringstream msg ;
         msg << method ;
         msg << " ( Element[" << elem.identifier() << "]" ;
-        msg << " , " << meta_data.entity_rank_names()[ side_entity_rank ];
         msg << " , local_side_id = " << local_side_id << " ) FAILED: " ;
         if ( NULL == elem_top ) {
           msg << " Element has no defined topology" ;
@@ -2966,7 +2969,7 @@ namespace stk {
         is_side ? elem_top->side[ local_side_id ].node
         : elem_top->edge[ local_side_id ].node ;
 
-      const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::MetaData::NODE_RANK );
+      const MyPairIterRelation elem_nodes(*get_bulk_data(), elem, stk::mesh::MetaData::NODE_RANK );
       //const PairIterRelation side_nodes = side.relations( MetaData::NODE_RANK );
 
       //if (side_node_ids.size() !=
@@ -3030,8 +3033,8 @@ namespace stk {
       const CellTopologyData * const element_topo_data = PerceptMesh::get_cell_topology(element);
 
       shards::CellTopology element_topo(element_topo_data);
-      const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
-      const stk::mesh::PairIterRelation side_nodes = side.relations(stk::mesh::MetaData::NODE_RANK);
+      const MyPairIterRelation elem_nodes(*get_bulk_data(), element, stk::mesh::MetaData::NODE_RANK );
+      const MyPairIterRelation side_nodes(*get_bulk_data(), side, stk::mesh::MetaData::NODE_RANK );
 
       const CellTopologyData * const side_topo_data = PerceptMesh::get_cell_topology(side);
       shards::CellTopology side_topo(side_topo_data);
@@ -3182,7 +3185,7 @@ namespace stk {
                 {
                   stk::mesh::Entity element = bucket[iElement];
 
-                  const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+                  const MyPairIterRelation elem_nodes(*get_bulk_data(), element, stk::mesh::MetaData::NODE_RANK );
 
                   bool isCandidate = false;
                   unsigned num_node = elem_nodes.size();
@@ -3231,7 +3234,7 @@ namespace stk {
                                     {
                                       stk::mesh::Entity element_2 = bucket_2[iElement_2];
 
-                                      const stk::mesh::PairIterRelation& elem_nodes_2 = element_2.relations( stk::mesh::MetaData::NODE_RANK );
+                                      const MyPairIterRelation elem_nodes_2(*get_bulk_data(), element_2, stk::mesh::MetaData::NODE_RANK );
                                       surface_node_ids.resize(elem_nodes_2.size());
                                       for (unsigned jnode = 0; jnode < elem_nodes_2.size(); jnode++)
                                         {
@@ -3478,8 +3481,8 @@ namespace stk {
                                     stk::mesh::Entity entity_1 = bucket_1[iEntity];
                                     stk::mesh::Entity entity_2 = bucket_2[iEntity];
 
-                                    stk::mesh::PairIterRelation elem_nodes_1 = entity_1.relations(stk::mesh::MetaData::NODE_RANK);
-                                    stk::mesh::PairIterRelation elem_nodes_2 = entity_2.relations(stk::mesh::MetaData::NODE_RANK);
+                                    const MyPairIterRelation elem_nodes_1(bulkData_1, entity_1, stk::mesh::MetaData::NODE_RANK );
+                                    const MyPairIterRelation elem_nodes_2(bulkData_2, entity_2, stk::mesh::MetaData::NODE_RANK );
                                     if (elem_nodes_1.size() != elem_nodes_2.size())
                                       {
                                         msg += "| entity relations size diff |\n";
@@ -3741,7 +3744,7 @@ namespace stk {
 
       typedef std::set<stk::mesh::EntityId> SetOfIds;
       SetOfIds entity_ids;
-      stk::mesh::PairIterRelation entity_nodes = entity.relations(node_rank);
+      const MyPairIterRelation entity_nodes(*get_bulk_data(), entity, node_rank );
 
       for (unsigned is=0; is < entity_nodes.size(); is++)
         {
@@ -3750,7 +3753,7 @@ namespace stk {
 
       for (unsigned isnode=0; isnode < entity_nodes.size(); isnode++)
         {
-          stk::mesh::PairIterRelation node_entitys = entity_nodes[isnode].entity().relations(entity_rank);
+          const MyPairIterRelation node_entitys(*get_bulk_data(), entity_nodes[isnode].entity(), entity_rank);
           for (unsigned ienode=0; ienode < node_entitys.size(); ienode++)
             {
               stk::mesh::Entity entity2 = node_entitys[ienode].entity();
@@ -3759,13 +3762,14 @@ namespace stk {
 
               SetOfIds entity2_ids;
 
-              if (entity2.relations(node_rank).size() == 0)
+              //if (entity2.relations(node_rank).size() == 0)
+              if ((*this).get_bulk_data()->num_connectivity(entity2, node_rank) == 0)
                 continue;
 
               if (eMesh.isGhostElement(entity2))
                 continue;
 
-              stk::mesh::PairIterRelation entity2_nodes = entity2.relations(node_rank);
+              const MyPairIterRelation entity2_nodes(*get_bulk_data(), entity2, node_rank );
               for (unsigned is2=0; is2 < entity2_nodes.size(); is2++)
                 {
                   entity2_ids.insert(entity2_nodes[is2].entity().identifier());
@@ -3815,9 +3819,9 @@ namespace stk {
     {
       const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( side_rank() );
 
-      typedef std::set<stk::mesh::Entity> SetOfEntities;
+      typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> SetOfEntities;
 
-      SetOfEntities elem_set;
+      SetOfEntities elem_set(*get_bulk_data());
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
@@ -3840,7 +3844,7 @@ namespace stk {
           elem_it != elem_set.end(); ++elem_it)
         {
           stk::mesh::Entity elem = *elem_it;
-          stk::mesh::PairIterRelation rels = elem.relations(element_rank());
+          const MyPairIterRelation rels(*get_bulk_data(), elem, element_rank() );
           for (unsigned irels = 0; irels < rels.size(); irels++)
             {
               stk::mesh::Entity vol_elem = rels[irels].entity();
@@ -3935,7 +3939,7 @@ namespace stk {
                     if (fdata_fix)
                       {
                         if (fixed_node_selector)
-                          fdata_fix[0] = (*fixed_node_selector)(node) ? 1 : 0;
+                          fdata_fix[0] = (*fixed_node_selector)(node.bucket()) ? 1 : 0;
                         else
                           fdata_fix[0] = 0;
                       }
@@ -4014,7 +4018,7 @@ namespace stk {
           if (not_aura(**k))
             {
               stk::mesh::Bucket & bucket = **k ;
-              unsigned fd_size = bucket.field_data_size(*field_dest);
+              unsigned fd_size = get_bulk_data()->field_data_size_per_entity(*field_dest, bucket);
               unsigned stride = fd_size/sizeof(double);
               // FIXME
               //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
@@ -4069,7 +4073,7 @@ namespace stk {
           if (not_aura(**k))
             {
               stk::mesh::Bucket & bucket = **k ;
-              unsigned fd_size = bucket.field_data_size(*field_y);
+              unsigned fd_size = get_bulk_data()->field_data_size_per_entity(*field_y, bucket);
               unsigned stride = fd_size/sizeof(double);
               // FIXME
               //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
@@ -4115,7 +4119,7 @@ namespace stk {
           if (on_locally_owned_part(**k))
             {
               stk::mesh::Bucket & bucket = **k ;
-              unsigned fd_size = bucket.field_data_size(*field_y);
+              unsigned fd_size = get_bulk_data()->field_data_size_per_entity(*field_y, bucket);
               unsigned stride = fd_size/sizeof(double);
               // FIXME
               //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
@@ -4152,7 +4156,7 @@ namespace stk {
           //if (not_aura(**k))
             {
               stk::mesh::Bucket & bucket = **k ;
-              unsigned fd_size = bucket.field_data_size(*field_x);
+              unsigned fd_size = get_bulk_data()->field_data_size_per_entity(*field_x, bucket);
               unsigned stride = fd_size/sizeof(double);
               // FIXME
               //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
@@ -4204,7 +4208,7 @@ namespace stk {
           if (not_aura(**k))
             {
               stk::mesh::Bucket & bucket = **k ;
-              unsigned fd_size = bucket.field_data_size(*field_y);
+              unsigned fd_size = get_bulk_data()->field_data_size_per_entity(*field_y, bucket);
               unsigned stride = fd_size/sizeof(double);
               // FIXME
               //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
@@ -4334,8 +4338,8 @@ namespace stk {
 
     void PerceptMesh::dump_vtk(stk::mesh::Entity node, std::string filename, stk::mesh::Selector *selector)
     {
-      typedef std::map<stk::mesh::Entity , unsigned> NodeMap;
-      NodeMap node_map;
+      typedef std::map<stk::mesh::Entity , unsigned, stk::mesh::EntityLess> NodeMap;
+      NodeMap node_map(*get_bulk_data());
       unsigned nnode_per_elem=0, nelem_node_size=0;
       unsigned num_elem=0;
 
@@ -4343,15 +4347,15 @@ namespace stk {
 
       for (unsigned irank=side_rank(); irank <= element_rank(); irank++)
         {
-          stk::mesh::PairIterRelation node_elems_1 = node.relations(irank);
+          const MyPairIterRelation node_elems_1(*get_bulk_data(), node, irank );
           for (unsigned ielem = 0; ielem < node_elems_1.size(); ielem++)
             {
               stk::mesh::Entity element = node_elems_1[ielem].entity();
-              if (!selector || (*selector)(element))
+              if (!selector || (*selector)(element.bucket()))
                 {
                   ++num_elem;
                   node_elems.push_back(element);
-                  stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
+                  const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
                   nnode_per_elem = elem_nodes.size(); // FIXME for hetero mesh
                   nelem_node_size += nnode_per_elem + 1;
                   for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
@@ -4385,9 +4389,9 @@ namespace stk {
       for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
         {
           stk::mesh::Entity element = node_elems[ielem];
-          if (!selector || (*selector)(element))
+          if (!selector || (*selector)(element.bucket()))
             {
-              stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
+              const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
               file << elem_nodes.size() << " ";
               for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
                 {
@@ -4402,7 +4406,7 @@ namespace stk {
       for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
         {
           stk::mesh::Entity element = node_elems[ielem];
-          if (!selector || (*selector)(element))
+          if (!selector || (*selector)(element.bucket()))
             {
               file << vtk_type(element) << "\n";
             }
@@ -4430,8 +4434,8 @@ namespace stk {
     void PerceptMesh::dump_vtk(std::string filename, bool dump_sides)
     {
       unsigned sdr = (dump_sides?side_rank():element_rank());
-      typedef std::map<stk::mesh::Entity , unsigned> NodeMap;
-      NodeMap node_map;
+      typedef std::map<stk::mesh::Entity , unsigned, stk::mesh::EntityLess> NodeMap;
+      NodeMap node_map(*get_bulk_data());
       unsigned nnode_per_elem=0;
       unsigned nelem=0, nelem_node_size=0;
       for (unsigned irank=sdr; irank <= element_rank(); irank++)
@@ -4445,7 +4449,7 @@ namespace stk {
                 {
                   stk::mesh::Entity element = bucket[iElement];
                   ++nelem;
-                  stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
+                  const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
                   nnode_per_elem = elem_nodes.size(); // FIXME for hetero mesh
                   nelem_node_size += nnode_per_elem + 1;
                   for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
@@ -4486,7 +4490,7 @@ namespace stk {
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
                   stk::mesh::Entity element = bucket[iElement];
-                  stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
+                  const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
                   file << elem_nodes.size() << " ";
                   for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
                     {
@@ -4524,7 +4528,7 @@ namespace stk {
           shards::CellTopology cell_topo(cell_topo_data);
           out << " Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " topo: " << cell_topo.getName() << " nodes: [";
 
-          const mesh::PairIterRelation elem_nodes = entity.relations(node_rank() );
+          const MyPairIterRelation elem_nodes(*get_bulk_data(), entity, node_rank() );
           unsigned num_node = elem_nodes.size();
           for (unsigned inode=0; inode < num_node; inode++)
             {
@@ -4681,13 +4685,13 @@ namespace stk {
       }
     }
 
-    static void get_nodes_on_side(stk::mesh::Entity element, unsigned element_side_ordinal, std::vector<stk::mesh::Entity>& node_vector)
+    static void get_nodes_on_side(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned element_side_ordinal, std::vector<stk::mesh::Entity>& node_vector)
     {
-      stk::mesh::EntityRank side_entity_rank = stk::mesh::MetaData::get(element).side_rank();
+      stk::mesh::EntityRank side_entity_rank = stk::mesh::BulkData::get(element).mesh_meta_data().side_rank();
 
       const CellTopologyData * const element_topo_data = PerceptMesh::get_cell_topology(element);
       shards::CellTopology element_topo(element_topo_data);
-      const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+      const MyPairIterRelation elem_nodes(bulkData, element, stk::mesh::MetaData::NODE_RANK );
       const unsigned *  inodes = 0;
       unsigned n_elem_side_nodes = 0;
 
@@ -4714,7 +4718,11 @@ namespace stk {
       stk::mesh::Part* part = get_fem_meta_data()->get_part(part_name);
       VERIFY_OP_ON(part, !=, 0, "Need to call add_inner_skin_part first - no available inner skin part");
 
+#if defined(__PATHSCALE__)
+      typedef std::set<stk::mesh::Entity> NodeSet;
+#else
       typedef boost::unordered_set<stk::mesh::Entity> NodeSet;
+#endif
       if (remove_previous_part_nodes)
         {
           stk::mesh::PartVector add_parts, remove_parts(1,part);
@@ -4807,9 +4815,9 @@ namespace stk {
           EntitySide& es = boundary[iesv];
           node_vector.resize(0);
           if (es.inside.entity.is_valid())
-            get_nodes_on_side(es.inside.entity, es.inside.side_ordinal, node_vector);
+            get_nodes_on_side(*get_bulk_data(), es.inside.entity, es.inside.side_ordinal, node_vector);
           if (es.outside.entity.is_valid())
-            get_nodes_on_side(es.outside.entity, es.outside.side_ordinal, node_vector);
+            get_nodes_on_side(*get_bulk_data(), es.outside.entity, es.outside.side_ordinal, node_vector);
           for (unsigned inv=0; inv < node_vector.size(); inv++)
             {
               if (node_vector[inv].bucket().owned())
@@ -4891,7 +4899,7 @@ namespace stk {
           HistogramsParser<double> hparser(options);
           hparser.create(*histograms);
 #else
-          return;
+          return 0;
 #endif
         }
       // check for vector fields
@@ -5053,7 +5061,7 @@ namespace stk {
     unsigned PerceptMesh::getFamilyTreeRelationIndex(FamilyTreeLevel level, const stk::mesh::Entity element)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       if (level == FAMILY_TREE_LEVEL_0)
         {
           // only one level, so we return 0 as the index
@@ -5065,8 +5073,14 @@ namespace stk {
 
           // NOTE: reversed index - when looking for FAMILY_TREE_LEVEL_0, we are looking for the family tree associated
           //   with this element when viewed as a child, not a parent.
-          if ( (family_tree_0.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 1;
-          else if ( (family_tree_1.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 0;
+          percept::MyPairIterRelation family_tree_0_relations((*this), family_tree_0, element.entity_rank());
+          percept::MyPairIterRelation family_tree_1_relations((*this), family_tree_1, element.entity_rank());
+          //if ( (family_tree_0.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 1;
+          //else if ( (family_tree_1.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 0;
+          if ( family_tree_0_relations[FAMILY_TREE_PARENT].entity() == element) 
+            return 1;
+          else if (family_tree_1_relations[FAMILY_TREE_PARENT].entity() == element)
+            return 0;
           else
             {
               std::cout << "element_to_family_tree_relations[0].entity().identifier() = " << element_to_family_tree_relations[0].entity().identifier()
@@ -5085,8 +5099,14 @@ namespace stk {
           stk::mesh::Entity family_tree_0 = element_to_family_tree_relations[0].entity();
           stk::mesh::Entity family_tree_1 = element_to_family_tree_relations[1].entity();
 
-          if ( (family_tree_0.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 0;
-          else if ( (family_tree_1.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 1;
+          percept::MyPairIterRelation family_tree_0_relations((*this), family_tree_0, element.entity_rank());
+          percept::MyPairIterRelation family_tree_1_relations((*this), family_tree_1, element.entity_rank());
+          //if ( (family_tree_0.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 0;
+          //else if ( (family_tree_1.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 1;
+          if ( family_tree_0_relations[FAMILY_TREE_PARENT].entity() == element) 
+            return 0;
+          else if (family_tree_1_relations[FAMILY_TREE_PARENT].entity() == element)
+            return 1;
           else
             {
               std::cout << "element_to_family_tree_relations[0].entity().identifier() = " << element_to_family_tree_relations[0].entity().identifier()
@@ -5103,7 +5123,7 @@ namespace stk {
     bool PerceptMesh::isChildElement( const stk::mesh::Entity element, bool check_for_family_tree)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       if (element_to_family_tree_relations.size()==0 )
         {
           if (check_for_family_tree)
@@ -5120,7 +5140,7 @@ namespace stk {
       // in this case, we specifically look at only the 0'th familty tree relation
       unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
       stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
-      stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+      const MyPairIterRelation family_tree_relations(*get_bulk_data(), family_tree, element.entity_rank());
       stk::mesh::Entity parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
       if (element == parent)
         {
@@ -5140,7 +5160,7 @@ namespace stk {
     bool PerceptMesh::isLeafElement( const stk::mesh::Entity element)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       if (element_to_family_tree_relations.size()==0 )
         {
           return true;
@@ -5156,7 +5176,7 @@ namespace stk {
     bool PerceptMesh::isChildElementLeaf( const stk::mesh::Entity element, bool check_for_family_tree)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       if (element_to_family_tree_relations.size()==0 )
         {
           if (check_for_family_tree)
@@ -5180,7 +5200,7 @@ namespace stk {
           unsigned element_ft_level_1 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
 
           stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level_1].entity();
-          stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+          const MyPairIterRelation family_tree_relations(*get_bulk_data(), family_tree, element.entity_rank());
           if (family_tree_relations.size() == 0)
             {
               throw std::logic_error(std::string("isChildElementLeaf:: family_tree_relations size=0 = "));
@@ -5201,7 +5221,7 @@ namespace stk {
     bool PerceptMesh::hasFamilyTree(const stk::mesh::Entity element)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       if (element_to_family_tree_relations.size()==0 )
         {
           return false;
@@ -5269,7 +5289,7 @@ namespace stk {
     bool PerceptMesh::isParentElement( const stk::mesh::Entity element, bool check_for_family_tree)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       if (element_to_family_tree_relations.size()==0 )
         {
           if (check_for_family_tree)
@@ -5291,7 +5311,7 @@ namespace stk {
       for (unsigned i_ft_rel = 0; i_ft_rel < element_to_family_tree_relations.size(); i_ft_rel++)
         {
           stk::mesh::Entity family_tree = element_to_family_tree_relations[i_ft_rel].entity();
-          stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+          const MyPairIterRelation family_tree_relations(*get_bulk_data(), family_tree, element.entity_rank());
           if (family_tree_relations.size() == 0)
             {
               std::cout << "isParentElement:: family_tree_relations size=0, i_ft_rel= " << i_ft_rel
@@ -5321,7 +5341,7 @@ namespace stk {
     bool PerceptMesh::isParentElementLeaf( const stk::mesh::Entity element, bool check_for_family_tree)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK );
       if (element_to_family_tree_relations.size()==0 )
         {
           if (check_for_family_tree)
@@ -5354,7 +5374,7 @@ namespace stk {
         }
 
       stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level].entity();
-      stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+      const MyPairIterRelation family_tree_relations(*get_bulk_data(), family_tree, element.entity_rank());
       if (family_tree_relations.size() == 0)
         {
           throw std::logic_error(std::string("isParentElementLeaf:: family_tree_relations size=0 = "));
@@ -5375,7 +5395,7 @@ namespace stk {
     bool PerceptMesh::isParentElementLevel2( const stk::mesh::Entity element, bool check_for_family_tree)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       if (element_to_family_tree_relations.size()==0 )
         {
           if (check_for_family_tree)
@@ -5398,7 +5418,7 @@ namespace stk {
 
       unsigned element_ft_level_1 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
       stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level_1].entity();
-      stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+      const MyPairIterRelation family_tree_relations(*get_bulk_data(), family_tree, element.entity_rank());
       if (family_tree_relations.size() == 0)
         {
           throw std::logic_error(std::string("isParentElementLevel2:: family_tree_relations size=0 = "));
@@ -5415,7 +5435,7 @@ namespace stk {
     bool PerceptMesh::isChildWithoutNieces( const stk::mesh::Entity element, bool check_for_family_tree)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       if (element_to_family_tree_relations.size()==0 )
         {
           if (check_for_family_tree)
@@ -5441,7 +5461,7 @@ namespace stk {
 
       unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
       stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
-      stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+      const MyPairIterRelation family_tree_relations(*get_bulk_data(), family_tree, element.entity_rank());
       if (family_tree_relations.size() == 0)
         {
           throw std::logic_error(std::string("isChildWithoutNieces:: family_tree_relations size=0 = "));
@@ -5462,7 +5482,7 @@ namespace stk {
     bool PerceptMesh::isChildWithoutGrandNieces( const stk::mesh::Entity element, bool check_for_family_tree)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       if (element_to_family_tree_relations.size()==0 )
         {
           if (check_for_family_tree)
@@ -5488,7 +5508,7 @@ namespace stk {
 
       unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
       stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
-      stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+      const MyPairIterRelation family_tree_relations(*get_bulk_data(), family_tree, element.entity_rank());
       if (family_tree_relations.size() == 0)
         {
           throw std::logic_error(std::string("isChildWithoutNieces:: family_tree_relations size=0 = "));
@@ -5532,7 +5552,7 @@ namespace stk {
     {
       children.resize(0);
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       if (element_to_family_tree_relations.size()==0 )
         {
           if (check_for_family_tree)
@@ -5568,7 +5588,7 @@ namespace stk {
         }
 
       stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level].entity();
-      stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+      const MyPairIterRelation family_tree_relations(*get_bulk_data(), family_tree, element.entity_rank());
       if (family_tree_relations.size() == 0)
         {
           throw std::logic_error(std::string("getChildren:: family_tree_relations size=0 = "));
@@ -5586,7 +5606,7 @@ namespace stk {
     stk::mesh::Entity PerceptMesh::getParent(stk::mesh::Entity element, bool check_for_family_tree)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       if (element_to_family_tree_relations.size()==0 )
         {
           if (check_for_family_tree)
@@ -5605,7 +5625,7 @@ namespace stk {
 
       unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
       stk::mesh::Entity family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
-      stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+      const MyPairIterRelation family_tree_relations(*get_bulk_data(), family_tree, element.entity_rank());
       if (family_tree_relations.size() == 0)
         {
           throw std::logic_error(std::string("getChildren:: family_tree_relations size=0 = "));
@@ -5617,7 +5637,7 @@ namespace stk {
     void PerceptMesh::printParentChildInfo(const stk::mesh::Entity element, bool check_for_family_tree)
     {
       const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-      stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+      const MyPairIterRelation element_to_family_tree_relations(*get_bulk_data(), element, FAMILY_TREE_RANK);
       std::cout << "printParentChildInfo:: element_to_family_tree_relations.size() = " << element_to_family_tree_relations.size() << std::endl;
       if (element_to_family_tree_relations.size() == 0)
         {
@@ -5635,7 +5655,7 @@ namespace stk {
       for (unsigned i_ft_rel = 0; i_ft_rel < element_to_family_tree_relations.size(); i_ft_rel++)
         {
           stk::mesh::Entity family_tree = element_to_family_tree_relations[i_ft_rel].entity();
-          stk::mesh::PairIterRelation family_tree_relations = family_tree.relations(element.entity_rank());
+          const MyPairIterRelation family_tree_relations(*get_bulk_data(), family_tree, element.entity_rank());
           if (family_tree_relations.size() == 0)
             {
               std::cout << "printParentChildInfo:: family_tree_relations size=0, i_ft_rel= " << i_ft_rel

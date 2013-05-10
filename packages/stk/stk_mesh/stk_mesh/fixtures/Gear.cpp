@@ -99,10 +99,10 @@ void Gear::populate_fields(FieldState state) {
 
         Entity node = get_node(iz,ir,ia);
 
-        double * const cylindrical_data = field_data( cylindrical_coord_field , node );
-        double * const translation_data = field_data( translation_field , node );
-        double * const cartesian_data = field_data( cartesian_coord_field , node );
-        double * const displacement_data = field_data( displacement_field.field_of_state(state) , node );
+        double * const cylindrical_data = bulk_data.field_data( cylindrical_coord_field , node );
+        double * const translation_data = bulk_data.field_data( translation_field , node );
+        double * const cartesian_data = bulk_data.field_data( cartesian_coord_field , node );
+        double * const displacement_data = bulk_data.field_data( displacement_field.field_of_state(state) , node );
 
         cylindrical_data[0] = rad ;
         cylindrical_data[1] = angle ;
@@ -137,10 +137,10 @@ void Gear::populate_fields(FieldState state) {
 
         Entity node = get_node(iz,ir,ia);
 
-        double * const cylindrical_data = field_data( cylindrical_coord_field , node );
-        double * const translation_data = field_data( translation_field , node );
-        double * const cartesian_data = field_data( cartesian_coord_field , node );
-        double * const displacement_data = field_data( displacement_field.field_of_state(state) , node );
+        double * const cylindrical_data = bulk_data.field_data( cylindrical_coord_field , node );
+        double * const translation_data = bulk_data.field_data( translation_field , node );
+        double * const cartesian_data = bulk_data.field_data( cartesian_coord_field , node );
+        double * const displacement_data = bulk_data.field_data( displacement_field.field_of_state(state) , node );
 
         cylindrical_data[0] = rad ;
         cylindrical_data[1] = angle ;

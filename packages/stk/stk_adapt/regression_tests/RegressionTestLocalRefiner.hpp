@@ -141,8 +141,11 @@ namespace stk
           double plane_point[3] = {2,0,0};
           double plane_normal[3] = {1, .5, -.5};
 
-          const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+          const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK );
+          //stk::mesh::Entity const *elem_nodes_e = m_eMesh.get_bulk_data()->begin_entities(element, stk::mesh::MetaData::NODE_RANK );
+
           unsigned num_node = elem_nodes.size();
+          //unsigned num_node = m_eMesh.get_bulk_data()->num_connectivity(element, stk::mesh::MetaData::NODE_RANK );
           double *f_data = PerceptMesh::field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
@@ -150,6 +153,7 @@ namespace stk
           for (unsigned inode=0; inode < num_node-1; inode++)
             {
               mesh::Entity node_i = elem_nodes[ inode ].entity();
+              //mesh::Entity node_i = elem_nodes_e[ inode ];
               double *coord_data_i = PerceptMesh::field_data(coordField, node_i);
 
               for (unsigned jnode=inode+1; jnode < num_node; jnode++)
@@ -186,7 +190,7 @@ namespace stk
         SetUnrefineField(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {}
         virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
-          const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+          const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           double *f_data = PerceptMesh::field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
@@ -224,7 +228,7 @@ namespace stk
                        double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
         {
           int mark = 0;
-          if (0 == m_selector || (*m_selector)(element))
+          if (0 == m_selector || (*m_selector)(element.bucket()))
             {
               double plane_point[3] = {2,0,0};
               double plane_normal[3] = {1, 0, 0};
@@ -371,13 +375,13 @@ namespace stk
         /// Element-based: Return DO_NOTHING, DO_REFINE, DO_UNREFINE or sum of these
         int operator()(const stk::mesh::Entity element)
         {
-          if (0 == m_eb_selector || (*m_eb_selector)(element))
+          if (0 == m_eb_selector || (*m_eb_selector)(element.bucket()))
             {
 
               const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
               int spatialDimension = m_eMesh.get_spatial_dim();
               CellTopology cell_topo(cell_topo_data);
-              const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+              const percept::MyPairIterRelation elem_nodes (m_eMesh, element,stk::mesh::MetaData::NODE_RANK);
 
               VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
@@ -420,7 +424,7 @@ namespace stk
                         double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
         {
           int mark=0;
-          if (0 == m_selector || (*m_selector)(element))
+          if (0 == m_selector || (*m_selector)(element.bucket()))
             {
 
               // refine check
@@ -466,13 +470,13 @@ namespace stk
         /// Element-based: Return DO_NOTHING, DO_REFINE, DO_UNREFINE or sum of these
         int operator()(const stk::mesh::Entity element)
         {
-          if (0 == m_eb_selector || (*m_eb_selector)(element))
+          if (0 == m_eb_selector || (*m_eb_selector)(element.bucket()))
             {
 
               const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
               int spatialDimension = m_eMesh.get_spatial_dim();
               CellTopology cell_topo(cell_topo_data);
-              const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+              const percept::MyPairIterRelation elem_nodes (m_eMesh, element,stk::mesh::MetaData::NODE_RANK);
 
               VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
@@ -515,7 +519,7 @@ namespace stk
                         double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
         {
           int mark=0;
-          if (0 == m_selector || (*m_selector)(element))
+          if (0 == m_selector || (*m_selector)(element.bucket()))
             {
 
               // refine check

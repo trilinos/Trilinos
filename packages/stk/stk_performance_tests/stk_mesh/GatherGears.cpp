@@ -56,10 +56,9 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
     const Bucket& b = *buckets[ib];
 
     for(size_t i=0; i<b.size(); ++i) {
-      Entity elem = b[i];
-      PairIterRelation node_rels = elem.node_relations();
 
-      size_t num_nodes = node_rels.size();
+      Node const *node_rels = b.begin_nodes(i);
+      size_t num_nodes = b.num_nodes(i);
       size_t len = num_nodes*spatial_dim;
       if (elem_node_coords.size() != len) elem_node_coords.resize(len);
 
@@ -67,8 +66,8 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
 
       unsigned offset = 0;
       for(size_t n=0; n<num_nodes; ++n) {
-        Entity node = node_rels[n].entity();
-        double* node_coords = field_data(coord_field, node);
+        Node node = node_rels[n];
+        double* node_coords = bulk.field_data(coord_field, node);
         elem_node_coords[offset++] = node_coords[0];
         elem_node_coords[offset++] = node_coords[1];
         elem_node_coords[offset++] = node_coords[2];

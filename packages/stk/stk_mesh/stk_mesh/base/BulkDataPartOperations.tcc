@@ -84,16 +84,14 @@ void BulkData::change_entity_parts( Entity entity,
                                     RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts,
                                     bool always_propagate_internal_changes)
 {
-  TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity.key());
-  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
-  //DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
-  //DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
+  TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity_key(entity));
+  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity);
 
   require_ok_to_modify();
 
   require_entity_owner( entity , m_parallel_rank );
 
-  const EntityRank entity_rank = entity.entity_rank();
+  const EntityRank ent_rank = entity_rank(entity);
   const EntityRank undef_rank  = InvalidEntityRank;
 
   // Transitive addition and removal:
@@ -116,7 +114,7 @@ void BulkData::change_entity_parts( Entity entity,
 
   for ( AddIterator ia = begin_add_parts; ia != end_add_parts ; ++ia ) {
     quick_verify_check = quick_verify_check &&
-      internal_quick_verify_change_part(*ia, entity_rank, undef_rank);
+      internal_quick_verify_change_part(*ia, ent_rank, undef_rank);
     const PartVector& supersets = (*ia)->supersets();
     for(PartVector::const_iterator s_iter=supersets.begin(), s_end=supersets.end();
         s_iter!=s_end; ++s_iter) {
@@ -147,14 +145,14 @@ void BulkData::change_entity_parts( Entity entity,
     */
 
     quick_verify_check = quick_verify_check &&
-      internal_quick_verify_change_part(*ir, entity_rank, undef_rank);
+      internal_quick_verify_change_part(*ir, ent_rank, undef_rank);
 
     if ( ! contains_ordinal( a_parts_begin, a_parts_end , (*ir)->mesh_meta_data_ordinal() ) ) {
       r_parts.push_back( (*ir)->mesh_meta_data_ordinal() );
       for ( PartVector::const_iterator  cur_part = (*ir)->subsets().begin() ;
             cur_part != (*ir)->subsets().end() ;
             ++cur_part )
-        if ( entity.bucket().member ( **cur_part ) )
+        if ( bucket(entity).member ( **cur_part ) )
           r_parts.push_back ( (*cur_part)->mesh_meta_data_ordinal() );
     }
   }
@@ -177,8 +175,6 @@ void BulkData::change_entity_parts( Entity entity,
   }
 
   internal_change_entity_parts( entity , a_parts , r_parts , always_propagate_internal_changes );
-
-  return ;
 }
 
 //  The 'add_parts' and 'remove_parts' are complete and disjoint.
@@ -193,12 +189,12 @@ void BulkData::internal_change_entity_parts(
   const std::vector<PartT> & remove_parts,
   bool always_propagate_internal_changes )
 {
-  TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
-  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
-  DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
-  DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
+  TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity_key(entity));
+  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity);
+  DiagIfWatching(LOG_ENTITY, entity_key(entity), "add_parts: " << add_parts);
+  DiagIfWatching(LOG_ENTITY, entity_key(entity), "remove_parts: " << remove_parts);
 
-  Bucket * const k_old = m_entity_repo.get_entity_bucket( entity );
+  Bucket * const k_old = bucket_ptr( entity );
 
   if ( k_old && k_old->member_all( add_parts ) &&
               ! k_old->member_any( remove_parts ) ) {
@@ -251,18 +247,18 @@ void BulkData::internal_change_entity_parts(
     parts_total.push_back( univ_ord );
   }
 
+  EntityRank e_rank = entity_rank(entity);
+
   //--------------------------------
   // Move the entity to the new partition.
   stk::mesh::impl::Partition *partition =
-          m_bucket_repository.get_or_create_partition(entity.entity_rank(), parts_total);
+          m_bucket_repository.get_or_create_partition(e_rank, parts_total);
 
-  if (k_old)
-  {
-      k_old->getPartition()->move_to(entity, *partition);
+  if (k_old) {
+    k_old->getPartition()->move_to(entity, *partition);
   }
-  else
-  {
-      partition->add(entity);
+  else {
+    partition->add(entity);
   }
 
   ////
@@ -275,7 +271,7 @@ void BulkData::internal_change_entity_parts(
 
   std::vector<PartT> rank_parts_removed;
   for(typename std::vector<PartT>::const_iterator pr=parts_removed.begin(), prend=parts_removed.end(); pr!=prend; ++pr) {
-    if (impl::get_part(*pr, m_mesh_meta_data).primary_entity_rank() == entity.entity_rank()) {
+    if (impl::get_part(*pr, m_mesh_meta_data).primary_entity_rank() == e_rank) {
       rank_parts_removed.push_back(*pr);
     }
   }
@@ -284,10 +280,6 @@ void BulkData::internal_change_entity_parts(
       !rank_parts_removed.empty() ) {
     internal_propagate_part_changes( entity , rank_parts_removed );
   }
-
-#ifndef NDEBUG
-  //ensure_part_superset_consistency( entity );
-#endif
 }
 
 //----------------------------------------------------------------------
@@ -302,77 +294,94 @@ void BulkData::internal_propagate_part_changes(
   const std::vector<PartT> & removed )
 {
   TraceIfWatching("stk::mesh::BulkData::internal_propagate_part_changes",
-                  LOG_ENTITY,
-                  entity.key());
-  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
-  DiagIfWatching(LOG_ENTITY, entity.key(), "Removed: " << removed);
+      LOG_ENTITY,
+      entity_key(entity));
+  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity);
+  DiagIfWatching(LOG_ENTITY, entity_key(entity), "Removed: " << removed);
 
-  const unsigned etype = entity.entity_rank();
+  m_check_invalid_rels = false;
 
-  PairIterRelation rel = entity.relations();
+  const unsigned erank = entity_rank(entity);
+  const EntityRank end_rank = m_mesh_meta_data.entity_rank_count();
 
   OrdinalVector to_del , to_add , empty ;
 
-  for ( ; ! rel.empty() ; ++rel ) {
-    const unsigned rel_type  = rel->entity_rank();
-    const unsigned rel_ident = rel->relation_ordinal();
+  for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+  {
+    size_t num_rels = num_connectivity(entity, irank);
+    Entity const *rel_entities = begin_entities(entity, irank);
+    ConnectivityOrdinal const *rel_ordinals = begin_ordinals(entity, irank);
+    for (size_t j = 0; j < num_rels; ++j)
+    {
+      const unsigned rel_ident = rel_ordinals[j];
 
-    if ( rel_type < etype ) { // a 'to' entity
+      if ( irank < erank ) { // a 'to' entity
 
-      Entity e_to = rel->entity();
+        Entity e_to = rel_entities[j];
 
-      to_del.clear();
-      to_add.clear();
-      empty.clear();
+        if (e_to == Entity::InvalidEntity)
+        {
+          continue;
+        }
 
-      // Induce part membership from this relationship to
-      // pick up any additions.
-      induced_part_membership( entity, empty,
-                               rel_type, rel_ident, to_add );
+        to_del.clear();
+        to_add.clear();
+        empty.clear();
 
-      if ( ! removed.empty() ) {
-        // Something was removed from the 'from' entity,
-        // deduce what may have to be removed from the 'to' entity.
+        // Induce part membership from this relationship to
+        // pick up any additions.
+        induced_part_membership(*this, entity, empty, irank, rel_ident, to_add );
 
-        // Deduce parts for 'e_to' from all upward relations.
-        // Any non-parallel part that I removed that is not deduced for
-        // 'e_to' must be removed from 'e_to'
+        if ( ! removed.empty() ) {
+          // Something was removed from the 'from' entity,
+          // deduce what may have to be removed from the 'to' entity.
 
-        for ( PairIterRelation
-              to_rel = e_to.relations(); ! to_rel.empty() ; ++to_rel ) {
-          if ( e_to.entity_rank() < to_rel->entity_rank() &&
-               entity != to_rel->entity() /* Already did this entity */ ) {
-            // Relation from to_rel->entity() to e_to
-            induced_part_membership( to_rel->entity(), empty,
-                                     e_to.entity_rank(),
-                                     to_rel->relation_ordinal(),
-                                     to_add );
+          // Deduce parts for 'e_to' from all upward relations.
+          // Any non-parallel part that I removed that is not deduced for
+          // 'e_to' must be removed from 'e_to'
+
+          EntityRank e_to_rank = entity_rank(e_to);
+
+          for (EntityRank to_rel_rank_i = e_to_rank + 1; to_rel_rank_i < end_rank; ++to_rel_rank_i)
+          {
+            size_t num_back_rels = num_connectivity(e_to, to_rel_rank_i);
+            Entity const* back_rel_entities = begin_entities(e_to, to_rel_rank_i);
+            ConnectivityOrdinal const *rel_ords = begin_ordinals(e_to, to_rel_rank_i);
+            for (size_t k = 0; k < num_back_rels; ++k)
+            {
+              if (entity != back_rel_entities[k])  // Already did this entity
+              {
+                // Relation from to_rel->entity() to e_to
+                induced_part_membership(*this, back_rel_entities[k], empty,
+                                        e_to_rank, rel_ords[k], to_add );
+              }
+            }
+          }
+
+          OrdinalVector::const_iterator to_add_begin = to_add.begin(),
+            to_add_end   = to_add.end();
+
+          for ( typename std::vector<PartT>::const_iterator
+              k = removed.begin() ; k != removed.end() ; ++k ) {
+            if ( ! contains_ordinal( to_add_begin, to_add_end , impl::get_ordinal(*k) ) ) {
+              induced_part_membership( impl::get_part(*k, m_mesh_meta_data), erank, irank, rel_ident, to_del );
+            }
           }
         }
 
-        OrdinalVector::const_iterator to_add_begin = to_add.begin(),
-                                      to_add_end   = to_add.end();
-
-        for ( typename std::vector<PartT>::const_iterator
-              j = removed.begin() ; j != removed.end() ; ++j ) {
-          if ( ! contains_ordinal( to_add_begin, to_add_end , impl::get_ordinal(*j) ) ) {
-            induced_part_membership( impl::get_part(*j, m_mesh_meta_data), etype, rel_type, rel_ident, to_del );
-          }
+        if ( parallel_size() < 2 || entity_comm_sharing(entity_key(e_to)).empty() ) {
+          // Entirely local, ok to remove memberships now
+          internal_change_entity_parts( e_to , to_add , to_del );
+        }
+        else {
+          // Shared, do not remove memberships now.
+          // Wait until modification_end.
+          internal_change_entity_parts( e_to , to_add , empty );
         }
       }
-
-      if ( parallel_size() < 2 || entity_comm_sharing(e_to.key()).empty() ) {
-        // Entirely local, ok to remove memberships now
-        internal_change_entity_parts( e_to , to_add , to_del );
-      }
-      else {
-        // Shared, do not remove memberships now.
-        // Wait until modification_end.
-        internal_change_entity_parts( e_to , to_add , empty );
-      }
-
     }
   }
+  m_check_invalid_rels = true;
 }
 
 // TODO Change the methods below to requirements (private, const invariant checkers)
@@ -390,7 +399,7 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
 {
   const std::vector<std::string> & rank_names = meta.entity_rank_names();
   const EntityRank undef_rank  = InvalidEntityRank;
-  const EntityRank entity_rank = entity.entity_rank();
+  const EntityRank erank = entity_rank(entity);
 
   bool ok = true ;
   std::ostringstream msg ;
@@ -402,12 +411,12 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
     const unsigned part_rank = p.primary_entity_rank();
 
     bool intersection_ok, rel_target_ok, rank_ok;
-    internal_basic_part_check(&p, entity_rank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
+    internal_basic_part_check(&p, erank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
 
     if ( !intersection_ok || !rel_target_ok || !rank_ok ) {
       if ( ok ) {
         ok = false ;
-        msg << "change parts for entity " << print_entity_key( entity );
+        msg << "change parts for entity " << identifier(entity);
         msg << " , { " ;
       }
       else {

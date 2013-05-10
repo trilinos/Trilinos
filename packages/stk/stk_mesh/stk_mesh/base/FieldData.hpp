@@ -17,6 +17,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -71,64 +72,30 @@ template< class FieldType > struct BucketArray {};
 template< class FieldType > struct EntityArray {};
 
 //----------------------------------------------------------------------
-/** \brief  Check for existence of field data.
- *
- *  \exception std::runtime_error
- *     Thrown if required_by != NULL and the field data does not exist.
- */
-bool field_data_valid( const FieldBase & f ,
-                       const Bucket & k ,
-                       unsigned ord = 0,
-                       const char * required_by = NULL );
-
-/** \brief  Check for existence of field data.
- *
- *  \exception std::runtime_error
- *     Thrown if required_by != NULL and the field data does not exist.
- */
-inline
-bool field_data_valid( const FieldBase & f ,
-                       const Entity e ,
-                       const char * required_by = NULL )
-{ return field_data_valid( f, e.bucket(), e.bucket_ordinal(), required_by ); }
-
-//----------------------------------------------------------------------
 
 /** \brief  Size, in bytes, of the field data for each entity */
 inline
-unsigned field_data_size( const FieldBase & f , const Bucket & k )
+unsigned field_data_size_per_entity( const FieldBase & f , const Bucket & k )
 {
-  return k.field_data_size(f);
+  return BulkData::get(k).field_data_size_per_entity(f, k);
 }
 
-/** \brief  Size, in bytes, of the field data for each entity */
-inline
-unsigned field_data_size( const FieldBase & f , const Entity e )
-{ return field_data_size( f , e.bucket() ); }
-
-//----------------------------------------------------------------------
-
-
-/** \brief  Pointer to the field data array */
-template< class field_type >
-inline
-typename FieldTraits< field_type >::data_type *
-field_data( const field_type & f , const Bucket::iterator i )
-{
-  return field_data(f,*i);
-}
-
-
-/** \brief  Pointer to the field data array */
 template< class field_type >
 inline
 typename FieldTraits< field_type >::data_type *
 field_data( const field_type & f , const Entity e )
 {
-  return e.bucket().field_data( f, e );
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
+  return stk::mesh::BulkData::get(e).field_data(f, e);
+#else
+  ThrowErrorMsg("stk::mesh::field_data(const field_type &, const Entity) has been deprecated.");
+  typename FieldTraits< field_type >::data_type *bad = 0;
+  return bad;
+#endif
 }
 
 //----------------------------------------------------------------------
+
 
 #ifndef DOXYGEN_COMPILE
 
@@ -140,8 +107,8 @@ struct EntityArray< Field<ScalarType,void,void,void,void,void,void,void> >
   typedef shards::Array<ScalarType,shards::RankZero,void,void,void,void,void,void,void>
   array_type ;
 
-  EntityArray( const field_type & f , const Entity e )
-    : array_type( field_data( f , e ) ) {}
+  EntityArray( const field_type & f , const Bucket& b, unsigned bucket_ordinal )
+    : array_type( BulkData::get(b).field_data( f , b, bucket_ordinal ) ) {}
 
 private:
   EntityArray();
@@ -173,14 +140,11 @@ public:
   shards::Array<ScalarType,shards::FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>
   array_type ;
 
-  EntityArray( const field_type & f , const Entity e ) : array_type()
+  EntityArray( const field_type & f , const Bucket& b, unsigned bucket_ordinal) : array_type()
   {
-    const Bucket          & b = e.bucket();
-    if (b.field_data_size(f)) {
-      array_type::assign_stride(
-          (ScalarType*)(b.field_data_location(f, e ) ),
-          b.field_data_stride(f)
-          );
+    if ( BulkData::get(b).field_data_size_per_entity(f, b)) {
+      array_type::assign_stride( BulkData::get(b).field_data(f, b, bucket_ordinal),
+                                 BulkData::get(b).field_data_stride(f, b) );
     }
   }
 #endif /* DOXYGEN_COMPILE */
@@ -230,23 +194,23 @@ public:
 
   BucketArray( const field_type & f , const Bucket & k )
   {
-    if (k.field_data_size(f)) {
-      array_type::assign( (ScalarType*)( k.field_data_location(f,k[0]) ) ,
+    if (BulkData::get(k).field_data_size_per_entity(f, k)) {
+      array_type::assign( BulkData::get(k).field_data(f, k, 0) ,
                           k.size() );
-
     }
   }
 
   BucketArray( const field_type & f,
+               const Bucket& b,
                const Bucket::iterator i,
                const Bucket::iterator j)
   {
     const ptrdiff_t n = j - i ;
 
-    if ( i->bucket().field_data_size(f) && 0 < n ) {
-      array_type::assign(
-        (ScalarType*)( i->bucket().field_data_location( f, *i ) ),
-        (typename array_type::size_type) n );
+    if ( BulkData::get(b).field_data_size_per_entity(f, b) && 0 < n ) {
+      unsigned b_ord = i-b.begin();
+      array_type::assign( BulkData::get(b).field_data( f, b, b_ord ),
+                          (typename array_type::size_type) n );
     }
   }
 
@@ -281,14 +245,15 @@ public:
 
   BucketArray( const field_type & f , const Bucket & b )
   {
-    if ( b.field_data_size(f) ) {
-      array_type::assign_stride(
-        (ScalarType*)( b.field_data_location(f,b[0]) ),
-        b.field_data_stride(f) , (typename array_type::size_type) b.size() );
+    if ( BulkData::get(b).field_data_size_per_entity(f, b) ) {
+      array_type::assign_stride( BulkData::get(b).field_data(f, b, 0),
+                                 BulkData::get(b).field_data_stride(f, b),
+                                 (typename array_type::size_type) b.size() );
     }
   }
 
   BucketArray( const field_type & f,
+               const Bucket& b,
                const Bucket::iterator i,
                const Bucket::iterator j)
   {
@@ -296,16 +261,14 @@ public:
 
     if ( 0 < distance ) {
 
-      const Bucket          & b  = i->bucket();
-
-      if ( b.field_data_size(f) ) {
-        array_type::assign_stride(
-          (ScalarType*)( b.field_data_location(f,*i) ),
-          b.field_data_stride(f) , (typename array_type::size_type) distance );
+      if ( BulkData::get(b).field_data_size_per_entity(f, b) ) {
+        unsigned bucket_ordinal = i - b.begin();
+        array_type::assign_stride( BulkData::get(b).field_data(f, b, bucket_ordinal),
+                                   BulkData::get(b).field_data_stride(f, b),
+                                   (typename array_type::size_type) distance );
       }
     }
   }
-
 
 #endif /* DOXYGEN_COMPILE */
 };

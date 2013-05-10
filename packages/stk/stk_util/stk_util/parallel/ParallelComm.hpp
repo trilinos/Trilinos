@@ -138,14 +138,14 @@ class CommAll {
 public:
 
   ParallelMachine parallel()      const { return m_comm ; }
-  unsigned        parallel_size() const { return m_size ; }
-  unsigned        parallel_rank() const { return m_rank ; }
+  int             parallel_size() const { return m_size ; }
+  int             parallel_rank() const { return m_rank ; }
 
   /** Obtain the message buffer for a given processor */
-  CommBuffer & send_buffer( unsigned ) const ;
+  CommBuffer & send_buffer( int ) const ;
 
   /** Obtain the message buffer for a given processor */
-  CommBuffer & recv_buffer( unsigned ) const ;
+  CommBuffer & recv_buffer( int ) const ;
 
   //----------------------------------------
   /** Construct for undefined communication.
@@ -211,15 +211,15 @@ private:
   CommAll( const CommAll & );
   CommAll & operator = ( const CommAll & );
 
-  void rank_error( const char * , unsigned ) const ;
+  void rank_error( const char * , int ) const ;
 
   bool allocate_buffers( const unsigned * const send_size ,
                          const unsigned * const recv_size ,
                          bool local_flag );
 
   ParallelMachine m_comm ;
-  unsigned        m_size ;
-  unsigned        m_rank ;
+  int             m_size ;
+  int             m_rank ;
   unsigned        m_bound ;
   unsigned        m_max ;
   CommBuffer    * m_send ;
@@ -232,8 +232,8 @@ class CommBroadcast {
 public:
 
   ParallelMachine parallel()      const { return m_comm ; }
-  unsigned        parallel_size() const { return m_size ; }
-  unsigned        parallel_rank() const { return m_rank ; }
+  int             parallel_size() const { return m_size ; }
+  int             parallel_rank() const { return m_rank ; }
 
   /** Obtain the message buffer for the root_rank processor */
   CommBuffer & send_buffer();
@@ -243,7 +243,7 @@ public:
 
   //----------------------------------------
 
-  CommBroadcast( ParallelMachine , unsigned root_rank );
+  CommBroadcast( ParallelMachine , int root_rank );
 
   void communicate();
 
@@ -258,9 +258,9 @@ private:
   CommBroadcast & operator = ( const CommBroadcast & );
 
   ParallelMachine m_comm ;
-  unsigned        m_size ;
-  unsigned        m_rank ;
-  unsigned        m_root_rank ;
+  int             m_size ;
+  int             m_rank ;
+  int             m_root_rank ;
   CommBuffer      m_buffer ;
 };
 
@@ -270,20 +270,20 @@ class CommGather {
 public:
 
   ParallelMachine parallel()      const { return m_comm ; }
-  unsigned        parallel_size() const { return m_size ; }
-  unsigned        parallel_rank() const { return m_rank ; }
+  int             parallel_size() const { return m_size ; }
+  int             parallel_rank() const { return m_rank ; }
 
   ~CommGather();
 
-  CommGather( ParallelMachine , unsigned root_rank , unsigned send_size );
+  CommGather( ParallelMachine , int root_rank , unsigned send_size );
 
   CommBuffer & send_buffer() { return m_send ; }
 
   void communicate();
 
-  CommBuffer & recv_buffer( unsigned );
+  CommBuffer & recv_buffer( int );
 
-  void reset(); 
+  void reset();
 
 private:
 
@@ -292,9 +292,9 @@ private:
   CommGather & operator = ( const CommBroadcast & );
 
   ParallelMachine m_comm ;
-  unsigned        m_size ;
-  unsigned        m_rank ;
-  unsigned        m_root_rank ;
+  int             m_size ;
+  int             m_rank ;
+  int             m_root_rank ;
   CommBuffer      m_send ;
   CommBuffer    * m_recv ;
   int           * m_recv_count ;
@@ -443,14 +443,14 @@ void * CommBuffer::buffer() const
 // Inline implementations for the CommAll
 
 inline
-CommBuffer & CommAll::send_buffer( unsigned p ) const
+CommBuffer & CommAll::send_buffer( int p ) const
 {
   if ( m_size <= p ) { rank_error("send_buffer",p); }
   return m_send[p] ;
 }
 
 inline
-CommBuffer & CommAll::recv_buffer( unsigned p ) const
+CommBuffer & CommAll::recv_buffer( int p ) const
 {
   if ( m_size <= p ) { rank_error("recv_buffer",p); }
   return m_recv[p] ;

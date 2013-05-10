@@ -575,7 +575,7 @@ namespace stk_example_io {
     stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
       meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
-    stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
+    stk::io::field_data_from_ioss(bulk, coord_field, nodes, nb, "mesh_model_coordinates");
   }
 
   // ========================================================================
@@ -584,53 +584,53 @@ namespace stk_example_io {
     const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
 
     for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
-	it != elem_blocks.end(); ++it) {
+        it != elem_blocks.end(); ++it) {
       Ioss::ElementBlock *entity = *it;
 
       if (stk::io::include_entity(entity)) {
-	const std::string &name = entity->name();
+        const std::string &name = entity->name();
         const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
-	stk::mesh::Part* const part = meta.get_part(name);
-	assert(part != NULL);
+        stk::mesh::Part* const part = meta.get_part(name);
+        assert(part != NULL);
 
-	const CellTopologyData* cell_topo = meta.get_cell_topology(*part).getCellTopologyData();
-	if (cell_topo == NULL) {
+        const CellTopologyData* cell_topo = meta.get_cell_topology(*part).getCellTopologyData();
+        if (cell_topo == NULL) {
           std::ostringstream msg ;
-	  msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
-	  throw std::runtime_error( msg.str() );
-	}
+          msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
+          throw std::runtime_error( msg.str() );
+        }
 
-	std::vector<int> elem_ids ;
-	std::vector<int> connectivity ;
-	std::vector<stk::mesh::EntityId> connectivity2 ;
+        std::vector<int> elem_ids ;
+        std::vector<int> connectivity ;
+        std::vector<stk::mesh::EntityId> connectivity2 ;
 
-	entity->get_field_data("ids", elem_ids);
-	entity->get_field_data("connectivity", connectivity);
+        entity->get_field_data("ids", elem_ids);
+        entity->get_field_data("connectivity", connectivity);
         connectivity2.reserve(connectivity.size());
         std::copy(connectivity.begin(), connectivity.end(), std::back_inserter(connectivity2));
 
-	size_t element_count = elem_ids.size();
-	int nodes_per_elem = cell_topo->node_count ;
+        size_t element_count = elem_ids.size();
+        int nodes_per_elem = cell_topo->node_count ;
 
-	std::vector<stk::mesh::Entity> elements(element_count);
-	for(size_t i=0; i<element_count; ++i) {
-	  stk::mesh::EntityId *conn = &connectivity2[i*nodes_per_elem];
-	  elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
-	}
+        std::vector<stk::mesh::Entity> elements(element_count);
+        for(size_t i=0; i<element_count; ++i) {
+          stk::mesh::EntityId *conn = &connectivity2[i*nodes_per_elem];
+          elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
+        }
 
-	// For this example, we are just taking all attribute fields
-	// found on the io database and populating fields on the
-	// corresponding mesh part.  In practice, would probably be
-	// selective about which attributes to use...
-	Ioss::NameList names;
-	entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
-	for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-	  if (*I == "attribute" && names.size() > 1)
-	    continue;
-	  stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(*I);
-	  stk::io::field_data_from_ioss(field, elements, entity, *I);
+        // For this example, we are just taking all attribute fields
+        // found on the io database and populating fields on the
+        // corresponding mesh part.  In practice, would probably be
+        // selective about which attributes to use...
+        Ioss::NameList names;
+        entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
+        for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
+          if (*I == "attribute" && names.size() > 1)
+            continue;
+          stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(*I);
+          stk::io::field_data_from_ioss(bulk, field, elements, entity, *I);
 
-	}
+        }
       }
     }
   }
@@ -643,36 +643,36 @@ namespace stk_example_io {
     const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
 
     for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
-	it != node_sets.end(); ++it) {
+        it != node_sets.end(); ++it) {
       Ioss::NodeSet *entity = *it;
 
       if (stk::io::include_entity(entity)) {
-	const std::string & name = entity->name();
-  const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
-	stk::mesh::Part* const part = meta.get_part(name);
-	assert(part != NULL);
-	stk::mesh::PartVector add_parts( 1 , part );
+        const std::string & name = entity->name();
+        const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+        stk::mesh::Part* const part = meta.get_part(name);
+        assert(part != NULL);
+        stk::mesh::PartVector add_parts( 1 , part );
 
-	std::vector<int> node_ids ;
-	int node_count = entity->get_field_data("ids", node_ids);
+        std::vector<int> node_ids ;
+        int node_count = entity->get_field_data("ids", node_ids);
 
-	std::vector<stk::mesh::Entity> nodes(node_count);
-	for(int i=0; i<node_count; ++i) {
-	  nodes[i] = bulk.get_entity( stk::mesh::MetaData::NODE_RANK, node_ids[i] );
-	  if (nodes[i].is_valid())
-	    bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, node_ids[i], add_parts );
-	}
+        std::vector<stk::mesh::Entity> nodes(node_count);
+        for(int i=0; i<node_count; ++i) {
+          nodes[i] = bulk.get_entity( stk::mesh::MetaData::NODE_RANK, node_ids[i] );
+          if (nodes[i].is_valid())
+            bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, node_ids[i], add_parts );
+        }
 
-	/** \todo REFACTOR Application would probably store this field
-	 * (and others) somewhere after the declaration instead of
-	 * looking it up each time it is needed.
-	 */
-	stk::mesh::Field<double> *df_field =
-	  meta.get_field<stk::mesh::Field<double> >("distribution_factors");
+        /** \todo REFACTOR Application would probably store this field
+         * (and others) somewhere after the declaration instead of
+         * looking it up each time it is needed.
+         */
+        stk::mesh::Field<double> *df_field =
+            meta.get_field<stk::mesh::Field<double> >("distribution_factors");
 
-	if (df_field != NULL) {
-	  stk::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
-	}
+        if (df_field != NULL) {
+          stk::io::field_data_from_ioss(bulk, df_field, nodes, entity, "distribution_factors");
+        }
       }
     }
   }
@@ -690,50 +690,51 @@ namespace stk_example_io {
     for (int i=0; i < block_count; i++) {
       Ioss::SideBlock *block = sset->get_block(i);
       if (stk::io::include_entity(block)) {
-	std::vector<int> side_ids ;
-	std::vector<int> elem_side ;
+        std::vector<int> side_ids ;
+        std::vector<int> elem_side ;
 
-	stk::mesh::Part * const side_block_part = meta.get_part(block->name());
-	stk::mesh::EntityRank side_rank = side_block_part->primary_entity_rank();
+        stk::mesh::Part * const side_block_part = meta.get_part(block->name());
+        stk::mesh::EntityRank side_rank = side_block_part->primary_entity_rank();
 
-	block->get_field_data("ids", side_ids);
-	block->get_field_data("element_side", elem_side);
+        block->get_field_data("ids", side_ids);
+        block->get_field_data("element_side", elem_side);
 
-	assert(side_ids.size() * 2 == elem_side.size());
-	stk::mesh::PartVector add_parts( 1 , side_block_part );
+        assert(side_ids.size() * 2 == elem_side.size());
+        stk::mesh::PartVector add_parts( 1 , side_block_part );
 
-	size_t side_count = side_ids.size();
-	std::vector<stk::mesh::Entity> sides(side_count);
-	for(size_t is=0; is<side_count; ++is) {
+        size_t side_count = side_ids.size();
+        std::vector<stk::mesh::Entity> sides(side_count);
+        for(size_t is=0; is<side_count; ++is) {
 
-	  stk::mesh::Entity const elem = bulk.get_entity(element_rank, elem_side[is*2]);
+          stk::mesh::Entity const elem = bulk.get_entity(element_rank, elem_side[is*2]);
 
-	  // If NULL, then the element was probably assigned to an
-	  // element block that appears in the database, but was
-	  // subsetted out of the analysis mesh. Only process if
-	  // non-null.
-	  if (elem.is_valid()) {
-	    // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
-	    // Hence the '-1' in the following line.
-	    int side_ordinal = elem_side[is*2+1] - 1 ;
+          // If NULL, then the element was probably assigned to an
+          // element block that appears in the database, but was
+          // subsetted out of the analysis mesh. Only process if
+          // non-null.
+          if (elem.is_valid()) {
+            // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
+            // Hence the '-1' in the following line.
+            int side_ordinal = elem_side[is*2+1] - 1 ;
 
-	    stk::mesh::Entity side = stk::mesh::Entity();
-	    if (side_rank == 2) {
-	      side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
-	    } else {
-	      side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal);
-	    }
-	    bulk.change_entity_parts( side, add_parts );
-	    sides[is] = side;
-	  } else {
-	    sides[is] = stk::mesh::Entity();
-	  }
-	}
+            stk::mesh::Entity side = stk::mesh::Entity();
+            if (side_rank == 2) {
+              side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
+            } else {
+              side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal);
+            }
+            bulk.change_entity_parts( side, add_parts );
+            sides[is] = side;
+          } else {
+            sides[is] = stk::mesh::Entity();
+          }
+        }
 
-	const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*side_block_part);
-	if (df_field != NULL) {
-	  stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
-	}
+        const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*side_block_part);
+
+        if (df_field != NULL) {
+          stk::io::field_data_from_ioss(bulk, df_field, sides, block, "distribution_factors");
+        }
       }
     }
   }
@@ -770,7 +771,7 @@ namespace stk_example_io {
     while (I != fields.end()) {
       const stk::mesh::FieldBase *f = *I; ++I;
       if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
-	stk::io::field_data_from_ioss(f, entities, io_entity, f->name());
+	stk::io::field_data_from_ioss(bulk, f, entities, io_entity, f->name());
       }
     }
   }
@@ -842,7 +843,7 @@ namespace stk_example_io {
     while (I != fields.end()) {
       const stk::mesh::FieldBase *f = *I; ++I;
       if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
-	stk::io::field_data_to_ioss(f, entities, io_entity, f->name(), filter_role);
+	stk::io::field_data_to_ioss(bulk, f, entities, io_entity, f->name(), filter_role);
       }
     }
   }

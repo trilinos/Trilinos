@@ -31,7 +31,6 @@ class UnitTestFieldImpl {
 public:
   UnitTestFieldImpl() {}
 
-  void testField();
   void testFieldRestriction();
 
 };
@@ -40,12 +39,6 @@ public:
 }//namespace stk
 
 namespace {
-
-STKUNIT_UNIT_TEST(UnitTestField, testUnit)
-{
-  stk::mesh::UnitTestFieldImpl ufield;
-  ufield.testField();
-}
 
 STKUNIT_UNIT_TEST(UnitTestFieldRestriction, testUnit)
 {
@@ -75,178 +68,6 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( CTAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( DTAG )
 
 }
-
-void UnitTestFieldImpl::testField()
-{
-  MetaData meta_data;
-
-  // Declaration of a field allocates one field object
-  // per state of the field.  These fields are inserted
-  // into a vector of fields of the base class.
-
-  impl::FieldRepository field_repo;
-  const FieldVector  & allocated_fields = field_repo.get_fields();
-
-  //------------------------------
-  // Declare a double precision scalar field of one state.
-  // Not an array; therefore, is rank zero.
-  // Test the query methods for accuracy.
-  FieldBase * const fA =
-    field_repo.declare_field( std::string("A"),
-                              data_traits<double>() ,
-                              0     /* # Ranks */ ,
-                              NULL  /* dimension tags */ ,
-                              1     /* # States */ ,
-                              &meta_data );
-
-  STKUNIT_ASSERT( allocated_fields.size() == 1 );
-  STKUNIT_ASSERT( fA != NULL );
-  STKUNIT_ASSERT( fA == allocated_fields[0] );
-  STKUNIT_ASSERT( fA->name() == std::string("A") );
-  STKUNIT_ASSERT( fA->type_is<double>() );
-  STKUNIT_ASSERT( fA->state() == StateNone );
-  STKUNIT_ASSERT( fA->rank()  == 0 );
-
-  //------------------------------
-  // Declare a field with an invalid suffix in its name.
-  // Suffixes corresponding to "OLD" "N" "NM1" "NM2" "NM3" "NM4"
-  // are not allowed as these are automatically appended to
-  // the declared variable name for multistate fields.
-  {
-    STKUNIT_ASSERT_THROW(
-      field_repo.declare_field( "A_STKFS_OLD" ,
-                                data_traits<double>() ,
-                                0     /* # Ranks */ ,
-                                NULL  /* dimension tags */ ,
-                                1     /* # States */ ,
-                                &meta_data ),
-      std::runtime_error);
-    STKUNIT_ASSERT( allocated_fields.size() == 1 );
-  }
-
-  //------------------------------
-  // Declare a double precision scalar field of two states.
-  // Not an array; therefore, is rank zero.
-  // Test that two fields: "B" and "B_OLD" were created.
-  // Test the query methods for accuracy.
-
-  FieldBase * const fB =
-    field_repo.declare_field( std::string("B"),
-                              data_traits<int>(),
-                              0     /* # Ranks */ ,
-                              NULL  /* dimension tags */ ,
-                              2     /* # States */ ,
-                              &meta_data );
-
-  STKUNIT_ASSERT( allocated_fields.size() == 3 );
-  STKUNIT_ASSERT( fB != NULL );
-  STKUNIT_ASSERT( fB == allocated_fields[1] );
-  STKUNIT_ASSERT( fB->name() == std::string("B") );
-  STKUNIT_ASSERT( fB->type_is<int>() );
-  STKUNIT_ASSERT( fB->state() == StateNew );
-  STKUNIT_ASSERT( fB->rank() == 0 );
-
-  const FieldBase * const fB_old = allocated_fields[2] ;
-  STKUNIT_ASSERT( fB_old->name() == std::string("B_STKFS_OLD") );
-  STKUNIT_ASSERT( fB_old->type_is<int>() );
-  STKUNIT_ASSERT( fB_old->state() == StateOld );
-  STKUNIT_ASSERT( fB_old->rank() == 0 );
-
-  //------------------------------
-  // Redeclare field must give back the previous field:
-
-  FieldBase * const fB_redundant =
-    field_repo.declare_field( std::string("B"),
-                              data_traits<int>(),
-                              0     /* # Ranks */ ,
-                              NULL  /* dimension tags */ ,
-                              2     /* # States */ ,
-                              &meta_data );
-
-  STKUNIT_ASSERT( allocated_fields.size() == 3 );
-  STKUNIT_ASSERT( fB == fB_redundant );
-
-  //------------------------------
-  // Declare a double precision array field of four states.
-  // Test that four fields: were created.
-  // Test the query methods for accuracy.
-
-  const shards::ArrayDimTag * dim_tags[] =
-    { & ATAG::tag() , & BTAG::tag() , & CTAG::tag() , & DTAG::tag() };
-
-  FieldBase * const fC =
-    field_repo.declare_field( std::string("C"),
-                              data_traits<double>(),
-                              3         /* # Ranks */ ,
-                              dim_tags  /* dimension tags */ ,
-                              4         /* # States */ ,
-                              &meta_data );
-
-  STKUNIT_ASSERT( allocated_fields.size() == 7 );
-  STKUNIT_ASSERT( fC != NULL );
-  STKUNIT_ASSERT( fC == allocated_fields[3] );
-  STKUNIT_ASSERT( fC->name() == std::string("C") );
-  STKUNIT_ASSERT( fC->type_is<double>() );
-  STKUNIT_ASSERT( fC->state() == StateNew );
-  STKUNIT_ASSERT( fC->rank() == 3 );
-
-  const FieldBase * const fC_n = allocated_fields[4] ;
-  const FieldBase * const fC_nm1 = allocated_fields[5] ;
-  const FieldBase * const fC_nm2 = allocated_fields[6] ;
-
-  STKUNIT_ASSERT( fC     == fC->field_state( StateNP1 ) );
-  STKUNIT_ASSERT( fC_n   == fC->field_state( StateN ) );
-  STKUNIT_ASSERT( fC_nm1 == fC->field_state( StateNM1 ) );
-  STKUNIT_ASSERT( fC_nm2 == fC->field_state( StateNM2 ) );
-
-  STKUNIT_ASSERT( fC     == fC_n->field_state( StateNP1 ) );
-  STKUNIT_ASSERT( fC_n   == fC_n->field_state( StateN ) );
-  STKUNIT_ASSERT( fC_nm1 == fC_n->field_state( StateNM1 ) );
-  STKUNIT_ASSERT( fC_nm2 == fC_n->field_state( StateNM2 ) );
-
-  STKUNIT_ASSERT( fC     == fC_nm1->field_state( StateNP1 ) );
-  STKUNIT_ASSERT( fC_n   == fC_nm1->field_state( StateN ) );
-  STKUNIT_ASSERT( fC_nm1 == fC_nm1->field_state( StateNM1 ) );
-  STKUNIT_ASSERT( fC_nm2 == fC_nm1->field_state( StateNM2 ) );
-
-  STKUNIT_ASSERT( fC     == fC_nm2->field_state( StateNP1 ) );
-  STKUNIT_ASSERT( fC_n   == fC_nm2->field_state( StateN ) );
-  STKUNIT_ASSERT( fC_nm1 == fC_nm2->field_state( StateNM1 ) );
-  STKUNIT_ASSERT( fC_nm2 == fC_nm2->field_state( StateNM2 ) );
-
-  STKUNIT_ASSERT( fC_n->name() == std::string("C_STKFS_N") );
-  STKUNIT_ASSERT( fC_n->type_is<double>() );
-  STKUNIT_ASSERT( fC_n->state() == StateN );
-  STKUNIT_ASSERT( fC_n->rank() == 3 );
-
-  STKUNIT_ASSERT( fC_nm1->name() == std::string("C_STKFS_NM1") );
-  STKUNIT_ASSERT( fC_nm1->type_is<double>() );
-  STKUNIT_ASSERT( fC_nm1->state() == StateNM1 );
-  STKUNIT_ASSERT( fC_nm1->rank() == 3 );
-
-  STKUNIT_ASSERT( fC_nm2->name() == std::string("C_STKFS_NM2") );
-  STKUNIT_ASSERT( fC_nm2->type_is<double>() );
-  STKUNIT_ASSERT( fC_nm2->state() == StateNM2 );
-  STKUNIT_ASSERT( fC_nm2->rank() == 3 );
-
-  //------------------------------
-  // Redeclare field must give back the previous field:
-  //------------------------------
-
-  for ( unsigned i = 0 ; i < allocated_fields.size() ; ++i ) {
-    FieldBase * const f = allocated_fields[i] ;
-    STKUNIT_ASSERT( f->mesh_meta_data_ordinal() == i );
-  }
-
-  //Coverage of EntityDimension::name in FieldData.cpp
-  {
-    const stk::mesh::EntityDimension&  entity_dimension_tag = stk::mesh::EntityDimension::tag();
-    // static const char * name();
-
-    entity_dimension_tag.name();
-  }
-}
-
 
 //----------------------------------------------------------------------
 // Test field restrictions: the mapping of ( field , part ) -> dimensions

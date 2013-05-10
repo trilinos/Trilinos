@@ -33,6 +33,10 @@ class FieldRepository {
     FieldRepository() {}
     ~FieldRepository();
 
+    void add_field(FieldBase* new_field) {
+      m_fields.push_back(new_field);
+    }
+
     FieldBase * get_field(
         const char                        * arg_method ,
         const std::string                 & arg_name ,

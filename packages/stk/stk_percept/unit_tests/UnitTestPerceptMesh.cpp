@@ -245,7 +245,7 @@ namespace stk
                       {
                         stk::mesh::Entity element = bucket[iElement];
 
-                        const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+                        const MyPairIterRelation elem_nodes(bulkData, element, stk::mesh::MetaData::NODE_RANK );
 
                         unsigned num_node = elem_nodes.size();
                         for (unsigned inode=0; inode < num_node; inode++)

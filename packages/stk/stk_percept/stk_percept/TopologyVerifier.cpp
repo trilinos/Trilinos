@@ -58,11 +58,11 @@ namespace stk
     }
 
     /// return true if topology is bad
-    bool TopologyVerifier::isTopologyBad( mesh::Entity elem)
+    bool TopologyVerifier::isTopologyBad(stk::mesh::BulkData& bulkData, mesh::Entity elem)
     {
       const CellTopologyData * const top = stk::percept::PerceptMesh::get_cell_topology(elem);
 
-      const mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::MetaData::NODE_RANK );
+      const MyPairIterRelation elem_nodes(bulkData, elem, stk::mesh::MetaData::NODE_RANK );
 
 #if 0
       std::cout << "top->node_count = " << top->node_count << "\n";
@@ -114,7 +114,7 @@ namespace stk
           // Number of elems in this bucket of elems and elem field data
           const unsigned number_elems = bucket.size();
 
-          double * elem_node_data = field_data( *coord_field , bucket.begin() );
+          double * elem_node_data = bulk.field_data( *coord_field , bucket, 0 );
           //double * elem_centroid_data = field_data( elem_centroid_field , bucket.begin() );
 
           // FIXME
@@ -133,14 +133,14 @@ namespace stk
           for ( unsigned i = 0 ; i < number_elems ; ++i)
             {
               mesh::Entity elem = bucket[i] ;
-              bool isDuplicateNode = isTopologyBad(elem);
+              bool isDuplicateNode = isTopologyBad(bulk, elem);
               if (isDuplicateNode)
                 {
                   std::cout << "duplicate node found: elem = " << elem << std::endl;
                   return true;
                 }
               if (0) std::cout << "elemOfBucket= " << elem << std::endl;
-              const mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::MetaData::NODE_RANK );
+              const MyPairIterRelation elem_nodes(bulk, elem, stk::mesh::MetaData::NODE_RANK );
 
               //const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
               const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
@@ -178,13 +178,13 @@ namespace stk
                     {
                       unsigned inodeOnPotBadEdgeInElem = cell_topo->edge[iedgeOrd].node[inodeOnPotBadEdge];
 
-                      const mesh::PairIterRelation node_elems = elem_nodes[inodeOnPotBadEdgeInElem].entity().relations( stk::mesh::MetaData::ELEMENT_RANK );
+                      const MyPairIterRelation node_elems(bulk, elem_nodes[inodeOnPotBadEdgeInElem].entity(), stk::mesh::MetaData::ELEMENT_RANK );
                       unsigned num_elems_on_node = node_elems.size();
 
                       for (unsigned iele = 0; iele < num_elems_on_node; iele++)
                         {
                           mesh::Entity elemOnNode = node_elems[iele].entity();
-                          const mesh::PairIterRelation elemOnNode_nodes = elemOnNode.relations( stk::mesh::MetaData::NODE_RANK );
+                          const MyPairIterRelation elemOnNode_nodes(bulk, elemOnNode, stk::mesh::MetaData::NODE_RANK );
 
                           const CellTopologyData * const local_cell_topo = stk::percept::PerceptMesh::get_cell_topology(elemOnNode);
                           int local_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(local_cell_topo->name);

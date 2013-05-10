@@ -121,8 +121,8 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
   // Test a customized element distribution with one element on proc 0 and 1
   // and none on the other procs
 
-  const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  const int p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const int p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
 
   // Skip unless p_size is at least 2
   if (p_size < 2)
@@ -135,7 +135,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
   // map< processor, vector of element ids >, this is our custom parallel
   // distribution. One element will go on rank 0, the other on rank 1, any
   // other ranks get nothing.
-  std::map<unsigned,std::vector<EntityId> > parallel_distribution;
+  std::map<int,std::vector<EntityId> > parallel_distribution;
   {
     std::vector< EntityId> element_ids;
     element_ids.push_back(1);
@@ -163,14 +163,14 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
   Entity entity_1 = mesh.get_entity(element_rank, 1);
   Entity entity_2 = mesh.get_entity(element_rank ,2);
   if (p_rank <= 1) {
-    STKUNIT_ASSERT_TRUE( entity_1.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_2.is_valid() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_1.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_2.owner_rank() );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_1) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_2) );
+    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_1) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_2) );
   }
   else {
-    STKUNIT_EXPECT_TRUE( !entity_1.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_2.is_valid() );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_1) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_2) );
   }
 }
 
@@ -178,8 +178,8 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
 {
   // Test a customized element distribution with one element on each proc
 
-  const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  const int p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const int p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
 
   const unsigned NX = p_size;
   const unsigned NY = 1;
@@ -187,8 +187,8 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
 
   // map< processor, vector of element ids >, this is our custom parallel
   // distribution. Assign each processor an element such that rank+1 = elem_id
-  std::map<unsigned,std::vector<EntityId> > parallel_distribution;
-  for (unsigned p=0 ; p < p_size ; ++p) {
+  std::map<int,std::vector<EntityId> > parallel_distribution;
+  for (int p=0 ; p < p_size ; ++p) {
     std::vector< EntityId> element_ids;
     element_ids.push_back(p+1); // element id's start at 1
     parallel_distribution[p] = element_ids;
@@ -203,21 +203,21 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
 
   // We should always know about, and own, the element assigned to us
   Entity my_entity    = mesh.get_entity(element_rank, p_rank + 1);
-  STKUNIT_ASSERT_TRUE( my_entity.is_valid() );
-  STKUNIT_EXPECT_EQUAL( p_rank, my_entity.owner_rank() );
+  STKUNIT_ASSERT_TRUE( mesh.is_valid(my_entity) );
+  STKUNIT_EXPECT_EQUAL( p_rank, mesh.parallel_owner_rank(my_entity) );
 
   // If applicable, we know about the element on adjacent lower rank
   if (p_rank > 0) {
     Entity prior_entity = mesh.get_entity(element_rank, p_rank);
-    STKUNIT_ASSERT_TRUE( prior_entity.is_valid() );
-    STKUNIT_EXPECT_EQUAL( p_rank - 1, prior_entity.owner_rank() );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(prior_entity) );
+    STKUNIT_EXPECT_EQUAL( p_rank - 1, mesh.parallel_owner_rank(prior_entity) );
   }
 
   // If applicable, we know about the element on adjacent higher rank
   if (p_rank < p_size - 1) {
     Entity next_entity   = mesh.get_entity(element_rank, p_rank + 2);
-    STKUNIT_ASSERT_TRUE( next_entity.is_valid() );
-    STKUNIT_EXPECT_EQUAL( p_rank + 1, next_entity.owner_rank() );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(next_entity) );
+    STKUNIT_EXPECT_EQUAL( p_rank + 1, mesh.parallel_owner_rank(next_entity) );
   }
 }
 
@@ -232,8 +232,8 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
   // [ p_1, p_0, p_1, p_1 ]
   //
 
-  const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  const int p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const int p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
 
   // Skip unless p_size is at least 2
   if (p_size < 2)
@@ -246,7 +246,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
   // map< processor, vector of element ids >, this is our custom parallel
   // distribution. Assign 1,6 to proc 0, all the rest to proc 1. The other
   // procs get nothing.
-  std::map<unsigned,std::vector<EntityId> > parallel_distribution;
+  std::map<int,std::vector<EntityId> > parallel_distribution;
   {
     std::vector< EntityId> element_ids;
     element_ids.push_back(1);
@@ -286,48 +286,48 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
   Entity entity_7 = mesh.get_entity(element_rank, 7);
   Entity entity_8 = mesh.get_entity(element_rank, 8);
   if (p_rank == 0) {
-    STKUNIT_ASSERT_TRUE( entity_1.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_2.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_3.is_valid() );
-    STKUNIT_ASSERT_TRUE( !entity_4.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_5.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_6.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_7.is_valid() );
-    STKUNIT_ASSERT_TRUE( !entity_8.is_valid() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_1.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_2.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_3.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_5.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_6.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_7.owner_rank() );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_1) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_2) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_3) );
+    STKUNIT_ASSERT_TRUE( !mesh.is_valid(entity_4) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_5) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_6) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_7) );
+    STKUNIT_ASSERT_TRUE( !mesh.is_valid(entity_8) );
+    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_1) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_2) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_3) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_5) );
+    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_6) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_7) );
   }
   else if (p_rank == 1) {
-    STKUNIT_ASSERT_TRUE( entity_1.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_2.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_3.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_4.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_5.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_6.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_7.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_8.is_valid() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_1.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_2.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_3.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_4.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_5.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_6.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_7.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_8.owner_rank() );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_1) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_2) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_3) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_4) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_5) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_6) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_7) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_8) );
+    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_1) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_2) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_3) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_4) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_5) );
+    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_6) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_7) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_8) );
   }
   else {
-    STKUNIT_EXPECT_TRUE( !entity_1.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_2.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_3.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_4.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_5.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_6.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_7.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_8.is_valid() );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_1) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_2) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_3) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_4) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_5) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_6) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_7) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_8) );
   }
 }
 
@@ -337,8 +337,8 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
   // [ e_1, e_2, e_3, e_4, e_5 ] elements
   // [ p_0, p_1, p_1, p_1, p_0 ] processors
   //
-  const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  const int p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const int p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
 
   // Skip unless p_size is at least 2
   if (p_size < 2)
@@ -351,7 +351,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
   // map< processor, vector of element ids >, this is our custom parallel
   // distribution. Assign 1,5 to proc 0, all the rest to proc 1. The other
   // procs get nothing.
-  std::map<unsigned,std::vector<EntityId> > parallel_distribution;
+  std::map<int,std::vector<EntityId> > parallel_distribution;
   {
     std::vector< EntityId> element_ids;
     element_ids.push_back(1);
@@ -385,34 +385,34 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
   Entity entity_4 = mesh.get_entity(element_rank, 4);
   Entity entity_5 = mesh.get_entity(element_rank, 5);
   if (p_rank == 0) {
-    STKUNIT_ASSERT_TRUE( entity_1.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_2.is_valid() );
-    STKUNIT_ASSERT_TRUE( !entity_3.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_4.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_5.is_valid() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_1.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_2.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_4.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_5.owner_rank() );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_1) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_2) );
+    STKUNIT_ASSERT_TRUE( !mesh.is_valid(entity_3) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_4) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_5) );
+    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_1) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_2) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_4) );
+    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_5) );
   }
   else if (p_rank == 1) {
-    STKUNIT_ASSERT_TRUE( entity_1.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_2.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_3.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_4.is_valid() );
-    STKUNIT_ASSERT_TRUE( entity_5.is_valid() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_1.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_2.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_3.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_4.owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_5.owner_rank() );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_1) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_2) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_3) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_4) );
+    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_5) );
+    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_1) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_2) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_3) );
+    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_4) );
+    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_5) );
   }
   else {
-    STKUNIT_EXPECT_TRUE( !entity_1.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_2.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_3.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_4.is_valid() );
-    STKUNIT_EXPECT_TRUE( !entity_5.is_valid() );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_1) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_2) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_3) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_4) );
+    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_5) );
   }
 }
 

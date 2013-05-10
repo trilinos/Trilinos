@@ -68,14 +68,14 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
 
   if (dep_rank == element_rank) return;
   // Create a map of ids of migrating elements to their owner proc and a vector of the migrating elements.
-  std::map<mesh::EntityId, unsigned> elem_procs;
+  std::map<mesh::EntityId, int> elem_procs;
   mesh::EntityVector owned_moving_elems;
   mesh::EntityProcVec::iterator ep_iter = entity_procs.begin(),
                                  ep_end = entity_procs.end();
   for( ; ep_end != ep_iter; ++ep_iter ) {
-    if( element_rank == ep_iter->first.entity_rank() )
+    if( element_rank == bulk_data.entity_rank(ep_iter->first) )
     {
-      const mesh::EntityId elem_id = ep_iter->first.identifier();
+      const mesh::EntityId elem_id = bulk_data.identifier(ep_iter->first);
       elem_procs[elem_id] = ep_iter->second;
       owned_moving_elems.push_back(ep_iter->first);
     }
@@ -88,28 +88,28 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
 
   // For all dep-rank entities related to migrating elements, pack their info in to
   // dep_entity_procs.
-  std::map<mesh::EntityId, unsigned> dep_entity_procs;
+  std::map<mesh::EntityId, int> dep_entity_procs;
   mesh::EntityVector::reverse_iterator r_iter = owned_moving_elems.rbegin(),
                                         r_end = owned_moving_elems.rend();
   for( ; r_end != r_iter; ++r_iter )
   {
-    const mesh::EntityId elem_id = r_iter->identifier();
+    const mesh::EntityId elem_id = bulk_data.identifier(*r_iter);
     mesh::EntityVector related_entities;
     mesh::EntityVector elems(1);
     elems[0] = *r_iter;
-    stk::mesh::get_entities_through_relations(elems, dep_rank, related_entities);
+    stk::mesh::get_entities_through_relations(bulk_data, elems, dep_rank, related_entities);
     for( size_t j = 0; j < related_entities.size(); ++j ) {
-      dep_entity_procs[related_entities[j].identifier()] = elem_procs[elem_id];
+      dep_entity_procs[bulk_data.identifier(related_entities[j])] = elem_procs[elem_id];
     }
   }
 
 
-  std::map<mesh::EntityId, unsigned>::const_iterator c_iter = dep_entity_procs.begin(),
-                                                      c_end = dep_entity_procs.end();
+  std::map<mesh::EntityId, int>::const_iterator c_iter = dep_entity_procs.begin(),
+                                                c_end = dep_entity_procs.end();
   for( ; c_end != c_iter; ++c_iter )
   {
     mesh::Entity de = bulk_data.get_entity( dep_rank, c_iter->first );
-    if( parallel_machine_rank(partition->parallel()) == de.owner_rank() )
+    if( parallel_machine_rank(partition->parallel()) == bulk_data.parallel_owner_rank(de) )
     {
       stk::mesh::EntityProc dep_proc(de, c_iter->second);
       entity_procs.push_back(dep_proc);
@@ -150,6 +150,7 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
     bulk_data.modification_begin();
     bulk_data.change_entity_owner( cs_elem );
     bulk_data.modification_end();
+    partition->notify_mod_cycle(bulk_data);
   }
 
   //: Finished
@@ -178,7 +179,7 @@ bool stk::rebalance::rebalance(mesh::BulkData   & bulk_data  ,
   for (mesh::EntityVector::iterator iA = entities.begin() ; iA != entities.end() ; ++iA ) {
     if(rebal_elem_weight_ref)
     {
-      double * const w = mesh::field_data( *rebal_elem_weight_ref, *iA );
+      double * const w = bulk_data.field_data( *rebal_elem_weight_ref, *iA );
       ThrowRequireMsg( NULL != w,
         "Rebalance weight field is not defined on entities but should be defined on all entities.");
       // Should this be a throw instead???
@@ -189,7 +190,7 @@ bool stk::rebalance::rebalance(mesh::BulkData   & bulk_data  ,
     rebal_elem_ptrs.push_back( *iA );
   }
 
-  (&partition)->set_mesh_info(
+  (&partition)->set_mesh_info(bulk_data,
       rebal_elem_ptrs,
       rebal_coord_ref,
       rebal_elem_weight_ref);

@@ -110,12 +110,9 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      stk::mesh::Entity elem = b[i];
-
-      STKUNIT_EXPECT_EQ( 6u, elem.relations(face_rank).size() );
-      STKUNIT_EXPECT_EQ( 12u, elem.relations(edge_rank).size() );
-      STKUNIT_EXPECT_EQ( 8u,  elem.relations(node_rank).size() );
-
+      STKUNIT_EXPECT_EQ( 6u, b.num_faces(i) );
+      STKUNIT_EXPECT_EQ( 12u, b.num_edges(i) );
+      STKUNIT_EXPECT_EQ( 8u,  b.num_nodes(i) );
     }
   }
 
@@ -127,9 +124,8 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      stk::mesh::Entity face = b[i];
-      STKUNIT_EXPECT_EQ( 4u,face.relations(edge_rank).size());
-      STKUNIT_EXPECT_EQ( 4u, face.relations(node_rank).size() );
+      STKUNIT_EXPECT_EQ( 4u, b.num_edges(i) );
+      STKUNIT_EXPECT_EQ( 4u, b.num_nodes(i) );
     }
   }
 
@@ -141,8 +137,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      stk::mesh::Entity edge = b[i];
-      STKUNIT_EXPECT_EQ( 2u, edge.relations(node_rank).size() );
+      STKUNIT_EXPECT_EQ( 2u, b.num_nodes(i) );
     }
   }
 }
@@ -191,11 +186,8 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      stk::mesh::Entity elem = b[i];
-
-      STKUNIT_EXPECT_EQ( 4u, elem.relations(edge_rank).size() );
-      STKUNIT_EXPECT_EQ( 4u,  elem.relations(node_rank).size() );
-
+      STKUNIT_EXPECT_EQ( 4u, b.num_edges(i) );
+      STKUNIT_EXPECT_EQ( 4u, b.num_nodes(i) );
     }
   }
 
@@ -207,8 +199,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      stk::mesh::Entity edge = b[i];
-      STKUNIT_EXPECT_EQ( 2u, edge.relations(node_rank).size() );
+      STKUNIT_EXPECT_EQ( 2u, b.num_nodes(i) );
     }
   }
 }

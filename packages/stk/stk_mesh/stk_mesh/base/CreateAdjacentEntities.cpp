@@ -46,7 +46,7 @@ struct EntitySubcellComponent {
     unsigned   subcell_id;
 };
 
-void get_entities_with_given_subcell(
+void get_entities_with_given_subcell(const BulkData& mesh,
   const CellTopologyData * subcell_topology,
   const EntityRank subcell_rank,
   const EntityVector & subcell_nodes,
@@ -56,7 +56,7 @@ void get_entities_with_given_subcell(
 {
   // Get all entities that have relations to all the subcell nodes
   EntityVector entities;
-  get_entities_through_relations(subcell_nodes,
+  get_entities_through_relations(mesh, subcell_nodes,
                                  entities_rank,
                                  entities);
 
@@ -64,7 +64,7 @@ void get_entities_with_given_subcell(
   // nodes compose a valid subcell of the entity
   for (EntityVector::const_iterator eitr = entities.begin();
        eitr != entities.end(); ++eitr) {
-    int local_subcell_num = get_entity_subcell_id(
+    int local_subcell_num = get_entity_subcell_id(mesh,
       *eitr,
       subcell_rank,
       subcell_topology,
@@ -79,22 +79,6 @@ void get_entities_with_given_subcell(
 bool is_degenerate( const CellTopology & topo)
 {
   return topo.getSideCount() < 3;
-}
-
-// Check if entity has a specific relation to an entity of subcell_rank
-bool relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id )
-{
-  bool found = false;
-  PairIterRelation relations = entity.relations(subcell_rank);
-
-  for (; !relations.empty(); ++relations) {
-    if (relations->relation_ordinal() == subcell_id) {
-      found = true;
-      break;
-    }
-  }
-
-  return found;
 }
 
 void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & entities_to_request)
@@ -131,13 +115,13 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
 
           for (size_t subcell_id = 0; subcell_id < subcell_count; ++subcell_id ) {
 
-            if ( ! relation_exist( elem, subcell_rank, subcell_id) ) { //
+            if ( ! mesh.relation_exist( elem, subcell_rank, subcell_id) ) { //
 
 
               EntityVector subcell_nodes;
 
               const CellTopologyData * subcell_topology =
-                get_subcell_nodes(
+                get_subcell_nodes(mesh,
                     elem,
                     subcell_rank,
                     subcell_id,
@@ -146,7 +130,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
 
               std::vector<EntitySubcellComponent> adjacent_elements;
 
-              get_entities_with_given_subcell(
+              get_entities_with_given_subcell(mesh,
                   subcell_topology,
                   subcell_rank,
                   subcell_nodes,
@@ -156,7 +140,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
 
               std::reverse( subcell_nodes.begin(), subcell_nodes.end());
 
-              get_entities_with_given_subcell(
+              get_entities_with_given_subcell(mesh,
                   subcell_topology,
                   subcell_rank,
                   subcell_nodes,
@@ -171,7 +155,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
                   adjacent_itr != adjacent_elements.end();
                   ++adjacent_itr)
               {
-                if (adjacent_itr->entity.identifier() < elem.identifier()) {
+                if (mesh.identifier(adjacent_itr->entity) < mesh.identifier(elem)) {
                   current_elem_has_lowest_id = false;
                   break;
                 }
@@ -263,12 +247,12 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
 
           for (size_t subcell_id = 0; subcell_id < subcell_count; ++subcell_id ) {
 
-            if ( ! relation_exist( elem, subcell_rank, subcell_id) ) { //
+            if ( ! mesh.relation_exist( elem, subcell_rank, subcell_id) ) { //
 
               EntityVector subcell_nodes;
 
               const CellTopologyData * subcell_topology =
-                get_subcell_nodes(
+                get_subcell_nodes(mesh,
                     elem,
                     subcell_rank,
                     subcell_id,
@@ -277,7 +261,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
 
               std::vector<EntitySubcellComponent> adjacent_elements;
 
-              get_entities_with_given_subcell(
+              get_entities_with_given_subcell(mesh,
                   subcell_topology,
                   subcell_rank,
                   subcell_nodes,
@@ -287,7 +271,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
 
               std::reverse( subcell_nodes.begin(), subcell_nodes.end());
 
-              get_entities_with_given_subcell(
+              get_entities_with_given_subcell(mesh,
                   subcell_topology,
                   subcell_rank,
                   subcell_nodes,
@@ -302,7 +286,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
                   adjacent_itr != adjacent_elements.end();
                   ++adjacent_itr)
               {
-                if (adjacent_itr->entity.identifier() < elem.identifier()) {
+                if (mesh.identifier(adjacent_itr->entity) < mesh.identifier(elem)) {
                   current_elem_has_lowest_id = false;
                   break;
                 }
@@ -382,12 +366,12 @@ void complete_connectivity( BulkData & mesh )
 
             for (size_t subcell_id = 0; subcell_id < subcell_count; ++subcell_id ) {
 
-              if ( !relation_exist(entity, subcell_rank, subcell_id) ) {
+              if ( !mesh.relation_exist(entity, subcell_rank, subcell_id) ) {
 
                 EntityVector subcell_nodes;
 
                 const CellTopologyData * subcell_topology =
-                  get_subcell_nodes(
+                  get_subcell_nodes(mesh,
                       entity,
                       subcell_rank,
                       subcell_id,
@@ -400,7 +384,7 @@ void complete_connectivity( BulkData & mesh )
                 // polarity information is required to correctly attached
                 // degenerate elements to the correct faces and edges
 
-                get_entities_with_given_subcell(
+                get_entities_with_given_subcell(mesh,
                     subcell_topology,
                     subcell_rank,
                     subcell_nodes,
@@ -410,7 +394,7 @@ void complete_connectivity( BulkData & mesh )
 
                 std::reverse( subcell_nodes.begin(), subcell_nodes.end());
 
-                get_entities_with_given_subcell(
+                get_entities_with_given_subcell(mesh,
                     subcell_topology,
                     subcell_rank,
                     subcell_nodes,

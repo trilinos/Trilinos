@@ -237,13 +237,16 @@ void UnitTestStkMeshSkinning::test_skinning()
   // map skin-id to ids of elements it is attached to; we will use this to
   // compute sharing
   for (std::vector<stk::mesh::Entity>::const_iterator
-       itr = skin_entities.begin(); itr != skin_entities.end(); ++itr) {
-    stk::mesh::PairIterRelation upward_relation_itr =
-      itr->relations(element_rank);
-    bool has_multiple = upward_relation_itr.size() > 1;
+       itr = skin_entities.begin(); itr != skin_entities.end(); ++itr)
+  {
+    stk::mesh::Entity const *elem_itr = bulk_data.begin_element_entities(*itr);
+    stk::mesh::Entity const *elem_end = bulk_data.end_element_entities(*itr);
+    bool has_multiple = bulk_data.num_elements(*itr) > 1;
     std::set<unsigned> sharing_elements;
-    for ( ; !upward_relation_itr.empty() ; ++upward_relation_itr ) {
-      unsigned elem_id = upward_relation_itr->entity().identifier();
+    for ( ; elem_itr != elem_end ; ++elem_itr )
+    {
+      unsigned elem_id = bulk_data.identifier(*elem_itr);
+
       if (results.find(elem_id) != results.end()) {
         ++results[elem_id];
       }

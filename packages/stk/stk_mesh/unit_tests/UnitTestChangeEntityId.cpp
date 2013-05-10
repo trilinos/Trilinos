@@ -35,8 +35,8 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_small )
   meta_data.commit();
 
   BulkData mesh(meta_data, pm);
-  unsigned p_rank = mesh.parallel_rank();
-  unsigned p_numProcs = mesh.parallel_size();
+  int p_rank = mesh.parallel_rank();
+  int p_numProcs = mesh.parallel_size();
   if (p_numProcs > 1) {
     //change-entity-id test only supported in serial
     return;
@@ -62,16 +62,16 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_small )
   const EntityId new_id_for_shared_node = 666;
 
   mesh.change_entity_id(new_id_for_local_node, node1_local_chg_id);
-  if (node2_shared_chg_id.owner_rank() == p_rank) {
+  if (mesh.parallel_owner_rank(node2_shared_chg_id) == p_rank) {
     mesh.change_entity_id(new_id_for_shared_node, node2_shared_chg_id);
   }
 
-  STKUNIT_EXPECT_EQ(new_id_for_local_node, node1_local_chg_id.identifier());
+  STKUNIT_EXPECT_EQ(new_id_for_local_node, mesh.identifier(node1_local_chg_id));
 
   mesh.modification_end();
 
-  STKUNIT_EXPECT_EQ(new_id_for_local_node, node1_local_chg_id.identifier());
-  STKUNIT_EXPECT_EQ(new_id_for_shared_node, node2_shared_chg_id.identifier());
+  STKUNIT_EXPECT_EQ(new_id_for_local_node, mesh.identifier(node1_local_chg_id));
+  STKUNIT_EXPECT_EQ(new_id_for_shared_node, mesh.identifier(node2_shared_chg_id));
 }
 
 STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
@@ -120,8 +120,8 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
   BOOST_FOREACH(Bucket * b, elem_buckets) {
     for (size_t i =0; i<b->size(); ++i) {
       Entity e = (*b)[i];
-      old_ids.push_back(e.identifier());
-      mesh.change_entity_id( e.identifier()+num_elems, e);
+      old_ids.push_back(mesh.identifier(e));
+      mesh.change_entity_id( mesh.identifier(e)+num_elems, e);
     }
   }
 
@@ -135,7 +135,7 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
   BOOST_FOREACH(Bucket * b, elem_buckets) {
     for (size_t i =0; i<b->size(); ++i) {
       Entity e = (*b)[i];
-      new_ids_minus_num_elems.push_back(e.identifier()-num_elems);
+      new_ids_minus_num_elems.push_back(mesh.identifier(e)-num_elems);
     }
   }
 

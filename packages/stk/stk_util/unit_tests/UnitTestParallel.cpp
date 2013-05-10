@@ -37,8 +37,8 @@ STKUNIT_UNIT_TEST(UnitTestParallel, testUnit)
 
 STKUNIT_UNIT_TEST(UnitTestParallel, testCommAll)
 {
-  unsigned mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  unsigned mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
   STKUNIT_ASSERT_LT(mpi_rank, mpi_size);
 
   stk::CommAll comm_all(MPI_COMM_WORLD);
@@ -46,7 +46,7 @@ STKUNIT_UNIT_TEST(UnitTestParallel, testCommAll)
   STKUNIT_ASSERT_EQ(comm_all.parallel_size(), mpi_size);
   STKUNIT_ASSERT_EQ(comm_all.parallel_rank(), mpi_rank);
 
-  for(unsigned p=0; p<mpi_size; ++p) {
+  for (int p = 0; p<mpi_size; ++p) {
     if (p - mpi_rank <= 10 || mpi_rank - p <= 10) {
       stk::CommBuffer& buf = comm_all.send_buffer(p);
       buf.skip<unsigned long>(1);

@@ -440,15 +440,6 @@ unsigned FieldBaseImpl::max_size( unsigned entity_rank ) const
   return max ;
 }
 
-void FieldBaseImpl::set_field_states( FieldBase ** field_states)
-{
-  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::set_field_states", LOG_FIELD, m_ordinal);
-
-  for (unsigned i = 0; i < m_num_states; ++i) {
-    m_field_states[i] = field_states[i];
-  }
-}
-
 //----------------------------------------------------------------------
 
 //----------------------------------------------------------------------

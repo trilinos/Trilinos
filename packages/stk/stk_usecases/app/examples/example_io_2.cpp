@@ -222,7 +222,7 @@ namespace app {
     stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
       meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
-    stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
+    stk::io::field_data_from_ioss(bulk, coord_field, nodes, nb, "mesh_model_coordinates");
   }
 
   // ========================================================================
@@ -273,7 +273,7 @@ namespace app {
 	  if (*I == "attribute" && names.size() > 1)
 	    continue;
 	  stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(*I);
-	  stk::io::field_data_from_ioss(field, elements, entity, *I);
+	  stk::io::field_data_from_ioss(bulk, field, elements, entity, *I);
 
 	}
       }
@@ -316,7 +316,7 @@ namespace app {
 	  meta.get_field<stk::mesh::Field<double> >("distribution_factors");
 
 	if (df_field != NULL) {
-	  stk::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
+	  stk::io::field_data_from_ioss(bulk, df_field, nodes, entity, "distribution_factors");
 	}
       }
     }
@@ -370,7 +370,7 @@ namespace app {
 
 	const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*fb_part);
 	if (df_field != NULL) {
-	  stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
+	  stk::io::field_data_from_ioss(bulk, df_field, sides, block, "distribution_factors");
 	}
       }
     }
@@ -408,7 +408,7 @@ namespace app {
     while (I != fields.end()) {
       const stk::mesh::FieldBase *f = *I; ++I;
       if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
-	stk::io::field_data_from_ioss(f, entities, io_entity, f->name());
+	stk::io::field_data_from_ioss(bulk, f, entities, io_entity, f->name());
       }
     }
   }
@@ -478,7 +478,7 @@ namespace app {
     while (I != fields.end()) {
       const stk::mesh::FieldBase *f = *I; ++I;
       if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
-	stk::io::field_data_to_ioss(f, entities, io_entity, f->name(), filter_role);
+	stk::io::field_data_to_ioss(bulk, f, entities, io_entity, f->name(), filter_role);
       }
     }
   }

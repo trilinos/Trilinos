@@ -91,12 +91,13 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
     //should have relations.size() == 4 and comm.size() == 0
     if (middle_element.is_valid() && middle_element.owner_rank() == mesh.parallel_rank()) {
 
-      stk::mesh::PairIterRelation relations = middle_element.relations(NODE_RANK);
+      stk::mesh::Entity const *rel_nodes_iter = mesh.begin_node_entities(middle_element);
+      stk::mesh::Entity const *rel_nodes_end = mesh.end_node_entities(middle_element);
 
-      for (; relations.first != relations.second; ++relations.first) {
-        stk::mesh::Entity current_node = (relations.first->entity());
+      for (; rel_nodes_iter != rel_nodes_end; ++rel_nodes_iter) {
+        stk::mesh::Entity current_node = *rel_nodes_iter;
         //each node should be attached to only 1 element and 3 faces
-        correct_relations &= ( current_node.relations().size() == 4 );
+        correct_relations &= ( mesh.count_relations(current_node) == 4 );
         //the entire closure of the element should exist on a single process
         correct_comm      &= ( mesh.entity_comm(current_node.key()).size() == 0 );
       }

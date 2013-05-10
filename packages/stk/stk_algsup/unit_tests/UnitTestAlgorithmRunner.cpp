@@ -29,7 +29,8 @@ public:
   MyAlg() : maximum_entity_count(0), num_applys(0) {}
   virtual ~MyAlg() {}
 
-  void apply(stk::mesh::Bucket::iterator /*ibeg*/,
+  void apply(const stk::mesh::BulkData &mesh,
+             stk::mesh::Bucket::iterator /*ibeg*/,
              stk::mesh::Bucket::iterator /*iend*/) const
   {
     ++num_applys;

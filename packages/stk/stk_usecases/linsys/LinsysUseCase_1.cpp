@@ -245,9 +245,9 @@ void use_case_1_initialize_data(
     const unsigned length = bucket.size();
     const unsigned length_3 = length * 3 ;
 
-    double * const coord = stk::mesh::field_data( node_coord , bucket.begin() );
-    double * const displ = stk::mesh::field_data( node_displ , bucket.begin() );
-    double * const rotat = stk::mesh::field_data( node_rotat , bucket.begin() );
+    double * const coord = mesh.field_data( node_coord , bucket, 0 );
+    double * const displ = mesh.field_data( node_displ , bucket, 0 );
+    double * const rotat = mesh.field_data( node_rotat , bucket, 0 );
 
     for ( unsigned i = 0 ; i < length_3 ; ++i ) {
       displ[i] = 0.1 * coord[i] ;
@@ -388,7 +388,7 @@ void use_case_1_generate_mesh(
         throw std::runtime_error( msg.str() );
       }
 
-      double * const data = field_data( node_coord , node );
+      double * const data = mesh.field_data( node_coord , node );
       data[0] = node_coordinates[ i3 + 0 ];
       data[1] = node_coordinates[ i3 + 1 ];
       data[2] = node_coordinates[ i3 + 2 ];

@@ -21,7 +21,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy2D )
   // single element each time.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD ;
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
+  const int p_rank = stk::parallel_machine_rank( pm );
 
   const unsigned nx = 3 , ny = 3 ;
 
@@ -35,7 +35,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy2D )
 
     stk::mesh::Entity elem = fixture.elem( ix , iy );
 
-    if ( elem.is_valid() && p_rank == elem.owner_rank() ) {
+    if ( fixture.m_bulk_data.is_valid(elem) && p_rank == fixture.m_bulk_data.parallel_owner_rank(elem) ) {
       stk::mesh::Entity tmp = elem ;
       fixture.m_bulk_data.destroy_entity( tmp );
     }
@@ -51,7 +51,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy3D )
   // single element each time.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD ;
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
+  const int p_rank = stk::parallel_machine_rank( pm );
 
   const unsigned nx = 3 , ny = 3 , nz = 3 ;
 
@@ -66,7 +66,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy3D )
 
     stk::mesh::Entity elem = fixture.elem( ix , iy , iz );
 
-    if ( elem.is_valid() && p_rank == elem.owner_rank() ) {
+    if ( fixture.m_bulk_data.is_valid(elem) && p_rank == fixture.m_bulk_data.parallel_owner_rank(elem) ) {
       stk::mesh::Entity tmp = elem ;
       fixture.m_bulk_data.destroy_entity( tmp );
     }
@@ -97,20 +97,23 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   stk::mesh::Entity old_node = fixture.node(0,1,1);
 
   stk::mesh::Entity right_element = fixture.elem(0,0,1);
-  const stk::mesh::EntityKey right_element_key = right_element.key();
+  const stk::mesh::EntityKey right_element_key = mesh.entity_key(right_element);
 
   unsigned right_ordinal = 0;
   const unsigned new_node_id = 28;
 
   // If this process knows about both entities, compute the ordinal
   // of the relation from right_element to old_node
-
-  if ( old_node.is_valid() && right_element.is_valid() ) {
-    stk::mesh::PairIterRelation rel = old_node.relations();
-
-    for (; rel.first != rel.second; ++rel) {
-      if ( right_element == rel.first->entity() ) {
-        right_ordinal = rel.first->relation_ordinal();
+  if ( mesh.is_valid(old_node) && mesh.is_valid(right_element) )
+  {
+    size_t num_rels = mesh.num_elements(old_node);
+    stk::mesh::Entity const *rel_elems = mesh.begin_element_entities(old_node);
+    stk::mesh::ConnectivityOrdinal const *rel_ords = mesh.begin_element_ordinals(old_node);
+    for (size_t i = 0; i < num_rels; ++i)
+    {
+      if (right_element == rel_elems[i])
+      {
+        right_ordinal = rel_ords[i];
       }
     }
   }
@@ -120,8 +123,8 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   mesh.modification_begin();
 
   //only crack the mesh if I own the element
-  if ( right_element.is_valid() &&
-       right_element.owner_rank() == mesh.parallel_rank() ) {
+  if ( mesh.is_valid(right_element) &&
+       mesh.parallel_owner_rank(right_element) == mesh.parallel_rank() ) {
 
     const stk::mesh::PartVector no_parts;
 
@@ -143,12 +146,12 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   // Now that modification_end has been called, all processes that know
   // about right_element should know about the crack.
 
-  if ( right_element.is_valid() ) {
-    stk::mesh::PairIterRelation rel = right_element.relations();
-    STKUNIT_ASSERT_EQ(rel.size(), 8u);
-    stk::mesh::Entity new_node      = rel.first[right_ordinal].entity();
-    STKUNIT_ASSERT(new_node.is_valid());
+  if ( mesh.is_valid(right_element) ) {
+    int num_node_rels = mesh.num_nodes(right_element);
+    STKUNIT_ASSERT_EQ(num_node_rels, 8);
+    stk::mesh::Entity new_node = mesh.begin_node_entities(right_element)[right_ordinal];
+    STKUNIT_ASSERT(mesh.is_valid(new_node));
 
-    STKUNIT_EXPECT_EQ ( new_node.identifier(), new_node_id );
+    STKUNIT_EXPECT_EQ ( mesh.identifier(new_node), new_node_id );
   }
 }

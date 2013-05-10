@@ -239,7 +239,8 @@ void delete_selector_property(Ioss::GroupingEntity *io_entity);
  * the meshobjects in the Ioss io_entity to the
  * stk::mesh::Entities is given by the 'entities' list.
  */
-void field_data_from_ioss(const stk::mesh::FieldBase *field,
+void field_data_from_ioss(const stk::mesh::BulkData& mesh,
+                          const stk::mesh::FieldBase *field,
                           std::vector<stk::mesh::Entity> &entities,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &io_fld_name);
@@ -250,7 +251,8 @@ void field_data_from_ioss(const stk::mesh::FieldBase *field,
  * mapping from the meshobjects in the Ioss io_entity to the
  * stk::mesh::Entities is given by the 'entities' list.
  */
-void field_data_to_ioss(const stk::mesh::FieldBase *field,
+void field_data_to_ioss(const stk::mesh::BulkData& mesh,
+                        const stk::mesh::FieldBase *field,
                         std::vector<stk::mesh::Entity> &entities,
                         Ioss::GroupingEntity *io_entity,
                         const std::string &io_fld_name,

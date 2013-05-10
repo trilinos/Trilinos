@@ -342,11 +342,12 @@ void scale_sum( const unsigned number ,
 #endif
 }
 
-void ElementMeanValue::apply( stk::mesh::Bucket::iterator ibegin ,
+void ElementMeanValue::apply( const stk::mesh::BulkData &mesh,
+                              stk::mesh::Bucket::iterator ibegin ,
                               stk::mesh::Bucket::iterator iend ) const
 {
   const stk::mesh::BucketArray< stk::mesh::Field<double*,stk::mesh::ElementNode> >
-    elem_node( elem_node_field , ibegin , iend );
+    elem_node( elem_node_field , mesh.bucket(*ibegin), ibegin , iend );
 
   const double * const * const node_ptr = elem_node.contiguous_data();
 
@@ -355,7 +356,7 @@ void ElementMeanValue::apply( stk::mesh::Bucket::iterator ibegin ,
     const unsigned nodes_per_elem = elem_node.dimension<0>();
     const unsigned number_elem    = elem_node.dimension<1>();
 
-    double * const elem_data = field_data( elem_field , ibegin );
+    double * const elem_data = mesh.field_data( elem_field , *ibegin );
 
 #if USE_HARDWIRED_NUMBER_NODES
     switch( nodes_per_elem ) {
@@ -374,12 +375,14 @@ void ElementMeanValue::apply( stk::mesh::Bucket::iterator ibegin ,
   }
 }
 
-void ElementMeanValue_Gather::apply( stk::mesh::Bucket::iterator ibegin ,
+void ElementMeanValue_Gather::apply( const stk::mesh::BulkData &mesh,
+                                     stk::mesh::Bucket::iterator ibegin ,
                                      stk::mesh::Bucket::iterator iend ) const
 
 {
+  const stk::mesh::Bucket &bucket = mesh.bucket(*ibegin);
   const stk::mesh::BucketArray< stk::mesh::Field<double*,stk::mesh::ElementNode> >
-    elem_node( elem_node_field , ibegin , iend );
+    elem_node( elem_node_field , bucket, ibegin , iend );
 
   const double * const * const node_ptr = elem_node.contiguous_data();
 
@@ -388,7 +391,7 @@ void ElementMeanValue_Gather::apply( stk::mesh::Bucket::iterator ibegin ,
     const unsigned nodes_per_elem = elem_node.dimension<0>();
     const unsigned number_elem    = elem_node.dimension<1>();
 
-    double * const elem_data = field_data( elem_field , ibegin );
+    double * const elem_data = mesh.field_data( elem_field , *ibegin );
 
 #if USE_HARDWIRED_NUMBER_NODES
     switch( nodes_per_elem ) {
@@ -434,14 +437,15 @@ void ElementMeanValue_Gather::apply( stk::mesh::Bucket::iterator ibegin ,
 
 //----------------------------------------------------------------------
 
-void NodeScaleSum::apply( stk::mesh::Bucket::iterator ibegin ,
+void NodeScaleSum::apply( const stk::mesh::BulkData &mesh,
+                          stk::mesh::Bucket::iterator ibegin ,
                           stk::mesh::Bucket::iterator iend ) const
 {
   enum { SpaceDim = 3 };
 
-        double * x_val = field_data( X , ibegin );
-  const double * y_val = field_data( Y , ibegin );
-  const double * z_val = field_data( Z , ibegin );
+        double * x_val = mesh.field_data( X , *ibegin );
+  const double * y_val = mesh.field_data( Y , *ibegin );
+  const double * z_val = mesh.field_data( Z , *ibegin );
   const int size = iend - ibegin ;
 
   scale_sum( size * SpaceDim , a , x_val , b , y_val , c , z_val );
@@ -473,14 +477,12 @@ void verify_elem_node_coord(
     double * const * elem_data = array.contiguous_data();
 
     for ( unsigned i = 0 ; i < size ; ++i ) {
-      stk::mesh::Entity elem = bucket[i] ;
-
-      stk::mesh::PairIterRelation rel = elem.relations( stk::mesh::MetaData::NODE_RANK );
+      stk::mesh::Node const * elem_nodes = bucket.begin_nodes(i);
 
       for ( unsigned j = 0 ; j < num_node ; ++j , ++elem_data ) {
-        stk::mesh::Entity node = rel[j].entity();
+        stk::mesh::Node node = elem_nodes[j];
 
-        double * const node_data = field_data( node_coord , node );
+        double * const node_data = mesh.field_data( node_coord , node );
         if ( *elem_data != node_data ) {
           std::cout << "verify_elem_node_coord ERROR, *elem_data != node_data" << std::endl;
         }

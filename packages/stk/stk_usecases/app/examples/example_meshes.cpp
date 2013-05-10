@@ -225,7 +225,7 @@ void use_case_5_generate_mesh_bulk_data(
 
     mesh::Entity const node = bulk_data.get_entity( mesh::MetaData::NODE_RANK , i + 1 );
 
-    double * const coord = field_data( node_coord , node );
+    double * const coord = bulk_data.field_data( node_coord , node );
 
     coord[0] = node_coord_data[i][0] ;
     coord[1] = node_coord_data[i][1] ;

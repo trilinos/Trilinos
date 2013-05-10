@@ -40,6 +40,7 @@ void copy_owned_to_shared( const BulkData& mesh,
  *  If symmetric ( & domain == & range) then from owned to not owned.
  */
 void communicate_field_data(
+  const BulkData& mesh,
   ParallelMachine machine,
   const std::vector<EntityProc> & domain ,
   const std::vector<EntityProc> & range ,
@@ -145,8 +146,9 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
   for ( std::vector<EntityCommListInfo>::const_iterator
         i = entity_comm.begin(); i != entity_comm.end() ; ++i ) {
     Entity entity = i->entity;
-    if (entity.is_valid() && (0 == selector || (*selector)(entity.bucket()) ) ) {
-      array_type array( field , entity );
+    const MeshIndex& mi = mesh.mesh_index(entity);
+    if (mesh.is_valid(entity) && (0 == selector || (*selector)(mi.bucket) ) ) {
+      array_type array( field , *mi.bucket, mi.bucket_ordinal );
       Type * const ptr_beg = array.contiguous_data();
       Type * const ptr_end = ptr_beg + array.size();
 

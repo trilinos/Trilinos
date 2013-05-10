@@ -17,8 +17,8 @@
 namespace stk {
 namespace mesh {
 
-typedef std::less<unsigned> LowestRankSharingProcOwns;
-typedef std::greater<unsigned> HighestRankSharingProcOwns;
+typedef std::less<int> LowestRankSharingProcOwns;
+typedef std::greater<int> HighestRankSharingProcOwns;
 
 /** Sets the owner for shared entities according to the template parameter OwnershipRule.
  * OwnershipRule is used as a the comparison operator in a std::set.
@@ -27,9 +27,9 @@ typedef std::greater<unsigned> HighestRankSharingProcOwns;
 template<class OwnershipRule>
 void set_owners(BulkData& mesh)
 {
-  typedef std::set<unsigned,OwnershipRule> ProcSet ;
+  typedef std::set<int,OwnershipRule> ProcSet ;
 
-  const unsigned local_proc = mesh.parallel_rank();
+  const int local_proc = mesh.parallel_rank();
 
   std::vector<EntityProc> entity_new_owners;
 
@@ -49,7 +49,7 @@ void set_owners(BulkData& mesh)
         proc_set.insert( sharing[j].proc );
       }
 
-      const unsigned new_owner_proc = *proc_set.begin();
+      const int new_owner_proc = *proc_set.begin();
 
       entity_new_owners.push_back(std::make_pair( entity, new_owner_proc ) );
     }
@@ -66,4 +66,3 @@ void set_owners(BulkData& mesh)
 }//namespace stk
 
 #endif // stk_mesh_SetOwner_hpp
-

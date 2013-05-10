@@ -226,8 +226,7 @@ bool use_case_4_driver( MPI_Comm comm ,
       int field_id = dof_mapper.get_field_id(displacements_field);
 
       stk::mesh::Entity first_entity = *(part_buckets[0]->begin());
-      stk::mesh::PairIterRelation rel = first_entity.relations(stk::mesh::MetaData::NODE_RANK);
-      int num_nodes_per_elem = rel.second - rel.first;
+      int num_nodes_per_elem = mesh_bulk_data.num_nodes(first_entity);
 
       int pattern_id = matgraph->definePattern(num_nodes_per_elem, stk::mesh::MetaData::NODE_RANK, field_id);
 
@@ -264,9 +263,12 @@ bool use_case_4_driver( MPI_Comm comm ,
                  b_end  = part_buckets[i]->end();
         for(; b_iter != b_end; ++b_iter) {
           stk::mesh::Entity elem = *b_iter;
-          rel = elem.relations(stk::mesh::MetaData::NODE_RANK);
-          for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
-            node_ids[j] = rel.first->entity().identifier();
+
+          stk::mesh::Entity const *rel = mesh_bulk_data.begin_node_entities(elem);
+          int rel_size = mesh_bulk_data.num_nodes(elem);
+
+          for(int j=0; j < rel_size; ++j) {
+            node_ids[j] = mesh_bulk_data.identifier(rel[j]);
           }
 
           matgraph->getPatternIndices(pattern_id, &node_ids[0], eqn_indices);
@@ -307,9 +309,9 @@ void use_case_4_initialize_data(
     const unsigned length = bucket.size();
     const unsigned length_3 = length * 3 ;
 
-    double * const coord = stk::mesh::field_data( node_coord , bucket.begin() );
-    double * const displ = stk::mesh::field_data( node_displ , bucket.begin() );
-    double * const rotat = stk::mesh::field_data( node_rotat , bucket.begin() );
+    double * const coord = mesh.field_data( node_coord , bucket, 0 );
+    double * const displ = mesh.field_data( node_displ , bucket, 0 );
+    double * const rotat = mesh.field_data( node_rotat , bucket, 0 );
 
     for ( unsigned i = 0 ; i < length_3 ; ++i ) {
       displ[i] = 0.1 * coord[i] ;
@@ -370,10 +372,10 @@ void use_case_4_generate_mesh(
         const size_t                        num_elem = gmesh.element_count_proc(i);
         const std::pair<std::string,int> top_info = gmesh.topology_type(i);
 
-	std::vector<int> elem_map( num_elem , 0 );
+        std::vector<int> elem_map( num_elem , 0 );
         std::vector<int> elem_conn( num_elem * top_info.second );
 
-	gmesh.element_map( i, elem_map );
+        gmesh.element_map( i, elem_map );
         gmesh.connectivity( i , elem_conn );
 
         if ( top_info.second == 8 ) {
@@ -450,7 +452,7 @@ void use_case_4_generate_mesh(
         throw std::runtime_error( msg.str() );
       }
 
-      double * const data = field_data( node_coord , node );
+      double * const data = mesh.field_data( node_coord , node );
       data[0] = node_coordinates[ i3 + 0 ];
       data[1] = node_coordinates[ i3 + 1 ];
       data[2] = node_coordinates[ i3 + 2 ];

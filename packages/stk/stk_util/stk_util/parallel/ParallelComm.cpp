@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdexcept>
 #include <sstream>
+#include <iostream>
 #include <vector>
 
 #include <stk_util/parallel/ParallelComm.hpp>
@@ -39,7 +40,7 @@ bool all_to_all_dense( ParallelMachine p_comm ,
   int result ;
 
   {
-    const unsigned p_size = parallel_machine_size( p_comm );
+    const int p_size = parallel_machine_size( p_comm );
 
     std::vector<int> tmp( p_size * 4 );
 
@@ -51,7 +52,7 @@ bool all_to_all_dense( ParallelMachine p_comm ,
     unsigned char * const ps = static_cast<ucharp>(send[0].buffer());
     unsigned char * const pr = static_cast<ucharp>(recv[0].buffer());
 
-    for ( unsigned i = 0 ; i < p_size ; ++i ) {
+    for ( int i = 0 ; i < p_size ; ++i ) {
       const CommBuffer & send_buf = send[i] ;
       const CommBuffer & recv_buf = recv[i] ;
 
@@ -85,15 +86,15 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
   int result = MPI_SUCCESS ;
 
   {
-    const unsigned p_size = parallel_machine_size( p_comm );
-    const unsigned p_rank = parallel_machine_rank( p_comm );
+    const int p_size = parallel_machine_size( p_comm );
+    const int p_rank = parallel_machine_rank( p_comm );
 
     //------------------------------
     // Receive count
 
     unsigned num_recv = 0 ;
 
-    for ( unsigned i = 0 ; i < p_size ; ++i ) {
+    for ( int i = 0 ; i < p_size ; ++i ) {
       if ( recv[i].capacity() ) { ++num_recv ; }
     }
 
@@ -106,7 +107,7 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
 
     unsigned count = 0 ;
 
-    for ( unsigned i = 0 ; result == MPI_SUCCESS && i < p_size ; ++i ) {
+    for ( int i = 0 ; result == MPI_SUCCESS && i < p_size ; ++i ) {
       const unsigned recv_size = recv[i].capacity();
       void * const   recv_buf  = recv[i].buffer();
       if ( recv_size ) {
@@ -143,7 +144,7 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
       // Ready-send the buffers, rotate the send processor
       // in a simple attempt to smooth out the communication traffic.
 
-      for ( unsigned i = 0 ; MPI_SUCCESS == result && i < p_size ; ++i ) {
+      for ( int i = 0 ; MPI_SUCCESS == result && i < p_size ; ++i ) {
         const int dst = ( i + p_rank ) % p_size ;
         const unsigned send_size = send[dst].capacity();
         void * const   send_buf  = send[dst].buffer();
@@ -249,7 +250,7 @@ void CommBuffer::unpack_overflow() const
   throw std::overflow_error( os.str() );
 }
 
-void CommAll::rank_error( const char * method , unsigned p ) const
+void CommAll::rank_error( const char * method , int p ) const
 {
   std::ostringstream os ;
   os << "stk::CommAll::" << method
@@ -370,7 +371,7 @@ bool CommAll::allocate_buffers( const unsigned num_msg_bounds ,
   const unsigned zero = 0 ;
   std::vector<unsigned> tmp( m_size , zero );
 
-  for ( unsigned i = 0 ; i < m_size ; ++i ) {
+  for ( int i = 0 ; i < m_size ; ++i ) {
     tmp[i] = m_send[i].size();
   }
 
@@ -497,7 +498,7 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
 
     const unsigned r = 2 * ( m_rank % NPSum );
 
-    for ( unsigned i = 0 ; i < m_size ; ++i ) {
+    for ( int i = 0 ; i < m_size ; ++i ) {
       const unsigned n_send = m_send[i].capacity();
       const unsigned n_recv = m_recv[i].capacity();
 
@@ -518,7 +519,7 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
     std::copy(local_result, local_result+Length, global_result);
   }
 
-  bool global_flag ; 
+  bool global_flag ;
 
   error_alloc   = global_result[ Length - 2 ] ;
   global_flag   = global_result[ Length - 1 ] ;
@@ -549,7 +550,7 @@ void CommAll::communicate()
 
   // Verify the send buffers have been filled, reset the buffer pointers
 
-  for ( unsigned i = 0 ; i < m_size ; ++i ) {
+  for ( int i = 0 ; i < m_size ; ++i ) {
 
     if ( m_send[i].remaining() ) {
       msg << method << " LOCAL[" << m_rank << "] ERROR: Send[" << i
@@ -579,7 +580,7 @@ void CommAll::communicate()
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-CommBroadcast::CommBroadcast( ParallelMachine comm , unsigned root_rank )
+CommBroadcast::CommBroadcast( ParallelMachine comm , int root_rank )
   : m_comm( comm ),
     m_size( parallel_machine_size( comm ) ),
     m_rank( parallel_machine_rank( comm ) ),
@@ -591,8 +592,8 @@ bool CommBroadcast::allocate_buffer( const bool local_flag )
 {
   static const char method[] = "stk::CommBroadcast::allocate_buffer" ;
 
-  unsigned root_rank_min = m_root_rank ;
-  unsigned root_rank_max = m_root_rank ;
+  int root_rank_min = m_root_rank ;
+  int root_rank_max = m_root_rank ;
   unsigned root_send_size = m_root_rank == m_rank ? m_buffer.size() : 0 ;
   unsigned flag = local_flag ;
 
@@ -684,13 +685,13 @@ void CommGather::reset()
   m_send.reset();
 
   if ( NULL != m_recv ) {
-    for ( unsigned i = 0 ; i < m_size ; ++i ) { m_recv[i].reset(); }
+    for ( int i = 0 ; i < m_size ; ++i ) { m_recv[i].reset(); }
   }
 }
 
-CommBuffer & CommGather::recv_buffer( unsigned p )
+CommBuffer & CommGather::recv_buffer( int p )
 {
-  static CommBuffer empty ; 
+  static CommBuffer empty ;
 
   return m_size <= p ? empty : (
          m_size <= 1 ? m_send : m_recv[p] );
@@ -699,7 +700,7 @@ CommBuffer & CommGather::recv_buffer( unsigned p )
 //----------------------------------------------------------------------
 
 CommGather::CommGather( ParallelMachine comm ,
-                        unsigned root_rank , unsigned send_size )
+                        int root_rank , unsigned send_size )
   : m_comm( comm ),
     m_size( parallel_machine_size( comm ) ),
     m_rank( parallel_machine_rank( comm ) ),
@@ -732,7 +733,7 @@ CommGather::CommGather( ParallelMachine comm ,
       m_recv = CommBuffer::allocate( m_size ,
                  reinterpret_cast<unsigned*>( m_recv_count ) );
 
-      for ( unsigned i = 0 ; i < m_size ; ++i ) {
+      for ( int i = 0 ; i < m_size ; ++i ) {
         m_recv_displ[i] = m_recv[i].m_beg - m_recv[0].m_beg ;
       }
     }
@@ -777,13 +778,13 @@ bool comm_dense_sizes( ParallelMachine comm ,
   static const char method[] = "stk::comm_dense_sizes" ;
 
   const unsigned zero = 0 ;
-  const unsigned p_size = parallel_machine_size( comm );
+  const int p_size = parallel_machine_size( comm );
 
   std::vector<unsigned> send_buf( p_size * 2 , zero );
   std::vector<unsigned> recv_buf( p_size * 2 , zero );
 
-  for ( unsigned i = 0 ; i < p_size ; ++i ) {
-    const unsigned i2 = i * 2 ;
+  for ( int i = 0 ; i < p_size ; ++i ) {
+    const int i2 = i * 2 ;
     send_buf[i2]   = send_size[i] ;
     send_buf[i2+1] = local_flag ;
   }
@@ -804,8 +805,8 @@ bool comm_dense_sizes( ParallelMachine comm ,
 
   bool global_flag = false ;
 
-  for ( unsigned i = 0 ; i < p_size ; ++i ) {
-    const unsigned i2 = i * 2 ;
+  for ( int i = 0 ; i < p_size ; ++i ) {
+    const int i2 = i * 2 ;
     recv_size[i] = recv_buf[i2] ;
     if ( recv_buf[i2+1] ) { global_flag = true ; }
   }
@@ -859,8 +860,8 @@ bool comm_sizes( ParallelMachine comm ,
     MPI_Op_create( sum_np_max_2_op , 1 , & mpi_op );
   }
 
-  const unsigned p_size = parallel_machine_size( comm );
-  const unsigned p_rank = parallel_machine_rank( comm );
+  const int p_size = parallel_machine_size( comm );
+  const int p_rank = parallel_machine_rank( comm );
 
   int result ;
 
@@ -879,7 +880,7 @@ bool comm_sizes( ParallelMachine comm ,
     size_t * const p_send = (send_buf.empty() ? NULL : & send_buf[0]) ;
     size_t * const p_recv = (recv_buf.empty() ? NULL : & recv_buf[0]) ;
 
-    for ( unsigned i = 0 ; i < p_size ; ++i ) {
+    for ( int i = 0 ; i < p_size ; ++i ) {
       recv_size[i] = 0 ; // Zero output
       if ( send_size[i] ) {
         send_buf[i] = 1 ;
@@ -909,25 +910,19 @@ bool comm_sizes( ParallelMachine comm ,
     max_msg     = recv_buf[ p_size ] ;
     global_flag = recv_buf[ p_size + 1 ] ;
 
-//    size_t max_num_recv = 0;
-//    result = MPI_Allreduce(&num_recv,&max_num_recv,1,MPI_LONG_LONG,MPI_MAX,comm);
-//    if (p_rank==0) {
-//    std::cout<<"max_num_recv: "<<max_num_recv<<std::endl;
-//    }
     // max_msg is now the maximum send count,
     // Loop over receive counts to determine
     // if a receive count is larger.
 
-    for ( unsigned i = 0 ; i < p_size ; ++i ) {
+    for ( int i = 0 ; i < p_size ; ++i ) {
       if ( max_msg < recv_buf[i] ) { max_msg = recv_buf[i] ; }
     }
   }
 
   num_msg_maximum = max_msg ;
-//std::cout<<"proc "<<p_rank<<", num_msg_bound: "<<num_msg_bound<<", max_msg: "<<max_msg<<std::endl;
   if ( false /*num_msg_bound < max_msg && p_size < 1024*/ ) {
     // Dense, pay for an all-to-all
-//std::cout<<"doing all-to-all"<<std::endl;
+
     result =
        MPI_Alltoall( (void*) send_size , 1 , MPI_LONG_LONG ,
                      recv_size , 1 , MPI_UNSIGNED , comm );
@@ -941,9 +936,8 @@ bool comm_sizes( ParallelMachine comm ,
   else if ( max_msg ) {
     // Sparse, just do point-to-point
 
-//std::cout<<"doing point-to-point"<<std::endl;
     const int mpi_tag = STK_MPI_TAG_SIZING ;
- 
+
     MPI_Request request_null = MPI_REQUEST_NULL ;
     std::vector<MPI_Request> request( num_recv , request_null );
     std::vector<MPI_Status>  status(  num_recv );
@@ -966,7 +960,7 @@ bool comm_sizes( ParallelMachine comm ,
     // Send the point-to-point message sizes,
     // rotate the sends in an attempt to balance the message traffic.
 
-    for ( unsigned i = 0 ; i < p_size ; ++i ) {
+    for ( int i = 0 ; i < p_size ; ++i ) {
       int      dst = ( i + p_rank ) % p_size ;
       size_t value = send_size[dst] ;
       if ( value ) {
@@ -1022,7 +1016,6 @@ bool comm_sizes( ParallelMachine comm ,
 //----------------------------------------------------------------------
 
 #else
-
 
 bool comm_sizes( ParallelMachine ,
                  const unsigned ,

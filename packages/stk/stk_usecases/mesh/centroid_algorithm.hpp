@@ -114,12 +114,12 @@ void centroid_algorithm(
       // in the bucket.
       //   double * node_ptr[ nodes_per_element * number_of_elements ]
 
-      double ** node_ptr = field_data( elem_node_coord , bucket.begin() );
+      double ** node_ptr = bulkData.field_data( elem_node_coord , bucket, 0);
 
       // Element centroid field data
       //   double elem_ptr[ SpatialDim * number_of_elements ]
 
-      double *  elem_ptr = field_data( elem_centroid , bucket.begin() );
+      double *  elem_ptr = bulkData.field_data( elem_centroid , bucket, 0 );
 
       // Call an element function to calculate centroid for
       // contiguous arrays of element field data.
@@ -162,7 +162,7 @@ bool centroid_algorithm_unit_test_dimensions(
       const unsigned size = bucket.size();
 
       {
-        BucketArray< VectorFieldType > array( elem_centroid , bucket.begin(), bucket.end()  );
+        BucketArray< VectorFieldType > array(elem_centroid , bucket , bucket.begin(), bucket.end()  );
         const unsigned n1 = array.template dimension<0>();
         const unsigned n2 = array.template dimension<1>();
         if ( n1 != (unsigned) SpatialDim ) {

@@ -96,11 +96,11 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
     Entity const node0 = bulk.get_entity( NODE_RANK , fixture.m_node_ids[n0] );
     Entity const node1 = bulk.get_entity( NODE_RANK , fixture.m_node_ids[n1] );
 
-    STKUNIT_ASSERT( node0.is_valid() );
-    STKUNIT_ASSERT( node1.is_valid() );
+    STKUNIT_ASSERT( bulk.is_valid(node0) );
+    STKUNIT_ASSERT( bulk.is_valid(node1) );
 
-    STKUNIT_ASSERT_EQUAL( bulk.entity_comm_sharing(node0.key()).size(), 1u );
-    STKUNIT_ASSERT_EQUAL( bulk.entity_comm_sharing(node1.key()).size() , 1u );
+    STKUNIT_ASSERT_EQUAL( bulk.entity_comm_sharing(bulk.entity_key(node0)).size(), 1u );
+    STKUNIT_ASSERT_EQUAL( bulk.entity_comm_sharing(bulk.entity_key(node1)).size() , 1u );
   }
 
   // Test no-op first:
@@ -149,8 +149,8 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   MetaData& meta = ring.m_meta_data;
   BulkData& bulk = ring.m_bulk_data;
 
-  const unsigned p_rank     = bulk.parallel_rank();
-  const unsigned p_size     = bulk.parallel_size();
+  const int p_rank     = bulk.parallel_rank();
+  const int p_size     = bulk.parallel_size();
   const unsigned nPerProc   = ring.m_num_element_per_proc ;
   const unsigned id_total   = nPerProc * p_size ;
   const unsigned id_begin   = nPerProc * p_rank ;
@@ -170,21 +170,23 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
 
   Entity send_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send ] );
   Entity send_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send + 1 ] );
-  Entity send_node_1 = send_element_1.relations()[1].entity();
-  Entity send_node_2 = send_element_2.relations()[1].entity();
+
+  Entity send_node_1 = *(bulk.begin_node_entities(send_element_1) + 1);
+  Entity send_node_2 = *(bulk.begin_node_entities(send_element_2) + 1);
+
   Entity recv_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv ] );
   Entity recv_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv + 1 ] );
 
-  STKUNIT_ASSERT( send_element_1.is_valid() && p_rank == send_element_1.owner_rank() );
-  STKUNIT_ASSERT( send_element_2.is_valid() && p_rank == send_element_2.owner_rank() );
-  STKUNIT_ASSERT( !recv_element_1.is_valid() || p_rank != recv_element_1.owner_rank() );
-  STKUNIT_ASSERT( !recv_element_2.is_valid() || p_rank != recv_element_2.owner_rank() );
+  STKUNIT_ASSERT( bulk.is_valid(send_element_1) && p_rank == bulk.parallel_owner_rank(send_element_1) );
+  STKUNIT_ASSERT( bulk.is_valid(send_element_2) && p_rank == bulk.parallel_owner_rank(send_element_2) );
+  STKUNIT_ASSERT( !bulk.is_valid(recv_element_1) || p_rank != bulk.parallel_owner_rank(recv_element_1) );
+  STKUNIT_ASSERT( !bulk.is_valid(recv_element_2) || p_rank != bulk.parallel_owner_rank(recv_element_2) );
 
-  if ( p_rank == send_node_1.owner_rank() ) {
+  if ( p_rank == bulk.parallel_owner_rank(send_node_1) ) {
     EntityProc entry( send_node_1 , p_send );
     change.push_back( entry );
   }
-  if ( p_rank == send_node_2.owner_rank() ) {
+  if ( p_rank == bulk.parallel_owner_rank(send_node_2) ) {
     EntityProc entry( send_node_2 , p_send );
     change.push_back( entry );
   }
@@ -213,10 +215,10 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   recv_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv ] );
   recv_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv + 1 ] );
 
-  STKUNIT_ASSERT( !send_element_1.is_valid() || p_rank != send_element_1.owner_rank() );
-  STKUNIT_ASSERT( !send_element_2.is_valid() || p_rank != send_element_2.owner_rank() );
-  STKUNIT_ASSERT( recv_element_1.is_valid() && p_rank == recv_element_1.owner_rank() );
-  STKUNIT_ASSERT( recv_element_2.is_valid() && p_rank == recv_element_2.owner_rank() );
+  STKUNIT_ASSERT( !bulk.is_valid(send_element_1) || p_rank != bulk.parallel_owner_rank(send_element_1) );
+  STKUNIT_ASSERT( !bulk.is_valid(send_element_2) || p_rank != bulk.parallel_owner_rank(send_element_2) );
+  STKUNIT_ASSERT( bulk.is_valid(recv_element_1) && p_rank == bulk.parallel_owner_rank(recv_element_1) );
+  STKUNIT_ASSERT( bulk.is_valid(recv_element_2) && p_rank == bulk.parallel_owner_rank(recv_element_2) );
 
   stk::mesh::count_entities( select_used , bulk , local_count );
   STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nLocalNode );

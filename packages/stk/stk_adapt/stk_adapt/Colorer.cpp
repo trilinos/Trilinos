@@ -1,7 +1,7 @@
 #include <stk_percept/function/ElementOp.hpp>
 
 #include <stk_adapt/Colorer.hpp>
-
+#include <stk_percept/PerceptMesh.hpp>
 
 
 namespace stk {
@@ -124,7 +124,7 @@ namespace stk {
 
                             if (!m_noColoring)
                               {
-                                const stk::mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+                                const percept::MyPairIterRelation elem_nodes (eMesh, element, stk::mesh::MetaData::NODE_RANK );
                                 num_node = elem_nodes.size();
                                 node_ids.reserve(num_node);
                                 for (unsigned inode=0; inode < num_node; inode++)

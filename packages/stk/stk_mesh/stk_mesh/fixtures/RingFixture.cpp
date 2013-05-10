@@ -55,8 +55,8 @@ RingFixture::RingFixture( stk::ParallelMachine pm ,
 
 void RingFixture::generate_mesh( )
 {
-  const unsigned p_rank     = m_bulk_data.parallel_rank();
-  const unsigned p_size     = m_bulk_data.parallel_size();
+  const int p_rank          = m_bulk_data.parallel_rank();
+  const int p_size          = m_bulk_data.parallel_size();
   const unsigned nPerProc   = m_num_element_per_proc ;
   const unsigned id_total   = nPerProc * p_size ;
   const unsigned id_begin   = nPerProc * p_rank ;
@@ -95,8 +95,8 @@ void RingFixture::generate_mesh( )
 
 void RingFixture::fixup_node_ownership()
 {
-  const unsigned p_rank     = m_bulk_data.parallel_rank();
-  const unsigned p_size     = m_bulk_data.parallel_size();
+  const int p_rank          = m_bulk_data.parallel_rank();
+  const int p_size          = m_bulk_data.parallel_size();
   const unsigned nPerProc   = m_num_element_per_proc ;
   const unsigned id_begin   = nPerProc * p_rank ;
 
@@ -105,7 +105,7 @@ void RingFixture::fixup_node_ownership()
   if ( 1 < p_size ) {
     std::vector<EntityProc> change ;
     Entity const e_node_0 = m_bulk_data.get_entity( 0 , m_node_ids[id_begin] );
-    if ( p_rank == e_node_0.owner_rank() ) {
+    if ( p_rank == m_bulk_data.parallel_owner_rank(e_node_0) ) {
       EntityProc entry ;
       entry.first = e_node_0 ;
       entry.second = ( p_rank + p_size - 1 ) % p_size ;

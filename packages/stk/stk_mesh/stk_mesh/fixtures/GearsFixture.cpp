@@ -191,6 +191,7 @@ double scale_angle_2pi(double angle) {
 
 
 void select_nodal_data(
+    const BulkData& mesh,
     GearsFixture::CylindricalField & cylindrical_coord_field,
     Entity element,
     double & radius,
@@ -201,11 +202,15 @@ void select_nodal_data(
   radius = 0.0;
   angle = TWO_PI;
   height = 0.0;
-  PairIterRelation node_relations = element.relations(NODE_RANK);
-  int numNodes = node_relations.second - node_relations.first;
-  for ( ; node_relations.first != node_relations.second ; ++(node_relations.first) ) {
-    Entity node = node_relations.first->entity();
-    EntityArray<GearsFixture::CylindricalField> cylindrical_data( cylindrical_coord_field, node);
+
+  int numNodes = mesh.num_nodes(element);
+  Entity const *elem_nodes = mesh.begin_node_entities(element);
+  for (int i = 0; i < numNodes; ++i)
+  {
+    Entity node = elem_nodes[i];
+    const MeshIndex& mi = mesh.mesh_index(node);
+    const Bucket& bucket = *mi.bucket;
+    EntityArray<GearsFixture::CylindricalField> cylindrical_data( cylindrical_coord_field, bucket, mi.bucket_ordinal);
     radius += cylindrical_data(0);
     angle  = std::min(angle,cylindrical_data(1));
     height += cylindrical_data(2);
@@ -236,13 +241,16 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
         double radius = 0.0;
         double angle  = 0.0;
         double height = 0.0;
-        select_nodal_data(cylindrical_coord_field, element, radius, angle, height);
+        select_nodal_data(bulk_data, cylindrical_coord_field, element, radius, angle, height);
         unsigned destination_processor_rank = destination_processor(gear,radius,angle,height,p_rank,p_size);
         elements_to_change_owner.push_back(EntityProc(element,destination_processor_rank));
+
         // Now add all related nodes to list to move to this processor:
-        PairIterRelation node_relations = element.relations(stk::mesh::MetaData::NODE_RANK);
-        for ( ; node_relations.first != node_relations.second ; ++(node_relations.first) ) {
-          Entity node = node_relations.first->entity();
+        Entity const *elem_nodes_j = bulk_data.begin_node_entities(element);
+        Entity const *elem_nodes_e = bulk_data.end_node_entities(element);
+        for ( ; elem_nodes_j != elem_nodes_e; ++elem_nodes_j)
+        {
+          Entity node = *elem_nodes_j;
           if (node_set.count(node)==0) {
             elements_to_change_owner.push_back(EntityProc(node,destination_processor_rank));
             node_set.insert(node);

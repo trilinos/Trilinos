@@ -135,11 +135,12 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   fix.m_bulk_data.modification_begin();
   fix.generate_mesh();
   STKUNIT_ASSERT(fix.m_bulk_data.modification_end());
+  const stk::mesh::BulkData& mesh = fix.m_bulk_data;
 
   // Check bucket membership correctness
 
   {
-    const Bucket & bucket = fix.m_entity1.bucket();
+    const Bucket & bucket = mesh.bucket(fix.m_entity1);
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
@@ -147,7 +148,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   }
 
   {
-    const Bucket & bucket = fix.m_entity2.bucket();
+    const Bucket & bucket = mesh.bucket(fix.m_entity2);
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
@@ -155,7 +156,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   }
 
   {
-    const Bucket & bucket = fix.m_entity3.bucket();
+    const Bucket & bucket = mesh.bucket(fix.m_entity3);
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partC ) );
@@ -163,7 +164,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   }
 
   {
-    const Bucket & bucket = fix.m_entity4.bucket();
+    const Bucket & bucket = mesh.bucket(fix.m_entity4);
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partC ) );
@@ -171,7 +172,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   }
 
   {
-    const Bucket & bucket = fix.m_entity5.bucket();
+    const Bucket & bucket = mesh.bucket(fix.m_entity5);
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );

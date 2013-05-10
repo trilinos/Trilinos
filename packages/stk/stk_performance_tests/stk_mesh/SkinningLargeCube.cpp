@@ -80,8 +80,8 @@ void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part, Entity
       i != owned_elements.end(); ++i )
   {
     stk::mesh::Entity entity= *i;
-    if ( entity.state() == stk::mesh::Created ||
-         entity.state() == stk::mesh::Modified ) {
+    if ( mesh.state(entity) == stk::mesh::Created ||
+         mesh.state(entity) == stk::mesh::Modified ) {
      modified_elements.push_back(entity);
     }
   }
@@ -92,6 +92,7 @@ void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part, Entity
 }
 
 void find_owned_nodes_with_relations_outside_closure(
+    const stk::mesh::BulkData& mesh,
     stk::mesh::EntityVector & closure,
     stk::mesh::Selector       select_owned,
     stk::mesh::EntityVector & nodes)
@@ -103,26 +104,34 @@ void find_owned_nodes_with_relations_outside_closure(
   stk::mesh::EntityVector::iterator node_end = std::lower_bound(closure.begin(),
       closure.end(),
       stk::mesh::EntityKey(upward_rank, 0),
-      stk::mesh::EntityLess());
+      stk::mesh::EntityLess(mesh));
 
   for (stk::mesh::EntityVector::iterator itr = closure.begin(); itr != node_end; ++itr) {
     stk::mesh::Entity node = *itr;
 
-    if (select_owned(node)) {
-      stk::mesh::PairIterRelation relations_pair = node.relations();
+    if (select_owned(mesh.bucket(node))) {
+
+      const stk::mesh::Bucket &node_bkt = mesh.bucket(node);
+      const stk::mesh::Ordinal node_bkt_idx = mesh.bucket_ordinal(node);
 
       //loop over the relations and check to see if they are in the closure
-      for (; relations_pair.first != relations_pair.second; ++relations_pair.first) {
-        stk::mesh::Entity current_entity = (relations_pair.first->entity());
-
-        //has relation outside of closure
-        if ( !std::binary_search(node_end,
+      for (EntityRank irank = stk::topology::BEGIN_RANK;
+            irank != stk::topology::END_RANK;
+            ++irank)
+      {
+        stk::mesh::Entity const * rel_entity_i   = node_bkt.begin_entities(node_bkt_idx, irank);
+        stk::mesh::Entity const * rel_entity_end = node_bkt.end_entities(node_bkt_idx, irank);
+        for ( ; rel_entity_i != rel_entity_end ; ++rel_entity_i ) {
+          stk::mesh::Entity current_entity = *rel_entity_i;
+          //has relation outside of closure
+          if ( !std::binary_search(node_end,
               closure.end(),
               current_entity,
-              stk::mesh::EntityLess()) )
-        {
-          nodes.push_back(node);
-          break;
+              stk::mesh::EntityLess(mesh)) )
+          {
+            nodes.push_back(node);
+            break;
+          }
         }
       }
     }
@@ -134,35 +143,41 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
     stk::mesh::EntityVector & nodes,
     stk::mesh::EntityVector & new_nodes)
 {
-
-
   for (size_t i = 0; i < nodes.size(); ++i) {
     stk::mesh::Entity entity = nodes[i];
     stk::mesh::Entity new_entity = new_nodes[i];
 
-    stk::mesh::PairIterRelation relations_pair = entity.relations();
-
     std::vector<stk::mesh::EntitySideComponent> sides;
 
     //loop over the relations and check to see if they are in the closure
-    for (; relations_pair.first != relations_pair.second;) {
-      --relations_pair.second;
-      stk::mesh::Entity current_entity = (relations_pair.second->entity());
-      size_t side_ordinal = relations_pair.second->relation_ordinal();
+    for (stk::mesh::EntityRank irank = stk::topology::END_RANK;
+          irank != stk::topology::BEGIN_RANK; )
+    {
+      --irank;
 
-      if (mesh.in_receive_ghost(current_entity.key())) {
-        // TODO deleteing the ghost triggers a logic error at the
-        // end of the NEXT modification cycle.  We need to fix this!
-        //mesh.destroy_entity(current_entity);
-        continue;
-      }
-      else if ( std::binary_search(closure.begin(),
+      int num_rels = mesh.num_connectivity(entity, irank);
+      stk::mesh::Entity const *rel_ents = mesh.begin_entities(entity, irank);
+      stk::mesh::ConnectivityOrdinal const *rel_ords = mesh.begin_ordinals(entity, irank);
+
+      for (int k = num_rels - 1; k >= 0; --k)
+      {
+        stk::mesh::Entity current_entity = rel_ents[k];
+        size_t side_ordinal = rel_ords[k];
+
+        if (mesh.in_receive_ghost(mesh.entity_key(current_entity))) {
+          // TODO deleteing the ghost triggers a logic error at the
+          // end of the NEXT modification cycle.  We need to fix this!
+          //mesh.destroy_entity(current_entity);
+          continue;
+        }
+        else if ( std::binary_search(closure.begin(),
             //has relation in closure
             closure.end(),
             current_entity,
-            stk::mesh::EntityLess()) )
-      {
-        sides.push_back(stk::mesh::EntitySideComponent(current_entity,side_ordinal));
+            stk::mesh::EntityLess(mesh)) )
+        {
+          sides.push_back(stk::mesh::EntitySideComponent(current_entity,side_ordinal));
+        }
       }
     }
 
@@ -181,11 +196,11 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
     //copy field data from nodes[i] to new_nodes[i]
     mesh.copy_entity_fields( entity, new_entity);
 
-    if (entity.relations().empty()) {
+    if (mesh.has_no_relations(entity)) {
       mesh.destroy_entity(entity);
     }
 
-    if (new_entity.relations().empty()) {
+    if (mesh.has_no_relations(new_entity)) {
       mesh.destroy_entity(new_entity);
     }
   }
@@ -203,13 +218,13 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     stk::mesh::Entity node = nodes[i];
     stk::mesh::Entity new_node = new_nodes[i];
 
-    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_sharing(node.key());
+    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_sharing(mesh.entity_key(node));
 
     for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
 
       size_t proc = entity_comm.first->proc;
-      comm.send_buffer(proc).pack<stk::mesh::EntityKey>(node.key())
-        .pack<stk::mesh::EntityKey>(new_node.key());
+      comm.send_buffer(proc).pack<stk::mesh::EntityKey>(mesh.entity_key(node))
+        .pack<stk::mesh::EntityKey>(mesh.entity_key(new_node));
 
     }
   }
@@ -220,13 +235,13 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     stk::mesh::Entity node = nodes[i];
     stk::mesh::Entity new_node = new_nodes[i];
 
-    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_sharing(node.key());
+    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_sharing(mesh.entity_key(node));
 
     for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
 
       size_t proc = entity_comm.first->proc;
-      comm.send_buffer(proc).pack<stk::mesh::EntityKey>(node.key())
-        .pack<stk::mesh::EntityKey>(new_node.key());
+      comm.send_buffer(proc).pack<stk::mesh::EntityKey>(mesh.entity_key(node))
+        .pack<stk::mesh::EntityKey>(mesh.entity_key(new_node));
 
     }
   }
@@ -235,7 +250,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 
   const stk::mesh::PartVector no_parts;
 
-  for (size_t process = 0; process < mesh.parallel_size(); ++process) {
+  for (int process = 0; process < mesh.parallel_size(); ++process) {
     stk::mesh::EntityKey old_key;
     stk::mesh::EntityKey new_key;
 
@@ -270,7 +285,7 @@ void separate_and_skin_mesh(
   stk::mesh::Selector select_owned = fem_meta.locally_owned_part();
 
   stk::mesh::EntityVector nodes;
-  find_owned_nodes_with_relations_outside_closure( entities_closure, select_owned, nodes);
+  find_owned_nodes_with_relations_outside_closure( mesh, entities_closure, select_owned, nodes);
 
   //ask for new nodes to represent the copies
   std::vector<size_t> requests(fem_meta.entity_rank_count(), 0);
@@ -362,7 +377,7 @@ STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
       for (size_t iy=0; iy < NY; ++iy) {
       for (size_t iz=0; iz < NZ; ++iz) {
         stk::mesh::Entity element = fixture.elem(ix,iy,iz);
-        if (element.is_valid() && element.owner_rank() == mesh.parallel_rank()) {
+        if (mesh.is_valid(element) && mesh.parallel_owner_rank(element) == mesh.parallel_rank()) {
           entities_to_separate.push_back(element);
           num_detached_this_proc++;
         }
@@ -376,7 +391,7 @@ STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
       for (size_t iy=NY/2; iy < NY/2+1; ++iy) {
       for (size_t iz=NZ/2; iz < NZ/2+1; ++iz) {
         stk::mesh::Entity element = fixture.elem(ix,iy,iz);
-        if (element.is_valid() && element.owner_rank() == mesh.parallel_rank()) {
+        if (mesh.is_valid(element) && mesh.parallel_owner_rank(element) == mesh.parallel_rank()) {
           entities_to_separate.push_back(element);
         }
       }

@@ -44,12 +44,13 @@ size_t do_stk_node_rel_test(stk::mesh::BulkData& bulk)
     num_elems += b.size();
 
     for(size_t i=0; i<b.size(); ++i) {
-      Entity elem = b[i];
-      PairIterRelation node_rels = elem.node_relations();
+      Entity const *node_itr = b.begin_node_entities(i);
+      Entity const *nodes_end = b.end_node_entities(i);
 
-      for(; !node_rels.empty(); ++node_rels) {
-        Entity node = node_rels->entity();
-        owner_rank += node.owner_rank();
+      for (; node_itr != nodes_end; ++node_itr)
+      {
+        Entity node = *node_itr;
+        owner_rank += bulk.parallel_owner_rank(node);
         ++nodes_visited;
       }
     }

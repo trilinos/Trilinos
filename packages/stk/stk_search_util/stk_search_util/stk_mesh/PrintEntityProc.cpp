@@ -25,22 +25,23 @@ typedef std::vector<std::pair<IdentProc, IdentProc> > IdentProcRelation;
 // Used to output the results of a coarse or direct search to
 // verify which entity contains another entity.
 void print_entity_map(stk::diag::Writer &writer,
+                      const stk::mesh::BulkData& mesh1, const stk::mesh::BulkData& mesh2,
                       const std::vector<std::pair<stk::mesh::Entity , stk::mesh::Entity> >& entity_map,
                       const std::string & relation)
 {
   if (writer.shouldPrint()) {
     size_t size = entity_map.size();
     for (size_t i=0; i < size; i++) {
-      stk::mesh::EntityKey key1 = entity_map[i].first.key();
-      stk::mesh::EntityKey key2 = entity_map[i].second.key();
-      const stk::mesh::MetaData& meta1 = stk::mesh::MetaData::get(entity_map[i].first);
-      const stk::mesh::MetaData& meta2 = stk::mesh::MetaData::get(entity_map[i].second);
+      stk::mesh::EntityKey key1 = mesh1.entity_key(entity_map[i].first);
+      stk::mesh::EntityKey key2 = mesh2.entity_key(entity_map[i].second);
+      const stk::mesh::MetaData& meta1 = mesh1.mesh_meta_data();
+      const stk::mesh::MetaData& meta2 = mesh2.mesh_meta_data();
 
       writer << "[" << i << "] "
-             << meta1.entity_rank_name(stk::mesh::entity_rank(key1)) << " "
-             << stk::mesh::entity_id(key1) << relation
-             << meta2.entity_rank_name(stk::mesh::entity_rank(key2)) << " "
-             << stk::mesh::entity_id(key2) << "\n";
+             << meta1.entity_rank_name(key1.rank()) << " "
+             << key1.id() << relation
+             << meta2.entity_rank_name(key2.rank()) << " "
+             << key2.id() << "\n";
     }
   }
 }
@@ -58,6 +59,7 @@ void print_entity_map(stk::diag::Writer &writer,
  * Example output: "Share NODE 37 with processor 12"
  */
 void print_entity_proc_map(stk::diag::Writer &writer,
+                           const stk::mesh::BulkData &mesh,
                            const std::vector<stk::mesh::EntityProc>& entity_proc,
                            const std::string &action,
                            const std::string &to_from)
@@ -65,19 +67,20 @@ void print_entity_proc_map(stk::diag::Writer &writer,
   if (writer.shouldPrint()) {
     size_t size = entity_proc.size();
     for (size_t i=0; i < size; i++) {
-      stk::mesh::EntityKey key = entity_proc[i].first.key();
-      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get( entity_proc[i].first );
+      stk::mesh::EntityKey key = mesh.entity_key(entity_proc[i].first);
+      const stk::mesh::MetaData& meta = mesh.mesh_meta_data();
 
       writer << "[" << i << "] "
              << action
-             << meta.entity_rank_name(stk::mesh::entity_rank(key)) << " "
-             << stk::mesh::entity_id(key) << " " << to_from << " processor "
+             << meta.entity_rank_name(key.rank()) << " "
+             << key.id() << " " << to_from << " processor "
              << entity_proc[i].second << "\n";
     }
   }
 }
 
 void print_entity_proc_map(stk::diag::Writer &writer,
+                           const stk::mesh::BulkData &mesh,
                            const std::vector<stk::mesh::Entity>& entity_proc,
                            const std::string &action,
                            const std::string &to_from)
@@ -85,13 +88,13 @@ void print_entity_proc_map(stk::diag::Writer &writer,
   if (writer.shouldPrint()) {
     size_t size = entity_proc.size();
     for (size_t i=0; i < size; i++) {
-      stk::mesh::EntityKey key = entity_proc[i].key();
+      stk::mesh::EntityKey key = mesh.entity_key(entity_proc[i]);
       const stk::mesh::MetaData& meta = stk::mesh::MetaData::get( entity_proc[i].bucket() );
 
       writer << "[" << i << "] "
              << action
-             << meta.entity_rank_name(stk::mesh::entity_rank(key)) << " "
-             << stk::mesh::entity_id(key) << " " << to_from << " processor "
+             << meta.entity_rank_name(key.rank()) << " "
+             << key.id() << " " << to_from << " processor "
              << entity_proc[i].owner_rank() << "\n";
     }
   }
@@ -117,7 +120,7 @@ void print_entity_proc_map( stk::diag::Writer & writer ,
     for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
           i = comm.begin() ; i != comm.end() ; ++i ) {
 
-      std::vector<unsigned> procs ;
+      std::vector<int> procs ;
 
       mesh.comm_procs( g , i->key , procs );
 
@@ -167,12 +170,12 @@ void print_stk_mesh_relation_map(
       stk::mesh::EntityKey range_entity_key(range.ident);
 
       writer << "[" << i << "] ("
-             << entity_names[stk::mesh::entity_rank(domain_entity_key)] << " "
-             << stk::mesh::entity_id(domain_entity_key)
+             << entity_names[domain_entity_key.rank()] << " "
+             << domain_entity_key.id()
              << ", proc " << domain.proc
              << "    ->    "
-             << entity_names[stk::mesh::entity_rank(range_entity_key)] << " "
-             << stk::mesh::entity_id(range_entity_key)
+             << entity_names[range_entity_key.rank()] << " "
+             << range_entity_key.id()
              << ", proc " << range.proc
              << ")\n";
     }

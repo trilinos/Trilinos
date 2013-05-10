@@ -155,7 +155,7 @@ namespace stk {
         jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
         double val=0.0, val_shape=0.0;
 
-        stk::mesh::PairIterRelation elem_nodes = element.relations(m_eMesh->node_rank());
+        const MyPairIterRelation elem_nodes(*m_eMesh, element, m_eMesh->node_rank());
         VERIFY_OP_ON((int)elem_nodes.size(), ==, jacA.m_num_nodes, "node num mismatch");
         val_shape = 0.0;
         bool found = false;

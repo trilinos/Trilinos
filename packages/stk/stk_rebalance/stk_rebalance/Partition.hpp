@@ -95,12 +95,13 @@ public:
    * \param nodal_coord_ref  Nodal coordinate field to determine new partition
    *                         if using geometric based partitioning.
    *
-   * \param elem_weight_ref  Weighting of elements used in defining 
+   * \param elem_weight_ref  Weighting of elements used in defining
    *                         the new partition. If used, the total element
-   *                         weight will be balanced across all of the 
+   *                         weight will be balanced across all of the
    *                         processors. Can be NULL.
    */
-  virtual void set_mesh_info ( const std::vector<mesh::Entity> &mesh_entities,
+  virtual void set_mesh_info ( mesh::BulkData& mesh,
+                               const std::vector<mesh::Entity> &mesh_entities,
                                const VectorField   * nodal_coord_ref,
                                const ScalarField   * elem_weight_ref=NULL) = 0;
 
@@ -114,8 +115,8 @@ public:
   virtual unsigned num_elems() const = 0;
 
   /** \brief determine New Partition.
-   * 
-   * \param RebalancingNeeded  If true, then a new partition 
+   *
+   * \param RebalancingNeeded  If true, then a new partition
    *                           has been defined.  If false, the
    *                           new partition is the same as the old
    *                           one and no rebalancing is needed.
@@ -146,6 +147,7 @@ public:
   /** \brief Query whether element dependents need to be rebalanced outside this Partition. */
   virtual bool partition_dependents_needed() const = 0;
 
+  virtual void notify_mod_cycle(const stk::mesh::BulkData& mesh) = 0;
 
 protected:
 

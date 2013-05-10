@@ -39,6 +39,11 @@ namespace stk
       {
       }
 
+      virtual ~BuildBoundingBoxes() {
+    	  m_coords_field = NULL;
+    	  m_notInitialized = true;
+      }
+
       void init(std::vector<AABoundingBox>& boxes, VectorFieldType *coords_field)
       {
         m_boxes(boxes);
@@ -67,7 +72,7 @@ namespace stk
       AABoundingBox getBoundingBox(const stk::mesh::Entity element, const mesh::BulkData& bulkData)
       {
         double bbox[2*SpatialDim];
-        const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+        const MyPairIterRelation elem_nodes(bulkData, element, stk::mesh::MetaData::NODE_RANK );
         unsigned numNodes = elem_nodes.size();
         for (unsigned iNode = 0; iNode < numNodes; iNode++)
           {

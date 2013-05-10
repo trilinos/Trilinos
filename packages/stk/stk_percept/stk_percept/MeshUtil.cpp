@@ -17,10 +17,10 @@ namespace stk {
     // ================================================================================================================================================================
     // ================================================================================================================================================================
 
-    void MeshUtil::fillSideNodes(stk::mesh::Entity element, unsigned iside, std::vector<stk::mesh::EntityId>& side_nodes)
+    void MeshUtil::fillSideNodes(percept::PerceptMesh& eMesh, stk::mesh::Entity element, unsigned iside, std::vector<stk::mesh::EntityId>& side_nodes)
     {
       CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
-      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+      const MyPairIterRelation elem_nodes(eMesh, element, stk::mesh::MetaData::NODE_RANK );
 
       int nfn = cell_topo.getCellTopologyData()->side[iside].topology->vertex_count;
       side_nodes.resize(nfn);
@@ -31,10 +31,10 @@ namespace stk {
         }
     }
 
-    void MeshUtil::fillSideNodes(stk::mesh::Entity element, unsigned iside, std::vector<stk::mesh::Entity>& side_nodes)
+    void MeshUtil::fillSideNodes(percept::PerceptMesh& eMesh, stk::mesh::Entity element, unsigned iside, std::vector<stk::mesh::Entity>& side_nodes)
     {
       CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
-      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+      const MyPairIterRelation elem_nodes(eMesh, element, stk::mesh::MetaData::NODE_RANK );
 
       int nfn = cell_topo.getCellTopologyData()->side[iside].topology->vertex_count;
       side_nodes.resize(nfn);
@@ -48,7 +48,7 @@ namespace stk {
     double MeshUtil::triFaceArea(percept::PerceptMesh& eMesh, stk::mesh::Entity element, unsigned iside)
     {
       std::vector<stk::mesh::Entity> side_nodes;
-      fillSideNodes(element, iside, side_nodes);
+      fillSideNodes(eMesh, element, iside, side_nodes);
 
       //int spatialDim = eMesh.get_spatial_dim();
       double a[3]={0,0,0};
@@ -110,7 +110,7 @@ namespace stk {
       return false;
     }
 
-    bool MeshUtil::sharesFace(stk::mesh::Entity element1, stk::mesh::Entity element2, unsigned& iside1, unsigned& iside2)
+    bool MeshUtil::sharesFace(percept::PerceptMesh& eMesh, stk::mesh::Entity element1, stk::mesh::Entity element2, unsigned& iside1, unsigned& iside2)
     {
       CellTopology cell_topo1(stk::percept::PerceptMesh::get_cell_topology(element1));
       CellTopology cell_topo2(stk::percept::PerceptMesh::get_cell_topology(element2));
@@ -122,10 +122,10 @@ namespace stk {
       unsigned nsides = (unsigned)cell_topo1.getSideCount();
       for (iside1 = 0; iside1 < nsides; iside1++)
         {
-          fillSideNodes(element1, iside1, side1);
+          fillSideNodes(eMesh, element1, iside1, side1);
           for (iside2 = 0; iside2 < nsides; iside2++)
             {
-              fillSideNodes(element2, iside2, side2);
+              fillSideNodes(eMesh, element2, iside2, side2);
 
               // true = reverse the nodes since we are looking at a face from two sides
               if (nodesMatch(side1, side2, true))
@@ -154,7 +154,7 @@ namespace stk {
       unsigned iside1=0, iside2=0;
       if (eMesh.isParentElement(element1, false) && eMesh.isParentElement(element2, false))
         {
-          if (sharesFace(element1, element2, iside1, iside2))
+          if (sharesFace(eMesh, element1, element2, iside1, iside2))
             {
               double ptriFaceArea1 = triFaceArea(eMesh, element1, iside1);
               double ptriFaceArea2 = triFaceArea(eMesh, element2, iside2);
@@ -174,7 +174,7 @@ namespace stk {
                     {
                       stk::mesh::Entity child1 = children1[ichild1];
                       stk::mesh::Entity child2 = children2[ichild2];
-                      if (sharesFace(child1, child2, ichild_side1, ichild_side2))
+                      if (sharesFace(eMesh, child1, child2, ichild_side1, ichild_side2))
                         {
                           double ctriFaceArea1 = triFaceArea(eMesh, child1, ichild_side1);
                           double ctriFaceArea2 = triFaceArea(eMesh, child2, ichild_side2);

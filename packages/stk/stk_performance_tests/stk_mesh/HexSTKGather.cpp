@@ -61,15 +61,17 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
     if (elem_node_coords.size() != len) elem_node_coords.resize(len);
 
     for(size_t i=0; i<b.size(); ++i) {
-      Entity elem = b[i];
-      PairIterRelation node_rels = elem.node_relations();
 
       //here's the gather:
 
+      Node const *node_rel_itr  = b.begin_nodes(i);
+      Node const *node_rels_end = b.end_nodes(i);
+
       unsigned offset = 0;
-      for(; !node_rels.empty(); ++node_rels) {
-        Entity node = node_rels->entity();
-        double* node_coords = field_data(coord_field, node);
+      for(; node_rel_itr != node_rels_end; ++node_rel_itr)
+      {
+        Node node = *node_rel_itr;
+        double* node_coords = coord_field[node];
         elem_node_coords[offset++] = node_coords[0];
         elem_node_coords[offset++] = node_coords[1];
         elem_node_coords[offset++] = node_coords[2];
@@ -99,9 +101,9 @@ TEST(hex_gather, hex_gather)
   mesh_dims[1]=30; //num_elems_y
   mesh_dims[2]=30; //num_elems_z
 #else
-  mesh_dims[0]=100; //num_elems_x
-  mesh_dims[1]=100; //num_elems_y
-  mesh_dims[2]=100; //num_elems_z
+  mesh_dims[0]=150; //num_elems_x
+  mesh_dims[1]=150; //num_elems_y
+  mesh_dims[2]=150; //num_elems_z
 #endif
 
   std::ostringstream oss;

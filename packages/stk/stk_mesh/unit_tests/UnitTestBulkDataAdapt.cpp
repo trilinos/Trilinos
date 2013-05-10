@@ -45,28 +45,6 @@ namespace {
 const EntityRank NODE_RANK = MetaData::NODE_RANK;
 } // empty namespace
 
-void printEntity(std::ostringstream& msg, Entity entity)
-{
-  BulkData& bulk = BulkData::get(entity);
-  msg << " :: " << print_entity_key(entity) << ":o[" << entity.owner_rank() << "]:l[" << entity.state()
-      << "]:ec[";
-  for ( PairIterEntityComm ec = bulk.entity_comm(entity.key()) ; ! ec.empty() ; ++ec ) {
-    msg << "(" << ec->ghost_id << "," << ec->proc << ")";
-  }
-  msg << "]";
-}
-
-void printNode(std::ostringstream& msg, Entity node)
-{
-  printEntity(msg, node);
-  PairIterRelation rels = node.relations();
-  for (unsigned i = 0; i < rels.size(); i++)
-    {
-      Entity entity = rels[i].entity();
-      if (entity.entity_rank() > node.entity_rank())
-        printEntity(msg, entity);
-    }
-}
 
 void printBuckets(std::ostringstream& msg, BulkData& mesh)
 {
@@ -78,7 +56,7 @@ void printBuckets(std::ostringstream& msg, BulkData& mesh)
       size_t bucket_size = bucket.size();
       for (unsigned ie=0; ie < bucket_size; ie++)
         {
-          msg << bucket[ie].identifier() << ", ";
+          msg << mesh.identifier(bucket[ie]) << ", ";
         }
     }
 }
@@ -134,8 +112,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   unsigned max_bucket_size = 1;
   BulkData mesh(meta_data, pm, max_bucket_size);
   //BulkData mesh(MetaData::get_meta_data(meta_data), pm);
-  unsigned p_rank = mesh.parallel_rank();
-  unsigned p_size = mesh.parallel_size();
+  int p_rank = mesh.parallel_rank();
+  int p_size = mesh.parallel_size();
 
   if (p_size != 3) return;
 
@@ -154,7 +132,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
 
   for (unsigned ielem=0; ielem < nelems; ielem++)
     {
-      if (elems_0[ielem][3] == p_rank)
+      if (static_cast<int>(elems_0[ielem][3]) == p_rank)
         {
           elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], empty_parts);
 
@@ -182,9 +160,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   for (unsigned inode=0; inode < nnodes; inode++)
     {
       node1 = mesh.get_entity(MetaData::NODE_RANK, nodes_0[inode][0]);
-      if (node1.is_valid() && node1.owner_rank() == p_rank)
+      if (mesh.is_valid(node1) && mesh.parallel_owner_rank(node1) == p_rank)
         {
-          unsigned dest = nodes_0[inode][1];
+          int dest = nodes_0[inode][1];
           EntityProc eproc(node1, dest);
           change.push_back(eproc);
         }

@@ -51,24 +51,24 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityKey)
   EntityKey key_order_1_12 = EntityKey( 1 , 12 );
   EntityKey key_order_2_10 = EntityKey( 2 , 10 );
 
-  STKUNIT_ASSERT( ! entity_key_valid(  key_bad_zero ) );
-  STKUNIT_ASSERT(   entity_key_valid(  key_good_0_1 ) );
-  STKUNIT_ASSERT(   entity_key_valid(  key_good_1_1 ) );
-  STKUNIT_ASSERT(   entity_key_valid(  key_good_2_10 ) );
+  STKUNIT_ASSERT( ! key_bad_zero.is_valid() );
+  STKUNIT_ASSERT(   key_good_0_1.is_valid() );
+  STKUNIT_ASSERT(   key_good_1_1.is_valid() );
+  STKUNIT_ASSERT(   key_good_2_10.is_valid() );
 
-  STKUNIT_ASSERT( 0  == entity_rank( key_good_0_1));
-  STKUNIT_ASSERT( 1  == entity_rank( key_good_1_1) );
-  STKUNIT_ASSERT( 2  == entity_rank( key_good_2_10) );
-  STKUNIT_ASSERT( 1  == entity_id( key_good_0_1) );
-  STKUNIT_ASSERT( 1  == entity_id( key_good_1_1) );
-  STKUNIT_ASSERT( 10 == entity_id( key_good_2_10) );
+  STKUNIT_ASSERT( 0  == key_good_0_1.rank());
+  STKUNIT_ASSERT( 1  == key_good_1_1.rank() );
+  STKUNIT_ASSERT( 2  == key_good_2_10.rank() );
+  STKUNIT_ASSERT( 1  == key_good_0_1.id() );
+  STKUNIT_ASSERT( 1  == key_good_1_1.id() );
+  STKUNIT_ASSERT( 10 == key_good_2_10.id() );
 
   STKUNIT_ASSERT(  key_order_1_12 <  key_order_2_10);
   STKUNIT_ASSERT( !( key_order_1_12 >  key_order_2_10));
 
 #ifndef NDEBUG
   STKUNIT_ASSERT_THROW( EntityKey( ~0u , 1 ) , std::logic_error );
-  STKUNIT_ASSERT_THROW( EntityKey( 0 , ~stk::mesh::EntityKey::raw_key_type(0) ) , std::logic_error );
+  STKUNIT_ASSERT_THROW( EntityKey( 0 , ~0ull ) , std::logic_error );
 #endif // NDEBUG
 }
 

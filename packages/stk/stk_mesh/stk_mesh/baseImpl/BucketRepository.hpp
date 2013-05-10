@@ -15,6 +15,11 @@
 
 namespace stk {
 namespace mesh {
+
+namespace utest {
+struct SyncToPartitions;
+}
+
 namespace impl {
 
 class EntityRepository;
@@ -27,17 +32,21 @@ public:
       BulkData & mesh,
       unsigned bucket_capacity,
       unsigned entity_rank_count,
-      EntityRepository & entity_repo
+      EntityRepository & entity_repo,
+      const ConnectivityMap & connectivity_map
       );
 
-  /** \brief  Query to get all buckets of a given entity rank */
+  /** \brief  Query to get all buckets of a given entity rank.
+   *
+   *  Don't call inside BucketRepository member functions!
+   */
   const std::vector<Bucket*> & buckets( EntityRank rank ) const
   {
     ThrowAssertMsg( rank < m_buckets.size(), "Invalid entity rank " << rank );
 
     if (m_need_sync_from_partitions[rank])
     {
-        const_cast<BucketRepository *>(this)->sync_from_partitions(rank);
+      const_cast<BucketRepository *>(this)->sync_from_partitions(rank);
     }
 
     return m_buckets[ rank ];
@@ -52,23 +61,7 @@ public:
   BulkData& mesh() const { return m_mesh; }
 
   //------------------------------------
-
-  /** \brief  Rotate the field data of multistate fields.
-   *
-   *  <PRE>
-   *  Rotation of states:
-   *    StateN   <- StateNP1 (StateOld <- StateNew)
-   *    StateNM1 <- StateN   (StateNM1 <- StateOld)
-   *    StateNM2 <- StateNM1
-   *    StateNM3 <- StateNM2
-   *    StateNM3 <- StateNM2
-   *  </PRE>
-   */
-  void update_field_data_states() const ;
-
-  void copy_fields( Bucket & k_dst , unsigned i_dst ,
-                           Bucket & k_src , unsigned i_src )
-  { k_dst.replace_fields(i_dst,k_src,i_src); }
+  size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const;
 
   void internal_sort_bucket_entities();
 
@@ -84,23 +77,38 @@ public:
   {
     if (m_need_sync_from_partitions[entity_rank])
     {
-        const_cast<BucketRepository *>(this)->sync_from_partitions(entity_rank);
+      const_cast<BucketRepository *>(this)->sync_from_partitions(entity_rank);
     }
     std::vector< std::vector<Bucket*> >::const_iterator itr = m_buckets.begin() + entity_rank;
     return stk::mesh::get_bucket_range(m_buckets, itr);
   }
 
+  Bucket *get_bucket(EntityRank entity_rank, int bucket_id) const;
+
+  template <class RankType>
+  inline
+  Bucket *get_bucket(RankType rank_id) const;
+
+  //  Bucket *get_bucket(Node node) const;
+  //  Bucket *get_bucket(Edge edge) const;
+  //  Bucket *get_bucket(Face face) const;
+  //  Bucket *get_bucket(Element elem) const;
+
   ////
   //// Partitions are now the primary location of buckets.
-  ////
+  ////c
 
   friend class Partition;
+  friend struct stk::mesh::utest::SyncToPartitions;
 
   Partition *get_or_create_partition(const unsigned arg_entity_rank ,
                                      const PartVector &parts);
 
   Partition *get_or_create_partition(const unsigned arg_entity_rank ,
                                      const OrdinalVector &parts);
+
+  // For use by BulkData::internal_modification_end().
+  void internal_modification_end();
 
   // Update m_buckets from the partitions.
   void sync_from_partitions();
@@ -109,13 +117,19 @@ public:
   // Used in unit tests.  Returns the current partitions.
   std::vector<Partition *> get_partitions(EntityRank rank);
 
-  // Used in unit tests. Delete the Partitions in m_partitions, clear it, and then (re-)build
-  // the Partitions from the m_buckets.
-  void sync_to_partitions();
-
+  const ConnectivityMap& connectivity_map() const { return m_connectivity_map; }
 
 private:
+
   BucketRepository();
+
+  Bucket *allocate_bucket(EntityRank arg_entity_rank,
+                          const std::vector<unsigned> & arg_key,
+                          size_t arg_capacity);
+
+  void deallocate_bucket(Bucket *bucket);
+
+  void sync_bucket_ids(EntityRank entity_rank);
 
   BulkData                            & m_mesh ; // Associated Bulk Data Aggregate
   unsigned                              m_bucket_capacity ; // Maximum number of entities per bucket
@@ -128,11 +142,32 @@ private:
 
   std::vector<std::vector<Partition *> >         m_partitions;
   std::vector<bool>                              m_need_sync_from_partitions;
+
+  ConnectivityMap m_connectivity_map;
 };
+
+inline
+Bucket *BucketRepository::get_bucket(EntityRank entity_rank, int bucket_id) const
+{
+  const std::vector<Bucket *> & all_buckets_for_rank = m_buckets[entity_rank];
+  ThrowAssert(static_cast<size_t>(bucket_id) < all_buckets_for_rank.size());
+  return all_buckets_for_rank[bucket_id];
+}
+
+template <class RankType>
+inline
+Bucket *BucketRepository::get_bucket(RankType rank_id) const
+{
+  const std::vector<Bucket *> & all_buckets_for_rank = m_buckets[TopoHelper<RankType>::entity_rank];
+  int id = EXTRACT_BUCKET_ID(rank_id);
+  ThrowAssert(static_cast<size_t>(id) < all_buckets_for_rank.size());
+  return all_buckets_for_rank[id];
+}
+
+#undef RANK_DEPENDENT_GET_BUCKET_FN_DEF
 
 } // namespace impl
 } // namespace mesh
 } // namespace stk
-
 
 #endif // stk_mesh_BucketRepository_hpp

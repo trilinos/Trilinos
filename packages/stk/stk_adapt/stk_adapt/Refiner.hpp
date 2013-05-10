@@ -46,7 +46,7 @@
 namespace stk {
   namespace adapt {
 
-    typedef std::set<stk::mesh::Entity> ElementUnrefineCollection;
+typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> ElementUnrefineCollection;
     typedef std::map<stk::mesh::Part*, stk::mesh::Part*> SideElementPartMap;
     typedef std::map<stk::mesh::Part*, stk::mesh::PartVector> SidePartMap;
     //typedef std::map<std::string, std::string> SidePartMap;
@@ -57,7 +57,7 @@ namespace stk {
 
 
 #if UNIFORM_REF_REMOVE_OLD_STD_SET
-    typedef std::set<stk::mesh::Entity> elements_to_be_destroyed_type;
+typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destroyed_type;
 #endif
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
     typedef std::vector<stk::mesh::Entity> elements_to_be_destroyed_type;
@@ -152,8 +152,8 @@ namespace stk {
 
       // ================================ unrefine
 
-      typedef std::set<stk::mesh::Entity> NodeSetType;
-      typedef std::set<stk::mesh::Entity> SetOfEntities;
+      typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> NodeSetType;
+      typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> SetOfEntities;
 
 
       void

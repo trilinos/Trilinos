@@ -28,7 +28,7 @@
 //
 // A common pattern for code that wants tracing (put this code somewhere before
 // the code you want to trace).
-//   stk::mesh::setStream(use_case::dwout());
+//   stk::mesh::setStream(use_case::dwout()); (OR sierra::dwout() for Sierra tracing!)
 //   meshlog.setPrintMask(stk::mesh::LOG_ENTITY | stk::mesh::LOG_TRACE | stk::mesh::LOG_TRACE_SUB_CALLS);
 //   stk::mesh::watch(stk::mesh::EntityKey(0, 11)); // Node 11
 //   stk::diag::Trace::addTraceFunction("stk::mesh::");
@@ -78,14 +78,20 @@ std::vector<Watch*>& watch_vector();
 template <typename T>
 bool internal_is_watching(const T& item)
 {
+  bool found_type_match = false;
   for (std::vector<Watch*>::const_iterator
        itr = watch_vector().begin(); itr != watch_vector().end(); ++itr) {
-    if ((*itr)->type() == typeid(T) &&
-        (*itr)->match(&item)) {
-      return true;
+    if ((*itr)->type() == typeid(T)) {
+      found_type_match = true;
+      if ((*itr)->match(&item)) {
+        return true;
+      }
     }
   }
-  return false;
+
+  // If we aren't watching any particular item of a type, then we are
+  // watching *all* items of that type
+  return !found_type_match;
 }
 
 template <typename T>

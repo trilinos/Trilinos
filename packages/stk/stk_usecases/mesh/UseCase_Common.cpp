@@ -44,25 +44,29 @@ namespace mesh {
 namespace use_cases {
 
 bool verify_elem_node_coord(
+  const mesh::BulkData & mesh,
   mesh::Entity elem ,
   const VectorFieldType & node_coord ,
   const unsigned node_count )
 {
   bool result = true;
-  mesh::PairIterRelation rel = elem.relations( NODE_RANK );
+  mesh::Entity const *rel = mesh.begin_node_entities(elem);
 
-  if( (unsigned) rel.size() != node_count ) {
-    std::cerr << "Error!  relation size == " << rel.size() << " != "
+  if( static_cast<unsigned>(mesh.num_nodes(elem)) != node_count ) {
+    std::cerr << "Error!  relation size == " << mesh.num_nodes(elem) << " != "
       << node_count << " == node count" << std::endl;
     result = false;
   }
 
   // Iterating over the nodes in element
   for ( unsigned j = 0 ; j < node_count ; ++j ) {
-    mesh::Entity node = rel[j].entity();
+    mesh::Entity node = rel[j];
 
     // Field data for the nodal coordinate field for node
-    mesh::EntityArray< VectorFieldType > node_coord_array( node_coord , node );
+    const mesh::Bucket &node_bucket = mesh.bucket(node);
+    const mesh::Ordinal node_bordinal = mesh.bucket_ordinal(node);
+    mesh::EntityArray< VectorFieldType >
+      node_coord_array( node_coord , node_bucket, node_bordinal );
 
     // Checking the size and dimensionality of node_coord_array
     {

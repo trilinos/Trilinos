@@ -34,46 +34,66 @@ void BulkData::require_valid_relation( const char action[] ,
                                        const Entity e_from ,
                                        const Entity e_to )
 {
-  const bool error_mesh_from = & mesh != & BulkData::get(e_from);
-  const bool error_mesh_to   = & mesh != & BulkData::get(e_to);
-  const bool error_type      = e_from.entity_rank() <= e_to.entity_rank();
-  const bool error_nil_from  = !e_from.is_valid();
-  const bool error_nil_to    = !e_to.is_valid();
+  const bool error_type      = mesh.entity_rank(e_from) <= mesh.entity_rank(e_to);
+  const bool error_nil_from  = !mesh.is_valid(e_from);
+  const bool error_nil_to    = !mesh.is_valid(e_to);
 
-  if ( error_mesh_from || error_mesh_to || error_type ||
-       error_nil_from || error_nil_to ) {
+  if ( error_type || error_nil_from || error_nil_to ) {
     std::ostringstream msg ;
 
     msg << "Could not " << action << " relation from entity "
-        << print_entity_key(e_from) << " to entity "
-        << print_entity_key(e_to) << "\n";
+        << print_entity_key(MetaData::get(mesh), mesh.entity_key(e_from)) << " to entity "
+        << print_entity_key(MetaData::get(mesh), mesh.entity_key(e_to)) << "\n";
 
-    ThrowErrorMsgIf( error_mesh_from || error_mesh_to,
-                     msg.str() << (error_mesh_from ? "e_from" : "e_to" ) <<
-                     " not member of this mesh");
     ThrowErrorMsgIf( error_nil_from  || error_nil_to,
-                     msg.str() << (error_mesh_from ? "e_from" : "e_to" ) <<
-                     " was destroyed");
+                     msg.str() << ", entity was destroyed");
     ThrowErrorMsgIf( error_type, msg.str() <<
                      "A relation must be from higher to lower ranking entity");
   }
 }
 
+namespace {
+
+inline bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
+{
+  return r1.raw_relation_id() == r2.raw_relation_id() && r1.entity() != r2.entity() ;
+}
+
+}
+
 //----------------------------------------------------------------------
+bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
+                                         RelationIdentifier local_id,
+                                         unsigned sync_count, bool is_back_relation,
+                                         Permutation permut)
+{
+  TraceIfWatching("stk::mesh::BuilkData::declare_relation", LOG_ENTITY, entity_key(e_from));
+
+  const MeshIndex& idx = mesh_index(e_from);
+
+  bool modified = idx.bucket->declare_relation(idx.bucket_ordinal, e_to, static_cast<ConnectivityOrdinal>(local_id),
+                                               permut);
+
+  if (modified) {
+    set_synchronized_count( e_from, sync_count );
+  }
+  return modified;
+}
 
 void BulkData::declare_relation( Entity e_from ,
                                  Entity e_to ,
-                                 const RelationIdentifier local_id )
+                                 const RelationIdentifier local_id ,
+                                 Permutation permut)
 {
-  TraceIfWatching("stk::mesh::BulkData::declare_relation", LOG_ENTITY, e_from.key());
-  TraceIfWatchingDec("stk::mesh::BulkData::declare_relation", LOG_ENTITY, e_to.key(), 1);
-  DiagIfWatching(LOG_ENTITY, e_from.key(),
-                 "from: " << e_from << ";  " <<
-                 "to: " << e_to << ";  " <<
+  TraceIfWatching("stk::mesh::BulkData::declare_relation", LOG_ENTITY, entity_key(e_from));
+  TraceIfWatchingDec("stk::mesh::BulkData::declare_relation", LOG_ENTITY, entity_key(e_to), 1);
+  DiagIfWatching(LOG_ENTITY, entity_key(e_from),
+                 "from: " << entity_key(e_from) << ";  " <<
+                 "to: " << entity_key(e_to) << ";  " <<
                  "id: " << local_id);
-  DiagIfWatching(LOG_ENTITY, e_to.key(),
-                 "from: " << e_from << ";  " <<
-                 "to: " << e_to << ";  " <<
+  DiagIfWatching(LOG_ENTITY, entity_key(e_to),
+                 "from: " << entity_key(e_from) << ";  " <<
+                 "to: " << entity_key(e_to) << ";  " <<
                  "id: " << local_id);
 
   require_ok_to_modify();
@@ -82,16 +102,41 @@ void BulkData::declare_relation( Entity e_from ,
 
   // TODO: Don't throw if exact relation already exists, that should be a no-op.
   // Should be an exact match if relation of local_id already exists (e_to should be the same).
-  m_entity_repo.declare_relation( e_from, e_to, local_id, m_sync_count);
+  bool is_converse = false;
+  bool caused_change_fwd = internal_declare_relation(e_from, e_to, local_id, m_sync_count,
+                                                     is_converse, permut);
+
+  // Relationships should always be symmetrical
+  if ( caused_change_fwd ) {
+
+    if (entity_rank(e_to) >= m_bucket_repository.connectivity_map().m_map.size() ||
+        entity_rank(e_from) >= m_bucket_repository.connectivity_map().m_map.size() ||
+        m_bucket_repository.connectivity_map()(entity_rank(e_to), entity_rank(e_from)) != stk::mesh::INVALID_CONNECTIVITY_TYPE) {
+      // the setup for the converse relationship works slightly differently
+      is_converse = true;
+      bool caused_change_inv = internal_declare_relation(e_to, e_from, local_id, m_sync_count,
+                                                         is_converse, permut );
+
+      ThrowErrorMsgIf( !caused_change_inv,
+          " Internal error - could not create inverse relation of " <<
+          identifier(e_from) << " to " << identifier(e_to));
+    }
+  }
+
+  // It is critical that the modification be done AFTER the relations are
+  // added so that the propagation can happen correctly.
+  if ( caused_change_fwd ) {
+    this->modified(e_to);
+    this->modified(e_from);
+  }
 
   OrdinalVector add , empty ;
 
   // Deduce and set new part memberships:
 
-  induced_part_membership( e_from, empty, e_to.entity_rank(), local_id, add );
+  induced_part_membership(*this, e_from, empty, entity_rank(e_to), local_id, add );
 
   internal_change_entity_parts( e_to , add , empty );
-
 }
 
 //----------------------------------------------------------------------
@@ -101,21 +146,22 @@ void BulkData::declare_relation( Entity entity ,
 {
   require_ok_to_modify();
 
-  const unsigned erank = entity.entity_rank();
+  const unsigned erank = entity_rank(entity);
 
   std::vector<Relation>::const_iterator i ;
   for ( i = rel.begin() ; i != rel.end() ; ++i ) {
     Entity e = i->entity();
     const unsigned n = i->relation_ordinal();
-    if ( e.entity_rank() < erank ) {
-      declare_relation( entity , e , n );
+    const Permutation permut = static_cast<Permutation>(i->getOrientation());
+    if ( entity_rank(e) < erank ) {
+      declare_relation( entity , e , n, permut );
     }
-    else if ( erank < e.entity_rank() ) {
-      declare_relation( e , entity , n );
+    else if ( erank < entity_rank(e) ) {
+      declare_relation( e , entity , n, permut );
     }
     else {
       ThrowErrorMsg("Given entities of the same entity rank. entity is " <<
-                    print_entity_key(entity));
+                    identifier(entity));
     }
   }
 }
@@ -126,26 +172,31 @@ bool BulkData::destroy_relation( Entity e_from ,
                                  Entity e_to,
                                  const RelationIdentifier local_id )
 {
-  TraceIfWatching("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, e_from.key());
-  TraceIfWatchingDec("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, e_to.key(), 1);
-  DiagIfWatching(LOG_ENTITY, e_from.key(),
-                 "from: " << e_from << ";  " <<
-                 "to: " << e_to << ";  " <<
+  TraceIfWatching("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, entity_key(e_from));
+  TraceIfWatchingDec("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, entity_key(e_to), 1);
+  DiagIfWatching(LOG_ENTITY, entity_key(e_from),
+                 "from: " << entity_key(e_from) << ";  " <<
+                 "to: " << entity_key(e_to) << ";  " <<
                  "id: " << local_id);
-  DiagIfWatching(LOG_ENTITY, e_to.key(),
-                 "from: " << e_from << ";  " <<
-                 "to: " << e_to << ";  " <<
+  DiagIfWatching(LOG_ENTITY, entity_key(e_to),
+                 "from: " << entity_key(e_from) << ";  " <<
+                 "to: " << entity_key(e_to) << ";  " <<
                  "id: " << local_id);
 
   require_ok_to_modify();
 
   require_valid_relation( "destroy" , *this , e_from , e_to );
 
+  const EntityRank end_rank = m_mesh_meta_data.entity_rank_count();
+  EntityRank e_to_entity_rank = entity_rank(e_to);
+
   //------------------------------
   // When removing a relationship may need to
   // remove part membership and set field relation pointer to NULL
 
-  if ( parallel_size() < 2 || entity_comm_sharing(e_to.key()).empty() ) {
+  m_check_invalid_rels = false; // OK to have gaps when deleting
+
+  if ( parallel_size() < 2 || entity_comm_sharing(entity_key(e_to)).empty() ) {
 
     //------------------------------
     // 'keep' contains the parts deduced from kept relations
@@ -157,26 +208,43 @@ bool BulkData::destroy_relation( Entity e_from ,
 
     OrdinalVector del, keep, empty;
 
+
     // For all relations that are *not* being deleted, add induced parts for
     // these relations to the 'keep' vector
-    for ( PairIterRelation i = e_to.relations(); !i.empty(); ++i ) {
-      if (e_to.entity_rank() < i->entity_rank()) { // Need to look at back rels only
-        if ( !( i->entity() == e_from && i->relation_ordinal() == local_id ) ) {
-          induced_part_membership( i->entity(), empty, e_to.entity_rank(),
-                                   i->relation_ordinal(), keep,
-                                   false /*Do not look at supersets*/);
+    for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+    {
+      size_t num_rels = num_connectivity(e_to, irank);
+      Entity const *rel_entities = begin_entities(e_to, irank);
+      ConnectivityOrdinal const *rel_ordinals = begin_ordinals(e_to, irank);
+      for (size_t j = 0; j < num_rels; ++j)
+      {
+        if (e_to_entity_rank < irank)
+        { // Need to look at back rels only
+          if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
+          {
+            induced_part_membership(*this, rel_entities[j], empty, e_to_entity_rank,
+                                    rel_ordinals[j], keep,
+                                    false /*Do not look at supersets*/);
+          }
         }
       }
     }
 
     // Find the relation this is being deleted and add the parts that are
     // induced from that relation (and that are not in 'keep') to 'del'
-    for ( PairIterRelation i = e_from.relations() ; !i.empty() ; ++i ) {
-      if ( i->entity() == e_to && i->relation_ordinal() == local_id ) {
-        induced_part_membership( e_from, keep, e_to.entity_rank(),
-                                 i->relation_ordinal(), del,
-                                 false /*Do not look at supersets*/);
-        break; // at most 1 relation can match our specification
+    for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+    {
+      size_t num_rels = num_connectivity(e_from, irank);
+      Entity const *rel_entities = begin_entities(e_from, irank);
+      ConnectivityOrdinal const *rel_ordinals = begin_ordinals(e_from, irank);
+      for (size_t j = 0; j < num_rels; ++j)
+      {
+        if ( rel_entities[j] == e_to && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) )
+        {
+          induced_part_membership(*this, e_from, keep, e_to_entity_rank,
+                                  rel_ordinals[j], del, false /*Do not look at supersets*/);
+          break; // at most 1 relation can match our specification
+        }
       }
     }
 
@@ -186,7 +254,27 @@ bool BulkData::destroy_relation( Entity e_from ,
   }
 
   //delete relations from the entities
-  return m_entity_repo.destroy_relation( e_from, e_to, local_id);
+  bool caused_change_fwd = bucket(e_from).destroy_relation(e_from, e_to, local_id);
+
+  // Relationships should always be symmetrical
+  if ( caused_change_fwd ) {
+    bool caused_change_inv = bucket(e_to).destroy_relation(e_to, e_from, local_id);
+    ThrowErrorMsgIf( !caused_change_inv,
+        " Internal error - could not destroy inverse relation of " <<
+        identifier(e_from) << " to " << identifier(e_to) <<
+        " with local relation id of " << local_id);
+  }
+
+  // It is critical that the modification be done AFTER the relations are
+  // changed so that the propagation can happen correctly.
+  if ( caused_change_fwd ) {
+    this->modified(e_to);
+    this->modified(e_from);
+  }
+
+  m_check_invalid_rels = true;
+
+  return caused_change_fwd;
 }
 
 //----------------------------------------------------------------------
@@ -194,4 +282,3 @@ bool BulkData::destroy_relation( Entity e_from ,
 
 } // namespace mesh
 } // namespace stk
-

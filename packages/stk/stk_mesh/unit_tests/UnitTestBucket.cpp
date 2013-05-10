@@ -64,13 +64,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
-  const int spatial_dimension = 3;
-
   // Create a mesh for testing buckets...
 
   // Create dummy names for entity ranks to be given to MetaData
-  std::vector<std::string> entity_names(10);
-  for ( size_t i = 0 ; i < 10 ; ++i ) {
+  std::vector<std::string> entity_names(5);
+  for ( size_t i = 0 ; i < 5 ; ++i ) {
     std::ostringstream name ;
     name << "EntityRank" << i ;
     entity_names[i] = name.str();
@@ -127,33 +125,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
       bulk.update_field_data_states ();
   }
 
-  // Third, checking field_data_valid (...)
-  {
-    const std::vector< FieldBase * > &field_bases = meta.get_fields();
-    STKUNIT_ASSERT_THROW(field_data_valid ( *field_bases[0] , *bulk.buckets(3)[0] , 1 , "error" ) , std::runtime_error);
-    STKUNIT_ASSERT_EQUAL(field_data_valid ( *field_bases[0] , *bulk.buckets(0)[0] , 1 , "no_error" ) , true);
-    STKUNIT_ASSERT_THROW(field_data_valid ( *field_bases[0] , *bulk.buckets(3)[0] , 99 , "error" ) , std::runtime_error);
-
-    // Set up a second mesh
-
-    MetaData meta2 ( spatial_dimension, entity_names );
-    BulkData bulk2( meta2 , pm , max_bucket_size );
-
-    ScalarFieldType & temperature2 =
-      meta2.declare_field < ScalarFieldType > ( "temperature2" , number_of_states );
-    ScalarFieldType & volume2 =
-      meta2.declare_field < ScalarFieldType > ( "volume2" , number_of_states );
-    Part  & universal2     = meta2.universal_part ();
-    put_field ( temperature2 , NODE_RANK , universal2 );
-    put_field ( volume2 , element_rank  , universal2 );
-    meta2.commit();
-
-    // Cover line containing messsage for wrong MetaData used
-    const std::vector< FieldBase * > &field_bases2 = meta2.get_fields();
-    STKUNIT_ASSERT_THROW(field_data_valid ( *field_bases2[0] , *bulk.buckets(0)[0] , 1 , "error" ) , std::runtime_error);
-  }
-
-  // Fourth, check has_superset (...) and membership functions
+  // next, check has_superset (...) and membership functions
   {
     PartVector tmp(2) ;
     tmp[0] = & meta.universal_part();

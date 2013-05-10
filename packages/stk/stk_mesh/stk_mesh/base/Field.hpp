@@ -114,21 +114,69 @@ template< typename Scalar , class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
           class Tag5 , class Tag6 , class Tag7 >
 class Field : public FieldBase {
 public:
+  Field(
+       MetaData                   * arg_mesh_meta_data ,
+       unsigned                     arg_ordinal ,
+       const std::string          & arg_name ,
+       const DataTraits           & arg_traits ,
+       unsigned                     arg_rank,
+       const shards::ArrayDimTag  * const * arg_dim_tags,
+       unsigned                     arg_number_of_states ,
+       FieldState                   arg_this_state
+       )
+    : FieldBase(arg_mesh_meta_data,
+        arg_ordinal,
+        arg_name,
+        arg_traits,
+        arg_rank,
+        arg_dim_tags,
+        arg_number_of_states,
+        arg_this_state
+        )
+  {}
 
   /** \brief  Query this field for a given field state. */
   Field & field_of_state( FieldState input_state ) const {
+#ifndef NDEBUG
+    return dynamic_cast<Field &>( * FieldBase::field_state(input_state) );
+#else // NDEBUG
     return static_cast<Field &>( * FieldBase::field_state(input_state) );
+#endif
+  }
+
+  virtual ~Field(){}
+
+  inline Scalar* operator[](Node node) const
+  {
+    return m_node_field[EXTRACT_BUCKET_ID(node)].data + m_node_field[EXTRACT_BUCKET_ID(node)].length * EXTRACT_BUCKET_ORDINAL(node);
+  }
+
+  virtual void update_node_field(unsigned bucket_id, unsigned length, void* data_ptr)
+  {
+    if (m_node_field.size() <= bucket_id) {
+      m_node_field.resize(bucket_id+1);
+    }
+
+    m_node_field[bucket_id].data = reinterpret_cast<Scalar*>(data_ptr);
+    m_node_field[bucket_id].length = length/sizeof(Scalar);
   }
 
 private:
 
+  struct ScalarView {
+    Scalar* data;
+    uint32_t length;
+    uint32_t unused;
+  };
+
+
 #ifndef DOXYGEN_COMPILE
 
-  ~Field();
   Field();
   Field( const Field & );
   Field & operator = ( const Field & );
 
+  std::vector<ScalarView> m_node_field; // This keeps "fast" pointers to the field data for every bucket
 #endif /* DOXYGEN_COMPILE */
 };
 

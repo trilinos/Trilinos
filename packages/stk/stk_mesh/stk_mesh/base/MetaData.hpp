@@ -16,6 +16,7 @@
 #include <stk_util/util/SameType.hpp>
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/util/string_case_compare.hpp>
 
 #include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/Types.hpp>
@@ -39,6 +40,8 @@ namespace shards {
 
 namespace stk {
 namespace mesh {
+
+class BulkData;
 
 /** \addtogroup stk_mesh_module
  *  \{
@@ -117,7 +120,6 @@ public:
 
   static MetaData & get( const BulkData & bulk_data );
   static MetaData & get( const Bucket & bucket );
-  static MetaData & get( const Entity entity );
   static MetaData & get( const Ghosting & ghost );
 
   /** \brief  Construct a meta data manager to own parts and fields.  */
@@ -130,6 +132,8 @@ public:
    *          all of the parts and fields that it owns.
    */
   ~MetaData();
+
+  void set_mesh_on_fields(BulkData* bulk);
 
   //------------------------------------
   /** \name Predefined Parts
@@ -401,7 +405,15 @@ public:
     const DataTraits  & arg_traits ,
     unsigned            arg_rank ,
     const shards::ArrayDimTag * const * arg_dim_tags ,
-    unsigned arg_num_states );
+    unsigned arg_num_states )
+  {
+    require_not_committed();
+  
+    return m_field_repo.declare_field(
+                  arg_name, arg_traits, arg_rank, arg_dim_tags,
+                  arg_num_states, this
+                 );
+  }
 
   /** \brief  Declare a field restriction via runtime type information.
    */
@@ -532,12 +544,13 @@ inline void set_cell_topology(Part & part)
 /** Get the cell_topology off a bucket */
 CellTopology get_cell_topology(const Bucket &bucket);
 
+CellTopology get_cell_topology(Entity entity);
+
 /** set a stk::topology on a part */
 void set_topology(Part &part, stk::topology topology);
 
 /** Get the cell_topology off an entity */
 CellTopology get_cell_topology(const Entity entity);
-
 
 /** get the stk::topology given a Shards Cell Topology */
 stk::topology get_topology(CellTopology shards_topology, int spatial_dimension = 3);
@@ -699,8 +712,12 @@ field_type * MetaData::get_field( const std::string & name ) const
   FieldBase * const field =
     m_field_repo.get_field( "stk::mesh::MetaData::get_field" ,
                           name , dt , Traits::Rank , tags , 0 );
-
-  return static_cast< field_type * >( field );
+  if (field == NULL) {
+    return static_cast<field_type*>(NULL);
+  }
+  else {
+    return dynamic_cast< field_type * >( field );
+  }
 }
 
 template< class field_type >
@@ -710,14 +727,94 @@ field_type & MetaData::declare_field( const std::string & name ,
 {
   typedef FieldTraits< field_type > Traits ;
 
-  const DataTraits & dt = data_traits< typename Traits::data_type >();
+  const DataTraits & traits = data_traits< typename Traits::data_type >();
 
-  const shards::ArrayDimTag * tags[8] ;
+  const shards::ArrayDimTag * dim_tags[8] ;
 
-  Traits::assign_tags( tags );
+  Traits::assign_tags( dim_tags );
 
-  return * static_cast< field_type * >(
-    declare_field_base( name , dt , Traits::Rank , tags , number_of_states ) );
+  static const char* reserved_state_suffix[6] = {
+    "_STKFS_OLD",
+    "_STKFS_N",
+    "_STKFS_NM1",
+    "_STKFS_NM2",
+    "_STKFS_NM3",
+    "_STKFS_NM4"
+  };
+
+  // Check that the name does not have a reserved suffix
+
+  for ( unsigned i = 0 ; i < 6 ; ++i ) {
+    const int len_name   = name.size();
+    const int len_suffix = std::strlen( reserved_state_suffix[i] );
+    const int offset     = len_name - len_suffix ;
+    if ( 0 <= offset ) {
+      const char * const name_suffix = name.c_str() + offset ;
+      ThrowErrorMsgIf( equal_case( name_suffix , reserved_state_suffix[i] ),
+          "For name = \"" << name_suffix <<
+          "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
+          reserved_state_suffix[i] << "\"" );
+    }
+  }
+
+  // Check that the field of this name has not already been declared
+
+  field_type * f[ MaximumFieldStates ] ;
+
+  f[0] = dynamic_cast<field_type*>(m_field_repo.get_field(
+      "MetaData::declare_field" ,
+      name ,
+      traits ,
+      Traits::Rank ,
+      dim_tags ,
+      number_of_states
+      ));
+
+  if ( NULL != f[0] ) {
+    for ( unsigned i = 1 ; i < number_of_states ; ++i ) {
+      f[i] = &f[0]->field_of_state(static_cast<FieldState>(i));
+    }
+  }
+  else {
+    // Field does not exist then create it
+
+    std::string field_names[ MaximumFieldStates ];
+
+    field_names[0] = name ;
+
+    if ( 2 == number_of_states ) {
+      field_names[1] = name ;
+      field_names[1].append( reserved_state_suffix[0] );
+    }
+    else {
+      for ( unsigned i = 1 ; i < number_of_states ; ++i ) {
+        field_names[i] = name ;
+        field_names[i].append( reserved_state_suffix[i] );
+      }
+    }
+
+    for ( unsigned i = 0 ; i < number_of_states ; ++i ) {
+
+      f[i] = new field_type(
+          this,
+          m_field_repo.get_fields().size() ,
+          field_names[i] ,
+          traits ,
+          Traits::Rank,
+          dim_tags,
+          number_of_states ,
+          static_cast<FieldState>(i)
+          );
+
+      m_field_repo.add_field( f[i] );
+    }
+
+    for ( unsigned i = 0 ; i < number_of_states ; ++i ) {
+      f[i]->m_impl.set_field_states( f );
+    }
+  }
+
+  return *f[0] ;
 }
 
 template< class field_type >

@@ -67,12 +67,6 @@ bool Selector::operator()( const Bucket * candidate ) const{
   return operator()(*candidate);
 }
 
-bool Selector::operator()( const Entity candidate ) const
-{
-  const Bucket & b = candidate.bucket();
-  return this->operator()(b);
-}
-
 Selector & Selector::operator &= ( const Selector & B )
 {
   if (m_mesh_meta_data == 0) {

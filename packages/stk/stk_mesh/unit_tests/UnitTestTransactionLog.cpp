@@ -575,7 +575,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelChangeOwnership)
   bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
   std::vector <stk::mesh::EntityProc> change_owner;
   if ( entity )
-    if ( fixture.comm_rank() == entity->owner_rank() )
+    if ( fixture.comm_rank() == bulk.parallel_owner_rank(entity) )
     {
       int other_rank = fixture.comm_rank()==0?1:0;
       change_owner.push_back ( std::make_pair ( entity , other_rank ) );

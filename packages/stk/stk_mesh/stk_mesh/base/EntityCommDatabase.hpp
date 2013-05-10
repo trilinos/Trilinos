@@ -31,7 +31,7 @@ namespace mesh {
 struct EntityComm
 {
   EntityCommInfoVector comm_map;
-  unsigned             owner_rank;
+  int                  owner_rank;
 };
 
 class EntityCommDatabase
@@ -44,14 +44,14 @@ public:
   PairIterEntityComm sharing( const EntityKey & key ) const;
   PairIterEntityComm comm( const EntityKey & key ) const;
   PairIterEntityComm comm( const EntityKey & key, const Ghosting & sub ) const;
-  unsigned owner_rank( const EntityKey & key ) const;
+  int owner_rank( const EntityKey & key ) const;
 
-  bool insert( const EntityKey & key, const EntityCommInfo & val, unsigned owner );
+  bool insert( const EntityKey & key, const EntityCommInfo & val, int owner );
   bool erase( const EntityKey & key, const EntityCommInfo & val );
   bool erase( const EntityKey & key, const Ghosting & ghost );
   void comm_clear_ghosting(const EntityKey & key );
   void comm_clear(const EntityKey & key );
-  bool change_owner_rank(const EntityKey& key, unsigned owner);
+  bool change_owner_rank(const EntityKey& key, int owner);
 
 private:
   bool cached_find(const EntityKey& key) const;
@@ -87,9 +87,9 @@ void EntityCommDatabase::insert(const EntityKey& key)
 }
 
 inline
-unsigned EntityCommDatabase::owner_rank( const EntityKey & key ) const
+int EntityCommDatabase::owner_rank( const EntityKey & key ) const
 {
-  if (!cached_find(key)) return InvalidOrdinal;
+  if (!cached_find(key)) return InvalidProcessRank;
 
   return m_last_lookup->second.owner_rank;
 }
@@ -140,7 +140,7 @@ PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key, const Ghosti
 }
 
 inline
-bool EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & val, unsigned owner )
+bool EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & val, int owner )
 {
   TraceIfWatching("stk::mesh::EntityComm::insert", LOG_ENTITY, key);
   DiagIfWatching(LOG_ENTITY, key, "owner " << owner);
@@ -246,14 +246,14 @@ void EntityCommDatabase::comm_clear(const EntityKey & key)
 }
 
 inline
-bool EntityCommDatabase::change_owner_rank(const EntityKey& key, unsigned owner)
+bool EntityCommDatabase::change_owner_rank(const EntityKey& key, int owner)
 {
   // Do not add key to map, only update rank if it was already in the map
   if (cached_find(key)) {
     TraceIfWatching("stk::mesh::EntityComm::change_owner_rank", LOG_ENTITY, key);
     DiagIfWatching(LOG_ENTITY, key, "new owner " << owner);
 
-    unsigned orig_owner = m_last_lookup->second.owner_rank;
+    const int orig_owner = m_last_lookup->second.owner_rank;
     m_last_lookup->second.owner_rank = owner;
     return orig_owner != owner;
   }
@@ -263,25 +263,25 @@ bool EntityCommDatabase::change_owner_rank(const EntityKey& key, unsigned owner)
 /** \brief  Is in owned closure of the given process,
  *          typically the local process.
  */
-bool in_owned_closure( const Entity entity , unsigned proc );
+bool in_owned_closure(const BulkData& mesh, const Entity entity , int proc );
 
 //----------------------------------------------------------------------
 
-void pack_entity_info( CommBuffer & buf , const Entity entity );
+void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity entity );
 
 void unpack_entity_info(
   CommBuffer     & buf,
   const BulkData & mesh ,
   EntityKey      & key ,
-  unsigned       & owner ,
+  int            & owner ,
   PartVector     & parts ,
   std::vector<Relation> & relations );
 
 /** \brief  Pack an entity's field values into a buffer */
-void pack_field_values( CommBuffer & , Entity );
+void pack_field_values(const BulkData& mesh, CommBuffer & , Entity );
 
 /** \brief  Unpack an entity's field values from a buffer */
-bool unpack_field_values( CommBuffer & , Entity , std::ostream & error_msg );
+bool unpack_field_values(const BulkData& mesh, CommBuffer & , Entity , std::ostream & error_msg );
 
 } // namespace mesh
 } // namespace stk

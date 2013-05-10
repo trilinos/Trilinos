@@ -74,7 +74,7 @@ namespace stk {
 
 	  // gather nodal coords and compute centroid
 	  std::vector<double> centroid(spatial_dim, 0.0);
-	  stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+	  percept::MyPairIterRelation elem_nodes (eMesh, element, stk::mesh::MetaData::NODE_RANK);
 	  for (unsigned inode=0; inode < elem_nodes.size(); inode++) {
 	    stk::mesh::Entity node = elem_nodes[inode].entity();
 	    double *coords = stk::mesh::field_data( *eMesh.get_coordinates_field() , node);

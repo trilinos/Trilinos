@@ -305,7 +305,7 @@ namespace stk
 
         typedef IntrepidManager IM;
         unsigned cubDegree = m_cubDegree;
-        const stk::mesh::PairIterRelation parent_elements = child_element.relations(child_element.entity_rank() + 1);
+        const MyPairIterRelation parent_elements(bulkData, child_element, child_element.entity_rank() + 1 );
         VERIFY_OP_ON(parent_elements.size(), ==, 1, "cant find parent");
         const stk::mesh::Entity element = parent_elements[0].entity();
         unsigned i_face = parent_elements[0].relation_ordinal();

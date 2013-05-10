@@ -33,7 +33,8 @@ struct ElementMeanValue {
 
   enum { maximum_entity_count = 0 }; /* Don't slice buckets */
 
-  void apply( stk::mesh::Bucket::iterator ibegin ,
+  void apply( const stk::mesh::BulkData &mesh,
+              stk::mesh::Bucket::iterator ibegin ,
               stk::mesh::Bucket::iterator iend ) const;
 
   ElementMeanValue(
@@ -50,7 +51,8 @@ struct ElementMeanValue_Gather {
 
   enum { maximum_entity_count = 0 }; /* Don't slice buckets */
 
-  void apply( stk::mesh::Bucket::iterator ibegin ,
+  void apply( const stk::mesh::BulkData &mesh,
+              stk::mesh::Bucket::iterator ibegin ,
               stk::mesh::Bucket::iterator iend ) const;
 
   ElementMeanValue_Gather(
@@ -68,7 +70,8 @@ struct ElementMeanValue_Gather {
 struct NodeScaleSum {
 
   enum { maximum_entity_count = 0 }; /* Don't slice buckets. */
-  void apply( stk::mesh::Bucket::iterator ibegin ,
+  void apply( const stk::mesh::BulkData &mesh,
+              stk::mesh::Bucket::iterator ibegin ,
               stk::mesh::Bucket::iterator iend ) const;
 
   NodeScaleSum(

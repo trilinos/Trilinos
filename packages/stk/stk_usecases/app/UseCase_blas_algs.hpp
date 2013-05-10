@@ -35,13 +35,14 @@ public:
 
   enum { maximum_entity_count = 0 }; /* Don't slice buckets */
 
-  void apply( stk::mesh::Bucket::iterator bucket_i ,
+  void apply( const stk::mesh::BulkData &mesh,
+              stk::mesh::Bucket::iterator bucket_i ,
               stk::mesh::Bucket::iterator bucket_j ) const
   {
     typedef typename stk::mesh::FieldTraits<field_type>::data_type scalar ;
 
-    stk::mesh::BucketArray<field_type> xa( x_ , bucket_i , bucket_j );
-    stk::mesh::BucketArray<field_type> ya( y_ , bucket_i , bucket_j );
+    stk::mesh::BucketArray<field_type> xa( x_ , mesh.bucket(*bucket_i), bucket_i , bucket_j );
+    stk::mesh::BucketArray<field_type> ya( y_ , mesh.bucket(*bucket_i), bucket_i , bucket_j );
 
     scalar * xi = xa.contiguous_data();
     scalar * yi = ya.contiguous_data();
@@ -78,12 +79,12 @@ public:
 
   enum { maximum_entity_count = 0 }; /* Don't slice buckets */
 
-  void apply( stk::mesh::Bucket::iterator bucket_i ,
+  void apply( const stk::mesh::BulkData &mesh, stk::mesh::Bucket::iterator bucket_i ,
               stk::mesh::Bucket::iterator bucket_j ) const
   {
     typedef typename stk::mesh::FieldTraits<field_type>::data_type scalar ;
 
-    stk::mesh::BucketArray<field_type> xa( x_ , bucket_i , bucket_j );
+    stk::mesh::BucketArray<field_type> xa( x_ , mesh.bucket(*bucket_i), bucket_i , bucket_j );
 
     scalar * xi = xa.contiguous_data();
     scalar * xe = xi + xa.size();
@@ -177,12 +178,13 @@ public:
 
   enum { maximum_entity_count = 0 }; /* Don't slice buckets */
 
-  void apply( stk::mesh::Bucket::iterator bucket_i ,
+  void apply( const stk::mesh::BulkData &mesh,
+              stk::mesh::Bucket::iterator bucket_i ,
               stk::mesh::Bucket::iterator bucket_j ,
               reduce_type * inout ) const
   {
-    stk::mesh::BucketArray<field_type> xa( field_x , bucket_i , bucket_j );
-    stk::mesh::BucketArray<field_type> ya( field_y , bucket_i , bucket_j );
+    stk::mesh::BucketArray<field_type> xa(field_x , mesh.bucket(*bucket_i) , bucket_i , bucket_j );
+    stk::mesh::BucketArray<field_type> ya(field_y , mesh.bucket(*bucket_i), bucket_i , bucket_j );
 
     scalar * xi = xa.contiguous_data();
     scalar * yi = ya.contiguous_data();
@@ -258,11 +260,12 @@ public:
 
   enum { maximum_entity_count = 0 }; /* Don't slice buckets */
 
-  void apply( stk::mesh::Bucket::iterator bucket_i ,
+  void apply( const stk::mesh::BulkData &mesh,
+              stk::mesh::Bucket::iterator bucket_i ,
               stk::mesh::Bucket::iterator bucket_j ,
               reduce_type * inout ) const
   {
-    stk::mesh::BucketArray<field_type> xa( field_x , bucket_i , bucket_j );
+    stk::mesh::BucketArray<field_type> xa( field_x , mesh.bucket(*bucket_i), bucket_i , bucket_j );
 
     scalar * xi = xa.contiguous_data();
     scalar * xe = xi + xa.size();

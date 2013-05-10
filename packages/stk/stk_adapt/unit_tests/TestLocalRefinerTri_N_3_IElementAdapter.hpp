@@ -48,7 +48,7 @@ namespace stk {
         // horizontal line position
         const double vy = 1.21;
 
-        const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+        const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
         for (unsigned inode=0; inode < elem_nodes.size(); inode++)
           {
@@ -76,7 +76,7 @@ namespace stk {
 
       // unrefine test
       {
-        const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
+        const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
         bool found = true;
         for (unsigned inode=0; inode < elem_nodes.size(); inode++)

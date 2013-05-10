@@ -21,26 +21,30 @@ namespace mesh {
 
 //----------------------------------------------------------------------------
 
-
 /** \brief  Is in owned closure of the given process,
  *          typically the local process.
  */
-bool in_owned_closure( const Entity entity , unsigned proc )
+bool in_owned_closure(const BulkData& mesh, const Entity entity , int proc )
 {
   // TODO: This function has a potential performance problem if relations
   // are dense.
 
   // Does proc own this entity? If so, we're done
-  bool result = entity.owner_rank() == proc ;
+  bool result = mesh.parallel_owner_rank(entity) == proc ;
 
   if ( ! result ) {
-    const unsigned erank = entity.entity_rank();
+    const unsigned erank = mesh.entity_rank(entity);
+    const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
 
     // Does entity have an upward relation to an entity owned by proc
-    for ( PairIterRelation
-          rel = entity.relations(); ! result && ! rel.empty() ; ++rel ) {
-      result =  erank < rel->entity_rank() &&
-                in_owned_closure( rel->entity(), proc);
+    for (EntityRank irank = erank + 1; irank < end_rank && !result; ++irank)
+    {
+      Entity const *irels_j = mesh.begin_entities(entity, irank);
+      Entity const *irels_e = mesh.end_entities(entity, irank);
+      for (; !result && (irels_j != irels_e); ++irels_j)
+      {
+        result = in_owned_closure(mesh, *irels_j, proc);
+      }
     }
   }
 
@@ -49,27 +53,51 @@ bool in_owned_closure( const Entity entity , unsigned proc )
 
 //----------------------------------------------------------------------------
 
-void pack_entity_info( CommBuffer & buf , const Entity entity )
+void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity entity )
 {
-  const EntityKey & key   = entity.key();
-  const unsigned    owner = entity.owner_rank();
+  const EntityKey & key   = mesh.entity_key(entity);
+  const unsigned    owner = mesh.parallel_owner_rank(entity);
   const std::pair<const unsigned *, const unsigned *>
-    part_ordinals = entity.bucket().superset_part_ordinals();
-  const PairIterRelation relations = entity.relations();
+    part_ordinals = mesh.bucket(entity).superset_part_ordinals();
 
   const unsigned nparts = part_ordinals.second - part_ordinals.first ;
-  const unsigned nrel   = relations.size();
+  const unsigned tot_rel = mesh.count_relations(entity);
 
   buf.pack<EntityKey>( key );
   buf.pack<unsigned>( owner );
   buf.pack<unsigned>( nparts );
   buf.pack<unsigned>( part_ordinals.first , nparts );
-  buf.pack<unsigned>( nrel );
+  buf.pack<unsigned>( tot_rel );
 
-  for ( unsigned i = 0 ; i < nrel ; ++i ) {
-    buf.pack<EntityKey>( relations[i].entity().key() );
-    buf.pack<unsigned>( relations[i].relation_ordinal() );
-    buf.pack<unsigned>( relations[i].attribute() );
+  const MeshIndex e_idx = mesh.mesh_index(entity);
+  ThrowAssertMsg(e_idx.bucket, "BulkData at " << &mesh << " does not know Entity " << mesh.identifier(entity));
+  const Bucket &bucket = *e_idx.bucket;
+  const Ordinal ebo = e_idx.bucket_ordinal;
+  const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+
+  for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+  {
+    const unsigned nrel = bucket.num_connectivity(ebo, irank);
+    Entity const *rel_entities = bucket.begin_entities(ebo, irank);
+    ConnectivityOrdinal const *rel_ordinals = bucket.begin_ordinals(ebo, irank);
+    Permutation const *rel_permutations = bucket.begin_permutations(ebo, irank);
+
+    for ( unsigned i = 0 ; i < nrel ; ++i ) {
+      if (mesh.is_valid(rel_entities[i])) {
+        buf.pack<EntityKey>( mesh.entity_key(rel_entities[i]) );
+        buf.pack<unsigned>( rel_ordinals[i] );
+        if (bucket.has_permutation(irank)) {
+          buf.pack<unsigned>( rel_permutations[i] );
+        } else {
+          buf.pack<unsigned>(0u);
+        }
+      } else { // relation to invalid entity (FIXED CONNECTIVITY CASE)
+        // TODO:  Consider not communicating relations to invalid entities...
+        buf.pack<EntityKey>( EntityKey() ); // invalid EntityKey
+        buf.pack<unsigned>( rel_ordinals[i] );
+        buf.pack<unsigned>(0u); // permutation
+      }
+    }
   }
 }
 
@@ -77,7 +105,7 @@ void unpack_entity_info(
   CommBuffer       & buf,
   const BulkData   & mesh ,
   EntityKey        & key ,
-  unsigned         & owner ,
+  int              & owner ,
   PartVector       & parts ,
   std::vector<Relation> & relations )
 {
@@ -85,7 +113,7 @@ void unpack_entity_info(
   unsigned nrel = 0 ;
 
   buf.unpack<EntityKey>( key );
-  buf.unpack<unsigned>( owner );
+  buf.unpack<int>( owner );
   buf.unpack<unsigned>( nparts );
 
   parts.resize( nparts );
@@ -108,10 +136,13 @@ void unpack_entity_info(
     buf.unpack<EntityKey>( rel_key );
     buf.unpack<unsigned>( rel_id );
     buf.unpack<unsigned>( rel_attr );
+    if (rel_key == EntityKey()) {
+      continue;
+    }
     Entity const entity =
-      mesh.get_entity( entity_rank(rel_key), entity_id(rel_key) );
-    if ( entity.is_valid() ) {
-      Relation rel( entity, rel_id );
+      mesh.get_entity( rel_key.rank(), rel_key.id() );
+    if ( mesh.is_valid(entity) ) {
+      Relation rel(mesh, entity, rel_id );
       rel.set_attribute(rel_attr);
       relations.push_back( rel );
     }
@@ -121,10 +152,9 @@ void unpack_entity_info(
 
 //----------------------------------------------------------------------
 
-void pack_field_values( CommBuffer & buf , Entity entity )
+void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
 {
-  const Bucket   & bucket = entity.bucket();
-  const BulkData & mesh   = BulkData::get(bucket);
+  const Bucket   & bucket = mesh.bucket(entity);
   const MetaData & mesh_meta_data = MetaData::get(mesh);
 
   const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields();
@@ -135,24 +165,23 @@ void pack_field_values( CommBuffer & buf , Entity entity )
     const FieldBase & f = **i ;
 
     if ( f.data_traits().is_pod ) {
-      const unsigned size = field_data_size( f , bucket );
+      const unsigned size = mesh.field_data_size_per_entity( f, bucket );
 
       buf.pack<unsigned>( size );
 
       if ( size ) {
         unsigned char * const ptr =
-          reinterpret_cast<unsigned char *>( field_data( f , entity ) );
+          reinterpret_cast<unsigned char *>( mesh.field_data( f , entity ) );
         buf.pack<unsigned char>( ptr , size );
       }
     }
   }
 }
 
-bool unpack_field_values(
+bool unpack_field_values(const BulkData& mesh,
   CommBuffer & buf , Entity entity , std::ostream & error_msg )
 {
-  const Bucket   & bucket = entity.bucket();
-  const BulkData & mesh   = BulkData::get(bucket);
+  const Bucket   & bucket = mesh.bucket(entity);
   const MetaData & mesh_meta_data = MetaData::get(mesh);
 
   const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields();
@@ -169,14 +198,14 @@ bool unpack_field_values(
 
     if ( f.data_traits().is_pod ) {
 
-      const unsigned size = field_data_size( f , bucket );
+      const unsigned size = mesh.field_data_size_per_entity( f, bucket );
       unsigned recv_data_size = 0 ;
       buf.unpack<unsigned>( recv_data_size );
 
       if ( size != recv_data_size ) {
         if ( ok ) {
           ok = false ;
-          print_entity_key( error_msg , mesh_meta_data , entity.key() );
+          error_msg << mesh.identifier(entity);
         }
         error_msg << " " << f.name();
         error_msg << " " << size ;
@@ -185,7 +214,7 @@ bool unpack_field_values(
       }
       else if ( size ) { // Non-zero and equal
         unsigned char * ptr =
-          reinterpret_cast<unsigned char *>( field_data( f , entity ) );
+          reinterpret_cast<unsigned char *>( mesh.field_data( f , entity ) );
         buf.unpack<unsigned char>( ptr , size );
       }
     }

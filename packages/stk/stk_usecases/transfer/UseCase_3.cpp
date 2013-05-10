@@ -28,8 +28,6 @@
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_mesh/diag/EntityKey.hpp>
-
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/IdentProc.hpp>
@@ -73,7 +71,7 @@ use_case_3_driver(stk::ParallelMachine  comm,
   stk::diag::TimeBlock __timer_transfer(timer_transfer);
 
   stk::CommAll comm_all( comm );
-  const unsigned my_rank = comm_all.parallel_rank();
+  const int my_rank = comm_all.parallel_rank();
 
   dw().m(LOG_TRANSFER) << "Use case 3: Point (range) in Box (domain) Search" << stk::diag::dendl;
   dw().m(LOG_TRANSFER) << "Range  Entity Type = " << range_entity  << stk::diag::dendl;
@@ -177,10 +175,10 @@ use_case_3_driver(stk::ParallelMachine  comm,
     stk::mesh::EntityKey domain_entity_key(i->first.ident);
     stk::mesh::EntityKey range_entity_key(i->second.ident);
 
-    const std::size_t domain_owning_proc = i->first.proc;
-    const std::size_t range_owning_rank  = i->second.proc;
+    const int domain_owning_proc = i->first.proc;
+    const int range_owning_rank  = i->second.proc;
     if (domain_owning_proc != my_rank && range_owning_rank == my_rank) {
-      stk::mesh::Entity r_entity = range_bulk_data.get_entity(stk::mesh::entity_rank(range_entity_key), stk::mesh::entity_id(range_entity_key));
+      stk::mesh::Entity r_entity = range_bulk_data.get_entity(range_entity_key.rank(), range_entity_key.id());
       if (r_entity.owner_rank() == my_rank) {
         stk::mesh::EntityProc ep(r_entity, domain_owning_proc);
         range_to_ghost.push_back(ep);
@@ -189,7 +187,7 @@ use_case_3_driver(stk::ParallelMachine  comm,
   }
 
   dw().m(LOG_TRANSFER) << "Change ghosts to send:";
-  stk::search_util::print_entity_proc_map(dw().m(LOG_TRANSFER), range_to_ghost, "Is ghosting ", " to ");
+  stk::search_util::print_entity_proc_map(dw().m(LOG_TRANSFER), range_bulk_data, range_to_ghost, "Is ghosting ", " to ");
 
 
   {
@@ -226,15 +224,15 @@ use_case_3_driver(stk::ParallelMachine  comm,
   {
     IdentProcRelation::const_iterator I=relation.begin(), rend=relation.end();
     for ( ; I!=rend; ++I) {
-      const std::size_t domain_owning_proc = I->first.proc;
+      const int domain_owning_proc = I->first.proc;
       if (domain_owning_proc == my_rank) {
         stk::mesh::EntityKey domain_entity_key(I->first.ident);
         stk::mesh::EntityKey range_entity_key(I->second.ident);
 
-        stk::mesh::Entity d_entity = domain_bulk_data.get_entity(stk::mesh::entity_rank(domain_entity_key), stk::mesh::entity_id(domain_entity_key));
-        stk::mesh::Entity r_entity = range_bulk_data.get_entity (stk::mesh::entity_rank(range_entity_key), stk::mesh::entity_id(range_entity_key));
-        assert(d_entity.is_valid());
-        assert(r_entity.is_valid());
+        stk::mesh::Entity d_entity = domain_bulk_data.get_entity(domain_entity_key.rank(), domain_entity_key.id());
+        stk::mesh::Entity r_entity = range_bulk_data.get_entity (range_entity_key.rank(), range_entity_key.id());
+        assert(domain_bulk_data.is_valid(d_entity));
+        assert(range_bulk_data.is_valid(r_entity));
         std::pair<stk::mesh::Entity , stk::mesh::Entity> e(d_entity, r_entity);
         entity_map.push_back(e);
       }
@@ -247,12 +245,14 @@ use_case_3_driver(stk::ParallelMachine  comm,
   if (dw().shouldPrint(LOG_TRANSFER)) {
     dw() << "[" << my_rank << "]  Detailed search found " << entity_map.size()
           << " range nodes in the " << domain_vector.size() << " domain faces." << stk::diag::push << stk::diag::dendl;
-    stk::search_util::print_entity_map(dw().m(LOG_TRANSFER), entity_map, " may contain ");
+    stk::search_util::print_entity_map(dw().m(LOG_TRANSFER), domain_bulk_data, range_bulk_data,
+                                       entity_map, " may contain ");
     dw() << stk::diag::pop << stk::diag::dendl;
   }
 
   std::vector<std::size_t> not_in_element;
-  stk::usecase::is_in_element(domain_coord_field, range_coord_field, entity_map, not_in_element);
+  stk::usecase::is_in_element(domain_bulk_data, range_bulk_data,
+                              domain_coord_field, range_coord_field, entity_map, not_in_element);
 
   dw().m(LOG_TRANSFER) << "[" << my_rank << "] Detailed search found " << not_in_element.size()
                        << " nodes that were not in the face following the detailed search.";
@@ -267,5 +267,6 @@ use_case_3_driver(stk::ParallelMachine  comm,
 
   dw().m(LOG_TRANSFER) << "[" << my_rank << "]  Detailed search found " << entity_map.size()
                        << " range nodes in the " << domain_vector.size() << " domain faces.\n";
-  stk::search_util::print_entity_map(dw().m(LOG_TRANSFER), entity_map, " contains ");
+  stk::search_util::print_entity_map(dw().m(LOG_TRANSFER), domain_bulk_data, range_bulk_data,
+                                     entity_map, " contains ");
 }

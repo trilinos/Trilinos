@@ -15,7 +15,7 @@
 
 namespace stk {
 
-unsigned parallel_machine_size( ParallelMachine parallel_machine )
+int parallel_machine_size( ParallelMachine parallel_machine )
 {
   int value = 1 ;
   if (parallel_machine != MPI_COMM_NULL) {
@@ -26,7 +26,7 @@ unsigned parallel_machine_size( ParallelMachine parallel_machine )
   return value ;
 }
 
-unsigned parallel_machine_rank( ParallelMachine parallel_machine )
+int parallel_machine_rank( ParallelMachine parallel_machine )
 {
   int value = 0 ;
   if (parallel_machine != MPI_COMM_NULL) {
@@ -50,16 +50,12 @@ void parallel_machine_barrier( ParallelMachine parallel_machine )
 
 namespace stk {
 
-unsigned parallel_machine_size( ParallelMachine parallel_machine) { return 1 ; }
+int parallel_machine_size( ParallelMachine parallel_machine) { return 1 ; }
 
-unsigned parallel_machine_rank( ParallelMachine parallel_machine) { return 0 ; }
+int parallel_machine_rank( ParallelMachine parallel_machine) { return 0 ; }
 
 void parallel_machine_barrier( ParallelMachine parallel_machine) {}
 
 }
 
 #endif
-
-/*--------------------------------------------------------------------*/
-
-

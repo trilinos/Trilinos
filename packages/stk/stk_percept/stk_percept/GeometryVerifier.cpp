@@ -278,7 +278,7 @@ namespace stk
               // Number of elems in this bucket of elems and elem field data
               const unsigned number_elems = bucket.size();
 
-              double * elem_node_data = field_data( *coord_field , bucket.begin() );
+              double * elem_node_data = bulk.field_data( *coord_field , bucket, 0 );
               //double * elem_centroid_data = field_data( elem_centroid_field , bucket.begin() );
               //double * const coord = field_data( m_coordinates_field , *node );
 
@@ -311,7 +311,7 @@ namespace stk
               // get min/max edge length
               FieldContainer<double> elem_min_edge_length(number_elems);
               FieldContainer<double> elem_max_edge_length(number_elems);
-              PerceptMesh::findMinMaxEdgeLength(bucket, *coord_field, elem_min_edge_length, elem_max_edge_length);
+              PerceptMesh::findMinMaxEdgeLength(bulk, bucket, *coord_field, elem_min_edge_length, elem_max_edge_length);
 
               /// note: we're using cubature here instead of explicitly specifying some reference points
               ///  the idea is that we'll get a good estimate of the Jacobian's sign by testing it at all the

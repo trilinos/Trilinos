@@ -140,7 +140,21 @@ class FieldBase
 
   unsigned get_initial_value_num_bytes() const { return m_impl.get_initial_value_num_bytes(); }
 
+  // This function updates the pointer to this field's data for the specified
+  // bucket_id, so that it can be used inside the operator[] function with just
+  // a few bit operations to figure out exactly where the data sits.
+  virtual void update_node_field(unsigned bucket_id, unsigned length, void* data_ptr)
+  { ThrowRequireMsg(false, "FieldBase::update_node_field not implemented. You should be using a derived-class field."); }
+
+  virtual ~FieldBase() {}
+
+  stk::mesh::BulkData& get_mesh() const
+  { return *m_mesh; }
+
 private:
+
+  void set_mesh(stk::mesh::BulkData* bulk)
+  { m_mesh = bulk; }
 
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
@@ -148,12 +162,13 @@ private:
   MetaData & meta_data() const { return m_impl.meta_data(); }
 
   friend class ::stk::mesh::MetaData ;
-  friend class ::stk::mesh::impl::FieldRepository ;
+  friend class ::stk::mesh::impl::FieldRepository;
   friend class ::stk::mesh::impl::FieldBaseImpl ;
 
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestFieldImpl ;
 
+protected:
   FieldBase(
       MetaData                   * arg_mesh_meta_data ,
       unsigned                     arg_ordinal ,
@@ -176,8 +191,9 @@ private:
         )
   {}
 
-  ~FieldBase(){}
+private:
 
+  stk::mesh::BulkData* m_mesh;
   impl::FieldBaseImpl  m_impl;
 
   //the following functions are declared but not defined

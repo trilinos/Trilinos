@@ -26,7 +26,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_mesh/diag/EntityKey.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
 #include <stk_search/CoarseSearch.hpp>
@@ -45,7 +44,7 @@ using namespace use_case;
 struct EntityKeyDecomp {
   unsigned operator()( const unsigned p_size ,
                        const stk::mesh::EntityKey & key ) const
-    { return ( stk::mesh::entity_id( key ) >> 8 ) % p_size ; }
+    { return ( key.id() >> 8 ) % p_size ; }
 };
 
 typedef stk::util::ParallelIndex<stk::mesh::EntityKey,unsigned,EntityKeyDecomp> ParallelIndex;
@@ -65,11 +64,6 @@ template<typename T>
 std::ostream& operator<<(std::ostream& ostr, const std::vector<T> &v){
   std::copy(v.begin(), v.end(), std::ostream_iterator<T>(ostr, ", "));
   return ostr;
-}
-
-
-std::ostream &operator<<(std::ostream &os, const stk::mesh::EntityKey &entity_key) {
-  return os << "[" << entity_rank(entity_key) << ":" << entity_id(entity_key) << "]";
 }
 
 
@@ -106,7 +100,7 @@ void check_query( const std::vector<ParallelIndex::Key> &recv_global_id_vector,
   for (; r_e != r_i && p_e != p_i; ++r_i, ++p_i) {
     const stk::mesh::EntityKey ri    = *r_i;
     const stk::mesh::EntityKey pi    = p_i->first;
-    const stk::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk::mesh::EntityKey(entity_rank(pi), entity_id(pi) + 1) : (p_i+1)->first;
+    const stk::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk::mesh::EntityKey(pi.rank(), pi.id() + 1) : (p_i+1)->first;
     if (pi == pi_p1) {
       std::cout << pi;
 
@@ -148,7 +142,7 @@ void check_query( const std::vector<ParallelIndex::Key> &recv_global_id_vector,
   }
   if (p_e != p_i) {
     const stk::mesh::EntityKey pi    = p_i->first;
-    const stk::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk::mesh::EntityKey(entity_rank(pi), entity_id(pi) + 1) : (p_i+1)->first;
+    const stk::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk::mesh::EntityKey(pi.rank(), pi.id() + 1) : (p_i+1)->first;
     if (pi == pi_p1) {
       std::cerr
         << " A send mesh node with global id "<<pi
@@ -234,8 +228,8 @@ use_case_0_driver(stk::ParallelMachine  comm,
 //     entity_key.value(i->first);
     stk::mesh::EntityKey entity_key(i->first);
 
-    const unsigned entity_rank = stk::mesh::entity_rank( entity_key);
-    const stk::mesh::EntityId entity_id = stk::mesh::entity_id( entity_key );
+    const unsigned entity_rank = entity_key.rank();
+    const stk::mesh::EntityId entity_id =  entity_key.id();
     const std::string & entity_rank_name = domain_meta_data.entity_rank_name( entity_rank );
     dw().m(LOG_TRANSFER)<<" contains "<<" "<<entity_rank_name<<"["<<entity_id<<"] Proc:"<<i->second<<stk::diag::dendl;
   }

@@ -132,27 +132,27 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
   //new_id = size * (++id_base) + rank;
   // stk::mesh::Entity elem2  = bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part );
 
-  bool use_memory_pool = false;
-  stk::mesh::impl::EntityRepository e(use_memory_pool);
+  // bool use_memory_pool = false;
+  stk::mesh::impl::EntityRepository &e = bulk.get_entity_repository();
 
-  bulk.entity_comm_clear(elem.key());
+  bulk.entity_comm_clear(bulk.entity_key(elem));
 
-  bulk.entity_comm_clear_ghosting(elem.key());
+  bulk.entity_comm_clear_ghosting(bulk.entity_key(elem));
 
   const stk::mesh::Ghosting & ghost = bulk.shared_aura();
 
   bulk.modification_end();
 
-  STKUNIT_ASSERT_FALSE(bulk.entity_comm_erase(elem.key(), ghost));
+  STKUNIT_ASSERT_FALSE(bulk.entity_comm_erase(bulk.entity_key(elem), ghost));
 
   const stk::mesh::EntityCommInfo comm_info( ghost.ordinal() , 0 );
 
-  STKUNIT_ASSERT_FALSE(bulk.entity_comm_erase(elem.key(), comm_info));
+  STKUNIT_ASSERT_FALSE(bulk.entity_comm_erase(bulk.entity_key(elem), comm_info));
 
   STKUNIT_ASSERT(bulk.entity_comm_insert(elem, comm_info));
 
-  //Checking internal_create_entity
-
+  //Checking internal_create_entity.
+  //   Hey, this doesn't seem to test much! -- PGX
   e.internal_create_entity( stk::mesh::EntityKey( 3, 2 ));
   e.internal_create_entity( stk::mesh::EntityKey( 3, 5 ));
   e.internal_create_entity( stk::mesh::EntityKey( 3, 7 ));
@@ -163,7 +163,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
     try {
 
       stk::mesh::Entity elem3 = e.get_entity(stk::mesh::EntityKey());
-      if(elem3.is_valid()){
+      if(bulk.is_valid(elem3)){
         // CAROL FIXME
       }
 

@@ -92,7 +92,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
         stk::mesh::Entity e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , e );
+        double * const e_weight = bulk_data.field_data( weight_field , e );
         *e_weight = 1.0;
       }
     }
@@ -101,7 +101,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
         stk::mesh::Entity n = bulk_data.get_entity( NODE_RANK, nid );
-        double * const coord = stk::mesh::field_data( coord_field , n );
+        double * const coord = bulk_data.field_data( coord_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -174,7 +174,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
     stk::mesh::Selector selector = fem_meta.locally_owned_part();
 
     get_selected_entities(selector, bulk_data.buckets(NODE_RANK), entities);
-    bool result = stk::rebalance::verify_dependent_ownership(element_rank, entities);
+    bool result = stk::rebalance::verify_dependent_ownership(bulk_data, element_rank, entities);
     //get_selected_entities(selector, bulk_data.buckets(constraint_rank), entities);
     //result &= stk::rebalance::verify_dependent_ownership(element_rank, entities);
     STKUNIT_ASSERT( result );

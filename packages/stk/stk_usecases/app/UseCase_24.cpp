@@ -291,7 +291,6 @@ void use_case_24_boundary_algorithm(
   const VectorFieldType   & nodal_momentum_flux )
 {
   mesh::MetaData &fem_meta = mesh::MetaData::get(bulkData);
-  const mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
   const mesh::EntityRank side_rank    = fem_meta.side_rank();
 
   // create intersection of faces and locally owned
@@ -305,137 +304,145 @@ void use_case_24_boundary_algorithm(
   unsigned count = 0 ;
 
   for ( std::vector<mesh::Bucket *>::const_iterator
-        ik = buckets.begin() ; ik != buckets.end() ; ++ik ) if ( select_owned_block( **ik ) ) {
+          ik = buckets.begin() ; ik != buckets.end() ; ++ik ) if ( select_owned_block( **ik ) ) {
 
-    const mesh::Bucket & faceBucket = **ik ;
+      const mesh::Bucket & faceBucket = **ik ;
 
-    // Number of sides in this bucket of sides and side field data
+      // Number of sides in this bucket of sides and side field data
 
-    const int number = faceBucket.size();
+      const int number = faceBucket.size();
 
-    count += number ;
+      count += number ;
 
-    for ( int i = 0 ; i < number ; ++i ) {
+      for ( int i = 0 ; i < number ; ++i ) {
 
-      mesh::Entity face = faceBucket[i] ;
+        mesh::Entity const *face_elem = faceBucket.begin_element_entities(i);
+        int num_face_elems = faceBucket.num_elements(i);
+        mesh::ConnectivityOrdinal const *face_elem_ordinal = faceBucket.begin_element_ordinals(i);
+        mesh::Entity const *face_nodes = faceBucket.begin_node_entities(i);
+        int num_face_nodes = faceBucket.num_nodes(i);
 
-      const mesh::PairIterRelation face_elem = face.relations( element_rank );
-      const mesh::PairIterRelation face_nodes = face.relations( mesh::MetaData::NODE_RANK);
+        if ( num_face_elems != 1 ) {
+          std::cout << " There appears to be more than one element connected to this boundary face.." << std::endl;
+          throw std::exception();
+        }
+        else {
 
-      if ( face_elem.size() != 1 ) {
-	std::cout << " There appears to be more than one element connected to this boundary face.." << std::endl;
-	throw std::exception();
-      }
-      else {
+          mesh::Entity elem = face_elem[0];
+          const mesh::Bucket &elem_bucket = bulkData.bucket(elem);
+          const mesh::Ordinal elem_bordinal = bulkData.bucket_ordinal(elem);
 
-	mesh::Entity elem = face_elem[0].entity();
+          //=======================================
+          // populate face bip data with values
+          //=======================================
 
-	//=======================================
-	// populate face bip data with values
-	//=======================================
+          // define some arrays for bip data
+          ScalarIPArray p_bip_array(pressure_ip, faceBucket, i);
+          VectorIPArray mf_bip_array(mass_flux_ip, faceBucket, i);
+          VectorIPArray mom_flux_bip(momentum_flux_bip, faceBucket, i);
 
-	// define some arrays for bip data
-	ScalarIPArray p_bip_array(pressure_ip, face);
-	VectorIPArray mf_bip_array(mass_flux_ip, face);
-	VectorIPArray mom_flux_bip(momentum_flux_bip, face);
+          // FIXME SPD 10/22/2008
+          // I do not like to remember specific indexes, e.g. what dimension(0),
+          // dimension(1), etc. means
+          // For example dimension(o) for ScalarIPFieldType provides numBoundaryIps
+          // whereas dimension(0) for a VectorIPFieldType, provides the SpatialDim..
+          // Again, I might like to see some specific method off of the field that returns
+          // things such as SpatialDim, and HowManyThereAre, e.g., numBoundaryIps
+          const int numBoundaryIps = p_bip_array.dimension(0);
+          const int nDim = mom_flux_bip.dimension(0);
+          for ( int k = 0; k < numBoundaryIps; ++k )
+          {
+            p_bip_array(k) = 1.0;
+            for (int j = 0; j < nDim; ++j){
+              mf_bip_array(j,k) = 1.0;
+              mom_flux_bip(j,k) = 1.0;
+            }
 
-	// FIXME SPD 10/22/2008
-	// I do not like to remember specific indexes, e.g. what dimension(0),
-	// dimension(1), etc. means
-	// For example dimension(o) for ScalarIPFieldType provides numBoundaryIps
-	// whereas dimension(0) for a VectorIPFieldType, provides the SpatialDim..
-	// Again, I might like to see some specific method off of the field that returns
-	// things such as SpatialDim, and HowManyThereAre, e.g., numBoundaryIps
-	const int numBoundaryIps = p_bip_array.dimension(0);
-	const int nDim = mom_flux_bip.dimension(0);
-	for ( int k = 0; k < numBoundaryIps; ++k )
-	{
-	  p_bip_array(k) = 1.0;
-	  for (int j = 0; j < nDim; ++j){
-	    mf_bip_array(j,k) = 1.0;
-	    mom_flux_bip(j,k) = 1.0;
-	  }
+          }
 
-	}
+          //=======================================
+          // populate face nodal data with values
+          //=======================================
+          for ( int k = 0; k < num_face_nodes; ++k )
+          {
+            mesh::Entity node = face_nodes[k];
+            const mesh::Bucket &node_bucket = bulkData.bucket(node);
+            const mesh::Ordinal node_bordinal = bulkData.bucket_ordinal(node);
 
-	//=======================================
-	// populate face nodal data with values
-	//=======================================
+            double * const pNode = bulkData.field_data( pressure ,node );
+            *pNode = 1.0;
 
-	for ( unsigned int k = 0; k < face_nodes.size(); ++k )
-	{
-	  mesh::Entity node = face_nodes[k].entity();
+            VectorArray v_face_node_array(velocity, node_bucket, node_bordinal);
+            VectorArray mf_face_node_array(nodal_momentum_flux, node_bucket, node_bordinal);
+            for ( int j = 0; j < nDim; ++j ){
+              v_face_node_array(j) = 1.0;
+              mf_face_node_array(j) = 1.0;
+            }
 
-	  double * const pNode = field_data( pressure ,node );
-	  *pNode = 1.0;
-
-	  VectorArray v_face_node_array(velocity, node);
-	  VectorArray mf_face_node_array(nodal_momentum_flux, node);
-	  for ( int j = 0; j < nDim; ++j ){
-	    v_face_node_array(j) = 1.0;
-	    mf_face_node_array(j) = 1.0;
-	  }
-
-	}
+          }
 
 
-	//=======================================
-	// populate element ip values
-	//=======================================
+          //=======================================
+          // populate element ip values
+          //=======================================
 
-	// define some arrays for bip data
-	ScalarIPArray p_ip_array(pressure_ip, elem);
-	VectorIPArray mf_ip_array(mass_flux_ip, elem);
+          // define some arrays for bip data
+          ScalarIPArray p_ip_array(pressure_ip, elem_bucket, elem_bordinal);
+          VectorIPArray mf_ip_array(mass_flux_ip, elem_bucket, elem_bordinal);
 
-	// FIXME SPD 10/22/2008
-	// I do not like to remember specific indexes, e.g. dimension(0) means,
-	// for a ScalarIPFieldType, numBoundaryIps whereas for a VectorIPFieldType,
-	// dimension(0) provides the SpatialDim..
-	const int numInteriorIps = p_ip_array.dimension(0);
-	const int nnDim = mf_ip_array.dimension(0);
-	for ( int k = 0; k < numInteriorIps; ++k )
-	{
-	  p_ip_array(k) = 1.0;
-	  for (int j = 0; j < nnDim; ++j){
-	    mf_ip_array(j,k) = 2.0;
-	  }
+          // FIXME SPD 10/22/2008
+          // I do not like to remember specific indexes, e.g. dimension(0) means,
+          // for a ScalarIPFieldType, numBoundaryIps whereas for a VectorIPFieldType,
+          // dimension(0) provides the SpatialDim..
+          const int numInteriorIps = p_ip_array.dimension(0);
+          const int nnDim = mf_ip_array.dimension(0);
+          for ( int k = 0; k < numInteriorIps; ++k )
+          {
+            p_ip_array(k) = 1.0;
+            for (int j = 0; j < nnDim; ++j){
+              mf_ip_array(j,k) = 2.0;
+            }
 
-	}
+          }
 
-	//================================================
-	// populate off elem nodes data with values
-	//================================================
+          //================================================
+          // populate off elem nodes data with values
+          //================================================
 
-        const mesh::PairIterRelation elem_nodes = elem.relations( mesh::MetaData::NODE_RANK);
-	const int localFaceNumber = face_elem[0].relation_ordinal();
-        const CellTopologyData *topo = mesh::get_cell_topology(elem).getCellTopologyData();
-	std::vector<int> skipNode(elem_nodes.size(),0);
 
-	for ( int j = 0; j < numBoundaryIps; ++j )
-	{
-	  const int faceNode = topo->side[localFaceNumber].node[j];
-	  skipNode[faceNode] = 1;
-	}
+          mesh::Entity const *elem_nodes = bulkData.begin_node_entities(elem);
+          int num_elem_nodes = bulkData.num_nodes(elem);
+          const int localFaceNumber = face_elem_ordinal[0];
+          const CellTopologyData *topo = mesh::get_cell_topology(elem_bucket).getCellTopologyData();
+          std::vector<int> skipNode(num_elem_nodes, 0);
 
-	// define some arrays for bip data
-	for ( unsigned int k = 0; k < elem_nodes.size(); ++k )
-	{
-	  mesh::Entity node = elem_nodes[k].entity();
+          for ( int j = 0; j < numBoundaryIps; ++j )
+          {
+            const int faceNode = topo->side[localFaceNumber].node[j];
+            skipNode[faceNode] = 1;
+          }
 
-	  double * const pNode = field_data( pressure ,node );
-	  VectorArray v_face_node_array(velocity, node);
+          // define some arrays for bip data
+          for (int k = 0; k < num_elem_nodes; ++k )
+          {
+            mesh::Entity node = elem_nodes[k];
+            const mesh::Bucket &node_bucket = bulkData.bucket(node);
+            const mesh::Ordinal node_bordinal = bulkData.bucket_ordinal(node);
 
-	  if ( !skipNode[k]  )
-	  {
-	    *pNode = 2.0;
+            double * const pNode = bulkData.field_data( pressure, node );
+            VectorArray v_face_node_array(velocity, node_bucket, node_bordinal);
 
-	    for ( int j = 0; j < nDim; ++j )
-	      v_face_node_array(j) = 2.0;
-	  }
-	}
+            if ( !skipNode[k]  )
+            {
+              *pNode = 2.0;
+
+              for ( int j = 0; j < nDim; ++j )
+                v_face_node_array(j) = 2.0;
+            }
+          }
+        }
       }
     }
-  }
 
   std::cout << "use_case_24_boundary_algorithm applied to '"
             << quad_block.name()

@@ -115,7 +115,14 @@ public:
 
   unsigned get_initial_value_num_bytes() const;
 
-  void set_field_states( FieldBase ** field_states);
+  template<typename FieldType>
+  void set_field_states( FieldType ** field_states)
+  {
+    for (unsigned i = 0; i < m_num_states; ++i) {
+      m_field_states[i] = field_states[i];
+    }
+  }
+
 
   FieldBaseImpl(
       MetaData                   * arg_mesh_meta_data ,

@@ -33,7 +33,7 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
 
   stk::mesh::fixtures::HexFixture fixture( pm , 2 , 1 , 1 );
 
-  const unsigned p_rank = fixture.m_bulk_data.parallel_rank();
+  const int p_rank = fixture.m_bulk_data.parallel_rank();
 
   stk::mesh::Part & shell_part = stk::mesh::declare_part<shards::ShellQuadrilateral<4> >( fixture.m_fem_meta, "shell_part");
 
@@ -49,7 +49,7 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
 
   // Whoever owns the 0,0,0 element create the shell and insert it between
   // the two elements.
-  if ( elem.is_valid() && p_rank == elem.owner_rank() ) {
+  if ( fixture.m_bulk_data.is_valid(elem) && p_rank == fixture.m_bulk_data.parallel_owner_rank(elem) ) {
     stk::mesh::EntityId elem_node[4];
     elem_node[0] = fixture.node_id( 1, 0, 0 );
     elem_node[1] = fixture.node_id( 1, 1, 0 );

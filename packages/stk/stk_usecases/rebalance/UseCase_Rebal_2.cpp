@@ -35,7 +35,8 @@ namespace use_cases {
 
 namespace {
 
-  void sum_element_weights_through_relations( stk::mesh::EntityVector & elements,
+  void sum_element_weights_through_relations(stk::mesh::BulkData &mesh,
+                                             stk::mesh::EntityVector & elements,
       ScalarField & field, const std::vector<stk::mesh::EntityRank> & ranks )
   {
     for( size_t i = 0; i < ranks.size(); ++i )
@@ -43,14 +44,14 @@ namespace {
       for( size_t ielem = 0; ielem < elements.size(); ++ielem )
       {
         stk::mesh::Entity elem = elements[ielem];
-        double * elem_weight = field_data( field , elem );
-        const stk::mesh::PairIterRelation rel = elem.relations( ranks[i] );
-        const unsigned num_entities = rel.size();
+        double * elem_weight = mesh.field_data( field , elem );
+        stk::mesh::Entity const * rel = mesh.begin_entities(elem, ranks[i] );
+        const unsigned num_entities = mesh.num_connectivity(elem, ranks[i] );
 
         for ( unsigned j = 0 ; j < num_entities ; ++j )
         {
-          stk::mesh::Entity entity = rel[j].entity();
-          const double * entity_weight = field_data( field , entity );
+          stk::mesh::Entity entity = rel[j];
+          const double * entity_weight = mesh.field_data( field , entity );
           elem_weight[0] += entity_weight[0];
         }
       }
@@ -117,14 +118,14 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
         selected_nodes.push_back( fixture.node(0, j+1, k  ) );
         selected_nodes.push_back( fixture.node(0, j,   k+1) );
         selected_nodes.push_back( fixture.node(0, j+1, k+1) );
-        stk::mesh::get_entities_through_relations(selected_nodes, face_rank, one_face);
+        stk::mesh::get_entities_through_relations(bulk, selected_nodes, face_rank, one_face);
         selected_faces.push_back(one_face[0]);
       }
 
     for( size_t iface = 0; iface < selected_faces.size(); ++iface )
     {
       stk::mesh::Entity face = selected_faces[iface];
-      double * const weight = stk::mesh::field_data( weight_field, face );
+      double * const weight = bulk.field_data( weight_field, face );
       weight[0] = 10.0;
     }
 
@@ -136,12 +137,12 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
       selected_nodes.clear();
       selected_nodes.push_back( fixture.node(0, j,   0) );
       selected_nodes.push_back( fixture.node(0, j+1, 0) );
-      stk::mesh::get_entities_through_relations(selected_nodes, edge_rank, one_edge);
+      stk::mesh::get_entities_through_relations(bulk, selected_nodes, edge_rank, one_edge);
       selected_edges.push_back(one_edge[0]);
       selected_nodes.clear();
       selected_nodes.push_back( fixture.node(0, j,   nz) );
       selected_nodes.push_back( fixture.node(0, j+1, nz) );
-      stk::mesh::get_entities_through_relations(selected_nodes, edge_rank, one_edge);
+      stk::mesh::get_entities_through_relations(bulk, selected_nodes, edge_rank, one_edge);
       selected_edges.push_back(one_edge[0]);
     }
     for ( unsigned k = 0 ; k < nz; ++k )
@@ -149,37 +150,37 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
       selected_nodes.clear();
       selected_nodes.push_back( fixture.node(0, 0, k) );
       selected_nodes.push_back( fixture.node(0, 0, k+1) );
-      stk::mesh::get_entities_through_relations(selected_nodes, edge_rank, one_edge);
+      stk::mesh::get_entities_through_relations(bulk, selected_nodes, edge_rank, one_edge);
       selected_edges.push_back(one_edge[0]);
       selected_nodes.clear();
       selected_nodes.push_back( fixture.node(0, ny, k) );
       selected_nodes.push_back( fixture.node(0, ny, k+1) );
-      stk::mesh::get_entities_through_relations(selected_nodes, edge_rank, one_edge);
+      stk::mesh::get_entities_through_relations(bulk, selected_nodes, edge_rank, one_edge);
       selected_edges.push_back(one_edge[0]);
     }
     for( size_t iedge = 0; iedge < selected_edges.size(); ++iedge )
     {
       stk::mesh::Entity edge = selected_edges[iedge];
-      double * const weight = stk::mesh::field_data( weight_field, edge );
+      double * const weight = bulk.field_data( weight_field, edge );
       weight[0] = 100.0;
     }
 
     // Finally, give the corner nodes of the x=0 plane a characteristic weight
     selected_nodes.clear();
-    double * weight = stk::mesh::field_data( weight_field, fixture.node(0, 0, 0) );
+    double * weight = bulk.field_data( weight_field, fixture.node(0, 0, 0) );
     weight[0] = 1000.0;
-    weight = stk::mesh::field_data( weight_field, fixture.node(0, ny, 0) );
+    weight = bulk.field_data( weight_field, fixture.node(0, ny, 0) );
     weight[0] = 1000.0;
-    weight = stk::mesh::field_data( weight_field, fixture.node(0, 0, nz) );
+    weight = bulk.field_data( weight_field, fixture.node(0, 0, nz) );
     weight[0] = 1000.0;
-    weight = stk::mesh::field_data( weight_field, fixture.node(0, ny, nz) );
+    weight = bulk.field_data( weight_field, fixture.node(0, ny, nz) );
     weight[0] = 1000.0;
 
     // Assign element weights
     for( size_t i = 0; i < my_element_ids.size(); ++i )
     {
       stk::mesh::Entity elem = bulk.get_entity(element_rank, my_element_ids[i]);
-      double * const e_weight = stk::mesh::field_data( weight_field , elem );
+      double * const e_weight = bulk.field_data( weight_field , elem );
       *e_weight = 1.0;
     }
     //
@@ -202,10 +203,10 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
         selected_nodes.push_back( fixture.node(0, j+1, k  ) );
         selected_nodes.push_back( fixture.node(0, j,   k+1) );
         selected_nodes.push_back( fixture.node(0, j+1, k+1) );
-        stk::mesh::get_entities_through_relations(selected_nodes, element_rank, one_face);
+        stk::mesh::get_entities_through_relations(bulk, selected_nodes, element_rank, one_face);
         selected_elems.push_back(one_face[0]);
       }
-    sum_element_weights_through_relations(selected_elems, weight_field, ranks);
+    sum_element_weights_through_relations(bulk, selected_elems, weight_field, ranks);
   }
 
   bulk.modification_end();
@@ -234,13 +235,13 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
     stk::mesh::Selector selector = fem_meta.locally_owned_part();
 
     get_selected_entities(selector, bulk.buckets(node_rank), entities);
-    result &= verify_dependent_ownership(element_rank, entities);
+    result &= verify_dependent_ownership(bulk, element_rank, entities);
 
     get_selected_entities(selector, bulk.buckets(edge_rank), entities);
-    result &= verify_dependent_ownership(element_rank, entities);
+    result &= verify_dependent_ownership(bulk, element_rank, entities);
 
     get_selected_entities(selector, bulk.buckets(face_rank), entities);
-    result &= verify_dependent_ownership(element_rank, entities);
+    result &= verify_dependent_ownership(bulk, element_rank, entities);
   }
 
   return result;

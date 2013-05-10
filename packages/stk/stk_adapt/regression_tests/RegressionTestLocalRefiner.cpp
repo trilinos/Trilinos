@@ -709,7 +709,7 @@ namespace stk
                     if (0)
                       {
                         eMesh.get_bulk_data()->modification_begin();
-                        ElementUnrefineCollection elements_to_unref1;
+                        ElementUnrefineCollection elements_to_unref1(*eMesh.get_bulk_data());
                         breaker.preUnrefine(elements_to_unref1, eMesh.element_rank());
                         eMesh.get_bulk_data()->modification_end();
                       }
@@ -833,7 +833,8 @@ namespace stk
           double *f_data = PerceptMesh::field_data_entity(field, element);
           stk::mesh::FieldBase* coord_field = m_eMesh.get_coordinates_field();
 
-          const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+          const MyPairIterRelation elem_nodes(bulkData, element, stk::mesh::MetaData::NODE_RANK );
+
           unsigned num_node = elem_nodes.size();
           double c[2] = {0,0};
           for (unsigned inode=0; inode < num_node; inode++)
@@ -1043,7 +1044,7 @@ namespace stk
         nodes.push_back(node0);
         nodes.push_back(node1);
         std::vector<stk::mesh::Entity> edge_elems;
-        get_entities_through_relations(nodes, stk::mesh::MetaData::ELEMENT_RANK, edge_elems);
+        get_entities_through_relations(stk::mesh::BulkData::get(node0), nodes, stk::mesh::MetaData::ELEMENT_RANK, edge_elems);
         ThrowRequire(!edge_elems.empty());
 
         bool all_marked_for_refinement = true;
@@ -1141,7 +1142,7 @@ namespace stk
           if (pMesh.isParentElement(elem,false)) continue;
 
           int elem_mark = 0;
-          const mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::MetaData::NODE_RANK );
+          const percept::MyPairIterRelation elem_nodes (pMesh, elem, stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           for (unsigned inode=0; inode < num_node; inode++)
           {

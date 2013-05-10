@@ -69,7 +69,7 @@ struct ExecInfo
 
 
   /**
-   * @brief Initialize MPI related operations for sierra, outputs banner, etc.  
+   * @brief Initialize MPI related operations for sierra, outputs banner, etc.
    *        returns 1 if MPI was initialized, 0 otherwise
    *
    * @param argc		an <b>int</b> pointer to the main argc.
@@ -105,7 +105,7 @@ struct ExecInfo
  //
  void ShutDownSierra(bool mpiInitFlag);
 
-  
+
 /**
  * @ingroup EnvMPIDetail EnvOutputDetail EnvCommandLineDetail
  * @brief Class <b>Startup</b> is a sentry class for starting the application.  It
@@ -178,7 +178,7 @@ private:
    */
   void startup(int *argc, char ***argv, const char *product_name, const char *build_time,
 	       ExecType mpi_key, const std::vector<int> *peer_sizes);
-  
+
 private:
   bool m_mpiInitFlag;			///< True if Startup initialized MPI
 };
@@ -245,7 +245,7 @@ const std::string &product_name();
 
 
 /**
- * @ingroup EnvRuntimeInformationDetail 
+ * @ingroup EnvRuntimeInformationDetail
  * @brief Function <b>developer_mode</b> returns true if the
  * --developer option was specified on the application command line.
  *

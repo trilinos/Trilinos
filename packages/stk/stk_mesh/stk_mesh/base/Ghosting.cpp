@@ -57,9 +57,9 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
       for ( PairIterEntityComm ec = m_mesh.entity_comm(i->key) ; ! ec.empty() ; ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           out << "    ";
-          print_entity_key( out, MetaData::get(m_mesh), i->key );
+          out << i->key.id();
           out << ", sending ghost to " << ec->proc << ", status is: "
-              << i->entity.state() << "\n";
+              << m_mesh.state(i->entity) << "\n";
         }
       }
     }
@@ -73,9 +73,9 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
       for ( PairIterEntityComm ec = m_mesh.entity_comm(i->key); !ec.empty(); ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           out << "    ";
-          print_entity_key( out, MetaData::get(m_mesh), i->key );
+          out << i->key.id();
           out << ", owner of ghost is " << i->owner
-              << ", status is: " << i->entity.state() << "\n";
+              << ", status is: " << m_mesh.state(i->entity) << "\n";
         }
       }
     }
