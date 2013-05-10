@@ -862,7 +862,7 @@ namespace MueLu {
 
         return A;
 #else
-        throwExceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+        throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
 #endif
       } else {
         throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
