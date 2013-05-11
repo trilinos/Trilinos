@@ -49,6 +49,11 @@ INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(TribitsGeneralMacros)
 INCLUDE(SetAndIncDirs)
 
+###
+### WARNING: See "NOTES TO DEVELOPERS" at the bottom of the file
+### TribitsPackageMacros.cmake!
+###
+
 
 #
 # Macro that configures the package's main config.h file
@@ -373,6 +378,8 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
       REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_INCLUDE_DIRS)
       REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_LIBRARY_DIRS)
       REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_LIBRARIES)
+
+      GLOBAL_SET(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES TRUE)
 
     ELSE()
 

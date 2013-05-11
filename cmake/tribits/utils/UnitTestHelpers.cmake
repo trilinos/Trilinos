@@ -44,6 +44,8 @@ INCLUDE(GlobalSet)
 #
 # Perform a single equality check and update overall test statistics
 #
+# UNITTEST_COMPARE_CONST( <varName> <constValue> )
+#
 
 FUNCTION(UNITTEST_COMPARE_CONST VAR_NAME CONST_VAL)
 
@@ -72,6 +74,11 @@ ENDFUNCTION()
 
 #
 # Perform a series regex of given strings and update overall test statistics
+#
+# UNITTEST_STRING_REGEX(
+#   <inputString>
+#   REGEX_STRINGS <str1> <str2> ...
+#   )
 #
 
 FUNCTION(UNITTEST_STRING_REGEX INPUT_STRING)
@@ -110,6 +117,11 @@ ENDFUNCTION()
 #
 # Perform a series regex of given strings and update overall test statistics
 #
+# UNITTEST_FILE_REGEX(
+#   <inputFileName>
+#   REGEX_STRINGS <str1> <str2> ...
+#   )
+# 
 
 FUNCTION(UNITTEST_FILE_REGEX  INPUT_FILE)
   MESSAGE("\nRegexing for strings in the file '${INPUT_FILE}':\n")

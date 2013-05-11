@@ -38,7 +38,7 @@
 # @HEADER
 
 INCLUDE(TribitsPackageSetupCompilerFlags)
-INCLUDE(TribitsPackageWritePackageConfig)
+INCLUDE(TribitsWriteClientExportFiles)
 INCLUDE(TribitsGeneralMacros)
 
 INCLUDE(ParseVariableArguments)
@@ -50,6 +50,9 @@ INCLUDE(PrependGlobalSet)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(TribitsAddOptionAndDefine)
 
+###
+### WARNING: See "NOTES TO DEVELOPERS" at the bottom of file!
+###
 
 #
 # Macro that defines the package architecture system varaibles used to link
@@ -63,6 +66,7 @@ MACRO(TRIBITS_DEFINE_LINKAGE_VARS PACKAGE_NAME_IN)
   GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_INCLUDE_DIRS)
   GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIBRARY_DIRS)
   GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIBRARIES)
+  GLOBAL_SET(${PACKAGE_NAME_IN}_HAS_NATIVE_LIBRARIES FALSE)
 ENDMACRO()
 
 
@@ -356,9 +360,9 @@ ENDMACRO()
 # has no libraries.
 #
 
-FUNCTION(PACAKGE_SETUP_DEPENDENCY_VARS_IF_NO_LIBS)
+FUNCTION(TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS)
 
-  IF (${PACKAGE_NAME}_SUBPACKAGES)
+  IF(${PACKAGE_NAME}_SUBPACKAGES)
 
     # A package with subpackages should get all of its dependency vars from
     # its enabled subpackages.
@@ -385,7 +389,6 @@ FUNCTION(PACAKGE_SETUP_DEPENDENCY_VARS_IF_NO_LIBS)
       MATH(EXPR SUBPACKAGE_IDX "${SUBPACKAGE_IDX}+1")
   
     ENDFOREACH()
-  
 
   ELSEIF(NOT ${PACKAGE_NAME}_INCLUDE_DIRS)
 
@@ -423,11 +426,13 @@ MACRO(TRIBITS_PACKAGE_POSTPROCESS_COMMON)
     PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
   ENDIF()
 
-  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES OR
+    ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES
+    )
     # Create the configure file so external projects can find packages with a
     # call to find_package(<package_name>)
     # This also creates the Makefile.export.* files.
-    TRIBITS_WRITE_PACKAGE_CONFIG_FILE(${PACKAGE_NAME})
+    TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES(${PACKAGE_NAME})
   ENDIF()
   
   SET(${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE TRUE
@@ -452,7 +457,7 @@ MACRO(TRIBITS_PACKAGE_POSTPROCESS)
   ADD_CUSTOM_TARGET(${PACKAGE_NAME}_libs DEPENDS ${${PACKAGE_NAME}_LIB_TARGETS})
   ADD_CUSTOM_TARGET(${PACKAGE_NAME}_all DEPENDS ${${PACKAGE_NAME}_ALL_TARGETS})
 
-  PACAKGE_SETUP_DEPENDENCY_VARS_IF_NO_LIBS()
+  TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS()
   TRIBITS_PACKAGE_POSTPROCESS_COMMON()
 
 ENDMACRO()
@@ -505,3 +510,22 @@ ENDMACRO()
 #
 
 PREPEND_SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+
+##################################################################
+#
+#                    NOTES TO DEVELOPERS
+#
+# Don't even attempt to touch the logic that goes into setting up and
+# modifying the variables:
+#
+#   ${PACKAGE_NAME}_INCLUDE_DIRS
+#   ${PACKAGE_NAME}_LIBRARY_DIRS
+#   ${PACKAGE_NAME}_LIBRARIES
+#   ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES
+#   ${PACKAGE_NAME}_FULL_EXPORT_DEP_PACKAGES
+#   ${PARENT_PACKAGE_NAME}_LIB_TARGETS
+#   ${PARENT_PACKAGE_NAME}_ALL_TARGETS
+#
+# without carefully studying the documentation in README.DEPENENCIES and then
+# carefully studying all of the code and issues that modify these variables!

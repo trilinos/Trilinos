@@ -55,11 +55,11 @@ ${DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET}
 ## Compilers used by ${PROJECT_NAME}/${PACKAGE_NAME} build
 ## ---------------------------------------------------------------------------
 
-SET(${PACKAGE_NAME}_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+SET(${EXPORT_FILE_VAR_PREFIX}_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
 
-SET(${PACKAGE_NAME}_C_COMPILER "${CMAKE_C_COMPILER}")
+SET(${EXPORT_FILE_VAR_PREFIX}_C_COMPILER "${CMAKE_C_COMPILER}")
 
-SET(${PACKAGE_NAME}_FORTRAN_COMPILER "${CMAKE_Fortran_COMPILER}")
+SET(${EXPORT_FILE_VAR_PREFIX}_FORTRAN_COMPILER "${CMAKE_Fortran_COMPILER}")
 
 
 ## ---------------------------------------------------------------------------
@@ -67,44 +67,44 @@ SET(${PACKAGE_NAME}_FORTRAN_COMPILER "${CMAKE_Fortran_COMPILER}")
 ## ---------------------------------------------------------------------------
 
 ## Set compiler flags, including those determined by build type
-SET(${PACKAGE_NAME}_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
+SET(${EXPORT_FILE_VAR_PREFIX}_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
 
-SET(${PACKAGE_NAME}_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
+SET(${EXPORT_FILE_VAR_PREFIX}_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
 
-SET(${PACKAGE_NAME}_FORTRAN_FLAGS "${CMAKE_FORTRAN_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}")
+SET(${EXPORT_FILE_VAR_PREFIX}_FORTRAN_FLAGS "${CMAKE_FORTRAN_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}")
 
 ## Extra link flags (e.g., specification of fortran libraries)
-SET(${PACKAGE_NAME}_EXTRA_LD_FLAGS "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
+SET(${EXPORT_FILE_VAR_PREFIX}_EXTRA_LD_FLAGS "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
 
 ## This is the command-line entry used for setting rpaths. In a build
 ## with static libraries it will be empty. 
-SET(${PACKAGE_NAME}_SHARED_LIB_RPATH_COMMAND "${SHARED_LIB_RPATH_COMMAND}")
-SET(${PACKAGE_NAME}_BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS}")
+SET(${EXPORT_FILE_VAR_PREFIX}_SHARED_LIB_RPATH_COMMAND "${SHARED_LIB_RPATH_COMMAND}")
+SET(${EXPORT_FILE_VAR_PREFIX}_BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS}")
 
-SET(${PACKAGE_NAME}_LINKER ${CMAKE_LINKER})
-SET(${PACKAGE_NAME}_AR ${CMAKE_AR})
+SET(${EXPORT_FILE_VAR_PREFIX}_LINKER ${CMAKE_LINKER})
+SET(${EXPORT_FILE_VAR_PREFIX}_AR ${CMAKE_AR})
 
 ## ---------------------------------------------------------------------------
 ## Set library specifications and paths 
 ## ---------------------------------------------------------------------------
 
 ## List of package include dirs
-SET(${PACKAGE_NAME}_INCLUDE_DIRS "${INCLUDE_DIRS}")
+SET(${EXPORT_FILE_VAR_PREFIX}_INCLUDE_DIRS "${INCLUDE_DIRS}")
 
 ## List of package library paths
-SET(${PACKAGE_NAME}_LIBRARY_DIRS "${LIBRARY_DIRS}")
+SET(${EXPORT_FILE_VAR_PREFIX}_LIBRARY_DIRS "${LIBRARY_DIRS}")
 
 ## List of package libraries
-SET(${PACKAGE_NAME}_LIBRARIES "${FULL_LIBRARY_SET}")
+SET(${EXPORT_FILE_VAR_PREFIX}_LIBRARIES "${FULL_LIBRARY_SET}")
 
 ## Specification of directories for TPL headers
-SET(${PACKAGE_NAME}_TPL_INCLUDE_DIRS "${${PACKAGE_NAME}_TPL_INCLUDE_DIRS}")
+SET(${EXPORT_FILE_VAR_PREFIX}_TPL_INCLUDE_DIRS "${${PACKAGE_NAME}_TPL_INCLUDE_DIRS}")
 
 ## Specification of directories for TPL libraries
-SET(${PACKAGE_NAME}_TPL_LIBRARY_DIRS "${${PACKAGE_NAME}_TPL_LIBRARY_DIRS}")
+SET(${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARY_DIRS "${${PACKAGE_NAME}_TPL_LIBRARY_DIRS}")
 
 ## List of required TPLs
-SET(${PACKAGE_NAME}_TPL_LIBRARIES "${${PACKAGE_NAME}_TPL_LIBRARIES}")
+SET(${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARIES "${${PACKAGE_NAME}_TPL_LIBRARIES}")
 
 ## ---------------------------------------------------------------------------
 ## MPI specific variables
@@ -112,21 +112,21 @@ SET(${PACKAGE_NAME}_TPL_LIBRARIES "${${PACKAGE_NAME}_TPL_LIBRARIES}")
 ##   and includes on systems that do not use the mpi wrappers for compiling
 ## ---------------------------------------------------------------------------
 
-SET(${PACKAGE_NAME}_MPI_LIBRARIES "${TPL_MPI_LIBRARIES}")
-SET(${PACKAGE_NAME}_MPI_LIBRARY_DIRS "${TPL_MPI_LIBRARY_DIRS}")
-SET(${PACKAGE_NAME}_MPI_INCLUDE_DIRS "${TPL_MPI_INCLUDE_DIRS}")
-SET(${PACKAGE_NAME}_MPI_EXEC "${MPI_EXEC}")
-SET(${PACKAGE_NAME}_MPI_EXEC_MAX_NUMPROCS "${MPI_EXEC_MAX_NUMPROCS}")
-SET(${PACKAGE_NAME}_MPI_EXEC_NUMPROCS_FLAG "${MPI_EXEC_NUMPROCS_FLAG}")
+SET(${EXPORT_FILE_VAR_PREFIX}_MPI_LIBRARIES "${TPL_MPI_LIBRARIES}")
+SET(${EXPORT_FILE_VAR_PREFIX}_MPI_LIBRARY_DIRS "${TPL_MPI_LIBRARY_DIRS}")
+SET(${EXPORT_FILE_VAR_PREFIX}_MPI_INCLUDE_DIRS "${TPL_MPI_INCLUDE_DIRS}")
+SET(${EXPORT_FILE_VAR_PREFIX}_MPI_EXEC "${MPI_EXEC}")
+SET(${EXPORT_FILE_VAR_PREFIX}_MPI_EXEC_MAX_NUMPROCS "${MPI_EXEC_MAX_NUMPROCS}")
+SET(${EXPORT_FILE_VAR_PREFIX}_MPI_EXEC_NUMPROCS_FLAG "${MPI_EXEC_NUMPROCS_FLAG}")
 
 ## ---------------------------------------------------------------------------
 ## Set useful general variables 
 ## ---------------------------------------------------------------------------
 
 ## The packages enabled for this project
-SET(${PACKAGE_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
+SET(${EXPORT_FILE_VAR_PREFIX}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
 
 ## The TPLs enabled for this project
-SET(${PACKAGE_NAME}_TPL_LIST "${ORDERED_FULL_TPL_SET}")
+SET(${EXPORT_FILE_VAR_PREFIX}_TPL_LIST "${ORDERED_FULL_TPL_SET}")
 
 ${PACKAGE_CONFIG_CODE}
