@@ -99,8 +99,6 @@ void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bui
   LO numVertices, numAggregates;
   ifs >> numVertices >> numAggregates;
 
-  std::cout << "numVertices = " << numVertices << std::endl;
-
   // FIXME: what is the map?
   Xpetra::UnderlyingLib  lib       = Xpetra::UseEpetra;
   const int              indexBase = 0;
