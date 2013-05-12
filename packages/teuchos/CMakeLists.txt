@@ -257,13 +257,3 @@ TRIBITS_EXCLUDE_FILES(
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
-
-
-# Test to make sure the Teuchos libraries are in the right order!  Writing a
-# test like this in TriBITS itself is nearly impossible!
-IF ( NOT "${${PACKAGE_NAME}_LIBRARIES}" STREQUAL
-  "teuchosremainder;teuchosnumerics;teuchoscomm;teuchosparameterlist;teuchoscore"
-  )
-  MESSAGE(FATAL_ERROR "Error, ${PACKAGE_NAME}_LIBRARIES = '${${PACKAGE_NAME}_LIBRARIES}'"
-    " is in the wrong order!")
-ENDIF()
