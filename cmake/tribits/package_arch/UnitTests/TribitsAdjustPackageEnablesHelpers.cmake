@@ -37,8 +37,8 @@
 # ************************************************************************
 # @HEADER
 
-MESSAGE("PROJECT_NAME = ${PROJECT_NAME}")
-MESSAGE("${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
+MESSAGE("The outer project: PROJECT_NAME = ${PROJECT_NAME}")
+MESSAGE("The outer project: ${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
 
 SET( CMAKE_MODULE_PATH
   "${${PROJECT_NAME}_TRIBITS_DIR}/utils"
@@ -84,8 +84,16 @@ PRINT_VAR(PROJECT_SOURCE_DIR)
 SET(REPOSITORY_DIR ".")
 PRINT_VAR(REPOSITORY_DIR)
 
+# Before we change the project name, we have to set the TRIBITS_DIR so that it
+# will point in the right place.  There is TriBITS code being called that must
+# have this variable set!
+
+SET(Trilinos_TRIBITS_DIR ${${PROJECT_NAME}_TRIBITS_DIR})
+
 # Set the mock project name last to override the outer project
 SET(PROJECT_NAME "Trilinos")
+MESSAGE("The inner test project: PROJECT_NAME = ${PROJECT_NAME}")
+MESSAGE("The inner tets project: ${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
 
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Teuchos             packages/teuchos                PS
