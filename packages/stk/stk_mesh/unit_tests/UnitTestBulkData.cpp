@@ -1311,7 +1311,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
       //
 
       {
-        const stk::mesh::EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
         for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
         {
           stk::mesh::Entity const *to_i = mesh.begin_entities(node, irank);

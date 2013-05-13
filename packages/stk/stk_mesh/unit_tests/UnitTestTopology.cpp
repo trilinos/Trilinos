@@ -321,7 +321,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_invalid_1 )
     Entity face = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
     fix.bulk.modification_end();
 
-    const int invalid_local_side_id = -1;
+    const unsigned invalid_local_side_id = static_cast<unsigned>(-1);
     // Hits "Unsuported local_side_id" error condition:
     STKUNIT_ASSERT_THROW(
         fix.bulk.element_side_polarity( element, face, invalid_local_side_id),

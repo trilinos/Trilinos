@@ -450,14 +450,14 @@ print( std::ostream & os , const std::string & indent , const Bucket & bucket )
 struct EntityRankLess
 {
   inline bool operator()(Entity entity, EntityRank rank) const {
-    return m_mesh.entity_rank(entity) < rank;
+    return m_mesh->entity_rank(entity) < rank;
   }
 
   inline bool operator()(EntityRank rank, Entity entity) const {
-    return rank < m_mesh.entity_rank(entity);
+    return rank < m_mesh->entity_rank(entity);
   }
 
-  const BulkData &m_mesh;
+  const BulkData *m_mesh;
 };
 
 size_t Bucket::get_others_begin_index(unsigned bucket_ordinal, EntityRank rank) const
@@ -465,7 +465,7 @@ size_t Bucket::get_others_begin_index(unsigned bucket_ordinal, EntityRank rank) 
   Entity const * const ents_begin = m_dynamic_other_connectivity.begin_entities(bucket_ordinal);
   Entity const * const ents_end = m_dynamic_other_connectivity.end_entities(bucket_ordinal);
 
-  EntityRankLess cmp = {m_mesh};
+  EntityRankLess cmp = {&m_mesh};
   Entity const *probe = ents_begin;
   probe = std::lower_bound(probe, ents_end, rank, cmp);
 
@@ -477,7 +477,7 @@ size_t Bucket::get_others_end_index(unsigned bucket_ordinal, EntityRank rank) co
   Entity const * const ents_begin = m_dynamic_other_connectivity.begin_entities(bucket_ordinal);
   Entity const * const ents_end = m_dynamic_other_connectivity.end_entities(bucket_ordinal);
 
-  EntityRankLess cmp = {m_mesh};
+  EntityRankLess cmp = {&m_mesh};
   Entity const *probe = ents_begin;
   probe = std::upper_bound(probe, ents_end, rank, cmp);
 
@@ -489,7 +489,7 @@ size_t Bucket::get_others_index_count(unsigned bucket_ordinal, EntityRank rank) 
   Entity const * const ents_begin = m_dynamic_other_connectivity.begin_entities(bucket_ordinal);
   Entity const * const ents_end = m_dynamic_other_connectivity.end_entities(bucket_ordinal);
 
-  EntityRankLess cmp = {m_mesh};
+  EntityRankLess cmp = {&m_mesh};
   Entity const *probe = ents_begin;
   Entity const *const saved_lower = std::lower_bound(probe, ents_end, rank, cmp);
   probe = std::upper_bound(probe, ents_end, rank, cmp);
