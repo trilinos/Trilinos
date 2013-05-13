@@ -1168,8 +1168,14 @@ private:
   // is bucket id, pair defines num bytes of data per entity and the
   // data for that field on that bucket
 
+#ifdef STK_PROFILE_MEMORY
   typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldBase> > FieldMetaDataVector;
-  std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldBase> > m_field_meta_data;
+  typedef std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldBase> > FieldMetaDataVectorVector;
+#else
+  typedef std::vector<FieldMetaData> FieldMetaDataVector;
+  typedef std::vector<FieldMetaDataVector> FieldMetaDataVectorVector;
+#endif
+  FieldMetaDataVectorVector m_field_meta_data;
 
   // Outer index is rank, inner is bucket-id. This contains *all* field
   // data for a bucket.
