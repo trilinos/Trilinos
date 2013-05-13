@@ -638,70 +638,14 @@ public:
   void comm_procs( const Ghosting & ghost ,
                    EntityKey key, std::vector<int> & procs ) const;
 
+  //
+  // Entity queries
+  //
 
-  const MeshIndex& mesh_index(Entity entity) const
+  bool check_bulk_data(Entity entity) const
   {
-    return m_mesh_indexes[entity.local_offset()];
-  }
-  MeshIndex& mesh_index(Entity entity)
-  {
-    return m_mesh_indexes[entity.local_offset()];
-  }
-
-  void set_mesh_index(Entity entity, Bucket * in_bucket, unsigned ordinal )
-  {
-    // The trace statement forces this method to be defined after Entity
-    TraceIfWatching("stk::mesh::BulkData::set_mesh_index", LOG_ENTITY, entity_key(entity));
-
-    if (in_bucket != NULL) {
-      ThrowAssertMsg(in_bucket->size() >= ordinal, "Detected bad bucket/ordinal.");
-    }
-    MeshIndex &mesh_idx = mesh_index(entity);
-    mesh_idx.bucket = in_bucket;
-    mesh_idx.bucket_ordinal = ordinal;
-  }
-
-  ///
-  /// Entity Member Functions:
-  ///
-  EntityId identifier(Entity entity) const
-  {
-    ThrowAssert(this == &BulkData::get(entity));
-    ThrowAssertMsg(entity.local_offset() < m_entity_keys.size(), "For bulk " << m_bulk_data_id << ", Entity offset " << entity.local_offset() << " is beyond max value " << m_entity_keys.size() - 1);
-    return m_entity_keys[entity.local_offset()].id();
-  }
-
-  EntityRank entity_rank(Entity entity) const
-  {
-    //Implementation will be replaced with this:
-    ThrowAssert(this == &BulkData::get(entity));
-    ThrowAssertMsg(entity.local_offset() < m_entity_keys.size(), "For bulk " << m_bulk_data_id << ", Entity offset " << entity.local_offset() << " is beyond max value " << m_entity_keys.size() - 1);
-    return m_entity_keys[entity.local_offset()].rank();
-  }
-
-  EntityKey entity_key(Entity entity) const
-  {
-    ThrowAssert(this == &BulkData::get(entity));
-    ThrowAssertMsg(entity.local_offset() < m_entity_keys.size(), "For bulk " << m_bulk_data_id << ", Entity offset " << entity.local_offset() << " is beyond max value " << m_entity_keys.size() - 1);
-    return m_entity_keys[entity.local_offset()];
-  }
-
-  void set_entity_key(Entity entity, EntityKey key)
-  {
-    ThrowAssert(this == &BulkData::get(entity));
-    ThrowAssertMsg(entity.local_offset() < m_entity_keys.size(), "For bulk " << m_bulk_data_id << ", Entity offset " << entity.local_offset() << " is beyond max value " << m_entity_keys.size() - 1);
-    m_entity_keys[entity.local_offset()] = key;
-
-    //// Prefer the above because an additional place that can
-    //// cause the array size to grow makes the code confusing.
-    //// If there are multiple places that can push_back(), they
-    //// all would need to check whether it is actually necessary.
-    //    if (entity.local_offset() == m_entity_keys.size()) {
-    //      m_entity_keys.push_back(key);
-    //    }
-    //    else {
-    //      m_entity_keys[entity.local_offset()] = key;
-    //    }
+    // if entity is invalid, we can't check bulk data
+    return entity.local_offset() == 0 || this == &BulkData::get(entity);
   }
 
   bool in_index_range(Entity entity) const
@@ -715,65 +659,252 @@ public:
     return m_entity_states[entity.local_offset()] != Deleted;
   }
 
+  size_t count_relations(Entity entity) const;
+
+  bool has_no_relations(Entity entity) const;
+
+  void entity_setter_debug_check(Entity entity) const
+  {
+    // The 0-th local_offset is special, it represents the invalid, 0-initialized entity.
+    // Client should never try to set properties on this entity even though it's in the index range.
+    ThrowAssert(entity.local_offset() > 0);
+  }
+
+  void entity_getter_debug_check(Entity entity) const
+  {
+    ThrowAssert(check_bulk_data(entity));
+    ThrowAssert(in_index_range(entity));
+  }
+
+  //
+  // Entity getters
+  //
+
+  const MeshIndex& mesh_index(Entity entity) const
+  {
+    entity_getter_debug_check(entity);
+
+    return m_mesh_indexes[entity.local_offset()];
+  }
+
+  MeshIndex& mesh_index(Entity entity)
+  {
+    entity_setter_debug_check(entity); // setter check due to non-const
+
+    return m_mesh_indexes[entity.local_offset()];
+  }
+
+  EntityId identifier(Entity entity) const
+  {
+    entity_getter_debug_check(entity);
+
+    return m_entity_keys[entity.local_offset()].id();
+  }
+
+  EntityRank entity_rank(Entity entity) const
+  {
+    entity_getter_debug_check(entity);
+
+    return m_entity_keys[entity.local_offset()].rank();
+  }
+
+  EntityKey entity_key(Entity entity) const
+  {
+    entity_getter_debug_check(entity);
+
+    return m_entity_keys[entity.local_offset()];
+  }
+
+  EntityState state(Entity entity) const
+  {
+    entity_getter_debug_check(entity);
+
+    return m_entity_states[entity.local_offset()];
+  }
+
+  size_t synchronized_count(Entity entity) const
+  {
+    entity_getter_debug_check(entity);
+
+    return m_entity_sync_counts[entity.local_offset()];
+  }
+
   Bucket & bucket(Entity entity) const
   {
-    ThrowAssert(entity.local_offset() < m_mesh_indexes.size());
-    return *m_mesh_indexes[entity.local_offset()].bucket;
+    entity_getter_debug_check(entity);
+
+    return *mesh_index(entity).bucket;
   }
 
   Bucket * bucket_ptr(Entity entity) const
   {
-    if (entity.local_offset() >= m_mesh_indexes.size()) return NULL;
-    return m_mesh_indexes[entity.local_offset()].bucket;
+    entity_getter_debug_check(entity);
+
+    return mesh_index(entity).bucket;
   }
 
   unsigned bucket_ordinal(Entity entity) const
   {
-    if (entity.local_offset() >= m_mesh_indexes.size()) return 0;
-    return m_mesh_indexes[entity.local_offset()].bucket_ordinal;
+    entity_getter_debug_check(entity);
+
+    return mesh_index(entity).bucket_ordinal;
   }
 
-  inline EntityState state(Entity entity) const
+  int parallel_owner_rank(Entity entity) const
   {
-    return m_entity_states[entity.local_offset()];
-  }
-  inline void set_state(Entity entity, EntityState entity_state)
-  {
-    m_entity_states[entity.local_offset()] = entity_state;
-  }
+    entity_getter_debug_check(entity);
 
-  inline int parallel_owner_rank(Entity entity) const
-  {
     return bucket(entity).parallel_owner_rank(bucket_ordinal(entity));
   }
 
-  inline bool set_parallel_owner_rank(Entity entity, int in_owner_rank)
-  {
-     TraceIfWatching("stk::mesh::BulkData::set_entity_owner_rank", LOG_ENTITY, entity_key(entity));
-     DiagIfWatching(LOG_ENTITY, entity_key(entity), "new owner: " << in_owner_rank);
+#ifdef SIERRA_MIGRATION
 
-     //     bool changed = entity.m_entityImpl->set_owner_rank(in_owner_rank);
-     //     if ( changed ) {
-     //       this->modified(entity);
-     //     }
-     //     return changed;
-     int &rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];
-     if ( in_owner_rank != rank ) {
-       rank = in_owner_rank;
-       modified(entity);
-       return true;
-     }
-     return false;
+  int global_id(Entity entity) const
+  {
+    ThrowAssert(m_add_fmwk_data);
+    entity_getter_debug_check(entity);
+
+    return m_fmwk_global_ids[entity.local_offset()];
   }
 
-  inline size_t synchronized_count(Entity entity) const
+  const RelationVector& aux_relations(Entity entity) const
   {
-    return m_entity_sync_counts[entity.local_offset()];
+    ThrowAssert(m_add_fmwk_data);
+    entity_setter_debug_check(entity); // setter check due to side effects
+
+    if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
+      m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
+    }
+    return *m_fmwk_aux_relations[entity.local_offset()];
   }
-  inline void set_synchronized_count(Entity entity, size_t sync_count)
+
+  RelationVector& aux_relations(Entity entity)
   {
+    ThrowAssert(m_add_fmwk_data);
+    entity_setter_debug_check(entity); // setter check due to side effects
+
+    if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
+      m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
+    }
+    return *m_fmwk_aux_relations[entity.local_offset()];
+  }
+
+  unsigned local_id(Entity entity) const
+  {
+    ThrowAssert(m_add_fmwk_data);
+    entity_getter_debug_check(entity);
+
+    return m_fmwk_local_ids[entity.local_offset()];
+  }
+
+  const void* get_shared_attr(Entity entity) const
+  {
+    ThrowAssert(m_add_fmwk_data);
+    entity_getter_debug_check(entity);
+
+    return m_fmwk_shared_attrs[entity.local_offset()];
+  }
+
+  int get_connect_count(Entity entity) const
+  {
+    ThrowAssert(m_add_fmwk_data);
+    entity_getter_debug_check(entity);
+
+    return m_fmwk_connect_counts[entity.local_offset()];
+  }
+
+#endif
+
+  //
+  // Entity setters
+  //
+
+  void set_mesh_index(Entity entity, Bucket * in_bucket, unsigned ordinal )
+  {
+    // The trace statement forces this method to be defined after Entity
+    TraceIfWatching("stk::mesh::BulkData::set_mesh_index", LOG_ENTITY, entity_key(entity));
+
+    entity_setter_debug_check(entity);
+
+    if (in_bucket != NULL) {
+      ThrowAssertMsg(in_bucket->size() >= ordinal, "Detected bad bucket/ordinal.");
+    }
+    MeshIndex &mesh_idx = mesh_index(entity);
+    mesh_idx.bucket = in_bucket;
+    mesh_idx.bucket_ordinal = ordinal;
+  }
+
+  void set_entity_key(Entity entity, EntityKey key)
+  {
+    entity_setter_debug_check(entity);
+
+    m_entity_keys[entity.local_offset()] = key;
+  }
+
+  void set_state(Entity entity, EntityState entity_state)
+  {
+    entity_setter_debug_check(entity);
+
+    m_entity_states[entity.local_offset()] = entity_state;
+  }
+
+  bool set_parallel_owner_rank(Entity entity, int in_owner_rank)
+  {
+    TraceIfWatching("stk::mesh::BulkData::set_entity_owner_rank", LOG_ENTITY, entity_key(entity));
+    DiagIfWatching(LOG_ENTITY, entity_key(entity), "new owner: " << in_owner_rank);
+
+    entity_setter_debug_check(entity);
+
+    int &rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];
+    if ( in_owner_rank != rank ) {
+      rank = in_owner_rank;
+      modified(entity);
+      return true;
+    }
+    return false;
+  }
+
+  void set_synchronized_count(Entity entity, size_t sync_count)
+  {
+    entity_setter_debug_check(entity);
+
     m_entity_sync_counts[entity.local_offset()] = sync_count;
   }
+
+#ifdef SIERRA_MIGRATION
+  void set_global_id(Entity entity, int id)
+  {
+    ThrowAssert(m_add_fmwk_data);
+    entity_setter_debug_check(entity);
+
+    m_fmwk_global_ids[entity.local_offset()] = id;
+  }
+
+  void set_local_id(Entity entity, unsigned id)
+  {
+    ThrowAssert(m_add_fmwk_data);
+    entity_setter_debug_check(entity);
+
+    m_fmwk_local_ids[entity.local_offset()] = id;
+  }
+
+  template <typename SharedAttr>
+  void set_shared_attr(Entity entity, SharedAttr* attr)
+  {
+    ThrowAssert(m_add_fmwk_data);
+    entity_setter_debug_check(entity);
+
+    m_fmwk_shared_attrs[entity.local_offset()] = attr;
+  }
+
+  void set_connect_count(Entity entity, int count)
+  {
+    ThrowAssert(m_add_fmwk_data);
+    entity_setter_debug_check(entity);
+
+    m_fmwk_connect_counts[entity.local_offset()] = count;
+  }
+#endif
 
   /**
    * Mark this entity as modified (only changes from Unchanged
@@ -783,10 +914,6 @@ public:
    * closure must also be marked as modified.
    */
   void modified(Entity entity);
-
-  size_t count_relations(Entity entity) const;
-
-  bool has_no_relations(Entity entity) const;
 
   ////
   //// Rank Id based functions --- only use outside of modification cycle.
@@ -959,24 +1086,6 @@ public:
     return m_fmwk_bulk_ptr;
   }
 
-  const RelationVector& aux_relations(Entity entity) const
-  {
-    ThrowAssert(m_add_fmwk_data);
-    if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
-      m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
-    }
-    return *m_fmwk_aux_relations[entity.local_offset()];
-  }
-
-  RelationVector& aux_relations(Entity entity)
-  {
-    ThrowAssert(m_add_fmwk_data);
-    if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
-      m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
-    }
-    return *m_fmwk_aux_relations[entity.local_offset()];
-  }
-
   RelationIterator internal_begin_relation(Entity entity, const Relation::RelationType relation_type) const
   {
     ThrowAssert(m_add_fmwk_data);
@@ -1006,66 +1115,6 @@ public:
     RelationVector &rels = aux_relations(entity);
     RelationVector tmp(rels);
     tmp.swap(rels);
-  }
-
-  int global_id(size_t local_offset) const
-  {
-    ThrowAssert(m_add_fmwk_data);
-    ThrowAssertMsg(local_offset < m_fmwk_global_ids.size(), "Out of bounds local_offset " << local_offset << ", max is " << m_fmwk_global_ids.size());
-    return m_fmwk_global_ids[local_offset];
-  }
-  int global_id(Entity entity) const
-  { return m_fmwk_global_ids[entity.local_offset()]; }
-
-  void set_global_id(Entity entity, int id)
-  {
-    ThrowAssert(m_add_fmwk_data);
-    ThrowAssertMsg(entity.local_offset() < m_fmwk_global_ids.size(), "Out of bounds local_offset " << entity.local_offset() << ", max is " << m_fmwk_global_ids.size());
-    m_fmwk_global_ids[entity.local_offset()] = id;
-  }
-
-  unsigned local_id(size_t local_offset) const
-  {
-    ThrowAssert(m_add_fmwk_data);
-    ThrowAssertMsg(local_offset < m_fmwk_local_ids.size(), "Out of bounds local_offset " << local_offset << ", max is " << m_fmwk_local_ids.size());
-    return m_fmwk_local_ids[local_offset];
-  }
-  unsigned local_id(Entity entity) const
-  { return local_id(entity.local_offset()); }
-
-  void set_local_id(Entity entity, unsigned id)
-  {
-    ThrowAssert(m_add_fmwk_data);
-    ThrowAssertMsg(entity.local_offset() < m_fmwk_local_ids.size(), "Out of bounds local_offset " << entity.local_offset() << ", max is " << m_fmwk_local_ids.size());
-    m_fmwk_local_ids[entity.local_offset()] = id;
-  }
-
-  const void* get_shared_attr(Entity entity) const
-  {
-    ThrowAssert(m_add_fmwk_data);
-    ThrowAssertMsg(entity.local_offset() < m_fmwk_shared_attrs.size(), "Out of bounds local_offset " << entity.local_offset() << ", max is " << m_fmwk_shared_attrs.size());
-    return m_fmwk_shared_attrs[entity.local_offset()];
-  }
-
-  template <typename SharedAttr>
-  void set_shared_attr(Entity entity, SharedAttr* attr)
-  {
-    ThrowAssert(m_add_fmwk_data);
-    ThrowAssertMsg(entity.local_offset() < m_fmwk_shared_attrs.size(), "Out of bounds local_offset " << entity.local_offset() << ", max is " << m_fmwk_shared_attrs.size());
-    m_fmwk_shared_attrs[entity.local_offset()] = attr;
-  }
-
-  int get_connect_count(Entity entity) const
-  {
-    ThrowAssert(m_add_fmwk_data);
-    ThrowAssertMsg(entity.local_offset() < m_fmwk_connect_counts.size(), "Out of bounds local_offset " << entity.local_offset() << ", max is " << m_fmwk_connect_counts.size());
-    return m_fmwk_connect_counts[entity.local_offset()];
-  }
-
-  void set_connect_count(Entity entity, int count)
-  {
-    ThrowAssert(m_add_fmwk_data);
-    m_fmwk_connect_counts[entity.local_offset()] = count;
   }
 
   bool add_fmwk_data() const { return m_add_fmwk_data; }
@@ -1127,10 +1176,10 @@ private:
 #endif
 #ifdef SIERRA_MIGRATION
   bool               m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
-  const void*    m_fmwk_bulk_ptr;
+  const void*        m_fmwk_bulk_ptr;
 
 public:
-  mutable bool               m_check_invalid_rels; // TODO REMOVE
+  mutable bool       m_check_invalid_rels; // TODO REMOVE
 private:
 #endif
   bool               m_maintain_fast_indices; // flag that will tell buckets to allocate+compute fast indices at modification end
