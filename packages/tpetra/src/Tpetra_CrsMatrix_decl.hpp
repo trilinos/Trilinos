@@ -1184,6 +1184,23 @@ namespace Tpetra {
            Scalar alpha = ScalarTraits<Scalar>::one(),
            Scalar beta = ScalarTraits<Scalar>::zero()) const;
 
+    //! Whether apply() allows applying the transpose or conjugate transpose.
+    bool hasTransposeApply() const;
+
+    /// \brief The domain Map of this operator.
+    ///
+    /// This is \c null until fillComplete() has been called.
+    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+
+    /// \brief The range Map of this operator.
+    ///
+    /// This is \c null until fillComplete() has been called.
+    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+
+    //@}
+    //! @name Other "apply"-like methods
+    //@{
+
     /// \brief "Hybrid" Jacobi + (Gauss-Seidel or SOR) on \f$B = A X\f$.
     ///
     /// "Hybrid" means Successive Over-Relaxation (SOR) or
@@ -1293,18 +1310,23 @@ namespace Tpetra {
                      const int numSweeps,
                      const bool zeroInitialGuess) const;
 
-    //! Whether apply() allows applying the transpose or conjugate transpose.
-    bool hasTransposeApply() const;
-
-    /// \brief The domain Map of this operator.
+    /// \brief Implementation of RowMatrix::add: return <tt>alpha*A + beta*this</tt>.
     ///
-    /// This is \c null until fillComplete() has been called.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
-
-    /// \brief The range Map of this operator.
-    ///
-    /// This is \c null until fillComplete() has been called.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    /// This override of the default implementation ensures that, when
+    /// called on a CrsMatrix, this method always returns a CrsMatrix
+    /// of exactly the same type as <tt>*this</tt>.  "Exactly the same
+    /// type" means that all the template parameters match, including
+    /// the fifth template parameter.  The input matrix A need not
+    /// necessarily be a CrsMatrix or a CrsMatrix of the same type as
+    /// <tt>*this</tt>, though this method may be able to optimize
+    /// further in that case.
+    virtual Teuchos::RCP<RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+    add (const Scalar& alpha,
+         const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+         const Scalar& beta,
+         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap,
+         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap,
+         const Teuchos::RCP<Teuchos::ParameterList>& params) const;
 
     //@}
     //! @name Implementation of Teuchos::Describable interface

@@ -80,7 +80,7 @@ namespace Tpetra {
 
     // If the user didn't supply a domain or range Map, then try to
     // get one from B first (if it has them), then from A (if it has
-    // them) If we don't have any domain or range Maps, scold the
+    // them).  If we don't have any domain or range Maps, scold the
     // user.
     RCP<const map_type> A_domainMap = A.getDomainMap ();
     RCP<const map_type> A_rangeMap = A.getRangeMap ();
