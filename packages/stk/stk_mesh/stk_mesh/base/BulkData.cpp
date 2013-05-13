@@ -172,6 +172,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   static int bulk_data_id = 0;
   m_bulk_data_id = bulk_data_id++;
+  ThrowRequireMsg(m_bulk_data_id < MAX_NUM_BULKDATA, "Trying to use too many BulkDatas");
   the_bulk_data_registry[m_bulk_data_id] = this;
 #endif
 

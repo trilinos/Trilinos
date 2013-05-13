@@ -1137,7 +1137,7 @@ private:
   void update_deleted_entities_container();
 
 #ifdef  STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  static const int MAX_NUM_BULKDATA = 256;
+  static const int MAX_NUM_BULKDATA = 65535;
   static BulkData * the_bulk_data_registry[MAX_NUM_BULKDATA];
 #endif
 

@@ -65,12 +65,12 @@ class EntityRepository;
 union Entity
 {
   enum Entity_t {
-    BULK_DATA_ID_SHIFT = 56ull,
+    BULK_DATA_ID_SHIFT = 48ull,
     InvalidEntity = 0ull,
     MinEntity = 1ull,
     MaxEntity = (1ull << BULK_DATA_ID_SHIFT) - 1,
     LOCAL_OFFSET_MASK = MaxEntity,
-    BULK_DATA_ID_MASK = 255
+    BULK_DATA_ID_MASK = (1ull << 16) - 1
   };
 
   int64_t m_value;
