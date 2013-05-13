@@ -6,6 +6,7 @@
 
 STKUNIT_UNIT_TEST( tracking_allocator, vector )
 {
+#ifndef __IBMCPP__
   typedef stk::tracking_allocator<int> allocator;
 
   EXPECT_EQ( allocator::peak_memory(), 0u);
@@ -60,4 +61,5 @@ STKUNIT_UNIT_TEST( tracking_allocator, vector )
     EXPECT_EQ( allocator::current_memory(), 0u);
     EXPECT_EQ( allocator::num_allocations(), 4u);
   }
+#endif
 }

@@ -33,8 +33,8 @@
 #include <algorithm>
 #include <map>
 #include <limits>
-
 #include <list>
+#include <memory>
 
 //----------------------------------------------------------------------
 
@@ -132,7 +132,11 @@ bool is_handled_generically(const RelationType relation_type)
  */
 class BulkData {
 
+#ifdef STK_PROFILE_MEMORY
   typedef tracking_allocator<unsigned char, FieldBase> field_data_allocator;
+#else
+  typedef std::allocator<unsigned char> field_data_allocator;
+#endif
 
 public:
 
