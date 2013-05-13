@@ -39,7 +39,7 @@ int main(int argc, char **argv)
  
   typedef stk::transfer::Transfer::MDArray MDArray;
 
-  stk::transfer::Transfer transfer;
+  stk::transfer::Transfer transfer("STK Transfer test Use case 5");
 
   MDArray FromPoints (FROMNUMPOINTS,DIM), 
           ToPoints   (  TONUMPOINTS,DIM), 
@@ -65,7 +65,17 @@ int main(int argc, char **argv)
     stk::diag::TimeBlock __timer_point_to_point(timer_point_to_point);
     try {
       transfer.PointToPoint(ToValues, ToPoints, FromValues, FromPoints, comm);
+    } catch (std::exception &e) {
+      std::cout <<__FILE__<<":"<<__LINE__
+                <<" Caught an std::exception with what string:"
+                <<e.what()
+                <<"      rethrowing....."
+                <<std::endl;
+      status = status && false;
     } catch (...) {
+      std::cout <<__FILE__<<":"<<__LINE__
+                <<" Caught an exception, rethrowing..."
+                <<std::endl;
       status = status && false;
     } 
   }

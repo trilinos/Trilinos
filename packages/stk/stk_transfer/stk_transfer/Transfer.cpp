@@ -9,6 +9,8 @@
 
 #include <iostream>
 
+#include <boost/shared_ptr.hpp>
+
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/CoarseSearch.hpp>
@@ -21,10 +23,91 @@ namespace transfer {
 
 using namespace STK_TransferP2P;
 
-Transfer::Transfer(const Hints &hints) :
+Transfer::Transfer(const std::string &name,
+                   const Hints &hints) :
+  Name           (name),
   Tolerance      (hints.Tolerance) ,
-  ExpansionFactor(hints.ExpansionFactor) 
+  ExpansionFactor(hints.ExpansionFactor),
+  RootTimer      ("Transfer Root",hints.Timer),
+  GhostingTimer  ("Ghosting",     RootTimer)
    {}
+
+template <unsigned DIM>
+void Transfer::PToP(      MDArray &ToValues,
+                    const MDArray &ToPoints,
+                    const MDArray &FromValues,
+                    const MDArray &FromPoints,
+                    const stk::ParallelMachine  comm) {
+  BoundingBox::Data radius = Tolerance;
+  IdentProcRelation TotalRangeToDomain;
+  PointMap to_points;
+  convert_to_map<DIM>(to_points, ToPoints);
+  while (to_points.size()) { // Keep going until all range points are processed.
+    IdentProcRelation RangeToDomain;
+    point_to_point_coarse_search<DIM>(RangeToDomain, to_points, FromPoints, radius, comm);
+    filter_with_fine_search     <DIM>(RangeToDomain, to_points, FromPoints, comm);
+    delete_range_points_found   <DIM>(to_points, RangeToDomain, comm);
+    TotalRangeToDomain.insert(TotalRangeToDomain.end(),
+                                   RangeToDomain.begin(),
+                                   RangeToDomain.end());
+    radius *= ExpansionFactor; // If points were missed, increase search radius.
+  }
+  sort(TotalRangeToDomain.begin(), TotalRangeToDomain.end());
+  linear_interpolation <DIM>(ToValues,
+                             FromValues,
+                             TotalRangeToDomain,
+                             ToPoints,
+                             FromPoints,
+                             comm);
+}
+
+template <unsigned DIM>
+void Transfer::PPToP(      MDArray &ToValues,
+                     const MDArray &ToPoints,
+                     const MDArray &FromValues,
+                     const MDArray &FromPoints,
+                     const stk::ParallelMachine  comm) {
+
+  BoundingBox::Data radius = Tolerance;
+  IdentProcRelation TotalRangeToDomain;
+  PointMap to_points;
+  convert_to_map<DIM>(to_points, ToPoints);
+  STKMesh FromMesh = convert_points_to_mesh(FromPoints, FromValues, comm);
+  
+  while (to_points.size()) { // Keep going until all range points are processed.
+    IdentProcRelation RangeToDomain;
+    point_to_point_coarse_search<DIM>(RangeToDomain, to_points, FromMesh, radius, comm);
+    
+    {
+      stk::diag::TimeBlock __timer_ghosting(GhostingTimer);
+      copy_domain_to_range_processors(FromMesh, RangeToDomain, Name, comm);
+      
+      const unsigned my_rank = parallel_machine_rank(comm);
+      const IdentProcRelation::const_iterator end=RangeToDomain.end();
+      for (IdentProcRelation::iterator i=RangeToDomain.begin(); i!=end; ++i) { 
+        unsigned &domain_owning_proc = i->first.proc;
+        const unsigned range_owning_rank  = i->second.proc;
+        if (domain_owning_proc != my_rank && range_owning_rank == my_rank) {
+          domain_owning_proc = my_rank;
+        }   
+      }
+    }
+    filter_with_fine_search     <DIM>(RangeToDomain, to_points, FromMesh, comm);
+    delete_range_points_found<DIM>(to_points, RangeToDomain, comm);
+    TotalRangeToDomain.insert(TotalRangeToDomain.end(),
+                              RangeToDomain.begin(),
+                              RangeToDomain.end());
+    radius *= ExpansionFactor; // If points were missed, increase search radius.
+  }
+  sort(TotalRangeToDomain.begin(), TotalRangeToDomain.end());
+  linear_interpolation <DIM>(ToValues,
+                           FromMesh,
+                           TotalRangeToDomain,
+                           ToPoints,
+                           FromMesh,
+                           comm);
+}
+
 
 void Transfer::PointToPoint(      MDArray &ToValues,
                             const MDArray &ToPoints,
@@ -44,26 +127,18 @@ void Transfer::PointToPoint(      MDArray &ToValues,
   if (ToValues.dimension(1) != FromValues.dimension(1)) 
     std::cerr <<__FILE__<<":"<<__LINE__<< " Inconsistant value data. "<<std::endl;
 
-  BoundingBox::Data radius = Tolerance;
   if (3==Dim) {
-    IdentProcRelation TotalRangeToDomain;
-    PointMap to_points;
-    convert_to_map<3>(to_points, ToPoints);
-    while (to_points.size()) { // Keep going until all range points are processed.
-      IdentProcRelation RangeToDomain;
-      point_to_point_coarse_search<3>(RangeToDomain, to_points, FromPoints, radius, comm);
-      filter_with_fine_search     <3>(RangeToDomain, to_points, FromPoints, comm);
-      delete_range_points_found   <3>(to_points, RangeToDomain, comm);
-      TotalRangeToDomain.insert(TotalRangeToDomain.end(),
-                                     RangeToDomain.begin(),
-                                     RangeToDomain.end());
-      radius *= ExpansionFactor; // If points were missed, increase search radius.
+    if(1==stk::parallel_machine_size(comm))
+      PToP<3>(ToValues,ToPoints,FromValues,FromPoints,comm);
+    else {
+      PPToP<3>(ToValues,ToPoints,FromValues,FromPoints,comm);
     }
-    sort(TotalRangeToDomain.begin(), TotalRangeToDomain.end());
-    linear_interpolation <3>(ToValues,FromValues,TotalRangeToDomain,ToPoints,FromPoints,comm);
   } else {
     std::cerr <<__FILE__<<":"<<__LINE__<< " Only 3D is supported at this time. "<<std::endl;
   }
 }
+
+
+
 
 }}

@@ -11,6 +11,7 @@
 #define STK_Transfer_hpp
 
 #include <Intrepid_FieldContainer.hpp>
+#include <stk_util/diag/Timer.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
 
@@ -22,16 +23,20 @@ public:
   typedef Intrepid::FieldContainer<double> MDArray;
 
   struct Hints {
-    Hints() : 
+    Hints(stk::diag::Timer *timer=0) : 
       Tolerance      (0.1), 
-      ExpansionFactor(1.5){};
+      ExpansionFactor(1.5),
+      Timer          (timer ? stk::diag::Timer("Transfer",*timer) : 
+                              stk::diag::createRootTimer("Transfer",stk::diag::TimerSet(0))){}
     double Tolerance;
     double ExpansionFactor;
+    stk::diag::Timer Timer;
   };
 
   // Constructor is trivial but could be expanded in the
   // future to allocate and initialize input data.
-  Transfer(const Hints& hints=Hints());
+  Transfer(const std::string &name,
+           const Hints& hints=Hints());
 
   // Given values defined at points in arrays FromValues and
   // FromPoints which have to be of the same length, and given
@@ -50,8 +55,25 @@ public:
                     const MDArray &FromPoints,
                     const stk::ParallelMachine  comm);
 private :
+  const std::string Name;
   const double Tolerance;
   const double ExpansionFactor;
+  stk::diag::Timer RootTimer;
+  stk::diag::Timer GhostingTimer;
+
+  template <unsigned DIM>
+  void PToP(MDArray &ToValues,
+            const MDArray &ToPoints,
+            const MDArray &FromValues,
+            const MDArray &FromPoints,
+            const stk::ParallelMachine  comm);
+
+  template <unsigned DIM>
+  void PPToP(MDArray &ToValues,
+            const MDArray &ToPoints,
+            const MDArray &FromValues,
+            const MDArray &FromPoints,
+            const stk::ParallelMachine  comm);
 };
 
 }}

@@ -13,6 +13,12 @@
 #include <Intrepid_FieldContainer.hpp>
 
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/EntityKey.hpp>
+
+
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/FieldParallel.hpp>
 
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/BoundingBox.hpp>
@@ -42,12 +48,50 @@
 //
 // Local Typedefs.  These might need to be lifted to be based on template
 // parameters.
-typedef stk::search::ident::IdentProc<uint64_t,unsigned>            IdentProc;
-typedef std::vector<std::pair<IdentProc, IdentProc> >               IdentProcRelation;
-typedef stk::search::box::SphereBoundingBox<IdentProc,float,3>      BoundingBox;
-typedef std::map<unsigned, std::vector<double> >                    PointMap;
+typedef stk::search::ident::IdentProc<stk::mesh::EntityKey,unsigned> IdentProc;
+typedef std::vector<std::pair<IdentProc, IdentProc> >                IdentProcRelation;
+typedef stk::search::box::SphereBoundingBox<IdentProc,float,3>       BoundingBox;
+typedef std::map<unsigned, std::vector<double> >                     PointMap;
 
 namespace STK_TransferP2P {
+
+
+typedef boost::shared_ptr<stk::mesh::BulkData> BulkDataPtr;
+typedef boost::shared_ptr<stk::mesh::MetaData> MetaDataPtr;
+typedef stk::mesh::Field<double,stk::mesh::Cartesian>    VectorFieldType ;
+typedef std::vector<stk::mesh::Entity> EntityVec;
+
+
+class STKMesh  {
+public :
+  typedef EntityVec::const_iterator iterator;
+  STKMesh(MetaDataPtr meta,
+          BulkDataPtr bulk,
+          EntityVec   &ent,
+          VectorFieldType &coord,
+          VectorFieldType &val);
+  STKMesh(const STKMesh &M);
+  ~STKMesh();
+  BulkDataPtr &BulkData();
+  iterator begin() const;
+  iterator   end() const;
+  const double *Coord(const iterator i) const ;
+  const double *Coord(const stk::mesh::EntityKey i) const;
+  const double *Value(const stk::mesh::EntityKey i) const;
+  stk::mesh::EntityKey Key(iterator i) const;
+  VectorFieldType &Coord();
+  VectorFieldType &Value();
+private :
+  STKMesh ();
+  STKMesh &operator=(const STKMesh&);
+  MetaDataPtr meta_data;
+  BulkDataPtr bulk_data;
+  EntityVec   entities;
+  VectorFieldType &coordinates_field;
+  VectorFieldType &values_field;
+};
+
+
 
 typedef Intrepid::FieldContainer<double> MDArray;
 
@@ -57,24 +101,24 @@ int LU_solve (const double A[9], const int piv[3], double b[3]);
 std::vector<double> solve_3_by_3_with_LU(const MDArray             M, 
                                          const std::vector<double> x);
 
-template <unsigned DIM>
+template <unsigned DIM, class PointData>
 void point_to_point_coarse_search(IdentProcRelation &RangeToDomain,
                                   const PointMap    &ToPoints,
-                                  const MDArray     &FromPoints,
+                                  const PointData   &FromPoints,
                                   const BoundingBox::Data radius,
                                   const stk::ParallelMachine comm);
-template <unsigned DIM>
-void linear_interpolation (MDArray &ToValues,
-                    const MDArray &FromValues,
+template <unsigned DIM, class MeshClass>
+void linear_interpolation (MDArray          &ToValues,
+                    const MeshClass         &FromValues,
                     const IdentProcRelation &RangeToDomain,
-                    const MDArray &ToPoints,
-                    const MDArray &FromPoints,
+                    const MDArray           &ToPoints,
+                    const MeshClass         &FromPoints,
                     const stk::ParallelMachine  comm);
   
-template <unsigned DIM>
+template <unsigned DIM, class MeshClass>
 void filter_with_fine_search(IdentProcRelation &RangeToDomain,
                                 const PointMap &ToPoints,
-                                const MDArray &FromPoints,
+                                const MeshClass &FromPoints,
                                 const stk::ParallelMachine  comm) ;
 
 template <unsigned DIM>
@@ -86,6 +130,14 @@ template <unsigned DIM>
 void convert_to_map(PointMap      &map_points,
                     const MDArray &Points) ;
 
+STKMesh convert_points_to_mesh(const MDArray &Coords, 
+                               const MDArray &Values,
+                               const stk::ParallelMachine  comm);
+
+void copy_domain_to_range_processors(STKMesh                   &Mesh,
+                                     const IdentProcRelation   &RangeToDomain,
+                                     const std::string         &transfer_name,
+                                     const stk::ParallelMachine comm);
 }
 #endif
 

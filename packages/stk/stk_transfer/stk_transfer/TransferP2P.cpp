@@ -9,6 +9,8 @@
 
 #include <iostream>
 
+#include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/CoarseSearch.hpp>
@@ -25,33 +27,91 @@ Scalar distance_squared (const Scalar x[DIM], const Scalar y[DIM]) {
 }
 
 }
+namespace STK_TransferP2P {
+
 
 // Template Specializations based on spatial dimension:
-template void STK_TransferP2P::point_to_point_coarse_search<3>(IdentProcRelation &,
-                                                               const PointMap    &,
-                                                               const MDArray     &,
-                                                               const BoundingBox::Data ,
-                                                               const stk::ParallelMachine );
-template void STK_TransferP2P::linear_interpolation<3> (MDArray &,
-                                                        const MDArray &,
-                                                        const IdentProcRelation &,
-                                                        const MDArray &,
-                                                        const MDArray &,
-                                                        const stk::ParallelMachine  );
+template void point_to_point_coarse_search<3, MDArray>(IdentProcRelation &,
+                                              const PointMap    &,
+                                              const MDArray     &,
+                                              const BoundingBox::Data ,
+                                              const stk::ParallelMachine );
+template void point_to_point_coarse_search<3, STKMesh>(IdentProcRelation &,
+                                              const PointMap    &,
+                                              const STKMesh     &,
+                                              const BoundingBox::Data ,
+                                              const stk::ParallelMachine );
+template void linear_interpolation<3,MDArray> (MDArray &,
+                                       const MDArray &,
+                                       const IdentProcRelation &,
+                                       const MDArray &,
+                                       const MDArray &,
+                                       const stk::ParallelMachine  );
 
-template void STK_TransferP2P::filter_with_fine_search<3>(IdentProcRelation &,
-                                                          const PointMap &,
-                                                          const MDArray &,
-                                                          const stk::ParallelMachine  ) ;
+template void linear_interpolation<3,STKMesh> (MDArray &,
+                                       const STKMesh &,
+                                       const IdentProcRelation &,
+                                       const MDArray &,
+                                       const STKMesh &,
+                                       const stk::ParallelMachine  );
 
-template void STK_TransferP2P::delete_range_points_found<3>(PointMap &,
-                                                         const IdentProcRelation &,
-                                                         const stk::ParallelMachine  ) ;
+template void filter_with_fine_search<3,MDArray> (IdentProcRelation &,
+                                                  const PointMap &,
+                                                  const MDArray  &,
+                                                  const stk::ParallelMachine) ;
 
-template  void STK_TransferP2P::convert_to_map<3>(PointMap &, const MDArray &);
+template void filter_with_fine_search<3,STKMesh> (IdentProcRelation &,
+                                                  const PointMap &,
+                                                  const STKMesh  &,
+                                                  const stk::ParallelMachine) ;
+template void delete_range_points_found<3>(PointMap &,
+                                           const IdentProcRelation &,
+                                           const stk::ParallelMachine  ) ;
+
+template void convert_to_map<3>(PointMap &, const MDArray &);
 
 
-namespace STK_TransferP2P {
+
+STKMesh::STKMesh(MetaDataPtr meta,
+          BulkDataPtr bulk,
+          EntityVec   &ent,
+          VectorFieldType &coord,
+          VectorFieldType &val) :
+    meta_data        (meta),
+    bulk_data        (bulk),
+    entities         (ent),
+    coordinates_field(coord),
+    values_field     (val) {}
+STKMesh::STKMesh(const STKMesh &M) :
+    meta_data        (M.meta_data),
+    bulk_data        (M.bulk_data),
+    entities         (M.entities),
+    coordinates_field(M.coordinates_field),
+    values_field     (M.values_field) {}
+STKMesh::~STKMesh(){}
+BulkDataPtr &STKMesh::BulkData() {return bulk_data;}
+STKMesh::iterator STKMesh::begin() const {return entities.begin();}
+STKMesh::iterator   STKMesh::end() const {return entities.end();}
+const double *STKMesh::Coord(const STKMesh::iterator i) const {
+  const double *coord = stk::mesh::field_data(coordinates_field, *i);
+  return coord;
+}
+const double *STKMesh::Coord(const stk::mesh::EntityKey i) const {
+  const stk::mesh::Entity  entity = bulk_data->get_entity(i);
+  const double *coord = stk::mesh::field_data(coordinates_field, entity);
+  return  coord;
+}
+const double *STKMesh::Value(const stk::mesh::EntityKey i) const {
+  const stk::mesh::Entity  entity = bulk_data->get_entity(i);
+  const double *value = stk::mesh::field_data(values_field, entity);
+  return  value;
+}
+stk::mesh::EntityKey STKMesh::Key(STKMesh::iterator i) const {
+  return bulk_data->entity_key(*i);
+}
+VectorFieldType &STKMesh::Coord(){return coordinates_field;}
+VectorFieldType &STKMesh::Value(){return values_field;}
+
 
 
 /*********************   LU_decomp()   *******************************
@@ -213,37 +273,72 @@ std::vector<double> solve_3_by_3_with_LU(const MDArray             M,
   return v;
 }
 
+namespace {
+
 template <unsigned DIM>
+void boundingbox_vector(std::vector<BoundingBox> &vector,
+                        const PointMap           &mesh,
+                        const BoundingBox::Data   radius,
+                        const stk::ParallelMachine comm) {
+  BoundingBox::Data center[DIM];
+  
+  for (PointMap::const_iterator i=mesh.begin(); i!=mesh.end(); ++i) {
+    for (unsigned j=0; j<DIM; ++j) center[j] = i->second[j];
+    const IdentProc::Key Id(0,i->first);
+    const BoundingBox::Key key(Id, stk::parallel_machine_rank(comm));
+    BoundingBox B(center, radius, key);
+    vector.push_back(B); 
+  }
+}
+
+template <unsigned DIM>
+void boundingbox_vector(std::vector<BoundingBox> &vector,
+                        const MDArray            &mesh,
+                        const BoundingBox::Data   radius,
+                        const stk::ParallelMachine comm) {
+
+  const unsigned NumDomainPts = mesh.dimension(0);
+  BoundingBox::Data center[DIM];
+  
+  for (unsigned i=0; i!=NumDomainPts; ++i) {
+    for (unsigned j=0; j<DIM; ++j) center[j] = mesh(i,j);
+    const IdentProc::Key Id(0,i);
+    const BoundingBox::Key key(Id, stk::parallel_machine_rank(comm));
+    BoundingBox B(center, radius, key);
+    vector.push_back(B); 
+  }
+}
+
+template <unsigned DIM>
+void boundingbox_vector(std::vector<BoundingBox> &vector,
+                        const STKMesh            &mesh,
+                        const BoundingBox::Data   radius,
+                        const stk::ParallelMachine comm) {
+  BoundingBox::Data center[DIM];
+  
+  for (typename STKMesh::iterator i=mesh.begin(); i!=mesh.end(); ++i) {
+    const double *c = mesh.Coord(i);
+    for (unsigned j=0; j<DIM; ++j) center[j] = c[j];
+    const stk::mesh::EntityKey Id=mesh.Key(i);
+    const BoundingBox::Key key(Id, stk::parallel_machine_rank(comm));
+    BoundingBox B(center, radius, key);
+    vector.push_back(B); 
+  }
+}
+
+}
+template <unsigned DIM, class PointData>
 void point_to_point_coarse_search(IdentProcRelation &RangeToDomain,
                                   const PointMap    &ToPoints,
-                                  const MDArray     &FromPoints,
+                                  const PointData   &FromPoints,
                                   const BoundingBox::Data radius,
                                   const stk::ParallelMachine comm) {
   
-  const unsigned NumDomainPts = FromPoints.dimension(0);
-
   std::vector<BoundingBox> range_vector;
   std::vector<BoundingBox> domain_vector;
 
-  BoundingBox::Data center[DIM];
-
-  for (unsigned i=0; i<NumDomainPts; ++i) {
-    for (unsigned j=0; j<DIM; ++j) {
-      center[j] = FromPoints(i,j);
-    }
-    const BoundingBox::Key key(i, stk::parallel_machine_rank(comm));
-    BoundingBox B(center, radius, key);
-    domain_vector.push_back(B); 
-  }
-
-  for (PointMap::const_iterator i=ToPoints.begin(); i!=ToPoints.end(); ++i) {
-    for (unsigned j=0; j<DIM; ++j) {
-      center[j] = i->second[j];
-    }
-    const BoundingBox::Key key(i->first, stk::parallel_machine_rank(comm));
-    BoundingBox B(center, radius, key);
-    range_vector.push_back(B); 
-  }
+  boundingbox_vector<DIM>(domain_vector, FromPoints, radius, comm);
+  boundingbox_vector<DIM>(range_vector,    ToPoints, radius, comm);
 
   stk::search::FactoryOrder order;
   order.m_communicator = comm;
@@ -255,22 +350,63 @@ void point_to_point_coarse_search(IdentProcRelation &RangeToDomain,
   stk::search::coarse_search(RangeToDomain, domain_vector, range_vector, order);
 }
 
+namespace {
+template <class ArrayOrMesh> 
+const double *entity_coord(const ArrayOrMesh &FromPoints,
+                           const stk::mesh::EntityKey &k);
+
+template <class ArrayOrMesh> 
+const double *entity_value(const ArrayOrMesh &FromPoints,
+                           const stk::mesh::EntityKey &k);
+
+template<> 
+  const double *entity_coord<MDArray>(const MDArray &FromPoints,
+                                      const stk::mesh::EntityKey &k) {
+  const int j = k.id();
+  const int i = FromPoints.getEnumeration(j,0);
+  const double * d = &FromPoints[i];
+  return d;
+}
+
+template<>  
+const double *entity_coord<STKMesh>(const STKMesh &FromMesh,
+                                    const stk::mesh::EntityKey &k) {
+  const double * d = FromMesh.Coord(k);
+  return d;
+}
+
+template<> 
+  const double *entity_value<MDArray>(const MDArray &FromPoints,
+                                      const stk::mesh::EntityKey &k) {
+  const int j = k.id();
+  const int i = FromPoints.getEnumeration(j,0);
+  const double * d = &FromPoints[i];
+  return d;
+}
+template<> 
+  const double *entity_value<STKMesh>(const STKMesh &FromMesh,
+                                      const stk::mesh::EntityKey &k) {
+  const double * d = FromMesh.Value(k);
+  return d;
+}
+}
 
 
-template <unsigned DIM>
-void linear_interpolation (MDArray &ToValues,
-                    const MDArray &FromValues,
+template <unsigned DIM, class MeshClass>
+void linear_interpolation (MDArray          &ToValues,
+                    const MeshClass         &FromValues,
                     const IdentProcRelation &RangeToDomain,
-                    const MDArray &ToPoints,
-                    const MDArray &FromPoints,
+                    const MDArray           &ToPoints,
+                    const MeshClass         &FromPoints,
                     const stk::ParallelMachine  comm) {
   const unsigned numValues = ToValues.dimension(0);
   const unsigned numFields = ToValues.dimension(1);
   for (unsigned i=0; i<numValues; ++i)  {
     MDArray Corners(DIM+1,DIM);
     for (unsigned j=0; j<DIM+1; ++j) {
-      const unsigned c = RangeToDomain[4*i+j].second.ident;
-      for (unsigned k=0; k<DIM; ++k) Corners(j,k) = FromPoints(c,k);
+      const IdentProc::Key k = RangeToDomain[4*i+j].second.ident;
+      const double *c = entity_coord<MeshClass>(FromPoints, k); 
+      for (unsigned k=0; k<DIM; ++k) Corners(j,k) = c[k];
     } 
     MDArray SpanVectors(DIM,DIM);
     for (unsigned j=1; j<DIM+1; ++j) 
@@ -287,8 +423,9 @@ void linear_interpolation (MDArray &ToValues,
     std::vector<double> Values(DIM+1);
     for (unsigned f=0; f<numFields; ++f)  {
       for (unsigned j=0; j<DIM+1; ++j) {
-        const unsigned c = RangeToDomain[4*i+j].second.ident;
-        Values[j] = FromValues(c,f);
+        const IdentProc::Key k = RangeToDomain[4*i+j].second.ident;
+        const double *c = entity_value(FromValues, k); 
+        Values[j] = c[f];
       }
       // So, we have choosen corner 0 as the base of the span
       // vectors and determined local (or parametric)
@@ -309,14 +446,15 @@ void linear_interpolation (MDArray &ToValues,
 
   
 // Want to find the N best elements to keep.  
-template <unsigned DIM>
-void filter_with_fine_search(IdentProcRelation &RangeToDomain,
-                                const PointMap &ToPoints,
-                                const MDArray &FromPoints,
+template <unsigned DIM, class MeshClass>
+void filter_with_fine_search(IdentProcRelation  &RangeToDomain,
+                                const PointMap  &ToPoints,
+                                const MeshClass &FromPoints,
                                 const stk::ParallelMachine  comm) {
 
   typedef  std::map<double,unsigned,std::greater<double> > DIST_MAP;
   const unsigned NumRelations = RangeToDomain.size();
+  const unsigned my_rank = stk::parallel_machine_rank(comm);
 
   DIST_MAP  smallest_distances;
   IdentProcRelation new_relations;
@@ -324,30 +462,34 @@ void filter_with_fine_search(IdentProcRelation &RangeToDomain,
   MDArray::scalar_type from_center[DIM];
   MDArray::scalar_type   to_center[DIM];
   // One of those duel sorted indexing problems:
-  for (IdentProc::Key i=0, j=0; j<NumRelations;) {
-    const IdentProc::Key  range_index = RangeToDomain[j].first .ident;
+  for (unsigned i=0, j=0; j<NumRelations;) {
+    const unsigned        range_index = RangeToDomain[j].first .ident.id();
+    const unsigned       processor_id = RangeToDomain[j].first .proc;
     const IdentProc::Key domain_index = RangeToDomain[j].second.ident;
-    if (i < range_index) {
-      if (DIM+1 == smallest_distances.size()) {
-        // Found enough points for linear interpolation.
-        for (DIST_MAP::const_iterator d=smallest_distances.begin(); 
-             d != smallest_distances.end(); ++d) {
-          new_relations.push_back(RangeToDomain[d->second]);
-        }
-      } 
-      smallest_distances.clear();
-      ++i;
-    } else {
-      for (unsigned k=0; k<DIM; ++k) from_center[k] = FromPoints(domain_index,k);
-      for (unsigned k=0; k<DIM; ++k)   to_center[k] =   ToPoints.find(range_index)->second[k];
-      const double dist = distance_squared<DIM>(from_center, to_center);
-      const DIST_MAP::value_type val(dist,j);
+    if (processor_id == my_rank) {
+      if (i < range_index) {
+        if (DIM+1 == smallest_distances.size()) {
+          // Found enough points for linear interpolation.
+          for (DIST_MAP::const_iterator d=smallest_distances.begin(); 
+               d != smallest_distances.end(); ++d) {
+            new_relations.push_back(RangeToDomain[d->second]);
+          }
+        } 
+        smallest_distances.clear();
+        ++i;
+      } else {
+        const double *from_coords = entity_coord<MeshClass>(FromPoints, domain_index);
+        for (unsigned k=0; k<DIM; ++k) from_center[k] = from_coords[k];
+        for (unsigned k=0; k<DIM; ++k)   to_center[k] =   ToPoints.find(range_index)->second[k];
+        const double dist = distance_squared<DIM>(from_center, to_center);
+        const DIST_MAP::value_type val(dist,j);
 
-      // Is using a map too much memory allocation/deallocation? Maybe std::vector is better.
-      if (smallest_distances.insert(val).second && DIM+1 < smallest_distances.size()) 
-        smallest_distances.erase(smallest_distances.begin()); // DIST_MAP: Largest at begin()
-      ++j;
-    }
+        // Is using a map too much memory allocation/deallocation? Maybe std::vector is better.
+        if (smallest_distances.insert(val).second && DIM+1 < smallest_distances.size()) 
+          smallest_distances.erase(smallest_distances.begin()); // DIST_MAP: Largest at begin()
+        ++j;
+      }
+    } else ++j;
   }
   if (DIM+1 == smallest_distances.size()) {
     for (DIST_MAP::const_iterator d=smallest_distances.begin(); 
@@ -365,8 +507,8 @@ void delete_range_points_found(PointMap &ToPoints,
   const unsigned NumRelations = RangeToDomain.size();
 
   for (unsigned i=0; i<NumRelations; i+=DIM+1)  {
-    const PointMap::key_type ident = RangeToDomain[i].first.ident;
-    ToPoints.erase(ident);
+    const PointMap::key_type id = RangeToDomain[i].first.ident.id();
+    ToPoints.erase(id);
   }
 }
 
@@ -383,5 +525,96 @@ void convert_to_map(PointMap      &map_points,
     at = map_points.insert(at,val);
   }
 }
+
+STKMesh convert_points_to_mesh(const MDArray &Coords, 
+                               const MDArray &Values,
+                               const stk::ParallelMachine  comm) {
+  const unsigned num_nodes   = Coords.dimension(0);
+  const unsigned spatial_dim = Coords.dimension(1);
+  const unsigned num_values  = Values.dimension(1);
+  MetaDataPtr meta_data(new stk::mesh::MetaData(spatial_dim));
+  BulkDataPtr bulk_data(new stk::mesh::BulkData(*meta_data.get(),comm));
+
+  VectorFieldType &coordinates_field =
+    meta_data->declare_field<VectorFieldType>("coordinates", spatial_dim);
+  VectorFieldType &values_field =
+    meta_data->declare_field<VectorFieldType>("values", num_values);
+
+  
+  stk::mesh::Part & allParts = meta_data->universal_part();
+  stk::mesh::put_field(coordinates_field , stk::mesh::MetaData::NODE_RANK, allParts);
+  stk::mesh::put_field(values_field ,      stk::mesh::MetaData::NODE_RANK, allParts);
+
+  bulk_data->modification_begin();
+  
+  const unsigned entity_rank_count = meta_data->entity_rank_count();
+  std::vector<size_t> requests(entity_rank_count,0);
+  requests[0] = num_nodes;
+  
+  EntityVec entities;
+  bulk_data->generate_new_entities(requests, entities);
+  
+  bulk_data->modification_end();
+
+  for (unsigned i=0; i<num_nodes; ++i) {
+    stk::mesh::Entity e = entities[i];
+    double *coord = stk::mesh::field_data(coordinates_field, e);
+    double *value = stk::mesh::field_data(values_field     , e);
+    for (unsigned j=0; j<spatial_dim; ++j) coord[j] = Coords(i,j);
+    for (unsigned j=0; j<num_values ; ++j) value[j] = Values(i,j);
+  }
+
+  STKMesh mesh(meta_data, bulk_data, entities, coordinates_field, values_field);
+
+  return mesh;
+}
+
+
+void copy_domain_to_range_processors(STKMesh                   &Mesh,
+                                     const IdentProcRelation   &RangeToDomain,
+                                     const std::string         &transfer_name,
+                                     const stk::ParallelMachine comm) {
+
+  const unsigned my_rank = stk::parallel_machine_rank(comm);
+  
+  std::vector<stk::mesh::EntityProc> domain_to_ghost ;
+
+  const IdentProcRelation::const_iterator end=RangeToDomain.end();
+  for (IdentProcRelation::const_iterator i=RangeToDomain.begin(); i!=end; ++i) {
+    
+    const stk::mesh::EntityKey domain_entity_key = i->second.ident;
+    const unsigned            domain_owning_rank = i->second.proc;
+    const unsigned             range_owning_rank = i->first.proc;
+    if (domain_owning_rank == my_rank && range_owning_rank != my_rank) {
+      const stk::mesh::Entity entity = Mesh.BulkData()->get_entity(domain_entity_key);
+      if (entity.owner_rank() == (int)my_rank) { // should always be true by construction.
+        const stk::mesh::EntityProc ep(entity, range_owning_rank);
+        domain_to_ghost.push_back(ep);
+      }   
+    }   
+  }
+ 
+  Mesh.BulkData()->modification_begin();
+  
+  stk::mesh::Ghosting & transfer_domain_ghosting =
+    Mesh.BulkData()->create_ghosting("Transfer "+transfer_name+" Ghosting");
+  {
+    std::vector<stk::mesh::EntityKey> receive;
+    transfer_domain_ghosting.receive_list( receive );
+    Mesh.BulkData()->change_ghosting( transfer_domain_ghosting ,
+                                        domain_to_ghost ,
+                                        receive );
+  }
+  Mesh.BulkData()->modification_end();
+  
+  // Copy coordinates to the newly ghosted nodes
+  std::vector<const stk::mesh::FieldBase *> fields ;
+  fields.push_back(&Mesh.Coord());
+  fields.push_back(&Mesh.Value());
+        
+  stk::mesh::communicate_field_data( transfer_domain_ghosting , fields);
+}
+  
+  
 
 }
