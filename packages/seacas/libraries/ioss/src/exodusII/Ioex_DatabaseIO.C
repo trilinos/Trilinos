@@ -6564,7 +6564,7 @@ namespace Ioex {
 					 // higher-order storage type.
 	  
 	  for (int i=0; i < attribute_count; i++) {
-	    int writ = std::snprintf(names[i], maximumNameLength+1, "attribute_%d", i+1);
+	    int writ = snprintf(names[i], maximumNameLength+1, "attribute_%d", i+1);
 	    if (writ > maximumNameLength)
 	      names[i][maximumNameLength] = '\0';
 	  }
