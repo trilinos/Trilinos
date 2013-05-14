@@ -659,8 +659,7 @@ public:
 
   bool is_valid(Entity entity) const
   {
-    ThrowAssert(entity.local_offset() < m_entity_states.size());
-    return m_entity_states[entity.local_offset()] != Deleted;
+    return (entity.local_offset() < m_entity_states.size()) && (m_entity_states[entity.local_offset()] != Deleted);
   }
 
   size_t count_relations(Entity entity) const;
@@ -676,8 +675,10 @@ public:
 
   void entity_getter_debug_check(Entity entity) const
   {
-    ThrowAssert(check_bulk_data(entity));
-    ThrowAssert(in_index_range(entity));
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
+    ThrowAssertMsg(check_bulk_data(entity), "Entity with bulk_data: " << BulkData::get(entity).m_bulk_data_id << " was given to bulk_data: " << m_bulk_data_id << "; entity has local_offset: "<< entity.local_offset());
+#endif
+    ThrowAssertMsg(in_index_range(entity) , "In bulk_data: " << m_bulk_data_id << ", entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_states.size() - 1);
   }
 
   //
