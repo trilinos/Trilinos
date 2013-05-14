@@ -866,7 +866,7 @@ namespace stk {
         return *this;
       }
 
-      inline const unsigned size() const { return m_size;}
+      inline unsigned size() const { return m_size;}
       inline const MyRelation operator[](int i) const {
         MyRelation mr = { m_entities[i], m_ordinals[i] };
         return mr;
