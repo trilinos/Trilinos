@@ -48,6 +48,11 @@
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Map.hpp>
 
+#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+#  include <Tpetra_HashTable.hpp>
+#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+
+
 // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
 #ifdef HAVE_MPI
 #  include "mpi.h"
@@ -473,7 +478,8 @@ namespace Tpetra {
     template<class LO, class GO, class NT>
     DistributedNoncontiguousDirectory<LO, GO, NT>::
     DistributedNoncontiguousDirectory (const Teuchos::RCP<const typename DistributedNoncontiguousDirectory<LO, GO, NT>::map_type>& map) :
-      Directory<LO, GO, NT> (map)
+      Directory<LO, GO, NT> (map),
+      useHashTables_ (false) // to be revised below
     {
       using Teuchos::Array;
       using Teuchos::ArrayView;
@@ -531,23 +537,25 @@ namespace Tpetra {
       // The number of Directory elements that my process owns.
       const size_t dir_numMyEntries = directoryMap_->getNodeNumElements ();
 
-      // NOTE (mfh 21 Mar 2012): I rephrased the comment below so that
-      // it made a little more sense, but I don't fully understand what
-      // it means yet.
+      // Fix for Bug 5822: If the input Map is "sparse," that is if
+      // the difference between the global min and global max GID is
+      // much larger than the global number of elements in the input
+      // Map, then it's possible that the Directory Map might have
+      // many more entries than the input Map on this process.  This
+      // can cause memory scalability issues.  In that case, we switch
+      // from the array-based implementation of Directory storage to
+      // the hash table - based implementation.  We don't use hash
+      // tables all the time, because they are slower in the common
+      // case of a nonsparse Map.
       //
-      // Allocate process ID List and LID list.  Initialize to
-      // invalid values, in case the user global element list does not
-      // fill all IDs from minAllGID to maxAllGID.
-      //
-      // FIXME (mfh 13 Jan 2013) See Bug 5822.  dir_numMyEntries may
-      // be quite large if the difference between the smallest and
-      // largest GID on all processes is large, even if the actual
-      // total number of GIDs is small (i.e., if the noncontiguous Map
-      // is very "sparse").
-      nodeIDs_ = arcp<int>(dir_numMyEntries);
-      std::fill (nodeIDs_.getRawPtr (), nodeIDs_.getRawPtr () + dir_numMyEntries, -1);
-      LIDs_ = arcp<LO>(dir_numMyEntries);
-      std::fill (LIDs_.getRawPtr (), LIDs_.getRawPtr () + dir_numMyEntries, LINVALID);
+      // NOTE: This is a per-process decision.  Some processes may use
+      // array-based storage, whereas others may use hash table -
+      // based storage.
+#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+      const size_t inverseSparsityThreshold = 2;
+      useHashTables_ =
+        dir_numMyEntries >= inverseSparsityThreshold * map->getNodeNumElements ();
+#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 
       // Get list of process IDs that own the directory entries for the
       // Map GIDs.  These will be the targets of the sends that the
@@ -599,24 +607,87 @@ namespace Tpetra {
       // Distribute the triples of (GID, process ID, LID).
       distor.doPostsAndWaits (exportEntries ().getConst (), packetSize, importElements ());
 
-      // Unpack the redistributed data.
-      {
+#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+      // Unpack the redistributed data.  Both implementations of
+      // Directory storage map from an LID in the Directory Map (which
+      // is the LID of the GID to store) to either a PID or an LID in
+      // the input Map.  Each "packet" (contiguous chunk of
+      // importElements) contains a triple: (GID, PID, LID).
+      if (useHashTables_) {
+        // Create the hash tables.  We know exactly how many elements
+        // to expect in each hash table.
+        //
+        // FIXME (mfh 12 May 2013) It would make sense to use
+        // FixedHashTable here.  That would mean we would need to know
+        // all the PIDs and LIDs at once when we build the table.  We
+        // could deal with this by using temporary space to unpack the
+        // PIDs and LIDs.  However, FixedHashTable doesn't currently
+        // accept separate key,value lists; instead, it assumes that
+        // the values occur in a contiguous sequence.  Rather than
+        // fixing FixedHashTable, I'll just use HashTable for now,
+        // which can accept (key,value) pairs one at a time.
+        lidToPidTable_ = rcp (new Details::HashTable<LO, int> (numReceives));
+        lidToLidTable_ = rcp (new Details::HashTable<LO, LO> (numReceives));
+        // Fill in the hash tables.
         typename Array<GO>::iterator iter = importElements.begin();
         for (size_t i = 0; i < numReceives; ++i) {
-          // Each "packet" (contiguous chunk of importElements) contains
-          // a triple: (GID, process ID, LID).
-          //
-          // Convert incoming GID to Directory LID.
-          const GO currGID = *iter++;
-          const LO currLID = directoryMap_->getLocalElement (currGID);
-          TEUCHOS_TEST_FOR_EXCEPTION(currLID == LINVALID, std::logic_error,
-            Teuchos::typeName(*this) << " constructor: Incoming global ID "
-            << currGID << " does not have a corresponding local ID in the "
+          const GO curGID = *iter++;
+          const LO curLID = directoryMap_->getLocalElement (curGID);
+          TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
+            Teuchos::typeName(*this) << " constructor: Incoming global index "
+            << curGID << " does not have a corresponding local index in the "
             "Directory Map.  Please report this bug to the Tpetra developers.");
-          nodeIDs_[currLID] = *iter++;
-          LIDs_[currLID]    = *iter++;
+          lidToPidTable_->add (curLID, *iter++);
+          lidToLidTable_->add (curLID, *iter++);
+        }
+      } else { // use array-based implementation of Directory storage
+        // Allocate arrays implementing Directory storage.  Fill them
+        // with invalid values, in case the input Map's GID list is
+        // sparse (i.e., does not populate all GIDs from minAllGID to
+        // maxAllGID).
+        nodeIDs_ = arcp<int> (dir_numMyEntries);
+        std::fill (nodeIDs_.begin (), nodeIDs_.end (), -1);
+        LIDs_ = arcp<LO> (dir_numMyEntries);
+        std::fill (LIDs_.begin (), LIDs_.end (), LINVALID);
+        // Fill in the arrays with PIDs resp. LIDs.
+        typename Array<GO>::iterator iter = importElements.begin();
+        for (size_t i = 0; i < numReceives; ++i) {
+          const GO curGID = *iter++;
+          const LO curLID = directoryMap_->getLocalElement (curGID);
+          TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
+                                     Teuchos::typeName(*this) << " constructor: Incoming global index "
+                                     << curGID << " does not have a corresponding local index in the "
+                                     "Directory Map.  Please report this bug to the Tpetra developers.");
+          nodeIDs_[curLID] = *iter++;
+          LIDs_[curLID]    = *iter++;
         }
       }
+#else // NOT HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+      if (! useHashTables_) {
+        // Allocate arrays implementing Directory storage.  Fill them
+        // with invalid values, in case the input Map's GID list is
+        // sparse (i.e., does not populate all GIDs from minAllGID to
+        // maxAllGID).
+        nodeIDs_ = arcp<int> (dir_numMyEntries);
+        std::fill (nodeIDs_.begin (), nodeIDs_.end (), -1);
+        LIDs_ = arcp<LO> (dir_numMyEntries);
+        std::fill (LIDs_.begin (), LIDs_.end (), LINVALID);
+        // Fill in the arrays with PIDs resp. LIDs.
+        typename Array<GO>::iterator iter = importElements.begin();
+        for (size_t i = 0; i < numReceives; ++i) {
+          const GO curGID = *iter++;
+          const LO curLID = directoryMap_->getLocalElement (curGID);
+          TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
+            Teuchos::typeName(*this) << " constructor: Incoming global index "
+            << curGID << " does not have a corresponding local index in the "
+            "Directory Map.  Please report this bug to the Tpetra developers.");
+          nodeIDs_[curLID] = *iter++;
+          LIDs_[curLID]    = *iter++;
+        }
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+      }
+#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
     }
 
     template<class LO, class GO, class NT>
@@ -723,17 +794,55 @@ namespace Tpetra {
         // - Otherwise:         (GID, PID)
         //
         // "PID" means "process ID" (a.k.a. "node ID," a.k.a. "rank").
-        LO curLID;
         typename Array<global_size_t>::iterator exportsIter = exports.begin();
         typename Array<GO>::const_iterator gidIter = sendGIDs.begin();
-        for ( ; gidIter != sendGIDs.end(); ++gidIter) {
+
+#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+        if (useHashTables_) {
+          for ( ; gidIter != sendGIDs.end(); ++gidIter) {
+            const GO curGID = *gidIter;
+            // Don't use as() here (see above note).
+            *exportsIter++ = static_cast<global_size_t> (curGID);
+            const LO curLID = directoryMap_->getLocalElement (curGID);
+            TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
+              Teuchos::typeName (*this) << "::getEntriesImpl(): The Directory "
+              "Map's global index " << curGID << " does not have a corresponding "
+              "local index.  Please report this bug to the Tpetra developers.");
+            // Don't use as() here (see above note).
+            *exportsIter++ = static_cast<global_size_t> (lidToPidTable_->get (curLID));
+            if (computeLIDs) {
+              // Don't use as() here (see above note).
+              *exportsIter++ = static_cast<global_size_t> (lidToLidTable_->get (curLID));
+            }
+          }
+        } else {
+          for ( ; gidIter != sendGIDs.end(); ++gidIter) {
+            const GO curGID = *gidIter;
+            // Don't use as() here (see above note).
+            *exportsIter++ = static_cast<global_size_t> (curGID);
+            const LO curLID = directoryMap_->getLocalElement (curGID);
+            TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
+              Teuchos::typeName (*this) << "::getEntriesImpl(): The Directory "
+              "Map's global index " << curGID << " does not have a corresponding "
+              "local index.  Please report this bug to the Tpetra developers.");
+            // Don't use as() here (see above note).
+            *exportsIter++ = static_cast<global_size_t> (nodeIDs_[curLID]);
+            if (computeLIDs) {
+              // Don't use as() here (see above note).
+              *exportsIter++ = static_cast<global_size_t> (LIDs_[curLID]);
+            }
+          }
+        }
+#else // NOT HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+        for ( ; gidIter != sendGIDs.end (); ++gidIter) {
+          const GO curGID = *gidIter;
           // Don't use as() here (see above note).
-          *exportsIter++ = static_cast<global_size_t> (*gidIter);
-          curLID = directoryMap_->getLocalElement (*gidIter);
+          *exportsIter++ = static_cast<global_size_t> (curGID);
+          const LO curLID = directoryMap_->getLocalElement (curGID);
           TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
             Teuchos::typeName (*this) << "::getEntriesImpl(): The Directory "
-            "Map's global ID " << *gidIter << " does not have a corresponding "
-            "local ID.  Please report this bug to the Tpetra developers.");
+            "Map's global index " << curGID << " does not have a corresponding "
+            "local index.  Please report this bug to the Tpetra developers.");
           // Don't use as() here (see above note).
           *exportsIter++ = static_cast<global_size_t> (nodeIDs_[curLID]);
           if (computeLIDs) {
@@ -741,6 +850,7 @@ namespace Tpetra {
             *exportsIter++ = static_cast<global_size_t> (LIDs_[curLID]);
           }
         }
+#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
       }
 
       Array<global_size_t> imports (packetSize * distor.getTotalReceiveLength ());
@@ -756,7 +866,8 @@ namespace Tpetra {
       Array<GO> sortedIDs (globalIDs);
       ArrayRCP<GO> offset = arcp<GO> (numEntries);
       GO ii=0;
-      for (typename ArrayRCP<GO>::iterator oo = offset.begin(); oo != offset.end(); ++oo, ++ii) {
+      for (typename ArrayRCP<GO>::iterator oo = offset.begin();
+           oo != offset.end(); ++oo, ++ii) {
         *oo = ii;
       }
       sort2 (sortedIDs.begin(), sortedIDs.begin() + numEntries, offset.begin());
@@ -765,16 +876,15 @@ namespace Tpetra {
       // we know these conversions are in range, because we loaded this data
       for (size_t i = 0; i < numRecv; ++i) {
         // Don't use as() here (see above note).
-        GO curGID = static_cast<GO> (*ptr++);
+        const GO curGID = static_cast<GO> (*ptr++);
         std::pair<IT, IT> p1 = std::equal_range (sortedIDs.begin(), sortedIDs.end(), curGID);
         if (p1.first != p1.second) {
-          //found it
-          size_t j = p1.first - sortedIDs.begin();
+          const size_t j = p1.first - sortedIDs.begin();
           // Don't use as() here (see above note).
-          nodeIDs[offset[j]] = static_cast<int>(*ptr++);
+          nodeIDs[offset[j]] = static_cast<int> (*ptr++);
           if (computeLIDs) {
             // Don't use as() here (see above note).
-            localIDs[offset[j]] = static_cast<LO>(*ptr++);
+            localIDs[offset[j]] = static_cast<LO> (*ptr++);
           }
           if (nodeIDs[offset[j]] == -1) {
             res = IDNotPresent;
