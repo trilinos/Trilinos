@@ -45,11 +45,11 @@
 #include <Tpetra_ConfigDefs.hpp>
 
 //
-// mfh 13 May 2013: Proposed fix for Bug 5822.
-//
-// To enable the fix, comment out the three lines below that undefine
-// HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX, and uncomment the three lines
-// below them that define that macro.
+// mfh 13-15 May 2013: HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX governs
+// the fix for Bug 5822.  The fix is enabled by default.  To disable
+// the fix, uncomment out the three lines below that undefine
+// HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX, and comment out the three
+// lines below them that define that macro.
 //
 
 // #ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
