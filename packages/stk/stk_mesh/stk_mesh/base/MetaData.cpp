@@ -24,11 +24,12 @@
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 #include <Shards_CellTopologyManagedData.hpp>
 
+#include <boost/foreach.hpp>
+
 namespace stk {
 namespace mesh {
 
 namespace {
-
 
 bool root_part_in_subset(stk::mesh::Part & part)
 {
@@ -1007,6 +1008,32 @@ FieldBase* MetaData::get_field( const std::string& name ) const
 
 CellTopology get_cell_topology(Entity entity)
 { return get_cell_topology(entity.bucket()); }
+
+void MetaData::dump_all_meta_info(std::ostream& out) const
+{
+  out << "MetaData info...\n";
+
+  out << "  Entity rank names:\n";
+  for (size_t i = 0, e = m_entity_rank_names.size(); i != e; ++i) {
+    out << "    " << i << ": " << m_entity_rank_names[i] << std::endl;
+  }
+  out << "  Special Parts:\n";
+  out << "    Universal part ord = " << m_universal_part->mesh_meta_data_ordinal() << std::endl;
+  out << "    Owns part ord = " << m_owns_part->mesh_meta_data_ordinal() << std::endl;
+  out << "    Shared part ord = " << m_owns_part->mesh_meta_data_ordinal() << std::endl;
+
+  out << "  All parts:\n";
+  const PartVector& all_parts = m_part_repo.get_all_parts();
+  BOOST_FOREACH(const Part* part, all_parts) {
+    print(out, "    ", *part);
+  }
+
+  out << "  All fields:\n";
+  const FieldVector& all_fields = m_field_repo.get_fields();
+  BOOST_FOREACH(const FieldBase* field, all_fields) {
+     print(out, "    ", *field);
+  }
+}
 
 } // namespace mesh
 } // namespace stk

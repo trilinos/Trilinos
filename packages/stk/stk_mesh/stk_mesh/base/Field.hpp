@@ -161,6 +161,20 @@ public:
     m_node_field[bucket_id].length = length/sizeof(Scalar);
   }
 
+  virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const
+  {
+    const unsigned num_scalar_values = size_per_entity / sizeof(Scalar);
+    Scalar* casted_data = reinterpret_cast<Scalar*>(data);
+
+    out << "{";
+    for (unsigned i = 0; i < num_scalar_values; ++i) {
+      out << casted_data[i] << " ";
+    }
+    out << "}";
+
+    return out;
+  }
+
 private:
 
   struct ScalarView {

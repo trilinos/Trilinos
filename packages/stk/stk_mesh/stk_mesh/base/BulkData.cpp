@@ -951,5 +951,63 @@ void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsig
   }
 }
 
+void BulkData::dump_all_mesh_info(std::ostream& out) const
+{
+  // Dump output for metadata first
+  m_mesh_meta_data.dump_all_meta_info(out);
+
+  out << "BulkData info...\n";
+
+  const FieldVector& all_fields = m_mesh_meta_data.get_fields();
+
+  // Iterate all buckets for all ranks...
+  const std::vector<std::string> & rank_names = m_mesh_meta_data.entity_rank_names();
+  for (size_t i = 0, e = rank_names.size(); i < e; ++i) {
+    EntityRank rank = i;
+    out << "  All " << rank_names[i] << " entities:" << std::endl;
+
+    const std::vector<Bucket*>& buckets = this->buckets(rank);
+    BOOST_FOREACH(Bucket* bucket, buckets) {
+      out << "    Found bucket with superset parts: { ";
+      PartVector supersets;
+      bucket->supersets(supersets);
+      BOOST_FOREACH(Part* part, supersets) {
+        out << part->name() << " ";
+      }
+      out << "}" << std::endl;
+
+      for (size_t b_ord = 0, b_end = bucket->size(); b_ord < b_end; ++b_ord) {
+        Entity entity = (*bucket)[b_ord];
+        out << "      " << print_entity_key(m_mesh_meta_data, entity_key(entity)) << std::endl;
+
+        // Print connectivity
+        for (size_t r = 0, re = rank_names.size(); r < re; ++r) {
+          out << "        Connectivity to " << rank_names[r] << std::endl;
+          Entity const* entities = bucket->begin_entities(b_ord, r);
+          ConnectivityOrdinal const* ordinals = bucket->begin_ordinals(b_ord, r);
+          const int num_conn         = bucket->num_connectivity(b_ord, r);
+          for (int c_itr = 0; c_itr < num_conn; ++c_itr) {
+            out << "          " << print_entity_key(m_mesh_meta_data, entity_key(entities[c_itr])) << "[" << ordinals[c_itr] << "]" << std::endl;
+          }
+        }
+
+        // Print field data
+        BOOST_FOREACH(FieldBase* field, all_fields) {
+          FieldMetaData field_meta_data = m_field_meta_data[m_num_fields * i + field->mesh_meta_data_ordinal()][bucket->bucket_id()];
+
+          unsigned data_size = field_meta_data.m_size;
+          if (data_size > 0) { // entity has this field?
+            void* data = field_meta_data.m_data + field_meta_data.m_size * b_ord;
+            out << "        For field: " << *field << ", has data: ";
+            field->print_data(out, data, data_size);
+            out << std::endl;
+          }
+        }
+      }
+
+    }
+  }
+}
+
 } // namespace mesh
 } // namespace stk

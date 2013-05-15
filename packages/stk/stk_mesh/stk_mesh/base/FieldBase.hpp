@@ -148,6 +148,8 @@ class FieldBase
 
   virtual ~FieldBase() {}
 
+  virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const { return out; }
+
   stk::mesh::BulkData& get_mesh() const
   { return *m_mesh; }
 
@@ -207,7 +209,14 @@ std::ostream & operator << ( std::ostream & , const FieldBase & );
 
 /** \brief  Print field and field restrictions on new lines. */
 std::ostream & print( std::ostream & ,
-                      const char * const , const FieldBase & );
+                      const char * const ,
+                      const FieldBase & );
+
+
+std::ostream & print_restrictions( std::ostream & ,
+                                   const char * const ,
+                                   const FieldBase & );
+
 
 } //namespace mesh
 } //namespace stk

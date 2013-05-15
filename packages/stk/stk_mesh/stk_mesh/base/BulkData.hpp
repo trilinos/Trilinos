@@ -140,9 +140,7 @@ class BulkData {
 
 public:
 
-
   void optimize_buckets_at_modification_end(bool b) { m_optimize_buckets = b; }
-
 
 #ifdef  STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   inline static BulkData & get( Entity entity);
@@ -1132,6 +1130,9 @@ public:
 
   // Do not call!  Just for a legacy test!
   impl::EntityRepository &get_entity_repository() { return m_entity_repo; }
+
+  // Print all mesh info
+  void dump_all_mesh_info(std::ostream& out = std::cout) const;
 
 private:
 

@@ -408,7 +408,7 @@ public:
     unsigned arg_num_states )
   {
     require_not_committed();
-  
+
     return m_field_repo.declare_field(
                   arg_name, arg_traits, arg_rank, arg_dim_tags,
                   arg_num_states, this
@@ -461,6 +461,7 @@ public:
    */
   EntityRank get_entity_rank(const CellTopology cell_topology) const;
 
+  void dump_all_meta_info(std::ostream& out = std::cout) const;
 
   /** \} */
 private:

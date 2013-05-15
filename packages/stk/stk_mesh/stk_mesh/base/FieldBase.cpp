@@ -25,9 +25,9 @@ std::ostream & operator << ( std::ostream & s , const FieldBase & field )
   }
   s << ">" ;
 
-  s << "[ name = \"" ;
+  s << "[ name: \"" ;
   s << field.name() ;
-  s << "\" , #states = " ;
+  s << "\" , #states: " ;
   s << field.number_of_states();
   s << " ]" ;
   return s ;
@@ -37,17 +37,27 @@ std::ostream & print( std::ostream & s ,
                       const char * const b ,
                       const FieldBase & field )
 {
+  s << b << field << std::endl;
+  std::string indent = b;
+  indent += "  ";
+  print_restrictions(s, indent.c_str(), field);
+  return s ;
+}
+
+std::ostream & print_restrictions(std::ostream & s ,
+                                  const char * const b ,
+                                  const FieldBase & field )
+{
   const PartVector & all_parts = MetaData::get(field).get_parts();
   const std::vector<FieldBase::Restriction> & rMap = field.restrictions();
-  s << field ;
-  s << " {" ;
+
   for ( std::vector<FieldBase::Restriction>::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
-    s << std::endl << b << "  " ;
+    s << b;
     i->print( s, i->entity_rank(), * all_parts[ i->part_ordinal() ], field.rank() );
+    s << std::endl;
   }
-  s << std::endl << b << "}" ;
-  return s ;
+  return s;
 }
 
 //----------------------------------------------------------------------

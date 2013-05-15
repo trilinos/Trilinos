@@ -8,6 +8,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Part.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/util/string_case_compare.hpp>
 
 #include <algorithm>
@@ -36,32 +37,46 @@ print( std::ostream & os , const char * const lead , const Part & p )
   const PartVector & supersets = p.supersets();
   const PartVector & subsets   = p.subsets();
 
-  std::vector<Part*>::const_iterator i ;
+  std::vector<Part*>::const_iterator i;
 
   if ( lead != NULL ) { os << lead ; }
-  os << "Part[ " ;
-  os << p.name() ;
-  os << " , " ;
-  os << p.mesh_meta_data_ordinal() ;
-  os << " ] {" ;
-  os << std::endl ;
+  os << "Part[ ";
+  os << "name: \"";
+  os << p.name();
+  os << "\" , ord: ";
+  os << p.mesh_meta_data_ordinal();
+  os << " , rank: ";
+  if (p.primary_entity_rank() == stk::topology::INVALID_RANK) {
+    os << "INVALID_RANK";
+  }
+  else {
+    os << p.primary_entity_rank();
+  }
+  os << " ]";
+  os << std::endl;
 
   if ( lead != NULL ) { os << lead ; }
-  os << "  Supersets {" ;
+  os << "  Supersets {";
   for ( i = supersets.begin() ; i != supersets.end() ; ++i ) {
-    const std::string & n = (*i)->name() ; os << " " << n ;
+    const std::string & n = (*i)->name();
+    os << " \"" << n << "\"";
   }
-  os << " }" << std::endl ;
-  os << " }" << std::endl ;
+  os << "  }" << std::endl;
 
-  if ( lead != NULL ) { os << lead ; }
-  os << "  Subsets {" ;
-  for ( i = subsets.begin() ; i != subsets.end() ; ++i ) {
-    const std::string & n = (*i)->name() ; os << " " << n ;
+  if ( lead != NULL ) { os << lead; }
+  os << "  Subsets {";
+  if (&p == &MetaData::get(p).universal_part() ) {
+    os << " *all_parts*";
   }
-  os << " }" << std::endl ;
+  else {
+    for ( i = subsets.begin() ; i != subsets.end() ; ++i ) {
+      const std::string & n = (*i)->name();
+      os << " \"" << n << "\"";
+    }
+  }
+  os << "  }" << std::endl;
 
-  return os ;
+  return os;
 }
 
 //----------------------------------------------------------------------
