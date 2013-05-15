@@ -79,17 +79,20 @@ ENDIF()
 #
 #
 
-APPEND_SET(SOURCES mac.cpp)
-
 # general headers, sources
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(HEADERS ${DIR}/*.cpp)
+APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
    SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
    APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-   APPEND_GLOB(HEADERS ${DIR}/*.cpp)
+   APPEND_GLOB(SOURCES ${DIR}/*.cpp)
    TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+   IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
+     SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos-tpetra)
+     APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+     APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+   ENDIF()
 ENDIF()
 
 # Must glob the binary dir last to get all of the auto-generated headers
