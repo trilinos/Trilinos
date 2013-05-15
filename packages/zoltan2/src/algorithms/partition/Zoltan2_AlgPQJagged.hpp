@@ -56,7 +56,7 @@
 #include <Tpetra_Distributor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <new>          // ::operator new[]
-
+#include <vector>
 #include "zoltan_comm_cpp.h"
 
 #include <bitset>
@@ -5508,7 +5508,6 @@ void AlgPQJagged(
                         );
                     }
                     else {
-                        //cout << " disarda curr" << curr << endl;
                         //if this part is partitioned into 1 then just copy the old values.
                         lno_t partSize = coordinateEnd - coordinateBegin;
                         *(outTotalCounts + currentOut + outShift) = partSize;
