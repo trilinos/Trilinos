@@ -55,11 +55,6 @@
       <!-- <Parameter name="Damping factor"                      type="double" value="4./3"/> -->
     </ParameterList>
 
-    <ParameterList name="myTentativeRFact"> <!-- for projecting coordinates -->
-      <Parameter name="factory"                             type="string" value="TransPFactory"/>
-      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
-    </ParameterList>
-
     <ParameterList name="myRestrictorFact">
       <Parameter name="factory"                             type="string" value="TransPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
@@ -181,22 +176,10 @@
     <Parameter name="maxCoarseSize"                         type="int"      value="500"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
-    <ParameterList name="FineLevel">
-      <Parameter name="startLevel"                          type="int"      value="0"/>
-      <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
-      <!-- <Parameter name="PreSmoother"                         type="string"   value="ForwardGaussSeidel"/> -->
-      <!-- <Parameter name="PostSmoother"                        type="string"   value="BackwardGaussSeidel"/> -->
-      <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
-      <Parameter name="Nullspace"                           type="string"   value="myRebalanceRestrictionFact"/>
-      <Parameter name="Coordinates"                         type="string"   value="myRebalanceRestrictionFact"/>
-      <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
-      <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
-    </ParameterList>
-
     <!-- Will result in a new FactoryMap for a new FactoryManager on Level 1.  Will be used as a model for FM's on later levels.
          Will refer to Factory Collection defined above. -->
-    <ParameterList name="OtherLevels">
-      <Parameter name="startLevel"                          type="int"      value="1"/>
+    <ParameterList name="AllButCoarsestLevel">
+      <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
       <!-- <Parameter name="PreSmoother"                         type="string" value="ForwardGaussSeidel"/> -->
       <!-- <Parameter name="PostSmoother"                        type="string" value="BackwardGaussSeidel"/> -->

@@ -68,11 +68,9 @@
 namespace Piro {
 namespace Epetra {
 
-/** \brief Epetra-based NOX Solver
- *
- * ToDo: Finish documentation!
- */
-
+/** \brief Epetra-based Model Evaluator for NOX solves
+ *  \ingroup Piro_Epetra_solver_grp
+ * */
 class NOXSolver
     : public EpetraExt::ModelEvaluator
 {

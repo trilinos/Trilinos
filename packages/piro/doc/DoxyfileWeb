@@ -42,7 +42,7 @@
 
 PROJECT_NAME           = Piro
 
-INPUT                  = index.doc namespaces.doc ../src
+INPUT                  = index.doc namespaces.doc modules.doc ../src
 
 EXCLUDE_PATTERNS       = *_Def.hpp
 

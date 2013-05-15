@@ -515,7 +515,7 @@ identity_3(Index const N)
 // 4th-order tensor vector dot product
 // \param A 4th-order tensor
 // \param u vector
-// \return 3rd-order tensor \f$ A dot u \f$ as \f$ B_{ijk}=A_{ijkl}u_{l} \f$
+// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijk}=A_{ijkp} u_{p} \f$
 //
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
@@ -536,8 +536,8 @@ dot(Tensor4<T> const & A, Vector<S> const & u)
         typename Promote<S, T>::type
         s = 0.0;
 
-        for (Index l = 0; l < N; ++l) {
-          s += A(i,j,k,l) * u(l);
+        for (Index p = 0; p < N; ++p) {
+          s += A(i,j,k,p) * u(p);
         }
         B(i,j,k) = s;
       }
@@ -551,7 +551,7 @@ dot(Tensor4<T> const & A, Vector<S> const & u)
 // vector 4th-order tensor dot product
 // \param A 4th-order tensor
 // \param u vector
-// \return 3rd-order tensor \f$ u dot A \f$ as \f$ B_{jkl}=u_{i}A_{ijkl} \f$
+// \return 3rd-order tensor \f$ u dot A \f$ as \f$ B_{ijk}=u_{p} A_{pijk} \f$
 //
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
@@ -565,17 +565,17 @@ dot(Vector<S> const & u, Tensor4<T> const & A)
   Tensor3<typename Promote<S, T>::type>
   B(N);
 
-  for (Index j = 0; j < N; ++j) {
-    for (Index k = 0; k < N; ++k) {
-      for (Index l = 0; l < N; ++l) {
+  for (Index i = 0; i < N; ++i) {
+    for (Index j = 0; j < N; ++j) {
+      for (Index k = 0; k < N; ++k) {
 
         typename Promote<S, T>::type
         s = 0.0;
 
-        for (Index i = 0; i < N; ++i) {
-          s += u(i) * A(i,j,k,l);
+        for (Index p = 0; p < N; ++p) {
+          s += u(p) * A(p,i,j,k);
         }
-        B(j,k,l) = s;
+        B(i,j,k) = s;
       }
     }
   }
@@ -587,7 +587,7 @@ dot(Vector<S> const & u, Tensor4<T> const & A)
 // 4th-order tensor vector dot2 product
 // \param A 4th-order tensor
 // \param u vector
-// \return 3rd-order tensor \f$ A dot2 u \f$ as \f$ B_{ijl}=A_{ijkl}u_{k} \f$
+// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijk} = A_{ijpk} u_{p} \f$
 //
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
@@ -603,15 +603,15 @@ dot2(Tensor4<T> const & A, Vector<S> const & u)
 
   for (Index i = 0; i < N; ++i) {
     for (Index j = 0; j < N; ++j) {
-      for (Index l = 0; l < N; ++l) {
+      for (Index k = 0; k < N; ++k) {
 
         typename Promote<S, T>::type
         s = 0.0;
 
-        for (Index k = 0; k < N; ++k) {
-          s += A(i,j,k,l) * u(k);
+        for (Index p = 0; p < N; ++p) {
+          s += A(i,j,p,k) * u(p);
         }
-        B(i,j,l) = s;
+        B(i,j,k) = s;
       }
     }
   }
@@ -623,7 +623,7 @@ dot2(Tensor4<T> const & A, Vector<S> const & u)
 // vector 4th-order tensor dot2 product
 // \param A 4th-order tensor
 // \param u vector
-// \return 3rd-order tensor \f$ u dot2 A \f$ as \f$ B_{ikl}=u_{j}A_{ijkl} \f$
+// \return 3rd-order tensor \f$ u dot2 A \f$ as \f$ B_{ijk}=u_{p} A_{ipjk} \f$
 //
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
@@ -638,16 +638,16 @@ dot2(Vector<S> const & u, Tensor4<T> const & A)
   B(N);
 
   for (Index i = 0; i < N; ++i) {
-    for (Index k = 0; k < N; ++k) {
-      for (Index l = 0; l < N; ++l) {
+    for (Index j = 0; j < N; ++j) {
+      for (Index k = 0; k < N; ++k) {
 
         typename Promote<S, T>::type
         s = 0.0;
 
-        for (Index j = 0; j < N; ++j) {
-          s += u(j) * A(i,j,k,l);
+        for (Index p = 0; p < N; ++p) {
+          s += u(p) * A(i,p,j,k);
         }
-        B(i,k,l) = s;
+        B(i,j,k) = s;
       }
     }
   }
@@ -656,7 +656,7 @@ dot2(Vector<S> const & u, Tensor4<T> const & A)
 }
 
 //
-// \return 2nd-order tensor \f$ C = A : B := C_{ij}=A_{ijkl}B_{kl} \f$
+// \return 2nd-order tensor \f$ C = A : B := C_{ij} = A_{ijpq} B_{pq} \f$
 //
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>
@@ -676,9 +676,9 @@ dotdot(Tensor4<T> const & A, Tensor<S> const & B)
       typename Promote<S, T>::type
       s = 0.0;
 
-      for (Index k = 0; k < N; ++k) {
-        for (Index l = 0; l < N; ++l) {
-          s += A(i,j,k,l) * B(k,l);
+      for (Index p = 0; p < N; ++p) {
+        for (Index q = 0; q < N; ++q) {
+          s += A(i,j,p,q) * B(p,q);
         }
       }
       C(i,j) = s;
@@ -689,7 +689,7 @@ dotdot(Tensor4<T> const & A, Tensor<S> const & B)
 }
 
 //
-// \return 2nd-order tensor \f$ C = B : A := C_{kl} = A_{ijkl} B_{ij} \f$
+// \return 2nd-order tensor \f$ C = B : A := C_{ij} = B_{pq} A_{pqij} \f$
 //
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>
@@ -703,18 +703,18 @@ dotdot(Tensor<S> const & B, Tensor4<T> const & A)
   Tensor<typename Promote<S, T>::type>
   C(N);
 
-  for (Index k = 0; k < N; ++k) {
-    for (Index l = 0; l < N; ++l) {
+  for (Index i = 0; i < N; ++i) {
+    for (Index j = 0; j < N; ++j) {
 
       typename Promote<S, T>::type
       s = 0.0;
 
-      for (Index i = 0; i < N; ++i) {
-        for (Index j = 0; j < N; ++j) {
-          s += A(i,j,k,l) * B(i,j);
+      for (Index p = 0; p < N; ++p) {
+        for (Index q = 0; q < N; ++q) {
+          s += B(p,q) * A(p,q,i,j);
         }
       }
-      C(k,l) = s;
+      C(i,j) = s;
     }
   }
 
@@ -722,7 +722,7 @@ dotdot(Tensor<S> const & B, Tensor4<T> const & A)
 }
 
 //
-// \return \f$ C = A : B := C_{ijkl} = A_{ijmn} B{mnkl} \f$
+// \return \f$ C = A : B := C_{ijkl} = A_{ijpq} B{pqkl} \f$
 //
 template<typename S, typename T>
 Tensor4<typename Promote<S, T>::type>
@@ -744,9 +744,9 @@ dotdot(Tensor4<S> const & A, Tensor4<T> const & B)
           typename Promote<S, T>::type
           s = 0.0;
 
-          for (Index m = 0; m < N; ++m) {
-            for (Index n = 0; n < N; ++n) {
-              s += A(i,j,m,n) * B(m,n,k,l);
+          for (Index p = 0; p < N; ++p) {
+            for (Index q = 0; q < N; ++q) {
+              s += A(i,j,p,q) * B(p,q,k,l);
             }
           }
           C(i,j,k,l) = s;

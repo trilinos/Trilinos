@@ -1069,6 +1069,11 @@ namespace Tpetra {
 
     /// \brief Insert indices into the given row.
     ///
+    /// \pre <tt>! (lg == LocalIndices && I == GlobalIndices)</tt>.
+    ///   It does not make sense to give this method local column
+    ///   indices (meaning that the graph has a column Map), yet to
+    ///   ask it to store global indices.
+    ///
     /// \param rowInfo [in] Result of CrsGraph's getRowInfo() or
     ///   updateAllocAndValues() methods, for the locally owned row
     ///   (whose local index is <tt>rowInfo.localRow</tt>) for which
@@ -1097,6 +1102,45 @@ namespace Tpetra {
                    const ELocalGlobal lg,
                    const ELocalGlobal I);
 
+    /// \brief Insert indices and their values into the given row.
+    ///
+    /// \tparam Scalar The type of a single value.  When this method
+    ///   is called by CrsMatrix, \c Scalar corresponds to the first
+    ///   template parameter of CrsMatrix.
+    ///
+    /// \pre <tt>! (lg == LocalIndices && I == GlobalIndices)</tt>.
+    ///   It does not make sense to give this method local column
+    ///   indices (meaning that the graph has a column Map), yet to
+    ///   ask it to store global indices.
+    ///
+    /// \param rowInfo [in] Result of CrsGraph's getRowInfo() or
+    ///   updateAllocAndValues() methods, for the locally owned row
+    ///   (whose local index is <tt>rowInfo.localRow</tt>) for which
+    ///   you want to insert indices.
+    ///
+    /// \param newInds [in] View of the column indices to insert.  If
+    ///   <tt>lg == GlobalIndices</tt>, then newInds.ginds, a
+    ///   <tt>Teuchos::ArrayView<const GlobalOrdinal></tt>, contains
+    ///   the (global) column indices to insert.  Otherwise, if <tt>lg
+    ///   == LocalIndices</tt>, then newInds.linds, a
+    ///   <tt>Teuchos::ArrayView<const LocalOrdinal></tt>, contains
+    ///   the (local) column indices to insert.
+    ///
+    /// \param oldRowVals [out] View of the current values.  They will
+    ///   be overwritten with the new values.
+    ///
+    /// \param newRowVals [in] View of the new values.  They will be
+    ///   copied over the old values.
+    ///
+    /// \param lg If <tt>lg == GlobalIndices</tt>, then the input
+    ///   indices (in \c newInds) are global indices.  Otherwise, if
+    ///   <tt>lg == LocalIndices</tt>, the input indices are local
+    ///   indices.
+    ///
+    /// \param I If <tt>lg == GlobalIndices</tt>, then this method
+    ///   will store the input indices as global indices.  Otherwise,
+    ///   if <tt>I == LocalIndices</tt>, this method will store the
+    ///   input indices as local indices.
     template<class Scalar>
     void
     insertIndicesAndValues (const RowInfo& rowInfo,
@@ -1171,11 +1215,12 @@ namespace Tpetra {
     //! Whether duplicate column indices in each row have been merged.
     bool isMerged () const;
 
-    //! Set indicesAreSorted_ to merged.  (Just set the Boolean.)
-    void setSorted (bool sorted);
-
-    //! Set noRedundancies_ to merged.  (Just set the Boolean.)
-    void setMerged (bool merged);
+    /// \brief Report that we made a local modification to its structure.
+    ///
+    /// Call this after making a local change to the graph's
+    /// structure.  Changing the structure locally invalidates the "is
+    /// sorted" and "is merged" states.
+    void setLocallyModified ();
 
     //! Sort the column indices in all the rows.
     void sortAllIndices ();
@@ -1444,10 +1489,18 @@ namespace Tpetra {
     bool indicesAreLocal_;
     bool indicesAreGlobal_;
     bool fillComplete_;
+    //! Whether the graph is locally lower triangular.
     bool lowerTriangular_;
+    //! Whether the graph is locally upper triangular.
     bool upperTriangular_;
+    //! Whether the graph's indices are sorted in each row, on this process.
     bool indicesAreSorted_;
+    /// \brief Whether the graph's indices are non-redundant (merged)
+    ///   in each row, on this process.
     bool noRedundancies_;
+    //! Whether this process has computed local constants.
+    bool haveLocalConstants_;
+    //! Whether all processes have computed global constants.
     bool haveGlobalConstants_;
 
     //! Nonlocal data given to insertGlobalValues or sumIntoGlobalValues.

@@ -66,6 +66,9 @@
 namespace Piro {
 namespace Epetra {
 
+/** \brief Epetra-based Model Evaluator for LOCA solves
+ *  \ingroup Piro_Epetra_solver_grp
+ * */
 class LOCASolver
     : public EpetraExt::ModelEvaluator
 {

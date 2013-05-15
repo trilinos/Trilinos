@@ -74,16 +74,45 @@ namespace Piro {
 
 namespace Epetra {
 
-//! Factory for creating Epetra-based Piro solvers
+/*! \brief Factory for creating Epetra-based %Piro solvers
+ *
+ *  Piro::SolverFactory is the counterpart for Thyra-based models.
+ */
 class SolverFactory {
 public:
-  //! Create solver
+  /*! \brief Create a solved model
+   *
+   *  The type of %Piro solver to instantiate is determined by the value of the string entry labeled <tt>"Solver Type"</tt>
+   *  and located at the top level of parameter list \c piroParams.
+   *
+   *  Currently, the following solver types are available (each accompanied by the corresponding token value):
+   *  - Piro::Epetra::NOXSolver (<tt>"NOX"</tt>)
+   *  - Piro::Epetra::LOCASolver (<tt>"LOCA"</tt>)
+   *  - Piro::Epetra::LOCAAdaptiveSolver (<tt>"LOCA Adaptive"</tt>)
+   *  - Piro::Epetra::TrapezoidRuleSolver (<tt>"Trapezoid Rule"</tt>)
+   *  - Piro::Epetra::VelocityVerletSolver (<tt>"Velocity Verlet"</tt>)
+   *  - Piro::Epetra::RythmosSolver (<tt>"Rythmos"</tt>)
+   */
   Teuchos::RCP<EpetraExt::ModelEvaluator>
   createSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<EpetraExt::ModelEvaluator> &model);
 
-  //! Set the auxiliary object provider of type T
+  /*! \brief Set the source for auxiliary objects
+   *
+   *  While all %Piro solvers only require a model evaluator to be properly initialized,
+   *  some of them also optionally accept so-called `auxiliary' objects which extend their functionality.
+   *  For instance, observers allow to monitor the solution process and the intermediate steps taken by the solver.
+   *
+   *  Currently, the following types are acceptable values for the generic type \c T:
+   *  - NOX::Epetra::Observer
+   *  - NOX::Epetra::ModelEvaluatorInterface
+   *  - NOX::Epetra::LinearSystem
+   *  - LOCA::SaveEigenData::AbstractStrategy
+   *  - LOCA::StatusTest::Abstract
+   *  - Piro::Epetra::AdaptiveSolutionManager
+   *  - Rythmos::IntegrationObserverBase<double>
+   */
   template <typename T>
   void setSource(const Provider<T> &p);
 

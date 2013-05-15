@@ -183,7 +183,7 @@ public:
   //! \name Core functionality
   //@{
   //! \brief Returns an instance of a subclass of the type T.
-  //! \details \pre <tt>!this->is_null()</tt>
+  //! \details \pre <tt>this->nonnull()</tt>
   Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) {
     return ptr_->getInstance(params);
   }
@@ -211,25 +211,25 @@ private:
   Teuchos::RCP<ProviderBase<T> > ptr_;
 };
 
-//! \name Check handle validity
+//! \name Validity check
 //@{
 
-//! \brief Returns \c true if the handle is initialized.
+//! \brief Returns \c true if \c handle is initialized.
 //! \relates Provider
 template <typename T>
 inline
-bool nonnull(const Provider<T> &h)
+bool nonnull(const Provider<T> &handle)
 {
-  return h.nonnull();
+  return handle.nonnull();
 }
 
-//! \brief Returns \c true if the argument is uninitialized.
+//! \brief Returns \c true if \c handle is uninitialized.
 //! \relates Provider
 template <typename T>
 inline
-bool is_null(const Provider<T> &h)
+bool is_null(const Provider<T> &handle)
 {
-  return h.is_null();
+  return handle.is_null();
 }
 
 //@}

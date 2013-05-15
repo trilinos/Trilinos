@@ -47,47 +47,26 @@ namespace Impl {
 
 
 struct PhysicalLayout {
-  enum LayoutType {Left,Right,Scalar,Vector};
+  enum LayoutType {Left,Right,Scalar,Error};
   LayoutType layout_type;
-  long long int stride[8]; //distance between two neighboring elements in a given dimension
   int rank;
+  long long int stride[8]; //distance between two neighboring elements in a given dimension
 
-  template<class DataType, class Device, class DataManagement, class Specialisation>
-  PhysicalLayout(View<DataType,LayoutLeft,Device,DataManagement,Specialisation> view) {
-	layout_type = Left;
-	rank = view.Rank;
-    for(int i=0;i<8;i++) stride[i] = 0;
-	stride[0] = 1;
-	stride[1] = view.m_stride;
-    for(int i = 2;i<rank;i++)
-    	stride[i] = view.dimension(i-1)*stride[i-1];
-  }
+  template< class T , class L , class D , class M >
+  PhysicalLayout( const View<T,L,D,M,LayoutScalar> & view )
+    : layout_type( Scalar )
+    , rank( 0 )
+    { for(int i=0;i<8;i++) stride[i] = 0; }
 
-  template<class DataType, class Device, class DataManagement, class Specialisation>
-  PhysicalLayout(View<DataType,LayoutRight,Device,DataManagement,Specialisation> view) {
-	layout_type = Right;
-	rank = view.Rank;
-    for(int i=0;i<8;i++) stride[i] = 0;
-	stride[rank-1] = 1;
-    for(int i = rank-2;i>=0;i--)
-    	stride[i] = view.dimension(i+1)*stride[i+1];
-	stride[0] = view.m_stride;
-  }
-
-  template<class DataType, class Layout, class Device, class DataManagement>
-  PhysicalLayout(View<DataType,Layout,Device,DataManagement,LayoutScalar> view) {
-	layout_type = Scalar;
-	rank = 0;
-    for(int i=0;i<8;i++) stride[i] = 0;
-  }
-
-  template<class DataType, class Layout, class Device, class DataManagement>
-  PhysicalLayout(View<DataType,Layout,Device,DataManagement,LayoutVector> view) {
-	layout_type = Vector;
-	rank = 1;
-    for(int i=0;i<8;i++) stride[i] = 0;
-	stride[0] = view.dimension_0();
-  }
+  template< class T , class L , class D , class M >
+  PhysicalLayout( const View<T,L,D,M,LayoutDefault> & view )
+    : layout_type( is_same< typename View<T,L,D,M,S>::array_layout , LayoutLeft  >::value ? Left : (
+                   is_same< typename View<T,L,D,M,S>::array_layout , LayoutRight >::value ? Right : Error )))
+    , rank( view.Rank )
+    {
+      for(int i=0;i<8;i++) stride[i] = 0;
+      view.stride( stride );
+    }
 };
 
 }

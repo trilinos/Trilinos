@@ -1142,6 +1142,77 @@ operator/(Tensor<T> const & A, S const & s)
 }
 
 //
+// Extract a row as a vector
+//
+template<typename T>
+Vector<T>
+row(Tensor<T> const & A, Index const i)
+{
+  Index const
+  N = A.get_dimension();
+
+  Vector<T>
+  v(N);
+
+  switch (N) {
+    default:
+      for (Index j = 0; j < N; ++j) {
+        v(j) = A(i,j);
+      }
+      break;
+
+    case 2:
+      v(0) = A(i,0);
+      v(1) = A(i,1);
+      break;
+
+    case 3:
+      v(0) = A(i,0);
+      v(1) = A(i,1);
+      v(2) = A(i,2);
+      break;
+  }
+
+  return v;
+}
+
+//
+// Extract a column as a vector
+//
+template<typename T>
+Vector<T>
+col(Tensor<T> const & A, Index const j)
+{
+  Index const
+  N = A.get_dimension();
+
+  Vector<T>
+  v(N);
+
+  switch (N) {
+    default:
+      for (Index i = 0; i < N; ++i) {
+        v(i) = A(i,j);
+      }
+      break;
+
+    case 2:
+      v(0) = A(0,j);
+      v(1) = A(1,j);
+      break;
+
+    case 3:
+      v(0) = A(0,j);
+      v(1) = A(1,j);
+      v(2) = A(2,j);
+      break;
+  }
+
+  return v;
+}
+
+
+//
 // R^N tensor vector product v = A u
 // \param A tensor
 // \param u vector
@@ -1168,8 +1239,8 @@ dot(Tensor<T> const & A, Vector<S> const & u)
         typename Promote<S, T>::type
         s = 0.0;
 
-        for (Index j = 0; j < N; ++j) {
-          s += A(i, j) * u(j);
+        for (Index p = 0; p < N; ++p) {
+          s += A(i, p) * u(p);
         }
         v(i) = s;
       }
@@ -1218,8 +1289,8 @@ dot(Vector<S> const & u, Tensor<T> const & A)
         typename Promote<S, T>::type
         s = 0.0;
 
-        for (Index j = 0; j < N; ++j) {
-          s += A(j, i) * u(j);
+        for (Index p = 0; p < N; ++p) {
+          s += A(p, i) * u(p);
         }
         v(i) = s;
       }
@@ -1269,8 +1340,8 @@ dot(Tensor<S> const & A, Tensor<T> const & B)
           typename Promote<S, T>::type
           s = 0.0;
 
-          for (Index k = 0; k < N; ++k) {
-            s += A(i, k) * B(k, j);
+          for (Index p = 0; p < N; ++p) {
+            s += A(i, p) * B(p, j);
           }
           C(i, j) = s;
         }
@@ -1332,8 +1403,8 @@ t_dot(Tensor<S> const & A, Tensor<T> const & B)
           typename Promote<S, T>::type
           s = 0.0;
 
-          for (Index k = 0; k < N; ++k) {
-            s += A(k, i) * B(k, j);
+          for (Index p = 0; p < N; ++p) {
+            s += A(p, i) * B(p, j);
           }
           C(i, j) = s;
         }
@@ -1395,8 +1466,8 @@ dot_t(Tensor<S> const & A, Tensor<T> const & B)
           typename Promote<S, T>::type
           s = 0.0;
 
-          for (Index k = 0; k < N; ++k) {
-            s += A(i, k) * B(j, k);
+          for (Index p = 0; p < N; ++p) {
+            s += A(i, p) * B(j, p);
           }
           C(i, j) = s;
         }
@@ -1458,8 +1529,8 @@ t_dot_t(Tensor<S> const & A, Tensor<T> const & B)
           typename Promote<S, T>::type
           s = 0.0;
 
-          for (Index k = 0; k < N; ++k) {
-            s += A(k, i) * B(j, k);
+          for (Index p = 0; p < N; ++p) {
+            s += A(p, i) * B(j, p);
           }
           C(i, j) = s;
         }
@@ -1515,9 +1586,9 @@ dotdot(Tensor<S> const & A, Tensor<T> const & B)
   switch (N) {
 
     default:
-      for (Index i = 0; i < N; ++i) {
-        for (Index j = 0; j < N; ++j) {
-          s += A(i, j) * B(i, j);
+      for (Index p = 0; p < N; ++p) {
+        for (Index q = 0; q < N; ++q) {
+          s += A(p, q) * B(p, q);
         }
       }
       break;

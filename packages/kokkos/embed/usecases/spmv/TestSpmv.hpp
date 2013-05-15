@@ -38,7 +38,7 @@ PerfSpmv test_spmv_scalar( const int nGrid ,
   //------------------------------
 
   typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
-  typedef KokkosArray::CrsArray<int,Device,Device,int> crsarray_type ;
+  typedef KokkosArray::CrsArray<int,Device,void,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -157,7 +157,7 @@ PerfSpmv test_spmv( const int nGrid ,
   //------------------------------
 
   typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
-  typedef KokkosArray::CrsArray<int,Device,Device,int> crsarray_type ;
+  typedef KokkosArray::CrsArray<int,Device,void,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:

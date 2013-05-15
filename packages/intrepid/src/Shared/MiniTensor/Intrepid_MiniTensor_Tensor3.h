@@ -259,7 +259,7 @@ operator/(Tensor3<T> const & A, S const & s);
 /// 3rd-order tensor vector product
 /// \param A 3rd-order tensor
 /// \param u vector
-/// \return \f$ C = A \cdot u := C_{ij} = A_{ijp} u_p \f$
+/// \return \f$ B = A \cdot u := B_{ij} = A_{ijp} u_p \f$
 ///
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>
@@ -269,7 +269,7 @@ dot(Tensor3<T> const & A, Vector<S> const & u);
 /// vector 3rd-order tensor product
 /// \param A 3rd-order tensor
 /// \param u vector
-/// \return \f$ C = u \cdot A := C_{ij} = u_p A{pij} \f$
+/// \return \f$ B = u \cdot A := B_{ij} = u_p A{pij} \f$
 ///
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>
@@ -279,7 +279,7 @@ dot(Vector<S> const & u, Tensor3<T> const & A);
 /// 3rd-order tensor vector product
 /// \param A 3rd-order tensor
 /// \param u vector
-/// \return \f$ C = A \cdot u := C_{ij} = A_{ipj} u_p \f$
+/// \return \f$ B = A \cdot u := B_{ij} = A_{ipj} u_p \f$
 ///
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>
@@ -289,7 +289,7 @@ dot2(Tensor3<T> const & A, Vector<S> const & u);
 /// vector 3rd-order tensor product
 /// \param u vector
 /// \param A 3rd-order tensor
-/// \return \f$ C = u \cdot A := C_{ij} = u_p A_{ipj} \f$
+/// \return \f$ B = u \cdot A := B_{ij} = u_p A_{ipj} \f$
 ///
 template<typename S, typename T>
 Tensor<typename Promote<S, T>::type>

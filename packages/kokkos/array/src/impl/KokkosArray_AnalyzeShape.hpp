@@ -86,6 +86,25 @@ struct AnalyzeShape : public Shape< sizeof(T) , 0 >
   typedef       T  non_const_type ;
 };
 
+template<>
+struct AnalyzeShape<void> : public Shape< 0 , 0 >
+{
+  typedef Shape< 0 , 0 >  shape ;
+
+  typedef       void  scalar_type ;
+  typedef       void  array_type ;
+  typedef       void  value_type ;
+  typedef       void  type ;
+  typedef const void  const_scalar_type ;
+  typedef const void  const_array_type ;
+  typedef const void  const_value_type ;
+  typedef const void  const_type ;
+  typedef       void  non_const_scalar_type ;
+  typedef       void  non_const_array_type ;
+  typedef       void  non_const_value_type ;
+  typedef       void  non_const_type ;
+};
+
 template< class T >
 struct AnalyzeShape< const T > : public AnalyzeShape<T>::shape
 {

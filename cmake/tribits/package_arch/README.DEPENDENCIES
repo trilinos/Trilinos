@@ -1,15 +1,23 @@
-Last updated 2010/09/20
+################################################################################
+#
+#                         TriBITS Package Dependenices 
+#
+################################################################################
 
-Here we describe how package dependencies are set up and managed in this
-package-architecture CMake build system.
+Last updated 2013/05/10
+
+Here we describe how package dependencies are set up and managed in this the
+TriBITS CMake build system.
+
 
 --------------------------------------------------------------------------------
 A) Top-level user cache variables
 --------------------------------------------------------------------------------
 
-Let ${PACKAGE_NAME} be a package of of the project ${PROJECT_NAME}.
+Let ${PACKAGE_NAME} be a TriBITS package within of the TriBITS project
+${PROJECT_NAME}.
 
-The following public CMkae cache variables are set by users to define what
+The following public CMake cache variables are set by users to define what
 packages and tests/examples get enabled:
 
   ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}:BOOL
@@ -73,6 +81,10 @@ packages and tests/examples get enabled:
     in all packages.  If ${PROJECT_NAME}_ENABLE_TESTS=ON, then this will also be
     set to 'ON'.
 
+These variables are defined in the file:
+
+   TribitsGlobalMacros.cmake
+
 The way that packages are enabled depending on the above user cache varaibles
 is now described.
 
@@ -81,7 +93,7 @@ explicitly turned off with ${PROJECT_NAME}_ENABLE_${PACKAGE_NANE}=OFF are also s
 'OFF'.  In addition, all optional intrapackage dependencies
 ${FORWARD_PACKAGE_NANE}_ENBLE_${PACKAGE_NANE} are also set to 'OFF'.
 
-2) The set of package enables is then adjusted based if
+2) The set of package enables is then adjusted if
 ${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON.
 
 At this point, the set of packages is the set the user really wants to
@@ -117,6 +129,15 @@ enabled packages are also enabled.  NOTE: The tests and examples for
 these packages will *not* be enabled by ${PROJECT_NAME}_ENABLE_TESTS and
 ${PROJECT_NAME}_ENABLE_EXAMPLES but only if they are explicitly turned on by
 the user.
+
+This dependency logic is executed in the TriBITS file:
+
+    TribitsAdjustPackageEnables.cmake
+
+There are pretty good unit and regression tests to demonstrate and protect
+this functionality in the directory:
+
+  tribits/package_arch/UntiTests/
 
 
 --------------------------------------------------------------------------------
@@ -185,6 +206,15 @@ Given the above variables, the following derived variables are then set:
     packages that list this package in their
     ${FORWARD_PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES variables.
 
+The primary TriBITS file that processes and defines these variables is:
+
+  TribitsAdjustPackageEnables.cmake
+
+There are pretty good unit and regression tests to demonstrate and protect
+this functionality in the directory:
+
+  tribits/package_arch/UntiTests/
+
 
 --------------------------------------------------------------------------------
 C) Top-level internal cache variables defining header and library dependencies
@@ -194,15 +224,15 @@ The following global internal cache variables are used to communicate
 the required header directory paths and libraries needed to build and
 link against a given package's capabilities.
 
-  ${PROJECT_NAME}_INCLUDE_DIRS
-  
+  ${PACKAGE_NAME}_INCLUDE_DIRS
+
     Defines a list of include paths needed to find all of the headers needed
     to compile client code against this (sub)packages sources and it's upstream
     packages and TPL sources.  This variable is used whenever building
     dowstream code including downstream libraries or executables in the same
     package, or libraries or executables in downstream packages.
   
-  ${PROJECT_NAME}_LIBRARY_DIRS
+  ${PACKAGE_NAME}_LIBRARY_DIRS
   
     Defines as list of the link directories needed to find all of the
     libraries for this packages and it's upstream packages and TPLs.  Adding
@@ -211,39 +241,99 @@ link against a given package's capabilities.
     library directories is used when creating the ${PACKAGE_NAME}Config.cmake
     files.
   
-  ${PROJECT_NAME}_LIBRARIES
+  ${PACKAGE_NAME}_LIBRARIES
   
-    Defines as list of *only* the libraries associated with the given (sub)package
-    and does *not* list libraries in upstream packages.  Linkages to upstream
-    packages is taken care of with calls to TARGET_LINK_LIBRARIES(...) and the
-    depenency management system in CMake takes care of adding these to various
-    link lines as needed (this is what CMake does well).  However, when a
-    package has no libraries of its own, this list of libraries will need to
-    contain the libraries to the direct dependent upstream packages in order
-    to allow the chain of dependencies to be handled correctly in downstream
-    packages and executables in the same package.
+    Defines as list of *only* the libraries associated with the given
+    (sub)package and does *not* list libraries in upstream packages.  Linkages
+    to upstream packages is taken care of with calls to
+    TARGET_LINK_LIBRARIES(...) and the depenency management system in CMake
+    takes care of adding these to various link lines as needed (this is what
+    CMake does well).  However, when a package has no libraries of its own
+    (which is often the case for packages that have subpackages, for example),
+    then this list of libraries will contain the libraries to the direct
+    dependent upstream packages in order to allow the chain of dependencies to
+    be handled correctly in downstream packages and executables in the same
+    package.  In this case, ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES will be
+    false.  The primary purpose of this variable is to passe to
+    TARGET_LINK_LIBRARIES(...) by downstream libraries and executbles.
+
+  ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES
+
+    Will be true if a package has native libraries.  Othewise, it will be
+    false.  This information is used to build export makefiles to avoid
+    duplicate libraries on the link line.
+
+  ${PACKAGE_NAME}_FULL_EXPORT_DEP_PACKAGES
+
+    Lists out, in order, all of the packages that the given package depends on
+    and support that package is enabled in the given package.  This is only
+    computed if ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES=ON.  This is
+    needed to generate the export makefile Makefile.export.${PACKAGE_NAME}.
+    NOTE: This list does *not* include the package itself.  This list is
+    created right when the basic package depenency datastructures are being
+    built.
  
   ${PARENT_PACKAGE_NAME}_LIB_TARGETS
  
     Lists all of the library targets for this package only that are as part of
     this package added by the TRIBITS_ADD_LIBRARY(...) function.  This is used
     to define a target called ${PACKAGE_NAME}_libs that is then used in the
-    testing system.  If a package has not libraries, then the library targets
-    for all of the immediate direct dependent packages will be added.  This is
-    needed for the chain of dependencies to work correctly.
+    testing system.  If a package has no libraries, then the library targets
+    for all of the immediate upstream direct dependent packages will be added.
+    This is needed for the chain of dependencies to work correctly.  Note that
+    subpackages don't have this variable defined for them.
  
   ${PARENT_PACKAGE_NAME}_ALL_TARGETS
  
     Lists all of the targets associated with this package.  This includes all
     libraries and tests added with TRIBITS_ADD_LIBRARY(...) and
-    TRIBITS_ADD_EXECUTABLE(...).  If this package has no targets (no
-    libraries or executables) this this will have the dependency only on
-    ${PARENT_PACKAGE_NAME}_libs.
+    TRIBITS_ADD_EXECUTABLE(...).  If this package has no targets (no libraries
+    or executables) this this will have the dependency only on
+    ${PARENT_PACKAGE_NAME}_libs.  Note that subpackages don't have this
+    variable defined for them.
 
 
 --------------------------------------------------------------------------------
 D) Notes on dependency logic
 --------------------------------------------------------------------------------
 
+The logic used to define the intra-package linkage varibles is complex due to
+a number of factors:
 
+1) Packages can have libraries or no libraries.  
 
+2) In installation-testing mode, the libraries for a package are read from a
+file instead of generated in source.
+
+3) A library can be a regular package library, or a test-only library, in
+which case it will not be listed in ${PACKAGE_NAME}_LIBRARIES.  The above
+description does not even talk about how test-only libraries are handed within
+the system except to say that they are excluded from the package's exported
+library dependencies.
+
+The management and usage of the intra-package linkage variables is spread
+across a number of TriBITS *.cmake files but the primary ones are:
+
+  TribitsPackageMacros.cmake
+  TribitsSubPackageMacros.cmake
+  TribitsLibraryMacros.cmake
+  TribitsAddExecutable.cmake
+
+There are other TriBITS cmake files that also access these variables but these
+are the key files.  The CMake code in these files all work together in
+coordination to set up and use these variables in a way that allows for smooth
+compiling and linking of source code for users of the system.
+
+Another file with complex dependency logic related to these varaibles is:
+
+   TribitsWriteClientExportFiles.cmake
+
+The TriBITS cmake code in this file servers a very similar role for external
+clients and therefore needs to be considered in this setting.
+
+All of these variations and features makes this a bit of a complex system to
+say the least.  Also, currently, there is essentually no unit or regression
+testing in place for the CMake code in these files that manipulate these
+intra-package dependency variables.  Because this logic is tied in with
+actaully building and linking code, there has not been a way set up yet to
+allow it to be efficiently tested outside of the actual build.
