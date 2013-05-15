@@ -46,247 +46,99 @@ namespace Intrepid
 {
 
 //
-// return dimension
-//
-template<typename T>
-inline
-Index
-Vector<T>::get_dimension() const
-{
-  return dimension;
-}
-
-//
-// set dimension
-//
-template<typename T>
-inline
-void
-Vector<T>::set_dimension(Index const N)
-{
-  if (N == get_dimension()) return;
-
-  e.resize(N);
-
-  dimension = N;
-
-  return;
-}
-
-//
-// Fill components from array defined by pointer.
-// \param data_ptr pointer into array for filling components
-//
-template<typename T>
-inline
-void
-Vector<T>::fill(T const * data_ptr)
-{
-  assert(data_ptr != NULL);
-
-  Index const
-  N = get_dimension();
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        e[i] = data_ptr[i];
-      }
-      break;
-
-    case 3:
-      e[0] = data_ptr[0];
-      e[1] = data_ptr[1];
-      e[2] = data_ptr[2];
-      break;
-
-    case 2:
-      e[0] = data_ptr[0];
-      e[1] = data_ptr[1];
-      break;
-
-  }
-
-  return;
-}
-
-//
-// default constructor
+// Default constructor
 //
 template<typename T>
 inline
 Vector<T>::Vector() :
-dimension(0)
+TensorBase<T>::TensorBase()
 {
   return;
 }
 
 //
-// constructor that initializes to NaNs
+// Constructor that initializes to NaNs
 //
 template<typename T>
 inline
-Vector<T>::Vector(Index const N) :
-dimension(0)
+Vector<T>::Vector(Index const dimension) :
+TensorBase<T>::TensorBase(dimension, order)
 {
-  set_dimension(N);
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        e[i] = not_a_number<T>();
-      }
-      break;
-
-    case 3:
-      e[0] = not_a_number<T>();
-      e[1] = not_a_number<T>();
-      e[2] = not_a_number<T>();
-      break;
-
-    case 2:
-      e[0] = not_a_number<T>();
-      e[1] = not_a_number<T>();
-      break;
-
-  }
-
   return;
 }
 
 //
 // Create vector from a scalar
-// \param s all components are set equal to this value
 //
 template<typename T>
 inline
-Vector<T>::Vector(Index const N, T const & s) :
-dimension(0)
+Vector<T>::Vector(Index const dimension, T const & s) :
+TensorBase<T>::TensorBase(dimension, order, s)
 {
-  set_dimension(N);
+  return;
+}
 
-  switch (N) {
+//
+// Create vector specifying components
+//
+template<typename T>
+inline
+Vector<T>::Vector(T const & s0, T const & s1)
+{
+  Vector<T> &
+  self = (*this);
 
-    default:
-      for (Index i = 0; i < N; ++i) {
-        e[i] = s;
-      }
-      break;
+  self.set_dimension(2);
 
-    case 3:
-      e[0] = s;
-      e[1] = s;
-      e[2] = s;
-      break;
-
-    case 2:
-      e[0] = s;
-      e[1] = s;
-      break;
-
-  }
+  self[0] = s0;
+  self[1] = s1;
 
   return;
 }
 
 //
 // Create vector specifying components
-// \param N dimension
-// \param s0, s1 are the vector components in the R^2 canonical basis
 //
 template<typename T>
 inline
-Vector<T>::Vector(T const & s0, T const & s1) :
-dimension(0)
+Vector<T>::Vector(T const & s0, T const & s1, T const & s2)
 {
-  set_dimension(2);
+  Vector<T> &
+  self = (*this);
 
-  e[0] = s0;
-  e[1] = s1;
+  self.set_dimension(3);
+
+  self[0] = s0;
+  self[1] = s1;
+  self[2] = s2;
 
   return;
 }
 
 //
-// Create vector specifying components
-// \param N dimension
-// \param s0, s1, s2 are the vector components in the R^3 canonical basis
+// Create vector from array
 //
 template<typename T>
 inline
-Vector<T>::Vector(T const & s0, T const & s1, T const & s2) :
-dimension(0)
+Vector<T>::Vector(Index const dimension, T const * data_ptr) :
+TensorBase<T>::TensorBase(dimension, order, data_ptr)
 {
-  set_dimension(3);
-
-  e[0] = s0;
-  e[1] = s1;
-  e[2] = s2;
-
   return;
 }
 
 //
-// R^N create vector from array - const version
-// \param N dimension
-// \param data_ptr
-//
-template<typename T>
-inline
-Vector<T>::Vector(Index const N, T const * data_ptr) :
-dimension(0)
-{
-  assert(data_ptr != NULL);
-
-  set_dimension(N);
-
-  fill(data_ptr);
-
-  return;
-}
-
-//
-// R^N copy constructor
-// \param v the values of its components are copied to the new vector
+// Copy constructor
 //
 template<typename T>
 inline
 Vector<T>::Vector(Vector<T> const & v) :
-dimension(0)
+TensorBase<T>::TensorBase(v)
 {
-  Index const
-  N = v.get_dimension();
-
-  set_dimension(N);
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        e[i] = v.e[i];
-      }
-      break;
-
-    case 3:
-      e[0] = v.e[0];
-      e[1] = v.e[1];
-      e[2] = v.e[2];
-      break;
-
-    case 2:
-      e[0] = v.e[0];
-      e[1] = v.e[1];
-      break;
-
-  }
-
   return;
 }
 
 //
-// R^N simple destructor
+// Simple destructor
 //
 template<typename T>
 inline
@@ -296,206 +148,25 @@ Vector<T>::~Vector()
 }
 
 //
-// R^N indexing for constant vector
-// \param i the index
+// Indexing for constant vector
 //
 template<typename T>
 inline
 T const &
 Vector<T>::operator()(Index const i) const
 {
-  assert(i < get_dimension());
-  return e[i];
+  return (*this)[i];
 }
 
 //
-// R^N vector indexing
-// \param i the index
+// Vector indexing
 //
 template<typename T>
 inline
 T &
 Vector<T>::operator()(Index const i)
 {
-  assert(i < get_dimension());
-  return e[i];
-}
-
-//
-// Linear access to components
-// \param i the index
-//
-template<typename T>
-inline
-T const &
-Vector<T>::operator[](Index const i) const
-{
-  assert(i < integer_power(get_dimension(), order()));
-  return e[i];
-}
-
-//
-// Linear access to components
-// \param i the index
-//
-template<typename T>
-inline
-T &
-Vector<T>::operator[](Index const i)
-{
-  assert(i < integer_power(get_dimension(), order()));
-  return e[i];
-}
-
-//
-// R^N copy assignment
-// \param v the values of its components are copied to this vector
-//
-template<typename T>
-inline
-Vector<T> &
-Vector<T>::operator=(Vector<T> const & v)
-{
-  if (this == &v) return *this;
-
-  Index const
-  N = v.get_dimension();
-
-  set_dimension(N);
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        e[i] = v.e[i];
-      }
-      break;
-
-    case 3:
-      e[0] = v.e[0];
-      e[1] = v.e[1];
-      e[2] = v.e[2];
-      break;
-
-    case 2:
-      e[0] = v.e[0];
-      e[1] = v.e[1];
-      break;
-
-  }
-
-  return *this;
-}
-
-//
-// R^N vector increment
-// \param v added to currrent vector
-//
-template<typename T>
-inline
-Vector<T> &
-Vector<T>::operator+=(Vector<T> const & v)
-{
-  Index const
-  N = get_dimension();
-
-  assert(v.get_dimension() == N);
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        e[i] += v.e[i];
-      }
-      break;
-
-    case 3:
-      e[0] += v.e[0];
-      e[1] += v.e[1];
-      e[2] += v.e[2];
-      break;
-
-    case 2:
-      e[0] += v.e[0];
-      e[1] += v.e[1];
-      break;
-
-  }
-
-  return *this;
-}
-
-//
-// R^N vector decrement
-// \param v substracted from current vector
-//
-template<typename T>
-inline
-Vector<T> &
-Vector<T>::operator-=(Vector<T> const & v)
-{
-  Index const
-  N = get_dimension();
-
-  assert(v.get_dimension() == N);
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        e[i] -= v.e[i];
-      }
-      break;
-
-    case 3:
-      e[0] -= v.e[0];
-      e[1] -= v.e[1];
-      e[2] -= v.e[2];
-      break;
-
-    case 2:
-      e[0] -= v.e[0];
-      e[1] -= v.e[1];
-      break;
-
-  }
-
-  return *this;
-}
-
-//
-// R^N fill with zeros
-//
-template<typename T>
-inline
-void
-Vector<T>::clear()
-{
-  Index const
-  N = get_dimension();
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        e[i] = 0.0;
-      }
-      break;
-
-    case 3:
-      e[0] = 0.0;
-      e[1] = 0.0;
-      e[2] = 0.0;
-      break;
-
-    case 2:
-      e[0] = 0.0;
-      e[1] = 0.0;
-      break;
-
-  }
-
-  return;
+  return (*this)[i];
 }
 
 //
@@ -542,7 +213,7 @@ operator+(Vector<S> const & u, Vector<T> const & v)
 }
 
 //
-// R^N vector substraction
+// R^N vector subtraction
 // \param u
 // \param v the operands
 // \return \f$ u - v \f$
