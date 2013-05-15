@@ -4807,7 +4807,7 @@ void AlgPQJagged(
         maxTotalCumulativePartCount  = p / maxPartNo;
     }
 
-    cout << "maxPartNo:" << maxPartNo << endl;
+    //cout << "maxPartNo:" << maxPartNo << endl;
 
 
     totalDimensionCut = totalPartCount - 1;
@@ -5190,6 +5190,8 @@ void AlgPQJagged(
             concurrent = concurrentPart;
 #endif
 
+
+            partId_t workPartCount = 0;
             //get the min and max coordinates of each part
             //together with the part weights of each part.
             for(int kk = 0; kk < concurrentPart; ++kk){
@@ -5200,6 +5202,7 @@ void AlgPQJagged(
                 if (pAlongI[currentPart] == 1){
                     continue;
                 }
+                ++workPartCount;
                 lno_t coordinateEnd= inTotalCounts[currentPart];
                 lno_t coordinateBegin = currentPart==0 ? 0: inTotalCounts[currentPart -1];
                 //cout << "begin:" << coordinateBegin  << " end:" << coordinateEnd << endl;
@@ -5222,140 +5225,141 @@ void AlgPQJagged(
             }
 
 
-            //obtain global Min max of the part.
-            pqJagged_getGlobalMinMaxTotalCoord<scalar_t>(
-                    comm,
-                    env,
-                    concurrentPart,
-                    localMinMaxTotal,
-                    globalMinMaxTotal);
+            if (workPartCount > 0){
+                //obtain global Min max of the part.
+                pqJagged_getGlobalMinMaxTotalCoord<scalar_t>(
+                        comm,
+                        env,
+                        concurrentPart,
+                        localMinMaxTotal,
+                        globalMinMaxTotal);
 
-            //represents the total number of cutlines
-            //whose coordinate should be determined.
-            partId_t allDone = 0;
+                //represents the total number of cutlines
+                //whose coordinate should be determined.
+                partId_t allDone = 0;
 
-            //Compute weight ratios for parts & cuts:
-            //e.g., 0.25  0.25  0.5    0.5  0.75 0.75  1
-            //part0  cut0  part1 cut1 part2 cut2 part3
-            partId_t cutShifts = 0;
-            partId_t partShift = 0;
-            for(int kk = 0; kk < concurrentPart; ++kk){
-                scalar_t minCoordinate = globalMinMaxTotal[kk];
-                scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPart];
+                //Compute weight ratios for parts & cuts:
+                //e.g., 0.25  0.25  0.5    0.5  0.75 0.75  1
+                //part0  cut0  part1 cut1 part2 cut2 part3
+                partId_t cutShifts = 0;
+                partId_t partShift = 0;
+                for(int kk = 0; kk < concurrentPart; ++kk){
+                    scalar_t minCoordinate = globalMinMaxTotal[kk];
+                    scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPart];
 
-                partId_t currentPart = currentWorkPart + kk;
-                partId_t partition = pAlongI[currentPart];
+                    partId_t currentPart = currentWorkPart + kk;
+                    partId_t partition = pAlongI[currentPart];
 
-                scalar_t *usedCutCoordinate = cutCoordinates + cutShifts;
-                scalar_t *usedCutPartRatios = targetPartWeightRatios + partShift;
-                //shift the usedCutCoordinate array as noCuts.
-                cutShifts += partition - 1;
-                //shift the partRatio array as noParts.
-                partShift += partition;
+                    scalar_t *usedCutCoordinate = cutCoordinates + cutShifts;
+                    scalar_t *usedCutPartRatios = targetPartWeightRatios + partShift;
+                    //shift the usedCutCoordinate array as noCuts.
+                    cutShifts += partition - 1;
+                    //shift the partRatio array as noParts.
+                    partShift += partition;
 
-                //cout << "min:" << minCoordinate << " max:" << maxCoordinate << endl;
-                //calculate only if part is not empty,
-                //and part will be further partitioend.
-                if(partition > 1 && minCoordinate <= maxCoordinate){
+                    //cout << "min:" << minCoordinate << " max:" << maxCoordinate << endl;
+                    //calculate only if part is not empty,
+                    //and part will be further partitioend.
+                    if(partition > 1 && minCoordinate <= maxCoordinate){
 
-                    //increase allDone by the number of cuts of the current part's cut line number.
-                    allDone += partition - 1;
-                    //set the number of cut lines that should be determined for this part.
-                    myNonDoneCount[kk] = partition - 1;
+                        //increase allDone by the number of cuts of the current part's cut line number.
+                        allDone += partition - 1;
+                        //set the number of cut lines that should be determined for this part.
+                        myNonDoneCount[kk] = partition - 1;
 
-                    //get the target weights of the parts.
-                    pqJagged_getCutCoord_Weights<scalar_t>(
-                            minCoordinate,
-                            maxCoordinate,
-                            pqJagged_uniformParts[0],
-                            pqJagged_partSizes[0],
-                            partition - 1,
-                            usedCutCoordinate,
-                            usedCutPartRatios,
-                            numThreads,
+                        //get the target weights of the parts.
+                        pqJagged_getCutCoord_Weights<scalar_t>(
+                                minCoordinate,
+                                maxCoordinate,
+                                pqJagged_uniformParts[0],
+                                pqJagged_partSizes[0],
+                                partition - 1,
+                                usedCutCoordinate,
+                                usedCutPartRatios,
+                                numThreads,
 #ifdef omitted
-                            partNo,
+                                partNo,
 #endif
-                            currentPartitions,
-                            newFuturePartitions,
-                            currentPart,
-                            obtainedPartCount
-                    );
+                                currentPartitions,
+                                newFuturePartitions,
+                                currentPart,
+                                obtainedPartCount
+                        );
 
-                    //get the initial estimated part assignments of the coordinates.
-                    getInitialPartAssignments<scalar_t, lno_t, partId_t>(
-                            maxCoordinate,
-                            minCoordinate,
-                            currentPart,
-                            inTotalCounts,
-                            partitionedPointCoordinates,
-                            pqCoord,
-                            partIds,
-                            _EPSILON,
-                            partition
-                    );
+                        //get the initial estimated part assignments of the coordinates.
+                        getInitialPartAssignments<scalar_t, lno_t, partId_t>(
+                                maxCoordinate,
+                                minCoordinate,
+                                currentPart,
+                                inTotalCounts,
+                                partitionedPointCoordinates,
+                                pqCoord,
+                                partIds,
+                                _EPSILON,
+                                partition
+                        );
+                    }
+                    else {
+                        // e.g., if have fewer coordinates than parts, don't need to do next dim.
+                        myNonDoneCount[kk] = 0;
+                    }
+                    obtainedPartCount += partition;
                 }
-                else {
-                    // e.g., if have fewer coordinates than parts, don't need to do next dim.
-                    myNonDoneCount[kk] = 0;
-                }
-                obtainedPartCount += partition;
+
+
+
+                //used imbalance, it is always 0, as it is difficult to estimate a range.
+                scalar_t used_imbalance = 0;
+
+
+                // Determine cut lines for k parts here.
+                pqJagged_1D_Partition<scalar_t, lno_t>(
+                        env,
+                        comm,
+                        partitionedPointCoordinates,
+                        pqCoord,
+                        pqJagged_uniformWeights[0],
+                        pqJagged_weights[0],
+                        targetPartWeightRatios,
+                        globalMinMaxTotal,
+                        localMinMaxTotal,
+                        //pAlongI[0],
+                        numThreads,
+                        maxScalar_t,
+                        minScalar_t,
+                        used_imbalance,
+                        currentWorkPart,
+                        concurrentPart,
+                        inTotalCounts,
+                        cutCoordinates,
+                        cutCoordinatesWork,
+                        leftClosestDistance,
+                        rightClosestDistance,
+                        cutUpperBounds,
+                        cutLowerBounds,
+                        cutUpperWeight,
+                        cutLowerWeight,
+                        isDone,
+                        partWeights,
+                        totalPartWeights_leftClosests_rightClosests,
+                        global_totalPartWeights_leftClosests_rightClosests,
+                        allowNonRectelinearPart,
+                        nonRectelinearPart,
+                        cutWeights,
+                        globalCutWeights,
+                        allDone,
+                        myNonDoneCount,
+                        useBinarySearch, // istring,
+                        partIds,
+#ifdef omitted
+                        partNo,
+#endif
+                        pAlongI
+                );
+
+
+
             }
-
-
-
-            //used imbalance, it is always 0, as it is difficult to estimate a range.
-            scalar_t used_imbalance = 0;
-
-
-            // Determine cut lines for k parts here.
-            pqJagged_1D_Partition<scalar_t, lno_t>(
-                    env,
-                    comm,
-                    partitionedPointCoordinates,
-                    pqCoord,
-                    pqJagged_uniformWeights[0],
-                    pqJagged_weights[0],
-                    targetPartWeightRatios,
-                    globalMinMaxTotal,
-                    localMinMaxTotal,
-                    //pAlongI[0],
-                    numThreads,
-                    maxScalar_t,
-                    minScalar_t,
-                    used_imbalance,
-                    currentWorkPart,
-                    concurrentPart,
-                    inTotalCounts,
-                    cutCoordinates,
-                    cutCoordinatesWork,
-                    leftClosestDistance,
-                    rightClosestDistance,
-                    cutUpperBounds,
-                    cutLowerBounds,
-                    cutUpperWeight,
-                    cutLowerWeight,
-                    isDone,
-                    partWeights,
-                    totalPartWeights_leftClosests_rightClosests,
-                    global_totalPartWeights_leftClosests_rightClosests,
-                    allowNonRectelinearPart,
-                    nonRectelinearPart,
-                    cutWeights,
-                    globalCutWeights,
-                    allDone,
-                    myNonDoneCount,
-                    useBinarySearch, // istring,
-                    partIds,
-#ifdef omitted
-                    partNo,
-#endif
-                    pAlongI
-            );
-
-
-
-
             bool migration_check = false;
             /*
 #ifdef enable_migration
@@ -5448,7 +5452,8 @@ void AlgPQJagged(
                     partId_t noParts = pAlongI[curr];
 #endif
                     //if the part is empty, skip the part.
-                    if(/*noParts <= 1  ||*/ globalMinMaxTotal[kk] > globalMinMaxTotal[kk + concurrentPart]) {
+                    if((noParts != 1  )&& globalMinMaxTotal[kk] > globalMinMaxTotal[kk + concurrentPart]) {
+
                         for(partId_t jj = 0; jj < noParts; ++jj){
                             outTotalCounts[currentOut + outShift + jj] = 0;
                         }
@@ -5472,6 +5477,7 @@ void AlgPQJagged(
 
 
                     if(noParts > 1){
+
                         // Rewrite the indices based on the computed cuts.
                         getChunksFromCoordinates<lno_t,scalar_t>(
                                 noParts,
@@ -5502,6 +5508,7 @@ void AlgPQJagged(
                         );
                     }
                     else {
+                        //cout << " disarda curr" << curr << endl;
                         //if this part is partitioned into 1 then just copy the old values.
                         lno_t partSize = coordinateEnd - coordinateBegin;
                         *(outTotalCounts + currentOut + outShift) = partSize;
