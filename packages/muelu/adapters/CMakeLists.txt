@@ -88,6 +88,11 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
    APPEND_GLOB(HEADERS ${DIR}/*.hpp)
    APPEND_GLOB(SOURCES ${DIR}/*.cpp)
    TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+   IF(${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
+     SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos-tpetra)
+     APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+     TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+   ENDIF()
 ENDIF()
 
 # Must glob the binary dir last to get all of the auto-generated headers
