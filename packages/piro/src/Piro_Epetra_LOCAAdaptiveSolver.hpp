@@ -70,6 +70,7 @@
 namespace Piro {
 namespace Epetra {
 
+/** \ingroup Piro_Epetra_solver_grp */
 class LOCAAdaptiveSolver
     : public EpetraExt::ModelEvaluator
 {

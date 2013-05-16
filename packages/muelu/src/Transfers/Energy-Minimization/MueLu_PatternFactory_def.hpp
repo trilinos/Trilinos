@@ -49,6 +49,7 @@
 #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_PatternFactory_decl.hpp"
+#include "MueLu_Utilities.hpp"
 
 #include "MueLu_Monitor.hpp"
 
@@ -58,24 +59,46 @@ namespace MueLu {
   RCP<const ParameterList> PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
+    validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory for the matrix");
     validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Generating factory for the matrix providing nonzero graph");
+    validParamList->set<int>                     ("k",             0, "Polynomial degree: the resulting pattern is A^k*P [default = 0]");
 
     return validParamList;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    Input(currentLevel, "P");
+  void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+    Input(coarseLevel, "P");
+
+    const ParameterList& pL = GetParameterList();
+    if (pL.get<int>("k") > 0)
+      Input(fineLevel, "A");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
-    FactoryMonitor m(*this, "Ppattern", currentLevel);
+  void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level& coarseLevel) const {
+    FactoryMonitor m(*this, "Ppattern", coarseLevel);
 
-    RCP<Matrix> P = Get< RCP<Matrix> >(currentLevel, "P");
+    RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
-    // When P goes away, does the pattern continue to exist?
-    Set(currentLevel, "Ppattern", P->getCrsGraph());
+    const ParameterList& pL = GetParameterList();
+    int k = pL.get<int>("k");
+
+    if (k > 0) {
+      RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
+      RCP<Matrix> AP;
+
+      bool doFillComplete  = true;
+      bool optimizeStorage = true;
+      bool allowMLMultiply = false;
+
+      for (int i = 0; i < k; i++) {
+        AP = Utils::Multiply(*A, false, *P, false, doFillComplete, optimizeStorage, allowMLMultiply);
+        P.swap(AP);
+      }
+    }
+
+    Set(coarseLevel, "Ppattern", P->getCrsGraph());
   }
 
 

@@ -41,8 +41,8 @@
 // @HEADER
 */
 
-#ifndef TPETRA_HASHTABLE_DECL_HPP
-#define TPETRA_HASHTABLE_DECL_HPP
+#ifndef TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
+#define TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
 
 #include <Teuchos_Describable.hpp>
 #include <Tpetra_ConfigDefs.hpp>
@@ -78,7 +78,7 @@ namespace Details {
 template<typename KeyType, typename ValueType>
 class FixedHashTable : public Teuchos::Describable {
 public:
-  /// \brief Constructor: Add <tt>(keys[i], i)</tt> to the table, 
+  /// \brief Constructor: Add <tt>(keys[i], i)</tt> to the table,
   ///   for i = 0, 1, ..., <tt>keys.size()</tt>.
   FixedHashTable (const ArrayView<const KeyType>& keys);
 
@@ -88,8 +88,8 @@ public:
   /// This version is useful if Map wants to exclude an initial
   /// sequence of contiguous GIDs from the table, and start with a
   /// given LID.
-  FixedHashTable (const ArrayView<const KeyType>& keys, 
-		  const ValueType startingValue);
+  FixedHashTable (const ArrayView<const KeyType>& keys,
+                  const ValueType startingValue);
 
   //! Copy constructor: Make a shallow copy of the data.
   FixedHashTable (const FixedHashTable& obj);
@@ -133,8 +133,8 @@ private:
   /// \brief Initialize: Add <tt>(keys[i], startingValue + i)</tt> to
   ///   the table, for i = 0, 1, ..., <tt>keys.size()</tt>.
   void
-  init (const ArrayView<const KeyType>& keys, 
-	const ValueType startingValue);
+  init (const ArrayView<const KeyType>& keys,
+const ValueType startingValue);
 
   //! The hash function; it returns \c int no matter the value type.
   int hashFunc (const KeyType key) const;
@@ -146,4 +146,4 @@ private:
 
 } // Tpetra namespace
 
-#endif
+#endif // TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP

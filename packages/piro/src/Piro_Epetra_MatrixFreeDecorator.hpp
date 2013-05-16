@@ -51,6 +51,9 @@
 
 #include "EpetraExt_ModelEvaluator.h"
 
+namespace Piro {
+namespace Epetra {
+
 /** \brief  Decorator class that creates a W (Jacobian) operator
  *          using Matrix-Free directional derivatives. 
  *
@@ -63,9 +66,6 @@
  * when x_dot != null, and using alpha and beta. 
  * 
  */
-
-namespace Piro {
-namespace Epetra {
 
 class MatrixFreeDecorator
     : public EpetraExt::ModelEvaluator

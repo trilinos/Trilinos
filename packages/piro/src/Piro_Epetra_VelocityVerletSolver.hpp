@@ -54,6 +54,7 @@
 namespace Piro {
 namespace Epetra {
 
+/** \ingroup Piro_Epetra_solver_grp */
 class VelocityVerletSolver
     : public EpetraExt::ModelEvaluator
 {

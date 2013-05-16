@@ -63,8 +63,7 @@ struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType , Specia
 
   static void apply( const view_type & view )
   {
-    const size_t count = ViewAssignment< Specialize >::allocation_count( view );
-    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , count );
+    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , view.capacity() );
   }
 };
 

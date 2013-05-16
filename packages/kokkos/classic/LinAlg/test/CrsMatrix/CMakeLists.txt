@@ -34,6 +34,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_UnitTests
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST( Raw_AddSparseMatrices
+  SOURCES   
+    Raw_AddSparseMatrices.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+) 
+
+
 IF (KokkosClassic_ENABLE_CUSPARSE) 
   TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_CUSPARSE
     SOURCES   

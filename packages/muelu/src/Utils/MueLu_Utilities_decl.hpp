@@ -51,9 +51,11 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
@@ -339,8 +341,8 @@ namespace MueLu {
     */
    static void Write(std::string const & fileName, const Map& M); // Write
 
-   //! @brief Read matrix from file in Matrix Market format.
-   static Teuchos::RCP<Matrix> Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm);
+   //! @brief Read matrix from file in Matrix Market or binary format.
+   static Teuchos::RCP<Matrix> Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm, bool binary = false);
 
 
     /*! @brief Read vector from file in Matrix Market format.
@@ -409,7 +411,7 @@ namespace MueLu {
 
     /*! @brief print matrix info
     */
-    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params = Teuchos::null);
+    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
 
   }; // class Utils
 

@@ -99,9 +99,8 @@ namespace MueLu {
     //    </ParameterList>
     //   </ParameterList>
     FactoryMap factoryMap;
-    if (paramList.isSublist("Factories")) {
+    if (paramList.isSublist("Factories"))
       this->BuildFactoryMap(paramList.sublist("Factories"), factoryMap, factoryMap);
-    }
 
     // Parameter List Parsing:
     // ---------
@@ -129,31 +128,31 @@ namespace MueLu {
       //TODO Move this its own class or MueLu::Utils?
       std::map<std::string,MsgType> verbMap;
       //for developers
-      verbMap["Errors"] = Errors;
-      verbMap["Warnings0"] = Warnings0;
-      verbMap["Warnings00"] = Warnings00;
-      verbMap["Warnings1"] = Warnings1;
-      verbMap["PerfWarnings"] = PerfWarnings;
-      verbMap["Runtime0"] = Runtime0;
-      verbMap["Runtime1"] = Runtime1;
+      verbMap["Errors"]         = Errors;
+      verbMap["Warnings0"]      = Warnings0;
+      verbMap["Warnings00"]     = Warnings00;
+      verbMap["Warnings1"]      = Warnings1;
+      verbMap["PerfWarnings"]   = PerfWarnings;
+      verbMap["Runtime0"]       = Runtime0;
+      verbMap["Runtime1"]       = Runtime1;
       verbMap["RuntimeTimings"] = RuntimeTimings;
-      verbMap["NoTimeReport"] = NoTimeReport;
-      verbMap["Parameters0"] = Parameters0;
-      verbMap["Parameters1"] = Parameters1;
-      verbMap["Statistics0"] = Statistics0;
-      verbMap["Statistics1"] = Statistics1;
-      verbMap["Timings0"] = Timings0;
-      verbMap["Timings1"] = Timings1;
+      verbMap["NoTimeReport"]   = NoTimeReport;
+      verbMap["Parameters0"]    = Parameters0;
+      verbMap["Parameters1"]    = Parameters1;
+      verbMap["Statistics0"]    = Statistics0;
+      verbMap["Statistics1"]    = Statistics1;
+      verbMap["Timings0"]       = Timings0;
+      verbMap["Timings1"]       = Timings1;
       verbMap["TimingsByLevel"] = TimingsByLevel;
-      verbMap["External"] = External;
-      verbMap["Debug"] = Debug;
+      verbMap["External"]       = External;
+      verbMap["Debug"]          = Debug;
       //for users and developers
-      verbMap["None"] = None;
-      verbMap["Low"] = Low;
-      verbMap["Medium"] = Medium;
-      verbMap["High"] = High;
-      verbMap["Extreme"] = Extreme;
-      if(hieraList.isParameter("verbosity")) {
+      verbMap["None"]           = None;
+      verbMap["Low"]            = Low;
+      verbMap["Medium"]         = Medium;
+      verbMap["High"]           = High;
+      verbMap["Extreme"]        = Extreme;
+      if (hieraList.isParameter("verbosity")) {
         std::string vl = hieraList.get<std::string>("verbosity");
         hieraList.remove("verbosity");
         //TODO Move this to its own class or MueLu::Utils?
@@ -165,6 +164,10 @@ namespace MueLu {
 
       if (hieraList.isParameter("dependencyOutputLevel"))
         this->graphOutputLevel_ = hieraList.get<int>("dependencyOutputLevel");
+
+      // Check for the reuse case
+      if (hieraList.isParameter("reuse"))
+        Factory::DisableMultipleCheckGlobally();
 
       if (hieraList.isSublist("DataToWrite")) {
         //TODO We should be able to specify any data.  If it exists, write it.
@@ -204,6 +207,7 @@ namespace MueLu {
           //  </ParameterList>
           FactoryMap levelFactoryMap;
           BuildFactoryMap(levelList, factoryMap, levelFactoryMap);
+
           RCP<FactoryManagerBase> m = rcp(new FactoryManager(levelFactoryMap));
 
           if (startLevel >= 0) {

@@ -51,51 +51,12 @@
 #include <Kokkos_DefaultKernels.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Exceptions.hpp"
-#include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
 
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-namespace Tpetra {
-  // Struct representing an i,j,v triplet.
-  //
-  // CrsMatrix uses this struct to communicate nonlocal sparse matrix
-  // entries in its globalAssemble() method.
-  template <class Ordinal, class Scalar>
-  struct CrsIJV {
-    CrsIJV();
-    CrsIJV(Ordinal row, Ordinal col, const Scalar &val);
-    Ordinal i,j;
-    Scalar  v;
-  };
-}
-
-namespace Teuchos {
-  // SerializationTraits specialization for CrsIJV, using
-  // DirectSerialization.  This lets Teuchos::Comm send and receive
-  // CrsIJV instances.
-  //
-  // NOTE (mfh 16 Dec 2012): This won't work if Scalar does not
-  // support direct serialization ("just taking the address").  The
-  // usual Scalar types (float, double, dd_real, qd_real, or
-  // std::complex<T> for any of these types) _do_ support direct
-  // serialization.
-  template <typename Ordinal, typename Scalar>
-  class SerializationTraits<int,Tpetra::CrsIJV<Ordinal,Scalar> >
-  : public DirectSerializationTraits<int,Tpetra::CrsIJV<Ordinal,Scalar> >
-  {};
-}
-
-namespace std {
-  // Comparison operator for i,j,v sparse matrix entries.  Defining
-  // this lets CrsMatrix use std::sort to sort CrsIJV instances.
-  template <class Ordinal, class Scalar>
-  bool operator<(const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1, const Tpetra::CrsIJV<Ordinal,Scalar> &ijv2);
-}
-#endif
 
 namespace Tpetra {
 
@@ -753,7 +714,7 @@ namespace Tpetra {
 
     /// \brief Perform a fillComplete on a matrix that already has data.
     ///
-    /// The matrux must already have filled local 1-D storage
+    /// The matrix must already have filled local 1-D storage
     /// (lclInds1D_ and rowPtrs_ for the graph, and values1D_ in the
     /// matrix).  If the matrix has been constructed in any other way,
     /// this method will throw an exception.  This routine is needed
@@ -1223,6 +1184,23 @@ namespace Tpetra {
            Scalar alpha = ScalarTraits<Scalar>::one(),
            Scalar beta = ScalarTraits<Scalar>::zero()) const;
 
+    //! Whether apply() allows applying the transpose or conjugate transpose.
+    bool hasTransposeApply() const;
+
+    /// \brief The domain Map of this operator.
+    ///
+    /// This is \c null until fillComplete() has been called.
+    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+
+    /// \brief The range Map of this operator.
+    ///
+    /// This is \c null until fillComplete() has been called.
+    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+
+    //@}
+    //! @name Other "apply"-like methods
+    //@{
+
     /// \brief "Hybrid" Jacobi + (Gauss-Seidel or SOR) on \f$B = A X\f$.
     ///
     /// "Hybrid" means Successive Over-Relaxation (SOR) or
@@ -1332,18 +1310,23 @@ namespace Tpetra {
                      const int numSweeps,
                      const bool zeroInitialGuess) const;
 
-    //! Whether apply() allows applying the transpose or conjugate transpose.
-    bool hasTransposeApply() const;
-
-    /// \brief The domain Map of this operator.
+    /// \brief Implementation of RowMatrix::add: return <tt>alpha*A + beta*this</tt>.
     ///
-    /// This is \c null until fillComplete() has been called.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
-
-    /// \brief The range Map of this operator.
-    ///
-    /// This is \c null until fillComplete() has been called.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    /// This override of the default implementation ensures that, when
+    /// called on a CrsMatrix, this method always returns a CrsMatrix
+    /// of exactly the same type as <tt>*this</tt>.  "Exactly the same
+    /// type" means that all the template parameters match, including
+    /// the fifth template parameter.  The input matrix A need not
+    /// necessarily be a CrsMatrix or a CrsMatrix of the same type as
+    /// <tt>*this</tt>, though this method may be able to optimize
+    /// further in that case.
+    virtual Teuchos::RCP<RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+    add (const Scalar& alpha,
+         const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+         const Scalar& beta,
+         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap,
+         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap,
+         const Teuchos::RCP<Teuchos::ParameterList>& params) const;
 
     //@}
     //! @name Implementation of Teuchos::Describable interface
@@ -1961,7 +1944,7 @@ namespace Tpetra {
     bool reverseMode = false;
     if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
 
-    // Cache the maps 
+    // Cache the maps
     Teuchos::RCP<const map_type> sourceMap = reverseMode? importer.getTargetMap() : importer.getSourceMap();
     Teuchos::RCP<const map_type> targetMap = reverseMode? importer.getSourceMap() : importer.getTargetMap();
 
@@ -2084,10 +2067,10 @@ namespace Tpetra {
     bool reverseMode = false;
     if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
 
-    // Cache the maps 
+    // Cache the maps
     Teuchos::RCP<const map_type> sourceMap = reverseMode? exporter.getTargetMap() : exporter.getSourceMap();
     Teuchos::RCP<const map_type> targetMap = reverseMode? exporter.getSourceMap() : exporter.getTargetMap();
-    
+
     // Pre-count the nonzeros to allow a build w/ Static Profile
     Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec(sourceMap);
     Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec(targetMap);

@@ -137,7 +137,7 @@ PerfCGSolve test_cgsolve_scalar( const int nGrid ,
 {
   typedef Scalar value_type ;
 
-  typedef KokkosArray::CrsArray<int,Device,Device,int>      crsarray_type ;
+  typedef KokkosArray::CrsArray<int,Device,void,int>      crsarray_type ;
   typedef KokkosArray::CrsMatrix<value_type,Device>         matrix_type ;
   typedef KokkosArray::View<value_type*,KokkosArray::LayoutRight,Device> vector_type ;
 
@@ -218,7 +218,7 @@ PerfCGSolve test_cgsolve_array( const int nGrid ,
 {
   typedef KokkosArray::Array<Scalar,N> value_type ;
 
-  typedef KokkosArray::CrsArray<int,Device,Device,int>      crsarray_type ;
+  typedef KokkosArray::CrsArray<int,Device,void,int>      crsarray_type ;
   typedef KokkosArray::CrsMatrix<value_type,Device>         matrix_type ;
   typedef KokkosArray::View<value_type*,KokkosArray::LayoutRight,Device> vector_type ;
 

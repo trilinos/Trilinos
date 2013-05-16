@@ -58,6 +58,9 @@
 
 namespace Piro {
 
+/** \brief Thyra-based Model Evaluator for Rythmos solves
+ *  \ingroup Piro_Thyra_solver_grp
+ * */
 template <typename Scalar>
 class RythmosSolver
     : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
@@ -168,6 +171,10 @@ rythmosSolver(
     const Teuchos::RCP<ObserverBase<Scalar> > &piroObserver);
 
 }
+
+/** \class Piro::RythmosSolver
+ *  \ingroup Piro_Thyra_solver_grp
+ * */
 
 #include "Piro_RythmosSolver_Def.hpp"
 

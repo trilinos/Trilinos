@@ -46,43 +46,7 @@ namespace Intrepid
 {
 
 //
-// R^N 4th-order tensor transpose
-// per Holzapfel 1.157
-//
-template<typename T>
-inline Tensor4<T> transpose(Tensor4<T> const & A)
-{
-  Index const N = A.get_dimension();
-
-  Tensor4<T> B(N);
-
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
-      for (Index k = 0; k < N; ++k) {
-        for (Index l = 0; l < N; ++l) {
-          B(i, j, k, l) = A(k, l, i, j);
-        }
-      }
-    }
-  }
-
-  return B;
-}
-
-//
-// Dimension
-// \return dimension
-//
-template<typename T>
-inline
-Index
-Tensor4<T>::get_dimension() const
-{
-  return dimension;
-}
-
-//
-// R^N indexing for constant 4th order tensor
+// Indexing for constant 4th order tensor
 // \param i index
 // \param j index
 // \param k index
@@ -94,19 +58,22 @@ T const &
 Tensor4<T>::operator()(
     Index const i, Index const j, Index const k, Index const l) const
 {
+  Tensor4<T> const &
+  self = (*this);
+
   Index const
-  N = get_dimension();
+  N = self.get_dimension();
 
   assert(i < N);
   assert(j < N);
   assert(k < N);
   assert(l < N);
 
-  return e[((i * N + j) * N + k) * N + l];
+  return self[((i * N + j) * N + k) * N + l];
 }
 
 //
-// R^N 4th-order tensor indexing
+// 4th-order tensor indexing
 // \param i index
 // \param j index
 // \param k index
@@ -118,41 +85,18 @@ T &
 Tensor4<T>::operator()(
     Index const i, Index const j, Index const k, Index const l)
 {
+  Tensor4<T> &
+  self = (*this);
+
   Index const
-  N = get_dimension();
+  N = self.get_dimension();
 
   assert(i < N);
   assert(j < N);
   assert(k < N);
   assert(l < N);
 
-  return e[((i * N + j) * N + k) * N + l];
-}
-
-//
-// Linear access to components
-// \param i the index
-//
-template<typename T>
-inline
-T const &
-Tensor4<T>::operator[](Index const i) const
-{
-  assert(i < integer_power(get_dimension(), order()));
-  return e[i];
-}
-
-//
-// Linear access to components
-// \param i the index
-//
-template<typename T>
-inline
-T &
-Tensor4<T>::operator[](Index const i)
-{
-  assert(i < integer_power(get_dimension(), order()));
-  return e[i];
+  return self[((i * N + j) * N + k) * N + l];
 }
 
 } // namespace Intrepid

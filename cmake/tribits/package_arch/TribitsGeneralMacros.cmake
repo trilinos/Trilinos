@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -32,23 +33,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 #
 # ************************************************************************
 # @HEADER
@@ -108,8 +92,9 @@ ENDFUNCTION()
 #
 
 FUNCTION( TRIBITS_APPEND_INCLUDE_AND_LINK_DIRS  PREFIX  LIST  EXTRA_DEP_LIBS_INOUT)
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE STREQUAL "MAX")
-    MESSAGE("\nPACKAGE_APPEND_INCLUDE_AND_LINK_DIRS: ${PREFIX} ${LIST} ${EXTRA_DEP_LIBS_INOUT}")
+  IF (TRIBITS_APPEND_INCLUDE_AND_LINK_DIRS_DEBUG_DUMP)
+    MESSAGE("\nPACKAGE_APPEND_INCLUDE_AND_LINK_DIRS: ${PREFIX} ${LIST}"
+      " ${EXTRA_DEP_LIBS_INOUT}")
   ENDIF()
   SET(EXTRA_DEP_LIBS_INOUT_TMP ${${EXTRA_DEP_LIBS_INOUT}})
   FOREACH(ITEM ${LIST})
@@ -128,7 +113,7 @@ FUNCTION( TRIBITS_APPEND_INCLUDE_AND_LINK_DIRS  PREFIX  LIST  EXTRA_DEP_LIBS_INO
       SET_PROPERTY(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS
         ${${PREFIX}${ITEM}_LIBRARY_DIRS})
     ENDIF()
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE STREQUAL "MAX")
+    IF (TRIBITS_APPEND_INCLUDE_AND_LINK_DIRS_DEBUG_DUMP)
       PRINT_VAR(${PREFIX}${ITEM}_LIBRARIES)
       PRINT_VAR(${PREFIX}${ITEM}_INCLUDE_DIRS)
       PRINT_VAR(${PREFIX}${ITEM}_LIBRARY_DIRS)
@@ -148,19 +133,25 @@ FUNCTION( TRIBITS_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS
   EXTRA_DEP_LIBS_INOUT
   )
 
-  #MESSAGE("TRIBITS_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS:")
-  #PRINT_VAR(MASTER_SORT_LIST)
-  #PRINT_VAR(LIST)
-  #PRINT_VAR(PREFIX)
-  #PRINT_VAR(EXTRA_DEP_LIBS_INOUT)
+  IF (TRIBITS_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS_DEBUG_DUMP)
+    MESSAGE("TRIBITS_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS:")
+    PRINT_VAR(MASTER_SORT_LIST)
+    PRINT_VAR(LIST)
+    PRINT_VAR(PREFIX)
+    PRINT_VAR(EXTRA_DEP_LIBS_INOUT)
+  ENDIF()
 
   SET(LOCAL_LIST ${LIST})
-  #PRINT_VAR(LOCAL_LIST)
+  IF (TRIBITS_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS_DEBUG_DUMP)
+    PRINT_VAR(LOCAL_LIST)
+  ENDIF()
 
   IF (LOCAL_LIST)
 
     TRIBITS_SORT_LIST_ACCORDING_TO_MASTER_LIST("${MASTER_SORT_LIST}"  LOCAL_LIST)
-    #PRINT_VAR(LOCAL_LIST)
+    IF (TRIBITS_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS_DEBUG_DUMP)
+      PRINT_VAR(LOCAL_LIST)
+    ENDIF()
 
     SET(EXTRA_DEP_LIBS_ARG_TMP ${${EXTRA_DEP_LIBS_INOUT}})
     TRIBITS_APPEND_INCLUDE_AND_LINK_DIRS("${PREFIX}"

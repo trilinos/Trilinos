@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_ROWMATRIX_HPP
-#define TPETRA_ROWMATRIX_HPP
+#ifndef TPETRA_ROWMATRIX_DECL_HPP
+#define TPETRA_ROWMATRIX_DECL_HPP
 
 #include <Teuchos_Describable.hpp>
 #include <Kokkos_DefaultNode.hpp>
@@ -63,7 +63,7 @@ namespace Tpetra {
   class Vector;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  //! \brief A pure virtual interface for row-partitioned matrices.
+  //! \brief An interface for row-partitioned matrices.
   /*!
      This class is templated on \c Scalar, \c LocalOrdinal, \c GlobalOrdinal and \c Node.
      The \c LocalOrdinal type, if omitted, defaults to \c int.
@@ -93,7 +93,7 @@ namespace Tpetra {
     //! @name Destructor
     //@{
 
-    //! Destructor.
+    //! Destructor (virtual for memory safety of derived classes).
     virtual ~RowMatrix();
 
     //@}
@@ -365,13 +365,68 @@ namespace Tpetra {
     /// It has the same value as the Euclidean norm of a vector made
     /// by stacking the columns of \f$A\f$.
     virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const = 0;
+
+    /// \brief Return a new RowMatrix which is the result of <tt>beta*this + alpha*A</tt>.
+    ///
+    /// The new RowMatrix is actually a CrsMatrix (which see).  Note
+    /// that RowMatrix is a read-only interface (not counting the left
+    /// and right scale methods), so it is impossible to implement an
+    /// in-place add using just that interface.
+    ///
+    /// For brevity, call this matrix B, and the result matrix C.  C's
+    /// row Map will be identical to B's row Map.  It is correct,
+    /// though less efficient, for A and B not to have the same row
+    /// Maps.  We could make C's row Map the union of the two row Maps
+    /// in that case.  However, we don't want row Maps to grow for a
+    /// repeated sequence of additions with matrices with different
+    /// row Maps.  Furthermore, the fact that the user called this
+    /// method on B, rather than on A, suggests a preference for using
+    /// B's distribution.  The most reasonable thing to do, then, is
+    /// to use B's row Map for C.
+    ///
+    /// A and B must have identical or congruent communicators.  This
+    /// method must be called as a collective over B's communicator.
+    ///
+    /// The parameters are optional and may be null.  Here are the
+    /// parameters that this function accepts:
+    ///   - "Call fillComplete" (\c bool): If true, call fillComplete on
+    ///     the result matrix C.  This is \c true by default.
+    ///   - "Constructor parameters" (sublist): If provided, give these
+    ///     parameters to C's constructor.
+    ///   - "fillComplete parameters" (sublist): If provided, and if
+    ///     "Call fillComplete" is true, then give these parameters to
+    ///     C's fillComplete call.
+    ///
+    /// It is not strictly necessary that a RowMatrix always have a
+    /// domain and range Map.  For example, a CrsMatrix does not have
+    /// a domain and range Map until after its first fillComplete
+    /// call.  Neither A nor B need to have a domain and range Map in
+    /// order to call add().  If at least one of them has a domain and
+    /// range Map, you need not supply a domain and range Map to this
+    /// method.  If you ask this method to call fillComplete on C (it
+    /// does by default), it will supply the any missing domain or
+    /// range Maps from either B's or A's (in that order) domain and
+    /// range Maps.  If neither A nor B have a domain and range Map,
+    /// and if you ask this method to call fillComplete, then you
+    /// <i>must</i> supply both a domain Map and a range Map to this
+    /// method.
+    ///
+    /// This method comes with a default implementation, since the
+    /// RowMatrix interface suffices for implementing it.  Subclasses
+    /// (like CrsMatrix) may override this implementation, for example
+    /// to improve its performance, given additional knowledge about
+    /// the subclass.  Subclass implementations may need to do a
+    /// dynamic cast on A in order to know its type.
+    virtual Teuchos::RCP<RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+    add (const Scalar& alpha,
+         const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+         const Scalar& beta,
+         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap=Teuchos::null,
+         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap=Teuchos::null,
+         const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null) const;
     //@}
   }; // class RowMatrix
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~RowMatrix() {
-  }
-
 } // namespace Tpetra
 
-#endif
+#endif // TPETRA_ROWMATRIX_DECL_HPP
+

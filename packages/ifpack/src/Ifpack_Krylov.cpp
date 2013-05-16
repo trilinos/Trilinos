@@ -39,10 +39,6 @@
 #include "Ifpack_Krylov.h"
 #include "Ifpack_Utils.h"
 #include "Ifpack_Condest.h"
-#include "Ifpack_PointRelaxation.h"
-#include "Ifpack_BlockRelaxation.h"
-#include "Ifpack_SparseContainer.h"
-#include "Ifpack_Amesos.h"
 #ifdef HAVE_IFPACK_AZTECOO
 #include "AztecOO.h"
 #endif
@@ -231,7 +227,12 @@ int Ifpack_Krylov::Compute()
 #ifdef HAVE_IFPACK_AZTECOO
   // setup Aztec solver
   AztecSolver_ = Teuchos::rcp( new AztecOO );
-  AztecSolver_ -> SetUserOperator(&*Operator_);
+  if(IsRowMatrix_==true) {
+    AztecSolver_ -> SetUserMatrix(&*Matrix_);
+  }
+  else {
+    AztecSolver_ -> SetUserOperator(&*Operator_);
+  }
   if(SolverType_==0) {
     AztecSolver_ -> SetAztecOption(AZ_solver, AZ_cg);
   }
@@ -251,7 +252,7 @@ int Ifpack_Krylov::Compute()
     IfpackPrec_ = Teuchos::rcp( new Ifpack_PointRelaxation(&*Matrix_) );
   }
   else {
-    IfpackPrec_ = Teuchos::rcp( new Ifpack_BlockRelaxation< Ifpack_SparseContainer< Ifpack_Amesos > > (&*Matrix_) );
+    IfpackPrec_ = Teuchos::rcp( new Ifpack_BlockRelaxation< Ifpack_DenseContainer > (&*Matrix_) );
     int NumRows;
     if(IsRowMatrix_==true) {  NumRows = Matrix_->NumMyRows();                                }
     else                   {  NumRows = Operator_->OperatorDomainMap().NumGlobalElements();  }

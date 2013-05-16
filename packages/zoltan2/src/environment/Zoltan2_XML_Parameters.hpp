@@ -215,14 +215,6 @@
     an invalid neighbor identifier is considered an error.' \
     /> \
    <Parameter  \
-    id=\"33\" name=\"force_binary_search\" type=\"string\" validatorId=\"31\" value=\"no\" \
-    docString=\"If true, then regardless of the part number, cut line will be searched using binary search.\n\" \
-    /> \
-   <Parameter  \
-    id=\"34\" name=\"force_linear_search\" type=\"string\" validatorId=\"32\" value=\"no\" \
-    docString=\"If true, then regardless of the part number, cut line will be searched using linear search.\n\" \
-    /> \
-   <Parameter  \
     id=\"35\" name=\"parallel_part_calculation_count\" type=\"int\" validatorId=\"33\" value=\"1\" \
     docString=\"The number of parts whose cut coordinates will be calculated concurently.\" \
     /> \
@@ -231,15 +223,15 @@
     docString='  migration_imbalance_cut_off, the minimum imbalance of the processors to avoid migration (default 1.1)' \
     /> \
    <Parameter  \
-    id=\"37\" name=\"migration_type\" type=\"int\" validatorId=\"37\" value=\"1\" \
+    id=\"37\" name=\"migration_all_to_all_type\" type=\"int\" validatorId=\"37\" value=\"1\" \
     docString=\"Migration type, 0 for naive migration, 1 for smarter migration.\" \
     /> \
    <Parameter  \
-    id=\"38\" name=\"migration_option\" type=\"int\" validatorId=\"38\" value=\"1\" \
+    id=\"38\" name=\"migration_check_option\" type=\"int\" validatorId=\"38\" value=\"1\" \
     docString=\"Migration option, 0 for decision depending on the imbalance, 1 for forcing migration, 2 for avoiding migration\" \
     /> \
    <Parameter  \
-    id=\"39\" name=\"assignment_type\" type=\"int\" validatorId=\"39\" value=\"1\" \
+    id=\"39\" name=\"migration_processor_assignment_type\" type=\"int\" validatorId=\"39\" value=\"1\" \
     docString=\"Migration processor assignment type, 0 for assignning procs with respect to weight, otherwise for assigning procs with respect to closeness\" \
     /> \
    <Parameter  \
@@ -430,30 +422,10 @@
         <String integralValue=\"0\" stringValue=\"0\"/> \
         <String integralValue=\"0\" stringValue=\"off\"/> \
       </Validator> \
-      <Validator defaultParameterName=\"force_binary_search\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"31\"> \
-        <String integralValue=\"1\" stringValue=\"true\"/> \
-        <String integralValue=\"1\" stringValue=\"yes\"/> \
-        <String integralValue=\"1\" stringValue=\"1\"/> \
-        <String integralValue=\"1\" stringValue=\"on\"/> \
-        <String integralValue=\"0\" stringValue=\"false\"/> \
-        <String integralValue=\"0\" stringValue=\"no\"/> \
-        <String integralValue=\"0\" stringValue=\"0\"/> \
-        <String integralValue=\"0\" stringValue=\"off\"/> \
-      </Validator> \
-      <Validator defaultParameterName=\"force_linear_search\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"32\"> \
-        <String integralValue=\"1\" stringValue=\"true\"/> \
-        <String integralValue=\"1\" stringValue=\"yes\"/> \
-        <String integralValue=\"1\" stringValue=\"1\"/> \
-        <String integralValue=\"1\" stringValue=\"on\"/> \
-        <String integralValue=\"0\" stringValue=\"false\"/> \
-        <String integralValue=\"0\" stringValue=\"no\"/> \
-        <String integralValue=\"0\" stringValue=\"0\"/> \
-        <String integralValue=\"0\" stringValue=\"off\"/> \
-      </Validator> \
       <Validator defaultParameterName=\"parallel_part_calculation_count\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"33\"/> \
-      <Validator defaultParameterName=\"migration_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"37\"/> \
-      <Validator defaultParameterName=\"migration_option\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"38\"/> \
-      <Validator defaultParameterName=\"assignment_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"39\"/> \
+      <Validator defaultParameterName=\"migration_all_to_all_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"37\"/> \
+      <Validator defaultParameterName=\"migration_check_option\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"38\"/> \
+      <Validator defaultParameterName=\"migration_processor_assignment_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"39\"/> \
       <Validator defaultParameterName=\"remap_parts\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"40\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
         <String integralValue=\"1\" stringValue=\"yes\"/> \

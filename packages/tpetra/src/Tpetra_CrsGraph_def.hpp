@@ -79,9 +79,10 @@ namespace Tpetra {
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   , fillComplete_(false)
-  , indicesAreSorted_(true)
-  , noRedundancies_(true)
-  , haveGlobalConstants_(false)
+  , indicesAreSorted_ (true)
+  , noRedundancies_ (true)
+  , haveLocalConstants_ (false)
+  , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
   , insertGlobalIndicesWarnedEfficiency_(false)
   , insertLocalIndicesWarnedEfficiency_(false)
@@ -118,7 +119,8 @@ namespace Tpetra {
   , fillComplete_(false)
   , indicesAreSorted_(true)
   , noRedundancies_(true)
-  , haveGlobalConstants_(false)
+  , haveLocalConstants_ (false)
+  , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
   , insertGlobalIndicesWarnedEfficiency_(false)
   , insertLocalIndicesWarnedEfficiency_(false)
@@ -154,7 +156,8 @@ namespace Tpetra {
   , fillComplete_(false)
   , indicesAreSorted_(true)
   , noRedundancies_(true)
-  , haveGlobalConstants_(false)
+  , haveLocalConstants_ (false)
+  , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
   , insertGlobalIndicesWarnedEfficiency_(false)
   , insertLocalIndicesWarnedEfficiency_(false)
@@ -199,7 +202,8 @@ namespace Tpetra {
   , fillComplete_(false)
   , indicesAreSorted_(true)
   , noRedundancies_(true)
-  , haveGlobalConstants_(false)
+  , haveLocalConstants_ (false)
+  , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
   , insertGlobalIndicesWarnedEfficiency_(false)
   , insertLocalIndicesWarnedEfficiency_(false)
@@ -243,7 +247,8 @@ namespace Tpetra {
   , fillComplete_(false)
   , indicesAreSorted_(true)
   , noRedundancies_(true)
-  , haveGlobalConstants_(false)
+  , haveLocalConstants_ (false)
+  , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
   , insertGlobalIndicesWarnedEfficiency_(false)
   , insertLocalIndicesWarnedEfficiency_(false)
@@ -533,24 +538,23 @@ namespace Tpetra {
     return noRedundancies_;
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setSorted(bool sorted)
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocallyModified ()
   {
-    indicesAreSorted_ = sorted;
+    // FIXME (mfh 07 May 2013) How do we know that the change
+    // introduced a redundancy, or even that it invalidated the sorted
+    // order of indices?  CrsGraph has always made this conservative
+    // guess.  It could be a bit costly to check at insertion time,
+    // though.
+    indicesAreSorted_ = false;
+    noRedundancies_ = false;
+
+    // We've modified the graph, so we'll have to recompute local
+    // constants like the number of diagonal entries on this process.
+    haveLocalConstants_ = false;
   }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setMerged(bool merged)
-  {
-    noRedundancies_ = merged;
-  }
-
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -963,8 +967,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <class T>
   size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds, 
-				const ArrayView<T>& vals) const
+  filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds,
+                                const ArrayView<T>& vals) const
   {
     const Map<LocalOrdinal,GlobalOrdinal,Node>& cmap = *colMap_;
     size_t numFiltered = 0;
@@ -977,10 +981,10 @@ namespace Tpetra {
     typename ArrayView<GlobalOrdinal>::iterator cptr = ginds.begin();
     while (cptr != ginds.end()) {
       if (cmap.isNodeGlobalElement (*cptr)) {
-	*fend++ = *cptr;
-	*fvalsend++ = *valscptr;
+        *fend++ = *cptr;
+        *fvalsend++ = *valscptr;
 #ifdef HAVE_TPETRA_DEBUG
-	++numFiltered_debug;
+        ++numFiltered_debug;
 #endif
       }
       ++cptr;
@@ -990,7 +994,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
     TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
-    const size_t numFilteredActual = 
+    const size_t numFilteredActual =
       Teuchos::as<size_t> (fvalsend - vals.begin ());
     TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
 #endif
@@ -1005,7 +1009,7 @@ namespace Tpetra {
   size_t
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
-			       const ArrayView<T>& vals) const
+                               const ArrayView<T>& vals) const
   {
     const Map<LocalOrdinal,GlobalOrdinal,Node>& cmap = *colMap_;
     size_t numFiltered = 0;
@@ -1018,10 +1022,10 @@ namespace Tpetra {
     typename ArrayView<LocalOrdinal>::iterator cptr = linds.begin();
     while (cptr != linds.end()) {
       if (cmap.isNodeLocalElement (*cptr)) {
-	*fend++ = *cptr;
-	*fvalsend++ = *valscptr;
+        *fend++ = *cptr;
+        *fvalsend++ = *valscptr;
 #ifdef HAVE_TPETRA_DEBUG
-	++numFiltered_debug;
+        ++numFiltered_debug;
 #endif
       }
       ++cptr;
@@ -1031,7 +1035,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
     TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
-    const size_t numFilteredActual = 
+    const size_t numFilteredActual =
       Teuchos::as<size_t> (fvalsend - vals.begin ());
     TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
 #endif
@@ -1042,16 +1046,16 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t 
+  size_t
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertIndices (const RowInfo& rowinfo, 
-		 const SLocalGlobalViews &newInds,
-		 const ELocalGlobal lg,
-		 const ELocalGlobal I)
+  insertIndices (const RowInfo& rowinfo,
+                 const SLocalGlobalViews &newInds,
+                 const ELocalGlobal lg,
+                 const ELocalGlobal I)
   {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      lg != GlobalIndices && lg != LocalIndices, std::invalid_argument, 
+      lg != GlobalIndices && lg != LocalIndices, std::invalid_argument,
       "Tpetra::CrsGraph::insertIndices: lg must be either GlobalIndices or "
       "LocalIndices.");
 #endif // HAVE_TPETRA_DEBUG
@@ -1081,17 +1085,17 @@ namespace Tpetra {
         std::copy(new_linds.begin(), new_linds.end(), lind_view.begin()+rowinfo.numEntries);
       }
       else if (I == GlobalIndices) {
-        // not needed yet
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::CrsGraph::"
           "insertIndices: the case where the input indices are local and the "
-          "indices to write are global (lg=LocalIndices, I=GlobalIndices) has "
-          "not yet been implemented.");
+          "indices to write are global (lg=LocalIndices, I=GlobalIndices) is "
+          "not implemented, because it does not make sense." << std::endl <<
+          "If you have correct local column indices, that means the graph has "
+          "a column Map.  In that case, you should be storing local indices.");
       }
     }
     numRowEntries_[rowinfo.localRow] += numNewInds;
     nodeNumEntries_ += numNewInds;
-    setSorted(false);
-    setMerged(false);
+    setLocallyModified ();
     return numNewInds;
   }
 
@@ -1100,7 +1104,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   insertGlobalIndicesImpl (const LocalOrdinal myRow,
-			   const ArrayView<const GlobalOrdinal> &indices)
+                           const ArrayView<const GlobalOrdinal> &indices)
   {
     const char* tfecfFuncName("insertGlobalIndicesImpl()");
 
@@ -1144,8 +1148,7 @@ namespace Tpetra {
                 gblInds2D_[myRow].begin()+rowInfo.numEntries);
     numRowEntries_[myRow] += numNewInds;
     nodeNumEntries_ += numNewInds;
-    setSorted(false);
-    setMerged(false);
+    setLocallyModified ();
 
 #ifdef HAVE_TPETRA_DEBUG
     {
@@ -1206,9 +1209,7 @@ namespace Tpetra {
                 lclInds2D_[myRow].begin()+rowInfo.numEntries);
     numRowEntries_[myRow] += numNewInds;
     nodeNumEntries_ += numNewInds;
-    setSorted(false);
-    setMerged(false);
-
+    setLocallyModified ();
 #ifdef HAVE_TPETRA_DEBUG
     {
       const size_t chkNewNumEntries = getNumEntriesInLocalRow (myRow);
@@ -1225,17 +1226,17 @@ namespace Tpetra {
   template <class Scalar>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   insertIndicesAndValues (const RowInfo& rowInfo,
-			  const SLocalGlobalViews& newInds,
-			  const ArrayView<Scalar>& oldRowVals,
-			  const ArrayView<const Scalar>& newRowVals,
-			  const ELocalGlobal lg,
-			  const ELocalGlobal I)
+                          const SLocalGlobalViews& newInds,
+                          const ArrayView<Scalar>& oldRowVals,
+                          const ArrayView<const Scalar>& newRowVals,
+                          const ELocalGlobal lg,
+                          const ELocalGlobal I)
   {
     const size_t numNewInds = insertIndices (rowInfo, newInds, lg, I);
-    typename ArrayView<const Scalar>::const_iterator newRowValsBegin = 
+    typename ArrayView<const Scalar>::const_iterator newRowValsBegin =
       newRowVals.begin ();
-    std::copy (newRowValsBegin, newRowValsBegin + numNewInds, 
-	       oldRowVals.begin () + rowInfo.numEntries);
+    std::copy (newRowValsBegin, newRowValsBegin + numNewInds,
+               oldRowVals.begin () + rowInfo.numEntries);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1539,8 +1540,6 @@ namespace Tpetra {
     globalNumEntries_       = OrdinalTraits<global_size_t>::invalid();
     globalNumDiags_         = OrdinalTraits<global_size_t>::invalid();
     globalMaxNumRowEntries_ = OrdinalTraits<global_size_t>::invalid();
-    nodeNumDiags_           = OrdinalTraits<       size_t>::invalid();
-    nodeMaxNumRowEntries_   = OrdinalTraits<       size_t>::invalid();
     haveGlobalConstants_    = false;
   }
 
@@ -2300,8 +2299,8 @@ namespace Tpetra {
     lowerTriangular_  = false;
     upperTriangular_  = false;
     // either still sorted/merged or initially sorted/merged
-    setSorted(true);
-    setMerged(true);
+    indicesAreSorted_ = true;
+    noRedundancies_ = true;
     fillComplete_ = false;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2442,8 +2441,8 @@ namespace Tpetra {
     setDomainRangeMaps(domainMap,rangeMap);
 
     // Presume the user sorted and merged the arrays first
-    setSorted(true);
-    setMerged(true);
+    indicesAreSorted_ = true;
+    noRedundancies_ = true;
 
     // makeImportExport won't create a new importer/exporter if I set one here first.
     importer_=Teuchos::null;
@@ -2582,58 +2581,116 @@ namespace Tpetra {
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::computeGlobalConstants()
   {
     using Teuchos::as;
+    using Teuchos::outArg;
     using Teuchos::reduceAll;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef global_size_t GST;
 
-    // compute the local constants first
-    const size_t nlrs = getNodeNumRows();
-    // reset all local properties
-    upperTriangular_ = true;
-    lowerTriangular_ = true;
-    nodeMaxNumRowEntries_ = 0;
-    nodeNumDiags_         = 0;
-    // indices are already sorted in each row
-    const Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap = *rowMap_;
-    if (indicesAreAllocated() == true && nodeNumAllocated_ > 0) {
-      for (size_t r=0; r < nlrs; ++r) {
-        GlobalOrdinal rgid = rowMap.getGlobalElement(r);
-        // determine the local column index for this row, used for delimiting the diagonal
-        const LocalOrdinal rlcid = colMap_->getLocalElement(rgid);
-        RowInfo rowinfo = getRowInfo(r);
-        ArrayView<const LocalOrdinal> rview = getLocalView(rowinfo);
-        typename ArrayRCP<const LocalOrdinal>::iterator beg, end, cur;
-        beg = rview.begin();
-        end = beg + rowinfo.numEntries;
-        if (beg != end) {
-          for (cur = beg; cur != end; ++cur) {
-            // is this the diagonal?
-            if (rlcid == (*cur)) ++nodeNumDiags_;
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap(), std::logic_error, "Tpetra::"
+      "CrsGraph::computeGlobalConstants: At this point, the graph should have "
+      "a column Map, but it does not.  Please report this bug to the Tpetra "
+      "developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+    // If necessary, (re)compute the local constants: nodeNumDiags_,
+    // lowerTriangular_, upperTriangular_, and nodeMaxNumRowEntries_.
+    if (! haveLocalConstants_) {
+      // We have actually already computed nodeNumEntries_.
+      // nodeNumEntries_ gets updated by methods that insert or remove
+      // indices (including setAllIndices and
+      // expertStaticFillComplete).  Before fillComplete, its count
+      // may include duplicate column indices in the same row.
+      // However, mergeRowIndices and mergeRowIndicesAndValues both
+      // subtract off merged indices in each row from the total count.
+      // Thus, nodeNumEntries_ _should_ be accurate at this point,
+      // meaning that we don't have to re-count it here.
+
+      // Reset local properties
+      upperTriangular_ = true;
+      lowerTriangular_ = true;
+      nodeMaxNumRowEntries_ = 0;
+      nodeNumDiags_         = 0;
+
+      // At this point, we know that we have both a row Map and a column Map.
+      const Map<LO,GO,Node>& rowMap = *rowMap_;
+      const Map<LO,GO,Node>& colMap = *colMap_;
+
+      // Go through all the entries of the graph.  Count the number of
+      // diagonal elements we encounter, and figure out whether the
+      // graph is lower or upper triangular.  Diagonal elements are
+      // determined using global indices, with respect to the whole
+      // graph.  However, lower or upper triangularity is a local
+      // property, and is determined using local indices.
+      //
+      // At this point, indices have already been sorted in each row.
+      // That makes finding out whether the graph is lower / upper
+      // triangular easier.
+      if (indicesAreAllocated () && nodeNumAllocated_ > 0) {
+        const size_t numLocalRows = getNodeNumRows ();
+        for (size_t localRow = 0; localRow < numLocalRows; ++localRow) {
+          const GO globalRow = rowMap.getGlobalElement (localRow);
+          // Find the local (column) index for the diagonal element.
+          const LO rlcid = colMap.getLocalElement (globalRow);
+          RowInfo rowInfo = getRowInfo (localRow);
+          ArrayView<const LO> rview = getLocalView (rowInfo);
+          typename ArrayView<const LO>::iterator beg, end, cur;
+          beg = rview.begin();
+          end = beg + rowInfo.numEntries;
+          if (beg != end) {
+            for (cur = beg; cur != end; ++cur) {
+              // is this the diagonal?
+              if (rlcid == *cur) ++nodeNumDiags_;
+            }
+            // Local column indices are sorted in each row.  That means
+            // the smallest column index in this row (on this process)
+            // is *beg, and the largest column index in this row (on
+            // this process) is *(end - 1).  We know that end - 1 is
+            // valid because beg != end.
+            const size_t smallestCol = as<size_t> (*beg);
+            const size_t largestCol = as<size_t> (*(end - 1));
+
+            if (smallestCol < localRow) {
+              upperTriangular_ = false;
+            }
+            if (localRow < largestCol) {
+              lowerTriangular_ = false;
+            }
           }
-          // because of sorting, smallest column index is (*beg); it indicates upper triangularity
-          if (as<size_t> (beg[0]) < r) {
-            upperTriangular_ = false;
-          }
-          // because of sorting, largest column index is (*newend); it indicates lower triangularity
-          if (r < as<size_t> (end[-1])) {
-            lowerTriangular_ = false;
-          }
+          // Update the max number of entries over all rows.
+          nodeMaxNumRowEntries_ = std::max (nodeMaxNumRowEntries_, rowInfo.numEntries);
         }
-        // compute num entries for this row, accumulate into nodeNumEntries_, update nodeMaxNumRowEntries_
-        nodeMaxNumRowEntries_ = std::max (nodeMaxNumRowEntries_, rowinfo.numEntries);
       }
-    }
+      haveLocalConstants_ = true;
+    } // if my process doesn't have local constants
 
-    // compute global constants using computed local constants
+    // Compute global constants from local constants.  Processes that
+    // already have local constants still participate in the
+    // all-reduces, using their previously computed values.
     if (haveGlobalConstants_ == false) {
-      global_size_t lcl[2], gbl[2];
-      lcl[0] = nodeNumEntries_;
-      lcl[1] = nodeNumDiags_;
-      reduceAll<int,global_size_t> (*getComm (), Teuchos::REDUCE_SUM,
-                                    2, lcl, gbl);
+      // Promote all the nodeNum* and nodeMaxNum* quantities from
+      // size_t to global_size_t, when doing the all-reduces for
+      // globalNum* / globalMaxNum* results.
+      //
+      // FIXME (mfh 07 May 2013) Unfortunately, we either have to do
+      // this in two all-reduces (one for the sum and the other for
+      // the max), or use a custom MPI_Op that combines the sum and
+      // the max.  The latter might even be slower than two
+      // all-reduces on modern network hardware.  It would also be a
+      // good idea to use nonblocking all-reduces (MPI 3), so that we
+      // don't have to wait around for the first one to finish before
+      // starting the second one.
+      GST lcl[2], gbl[2];
+      lcl[0] = as<GST> (nodeNumEntries_);
+      lcl[1] = as<GST> (nodeNumDiags_);
+      reduceAll<int,GST> (*getComm (), Teuchos::REDUCE_SUM,
+                          2, lcl, gbl);
       globalNumEntries_ = gbl[0];
       globalNumDiags_   = gbl[1];
-      reduceAll<int,global_size_t> (*getComm(), Teuchos::REDUCE_MAX,
-                                    nodeMaxNumRowEntries_,
-                                    outArg (globalMaxNumRowEntries_));
+      reduceAll<int,GST> (*getComm (), Teuchos::REDUCE_MAX,
+                          as<GST> (nodeMaxNumRowEntries_),
+                          outArg (globalMaxNumRowEntries_));
       haveGlobalConstants_ = true;
     }
   }
@@ -2832,7 +2889,7 @@ namespace Tpetra {
       }
     }
     // we just sorted every row
-    setSorted(true);
+    indicesAreSorted_ = true;
   }
 
 
@@ -3122,7 +3179,7 @@ namespace Tpetra {
         mergeRowIndices(rowInfo);
       }
       // we just merged every row
-      setMerged(true);
+      noRedundancies_ = true;
     }
   }
 

@@ -55,8 +55,8 @@ namespace Impl {
 bool host_thread_is_master() { return true ; }
 bool host_thread_spawn()     { return false ; }
 int  host_thread_wait( volatile int * const flag , const int ) { return *flag ; }
-void host_internal_thread_lock() {}
-void host_internal_thread_unlock() {}
+void host_thread_lock() {}
+void host_thread_unlock() {}
 
 } // namespace Impl
 } // namespace KokkosArray

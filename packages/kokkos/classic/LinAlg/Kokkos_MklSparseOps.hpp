@@ -488,6 +488,19 @@ namespace Kokkos {
     ///   don't keep it around.  (This saves a bit of memory.)
     MklSparseOps(const RCP<Node> &node, Teuchos::ParameterList& params);
 
+    /// \brief "Sum constructor": compute *this = alpha*A + beta*B.
+    ///
+    /// The resulting matrix shares the Node instance and copies the
+    /// parameters of the matrix A.
+    MklSparseOps (const Scalar& alpha,
+                  const MklSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                  const Scalar& beta,
+                  const MklSparseOps<Scalar, Ordinal, Node, Allocator>& B)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "MklSparseOps: sum constructor not implemented");
+    }
+
     //! Destructor
     ~MklSparseOps();
 
@@ -726,15 +739,27 @@ namespace Kokkos {
            MultiVector<RangeScalar,Node> &X) const;
 
     template <class DomainScalar, class RangeScalar>
-    void 
+    void
     gaussSeidel (const MultiVector<DomainScalar,Node> &B,
-		 MultiVector< RangeScalar,Node> &X,
-		 const MultiVector<Scalar,Node> &D,
-		 const RangeScalar& dampingFactor,
-		 const ESweepDirection direction) const
+                 MultiVector< RangeScalar,Node> &X,
+                 const MultiVector<Scalar,Node> &D,
+                 const RangeScalar& dampingFactor,
+                 const ESweepDirection direction) const
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-				 "MklSparseOps: gaussSeidel not implemented");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                                 "MklSparseOps: gaussSeidel not implemented");
+    }
+
+    /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
+    ///
+    /// This method may choose to reuse storage of <tt>*this</tt>.
+    void
+    addInPlace (const Scalar& alpha,
+                const MklSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                const Scalar& beta)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "MklSparseOps: addInPlace not implemented");
     }
     //@}
 

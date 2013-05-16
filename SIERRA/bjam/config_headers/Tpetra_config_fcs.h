@@ -43,6 +43,9 @@
 /* Define when building Tpetra with TSQR support */
 #define HAVE_TPETRA_TSQR
 
+/* Define when enabling the Murmur hash function in Tpetra */
+/* #undef TPETRA_USE_MURMUR_HASH */
+
 /* Define if user requested explicit instantiation of classes into libtpetra */
 /* #undef HAVE_TPETRA_EXPLICIT_INSTANTIATION */
 

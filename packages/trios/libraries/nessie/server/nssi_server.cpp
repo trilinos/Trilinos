@@ -1483,6 +1483,11 @@ int nssi_service_init(
 {
     int rc = NSSI_OK;
 
+    /* each md can recv reqs_per_queue messages */
+    int reqs_per_queue = 10000;
+    /* two incoming queues */
+    char *req_queue_buffer = NULL;
+
     nthread_lock_init(&supported_ops_mutex);
     nthread_lock_init(&request_args_map_mutex);
 
@@ -1508,13 +1513,32 @@ int nssi_service_init(
     trace_register_group(TRACE_RPC_COUNTER_GNAME, &trace_counter_gid);
     trace_register_group(TRACE_RPC_INTERVAL_GNAME, &trace_interval_gid);
 
-    /* copy the service description to the local service description */
-    memcpy(&local_service, service, sizeof(nssi_service));
-
     /* Register standard services */
     NSSI_REGISTER_SERVER_STUB(NSSI_OP_GET_SERVICE,  rpc_get_service,  void,                   nssi_service);
     NSSI_REGISTER_SERVER_STUB(NSSI_OP_KILL_SERVICE, rpc_kill_service, nssi_kill_service_args, void);
     NSSI_REGISTER_SERVER_STUB(NSSI_OP_TRACE_RESET,  rpc_trace_reset,  nssi_trace_reset_args,  void);
+
+    /* allocate enough memory for 2 request queues */
+    req_queue_buffer = (char *) malloc(2*reqs_per_queue*service->req_size);
+
+    /* initialize the buffer */
+    memset(req_queue_buffer, 0, 2*reqs_per_queue*service->req_size);
+
+    rc=NNTI_register_memory(
+            &transports[service->transport_id],
+            req_queue_buffer,
+            service->req_size,
+            2*reqs_per_queue,
+            NNTI_RECV_QUEUE,
+            &transports[service->transport_id].me,
+            &service->req_addr);
+    if (rc != NNTI_OK) {
+        log_error(rpc_debug_level, "failed registering request queue: %s",
+                nnti_err_str(rc));
+    }
+
+    /* copy the service description to the local service description */
+    memcpy(&local_service, service, sizeof(nssi_service));
 
     return rc;
 }
@@ -1562,8 +1586,22 @@ int nssi_service_add_op(
  */
 int nssi_service_fini(const nssi_service *service)
 {
+    int rc = NSSI_OK;
+    char *req_queue_buffer = NULL;
+
     nthread_lock_fini(&supported_ops_mutex);
     nthread_lock_fini(&request_args_map_mutex);
+
+    req_queue_buffer = NNTI_BUFFER_C_POINTER(&service->req_addr);
+
+    rc=NNTI_unregister_memory((NNTI_buffer_t *)&service->req_addr);
+    if (rc != NNTI_OK) {
+        log_error(rpc_debug_level, "failed unregistering request queue: %s",
+                nnti_err_str(rc));
+    }
+
+    log_debug(rpc_debug_level, "Free req_queue_buffer");
+    free(req_queue_buffer);
 
     time_to_die=false;
 
@@ -1658,15 +1696,6 @@ int nssi_service_start_wfn(
 
     char *req_buf;
 
-    /* two incoming queues */
-    char *req_queue_buffer = NULL;
-
-    /* each message is no larger than req_size */
-    int   req_size = svc->req_size;
-
-    /* each md can recv reqs_per_queue messages */
-    int reqs_per_queue = 10000;
-
     NNTI_buffer_t req_queue;
     NNTI_status_t status;
 
@@ -1683,27 +1712,7 @@ int nssi_service_start_wfn(
 
     log_debug(debug_level, "starting single-threaded rpc service");
 
-    /* allocate enough memory for 2 request queues */
-    req_queue_buffer = (char *) malloc(2*reqs_per_queue*req_size);
-
-    /* initialize the buffer */
-    memset(req_queue_buffer, 0, 2*reqs_per_queue*req_size);
-
-    rc=NNTI_register_memory(
-            &transports[svc->transport_id],
-            req_queue_buffer,
-            req_size,
-            2*reqs_per_queue,
-            NNTI_RECV_QUEUE,
-            &transports[svc->transport_id].me,
-            &req_queue);
-    if (rc != NNTI_OK) {
-        log_error(debug_level, "failed registering request queue: %s",
-                nnti_err_str(rc));
-    }
-
-    local_service.req_addr = req_queue;
-
+    req_queue = svc->req_addr;
     /* initialize indices and counters */
     req_count = 0; /* number of reqs processed */
 
@@ -1826,15 +1835,6 @@ cleanup:
     trace_fini();
 
     log_debug(debug_level, "Cleaning up...");
-
-    rc=NNTI_unregister_memory(&req_queue);
-    if (rc != NNTI_OK) {
-        log_error(debug_level, "failed unregistering request queue: %s",
-                nnti_err_str(rc));
-    }
-
-    log_debug(debug_level, "Free req_queue_buffer");
-    free(req_queue_buffer);
 
     /* print out stats about the server */
     log_info(debug_level, "Exiting nssi_service_start: %d "
