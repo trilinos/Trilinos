@@ -1080,13 +1080,162 @@ namespace Tpetra {
            class LocalMatOps>
   void
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertGlobalValues (GlobalOrdinal globalRow,
+  insertGlobalValues (const GlobalOrdinal globalRow,
                       const ArrayView<const GlobalOrdinal> &indices,
                       const ArrayView<const Scalar>        &values)
   {
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::toString;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
+    typedef Teuchos::OrdinalTraits<LO> OTL;
+    typedef Map<LO, GO, Node> map_type;
+    typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
     const char tfecfFuncName[] = "insertGlobalValues";
+
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      values.size() != indices.size(), std::runtime_error,
+      ": values.size() must equal indices.size().  values.size() = "
+      << values.size() << ", but indices.size() = " << indices.size() << ".");
+#endif // HAVE_TPETRA_DEBUG
+
+    const LO localRow = getRowMap ()->getLocalElement (globalRow);
+
+    if (localRow == OTL::invalid ()) { // globalRow _not_ owned by calling process
+      // Add the new data to the list of nonlocals.
+      // This creates the array if it doesn't exist yet.
+      Array<std::pair<GO, Scalar> >& curRow = nonlocals_[globalRow];
+      curRow.reserve (curRow.size () + indices.size ());
+
+      typename ArrayView<const GO>::const_iterator ind = indices.begin();
+      typename ArrayView<const Scalar>::const_iterator val =  values.begin();
+      for (; val != values.end(); ++val, ++ind) {
+        curRow.push_back (std::make_pair (*ind, *val));
+      }
+    }
+    else { // globalRow _is_ owned by calling process
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        this->isStaticGraph(), std::runtime_error,
+        ": The CrsMatrix was constructed with a static (i.e., const) graph."
+        << endl << "In that case, it is not allowed to insert new entries into "
+        "rows owned by the calling process.");
+      if (! myGraph_->indicesAreAllocated ()) {
+        allocateValues (GlobalIndices, GraphNotYetAllocated);
+      }
+
+      const size_type numEntriesToInsert = indices.size ();
+      // If the matrix has a column Map, check at this point whether
+      // the column indices belong to the column Map.
+      //
+      // FIXME (mfh 16 May 2013) We may want to consider deferring the
+      // test to the CrsGraph method, since it may have to do this
+      // anyway.
+      if (hasColMap ()) {
+        const map_type& colMap = * (getColMap ());
+        // In a debug build, keep track of the nonowned ("bad") column
+        // indices, so that we can display them in the exception
+        // message.  In a release build, just ditch the loop early if
+        // we encounter a nonowned column index.
+#ifdef HAVE_TPETRA_DEBUG
+        Array<GO> badColInds;
+#endif // HAVE_TPETRA_DEBUG
+        bool allInColMap = true;
+        for (size_type k = 0; k < numEntriesToInsert; ++k) {
+          if (! colMap.isNodeGlobalElement (indices[k])) {
+            allInColMap = false;
+#ifdef HAVE_TPETRA_DEBUG
+            badColInds.push_back (indices[k]);
+#else
+            break;
+#endif // HAVE_TPETRA_DEBUG
+          }
+        }
+        if (! allInColMap) {
+          std::ostringstream os;
+          os << "Tpetra::CrsMatrix::insertGlobalValues: You attempted to insert "
+            "entries in owned row " << globalRow << ", at the following column "
+            "indices: " << toString (indices) << "." << endl;
+#ifdef HAVE_TPETRA_DEBUG
+          os << "Of those, the following indices are not in the column Map on "
+            "this process: " << toString (badColInds) << "." << endl << "Since "
+            "the matrix has a column Map already, it is invalid to insert "
+            "entries at those locations.";
+#else
+          os << "At least one of those indices is not in the column Map on this "
+            "process." << endl << "It is invalid to insert into columns not in "
+            "the column Map on the process that owns the row.";
+#endif // HAVE_TPETRA_DEBUG
+        TEUCHOS_TEST_FOR_EXCEPTION(! allInColMap, std::invalid_argument, os.str ());
+        }
+      }
+
+      typename Graph::SLocalGlobalViews inds_view;
+      ArrayView<const Scalar> vals_view;
+
+      inds_view.ginds = indices;
+      vals_view       = values;
+
+      RowInfo rowInfo = myGraph_->getRowInfo (localRow);
+      const size_t curNumEntries = rowInfo.numEntries;
+      const size_t newNumEntries = curNumEntries + as<size_t> (numEntriesToInsert);
+      if (newNumEntries > rowInfo.allocSize) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          getProfileType() == StaticProfile, std::runtime_error,
+          ": new indices exceed statically allocated graph structure.");
+
+        // Update allocation only as much as necessary
+        rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices, Scalar> (rowInfo, newNumEntries,
+                                                                                  values2D_[localRow]);
+      }
+      if (isGloballyIndexed ()) {
+        // lg=GlobalIndices, I=GlobalIndices means the method calls
+        // getGlobalViewNonConst() and does direct copying, which
+        // should be reasonably fast.
+        myGraph_->template insertIndicesAndValues<Scalar> (rowInfo, inds_view,
+                                                           this->getViewNonConst (rowInfo),
+                                                           values,
+                                                           GlobalIndices, GlobalIndices);
+      }
+      else {
+        // lg=GlobalIndices, I=LocalIndices means the method calls
+        // the Map's getLocalElement() method once per entry to
+        // insert.  This may be slow.
+        myGraph_->template insertIndicesAndValues<Scalar> (rowInfo, inds_view,
+                                                           this->getViewNonConst (rowInfo),
+                                                           values,
+                                                           GlobalIndices, LocalIndices);
+      }
+#ifdef HAVE_TPETRA_DEBUG
+      {
+        const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow(localRow);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(chkNewNumEntries != newNumEntries,
+          std::logic_error, ": There should be a total of " << newNumEntries
+          << " entries in the row, but the graph now reports " << chkNewNumEntries
+          << " entries.  Please report this bug to the Tpetra developers.");
+      }
+#endif // HAVE_TPETRA_DEBUG
+    }
+  }
+
+
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node,
+           class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  insertGlobalValuesFiltered (const GlobalOrdinal globalRow,
+                              const ArrayView<const GlobalOrdinal> &indices,
+                              const ArrayView<const Scalar>        &values)
+  {
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    const char tfecfFuncName[] = "insertGlobalValuesFiltered";
 
     // mfh 14 Dec 2012: Defer test for static graph until we know that
     // globalRow is in the row Map.  If it's not in the row Map, it
@@ -4122,8 +4271,8 @@ namespace Tpetra {
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-          "combineGlobalValues: Should never get here!  Please report this bug"
-          "to the Tpetra developers.");
+          "combineGlobalValues: Invalid combine mode; should never get here!  "
+          "Please report this bug to the Tpetra developers.");
       }
     }
     else { // The matrix has a dynamic graph.
@@ -4134,7 +4283,7 @@ namespace Tpetra {
         // are equivalent.  We need to call insertGlobalValues()
         // anyway if the column indices don't yet exist in this row,
         // so we just call insertGlobalValues() for both cases.
-        insertGlobalValues (globalRowIndex, columnIndices, values);
+        insertGlobalValuesFiltered (globalRowIndex, columnIndices, values);
       }
       // FIXME (mfh 14 Mar 2012):
       //

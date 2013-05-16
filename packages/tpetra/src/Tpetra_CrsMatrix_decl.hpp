@@ -547,33 +547,121 @@ namespace Tpetra {
     //! @name Insertion/Removal Methods
     //@{
 
-    //! Insert matrix entries, using global IDs.
-    /** All index values must be in the global space.
-        \pre \c globalRow exists as an ID in the global row map
-        \pre <tt>isStorageOptimized() == false</tt>
+    /// \brief Insert one or more entries into the matrix, using global indices.
+    ///
+    /// \param globalRow [in] Global index of the row into which to
+    ///   insert the entries.
+    /// \param cols [in] Global indices of the columns into which
+    ///   to insert the entries.
+    /// \param values [in] Values to insert into the above columns.
+    ///
+    /// For all k in 0, ..., <tt>col.size()-1</tt>, insert the value
+    /// <tt>values[k]</tt> into entry <tt>(globalRow, cols[k])</tt> of
+    /// the matrix.  If that entry already exists, add the new value
+    /// to the old value.
+    ///
+    /// This is a local operation.  It does not communicate (using
+    /// MPI).  If row \c globalRow is owned by the calling process,
+    /// the entries will be inserted immediately.  Otherwise, if that
+    /// row is <i>not</i> owned by the calling process, then the
+    /// entries will be stored locally for now, and only communicated
+    /// to the process that owns the row when either fillComplete() or
+    /// globalAssemble() is called.  If that process already has an
+    /// entry, the incoming value will be added to the old value, just
+    /// as if it were inserted on the owning process.
+    //
+    /// If the matrix has a column Map (<tt>hasColMap() == true</tt>),
+    /// and if globalRow is owned by process p, then it is forbidden
+    /// to insert column indices that are not in the column Map on
+    /// process p.  Tpetra will test the input column indices to
+    /// ensure this is the case, but if \c globalRow is not owned by
+    /// the calling process, the test will be deferred until the next
+    /// call to globalAssemble() or fillComplete().
+    ///
+    /// \warning The behavior described in the above paragraph differs
+    ///   from that of Epetra.  If the matrix has a column Map,
+    ///   Epetra_CrsMatrix "filters" column indices not in the column
+    ///   Map.  Many users found this confusing, so we changed it so
+    ///   that nonowned column indices are forbidden.
+    ///
+    /// It is legal to call this method whether the matrix's column
+    /// indices are globally or locally indexed.  If the matrix's
+    /// column indices are locally indexed (<tt>isLocallyIndexed() ==
+    /// true</tt>), then this method will convert the input global
+    /// column indices to local column indices.
+    ///
+    /// For better performance when filling entries into a sparse
+    /// matrix, consider the following tips:
+    /// <ol>
+    /// <li>Use local indices (e.g., insertLocalValues()) if you know
+    ///   the column Map in advance.  Converting global indices to
+    ///   local indices is expensive.  Of course, if you don't know
+    ///   the column Map in advance, you must use global indices.</li>
+    /// <li>When invoking the CrsMatrix constructor, give the best
+    ///   possible upper bounds on the number of entries in each row
+    ///   of the matrix.  This will avoid expensive reallocation if
+    ///   your bound was not large enough.</li>
+    /// <li>If your upper bound on the number of entries in each row
+    ///   will always be correct, create the matrix with
+    ///   StaticProfile.  This uses a faster and more compact data
+    ///   structure to store the matrix.</li>
+    /// <li>If you plan to reuse a matrix's graph structure, but
+    ///   change its values, in repeated fillComplete() / resumeFill()
+    ///   cycles, you can get the best performance by creating the
+    ///   matrix with a const CrsGraph.  Do this by using the
+    ///   CrsMatrix constructor that accepts an RCP of a const
+    ///   CrsGraph.  If you do this, you must use the "replace" or
+    ///   "sumInto" methods to change the values of the matrix; you
+    ///   may not use insertGlobalValues() or
+    ///   insertLocalValues().</li>
+    /// </ol>
+    void
+    insertGlobalValues (const GlobalOrdinal globalRow,
+                        const ArrayView<const GlobalOrdinal>& cols,
+                        const ArrayView<const Scalar>& vals);
 
-        \note If \c globalRow does not belong to the matrix on this node, then it will be communicated to the appropriate node when globalAssemble() is called (which will, at the latest, occur during the next call to fillComplete().) Otherwise, the entries will be inserted in the local matrix.
-        \note If the matrix row already contains values at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
-        \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
-        \note If <tt>isLocallyIndexed() == true</tt>, then the global indices will be translated to local indices via the column map; indices not present in the column map will be discarded.
-    */
-    void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals);
-
-    //! Insert matrix entries, using local IDs.
-    /**
-       \pre \c localRow is a local row belonging to the matrix on this node
-       \pre <tt>isGloballyIndexed() == false</tt>
-       \pre <tt>isStorageOptimized() == false</tt>
-       \pre <tt>hasColMap() == true</tt>
-
-       \post <tt>isLocallyIndexed() == true</tt>
-
-       \note If the matrix row already contains entries at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
-       \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
-    */
-    void insertLocalValues(LocalOrdinal localRow,
-                           const ArrayView<const LocalOrdinal> &cols,
-                           const ArrayView<const Scalar> &vals);
+    /// \brief Insert one or more entries into the matrix, using local indices.
+    ///
+    /// \param LocalRow [in] Local index of the row into which to
+    ///   insert the entries.  It must be owned by the calling process
+    ///   (i.e., it must be a valid local index on this process).
+    /// \param cols [in] Local indices of the columns into which
+    ///   to insert the entries.
+    /// \param values [in] Values to insert into the above columns.
+    ///
+    /// For all k in 0, ..., <tt>cols.size()-1</tt>, insert the value
+    /// <tt>values[k]</tt> into entry <tt>(globalRow, cols[k])</tt> of
+    /// the matrix.  If that entry already exists, add the new value
+    /// to the old value.
+    ///
+    /// In order to call this method, the matrix must be locally
+    /// indexed, and it must have a column Map.
+    ///
+    /// For better performance when filling entries into a sparse
+    /// matrix, consider the following tips:
+    /// <ol>
+    /// <li>When invoking the CrsMatrix constructor, give the best
+    ///   possible upper bounds on the number of entries in each row
+    ///   of the matrix.  This will avoid expensive reallocation if
+    ///   your bound was not large enough.</li>
+    /// <li>If your upper bound on the number of entries in each row
+    ///   will always be correct, create the matrix with
+    ///   StaticProfile.  This uses a faster and more compact data
+    ///   structure to store the matrix.</li>
+    /// <li>If you plan to reuse a matrix's graph structure, but
+    ///   change its values, in repeated fillComplete() / resumeFill()
+    ///   cycles, you can get the best performance by creating the
+    ///   matrix with a const CrsGraph.  Do this by using the
+    ///   CrsMatrix constructor that accepts an RCP of a const
+    ///   CrsGraph.  If you do this, you must use the "replace" or
+    ///   "sumInto" methods to change the values of the matrix; you
+    ///   may not use insertGlobalValues() or
+    ///   insertLocalValues().</li>
+    /// </ol>
+    void
+    insertLocalValues (LocalOrdinal localRow,
+                       const ArrayView<const LocalOrdinal> &cols,
+                       const ArrayView<const Scalar> &vals);
 
     //! \brief Replace matrix entries, using global IDs.
     /** All index values must be in the global space.
@@ -1383,6 +1471,16 @@ namespace Tpetra {
     // private and not implementing it.
     CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>&
     operator= (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
+
+    /// \brief Like insertGlobalValues(), but with column filtering.
+    ///
+    /// "Column filtering" means that if the matrix has a column Map,
+    /// then this method ignores entries in columns that are not in
+    /// the column Map.
+    void
+    insertGlobalValuesFiltered (const GlobalOrdinal globalRow,
+                                const ArrayView<const GlobalOrdinal> &indices,
+                                const ArrayView<const Scalar>        &values);
 
     /// \brief Combine in the data using the given combine mode.
     ///

@@ -427,10 +427,10 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map with numLocal entries per node using a pre-existing column map.
     // ensure:
-    // * that the matrix uses this col map
-    // * that it performs filtering during insertions
+    // * that the matrix uses this column Map
     // * that we can perform local or global insertions
-    const size_t numLocal = 10; TEUCHOS_TEST_FOR_EXCEPTION( numLocal < 2, std::logic_error, "Test assumes that numLocal be greater than 1.");
+    const size_t numLocal = 10;
+    TEUCHOS_TEST_FOR_EXCEPTION( numLocal < 2, std::logic_error, "Test assumes that numLocal be greater than 1.");
     // these maps are equalivalent, but we should keep two distinct maps just to verify the general use case.
     RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     RCP<const Map<LO,GO,Node> > cmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
@@ -448,10 +448,25 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY(bdmat.getRowMap(), rmap);
       TEST_EQUALITY_CONST(bdmat.hasColMap(), true);
       TEST_EQUALITY(bdmat.getColMap(), cmap);
+
       for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
-        // use global for the first one to verify that the matrix allows it
-        // r-1 might be invalid, but the column map filtering should address that.
-        bdmat.insertGlobalValues(r,tuple<GO>(r-1,r,r+1),tuple<Scalar>(SONE,SONE,SONE));
+        // The second, apparently superfluous check avoids issues if
+        // r-1 overflows unsigned.
+        if (r - 1 >= rmap->getMinGlobalIndex () && r - 1 <= rmap->getMaxGlobalIndex ()) {
+          // The second, apparently superfluous check avoids issues if
+          // r+1 overflows.
+          if (r + 1 <= rmap->getMaxGlobalIndex () && r + 1 >= rmap->getMinGlobalIndex ()) {
+            bdmat.insertGlobalValues(r,tuple<GO>(r-1,r,r+1),tuple<Scalar>(SONE,SONE,SONE));
+          } else {
+            bdmat.insertGlobalValues(r,tuple<GO>(r-1,r),tuple<Scalar>(SONE,SONE));
+          }
+        } else { // r - 1 invalid
+          if (r + 1 <= rmap->getMaxGlobalIndex () && r + 1 >= rmap->getMinGlobalIndex ()) {
+            bdmat.insertGlobalValues(r,tuple<GO>(r,r+1),tuple<Scalar>(SONE,SONE));
+          } else { // r + 1 invalid
+            bdmat.insertGlobalValues(r,tuple<GO>(r),tuple<Scalar>(SONE));
+          }
+        }
       }
       TEST_NOTHROW(bdmat.fillComplete());
       // nothing should have changed with regard to the row and column maps of the matrix
