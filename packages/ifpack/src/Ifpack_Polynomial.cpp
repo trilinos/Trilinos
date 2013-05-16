@@ -412,8 +412,6 @@ int Ifpack_Polynomial::Compute()
   // Solve least squares problem using LAPACK
   Teuchos::LAPACK< int, std::complex<double> > lapack;
   const int N = Vmatrix.numCols();
-  int rank = N;
-  const double rankTolerance = Teuchos::ScalarTraits< std::complex<double> >::eps();
   Teuchos::Array<double> singularValues(N);
   Teuchos::Array<double> rwork(1);
   rwork.resize (std::max (1, 5 * N));
@@ -552,26 +550,10 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   Time_->ResetStartTime();
 
-  double *invDiag=0;
-  invDiag=InvDiagonal_->Values();
-
-  // AztecOO gives X and Y pointing to the same memory location,
-  // need to create an auxiliary vector, Xcopy
-  //Teuchos::RefCountPtr<const Epetra_MultiVector> Xcopy;
-  //if (X.Pointers()[0] == Y.Pointers()[0])
-  //  Xcopy = Teuchos::rcp( new Epetra_MultiVector(X) );
-  //else
-  //  Xcopy = Teuchos::rcp( &X, false );
-
   Epetra_MultiVector Xcopy(X);
   if(ZeroStartingSolution_==true) {
     Y.PutScalar(0.0);
   }
-
-  //double **xPtr = 0;
-  double **yPtr = 0;
-  //Xcopy->ExtractView(&xPtr);
-  //Y.ExtractView(&yPtr);
 
 #ifdef HAVE_IFPACK_EPETRAEXT
   EpetraExt_PointToBlockDiagPermute* IBD=0;
