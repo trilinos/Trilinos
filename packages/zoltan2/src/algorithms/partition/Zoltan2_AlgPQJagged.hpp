@@ -56,11 +56,10 @@
 #include <Tpetra_Distributor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <new>          // ::operator new[]
-#include <vector>
+
 #include "zoltan_comm_cpp.h"
 
 #include <bitset>
-
 
 #define EPS_SCALE 1
 #define LEAST_SIGNIFICANCE 0.0001
@@ -87,6 +86,8 @@
 #define KCUTOFF 0.80
 #define forceMigration 1500000
 #define Z2_DEFAULT_CON_PART_COUNT 16
+
+using std::vector;
 
 namespace Teuchos{
 template <typename Ordinal, typename T>
@@ -117,7 +118,7 @@ public:
         k(k_),
         reductionType(0){}
 
-    PQJaggedCombinedReductionOp (vector <Ordinal> *pVector, Ordinal vBegin, Ordinal k_):
+  PQJaggedCombinedReductionOp (vector <Ordinal> *pVector, Ordinal vBegin, Ordinal k_):
         numSum_0(0), numMin_1(0), numMin_2(0),
         partVector(pVector), vectorBegin(vBegin),
         k(k_),
