@@ -589,14 +589,13 @@ public:
    *    This request will only be honored if the ghosted entity is
    *    not in the closure of another ghosted entity which will remain
    *    in or be added to this ghosting.
-   *
-   *  To destroy all ghosted entities in a particular ghosting:
-   *    mesh.change_ghosting( ghosts , std::vector<EntityProc>() ,
-   *                                   ghosts.receive() );
    */
   void change_ghosting( Ghosting & ghosts,
                         const std::vector<EntityProc> & add_send ,
-                        const std::vector<EntityKey> & remove_receive );
+                        const std::vector<EntityKey> & remove_receive = std::vector<EntityKey>());
+
+  // Clear all ghosts for a particular ghosting.
+  void destroy_ghosting( Ghosting& ghost_layer );
 
   /** \brief  Empty every single Ghosting.
    *          Same result, but more efficient than, calling

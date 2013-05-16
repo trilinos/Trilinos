@@ -98,6 +98,15 @@ void comm_sync_send_recv(
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
+void BulkData::destroy_ghosting( Ghosting& ghost_layer )
+{
+  std::vector<EntityKey> receive_list;
+  ghost_layer.receive_list(receive_list);
+  change_ghosting(ghost_layer, std::vector<stk::mesh::EntityProc>(), receive_list);
+}
+
+//----------------------------------------------------------------------
+
 void BulkData::destroy_all_ghosting()
 {
   Trace_("stk::mesh::BulkData::destroy_all_ghosting");
