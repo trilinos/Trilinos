@@ -166,6 +166,12 @@ int main(int argc, char *argv[])
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
 
+  Prec = Teuchos::rcp( Factory.Create("Polynomial", &*A) );
+  assert (Prec != Teuchos::null);
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
+  cout << *Prec;
+
   Prec = Teuchos::rcp( Factory.Create("Krylov", &*A) );
   assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());

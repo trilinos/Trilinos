@@ -386,227 +386,125 @@ Tensor<T>::operator()(Index const i, Index const j)
 }
 
 //
-// R^N tensor addition
-// \return \f$ A + B \f$
+// Tensor addition
 //
 template<typename S, typename T>
 inline
 Tensor<typename Promote<S, T>::type>
 operator+(Tensor<S> const & A, Tensor<T> const & B)
 {
-  Index const
-  N = A.get_dimension();
-
-  assert(B.get_dimension() == N);
-
   Tensor<typename Promote<S, T>::type>
-  C(N);
+  C;
 
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        for (Index j = 0; j < N; ++j) {
-          C(i, j) = A(i, j) + B(i, j);
-        }
-      }
-      break;
-
-    case 3:
-      C(0,0) = A(0,0) + B(0,0);
-      C(0,1) = A(0,1) + B(0,1);
-      C(0,2) = A(0,2) + B(0,2);
-
-      C(1,0) = A(1,0) + B(1,0);
-      C(1,1) = A(1,1) + B(1,1);
-      C(1,2) = A(1,2) + B(1,2);
-
-      C(2,0) = A(2,0) + B(2,0);
-      C(2,1) = A(2,1) + B(2,1);
-      C(2,2) = A(2,2) + B(2,2);
-      break;
-
-    case 2:
-      C(0,0) = A(0,0) + B(0,0);
-      C(0,1) = A(0,1) + B(0,1);
-
-      C(1,0) = A(1,0) + B(1,0);
-      C(1,1) = A(1,1) + B(1,1);
-      break;
-
-  }
+  add(A, B, C);
 
   return C;
 }
 
 //
-// R^N Tensor subtraction
-// \return \f$ A - B \f$
+// Tensor subtraction
 //
 template<typename S, typename T>
 inline
 Tensor<typename Promote<S, T>::type>
 operator-(Tensor<S> const & A, Tensor<T> const & B)
 {
-  Index const
-  N = A.get_dimension();
-
-  assert(B.get_dimension() == N);
-
   Tensor<typename Promote<S, T>::type>
-  C(N);
+  C;
 
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        for (Index j = 0; j < N; ++j) {
-          C(i, j) = A(i, j) - B(i, j);
-        }
-      }
-      break;
-
-    case 3:
-      C(0,0) = A(0,0) - B(0,0);
-      C(0,1) = A(0,1) - B(0,1);
-      C(0,2) = A(0,2) - B(0,2);
-
-      C(1,0) = A(1,0) - B(1,0);
-      C(1,1) = A(1,1) - B(1,1);
-      C(1,2) = A(1,2) - B(1,2);
-
-      C(2,0) = A(2,0) - B(2,0);
-      C(2,1) = A(2,1) - B(2,1);
-      C(2,2) = A(2,2) - B(2,2);
-      break;
-
-    case 2:
-      C(0,0) = A(0,0) - B(0,0);
-      C(0,1) = A(0,1) - B(0,1);
-
-      C(1,0) = A(1,0) - B(1,0);
-      C(1,1) = A(1,1) - B(1,1);
-      break;
-
-  }
+  subtract(A, B, C);
 
   return C;
 }
 
 //
-// R^N tensor minus
-// \return \f$ -A \f$
+// Tensor minus
 //
 template<typename T>
 inline
 Tensor<T>
 operator-(Tensor<T> const & A)
 {
-  Index const
-  N = A.get_dimension();
+  Tensor<T>
+  B;
 
-  Tensor<T> S(N);
+  minus(A, B);
 
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        for (Index j = 0; j < N; ++j) {
-          S(i, j) = - A(i, j);
-        }
-      }
-      break;
-
-    case 3:
-      S(0,0) = -A(0,0);
-      S(0,1) = -A(0,1);
-      S(0,2) = -A(0,2);
-
-      S(1,0) = -A(1,0);
-      S(1,1) = -A(1,1);
-      S(1,2) = -A(1,2);
-
-      S(2,0) = -A(2,0);
-      S(2,1) = -A(2,1);
-      S(2,2) = -A(2,2);
-      break;
-
-    case 2:
-      S(0,0) = -A(0,0);
-      S(0,1) = -A(0,1);
-
-      S(1,0) = -A(1,0);
-      S(1,1) = -A(1,1);
-      break;
-
-  }
-
-  return S;
+  return B;
 }
 
 //
-// R^N tensor equality
-// Tested by components
-// \return \f$ A \equiv B \f$
+// Tensor equality
 //
 template<typename T>
 inline
 bool
 operator==(Tensor<T> const & A, Tensor<T> const & B)
 {
-  Index const
-  N = A.get_dimension();
-
-  assert(B.get_dimension() == N);
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        for (Index j = 0; j < N; ++j) {
-          if (A(i, j) != B(i, j)) {
-            return false;
-          }
-        }
-      }
-      break;
-
-    case 3:
-      return
-          A(0,0)==B(0,0) && A(0,1)==B(0,1) && A(0,2)==B(0,2) &&
-          A(1,0)==B(1,0) && A(1,1)==B(1,1) && A(1,2)==B(1,2) &&
-          A(2,0)==B(2,0) && A(2,1)==B(2,1) && A(2,2)==B(2,2);
-      break;
-
-    case 2:
-      return
-          A(0,0)==B(0,0) && A(0,1)==B(0,1) &&
-          A(1,0)==B(1,0) && A(1,1)==B(1,1);
-      break;
-
-  }
-
-  return true;
+  return equal(A, B);
 }
 
 //
-// R^N tensor inequality
-// Tested by components
-// \return \f$ A \neq B \f$
+// Tensor inequality
 //
 template<typename T>
 inline
 bool
 operator!=(Tensor<T> const & A, Tensor<T> const & B)
 {
-  return !(A == B);
+  return not_equal(A, B);
 }
 
 //
-// R^N tensor vector product v = A u
-// \param A tensor
-// \param u vector
-// \return \f$ A u \f$
+// Scalar tensor product
+//
+template<typename S, typename T>
+inline
+typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
+operator*(S const & s, Tensor<T> const & A)
+{
+  Tensor<typename Promote<S, T>::type>
+  B;
+
+  scale(A, s, B);
+
+  return B;
+}
+
+//
+// Tensor scalar product
+//
+template<typename S, typename T>
+inline
+typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
+operator*(Tensor<T> const & A, S const & s)
+{
+  Tensor<typename Promote<S, T>::type>
+  B;
+
+  scale(A, s, B);
+
+  return B;
+}
+
+//
+// Tensor scalar division
+//
+template<typename S, typename T>
+inline
+Tensor<typename Promote<S, T>::type>
+operator/(Tensor<T> const & A, S const & s)
+{
+  Tensor<typename Promote<S, T>::type>
+  B;
+
+  divide(A, s, B);
+
+  return B;
+}
+
+//
+// Tensor vector product v = A u
 //
 template<typename S, typename T>
 inline
@@ -617,10 +515,7 @@ operator*(Tensor<T> const & A, Vector<S> const & u)
 }
 
 //
-// R^N vector tensor product v = u A
-// \param A tensor
-// \param u vector
-// \return \f$ u A = A^T u \f$
+// Vector tensor product v = u A
 //
 template<typename S, typename T>
 inline
@@ -631,8 +526,7 @@ operator*(Vector<S> const & u, Tensor<T> const & A)
 }
 
 //
-// R^N tensor dot product C = A B
-// \return \f$ A \cdot B \f$
+// Tensor dot product C = A B
 //
 template<typename S, typename T>
 inline
@@ -640,128 +534,6 @@ Tensor<typename Promote<S, T>::type>
 operator*(Tensor<S> const & A, Tensor<T> const & B)
 {
   return dot(A, B);
-}
-
-//
-// R^N scalar tensor product
-// \param s scalar
-// \param A tensor
-// \return \f$ s A \f$
-//
-template<typename S, typename T>
-inline
-typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
-operator*(S const & s, Tensor<T> const & A)
-{
-  Index const
-  N = A.get_dimension();
-
-  Tensor<typename Promote<S, T>::type>
-  B(N);
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        for (Index j = 0; j < N; ++j) {
-          B(i, j) = s * A(i, j);
-        }
-      }
-      break;
-
-    case 3:
-      B(0,0) = s * A(0,0);
-      B(0,1) = s * A(0,1);
-      B(0,2) = s * A(0,2);
-
-      B(1,0) = s * A(1,0);
-      B(1,1) = s * A(1,1);
-      B(1,2) = s * A(1,2);
-
-      B(2,0) = s * A(2,0);
-      B(2,1) = s * A(2,1);
-      B(2,2) = s * A(2,2);
-      break;
-
-    case 2:
-      B(0,0) = s * A(0,0);
-      B(0,1) = s * A(0,1);
-
-      B(1,0) = s * A(1,0);
-      B(1,1) = s * A(1,1);
-      break;
-
-  }
-
-  return B;
-}
-
-//
-// R^N tensor scalar product
-// \param A tensor
-// \param s scalar
-// \return \f$ s A \f$
-//
-template<typename S, typename T>
-inline
-typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
-operator*(Tensor<T> const & A, S const & s)
-{
-  return s * A;
-}
-
-//
-// R^N tensor scalar division
-// \param A tensor
-// \param s scalar
-// \return \f$ A / s \f$
-//
-template<typename S, typename T>
-inline
-Tensor<typename Promote<S, T>::type>
-operator/(Tensor<T> const & A, S const & s)
-{
-  Index const
-  N = A.get_dimension();
-
-  Tensor<typename Promote<S, T>::type>
-  B(N);
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        for (Index j = 0; j < N; ++j) {
-          B(i, j) = A(i, j) / s;
-        }
-      }
-      break;
-
-    case 3:
-      B(0,0) = A(0,0) / s;
-      B(0,1) = A(0,1) / s;
-      B(0,2) = A(0,2) / s;
-
-      B(1,0) = A(1,0) / s;
-      B(1,1) = A(1,1) / s;
-      B(1,2) = A(1,2) / s;
-
-      B(2,0) = A(2,0) / s;
-      B(2,1) = A(2,1) / s;
-      B(2,2) = A(2,2) / s;
-      break;
-
-    case 2:
-      B(0,0) = A(0,0) / s;
-      B(0,1) = A(0,1) / s;
-
-      B(1,0) = A(1,0) / s;
-      B(1,1) = A(1,1) / s;
-      break;
-
-  }
-
-  return B;
 }
 
 //

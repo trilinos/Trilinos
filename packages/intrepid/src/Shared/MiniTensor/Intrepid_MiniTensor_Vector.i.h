@@ -170,136 +170,55 @@ Vector<T>::operator()(Index const i)
 }
 
 //
-// R^N vector addition
-// \param u
-// \param v the operands
-// \return \f$ u + v \f$
+// Vector addition
 //
 template<typename S, typename T>
 inline
 Vector<typename Promote<S, T>::type>
 operator+(Vector<S> const & u, Vector<T> const & v)
 {
-  Index const
-  N = u.get_dimension();
-
-  assert(v.get_dimension() == N);
-
   Vector<typename Promote<S, T>::type>
-  s(N);
+  w;
 
-  switch (N) {
+  add(u, v, w);
 
-    default:
-      for (Index i = 0; i < N; ++i) {
-        s(i) = u(i) + v(i);
-      }
-      break;
-
-    case 3:
-      s(0) = u(0) + v(0);
-      s(1) = u(1) + v(1);
-      s(2) = u(2) + v(2);
-      break;
-
-    case 2:
-      s(0) = u(0) + v(0);
-      s(1) = u(1) + v(1);
-      break;
-
-  }
-
-  return s;
+  return w;
 }
 
 //
-// R^N vector subtraction
-// \param u
-// \param v the operands
-// \return \f$ u - v \f$
+// Vector subtraction
 //
 template<typename S, typename T>
 inline
 Vector<typename Promote<S, T>::type>
 operator-(Vector<S> const & u, Vector<T> const & v)
 {
-  Index const
-  N = u.get_dimension();
-
-  assert(v.get_dimension() == N);
-
   Vector<typename Promote<S, T>::type>
-  s(N);
+  w;
 
-  switch (N) {
+  subtract(u, v, w);
 
-    default:
-      for (Index i = 0; i < N; ++i) {
-        s(i) = u(i) - v(i);
-      }
-      break;
-
-    case 3:
-      s(0) = u(0) - v(0);
-      s(1) = u(1) - v(1);
-      s(2) = u(2) - v(2);
-      break;
-
-    case 2:
-      s(0) = u(0) - v(0);
-      s(1) = u(1) - v(1);
-      break;
-
-  }
-
-  return s;
+  return w;
 }
 
 //
-// R^N vector minus
-// \param u
-// \return \f$ -u \f$
+// Vector minus
 //
 template<typename T>
 inline
 Vector<T>
 operator-(Vector<T> const & u)
 {
-  Index const
-  N = u.get_dimension();
-
   Vector<T>
-  v(N);
+  v;
 
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        v(i) = -u(i);
-      }
-      break;
-
-    case 3:
-      v(0) = -u(0);
-      v(1) = -u(1);
-      v(2) = -u(2);
-      break;
-
-    case 2:
-      v(0) = -u(0);
-      v(1) = -u(1);
-      break;
-
-  }
+  minus(u, v);
 
   return v;
 }
 
 //
-// R^N vector dot product
-// \param u
-// \param v the operands
-// \return \f$ u \cdot v \f$
+// Vector dot product
 //
 template<typename S, typename T>
 inline
@@ -310,159 +229,77 @@ operator*(Vector<S> const & u, Vector<T> const & v)
 }
 
 //
-// R^N vector equality tested by components
-// \param u
-// \param v the operands
-// \return \f$ u \equiv v \f$
+// Vector equality tested by components
 //
 template<typename T>
 inline
 bool
 operator==(Vector<T> const & u, Vector<T> const & v)
 {
-  Index const
-  N = u.get_dimension();
-
-  assert(v.get_dimension() == N);
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        if (v(i) != u(i)) {
-          return false;
-        }
-      }
-      break;
-
-    case 3:
-      return u(0) == v(0) && u(1) == v(1) && u(2) == v(2);
-      break;
-
-    case 2:
-      return u(0) == v(0) && u(1) == v(1);
-      break;
-
-  }
-
-  return true;
+  return equal(u, v);
 }
 
 //
-// R^N, vector inequality tested by components
-// \param u
-// \param v the operands
-// \return \f$ u \neq v \f$
+// Vector inequality tested by components
 //
 template<typename T>
 inline
 bool
 operator!=(Vector<T> const & u, Vector<T> const & v)
 {
-  return !(u == v);
+  return not_equal(u, v);
 }
 
 //
-// R^N scalar vector product
-// \param s scalar factor
-// \param u vector factor
-// \return \f$ s u \f$
+// Scalar vector product
 //
 template<typename S, typename T>
 inline
 typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
 operator*(S const & s, Vector<T> const & u)
 {
-  Index const
-  N = u.get_dimension();
-
   Vector<typename Promote<S, T>::type>
-  v(N);
+  v;
 
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        v(i) = s * u(i);
-      }
-      break;
-
-    case 3:
-      v(0) = s * u(0);
-      v(1) = s * u(1);
-      v(2) = s * u(2);
-      break;
-
-    case 2:
-      v(0) = s * u(0);
-      v(1) = s * u(1);
-      break;
-
-  }
+  scale(u, s, v);
 
   return v;
 }
 
 //
-// R^N vector scalar product
-// \param u vector factor
-// \param s scalar factor
-// \return \f$ s u \f$
+// Vector scalar product
 //
 template<typename S, typename T>
 inline
 typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
 operator*(Vector<T> const & u, S const & s)
 {
-  return s * u;
+  Vector<typename Promote<S, T>::type>
+  v;
+
+  scale(u, s, v);
+
+  return v;
 }
 
 //
-// R^N vector scalar division
-// \param u vector
-// \param s scalar that divides each component of vector
-// \return \f$ u / s \f$
+// Vector scalar division
 //
 template<typename S, typename T>
 inline
 Vector<typename Promote<S, T>::type>
 operator/(Vector<T> const & u, S const & s)
 {
-  Index const
-  N = u.get_dimension();
-
   Vector<typename Promote<S, T>::type>
-  v(N);
+  v;
 
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < N; ++i) {
-        v(i) = u(i) / s;
-      }
-      break;
-
-    case 3:
-      v(0) = u(0) / s;
-      v(1) = u(1) / s;
-      v(2) = u(2) / s;
-      break;
-
-    case 2:
-      v(0) = u(0) / s;
-      v(1) = u(1) / s;
-      break;
-
-  }
+  divide(u, s, v);
 
   return v;
 }
 
 //
-// R^N vector dot product
-// \param u
-// \param v operands
-// \return \f$ u \cdot v \f$
+// Vector dot product
 //
 template<typename S, typename T>
 inline
@@ -500,10 +337,6 @@ dot(Vector<S> const & u, Vector<T> const & v)
 
 //
 // Cross product only valid for R^3.
-// R^N with N != 3 will produce an error.
-// \param u
-// \param v operands
-// \return \f$ u \times v \f$
 //
 template<typename S, typename T>
 inline

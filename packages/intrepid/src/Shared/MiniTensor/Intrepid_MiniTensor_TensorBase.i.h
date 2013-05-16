@@ -370,6 +370,174 @@ norm_f(TensorBase<T> const & X)
   return std::sqrt(s);
 }
 
+//
+// Base addition
+//
+template<typename R, typename S, typename T>
+void
+add(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  Index const
+  order = A.get_order();
+
+  assert(B.get_dimension() == dimension);
+  assert(B.get_order() == order);
+  assert(C.get_order() == order);
+
+  C.set_dimension(dimension);
+
+  Index const
+  number_components = C.get_number_components();
+
+  for (Index i = 0; i < number_components; ++i) {
+    C[i] = A[i] + B[i];
+  }
+
+  return;
+}
+
+//
+// Base subtraction
+//
+template<typename R, typename S, typename T>
+void
+subtract(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  Index const
+  order = A.get_order();
+
+  assert(B.get_dimension() == dimension);
+  assert(B.get_order() == order);
+  assert(C.get_order() == order);
+
+  C.set_dimension(dimension);
+
+  Index const
+  number_components = C.get_number_components();
+
+  for (Index i = 0; i < number_components; ++i) {
+    C[i] = A[i] - B[i];
+  }
+
+  return;
+}
+
+//
+// Base minus
+//
+template<typename T>
+void
+minus(TensorBase<T> const & A, TensorBase<T> & B)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  Index const
+  order = A.get_order();
+
+  assert(B.get_order() == order);
+
+  B.set_dimension(dimension);
+
+  Index const
+  number_components = B.get_number_components();
+
+  for (Index i = 0; i < number_components; ++i) {
+    B[i] = - A[i];
+  }
+
+  return;
+}
+
+//
+// Base equality
+//
+template<typename T>
+bool
+equal(TensorBase<T> const & A, TensorBase<T> const & B)
+{
+  assert(A.get_order() == B.get_order());
+  assert(A.get_dimension() == B.get_dimension());
+
+  Index const
+  number_components = A.get_number_components();
+
+  for (Index i = 0; i < number_components; ++i) {
+    if (A[i] != B[i]) return false;
+  }
+
+  return true;
+}
+
+//
+// Base not equality
+//
+template<typename T>
+bool
+not_equal(TensorBase<T> const & A, TensorBase<T> const & B)
+{
+  return !(equal(A, B));
+}
+
+//
+// Base scaling
+//
+template<typename R, typename S, typename T>
+void
+scale(TensorBase<R> const & A, S const & s, TensorBase<T> & B)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  Index const
+  order = A.get_order();
+
+  assert(B.get_order() == order);
+
+  B.set_dimension(dimension);
+
+  Index const
+  number_components = B.get_number_components();
+
+  for (Index i = 0; i < number_components; ++i) {
+    B[i] = s * A[i];
+  }
+
+  return;
+}
+
+//
+// Base division
+//
+template<typename R, typename S, typename T>
+void
+divide(TensorBase<R> const & A, S const & s, TensorBase<T> & B)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  Index const
+  order = A.get_order();
+
+  assert(B.get_order() == order);
+
+  B.set_dimension(dimension);
+
+  Index const
+  number_components = B.get_number_components();
+
+  for (Index i = 0; i < number_components; ++i) {
+    B[i] = A[i] / s;
+  }
+
+  return;
+}
 
 } // namespace Intrepid
 
