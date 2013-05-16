@@ -623,10 +623,11 @@ namespace Tpetra {
     /// \brief Insert one or more entries into the matrix, using local indices.
     ///
     /// \param LocalRow [in] Local index of the row into which to
-    ///   insert the entries.  It must be owned by the calling process
-    ///   (i.e., it must be a valid local index on this process).
-    /// \param cols [in] Local indices of the columns into which
-    ///   to insert the entries.
+    ///   insert the entries.  It must be owned by the row Map on the
+    ///   calling process.
+    /// \param cols [in] Local indices of the columns into which to
+    ///   insert the entries.  All of the column indices must be owned
+    ///   by the column Map on the calling process.
     /// \param values [in] Values to insert into the above columns.
     ///
     /// For all k in 0, ..., <tt>cols.size()-1</tt>, insert the value
@@ -659,7 +660,7 @@ namespace Tpetra {
     ///   insertLocalValues().</li>
     /// </ol>
     void
-    insertLocalValues (LocalOrdinal localRow,
+    insertLocalValues (const LocalOrdinal localRow,
                        const ArrayView<const LocalOrdinal> &cols,
                        const ArrayView<const Scalar> &vals);
 
@@ -1482,6 +1483,16 @@ namespace Tpetra {
                                 const ArrayView<const GlobalOrdinal> &indices,
                                 const ArrayView<const Scalar>        &values);
 
+    /// \brief Like insertLocalValues(), but with column filtering.
+    ///
+    /// "Column filtering" means that if the matrix has a column Map,
+    /// then this method ignores entries in columns that are not in
+    /// the column Map.
+    void
+    insertLocalValuesFiltered (const LocalOrdinal localRow,
+                               const ArrayView<const LocalOrdinal> &indices,
+                               const ArrayView<const Scalar>       &values);
+
     /// \brief Combine in the data using the given combine mode.
     ///
     /// The copyAndPermute() and unpackAndCombine() methods use this
@@ -1648,6 +1659,11 @@ namespace Tpetra {
       const LO lrow = this->getRowMap()->getLocalElement(globalRow);
 
       if (lrow == LOT::invalid()) {
+        // FIXME (mfh 16 May 2013) We're using this exception to do
+        // sumIntoGlobalValues for nonowned rows, so we might want to
+        // avoid the overhead of constructing the fancy exception
+        // message each time if we don't plan to use it.
+
         // The exception test macro doesn't let you pass an additional
         // argument to the exception's constructor, so we don't use it.
         std::ostringstream os;
@@ -1935,11 +1951,6 @@ namespace Tpetra {
     /// the norm has not yet been computed, or that the values in the
     /// matrix may have changed and the norm must be recomputed.
     mutable Magnitude frobNorm_;
-
-    //! Whether this instance's insertGlobalValues() method has triggered an efficiency warning yet.
-    bool insertGlobalValuesWarnedEfficiency_;
-    //! Whether this instance's insertLocalValues() method has triggered an efficiency warning yet.
-    bool insertLocalValuesWarnedEfficiency_;
   }; // class CrsMatrix
 
   /** \brief Non-member function to create an empty CrsMatrix given a row map and a non-zero profile.

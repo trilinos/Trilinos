@@ -162,9 +162,7 @@ namespace Tpetra {
              size_t maxNumEntriesPerRow,
              ProfileType pftype,
              const RCP<Teuchos::ParameterList>& params) :
-    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
-    insertGlobalValuesWarnedEfficiency_ (false),
-    insertLocalValuesWarnedEfficiency_ (false)
+    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
   {
     try {
       myGraph_ = rcp (new Graph (rowMap, maxNumEntriesPerRow, pftype, params));
@@ -189,9 +187,7 @@ namespace Tpetra {
              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
              const RCP<Teuchos::ParameterList>& params) :
-    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
-    insertGlobalValuesWarnedEfficiency_ (false),
-    insertLocalValuesWarnedEfficiency_ (false)
+    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
   {
     try {
       myGraph_ = rcp (new Graph (rowMap, NumEntriesPerRowToAlloc, pftype, params));
@@ -217,9 +213,7 @@ namespace Tpetra {
              size_t maxNumEntriesPerRow,
              ProfileType pftype,
              const RCP<Teuchos::ParameterList>& params) :
-    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
-    insertGlobalValuesWarnedEfficiency_ (false),
-    insertLocalValuesWarnedEfficiency_ (false)
+    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
   {
     try {
       myGraph_ = rcp (new Graph (rowMap, colMap, maxNumEntriesPerRow, pftype, params));
@@ -245,9 +239,7 @@ namespace Tpetra {
              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
              const RCP<Teuchos::ParameterList>& params) :
-    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
-    insertGlobalValuesWarnedEfficiency_ (false),
-    insertLocalValuesWarnedEfficiency_ (false)
+    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
   {
     try {
       myGraph_ = rcp (new Graph (rowMap, colMap, NumEntriesPerRowToAlloc,
@@ -274,8 +266,6 @@ namespace Tpetra {
              const RCP<Teuchos::ParameterList>& params)
   : DistObject<char, LocalOrdinal,GlobalOrdinal,Node> (graph->getRowMap ())
   , staticGraph_ (graph)
-  , insertGlobalValuesWarnedEfficiency_ (false)
-  , insertLocalValuesWarnedEfficiency_ (false)
   {
     const char tfecfFuncName[] = "CrsMatrix(graph)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(staticGraph_.is_null (),
@@ -307,9 +297,7 @@ namespace Tpetra {
              const ArrayRCP<LocalOrdinal> & columnIndices,
              const ArrayRCP<Scalar> & values,
              const RCP<Teuchos::ParameterList>& params) :
-    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
-    insertGlobalValuesWarnedEfficiency_ (false),
-    insertLocalValuesWarnedEfficiency_ (false)
+    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
   {
     try {
       myGraph_ = rcp (new Graph (rowMap, colMap, rowPointers,columnIndices,params));
@@ -332,8 +320,7 @@ namespace Tpetra {
            class GlobalOrdinal,
            class Node,
            class LocalMatOps>
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  ~CrsMatrix() {}
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::~CrsMatrix() {}
 
   template<class Scalar,
            class LocalOrdinal,
@@ -981,14 +968,105 @@ namespace Tpetra {
     sparse_ops_type::finalizeMatrix (*staticGraph_->getLocalGraph (), *lclMatrix_, lclparams);
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node,
+           class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  insertLocalValues (const LocalOrdinal localRow,
+                     const ArrayView<const LocalOrdinal> &indices,
+                     const ArrayView<const Scalar>       &values)
+  {
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::toString;
+    using std::endl;
+    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    const char tfecfFuncName[] = "insertLocalValues";
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  //                                                                         //
-  //                  User-visible class methods                             //
-  //                                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillActive (), std::runtime_error,
+      ": Fill is not active.  After calling fillComplete, you must call "
+      "resumeFill before you may insert entries into the matrix again.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isStaticGraph (),  std::runtime_error,
+      " cannot insert indices with static graph; use replaceLocalValues() instead.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_->isGloballyIndexed(),
+      std::runtime_error, ": graph indices are global; use insertGlobalValues().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! hasColMap (), std::runtime_error,
+      " cannot insert local indices without a column map.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(values.size() != indices.size(),
+      std::runtime_error, ": values.size() must equal indices.size().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! getRowMap()->isNodeLocalElement(localRow), std::runtime_error,
+      ": Local row index " << localRow << " does not belong to this process.");
+
+    if (! myGraph_->indicesAreAllocated ()) {
+      allocateValues (LocalIndices, GraphNotYetAllocated);
+    }
+
+    const size_t numEntriesToAdd = as<size_t> (indices.size ());
+#ifdef HAVE_TPETRA_DEBUG
+    // In a debug build, if the matrix has a column Map, test whether
+    // any of the given column indices are not in the column Map.
+    // Keep track of the invalid column indices so we can tell the
+    // user about them.
+    if (hasColMap ()) {
+      const map_type& colMap = * (getColMap ());
+      Array<LocalOrdinal> badColInds;
+      bool allInColMap = true;
+      for (size_t k = 0; k < numEntriesToAdd; ++k) {
+        if (! colMap.isNodeLocalElement (indices[k])) {
+          allInColMap = false;
+          badColInds.push_back (indices[k]);
+        }
+      }
+      if (! allInColMap) {
+        std::ostringstream os;
+        os << "Tpetra::CrsMatrix::insertLocalValues: You attempted to insert "
+          "entries in owned row " << localRow << ", at the following column "
+          "indices: " << toString (indices) << "." << endl;
+        os << "Of those, the following indices are not in the column Map on "
+          "this process: " << toString (badColInds) << "." << endl << "Since "
+          "the matrix has a column Map already, it is invalid to insert "
+          "entries at those locations.";
+        TEUCHOS_TEST_FOR_EXCEPTION(! allInColMap, std::invalid_argument, os.str ());
+      }
+    }
+#endif // HAVE_TPETRA_DEBUG
+
+    RowInfo rowInfo = myGraph_->getRowInfo (localRow);
+    const size_t curNumEntries = rowInfo.numEntries;
+    const size_t newNumEntries = curNumEntries + numEntriesToAdd;
+    if (newNumEntries > rowInfo.allocSize) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        getProfileType() == StaticProfile, std::runtime_error,
+        ": new indices exceed statically allocated graph structure.");
+
+      // Make space for the new matrix entries.
+      rowInfo = myGraph_->template updateAllocAndValues<LocalIndices, Scalar> (rowInfo, newNumEntries,
+                                                                               values2D_[localRow]);
+    }
+    typename Graph::SLocalGlobalViews inds_view;
+    inds_view.linds = indices;
+    myGraph_->template insertIndicesAndValues<Scalar> (rowInfo, inds_view,
+                                                       this->getViewNonConst (rowInfo),
+                                                       values, LocalIndices, LocalIndices);
+#ifdef HAVE_TPETRA_DEBUG
+    const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow (localRow);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      chkNewNumEntries != newNumEntries, std::logic_error,
+      ": The row should have " << newNumEntries << " entries after insert, but "
+      "instead has " << chkNewNumEntries << ".  Please report this bug to the "
+      "Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isLocallyIndexed(), std::logic_error,
+      ": At end of insertLocalValues(), this CrsMatrix is not locally indexed.  "
+      "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+  }
 
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1000,11 +1078,11 @@ namespace Tpetra {
            class LocalMatOps>
   void
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertLocalValues (LocalOrdinal localRow,
-                     const ArrayView<const LocalOrdinal> &indices,
-                     const ArrayView<const Scalar>       &values)
+  insertLocalValuesFiltered (const LocalOrdinal localRow,
+                             const ArrayView<const LocalOrdinal> &indices,
+                             const ArrayView<const Scalar>       &values)
   {
-    const char tfecfFuncName[] = "insertLocalValues()";
+    const char tfecfFuncName[] = "insertLocalValues";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillActive (), std::runtime_error,
       " requires that fill is active.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isStaticGraph (),  std::runtime_error,
@@ -1016,7 +1094,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(values.size() != indices.size(),
       std::runtime_error, ": values.size() must equal indices.size().");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! getRowMap()->isNodeLocalElement(localRow), std::runtime_error,
+      ! getRowMap()->isNodeLocalElement (localRow), std::runtime_error,
       ": Local row index " << localRow << " does not belong to this process.");
     if (! myGraph_->indicesAreAllocated ()) {
       allocateValues (LocalIndices, GraphNotYetAllocated);
@@ -1034,22 +1112,9 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getProfileType() == StaticProfile,
           std::runtime_error, ": new indices exceed statically allocated graph "
           "structure.");
-
-        // Only print an efficiency warning once per CrsMatrix
-        // instance, per method name (insertLocalValues() or
-        // insertGlobalValues()).
-        if (! insertLocalValuesWarnedEfficiency_) {
-          TPETRA_EFFICIENCY_WARNING(true, std::runtime_error,
-            "::insertLocalValues():" << std::endl
-            << "Pre-allocated space has been exceeded, requiring new allocation.  "
-            "This is allowed but not efficient in terms of run time.  "
-            "To improve efficiency, suggest a larger number of entries per row in the constructor.  "
-            "You may either specify a maximum number of entries for all the rows, or a per-row maximum.  "
-            "This CrsMatrix instance will not print further messages of this kind, in order not to clutter output.");
-          insertLocalValuesWarnedEfficiency_ = true;
-        }
         // Make space for the new matrix entries.
-        rowInfo = myGraph_->template updateAllocAndValues<LocalIndices, Scalar> (rowInfo, newNumEntries, values2D_[localRow]);
+        rowInfo = myGraph_->template updateAllocAndValues<LocalIndices, Scalar> (rowInfo, newNumEntries,
+                                                                                 values2D_[localRow]);
       }
       typename Graph::SLocalGlobalViews inds_view;
       inds_view.linds = f_inds (0, numFilteredEntries);
@@ -1297,21 +1362,9 @@ namespace Tpetra {
             getProfileType() == StaticProfile, std::runtime_error,
             ": new indices exceed statically allocated graph structure.");
 
-          // Only print an efficiency warning once per CrsMatrix
-          // instance, per method name (insertLocalValues() or
-          // insertGlobalValues()).
-          if (! insertGlobalValuesWarnedEfficiency_) {
-            TPETRA_EFFICIENCY_WARNING(true, std::runtime_error,
-              "::insertGlobalValues():" << std::endl
-              << "Pre-allocated space has been exceeded, requiring new allocation.  "
-              "This is allowed but not efficient in terms of run time.  "
-              "To improve efficiency, suggest a larger number of entries per row in the constructor.  "
-              "You may either specify a maximum number of entries for all the rows, or a per-row maximum.  "
-              "This CrsMatrix instance will not print further messages of this kind, in order not to clutter output.");
-            insertGlobalValuesWarnedEfficiency_ = true;
-          }
           // Update allocation only as much as necessary
-          rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices, Scalar> (rowInfo, newNumEntries, values2D_[lrow]);
+          rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices, Scalar> (rowInfo, newNumEntries,
+                                                                                    values2D_[lrow]);
         }
         if (isGloballyIndexed ()) {
           // lg=GlobalIndices, I=GlobalIndices means the method calls
