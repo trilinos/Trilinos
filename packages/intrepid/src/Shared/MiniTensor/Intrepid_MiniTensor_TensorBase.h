@@ -205,6 +205,55 @@ template<typename T>
 T
 norm_f(TensorBase<T> const & X);
 
+///
+/// Base addition
+///
+template<typename R, typename S, typename T>
+void
+add(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C);
+
+///
+/// Base subtraction
+///
+template<typename R, typename S, typename T>
+void
+subtract(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C);
+
+///
+/// Base minus
+///
+template<typename T>
+void
+minus(TensorBase<T> const & A, TensorBase<T> & B);
+
+///
+/// Base equality
+///
+template<typename T>
+bool
+equal(TensorBase<T> const & A, TensorBase<T> const & B);
+
+///
+/// Base not equality
+///
+template<typename T>
+bool
+not_equal(TensorBase<T> const & A, TensorBase<T> const & B);
+
+///
+/// Base scaling
+///
+template<typename R, typename S, typename T>
+void
+scale(TensorBase<R> const & A, S const & s, TensorBase<T> & B);
+
+///
+/// Base division
+///
+template<typename R, typename S, typename T>
+void
+divide(TensorBase<R> const & A, S const & s, TensorBase<T> & B);
+
 } // namespace Intrepid
 
 #include "Intrepid_MiniTensor_TensorBase.i.h"

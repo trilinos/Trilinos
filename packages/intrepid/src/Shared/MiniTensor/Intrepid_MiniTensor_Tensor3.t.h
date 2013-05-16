@@ -106,187 +106,110 @@ Tensor3<T>::~Tensor3()
 
 //
 // 3rd-order tensor addition
-// \param A 3rd-order tensor
-// \param B 3rd-order tensor
-// \return \f$ A + B \f$
 //
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
 operator+(Tensor3<S> const & A, Tensor3<T> const & B)
 {
-  Index const
-  N = A.get_dimension();
-
-  assert(B.get_dimension() == N);
-
   Tensor3<typename Promote<S, T>::type>
-  C(N);
+  C;
 
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
-      for (Index k = 0; k < N; ++k) {
-        C(i,j,k) = A(i,j,k) + B(i,j,k);
-      }
-    }
-  }
+  add(A, B, C);
 
   return C;
 }
 
 //
-// 3rd-order tensor substraction
-// \param A 3rd-order tensor
-// \param B 3rd-order tensor
-// \return \f$ A - B \f$
+// 3rd-order tensor subtraction
 //
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
 operator-(Tensor3<S> const & A, Tensor3<T> const & B)
 {
-  Index const
-  N = A.get_dimension();
-
-  assert(B.get_dimension() == N);
-
   Tensor3<typename Promote<S, T>::type>
-  C(N);
+  C;
 
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
-      for (Index k = 0; k < N; ++k) {
-        C(i,j,k) = A(i,j,k) - B(i,j,k);
-      }
-    }
-  }
+  subtract(A, B, C);
 
   return C;
 }
 
 //
 // 3rd-order tensor minus
-// \return \f$ -A \f$
 //
 template<typename T>
 Tensor3<T>
 operator-(Tensor3<T> const & A)
 {
-  Index const
-  N = A.get_dimension();
-
   Tensor3<T>
-  S(N);
+  B;
 
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
-      for (Index k = 0; k < N; ++k) {
-        S(i,j,k) = - A(i,j,k);
-      }
-    }
-  }
+  minus(A, B);
 
-  return S;
+  return B;
 }
 
 //
 // 3rd-order tensor equality
-// Tested by components
 //
 template<typename T>
 inline bool
 operator==(Tensor3<T> const & A, Tensor3<T> const & B)
 {
-  Index const
-  N = A.get_dimension();
-
-  assert(B.get_dimension() == N);
-
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
-      for (Index k = 0; k < N; ++k) {
-        if (A(i,j,k) != B(i,j,k)) {
-          return false;
-        }
-      }
-    }
-  }
-
-  return true;
+  return equal(A, B);
 }
 
 //
 // 3rd-order tensor inequality
-// Tested by components
 //
 template<typename T>
 inline bool
 operator!=(Tensor3<T> const & A, Tensor3<T> const & B)
 {
-  return !(A==B);
+  return not_equal(A, B);
 }
 
 //
 // Scalar 3rd-order tensor product
-// \param s scalar
-// \param A 3rd-order tensor
-// \return \f$ s A \f$
 //
 template<typename S, typename T>
 typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
 operator*(S const & s, Tensor3<T> const & A)
 {
-  Index const
-  N = A.get_dimension();
-
   Tensor3<typename Promote<S, T>::type>
-  B(N);
+  B;
 
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
-      for (Index k = 0; k < N; ++k) {
-        B(i,j,k) = s * A(i,j,k);
-      }
-    }
-  }
+  scale(A, s, B);
 
   return B;
 }
 
 //
 // 3rd-order tensor scalar product
-// \param A 3rd-order tensor
-// \param s scalar
-// \return \f$ s A \f$
 //
 template<typename S, typename T>
 typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
 operator*(Tensor3<T> const & A, S const & s)
 {
-  return s * A;
+  Tensor3<typename Promote<S, T>::type>
+  B;
+
+  scale(A, s, B);
+
+  return B;
 }
 
 //
 // 3rd-order tensor scalar division
-// \param A 3rd-order tensor
-// \param s scalar
-// \return \f$ s A \f$
 //
 template<typename S, typename T>
 Tensor3<typename Promote<S, T>::type>
 operator/(Tensor3<T> const & A, S const & s)
 {
-  Index const
-  N = A.get_dimension();
-
   Tensor3<typename Promote<S, T>::type>
-  B(N);
+  B;
 
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
-      for (Index k = 0; k < N; ++k) {
-        B(i,j,k) = A(i,j,k) / s;
-      }
-    }
-  }
+  divide(A, s, B);
 
   return B;
 }

@@ -79,238 +79,246 @@ generate_sequence(
 
 } // anonymous namescape
 
-TEUCHOS_UNIT_TEST(MiniTensor, VectorCopyConstructor)
+TEUCHOS_UNIT_TEST(MiniTensor, VectorFundamental)
 {
-  Vector<Real> const
-  u(1.0, 2.0, 3.0);
+  Index const
+  dimension = 3;
 
+  Index const
+  number_components = integer_power(dimension, Vector<Real>::order);
+
+  std::vector<Real> const
+  X = generate_sequence<Real>(number_components, 1.0, 1.0);
+
+  // Test constructor with pointer
   Vector<Real> const
+  u(dimension, &X[0]);
+
+  // Test copy constructor
+  Vector<Real>
   v = u;
 
-  Vector<Real> const
+  Vector<Real>
+  w;
+
+  // Test copy assignment
   w = v - u;
 
-  Real const
-  error = norm(w);
+  Real
+  error = norm_f(w);
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
 
-TEUCHOS_UNIT_TEST(MiniTensor, TensorCopyConstructor)
-{
-  Tensor<Real> const
-  A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+  // Test fill with pointer
+  v.fill(&X[0]);
 
-  Tensor<Real> const
-  B = A;
+  w = v - u;
 
-  Tensor<Real> const
-  C = B - A;
-
-  Real const
-  error = norm(C);
+  error = norm_f(w);
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
 
-TEUCHOS_UNIT_TEST(MiniTensor, Tensor3CopyConstructor)
-{
   std::vector<Real> const
-  v = generate_sequence<Real>(27, 1.0, 1.0);
+  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
 
-  Tensor3<Real> const
-  A(3, &v[0]);
+  w.fill(&Y[0]);
 
-  Tensor3<Real> const
+  // Test increment
+  w += u;
+
+  error = norm_f(w);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  w.fill(&X[0]);
+
+  // Test decrement
+  w -= u;
+
+  error = norm_f(w);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, TensorFundamental)
+{
+  Index const
+  dimension = 3;
+
+  Index const
+  number_components = integer_power(dimension, Tensor<Real>::order);
+
+  std::vector<Real> const
+  X = generate_sequence<Real>(number_components, 1.0, 1.0);
+
+  // Test constructor with pointer
+  Tensor<Real> const
+  A(dimension, &X[0]);
+
+  // Test copy constructor
+  Tensor<Real>
   B = A;
 
-  Tensor3<Real> const
+  Tensor<Real>
+  C;
+
+  // Test copy assignment
   C = B - A;
 
-  Real const
+  Real
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  // Test fill with pointer
+  B.fill(&X[0]);
+
+  C = B - A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  std::vector<Real> const
+  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
+
+  C.fill(&Y[0]);
+
+  // Test increment
+  C += A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  C.fill(&X[0]);
+
+  // Test decrement
+  C -= A;
+
   error = norm_f(C);
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
 }
 
-TEUCHOS_UNIT_TEST(MiniTensor, VectorCopyAssignment)
+TEUCHOS_UNIT_TEST(MiniTensor, Tensor3Fundamental)
 {
-  Vector<Real> const
-  u(1.0, 2.0, 3.0);
+  Index const
+  dimension = 3;
 
-  Vector<Real>
-  v;
+  Index const
+  number_components = integer_power(dimension, Tensor3<Real>::order);
 
-  v = u;
+  std::vector<Real> const
+  X = generate_sequence<Real>(number_components, 1.0, 1.0);
 
-  Vector<Real> const
-  w = v - u;
+  // Test constructor with pointer
+  Tensor3<Real> const
+  A(dimension, &X[0]);
 
-  Real const
-  error = norm(w);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, TensorCopyAssignment)
-{
-  Tensor<Real> const
-  A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
-
-  Tensor<Real>
-  B;
-
+  // Test copy constructor
+  Tensor3<Real>
   B = A;
 
-  Tensor<Real> const
+  Tensor3<Real>
+  C;
+
+  // Test copy assignment
   C = B - A;
 
-  Real const
-  error = norm(C);
+  Real
+  error = norm_f(C);
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
 
-TEUCHOS_UNIT_TEST(MiniTensor, VectorPointer)
-{
-  Vector<Real> const
-  u(1.0, 2.0, 3.0);
+  // Test fill with pointer
+  B.fill(&X[0]);
 
-  Real X[3] = {1.0, 2.0, 3.0};
-
-  Vector<Real>
-  v(3, X);
-
-  Vector<Real> const
-  w = v - u;
-
-  Real const
-  error = norm(w);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, TensorPointer)
-{
-  Tensor<Real> const
-  A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
-
-  Real X[9] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-
-  Tensor<Real>
-  B(3, X);
-
-  Tensor<Real> const
   C = B - A;
 
-  Real const
-  error = norm(C);
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  std::vector<Real> const
+  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
+
+  C.fill(&Y[0]);
+
+  // Test increment
+  C += A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  C.fill(&X[0]);
+
+  // Test decrement
+  C -= A;
+
+  error = norm_f(C);
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
 }
 
-TEUCHOS_UNIT_TEST(MiniTensor, VectorFill)
+TEUCHOS_UNIT_TEST(MiniTensor, Tensor4Fundamental)
 {
-  Vector<Real> const
-  u(1.0, 2.0, 3.0);
+  Index const
+  dimension = 3;
 
-  Vector<Real>
-  v(3);
+  Index const
+  number_components = integer_power(dimension, Tensor4<Real>::order);
 
-  Real X[3] = {1.0, 2.0, 3.0};
+  std::vector<Real> const
+  X = generate_sequence<Real>(number_components, 1.0, 1.0);
 
-  v.fill(X);
+  // Test constructor with pointer
+  Tensor4<Real> const
+  A(dimension, &X[0]);
 
-  Vector<Real> const
-  w = v - u;
+  // Test copy constructor
+  Tensor4<Real>
+  B = A;
 
-  Real const
-  error = norm(w);
+  Tensor4<Real>
+  C;
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, TensorFill)
-{
-  Tensor<Real> const
-  A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
-
-  Tensor<Real>
-  B(3);
-
-  Real X[9] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-
-  B.fill(X);
-
-  Tensor<Real> const
+  // Test copy assignment
   C = B - A;
 
-  Real const
-  error = norm(C);
+  Real
+  error = norm_f(C);
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
 
-TEUCHOS_UNIT_TEST(MiniTensor, VectorIncrement)
-{
-  Vector<Real> const
-  u(1.0, 2.0, 3.0);
+  // Test fill with pointer
+  B.fill(&X[0]);
 
-  Vector<Real>
-  v(-1.0, -2.0, -3.0);
+  C = B - A;
 
-  v += u;
-
-  Real const
-  error = norm(v);
+  error = norm_f(C);
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
 
-TEUCHOS_UNIT_TEST(MiniTensor, TensorIncrement)
-{
-  Tensor<Real> const
-  A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+  std::vector<Real> const
+  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
 
-  Tensor<Real>
-  B(-1.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0, -8.0, -9.0);
+  C.fill(&Y[0]);
 
-  B += A;
+  // Test increment
+  C += A;
 
-  Real const
-  error = norm(B);
+  error = norm_f(C);
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
 
-TEUCHOS_UNIT_TEST(MiniTensor, VectorDecrement)
-{
-  Vector<Real> const
-  u(1.0, 2.0, 3.0);
+  C.fill(&X[0]);
 
-  Vector<Real>
-  v(1.0, 2.0, 3.0);
+  // Test decrement
+  C -= A;
 
-  v -= u;
-
-  Real const
-  error = norm(v);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, TensorDecrement)
-{
-  Tensor<Real> const
-  A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
-
-  Tensor<Real>
-  B(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
-
-  B -= A;
-
-  Real const
-  error = norm(B);
+  error = norm_f(C);
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
 }

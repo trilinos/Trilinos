@@ -83,7 +83,7 @@ Tensor3<T>::operator()(Index const i, Index const j, Index const k)
   assert(j < N);
   assert(k < N);
 
-  return self[i * N * N + j * N + k];
+  return self[(i * N + j) * N + k];
 }
 
 } // namespace Intrepid
