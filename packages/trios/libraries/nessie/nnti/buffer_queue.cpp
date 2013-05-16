@@ -120,6 +120,11 @@ int trios_buffer_queue_init(
 
     log_debug(bq_debug_level, "enter");
 
+    if (buffer_size <= 0) {
+        log_debug(bq_debug_level, "buffer_size <= 0 - queue not created");
+        return((int)nnti_rc);
+    }
+
     nthread_lock_init(&bq->mutex);
 
     if (nthread_lock(&bq->mutex)) log_warn(bq_debug_level, "failed to get thread lock");
