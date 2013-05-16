@@ -224,6 +224,7 @@ namespace stk {
         }
 
       eMesh.get_bulk_data()->declare_relation(family_tree, newElement, ordinal + 1);  // the + 1 here is to give space for the parent
+      percept::MyPairIterRelation parent_to_family_tree_relations1 (eMesh, parent_elem, FAMILY_TREE_RANK);
 
       // add all the nodes for ghosting purposes
       /** Explanation: child elements can be created in the aura that have nodes in the aura but aren't shared
@@ -289,10 +290,10 @@ namespace stk {
             }
 
           // check for second level and subsequent refinement
-          if (parent_to_family_tree_relations.size() == 2)
+          if (parent_to_family_tree_relations1.size() == 2)
             {
               unsigned parent_elem_ft_level_0 = eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, parent_elem);
-              stk::mesh::Entity family_tree_level_0 = parent_to_family_tree_relations[parent_elem_ft_level_0].entity();
+              stk::mesh::Entity family_tree_level_0 = parent_to_family_tree_relations1[parent_elem_ft_level_0].entity();
 
               percept::MyPairIterRelation ft_level_0_nodes (eMesh, family_tree_level_0,  stk::mesh::MetaData::NODE_RANK );
               for (unsigned i = 0; i < ft_level_0_nodes.size(); i++)

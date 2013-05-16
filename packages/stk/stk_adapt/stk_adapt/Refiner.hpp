@@ -235,7 +235,6 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destro
       void
       replaceNodeRegistryOwnership(ElementUnrefineCollection& elements_to_delete, stk::mesh::EntityRank rank);
 
-    protected:
       void
       filterUnrefSet(ElementUnrefineCollection& elements_to_unref);
 
@@ -245,6 +244,14 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destro
       void
       getDeletedNodes(NodeSetType& deleted_nodes, const NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref);
 
+      void
+      unrefinePass2(ElementUnrefineCollection& elements_to_unref);
+
+    protected:
+      void
+      remeshGrandParents(SetOfEntities& grandParents);
+      void
+      filterUnrefSetPass2(ElementUnrefineCollection& elements_to_unref,   SetOfEntities& grandParents);
 
       void
       removeDeletedNodes(NodeSetType& deleted_nodes);
@@ -263,7 +270,7 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destro
       void getSideElemsToBeRemoved(NodeSetType& deleted_nodes,
                                    SetOfEntities& children_to_be_removed, SetOfEntities& side_elem_set_to_be_removed, SetOfEntities& family_trees_to_be_removed, SetOfEntities& parent_side_elements);
 
-      void removeChildElements(SetOfEntities& children_to_be_removed);
+      void removeChildElements(SetOfEntities& children_to_be_removed, ElementUnrefineCollection* elements_to_unref_0=0);
 
       void removeSideElements(SetOfEntities& side_elem_set_to_be_removed, SetOfEntities& elements_to_be_deleted);
 

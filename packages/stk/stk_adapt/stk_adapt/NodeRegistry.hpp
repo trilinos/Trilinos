@@ -2434,7 +2434,11 @@ namespace stk {
       bool getUseCustomGhosting() { return m_useCustomGhosting; }
 
       // remove any sub-dim entities from the map that have a node in deleted_nodes
-      void cleanDeletedNodes(std::set<stk::mesh::Entity, stk::mesh::EntityLess>& deleted_nodes, bool debug=false)
+      void cleanDeletedNodes(std::set<stk::mesh::Entity, stk::mesh::EntityLess>& deleted_nodes,
+                             std::set<stk::mesh::Entity, stk::mesh::EntityLess>& kept_nodes_orig_minus_kept_nodes,
+                             SubDimCellToDataMap& to_save,
+//                              bool do_kept_nodes_orig,
+                             bool debug=false)
       {
         std::set<stk::mesh::Entity, stk::mesh::EntityLess> deleted_nodes_copy = deleted_nodes;
 
@@ -2450,7 +2454,7 @@ namespace stk {
 
         for (iter = map.begin(); iter != map.end(); ++iter)
           {
-            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
 
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
@@ -2461,6 +2465,10 @@ namespace stk {
               {
                 if (deleted_nodes.find(nodeIds_onSE[ii]) != deleted_nodes.end())
                   {
+                    if (kept_nodes_orig_minus_kept_nodes.find(nodeIds_onSE[ii]) != kept_nodes_orig_minus_kept_nodes.end())
+                      {
+                        to_save[subDimEntity] = nodeId_elementOwnderId;
+                      }
                     found = true;
                     jj = ii;
                     deleted_nodes_copy.erase(nodeIds_onSE[ii]);

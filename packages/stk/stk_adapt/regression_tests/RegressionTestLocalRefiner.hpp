@@ -345,7 +345,7 @@ namespace stk
         double dot_0 = plane_dot_product(plane_point, plane_normal, coord0);
         double dot_1 = plane_dot_product(plane_point, plane_normal, coord1);
 
-        if (dot_0*dot_1 < 0) 
+        if (dot_0*dot_1 < 0)
           return DO_REFINE;
         else
           return DO_UNREFINE;
@@ -450,7 +450,7 @@ namespace stk
 
       // This can be used as an edge or element-based predicate
 
-      struct ShockBasedRefinePredicate1 : public IEdgeBasedAdapterPredicate, IElementBasedAdapterPredicate {
+      struct ShockBasedRefinePredicate1 : public IEdgeBasedAdapterPredicate, IElementBasedAdapterPredicate, percept::ElementOp {
 
         percept::PerceptMesh& m_eMesh;
         stk::mesh::FieldBase * m_nodal_refine_field;
@@ -528,8 +528,74 @@ namespace stk
           return mark;
         }
 
-        //double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
-        //return m_selector(entity) && fdata[0] > 0;
+        virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        {
+          const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK );
+          //stk::mesh::Entity const *elem_nodes_e = m_eMesh.get_bulk_data()->begin_entities(element, stk::mesh::MetaData::NODE_RANK );
+
+          unsigned num_node = elem_nodes.size();
+          //unsigned num_node = m_eMesh.get_bulk_data()->num_connectivity(element, stk::mesh::MetaData::NODE_RANK );
+          double *f_data = PerceptMesh::field_data_entity(field, element);
+          VectorFieldType* coordField = m_eMesh.get_coordinates_field();
+
+          bool found = false;
+          for (unsigned inode=0; inode < num_node-1; inode++)
+            {
+              mesh::Entity node_i = elem_nodes[ inode ].entity();
+              //mesh::Entity node_i = elem_nodes_e[ inode ];
+              double *coord_data_i = PerceptMesh::field_data(coordField, node_i);
+
+              for (unsigned jnode=inode+1; jnode < num_node; jnode++)
+                {
+                  mesh::Entity node_j = elem_nodes[ jnode ].entity();
+                  double *coord_data_j = PerceptMesh::field_data(coordField, node_j);
+
+                  int mark = shock_diff1(m_nodal_refine_field, m_eMesh, node_i, node_j, coord_data_i, coord_data_j, m_shock, m_shock_displacement);
+                  if (mark & DO_REFINE)
+                    {
+                      found=true;
+                      break;
+                    }
+                }
+            }
+          if (found)
+            f_data[0] = 1.0;
+          else
+            f_data[0] = -1.0;
+
+          return false;  // don't terminate the loop
+        }
+        virtual void init_elementOp() {}
+        virtual void fini_elementOp() {}
+
+      };
+
+      class SetRefineField1 : public percept::ElementOp
+      {
+        IEdgeAdapter& m_breaker;
+      public:
+        SetRefineField1(IEdgeAdapter& breaker) : m_breaker(breaker) {
+        }
+
+        virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        {
+          bool isParent = m_breaker.getMesh().isParentElement(element, false);
+          bool hasFamilyTree = m_breaker.getMesh().hasFamilyTree(element);
+          double *f_data = PerceptMesh::field_data_entity(field, element);
+          int mark = m_breaker.markUnrefine(element);
+          f_data[0] = 0.0;
+          if (hasFamilyTree && !isParent)
+            {
+              if (mark & DO_UNREFINE)
+                f_data[0] = -2.0;
+              else
+                f_data[0] = 2.0;
+            }
+
+          return false;
+        }
+        virtual void init_elementOp() {}
+        virtual void fini_elementOp() {}
       };
 
 
