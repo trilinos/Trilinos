@@ -1040,7 +1040,7 @@ public:
 
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
-  field_data(const FieldType & f, const Bucket& b, unsigned bucket_ord) const
+  field_data(const FieldType & f, const Bucket& b, unsigned bucket_ord = 0) const
   {
     const EntityRank rank         = b.entity_rank();
     // TODO - should be const ref?
