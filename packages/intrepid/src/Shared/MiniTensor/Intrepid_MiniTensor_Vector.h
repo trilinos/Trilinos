@@ -49,22 +49,24 @@
 
 #include "Intrepid_MiniTensor_Definitions.h"
 #include "Intrepid_MiniTensor_Storage.h"
+#include "Intrepid_MiniTensor_TensorBase.h"
 #include "Intrepid_MiniTensor_Utilities.h"
 
 namespace Intrepid {
 
 ///
-/// Vector in R^N.
+/// Vector class.
 ///
 template<typename T>
-class Vector
+class Vector : public TensorBase<T>
 {
 public:
 
   ///
-  /// Component type
+  /// Order
   ///
-  typedef T type;
+  static Index const
+  order = 1U;
 
   ///
   /// Default constructor
@@ -72,19 +74,19 @@ public:
   Vector();
 
   ///
-  /// Constructor that initializes to NaNs
-  /// \param N dimension
+  /// Construction that initializes to NaNs
+  /// \param dimension
   ///
   explicit
-  Vector(Index const N);
+  Vector(Index const dimension);
 
   ///
   /// Create vector from a scalar
-  /// \param N dimension
+  /// \param dimension
   /// \param s all components are set equal to this value
   ///
   explicit
-  Vector(Index const N, T const & s);
+  Vector(Index const dimension, T const & s);
 
   ///
   /// Create vector specifying components
@@ -102,11 +104,11 @@ public:
   Vector(T const & s0, T const & s1, T const & s2);
 
   ///
-  /// Create vector from array - const version
+  /// Create vector from array.
   /// \param N dimension
   /// \param data_ptr pointer into the array
   ///
-  Vector(Index const N, T const * data_ptr);
+  Vector(Index const dimension, T const * data_ptr);
 
   ///
   /// Copy constructor
@@ -134,91 +136,12 @@ public:
   operator()(Index const i);
 
   ///
-  /// Linear access to components
-  /// \param i the index
-  ///
-  T const &
-  operator[](Index const i) const;
-
-  ///
-  /// Linear access to components
-  /// \param i the index
-  ///
-  T &
-  operator[](Index const i);
-
-  ///
-  /// \return dimension
-  ///
-  Index
-  get_dimension() const;
-
-  ///
-  /// \param N dimension of vector
-  ///
-  void
-  set_dimension(Index const N);
-
-  ///
-  /// Fill components from array defined by pointer.
-  /// \param data_ptr pointer into array for filling components
-  ///
-  void
-  fill(T const * data_ptr);
-
-  ///
-  /// Copy assignment
-  /// \param v the values of its components are copied to this vector
-  ///
-  Vector<T> &
-  operator=(Vector<T> const & v);
-
-  ///
-  /// Vector increment
-  /// \param v added to currrent vector
-  ///
-  Vector<T> &
-  operator+=(Vector<T> const & v);
-
-  ///
-  /// Vector decrement
-  /// \param v substracted from current vector
-  ///
-  Vector<T> &
-  operator-=(Vector<T> const & v);
-
-  ///
-  /// Fill with zeros
-  ///
-  void
-  clear();
-
-  ///
   /// Vector order
   ///
-  static
   Index
-  order() {return 1U;};
-
-private:
-
-  ///
-  /// Vector dimension
-  ///
-  Index
-  dimension;
-
-  ///
-  /// Vector components
-  ///
-  MiniTensor::StorageRCPArray<T>
-  e;
+  get_order() const {return order;};
 
 };
-
-//
-// Prototypes for utilities
-//
 
 ///
 /// Vector addition

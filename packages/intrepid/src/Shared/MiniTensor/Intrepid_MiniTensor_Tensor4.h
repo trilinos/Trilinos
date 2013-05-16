@@ -47,17 +47,18 @@
 namespace Intrepid {
 
 ///
-/// Fourth order tensor in R^N.
+/// Fourth-order tensor.
 ///
 template<typename T>
-class Tensor4
+class Tensor4 : public TensorBase<T>
 {
 public:
 
   ///
-  /// Component type
+  /// Order
   ///
-  typedef T type;
+  static Index const
+  order = 4U;
 
   ///
   /// Default constructor
@@ -68,13 +69,20 @@ public:
   /// 4th-order tensor constructor with NaNs
   ///
   explicit
-  Tensor4(Index const N);
+  Tensor4(Index const dimension);
 
   ///
   /// 4th-order tensor constructor with a scalar
   /// \param s all components set to this scalar
   ///
-  Tensor4(Index const N, T const & s);
+  Tensor4(Index const dimension, T const & s);
+
+  ///
+  /// Create 4th-order tensor from array
+  /// \param dimension
+  /// \param data_ptr pointer into the array
+  ///
+  Tensor4(Index const dimension, T const * data_ptr);
 
   ///
   /// Copy constructor
@@ -117,77 +125,10 @@ public:
       Index const l);
 
   ///
-  /// Linear access to components
-  /// \param i the index
-  ///
-  T const &
-  operator[](Index const i) const;
-
-  ///
-  /// Linear access to components
-  /// \param i the index
-  ///
-  T &
-  operator[](Index const i);
-
-  ///
-  /// \return dimension
-  ///
-  Index
-  get_dimension() const;
-
-  ///
-  /// \param N dimension of 4th-order tensor
-  ///
-  void
-  set_dimension(Index const N);
-
-  ///
-  /// 4th-order tensor copy assignment
-  ///
-  Tensor4<T> &
-  operator=(Tensor4<T> const & A);
-
-  ///
-  /// 4th-order tensor increment
-  /// \param A added to this tensor
-  ///
-  Tensor4<T> &
-  operator+=(Tensor4<T> const & A);
-
-  ///
-  /// 4th-order tensor decrement
-  /// \param A substracted from this tensor
-  ///
-  Tensor4<T> &
-  operator-=(Tensor4<T> const & A);
-
-  ///
-  /// Fill 4th-order tensor with zeros
-  ///
-  void
-  clear();
-
-  ///
   /// Tensor order
   ///
-  static
   Index
-  order() {return 4U;};
-
-private:
-
-  ///
-  /// Tensor dimension
-  ///
-  Index
-  dimension;
-
-  ///
-  /// Tensor components
-  ///
-  MiniTensor::StorageRCPArray<T>
-  e;
+  get_order() const {return order;};
 
 };
 

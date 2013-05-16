@@ -1,11 +1,12 @@
 // @HEADER
-// ************************************************************************
 //
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
+// ***********************************************************************
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,58 +35,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions: Alejandro Mota (amota@sandia.gov)
+// Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
+//
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Tensor3_i_h)
-#define Intrepid_MiniTensor_Tensor3_i_h
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-namespace Intrepid {
+#include <string>
 
-//
-// Indexing for constant 3rd order tensor
-//
-template<typename T>
-inline
-T const &
-Tensor3<T>::operator()(Index const i, Index const j, Index const k) const
-{
-  Tensor3<T> const &
-  self = (*this);
+namespace Stratimikos {
 
-  Index const
-  N = self.get_dimension();
+// Dynamically register MueLu Tpetra adapters in Stratimikos
+void enableMueLuTpetra(
+    DefaultLinearSolverBuilder &builder,
+    const std::string &stratName = "MueLu");
 
-  assert(i < N);
-  assert(j < N);
-  assert(k < N);
-
-  return self[(i * N + j) * N + k];
-}
-
-//
-// 3rd-order tensor indexing
-//
-template<typename T>
-inline
-T &
-Tensor3<T>::operator()(Index const i, Index const j, Index const k)
-{
-  Tensor3<T> &
-  self = (*this);
-
-  Index const
-  N = self.get_dimension();
-
-  assert(i < N);
-  assert(j < N);
-  assert(k < N);
-
-  return self[(i * N + j) * N + k];
-}
-
-} // namespace Intrepid
-
-#endif // Intrepid_MiniTensor_Tensor3_i_h
+} // namespace Stratimikos

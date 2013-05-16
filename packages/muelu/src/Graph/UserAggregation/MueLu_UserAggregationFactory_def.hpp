@@ -117,7 +117,7 @@ void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bui
     ifs >> aggSize;
 
     std::vector<LO> list(aggSize);
-    for (unsigned int k = 0; k < aggSize; k++) {
+    for (int k = 0; k < aggSize; k++) {
       // FIXME: File contains GIDs, we need LIDs
       // for now, works on a single processor
       ifs >> list[k];
@@ -127,7 +127,7 @@ void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bui
     aggregates->SetIsRoot(list[0]);
 
     // Fill vertex2AggId and procWinner structure with information
-    for (unsigned int k = 0; k < aggSize; k++) {
+    for (int k = 0; k < aggSize; k++) {
       vertex2AggId[list[k]] = i;
       procWinner  [list[k]] = myRank;
     }

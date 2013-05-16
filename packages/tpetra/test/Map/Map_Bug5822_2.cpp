@@ -66,6 +66,7 @@ using Teuchos::Comm;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::tuple;
+using std::cerr;
 using std::endl;
 using std::cout;
 using std::cin;
@@ -75,14 +76,32 @@ using std::cin;
 // processes.
 TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
 {
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  typedef int LO;
-  typedef long long GO;
-  typedef Kokkos::SerialNode NT;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
-
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
   const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
+  TEUCHOS_TEST_FOR_EXCEPTION(numProcs != 2, std::logic_error,
+    "This test only makes sense to run with 2 MPI processes.");
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  typedef long long GO;
+  if (sizeof (long long) <= 4) {
+    out << "sizeof (long long) = " << sizeof (long long) << " <= 4.  "
+      "This test only makes sense if sizeof (long long) >= 8, "
+      "since the test is supposed to exercise GIDs > 2 billion.";
+    return;
+  }
+#else // NOT HAVE_TEUCHOS_LONG_LONG_INT
+  typedef long GO;
+  if (sizeof (long) <= 4) {
+    out << "sizeof (long) = " << sizeof (long) << " <= 4.  "
+      "This test only makes sense if sizeof (long) >= 8, "
+      "since the test is supposed to exercise GIDs > 2 billion.";
+    return;
+  }
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+  typedef int LO;
+  typedef Kokkos::SerialNode NT;
+  typedef Tpetra::Map<LO, GO, NT> map_type;
 
   // Proc 0 gets [0, 3B, 3B+2, 3B+4, 3B+8, 3B+10] (6 GIDs).
   // Proc 1 gets [3B+12, 3B+14, 3B+16, 3B+18, 3B+20] (5 GIDs).
@@ -130,23 +149,87 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   // comm->barrier();
   // Tpetra::Map requires that the index base is less than the minimum GID.
   const GO indexBase = 0L;
-  out << "Constructing the map..." << endl;
+  out << "Constructing the Map" << endl;
   RCP<const map_type> map;
   {
     TEUCHOS_FUNC_TIME_MONITOR("Construct Map");
     map = rcp(new map_type (globalNumElts, myGids (), indexBase, comm, node));
   }
 
+  cerr << myRank << ": Querying the Map for local elements" << endl;
   {
-    TEUCHOS_FUNC_TIME_MONITOR("Querying the map for local elements");
+    TEUCHOS_FUNC_TIME_MONITOR("Querying the Map for local elements");
     ArrayView<const GO> myGidsFound = map->getNodeElementList ();
     TEST_COMPARE_ARRAYS( myGidsExpected (), myGidsFound () );
   }
+
+  cerr << myRank << ": Querying the Map for remote elements" << endl;
+  // Proc 0 gets [0, 3B, 3B+2, 3B+4, 3B+8, 3B+10] (6 GIDs).
+  // Proc 1 gets [3B+12, 3B+14, 3B+16, 3B+18, 3B+20] (5 GIDs).
+  {
+    TEUCHOS_FUNC_TIME_MONITOR("Querying the Map for remote elements");
+
+    const int numRemoteGids = (myRank == 0) ? 5 : 6;
+
+    Array<GO> remoteGids (numRemoteGids);
+    Array<int> remotePids (numRemoteGids, -1);
+    Array<LO> remoteLids (numRemoteGids, Teuchos::OrdinalTraits<LO>::invalid ());
+    if (myRank == 0) {
+      Array<int> expectedRemotePids (numRemoteGids);
+      std::fill (expectedRemotePids.begin (), expectedRemotePids.end (), 1);
+      Array<int> expectedRemoteLids (numRemoteGids);
+      expectedRemoteLids[0] = 0;
+      expectedRemoteLids[1] = 1;
+      expectedRemoteLids[2] = 2;
+      expectedRemoteLids[3] = 3;
+      expectedRemoteLids[4] = 4;
+      remoteGids[0] = threeBillion + 12;
+      remoteGids[1] = threeBillion + 14;
+      remoteGids[2] = threeBillion + 16;
+      remoteGids[3] = threeBillion + 18;
+      remoteGids[4] = threeBillion + 20;
+
+      comm->barrier ();
+      cerr << myRank << ": Calling getRemoteIndexList" << endl;
+      comm->barrier ();
+      map->getRemoteIndexList (remoteGids (), remotePids (), remoteLids ());
+
+      TEST_COMPARE_ARRAYS( remotePids (), expectedRemotePids () );
+      TEST_COMPARE_ARRAYS( remoteLids (), expectedRemoteLids () );
+    } else if (myRank == 1) {
+      Array<int> expectedRemotePids (numRemoteGids);
+      std::fill (expectedRemotePids.begin (), expectedRemotePids.end (), 0);
+      Array<int> expectedRemoteLids (numRemoteGids);
+      expectedRemoteLids[0] = 0;
+      expectedRemoteLids[1] = 1;
+      expectedRemoteLids[2] = 2;
+      expectedRemoteLids[3] = 3;
+      expectedRemoteLids[4] = 4;
+      expectedRemoteLids[5] = 5;
+      remoteGids[0] = 0;
+      remoteGids[1] = threeBillion;
+      remoteGids[2] = threeBillion + 2;
+      remoteGids[3] = threeBillion + 4;
+      remoteGids[4] = threeBillion + 8;
+      remoteGids[5] = threeBillion + 10;
+
+      comm->barrier ();
+      cerr << myRank << ": Calling getRemoteIndexList" << endl;
+      comm->barrier ();
+      map->getRemoteIndexList (remoteGids (), remotePids (), remoteLids ());
+
+      TEST_COMPARE_ARRAYS( remotePids (), expectedRemotePids () );
+      TEST_COMPARE_ARRAYS( remoteLids (), expectedRemoteLids () );
+    } else {
+      comm->barrier ();
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+      comm->barrier ();
+    }
+  }
+
+  cerr << myRank << ": Done with getRemoteIndexList" << endl;
+  cout << endl; // make TimeMonitor output neat on test line
   Teuchos::TimeMonitor::summarize();
-#else
-  out << "This test only makes sense if long long support is enabled in Teuchos.";
-  return;
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 }
 
 

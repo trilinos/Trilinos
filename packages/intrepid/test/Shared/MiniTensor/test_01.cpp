@@ -39,7 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#include<ctime>
+#include <ctime>
+#include <vector>
 
 #include "Intrepid_FieldContainer.hpp"
 #include "Sacado.hpp"
@@ -59,543 +60,806 @@ int main(int argc, char* argv[])
 namespace Intrepid
 {
 
-  TEUCHOS_UNIT_TEST(MiniTensor, Initialization)
-  {
-    FieldContainer<Real> FC(3, 3);
-    FC(0, 0) = 1.0;
-    FC(0, 1) = 2.0;
-    FC(0, 2) = 3.0;
-    FC(1, 0) = 4.0;
-    FC(1, 1) = 5.0;
-    FC(1, 2) = 6.0;
-    FC(2, 0) = 7.0;
-    FC(2, 1) = 8.0;
-    FC(2, 2) = 9.0;
+namespace {
 
-    Real const * dataPtr0 = &FC(0, 0);
+template<typename T>
+std::vector<T>
+generate_sequence(
+    Index const number_elements, T const & start, T const & increment)
+{
+  std::vector<T>
+  v(number_elements);
 
-    Index const N = 3;
-    Vector<Real> u(N, dataPtr0);
-
-    TEST_COMPARE( u(0), ==, 1.0);
-    TEST_COMPARE( u(1), ==, 2.0);
-    TEST_COMPARE( u(2), ==, 3.0);
-
-    Real const * dataPtr1 = &FC(1, 0);
-
-    u = Vector<Real>(N, dataPtr1);
-
-    TEST_COMPARE( u(0), ==, 4.0);
-    TEST_COMPARE( u(1), ==, 5.0);
-    TEST_COMPARE( u(2), ==, 6.0);
-
-    Real const * dataPtr2 = &FC(2, 0);
-
-    u = Vector<Real>(N, dataPtr2);
-
-    TEST_COMPARE( u(0), ==, 7.0);
-    TEST_COMPARE( u(1), ==, 8.0);
-    TEST_COMPARE( u(2), ==, 9.0);
+  for (Index i = 0; i < number_elements; ++i) {
+    v[i] = start + i * increment;
   }
 
-  TEUCHOS_UNIT_TEST(MiniTensor, VectorAddition)
-  {
-    Vector<Real> const u(1.0, 0.0, 0.0);
-    Vector<Real> const v(0.0, 1.0, 0.0);
-    Vector<Real> const w(1.0, 1.0, 0.0);
+  return v;
+}
 
-    TEST_COMPARE( u + v == w, !=, 0);
-  }
+} // anonymous namescape
 
-  TEUCHOS_UNIT_TEST(MiniTensor, VectorSubtraction)
-  {
-    Vector<Real> u(3);
-    Vector<Real> v(3);
-    u(0) = 1.0;
-    u(1) = 2.0;
-    u(2) = 3.0;
+TEUCHOS_UNIT_TEST(MiniTensor, VectorFundamental)
+{
+  Index const
+  dimension = 3;
 
-    v = u - u;
+  Index const
+  number_components = integer_power(dimension, Vector<Real>::order);
 
-    TEST_COMPARE(norm(v), <=, machine_epsilon<Real>());
-  }
+  std::vector<Real> const
+  X = generate_sequence<Real>(number_components, 1.0, 1.0);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, VectorScalarMultipliaction)
-  {
-    Vector<Real> u(3);
-    Vector<Real> v(3);
-    Vector<Real> w(3);
-    u(0) = 1.0;
-    u(1) = 2.0;
-    u(2) = 3.0;
+  // Test constructor with pointer
+  Vector<Real> const
+  u(dimension, &X[0]);
 
-    v(0) = -2.0;
-    v(1) = -4.0;
-    v(2) = -6.0;
+  // Test copy constructor
+  Vector<Real>
+  v = u;
 
-    w = 4.0 * u + 2.0 * v;
+  Vector<Real>
+  w;
 
-    TEST_COMPARE( norm(w), <=, machine_epsilon<Real>());
-  }
+  // Test copy assignment
+  w = v - u;
 
-  TEUCHOS_UNIT_TEST(MiniTensor, TensorInstantiation)
-  {
-    FieldContainer<Real> FC(2, 3, 3);
-    FC(0, 0, 0) = 1.0;
-    FC(0, 0, 1) = 2.0;
-    FC(0, 0, 2) = 3.0;
-    FC(0, 1, 0) = 4.0;
-    FC(0, 1, 1) = 5.0;
-    FC(0, 1, 2) = 6.0;
-    FC(0, 2, 0) = 7.0;
-    FC(0, 2, 1) = 8.0;
-    FC(0, 2, 2) = 9.0;
-    FC(1, 0, 0) = 10.0;
-    FC(1, 0, 1) = 11.0;
-    FC(1, 0, 2) = 12.0;
-    FC(1, 1, 0) = 13.0;
-    FC(1, 1, 1) = 14.0;
-    FC(1, 1, 2) = 15.0;
-    FC(1, 2, 0) = 16.0;
-    FC(1, 2, 1) = 17.0;
-    FC(1, 2, 2) = 18.0;
+  Real
+  error = norm_f(w);
 
-    Real const * dataPtr0 = &FC(0, 0, 0);
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
 
-    Tensor<Real> const A(3, dataPtr0);
+  // Test fill with pointer
+  v.fill(&X[0]);
 
-    TEST_COMPARE( A(0,0), ==, 1.0);
-    TEST_COMPARE( A(0,1), ==, 2.0);
-    TEST_COMPARE( A(0,2), ==, 3.0);
-    TEST_COMPARE( A(1,0), ==, 4.0);
-    TEST_COMPARE( A(1,1), ==, 5.0);
-    TEST_COMPARE( A(1,2), ==, 6.0);
-    TEST_COMPARE( A(2,0), ==, 7.0);
-    TEST_COMPARE( A(2,1), ==, 8.0);
-    TEST_COMPARE( A(2,2), ==, 9.0);
+  w = v - u;
 
-    Real const * dataPtr1 = &FC(1, 0, 0);
+  error = norm_f(w);
 
-    Tensor<Real> const B(3, dataPtr1);
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
 
-    TEST_COMPARE( B(0,0), ==, 10.0);
-    TEST_COMPARE( B(0,1), ==, 11.0);
-    TEST_COMPARE( B(0,2), ==, 12.0);
-    TEST_COMPARE( B(1,0), ==, 13.0);
-    TEST_COMPARE( B(1,1), ==, 14.0);
-    TEST_COMPARE( B(1,2), ==, 15.0);
-    TEST_COMPARE( B(2,0), ==, 16.0);
-    TEST_COMPARE( B(2,1), ==, 17.0);
-    TEST_COMPARE( B(2,2), ==, 18.0);
-  }
+  std::vector<Real> const
+  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, TensorAddition)
-  {
-    Tensor<Real> const A(3, 1.0);
-    Tensor<Real> const B(3, 2.0);
-    Tensor<Real> const C(3, 3.0);
+  w.fill(&Y[0]);
 
-    TEST_COMPARE( C == A + B, !=, 0);
-  }
+  // Test increment
+  w += u;
 
-  TEUCHOS_UNIT_TEST(MiniTensor, Inverse)
-  {
-    std::srand(std::time(NULL));
-    Index const N = double(std::rand()) / double(RAND_MAX) * 7.0 + 3.0;
-    Tensor<Real> A(N);
-    Tensor<Real> B(N);
-    Tensor<Real> C(N);
+  error = norm_f(w);
 
-    for (Index i = 0; i < N; ++i) {
-      for (Index j = 0; j < N; ++j) {
-        A(i, j) = double(std::rand()) / double(RAND_MAX) * 20.0 - 10.0;
-      }
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  w.fill(&X[0]);
+
+  // Test decrement
+  w -= u;
+
+  error = norm_f(w);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, TensorFundamental)
+{
+  Index const
+  dimension = 3;
+
+  Index const
+  number_components = integer_power(dimension, Tensor<Real>::order);
+
+  std::vector<Real> const
+  X = generate_sequence<Real>(number_components, 1.0, 1.0);
+
+  // Test constructor with pointer
+  Tensor<Real> const
+  A(dimension, &X[0]);
+
+  // Test copy constructor
+  Tensor<Real>
+  B = A;
+
+  Tensor<Real>
+  C;
+
+  // Test copy assignment
+  C = B - A;
+
+  Real
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  // Test fill with pointer
+  B.fill(&X[0]);
+
+  C = B - A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  std::vector<Real> const
+  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
+
+  C.fill(&Y[0]);
+
+  // Test increment
+  C += A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  C.fill(&X[0]);
+
+  // Test decrement
+  C -= A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, Tensor3Fundamental)
+{
+  Index const
+  dimension = 3;
+
+  Index const
+  number_components = integer_power(dimension, Tensor3<Real>::order);
+
+  std::vector<Real> const
+  X = generate_sequence<Real>(number_components, 1.0, 1.0);
+
+  // Test constructor with pointer
+  Tensor3<Real> const
+  A(dimension, &X[0]);
+
+  // Test copy constructor
+  Tensor3<Real>
+  B = A;
+
+  Tensor3<Real>
+  C;
+
+  // Test copy assignment
+  C = B - A;
+
+  Real
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  // Test fill with pointer
+  B.fill(&X[0]);
+
+  C = B - A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  std::vector<Real> const
+  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
+
+  C.fill(&Y[0]);
+
+  // Test increment
+  C += A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  C.fill(&X[0]);
+
+  // Test decrement
+  C -= A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, Tensor4Fundamental)
+{
+  Index const
+  dimension = 3;
+
+  Index const
+  number_components = integer_power(dimension, Tensor4<Real>::order);
+
+  std::vector<Real> const
+  X = generate_sequence<Real>(number_components, 1.0, 1.0);
+
+  // Test constructor with pointer
+  Tensor4<Real> const
+  A(dimension, &X[0]);
+
+  // Test copy constructor
+  Tensor4<Real>
+  B = A;
+
+  Tensor4<Real>
+  C;
+
+  // Test copy assignment
+  C = B - A;
+
+  Real
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  // Test fill with pointer
+  B.fill(&X[0]);
+
+  C = B - A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  std::vector<Real> const
+  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
+
+  C.fill(&Y[0]);
+
+  // Test increment
+  C += A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  C.fill(&X[0]);
+
+  // Test decrement
+  C -= A;
+
+  error = norm_f(C);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, Initialization)
+{
+  FieldContainer<Real> FC(3, 3);
+  FC(0, 0) = 1.0;
+  FC(0, 1) = 2.0;
+  FC(0, 2) = 3.0;
+  FC(1, 0) = 4.0;
+  FC(1, 1) = 5.0;
+  FC(1, 2) = 6.0;
+  FC(2, 0) = 7.0;
+  FC(2, 1) = 8.0;
+  FC(2, 2) = 9.0;
+
+  Real const * dataPtr0 = &FC(0, 0);
+
+  Index const N = 3;
+  Vector<Real> u(N, dataPtr0);
+
+  TEST_COMPARE( u(0), ==, 1.0);
+  TEST_COMPARE( u(1), ==, 2.0);
+  TEST_COMPARE( u(2), ==, 3.0);
+
+  Real const * dataPtr1 = &FC(1, 0);
+
+  u = Vector<Real>(N, dataPtr1);
+
+  TEST_COMPARE( u(0), ==, 4.0);
+  TEST_COMPARE( u(1), ==, 5.0);
+  TEST_COMPARE( u(2), ==, 6.0);
+
+  Real const * dataPtr2 = &FC(2, 0);
+
+  u = Vector<Real>(N, dataPtr2);
+
+  TEST_COMPARE( u(0), ==, 7.0);
+  TEST_COMPARE( u(1), ==, 8.0);
+  TEST_COMPARE( u(2), ==, 9.0);
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, VectorAddition)
+{
+  Vector<Real> const u(1.0, 0.0, 0.0);
+  Vector<Real> const v(0.0, 1.0, 0.0);
+  Vector<Real> const w(1.0, 1.0, 0.0);
+
+  TEST_COMPARE( u + v == w, !=, 0);
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, VectorSubtraction)
+{
+  Vector<Real> u(3);
+  Vector<Real> v(3);
+  u(0) = 1.0;
+  u(1) = 2.0;
+  u(2) = 3.0;
+
+  v = u - u;
+
+  TEST_COMPARE(norm(v), <=, machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, VectorScalarMultipliaction)
+{
+  Vector<Real> u(3);
+  Vector<Real> v(3);
+  Vector<Real> w(3);
+  u(0) = 1.0;
+  u(1) = 2.0;
+  u(2) = 3.0;
+
+  v(0) = -2.0;
+  v(1) = -4.0;
+  v(2) = -6.0;
+
+  w = 4.0 * u + 2.0 * v;
+
+  TEST_COMPARE( norm(w), <=, machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, TensorInstantiation)
+{
+  FieldContainer<Real> FC(2, 3, 3);
+  FC(0, 0, 0) = 1.0;
+  FC(0, 0, 1) = 2.0;
+  FC(0, 0, 2) = 3.0;
+  FC(0, 1, 0) = 4.0;
+  FC(0, 1, 1) = 5.0;
+  FC(0, 1, 2) = 6.0;
+  FC(0, 2, 0) = 7.0;
+  FC(0, 2, 1) = 8.0;
+  FC(0, 2, 2) = 9.0;
+  FC(1, 0, 0) = 10.0;
+  FC(1, 0, 1) = 11.0;
+  FC(1, 0, 2) = 12.0;
+  FC(1, 1, 0) = 13.0;
+  FC(1, 1, 1) = 14.0;
+  FC(1, 1, 2) = 15.0;
+  FC(1, 2, 0) = 16.0;
+  FC(1, 2, 1) = 17.0;
+  FC(1, 2, 2) = 18.0;
+
+  Real const * dataPtr0 = &FC(0, 0, 0);
+
+  Tensor<Real> const A(3, dataPtr0);
+
+  TEST_COMPARE( A(0,0), ==, 1.0);
+  TEST_COMPARE( A(0,1), ==, 2.0);
+  TEST_COMPARE( A(0,2), ==, 3.0);
+  TEST_COMPARE( A(1,0), ==, 4.0);
+  TEST_COMPARE( A(1,1), ==, 5.0);
+  TEST_COMPARE( A(1,2), ==, 6.0);
+  TEST_COMPARE( A(2,0), ==, 7.0);
+  TEST_COMPARE( A(2,1), ==, 8.0);
+  TEST_COMPARE( A(2,2), ==, 9.0);
+
+  Real const * dataPtr1 = &FC(1, 0, 0);
+
+  Tensor<Real> const B(3, dataPtr1);
+
+  TEST_COMPARE( B(0,0), ==, 10.0);
+  TEST_COMPARE( B(0,1), ==, 11.0);
+  TEST_COMPARE( B(0,2), ==, 12.0);
+  TEST_COMPARE( B(1,0), ==, 13.0);
+  TEST_COMPARE( B(1,1), ==, 14.0);
+  TEST_COMPARE( B(1,2), ==, 15.0);
+  TEST_COMPARE( B(2,0), ==, 16.0);
+  TEST_COMPARE( B(2,1), ==, 17.0);
+  TEST_COMPARE( B(2,2), ==, 18.0);
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, TensorAddition)
+{
+  Tensor<Real> const A(3, 1.0);
+  Tensor<Real> const B(3, 2.0);
+  Tensor<Real> const C(3, 3.0);
+
+  TEST_COMPARE( C == A + B, !=, 0);
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, Inverse)
+{
+  std::srand(std::time(NULL));
+  Index const N = double(std::rand()) / double(RAND_MAX) * 7.0 + 3.0;
+  Tensor<Real> A(N);
+  Tensor<Real> B(N);
+  Tensor<Real> C(N);
+
+  for (Index i = 0; i < N; ++i) {
+    for (Index j = 0; j < N; ++j) {
+      A(i, j) = double(std::rand()) / double(RAND_MAX) * 20.0 - 10.0;
     }
-
-    B = inverse(A);
-
-    C = A * B;
-
-    Real const error = norm(C - eye<Real>(N)) / norm(A);
-
-    TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
   }
 
-  TEUCHOS_UNIT_TEST(MiniTensor, TensorManipulation)
-  {
-    Tensor<Real> A = eye<Real>(3);
-    Tensor<Real> B(3);
-    Tensor<Real> C(3);
-    Vector<Real> u(3);
+  B = inverse(A);
 
-    A = 2.0 * A;
-    A(1, 0) = A(0, 1) = 1.0;
-    A(2, 1) = A(1, 2) = 1.0;
+  C = A * B;
 
-    B = inverse(A);
+  Real const error = norm(C - eye<Real>(N)) / norm(A);
 
-    C = A * B;
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
+}
 
-    TEST_COMPARE(norm(C - eye<Real>(3)), <=, machine_epsilon<Real>());
+TEUCHOS_UNIT_TEST(MiniTensor, TensorManipulation)
+{
+  Tensor<Real> A = eye<Real>(3);
+  Tensor<Real> B(3);
+  Tensor<Real> C(3);
+  Vector<Real> u(3);
 
-    Real I1_A = I1(A);
-    Real I2_A = I2(A);
-    Real I3_A = I3(A);
+  A = 2.0 * A;
+  A(1, 0) = A(0, 1) = 1.0;
+  A(2, 1) = A(1, 2) = 1.0;
 
-    u(0) = I1_A - 6;
-    u(1) = I2_A - 10;
-    u(2) = I3_A - 4;
+  B = inverse(A);
 
-    Real const error = norm(u);
+  C = A * B;
 
-    TEST_COMPARE(error, <=, machine_epsilon<Real>());
-  }
+  TEST_COMPARE(norm(C - eye<Real>(3)), <=, machine_epsilon<Real>());
 
-  TEUCHOS_UNIT_TEST(MiniTensor, Exponential)
-  {
-    Tensor<Real> const A(1, 2, 3, 4, 5, 6, 7, 8, 9);
+  Real I1_A = I1(A);
+  Real I2_A = I2(A);
+  Real I3_A = I3(A);
 
-    Tensor<Real> const B = exp_pade(A);
+  u(0) = I1_A - 6;
+  u(1) = I2_A - 10;
+  u(2) = I3_A - 4;
 
-    Tensor<Real> const C = exp_taylor(A);
+  Real const error = norm(u);
 
-    Tensor<Real> const D = B - C;
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+}
 
-    Real const error = norm(D) / norm(B);
+TEUCHOS_UNIT_TEST(MiniTensor, Exponential)
+{
+  Tensor<Real> const A(1, 2, 3, 4, 5, 6, 7, 8, 9);
 
-    TEST_COMPARE( error, <=, 100.0 * machine_epsilon<Real>());
-  }
+  Tensor<Real> const B = exp_pade(A);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen)
-  {
-    Tensor<Real> A = eye<Real>(3);
-    A(0, 1) = 0.1;
-    A(1, 0) = 0.1;
+  Tensor<Real> const C = exp_taylor(A);
 
-    Tensor<Real> V(3);
-    Tensor<Real> D(3);
+  Tensor<Real> const D = B - C;
 
-    boost::tie(V, D) = eig_sym(A);
+  Real const error = norm(D) / norm(B);
 
-    TEST_COMPARE(std::abs(D(0,0) - 1.1), <=, machine_epsilon<Real>());
-    TEST_COMPARE(std::abs(D(1,1) - 1.0), <=, machine_epsilon<Real>());
-    TEST_COMPARE(std::abs(D(2,2) - 0.9), <=, machine_epsilon<Real>());
-  }
+  TEST_COMPARE( error, <=, 100.0 * machine_epsilon<Real>());
+}
 
-  TEUCHOS_UNIT_TEST(MiniTensor, LeftPolarDecomposition)
-  {
-    Tensor<Real> V0(1.1, 0.2, 0.0, 0.2, 1.0, 0.0, 0.0, 0.0, 1.2);
+TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen)
+{
+  Tensor<Real> A = eye<Real>(3);
+  A(0, 1) = 0.1;
+  A(1, 0) = 0.1;
 
-    Tensor<Real> R0(sqrt(2) / 2, -sqrt(2) / 2, 0.0, sqrt(2) / 2, sqrt(2) / 2,
-        0.0, 0.0, 0.0, 1.0);
+  Tensor<Real> V(3);
+  Tensor<Real> D(3);
 
-    Tensor<Real> F = V0 * R0;
-    Tensor<Real> V(3);
-    Tensor<Real> R(3);
-    boost::tie(V, R) = polar_left(F);
+  boost::tie(V, D) = eig_sym(A);
 
-    TEST_COMPARE(norm(V-V0), <=, 10.0*machine_epsilon<Real>());
-    TEST_COMPARE(norm(R-R0), <=, machine_epsilon<Real>());
-  }
+  TEST_COMPARE(std::abs(D(0,0) - 1.1), <=, machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(D(1,1) - 1.0), <=, machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(D(2,2) - 0.9), <=, machine_epsilon<Real>());
+}
 
-  TEUCHOS_UNIT_TEST(MiniTensor, LogRotation)
-  {
-    Tensor<Real> R = identity<Real>(3);
-    Tensor<Real> R0(sqrt(2) / 2, -sqrt(2) / 2, 0.0, sqrt(2) / 2, sqrt(2) / 2,
-        0.0, 0.0, 0.0, 1.0);
+TEUCHOS_UNIT_TEST(MiniTensor, LeftPolarDecomposition)
+{
+  Tensor<Real> V0(1.1, 0.2, 0.0, 0.2, 1.0, 0.0, 0.0, 0.0, 1.2);
 
-    Tensor<Real> r = log_rotation(R);
-    Tensor<Real> r0 = log_rotation(R0);
+  Tensor<Real> R0(sqrt(2) / 2, -sqrt(2) / 2, 0.0, sqrt(2) / 2, sqrt(2) / 2,
+      0.0, 0.0, 0.0, 1.0);
 
-    TEST_COMPARE(norm(r), <=, machine_epsilon<Real>());
+  Tensor<Real> F = V0 * R0;
+  Tensor<Real> V(3);
+  Tensor<Real> R(3);
+  boost::tie(V, R) = polar_left(F);
 
-    TEST_COMPARE( std::abs(r0(0,1) + 0.785398163397448), <=,
-        10.0*machine_epsilon<Real>());
+  TEST_COMPARE(norm(V-V0), <=, 10.0*machine_epsilon<Real>());
+  TEST_COMPARE(norm(R-R0), <=, machine_epsilon<Real>());
+}
 
-    TEST_COMPARE( std::abs(r0(0,1) + r0(1,0)), <=, machine_epsilon<Real>());
+TEUCHOS_UNIT_TEST(MiniTensor, LogRotation)
+{
+  Tensor<Real> R = identity<Real>(3);
+  Tensor<Real> R0(sqrt(2) / 2, -sqrt(2) / 2, 0.0, sqrt(2) / 2, sqrt(2) / 2,
+      0.0, 0.0, 0.0, 1.0);
 
-    Real theta = std::acos(-1.0) + 10 * machine_epsilon<Real>();
+  Tensor<Real> r = log_rotation(R);
+  Tensor<Real> r0 = log_rotation(R0);
 
-    R(0, 0) = cos(theta);
-    R(1, 1) = cos(theta);
-    R(0, 1) = sin(theta);
-    R(1, 0) = -sin(theta);
-    R(2, 2) = 1.0;
+  TEST_COMPARE(norm(r), <=, machine_epsilon<Real>());
 
-    Tensor<Real> logR = log_rotation(R);
+  TEST_COMPARE( std::abs(r0(0,1) + 0.785398163397448), <=,
+      10.0*machine_epsilon<Real>());
 
-    Tensor<Real> Rref(3, 0.0);
-    Rref(0, 1) = -theta;
-    Rref(1, 0) = theta;
+  TEST_COMPARE( std::abs(r0(0,1) + r0(1,0)), <=, machine_epsilon<Real>());
 
-    TEST_COMPARE(norm(logR - Rref), <=, 100*machine_epsilon<Real>());
-  }
+  Real theta = std::acos(-1.0) + 10 * machine_epsilon<Real>();
 
-  TEUCHOS_UNIT_TEST(MiniTensor, BakerCampbellHausdorff)
-  {
-    Tensor<Real> F = 3.0 * identity<Real>(3);
-    Tensor<Real> V(3), R(3), logV(3), logR(3);
+  R(0, 0) = cos(theta);
+  R(1, 1) = cos(theta);
+  R(0, 1) = sin(theta);
+  R(1, 0) = -sin(theta);
+  R(2, 2) = 1.0;
 
-    boost::tie(V, R, logV) = polar_left_logV(F);
-    logR = log_rotation(R);
+  Tensor<Real> logR = log_rotation(R);
 
-    Tensor<Real> f = bch(logV, logR);
+  Tensor<Real> Rref(3, 0.0);
+  Rref(0, 1) = -theta;
+  Rref(1, 0) = theta;
 
-    TEST_COMPARE( std::abs(f(0,0) - std::log(3.0)), <=,
-        machine_epsilon<Real>());
+  TEST_COMPARE(norm(logR - Rref), <=, 100*machine_epsilon<Real>());
+}
 
-    Vector<Real> u(3);
-    u(0) = std::acos(-1.0) / std::sqrt(2.0);
-    u(1) = u(0);
-    u(2) = 0.0;
+TEUCHOS_UNIT_TEST(MiniTensor, BakerCampbellHausdorff)
+{
+  Tensor<Real> F = 3.0 * identity<Real>(3);
+  Tensor<Real> V(3), R(3), logV(3), logR(3);
 
-    Tensor<Real> R1(3, 0.0);
-    Tensor<Real> logR2(3, 0.0);
-    logR2(0, 2) = u(1);
-    logR2(1, 2) = -u(0);
-    logR2(2, 0) = -u(1);
-    logR2(2, 1) = u(0);
-    logR2(0, 1) = -u(2);
-    logR2(1, 0) = u(2);
+  boost::tie(V, R, logV) = polar_left_logV(F);
+  logR = log_rotation(R);
 
-    R1 = exp_skew_symmetric(logR2);
-    Tensor<Real> Rref = zero<Real>(3);
-    Rref(0, 1) = 1.0;
-    Rref(1, 0) = 1.0;
-    Rref(2, 2) = -1.0;
+  Tensor<Real> f = bch(logV, logR);
 
-    TEST_COMPARE( norm(Rref-R1), <=, 100.0*machine_epsilon<Real>());
-    TEST_COMPARE( norm(exp_skew_symmetric(logR) - R), <=,
-        100.0*machine_epsilon<Real>());
-  }
+  TEST_COMPARE( std::abs(f(0,0) - std::log(3.0)), <=,
+      machine_epsilon<Real>());
 
-  TEUCHOS_UNIT_TEST(MiniTensor, PolarLeftLog)
-  {
-    Tensor<Real> const F(3.60070151614402, 0.00545892068653966,
-        0.144580850331452, -5.73345529510674, 0.176660910549112,
-        1.39627497290058, 2.51510445213514, 0.453212159218359,
-        -1.44616077859513);
+  Vector<Real> u(3);
+  u(0) = std::acos(-1.0) / std::sqrt(2.0);
+  u(1) = u(0);
+  u(2) = 0.0;
 
-    Tensor<Real> const L(0.265620603957487, -1.066921781600734,
-        -0.089540974250415, -1.066921781600734, 0.927394431410918,
-        -0.942214085118614, -0.089540974250415, -0.942214085118613,
-        0.105672693695746);
+  Tensor<Real> R1(3, 0.0);
+  Tensor<Real> logR2(3, 0.0);
+  logR2(0, 2) = u(1);
+  logR2(1, 2) = -u(0);
+  logR2(2, 0) = -u(1);
+  logR2(2, 1) = u(0);
+  logR2(0, 1) = -u(2);
+  logR2(1, 0) = u(2);
 
-    Tensor<Real> V(3), R(3), v(3), r(3);
+  R1 = exp_skew_symmetric(logR2);
+  Tensor<Real> Rref = zero<Real>(3);
+  Rref(0, 1) = 1.0;
+  Rref(1, 0) = 1.0;
+  Rref(2, 2) = -1.0;
 
-    boost::tie(V, R, v) = polar_left_logV(F);
+  TEST_COMPARE( norm(Rref-R1), <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE( norm(exp_skew_symmetric(logR) - R), <=,
+      100.0*machine_epsilon<Real>());
+}
 
-    Real const error = norm(v - L) / norm(L);
+TEUCHOS_UNIT_TEST(MiniTensor, PolarLeftLog)
+{
+  Tensor<Real> const F(3.60070151614402, 0.00545892068653966,
+      0.144580850331452, -5.73345529510674, 0.176660910549112,
+      1.39627497290058, 2.51510445213514, 0.453212159218359,
+      -1.44616077859513);
 
-    TEST_COMPARE( error, <=, 100*machine_epsilon<Real>());
-  }
+  Tensor<Real> const L(0.265620603957487, -1.066921781600734,
+      -0.089540974250415, -1.066921781600734, 0.927394431410918,
+      -0.942214085118614, -0.089540974250415, -0.942214085118613,
+      0.105672693695746);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, VolumetricDeviatoric)
-  {
-    Tensor<Real> A = 3.0 * eye<Real>(3);
+  Tensor<Real> V(3), R(3), v(3), r(3);
 
-    TEST_COMPARE( norm(A - vol(A)), <=, 100.0*machine_epsilon<Real>());
+  boost::tie(V, R, v) = polar_left_logV(F);
 
-    Tensor<Real> B = dev(A);
+  Real const error = norm(v - L) / norm(L);
 
-    A(0, 0) = 0.0;
-    A(1, 1) = 0.0;
-    A(2, 2) = 0.0;
+  TEST_COMPARE( error, <=, 100*machine_epsilon<Real>());
+}
 
-    TEST_COMPARE( norm(A - B), <=, 100.0*machine_epsilon<Real>());
-  }
+TEUCHOS_UNIT_TEST(MiniTensor, VolumetricDeviatoric)
+{
+  Tensor<Real> A = 3.0 * eye<Real>(3);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, SVD2x2)
-  {
-    Real const phi = 1.0;
+  TEST_COMPARE( norm(A - vol(A)), <=, 100.0*machine_epsilon<Real>());
 
-    Real const psi = 2.0;
+  Tensor<Real> B = dev(A);
 
-    Real const s0 = sqrt(3.0);
+  A(0, 0) = 0.0;
+  A(1, 1) = 0.0;
+  A(2, 2) = 0.0;
 
-    Real const s1 = sqrt(2.0);
+  TEST_COMPARE( norm(A - B), <=, 100.0*machine_epsilon<Real>());
+}
 
-    Real const cl = cos(phi);
+TEUCHOS_UNIT_TEST(MiniTensor, SVD2x2)
+{
+  Real const phi = 1.0;
 
-    Real const sl = sin(phi);
+  Real const psi = 2.0;
 
-    Real const cr = cos(psi);
+  Real const s0 = sqrt(3.0);
 
-    Real const sr = sin(psi);
+  Real const s1 = sqrt(2.0);
 
-    Tensor<Real> const X(cl, -sl, sl, cl);
+  Real const cl = cos(phi);
 
-    Tensor<Real> const Y(cr, -sr, sr, cr);
+  Real const sl = sin(phi);
 
-    Tensor<Real> const D(s0, 0.0, 0.0, s1);
+  Real const cr = cos(psi);
 
-    Tensor<Real> const A = X * D * transpose(Y);
+  Real const sr = sin(psi);
 
-    Tensor<Real> U(2), S(2), V(2);
+  Tensor<Real> const X(cl, -sl, sl, cl);
 
-    boost::tie(U, S, V) = svd(A);
+  Tensor<Real> const Y(cr, -sr, sr, cr);
 
-    Tensor<Real> B = U * S * transpose(V);
+  Tensor<Real> const D(s0, 0.0, 0.0, s1);
 
-    Real const error = norm(A - B) / norm(A);
+  Tensor<Real> const A = X * D * transpose(Y);
 
-    TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
-  }
+  Tensor<Real> U(2), S(2), V(2);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3)
-  {
-    Tensor<Real> const A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+  boost::tie(U, S, V) = svd(A);
 
-    Tensor<Real> U(3), S(3), V(3);
+  Tensor<Real> B = U * S * transpose(V);
 
-    boost::tie(U, S, V) = svd(A);
+  Real const error = norm(A - B) / norm(A);
 
-    Tensor<Real> const B = U * S * transpose(V);
+  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+}
 
-    Real const error = norm(A - B) / norm(A);
+TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3)
+{
+  Tensor<Real> const A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
 
-    TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
-  }
+  Tensor<Real> U(3), S(3), V(3);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3Fad)
-  {
-    Tensor<Sacado::Fad::DFad<double> > A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
-        9.0);
+  boost::tie(U, S, V) = svd(A);
 
-    Tensor<Sacado::Fad::DFad<double> > U(3), S(3), V(3);
+  Tensor<Real> const B = U * S * transpose(V);
 
-    boost::tie(U, S, V) = svd(A);
+  Real const error = norm(A - B) / norm(A);
 
-    Tensor<Sacado::Fad::DFad<double> > B = U * S * transpose(V);
+  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+}
 
-    Sacado::Fad::DFad<double> const error = norm(B - A) / norm(A);
+TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3Fad)
+{
+  Tensor<Sacado::Fad::DFad<double> > A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
+      9.0);
 
-    TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
-  }
+  Tensor<Sacado::Fad::DFad<double> > U(3), S(3), V(3);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen2x2)
-  {
-    Tensor<Real> const A(2.0, 1.0, 1.0, 2.0);
+  boost::tie(U, S, V) = svd(A);
 
-    Tensor<Real> V(2), D(2);
+  Tensor<Sacado::Fad::DFad<double> > B = U * S * transpose(V);
 
-    boost::tie(V, D) = eig_sym(A);
+  Sacado::Fad::DFad<double> const error = norm(B - A) / norm(A);
 
-    Tensor<Real> const B = V * D * transpose(V);
+  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+}
 
-    Real const error = norm(A - B) / norm(A);
+TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen2x2)
+{
+  Tensor<Real> const A(2.0, 1.0, 1.0, 2.0);
 
-    TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
-  }
+  Tensor<Real> V(2), D(2);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen3x3)
-  {
-    Tensor<Real> const A(2.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0, 1.0, 2.0);
+  boost::tie(V, D) = eig_sym(A);
 
-    Tensor<Real> V(3), D(3);
+  Tensor<Real> const B = V * D * transpose(V);
 
-    boost::tie(V, D) = eig_sym(A);
+  Real const error = norm(A - B) / norm(A);
 
-    Tensor<Real> const B = V * D * transpose(V);
+  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+}
 
-    Real const error = norm(A - B) / norm(A);
+TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen3x3)
+{
+  Tensor<Real> const A(2.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0, 1.0, 2.0);
 
-    TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
-  }
+  Tensor<Real> V(3), D(3);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, Inverse4x4)
-  {
-    Tensor<Real> A = 2.0 * identity<Real>(4);
+  boost::tie(V, D) = eig_sym(A);
 
-    A(0, 1) = 1.0;
-    A(1, 0) = 1.0;
+  Tensor<Real> const B = V * D * transpose(V);
 
-    A(1, 2) = 1.0;
-    A(2, 1) = 1.0;
+  Real const error = norm(A - B) / norm(A);
 
-    A(2, 3) = 1.0;
-    A(3, 2) = 1.0;
+  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+}
 
-    Tensor<Real> const B = inverse(A);
+TEUCHOS_UNIT_TEST(MiniTensor, Inverse4x4)
+{
+  Tensor<Real> A = 2.0 * identity<Real>(4);
 
-    Tensor<Real> const C = A * B;
+  A(0, 1) = 1.0;
+  A(1, 0) = 1.0;
 
-    Tensor<Real> const I = eye<Real>(4);
+  A(1, 2) = 1.0;
+  A(2, 1) = 1.0;
 
-    Real const error = norm(C - I) / norm(A);
+  A(2, 3) = 1.0;
+  A(3, 2) = 1.0;
 
-    TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
-  }
+  Tensor<Real> const B = inverse(A);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, Polar3x3)
-  {
-    Tensor<Real> A(2.0, 1.0, 0.0, 0.0, 2.0, 1.0, 0.0, 0.0, 2.0);
+  Tensor<Real> const C = A * B;
 
-    Tensor<Real> R(3), U(3);
+  Tensor<Real> const I = eye<Real>(4);
 
-    boost::tie(R, U) = polar_right(A);
+  Real const error = norm(C - I) / norm(A);
 
-    Tensor<Real> X(3), D(3), Y(3);
+  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+}
 
-    boost::tie(X, D, Y) = svd(A);
+TEUCHOS_UNIT_TEST(MiniTensor, Polar3x3)
+{
+  Tensor<Real> A(2.0, 1.0, 0.0, 0.0, 2.0, 1.0, 0.0, 0.0, 2.0);
 
-    Tensor<Real> B = R - X * transpose(Y) + U - Y * D * transpose(Y);
+  Tensor<Real> R(3), U(3);
 
-    Real const error = norm(B) / norm(A);
+  boost::tie(R, U) = polar_right(A);
 
-    TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
-  }
+  Tensor<Real> X(3), D(3), Y(3);
 
-  TEUCHOS_UNIT_TEST(MiniTensor, Cholesky)
-  {
-    Tensor<Real> A(1.0, 1.0, 1.0, 1.0, 5.0, 3.0, 1.0, 3.0, 3.0);
+  boost::tie(X, D, Y) = svd(A);
 
-    Tensor<Real> G(3);
+  Tensor<Real> B = R - X * transpose(Y) + U - Y * D * transpose(Y);
 
-    bool is_spd;
+  Real const error = norm(B) / norm(A);
 
-    boost::tie(G, is_spd) = cholesky(A);
+  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+}
 
-    Tensor<Real> B(1.0, 0.0, 0.0, 1.0, 2.0, 0.0, 1.0, 1.0, 1.0);
+TEUCHOS_UNIT_TEST(MiniTensor, Cholesky)
+{
+  Tensor<Real> A(1.0, 1.0, 1.0, 1.0, 5.0, 3.0, 1.0, 3.0, 3.0);
 
-    Real const error = norm(G - B) / norm(A);
+  Tensor<Real> G(3);
 
-    TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
-  }
+  bool is_spd;
 
-  TEUCHOS_UNIT_TEST(MiniTensor, MechanicsTransforms)
-  {
-    Tensor<Real> F(0.0, -6.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0 / 3.0);
+  boost::tie(G, is_spd) = cholesky(A);
 
-    Tensor<Real> sigma(0.0, 0.0, 0.0, 0.0, 50.0, 0.0, 0.0, 0.0, 0.0);
+  Tensor<Real> B(1.0, 0.0, 0.0, 1.0, 2.0, 0.0, 1.0, 1.0, 1.0);
 
-    Tensor<Real> P = piola(F, sigma);
+  Real const error = norm(G - B) / norm(A);
 
-    Real error = abs(P(1, 0) - 100.0) / 100.0;
+  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+}
 
-    TEST_COMPARE(error, <=, machine_epsilon<Real>());
+TEUCHOS_UNIT_TEST(MiniTensor, MechanicsTransforms)
+{
+  Tensor<Real> F(0.0, -6.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0 / 3.0);
 
-    sigma = piola_inverse(F, P);
+  Tensor<Real> sigma(0.0, 0.0, 0.0, 0.0, 50.0, 0.0, 0.0, 0.0, 0.0);
 
-    error = abs(sigma(1, 1) - 50.0) / 50.0;
+  Tensor<Real> P = piola(F, sigma);
 
-    TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  Real error = abs(P(1, 0) - 100.0) / 100.0;
 
-    Tensor<Real> E = 0.5 * (t_dot(F, F) - eye<Real>(3));
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
 
-    Tensor<Real> e = 0.5 * (eye<Real>(3) - inverse(dot_t(F, F)));
+  sigma = piola_inverse(F, P);
 
-    Tensor<Real> g = push_forward_covariant(F, E);
+  error = abs(sigma(1, 1) - 50.0) / 50.0;
 
-    error = norm(g - e) / norm(e);
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
 
-    TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  Tensor<Real> E = 0.5 * (t_dot(F, F) - eye<Real>(3));
 
-    Tensor<Real> G = pull_back_covariant(F, e);
+  Tensor<Real> e = 0.5 * (eye<Real>(3) - inverse(dot_t(F, F)));
 
-    error = norm(G - E) / norm(E);
+  Tensor<Real> g = push_forward_covariant(F, E);
 
-    TEST_COMPARE(error, <=, machine_epsilon<Real>());
-  }
+  error = norm(g - e) / norm(e);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  Tensor<Real> G = pull_back_covariant(F, e);
+
+  error = norm(G - E) / norm(E);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+}
 
 } // namespace Intrepid

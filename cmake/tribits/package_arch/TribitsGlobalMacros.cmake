@@ -257,15 +257,21 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     "Determines if ${PROJECT_NAME}Config.cmake and <PACKAGE>Config.cmake files are created or not."
     )
 
-  # We need to generate the dependency logic for export dependency files if
-  # asked.
-  IF (${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES OR
-    ${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
-    )
-    SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES ON)
-  ELSE()
-    SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES OFF)
+  IF (NOT ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT)
+    # We need to generate the dependency logic for export dependency files if
+    # asked.
+    IF (${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES OR
+      ${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
+      )
+      SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
+    ELSE()
+      SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT OFF)
+    ENDIF()
   ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES
+     ${${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT} CACHE BOOL
+    "Allow secondary stable packages and code to be implicitly enabled." )
+  
 
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF CACHE BOOL
     "Allow secondary stable packages and code to be implicitly enabled." )

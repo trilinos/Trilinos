@@ -51,6 +51,7 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
@@ -410,7 +411,7 @@ namespace MueLu {
 
     /*! @brief print matrix info
     */
-    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params = Teuchos::null);
+    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
 
   }; // class Utils
 

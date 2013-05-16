@@ -139,7 +139,7 @@ int AlgRCM(
       // TODO: Else, sort nbors by increasing degree
       for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
 	lno_t nbor = edgeIds[ptr];
-	if (perm[nbor] == INVALID){
+	if (static_cast<Tpetra::global_size_t>(perm[nbor]) == INVALID){
 	  //cout << "Debug: perm[" << nbor << "] = " << count << endl;
 	  perm[nbor] = count++; // Label as we push on Q
 	  Q.push(nbor);
@@ -148,7 +148,7 @@ int AlgRCM(
     }
 
     // Find an unmarked vertex, use as new root
-    while ((next < nVtx) && (perm[next] != INVALID)) next++;
+    while ((next < nVtx) && (static_cast<Tpetra::global_size_t>(perm[next]) != INVALID)) next++;
     root = next;
   }
 

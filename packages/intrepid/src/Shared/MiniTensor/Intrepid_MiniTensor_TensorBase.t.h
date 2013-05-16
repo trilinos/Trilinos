@@ -39,53 +39,13 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Tensor3_i_h)
-#define Intrepid_MiniTensor_Tensor3_i_h
+#if !defined(Intrepid_MiniTensor_TensorBase_t_h)
+#define Intrepid_MiniTensor_TensorBase_t_h
 
 namespace Intrepid {
 
-//
-// Indexing for constant 3rd order tensor
-//
-template<typename T>
-inline
-T const &
-Tensor3<T>::operator()(Index const i, Index const j, Index const k) const
-{
-  Tensor3<T> const &
-  self = (*this);
-
-  Index const
-  N = self.get_dimension();
-
-  assert(i < N);
-  assert(j < N);
-  assert(k < N);
-
-  return self[(i * N + j) * N + k];
-}
-
-//
-// 3rd-order tensor indexing
-//
-template<typename T>
-inline
-T &
-Tensor3<T>::operator()(Index const i, Index const j, Index const k)
-{
-  Tensor3<T> &
-  self = (*this);
-
-  Index const
-  N = self.get_dimension();
-
-  assert(i < N);
-  assert(j < N);
-  assert(k < N);
-
-  return self[(i * N + j) * N + k];
-}
+// Placeholder for now.
 
 } // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Tensor3_i_h
+#endif // Intrepid_MiniTensor_TensorBase_t_h
