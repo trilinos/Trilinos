@@ -1084,7 +1084,9 @@ namespace Tpetra {
                       const ArrayView<const GlobalOrdinal> &indices,
                       const ArrayView<const Scalar>        &values)
   {
-    const char tfecfFuncName[] = "insertGlobalValues()";
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    const char tfecfFuncName[] = "insertGlobalValues";
 
     // mfh 14 Dec 2012: Defer test for static graph until we know that
     // globalRow is in the row Map.  If it's not in the row Map, it
@@ -1093,14 +1095,16 @@ namespace Tpetra {
     // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     //   isStaticGraph(), std::runtime_error,
     //   ": matrix was constructed with static graph. Cannot insert new entries.");
+#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       values.size() != indices.size(), std::runtime_error,
       ": values.size() must equal indices.size().  values.size() = "
       << values.size() << ", but indices.size() = " << indices.size() << ".");
+#endif // HAVE_TPETRA_DEBUG
 
-    const LocalOrdinal lrow = getRowMap()->getLocalElement(globalRow);
+    const LO lrow = getRowMap ()->getLocalElement (globalRow);
 
-    if (lrow != LOT::invalid()) { // globalRow is in our row Map.
+    if (lrow != Teuchos::OrdinalTraits<LO>::invalid ()) { // globalRow is in our row Map.
       // If the matrix has a static graph, this process is now allowed
       // to insert into rows it owns.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -1116,25 +1120,24 @@ namespace Tpetra {
       // We have to declare these Arrays here rather than in the
       // hasColMap() if branch, so that views to them will remain
       // valid for the whole scope.
-      Array<GlobalOrdinal> filtered_indices;
-      Array<Scalar>        filtered_values;
-      if (hasColMap()) { // We have a column Map.
-        //
-        // Use column map to filter the indices and corresponding
+      Array<GO> filtered_indices;
+      Array<Scalar> filtered_values;
+      if (hasColMap ()) { // We have a column Map.
+        // Use column Map to filter the indices and corresponding
         // values, so that we only insert entries into columns we own.
         filtered_indices.assign (indices.begin (), indices.end ());
         filtered_values.assign (values.begin (), values.end ());
         const size_t numFilteredEntries =
           myGraph_->template filterGlobalIndicesAndValues<Scalar> (filtered_indices (),
                                                                    filtered_values ());
-        inds_view.ginds = filtered_indices(0,numFilteredEntries);
-        vals_view       = filtered_values(0,numFilteredEntries);
+        inds_view.ginds = filtered_indices (0, numFilteredEntries);
+        vals_view       = filtered_values (0, numFilteredEntries);
       }
       else { // we don't have a column Map.
         inds_view.ginds = indices;
         vals_view       = values;
       }
-      const size_t numFilteredEntries = vals_view.size();
+      const size_t numFilteredEntries = vals_view.size ();
       // add the new indices and values
       if (numFilteredEntries > 0) {
         RowInfo rowInfo = myGraph_->getRowInfo(lrow);
@@ -1159,9 +1162,9 @@ namespace Tpetra {
             insertGlobalValuesWarnedEfficiency_ = true;
           }
           // Update allocation only as much as necessary
-          rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices,Scalar>(rowInfo, newNumEntries, values2D_[lrow]);
+          rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices, Scalar> (rowInfo, newNumEntries, values2D_[lrow]);
         }
-        if (isGloballyIndexed()) {
+        if (isGloballyIndexed ()) {
           // lg=GlobalIndices, I=GlobalIndices means the method calls
           // getGlobalViewNonConst() and does direct copying, which
           // should be reasonably fast.
@@ -1190,13 +1193,18 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
       }
     }
-    else { // The calling process doesn't own the given row, so add
-           // the new data to the list of nonlocals.
-      typename ArrayView<const GlobalOrdinal>::iterator ind = indices.begin();
-      typename ArrayView<const Scalar       >::iterator val =  values.begin();
-      nonlocals_[globalRow].reserve( nonlocals_[globalRow].size() + indices.size() );
+    else {
+      // The calling process doesn't own the given row, so add the new
+      // data to the list of nonlocals.
+
+      // This creates the array if it doesn't exist yet.
+      Array<std::pair<GO, Scalar> >& curRow = nonlocals_[globalRow];
+      curRow.reserve (curRow.size () + indices.size ());
+
+      typename ArrayView<const GO>::const_iterator ind = indices.begin();
+      typename ArrayView<const Scalar>::const_iterator val =  values.begin();
       for (; val != values.end(); ++val, ++ind) {
-        nonlocals_[globalRow].push_back(std::make_pair(*ind, *val));
+        curRow.push_back (std::make_pair (*ind, *val));
       }
     }
   }
