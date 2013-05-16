@@ -1658,7 +1658,7 @@ namespace Tpetra {
 
       const LO lrow = this->getRowMap()->getLocalElement(globalRow);
 
-      if (lrow == LOT::invalid()) {
+      if (lrow == OTL::invalid()) {
         // FIXME (mfh 16 May 2013) We're using this exception to do
         // sumIntoGlobalValues for nonowned rows, so we might want to
         // avoid the overhead of constructing the fancy exception
@@ -1698,8 +1698,7 @@ namespace Tpetra {
 
   protected:
     // useful typedefs
-    typedef OrdinalTraits<LocalOrdinal>                     LOT;
-    typedef OrdinalTraits<GlobalOrdinal>                    GOT;
+    typedef OrdinalTraits<LocalOrdinal>                     OTL;
     typedef ScalarTraits<Scalar>                            STS;
     typedef typename STS::magnitudeType               Magnitude;
     typedef ScalarTraits<Magnitude>                         STM;
@@ -1709,6 +1708,10 @@ namespace Tpetra {
     typedef typename LocalMatOps::template bind_scalar<Scalar>::other_type                    sparse_ops_type;
     typedef typename sparse_ops_type::template graph<LocalOrdinal,Node>::graph_type          local_graph_type;
     typedef typename sparse_ops_type::template matrix<Scalar,LocalOrdinal,Node>::matrix_type local_matrix_type;
+
+    typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
+    typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+
     // Enums
     enum GraphAllocationStatus {
       GraphAlreadyAllocated,
@@ -2054,8 +2057,8 @@ namespace Tpetra {
     if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
 
     // Cache the maps
-    Teuchos::RCP<const map_type> sourceMap = reverseMode? importer.getTargetMap() : importer.getSourceMap();
-    Teuchos::RCP<const map_type> targetMap = reverseMode? importer.getSourceMap() : importer.getTargetMap();
+    RCP<const map_type> sourceMap = reverseMode? importer.getTargetMap() : importer.getSourceMap();
+    RCP<const map_type> targetMap = reverseMode? importer.getSourceMap() : importer.getTargetMap();
 
     // Pre-count the nonzeros to allow a build w/ Static Profile
     Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec(sourceMap);
@@ -2177,8 +2180,8 @@ namespace Tpetra {
     if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
 
     // Cache the maps
-    Teuchos::RCP<const map_type> sourceMap = reverseMode? exporter.getTargetMap() : exporter.getSourceMap();
-    Teuchos::RCP<const map_type> targetMap = reverseMode? exporter.getSourceMap() : exporter.getTargetMap();
+    RCP<const map_type> sourceMap = reverseMode? exporter.getTargetMap() : exporter.getSourceMap();
+    RCP<const map_type> targetMap = reverseMode? exporter.getSourceMap() : exporter.getTargetMap();
 
     // Pre-count the nonzeros to allow a build w/ Static Profile
     Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec(sourceMap);
