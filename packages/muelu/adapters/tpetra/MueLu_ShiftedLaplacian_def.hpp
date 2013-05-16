@@ -175,12 +175,13 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
 
   if(GridTransfersExist_==false) {
 
-    TentPfact_ = rcp( new TentativePFactory         );
-    Pfact_     = rcp( new SaPFactory                );
-    Rfact_     = rcp( new TransPFactory             );
-    Acfact_    = rcp( new RAPFactory                );
-    Acshift_   = rcp( new RAPShiftFactory           );
-    Aggfact_   = rcp( new CoupledAggregationFactory );
+    TentPfact_ = rcp( new TentativePFactory           );
+    Pfact_     = rcp( new SaPFactory                  );
+    Rfact_     = rcp( new TransPFactory               );
+    Acfact_    = rcp( new RAPFactory                  );
+    Acshift_   = rcp( new RAPShiftFactory             );
+    Aggfact_   = rcp( new CoupledAggregationFactory   );
+    UCaggfact_ = rcp( new UncoupledAggregationFactory );
 
     // choose smoother
     if(Smoother_=="gmres") {
@@ -254,11 +255,17 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     Manager_   -> SetFactory("P", Pfact_);
     Manager_   -> SetFactory("R", Rfact_);
     Manager_   -> SetFactory("Ptent", TentPfact_);
-    Manager_   -> SetFactory("Aggregates", Aggfact_);
+    if(Aggregation_=="coupled") {
+      Manager_   -> SetFactory("Aggregates", Aggfact_   );
+    }
+    else {
+      Manager_   -> SetFactory("Aggregates", UCaggfact_ );
+    }
     Hierarchy_ -> Keep("P", Pfact_.get());
     Hierarchy_ -> Keep("R", Rfact_.get());
     Hierarchy_ -> Keep("Ptent", TentPfact_.get());
     Hierarchy_ -> SetImplicitTranspose(true);
+    Hierarchy_ -> SetMaxCoarseSize( coarseGridSize_ );
     Hierarchy_ -> Setup(*Manager_, 0, numLevels_);
     Hierarchy_ -> Delete("Smoother");
     Hierarchy_ -> Delete("CoarseSolver");    
