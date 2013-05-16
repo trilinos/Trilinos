@@ -549,9 +549,9 @@ namespace Tpetra {
     insertGlobalIndices (GlobalOrdinal globalRow,
                          const ArrayView<const GlobalOrdinal>& indices);
 
-    //! Insert graph indices, using local IDs.
+    //! Insert local indices into the graph.
     /**
-       \pre \c localRow is a local row belonging to the graph on this node
+       \pre \c localRow is a local row belonging to the graph on this process.
        \pre <tt>isGloballyIndexed() == false</tt>
        \pre <tt>isStorageOptimized() == false</tt>
        \pre <tt>hasColMap() == true</tt>
@@ -565,7 +565,7 @@ namespace Tpetra {
          during the next call to fillComplete().
     */
     void
-    insertLocalIndices (LocalOrdinal localRow,
+    insertLocalIndices (const LocalOrdinal localRow,
                         const ArrayView<const LocalOrdinal> &indices);
 
     //! Remove all graph indices from the specified local row.
@@ -1149,6 +1149,15 @@ namespace Tpetra {
     void
     insertLocalIndicesImpl (const LocalOrdinal myRow,
                             const ArrayView<const LocalOrdinal> &indices);
+    //! Like insertLocalIndices(), but with column Map filtering.
+    void
+    insertLocalIndicesFiltered (const LocalOrdinal localRow,
+                                const ArrayView<const LocalOrdinal> &indices);
+
+    //! Like insertGlobalIndices(), but with column Map filtering.
+    void
+    insertGlobalIndicesFiltered (const GlobalOrdinal localRow,
+                                 const ArrayView<const GlobalOrdinal> &indices);
 
     /// \brief Transform the given values using local indices.
     ///

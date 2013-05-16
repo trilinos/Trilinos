@@ -1096,7 +1096,7 @@ namespace Tpetra {
   insertGlobalIndicesImpl (const LocalOrdinal myRow,
                            const ArrayView<const GlobalOrdinal> &indices)
   {
-    const char* tfecfFuncName("insertGlobalIndicesImpl()");
+    const char* tfecfFuncName ("insertGlobalIndicesImpl");
 
     RowInfo rowInfo = getRowInfo(myRow);
     const size_t numNewInds = indices.size();
@@ -1142,7 +1142,7 @@ namespace Tpetra {
   insertLocalIndicesImpl (const LocalOrdinal myRow,
                           const ArrayView<const LocalOrdinal> &indices)
   {
-    const char* tfecfFuncName("insertLocallIndicesImpl()");
+    const char* tfecfFuncName ("insertLocallIndicesImpl");
 
     RowInfo rowInfo = getRowInfo(myRow);
     const size_t numNewInds = indices.size();
@@ -1834,11 +1834,87 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertLocalIndices (LocalOrdinal localRow,
+  insertLocalIndices (const LocalOrdinal localRow,
                       const ArrayView<const LocalOrdinal> &indices)
   {
+    using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
-    const char tfecfFuncName[] = "insertLocalIndices()";
+    const char tfecfFuncName[] = "insertLocalIndices";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isFillActive() == false, std::runtime_error,
+      ": requires that fill is active.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isGloballyIndexed() == true, std::runtime_error,
+      ": graph indices are global; use insertGlobalIndices().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      hasColMap() == false, std::runtime_error,
+      ": cannot insert local indices without a column map.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      rowMap_->isNodeLocalElement(localRow) == false, std::runtime_error,
+      ": row does not belong to this node.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      hasRowInfo() == false, std::runtime_error,
+      ": graph row information was deleted at fillComplete().");
+    if (! indicesAreAllocated ()) {
+      allocateIndices (LocalIndices);
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+    // In a debug build, if the graph has a column Map, test whether
+    // any of the given column indices are not in the column Map.
+    // Keep track of the invalid column indices so we can tell the
+    // user about them.
+    if (hasColMap ()) {
+      using Teuchos::Array;
+      using Teuchos::toString;
+      using std::endl;
+      typedef typename ArrayView<const LO>::size_type size_type;
+
+      const map_type& colMap = * (getColMap ());
+      Array<LO> badColInds;
+      bool allInColMap = true;
+      for (size_type k = 0; k < indices.size (); ++k) {
+        if (! colMap.isNodeLocalElement (indices[k])) {
+          allInColMap = false;
+          badColInds.push_back (indices[k]);
+        }
+      }
+      if (! allInColMap) {
+        std::ostringstream os;
+        os << "Tpetra::CrsMatrix::insertLocalIndices: You attempted to insert "
+          "entries in owned row " << localRow << ", at the following column "
+          "indices: " << toString (indices) << "." << endl;
+        os << "Of those, the following indices are not in the column Map on "
+          "this process: " << toString (badColInds) << "." << endl << "Since "
+          "the graph has a column Map already, it is invalid to insert entries "
+          "at those locations.";
+        TEUCHOS_TEST_FOR_EXCEPTION(! allInColMap, std::invalid_argument, os.str ());
+      }
+    }
+#endif // HAVE_TPETRA_DEBUG
+
+    insertLocalIndicesImpl (localRow, indices);
+
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      indicesAreAllocated() == false || isLocallyIndexed() == false,
+      std::logic_error,
+      ": Violated stated post-conditions. Please contact Tpetra team.");
+#endif
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  insertLocalIndicesFiltered (const LocalOrdinal localRow,
+                              const ArrayView<const LocalOrdinal> &indices)
+  {
+    typedef LocalOrdinal LO;
+    const char tfecfFuncName[] = "insertLocalIndicesFiltered";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isFillActive() == false, std::runtime_error,
@@ -1887,12 +1963,95 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertGlobalIndices (GlobalOrdinal grow,
+  insertGlobalIndices (const GlobalOrdinal grow,
                        const ArrayView<const GlobalOrdinal> &indices)
   {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    const char tfecfFuncName[] = "insertGlobalIndices()";
+    typedef typename ArrayView<const GO>::size_type size_type;
+    const char tfecfFuncName[] = "insertGlobalIndices";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isLocallyIndexed() == true, std::runtime_error,
+      ": graph indices are local; use insertLocalIndices().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      hasRowInfo() == false, std::runtime_error,
+      ": graph row information was deleted at fillComplete().");
+    // This can't really be satisfied for now, because if we are
+    // fillComplete(), then we are local.  In the future, this may
+    // change.  However, the rule that modification require active
+    // fill will not change.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isFillActive() == false, std::runtime_error,
+      ": You are not allowed to call this method if fill is not active.  "
+      "If fillComplete has been called, you must first call resumeFill "
+      "before you may insert indices.");
+    if (! indicesAreAllocated ()) {
+      allocateIndices (GlobalIndices);
+    }
+    const LO myRow = rowMap_->getLocalElement (grow);
+    if (myRow != Teuchos::OrdinalTraits<LO>::invalid ()) {
+#ifdef HAVE_TPETRA_DEBUG
+      if (hasColMap ()) {
+        using std::endl;
+        const map_type& colMap = * (getColMap ());
+        // In a debug build, keep track of the nonowned ("bad") column
+        // indices, so that we can display them in the exception
+        // message.  In a release build, just ditch the loop early if
+        // we encounter a nonowned column index.
+        Array<GO> badColInds;
+        bool allInColMap = true;
+        for (size_type k = 0; k < indices.size (); ++k) {
+          if (! colMap.isNodeGlobalElement (indices[k])) {
+            allInColMap = false;
+            badColInds.push_back (indices[k]);
+          }
+        }
+        if (! allInColMap) {
+          std::ostringstream os;
+          os << "Tpetra::CrsGraph::insertGlobalIndices: You attempted to insert "
+            "entries in owned row " << grow << ", at the following column "
+            "indices: " << toString (indices) << "." << endl;
+          os << "Of those, the following indices are not in the column Map on "
+            "this process: " << toString (badColInds) << "." << endl << "Since "
+            "the matrix has a column Map already, it is invalid to insert "
+            "entries at those locations.";
+          TEUCHOS_TEST_FOR_EXCEPTION(! allInColMap, std::invalid_argument, os.str ());
+        }
+      }
+#endif // HAVE_TPETRA_DEBUG
+      insertGlobalIndicesImpl (myRow, indices);
+    }
+    else { // a nonlocal row
+      const size_type numIndices = indices.size ();
+      // This creates the Array if it doesn't exist yet.  std::map's
+      // operator[] does a lookup each time, so it's better to pull
+      // nonlocals_[grow] out of the loop.
+      std::deque<GO>& nonlocalRow = nonlocals_[grow];
+      for (size_type k = 0; k < numIndices; ++k) {
+        nonlocalRow.push_back (indices[k]);
+      }
+    }
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      indicesAreAllocated() == false || isGloballyIndexed() == false,
+      std::logic_error,
+      ": Violated stated post-conditions. Please contact Tpetra team.");
+#endif
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  insertGlobalIndicesFiltered (const GlobalOrdinal grow,
+                               const ArrayView<const GlobalOrdinal> &indices)
+  {
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    const char tfecfFuncName[] = "insertGlobalIndicesFiltered";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isLocallyIndexed() == true, std::runtime_error,
@@ -2226,13 +2385,14 @@ namespace Tpetra {
     // NOW PROCESS THE RECEIVED ROW DATA
     ////////////////////////////////////////////////////////////////////////////////////
     // TODO: instead of adding one entry at a time, add one row at a time.
-    //       this requires resorting; they arrived sorted by sending node, so that entries could be non-contiguous if we received
+    //       this requires resorting; they arrived sorted by sending node,
+    //       so that entries could be non-contiguous if we received
     //       multiple entries for a particular row from different processors.
     //       it also requires restoring the data, which may make it not worth the trouble.
     for (typename Array<pair<GO,GO> >::const_iterator ij = IJRecvBuffer.begin();
          ij != IJRecvBuffer.end(); ++ij)
     {
-      insertGlobalIndices(ij->first, tuple<GO> (ij->second));
+      insertGlobalIndicesFiltered (ij->first, tuple<GO> (ij->second));
     }
     checkInternalState();
   }
@@ -3452,27 +3612,37 @@ namespace Tpetra {
     // reasonable meaning, whether or not the matrix is fill complete.
     // It's just more work to implement.
 
-    // We are not checking the value of the CombineMode input-argument.
-    // For CrsGraph, we only support import/export operations if fillComplete has not yet been called.
-    // Any incoming column-indices are inserted into the target graph. In this context, CombineMode values
-    // of ADD vs INSERT are equivalent. What is the meaning of REPLACE for CrsGraph? If a duplicate column-index
-    // is inserted, it will be compressed out when fillComplete is called.
+    // We are not checking the value of the CombineMode
+    // input-argument.  For CrsGraph, we only support import/export
+    // operations if fillComplete has not yet been called.  Any
+    // incoming column-indices are inserted into the target graph. In
+    // this context, CombineMode values of ADD vs INSERT are
+    // equivalent. What is the meaning of REPLACE for CrsGraph? If a
+    // duplicate column-index is inserted, it will be compressed out
+    // when fillComplete is called.
     //
-    // Note: I think REPLACE means that an existing row is replaced by the imported row, i.e., the existing indices are cleared. CGB, 6/17/2010
+    // Note: I think REPLACE means that an existing row is replaced by
+    // the imported row, i.e., the existing indices are cleared. CGB,
+    // 6/17/2010
 
-    const char tfecfFuncName[] = "unpackAndCombine()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(importLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
-        ": importLIDs and numPacketsPerLID must have the same size.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(this->isFillComplete() == true, std::runtime_error,
-        ": import/export operations are not allowed on destination CrsGraph after fillComplete has been called.");
+    const char tfecfFuncName[] = "unpackAndCombine";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      importLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
+      ": importLIDs and numPacketsPerLID must have the same size.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isFillComplete (), std::runtime_error,
+      ": Import or Export operations are not allowed on the destination "
+      "CrsGraph if it is fill complete.");
     size_t importsOffset = 0;
-    typename ArrayView<const LocalOrdinal>::iterator
-      impLIDiter = importLIDs.begin(), impLIDend = importLIDs.end();
-    size_t i = 0;
-    for (; impLIDiter != impLIDend; ++impLIDiter, ++i) {
+
+    typedef typename ArrayView<const LocalOrdinal>::const_iterator iter_type;
+    iter_type impLIDiter = importLIDs.begin();
+    iter_type impLIDend = importLIDs.end();
+
+    for (size_t i = 0; impLIDiter != impLIDend; ++impLIDiter, ++i) {
       LocalOrdinal row_length = numPacketsPerLID[i];
-      const ArrayView<const GlobalOrdinal> row(&imports[importsOffset], row_length);
-      insertGlobalIndices(this->getMap()->getGlobalElement(*impLIDiter), row);
+      ArrayView<const GlobalOrdinal> row (&imports[importsOffset], row_length);
+      insertGlobalIndicesFiltered (this->getMap ()->getGlobalElement (*impLIDiter), row);
       importsOffset += row_length;
     }
   }
