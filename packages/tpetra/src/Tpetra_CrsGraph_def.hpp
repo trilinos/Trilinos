@@ -84,8 +84,6 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
-  , insertGlobalIndicesWarnedEfficiency_(false)
-  , insertLocalIndicesWarnedEfficiency_(false)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     staticAssertions();
@@ -122,8 +120,6 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
-  , insertGlobalIndicesWarnedEfficiency_(false)
-  , insertLocalIndicesWarnedEfficiency_(false)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     staticAssertions();
@@ -159,8 +155,6 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
-  , insertGlobalIndicesWarnedEfficiency_(false)
-  , insertLocalIndicesWarnedEfficiency_(false)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     const char tfecfFuncName[] = "CrsGraph(rowMap,NumEntriesPerRowToAlloc)";
@@ -205,8 +199,6 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
-  , insertGlobalIndicesWarnedEfficiency_(false)
-  , insertLocalIndicesWarnedEfficiency_(false)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,NumEntriesPerRowToAlloc)";
@@ -250,8 +242,6 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
-  , insertGlobalIndicesWarnedEfficiency_(false)
-  , insertLocalIndicesWarnedEfficiency_(false)
   {
     staticAssertions();
     globalNumEntries_ = globalNumDiags_ = globalMaxNumRowEntries_ = OrdinalTraits<global_size_t>::invalid();
@@ -1115,22 +1105,7 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         getProfileType() == StaticProfile, std::runtime_error,
         ": new indices exceed statically allocated graph structure.");
-      // Only print an efficiency warning once per CrsGraph
-      // instance, per method name (insertLocalIndices() or
-      // insertGlobalIndices()).
-      if (! insertGlobalIndicesWarnedEfficiency_) {
-        TPETRA_EFFICIENCY_WARNING(
-          true, std::runtime_error,
-          "::insertGlobalIndices():" << std::endl << "Pre-allocated space "
-          "has been exceeded, requiring new allocation.  This is allowed "
-          "but not efficient in terms of run time.  To improve efficiency, "
-          "we suggest using a larger number of entries per row in the "
-          "constructor.  You may either specify a maximum number of "
-          "entries for all the rows, or a per-row maximum.  This CrsGraph "
-          "instance will not print further messages of this kind, in order "
-          "not to clutter output.");
-        insertGlobalIndicesWarnedEfficiency_ = true;
-      }
+
       // update allocation, doubling size to reduce number of reallocations
       size_t newAllocSize = 2*rowInfo.allocSize;
       if (newAllocSize < newNumEntries)
@@ -1176,22 +1151,7 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         getProfileType() == StaticProfile, std::runtime_error,
         ": new indices exceed statically allocated graph structure.");
-      // Only print an efficiency warning once per CrsGraph
-      // instance, per method name (insertLocalIndices() or
-      // insertGlobalIndices()).
-      if (! insertLocalIndicesWarnedEfficiency_) {
-        TPETRA_EFFICIENCY_WARNING(
-          true, std::runtime_error,
-          "::insertLocalIndices():" << std::endl << "Pre-allocated space "
-          "has been exceeded, requiring new allocation.  This is allowed "
-          "but not efficient in terms of run time.  To improve efficiency, "
-          "we suggest using a larger number of entries per row in the "
-          "constructor.  You may either specify a maximum number of "
-          "entries for all the rows, or a per-row maximum.  This CrsGraph "
-          "instance will not print further messages of this kind, in order "
-          "not to clutter output.");
-        insertLocalIndicesWarnedEfficiency_ = true;
-      }
+
       // update allocation, doubling size to reduce number of reallocations
       size_t newAllocSize = 2*rowInfo.allocSize;
       if (newAllocSize < newNumEntries)

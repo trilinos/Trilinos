@@ -229,9 +229,6 @@ namespace Tpetra {
 
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
     ///
-    /// The column Map will be used to filter any graph indices
-    /// inserted using insertLocalIndices() or insertGlobalIndices().
-    ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
@@ -256,9 +253,6 @@ namespace Tpetra {
               const RCP<ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
-    ///
-    /// The column Map will be used to filter any graph indices
-    /// inserted using insertLocalIndices() or insertGlobalIndices().
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -1520,11 +1514,6 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
       return haveRowInfo_;
     }
-
-    //! Whether this instance's insertGlobalIndices() method has triggered an efficiency warning yet.
-    bool insertGlobalIndicesWarnedEfficiency_;
-    //! Whether this instance's insertLocalIndices() method has triggered an efficiency warning yet.
-    bool insertLocalIndicesWarnedEfficiency_;
   }; // class CrsGraph
 
   /** \brief Non-member function to create an empty CrsGraph given a row map and a non-zero profile.
