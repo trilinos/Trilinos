@@ -3190,17 +3190,62 @@ int process_event(
 //            }
             break;
         case RDMA_TARGET_BUFFER:
-            if (wc->opcode==IBV_WC_RECV_RDMA_WITH_IMM) {
-                log_debug(debug_level, "RDMA target completion - wc==%p, event_buf==%p", wc, event_buf);
-                wr->op_state.rdma_complete=true;
-                wr->op_state.wc_complete  =true;
-                if (config.use_rdma_target_ack) {
-                    wr->last_op=wr->ack.op;
+            if (wr->last_op==IB_OP_GET_INITIATOR) {
+                if ((wc->opcode==IBV_WC_RDMA_READ) &&
+                    (wc->wc_flags==0)) {
+                    if (wr->op_state.rdma_init==true) {
+                        log_debug(debug_level, "RDMA target (read initiator) completion - event_buf==%p", event_buf);
+                        if (config.use_rdma_target_ack) {
+                            wr->op_state.rdma_complete=true;
+                        } else {
+                            wr->op_state.rdma_complete=true;
+                            wr->op_state.wc_complete  =true;
+                        }
+                    }
                 }
-
-                if (wr->cq == transport_global_data.data_cq) {
-                    transport_global_data.data_srq_count--;
-                    log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
+                else if ((config.use_rdma_target_ack) &&
+                         ((wc->opcode==IBV_WC_RDMA_WRITE) &&
+                          (wc->wc_flags==IBV_WC_WITH_IMM))) {
+                    if (wr->op_state.rdma_init==true) {
+                        log_debug(debug_level, "RDMA target ACK (read initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
+                        wr->last_op=IB_OP_GET_INITIATOR;
+                        wr->op_state.wc_complete=true;
+                    }
+                }
+            } else if (wr->last_op==IB_OP_PUT_INITIATOR) {
+                if (wc->opcode==IBV_WC_RDMA_WRITE) {
+                    if (wc->wc_flags==0) {
+                        if (wr->op_state.rdma_init==true) {
+                            log_debug(debug_level, "RDMA target (write initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
+                            if (config.use_rdma_target_ack) {
+                                wr->op_state.rdma_complete=true;
+                            } else {
+                                wr->op_state.rdma_complete=true;
+                                wr->op_state.wc_complete  =true;
+                            }
+                        }
+                    }
+                    if (wc->wc_flags==IBV_WC_WITH_IMM) {
+                        if ((config.use_rdma_target_ack) &&
+                            (wr->op_state.rdma_init==true)) {
+                            log_debug(debug_level, "RDMA target ACK (write initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
+                            wr->last_op=IB_OP_PUT_INITIATOR;
+                            wr->op_state.wc_complete=true;
+                        }
+                    }
+                }
+            } else {
+                if (wc->opcode==IBV_WC_RECV_RDMA_WITH_IMM) {
+                    log_debug(debug_level, "RDMA target (target) completion - wc==%p, event_buf==%p", wc, event_buf);
+                    wr->op_state.rdma_complete=true;
+                    wr->op_state.wc_complete  =true;
+                    if (config.use_rdma_target_ack) {
+                        wr->last_op=wr->ack.op;
+                    }
+                    if (wr->cq == transport_global_data.data_cq) {
+                        transport_global_data.data_srq_count--;
+                        log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
+                    }
                 }
             }
 //            if (wr->op_state == RDMA_TARGET_COMPLETE) {
