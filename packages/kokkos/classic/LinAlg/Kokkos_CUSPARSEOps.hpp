@@ -728,14 +728,16 @@ namespace Kokkos {
     //! @name Initialization of graph and matrix
     //@{
 
-    //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node,
-                                         const ArrayView<const size_t> &rowPtrs);
+    //! Allocate and initialize storage for row offsets.
+    static ArrayRCP<size_t> 
+    allocRowPtrs (const RCP<Node> &node,
+		  const ArrayView<const size_t>& numEntriesPerRow);
 
-    //! \brief Allocate and initialize the storage for a sparse graph.
+    //! Allocate and initialize the storage for a sparse graph.
     template <class T>
-    static ArrayRCP<T> allocStorage(const RCP<Node> &node,
-                                    const ArrayView<const size_t> &ptrs);
+    static ArrayRCP<T> 
+    allocStorage (const RCP<Node> &node,
+		  const ArrayView<const size_t>& rowPtrs);
 
     //! Finalize a graph is null for CUSPARSE.
     static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag,
@@ -1570,27 +1572,27 @@ namespace Kokkos {
     //! @name Initialization of graph and matrix
     //@{
 
-    //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<size_t>
+    //! Allocate and initialize storage for row offsets.
+    static ArrayRCP<size_t> 
     allocRowPtrs (const RCP<Node> &node,
-                  const ArrayView<const size_t> &rowPtrs)
+		  const ArrayView<const size_t>& numEntriesPerRow);
     {
       // alloc page-locked ("pinned") memory on the host,
       // specially allocated and specially deallocated
       CUDANodeHostPinnedDeallocator<size_t> dealloc;
       ArrayRCP<size_t> ptrs = dealloc.alloc(numEntriesPerRow.size() + 1);
       ptrs[0] = 0;
-      std::partial_sum( numEntriesPerRow.getRawPtr(),
-                        numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(),
-                        ptrs.begin()+1 );
+      std::partial_sum (numEntriesPerRow.getRawPtr(),
+                        numEntriesPerRow.getRawPtr() + numEntriesPerRow.size(),
+                        ptrs.begin() + 1);
       return ptrs;
     }
 
     //! Allocate and initialize the storage for a sparse graph.
     template <class T>
     static ArrayRCP<T>
-    allocStorage (const RCP<Node> &node,
-                  const ArrayView<const size_t> &ptrs)
+    allocStorage (const RCP<Node>& node,
+                  const ArrayView<const size_t>& rowPtrs)
     {
       // alloc page-locked ("pinned") memory on the host,
       // specially allocated and specially deallocated
