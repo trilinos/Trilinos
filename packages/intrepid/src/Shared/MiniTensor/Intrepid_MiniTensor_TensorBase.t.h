@@ -39,66 +39,13 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Tensor4_i_h)
-#define Intrepid_MiniTensor_Tensor4_i_h
+#if !defined(Intrepid_MiniTensor_TensorBase_t_h)
+#define Intrepid_MiniTensor_TensorBase_t_h
 
-namespace Intrepid
-{
+namespace Intrepid {
 
-//
-// Indexing for constant 4th order tensor
-// \param i index
-// \param j index
-// \param k index
-// \param l index
-//
-template<typename T>
-inline
-T const &
-Tensor4<T>::operator()(
-    Index const i, Index const j, Index const k, Index const l) const
-{
-  Tensor4<T> const &
-  self = (*this);
-
-  Index const
-  N = self.get_dimension();
-
-  assert(i < N);
-  assert(j < N);
-  assert(k < N);
-  assert(l < N);
-
-  return self[((i * N + j) * N + k) * N + l];
-}
-
-//
-// 4th-order tensor indexing
-// \param i index
-// \param j index
-// \param k index
-// \param l index
-//
-template<typename T>
-inline
-T &
-Tensor4<T>::operator()(
-    Index const i, Index const j, Index const k, Index const l)
-{
-  Tensor4<T> &
-  self = (*this);
-
-  Index const
-  N = self.get_dimension();
-
-  assert(i < N);
-  assert(j < N);
-  assert(k < N);
-  assert(l < N);
-
-  return self[((i * N + j) * N + k) * N + l];
-}
+// Placeholder for now.
 
 } // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Tensor4_i_h
+#endif // Intrepid_MiniTensor_TensorBase_t_h

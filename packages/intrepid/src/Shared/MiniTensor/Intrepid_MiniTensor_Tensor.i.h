@@ -97,37 +97,6 @@ sort_permutation(Vector<T> const & u)
 }
 
 //
-// get dimension
-//
-template<typename T>
-inline
-Index
-Tensor<T>::get_dimension() const
-{
-  return dimension;
-}
-
-//
-// set dimension
-//
-template<typename T>
-inline
-void
-Tensor<T>::set_dimension(Index const N)
-{
-  if (N == get_dimension()) return;
-
-  Index const
-  number_components = N * N;
-
-  e.resize(number_components);
-
-  dimension = N;
-
-  return;
-}
-
-//
 // Fill components from array defined by pointer.
 // \param data_ptr pointer into array for filling components
 // \param order component convention (3D only)
@@ -135,48 +104,36 @@ Tensor<T>::set_dimension(Index const N)
 template<typename T>
 inline
 void
-Tensor<T>::fill(T const * data_ptr, ComponentOrder const order)
+Tensor<T>::fill(T const * data_ptr, ComponentOrder const component_order)
 {
   assert(data_ptr != NULL);
 
-  Index const
-  N = get_dimension();
+  Tensor<T> &
+  self = (*this);
 
   Index const
-  number_components = N * N;
+  dimension = self.get_dimension();
 
-  switch (N) {
+  switch (dimension) {
 
     default:
-      for (Index i = 0; i < number_components; ++i) {
-        e[i] = data_ptr[i];
-      }
+      TensorBase<T>::fill(data_ptr);
       break;
 
     case 3:
 
-      switch (order) {
+      switch (component_order) {
 
         default:
           std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
           std::cerr << std::endl;
-          std::cerr << "Inverse of singular tensor.";
+          std::cerr << "Unknown component order.";
           std::cerr << std::endl;
           exit(1);
           break;
 
         case CANONICAL:
-          e[0] = data_ptr[0];
-          e[1] = data_ptr[1];
-          e[2] = data_ptr[2];
-
-          e[3] = data_ptr[3];
-          e[4] = data_ptr[4];
-          e[5] = data_ptr[5];
-
-          e[6] = data_ptr[6];
-          e[7] = data_ptr[7];
-          e[8] = data_ptr[8];
+          TensorBase<T>::fill(data_ptr);
           break;
 
         case SIERRA_FULL:
@@ -184,182 +141,99 @@ Tensor<T>::fill(T const * data_ptr, ComponentOrder const order)
           //  0  1  2  3  4  5  6  7  8
           // XX YY ZZ XY YZ ZX YX ZY XZ
           //  0  4  8  1  5  6  3  7  2
-          e[0] = data_ptr[0];
-          e[4] = data_ptr[1];
-          e[8] = data_ptr[2];
+          self[0] = data_ptr[0];
+          self[4] = data_ptr[1];
+          self[8] = data_ptr[2];
 
-          e[1] = data_ptr[3];
-          e[5] = data_ptr[4];
-          e[6] = data_ptr[5];
+          self[1] = data_ptr[3];
+          self[5] = data_ptr[4];
+          self[6] = data_ptr[5];
 
-          e[3] = data_ptr[6];
-          e[7] = data_ptr[7];
-          e[2] = data_ptr[8];
+          self[3] = data_ptr[6];
+          self[7] = data_ptr[7];
+          self[2] = data_ptr[8];
           break;
 
         case SIERRA_SYMMETRIC:
-          e[0] = data_ptr[0];
-          e[4] = data_ptr[1];
-          e[8] = data_ptr[2];
+          self[0] = data_ptr[0];
+          self[4] = data_ptr[1];
+          self[8] = data_ptr[2];
 
-          e[1] = data_ptr[3];
-          e[5] = data_ptr[4];
-          e[6] = data_ptr[5];
+          self[1] = data_ptr[3];
+          self[5] = data_ptr[4];
+          self[6] = data_ptr[5];
 
-          e[3] = data_ptr[3];
-          e[7] = data_ptr[4];
-          e[2] = data_ptr[5];
+          self[3] = data_ptr[3];
+          self[7] = data_ptr[4];
+          self[2] = data_ptr[5];
           break;
       }
 
       break;
-
-    case 2:
-      e[0] = data_ptr[0];
-      e[1] = data_ptr[1];
-
-      e[2] = data_ptr[2];
-      e[3] = data_ptr[3];
-      break;
-
   }
 
   return;
 }
 
 //
-// default constructor
+// Default constructor
 //
 template<typename T>
 inline
 Tensor<T>::Tensor() :
-dimension(0)
+TensorBase<T>::TensorBase()
 {
   return;
 }
 
 //
-// constructor that initializes to NaNs
+// Constructor that initializes to NaNs
 //
 template<typename T>
 inline
-Tensor<T>::Tensor(Index const N) :
-dimension(0)
+Tensor<T>::Tensor(Index const dimension) :
+TensorBase<T>::TensorBase(dimension, order)
 {
-  set_dimension(N);
-
-  Index const
-  number_components = N * N;
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < number_components; ++i) {
-        e[i] = not_a_number<T>();
-      }
-      break;
-
-    case 3:
-      e[0] = not_a_number<T>();
-      e[1] = not_a_number<T>();
-      e[2] = not_a_number<T>();
-
-      e[3] = not_a_number<T>();
-      e[4] = not_a_number<T>();
-      e[5] = not_a_number<T>();
-
-      e[6] = not_a_number<T>();
-      e[7] = not_a_number<T>();
-      e[8] = not_a_number<T>();
-      break;
-
-    case 2:
-      e[0] = not_a_number<T>();
-      e[1] = not_a_number<T>();
-
-      e[2] = not_a_number<T>();
-      e[3] = not_a_number<T>();
-      break;
-
-  }
   return;
 }
 
 //
 // Create tensor from a scalar
-// \param s all components are set equal to this value
 //
 template<typename T>
 inline
-Tensor<T>::Tensor(Index const N, T const & s) :
-dimension(0)
+Tensor<T>::Tensor(Index const dimension, T const & s) :
+TensorBase<T>::TensorBase(dimension, order, s)
 {
-  set_dimension(N);
-
-  Index const
-  number_components = N * N;
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < number_components; ++i) {
-        e[i] = s;
-      }
-      break;
-
-    case 3:
-      e[0] = s;
-      e[1] = s;
-      e[2] = s;
-
-      e[3] = s;
-      e[4] = s;
-      e[5] = s;
-
-      e[6] = s;
-      e[7] = s;
-      e[8] = s;
-      break;
-
-    case 2:
-      e[0] = s;
-      e[1] = s;
-
-      e[2] = s;
-      e[3] = s;
-      break;
-
-  }
-
   return;
 }
 
 //
 // Create tensor specifying components
-// \param N dimension
 // \param  s00, s01, ... components in the R^2 canonical basis
 //
 template<typename T>
 inline
 Tensor<T>::Tensor(
     T const & s00, T const & s01,
-    T const & s10, T const & s11) :
-dimension(0)
+    T const & s10, T const & s11)
 {
-  set_dimension(2);
+  Tensor<T> &
+  self = (*this);
 
-  e[0] = s00;
-  e[1] = s01;
+  self.set_dimension(2);
 
-  e[2] = s10;
-  e[3] = s11;
+  self[0] = s00;
+  self[1] = s01;
+
+  self[2] = s10;
+  self[3] = s11;
 
   return;
 }
 
 //
 // Create tensor specifying components
-// \param N dimension
 // \param  s00, s01, ... components in the R^3 canonical basis
 //
 template<typename T>
@@ -367,97 +241,69 @@ inline
 Tensor<T>::Tensor(
     T const & s00, T const & s01, T const & s02,
     T const & s10, T const & s11, T const & s12,
-    T const & s20, T const & s21, T const & s22) :
-    dimension(0)
+    T const & s20, T const & s21, T const & s22)
 {
-  set_dimension(3);
+  Tensor<T> &
+  self = (*this);
 
-  e[0] = s00;
-  e[1] = s01;
-  e[2] = s02;
+  self.set_dimension(3);
 
-  e[3] = s10;
-  e[4] = s11;
-  e[5] = s12;
+  self[0] = s00;
+  self[1] = s01;
+  self[2] = s02;
 
-  e[6] = s20;
-  e[7] = s21;
-  e[8] = s22;
+  self[3] = s10;
+  self[4] = s11;
+  self[5] = s12;
+
+  self[6] = s20;
+  self[7] = s21;
+  self[8] = s22;
 
   return;
 }
 
 //
-// R^N create tensor from array - const version
-// \param data_ptr
-// \param order component convention (3D only)
+//  Create tensor from array
+//
+template<typename T>
+inline
+Tensor<T>::Tensor(Index const dimension, T const * data_ptr) :
+TensorBase<T>::TensorBase(dimension, order, data_ptr)
+{
+  return;
+}
+
+//
+//  Create tensor from array with component order
 //
 template<typename T>
 inline
 Tensor<T>::Tensor(
-    Index const N,
+    Index const dimension,
     T const * data_ptr,
-    ComponentOrder const order) :
-dimension(0)
+    ComponentOrder const component_order)
 {
   assert(data_ptr != NULL);
 
-  set_dimension(N);
+  Tensor<T> &
+  self = (*this);
 
-  fill(data_ptr, order);
+  self.set_dimension(dimension);
+
+  fill(data_ptr, component_order);
 
   return;
 }
 
 //
-// R^N copy constructor
-// \param A the values of its components are copied to the new tensor
+// Copy constructor
 //
 template<typename T>
 inline
 Tensor<T>::Tensor(Tensor<T> const & A) :
-dimension(0)
+TensorBase<T>::TensorBase(A)
 {
-  Index const
-  N = A.get_dimension();
-
-  set_dimension(N);
-
-  Index const
-  number_components = N * N;
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < number_components; ++i) {
-        e[i] = A.e[i];
-      }
-      break;
-
-    case 3:
-      e[0] = A.e[0];
-      e[1] = A.e[1];
-      e[2] = A.e[2];
-
-      e[3] = A.e[3];
-      e[4] = A.e[4];
-      e[5] = A.e[5];
-
-      e[6] = A.e[6];
-      e[7] = A.e[7];
-      e[8] = A.e[8];
-      break;
-
-    case 2:
-      e[0] = A.e[0];
-      e[1] = A.e[1];
-
-      e[2] = A.e[2];
-      e[3] = A.e[3];
-      break;
-
-  }
-
   return;
 }
 
@@ -466,29 +312,31 @@ dimension(0)
 //
 template<typename T>
 inline
-Tensor<T>::Tensor(Tensor4<T> const & A) :
-dimension(0)
+Tensor<T>::Tensor(Tensor4<T> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension_4th = A.get_dimension();
 
   Index const
-  N2 = N * N;
+  dimension_2nd = dimension_4th * dimension_4th;
 
-  set_dimension(N2);
+  Tensor<T> &
+  self = (*this);
+
+  self.set_dimension(dimension_2nd);
 
   Index const
-  number_components = N2 * N2;
+  number_components = dimension_2nd * dimension_2nd;
 
   for (Index i = 0; i < number_components; ++i) {
-    e[i] = A[i];
+    self[i] = A[i];
   }
 
   return;
 }
 
 //
-// R^N simple destructor
+// Simple destructor
 //
 template<typename T>
 inline
@@ -498,268 +346,43 @@ Tensor<T>::~Tensor()
 }
 
 //
-// R^N indexing for constant tensor
-// \param i index
-// \param j index
+// Indexing for constant tensor
 //
 template<typename T>
 inline
 T const &
 Tensor<T>::operator()(Index const i, Index const j) const
 {
-  assert(i < get_dimension());
-  assert(j < get_dimension());
-  return e[i * get_dimension() + j];
+  Tensor<T> const &
+  self = (*this);
+
+  Index const
+  N = self.get_dimension();
+
+  assert(i < N);
+  assert(j < N);
+
+  return self[i * N + j];
 }
 
 //
-// R^N tensor indexing
-// \param i index
-// \param j index
+//Tensor indexing
 //
 template<typename T>
 inline
 T &
 Tensor<T>::operator()(Index const i, Index const j)
 {
-  assert(i < get_dimension());
-  assert(j < get_dimension());
-  return e[i * get_dimension() + j];
-}
-
-//
-// Linear access to components
-// \param i the index
-//
-template<typename T>
-inline
-T const &
-Tensor<T>::operator[](Index const i) const
-{
-  assert(i < integer_power(get_dimension(), order()));
-  return e[i];
-}
-
-//
-// Linear access to components
-// \param i the index
-//
-template<typename T>
-inline
-T &
-Tensor<T>::operator[](Index const i)
-{
-  assert(i < integer_power(get_dimension(), order()));
-  return e[i];
-}
-
-//
-// R^N copy assignment
-// \param A the values of its components are copied to this tensor
-//
-template<typename T>
-inline
-Tensor<T> &
-Tensor<T>::operator=(Tensor<T> const & A)
-{
-  if (this == &A) return *this;
+  Tensor<T> &
+  self = (*this);
 
   Index const
-  N = A.get_dimension();
+  N = self.get_dimension();
 
-  set_dimension(N);
+  assert(i < N);
+  assert(j < N);
 
-  Index const
-  number_components = N * N;
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < number_components; ++i) {
-        e[i] = A.e[i];
-      }
-      break;
-
-    case 3:
-      e[0] = A.e[0];
-      e[1] = A.e[1];
-      e[2] = A.e[2];
-
-      e[3] = A.e[3];
-      e[4] = A.e[4];
-      e[5] = A.e[5];
-
-      e[6] = A.e[6];
-      e[7] = A.e[7];
-      e[8] = A.e[8];
-      break;
-
-    case 2:
-      e[0] = A.e[0];
-      e[1] = A.e[1];
-
-      e[2] = A.e[2];
-      e[3] = A.e[3];
-      break;
-
-  }
-
-  return *this;
-}
-
-//
-// R^N tensor increment
-// \param A added to current tensor
-//
-template<typename T>
-inline
-Tensor<T> &
-Tensor<T>::operator+=(Tensor<T> const & A)
-{
-  Index const
-  N = get_dimension();
-
-  assert(A.get_dimension() == N);
-
-  Index const
-  number_components = N * N;
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < number_components; ++i) {
-        e[i] += A.e[i];
-      }
-      break;
-
-    case 3:
-      e[0] += A.e[0];
-      e[1] += A.e[1];
-      e[2] += A.e[2];
-
-      e[3] += A.e[3];
-      e[4] += A.e[4];
-      e[5] += A.e[5];
-
-      e[6] += A.e[6];
-      e[7] += A.e[7];
-      e[8] += A.e[8];
-      break;
-
-    case 2:
-      e[0] += A.e[0];
-      e[1] += A.e[1];
-
-      e[2] += A.e[2];
-      e[3] += A.e[3];
-      break;
-
-  }
-
-  return *this;
-}
-
-//
-// R^N tensor decrement
-// \param A substracted from current tensor
-//
-template<typename T>
-inline
-Tensor<T> &
-Tensor<T>::operator-=(Tensor<T> const & A)
-{
-  Index const
-  N = get_dimension();
-
-  assert(A.get_dimension() == N);
-
-  Index const
-  number_components = N * N;
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < number_components; ++i) {
-        e[i] -= A.e[i];
-      }
-      break;
-
-    case 3:
-      e[0] -= A.e[0];
-      e[1] -= A.e[1];
-      e[2] -= A.e[2];
-
-      e[3] -= A.e[3];
-      e[4] -= A.e[4];
-      e[5] -= A.e[5];
-
-      e[6] -= A.e[6];
-      e[7] -= A.e[7];
-      e[8] -= A.e[8];
-      break;
-
-    case 2:
-      e[0] -= A.e[0];
-      e[1] -= A.e[1];
-
-      e[2] -= A.e[2];
-      e[3] -= A.e[3];
-      break;
-
-  }
-
-
-  return *this;
-}
-
-//
-// R^N fill with zeros
-//
-template<typename T>
-inline
-void
-Tensor<T>::clear()
-{
-  Index const
-  N = get_dimension();
-
-  Index const
-  number_components = N * N;
-
-  switch (N) {
-
-    default:
-      for (Index i = 0; i < number_components; ++i) {
-        e[i] = 0.0;
-      }
-      break;
-
-    case 3:
-      e[0] = 0.0;
-      e[1] = 0.0;
-      e[2] = 0.0;
-
-      e[3] = 0.0;
-      e[4] = 0.0;
-      e[5] = 0.0;
-
-      e[6] = 0.0;
-      e[7] = 0.0;
-      e[8] = 0.0;
-      break;
-
-    case 2:
-      e[0] = 0.0;
-      e[1] = 0.0;
-
-      e[2] = 0.0;
-      e[3] = 0.0;
-      break;
-
-  }
-
-
-  return;
+  return self[i * N + j];
 }
 
 //
@@ -817,7 +440,7 @@ operator+(Tensor<S> const & A, Tensor<T> const & B)
 }
 
 //
-// R^N Tensor substraction
+// R^N Tensor subtraction
 // \return \f$ A - B \f$
 //
 template<typename S, typename T>

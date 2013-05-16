@@ -45,31 +45,11 @@
 namespace Intrepid {
 
 //
-// set dimension
-//
-//
-template<typename T>
-void
-Tensor3<T>::set_dimension(Index const N)
-{
-  if (N == get_dimension()) return;
-
-  Index const
-  number_components = N * N * N;
-
-  e.resize(number_components);
-
-  dimension = N;
-
-  return;
-}
-
-//
 // 3rd-order tensor default constructor
 //
 template<typename T>
 Tensor3<T>::Tensor3() :
-dimension(0)
+TensorBase<T>::TensorBase()
 {
   return;
 }
@@ -78,161 +58,49 @@ dimension(0)
 // 3rd-order tensor constructor with NaNs
 //
 template<typename T>
-Tensor3<T>::Tensor3(Index const N) :
-dimension(0)
+Tensor3<T>::Tensor3(Index const dimension) :
+TensorBase<T>::TensorBase(dimension, order)
 {
-  set_dimension(N);
-
-  Index const
-  number_components = N * N * N;
-
-  for (Index i = 0; i < number_components; ++i) {
-    e[i] = not_a_number<T>();
-  }
-
   return;
 }
 
 //
-// R^N 3rd-order tensor constructor with a scalar
-// \param s all components set to this scalar
+// 3rd-order tensor constructor with a scalar
 //
 template<typename T>
-Tensor3<T>::Tensor3(Index const N, T const & s) :
-dimension(0)
+Tensor3<T>::Tensor3(Index const dimension, T const & s) :
+TensorBase<T>::TensorBase(dimension, order, s)
 {
-  set_dimension(N);
-
-  Index const
-  number_components = N * N * N;
-
-  for (Index i = 0; i < number_components; ++i) {
-    e[i] = s;
-  }
-
   return;
 }
 
 //
-// R^N copy constructor
-// 3rd-order tensor constructor from 3rd-order tensor
-// \param A from which components are copied
+//  Create 3rd-order tensor from array
+//
+template<typename T>
+inline
+Tensor3<T>::Tensor3(Index const dimension, T const * data_ptr) :
+TensorBase<T>::TensorBase(dimension, order, data_ptr)
+{
+  return;
+}
+
+//
+// Copy constructor
 //
 template<typename T>
 Tensor3<T>::Tensor3(Tensor3<T> const & A) :
-dimension(0)
+TensorBase<T>::TensorBase(A)
 {
-  Index const
-  N = A.get_dimension();
-
-  set_dimension(N);
-
-  Index const
-  number_components = N * N * N;
-
-  for (Index i = 0; i < number_components; ++i) {
-    e[i] = A.e[i];
-  }
-
   return;
 }
 
 //
-// R^N 3rd-order tensor simple destructor
+// 3rd-order tensor simple destructor
 //
 template<typename T>
 Tensor3<T>::~Tensor3()
 {
-  return;
-}
-
-//
-// R^N 3rd-order tensor copy assignment
-//
-template<typename T>
-Tensor3<T> &
-Tensor3<T>::operator=(Tensor3<T> const & A)
-{
-  if (this != &A) return *this;
-
-  Index const
-  N = A.get_dimension();
-
-  set_dimension(N);
-
-  Index const
-  number_components = N * N * N;
-
-  for (Index i = 0; i < number_components; ++i) {
-    e[i] = A.e[i];
-  }
-
-  return *this;
-}
-
-//
-// 3rd-order tensor increment
-// \param A added to this tensor
-//
-template<typename T>
-Tensor3<T> &
-Tensor3<T>::operator+=(Tensor3<T> const & A)
-{
-  Index const
-  N = get_dimension();
-
-  assert(A.get_dimension() == N);
-
-  Index const
-  number_components = N * N * N;
-
-  for (Index i = 0; i < number_components; ++i) {
-    e[i] += A.e[i];
-  }
-
-  return *this;
-}
-
-//
-// 3rd-order tensor decrement
-// \param A substracted from this tensor
-//
-template<typename T>
-Tensor3<T> &
-Tensor3<T>::operator-=(Tensor3<T> const & A)
-{
-  Index const
-  N = get_dimension();
-
-  assert(A.get_dimension() == N);
-
-  Index const
-  number_components = N * N * N;
-
-  for (Index i = 0; i < number_components; ++i) {
-    e[i] -= A.e[i];
-  }
-
-  return *this;
-}
-
-//
-// R^N fill 3rd-order tensor with zeros
-//
-template<typename T>
-void
-Tensor3<T>::clear()
-{
-  Index const
-  N = get_dimension();
-
-  Index const
-  number_components = N * N * N;
-
-  for (Index i = 0; i < number_components; ++i) {
-    e[i] = 0.0;;
-  }
-
   return;
 }
 
