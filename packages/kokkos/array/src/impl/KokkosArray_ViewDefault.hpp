@@ -828,7 +828,7 @@ public:
   // Stride of physical storage, dimensioned to at least Rank
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::size_type stride( iType * const s ) const
+  void stride( iType * const s ) const
   {
     enum { is_left = Impl::is_same< typename traits::array_layout , LayoutLeft >::value };
 

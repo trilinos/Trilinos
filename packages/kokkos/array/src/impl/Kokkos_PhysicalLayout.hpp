@@ -60,8 +60,17 @@ struct PhysicalLayout {
 
   template< class T , class L , class D , class M >
   PhysicalLayout( const View<T,L,D,M,LayoutDefault> & view )
-    : layout_type( is_same< typename View<T,L,D,M,S>::array_layout , LayoutLeft  >::value ? Left : (
-                   is_same< typename View<T,L,D,M,S>::array_layout , LayoutRight >::value ? Right : Error )))
+    : layout_type( is_same< typename View<T,L,D,M>::array_layout , LayoutLeft  >::value ? Left : (
+                   is_same< typename View<T,L,D,M>::array_layout , LayoutRight >::value ? Right : Error ))
+    , rank( view.Rank )
+    {
+      for(int i=0;i<8;i++) stride[i] = 0;
+      view.stride( stride );
+    }
+  template< class T , class L , class D , class M >
+  PhysicalLayout( const View<T,L,D,M,CudaTexture> & view )
+    : layout_type( is_same< typename View<T,L,D,M>::array_layout , LayoutLeft  >::value ? Left : (
+                   is_same< typename View<T,L,D,M>::array_layout , LayoutRight >::value ? Right : Error ))
     , rank( view.Rank )
     {
       for(int i=0;i<8;i++) stride[i] = 0;

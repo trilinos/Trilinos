@@ -34,6 +34,17 @@ typedef KokkosArray::Cuda device_type;
 
 #define EPSILON 1e-5;
 
+void cuda_check_error(char* comment)
+{
+#if DEVICE==1
+  printf("ERROR %s in %s:%i\n", comment, __FILE__, __LINE__);
+#endif
+#if DEVICE==2
+  printf("ERROR-CUDA %s %s in %s:%i\n", comment, cudaGetErrorString(cudaGetLastError()), __FILE__, __LINE__);
+#endif
+
+}
+
 struct test_data{
 	int num_tests;
 	int num_errors;
@@ -85,8 +96,8 @@ int test_crs_matrix(test_data &test_sum, Matrix A, RangeVector y, DomainVector x
     typedef typename vector::HostMirror h_vector;
 
     int numVecs = x.dimension_1();
-    int numCols = A.numCols;
-    int numRows = A.numRows;
+    int numCols = A.numCols();
+    int numRows = A.numRows();
 
     bool print_report_always = test_sum.print_report;
     vector a("a",numVecs);
@@ -141,10 +152,9 @@ int test_crs_matrix(test_data &test_sum, Matrix A, RangeVector y, DomainVector x
 	  KokkosArray::MV_Multiply(b,y,a,A,x);
 	else
 	  KokkosArray::MV_Multiply(s_b,y,s_a,A,x);
-
 	KokkosArray::deep_copy(h_y,y);
-	Scalar error[numVecs];
-	Scalar sum[numVecs];
+	Scalar* error = new Scalar[numVecs];
+	Scalar* sum = new Scalar[numVecs];
 	for(int k = 0; k<numVecs; k++)
 		{error[k] = 0; sum[k] = 0;}
 	for(int i=0;i<numRows;i++)
@@ -165,16 +175,23 @@ int test_crs_matrix(test_data &test_sum, Matrix A, RangeVector y, DomainVector x
 	if((num_errors>0?true:false)||print_report_always) {
 	  if(num_errors>0)
 		test_sum.num_errors++;
+	  int testnumber = 0;
+	  testnumber+=alpha+1;
+	  testnumber+=(beta+1)*10;
+	  if(vector_scalar) testnumber+=100;
+	  testnumber += numVecs*1000;
+
 	  char str[512];
-	  sprintf(str,"%s %s y = b*y + a*A*x with A: %ix%i numVecs: %i a/b: %s a: %i b: %i Result: %e Error: %e\n",
+	  sprintf(str,"%s %s y = b*y + a*A*x with A: %ix%i numVecs: %i a/b: %s a: %i b: %i Result: %e Error: %e Testnumber: %i\n",
 			  type_string,num_errors>0?"FAILED":"PASSED",numRows,numCols,numVecs,vector_scalar?"Vector":"Scalar",
-			  alpha,beta,total_sum, total_error);
+			  alpha,beta,total_sum, total_error,testnumber);
 	  printf("%s",str);
 	  if(num_errors>0)
 	    test_sum.error_string.append(str);
 	}
 	test_sum.num_tests++;
-
+    delete [] error;
+    delete [] sum;
  	return num_errors;
 }
 
@@ -201,12 +218,19 @@ int test_crs_matrix_test(test_data &test_sum, int numRows, int numCols, int nnz,
 	h_mv_type h_y_compare = KokkosArray::create_mirror(y);
 
 	int num_errors = 0;
+	if(test==-1) {
     for(int alpha=-1;alpha<3;alpha++)
        for(int beta=-1;beta<3;beta++)
     	  num_errors += test_crs_matrix<Scalar>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,false,typestring);
     for(int alpha=-1;alpha<3;alpha++)
        for(int beta=-1;beta<3;beta++)
     	  num_errors += test_crs_matrix<Scalar>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,true,typestring);
+	} else {
+	  int alpha = ((test%10)%4)-1;
+	  int beta = (((test/10)%10)%4)-1;
+	  bool do_vector = (test/100)%2;
+	  num_errors += test_crs_matrix<Scalar>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,do_vector,typestring);
+	}
     return num_errors;
 }
 
@@ -268,6 +292,7 @@ int main(int argc, char **argv)
  int maxNumVecs = numVecs==-1?17:numVecs;
  int numVecIdx = 0;
  if(numVecs == -1) numVecs = numVecsList[numVecIdx++];
+ if(test>=1000) maxNumVecs = numVecs = test/1000;
 
  int total_errors = 0;
  test_data test_sum;
@@ -281,9 +306,9 @@ int main(int argc, char **argv)
  }
 
  if(total_errors == 0)
-   printf("Kokkos::MultiVector Test: Passed %i tests\n",test_sum.num_tests);
+   printf("Kokkos::MatVec Test: Passed %i tests\n",test_sum.num_tests);
  else
-   printf("Kokkos::MultiVector Test: Failed %i of %i tests\n",test_sum.num_errors,test_sum.num_tests);
+   printf("Kokkos::MatVec Test: Failed %i of %i tests\n",test_sum.num_errors,test_sum.num_tests);
 
 
  KokkosArrayCUDA(
