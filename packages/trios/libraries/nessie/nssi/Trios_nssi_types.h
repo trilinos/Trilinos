@@ -78,6 +78,8 @@ struct sockaddr_in {
 
 
 typedef struct {
+    uint8_t  put_data_in_request;
+
     uint8_t  use_buffer_queue;
 
     uint32_t buffer_queue_initial_size;

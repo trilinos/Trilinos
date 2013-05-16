@@ -1097,6 +1097,12 @@ static int encode_args(
     /* xdrs for the header and the args. */
     XDR hdr_xdrs, args_xdrs;
 
+    nssi_size hdr_size    = 0;
+    nssi_size args_size   = 0;
+    nssi_size data_size   = 0;
+    nssi_size data_offset = 0;
+    nssi_size remaining   = 0;
+
     char *buf=NULL;
 
 
@@ -1123,137 +1129,173 @@ static int encode_args(
             goto cleanup;
     }
 
+    /* set the request ID for the header */
+    header->id = request->id;
+
+
+    /* the size of the encoded header */
+    hdr_size = xdr_sizeof((xdrproc_t)&xdr_nssi_request_header, header);
+
+    if (args == NULL) {
+        /* there are no args */
+        header->fetch_args = FALSE;
+        args_size = 0;
+    } else {
+        /* the size of the encoded args */
+        args_size = xdr_sizeof(request->xdr_encode_args, args);
+        /* what's left after encoding the header */
+        remaining = NNTI_BUFFER_SIZE(short_req_hdl) - hdr_size;
+        if (remaining > args_size) {
+            /* args will fit in the request. fetch not required. */
+            header->fetch_args = FALSE;
+        } else {
+            /* args will not fit in the request. server must fetch. */
+            header->fetch_args = TRUE;
+        }
+    }
+
+    log_debug(rpc_debug_level, "initial hdr_size=%d", hdr_size);
+
+    /**
+     *   If the arguments are too large to fit in an
+     *   \ref short request buffer, the client stores
+     *   excess arguments and waits for the server to
+     *   "fetch" the arguments using the \ref nssi_get_data method.
+     */
+    if (header->fetch_args == TRUE) {
+
+        log_debug(rpc_debug_level,"putting args (len=%d) "
+                "in long request", args_size);
+
+        request->use_long_args=1;
+
+        log_debug(rpc_debug_level,"allocating space for args");
+        /* allocate memory for the encoded arguments. The request
+         * structure keeps track of the buffer so it can free
+         * the memory later. */
+        buf=(char *)malloc(args_size);
+        if (!buf)   {
+            log_fatal(rpc_debug_level, "malloc() failed!");
+            rc = NSSI_ENOMEM;
+            goto cleanup;
+        }
+        rc=NNTI_register_memory(
+                &transports[svc->transport_id],
+                buf,
+                args_size,
+                1,
+                NNTI_GET_SRC,
+                &svc->svc_host,
+                &request->long_args_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering long args: %s",
+                    nnti_err_str(rc));
+            goto cleanup;
+        }
+        header->args_addr=request->long_args_hdl;
+
+        /* create an xdr memory stream for the encoded args */
+        xdrmem_create(&args_xdrs, NNTI_BUFFER_C_POINTER(&request->long_args_hdl),
+                NNTI_BUFFER_SIZE(&request->long_args_hdl), XDR_ENCODE);
+
+        /* if we get here, args should not be NULL */
+        assert(args);
+
+        /* encode the args  */
+        log_debug(rpc_debug_level,"encoding args");
+        trios_start_timer(call_time);
+        if (! request->xdr_encode_args(&args_xdrs, args)) {
+            log_fatal(rpc_debug_level,"failed to encode the args");
+            return NSSI_EENCODE;
+        }
+        trios_stop_timer("xdr_encode_args - encode", call_time);
+
+    } else if ((header->fetch_args == FALSE) && (args != NULL)) {
+
+        log_debug(rpc_debug_level,"putting args (len=%d) "
+                "in short request", args_size);
+
+        request->use_long_args=0;
+
+        /* create an xdr memory stream inside the short request for the encoded args */
+        xdrmem_create(&args_xdrs, NNTI_BUFFER_C_POINTER(short_req_hdl) + hdr_size,
+                NNTI_BUFFER_SIZE(short_req_hdl) - hdr_size, XDR_ENCODE);
+
+        /* if we get here, args should not be NULL */
+        assert(args);
+
+        /* encode the args  */
+        log_debug(rpc_debug_level,"encoding args");
+        trios_start_timer(call_time);
+        if (! request->xdr_encode_args(&args_xdrs, args)) {
+            log_fatal(rpc_debug_level,"failed to encode the args");
+            return NSSI_EENCODE;
+        }
+        trios_stop_timer("xdr_encode_args - encode", call_time);
+
+    }
+
+    /* if the args are being fetched, then the header has changed.
+     * recalculate the size of the encoded header. */
+    if (header->fetch_args == TRUE) {
+        hdr_size = xdr_sizeof((xdrproc_t)&xdr_nssi_request_header, header);
+        log_debug(rpc_debug_level, "using long args. recalculated hdr_size=%d", hdr_size);
+    }
+
+    if (nssi_config.put_data_in_request == FALSE) {
+        header->fetch_data = TRUE;
+    } else {
+        /* the size of the bulk data buffer */
+        data_size=NNTI_BUFFER_SIZE(&header->data_addr);
+        if (data_size > 0) {
+            /* what's left after encoding the header into the short request */
+            remaining = NNTI_BUFFER_SIZE(short_req_hdl) - hdr_size;
+            data_offset = hdr_size;
+            if (header->fetch_args == FALSE) {
+                /* the args are in the short request.  reduce the remaining space by the size of the encoded args. */
+                remaining -= args_size;
+                data_offset += args_size;
+            }
+            if (remaining > data_size) {
+                /* data will fit in the request. fetch not required. */
+                header->fetch_data = FALSE;
+            } else {
+                /* data will not fit in the request.  server must fetch. */
+                header->fetch_data = TRUE;
+            }
+        } else {
+            /* there is no data */
+            header->fetch_data = FALSE;
+        }
+
+        if ((data_size > 0) && (header->fetch_data == FALSE)) {
+            log_debug(rpc_debug_level,"putting data (size=%d, offset=%d) in short request", data_size, data_offset);
+            /* copy small data into the short request */
+            memcpy(NNTI_BUFFER_C_POINTER(short_req_hdl)+data_offset, NNTI_BUFFER_C_POINTER(&header->data_addr), data_size);
+        }
+    }
+
+
+    /*
+     * encode the header
+     */
+    log_debug(rpc_debug_level,"encoding request header");
+
     /* create an xdr memory stream for the short request buffer */
     xdrmem_create(&hdr_xdrs, NNTI_BUFFER_C_POINTER(short_req_hdl),
             NNTI_BUFFER_SIZE(short_req_hdl), XDR_ENCODE);
 
-    /* set the request ID for the header */
-    header->id = request->id;
-
-    if (args == NULL) {
-        header->fetch_args = FALSE;
-
-        /* encode the header  */
-        log_debug(rpc_debug_level,"encoding request header");
-        trios_start_timer(call_time);
-        if (! xdr_nssi_request_header(&hdr_xdrs, header)) {
-            log_fatal(rpc_debug_level,"failed to encode the request header");
-            return NSSI_EENCODE;
-        }
-        trios_stop_timer("xdr_nssi_request_header - encode", call_time);
+    trios_start_timer(call_time);
+    if (! xdr_nssi_request_header(&hdr_xdrs, header)) {
+        log_fatal(rpc_debug_level,"failed to encode the request header");
+        return NSSI_EENCODE;
     }
-    else {
-        if (logging_debug(rpc_debug_level)) {
-            fprint_nssi_request_header(logger_get_file(), "header",
-                                       "DEBUG", header);
-        }
-        /* find out if a short request has room for the args */
-        nssi_size args_size = xdr_sizeof(request->xdr_encode_args, args);
-        nssi_size hdr_size  = xdr_sizeof((xdrproc_t)&xdr_nssi_request_header, header);
-        nssi_size remaining = NNTI_BUFFER_SIZE(short_req_hdl) - hdr_size;
+    trios_stop_timer("xdr_nssi_request_header - encode", call_time);
 
-        log_debug(rpc_debug_level, "short_req_size=%d, "
-                "args_size = %d, hdr_size=%d",
-                NNTI_BUFFER_SIZE(short_req_hdl), args_size, hdr_size);
 
-        /* stuff to do if the args fit into the request buffer */
-        if (args_size < remaining) {
-
-            log_debug(rpc_debug_level,"putting args (len=%d) "
-                    "in short request", args_size);
-            header->fetch_args = FALSE;
-
-            request->use_long_args=0;
-
-            /* encode the header  */
-            log_debug(rpc_debug_level,"encoding request header");
-            trios_start_timer(call_time);
-            if (! xdr_nssi_request_header(&hdr_xdrs, header)) {
-                log_fatal(rpc_debug_level,"failed to encode the request header");
-                return NSSI_EENCODE;
-            }
-            trios_stop_timer("xdr_nssi_request_header - encode", call_time);
-
-            /* encode the args  */
-            if (args != NULL) {
-                log_debug(rpc_debug_level,"encoding args");
-                trios_start_timer(call_time);
-                if (! request->xdr_encode_args(&hdr_xdrs, args)) {
-                    log_fatal(rpc_debug_level,"failed to encode the args");
-                    return NSSI_EENCODE;
-                }
-                trios_stop_timer("xdr_encode_args - encode", call_time);
-            }
-        }
-
-        /**
-         *   If the arguments are too large to fit in an
-         *   \ref short request buffer, the client stores
-         *   excess arguments and waits for the server to
-         *   "fetch" the arguments using the \ref nssi_ptl_get method.
-         */
-        else {
-
-            log_debug(rpc_debug_level,"putting args (len=%d) "
-                    "in long request", args_size);
-
-            /* we want the server to fetch the arguments */
-            header->fetch_args = TRUE;
-
-            request->use_long_args=1;
-
-            log_debug(rpc_debug_level,"allocating space for args");
-            /* allocate memory for the encoded arguments. The request
-             * structure keeps track of the buffer so it can free
-             * the memory later. */
-            buf=(char *)malloc(args_size);
-            if (!buf)   {
-                log_fatal(rpc_debug_level, "malloc() failed!");
-                rc = NSSI_ENOMEM;
-                goto cleanup;
-            }
-            rc=NNTI_register_memory(
-                    &transports[svc->transport_id],
-                    buf,
-                    args_size,
-                    1,
-                    NNTI_GET_SRC,
-                    &svc->svc_host,
-                    &request->long_args_hdl);
-            if (rc != NNTI_OK) {
-                log_error(rpc_debug_level, "failed registering long args: %s",
-                        nnti_err_str(rc));
-                goto cleanup;
-            }
-            header->args_addr=request->long_args_hdl;
-//            fprint_NNTI_buffer(logger_get_file(), "request->long_args_hdl",
-//                    "encode_args", &request->long_args_hdl);
-
-            /* create an xdr memory stream for the encoded args */
-            xdrmem_create(&args_xdrs, NNTI_BUFFER_C_POINTER(&request->long_args_hdl),
-                    NNTI_BUFFER_SIZE(&request->long_args_hdl), XDR_ENCODE);
-
-            /* encode the header  */
-            log_debug(rpc_debug_level,"encoding request header");
-            trios_start_timer(call_time);
-            if (! xdr_nssi_request_header(&hdr_xdrs, header)) {
-                log_fatal(rpc_debug_level,"failed to encode the request header");
-                return NSSI_EENCODE;
-            }
-            trios_stop_timer("xdr_nssi_request_header - encode", call_time);
-
-            /* encode the args  */
-            if (args != NULL) {
-                log_debug(rpc_debug_level,"encoding args");
-                trios_start_timer(call_time);
-                if (! request->xdr_encode_args(&args_xdrs, args)) {
-                    log_fatal(rpc_debug_level,"failed to encode the args");
-                    return NSSI_EENCODE;
-                }
-                trios_stop_timer("xdr_encode_args - encode", call_time);
-            }
-        }
-    }
+    log_debug(rpc_debug_level, "short_req_size=%d, "
+            "hdr_size(final)=%d, args_size=%d, data_size=%d",
+            NNTI_BUFFER_SIZE(short_req_hdl), hdr_size, args_size, data_size);
 
     /* print the header for debugging */
     if (logging_debug(rpc_debug_level)) {

@@ -180,7 +180,11 @@ typedef struct {
     int           opcode;
     unsigned long request_id;
     uint64_t      start_time;
-    double arrival_time;
+    double        arrival_time;
+
+    NNTI_buffer_t *data_hdl;
+    NNTI_buffer_t  shadow_data;
+    NNTI_buffer_t *shadow_data_hdl;
 } request_args_t;
 
 static std::map<struct caller_reqid, request_args_t *, caller_reqid_lt> request_args_map;
@@ -188,6 +192,19 @@ typedef std::map<struct caller_reqid, request_args_t *, caller_reqid_lt>::iterat
 typedef std::pair<struct caller_reqid, request_args_t *> request_args_map_pair_t;
 
 static nthread_lock_t request_args_map_mutex;
+
+typedef struct {
+    const NNTI_buffer_t *data_buffer;   // this is the original client data buffer
+    const NNTI_buffer_t *shadow_buffer; // this is the shadow buffer on the server
+    bool                 data_was_got;
+    bool                 data_was_put;
+} shadow_buffer_entry;
+static std::map<const NNTI_buffer_t *, shadow_buffer_entry *> shadow_buffer_map;
+typedef std::map<const NNTI_buffer_t *, shadow_buffer_entry *>::iterator shadow_buffer_map_iterator_t;
+static nthread_lock_t shadow_buffer_mutex;
+
+static log_level shadow_debug_level = LOG_UNDEFINED;
+
 
 
 //static void print_raw_buf(void *buf, uint32_t size)
@@ -263,6 +280,99 @@ void request_args_del(const NNTI_peer_t *caller, const unsigned long reqid)
 
     log_debug(rpc_debug_level, "end");
 }
+
+
+static void print_shadow_buffer_map()
+{
+    log_level debug_level=shadow_debug_level;
+
+    if (!logging_debug(debug_level)) {
+        return;
+    }
+
+    shadow_buffer_map_iterator_t i;
+    if (nthread_lock(&shadow_buffer_mutex)) log_warn(shadow_debug_level, "failed to get thread lock");
+    for (i=shadow_buffer_map.begin(); i != shadow_buffer_map.end(); i++) {
+        log_debug(debug_level, "shadow_buffer_map key=%p sbe=%p", i->first, i->second);
+    }
+    nthread_unlock(&shadow_buffer_mutex);
+}
+static NNTI_result_t insert_shadow_buffer(shadow_buffer_entry *sbe)
+{
+    NNTI_result_t  rc=NNTI_OK;
+
+    if (nthread_lock(&shadow_buffer_mutex)) log_warn(shadow_debug_level, "failed to get thread lock");
+
+    log_debug(shadow_debug_level, "adding shadow buffer (sbe=%p)", sbe);
+
+    assert(shadow_buffer_map.find(sbe->shadow_buffer) == shadow_buffer_map.end());
+    shadow_buffer_map[sbe->shadow_buffer] = sbe;
+
+    log_debug(shadow_debug_level, "added shadow buffer (sbe=%p)", sbe);
+
+    nthread_unlock(&shadow_buffer_mutex);
+
+    return(rc);
+
+}
+static shadow_buffer_entry *get_shadow_buffer(const NNTI_buffer_t *sbuf)
+{
+    shadow_buffer_entry *sbe=NULL;
+
+    if (nthread_lock(&shadow_buffer_mutex)) log_warn(shadow_debug_level, "failed to get thread lock");
+
+    log_debug(shadow_debug_level, "looking for shadow buffer (sbuf=%p)", sbuf);
+
+    if (shadow_buffer_map.find(sbuf) != shadow_buffer_map.end()) {
+        sbe = shadow_buffer_map[sbuf];
+    }
+
+    log_debug(shadow_debug_level, "found shadow buffer entry (sbe=%p)", sbe);
+
+    nthread_unlock(&shadow_buffer_mutex);
+
+    if (sbe != NULL) {
+        log_debug(shadow_debug_level, "shadow buffer entry found (sbe=%p)", sbe);
+        return sbe;
+    }
+
+    log_debug(shadow_debug_level, "shadow buffer entry NOT found");
+
+    print_shadow_buffer_map();
+
+    return(NULL);
+}
+static shadow_buffer_entry *del_shadow_buffer(NNTI_buffer_t *victim)
+{
+    shadow_buffer_entry *sbe=NULL;
+
+    log_level debug_level = shadow_debug_level;
+
+    if (nthread_lock(&shadow_buffer_mutex)) log_warn(shadow_debug_level, "failed to get thread lock");
+
+    log_debug(debug_level, "deleting shadow buffer (victim=%p)", victim);
+
+    if (shadow_buffer_map.find(victim) != shadow_buffer_map.end()) {
+        sbe = shadow_buffer_map[victim];
+    }
+
+    if (sbe != NULL) {
+        log_debug(shadow_debug_level, "shadow buffer entry found and deleted (sbe=%p ; victim=%p)", sbe, victim);
+        shadow_buffer_map.erase(victim);
+    } else {
+        log_debug(debug_level, "shadow buffer entry NOT found");
+    }
+
+    log_debug(debug_level, "deleted (sbe=%p ; victim=%p)", sbe, victim);
+
+    nthread_unlock(&shadow_buffer_mutex);
+
+    print_shadow_buffer_map();
+
+    return(sbe);
+}
+
+
 
 /* ----------- Implementation of core services ----------- */
 
@@ -983,6 +1093,11 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
     int req_count = 0;
     log_level debug_level = rpc_debug_level;
 
+    shadow_buffer_entry *sbe=NULL;
+    char          *shadow_data_buf =NULL;
+    nssi_size      shadow_data_size=0;
+
+
     request_args_t *req_args=NULL;
 
 //    nssi_service *svc       = rpc_req->svc;
@@ -1101,6 +1216,66 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
         }
     }
 
+    req_args = (request_args_t *)malloc(sizeof(request_args_t));
+    req_args->opcode = header.opcode;
+    req_args->request_id = header.id;
+    req_args->arrival_time = rpc_req->arrival_time;
+    req_args->start_time = trios_get_time_ms();
+    request_args_add(&caller, header.id, req_args);
+
+    req_args->data_hdl=&header.data_addr;
+
+    shadow_data_size=NNTI_BUFFER_SIZE(&header.data_addr);
+    if (header.fetch_data == TRUE) {
+
+        req_args->shadow_data    =header.data_addr;
+        req_args->shadow_data_hdl=&req_args->shadow_data;
+
+    } else if ((shadow_data_size > 0) && (header.fetch_data == FALSE)) {
+
+        if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= shadow_data_size)) {
+            log_debug(rpc_debug_level, "using buffer queue for SHADOW buffer");
+            req_args->shadow_data_hdl=trios_buffer_queue_pop(&rdma_target_bq);
+            assert(req_args->shadow_data_hdl);
+            NNTI_BUFFER_SIZE(req_args->shadow_data_hdl)=shadow_data_size;
+        } else {
+            log_debug(rpc_debug_level, "allocating buffer for SHADOW buffer");
+            shadow_data_buf=(char*)malloc(shadow_data_size);
+
+            req_args->shadow_data_hdl=&req_args->shadow_data;
+
+            trios_start_timer(call_time);
+            rc=NNTI_register_memory(
+                    &transports[rpc_req->svc->transport_id],
+                    (char *)shadow_data_buf,
+                    shadow_data_size,
+                    1,
+                    (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
+                    &transports[rpc_req->svc->transport_id].me,
+                    req_args->shadow_data_hdl);
+            trios_stop_timer("NNTI_register_memory - shadow_data_buf", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed registering shadow_data: %s",
+                        nnti_err_str(rc));
+                goto cleanup;
+            }
+        }
+
+        nssi_size data_offset=xdr_getpos(&xdrs);
+
+        log_debug(rpc_debug_level,"extracting data (size=%d, offset=%d) from short request", shadow_data_size, data_offset);
+        /* copy small data into the short request */
+        memcpy(NNTI_BUFFER_C_POINTER(req_args->shadow_data_hdl), req_buf+data_offset, shadow_data_size);
+
+        sbe=(shadow_buffer_entry *)malloc(sizeof(shadow_buffer_entry));
+        sbe->data_buffer  =req_args->data_hdl;
+        sbe->shadow_buffer=req_args->shadow_data_hdl;
+        sbe->data_was_got =false;
+        sbe->data_was_put =true;
+        insert_shadow_buffer(sbe);
+    }
+
     /* end the decode args interval */
     trace_end_interval(trace_interval_gid, TRACE_RPC_DECODE,
             0, "decode request");
@@ -1114,21 +1289,38 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
             req_count, header.id, header.opcode,
             svc_op.func);
 
-    req_args = (request_args_t *)malloc(sizeof(request_args_t));
-    req_args->opcode = header.opcode;
-    req_args->request_id = header.id;
-    req_args->arrival_time = rpc_req->arrival_time;
-    req_args->start_time = trios_get_time_ms();
-    request_args_add(&caller, header.id, req_args);
-
     // is reentrant??
     trios_start_timer(call_time);
-    rc = svc_op.func(header.id, &caller, op_args, &header.data_addr, &header.res_addr);
+    rc = svc_op.func(header.id, &caller, op_args, req_args->shadow_data_hdl, &header.res_addr);
     trios_stop_timer("svc_op", call_time);
     if (rc != NSSI_OK) {
         log_info(rpc_debug_level,
                 "user op failed: %s",
                 nssi_err_str(rc));
+    }
+
+    if ((shadow_data_size > 0) && (header.fetch_data == FALSE)) {
+
+        sbe=del_shadow_buffer(req_args->shadow_data_hdl);
+        free(sbe);
+
+        if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)shadow_data_size)) {
+            trios_buffer_queue_push(&rdma_target_bq, req_args->shadow_data_hdl);
+        } else {
+
+            shadow_data_buf=NNTI_BUFFER_C_POINTER(req_args->shadow_data_hdl);
+
+            trios_start_timer(call_time);
+            rc=NNTI_unregister_memory(req_args->shadow_data_hdl);
+            trios_stop_timer("NNTI_unregister_memory - shadow_data_buf", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed unregistering data: %s",
+                        nnti_err_str(rc));
+            }
+
+            free(shadow_data_buf);
+        }
     }
 
     /* send result back to client */
@@ -1209,11 +1401,20 @@ int nssi_get_data(
     NNTI_status_t status;
     trios_declare_timer(call_time);
 
+    shadow_buffer_entry *sbe=NULL;
+
     if (len == 0)
         return rc;
 
     if (len < 0)
         return NSSI_EINVAL;
+
+    sbe=get_shadow_buffer(data_addr);
+    if (sbe != NULL) {
+        memcpy(buf, NNTI_BUFFER_C_POINTER(sbe->shadow_buffer), len);
+        sbe->data_was_got=true;
+        return rc;
+    }
 
     if ((nssi_config.use_buffer_queue) &&
         (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)len)) {
@@ -1315,11 +1516,19 @@ extern int nssi_put_data(
     NNTI_status_t status;
     trios_declare_timer(call_time);
 
+    shadow_buffer_entry *sbe=NULL;
+
     if (len == 0)
         return rc;
 
     if (len < 0)
         return NSSI_EINVAL;
+
+    /* if there is a shadow data buffer in use, then put the shadow data into the client's data_addr */
+    sbe=get_shadow_buffer(data_addr);
+    if (sbe != NULL) {
+        data_addr = sbe->data_buffer;
+    }
 
     if ((nssi_config.use_buffer_queue) &&
         (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)len)) {
@@ -1330,7 +1539,7 @@ extern int nssi_put_data(
         /* copy the user buffer contents into RDMA buffer */
         memcpy(NNTI_BUFFER_C_POINTER(rpc_msg_hdl), buf, len);
     } else {
-        log_debug(rpc_debug_level, "using user buffer for GET buffer");
+        log_debug(rpc_debug_level, "using user buffer for PUT buffer");
         rpc_msg_hdl=&rpc_msg;
         rc=NNTI_register_memory(
                 &transports[data_addr->transport_id],
@@ -1492,6 +1701,7 @@ int nssi_service_init(
 
     nthread_lock_init(&supported_ops_mutex);
     nthread_lock_init(&request_args_map_mutex);
+    nthread_lock_init(&shadow_buffer_mutex);
 
     /* initialize the service descriptors */
     memset(service, 0, sizeof(nssi_service));
@@ -1593,6 +1803,7 @@ int nssi_service_fini(const nssi_service *service)
 
     nthread_lock_fini(&supported_ops_mutex);
     nthread_lock_fini(&request_args_map_mutex);
+    nthread_lock_fini(&shadow_buffer_mutex);
 
     req_queue_buffer = NNTI_BUFFER_C_POINTER(&service->req_addr);
 
