@@ -78,18 +78,30 @@ namespace Details {
 template<typename KeyType, typename ValueType>
 class FixedHashTable : public Teuchos::Describable {
 public:
-  /// \brief Constructor: Add <tt>(keys[i], i)</tt> to the table,
-  ///   for i = 0, 1, ..., <tt>keys.size()</tt>.
+  /// \brief Constructor for arbitrary keys and contiguous values
+  ///   starting with zero.
+  ///
+  /// Add <tt>(keys[i], i)</tt> to the table,
+  /// for i = 0, 1, ..., <tt>keys.size()</tt>.
   FixedHashTable (const ArrayView<const KeyType>& keys);
 
-  /// \brief Constructor: Add <tt>(keys[i], startingValue + i)</tt> to
-  ///   the table, for i = 0, 1, ..., <tt>keys.size()</tt>.
+  /// \brief Constructor for arbitrary keys and contiguous values
+  ///   starting with \c startingValue.
   ///
-  /// This version is useful if Map wants to exclude an initial
-  /// sequence of contiguous GIDs from the table, and start with a
-  /// given LID.
+  /// Add <tt>(keys[i], startingValue + i)</tt> to the table, for i =
+  /// 0, 1, ..., <tt>keys.size()</tt>.  This version is useful if Map
+  /// wants to exclude an initial sequence of contiguous GIDs from the
+  /// table, and start with a given LID.
   FixedHashTable (const ArrayView<const KeyType>& keys,
                   const ValueType startingValue);
+
+  /// \brief Constructor for arbitrary keys and arbitrary values.
+  ///
+  /// Add <tt>(keys[i], vals[i])</tt> to the table, for i = 0, 1, ...,
+  /// <tt>keys.size()</tt>.  This version is useful for applications
+  /// other than Map's GID-to-LID lookup table.
+  FixedHashTable (const ArrayView<const KeyType>& keys,
+                  const ArrayView<const ValueType>& vals);
 
   //! Copy constructor: Make a shallow copy of the data.
   FixedHashTable (const FixedHashTable& obj);
@@ -130,11 +142,22 @@ private:
   /// This is redundant, but we keep it around to speed up get().
   const std::pair<KeyType, ValueType>* rawVal_;
 
-  /// \brief Initialize: Add <tt>(keys[i], startingValue + i)</tt> to
-  ///   the table, for i = 0, 1, ..., <tt>keys.size()</tt>.
+  /// \brief Allocate storage and initialize the table.
+  ///
+  /// Add <tt>(keys[i], startingValue + i)</tt> to the table,
+  /// for i = 0, 1, ..., <tt>keys.size()</tt>.
   void
   init (const ArrayView<const KeyType>& keys,
-const ValueType startingValue);
+        const ValueType startingValue);
+
+  /// \brief Allocate storage and initialize the table.
+  ///
+  /// Add <tt>(keys[i], vals[i])</tt> to the table, for i = 0, 1, ...,
+  /// <tt>keys.size()</tt>.  This is called by the version of the
+  /// constructor that takes the same arguments.
+  void
+  init (const ArrayView<const KeyType>& keys,
+        const ArrayView<const ValueType>& vals);
 
   //! The hash function; it returns \c int no matter the value type.
   int hashFunc (const KeyType key) const;
