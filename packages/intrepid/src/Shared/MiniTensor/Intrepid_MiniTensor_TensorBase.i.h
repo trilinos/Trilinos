@@ -102,6 +102,49 @@ TensorBase<T>::set_dimension(Index const dimension)
 }
 
 //
+// Fill components with value.
+//
+template<typename T>
+inline
+void
+TensorBase<T>::fill(ComponentValue value)
+{
+  Index const
+  number_components = get_number_components();
+
+  switch (value) {
+
+    default:
+      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+      std::cerr << std::endl;
+      std::cerr << "Unknown specification of value for filling components.";
+      std::cerr << std::endl;
+      exit(1);
+      break;
+
+    case ZEROS:
+      for (Index i = 0; i < number_components; ++i) {
+        (*this)[i] = 0;
+      }
+      break;
+
+    case ONES:
+      for (Index i = 0; i < number_components; ++i) {
+        (*this)[i] = 1;
+      }
+      break;
+
+    case RANDOM:
+      for (Index i = 0; i < number_components; ++i) {
+        (*this)[i] = Teuchos::ScalarTraits<T>().random();
+      }
+      break;
+  }
+
+  return;
+}
+
+//
 // Fill components from array defined by pointer.
 //
 template<typename T>
@@ -148,6 +191,27 @@ dimension_(dimension)
   for (Index i = 0; i < number_components; ++i) {
     (*this)[i] = not_a_number<T>();
   }
+
+  return;
+}
+
+//
+// Create with specified value
+//
+template<typename T>
+inline
+TensorBase<T>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ComponentValue value) :
+dimension_(dimension)
+{
+  Index const
+  number_components = integer_power(dimension, order);
+
+  set_number_components(number_components);
+
+  fill(value);
 
   return;
 }
@@ -340,22 +404,16 @@ inline
 void
 TensorBase<T>::clear()
 {
-  Index const
-  number_components = get_number_components();
-
-  for (Index i = 0; i < number_components; ++i) {
-    (*this)[i] = 0.0;
-  }
-
+  fill(ZEROS);
   return;
 }
 
 //
-// Frobenius norm
+// Square of Frobenius norm
 //
 template<typename T>
 T
-norm_f(TensorBase<T> const & X)
+norm_f_square(TensorBase<T> const & X)
 {
   T
   s = 0.0;
@@ -367,7 +425,17 @@ norm_f(TensorBase<T> const & X)
     s += X[i] * X[i];
   }
 
-  return std::sqrt(s);
+  return s;
+}
+
+//
+// Frobenius norm
+//
+template<typename T>
+T
+norm_f(TensorBase<T> const & X)
+{
+  return std::sqrt(norm_f_square(X));
 }
 
 //

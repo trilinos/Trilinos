@@ -67,6 +67,17 @@ TensorBase<T>::TensorBase(dimension, order)
   return;
 }
 
+///
+/// Create vector from a specified value
+///
+template<typename T>
+inline
+Vector<T>::Vector(Index const dimension, ComponentValue value) :
+TensorBase<T>::TensorBase(dimension, order, value)
+{
+  return;
+}
+
 //
 // Create vector from a scalar
 //

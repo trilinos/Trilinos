@@ -72,6 +72,14 @@ public:
   Tensor3(Index const dimension);
 
   ///
+  /// Create 3rd-order tensor from a specified value
+  /// \param dimension
+  /// \param value all components are set equal to this
+  ///
+  explicit
+  Tensor3(Index const dimension, ComponentValue value);
+
+  ///
   /// 3rd-order tensor constructor with a scalar
   /// \param s all components set to this scalar
   ///
