@@ -89,10 +89,10 @@ SET(${EXPORT_FILE_VAR_PREFIX}_AR ${CMAKE_AR})
 ## ---------------------------------------------------------------------------
 
 ## List of package include dirs
-SET(${EXPORT_FILE_VAR_PREFIX}_INCLUDE_DIRS "${INCLUDE_DIRS}")
+SET(${EXPORT_FILE_VAR_PREFIX}_INCLUDE_DIRS "${FULL_INCLUDE_DIRS_SET}")
 
 ## List of package library paths
-SET(${EXPORT_FILE_VAR_PREFIX}_LIBRARY_DIRS "${LIBRARY_DIRS}")
+SET(${EXPORT_FILE_VAR_PREFIX}_LIBRARY_DIRS "${FULL_LIBRARY_DIRS_SET}")
 
 ## List of package libraries
 SET(${EXPORT_FILE_VAR_PREFIX}_LIBRARIES "${FULL_LIBRARY_SET}")
