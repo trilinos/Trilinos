@@ -389,6 +389,8 @@ int Ifpack_Polynomial::Compute()
   }
   cpts.push_back(zero);
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+
   // Construct overdetermined Vandermonde matrix
   Teuchos::SerialDenseMatrix< int,std::complex<double> > Vmatrix(cpts.size(),PolyDegree_+1);
   Vmatrix.putScalar(zero);
@@ -443,6 +445,65 @@ int Ifpack_Polynomial::Compute()
     //			       << RHS(ii,0));
     coeff_[ii]=real(RHS(ii,0)/c0);
   }
+
+#else
+
+  // Construct overdetermined Vandermonde matrix
+  Teuchos::SerialDenseMatrix< int, double > Vmatrix(xs.size()+1,PolyDegree_+1);
+  Vmatrix.putScalar(0.0);
+  for( int jj=0; jj<=PolyDegree_; jj++) {
+    for( int ii=0; ii<xs.size(); ii++) {
+      if(jj>0) {
+	Vmatrix(ii,jj)=pow(xs[ii],jj);
+      }
+      else {
+	Vmatrix(ii,jj)=1.0;
+      }
+    }
+  }
+  Vmatrix(xs.size(),0)=1.0;
+
+  // Right hand side: all zero except last entry
+  Teuchos::SerialDenseMatrix< int, double > RHS(xs.size()+1,1);
+  RHS.putScalar(0.0);
+  RHS(xs.size(),0)=1.0;
+
+  // Solve least squares problem using LAPACK
+  Teuchos::LAPACK< int, double > lapack;
+  const int N = Vmatrix.numCols();
+  Teuchos::Array<double> singularValues(N);
+  Teuchos::Array<double> rwork(1);
+  rwork.resize (std::max (1, 5 * N));
+  double lworkScalar(1.0);
+  int info = 0;
+  lapack.GELS('N', Vmatrix.numRows(), Vmatrix.numCols(), RHS.numCols(),
+	           Vmatrix.values(),  Vmatrix.numRows(), RHS.values(),    RHS.numRows(),
+	           &lworkScalar, -1, &info);
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+			     "_GELSS workspace query returned INFO = "
+			     << info << " != 0.");
+  const int lwork = static_cast<int> (lworkScalar);
+  TEUCHOS_TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
+			     "_GELSS workspace query returned LWORK = "
+			     << lwork << " < 0.");
+  // Allocate workspace.  Size > 0 means &work[0] makes sense.
+  Teuchos::Array< double > work (std::max (1, lwork));
+  // Solve the least-squares problem.
+  lapack.GELS('N', Vmatrix.numRows(), Vmatrix.numCols(),  RHS.numCols(),
+	           Vmatrix.values(),  Vmatrix.numRows(),  RHS.values(),   RHS.numRows(),
+       	           &work[0], lwork, &info);
+
+  coeff_.resize(PolyDegree_+1);
+  double c0=RHS(0,0);
+  for(int ii=0; ii<=PolyDegree_; ii++) {
+    // test that the imaginary part is nonzero
+    //TEUCHOS_TEST_FOR_EXCEPTION(abs(imag(RHS(ii,0))) > 1e-8, std::logic_error,
+    //			       "imaginary part of polynomial coefficients is nonzero! coeff = "
+    //			       << RHS(ii,0));
+    coeff_[ii]=RHS(ii,0)/c0;
+  }
+
+#endif
 
 #ifdef IFPACK_FLOPCOUNTERS
   ComputeFlops_ += NumMyRows_;
