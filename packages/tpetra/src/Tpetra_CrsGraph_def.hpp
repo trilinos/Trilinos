@@ -2222,7 +2222,6 @@ namespace Tpetra {
         LookupStatus stat = rowMap_->getRemoteIndexList(NLRs(),NLRIds());
         int lclerror = ( stat == IDNotPresent ? 1 : 0 );
         int gblerror;
-        RCP<const Comm<int> > comm = this->getComm ();
         reduceAll<int, int> (*comm, REDUCE_MAX, lclerror, outArg (gblerror));
         if (gblerror != 0) {
           const int myRank = comm->getRank ();

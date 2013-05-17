@@ -4543,7 +4543,6 @@ namespace Tpetra {
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
 
     // If the graph is not fill complete, then the Export object (if
     // one should exist) hasn't been constructed yet.
