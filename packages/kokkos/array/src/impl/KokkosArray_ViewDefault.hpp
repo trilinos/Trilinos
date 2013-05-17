@@ -148,32 +148,23 @@ struct ViewAssignment< LayoutDefault , void , void >
     typedef typename traits::memory_space memory_space ;
     typedef typename traits::scalar_type  scalar_type ;
 
+    enum { is_left = is_same< typename traits::array_layout , LayoutLeft >::value };
+
     ViewTracking< traits >::decrement( dst.m_ptr_on_device );
 
-    if ( traits::rank == 1 && traits::rank_dynamic == 1 && n0 < n1 ) {
+    shape_type::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
 
-      // Rank=1 array allocation may be larger than the initial dimension
-      // to allow resizing up to the allocated size.
+    // Left layout arrays are aligned on the first dimension.
+    // Right layout arrays are aligned on blocks of the 2-7th dimensions.
 
-      shape_type::assign( dst.m_shape, n0, 0, 0, 0, 0, 0, 0, 0 );
+    dst.m_stride =
+      is_left ? dst.m_shape.N0
+              : dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 *
+                dst.m_shape.N4 * dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 ;
 
-      dst.m_stride = memory_space::preferred_alignment( dst.m_shape.scalar_size , n1 );
-    }
-    else {
-      enum { is_left = is_same< typename traits::array_layout , LayoutLeft >::value };
-
-      shape_type::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-
-      // Rank=1 and left-layout arrays are aligned on the first dimension.
-      // Rank>1 and right-layout arrays are aligned on blocks of the 2-7th dimensions.
-
-      const size_t base_count =
-        ( traits::rank == 1 || is_left )
-        ? dst.m_shape.N0
-        : dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 * dst.m_shape.N4 *
-          dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 ;
-
-      dst.m_stride = memory_space::preferred_alignment( dst.m_shape.scalar_size , base_count );
+    if ( 1 < traits::rank ) {
+      // If greater than rank 1 insert padding for alignment
+      dst.m_stride = memory_space::preferred_alignment( dst.m_shape.scalar_size , dst.m_stride );
     }
 
     dst.m_ptr_on_device = (scalar_type *)
@@ -332,7 +323,7 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
     ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
   }
 
-  /** \brief  Extract Rank-1 array from Rank-1 array */
+  /** \brief  Extract Rank-1 array from range of Rank-1 array */
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM ,
             typename iType >
@@ -361,13 +352,101 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
     dst.m_ptr_on_device = 0 ;
 
     if ( range.first < range.second ) {
-      assert_shape_bounds( src.m_shape , range.first );
-      assert_shape_bounds( src.m_shape , range.second - 1 );
+      assert_shape_bounds( src.m_shape , 1 , range.first );
+      assert_shape_bounds( src.m_shape , 1 , range.second - 1 );
 
       dst.m_shape.N0 = range.second - range.first ;
+      dst.m_stride   = src.m_stride - range.first ;
       dst.m_ptr_on_device = src.m_ptr_on_device + range.first ;
 
       ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    }
+  }
+
+  /** \brief  Extract LayoutRight Rank-N array from range of LayoutRight Rank-N array */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM ,
+            typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
+                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
+                  const std::pair<iType,iType> & range ,
+                  typename enable_if< (
+                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
+                                     ViewTraits<ST,SL,SD,SM> >::value
+                    &&
+                    Impl::is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value 
+                    &&
+                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutRight >::value 
+                    &&
+                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
+                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank > 1 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic > 0 )
+                  )>::type * = 0 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    typedef typename traits_type::shape_type shape_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+
+    shape_type::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
+    dst.m_stride        = 0 ;
+    dst.m_ptr_on_device = 0 ;
+
+    if ( range.first < range.second ) {
+      assert_shape_bounds( src.m_shape , 8 , range.first ,      0,0,0,0,0,0,0);
+      assert_shape_bounds( src.m_shape , 8 , range.second - 1 , 0,0,0,0,0,0,0);
+
+      shape_type::assign( dst.m_shape, range.second - range.first ,
+                          src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
+                          src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
+
+      dst.m_stride        = src.m_stride ; // aligned( product[ N1 .. N7 ] )
+      dst.m_ptr_on_device = src.m_ptr_on_device + range.first * src.m_stride ;
+
+      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    }
+  }
+
+  //------------------------------------
+  /** \brief  Deep copy data from compatible value type, layout, rank, and specialization.
+   *          Check the dimensions and allocation lengths at runtime.
+   */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  inline static
+  void deep_copy( const View<DT,DL,DD,DM,LayoutDefault> & dst ,
+                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
+                  const typename Impl::enable_if<(
+                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::scalar_type ,
+                                   typename ViewTraits<ST,SL,SD,SM>::non_const_scalar_type >::value
+                    &&
+                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
+                                   typename ViewTraits<ST,SL,SD,SM>::array_layout >::value
+                    &&
+                    ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) == unsigned(ViewTraits<ST,SL,SD,SM>::rank) )
+                  )>::type * = 0 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    typedef ViewTraits<ST,SL,SD,SM> src_traits ;
+
+    enum { is_right = Impl::is_same<typename dst_traits::array_layout,LayoutRight>::value };
+
+    if ( dst.m_ptr_on_device != src.m_ptr_on_device ) {
+
+      Impl::assert_shapes_are_equal( dst.m_shape , src.m_shape );
+
+      const size_t nbytes = dst.m_shape.scalar_size *
+        ( 1 == dst_traits::rank ? dst.m_shape.N0 : (
+          is_right  ? dst.m_shape.N0 * dst.m_stride : (
+                      dst.m_stride   * dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 *
+                      dst.m_shape.N4 * dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 )));
+          
+      DeepCopy< typename dst_traits::memory_space ,
+                typename src_traits::memory_space >( dst.m_ptr_on_device , src.m_ptr_on_device , nbytes );
     }
   }
 };
@@ -521,7 +600,7 @@ public:
   // (2) the rank matches the number of arguments
   // (3) the memory space is valid for the access
   //------------------------------------
-  // LayoutLeft:
+  // LayoutLeft, rank 1:
 
   template< typename iType0 >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -547,6 +626,21 @@ public:
       return m_ptr_on_device[ i0 ];
     }
 
+  template< typename iType0 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper< traits, LayoutLeft, 1, iType0 >::type & operator()
+    ( const iType0 & i0 , const int , const int = 0 , const int = 0 , 
+      const int = 0 , const int = 0 , const int = 0 , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 ];
+    }
+
+  // LayoutLeft, rank 2:
+
   template< typename iType0 , typename iType1 >
   KOKKOSARRAY_INLINE_FUNCTION
   typename Impl::EnableViewOper< traits, LayoutLeft, 2, iType0, iType1 >::type & operator()
@@ -558,6 +652,21 @@ public:
 
       return m_ptr_on_device[ i0 + m_stride * i1 ];
     }
+
+  template< typename iType0 , typename iType1 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper< traits, LayoutLeft, 2, iType0, iType1 >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const int , const int = 0 ,
+      const int = 0 , const int = 0 , const int = 0 , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * i1 ];
+    }
+
+  // LayoutLeft, rank 3:
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -572,6 +681,22 @@ public:
                               i1 + m_shape.N1 * i2 ) ];
     }
 
+  template< typename iType0 , typename iType1 , typename iType2 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper< traits, LayoutLeft, 3, iType0, iType1, iType2 >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
+      const int = 0 , const int = 0 , const int = 0 , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * (
+                              i1 + m_shape.N1 * i2 ) ];
+    }
+
+  // LayoutLeft, rank 4:
+
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOSARRAY_INLINE_FUNCTION
   typename Impl::EnableViewOper< traits, LayoutLeft, 4, iType0, iType1, iType2, iType3 >::type & operator()
@@ -585,6 +710,23 @@ public:
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * i3 )) ];
     }
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper< traits, LayoutLeft, 4, iType0, iType1, iType2, iType3 >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const int , const int = 0 , const int = 0 , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * i3 )) ];
+    }
+
+  // LayoutLeft, rank 5:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 >
@@ -604,6 +746,27 @@ public:
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * i4 ))) ];
     }
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper<
+    traits, LayoutLeft, 5, iType0, iType1, iType2, iType3 , iType4
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const int , const int = 0 , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * (
+                              i3 + m_shape.N3 * i4 ))) ];
+    }
+
+  // LayoutLeft, rank 6:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 >
@@ -626,6 +789,28 @@ public:
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper<
+    traits, LayoutLeft, 6, iType0, iType1, iType2, iType3 , iType4, iType5
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const iType5 & i5 , const int , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * (
+                              i3 + m_shape.N3 * (
+                              i4 + m_shape.N4 * i5 )))) ];
+    }
+
+  // LayoutLeft, rank 7:
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 >
   KOKKOSARRAY_INLINE_FUNCTION
   typename Impl::EnableViewOper<
@@ -645,6 +830,29 @@ public:
                               i4 + m_shape.N4 * (
                               i5 + m_shape.N5 * i6 ))))) ];
     }
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 , typename iType6 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper<
+    traits, LayoutLeft, 7, iType0, iType1, iType2, iType3 , iType4, iType5, iType6
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * (
+                              i3 + m_shape.N3 * (
+                              i4 + m_shape.N4 * (
+                              i5 + m_shape.N5 * i6 ))))) ];
+    }
+
+  // LayoutLeft, rank 8:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 , typename iType7 >
@@ -669,7 +877,7 @@ public:
     }
 
   //------------------------------------
-  // LayoutRight:
+  // LayoutRight, rank 1:
 
   template< typename iType0 >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -695,6 +903,21 @@ public:
       return m_ptr_on_device[ i0 ];
     }
 
+  template< typename iType0 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper< traits, LayoutRight, 1, iType0 >::type & operator()
+    ( const iType0 & i0 , const int , const int = 0 , const int = 0 ,
+      const int = 0 , const int = 0 , const int = 0 , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 ];
+    }
+
+  // LayoutRight, rank 2:
+
   template< typename iType0 , typename iType1 >
   KOKKOSARRAY_INLINE_FUNCTION
   typename Impl::EnableViewOper< traits, LayoutRight, 2, iType0, iType1 >::type & operator()
@@ -705,6 +928,35 @@ public:
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i1 + i0 * m_stride ];
+    }
+
+  template< typename iType0 , typename iType1 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper< traits, LayoutRight, 2, iType0, iType1 >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const int , const int = 0 ,
+      const int = 0 , const int = 0 , const int = 0 , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i1 + i0 * m_stride ];
+    }
+
+  // LayoutRight, rank 3:
+
+  template< typename iType0 , typename iType1 , typename iType2 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper< traits, LayoutRight, 3, iType0, iType1, iType2 >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
+      const int = 0 , const int = 0 , const int = 0 , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i2 + m_shape.N2 * (
+                              i1 ) + i0 * m_stride ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -719,6 +971,8 @@ public:
       return m_ptr_on_device[ i2 + m_shape.N2 * (
                               i1 ) + i0 * m_stride ];
     }
+
+  // LayoutRight, rank 4:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -735,6 +989,25 @@ public:
                               i2 + m_shape.N2 * (
                               i1 )) + i0 * m_stride ];
     }
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper<
+    traits, LayoutRight, 4, iType0, iType1, iType2, iType3
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , 
+      const int , const int = 0 , const int = 0 , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i3 + m_shape.N3 * (
+                              i2 + m_shape.N2 * (
+                              i1 )) + i0 * m_stride ];
+    }
+
+  // LayoutRight, rank 5:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 >
@@ -753,6 +1026,47 @@ public:
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
                               i1 ))) + i0 * m_stride ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper<
+    traits, LayoutRight, 5, iType0, iType1, iType2, iType3 , iType4
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const int , const int = 0 , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i4 + m_shape.N4 * (
+                              i3 + m_shape.N3 * (
+                              i2 + m_shape.N2 * (
+                              i1 ))) + i0 * m_stride ];
+    }
+
+  // LayoutRight, rank 6:
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper<
+    traits, LayoutRight, 6, iType0, iType1, iType2, iType3 , iType4, iType5
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const iType5 & i5 , const int , const int = 0 ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i5 + m_shape.N5 * (
+                              i4 + m_shape.N4 * (
+                              i3 + m_shape.N3 * (
+                              i2 + m_shape.N2 * (
+                              i1 )))) + i0 * m_stride ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -775,6 +1089,8 @@ public:
                               i1 )))) + i0 * m_stride ];
     }
 
+  // LayoutRight, rank 7:
+
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -795,6 +1111,29 @@ public:
                               i2 + m_shape.N2 * (
                               i1 ))))) + i0 * m_stride ];
     }
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 , typename iType6 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper<
+    traits, LayoutRight, 7, iType0, iType1, iType2, iType3 , iType4, iType5, iType6
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
+    {
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i6 + m_shape.N6 * (
+                              i5 + m_shape.N5 * (
+                              i4 + m_shape.N4 * (
+                              i3 + m_shape.N3 * (
+                              i2 + m_shape.N2 * (
+                              i1 ))))) + i0 * m_stride ];
+    }
+
+  // LayoutRight, rank 8:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 , typename iType7 >
@@ -853,27 +1192,10 @@ public:
   {
     enum { is_left = Impl::is_same< typename traits::array_layout , LayoutLeft >::value };
 
-    return Rank == 1 ? m_stride : (
-           is_left ? ( m_stride   * m_shape.N1 * m_shape.N2 * m_shape.N3 *
-                       m_shape.N4 * m_shape.N5 * m_shape.N6 * m_shape.N7 )
-                   : ( m_stride * m_shape.N0 ) );
-  }
-
-  /** \brief  Resize this Rank=1 view.  Does not reallocate or alter any other view.
-   *          Resize smaller or larger up to capacity, return if successful.
-   */
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  bool resize( const iType & n0 ,
-               typename Impl::enable_if<( traits::rank == 1 &&
-                                          traits::rank_dynamic == 1 &&
-                                          iType(0) == 0 
-                                        )>::type * = 0 )
-  {
-    const size_t n = size_t(n0);
-    const bool success = n <= m_stride ;
-    if ( success ) { m_shape.N0 = n ; }
-    return success ;
+    return Rank == 1 ? typename traits::size_type( m_shape.N0 ) : (
+           is_left   ? typename traits::size_type( m_stride   * m_shape.N1 * m_shape.N2 * m_shape.N3 *
+                                                   m_shape.N4 * m_shape.N5 * m_shape.N6 * m_shape.N7 )
+                     : typename traits::size_type( m_stride * m_shape.N0 ) );
   }
 };
 

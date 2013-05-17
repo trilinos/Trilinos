@@ -232,6 +232,7 @@ struct AssertShapeBoundsAbort< KokkosArray::HostSpace >
                      const size_t n2 , const size_t n3 ,
                      const size_t n4 , const size_t n5 ,
                      const size_t n6 , const size_t n7 ,
+                     const size_t arg_rank ,
                      const size_t i0 , const size_t i1 ,
                      const size_t i2 , const size_t i3 ,
                      const size_t i4 , const size_t i5 ,
@@ -247,21 +248,23 @@ struct AssertShapeBoundsAbort
                      const size_t n2 , const size_t n3 ,
                      const size_t n4 , const size_t n5 ,
                      const size_t n6 , const size_t n7 ,
+                     const size_t arg_rank ,
                      const size_t i0 , const size_t i1 ,
                      const size_t i2 , const size_t i3 ,
                      const size_t i4 , const size_t i5 ,
                      const size_t i6 , const size_t i7 )
     {
       AssertShapeBoundsAbort< KokkosArray::HostSpace >
-        ::apply( rank , n0 , n1 , n2 , n3 , n4 , n5 , n6 , n7 ,
-                        i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 );
+        ::apply( rank ,    n0 , n1 , n2 , n3 , n4 , n5 , n6 , n7 ,
+                 arg_rank, i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 );
     }
 };
 
 template< class ShapeType >
 KOKKOSARRAY_INLINE_FUNCTION
 void assert_shape_bounds( const ShapeType & shape ,
-                          const size_t i0 = 0 ,
+                          const size_t arg_rank ,
+                          const size_t i0 ,
                           const size_t i1 = 0 ,
                           const size_t i2 = 0 ,
                           const size_t i3 = 0 ,
@@ -270,32 +273,36 @@ void assert_shape_bounds( const ShapeType & shape ,
                           const size_t i6 = 0 ,
                           const size_t i7 = 0 )
 {
-  const bool ok = 0 == ShapeType::rank ? true : i0 < shape.N0 && (
-                  1 == ShapeType::rank ? true : i1 < shape.N1 && (
-                  2 == ShapeType::rank ? true : i2 < shape.N2 && (
-                  3 == ShapeType::rank ? true : i3 < shape.N3 && (
-                  4 == ShapeType::rank ? true : i4 < shape.N4 && (
-                  5 == ShapeType::rank ? true : i5 < shape.N5 && (
-                  6 == ShapeType::rank ? true : i6 < shape.N6 && (
-                  7 == ShapeType::rank ? true : i7 < shape.N7 )))))));
+  // Must supply at least as many indices as ranks.
+  // Every index must be within bounds.
+  const bool ok = ShapeType::rank <= arg_rank &&
+                  i0 < shape.N0 && 
+                  i1 < shape.N1 &&
+                  i2 < shape.N2 &&
+                  i3 < shape.N3 &&
+                  i4 < shape.N4 &&
+                  i5 < shape.N5 &&
+                  i6 < shape.N6 &&
+                  i7 < shape.N7 ;
+
   if ( ! ok ) {
     AssertShapeBoundsAbort< ExecutionSpace >
       ::apply( ShapeType::rank ,
                shape.N0 , shape.N1 , shape.N2 , shape.N3 ,
                shape.N4 , shape.N5 , shape.N6 , shape.N7 ,
-               i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 );
+               arg_rank , i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 );
   }
 }
 
 #if defined( KOKKOSARRAY_EXPRESSION_CHECK )
-#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( S , I0 ) assert_shape_bounds(S,I0);
-#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( S , I0 , I1 ) assert_shape_bounds(S,I0,I1);
-#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( S , I0 , I1 , I2 ) assert_shape_bounds(S,I0,I1,I2);
-#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( S , I0 , I1 , I2 , I3 ) assert_shape_bounds(S,I0,I1,I2,I3);
-#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_5( S , I0 , I1 , I2 , I3 , I4 ) assert_shape_bounds(S,I0,I1,I2,I3,I4);
-#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_6( S , I0 , I1 , I2 , I3 , I4 , I5 ) assert_shape_bounds(S,I0,I1,I2,I3,I4,I5);
-#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_7( S , I0 , I1 , I2 , I3 , I4 , I5 , I6 ) assert_shape_bounds(S,I0,I1,I2,I3,I4,I5,I6);
-#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_8( S , I0 , I1 , I2 , I3 , I4 , I5 , I6 , I7 ) assert_shape_bounds(S,I0,I1,I2,I3,I4,I5,I6,I7);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( S , I0 ) assert_shape_bounds(S,1,I0);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( S , I0 , I1 ) assert_shape_bounds(S,2,I0,I1);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( S , I0 , I1 , I2 ) assert_shape_bounds(S,3,I0,I1,I2);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( S , I0 , I1 , I2 , I3 ) assert_shape_bounds(S,4,I0,I1,I2,I3);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_5( S , I0 , I1 , I2 , I3 , I4 ) assert_shape_bounds(S,5,I0,I1,I2,I3,I4);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_6( S , I0 , I1 , I2 , I3 , I4 , I5 ) assert_shape_bounds(S,6,I0,I1,I2,I3,I4,I5);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_7( S , I0 , I1 , I2 , I3 , I4 , I5 , I6 ) assert_shape_bounds(S,7,I0,I1,I2,I3,I4,I5,I6);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_8( S , I0 , I1 , I2 , I3 , I4 , I5 , I6 , I7 ) assert_shape_bounds(S,8,I0,I1,I2,I3,I4,I5,I6,I7);
 #else
 #define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( S , I0 ) /* */
 #define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( S , I0 , I1 ) /* */

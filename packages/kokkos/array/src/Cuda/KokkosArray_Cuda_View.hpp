@@ -67,12 +67,12 @@ struct AssertShapeBoundsAbort< CudaSpace >
 {
   KOKKOSARRAY_INLINE_FUNCTION
   static void apply( const size_t /* rank */ ,
-
                      const size_t /* n0 */ , const size_t /* n1 */ ,
                      const size_t /* n2 */ , const size_t /* n3 */ ,
                      const size_t /* n4 */ , const size_t /* n5 */ ,
                      const size_t /* n6 */ , const size_t /* n7 */ ,
 
+                     const size_t /* arg_rank */ ,
                      const size_t /* i0 */ , const size_t /* i1 */ ,
                      const size_t /* i2 */ , const size_t /* i3 */ ,
                      const size_t /* i4 */ , const size_t /* i5 */ ,
@@ -895,56 +895,27 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   typename traits::scalar_type * ptr_on_device() const { return m_texture.ptr ; }
 
-// Stride of physical storage, dimensioned to at least Rank
-template< typename iType >
-KOKKOSARRAY_INLINE_FUNCTION
-void stride( iType * const s ) const
-{
-  enum { is_left = Impl::is_same< typename traits::array_layout , LayoutLeft >::value };
+  // Stride of physical storage, dimensioned to at least Rank
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  void stride( iType * const s ) const
+  {
+    enum { is_left = Impl::is_same< typename traits::array_layout , LayoutLeft >::value };
 
-  if ( 1 == Rank ) {
-    s[0] = 1 ;
+    if ( 1 == Rank ) {
+      s[0] = 1 ;
+    }
+    else if ( is_left ) {
+      s[0] = 1 ;
+      s[1] = m_stride ;
+      for ( int i = 2 ; i < Rank ; ++i ) { s[i] = s[i-1] * dimension(i-1); }
+    }
+    else {
+      s[0] = m_stride ;
+      s[Rank-1] = 1 ;
+      for ( int i = Rank - 2 ; 0 < i ; --i ) { s[i] = s[i+1] * dimension(i+1); }
+    }
   }
-  else if ( is_left ) {
-    s[0] = 1 ;
-    s[1] = m_stride ;
-    for ( int i = 2 ; i < Rank ; ++i ) { s[i] = s[i-1] * dimension(i-1); }
-  }
-  else {
-    s[0] = m_stride ;
-    s[Rank-1] = 1 ;
-    for ( int i = Rank - 2 ; 0 < i ; --i ) { s[i] = s[i+1] * dimension(i+1); }
-  }
-}
-
-// Count of contiguously allocated data members including padding.
-KOKKOSARRAY_INLINE_FUNCTION
-typename traits::size_type capacity() const
-{
-  enum { is_left = Impl::is_same< typename traits::array_layout , LayoutLeft >::value };
-
-  return Rank == 1 ? m_stride : (
-         is_left ? ( m_stride   * m_shape.N1 * m_shape.N2 * m_shape.N3 *
-                     m_shape.N4 * m_shape.N5 * m_shape.N6 * m_shape.N7 )
-                 : ( m_stride * m_shape.N0 ) );
-}
-
-/** \brief  Resize this Rank=1 view.  Does not reallocate or alter any other view.
- *          Resize smaller or larger up to capacity, return if successful.
- */
-template< typename iType >
-KOKKOSARRAY_INLINE_FUNCTION
-bool resize( const iType & n0 ,
-             typename Impl::enable_if<( traits::rank == 1 &&
-                                        traits::rank_dynamic == 1 &&
-                                        iType(0) == 0
-                                      )>::type * = 0 )
-{
-  const size_t n = size_t(n0);
-  const bool success = n <= m_stride ;
-  if ( success ) { m_shape.N0 = n ; }
-  return success ;
-}
 };
 
 } /* namespace KokkosArray */

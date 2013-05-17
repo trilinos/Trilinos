@@ -128,6 +128,30 @@ struct ViewAssignment< LayoutScalar , LayoutScalar , void >
 
     ViewTracking< traits >::increment( dst.m_ptr_on_device );
   }
+
+  /** \brief  Deep copy data from compatible value type, layout, rank, and specialization.  */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  inline static
+  void deep_copy( const View<DT,DL,DD,DM,Impl::LayoutScalar> & dst ,
+                  const View<ST,SL,SD,SM,Impl::LayoutScalar> & src ,
+                  const typename Impl::enable_if<(
+                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::value_type ,
+                                   typename ViewTraits<ST,SL,SD,SM>::non_const_value_type >::value
+                  )>::type * = 0 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    typedef ViewTraits<ST,SL,SD,SM> src_traits ;
+
+    if ( dst.m_ptr_on_device != src.m_ptr_on_device ) {
+
+      DeepCopy< typename dst_traits::memory_space ,
+                typename src_traits::memory_space >( dst.m_ptr_on_device , src.m_ptr_on_device ,
+                                                     sizeof(typename dst_traits::value_type) );
+    }
+  }
+
+  //------------------------------------
 };
 
 //----------------------------------------------------------------------------
@@ -179,7 +203,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
 
     enum { is_left = is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value };
 
-    assert_shape_bounds( src.m_shape , i0 , i1 );
+    assert_shape_bounds( src.m_shape , 2 , i0 , i1 );
 
     ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
@@ -214,7 +238,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
 
     enum { is_left = is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value };
 
-    assert_shape_bounds( src.m_shape, i0, i1, i2 );
+    assert_shape_bounds( src.m_shape, 3 , i0, i1, i2 );
 
     ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
@@ -256,7 +280,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
 
     enum { is_left = is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value };
 
-    assert_shape_bounds( src.m_shape, i0, i1, i2, i3 );
+    assert_shape_bounds( src.m_shape, 4 , i0, i1, i2, i3 );
 
     ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
@@ -301,7 +325,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
 
     enum { is_left = is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value };
 
-    assert_shape_bounds( src.m_shape, i0, i1, i2, i3, i4 );
+    assert_shape_bounds( src.m_shape, 5 , i0, i1, i2, i3, i4 );
 
     ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
@@ -349,7 +373,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
 
     enum { is_left = is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value };
 
-    assert_shape_bounds( src.m_shape, i0, i1, i2, i3, i4, i5 );
+    assert_shape_bounds( src.m_shape, 6 , i0, i1, i2, i3, i4, i5 );
 
     ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
@@ -400,7 +424,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
 
     enum { is_left = is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value };
 
-    assert_shape_bounds( src.m_shape, i0, i1, i2, i3, i4, i5, i6 );
+    assert_shape_bounds( src.m_shape, 7 , i0, i1, i2, i3, i4, i5, i6 );
 
     ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
@@ -454,7 +478,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
 
     enum { is_left = is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value };
 
-    assert_shape_bounds( src.m_shape, i0, i1, i2, i3, i4, i5, i6, i7 );
+    assert_shape_bounds( src.m_shape, 8 , i0, i1, i2, i3, i4, i5, i6, i7 );
 
     ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
@@ -617,6 +641,8 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   typename traits::size_type capacity() const { return 1 ; }
 };
+
+//----------------------------------------------------------------------------
 
 } /* namespace KokkosArray */
 

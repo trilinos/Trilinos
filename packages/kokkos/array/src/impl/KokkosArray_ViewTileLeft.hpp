@@ -166,6 +166,42 @@ struct ViewAssignment< LayoutTileLeftFast , LayoutTileLeftFast, void >
 
     ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
   }
+
+  //------------------------------------
+  /** \brief  Deep copy data from compatible value type, layout, rank, and specialization.
+   *          Check the dimensions and allocation lengths at runtime.
+   */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  inline static
+  void deep_copy( const View<DT,DL,DD,DM,Impl::LayoutTileLeftFast> & dst ,
+                  const View<ST,SL,SD,SM,Impl::LayoutTileLeftFast> & src ,
+                  const typename Impl::enable_if<(
+                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::value_type ,
+                                   typename ViewTraits<ST,SL,SD,SM>::non_const_value_type >::value
+                    &&
+                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
+                                   typename ViewTraits<ST,SL,SD,SM>::array_layout >::value
+                    &&
+                    ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) == unsigned(ViewTraits<ST,SL,SD,SM>::rank) )
+                  )>::type * = 0 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    typedef ViewTraits<ST,SL,SD,SM> src_traits ;
+
+    if ( dst.m_ptr_on_device != src.m_ptr_on_device ) {
+
+      Impl::assert_shapes_are_equal( dst.m_shape , src.m_shape );
+
+      const size_t n_dst = sizeof(typename dst_traits::scalar_type) * dst.capacity();
+      const size_t n_src = sizeof(typename src_traits::scalar_type) * src.capacity();
+
+      Impl::assert_counts_are_equal( n_dst , n_src );
+
+      DeepCopy< typename dst_traits::memory_space ,
+                typename src_traits::memory_space >( dst.m_ptr_on_device , src.m_ptr_on_device , n_dst );
+    }
+  }
 };
 
 //----------------------------------------------------------------------------
