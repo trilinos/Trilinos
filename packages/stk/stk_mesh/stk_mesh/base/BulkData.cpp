@@ -288,7 +288,7 @@ bool BulkData::modification_begin()
     ++m_sync_count ;
 
     //Set all entity states to 'Unchanged',
-    for ( impl::EntityRepository::iterator
+    for ( impl::EntityRepository::const_iterator
             i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i )
     {
       m_entity_states[i->second.local_offset()] = Unchanged;

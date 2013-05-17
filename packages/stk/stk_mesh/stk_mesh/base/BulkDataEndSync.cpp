@@ -183,7 +183,7 @@ void BulkData::internal_update_distributed_index(
   // Iterate over all entities known to this process, putting
   // modified shared/owned entities in local_created_or_modified.
   size_t num_created_or_modified = 0;
-  for ( impl::EntityRepository::iterator
+  for ( impl::EntityRepository::const_iterator
         i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i ) {
 
     Entity entity = i->second ;
@@ -197,7 +197,7 @@ void BulkData::internal_update_distributed_index(
 
   local_created_or_modified.reserve(num_created_or_modified);
 
-  for ( impl::EntityRepository::iterator
+  for ( impl::EntityRepository::const_iterator
         i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i ) {
 
     Entity entity = i->second ;

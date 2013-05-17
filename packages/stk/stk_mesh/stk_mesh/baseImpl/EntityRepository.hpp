@@ -34,6 +34,8 @@ namespace impl {
 
 class EntityRepository {
 
+public:
+
 #if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1
   struct stk_entity_rep_hash : public std::unary_function< EntityKey, std::size_t >
   {
@@ -48,9 +50,8 @@ class EntityRepository {
   typedef std::map<EntityKey,Entity> EntityMap;
 #endif
 
-  public:
-
-    typedef EntityMap::const_iterator iterator;
+    typedef EntityMap::const_iterator const_iterator;
+    typedef EntityMap::iterator iterator;
 
     EntityRepository(BulkData &mesh, bool use_pool)
       : m_mesh(mesh), m_entities(), m_use_pool(use_pool) {}
@@ -59,8 +60,11 @@ class EntityRepository {
 
     Entity get_entity( const EntityKey &key ) const;
 
-    iterator begin() const { return m_entities.begin(); }
-    iterator end() const { return m_entities.end(); }
+    const_iterator begin() const { return m_entities.begin(); }
+    const_iterator end() const { return m_entities.end(); }
+
+    const_iterator begin_rank(EntityRank ent_rank) const { return m_entities.lower_bound(EntityKey(ent_rank, 0)); }
+    const_iterator end_rank(EntityRank ent_rank) const { return m_entities.upper_bound(EntityKey(ent_rank+1, 0)); }
 
     // Return a pair: the relevant entity, and whether it had to be created
     // or not. If there was already an active entity, the second item in the

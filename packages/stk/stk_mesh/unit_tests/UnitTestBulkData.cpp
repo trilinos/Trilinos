@@ -434,6 +434,78 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
 }
 
 //----------------------------------------------------------------------
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testBulkDataRankBeginEnd)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
+
+  const int p_size = stk::parallel_machine_size( pm );
+  if (p_size != 1) {
+    return;
+  }
+
+  const size_t spatial_dim = 3;
+  MetaData meta(spatial_dim, stk::mesh::entity_rank_names());
+  BulkData bulk(meta, pm);
+  bulk.modification_begin();
+  BulkData::const_entity_iterator iter = bulk.begin_entities(MetaData::NODE_RANK);
+  BulkData::const_entity_iterator end = bulk.end_entities(MetaData::NODE_RANK);
+
+  STKUNIT_ASSERT(iter == end);
+
+  EntityId node_id = 1;
+  bulk.declare_entity(MetaData::NODE_RANK, node_id);
+
+  iter = bulk.begin_entities(MetaData::NODE_RANK);
+  end = bulk.end_entities(MetaData::NODE_RANK);
+
+  //insist that there is 1 node:
+  STKUNIT_ASSERT(iter != end);
+  STKUNIT_ASSERT(std::distance(iter,end) == 1u);
+
+  //now declare an edge...
+  EntityId edge_id = 1;
+  bulk.declare_entity(MetaData::EDGE_RANK, edge_id);
+
+  iter = bulk.begin_entities(MetaData::NODE_RANK);
+  end = bulk.end_entities(MetaData::NODE_RANK);
+
+  //insist that there is still 1 node:
+  STKUNIT_ASSERT(iter != end);
+  STKUNIT_ASSERT(std::distance(iter,end) == 1u);
+
+  iter = bulk.begin_entities(MetaData::EDGE_RANK);
+  end = bulk.end_entities(MetaData::EDGE_RANK);
+
+  //insist that there is 1 edge:
+  STKUNIT_ASSERT(iter != end);
+  STKUNIT_ASSERT(std::distance(iter,end) == 1u);
+
+  node_id = 2;
+  bulk.declare_entity(MetaData::NODE_RANK, node_id);
+
+  iter = bulk.begin_entities(MetaData::NODE_RANK);
+  end = bulk.end_entities(MetaData::NODE_RANK);
+
+  //insist that there are 2 nodes:
+  STKUNIT_ASSERT(iter != end);
+  STKUNIT_ASSERT(std::distance(iter,end) == 2u);
+
+  iter = bulk.begin_entities(MetaData::EDGE_RANK);
+  end = bulk.end_entities(MetaData::EDGE_RANK);
+
+  //insist that there is still 1 edge:
+  STKUNIT_ASSERT(iter != end);
+  STKUNIT_ASSERT(std::distance(iter,end) == 1u);
+
+  iter = bulk.begin_entities(MetaData::FACE_RANK);
+  end = bulk.end_entities(MetaData::FACE_RANK);
+
+  //insist that there are no faces:
+  STKUNIT_ASSERT(iter == end);
+
+  bulk.modification_end();
+}
 //----------------------------------------------------------------------
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)

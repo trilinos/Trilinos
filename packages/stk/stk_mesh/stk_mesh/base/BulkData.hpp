@@ -300,6 +300,20 @@ public:
   }
 #endif
 
+  typedef impl::EntityRepository::const_iterator const_entity_iterator;
+
+  //iterator that traverses entities of the specified rank, in order of ascending global identifier
+  const_entity_iterator begin_entities(EntityRank ent_rank) const
+  {
+    return m_entity_repo.begin_rank(ent_rank);
+  }
+
+  //end-iterator for entities of the specified rank
+  const_entity_iterator end_entities(EntityRank ent_rank) const
+  {
+    return m_entity_repo.end_rank(ent_rank);
+  }
+
   /** \brief  Get entity with a given rank and id */
   Entity get_entity( EntityRank ent_rank , EntityId entity_id ) const {
     require_good_rank_and_id(ent_rank, entity_id);
