@@ -176,6 +176,8 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
 
     KokkosArray::deep_copy( linsys_host_x , linsys_x );
 
+    const int rank = comm::rank( mesh.parallel_data_map.machine );
+
     size_t error_count = 0 ;
 
     for ( unsigned i = 0 ; i < linsys_host_solution.dimension_0() ; ++i ) {
@@ -188,7 +190,8 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
       if ( error ) ++error_count ;
 
       if ( error && 0 < error_count && error_count < 10 ) {
-        std::cout << "  error(" << i << "," << j << ") = " << diff
+        std::cout << "P" << rank
+                  << ":  error(" << i << "," << j << ") = " << diff
                   << " : x = " << linsys_host_x(i,j)
                   << " != " << linsys_host_solution(i,j) << " = solution"
                   << std::endl ;
@@ -196,9 +199,17 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
     }
     }
 
-    if ( error_count ) {
-      std::cout << " Error count = " << error_count 
-                << " , N = " << local_owned_length
+#if HAVE_MPI
+  long local = error_count ;
+  long global = 0 ;
+  MPI_Allreduce( & local , & global , 1 , MPI_LONG , MPI_SUM , mesh.parallel_data_map.machine.mpi_comm );
+  error_count = global ;
+#endif
+
+    if ( 0 == rank ) {
+      std::cout << " Size = " << linsys_host_solution.dimension_0()
+                << "x" << linsys_host_solution.dimension_1()
+                << " , Error count = " << error_count 
                 << " , CG-residual = " << residual_norm
                 << " , CG-iteration = " << iteration_count
                 << std::endl ;

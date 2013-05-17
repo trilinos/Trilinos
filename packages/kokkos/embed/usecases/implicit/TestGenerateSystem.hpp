@@ -66,20 +66,22 @@ GraphType create_graph_from_mesh( const MeshType & mesh )
 
 //----------------------------------------------------------------------------
 
-template< class FEMeshType , unsigned N , class Device >
+template< class FEMeshType , class ValueType , class Device >
 void fill_linear_system( const FEMeshType & mesh ,
-                         const KokkosArray::CrsMatrix< KokkosArray::Array<double,N> , Device > & matrix ,
-                         const KokkosArray::View< KokkosArray::Array<double,N>* , KokkosArray::LayoutRight , Device > & rhs ,
-                         const typename KokkosArray::View< KokkosArray::Array<double,N>* , KokkosArray::LayoutRight , Device >::HostMirror & solution )
+                         const KokkosArray::CrsMatrix< ValueType , Device > & matrix ,
+                         const KokkosArray::View< ValueType* , KokkosArray::LayoutRight , Device > & rhs ,
+                         const typename KokkosArray::View< ValueType* , KokkosArray::LayoutRight , Device >::HostMirror & solution )
 {
-  typedef KokkosArray::CrsMatrix< KokkosArray::Array<double,N> , Device >                        matrix_type ;
-  typedef KokkosArray::View< KokkosArray::Array<double,N>* , KokkosArray::LayoutRight , Device > vector_type ;
+  typedef KokkosArray::CrsMatrix< ValueType , Device >                        matrix_type ;
+  typedef KokkosArray::View< ValueType* , KokkosArray::LayoutRight , Device > vector_type ;
 
   typename matrix_type::graph_type ::HostMirror host_graph  = KokkosArray::create_mirror( matrix.graph );
   typename matrix_type::values_type::HostMirror host_values = KokkosArray::create_mirror( matrix.values );
-  typename FEMeshType::node_coords_type::HostMirror host_node_coords = KokkosArray::create_mirror( mesh.node_coords );
+  typename FEMeshType::node_coords_type::HostMirror host_node_coords = KokkosArray::create_mirror_view( mesh.node_coords );
 
   typename vector_type::HostMirror host_rhs = KokkosArray::create_mirror( rhs );
+
+  KokkosArray::deep_copy( host_node_coords , mesh.node_coords );
 
   for ( unsigned iRow = 0 ; iRow < solution.dimension_0() ; ++iRow ) {
     for ( unsigned j = 0 ; j < solution.dimension_1() ; ++j ) {
@@ -87,7 +89,7 @@ void fill_linear_system( const FEMeshType & mesh ,
       solution(iRow,j) = host_node_coords(iRow,0) * 5 +
                          host_node_coords(iRow,1) * 2 +
                          host_node_coords(iRow,2) * 1 +
-                         0.01 * double(j) / double(solution.dimension_1());
+                         0.01 * ( 1 + double(j) / double(solution.dimension_1()) );
     }
   }
 
@@ -101,67 +103,19 @@ void fill_linear_system( const FEMeshType & mesh ,
       for ( unsigned j = 0 ; j < solution.dimension_1() ; ++j ) {
 
         if ( iRow == iCol ) {
-          host_values(iEntry,j) = 4 + 0.1 * double(j) / double(solution.dimension_1());
+          host_values(iEntry,j) = 27 + 0.01 * double(j) / double(solution.dimension_1());
         }
         else {
-          host_values(iEntry,j) = -1 - 0.1 * double(j) / double(solution.dimension_1());
+          host_values(iEntry,j) = -1 - 0.01 * double(j) / double(solution.dimension_1());
         }
 
         const double sCol = host_node_coords(iCol,0) * 5 +
                             host_node_coords(iCol,1) * 2 +
                             host_node_coords(iCol,2) * 1 +
-                            0.01 * double(j) / double(solution.dimension_1());
+                            0.01 * ( 1 + double(j) / double(solution.dimension_1()) );
 
         host_rhs(iRow,j) += host_values(iEntry,j) * sCol ;
       }
-    }
-  }
-
-  KokkosArray::deep_copy( rhs , host_rhs );
-  KokkosArray::deep_copy( matrix.values , host_values );
-}
-
-template< class FEMeshType , class Device >
-void fill_linear_system( const FEMeshType & mesh ,
-                         const KokkosArray::CrsMatrix< double , Device > matrix ,
-                         const KokkosArray::View< double* , KokkosArray::LayoutRight , Device > rhs ,
-                         const typename KokkosArray::View< double* , KokkosArray::LayoutRight , Device >::HostMirror solution )
-{
-  typedef KokkosArray::CrsMatrix< double, Device >                        matrix_type ;
-  typedef KokkosArray::View< double* , KokkosArray::LayoutRight , Device > vector_type ;
-
-  typename matrix_type::graph_type ::HostMirror host_graph  = KokkosArray::create_mirror( matrix.graph );
-  typename matrix_type::values_type::HostMirror host_values = KokkosArray::create_mirror( matrix.values );
-  typename FEMeshType::node_coords_type::HostMirror host_node_coords = KokkosArray::create_mirror( mesh.node_coords );
-
-  typename vector_type::HostMirror host_rhs = KokkosArray::create_mirror( rhs );
-
-  for ( unsigned iRow = 0 ; iRow < solution.dimension_0() ; ++iRow ) {
-      host_rhs(iRow) = 0 ;
-      solution(iRow) = host_node_coords(iRow,0) * 5 +
-                       host_node_coords(iRow,1) * 2 +
-                       host_node_coords(iRow,2) * 1 ;
-  }
-
-  for ( unsigned iRow = 0 ; iRow < host_graph.row_map.dimension_0() - 1 ; ++iRow ) {
-    const unsigned endEntry = host_graph.row_map(iRow+1);
-
-    for ( unsigned iEntry = host_graph.row_map(iRow) ; iEntry < endEntry ; ++iEntry ) {
-
-      const unsigned iCol = host_graph.entries(iEntry);
-
-      if ( iRow == iCol ) {
-        host_values(iEntry) = 4 ;
-      }
-      else {
-        host_values(iEntry) = -1 ;
-      }
-
-      const double sCol = host_node_coords(iCol,0) * 5 +
-                          host_node_coords(iCol,1) * 2 +
-                          host_node_coords(iCol,2) * 1 ;
-
-      host_rhs(iRow) += host_values(iEntry) * sCol ;
     }
   }
 
