@@ -78,30 +78,38 @@ void Diagonal<MatrixType>::setParameters(const Teuchos::ParameterList& /*params*
 template<class MatrixType>
 void Diagonal<MatrixType>::initialize()
 {
-  if (isInitialized_ == true) return;
+  if (isInitialized_) return;
+
+  // Precompute diagonal offsets so we don't have to search for them later.
+  if (matrix_ != Teuchos::null) {
+    matrix_->getLocalDiagOffsets(offsets_);
+  }
+
   isInitialized_ = true;
   ++numInitialize_;
-  //nothing to do
 }
 
 template<class MatrixType>
 void Diagonal<MatrixType>::compute()
 {
-  initialize();
-  ++numCompute_;
+  if (!isInitialized_) initialize();
 
-  if (isComputed_ == true) return;
+  isComputed_ = false;
 
-  isComputed_ = true;
+  if (matrix_ == Teuchos::null) {
+    isComputed_ = true;
+    return;
+  }
 
-  if (matrix_ == Teuchos::null) return;
-
+  // Get the diagonal entries using the precomputed offsets and invert them.
   Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmp_vec = Teuchos::rcp(new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix_->getRowMap()));
-
-  matrix_->getLocalDiagCopy(*tmp_vec);
+  matrix_->getLocalDiagCopy(*tmp_vec, offsets_());
   tmp_vec->reciprocal(*tmp_vec);
 
   inversediag_ = tmp_vec;
+
+  isComputed_ = true;
+  ++numCompute_;
 }
 
 template<class MatrixType>

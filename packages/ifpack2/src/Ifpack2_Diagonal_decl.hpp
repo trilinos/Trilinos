@@ -230,6 +230,7 @@ public:
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rangeMap_;
     Teuchos::RCP<const MatrixType> matrix_;
     Teuchos::RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > inversediag_;
+    Teuchos::ArrayRCP<size_t> offsets_;
 
     mutable int numInitialize_;
     mutable int numCompute_;
