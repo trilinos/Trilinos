@@ -200,19 +200,20 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
     }
 
 #if HAVE_MPI
-  long local = error_count ;
-  long global = 0 ;
-  MPI_Allreduce( & local , & global , 1 , MPI_LONG , MPI_SUM , mesh.parallel_data_map.machine.mpi_comm );
-  error_count = global ;
+  long global[2] = { 0 , 0 };
+  long local[2] = { linsys_host_solution.dimension_0() , error_count };
+  MPI_Allreduce( local , global , 2 , MPI_LONG , MPI_SUM , mesh.parallel_data_map.machine.mpi_comm );
+#else
+  long global[2] = { linsys_host_solution.dimension_0() , error_count };
 #endif
 
     if ( 0 == rank ) {
-      std::cout << " Size = " << linsys_host_solution.dimension_0()
+      std::cout << "\"Verify: Size = " << global[0]
                 << "x" << linsys_host_solution.dimension_1()
-                << " , Error count = " << error_count 
+                << " , Error count = " << global[1]
                 << " , CG-residual = " << residual_norm
                 << " , CG-iteration = " << iteration_count
-                << std::endl ;
+                << "\"" << std::endl ;
     }
   }
 

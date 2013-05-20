@@ -128,15 +128,15 @@ private:
                                                        vsend.ptr_on_device() ,
                                                        m_map.count_send * m_chunk * sizeof(scalar_type) );
 
-    for ( unsigned i = 0 ; i < m_map.host_send.dimension_0() ; ++i ) {
+    for ( unsigned i = 0 , j = 0 ; i < m_map.host_send.dimension_0() ; ++i ) {
       const int proc  = m_map.host_send(i,0);
       const int count = m_map.host_send(i,1);
 
       // Gather send data to contiguous buffer:
 
-      for ( int k = 0 , km = 0 ; k < count ; ++k ) {
+      for ( int k = 0 , km = 0 ; k < count ; ++k , ++j ) {
         const int km_end = km + m_chunk ;
-        for ( int ki = m_chunk * m_map.host_send_item(k) ; km < km_end ; ++km , ++ki ) {
+        for ( int ki = m_chunk * m_map.host_send_item(j) ; km < km_end ; ++km , ++ki ) {
           m_host_send_message[km] = m_host_send_buffer[ki];
         }
       }
@@ -207,7 +207,7 @@ public:
             const unsigned                         arg_chunk )
     : m_A( arg_A )
     , m_map( arg_data_map )
-    , m_host_send_message("MultiplySendMessage", send_count_max( arg_data_map ) )
+    , m_host_send_message("MultiplySendMessage", send_count_max( arg_data_map ) * arg_chunk )
     , m_host_send_buffer( "MultiplySendBuffer" , arg_data_map.count_send * arg_chunk )
     , m_host_recv_buffer( "MultiplyRecvBuffer" , arg_data_map.count_receive * arg_chunk )
     , m_recv_request( arg_data_map.host_recv.dimension_0() , MPI_REQUEST_NULL )
