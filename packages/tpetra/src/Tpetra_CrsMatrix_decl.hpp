@@ -42,11 +42,6 @@
 #ifndef TPETRA_CRSMATRIX_DECL_HPP
 #define TPETRA_CRSMATRIX_DECL_HPP
 
-// TODO: row-wise insertion of entries in globalAssemble() may be more efficient
-
-// TODO: add typeglobs: CrsMatrix<Scalar,typeglob>
-// TODO: add template (template) parameter for nonlocal container (this will be part of typeglob)
-
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 
@@ -708,20 +703,23 @@ namespace Tpetra {
     /// \param vals [in] One or more values corresponding to those
     ///   column indices.  <tt>vals[k]</tt> corresponds to
     ///   <tt>cols[k]</tt>.
-    void sumIntoGlobalValues(GlobalOrdinal globalRow,
-                             const ArrayView<const GlobalOrdinal> &cols,
-                             const ArrayView<const Scalar>        &vals);
+    void
+    sumIntoGlobalValues (const GlobalOrdinal globalRow,
+                         const ArrayView<const GlobalOrdinal> &cols,
+                         const ArrayView<const Scalar>        &vals);
 
-
-    //! Sum into multiple entries, using local IDs.
-    /** All index values must be in the local space.
-
-        \pre \c localRow is a local row belonging to the matrix on this node.
-
-    */
-    void sumIntoLocalValues(LocalOrdinal globalRow,
-                            const ArrayView<const LocalOrdinal>  &cols,
-                            const ArrayView<const Scalar>        &vals);
+    /// \brief Sum into one or more sparse matrix entries, using local indices.
+    ///
+    /// \param localRow [in] Local index of a row.  This row must be
+    ///   owned by the calling process.
+    /// \param cols [in] Local indices of the columns whose entries we
+    ///   want to modify.
+    /// \param vals [in] Values corresponding to the above column
+    ///   indices.  <tt>vals[k]</tt> corresponds to <tt>cols[k]</tt>.
+    void
+    sumIntoLocalValues (const LocalOrdinal localRow,
+                        const ArrayView<const LocalOrdinal>  &cols,
+                        const ArrayView<const Scalar>        &vals);
 
     //! Set all matrix entries equal to scalarThis.
     void setAllToScalar(const Scalar &alpha);
@@ -739,29 +737,54 @@ namespace Tpetra {
     */
     void setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values);
 
-
-
     //@}
     //! @name Transformational Methods
     //@{
 
-    /// \brief Communicate non-local contributions to other nodes.
+    /// \brief Communicate nonlocal contributions to other processes.
+    ///
+    /// Users do not normally need to call this method.  fillComplete
+    /// always calls this method, unless you specifically tell
+    /// fillComplete to do otherwise by setting its "No Nonlocal
+    /// Changes" parameter to \c true.  Thus, it suffices to call
+    /// fillComplete.
+    ///
+    /// Methods like insertGlobalValues and sumIntoGlobalValues let
+    /// you add or modify entries in rows that are not owned by the
+    /// calling process.  These entries are called "nonlocal
+    /// contributions."  The methods that allow nonlocal contributions
+    /// store the entries on the calling process, until globalAssemble
+    /// is called.  globalAssemble sends these nonlocal contributions
+    /// to the process(es) that own them, where they then become part
+    /// of the matrix.
     ///
     /// This method only does global assembly if there are nonlocal
     /// entries on at least one process.  It does an all-reduce to
     /// find that out.  If not, it returns early, without doing any
     /// more communication or work.
+    ///
+    /// If you previously inserted into a row which is not owned by
+    /// <i>any</i> process in the row Map, the behavior of this method
+    /// is undefined.  It may detect the invalid row indices and throw
+    /// an exception, or it may silently drop the entries inserted
+    /// into invalid rows.  Behavior may vary, depending on whether
+    /// Tpetra was built with debug checking enabled.
     void globalAssemble();
 
-    /*! Resume fill operations.
-      After calling fillComplete(), resumeFill() must be called before initiating any changes to the matrix.
-
-      resumeFill() may be called repeatedly.
-
-      \post  <tt>isFillActive() == true<tt>
-      \post  <tt>isFillComplete() == false<tt>
-    */
-    void resumeFill(const RCP<ParameterList> &params = null);
+    /// \brief Resume operations that may change the values or
+    ///   structure of the matrix.
+    ///
+    /// This method must be called as a collective operation.
+    ///
+    /// Calling fillComplete "freezes" both the values and the
+    /// structure of the matrix.  If you want to modify the matrix
+    /// again, you must first call resumeFill.  You then may not call
+    /// resumeFill again on that matrix until you first call
+    /// fillComplete.  You may make sequences of fillComplete,
+    /// resumeFill calls as many times as you wish.
+    ///
+    /// \post <tt>isFillActive() && ! isFillComplete()</tt>
+    void resumeFill (const RCP<ParameterList>& params = null);
 
     /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
