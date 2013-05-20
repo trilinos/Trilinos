@@ -64,14 +64,14 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
 
       //here's the gather:
 
-      Node const *node_rel_itr  = b.begin_nodes(i);
-      Node const *node_rels_end = b.end_nodes(i);
+      Entity const *node_rel_itr  = b.begin_nodes(i);
+      Entity const *node_rels_end = b.end_nodes(i);
 
       unsigned offset = 0;
       for(; node_rel_itr != node_rels_end; ++node_rel_itr)
       {
-        Node node = *node_rel_itr;
-        double* node_coords = coord_field[node];
+        Entity node = *node_rel_itr;
+        double* node_coords = bulk.field_data(coord_field, node);
         elem_node_coords[offset++] = node_coords[0];
         elem_node_coords[offset++] = node_coords[1];
         elem_node_coords[offset++] = node_coords[2];

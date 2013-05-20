@@ -277,7 +277,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_full )
   Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
   fix.bulk.modification_end();
 
-  stk::mesh::Entity const *rel2_nodes = fix.bulk.begin_node_entities(face2);
+  stk::mesh::Entity const *rel2_nodes = fix.bulk.begin_nodes(face2);
   STKUNIT_ASSERT_TRUE(rel2_nodes != 0);
 
   STKUNIT_ASSERT_TRUE( true );  // This test is to check compilation.

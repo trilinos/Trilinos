@@ -188,8 +188,8 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
     ThrowRequireMsg(sideProc!=p_rank,
      "When iterating Non-locally owned sides, found a locally owned side.");
 
-    stk::mesh::Entity const * iElem = bulk_data_.begin_entities(side, elem_rank);
-    stk::mesh::Entity const * eElem = bulk_data_.end_entities(side, elem_rank);
+    stk::mesh::Entity const * iElem = bulk_data_.begin(side, elem_rank);
+    stk::mesh::Entity const * eElem = bulk_data_.end(side, elem_rank);
     for ( ; iElem != eElem; ++iElem ) {
       const mesh::Entity elem = *iElem;
       unsigned moid;
@@ -342,8 +342,8 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
       if (bulk_data.is_valid(s)) {
         const mesh::Entity side = s;
         if (p_rank == side.owner_rank()) {
-          stk::mesh::Entity const * iElem = bulk_data.begin_entities(side, elem_rank);
-          stk::mesh::Entity const * eElem = bulk_data.end_entities(side, elem_rank);
+          stk::mesh::Entity const * iElem = bulk_data.begin(side, elem_rank);
+          stk::mesh::Entity const * eElem = bulk_data.end(side, elem_rank);
           for ( ; iElem != eElem; ++iElem ) {
             const mesh::Entity elem = *iElem;
             const int elemProc = elem.owner_rank();
@@ -385,8 +385,8 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     if (s.is_valid()) {
       mesh::Entity side = s;
       if (p_rank == side.owner_rank()) {
-        stk::mesh::Entity const * iElem = bulk_data.begin_entities(side, elem_rank);
-        stk::mesh::Entity const * eElem = bulk_data.end_entities(side, elem_rank);
+        stk::mesh::Entity const * iElem = bulk_data.begin(side, elem_rank);
+        stk::mesh::Entity const * eElem = bulk_data.end(side, elem_rank);
         for ( ; iElem != eElem; ++iElem ) {
           const mesh::Entity elem = *iElem;
           const int elemProc = elem.owner_rank();

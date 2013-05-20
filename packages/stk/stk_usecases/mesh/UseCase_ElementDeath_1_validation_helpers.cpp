@@ -550,7 +550,7 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
       //      {
       //        return false;
       //      }
-      stk::mesh::Entity const* existing_sides = mesh.begin_entities(entity,side_rank);
+      stk::mesh::Entity const* existing_sides = mesh.begin(entity,side_rank);
       stk::mesh::ConnectivityOrdinal const *existing_side_ordinals = mesh.begin_ordinals(entity, side_rank);
       int num_sides = mesh.num_connectivity(entity, side_rank);
 
@@ -591,7 +591,7 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
       //      {
       //        return false;
       //      }
-      stk::mesh::Entity const* existing_sides = mesh.begin_entities(entity,side_rank);
+      stk::mesh::Entity const* existing_sides = mesh.begin(entity,side_rank);
       stk::mesh::ConnectivityOrdinal const *existing_side_ordinals = mesh.begin_ordinals(entity, side_rank);
       int num_sides = mesh.num_connectivity(entity, side_rank);
 

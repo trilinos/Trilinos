@@ -477,10 +477,10 @@ void verify_elem_node_coord(
     double * const * elem_data = array.contiguous_data();
 
     for ( unsigned i = 0 ; i < size ; ++i ) {
-      stk::mesh::Node const * elem_nodes = bucket.begin_nodes(i);
+      stk::mesh::Entity const * elem_nodes = bucket.begin_nodes(i);
 
       for ( unsigned j = 0 ; j < num_node ; ++j , ++elem_data ) {
-        stk::mesh::Node node = elem_nodes[j];
+        stk::mesh::Entity node = elem_nodes[j];
 
         double * const node_data = mesh.field_data( node_coord , node );
         if ( *elem_data != node_data ) {

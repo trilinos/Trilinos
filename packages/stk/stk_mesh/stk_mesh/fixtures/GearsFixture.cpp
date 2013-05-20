@@ -204,7 +204,7 @@ void select_nodal_data(
   height = 0.0;
 
   int numNodes = mesh.num_nodes(element);
-  Entity const *elem_nodes = mesh.begin_node_entities(element);
+  Entity const *elem_nodes = mesh.begin_nodes(element);
   for (int i = 0; i < numNodes; ++i)
   {
     Entity node = elem_nodes[i];
@@ -246,8 +246,8 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
         elements_to_change_owner.push_back(EntityProc(element,destination_processor_rank));
 
         // Now add all related nodes to list to move to this processor:
-        Entity const *elem_nodes_j = bulk_data.begin_node_entities(element);
-        Entity const *elem_nodes_e = bulk_data.end_node_entities(element);
+        Entity const *elem_nodes_j = bulk_data.begin_nodes(element);
+        Entity const *elem_nodes_e = bulk_data.end_nodes(element);
         for ( ; elem_nodes_j != elem_nodes_e; ++elem_nodes_j)
         {
           Entity node = *elem_nodes_j;

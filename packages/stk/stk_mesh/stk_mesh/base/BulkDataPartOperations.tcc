@@ -309,7 +309,7 @@ void BulkData::internal_propagate_part_changes(
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
   {
     size_t num_rels = num_connectivity(entity, irank);
-    Entity const *rel_entities = begin_entities(entity, irank);
+    Entity const *rel_entities = begin(entity, irank);
     ConnectivityOrdinal const *rel_ordinals = begin_ordinals(entity, irank);
     for (size_t j = 0; j < num_rels; ++j)
     {
@@ -345,7 +345,7 @@ void BulkData::internal_propagate_part_changes(
           for (EntityRank to_rel_rank_i = e_to_rank + 1; to_rel_rank_i < end_rank; ++to_rel_rank_i)
           {
             size_t num_back_rels = num_connectivity(e_to, to_rel_rank_i);
-            Entity const* back_rel_entities = begin_entities(e_to, to_rel_rank_i);
+            Entity const* back_rel_entities = begin(e_to, to_rel_rank_i);
             ConnectivityOrdinal const *rel_ords = begin_ordinals(e_to, to_rel_rank_i);
             for (size_t k = 0; k < num_back_rels; ++k)
             {

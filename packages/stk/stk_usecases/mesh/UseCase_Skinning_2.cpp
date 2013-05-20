@@ -46,7 +46,7 @@ void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity entit
   {
     --irank;
 
-    stk::mesh::Entity const *relations = mesh.begin_entities(entity, irank);
+    stk::mesh::Entity const *relations = mesh.begin(entity, irank);
     int num_relations = mesh.num_connectivity(entity, irank);
     stk::mesh::ConnectivityOrdinal const *relation_ordinals = mesh.begin_ordinals(entity, irank);
 

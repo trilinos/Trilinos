@@ -941,7 +941,7 @@ void my_test(
         mesh::Entity elem = bucket[i] ;
 
         unsigned num_nodes = M.num_connectivity(elem, stk::mesh::MetaData::NODE_RANK);
-        const stk::mesh::Entity *elem_nodes = M.begin_entities(elem, stk::mesh::MetaData::NODE_RANK);
+        const stk::mesh::Entity *elem_nodes = M.begin(elem, stk::mesh::MetaData::NODE_RANK);
 
         if ( num_nodes == 8 ) {
 

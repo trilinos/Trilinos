@@ -171,8 +171,8 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   Entity send_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send ] );
   Entity send_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send + 1 ] );
 
-  Entity send_node_1 = *(bulk.begin_node_entities(send_element_1) + 1);
-  Entity send_node_2 = *(bulk.begin_node_entities(send_element_2) + 1);
+  Entity send_node_1 = *(bulk.begin_nodes(send_element_1) + 1);
+  Entity send_node_2 = *(bulk.begin_nodes(send_element_2) + 1);
 
   Entity recv_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv ] );
   Entity recv_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv + 1 ] );

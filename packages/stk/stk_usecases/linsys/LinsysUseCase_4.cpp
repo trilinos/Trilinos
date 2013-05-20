@@ -264,7 +264,7 @@ bool use_case_4_driver( MPI_Comm comm ,
         for(; b_iter != b_end; ++b_iter) {
           stk::mesh::Entity elem = *b_iter;
 
-          stk::mesh::Entity const *rel = mesh_bulk_data.begin_node_entities(elem);
+          stk::mesh::Entity const *rel = mesh_bulk_data.begin_nodes(elem);
           int rel_size = mesh_bulk_data.num_nodes(elem);
 
           for(int j=0; j < rel_size; ++j) {

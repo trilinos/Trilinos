@@ -362,7 +362,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
         // This class has convenience functions for size and indexing.
         //   rel.size() == std::distance( rel.first , rel.second );
         //   rel[i] == *( rel.first + i );
-        stk::mesh::Entity const * node_rels = bulkData.begin_node_entities(elem);
+        stk::mesh::Entity const * node_rels = bulkData.begin_nodes(elem);
         int node_rels_size = bulkData.num_nodes(elem);
 
         // Verify that the number of nodes in this element is correct.
@@ -411,7 +411,7 @@ bool gather_field_data( const stk::mesh::BulkData &mesh,
 {
   typedef typename stk::mesh::FieldTraits< field_type >::data_type T ;
 
-  stk::mesh::Entity const * rel = mesh.begin_entities(entity, entity_rank );
+  stk::mesh::Entity const * rel = mesh.begin(entity, entity_rank );
 
   bool result = expected_num_rel == static_cast<unsigned>(mesh.num_connectivity(entity, entity_rank));
 

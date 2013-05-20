@@ -31,11 +31,9 @@ void do_test(stk::mesh::impl::BucketConnectivity<stk::topology::NODE_RANK, Type>
   const unsigned num_to_entities = num_from_entities * num_node_connectivity;
   const unsigned to_entities_start_num = 100;
   std::vector<Entity> to_entities(num_to_entities);
-  std::vector<Node> nodes(num_to_entities);
   for (unsigned i = 0; i < num_to_entities; ++i)
   {
     to_entities[i].set_local_offset(i + to_entities_start_num);
-    nodes[i] = static_cast<Node>(i);
   }
 
   //assign initial connectivities
@@ -58,8 +56,8 @@ void do_test(stk::mesh::impl::BucketConnectivity<stk::topology::NODE_RANK, Type>
     unsigned ilc = 0;
     for (unsigned i = 0; i < num_from_entities; ++i)
     {
-      const Entity * b = connectivity.begin_entities(i);
-      const Entity * e = connectivity.end_entities(i);
+      const Entity * b = connectivity.begin(i);
+      const Entity * e = connectivity.end(i);
       const ConnectivityOrdinal * cb = connectivity.begin_ordinals(i);
       EXPECT_EQ(e - b, num_node_connectivity);
       for (unsigned ord = 0; b<e; ++b, ++ord, ++cb, ++ilc)
@@ -85,8 +83,8 @@ void do_test(stk::mesh::impl::BucketConnectivity<stk::topology::NODE_RANK, Type>
     for (unsigned i = 0; i < num_from_entities; ++i)
     {
       unsigned to_idx = (num_from_entities - i - 1) * num_node_connectivity;
-      const Entity * b = connectivity.begin_entities(i);
-      const Entity * e = connectivity.end_entities(i);
+      const Entity * b = connectivity.begin(i);
+      const Entity * e = connectivity.end(i);
       const ConnectivityOrdinal * cb = connectivity.begin_ordinals(i);
       EXPECT_EQ(e - b, num_node_connectivity);
       for (unsigned ord = 0; b<e; ++b, ++ord, ++cb, ++ilc)
@@ -110,8 +108,8 @@ void do_test(stk::mesh::impl::BucketConnectivity<stk::topology::NODE_RANK, Type>
     unsigned ilc = 0;
     for (unsigned i = 0; i < num_from_entities; ++i)
     {
-      const Entity * b = connectivity2.begin_entities(i);
-      const Entity * e = connectivity2.end_entities(i);
+      const Entity * b = connectivity2.begin(i);
+      const Entity * e = connectivity2.end(i);
       const ConnectivityOrdinal * cb = connectivity2.begin_ordinals(i);
       EXPECT_EQ(e - b, num_node_connectivity);
       for (unsigned ord = 0; b<e; ++b, ++ord, ++cb, ++ilc)
@@ -136,8 +134,8 @@ void do_test(stk::mesh::impl::BucketConnectivity<stk::topology::NODE_RANK, Type>
     for (unsigned i = 0; i < num_from_entities; ++i)
     {
       unsigned to_idx = (num_from_entities - i - 1) * num_node_connectivity;
-      const Entity * b = connectivity.begin_entities(i);
-      const Entity * e = connectivity.end_entities(i);
+      const Entity * b = connectivity.begin(i);
+      const Entity * e = connectivity.end(i);
       const ConnectivityOrdinal * cb = connectivity.begin_ordinals(i);
       EXPECT_EQ(e - b, num_node_connectivity);
       for (unsigned ord = 0; b<e; ++b, ++ord, ++cb, ++ilc)

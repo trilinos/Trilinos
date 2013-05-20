@@ -140,12 +140,6 @@ class FieldBase
 
   unsigned get_initial_value_num_bytes() const { return m_impl.get_initial_value_num_bytes(); }
 
-  // This function updates the pointer to this field's data for the specified
-  // bucket_id, so that it can be used inside the operator[] function with just
-  // a few bit operations to figure out exactly where the data sits.
-  virtual void update_node_field(unsigned bucket_id, unsigned length, void* data_ptr)
-  { ThrowRequireMsg(false, "FieldBase::update_node_field not implemented. You should be using a derived-class field."); }
-
   virtual ~FieldBase() {}
 
   virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const { return out; }

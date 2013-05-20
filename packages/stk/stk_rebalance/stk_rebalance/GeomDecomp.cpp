@@ -47,8 +47,8 @@ std::vector<mesh::Entity> GeomDecomp::entity_coordinates(const mesh::BulkData& m
   } else {
 
     // Loop over node relations in mesh entities
-    mesh::Entity const *nodes_i = mesh.begin_node_entities(entity);
-    mesh::Entity const *nodes_e = mesh.end_node_entities(entity);
+    mesh::Entity const *nodes_i = mesh.begin_nodes(entity);
+    mesh::Entity const *nodes_e = mesh.end_nodes(entity);
     for ( ; nodes_i != nodes_e; ++nodes_i)
     {
       const mesh::Entity nent = *nodes_i;

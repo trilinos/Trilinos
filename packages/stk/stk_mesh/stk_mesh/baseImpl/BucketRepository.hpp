@@ -154,16 +154,6 @@ Bucket *BucketRepository::get_bucket(EntityRank entity_rank, int bucket_id) cons
   return all_buckets_for_rank[bucket_id];
 }
 
-template <class RankType>
-inline
-Bucket *BucketRepository::get_bucket(RankType rank_id) const
-{
-  const std::vector<Bucket *> & all_buckets_for_rank = m_buckets[TopoHelper<RankType>::entity_rank];
-  int id = EXTRACT_BUCKET_ID(rank_id);
-  ThrowAssert(static_cast<size_t>(id) < all_buckets_for_rank.size());
-  return all_buckets_for_rank[id];
-}
-
 #undef RANK_DEPENDENT_GET_BUCKET_FN_DEF
 
 } // namespace impl

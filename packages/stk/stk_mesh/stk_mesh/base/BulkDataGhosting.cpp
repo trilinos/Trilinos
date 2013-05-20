@@ -281,8 +281,8 @@ void BulkData::internal_change_ghosting(
           irank < erank;
           ++irank)
       {
-        Entity const *rels_i = begin_entities(e, irank);
-        Entity const *rels_e = end_entities(e, irank);
+        Entity const *rels_i = begin(e, irank);
+        Entity const *rels_e = end(e, irank);
         for (; rels_i != rels_e; ++rels_i)
         {
           if ( is_valid(*rels_i) && in_receive_ghost( ghosts , entity_key(*rels_i) ) )
@@ -527,8 +527,8 @@ void insert_transitive_closure( BulkData& bulk_data,
 
       for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
       {
-        Entity const *irels_j = bulk_data.begin_entities(entry.first, irank);;
-        Entity const *irels_e = bulk_data.end_entities(entry.first, irank);
+        Entity const *irels_j = bulk_data.begin(entry.first, irank);;
+        Entity const *irels_e = bulk_data.end(entry.first, irank);
         for (; irels_j != irels_e; ++irels_j)
         {
           if (bulk_data.is_valid(*irels_j)) {
@@ -691,8 +691,8 @@ void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
     const EntityRank end_rank = bulk_data.mesh_meta_data().entity_rank_count();
     for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
     {
-      Entity const *irels_j = bulk_data.begin_entities(rel_entity, irank);
-      Entity const *irels_e = bulk_data.end_entities(rel_entity, irank);
+      Entity const *irels_j = bulk_data.begin(rel_entity, irank);
+      Entity const *irels_e = bulk_data.end(rel_entity, irank);
       for ( ; irels_j != irels_e; ++irels_j)
       {
         Entity const rel_of_rel_entity = *irels_j;
@@ -735,8 +735,8 @@ void BulkData::internal_regenerate_shared_aura()
 
       for (EntityRank k_rank = stk::topology::BEGIN_RANK; k_rank < end_rank; ++k_rank)
       {
-        Entity const *rels_itr = begin_entities(i->entity, k_rank);
-        Entity const *rels_end = end_entities(i->entity, k_rank);
+        Entity const *rels_itr = begin(i->entity, k_rank);
+        Entity const *rels_end = end(i->entity, k_rank);
         for ( ; rels_itr != rels_end; ++rels_itr)
         {
           if (is_valid(*rels_itr)) {

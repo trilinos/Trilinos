@@ -50,7 +50,7 @@ bool verify_elem_node_coord(
   const unsigned node_count )
 {
   bool result = true;
-  mesh::Entity const *rel = mesh.begin_node_entities(elem);
+  mesh::Entity const *rel = mesh.begin_nodes(elem);
 
   if( static_cast<unsigned>(mesh.num_nodes(elem)) != node_count ) {
     std::cerr << "Error!  relation size == " << mesh.num_nodes(elem) << " != "

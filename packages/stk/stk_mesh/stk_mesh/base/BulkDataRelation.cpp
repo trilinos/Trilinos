@@ -214,7 +214,7 @@ bool BulkData::destroy_relation( Entity e_from ,
     for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
     {
       size_t num_rels = num_connectivity(e_to, irank);
-      Entity const *rel_entities = begin_entities(e_to, irank);
+      Entity const *rel_entities = begin(e_to, irank);
       ConnectivityOrdinal const *rel_ordinals = begin_ordinals(e_to, irank);
       for (size_t j = 0; j < num_rels; ++j)
       {
@@ -235,7 +235,7 @@ bool BulkData::destroy_relation( Entity e_from ,
     for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
     {
       size_t num_rels = num_connectivity(e_from, irank);
-      Entity const *rel_entities = begin_entities(e_from, irank);
+      Entity const *rel_entities = begin(e_from, irank);
       ConnectivityOrdinal const *rel_ordinals = begin_ordinals(e_from, irank);
       for (size_t j = 0; j < num_rels; ++j)
       {

@@ -46,33 +46,6 @@ namespace impl {
 class Partition;
 class EntityRepository;
 
-template <typename T>
-struct IndexToRank{};
-
-template <>
-struct IndexToRank<Node>
-{
-  static const EntityRank rank = stk::topology::NODE_RANK;
-};
-
-template <>
-struct IndexToRank<Edge>
-{
-  static const EntityRank rank = stk::topology::EDGE_RANK;
-};
-
-template <>
-struct IndexToRank<Face>
-{
-  static const EntityRank rank = stk::topology::FACE_RANK;
-};
-
-template <>
-struct IndexToRank<Element>
-{
-  static const EntityRank rank = stk::topology::ELEMENT_RANK;
-};
-
 }
 
 struct EntityCommListInfo
@@ -168,7 +141,6 @@ public:
 #ifdef SIERRA_MIGRATION
             , bool add_fmwk_data = false
 #endif
-            , bool maintain_fast_indices = true
             , ConnectivityMap* connectivity_map = NULL
             );
 
@@ -499,7 +471,7 @@ public:
   bool relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id )
   {
     bool found = false;
-    Entity const * rel_entity_it = bucket(entity).begin_entities(bucket_ordinal(entity),subcell_rank);
+    Entity const * rel_entity_it = bucket(entity).begin(bucket_ordinal(entity),subcell_rank);
     const unsigned num_rel = bucket(entity).num_connectivity(bucket_ordinal(entity),subcell_rank);
     ConnectivityOrdinal const * rel_ord_it = bucket(entity).begin_ordinals(bucket_ordinal(entity),subcell_rank);
 
@@ -544,8 +516,8 @@ public:
         is_side ? elem_top->side[ local_side_id ].node
             : elem_top->edge[ local_side_id ].node ;
 
-    Entity const *elem_nodes = begin_node_entities(elem);
-    Entity const *side_nodes = begin_node_entities(side);
+    Entity const *elem_nodes = begin_nodes(elem);
+    Entity const *side_nodes = begin_nodes(side);
     const unsigned n = side_top->node_count;
     bool good = false ;
     for ( unsigned i = 0 ; !good && i < n ; ++i ) {
@@ -918,55 +890,18 @@ public:
   void modified(Entity entity);
 
   ////
-  //// Rank Id based functions --- only use outside of modification cycle.
-  //// Didn't use templates because of specialization issues wrt the Entity
-  //// argument versions.
-  ////
-
-  Entity get_entity(Node node) const;
-  Entity get_entity(Edge edge) const;
-  Entity get_entity(Face facee) const;
-  Entity get_entity(Element elem) const;
-
-  Node get_node(Entity entity) const;
-  Edge get_edge(Entity entity) const;
-  Face get_face(Entity entity) const;
-  Element get_element(Entity entity) const;
-
-  template <class RankType>
-  RankType
-  inline get_rank_id(Entity entity)
-  {
-    MeshIndex mi = m_mesh_indexes[entity.local_offset()];
-    ThrowAssert(mi.bucket->entity_rank() == impl::IndexToRank<RankType>::rank);
-    return make_rank_id<RankType>(mi.bucket->bucket_id(), mi.bucket_ordinal);
-  }
-
-  ////
   //// NEW SAMBA-LIKE RELATIONS GETTERS
   ////
 
   // TODO: support beyond-element rank (e.g. constaint) connectivity
 
-  Node const* begin_nodes(Entity entity) const;
-  Node const* end_nodes  (Entity entity) const;
-
-  Edge const* begin_edges(Entity entity) const;
-  Edge const* end_edges  (Entity entity) const;
-
-  Face const* begin_faces(Entity entity) const;
-  Face const* end_faces  (Entity entity) const;
-
-  Element const* begin_elements(Entity entity) const;
-  Element const* end_elements  (Entity entity) const;
-
-  Entity const* begin_entities(Entity entity, EntityRank rank) const;
-  Entity const* begin_node_entities(Entity entity) const;
-  Entity const* begin_edge_entities(Entity entity) const;
-  Entity const* begin_face_entities(Entity entity) const;
-  Entity const* begin_element_entities(Entity entity) const;
-  Entity const* begin_other_entities(Entity entity) const
-  { return begin_entities(entity, stk::topology::CONSTRAINT_RANK); }
+  Entity const* begin(Entity entity, EntityRank rank) const;
+  Entity const* begin_nodes(Entity entity) const;
+  Entity const* begin_edges(Entity entity) const;
+  Entity const* begin_faces(Entity entity) const;
+  Entity const* begin_elements(Entity entity) const;
+  Entity const* begin_others(Entity entity) const
+  { return begin(entity, stk::topology::CONSTRAINT_RANK); }
 
   ConnectivityOrdinal const* begin_ordinals(Entity entity, EntityRank rank) const;
   ConnectivityOrdinal const* begin_node_ordinals(Entity entity) const;
@@ -990,17 +925,17 @@ public:
   unsigned num_faces(Entity entity) const;
   unsigned num_elements(Entity entity) const;
   unsigned num_other(Entity entity) const
-  { return end_other_entities(entity) - begin_other_entities(entity); }
+  { return end_others(entity) - begin_others(entity); }
 
   unsigned count_valid_connectivity(Entity entity, EntityRank rank) const;
   unsigned count_valid_connectivity(Entity entity) const;
 
-  Entity const* end_entities(Entity entity, EntityRank rank) const;
-  Entity const* end_node_entities(Entity entity) const;
-  Entity const* end_edge_entities(Entity entity) const;
-  Entity const* end_face_entities(Entity entity) const;
-  Entity const* end_element_entities(Entity entity) const;
-  Entity const* end_other_entities(Entity entity) const;
+  Entity const* end(Entity entity, EntityRank rank) const;
+  Entity const* end_nodes(Entity entity) const;
+  Entity const* end_edges(Entity entity) const;
+  Entity const* end_faces(Entity entity) const;
+  Entity const* end_elements(Entity entity) const;
+  Entity const* end_others(Entity entity) const;
 
   ConnectivityOrdinal const* end_ordinals(Entity entity, EntityRank rank) const;
   ConnectivityOrdinal const* end_node_ordinals(Entity entity) const;
@@ -1053,17 +988,6 @@ public:
   {
     const MeshIndex& mi           = mesh_index(e);
     return field_data(f, *mi.bucket, mi.bucket_ordinal);
-  }
-
-  template<class FieldType, typename Index>
-  typename FieldTraits<FieldType>::data_type*
-  field_data(const FieldType & f, Index e_idx) const
-  {
-    const EntityRank rank = impl::IndexToRank<Index>::rank;
-    const unsigned b_id  = EXTRACT_BUCKET_ID(e_idx);
-    const unsigned b_ord = EXTRACT_BUCKET_ORDINAL(e_idx);
-    FieldMetaData field_meta_data = m_field_meta_data[m_num_fields * rank + f.mesh_meta_data_ordinal()][b_id];
-    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * b_ord);
   }
 
   const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & field, const Bucket& b ) const
@@ -1121,8 +1045,6 @@ public:
 
   bool add_fmwk_data() const { return m_add_fmwk_data; }
 #endif
-
-  bool maintain_fast_indices() const { return m_maintain_fast_indices; }
 
   // Do not call!
   void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
@@ -1187,8 +1109,6 @@ public:
   mutable bool       m_check_invalid_rels; // TODO REMOVE
 private:
 #endif
-  bool               m_maintain_fast_indices; // flag that will tell buckets to allocate+compute fast indices at modification end
-
   int m_num_fields;
 
   // The full database of comm info for all communicated entities.
@@ -1254,9 +1174,6 @@ private:
   void reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& id_map);
 
   void remove_entity_callback(EntityRank rank, unsigned bucket_id, unsigned bucket_ord);
-
-  // Field update helper
-  void internal_update_fast_field_data(bool skip_onestate_fields = false);
 
   // Misc
 
@@ -1326,6 +1243,8 @@ private:
                                  bool& intersection_ok,
                                  bool& rel_target_ok,
                                  bool& rank_ok) const;
+
+  void internal_check_unpopulated_relations(Entity entity, EntityRank rank) const;
 
   // Returns false if there is a problem. It is expected that
   // verify_change_parts will be called if quick_verify_change_part detects
@@ -1450,9 +1369,9 @@ BulkData & BulkData::get( const impl::BucketRepository & bucket_repo ) {
 }
 
 #define RANK_VAL_node stk::topology::NODE_RANK
-#define RANK_VAL_edge stk::topology::NODE_RANK
-#define RANK_VAL_face stk::topology::NODE_RANK
-#define RANK_VAL_element stk::topology::NODE_RANK
+#define RANK_VAL_edge stk::topology::EDGE_RANK
+#define RANK_VAL_face stk::topology::FACE_RANK
+#define RANK_VAL_element stk::topology::ELEMENT_RANK
 
 //
 // Define a begin/end pair
@@ -1460,7 +1379,7 @@ BulkData & BulkData::get( const impl::BucketRepository & bucket_repo ) {
 #define BEGIN_END_PAIR(rank_name, return_type, data_type)       \
                                                                 \
 inline                                                          \
-return_type const* BulkData::begin_##rank_name##_##data_type(Entity entity) const \
+return_type const* BulkData::begin_##rank_name##data_type(Entity entity) const \
 {                                                                       \
   ThrowAssert(is_valid(entity));                                        \
   ThrowAssert(bucket_ptr(entity));                                      \
@@ -1468,14 +1387,12 @@ return_type const* BulkData::begin_##rank_name##_##data_type(Entity entity) cons
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
   unsigned bucket_ord = mesh_idx.bucket_ordinal;                        \
-  if (m_check_invalid_rels) {                                           \
-    ThrowAssert(count_valid_connectivity(entity, RANK_VAL_##rank_name) == b.num_connectivity(bucket_ord, RANK_VAL_##rank_name)); \
-  }                                                                     \
-  return b.begin_##rank_name##_##data_type(bucket_ord);                 \
+  internal_check_unpopulated_relations(entity, RANK_VAL_##rank_name);   \
+  return b.begin_##rank_name##data_type(bucket_ord);                    \
 }                                                                       \
                                                                         \
 inline                                                                  \
-return_type const* BulkData::end_##rank_name##_##data_type(Entity entity) const \
+return_type const* BulkData::end_##rank_name##data_type(Entity entity) const \
 {                                                                       \
   ThrowAssert(is_valid(entity));                                        \
   ThrowAssert(bucket_ptr(entity));                                      \
@@ -1483,42 +1400,22 @@ return_type const* BulkData::end_##rank_name##_##data_type(Entity entity) const 
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
   unsigned bucket_ord = mesh_idx.bucket_ordinal;                        \
-  return b.end_##rank_name##_##data_type(bucket_ord);                   \
+  return b.end_##rank_name##data_type(bucket_ord);                      \
 }
 
 //
 // Define all methods for a rank
 //
-#define RANK_FUNCTION_DEFS(rank_name, type_name)                       \
+#define RANK_FUNCTION_DEFS(rank_name)                                  \
                                                                        \
-BEGIN_END_PAIR(rank_name, Entity, entities)                            \
+BEGIN_END_PAIR(rank_name, Entity, s)                                   \
                                                                        \
-BEGIN_END_PAIR(rank_name, ConnectivityOrdinal, ordinals)               \
+BEGIN_END_PAIR(rank_name, ConnectivityOrdinal, _ordinals)              \
                                                                        \
-BEGIN_END_PAIR(rank_name, Permutation, permutations)                   \
-                                                                       \
-inline                                                                 \
-Entity BulkData::get_entity(type_name rank_id) const                   \
-{                                                                      \
-  ThrowAssert(m_sync_state != MODIFIABLE);                             \
-  return (*m_bucket_repository.get_bucket(rank_id))[EXTRACT_BUCKET_ORDINAL(rank_id)]; \
-}                                                                      \
+BEGIN_END_PAIR(rank_name, Permutation, _permutations)                  \
                                                                        \
 inline                                                                 \
-type_name BulkData::get_##rank_name(Entity entity) const             \
-{                                                                      \
-  ThrowAssert(m_sync_state != MODIFIABLE);                             \
-  ThrowAssert(is_valid(entity));                                       \
-  ThrowAssert(this == &stk::mesh::BulkData::get(entity));              \
-  ThrowAssert(bucket_ptr(entity));                                     \
-  const MeshIndex &mesh_idx = mesh_index(entity);                      \
-  const uint64_t bucket_id  = mesh_idx.bucket->bucket_id();            \
-  const uint64_t bucket_ord = mesh_idx.bucket_ordinal;                 \
-  return make_rank_id<type_name>(bucket_id,bucket_ord);                \
-}                                                                      \
-                                                                       \
-inline                                                                 \
-unsigned BulkData::num_##rank_name##s(Entity entity) const                  \
+unsigned BulkData::num_##rank_name##s(Entity entity) const             \
 {                                                                      \
   ThrowAssert(is_valid(entity));                                       \
   ThrowAssert(bucket_ptr(entity));                                     \
@@ -1532,10 +1429,10 @@ unsigned BulkData::num_##rank_name##s(Entity entity) const                  \
 //
 // Define method for runtime rank
 //
-#define FUNCTION_DEF(begin_str, end_str, return_type)   \
+#define FUNCTION_DEF(begin_str, end_str, return_type)  \
                                                         \
 inline                                                  \
-return_type const* BulkData::begin_str##_##end_str(Entity entity, EntityRank rank) const \
+return_type const* BulkData::begin_str##end_str(Entity entity, EntityRank rank) const \
 {                                                                       \
   ThrowAssert(is_valid(entity));                                        \
   ThrowAssert(bucket_ptr(entity));                                      \
@@ -1543,65 +1440,33 @@ return_type const* BulkData::begin_str##_##end_str(Entity entity, EntityRank ran
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
   unsigned bucket_ord = mesh_idx.bucket_ordinal;                        \
-  if (m_check_invalid_rels) {                                           \
-    ThrowAssert(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank)); \
-  }                                                                     \
-  return b.begin_str##_##end_str(bucket_ord, rank);                 \
-}
-
-#define FAST_RANK_FUNCTION_DEFS(rank_name, type_name)                  \
-                                                                       \
-inline                                                                 \
-type_name const* BulkData::begin_##rank_name##s(Entity entity) const    \
-{                                                                       \
-  ThrowAssert(m_sync_state != MODIFIABLE);                              \
-  ThrowAssert(is_valid(entity));                                        \
-  ThrowAssert(bucket_ptr(entity));                                      \
-  ThrowAssert(this == &stk::mesh::BulkData::get(entity));               \
-  const MeshIndex &mesh_idx = mesh_index(entity);                       \
-  const Bucket &b = *mesh_idx.bucket;                                   \
-  unsigned bucket_ord = mesh_idx.bucket_ordinal;                        \
-  return b.begin_##rank_name##s(bucket_ord);                            \
-}                                                                       \
-                                                                        \
-inline                                                                  \
-type_name const* BulkData::end_##rank_name##s(Entity entity) const      \
-{                                                                       \
-  ThrowAssert(m_sync_state != MODIFIABLE);                              \
-  ThrowAssert(is_valid(entity));                                        \
-  ThrowAssert(bucket_ptr(entity));                                      \
-  ThrowAssert(this == &stk::mesh::BulkData::get(entity));               \
-  const MeshIndex &mesh_idx = mesh_index(entity);                       \
-  const Bucket &b = *mesh_idx.bucket;                                   \
-  unsigned bucket_ord = mesh_idx.bucket_ordinal;                        \
-  return b.end_##rank_name##s(bucket_ord);                              \
+  internal_check_unpopulated_relations(entity, rank);                   \
+  return b.begin_str##end_str(bucket_ord, rank);                        \
 }
 
 //
 // Methods defined here!
 //
 
-RANK_FUNCTION_DEFS(node, Node);
-RANK_FUNCTION_DEFS(edge, Edge);
-RANK_FUNCTION_DEFS(face, Face);
-RANK_FUNCTION_DEFS(element, Element);
+RANK_FUNCTION_DEFS(node);
+RANK_FUNCTION_DEFS(edge);
+RANK_FUNCTION_DEFS(face);
+RANK_FUNCTION_DEFS(element);
 
-FAST_RANK_FUNCTION_DEFS(node, Node);
-FAST_RANK_FUNCTION_DEFS(edge, Edge);
-FAST_RANK_FUNCTION_DEFS(face, Face);
-FAST_RANK_FUNCTION_DEFS(element, Element);
-
-FUNCTION_DEF(begin, entities, Entity);
-FUNCTION_DEF(end,   entities, Entity);
-FUNCTION_DEF(begin, ordinals, ConnectivityOrdinal);
-FUNCTION_DEF(end,   ordinals, ConnectivityOrdinal);
-FUNCTION_DEF(begin, permutations, Permutation);
-FUNCTION_DEF(end,   permutations, Permutation);
+FUNCTION_DEF(begin, , Entity);
+FUNCTION_DEF(end,   , Entity);
+FUNCTION_DEF(begin, _ordinals, ConnectivityOrdinal);
+FUNCTION_DEF(end,   _ordinals, ConnectivityOrdinal);
+FUNCTION_DEF(begin, _permutations, Permutation);
+FUNCTION_DEF(end,   _permutations, Permutation);
 
 #undef FUNCTION_DEFS
 #undef RANK_FUNCTION_DEFS
-#undef FAST_RANK_FUNCTION_DEFS
 #undef BEGIN_END_PAIR
+#undef RANK_VAL_node
+#undef RANK_VAL_edge
+#undef RANK_VAL_face
+#undef RANK_VAL_element
 
 inline
 unsigned BulkData::num_connectivity(Entity entity, EntityRank rank) const
@@ -1765,13 +1630,27 @@ Relation::Relation(const BulkData &mesh,  Entity ent , RelationIdentifier id )
 inline
 bool Bucket::other_entities_have_single_rank(unsigned bucket_ordinal, EntityRank rank) const
 {
-  Entity const * const other_rels = m_dynamic_other_connectivity.begin_entities(bucket_ordinal);
-  Entity const * const other_rels_end = m_dynamic_other_connectivity.end_entities(bucket_ordinal);;
+  Entity const * const other_rels = m_dynamic_other_connectivity.begin(bucket_ordinal);
+  Entity const * const other_rels_end = m_dynamic_other_connectivity.end(bucket_ordinal);;
 
   if ((other_rels == other_rels_end) && (rank != InvalidEntityRank))
     return false;
 
   return (m_mesh.entity_rank(*other_rels) == rank) && (m_mesh.entity_rank(*(other_rels_end - 1)) == rank);
+}
+
+inline
+void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank rank) const
+{
+#ifndef NDEBUG
+  if (m_check_invalid_rels) {
+    const MeshIndex &mesh_idx = mesh_index(entity);
+    const Bucket &b = *mesh_idx.bucket;
+    unsigned bucket_ord = mesh_idx.bucket_ordinal;
+    ThrowAssertMsg(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank),
+                   "WARNING: entity " << print_entity_key(mesh_meta_data(), entity_key(entity)) << " does not have fully populated connectivity for rank " << mesh_meta_data().entity_rank_name(rank) << ", " << count_valid_connectivity(entity, rank) << "/" << b.num_connectivity(bucket_ord, rank));
+  }
+#endif
 }
 
 } // namespace mesh

@@ -247,25 +247,13 @@ public:
   // Samba-like interface...
   // TODO: support beyond-element rank (e.g. constaint) connectivity generally
 
-  Node const* begin_nodes(unsigned bucket_ordinal) const;
-  Node const* end_nodes  (unsigned bucket_ordinal) const;
-
-  Edge const* begin_edges(unsigned bucket_ordinal) const;
-  Edge const* end_edges  (unsigned bucket_ordinal) const;
-
-  Face const* begin_faces(unsigned bucket_ordinal) const;
-  Face const* end_faces  (unsigned bucket_ordinal) const;
-
-  Element const* begin_elements(unsigned bucket_ordinal) const;
-  Element const* end_elements  (unsigned bucket_ordinal) const;
-
-  Entity const* begin_entities(unsigned bucket_ordinal, EntityRank rank) const;
-  Entity const* begin_node_entities(unsigned bucket_ordinal) const;
-  Entity const* begin_edge_entities(unsigned bucket_ordinal) const;
-  Entity const* begin_face_entities(unsigned bucket_ordinal) const;
-  Entity const* begin_element_entities(unsigned bucket_ordinal) const;
-  Entity const* begin_other_entities(unsigned bucket_ordinal) const
-  { return m_dynamic_other_connectivity.begin_entities(bucket_ordinal); }
+  Entity const* begin(unsigned bucket_ordinal, EntityRank rank) const;
+  Entity const* begin_nodes(unsigned bucket_ordinal) const;
+  Entity const* begin_edges(unsigned bucket_ordinal) const;
+  Entity const* begin_faces(unsigned bucket_ordinal) const;
+  Entity const* begin_elements(unsigned bucket_ordinal) const;
+  Entity const* begin_others(unsigned bucket_ordinal) const
+  { return m_dynamic_other_connectivity.begin(bucket_ordinal); }
 
   bool other_entities_have_single_rank(unsigned bucket_ordinal, EntityRank rank) const;
 
@@ -293,13 +281,13 @@ public:
   unsigned num_other(unsigned bucket_ordinal) const
   { return m_dynamic_other_connectivity.num_connectivity(bucket_ordinal); }
 
-  Entity const* end_entities(unsigned bucket_ordinal, EntityRank rank) const;
-  Entity const* end_node_entities(unsigned bucket_ordinal) const;
-  Entity const* end_edge_entities(unsigned bucket_ordinal) const;
-  Entity const* end_face_entities(unsigned bucket_ordinal) const;
-  Entity const* end_element_entities(unsigned bucket_ordinal) const;
-  Entity const* end_other_entities(unsigned bucket_ordinal) const
-  { return m_dynamic_other_connectivity.end_entities(bucket_ordinal); }
+  Entity const* end(unsigned bucket_ordinal, EntityRank rank) const;
+  Entity const* end_nodes(unsigned bucket_ordinal) const;
+  Entity const* end_edges(unsigned bucket_ordinal) const;
+  Entity const* end_faces(unsigned bucket_ordinal) const;
+  Entity const* end_elements(unsigned bucket_ordinal) const;
+  Entity const* end_others(unsigned bucket_ordinal) const
+  { return m_dynamic_other_connectivity.end(bucket_ordinal); }
 
   ConnectivityOrdinal const* end_ordinals(unsigned bucket_ordinal, EntityRank rank) const;
   ConnectivityOrdinal const* end_node_ordinals(unsigned bucket_ordinal) const;
@@ -408,56 +396,29 @@ bool Bucket::member_all( const OrdinalVector& parts ) const
 //
 // Define a begin/end pair
 //
-#define BEGIN_END_PAIR(rank_name, return_type, data_type)       \
+#define BEGIN_END_PAIR(rank_name, return_type, data_type, conn_postfix) \
                                                                 \
 inline                                                          \
-return_type const* Bucket::begin_##rank_name##_##data_type(unsigned bucket_ordinal) const \
+return_type const* Bucket::begin_##rank_name##data_type(unsigned bucket_ordinal) const \
 {                                                                       \
   switch(m_##rank_name##_kind) {                                        \
   case FIXED_CONNECTIVITY:                                              \
-    return m_fixed_##rank_name##_connectivity.begin_##data_type(bucket_ordinal); \
+    return m_fixed_##rank_name##_connectivity.begin##conn_postfix(bucket_ordinal); \
   case DYNAMIC_CONNECTIVITY:                                            \
-    return m_dynamic_##rank_name##_connectivity.begin_##data_type(bucket_ordinal); \
+    return m_dynamic_##rank_name##_connectivity.begin##conn_postfix(bucket_ordinal); \
   default:                                                                \
     return NULL;                                                          \
   }                                                                     \
 }                                                                       \
                                                                         \
 inline                                                          \
-return_type const* Bucket::end_##rank_name##_##data_type(unsigned bucket_ordinal) const \
+return_type const* Bucket::end_##rank_name##data_type(unsigned bucket_ordinal) const \
 {                                                                       \
   switch(m_##rank_name##_kind) {                                        \
   case FIXED_CONNECTIVITY:                                              \
-    return m_fixed_##rank_name##_connectivity.end_##data_type(bucket_ordinal); \
+    return m_fixed_##rank_name##_connectivity.end##conn_postfix(bucket_ordinal); \
   case DYNAMIC_CONNECTIVITY:                                            \
-    return m_dynamic_##rank_name##_connectivity.end_##data_type(bucket_ordinal); \
-  default:                                                                \
-    return NULL;                                                          \
-  }                                                                     \
-}
-
-#define FAST_BEGIN_END_PAIR(rank_name, type_name)                      \
-inline                                                                 \
-type_name const* Bucket::begin_##rank_name##s(unsigned bucket_ordinal) const    \
-{                                                                      \
-  switch(m_##rank_name##_kind) {                                        \
-  case FIXED_CONNECTIVITY:                                              \
-    return m_fixed_##rank_name##_connectivity.begin(bucket_ordinal); \
-  case DYNAMIC_CONNECTIVITY:                                            \
-    return m_dynamic_##rank_name##_connectivity.begin(bucket_ordinal); \
-  default:                                                                \
-    return NULL;                                                          \
-  }                                                                     \
-}                                                                      \
-                                                                       \
-inline                                                                 \
-type_name const* Bucket::end_##rank_name##s(unsigned bucket_ordinal) const      \
-{                                                                      \
-  switch(m_##rank_name##_kind) {                                        \
-  case FIXED_CONNECTIVITY:                                              \
-    return m_fixed_##rank_name##_connectivity.end(bucket_ordinal); \
-  case DYNAMIC_CONNECTIVITY:                                            \
-    return m_dynamic_##rank_name##_connectivity.end(bucket_ordinal); \
+    return m_dynamic_##rank_name##_connectivity.end##conn_postfix(bucket_ordinal) ; \
   default:                                                                \
     return NULL;                                                          \
   }                                                                     \
@@ -466,18 +427,16 @@ type_name const* Bucket::end_##rank_name##s(unsigned bucket_ordinal) const      
 //
 // Define all methods for a rank
 //
-#define RANK_FUNCTION_DEFS(rank_name, type_name)                       \
+#define RANK_FUNCTION_DEFS(rank_name)                                  \
                                                                        \
-FAST_BEGIN_END_PAIR(rank_name, type_name)                              \
+BEGIN_END_PAIR(rank_name, Entity, s, )                                 \
                                                                        \
-BEGIN_END_PAIR(rank_name, Entity, entities)                            \
+BEGIN_END_PAIR(rank_name, ConnectivityOrdinal, _ordinals, _ordinals)   \
                                                                        \
-BEGIN_END_PAIR(rank_name, ConnectivityOrdinal, ordinals)               \
-                                                                       \
-BEGIN_END_PAIR(rank_name, Permutation, permutations)                   \
+BEGIN_END_PAIR(rank_name, Permutation, _permutations, _permutations)   \
                                                                        \
 inline                                                                 \
-unsigned Bucket::num_##rank_name##s(unsigned bucket_ordinal) const                \
+unsigned Bucket::num_##rank_name##s(unsigned bucket_ordinal) const      \
 {                                                                       \
   switch(m_##rank_name##_kind) {                                        \
   case FIXED_CONNECTIVITY:                                              \
@@ -492,18 +451,18 @@ unsigned Bucket::num_##rank_name##s(unsigned bucket_ordinal) const              
 //
 // Define method for runtime rank
 //
-#define FUNCTION_DEF(begin_str, end_str, return_type)   \
+#define FUNCTION_DEF(begin_str, end_str, return_type, postfix)  \
                                                         \
 inline                                                  \
-return_type const* Bucket::begin_str##_##end_str(unsigned bucket_ordinal, EntityRank rank) const \
+return_type const* Bucket::begin_str##end_str(unsigned bucket_ordinal, EntityRank rank) const \
 {                                                                       \
   switch(rank) {                                                          \
-  case stk::topology::NODE_RANK:    return begin_str##_node_##end_str(bucket_ordinal); \
-  case stk::topology::EDGE_RANK:    return begin_str##_edge_##end_str(bucket_ordinal); \
-  case stk::topology::FACE_RANK:    return begin_str##_face_##end_str(bucket_ordinal); \
-  case stk::topology::ELEMENT_RANK: return begin_str##_element_##end_str(bucket_ordinal); \
+  case stk::topology::NODE_RANK:    return begin_str##_node##postfix(bucket_ordinal); \
+  case stk::topology::EDGE_RANK:    return begin_str##_edge##postfix(bucket_ordinal); \
+  case stk::topology::FACE_RANK:    return begin_str##_face##postfix(bucket_ordinal); \
+  case stk::topology::ELEMENT_RANK: return begin_str##_element##postfix(bucket_ordinal); \
   default:                                                              \
-    return begin##_other_##end_str(bucket_ordinal) + get_others_##begin_str##_index(bucket_ordinal, rank);  \
+    return begin##_other##postfix(bucket_ordinal) + get_others_##begin_str##_index(bucket_ordinal, rank);  \
   }                                                                     \
 }
 
@@ -511,20 +470,19 @@ return_type const* Bucket::begin_str##_##end_str(unsigned bucket_ordinal, Entity
 // Methods defined here!
 //
 
-RANK_FUNCTION_DEFS(node, Node);
-RANK_FUNCTION_DEFS(edge, Edge);
-RANK_FUNCTION_DEFS(face, Face);
-RANK_FUNCTION_DEFS(element, Element);
+RANK_FUNCTION_DEFS(node);
+RANK_FUNCTION_DEFS(edge);
+RANK_FUNCTION_DEFS(face);
+RANK_FUNCTION_DEFS(element);
 
-FUNCTION_DEF(begin, entities, Entity);
-FUNCTION_DEF(end,   entities, Entity);
-FUNCTION_DEF(begin, ordinals, ConnectivityOrdinal);
-FUNCTION_DEF(end,   ordinals, ConnectivityOrdinal);
-FUNCTION_DEF(begin, permutations, Permutation);
-FUNCTION_DEF(end,   permutations, Permutation);
+FUNCTION_DEF(begin, , Entity, s);
+FUNCTION_DEF(end,   , Entity, s);
+FUNCTION_DEF(begin, _ordinals, ConnectivityOrdinal, _ordinals);
+FUNCTION_DEF(end,   _ordinals, ConnectivityOrdinal, _ordinals);
+FUNCTION_DEF(begin, _permutations, Permutation, _permutations);
+FUNCTION_DEF(end,   _permutations, Permutation, _permutations);
 
 #undef BEGIN_END_PAIR
-#undef FAST_BEGIN_END_PAIR
 #undef RANK_FUNCTION_DEFS
 #undef FUNCTION_DEF
 

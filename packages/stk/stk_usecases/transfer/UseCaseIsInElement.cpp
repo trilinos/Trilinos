@@ -40,7 +40,7 @@ size_t is_in_element(const stk::mesh::BulkData &domain_mesh, const stk::mesh::Bu
         stk::mesh::get_cell_topology(domain_mesh.bucket(domain_entity)).getCellTopologyData();
     const int nodes_per_entity = cell_topo->node_count;
 
-    stk::mesh::Node const *entity_nodes = domain_mesh.begin_nodes(domain_entity);
+    stk::mesh::Entity const *entity_nodes = domain_mesh.begin_nodes(domain_entity);
     double *domain_fld_data = static_cast<double*>(domain_mesh.field_data(*domain_coordinates, entity_nodes[0]));
     assert(domain_fld_data != NULL);
     double xmin = domain_fld_data[0];

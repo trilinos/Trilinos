@@ -65,7 +65,7 @@ void add_connectivities(stk::linsys::LinearSystemInterface& ls,
     for(; b_iter != b_end; ++b_iter, ++e_bordinal) {
       stk::mesh::Entity entity = *b_iter;
 
-      stk::mesh::Entity const * rel = part_buckets[i]->begin_entities(e_bordinal, connected_entity_rank);
+      stk::mesh::Entity const * rel = part_buckets[i]->begin(e_bordinal, connected_entity_rank);
       int num_rels = part_buckets[i]->num_connectivity(e_bordinal, connected_entity_rank);
       for(int j=0; j < num_rels; ++j) {
         connected_ids[j] = mesh_bulk.identifier(rel[j]);

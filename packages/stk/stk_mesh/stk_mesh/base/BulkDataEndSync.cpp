@@ -275,8 +275,8 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity entity )
   {
     --irank;
 
-    Entity const *irels_ri = mesh.end_entities(entity, irank);
-    Entity const *irels_b = mesh.begin_entities(entity, irank);
+    Entity const *irels_ri = mesh.end(entity, irank);
+    Entity const *irels_b  = mesh.begin(entity, irank);
     for ( ; irels_ri != irels_b ; --irels_ri)
     {
       Entity e = *(irels_ri - 1);
@@ -748,8 +748,6 @@ bool BulkData::modification_end()
 
   bool return_value = internal_modification_end( true );
 
-  internal_update_fast_field_data();
-
 #ifdef STK_PROFILE_MEMORY
 
   profile_memory_usage<parallel::DistributedIndex>("Distributed Index", parallel(),parallel_rank());
@@ -760,23 +758,6 @@ bool BulkData::modification_end()
 #endif
 
   return return_value;
-}
-
-// This function updates a set of pointers on each field to point to its bucket-data inside BulkData.
-void BulkData::internal_update_fast_field_data(bool skip_onestate_fields) {
-  // TODO:  Extend this to all ranks.
-  const std::vector<Bucket*>& node_buckets = buckets(stk::topology::NODE_RANK);
-  const FieldVector& fields = m_mesh_meta_data.get_fields();
-  for(size_t f=0; f<fields.size(); ++f) {
-    if (skip_onestate_fields && fields[f]->number_of_states() == 1) { continue; }
-    FieldBase& field = *const_cast<FieldBase*>(fields[f]);
-    for(size_t i=0; i<node_buckets.size(); ++i) {
-      const Bucket& bucket = *node_buckets[i];
-      unsigned length_per_entity = field_data_size_per_entity(field, bucket);
-      void* data_ptr = field_data(field, bucket, 0);
-      field.update_node_field(bucket.bucket_id(), length_per_entity, data_ptr);
-    }
-  }
 }
 
 #if 0
@@ -925,11 +906,11 @@ T const* get_end_itr(const Bucket& bucket, int bucket_ordinal, EntityRank rank);
 
 template <>
 Entity const* get_begin_itr<Entity>(const Bucket& bucket, int bucket_ordinal, EntityRank rank)
-{ return bucket.begin_entities(bucket_ordinal, rank); }
+{ return bucket.begin(bucket_ordinal, rank); }
 
 template <>
 Entity const* get_end_itr<Entity>(const Bucket& bucket, int bucket_ordinal, EntityRank rank)
-{ return bucket.end_entities(bucket_ordinal, rank); }
+{ return bucket.end(bucket_ordinal, rank); }
 
 
 template <>
@@ -961,11 +942,11 @@ T const *get_end_relation_data(const Bucket & bucket, int bucket_ordinal, Entity
 
 template <>
 Entity const *get_begin_relation_data<Entity>(const Bucket & bucket, int bucket_ordinal, EntityRank rank)
-{ return bucket.begin_entities(bucket_ordinal, rank); }
+{ return bucket.begin(bucket_ordinal, rank); }
 
 template <>
 Entity const *get_end_relation_data<Entity>(const Bucket & bucket, int bucket_ordinal, EntityRank rank)
-{ return bucket.end_entities(bucket_ordinal, rank); }
+{ return bucket.end(bucket_ordinal, rank); }
 
 template <>
 ConnectivityOrdinal const *get_begin_relation_data<ConnectivityOrdinal>(const Bucket & bucket, int bucket_ordinal, EntityRank rank)

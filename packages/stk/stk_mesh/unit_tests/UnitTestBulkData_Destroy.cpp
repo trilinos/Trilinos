@@ -152,7 +152,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     // This process' first element in the loop
     // if a parallel mesh has a shared node
     Entity element = bulk.get_entity( MetaData::ELEMENT_RANK , mesh.m_element_ids[ nLocalElement * p_rank ] );
-    Entity const *element_nodes = bulk.begin_node_entities(element);
+    Entity const *element_nodes = bulk.begin_nodes(element);
     Entity node0 = element_nodes[0];
     Entity node1 = element_nodes[1];
 
@@ -162,11 +162,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     STKUNIT_ASSERT( 1 <= node0_elements && node0_elements <= 2 );
     STKUNIT_ASSERT( 1 <= node1_elements && node1_elements <= 2 );
 
-    STKUNIT_ASSERT( bulk.begin_element_entities(node0)[0] == element ||
-                    bulk.begin_element_entities(node0)[1] == element );
+    STKUNIT_ASSERT( bulk.begin_elements(node0)[0] == element ||
+                    bulk.begin_elements(node0)[1] == element );
 
-    STKUNIT_ASSERT( bulk.begin_element_entities(node1)[0] == element ||
-                    bulk.begin_element_entities(node1)[1] == element );
+    STKUNIT_ASSERT( bulk.begin_elements(node1)[0] == element ||
+                    bulk.begin_elements(node1)[1] == element );
 
     bulk.modification_begin();
 
@@ -219,7 +219,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     STKUNIT_ASSERT_EQUAL( size_t(2) , bulk.count_relations(node) );
 
     EntityId node_element_ids[2] ;
-    Entity const *node_elems = bulk.begin_element_entities(node);
+    Entity const *node_elems = bulk.begin_elements(node);
     node_element_ids[0] = bulk.identifier(node_elems[0]);
     node_element_ids[1] = bulk.identifier(node_elems[1]);
 
@@ -233,10 +233,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
     {
       --irank;
-      stk::mesh::Entity const *to_b = bulk.begin_entities(node, irank);
-      stk::mesh::Entity const *to_e = bulk.end_entities(node, irank);
+      stk::mesh::Entity const *to_b = bulk.begin(node, irank);
+      stk::mesh::Entity const *to_e = bulk.end(node, irank);
       for (; to_b != to_e;
-            to_b = bulk.begin_entities(node, irank), to_e = bulk.end_entities(node, irank))
+            to_b = bulk.begin(node, irank), to_e = bulk.end(node, irank))
       {
         STKUNIT_ASSERT( bulk.destroy_entity(*(to_e -1)) );
       }
@@ -283,7 +283,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     STKUNIT_ASSERT_EQUAL( 2u , bulk.count_relations(node_owned) );
 
     EntityId node_element_ids[2] ;
-    stk::mesh::Entity const *node_elems = bulk.begin_element_entities(node_owned);
+    stk::mesh::Entity const *node_elems = bulk.begin_elements(node_owned);
     node_element_ids[0] = bulk.identifier(node_elems[0]);
     node_element_ids[1] = bulk.identifier(node_elems[1]);
 
@@ -296,10 +296,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
     {
       --irank;
-      stk::mesh::Entity const *to_b = bulk.begin_entities(node_owned, irank);
-      stk::mesh::Entity const *to_e = bulk.end_entities(node_owned, irank);
+      stk::mesh::Entity const *to_b = bulk.begin(node_owned, irank);
+      stk::mesh::Entity const *to_e = bulk.end(node_owned, irank);
       for ( ; to_b != to_e;
-          bulk.begin_entities(node_owned, irank), to_e = bulk.end_entities(node_owned, irank))
+          bulk.begin(node_owned, irank), to_e = bulk.end(node_owned, irank))
       {
         STKUNIT_ASSERT( bulk.destroy_entity(*(to_e - 1)) );
       }

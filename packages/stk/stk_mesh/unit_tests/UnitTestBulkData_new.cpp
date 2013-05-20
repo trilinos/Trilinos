@@ -700,7 +700,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
     STKUNIT_ASSERT( mesh.is_valid(elem) );
     size_t num_elem_nodes = mesh.num_nodes(elem);
     STKUNIT_ASSERT_EQUAL( 8u , num_elem_nodes );
-    stk::mesh::Entity const *elem_nodes = mesh.begin_node_entities(elem);
+    stk::mesh::Entity const *elem_nodes = mesh.begin_nodes(elem);
     // stk::mesh::ConnectivityOrdinal const *elem_node_ords = mesh.begin_node_ordinals(elem);
     if ( 8u == num_elem_nodes ) {
       STKUNIT_ASSERT( elem_nodes[0] == fixture.node(ix,iy,iz));
@@ -835,8 +835,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
           irank < erank;
           ++irank)
     {
-      stk::mesh::Entity const *irels_itr = bkt.begin_entities(bkt_ordinal, irank);
-      stk::mesh::Entity const *irels_end = bkt.end_entities(bkt_ordinal, irank);
+      stk::mesh::Entity const *irels_itr = bkt.begin(bkt_ordinal, irank);
+      stk::mesh::Entity const *irels_end = bkt.end(bkt_ordinal, irank);
       for (; irels_itr != irels_end; ++irels_itr)
       {
         if (bulk.in_receive_ghost( ghosts , bulk.entity_key(*irels_itr) ) )
@@ -981,8 +981,8 @@ void new_insert_transitive_closure( stk::mesh::BulkData& bulk_data, std::set<stk
 
       for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
       {
-        stk::mesh::Entity const *rels_i = bulk_data.begin_entities(entry.first, irank);
-        stk::mesh::Entity const *rels_e = bulk_data.end_entities(entry.first, irank);
+        stk::mesh::Entity const *rels_i = bulk_data.begin(entry.first, irank);
+        stk::mesh::Entity const *rels_e = bulk_data.end(entry.first, irank);
         for ( ; rels_i != rels_e; ++rels_i)
         {
           if ( irank < etype ) {

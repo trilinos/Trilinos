@@ -128,25 +128,6 @@ size_t hash_value( Entity entity) {
 // BucketConnectivity
 //
 
-template <typename EntityVector, typename  RankTypeVector, typename BulkData> // hack to get around dependency
-void sync_rank_id_targets(const EntityVector &target_entities, RankTypeVector &targets, BulkData* mesh)
-{
-  typedef typename RankTypeVector::value_type RankType;
-
-  targets.resize(target_entities.size(), TopoHelper<RankType>::invalid);
-
-  for (size_t i = 0, end = target_entities.size(); i < end; ++i) {
-    Entity target = target_entities[i];
-    if (mesh->is_valid(target)) {
-      // TODO: Cleanup/remove MeshIndex
-      const MeshIndex& index = mesh->mesh_index(target);
-      uint64_t bucket_id  = index.bucket->bucket_id();
-      uint64_t bucket_ord = index.bucket_ordinal;
-      targets[i] = make_rank_id<RankType>(bucket_id, bucket_ord);
-    }
-  }
-}
-
 template <EntityRank TargetRank>
 template <typename BulkData> // hack to get around dependency
 inline
@@ -155,8 +136,8 @@ void impl::BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>::end_modification(
   //TODO: If bucket is blocked, no longer need to shrink to fit!
 
   {
-    EntityVector temp(m_target_entities.begin(), m_target_entities.end());
-    m_target_entities.swap(temp);
+    EntityVector temp(m_targets.begin(), m_targets.end());
+    m_targets.swap(temp);
   }
 
   {
@@ -164,9 +145,6 @@ void impl::BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>::end_modification(
     m_permutations.swap(temp);
   }
 
-  if (mesh->maintain_fast_indices()) {
-    sync_rank_id_targets(m_target_entities, m_targets, mesh);
-  }
   invariant_check_helper(mesh);
 }
 
@@ -186,10 +164,6 @@ void impl::BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>::end_modificatio
     {
       UInt16Vector temp(m_num_connectivities.begin(), m_num_connectivities.end());
       m_num_connectivities.swap(temp);
-    }
-
-    if (mesh->maintain_fast_indices()) {
-      sync_rank_id_targets(m_target_entities, m_targets, mesh);
     }
 
     invariant_check_helper(mesh);

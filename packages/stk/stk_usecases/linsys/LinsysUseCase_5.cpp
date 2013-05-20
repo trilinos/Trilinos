@@ -287,7 +287,7 @@ bool use_case_5_driver( MPI_Comm comm ,
                  b_end  = part_buckets[i]->end();
         for(; b_iter != b_end; ++b_iter) {
           stk::mesh::Entity elem = *b_iter;
-          stk::mesh::Entity const *rel = mesh_bulk_data.begin_node_entities(elem);
+          stk::mesh::Entity const *rel = mesh_bulk_data.begin_nodes(elem);
           int rel_size = mesh_bulk_data.num_nodes(elem);
           for(int j=0; j < rel_size; ++j) {
             node_ids[j] = mesh_bulk_data.identifier(rel[j]);

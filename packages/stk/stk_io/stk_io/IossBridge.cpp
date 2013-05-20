@@ -1199,7 +1199,7 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
   for(size_t i=0; i<num_sides; ++i) {
 
     const mesh::Entity side = sides[i] ;
-    mesh::Entity const *side_elem = bulk_data.begin_element_entities(side);
+    mesh::Entity const *side_elem = bulk_data.begin_elements(side);
     mesh::ConnectivityOrdinal const *side_ordinal = bulk_data.begin_element_ordinals(side);
 
     // Which element to use?
@@ -1345,7 +1345,7 @@ void output_element_block(Ioss::ElementBlock *block,
 
     elem_ids.push_back(bulk.identifier(elements[i]));
 
-    stk::mesh::Entity const * elem_nodes = bulk.begin_node_entities(elements[i]);
+    stk::mesh::Entity const * elem_nodes = bulk.begin_nodes(elements[i]);
 
     for (size_t j = 0; j < nodes_per_elem; ++j) {
       connectivity.push_back(bulk.identifier(elem_nodes[j]));

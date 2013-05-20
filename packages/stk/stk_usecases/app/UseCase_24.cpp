@@ -316,10 +316,10 @@ void use_case_24_boundary_algorithm(
 
       for ( int i = 0 ; i < number ; ++i ) {
 
-        mesh::Entity const *face_elem = faceBucket.begin_element_entities(i);
+        mesh::Entity const *face_elem = faceBucket.begin_elements(i);
         int num_face_elems = faceBucket.num_elements(i);
         mesh::ConnectivityOrdinal const *face_elem_ordinal = faceBucket.begin_element_ordinals(i);
-        mesh::Entity const *face_nodes = faceBucket.begin_node_entities(i);
+        mesh::Entity const *face_nodes = faceBucket.begin_nodes(i);
         int num_face_nodes = faceBucket.num_nodes(i);
 
         if ( num_face_elems != 1 ) {
@@ -410,7 +410,7 @@ void use_case_24_boundary_algorithm(
           //================================================
 
 
-          mesh::Entity const *elem_nodes = bulkData.begin_node_entities(elem);
+          mesh::Entity const *elem_nodes = bulkData.begin_nodes(elem);
           int num_elem_nodes = bulkData.num_nodes(elem);
           const int localFaceNumber = face_elem_ordinal[0];
           const CellTopologyData *topo = mesh::get_cell_topology(elem_bucket).getCellTopologyData();

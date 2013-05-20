@@ -6,8 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-// dan is newb
-
 #include <stddef.h>
 #include <stdexcept>
 #include <iostream>
@@ -446,12 +444,12 @@ void Entity::set_relation_orientation(RelationIterator rel, unsigned orientation
     const unsigned ord  = rel->getOrdinal();
     BulkData& bulk      = BulkData::get(*this);
 
-    Entity const*              fwd_rels  = bulk.begin_entities(*this, meshObj.entity_rank());
+    Entity const*              fwd_rels  = bulk.begin(*this, meshObj.entity_rank());
     ConnectivityOrdinal const* fwd_ords  = bulk.begin_ordinals(*this, meshObj.entity_rank());
     Permutation *              fwd_perms = const_cast<Permutation*>(bulk.begin_permutations(*this, meshObj.entity_rank()));
     const int                  num_fwd   = bulk.num_connectivity(*this, meshObj.entity_rank());
 
-    Entity const*              back_rels  = bulk.begin_entities(meshObj, entity_rank());
+    Entity const*              back_rels  = bulk.begin(meshObj, entity_rank());
     ConnectivityOrdinal const* back_ords  = bulk.begin_ordinals(meshObj, entity_rank());
     Permutation *              back_perms = const_cast<Permutation*>(bulk.begin_permutations(meshObj, entity_rank()));
     const int                  num_back   = bulk.num_connectivity(meshObj,entity_rank());

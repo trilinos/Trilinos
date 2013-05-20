@@ -1831,7 +1831,7 @@ namespace stk {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
         //CellTopology cell_topo(cell_topo_data);
-        stk::mesh::Entity const * const elem_nodes = stk::mesh::BulkData::get(element).begin_node_entities(element);
+        stk::mesh::Entity const * const elem_nodes = stk::mesh::BulkData::get(element).begin_nodes(element);
         // const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
         const unsigned *  inodes = 0;

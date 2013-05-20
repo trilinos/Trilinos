@@ -45,7 +45,7 @@ namespace {
       {
         stk::mesh::Entity elem = elements[ielem];
         double * elem_weight = mesh.field_data( field , elem );
-        stk::mesh::Entity const * rel = mesh.begin_entities(elem, ranks[i] );
+        stk::mesh::Entity const * rel = mesh.begin(elem, ranks[i] );
         const unsigned num_entities = mesh.num_connectivity(elem, ranks[i] );
 
         for ( unsigned j = 0 ; j < num_entities ; ++j )

@@ -95,7 +95,7 @@ void separate_wedge(
     // entities cannot be taken along with the separated wedge. As a
     // simplification, we simply leave all the old nodes behind.
     ThrowAssert(static_cast<size_t>(fixture.bulk_data.num_nodes(wedge)) == num_nodes_per_wedge);
-    stk::mesh::Entity const *rel_nodes = fixture.bulk_data.begin_node_entities(wedge);
+    stk::mesh::Entity const *rel_nodes = fixture.bulk_data.begin_nodes(wedge);
 
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
       stk::mesh::Entity old_node = rel_nodes[i];
@@ -510,11 +510,11 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
         if (elem_node_disp) {
           const size_t num_nodes = b.num_nodes(i);
 
-          stk::mesh::Node const *node_rels_itr = b.begin_nodes(i);
-          stk::mesh::Node const *node_rels_end = b.end_nodes(i);
+          stk::mesh::Entity const *node_rels_itr = b.begin_nodes(i);
+          stk::mesh::Entity const *node_rels_end = b.end_nodes(i);
           for ( ; node_rels_itr != node_rels_end; ++node_rels_itr)
           {
-            const stk::mesh::Node node = *node_rels_itr;
+            const stk::mesh::Entity node = *node_rels_itr;
             double* node_disp = fixture.bulk_data.field_data(fixture.displacement_field, node);
             elem_node_disp[0] = node_disp[0];
             elem_node_disp[1] = node_disp[1];

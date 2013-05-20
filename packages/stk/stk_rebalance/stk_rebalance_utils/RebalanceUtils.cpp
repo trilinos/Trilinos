@@ -78,8 +78,8 @@ bool stk::rebalance::verify_dependent_ownership( const mesh::BulkData & bulk_dat
     stk::mesh::Entity entity = entities[i];
     int owner_proc = bulk_data.parallel_owner_rank(entity);
 
-    stk::mesh::Entity const *rels_j = bulk_data.begin_entities(entity, parent_rank);
-    stk::mesh::Entity const *rels_e = bulk_data.end_entities(entity, parent_rank);
+    stk::mesh::Entity const *rels_j = bulk_data.begin(entity, parent_rank);
+    stk::mesh::Entity const *rels_e = bulk_data.end(entity, parent_rank);
 
     for ( ; rels_j != rels_e; ++rels_j)
     {

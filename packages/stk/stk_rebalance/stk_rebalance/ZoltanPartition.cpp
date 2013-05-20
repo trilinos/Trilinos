@@ -373,14 +373,14 @@ void getNeighbors( const mesh::BulkData& mesh, const mesh::Entity entity,
 {
   nodes_out.clear();
 
-  mesh::Entity const *elems_i = mesh.begin_element_entities(entity);
-  mesh::Entity const *elems_e = mesh.end_element_entities(entity);
+  mesh::Entity const *elems_i = mesh.begin_elements(entity);
+  mesh::Entity const *elems_e = mesh.end_elements(entity);
 
   for ( ; elems_i != elems_e; ++elems_i)
   {
     mesh::Entity elem = *elems_i;
-    mesh::Entity const *nodes_i = mesh.begin_node_entities(elem);
-    mesh::Entity const *nodes_e = mesh.end_node_entities(elem);
+    mesh::Entity const *nodes_i = mesh.begin_nodes(elem);
+    mesh::Entity const *nodes_e = mesh.end_nodes(elem);
     for ( ; nodes_i != nodes_e; ++nodes_i)
     {
       if (entity != *nodes_i) nodes_out.insert( *nodes_i );

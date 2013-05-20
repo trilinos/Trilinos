@@ -244,26 +244,6 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
     STKUNIT_ASSERT_EQUAL( data_ptr_old[0], initial_value[0] );
     STKUNIT_ASSERT_EQUAL( data_ptr_old[1], initial_value[1] );
   }
-  {
-    {
-      double* data_ptr_new = mesh.field_data( vfield_new, node);
-      double* data_ptr_old = mesh.field_data( vfield_old, node);
-      data_ptr_old[0] = 25.0;
-      data_ptr_old[1] = 26.0;
-      data_ptr_new[0] = 27.0;
-      data_ptr_new[1] = 28.0;
-    }
-
-    stk::mesh::Node stk_node = mesh.get_node(node);
-    double* data_ptr_new = vfield_new[stk_node];
-    double* data_ptr_old = vfield_old[stk_node];
-
-    STKUNIT_ASSERT_EQUAL( data_ptr_new[0], 27.0 );
-    STKUNIT_ASSERT_EQUAL( data_ptr_new[1], 28.0 );
-
-    STKUNIT_ASSERT_EQUAL( data_ptr_old[0], 25.0 );
-    STKUNIT_ASSERT_EQUAL( data_ptr_old[1], 26.0 );
-  }
 }
 
 }

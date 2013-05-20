@@ -576,7 +576,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh,
              b_end  = part_buckets[i]->end();
     for(; b_iter != b_end; ++b_iter) {
       stk::mesh::Entity elem = *b_iter;
-      stk::mesh::Entity const *rel = mesh.begin_node_entities(elem);
+      stk::mesh::Entity const *rel = mesh.begin_nodes(elem);
       for(int j=0; j < num_nodes_per_elem; ++j) {
         node_ids[j] = mesh.identifier(rel[j]);
       }

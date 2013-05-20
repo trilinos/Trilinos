@@ -50,7 +50,7 @@ void destroy_entity_and_create_particles(
 
   if ( ! new_particles.empty() ) {
     // Get node relations
-    stk::mesh::Entity const * relations = fixture.m_bulk_data.begin_node_entities(elem);
+    stk::mesh::Entity const * relations = fixture.m_bulk_data.begin_nodes(elem);
 
     std::vector<stk::mesh::Part*> add_parts;
     add_parts.push_back(&skin_part);
@@ -76,7 +76,7 @@ void destroy_entity_and_create_particles(
     {
       --irank;
 
-      stk::mesh::Entity const * relations = fixture.m_bulk_data.begin_entities(elem, irank);
+      stk::mesh::Entity const * relations = fixture.m_bulk_data.begin(elem, irank);
       int num_rels = fixture.m_bulk_data.num_connectivity(elem, irank);
       for (int j = num_rels - 1; j >= 0; --j) {
         stk::mesh::Entity current_entity = relations[j];

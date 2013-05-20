@@ -309,7 +309,7 @@ void find_sides_to_be_created(
       //make sure the side does not already exist
       const int side_ordinal = outside.side_ordinal;
       const stk::mesh::Entity entity = outside.entity;
-      stk::mesh::Entity const *existing_sides = mesh.begin_entities(entity, side_rank);
+      stk::mesh::Entity const *existing_sides = mesh.begin(entity, side_rank);
       int num_sides = mesh.num_connectivity(entity, side_rank);
       stk::mesh::ConnectivityOrdinal const *existing_side_ordinals = mesh.begin_ordinals(entity, side_rank);
 
@@ -372,8 +372,8 @@ void find_lower_rank_entities_to_kill(
           continue;
         }
 
-        stk::mesh::Entity const * relations_iter = mesh.begin_entities(entity, rank);
-        stk::mesh::Entity const * relations_end = mesh.end_entities(entity, rank);
+        stk::mesh::Entity const * relations_iter = mesh.begin(entity, rank);
+        stk::mesh::Entity const * relations_end = mesh.end(entity, rank);
 
         for (; relations_iter != relations_end && !found_live; ++relations_iter) {
 

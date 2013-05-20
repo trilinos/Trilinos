@@ -54,8 +54,8 @@ void get_entities_through_relations(
     std::vector<Entity>::const_iterator i = i_beg ;
     for ( ; i != i_end ; ++i )
     {
-      Entity const *irels_j = mesh.begin_entities(*i, erank);
-      Entity const *irels_end = mesh.end_entities(*i, erank);
+      Entity const *irels_j = mesh.begin(*i, erank);
+      Entity const *irels_end = mesh.end(*i, erank);
 
       while ( irels_j != irels_end && e != *irels_j) {
         ++irels_j ;
@@ -111,8 +111,8 @@ void get_entities_through_relations(
     std::vector<Entity>::const_iterator next_i = i + 1;
     for (EntityRank rank = stk::topology::BEGIN_RANK; rank < end_rank; ++rank)
     {
-      Entity const *rels_begin = ibucket.begin_entities(ibordinal, rank);
-      Entity const *rels_end = ibucket.end_entities(ibordinal, rank);
+      Entity const *rels_begin = ibucket.begin(ibordinal, rank);
+      Entity const *rels_end = ibucket.end(ibordinal, rank);
       get_entities_through_relations(mesh, rels_begin, rels_end, next_i, j,
                                      entities_related);
     }
@@ -131,8 +131,8 @@ void get_entities_through_relations(
           std::vector<Entity>::const_iterator i = entities.begin();
     const std::vector<Entity>::const_iterator j = entities.end();
 
-    Entity const *rels_begin = mesh.begin_entities(*i, entities_related_rank );
-    Entity const *rels_end = mesh.end_entities(*i, entities_related_rank );
+    Entity const *rels_begin = mesh.begin(*i, entities_related_rank );
+    Entity const *rels_end = mesh.end(*i, entities_related_rank );
     ++i;
     get_entities_through_relations(mesh, rels_begin, rels_end, i, j, entities_related);
   }
@@ -240,7 +240,7 @@ void induced_part_membership(const BulkData& mesh, const Entity entity ,
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
   {
     int num_rels = e_bucket.num_connectivity(e_ordinal, irank);
-    Entity const *rels = e_bucket.begin_entities(e_ordinal, irank);
+    Entity const *rels = e_bucket.begin(e_ordinal, irank);
     ConnectivityOrdinal const *ords = e_bucket.begin_ordinals(e_ordinal, irank);
     for (int j = 0; j < num_rels; ++j)
     {

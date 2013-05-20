@@ -57,8 +57,8 @@ void find_owned_nodes_with_relations_outside_closure(
              ++irank)
       {
         //loop over the relations and check to see if they are in the closure
-        stk::mesh::Entity const * relations_iter = mesh.begin_entities(node, irank);
-        stk::mesh::Entity const * relations_end = mesh.end_entities(node, irank);
+        stk::mesh::Entity const * relations_iter = mesh.begin(node, irank);
+        stk::mesh::Entity const * relations_end = mesh.end(node, irank);
 
         for (; relations_iter != relations_end; ++relations_iter) {
           stk::mesh::Entity current_entity = *relations_iter;
@@ -99,7 +99,7 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
       --irank;
 
       int num_rels = mesh.num_connectivity(entity, irank);
-      stk::mesh::Entity const * relations = mesh.begin_entities(entity, irank);
+      stk::mesh::Entity const * relations = mesh.begin(entity, irank);
       stk::mesh::ConnectivityOrdinal const *relation_ordinals = mesh.begin_ordinals(entity, irank);
       for (int j = num_rels - 1; j >= 0; --j)
       {

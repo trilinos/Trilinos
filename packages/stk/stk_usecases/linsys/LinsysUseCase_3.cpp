@@ -247,7 +247,7 @@ bool use_case_3_driver( MPI_Comm comm ,
           stk::mesh::Entity elem = *b_iter;
 
           int num_elem_nodes = mesh_bulk_data.num_nodes(elem);
-          stk::mesh::Entity const *elem_nodes = mesh_bulk_data.begin_node_entities(elem);
+          stk::mesh::Entity const *elem_nodes = mesh_bulk_data.begin_nodes(elem);
 
           for(int j=0; j < num_elem_nodes; ++j) {
             node_ids[j] = mesh_bulk_data.identifier(elem_nodes[j]);

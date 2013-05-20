@@ -163,7 +163,7 @@ void add_owned_sides_to_map(
     {
       // search through existing sides
       const int num_sides = mesh.num_connectivity(inside_entity, side_rank);
-      Entity const * existing_side = mesh.begin_entities(inside_entity, side_rank);
+      Entity const * existing_side = mesh.begin(inside_entity, side_rank);
       ConnectivityOrdinal const *existing_ords = mesh.begin_ordinals(inside_entity, side_rank);
       // See if we already have a side matching side_ordinal
       int i=0;
@@ -225,7 +225,7 @@ void add_non_owned_sides_to_map(
     {
       // search through existing sides
       const int num_sides = mesh.num_connectivity(inside_entity, side_rank);
-      Entity const * existing_entity = mesh.begin_entities(inside_entity, side_rank);
+      Entity const * existing_entity = mesh.begin(inside_entity, side_rank);
       ConnectivityOrdinal const *existing_ords = mesh.begin_ordinals(inside_entity, side_rank);
       // See if we already have a side matching side_ordinal
       int i=0;

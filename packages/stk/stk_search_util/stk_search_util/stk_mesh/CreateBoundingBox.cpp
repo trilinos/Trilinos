@@ -241,7 +241,7 @@ void build_axis_bbox(stk::mesh::Part &part,
     ct_assert(sizeof(domain.key.ident) >= sizeof(stk::mesh::EntityKey));
     domain.key.ident = bulk_data.entity_key(entities[i]);
 
-    stk::mesh::Node const * entity_nodes = bulk_data.begin_nodes(entities[i]);
+    stk::mesh::Entity const * entity_nodes = bulk_data.begin_nodes(entities[i]);
     assert(static_cast<int>(bulk_data.num_nodes(entities[i])) == nodes_per_entity);
 
     double *fld_data = (double*)bulk_data.field_data(*coordinates, entity_nodes[0]);
@@ -322,7 +322,7 @@ void build_cent_bbox(stk::mesh::Part &part,
     p.center[1] = 0;
     p.center[2] = 0;
 
-    stk::mesh::Node const *entity_nodes = bulk_data.begin_nodes(entities[i]);
+    stk::mesh::Entity const *entity_nodes = bulk_data.begin_nodes(entities[i]);
     const size_t nodes_per_entity = bulk_data.num_nodes(entities[i]);
     for (size_t j = 0; j < nodes_per_entity; ++j) {
       double *fld_data = (double*)bulk_data.field_data(*coordinates, entity_nodes[j]);

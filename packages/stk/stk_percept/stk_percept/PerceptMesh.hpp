@@ -842,13 +842,13 @@ namespace stk {
     public:
       MyPairIterRelation(PerceptMesh& eMesh, stk::mesh::Entity entity, stk::mesh::EntityRank entity_rank) :
         m_size ( eMesh.get_bulk_data()->num_connectivity(entity, entity_rank)),
-        m_entities ( eMesh.get_bulk_data()->begin_entities(entity, entity_rank) ),
+        m_entities ( eMesh.get_bulk_data()->begin(entity, entity_rank) ),
         m_ordinals ( eMesh.get_bulk_data()->begin_ordinals(entity, entity_rank) )
       {}
 
       MyPairIterRelation(const stk::mesh::BulkData& bulk_data, stk::mesh::Entity entity, stk::mesh::EntityRank entity_rank) :
         m_size ( bulk_data.num_connectivity(entity, entity_rank)),
-        m_entities ( bulk_data.begin_entities(entity, entity_rank) ),
+        m_entities ( bulk_data.begin(entity, entity_rank) ),
         m_ordinals ( bulk_data.begin_ordinals(entity, entity_rank) )
       {}
 
@@ -941,7 +941,7 @@ namespace stk {
           mesh::Entity elem = bucket[iElemInBucketOrd] ;
 
           if (0) std::cout << "elemOfBucket= " << elem << std::endl;
-          stk::mesh::Entity const* elem_nodes = bucket.begin_node_entities(elem.bucket_ordinal());
+          stk::mesh::Entity const* elem_nodes = bucket.begin_nodes(elem.bucket_ordinal());
 
           // FIXME: fill field data (node coordinates)
           for (unsigned iNodeOrd = 0; iNodeOrd < numNodes; iNodeOrd++)
@@ -977,7 +977,7 @@ namespace stk {
         }
       //std::cout << "element dataStride= " << dataStride << std::endl;
       const stk::mesh::BulkData & mesh = stk::mesh::BulkData::get(element);
-      stk::mesh::Entity const* element_nodes = mesh.begin_node_entities(element);
+      stk::mesh::Entity const* element_nodes = mesh.begin_nodes(element);
 
       unsigned numNodes = mesh.num_nodes(element);
 

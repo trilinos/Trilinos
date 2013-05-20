@@ -107,7 +107,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   if ( mesh.is_valid(old_node) && mesh.is_valid(right_element) )
   {
     size_t num_rels = mesh.num_elements(old_node);
-    stk::mesh::Entity const *rel_elems = mesh.begin_element_entities(old_node);
+    stk::mesh::Entity const *rel_elems = mesh.begin_elements(old_node);
     stk::mesh::ConnectivityOrdinal const *rel_ords = mesh.begin_element_ordinals(old_node);
     for (size_t i = 0; i < num_rels; ++i)
     {
@@ -149,7 +149,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   if ( mesh.is_valid(right_element) ) {
     int num_node_rels = mesh.num_nodes(right_element);
     STKUNIT_ASSERT_EQ(num_node_rels, 8);
-    stk::mesh::Entity new_node = mesh.begin_node_entities(right_element)[right_ordinal];
+    stk::mesh::Entity new_node = mesh.begin_nodes(right_element)[right_ordinal];
     STKUNIT_ASSERT(mesh.is_valid(new_node));
 
     STKUNIT_EXPECT_EQ ( mesh.identifier(new_node), new_node_id );

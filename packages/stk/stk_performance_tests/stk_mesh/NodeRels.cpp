@@ -44,8 +44,8 @@ size_t do_stk_node_rel_test(stk::mesh::BulkData& bulk)
     num_elems += b.size();
 
     for(size_t i=0; i<b.size(); ++i) {
-      Entity const *node_itr = b.begin_node_entities(i);
-      Entity const *nodes_end = b.end_node_entities(i);
+      Entity const *node_itr = b.begin_nodes(i);
+      Entity const *nodes_end = b.end_nodes(i);
 
       for (; node_itr != nodes_end; ++node_itr)
       {

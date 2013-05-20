@@ -30,8 +30,8 @@ void filter_superimposed_entities(const BulkData& mesh, const Entity entity, Ent
   // use this to check for superimposed entities
   EntityVector entity_nodes;
   entity_nodes.reserve(mesh.num_nodes(entity));
-  Entity const *rels_itr = mesh.begin_node_entities(entity);
-  Entity const *rels_end = mesh.end_node_entities(entity);
+  Entity const *rels_itr = mesh.begin_nodes(entity);
+  Entity const *rels_end = mesh.end_nodes(entity);
   for ( ; rels_itr != rels_end; ++rels_itr ) {
     entity_nodes.push_back(*rels_itr);
   }
@@ -59,7 +59,7 @@ void filter_superimposed_entities(const BulkData& mesh, const Entity entity, Ent
       ++itr;
     }
     else {
-      Entity const *node_rels = mesh.begin_node_entities(current_entity);
+      Entity const *node_rels = mesh.begin_nodes(current_entity);
       for (unsigned i = 0; i < num_node_rels; ++i)
       {
         current_nodes[i] = node_rels[i];

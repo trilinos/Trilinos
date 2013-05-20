@@ -85,8 +85,8 @@ void donate_one_element( BulkData & mesh , bool aura )
   Entity node = mesh.get_entity(node_key);
   STKUNIT_ASSERT( mesh.is_valid(node) );
 
-  Entity const *node_elems_i = mesh.begin_element_entities(node);
-  Entity const *node_elems_e = mesh.end_element_entities(node);
+  Entity const *node_elems_i = mesh.begin_elements(node);
+  Entity const *node_elems_e = mesh.end_elements(node);
   for ( ; (node_elems_i != node_elems_e) && !mesh.is_valid(elem); ++node_elems_i)
   {
     elem = *node_elems_i;
@@ -104,8 +104,8 @@ void donate_one_element( BulkData & mesh , bool aura )
     entry.second = mesh.entity_comm_sharing(mesh.entity_key(node))[0].proc;
     change.push_back( entry );
 
-    Entity const *elem_nodes_i = mesh.begin_node_entities(elem);
-    Entity const *elem_nodes_e = mesh.end_node_entities(elem);
+    Entity const *elem_nodes_i = mesh.begin_nodes(elem);
+    Entity const *elem_nodes_e = mesh.end_nodes(elem);
     for ( ; elem_nodes_i != elem_nodes_e; ++elem_nodes_i)
     {
       if ( mesh.parallel_owner_rank(*elem_nodes_i) == p_rank ) {
@@ -821,7 +821,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
 
   // get one of the nodes related to this element
   STKUNIT_ASSERT(bulk.num_nodes(element) > 0);
-  stk::mesh::Entity node = *bulk.begin_node_entities(element);
+  stk::mesh::Entity node = *bulk.begin_nodes(element);
   STKUNIT_ASSERT_EQUAL( bulk.entity_rank(node), (unsigned) stk::mesh::BaseEntityRank );
 
   // make a modification to the node by changing its parts
@@ -1059,8 +1059,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     const stk::mesh::EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
     for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
     {
-      stk::mesh::Entity const *to_i = mesh.begin_entities(changing_elem, irank);
-      stk::mesh::Entity const *to_e = mesh.end_entities(changing_elem, irank);
+      stk::mesh::Entity const *to_i = mesh.begin(changing_elem, irank);
+      stk::mesh::Entity const *to_e = mesh.end(changing_elem, irank);
       for ( ; to_i != to_e; ++to_i)
       {
         if (mesh.parallel_owner_rank(*to_i) == p_rank)
@@ -1281,8 +1281,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
       {
         for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
         {
-          stk::mesh::Entity const *to_i = mesh.begin_entities(node, irank);
-          stk::mesh::Entity const *to_e = mesh.end_entities(node, irank);
+          stk::mesh::Entity const *to_i = mesh.begin(node, irank);
+          stk::mesh::Entity const *to_e = mesh.end(node, irank);
           for (; to_i != to_e; ++to_i)
           {
             std::cout << "P[" << p_rank << "] rel = " << mesh.parallel_owner_rank(*to_i) << std::endl;
@@ -1313,8 +1313,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
       {
         for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
         {
-          stk::mesh::Entity const *to_i = mesh.begin_entities(node, irank);
-          stk::mesh::Entity const *to_e = mesh.end_entities(node, irank);
+          stk::mesh::Entity const *to_i = mesh.begin(node, irank);
+          stk::mesh::Entity const *to_e = mesh.end(node, irank);
           for (; to_i != to_e; ++to_i)
           {
             std::cout << "P[" << p_rank << "] node " << mesh.identifier(node) << " own= "

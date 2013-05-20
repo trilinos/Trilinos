@@ -768,7 +768,7 @@ namespace stk {
         {
           out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: \n";
 
-          stk::mesh::Entity const * const elem_nodes = bulk_data.begin_node_entities(entity);
+          stk::mesh::Entity const * const elem_nodes = bulk_data.begin_nodes(entity);
           unsigned num_node = bulk_data.num_nodes(entity);
           std::vector<double> min(fieldStride, 1e+30);
           std::vector<double> max(fieldStride, -1e+30);
@@ -841,7 +841,7 @@ namespace stk {
                     continue;
                   }
 
-                  stk::mesh::Entity const * const family_tree_relations = bulk_data.begin_entities(entity, rank);
+                  stk::mesh::Entity const * const family_tree_relations = bulk_data.begin(entity, rank);
                   unsigned num_ftrs = bulk_data.num_connectivity(entity, rank);
                   if (num_ftrs) out << " |" << rank << "| ";
                   for (unsigned iftr=0; iftr < num_ftrs; iftr++)

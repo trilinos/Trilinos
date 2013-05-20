@@ -121,7 +121,7 @@ Entity declare_element_side(
 
   mesh.declare_relation( elem , side , local_side_id );
 
-  Entity const *elem_nodes = mesh.begin_node_entities(elem);
+  Entity const *elem_nodes = mesh.begin_nodes(elem);
 
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i )
   {
@@ -160,7 +160,7 @@ Entity declare_element_edge(
 
   mesh.declare_relation( elem , edge , local_edge_id );
 
-  Entity const *elem_nodes = mesh.begin_node_entities(elem);
+  Entity const *elem_nodes = mesh.begin_nodes(elem);
 
   for ( unsigned i = 0 ; i < edge_top->node_count ; ++i )
   {
@@ -258,7 +258,7 @@ const CellTopologyData * get_subcell_nodes(const BulkData& mesh, const Entity en
   const unsigned* subcell_node_local_ids =
     celltopology->subcell[subcell_rank][subcell_identifier].node;
 
-  Entity const *node_relations = mesh.begin_node_entities(entity);
+  Entity const *node_relations = mesh.begin_nodes(entity);
   subcell_nodes.reserve(num_nodes_in_subcell);
 
   for (int i = 0; i < num_nodes_in_subcell; ++i )
@@ -291,7 +291,7 @@ int get_entity_subcell_id( const BulkData& mesh,
   }
 
   // get nodal relations for entity
-  Entity const *node_rels = mesh.begin_node_entities(entity);
+  Entity const *node_rels = mesh.begin_nodes(entity);
   const int num_permutations = subcell_topology->permutation_count;
 
   // Iterate over the subcells of entity...

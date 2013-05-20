@@ -107,7 +107,7 @@ struct create_edge_impl
 
     for (size_t ielem=0, eelem=m_bucket.size(); ielem<eelem; ++ielem) {
       {
-        Entity const *nodes = m_bucket.begin_node_entities(ielem);
+        Entity const *nodes = m_bucket.begin_nodes(ielem);
         const int num_nodes = Topology::num_nodes;
         for (int n=0; n<num_nodes; ++n) {
           elem_nodes[n] = nodes[n];
@@ -116,7 +116,7 @@ struct create_edge_impl
 
       std::vector<bool> edge_exist(Topology::num_edges,false);
       const int num_edges = m_bucket.num_edges(ielem);
-      Entity const *edge_entity = m_bucket.begin_edge_entities(ielem);
+      Entity const *edge_entity = m_bucket.begin_edges(ielem);
       ConnectivityOrdinal const *edge_ords = m_bucket.begin_edge_ordinals(ielem);
       for (int i=0 ; i < num_edges ; ++i)
       {
@@ -208,7 +208,7 @@ struct connect_face_impl
 
     for (size_t iface=0, eface=m_bucket.size(); iface<eface; ++iface) {
       {
-        Entity const *nodes = m_bucket.begin_node_entities(iface);
+        Entity const *nodes = m_bucket.begin_nodes(iface);
         const int num_nodes = Topology::num_nodes;
         for (int n=0; n<num_nodes; ++n) {
           face_nodes[n] = nodes[n];
@@ -217,7 +217,7 @@ struct connect_face_impl
 
       std::vector<bool> edge_exist(Topology::num_edges,false);
       const int num_edges = m_bucket.num_edges(iface);
-      Entity const * edge_entity = m_bucket.begin_edge_entities(iface);
+      Entity const * edge_entity = m_bucket.begin_edges(iface);
       ConnectivityOrdinal const *edge_ords = m_bucket.begin_edge_ordinals(iface);
       for (int i=0 ; i < num_edges ; ++i)
       {
@@ -369,7 +369,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector )
 
           for (size_t j=0, je=b.size(); j<je; ++j) {
             Entity edge = b[j];
-            Entity const *nodes_rel = b.begin_node_entities(j);
+            Entity const *nodes_rel = b.begin_nodes(j);
 
             for (unsigned n=0; n<num_nodes; ++n) {
               edge_nodes[n] = nodes_rel[n];

@@ -216,42 +216,6 @@ enum ConnectivityType
   INVALID_CONNECTIVITY_TYPE
 };
 
-enum Node
-{
-  INVALID_NODE = ~0ULL
-};
-
-enum Edge
-{
-  INVALID_EDGE = ~0ULL
-};
-
-enum Face
-{
-  INVALID_FACE = ~0ULL
-};
-
-enum Element
-{
-  INVALID_ELEMENT = ~0ULL
-};
-
-enum FastIndex
-{
-  NUM_BUCKET_ORDINAL_BITS = 32ULL,
-  BUCKET_ORDINAL_MASK = ~0ULL >> (64 - NUM_BUCKET_ORDINAL_BITS),
-  INVALID_FAST_INDEX = ~0ULL
-};
-
-template <class RankType>
-RankType
-inline make_rank_id(unsigned bucket_id, unsigned bucket_ordinal)
-{
-  uint64_t val = bucket_id;
-  val = (val << NUM_BUCKET_ORDINAL_BITS) | bucket_ordinal;
-  return static_cast<RankType>(val);
-}
-
 #define EXTRACT_BUCKET_ID(idx) ((idx) >> NUM_BUCKET_ORDINAL_BITS)
 
 #define EXTRACT_BUCKET_ORDINAL(idx) ((idx) & BUCKET_ORDINAL_MASK)

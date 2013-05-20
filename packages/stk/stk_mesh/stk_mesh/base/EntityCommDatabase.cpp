@@ -39,8 +39,8 @@ bool in_owned_closure(const BulkData& mesh, const Entity entity , int proc )
     // Does entity have an upward relation to an entity owned by proc
     for (EntityRank irank = erank + 1; irank < end_rank && !result; ++irank)
     {
-      Entity const *irels_j = mesh.begin_entities(entity, irank);
-      Entity const *irels_e = mesh.end_entities(entity, irank);
+      Entity const *irels_j = mesh.begin(entity, irank);
+      Entity const *irels_e = mesh.end(entity, irank);
       for (; !result && (irels_j != irels_e); ++irels_j)
       {
         result = in_owned_closure(mesh, *irels_j, proc);
@@ -78,7 +78,7 @@ void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity enti
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
   {
     const unsigned nrel = bucket.num_connectivity(ebo, irank);
-    Entity const *rel_entities = bucket.begin_entities(ebo, irank);
+    Entity const *rel_entities = bucket.begin(ebo, irank);
     ConnectivityOrdinal const *rel_ordinals = bucket.begin_ordinals(ebo, irank);
     Permutation const *rel_permutations = bucket.begin_permutations(ebo, irank);
 

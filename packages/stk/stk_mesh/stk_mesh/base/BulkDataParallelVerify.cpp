@@ -465,8 +465,8 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
       if ( ! bad_key && ! bad_own && ! bad_comm && ! bad_part )
       {
         EntityRank irank = stk::topology::BEGIN_RANK;
-        Entity const *rels_itr = bucket.begin_entities(bucket_ordinal, irank);
-        Entity const *rels_end = bucket.end_entities(bucket_ordinal, irank);
+        Entity const *rels_itr = bucket.begin(bucket_ordinal, irank);
+        Entity const *rels_end = bucket.end(bucket_ordinal, irank);
         ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
         Permutation const *perms_itr = bucket.begin_permutations(bucket_ordinal, irank);
 
@@ -480,8 +480,8 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
             // There are no more relations of the current, so try the next
             // higher rank if there is one.
             ++irank;
-            rels_itr = bucket.begin_entities(bucket_ordinal, irank);
-            rels_end = bucket.end_entities(bucket_ordinal, irank);
+            rels_itr = bucket.begin(bucket_ordinal, irank);
+            rels_end = bucket.end(bucket_ordinal, irank);
             ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
             perms_itr = bucket.begin_permutations(bucket_ordinal, irank);
           }
@@ -559,8 +559,8 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
           for (EntityRank irank = stk::topology::BEGIN_RANK;
                 irank < erank; ++irank)
           {
-            Entity const *ir_itr = bucket.begin_entities(bucket_ordinal, irank);
-            Entity const *ir_end = bucket.end_entities(bucket_ordinal, irank);
+            Entity const *ir_itr = bucket.begin(bucket_ordinal, irank);
+            Entity const *ir_end = bucket.end(bucket_ordinal, irank);
             for ( ; ir_itr != ir_end; ++ir_itr ) {
               error_log << " " << *ir_itr ;
             }

@@ -89,14 +89,14 @@ STKUNIT_UNIT_TEST( UnitTestGloballyShared, keyhole_3x1 )
     // Verify global sharing of edges on element_1 and element_3
     // element_1:  edge_1 should be globally shared
     // element_3:  edge_3 should be globally shared
-    stk::mesh::Entity const* element_1_edge_relations = mesh.begin_edge_entities(element_1);
+    stk::mesh::Entity const* element_1_edge_relations = mesh.begin_edges(element_1);
     const int num_element_1_edges = mesh.num_edges(element_1);
     STKUNIT_ASSERT_EQUAL( 4, num_element_1_edges );
     Entity element_1_edge_1 = element_1_edge_relations[1];
     STKUNIT_ASSERT_TRUE( element_1_edge_1.is_valid() );
     STKUNIT_EXPECT_TRUE( mesh.in_shared(element_1_edge_1.key()) );
 
-    stk::mesh::Entity const* element_3_edge_relations = mesh.begin_edge_entities(element_3);
+    stk::mesh::Entity const* element_3_edge_relations = mesh.begin_edges(element_3);
     const int num_element_3_edges = mesh.num_edges(element_3);
     STKUNIT_ASSERT_EQUAL( 4, num_element_3_edges );
     Entity element_3_edge_3 = element_3_edge_relations[3];
@@ -117,7 +117,7 @@ STKUNIT_UNIT_TEST( UnitTestGloballyShared, keyhole_3x1 )
     // Verify global sharing of edges on element_2
     // element_2:  edge_0 and edge_2 should _not be_ globally shared
     //             edge_1 and edge_3 should _be_ globally shared
-    stk::mesh::Entity const* element_2_edge_relations = mesh.begin_edge_entities(element_2);
+    stk::mesh::Entity const* element_2_edge_relations = mesh.begin_edges(element_2);
     const int num_element_2_edges = mesh.num_edges(element_2);
     STKUNIT_ASSERT_EQUAL( 4, num_element_2_edges );
 

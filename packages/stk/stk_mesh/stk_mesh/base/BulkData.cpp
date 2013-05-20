@@ -110,7 +110,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 #ifdef SIERRA_MIGRATION
                     , bool add_fmwk_data
 #endif
-                    , bool maintain_fast_indices
                     , ConnectivityMap* connectivity_map
                     )
   : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
@@ -137,7 +136,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_fmwk_bulk_ptr(NULL),
     m_check_invalid_rels(true),
 #endif
-    m_maintain_fast_indices(maintain_fast_indices),
     m_num_fields(-1), // meta data not necessarily committed yet
     m_mesh_indexes(),
     m_entity_keys(),
@@ -324,8 +322,8 @@ void BulkData::modified(Entity entity)
         irank > rank_of_original_entity;
         --irank)
   {
-    Entity const *rels_i = begin_entities(entity, irank);
-    Entity const *rels_e = end_entities(entity, irank);
+    Entity const *rels_i = begin(entity, irank);
+    Entity const *rels_e = end(entity, irank);
     for (; rels_i != rels_e; ++rels_i)
     {
       Entity other_entity = *rels_i;
@@ -366,20 +364,26 @@ bool BulkData::has_no_relations(Entity entity) const
 
 unsigned BulkData::count_valid_connectivity(Entity entity, EntityRank rank) const
 {
-  m_check_invalid_rels = false;
-  Entity const *rel_iter = begin_entities(entity, rank);
-  Entity const *rel_end = end_entities(entity, rank);
-  m_check_invalid_rels = true;
+  if (bucket(entity).connectivity_type(rank) == FIXED_CONNECTIVITY) {
 
-  unsigned count = 0;
-  for (; rel_iter != rel_end; ++rel_iter)
-  {
-    if (rel_iter->is_local_offset_valid())
+    m_check_invalid_rels = false;
+    Entity const *rel_iter = begin(entity, rank);
+    Entity const *rel_end = end(entity, rank);
+    m_check_invalid_rels = true;
+
+    unsigned count = 0;
+    for (; rel_iter != rel_end; ++rel_iter)
     {
-      ++count;
+      if (rel_iter->is_local_offset_valid())
+      {
+        ++count;
+      }
     }
+    return count;
   }
-  return count;
+  else {
+    return bucket(entity).num_connectivity(bucket_ordinal(entity), rank);
+  }
 }
 
 unsigned BulkData::count_valid_connectivity(Entity entity) const
@@ -591,7 +595,7 @@ bool BulkData::destroy_entity( Entity entity )
   for (EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
   {
     --irank;
-    Entity const *rel_entities = begin_entities(entity, irank);
+    Entity const *rel_entities = begin(entity, irank);
     ConnectivityOrdinal const *rel_ordinals = begin_ordinals(entity, irank);
     for (unsigned j = num_connectivity(entity, irank); j > 0u; )
     {
@@ -929,7 +933,6 @@ void BulkData::update_field_data_states()
       }
     }
   }
-  internal_update_fast_field_data(/* skip_onestate_fields */ true);
 }
 
 void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& id_map)
@@ -983,7 +986,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
         // Print connectivity
         for (size_t r = 0, re = rank_names.size(); r < re; ++r) {
           out << "        Connectivity to " << rank_names[r] << std::endl;
-          Entity const* entities = bucket->begin_entities(b_ord, r);
+          Entity const* entities = bucket->begin(b_ord, r);
           ConnectivityOrdinal const* ordinals = bucket->begin_ordinals(b_ord, r);
           const int num_conn         = bucket->num_connectivity(b_ord, r);
           for (int c_itr = 0; c_itr < num_conn; ++c_itr) {

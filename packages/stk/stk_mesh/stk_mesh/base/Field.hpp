@@ -146,21 +146,6 @@ public:
 
   virtual ~Field(){}
 
-  inline Scalar* operator[](Node node) const
-  {
-    return m_node_field[EXTRACT_BUCKET_ID(node)].data + m_node_field[EXTRACT_BUCKET_ID(node)].length * EXTRACT_BUCKET_ORDINAL(node);
-  }
-
-  virtual void update_node_field(unsigned bucket_id, unsigned length, void* data_ptr)
-  {
-    if (m_node_field.size() <= bucket_id) {
-      m_node_field.resize(bucket_id+1);
-    }
-
-    m_node_field[bucket_id].data = reinterpret_cast<Scalar*>(data_ptr);
-    m_node_field[bucket_id].length = length/sizeof(Scalar);
-  }
-
   virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const
   {
     const unsigned num_scalar_values = size_per_entity / sizeof(Scalar);
@@ -177,20 +162,10 @@ public:
 
 private:
 
-  struct ScalarView {
-    Scalar* data;
-    uint32_t length;
-    uint32_t unused;
-  };
-
-
 #ifndef DOXYGEN_COMPILE
-
   Field();
   Field( const Field & );
   Field & operator = ( const Field & );
-
-  std::vector<ScalarView> m_node_field; // This keeps "fast" pointers to the field data for every bucket
 #endif /* DOXYGEN_COMPILE */
 };
 

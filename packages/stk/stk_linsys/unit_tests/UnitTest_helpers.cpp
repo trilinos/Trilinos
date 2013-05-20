@@ -181,7 +181,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
     const stk::mesh::Bucket &bucket = *part_buckets[i];
     const stk::mesh::Ordinal num_elems = bucket.size();
     for(stk::mesh::Ordinal elem_i = 0; elem_i < num_elems; ++elem_i) {
-      stk::mesh::Entity const *elem_nodes = bucket.begin_node_entities(elem_i);
+      stk::mesh::Entity const *elem_nodes = bucket.begin_nodes(elem_i);
       const int num_elem_nodes = bucket.num_nodes(elem_i);
       for(int j = 0; j < num_elem_nodes; ++j) {
         node_ids[j] = mesh.identifier(elem_nodes[j]);
@@ -245,7 +245,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
     const stk::mesh::Bucket &bucket = *part_buckets[i];
     const stk::mesh::Ordinal num_elems = bucket.size();
     for(stk::mesh::Ordinal elem_i = 0; elem_i < num_elems; ++elem_i) {
-      stk::mesh::Entity const *elem_nodes = bucket.begin_node_entities(elem_i);
+      stk::mesh::Entity const *elem_nodes = bucket.begin_nodes(elem_i);
       const int num_elem_nodes = bucket.num_nodes(elem_i);
       for(int j = 0; j < num_elem_nodes; ++j) {
         node_ids[j] = mesh.identifier(elem_nodes[j]);

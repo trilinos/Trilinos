@@ -462,8 +462,8 @@ struct EntityRankLess
 
 size_t Bucket::get_others_begin_index(unsigned bucket_ordinal, EntityRank rank) const
 {
-  Entity const * const ents_begin = m_dynamic_other_connectivity.begin_entities(bucket_ordinal);
-  Entity const * const ents_end = m_dynamic_other_connectivity.end_entities(bucket_ordinal);
+  Entity const * const ents_begin = m_dynamic_other_connectivity.begin(bucket_ordinal);
+  Entity const * const ents_end = m_dynamic_other_connectivity.end(bucket_ordinal);
 
   EntityRankLess cmp = {&m_mesh};
   Entity const *probe = ents_begin;
@@ -474,8 +474,8 @@ size_t Bucket::get_others_begin_index(unsigned bucket_ordinal, EntityRank rank) 
 
 size_t Bucket::get_others_end_index(unsigned bucket_ordinal, EntityRank rank) const
 {
-  Entity const * const ents_begin = m_dynamic_other_connectivity.begin_entities(bucket_ordinal);
-  Entity const * const ents_end = m_dynamic_other_connectivity.end_entities(bucket_ordinal);
+  Entity const * const ents_begin = m_dynamic_other_connectivity.begin(bucket_ordinal);
+  Entity const * const ents_end = m_dynamic_other_connectivity.end(bucket_ordinal);
 
   EntityRankLess cmp = {&m_mesh};
   Entity const *probe = ents_begin;
@@ -486,8 +486,8 @@ size_t Bucket::get_others_end_index(unsigned bucket_ordinal, EntityRank rank) co
 
 size_t Bucket::get_others_index_count(unsigned bucket_ordinal, EntityRank rank) const
 {
-  Entity const * const ents_begin = m_dynamic_other_connectivity.begin_entities(bucket_ordinal);
-  Entity const * const ents_end = m_dynamic_other_connectivity.end_entities(bucket_ordinal);
+  Entity const * const ents_begin = m_dynamic_other_connectivity.begin(bucket_ordinal);
+  Entity const * const ents_end = m_dynamic_other_connectivity.end(bucket_ordinal);
 
   EntityRankLess cmp = {&m_mesh};
   Entity const *probe = ents_begin;

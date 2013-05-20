@@ -239,8 +239,8 @@ void UnitTestStkMeshSkinning::test_skinning()
   for (std::vector<stk::mesh::Entity>::const_iterator
        itr = skin_entities.begin(); itr != skin_entities.end(); ++itr)
   {
-    stk::mesh::Entity const *elem_itr = bulk_data.begin_element_entities(*itr);
-    stk::mesh::Entity const *elem_end = bulk_data.end_element_entities(*itr);
+    stk::mesh::Entity const *elem_itr = bulk_data.begin_elements(*itr);
+    stk::mesh::Entity const *elem_end = bulk_data.end_elements(*itr);
     bool has_multiple = bulk_data.num_elements(*itr) > 1;
     std::set<unsigned> sharing_elements;
     for ( ; elem_itr != elem_end ; ++elem_itr )

@@ -319,8 +319,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   mesh.modification_end();
   {
     STKUNIT_EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 2u);
-    stk::mesh::Entity const * const beg_rank4s = mesh.begin_entities(elem, ext_ranks[0]);
-    stk::mesh::Entity const * const beg_rank5s = mesh.begin_entities(elem, ext_ranks[1]);
+    stk::mesh::Entity const * const beg_rank4s = mesh.begin(elem, ext_ranks[0]);
+    stk::mesh::Entity const * const beg_rank5s = mesh.begin(elem, ext_ranks[1]);
     STKUNIT_EXPECT_EQ(beg_rank4s + 2u, beg_rank5s);
     stk::mesh::ConnectivityOrdinal const * const rank5_ords = mesh.begin_ordinals(elem, ext_ranks[1]);
     STKUNIT_EXPECT_EQ(rank5_ords[1], ord_count);
@@ -349,8 +349,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   Entity ere_0_2 = mesh.declare_entity(ext_ranks[0], new_ent_id++, empty_parts);
   mesh.declare_relation(ere_0_2, elem, ++ord_count);
   {
-    stk::mesh::Entity const * const beg_rank4s = mesh.begin_entities(elem, ext_ranks[0]);
-    stk::mesh::Entity const * const beg_rank5s = mesh.begin_entities(elem, ext_ranks[1]);
+    stk::mesh::Entity const * const beg_rank4s = mesh.begin(elem, ext_ranks[0]);
+    stk::mesh::Entity const * const beg_rank5s = mesh.begin(elem, ext_ranks[1]);
     STKUNIT_EXPECT_EQ(beg_rank4s + 3u, beg_rank5s);
     stk::mesh::ConnectivityOrdinal const * const rank4_ords = mesh.begin_ordinals(elem, ext_ranks[0]);
     STKUNIT_EXPECT_EQ(rank4_ords[2], ord_count);
@@ -369,7 +369,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   {
     STKUNIT_EXPECT_EQ(mesh.num_connectivity(ere_2_0, ext_ranks[0]), 2u);
     STKUNIT_EXPECT_EQ(mesh.num_connectivity(ere_0_0, ext_ranks[2]), 1u);
-    stk::mesh::Entity const * const rel_2_0_entities = mesh.begin_entities(ere_2_0, ext_ranks[0]);
+    stk::mesh::Entity const * const rel_2_0_entities = mesh.begin(ere_2_0, ext_ranks[0]);
     STKUNIT_EXPECT_EQ(rel_2_0_entities[1], ere_0_1);
     stk::mesh::ConnectivityOrdinal const * const rel_2_1_ords = mesh.begin_ordinals(ere_2_0, ext_ranks[1]);
     STKUNIT_EXPECT_EQ(rel_2_1_ords[1], ord_count);

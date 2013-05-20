@@ -40,8 +40,8 @@ void construct_transitive_closure(const BulkData& mesh, std::set<Entity,EntityLe
     // insert entities with relations of lower rank into the closure
     for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
     {
-      Entity const *irels_j = mesh.begin_entities(entry, irank);
-      Entity const *irels_e = mesh.end_entities(entry, irank);
+      Entity const *irels_j = mesh.begin(entry, irank);
+      Entity const *irels_e = mesh.end(entry, irank);
       for (; irels_j != irels_e; ++irels_j)
       {
         if (mesh.is_valid(*irels_j)) {

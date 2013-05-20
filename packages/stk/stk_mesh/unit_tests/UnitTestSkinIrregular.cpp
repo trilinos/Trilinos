@@ -267,7 +267,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
       if ( bulk_data.is_valid(shell) )
       {
         STKUNIT_ASSERT_TRUE( bulk_data.num_connectivity(shell, side_rank) == 2);
-        stk::mesh::Entity const *side_entities_i = bulk_data.begin_entities(shell, side_rank);
+        stk::mesh::Entity const *side_entities_i = bulk_data.begin(shell, side_rank);
         stk::mesh::ConnectivityOrdinal const *side_ordinals_i = bulk_data.begin_ordinals(shell, side_rank);
 
         // verify that only one side has been created
@@ -302,7 +302,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
       if ( bulk_data.is_valid(shell) )
       {
         STKUNIT_ASSERT_EQ( bulk_data.num_connectivity(shell, side_rank), 2u);
-        stk::mesh::Entity const *side_entities_i = bulk_data.begin_entities(shell, side_rank);
+        stk::mesh::Entity const *side_entities_i = bulk_data.begin(shell, side_rank);
         stk::mesh::ConnectivityOrdinal const *side_ordinals_i = bulk_data.begin_ordinals(shell, side_rank);
 
         // verify that only one side has been created
@@ -641,7 +641,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
       if ( bulk_data.is_valid(shell) )
       {
         STKUNIT_EXPECT_EQ(bulk_data.num_connectivity(shell, side_rank), 1u);
-        stk::mesh::Entity side_entity = *bulk_data.begin_entities(shell, side_rank);
+        stk::mesh::Entity side_entity = *bulk_data.begin(shell, side_rank);
         stk::mesh::ConnectivityOrdinal side_ordinal = *bulk_data.begin_ordinals(shell, side_rank);
 
         // verify that only one side has been created

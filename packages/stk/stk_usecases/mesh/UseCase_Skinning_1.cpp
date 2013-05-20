@@ -91,8 +91,8 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
     //should have relations.size() == 4 and comm.size() == 0
     if (middle_element.is_valid() && middle_element.owner_rank() == mesh.parallel_rank()) {
 
-      stk::mesh::Entity const *rel_nodes_iter = mesh.begin_node_entities(middle_element);
-      stk::mesh::Entity const *rel_nodes_end = mesh.end_node_entities(middle_element);
+      stk::mesh::Entity const *rel_nodes_iter = mesh.begin_nodes(middle_element);
+      stk::mesh::Entity const *rel_nodes_end = mesh.end_nodes(middle_element);
 
       for (; rel_nodes_iter != rel_nodes_end; ++rel_nodes_iter) {
         stk::mesh::Entity current_node = *rel_nodes_iter;
