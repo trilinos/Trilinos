@@ -16,6 +16,7 @@ int test_cuda( comm::Machine machine , std::istream & input )
   unsigned elem_beg = 3 ;
   unsigned elem_end = 4 ;
   unsigned run = 1 ;
+  bool     ensemble = false ;
 
   while ( ! input.eof() ) {
     std::string which ;
@@ -30,6 +31,9 @@ int test_cuda( comm::Machine machine , std::istream & input )
       input >> elem_end ;
       input >> run ;
     }
+    else if ( which == std::string("ensemble") ) {
+      ensemble = true ;
+    }
     else {
       std::cerr << "Expected \"device #Device\" OR \"implicit #ElemBeg #ElemEnd #Run\""
                 << std::endl ;
@@ -43,8 +47,15 @@ int test_cuda( comm::Machine machine , std::istream & input )
 
   KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice( ( device + parallel_rank ) % device_count ) );
 
-  implicit_driver<double,KokkosArray::Cuda>( label.str().c_str() , machine , 1 ,
-                                             elem_beg , elem_end , run );
+  if ( ensemble ) {
+   implicit_driver< KokkosArray::Array<double,32> ,
+                     KokkosArray::Cuda>( label.str().c_str() , machine , 1 ,
+                                         elem_beg , elem_end , run );
+  }
+  else {
+    implicit_driver<double,KokkosArray::Cuda>( label.str().c_str() , machine , 1 ,
+                                               elem_beg , elem_end , run );
+  }
 
   KokkosArray::Cuda::finalize();
 

@@ -232,11 +232,14 @@ public:
     const int iRow = threadIdx.y + blockDim.y * blockIdx.x ;
 
     if ( threadIdx.x < N && iRow < m_y.dimension_0() ) {
+      const int iEntryBeg = m_A.graph.row_map(iRow);
       const int iEntryEnd = m_A.graph.row_map(iRow+1);
 
       OutputValueType y = 0 ;
 
-      for ( int iEntry = m_A.graph.row_map(iRow) ; iEntry < iEntryEnd ; ++iEntry ) {
+      for ( int iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
+        // m_A.graph.entries(iEntry) is read by the entire warp.
+        // ... Perhaps read the sequence to shared memory ?  Complexity of determining length, thread-sync ...
         y += m_A.values(iEntry,threadIdx.x) * m_x( m_A.graph.entries(iEntry) , threadIdx.x );
       }
 
@@ -252,11 +255,11 @@ public:
     : m_A( A ), m_x( x ), m_y( y )
   {
     enum { W = CudaTraits::WarpSize };
-    enum { NX = ( N + W - 1 ) / W };
-    enum { NY = NX < 4 ? 16 / NX : 1 };
+    enum { WX = ( N + W - 1 ) / W };
+    enum { WY = WX <= 8 ? 16 / WX : 1 };
 
-    const dim3 dBlock( W * NX , NY , 1 );
-    const dim3 dGrid( ( nRow + NY - 1 ) / NY , 1 , 1 );
+    const dim3 dBlock( W * WX , WY , 1 );
+    const dim3 dGrid( ( nRow + WY - 1 ) / WY , 1 , 1 );
 
     cuda_parallel_launch_local_memory< Multiply ><<< dGrid , dBlock >>>( *this );
   }
