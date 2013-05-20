@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Need Help?  Go to http://trilinos.sandia.gov/Trilinos10CMakeQuickstart.txt
+
+# Notes on the cmake variables
+#   - The NSSI team uses PGI compilers by default.  Mixing languages requires these flags - "-pgcpplibs -pgf90libs"
+#   - MPI details are in the toolchain file
+
+# Path to Trilinos source
+TRILINOS_SRCDIR=$HOME/projects/trilinos/src/trilinos
+TRIOS_SRCDIR=${TRILINOS_SRCDIR}/packages/trios
+
+# Load the appropriate bash environment
+source ${TRIOS_SRCDIR}/sampleScripts/config/redsky/loadenv.sh
+
+rm -f CMakeCache.txt
+
+
+EXTRA_ARGS=$@
+
+INSTALL_PATH=$HOME/projects/trilinos/install/${TARGET_COMPILER}
+
+cmake \
+\
+    -D CMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
+\
+    -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
+\
+    -D TPL_ENABLE_MPI:BOOL=ON \
+\
+    -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+    -D Trilinos_ENABLE_TESTS:BOOL=ON \
+\
+    -D Trilinos_ENABLE_Trios:BOOL=ON \
+    -D Trilinos_ENABLE_Triossupport:BOOL=ON \
+	-D Trilinos_ENABLE_Triosnnti:BOOL=ON \
+	-D Trilinos_ENABLE_Triosnssi:BOOL=ON \
+	-D Trilinos_ENABLE_Triosprograms:BOOL=ON \
+	-D Trilinos_ENABLE_Triostests:BOOL=ON \
+	-D Trilinos_ENABLE_Triosexamples:BOOL=ON \
+\
+    -D TPL_ENABLE_InfiniBand:BOOL=ON \
+    -D InfiniBand_INCLUDE_DIRS:FILEPATH="/usr/include/infiniband" \
+    -D InfiniBand_LIBRARY_DIRS:FILEPATH="/usr/lib64" \
+\
+    $EXTRA_ARGS \
+\
+    ${TRILINOS_SRCDIR}

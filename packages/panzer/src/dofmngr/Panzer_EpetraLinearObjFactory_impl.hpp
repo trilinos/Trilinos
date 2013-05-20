@@ -101,6 +101,17 @@ EpetraLinearObjFactory<Traits,LocalOrdinalT>::EpetraLinearObjFactory(const Teuch
 }
 
 template <typename Traits,typename LocalOrdinalT>
+EpetraLinearObjFactory<Traits,LocalOrdinalT>::EpetraLinearObjFactory(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider)
+   : comm_(Teuchos::null), gidProvider_(gidProvider), useDiscreteAdjoint_(false)
+{ 
+   hasColProvider_ = colGidProvider_!=Teuchos::null;
+
+   // build and register the gather/scatter evaluators with 
+   // the base class.
+   this->buildGatherScatterEvaluators(*this);
+}
+
+template <typename Traits,typename LocalOrdinalT>
 EpetraLinearObjFactory<Traits,LocalOrdinalT>::~EpetraLinearObjFactory()
 { }
 

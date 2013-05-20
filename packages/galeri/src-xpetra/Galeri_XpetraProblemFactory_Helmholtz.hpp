@@ -52,7 +52,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Assert.hpp"
 
-#include "Galeri_StencilProblems.hpp"
 #include "Galeri_StencilProblems_Helmholtz.hpp"
 #include "Galeri_HelmholtzFEM2DProblem.hpp"
 #include "Galeri_HelmholtzFEM3DProblem.hpp"
@@ -66,19 +65,10 @@ namespace Galeri {
     using Teuchos::RCP;
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-    RCP<Problem<Map,Matrix,MultiVector> > BuildProblem(const std::string &MatrixType, const RCP<const Map>& map, Teuchos::ParameterList& list) {
-      RCP<Problem<Map,Matrix,MultiVector> > P;
+    RCP<Problem_Helmholtz<Map,Matrix,MultiVector> > BuildProblem_Helmholtz(const std::string &MatrixType, const RCP<const Map>& map, Teuchos::ParameterList& list) {
+      RCP<Problem_Helmholtz<Map,Matrix,MultiVector> > P;
 
-      if      (MatrixType == "Laplace1D")
-        P.reset(new Laplace1DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
-
-      else if (MatrixType == "Laplace2D")
-        P.reset(new Laplace2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
-
-      else if (MatrixType == "Laplace3D")
-        P.reset(new Laplace3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
-
-      else if (MatrixType == "Helmholtz1D")
+      if (MatrixType == "Helmholtz1D")
         P.reset(new Helmholtz1DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
 
       else if (MatrixType == "Helmholtz2D")

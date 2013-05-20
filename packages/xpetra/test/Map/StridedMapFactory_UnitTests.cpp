@@ -123,44 +123,47 @@ namespace {
     //const int myImageID = comm->getRank();
 
 #ifdef HAVE_XPETRA_EPETRA
-    GO offset = 111;
+    for (int indexBase = 0; indexBase < 2; indexBase++) {
 
-    // constructor calls: (num global elements, index base)
-    global_size_t numGlobalElements = 120 * numImages;
-    size_t numLocalElements = 120;
-    std::vector<size_t> stridedInfo;
-    stridedInfo.push_back(3);
-    stridedInfo.push_back(4);
-    stridedInfo.push_back(5);
+      GO offset = 111;
 
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
+      // constructor calls: (num global elements, index base)
+      global_size_t numGlobalElements = 120 * numImages;
+      size_t numLocalElements = 120;
+      std::vector<size_t> stridedInfo;
+      stridedInfo.push_back(3);
+      stridedInfo.push_back(4);
+      stridedInfo.push_back(5);
 
-    Teuchos::RCP<Xpetra::StridedMap<LO,GO,Node> > map = Xpetra::StridedMapFactory<LO,GO,Node>::Build(lib, numGlobalElements, 0, stridedInfo, comm, -1, offset);
+      Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
 
-    TEST_EQUALITY_CONST( map->getFixedBlockSize(), 12 );
-    TEST_EQUALITY_CONST( map->isStrided(), true );
-    TEST_EQUALITY_CONST( map->isBlocked(), true );
-    TEST_EQUALITY_CONST( map->getMinAllGlobalIndex(), offset );
-    TEST_EQUALITY_CONST( map->getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 1);
-    TEST_EQUALITY_CONST( map->isContiguous(), false);
-    TEST_EQUALITY_CONST( map->getNodeNumElements() % 12 , 0);
+      Teuchos::RCP<Xpetra::StridedMap<LO,GO,Node> > map = Xpetra::StridedMapFactory<LO,GO,Node>::Build(lib, numGlobalElements, indexBase, stridedInfo, comm, -1, offset);
 
-    Teuchos::RCP<Xpetra::StridedEpetraMap> emap = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(map);
-    TEST_EQUALITY_CONST( emap != Teuchos::null , true);
+      TEST_EQUALITY_CONST( map->getFixedBlockSize(), 12 );
+      TEST_EQUALITY_CONST( map->isStrided(), true );
+      TEST_EQUALITY_CONST( map->isBlocked(), true );
+      TEST_EQUALITY_CONST( map->getMinAllGlobalIndex(), indexBase + offset );
+      TEST_EQUALITY_CONST( map->getMaxAllGlobalIndex(), indexBase + offset + Teuchos::as<GO>(numGlobalElements) - 1);
+      TEST_EQUALITY_CONST( map->isContiguous(), false);
+      TEST_EQUALITY_CONST( map->getNodeNumElements() % 12 , 0);
 
-    Teuchos::RCP<Xpetra::StridedEpetraMap> emap2 = Teuchos::null;
-    for(size_t k=0; k<stridedInfo.size(); k++) {
-      Teuchos::RCP<Xpetra::StridedMap<LO,GO,Node> > map2 = Xpetra::StridedMapFactory<LO,GO,Node>::Build(lib, numGlobalElements, 0, stridedInfo, comm, k, offset);
-      TEST_EQUALITY_CONST( map2->getFixedBlockSize(), 12 );
-      TEST_EQUALITY_CONST( map2->isStrided(), true );
-      TEST_EQUALITY_CONST( map2->isBlocked(), true );
-      TEST_EQUALITY_CONST( map2->isContiguous(), false);
-      TEST_EQUALITY_CONST( map2->getNodeNumElements() % stridedInfo[k] , 0);
-      TEST_EQUALITY_CONST( map2->getNodeNumElements(), numLocalElements / map2->getFixedBlockSize() * stridedInfo[k] );
-      emap2 = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(map2);
-      TEST_EQUALITY_CONST( emap2 != Teuchos::null , true);
+      Teuchos::RCP<Xpetra::StridedEpetraMap> emap = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(map);
+      TEST_EQUALITY_CONST( emap != Teuchos::null , true);
+
+      Teuchos::RCP<Xpetra::StridedEpetraMap> emap2 = Teuchos::null;
+      for(size_t k=0; k<stridedInfo.size(); k++) {
+        Teuchos::RCP<Xpetra::StridedMap<LO,GO,Node> > map2 = Xpetra::StridedMapFactory<LO,GO,Node>::Build(lib, numGlobalElements, indexBase, stridedInfo, comm, k, offset);
+        TEST_EQUALITY_CONST( map2->getFixedBlockSize(), 12 );
+        TEST_EQUALITY_CONST( map2->isStrided(), true );
+        TEST_EQUALITY_CONST( map2->isBlocked(), true );
+        TEST_EQUALITY_CONST( map2->isContiguous(), false);
+        TEST_EQUALITY_CONST( map2->getNodeNumElements() % stridedInfo[k] , 0);
+        TEST_EQUALITY_CONST( map2->getNodeNumElements(), numLocalElements / map2->getFixedBlockSize() * stridedInfo[k] );
+        emap2 = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(map2);
+        TEST_EQUALITY_CONST( emap2 != Teuchos::null , true);
+      }
+
     }
-
 #endif
   }
 
@@ -173,44 +176,45 @@ namespace {
     //const int myImageID = comm->getRank();
 
 #ifdef HAVE_XPETRA_TPETRA
-    GO offset = 111;
+    for (int indexBase = 0; indexBase < 2; indexBase++) {
+      GO offset = 111;
 
-    // constructor calls: (num global elements, index base)
-    global_size_t numGlobalElements = 120 * numImages;
-    size_t numLocalElements = 120;
-    std::vector<size_t> stridedInfo;
-    stridedInfo.push_back(3);
-    stridedInfo.push_back(4);
-    stridedInfo.push_back(5);
+      // constructor calls: (num global elements, index base)
+      global_size_t numGlobalElements = 120 * numImages;
+      size_t numLocalElements = 120;
+      std::vector<size_t> stridedInfo;
+      stridedInfo.push_back(3);
+      stridedInfo.push_back(4);
+      stridedInfo.push_back(5);
 
-    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
+      Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
 
-    Teuchos::RCP<Xpetra::StridedMap<LO,GO,Node> > map = Xpetra::StridedMapFactory<LO,GO,Node>::Build(lib, numGlobalElements, 0, stridedInfo, comm, -1, offset);
+      Teuchos::RCP<Xpetra::StridedMap<LO,GO,Node> > map = Xpetra::StridedMapFactory<LO,GO,Node>::Build(lib, numGlobalElements, indexBase, stridedInfo, comm, -1, offset);
 
-    TEST_EQUALITY_CONST( map->getFixedBlockSize(), 12 );
-    TEST_EQUALITY_CONST( map->isStrided(), true );
-    TEST_EQUALITY_CONST( map->isBlocked(), true );
-    TEST_EQUALITY_CONST( map->getMinAllGlobalIndex(), offset );
-    TEST_EQUALITY_CONST( map->getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 1);
-    TEST_EQUALITY_CONST( map->isContiguous(), false);
-    TEST_EQUALITY_CONST( map->getNodeNumElements() % 12 , 0);
+      TEST_EQUALITY_CONST( map->getFixedBlockSize(), 12 );
+      TEST_EQUALITY_CONST( map->isStrided(), true );
+      TEST_EQUALITY_CONST( map->isBlocked(), true );
+      TEST_EQUALITY_CONST( map->getMinAllGlobalIndex(), indexBase + offset );
+      TEST_EQUALITY_CONST( map->getMaxAllGlobalIndex(), indexBase + offset + Teuchos::as<GO>(numGlobalElements) - 1);
+      TEST_EQUALITY_CONST( map->isContiguous(), false);
+      TEST_EQUALITY_CONST( map->getNodeNumElements() % 12 , 0);
 
-    Teuchos::RCP<Xpetra::StridedTpetraMap<LO,GO,Node> > tmap = Teuchos::rcp_dynamic_cast<Xpetra::StridedTpetraMap<LO,GO,Node> >(map);
-    TEST_EQUALITY_CONST( tmap != Teuchos::null , true);
+      Teuchos::RCP<Xpetra::StridedTpetraMap<LO,GO,Node> > tmap = Teuchos::rcp_dynamic_cast<Xpetra::StridedTpetraMap<LO,GO,Node> >(map);
+      TEST_EQUALITY_CONST( tmap != Teuchos::null , true);
 
-    Teuchos::RCP<Xpetra::StridedTpetraMap<LO,GO,Node> > tmap2 = Teuchos::null;
-    for(size_t k=0; k<stridedInfo.size(); k++) {
-      Teuchos::RCP<Xpetra::StridedMap<LO,GO,Node> > map2 = Xpetra::StridedMapFactory<LO,GO,Node>::Build(lib, numGlobalElements, 0, stridedInfo, comm, k, offset);
-      TEST_EQUALITY_CONST( map2->getFixedBlockSize(), 12 );
-      TEST_EQUALITY_CONST( map2->isStrided(), true );
-      TEST_EQUALITY_CONST( map2->isBlocked(), true );
-      TEST_EQUALITY_CONST( map2->isContiguous(), false);
-      TEST_EQUALITY_CONST( map2->getNodeNumElements() % stridedInfo[k] , 0);
-      TEST_EQUALITY_CONST( map2->getNodeNumElements(), numLocalElements / map2->getFixedBlockSize() * stridedInfo[k] );
-      tmap2 = Teuchos::rcp_dynamic_cast<Xpetra::StridedTpetraMap<LO,GO,Node> >(map);
-      TEST_EQUALITY_CONST( tmap2 != Teuchos::null , true);
+      Teuchos::RCP<Xpetra::StridedTpetraMap<LO,GO,Node> > tmap2 = Teuchos::null;
+      for(size_t k=0; k<stridedInfo.size(); k++) {
+        Teuchos::RCP<Xpetra::StridedMap<LO,GO,Node> > map2 = Xpetra::StridedMapFactory<LO,GO,Node>::Build(lib, numGlobalElements, indexBase, stridedInfo, comm, k, offset);
+        TEST_EQUALITY_CONST( map2->getFixedBlockSize(), 12 );
+        TEST_EQUALITY_CONST( map2->isStrided(), true );
+        TEST_EQUALITY_CONST( map2->isBlocked(), true );
+        TEST_EQUALITY_CONST( map2->isContiguous(), false);
+        TEST_EQUALITY_CONST( map2->getNodeNumElements() % stridedInfo[k] , 0);
+        TEST_EQUALITY_CONST( map2->getNodeNumElements(), numLocalElements / map2->getFixedBlockSize() * stridedInfo[k] );
+        tmap2 = Teuchos::rcp_dynamic_cast<Xpetra::StridedTpetraMap<LO,GO,Node> >(map);
+        TEST_EQUALITY_CONST( tmap2 != Teuchos::null , true);
+      }
     }
-
 #endif
   }
 

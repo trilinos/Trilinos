@@ -661,7 +661,7 @@ C) Configuring (Makefile Generator)
  
        -D Boost_INCLUDE_DIRS:PATH=/usr/local/boost/include
 
-      <TPLNAME>_LIBRARY_NAMES:STRING: List of unadorned library names,
+    <TPLNAME>_LIBRARY_NAMES:STRING: List of unadorned library names,
       in the order of the link line.  The platform-specific prefixes
       (e.g.. 'lib') and postfixes (e.g. '.a', '.lib', or '.dll') will be
       added automatically.

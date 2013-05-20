@@ -48,7 +48,15 @@
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"
 
-#include "Tpetra_HashTable.hpp"
+// mfh 27 Apr 2013: If HAVE_TPETRA_FIXED_HASH_TABLE is defined (which
+// it is by default), then Map will used the fixed-structure hash
+// table variant for global-to-local index lookups.  Otherwise, it
+// will use the dynamic-structure hash table variant.
+
+#ifndef HAVE_TPETRA_FIXED_HASH_TABLE
+#  define HAVE_TPETRA_FIXED_HASH_TABLE 1
+#endif // HAVE_TPETRA_FIXED_HASH_TABLE
+
 /// \file Tpetra_Map_decl.hpp
 /// \brief Declarations for the Tpetra::Map class and related nonmember constructors.
 ///
@@ -57,7 +65,19 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // Forward declaration of Directory.
   template <class LO, class GO, class N> class Directory;
-#endif
+
+#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
+  namespace Details {
+    template<class GlobalOrdinal, class LocalOrdinal>
+    class FixedHashTable;
+  } // namespace Details
+#  else
+  namespace Details {
+    template<class GlobalOrdinal, class LocalOrdinal>
+    class HashTable;
+  } // namespace Details
+#  endif // HAVE_TPETRA_FIXED_HASH_TABLE
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class Map
   /// \brief Describes a parallel distribution of objects over processes.
@@ -480,10 +500,13 @@ namespace Tpetra {
     /// \brief True if and only if \c map is compatible with this Map.
     ///
     /// Two Maps are "compatible" if all of the following are true:
-    /// 1. They have the same global number of elements.
-    /// 2. They have the same number of local elements on each process.
     ///
-    /// Determining #2 requires communication (a reduction over this
+    /// 1. Their communicators have the same numbers of processes.
+    ///    (This is necessary even to call this method.)
+    /// 2. They have the same global number of elements.
+    /// 3. They have the same number of local elements on each process.
+    ///
+    /// Determining #3 requires communication (a reduction over this
     /// Map's communicator).  This method assumes that the input Map
     /// is valid on all processes in this Map's communicator.
     ///
@@ -493,45 +516,29 @@ namespace Tpetra {
     /// compatible, then it is legal to assign X to Y or to assign Y
     /// to X.
     ///
-    /// Notes for Tpetra developers:
-    ///
     /// If the input Map and this Map have different communicators,
-    /// the behavior of this method is currently undefined.  In
-    /// general, Tpetra currently assumes that if users instigate
-    /// interactions between Tpetra objects, then those Tpetra objects
-    /// have the same communicator.  Also, defining semantics of
-    /// interaction between Tpetra objects with different
-    /// communicators may be tricky.  It seems like two Maps could be
-    /// compatible even if they had different communicators, as long
-    /// as their communicators have the same number of processes.
-    /// Could two Maps with different communicators be the same (in
-    /// the sense of \c isSameAs())?  It's not clear.
-    ///
-    /// Checking whether two communicators are the same would require
-    /// extending Teuchos::Comm to provide a comparison operator.
-    /// This could be implemented for MPI communicators by returning
-    /// \c true if \c MPI_Comm_compare() returns \c MPI_IDENT, and \c
-    /// false otherwise.  (Presumably, \c MPI_Comm_compare() works
-    /// even if the two communicators have different process counts;
-    /// the MPI 2.2 standard doesn't say otherwise.)  All serial
-    /// communicators have the same context and contain the same
-    /// number of processes, so all serial communicators are equal.
+    /// the behavior of this method is currently undefined if the two
+    /// communicators have different numbers of processes.
     bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     /// \brief True if and only if \c map is identical to this Map.
     ///
     /// "Identical" is stronger than "compatible."  Two Maps are
     /// identical if all of the following are true:
-    /// 1. They have the same min and max global indices.
-    /// 2. They have the same global number of elements.
-    /// 3. They are either both distributed, or both not distributed.
-    /// 4. Their index bases are the same.
-    /// 5. They have the same number of local elements on each process.
-    /// 6. They have the same global indices on each process.
     ///
-    /// #2 and #5 are exactly "compatibility" (see \c isCompatible()).
-    /// Thus, "identical" includes, but is stronger than,
-    /// "compatible."
+    /// 1. Their communicators are <i>congruent</i> (have the same
+    ///    number of processes, in the same order: this corresponds to
+    ///    the \c MPI_IDENT or \c MPI_CONGRUENT return values of
+    ///    MPI_Comm_compare).
+    /// 2. They have the same min and max global indices.
+    /// 3. They have the same global number of elements.
+    /// 4. They are either both distributed, or both not distributed.
+    /// 5. Their index bases are the same.
+    /// 6. They have the same number of local elements on each process.
+    /// 7. They have the same global indices on each process.
+    ///
+    /// "Identical" (isSameAs()) includes and is stronger than
+    /// "compatible" (isCompatible()).
     ///
     /// A Map corresponds to a block permutation over process ranks
     /// and global element indices.  Two Maps with different numbers
@@ -539,15 +546,13 @@ namespace Tpetra {
     /// alone identical.  Two identical Maps correspond to the same
     /// permutation.
     ///
-    /// Notes for Tpetra developers:
-    ///
     /// If the input Map and this Map have different communicators,
-    /// the behavior of this method is currently undefined.  See
-    /// further notes on \c isCompatible().
+    /// the behavior of this method is undefined if the two
+    /// communicators have different numbers of processes.
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     //@}
-    //! Accessors for the \c Teuchos::Comm and Kokkos Node objects.
+    //! Accessors for the Teuchos::Comm and Kokkos Node objects.
     //@{
 
     //! Get this Map's Comm object.
@@ -753,8 +758,13 @@ namespace Tpetra {
     /// describe(), may invoke \c getNodeElementList().
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
 
+#ifdef HAVE_TPETRA_FIXED_HASH_TABLE
+    //! Type of the table that maps global IDs to local IDs.
+    typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
+#else
     //! Type of the table that maps global IDs to local IDs.
     typedef Details::HashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
+#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
     /// \brief A mapping from global IDs to local IDs.
     ///

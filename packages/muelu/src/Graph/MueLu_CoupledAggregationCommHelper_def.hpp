@@ -112,41 +112,41 @@ namespace MueLu {
     }
 #endif
 
-    if (perturb)
-      {
-        if (perturbWt_ == Teuchos::null || !perturbWt_->getMap()->isSameAs(*weightMap)) {
-          perturbWt_ = VectorFactory::Build(weightMap,false); //no need to zero out because this will be randomized
+    if (perturb) {
+      if (perturbWt_ == Teuchos::null || !perturbWt_->getMap()->isSameAs(*weightMap)) {
+        perturbWt_ = VectorFactory::Build(weightMap,false); //no need to zero out because this will be randomized
 
-          // Modify seed of the random algorithm used by perturbWt_->randomize()
-          {
-            ST::seedrandom(static_cast<unsigned int>(MyPid*2 + (int) (11*ST::random())));
-            for (int i = 0; i < 10; ++i) ST::random();
-            perturbWt_->setSeed(static_cast<unsigned int>(ST::random()));
-          }
-          perturbWt_->randomize();
-          ArrayRCP<SC> lperturbWt = perturbWt_->getDataNonConst(0);
-          for (size_t i=0; i < nodeNumElements; ++i)
-            lperturbWt[i] = 1e-7*fabs(lperturbWt[i]); //FIXME this won't work for general SC
-#ifdef COMPARE_IN_OUT_VECTORS
-          ArrayRCP<SC> locperturbWt = perturbWt_->getDataNonConst(0);
-          for (size_t i=0; i < nodeNumElements; ++i)
-            printf("perturbWt[%d] = %15.10e\n",i,locperturbWt[i]);
-#endif
-        } //if (perturbWt_ == Teuchos::null || ...
-
-        ArrayRCP<SC> weight = weight_.getDataNonConst(0); // TODO: const?
-        ArrayRCP<SC> perturbWt = perturbWt_->getDataNonConst(0);
-
-        // Note: maxValue() not available for Tpetra
-        //SC largestGlobalWeight = weight_.maxValue();
-        SC largestGlobalWeight = weight_.normInf();
-        for (size_t i=0; i < nodeNumElements; ++i) {
-          if (weight[i] != 0.) {
-            weight[i] += largestGlobalWeight*perturbWt[i];
-          }
+        // Modify seed of the random algorithm used by perturbWt_->randomize()
+        {
+          ST::seedrandom( Teuchos::as<unsigned int>(MyPid*47) );
+          for (int i = 0; i < 10; ++i) ST::random();
         }
-        //TODO is it necessary to return the *perturbed* weights?
-      } //if (perturb)
+        //Note that we must not use perturbWt_->randomize().  This produces the same
+        //local random vector on each processor.  The whole point of the weights
+        //is to provide tie-breaking that isn't based on the highest PID.
+        ArrayRCP<SC> lperturbWt = perturbWt_->getDataNonConst(0);
+        for (size_t i=0; i < nodeNumElements; ++i)
+          lperturbWt[i] = 1e-7*fabs(ST::random()); //FIXME this won't work for general SC
+#ifdef COMPARE_IN_OUT_VECTORS
+        ArrayRCP<SC> locperturbWt = perturbWt_->getDataNonConst(0);
+        for (size_t i=0; i < nodeNumElements; ++i)
+          printf("perturbWt[%d] = %15.10e\n",i,locperturbWt[i]);
+#endif
+      } //if (perturbWt_ == Teuchos::null || ...
+
+      ArrayRCP<SC> weight = weight_.getDataNonConst(0); // TODO: const?
+      ArrayRCP<SC> perturbWt = perturbWt_->getDataNonConst(0);
+
+      // Note: maxValue() not available for Tpetra
+      //SC largestGlobalWeight = weight_.maxValue();
+      SC largestGlobalWeight = weight_.normInf();
+      for (size_t i=0; i < nodeNumElements; ++i) {
+        if (weight[i] != 0.) {
+          weight[i] += largestGlobalWeight*perturbWt[i];
+        }
+      }
+      //TODO is it necessary to return the *perturbed* weights?
+    } //if (perturb)
 
     // Communicate weights and store results in PostComm (which will be copied
     // back into weights later. When multiple processors have different weights

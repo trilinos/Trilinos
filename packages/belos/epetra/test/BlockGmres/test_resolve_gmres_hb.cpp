@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
   // Get the number of iterations for this solve.
   //
   numIters = solver->getNumIters();
-  std::cout << "Number of iterations performed for this solve (manager reset): " << numIters << std::endl;
+  std::cout << "Number of iterations performed for this solve (manager reset(Belos::Problem)): " << numIters << std::endl;
 
   if (ret!=Belos::Converged) {
     if (proc_verbose)
@@ -219,7 +219,50 @@ int main(int argc, char *argv[]) {
   MVT::MvNorm( resid, actual_resids2 );
   MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
-    std::cout<< "---------- Actual Residuals (manager reset) ----------"<<std::endl<<std::endl;
+    std::cout<< "---------- Actual Residuals (manager reset(Belos::Problem)) ----------"<<std::endl<<std::endl;
+    for ( int i=0; i<numrhs; i++) {
+      std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
+      if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) { 
+        badRes = true;
+      }
+    }
+  }
+  //
+  // -----------------------------------------------------------------
+  // Resolve the first problem by resetting the linear problem.
+  // -----------------------------------------------------------------
+  X->PutScalar( 0.0 );
+  set = problem.setProblem();
+  if (set == false) {
+    if (proc_verbose)
+      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+    return -1;
+  }
+  solver->setProblem( rcp(&problem,false) );
+  //
+  // Perform solve (again)
+  //
+  ret = solver->solve();
+  //
+  // Get the number of iterations for this solve.
+  //
+  numIters = solver->getNumIters();
+  std::cout << "Number of iterations performed for this solve (manager setProblem()): " << numIters << std::endl;
+
+  if (ret!=Belos::Converged) {
+    if (proc_verbose)
+      std::cout << "End Result: TEST FAILED" << std::endl;
+    return -1;
+  }
+  //
+  // Compute actual residuals.
+  //
+  OPT::Apply( *A, *X, resid );
+  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
+  MVT::MvNorm( resid, actual_resids2 );
+  MVT::MvNorm( *B, rhs_norm );
+  if (proc_verbose) {
+    std::cout<< "---------- Actual Residuals (manager setProblem()) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {
       std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
       if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) { 

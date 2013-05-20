@@ -698,34 +698,60 @@ namespace Tpetra {
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
     void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
-    /// \brief Scale the current values of a multi-vector, this = alpha*this.
+    /// \brief Scale in place: <tt>this = alpha*this</tt>.
     ///
+    /// Replace this MultiVector with alpha times this MultiVector.
     /// This method will always multiply, even if alpha is zero.  That
     /// means, for example, that if \c *this contains NaN entries
     /// before calling this method, the NaN entries will remain after
     /// this method finishes.
-    void scale(const Scalar &alpha);
+    void scale (const Scalar &alpha);
 
-    /// \brief Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+    /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
     ///
-    /// This method will always multiply, even if all the entries of
-    /// alpha are zero.  That means, for example, that if \c *this
-    /// contains NaN entries before calling this method, the NaN
-    /// entries will remain after this method finishes.
-    void scale(Teuchos::ArrayView<const Scalar> alpha);
+    /// Replace each column j of this MultiVector with
+    /// <tt>alpha[j]</tt> times the current column j of this
+    /// MultiVector.  This method will always multiply, even if all
+    /// the entries of alpha are zero.  That means, for example, that
+    /// if \c *this contains NaN entries before calling this method,
+    /// the NaN entries will remain after this method finishes.
+    void scale (Teuchos::ArrayView<const Scalar> alpha);
 
-    //! Replace multi-vector values with scaled values of A, this = alpha*A.
-    void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
-
-    /// \brief Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
+    /// \brief Scale in place: <tt>this = alpha * A</tt>.
     ///
-    /// If beta is zero, overwrite \c *this unconditionally, even if it contains NaN entries.
-    void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta);
+    /// Replace this MultiVector with scaled values of A.  This method
+    /// will always multiply, even if alpha is zero.  That means, for
+    /// example, that if \c *this contains NaN entries before calling
+    /// this method, the NaN entries will remain after this method
+    /// finishes.  It is legal for the input A to alias this
+    /// MultiVector.
+    void
+    scale (const Scalar& alpha,
+           const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A);
 
-    /// \brief Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
+    /// \brief Update: <tt>this = beta*this + alpha*A</tt>.
     ///
-    /// If gamma is zero, overwrite \c *this unconditionally, even if it contains NaN entries.
-    void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma);
+    /// Update this MultiVector with scaled values of A.  If beta is
+    /// zero, overwrite \c *this unconditionally, even if it contains
+    /// NaN entries.  It is legal for the input A to alias this
+    /// MultiVector.
+    void
+    update (const Scalar& alpha,
+            const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+            const Scalar& beta);
+
+    /// \brief Update: <tt>this = gamma*this + alpha*A + beta*B</tt>.
+    ///
+    /// Update this MultiVector with scaled values of A and B.  If
+    /// gamma is zero, overwrite \c *this unconditionally, even if it
+    /// contains NaN entries.  It is legal for the inputs A or B to
+    /// alias this MultiVector.
+    void
+    update (const Scalar& alpha,
+            const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+            const Scalar& beta,
+            const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
+            const Scalar& gamma);
 
     //! Compute 1-norm of each vector in multi-vector.
     void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
@@ -806,7 +832,7 @@ namespace Tpetra {
     //@{
 
     //! A simple one-line description of this object.
-    std::string description() const;
+    virtual std::string description() const;
 
     /// \brief Print the object with the given verbosity level to a FancyOStream.
     ///
@@ -836,10 +862,10 @@ namespace Tpetra {
     ///   part of the multivector.  This will print out as many rows
     ///   of data as the global number of rows in the multivector, so
     ///   beware.
-    void
+    virtual void
     describe (Teuchos::FancyOStream& out,
-              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const;
     //@}
 
     /// \brief Remove processes owning zero rows from the Map and their communicator.
@@ -955,7 +981,7 @@ namespace Tpetra {
 
     /// \brief Whether data redistribution between \c sourceObj and this object is legal.
     ///
-    /// This method is called in \c DistObject::doTransfer() to check
+    /// This method is called in DistObject::doTransfer() to check
     /// whether data redistribution between the two objects is legal.
     bool
     checkSizes (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj);
@@ -965,6 +991,9 @@ namespace Tpetra {
                     size_t numSameIDs,
                     const ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const ArrayView<const LocalOrdinal>& permuteFromLIDs);
+
+    //! Number of packets to send per LID
+    virtual size_t constantNumberOfPackets () const;
 
     void
     packAndPrepare (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj,

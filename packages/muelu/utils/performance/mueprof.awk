@@ -12,7 +12,8 @@
 #stuff that happens before processing any files
 BEGIN {
     # regular expression for timing output
-    regex="[0-9]*[.][0-9e-]*";
+    #regex="[0-9]*[.][0-9e-]*";
+    regex="[0-9]+[.]?[0-9]*[e]?[-]?[0-9]* [(][0-9][)]";
     startParsingTimers=0;
 }
 
@@ -53,7 +54,7 @@ BEGIN {
           levelSpecific=1;
         }
       }
-      #get corresponding parent timer
+      #get corresponding parent timer 
       if (match($0,"Value: ") && levelSpecific) {
         startOfValue = RSTART+RLENGTH;
         match($0,"$");
@@ -75,7 +76,7 @@ BEGIN {
         pattern = substr($0,RSTART,RLENGTH);
         after = substr($0,RSTART+RLENGTH);
 
-        # totals, not level-specific
+        # totals, not level-specific 
         if (match($0,"[(]total[)]")) {
           tlabels[before] = before;
           ttallies[before,linalg[FILENAME]] = pattern;
@@ -103,7 +104,7 @@ BEGIN {
           #trim off white space before and after
           sub(/^[ ]*/,"",alltimes);
           sub(/[ ]*$/,"",alltimes);
-          if (match(alltimes,/[0-9]+.[0-9]*[e]?[-]?[0-9]* [(]1[)]$/)) {
+          if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9]*\.?[0-9]*[)]$/)) {
             #print "  match found!\n"
             #before = substr(alltimes,1,RSTART-1);
             #remove trailing white space in variable "before"
@@ -116,7 +117,7 @@ BEGIN {
             #print "  " pattern
           }
           # get the max time
-          if (match(alltimes,/[0-9]+.[0-9]*[e]?[-]?[0-9]* [(]1[)][ ]*$/)) {
+          if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9][)][ ]*$/)) {
             themax = substr(alltimes,RSTART,RLENGTH);
             sub(/^[ ]*/,"",themax); sub(/[ ]*$/,"",themax);
             #print "themax = " themax
@@ -141,9 +142,47 @@ BEGIN {
     }
 
     # Pull out the reported total setup time.  This is printed as a sanity check.
+    foundTotal=0;
     if (startParsingTimers && match($0,"^ScalingTest: 2 - MueLu Setup")) {
-      match($0,regex);
-      TotalSetup[linalg[FILENAME]] = substr($0,RSTART,RLENGTH);
+      foundTotal=1;
+      #match($0,regex);
+      #TotalSetup[linalg[FILENAME]] = substr($0,RSTART,RLENGTH);
+      alltimes = substr($0,RSTART+RLENGTH);
+      #trim off white space before and after
+      sub(/^[ ]*/,"",alltimes); sub(/[ ]*$/,"",alltimes);
+      #chop off the 4th time
+      if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9]*\.?[0-9]*[)]$/)) {
+        alltimes = substr(alltimes,1,RSTART-1);
+      }
+      #print ">"alltimes"<"
+      # get the max time
+      if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9][)][ ]*$/)) {
+        themax = substr(alltimes,RSTART,RLENGTH);
+        sub(/^[ ]*/,"",themax); sub(/[ ]*$/,"",themax);
+        TotalSetup[linalg[FILENAME]] = themax;
+      }
+    }
+    if (foundTotal==0) {
+      #TODO Code consolidation.
+      #TODO This duplicates the previous if-block.  Only the regex in the "if" is different.
+      if (startParsingTimers && match($0,"^MueLu: Hierarchy: Setup [(]total[)]")) {
+        #match($0,regex);
+        #TotalSetup[linalg[FILENAME]] = substr($0,RSTART,RLENGTH);
+        alltimes = substr($0,RSTART+RLENGTH);
+        #trim off white space before and after
+        sub(/^[ ]*/,"",alltimes); sub(/[ ]*$/,"",alltimes);
+        #chop off the 4th time
+        if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9]*\.?[0-9]*[)]$/)) {
+          alltimes = substr(alltimes,1,RSTART-1);
+        }
+        #print ">"alltimes"<"
+        # get the max time
+        if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9][)][ ]*$/)) {
+          themax = substr(alltimes,RSTART,RLENGTH);
+          sub(/^[ ]*/,"",themax); sub(/[ ]*$/,"",themax);
+          TotalSetup[linalg[FILENAME]] = themax;
+        }
+      }
     }
 }
 
@@ -278,9 +317,11 @@ function SortAndPrint(arrayToSort,labels,tallies,linalg)
 # For sanity purposes, print the total that MueLu prints
 function PrintTotalSetupTime()
 {
-  printf("%80s          ----------------------------------------------\n%100s"," "," ");
+  #printf("%80s          ----------------------------------------------\n%100s"," "," ");
+  printf("%80s          ----------------\n%83s"," "," ");
   for (i in linalg)
-    printf("%5.2f               ",TotalSetup[linalg[i]]);
+    printf("Hierarchy Setup: %5.2f seconds       ",TotalSetup[linalg[i]]);
+    #printf("%77s%-17s%-17s%-17s%-11s\n"," "," "," ","MueLu reported",TotalSetup[linalg[j]] " sec.");
 }
 ###############################################################################
 function CopyArray(arrayToCopy, copy_array)

@@ -64,88 +64,80 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename MultiVector>
     static Teuchos::RCP<MultiVector>
-    CreateCartesianCoordinates(std::string const &coordType, RCP<const Map> const & map, Teuchos::ParameterList& list)
-    {
+    CreateCartesianCoordinates(std::string const &coordType, RCP<const Map> const & map, Teuchos::ParameterList& list) {
       using Galeri::Xpetra::VectorTraits;
 
       Teuchos::RCP<MultiVector> coordinates;
 
+      GlobalOrdinal ix, iy, iz;
       Scalar delta_x, delta_y, delta_z;
 
-      Scalar one = (Scalar) 1.0;
-      Scalar lx = list.get<Scalar>("lx", one) * list.get<double>("stretchx", 1.0);
-      Scalar ly = list.get<Scalar>("ly", one) * list.get<double>("stretchy", 1.0);
-      Scalar lz = list.get<Scalar>("lz", one) * list.get<double>("stretchz", 1.0);
+      Scalar lx = Teuchos::as<Scalar>(list.get<double>("lx", 1) * list.get<double>("stretchx", 1));
+      Scalar ly = Teuchos::as<Scalar>(list.get<double>("ly", 1) * list.get<double>("stretchy", 1));
+      Scalar lz = Teuchos::as<Scalar>(list.get<double>("lz", 1) * list.get<double>("stretchz", 1));
 
       GlobalOrdinal nx = list.get<GlobalOrdinal>("nx", -1);
       GlobalOrdinal ny = list.get<GlobalOrdinal>("ny", -1);
       GlobalOrdinal nz = list.get<GlobalOrdinal>("nz", -1);
 
-      GlobalOrdinal ix, iy, iz;
 
-      LocalOrdinal NumMyElements = map->getNodeNumElements();
+      size_t NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
 
       if (coordType == "1D") {
-        coordinates = VectorTraits<Map,MultiVector>::Build(map,1,false);
+        coordinates = VectorTraits<Map,MultiVector>::Build(map, 1, false);
         Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(1);
         Coord[0] = coordinates->getDataNonConst(0);
 
-        delta_x = lx / ((Scalar)(nx - 1));
+        delta_x = lx / Teuchos::as<Scalar>(nx - 1);
 
-        for (LocalOrdinal i = 0; i < NumMyElements; ++i) {
+        for (size_t i = 0; i < NumMyElements; ++i) {
           ix = MyGlobalElements[i];
-          Coord[0][i] = delta_x * ((Scalar) ix);
+          Coord[0][i] = delta_x * Teuchos::as<Scalar>(ix);
         }
 
       } else if (coordType == "2D") {
-
-        coordinates = VectorTraits<Map,MultiVector>::Build(map,2,false);
+        coordinates = VectorTraits<Map,MultiVector>::Build(map, 2, false);
         Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(2);
         Coord[0] = coordinates->getDataNonConst(0);
         Coord[1] = coordinates->getDataNonConst(1);
 
-        delta_x = lx / ((Scalar)(nx - 1));
-        delta_y = ly / ((Scalar)(ny - 1));
+        delta_x = lx / Teuchos::as<Scalar>(nx - 1);
+        delta_y = ly / Teuchos::as<Scalar>(ny - 1);
 
-        for (LocalOrdinal i = 0; i < NumMyElements; ++i)
-        {
+        for (size_t i = 0; i < NumMyElements; ++i) {
           ix = MyGlobalElements[i] % nx;
           iy = (MyGlobalElements[i] - ix) / nx;
 
-          Coord[0][i] = delta_x * ((Scalar) ix);
-          Coord[1][i] = delta_y * ((Scalar) iy);
+          Coord[0][i] = delta_x * Teuchos::as<Scalar>(ix);
+          Coord[1][i] = delta_y * Teuchos::as<Scalar>(iy);
         }
 
       } else if (coordType == "3D") {
-
-        coordinates = VectorTraits<Map,MultiVector>::Build(map,3,false);
+        coordinates = VectorTraits<Map,MultiVector>::Build(map, 3, false);
         Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(3);
         Coord[0] = coordinates->getDataNonConst(0);
         Coord[1] = coordinates->getDataNonConst(1);
         Coord[2] = coordinates->getDataNonConst(2);
 
-        delta_x = lx / ((Scalar) (nx - 1));
-        delta_y = ly / ((Scalar) (ny - 1));
-        delta_z = lz / ((Scalar) (nz - 1));
+        delta_x = lx / Teuchos::as<Scalar>(nx - 1);
+        delta_y = ly / Teuchos::as<Scalar>(ny - 1);
+        delta_z = lz / Teuchos::as<Scalar>(nz - 1);
 
-        for (LocalOrdinal i = 0; i < NumMyElements; i++)
-        {
+        for (size_t i = 0; i < NumMyElements; i++) {
           GlobalOrdinal ixy = MyGlobalElements[i] % (nx * ny);
           iz = (MyGlobalElements[i] - ixy) / (nx * ny);
 
           ix = ixy % nx;
           iy = (ixy - ix) / nx;
 
-          Coord[0][i] = delta_x * ((Scalar) ix);
-          Coord[1][i] = delta_y * ((Scalar) iy);
-          Coord[2][i] = delta_z * ((Scalar) iz);
+          Coord[0][i] = delta_x * Teuchos::as<Scalar>(ix);
+          Coord[1][i] = delta_y * Teuchos::as<Scalar>(iy);
+          Coord[2][i] = delta_z * Teuchos::as<Scalar>(iz);
         }
 
       } else {
-
         throw(std::runtime_error("in Galeri::Xpetra::Utils : `coordType' has incorrect value (" + coordType + ")"));
-
       } //if (coordType == ...
 
       return coordinates;
@@ -157,7 +149,7 @@ namespace Galeri {
       GlobalOrdinal start, end;
       GlobalOrdinal xpid = i % M;
 
-      GlobalOrdinal PerProcSmallXDir = (GlobalOrdinal) (((double) N)/((double) M));
+      GlobalOrdinal PerProcSmallXDir = Teuchos::as<GlobalOrdinal>(Teuchos::as<double>(N)/Teuchos::as<double>(M));
       GlobalOrdinal NBigXDir         = N - PerProcSmallXDir*M;
 
       if (xpid < NBigXDir) start =                                        xpid*(PerProcSmallXDir+1);

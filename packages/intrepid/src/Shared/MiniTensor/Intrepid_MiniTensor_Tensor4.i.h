@@ -46,43 +46,201 @@ namespace Intrepid
 {
 
 //
-// R^N 4th-order tensor transpose
-// per Holzapfel 1.157
+// 4th-order tensor default constructor
 //
 template<typename T>
-inline Tensor4<T> transpose(Tensor4<T> const & A)
+inline
+Tensor4<T>::Tensor4() :
+TensorBase<T>::TensorBase()
 {
-  Index const N = A.get_dimension();
+  return;
+}
 
-  Tensor4<T> B(N);
+//
+// 4th-order tensor constructor with NaNs
+//
+template<typename T>
+inline
+Tensor4<T>::Tensor4(Index const dimension) :
+TensorBase<T>::TensorBase(dimension, order)
+{
+  return;
+}
 
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
-      for (Index k = 0; k < N; ++k) {
-        for (Index l = 0; l < N; ++l) {
-          B(i, j, k, l) = A(k, l, i, j);
-        }
-      }
-    }
-  }
+//
+// 4th-order tensor constructor with a specified value
+//
+template<typename T>
+inline
+Tensor4<T>::Tensor4(Index const dimension, ComponentValue value) :
+TensorBase<T>::TensorBase(dimension, order, value)
+{
+  return;
+}
+
+//
+// 4th-order tensor constructor with a scalar
+//
+template<typename T>
+inline
+Tensor4<T>::Tensor4(Index const dimension, T const & s) :
+TensorBase<T>::TensorBase(dimension, order, s)
+{
+  return;
+}
+
+//
+//  Create 4th-order tensor from array
+//
+template<typename T>
+inline
+Tensor4<T>::Tensor4(Index const dimension, T const * data_ptr) :
+TensorBase<T>::TensorBase(dimension, order, data_ptr)
+{
+  return;
+}
+
+//
+// Copy constructor
+//
+template<typename T>
+inline
+Tensor4<T>::Tensor4(Tensor4<T> const & A) :
+TensorBase<T>::TensorBase(A)
+{
+  return;
+}
+
+//
+// 4th-order tensor simple destructor
+//
+template<typename T>
+inline
+Tensor4<T>::~Tensor4()
+{
+  return;
+}
+
+//
+// 4th-order tensor addition
+//
+template<typename S, typename T>
+inline
+Tensor4<typename Promote<S, T>::type>
+operator+(Tensor4<S> const & A, Tensor4<T> const & B)
+{
+  Tensor4<typename Promote<S, T>::type>
+  C;
+
+  add(A, B, C);
+
+  return C;
+}
+
+//
+// 4th-order tensor subtraction
+//
+template<typename S, typename T>
+inline
+Tensor4<typename Promote<S, T>::type>
+operator-(Tensor4<S> const & A, Tensor4<T> const & B)
+{
+  Tensor4<typename Promote<S, T>::type>
+  C;
+
+  subtract(A, B, C);
+
+  return C;
+}
+
+//
+// 4th-order tensor minus
+//
+template<typename T>
+inline
+Tensor4<T>
+operator-(Tensor4<T> const & A)
+{
+  Tensor4<T>
+  B;
+
+  minus(A, B);
 
   return B;
 }
 
 //
-// Dimension
-// \return dimension
+// 4th-order equality
 //
 template<typename T>
 inline
-Index
-Tensor4<T>::get_dimension() const
+bool
+operator==(Tensor4<T> const & A, Tensor4<T> const & B)
 {
-  return dimension;
+  return equal(A, B);
 }
 
 //
-// R^N indexing for constant 4th order tensor
+// 4th-order inequality
+//
+template<typename T>
+inline
+bool
+operator!=(Tensor4<T> const & A, Tensor4<T> const & B)
+{
+  return not_equal(A, B);
+}
+
+//
+// Scalar 4th-order tensor product
+//
+template<typename S, typename T>
+inline
+typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T> > >::type
+operator*(S const & s, Tensor4<T> const & A)
+{
+  Tensor4<typename Promote<S, T>::type>
+  B;
+
+  scale(A, s, B);
+
+  return B;
+}
+
+//
+// 4th-order tensor scalar product
+//
+template<typename S, typename T>
+inline
+typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T> > >::type
+operator*(Tensor4<T> const & A, S const & s)
+{
+  Tensor4<typename Promote<S, T>::type>
+  B;
+
+  scale(A, s, B);
+
+  return B;
+}
+
+//
+// 4th-order tensor scalar division
+//
+template<typename S, typename T>
+inline
+Tensor4<typename Promote<S, T>::type>
+operator/(Tensor4<T> const & A, S const & s)
+{
+  Tensor4<typename Promote<S, T>::type>
+  B;
+
+  divide(A, s, B);
+
+  return B;
+}
+
+//
+// Indexing for constant 4th order tensor
 // \param i index
 // \param j index
 // \param k index
@@ -94,19 +252,22 @@ T const &
 Tensor4<T>::operator()(
     Index const i, Index const j, Index const k, Index const l) const
 {
+  Tensor4<T> const &
+  self = (*this);
+
   Index const
-  N = get_dimension();
+  N = self.get_dimension();
 
   assert(i < N);
   assert(j < N);
   assert(k < N);
   assert(l < N);
 
-  return e[((i * N + j) * N + k) * N + l];
+  return self[((i * N + j) * N + k) * N + l];
 }
 
 //
-// R^N 4th-order tensor indexing
+// 4th-order tensor indexing
 // \param i index
 // \param j index
 // \param k index
@@ -118,41 +279,18 @@ T &
 Tensor4<T>::operator()(
     Index const i, Index const j, Index const k, Index const l)
 {
+  Tensor4<T> &
+  self = (*this);
+
   Index const
-  N = get_dimension();
+  N = self.get_dimension();
 
   assert(i < N);
   assert(j < N);
   assert(k < N);
   assert(l < N);
 
-  return e[((i * N + j) * N + k) * N + l];
-}
-
-//
-// Linear access to components
-// \param i the index
-//
-template<typename T>
-inline
-T const &
-Tensor4<T>::operator[](Index const i) const
-{
-  assert(i < integer_power(get_dimension(), order()));
-  return e[i];
-}
-
-//
-// Linear access to components
-// \param i the index
-//
-template<typename T>
-inline
-T &
-Tensor4<T>::operator[](Index const i)
-{
-  assert(i < integer_power(get_dimension(), order()));
-  return e[i];
+  return self[((i * N + j) * N + k) * N + l];
 }
 
 } // namespace Intrepid

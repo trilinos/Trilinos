@@ -107,7 +107,7 @@ namespace MueLu {
     //! Indicate that zero entries on the diagonal of Ac shall be repaired (i.e. if A(i,i) == 0.0 set A(i,i) = 1.0)
     void SetRepairZeroDiagonal(bool const &repairZeroDiagonals) {
       repairZeroDiagonals_ = repairZeroDiagonals;
-      if(repairZeroDiagonals_) checkAc_ = true; // make sure that plausibility check is performed. Otherwise SetRepairZeroDiagonal(true) has no effect.
+      if (repairZeroDiagonals_) checkAc_ = true; // make sure that plausibility check is performed. Otherwise SetRepairZeroDiagonal(true) has no effect.
     }
 
     //! Indicate that a simple plausibility check shall be done for Ac after building RAP
@@ -131,11 +131,6 @@ namespace MueLu {
     size_t NumTransferFactories() const { return transferFacts_.size(); }
 
     //@}
-
-    //! @name internal print methods.
-    static std::string PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag);
-
-    static std::string PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag);
 
   private:
 

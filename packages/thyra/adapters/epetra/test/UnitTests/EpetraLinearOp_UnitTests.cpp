@@ -46,6 +46,8 @@
 #include "Thyra_RowStatLinearOpBase.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "EpetraThyraAdaptersTestHelpers.hpp"
@@ -110,7 +112,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
   const RCP<VectorBase<double> > lhs_orig_vec =
     createMember<double>(epetraOp->range());
 
-  apply<double>(*epetraOp, NOTRANS, *rhs_vec, lhs_orig_vec.ptr());
+  apply<double>(*epetraOp, Thyra::NOTRANS, *rhs_vec, lhs_orig_vec.ptr());
 
   if (g_dumpAll) {
     out << "epetraOp = " << *epetraOp;

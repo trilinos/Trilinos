@@ -274,6 +274,10 @@ struct nssi_request_header {
      *        <em>\ref args_addr</em>. */
     bool fetch_args;
 
+    /** @brief A flag that tells the server to fetch bulk data from
+     *        <em>\ref data_addr</em>. */
+    bool fetch_data;
+
     /** @brief The remote memory address reserved for
      *        long arguments. */
     NNTI_buffer_t args_addr;

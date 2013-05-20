@@ -6,11 +6,11 @@ export PATH=/home/trilinos/tpl/gcc4.1.2/swig-2.0.0/bin:/home/trilinos/tpl/gcc4.1
 
 NETCDF_DIR=/home/trilinos/tpl/gcc4.1.2/netcdf_4.2
 BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost_1_49_0
-MPI4PY_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.2.2
+MPI4PY_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.3
 SCOTCH_DIR=/home/trilinos/tpl/gcc4.1.2/scotch_5.1
 PARMETIS_DIR=/home/trilinos/tpl/gcc4.1.2/ParMETIS3_1
 
-export PYTHONPATH="$MPI4PY_DIR:/home/trilinos/tpl/gcc4.1.2/numpy1.4.0/lib64/python2.4/site-packages"
+export PYTHONPATH="$MPI4PY_DIR/lib64/python:/home/trilinos/tpl/gcc4.1.2/numpy1.4.0/lib64/python2.4/site-packages"
 rm -f CMakeCache.txt
 
 cmake \
@@ -30,7 +30,7 @@ cmake \
 -D Boost_INCLUDE_DIRS=$BOOST_DIR \
 -D BoostLib_INCLUDE_DIRS=$BOOST_DIR/include \
 -D BoostLib_LIBRARY_DIRS=$BOOST_DIR/lib \
--D TPL_ENABLE_MATLAB=OFF \
+-D TPL_ENABLE_Matio=OFF \
 -D Trilinos_DATA_DIR:STRING=/home/bmpersc/nightly/TrilinosData \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \

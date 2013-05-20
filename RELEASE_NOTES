@@ -1,5 +1,97 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 11.2 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 11.2 general release contains 54 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
+Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards,
+ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra,
+Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra, Zoltan, Zoltan2.
+
+AztecOO
+
+  - Added support for 64-bit global indices.  They can be used if 64-bit based
+    Epetra maps are used.
+
+Epetra
+
+  - IndexBase argument for 64-bit maps is now a "long long". No change to
+    32-bit maps, where it remains an "int".
+
+NOX
+
+  - Added example of user defined preconditioner with a JFNK forward operator to
+    the thyra support.
+
+  - Removed all usage of EpetraExt::ModelEvaluator in favor of a direct
+    inhertance from the Thyra::ModelEvaluator.  The EpetraExt::ModelEvaluator is
+    being deprected.
+
+  - Added support for the Thyra Group to accept user defined preconditioners and
+    Jacobian operators.
+
+  - Merged the object code for the library noxthyra into the main nox library to
+    work around a circular dependency for the pseudo-transient solver.
+
+  - Added a pseudo-transient solver based on Thyra objects.  Still under
+    development.
+
+PyTrilinos
+  - General
+    - Added STK as an optional dependency of PyTrilinos
+    - Added Pliris as a supported package
+    - Provide better compatibility with external MPI implementations.
+      Specifically, if the user were to "import mpi4py" (for example)
+      prior to importing Teuchos or Epetra, then the Teuchos or Epetra
+      modules will not take responsibility for calling MPI_Finalize().
+    - Fixed some build errors
+
+  - Epetra module
+    - Priliminary support for Epetra64.  Ultimately, I would like the
+      default behavior to be using 64-bit methods without refering to
+      64-bit method names.
+    - Added PyTrilnos.Epetra.FECrsMatrix InsertGlobalValues method that
+      had been hidden by a %extend SWIG directive.
+
+  - EpetraExt module
+    - Gave names to EpetraExt template classes.  Using the nameless
+      versions had caused problems with newer versions of SWIG.  This
+      should get rid of the need for a patch distributed with
+      Archlinux.
+    - Added the EpetraExt::CrsMatrix_SubCopy class to
+      PyTrilinos.EpetraExt.
+
+  - NOX module
+    - Improved NOX support, especially NOX.Epetra.  This should be
+      largely invisible to the user, but I used to have to always import
+      NOX whether the user wanted it or not, due to nested namespace
+      issues.  These issues have been resolved now, and you only import
+      NOX if you specifically request it.
+
+  - Anasazi module
+    - Added EpetraMultiVecAccessor base class.  Anasazi added this base
+      class, and now the PyTrilinos version supports it as well.
+
+TriUtils
+
+  - Added support for 64-bit global indices.  They can be used if 64-bit based
+    Epetra maps are used or equivalent TriUtils functions with suffix "64" are
+    called.
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 11.0 Release Notes                                         #
 #                                                                             #
 ###############################################################################

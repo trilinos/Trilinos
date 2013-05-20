@@ -1,0 +1,30 @@
+/*! 
+\mainpage Trilinos/Kokkos: Shared-memory programming interface and computational kernels
+
+\section Kokkos_Intro Introduction
+
+The %Kokkos package has two main components.  The first, Kokkos Array,
+implements a performance-portable shared-memory parallel programming
+model and data containers.  Kokkos Array lets you write an algorithm
+once, and just change a template parameter to get the optimal data
+layout for your hardware.  It has back-ends for the following parallel
+programming models:
+
+- POSIX Threads (Pthreads)
+- OpenMP
+- NVIDIA's CUDA programming model for graphics processing units (GPUs)
+
+Kokkos Array also has optimizations for shared-memory parallel systems
+with nonuniform memory access (NUMA).  Its containers can hold data of
+any type \c Scalar that implements a certain basic interface and
+satisfies certain properties.  Kokkos Array may be used as a
+stand-alone programming model.
+
+The second %Kokkos component consists of computational kernels that
+support the %Tpetra package.  These kernels include sparse
+matrix-vector multiply, sparse triangular solve, Gauss-Seidel, and
+dense vector operations.  They are templated on the type of objects
+(\c Scalar) on which they operate.  This component was not meant to be
+visible to users; it is an implementation detail of the %Tpetra
+distributed linear algebra package.
+*/

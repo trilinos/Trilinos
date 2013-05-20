@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -63,7 +63,7 @@ namespace TSQR {
   /// \class Tsqr
   /// \brief Parallel Tall Skinny QR (TSQR) factorization
   /// \author Mark Hoemmen
-  /// 
+  ///
   /// This class computes the parallel Tall Skinny QR (TSQR)
   /// factorization of a matrix distributed in block rows across one
   /// or more MPI processes.  The parallel critical path length for
@@ -96,9 +96,9 @@ namespace TSQR {
   ///   distributed linear algebra libraries, such as Tpetra, the
   ///   local and global ordinal types may be different.
   ///
-  template<class LocalOrdinal, 
-	   class Scalar, 
-	   class NodeTsqrType = SequentialTsqr<LocalOrdinal, Scalar> >
+  template<class LocalOrdinal,
+           class Scalar,
+           class NodeTsqrType = SequentialTsqr<LocalOrdinal, Scalar> >
   class Tsqr {
   public:
     typedef MatView<LocalOrdinal, Scalar> matview_type;
@@ -136,13 +136,13 @@ namespace TSQR {
     ///
     /// \param distTsqr [in/out] Previously initialized DistTsqrType
     ///   object.  This takes care of the internode part of TSQR.
-    Tsqr (const node_tsqr_ptr& nodeTsqr, 
-	  const dist_tsqr_ptr& distTsqr) :
-      nodeTsqr_ (nodeTsqr), 
+    Tsqr (const node_tsqr_ptr& nodeTsqr,
+          const dist_tsqr_ptr& distTsqr) :
+      nodeTsqr_ (nodeTsqr),
       distTsqr_ (distTsqr)
     {}
 
-    /// \brief Get the intranode part of TSQR.  
+    /// \brief Get the intranode part of TSQR.
     ///
     /// Sometimes we need this in order to do post-construction
     /// initialization.
@@ -161,8 +161,8 @@ namespace TSQR {
     ///
     /// This method is deprecated; please call \c cache_size_hint()
     /// instead.
-    size_t TEUCHOS_DEPRECATED cache_block_size() const { 
-      return nodeTsqr_->cache_size_hint(); 
+    size_t TEUCHOS_DEPRECATED cache_block_size() const {
+      return nodeTsqr_->cache_size_hint();
     }
 
     /// \brief Does the R factor have a nonnegative diagonal?
@@ -178,7 +178,7 @@ namespace TSQR {
       // only if all QR factorization steps (both intranode and
       // internode) produce an R factor with a nonnegative diagonal.
       return nodeTsqr_->QR_produces_R_factor_with_nonnegative_diagonal() &&
-	distTsqr_->QR_produces_R_factor_with_nonnegative_diagonal();
+        distTsqr_->QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     /// \brief Compute QR factorization with explicit Q factor.
@@ -225,16 +225,16 @@ namespace TSQR {
     template<class NodeType>
     void
     factorExplicit (Kokkos::MultiVector<Scalar, NodeType>& A,
-		    Kokkos::MultiVector<Scalar, NodeType>& Q,
-		    Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& R,
-		    const bool contiguousCacheBlocks,
-		    const bool forceNonnegativeDiagonal=false)
+                    Kokkos::MultiVector<Scalar, NodeType>& Q,
+                    Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& R,
+                    const bool contiguousCacheBlocks,
+                    const bool forceNonnegativeDiagonal=false)
     {
       using Teuchos::asSafe;
 
       // Tsqr currently likes LocalOrdinal ordinals, but
       // Kokkos::MultiVector has size_t ordinals.  Do conversions
-      // here.  
+      // here.
       //
       // Teuchos::asSafe() can do safe conversion (e.g., checking for
       // overflow when casting to a narrower integer type), if a
@@ -251,35 +251,35 @@ namespace TSQR {
 
       // Sanity checks for matrix dimensions
       if (A_numRows < A_numCols) {
-	std::ostringstream os;
-	os << "In Tsqr::factorExplicit: input matrix A has " << A_numRows 
-	   << " local rows, and " << A_numCols << " columns.  The input "
-	  "matrix must have at least as many rows on each processor as "
-	  "there are columns.";
-	throw std::invalid_argument(os.str());
+        std::ostringstream os;
+        os << "In Tsqr::factorExplicit: input matrix A has " << A_numRows
+           << " local rows, and " << A_numCols << " columns.  The input "
+          "matrix must have at least as many rows on each processor as "
+          "there are columns.";
+        throw std::invalid_argument(os.str());
       } else if (A_numRows != Q_numRows) {
-	std::ostringstream os;
-	os << "In Tsqr::factorExplicit: input matrix A and output matrix Q "
-	  "must have the same number of rows.  A has " << A_numRows << " rows"
-	  " and Q has " << Q_numRows << " rows.";
-	throw std::invalid_argument(os.str());
+        std::ostringstream os;
+        os << "In Tsqr::factorExplicit: input matrix A and output matrix Q "
+          "must have the same number of rows.  A has " << A_numRows << " rows"
+          " and Q has " << Q_numRows << " rows.";
+        throw std::invalid_argument(os.str());
       } else if (R.numRows() < R.numCols()) {
-	std::ostringstream os;
-	os << "In Tsqr::factorExplicit: output matrix R must have at least "
-	  "as many rows as columns.  R has " << R.numRows() << " rows and "
-	   << R.numCols() << " columns.";
-	throw std::invalid_argument(os.str());
+        std::ostringstream os;
+        os << "In Tsqr::factorExplicit: output matrix R must have at least "
+          "as many rows as columns.  R has " << R.numRows() << " rows and "
+           << R.numCols() << " columns.";
+        throw std::invalid_argument(os.str());
       } else if (A_numCols != R.numCols()) {
-	std::ostringstream os;
-	os << "In Tsqr::factorExplicit: input matrix A and output matrix R "
-	  "must have the same number of columns.  A has " << A_numCols 
-	   << " columns and R has " << R.numCols() << " columns.";
-	throw std::invalid_argument(os.str());
+        std::ostringstream os;
+        os << "In Tsqr::factorExplicit: input matrix A and output matrix R "
+          "must have the same number of columns.  A has " << A_numCols
+           << " columns and R has " << R.numCols() << " columns.";
+        throw std::invalid_argument(os.str());
       }
 
       // Check for quick exit, based on matrix dimensions
       if (Q_numCols == 0)
-	return;
+        return;
 
       // Hold on to nonconst views of A and Q.  This will make TSQR
       // correct (if perhaps inefficient) for all possible Kokkos Node
@@ -288,45 +288,45 @@ namespace TSQR {
       Teuchos::ArrayRCP<scalar_type> Q_ptr = Q.getValuesNonConst();
 
       R.putScalar (STS::zero());
-      NodeOutput nodeResults = 
-	nodeTsqr_->factor (A_numRows, A_numCols, A_ptr.getRawPtr(), A_stride,
-			   R.values(), R.stride(), contiguousCacheBlocks);
+      NodeOutput nodeResults =
+        nodeTsqr_->factor (A_numRows, A_numCols, A_ptr.getRawPtr(), A_stride,
+                           R.values(), R.stride(), contiguousCacheBlocks);
       // FIXME (mfh 19 Oct 2010) Replace actions on raw pointer with
       // actions on the Kokkos::MultiVector or at least the ArrayRCP.
-      nodeTsqr_->fill_with_zeros (Q_numRows, Q_numCols, 
-				  Q_ptr.getRawPtr(), Q_stride,
-				  contiguousCacheBlocks);
-      matview_type Q_rawView (Q_numRows, Q_numCols, 
-			      Q_ptr.getRawPtr(), Q_stride);
-      matview_type Q_top_block = 
-	nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
+      nodeTsqr_->fill_with_zeros (Q_numRows, Q_numCols,
+                                  Q_ptr.getRawPtr(), Q_stride,
+                                  contiguousCacheBlocks);
+      matview_type Q_rawView (Q_numRows, Q_numCols,
+                              Q_ptr.getRawPtr(), Q_stride);
+      matview_type Q_top_block =
+        nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
       if (Q_top_block.nrows() < R.numCols()) {
-	std::ostringstream os;
-	os << "The top block of Q has too few rows.  This means that the "
-	   << "the intranode TSQR implementation has a bug in its top_block"
-	   << "() method.  The top block should have at least " << R.numCols()
-	   << " rows, but instead has only " << Q_top_block.ncols() 
-	   << " rows.";
-	throw std::logic_error (os.str());
+        std::ostringstream os;
+        os << "The top block of Q has too few rows.  This means that the "
+           << "the intranode TSQR implementation has a bug in its top_block"
+           << "() method.  The top block should have at least " << R.numCols()
+           << " rows, but instead has only " << Q_top_block.ncols()
+           << " rows.";
+        throw std::logic_error (os.str());
       }
       {
-	matview_type Q_top (R.numCols(), Q_numCols, Q_top_block.get(), 
-			    Q_top_block.lda());
-	matview_type R_view (R.numRows(), R.numCols(), R.values(), R.stride());
-	distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
+        matview_type Q_top (R.numCols(), Q_numCols, Q_top_block.get(),
+                            Q_top_block.lda());
+        matview_type R_view (R.numRows(), R.numCols(), R.values(), R.stride());
+        distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
       }
-      nodeTsqr_->apply (ApplyType::NoTranspose, 
-			A_numRows, A_numCols, A_ptr.getRawPtr(), A_stride,
-			nodeResults, Q_numCols, Q_ptr.getRawPtr(), Q_stride,
-			contiguousCacheBlocks);
+      nodeTsqr_->apply (ApplyType::NoTranspose,
+                        A_numRows, A_numCols, A_ptr.getRawPtr(), A_stride,
+                        nodeResults, Q_numCols, Q_ptr.getRawPtr(), Q_stride,
+                        contiguousCacheBlocks);
 
       // If necessary, force the R factor to have a nonnegative diagonal.
-      if (forceNonnegativeDiagonal && 
-	  ! QR_produces_R_factor_with_nonnegative_diagonal()) {
-	details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
-	matview_type Q_mine (Q_numRows, Q_numCols, Q_ptr.getRawPtr(), Q_stride);
-	matview_type R_mine (R.numRows(), R.numCols(), R.values(), R.stride());
-	forcer.force (Q_mine, R_mine);
+      if (forceNonnegativeDiagonal &&
+          ! QR_produces_R_factor_with_nonnegative_diagonal()) {
+        details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
+        matview_type Q_mine (Q_numRows, Q_numCols, Q_ptr.getRawPtr(), Q_stride);
+        matview_type R_mine (R.numRows(), R.numCols(), R.values(), R.stride());
+        forcer.force (Q_mine, R_mine);
       }
 
       // "Commit" the changes to the multivector.
@@ -334,6 +334,150 @@ namespace TSQR {
       Q_ptr = Teuchos::null;
     }
 
+
+    /// \brief Compute QR factorization with explicit Q factor: "raw"
+    ///   arrays interface, for column-major data.
+    ///
+    /// If you want to use TSQR to orthogonalize a block of
+    /// distributed vectors, and if you have your own data in raw
+    /// arrays and don't want to know about Kokkos::MultiVector or
+    /// Teuchos::SerialDenseMatrix, this method is for you.
+    ///
+    /// This method computes the "thin" QR factorization, like
+    /// Matlab's [Q,R] = qr(A,0), of a matrix A with more rows than
+    /// columns.  Like Matlab, it computes the Q factor "explicitly,"
+    /// that is, as a matrix represented in the same format as in the
+    /// input matrix A (rather than the implicit representation
+    /// returned by factor()).  You may use this to orthogonalize a
+    /// block of vectors which are the columns of A on input.
+    ///
+    /// Calling this method may be faster than calling factor() and
+    /// explicit_Q() in sequence, if you know that you only want the
+    /// explicit version of the Q factor.  This method is especially
+    /// intended for orthogonalizing the columns of a distributed
+    /// block of vectors.
+    ///
+    /// \warning No output array may alias any other input or output
+    ///   array.  In particular, Q may <i>not</i> alias A.  If you try
+    ///   this, you will certainly give you the wrong answer.
+    ///
+    /// \param numRows [in] Number of rows in my node's part of A.
+    ///   Q must have the same number of rows as A on each node.
+    /// \param numCols [in] Number of columns in A, Q, and R.
+    /// \param A [in/out] On input: my node's part of the matrix to
+    ///   factor; the matrix is distributed over the participating
+    ///   processors.  My node's part of the matrix is stored in
+    ///   column-major order with column stride LDA.  The columns of A
+    ///   on input are the vectors to orthogonalize.  On output:
+    ///   overwritten with garbage.
+    /// \param LDA [in] Leading dimension (column stride) of my node's
+    ///   part of A.
+    /// \param Q [out] On output: my node's part of the explicit Q
+    ///   factor.  My node's part of the matrix is stored in
+    ///   column-major order with column stride LDQ (which may differ
+    ///   from LDA).  Q may <i>not</i> alias A.
+    /// \param LDQ [in] Leading dimension (column stride) of my node's
+    ///   part of Q.
+    /// \param R [out] On output: the R factor, which is square with
+    ///   the same number of rows and columns as the number of columns
+    ///   in A.  The R factor is replicated on all nodes.  It is
+    ///   stored in column-major order with column stride LDR.
+    /// \param LDR [in] Leading dimension (column stride) of my node's
+    ///   part of R.
+    /// \param forceNonnegativeDiagonal [in] If true, then (if
+    ///   necessary) do extra work (modifying both the Q and R
+    ///   factors) in order to force the R factor to have a
+    ///   nonnegative diagonal.
+    void
+    factorExplicit (const LocalOrdinal numRows,
+                    const LocalOrdinal numCols,
+                    Scalar A[],
+                    const LocalOrdinal LDA,
+                    Scalar Q[],
+                    const LocalOrdinal LDQ,
+                    Scalar R[],
+                    const LocalOrdinal LDR,
+                    const bool forceNonnegativeDiagonal=false)
+    {
+      const bool contiguousCacheBlocks = false;
+
+      // Sanity checks for matrix dimensions.
+      if (numRows < numCols) {
+        std::ostringstream os;
+        os << "In Tsqr::factorExplicit: input matrix A has " << numRows
+           << " local rows, and " << numCols << " columns.  The input "
+          "matrix must have at least as many rows on each processor as "
+          "there are columns.";
+        throw std::invalid_argument (os.str ());
+      }
+
+      // Check for quick exit, based on matrix dimensions.
+      if (numCols == 0) {
+        return;
+      }
+
+      // Fill R initially with zeros.
+      {
+        Scalar* R_j = R;
+        for (LocalOrdinal j = 0; j < numCols; ++j) {
+          for (LocalOrdinal i = 0; i < numCols; ++i) {
+            R_j[i] = STS::zero ();
+          }
+          R_j += LDR;
+        }
+      }
+      // Compute the local QR factorization, in place in A, with the R
+      // factor written to R.
+      NodeOutput nodeResults =
+        nodeTsqr_->factor (numRows, numCols, A, LDA, R, LDR,
+                           contiguousCacheBlocks);
+      // Prepare the output matrix Q by filling with zeros.
+      nodeTsqr_->fill_with_zeros (numRows, numCols, Q, LDQ,
+                                  contiguousCacheBlocks);
+      // Wrap the output matrix Q in a "view."
+      matview_type Q_rawView (numRows, numCols, Q, LDQ);
+      // Wrap the uppermost cache block of Q.  We will need to extract
+      // its numCols x numCols uppermost block below.  We can't just
+      // extract the numCols x numCols top block from all of Q, in
+      // case Q is arranged using contiguous cache blocks.
+      matview_type Q_top_block =
+        nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
+      if (Q_top_block.nrows () < numCols) {
+        std::ostringstream os;
+        os << "The top block of Q has too few rows.  This means that the "
+           << "the intranode TSQR implementation has a bug in its top_block"
+           << "() method.  The top block should have at least " << numCols
+           << " rows, but instead has only " << Q_top_block.ncols ()
+           << " rows.";
+        throw std::logic_error (os.str ());
+      }
+      // Use the numCols x numCols top block of Q and the local R
+      // factor (computed above) to compute the distributed-memory
+      // part of the QR factorization.
+      {
+        matview_type Q_top (numCols, numCols, Q_top_block.get(),
+                            Q_top_block.lda());
+        matview_type R_view (numCols, numCols, R, LDR);
+        distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
+      }
+      // Apply the local part of the Q factor to the result of the
+      // distributed-memory QR factorization, to get the explicit Q
+      // factor.
+      nodeTsqr_->apply (ApplyType::NoTranspose,
+                        numRows, numCols, A, LDA,
+                        nodeResults, numCols, Q, LDQ,
+                        contiguousCacheBlocks);
+
+      // If necessary, and if the user asked, force the R factor to
+      // have a nonnegative diagonal.
+      if (forceNonnegativeDiagonal &&
+          ! QR_produces_R_factor_with_nonnegative_diagonal ()) {
+        details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
+        matview_type Q_mine (numRows, numCols, Q, LDQ);
+        matview_type R_mine (numCols, numCols, R, LDR);
+        forcer.force (Q_mine, R_mine);
+      }
+    }
 
     /// \brief Compute QR factorization of the global dense matrix A
     ///
@@ -355,7 +499,7 @@ namespace TSQR {
     ///   order.  On output, overwritten with an implicit representation
     ///   of the Q factor.
     ///
-    /// \param lda_local [in] Leading dimension of A_local.  
+    /// \param lda_local [in] Leading dimension of A_local.
     ///   Precondition: lda_local >= nrows_local.
     ///
     /// \param R [out] The final R factor of the QR factorization of the
@@ -380,19 +524,19 @@ namespace TSQR {
     ///   is overwritten).  Both parts go together.
     FactorOutput
     factor (const LocalOrdinal nrows_local,
-	    const LocalOrdinal ncols, 
-	    Scalar A_local[],
-	    const LocalOrdinal lda_local,
-	    Scalar R[],
-	    const LocalOrdinal ldr,
-	    const bool contiguousCacheBlocks = false)
+            const LocalOrdinal ncols,
+            Scalar A_local[],
+            const LocalOrdinal lda_local,
+            Scalar R[],
+            const LocalOrdinal ldr,
+            const bool contiguousCacheBlocks = false)
     {
       MatView< LocalOrdinal, Scalar > R_view (ncols, ncols, R, ldr);
       R_view.fill (STS::zero());
-      NodeOutput nodeResults = 
-	nodeTsqr_->factor (nrows_local, ncols, A_local, lda_local, 
-			  R_view.get(), R_view.lda(), 
-			  contiguousCacheBlocks);
+      NodeOutput nodeResults =
+        nodeTsqr_->factor (nrows_local, ncols, A_local, lda_local,
+                          R_view.get(), R_view.lda(),
+                          contiguousCacheBlocks);
       DistOutput distResults = distTsqr_->factor (R_view);
       return std::make_pair (nodeResults, distResults);
     }
@@ -404,7 +548,7 @@ namespace TSQR {
     /// nodes' C_local matrices stacked on top of each other.
     ///
     /// \param [in] If "N", compute Q*C.  If "T", compute Q^T * C.
-    ///   If "H" or "C", compute Q^H * C.  (The last option may not 
+    ///   If "H" or "C", compute Q^H * C.  (The last option may not
     ///   be implemented in all cases.)
     ///
     /// \param nrows_local [in] Number of rows of this node's local
@@ -426,10 +570,10 @@ namespace TSQR {
     ///
     /// \param C_local [in,out] On input, this node's local component of
     ///   the matrix C, stored as a general dense matrix in column-major
-    ///   order.  On output, overwritten with this node's component of 
+    ///   order.  On output, overwritten with this node's component of
     ///   op(Q)*C, where op(Q) = Q, Q^T, or Q^H.
     ///
-    /// \param ldc_local [in] Leading dimension of C_local.  
+    /// \param ldc_local [in] Leading dimension of C_local.
     ///   Precondition: ldc_local >= nrows_local.
     ///
     /// \param contiguousCacheBlocks [in] Whether or not the cache
@@ -437,15 +581,15 @@ namespace TSQR {
     ///
     void
     apply (const std::string& op,
-	   const LocalOrdinal nrows_local,
-	   const LocalOrdinal ncols_Q,
-	   const Scalar Q_local[],
-	   const LocalOrdinal ldq_local,
-	   const FactorOutput& factor_output,
-	   const LocalOrdinal ncols_C,
-	   Scalar C_local[],
-	   const LocalOrdinal ldc_local,
-	   const bool contiguousCacheBlocks = false)
+           const LocalOrdinal nrows_local,
+           const LocalOrdinal ncols_Q,
+           const Scalar Q_local[],
+           const LocalOrdinal ldq_local,
+           const FactorOutput& factor_output,
+           const LocalOrdinal ncols_C,
+           Scalar C_local[],
+           const LocalOrdinal ldc_local,
+           const bool contiguousCacheBlocks = false)
     {
       ApplyType applyType (op);
 
@@ -464,55 +608,55 @@ namespace TSQR {
       // C_top_view is the topmost cache block of C_local.  It has at
       // least as many rows as columns, but it likely has more rows
       // than columns.
-      matview_type C_view_top_block = 
-	nodeTsqr_->top_block (C_view, contiguousCacheBlocks);
+      matview_type C_view_top_block =
+        nodeTsqr_->top_block (C_view, contiguousCacheBlocks);
 
       // View of the topmost ncols_C by ncols_C block of C.
-      matview_type C_top_view (ncols_C, ncols_C, C_view_top_block.get(), 
-			       C_view_top_block.lda());
+      matview_type C_top_view (ncols_C, ncols_C, C_view_top_block.get(),
+                               C_view_top_block.lda());
 
-      if (! transposed) 
-	{
-	  // C_top (small compact storage) gets a deep copy of the top
-	  // ncols_C by ncols_C block of C_local.
-      	  matrix_type C_top (C_top_view);
+      if (! transposed)
+        {
+          // C_top (small compact storage) gets a deep copy of the top
+          // ncols_C by ncols_C block of C_local.
+          matrix_type C_top (C_top_view);
 
-	  // Compute in place on all processors' C_top blocks.
-	  distTsqr_->apply (applyType, C_top.ncols(), ncols_Q, C_top.get(), 
-			    C_top.lda(), factor_output.second);
+          // Compute in place on all processors' C_top blocks.
+          distTsqr_->apply (applyType, C_top.ncols(), ncols_Q, C_top.get(),
+                            C_top.lda(), factor_output.second);
 
-	  // Copy the result from C_top back into the top ncols_C by
-	  // ncols_C block of C_local.
-	  C_top_view.copy (C_top);
+          // Copy the result from C_top back into the top ncols_C by
+          // ncols_C block of C_local.
+          C_top_view.copy (C_top);
 
-	  // Apply the local Q factor (in Q_local and
-	  // factor_output.first) to C_local.
-	  nodeTsqr_->apply (applyType, nrows_local, ncols_Q, 
-			    Q_local, ldq_local, factor_output.first, 
-			    ncols_C, C_local, ldc_local,
-			    contiguousCacheBlocks);
-	}
+          // Apply the local Q factor (in Q_local and
+          // factor_output.first) to C_local.
+          nodeTsqr_->apply (applyType, nrows_local, ncols_Q,
+                            Q_local, ldq_local, factor_output.first,
+                            ncols_C, C_local, ldc_local,
+                            contiguousCacheBlocks);
+        }
       else
-	{
-	  // Apply the (transpose of the) local Q factor (in Q_local
-	  // and factor_output.first) to C_local.
-	  nodeTsqr_->apply (applyType, nrows_local, ncols_Q, 
-			    Q_local, ldq_local, factor_output.first, 
-			    ncols_C, C_local, ldc_local,
-			    contiguousCacheBlocks);
+        {
+          // Apply the (transpose of the) local Q factor (in Q_local
+          // and factor_output.first) to C_local.
+          nodeTsqr_->apply (applyType, nrows_local, ncols_Q,
+                            Q_local, ldq_local, factor_output.first,
+                            ncols_C, C_local, ldc_local,
+                            contiguousCacheBlocks);
 
-	  // C_top (small compact storage) gets a deep copy of the top
-	  // ncols_C by ncols_C block of C_local.
-      	  matrix_type C_top (C_top_view);
+          // C_top (small compact storage) gets a deep copy of the top
+          // ncols_C by ncols_C block of C_local.
+          matrix_type C_top (C_top_view);
 
-	  // Compute in place on all processors' C_top blocks.
-	  distTsqr_->apply (applyType, ncols_C, ncols_Q, C_top.get(), 
-			    C_top.lda(), factor_output.second);
+          // Compute in place on all processors' C_top blocks.
+          distTsqr_->apply (applyType, ncols_C, ncols_Q, C_top.get(),
+                            C_top.lda(), factor_output.second);
 
-	  // Copy the result from C_top back into the top ncols_C by
-	  // ncols_C block of C_local.
-	  C_top_view.copy (C_top);
-	}
+          // Copy the result from C_top back into the top ncols_C by
+          // ncols_C block of C_local.
+          C_top_view.copy (C_top);
+        }
     }
 
     /// \brief Compute the explicit Q factor from factor()
@@ -550,39 +694,39 @@ namespace TSQR {
     ///   in Q_local_in and Q_local_out are stored contiguously.
     void
     explicit_Q (const LocalOrdinal nrows_local,
-		const LocalOrdinal ncols_Q_in,
-		const Scalar Q_local_in[],
-		const LocalOrdinal ldq_local_in,
-		const FactorOutput& factorOutput,
-		const LocalOrdinal ncols_Q_out,
-		Scalar Q_local_out[],
-		const LocalOrdinal ldq_local_out,
-		const bool contiguousCacheBlocks = false)
+                const LocalOrdinal ncols_Q_in,
+                const Scalar Q_local_in[],
+                const LocalOrdinal ldq_local_in,
+                const FactorOutput& factorOutput,
+                const LocalOrdinal ncols_Q_out,
+                Scalar Q_local_out[],
+                const LocalOrdinal ldq_local_out,
+                const bool contiguousCacheBlocks = false)
     {
       nodeTsqr_->fill_with_zeros (nrows_local, ncols_Q_out, Q_local_out,
-				  ldq_local_out, contiguousCacheBlocks);
+                                  ldq_local_out, contiguousCacheBlocks);
       // "Rank" here means MPI rank, not linear algebra rank.
       const rank_type myRank = distTsqr_->rank();
       if (myRank == 0)
-	{
-	  // View of this node's local part of the matrix Q_out.
-	  matview_type Q_out_view (nrows_local, ncols_Q_out, 
-				   Q_local_out, ldq_local_out);
+        {
+          // View of this node's local part of the matrix Q_out.
+          matview_type Q_out_view (nrows_local, ncols_Q_out,
+                                   Q_local_out, ldq_local_out);
 
-	  // View of the topmost cache block of Q_out.  It is
-	  // guaranteed to have at least as many rows as columns.
-	  matview_type Q_out_top = 
-	    nodeTsqr_->top_block (Q_out_view, contiguousCacheBlocks);
+          // View of the topmost cache block of Q_out.  It is
+          // guaranteed to have at least as many rows as columns.
+          matview_type Q_out_top =
+            nodeTsqr_->top_block (Q_out_view, contiguousCacheBlocks);
 
-	  // Fill (topmost cache block of) Q_out with the first
-	  // ncols_Q_out columns of the identity matrix.
-	  for (ordinal_type j = 0; j < ncols_Q_out; ++j)
-	    Q_out_top(j, j) = Scalar(1);
-	}
-      apply ("N", nrows_local, 
-	     ncols_Q_in, Q_local_in, ldq_local_in, factorOutput,
-	     ncols_Q_out, Q_local_out, ldq_local_out,
-	     contiguousCacheBlocks);
+          // Fill (topmost cache block of) Q_out with the first
+          // ncols_Q_out columns of the identity matrix.
+          for (ordinal_type j = 0; j < ncols_Q_out; ++j)
+            Q_out_top(j, j) = Scalar(1);
+        }
+      apply ("N", nrows_local,
+             ncols_Q_in, Q_local_in, ldq_local_in, factorOutput,
+             ncols_Q_out, Q_local_out, ldq_local_out,
+             contiguousCacheBlocks);
     }
 
     /// \brief Compute Q*B
@@ -591,17 +735,17 @@ namespace TSQR {
     /// and B is ncols by ncols.  Respect cache blocks of Q.
     void
     Q_times_B (const LocalOrdinal nrows,
-	       const LocalOrdinal ncols,
-	       Scalar Q[],
-	       const LocalOrdinal ldq,
-	       const Scalar B[],
-	       const LocalOrdinal ldb,
-	       const bool contiguousCacheBlocks = false) const
+               const LocalOrdinal ncols,
+               Scalar Q[],
+               const LocalOrdinal ldq,
+               const Scalar B[],
+               const LocalOrdinal ldb,
+               const bool contiguousCacheBlocks = false) const
     {
       // This requires no internode communication.  However, the work
       // is not redundant, since each MPI process has a different Q.
-      nodeTsqr_->Q_times_B (nrows, ncols, Q, ldq, B, ldb, 
-			   contiguousCacheBlocks);
+      nodeTsqr_->Q_times_B (nrows, ncols, Q, ldq, B, ldb,
+                           contiguousCacheBlocks);
       // We don't need a barrier after this method, unless users are
       // doing mean MPI_Get() things.
     }
@@ -618,11 +762,11 @@ namespace TSQR {
     /// \return Numerical rank of R: 0 <= rank <= ncols.
     LocalOrdinal
     reveal_R_rank (const LocalOrdinal ncols,
-		   Scalar R[],
-		   const LocalOrdinal ldr,
-		   Scalar U[],
-		   const LocalOrdinal ldu,
-		   const magnitude_type& tol) const 
+                   Scalar R[],
+                   const LocalOrdinal ldr,
+                   Scalar U[],
+                   const LocalOrdinal ldu,
+                   const magnitude_type& tol) const
     {
       // Forward the request to the intranode TSQR implementation.
       // Currently, this work is performed redundantly on all MPI
@@ -664,7 +808,7 @@ namespace TSQR {
     ///
     /// \param tol [in] Relative tolerance for computing the numerical
     ///   rank of the matrix R.
-    /// 
+    ///
     /// \param contiguousCacheBlocks [in] Whether or not the cache
     ///   blocks of Q are stored contiguously.  Defaults to false,
     ///   which means that Q uses the ordinary column-major layout on
@@ -675,9 +819,9 @@ namespace TSQR {
     template<class NodeType>
     LocalOrdinal
     revealRank (Kokkos::MultiVector<Scalar, NodeType>& Q,
-		Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& R,
-		const magnitude_type& tol,
-		const bool contiguousCacheBlocks = false) const
+                Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& R,
+                const magnitude_type& tol,
+                const bool contiguousCacheBlocks = false) const
     {
       const LocalOrdinal nrows = static_cast<LocalOrdinal> (Q.getNumRows());
       const LocalOrdinal ncols = static_cast<LocalOrdinal> (Q.getNumCols());
@@ -686,7 +830,7 @@ namespace TSQR {
 
       // Take the easy exit if available.
       if (ncols == 0)
-	return 0;
+        return 0;
 
       //
       // FIXME (mfh 16 Jul 2010) We _should_ compute the SVD of R (as
@@ -697,23 +841,23 @@ namespace TSQR {
       // the same.
       //
       matrix_type U (ncols, ncols, STS::zero());
-      const ordinal_type rank = 
-	reveal_R_rank (ncols, R.values(), R.stride(), 
-		       U.get(), U.lda(), tol);
+      const ordinal_type rank =
+        reveal_R_rank (ncols, R.values(), R.stride(),
+                       U.get(), U.lda(), tol);
       if (rank < ncols)
-	{
-	  // cerr << ">>> Rank of R: " << rank << " < ncols=" << ncols << endl;
-	  // cerr << ">>> Resulting U:" << endl;
-	  // print_local_matrix (cerr, ncols, ncols, R, ldr);
-	  // cerr << endl;
+        {
+          // cerr << ">>> Rank of R: " << rank << " < ncols=" << ncols << endl;
+          // cerr << ">>> Resulting U:" << endl;
+          // print_local_matrix (cerr, ncols, ncols, R, ldr);
+          // cerr << endl;
 
-	  // If R is not full rank: reveal_R_rank() already computed
-	  // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
-	  // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
-	  // := Q \cdot U\f$, respecting cache blocks of Q.
-	  Q_times_B (nrows, ncols, Q_ptr.getRawPtr(), ldq, 
-		     U.get(), U.lda(), contiguousCacheBlocks);
-	}
+          // If R is not full rank: reveal_R_rank() already computed
+          // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
+          // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
+          // := Q \cdot U\f$, respecting cache blocks of Q.
+          Q_times_B (nrows, ncols, Q_ptr.getRawPtr(), ldq,
+                     U.get(), U.lda(), contiguousCacheBlocks);
+        }
       return rank;
     }
 
@@ -723,14 +867,14 @@ namespace TSQR {
     /// A_out.
     void
     cache_block (const LocalOrdinal nrows_local,
-		 const LocalOrdinal ncols,
-		 Scalar A_local_out[],
-		 const Scalar A_local_in[],
-		 const LocalOrdinal lda_local_in) const
+                 const LocalOrdinal ncols,
+                 Scalar A_local_out[],
+                 const Scalar A_local_in[],
+                 const LocalOrdinal lda_local_in) const
     {
-      nodeTsqr_->cache_block (nrows_local, ncols, 
-			      A_local_out, 
-			      A_local_in, lda_local_in);
+      nodeTsqr_->cache_block (nrows_local, ncols,
+                              A_local_out,
+                              A_local_in, lda_local_in);
     }
 
     /// \brief Un-cache-block A_in into A_out.
@@ -739,14 +883,14 @@ namespace TSQR {
     /// A_out.
     void
     un_cache_block (const LocalOrdinal nrows_local,
-		    const LocalOrdinal ncols,
-		    Scalar A_local_out[],
-		    const LocalOrdinal lda_local_out,		    
-		    const Scalar A_local_in[]) const
+                    const LocalOrdinal ncols,
+                    Scalar A_local_out[],
+                    const LocalOrdinal lda_local_out,
+                    const Scalar A_local_in[]) const
     {
-      nodeTsqr_->un_cache_block (nrows_local, ncols, 
-				 A_local_out, lda_local_out, 
-				 A_local_in);
+      nodeTsqr_->un_cache_block (nrows_local, ncols,
+                                 A_local_out, lda_local_out,
+                                 A_local_in);
     }
 
   private:

@@ -48,9 +48,6 @@
 
 namespace KokkosArray {
 
-struct Host ;
-struct Cuda ;
-
 struct MemoryManaged
 { typedef MemoryManaged  memory_traits ; enum { managed = true }; };
 

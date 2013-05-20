@@ -59,6 +59,9 @@ Commands:
    See all changes between what is committed in my repository vs what is in
    the repository on software.sandia.gov.  (master branch for both).
 
+-  git diff origin..
+   See all changes between origin/HEAD and what is committed in my repo.
+
 -  git commit
    Commits all staged files
 
@@ -84,6 +87,9 @@ Commands:
      --until, --before  commits made before the specified date.
      --author           author entry matches the specified string.
      --committer        committer entry matches the specified string.
+
+-  git revert <SHA>
+   Revert to a specific version of a public file.
 
 -  git checkout <SHA>
    git reset --hard <SHA>
@@ -232,4 +238,151 @@ My former cvss
  git diff --name-only origin/master .
 Shows which files differ from the Trilinos repository
 
+--------------------------------------------------------------------------
+Brent's tutorial
+
+How to get off a branch
+-  Check out a certain hash code.  Make changes and commit.  Pull rebase.
+-  Pull rebase, fix conflicts.  Make more changes.  Pull rebase again.  
+   Have to re-resolve conflicts.
+-  Some branch problems...
+
+How to fix your repo when it is off a branch
+
+
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+Brent's tutorial
+
+------------
+If forget to do the config before committing
+  do the configuration (git config --global user
+
+Change some files...
+  git commit --amend --author 'John Doe <user@domain.tld>'
+
+See Git notes on trilinos web pages for further info.
+
+------------
+To make a new local branch...
+  git branch new_branch
+  git checkout new_branch
+
+To push a branch to the repository...
+Push my master branch to repository as branch example_branch
+  git push origin master:example_branch
+Your branch's changes will be in remotes/origin/example_branch, but not
+remotes/origin/master.  They are still in your local master branch.
+A "git push" now would put them in origin master.
+
+Or can back up to the content of origin master with
+  git reset --hard HEAD~3
+where 3 is the number of commits by which you are ahead of origin/master.
+The changes you made are still in remotes/origin/example_branch.
+
+Once something is public, don't rebase from before the point where it was
+made public.
+
+------------
+
+To merge new_branch onto master
+  git checkout master
+  git merge new_branch
+
+If have conflicts, can abort the merge
+  git merge --abort
+
+Or can fix the conflicts...
+  git add filename
+  git commit
+
+------------
+
+Collaboration branch
+
+In your cloned Trilinos repo...
+
+see which remotes you have
+  git remote -v
+
+Create the remote
+  git remote add collab software.sandia.gov:/space/git/collaboration/Trilinos
+
+Get the remote
+  git fetch
+
+See all the branches
+  git branch -a
+
+Look at the branch with the fix
+  git checkout --track remotes/collab/theBugfixBranch
+
+
+------------
+REBASE
+
+Rebase changes history.
+
+When rebasing is dangerous...
+Rebasing any commit that is public (e.g., commit that has been pushed,
+exists on origin, or has been pulled by someone else from your repo) is BAD.
+
+Karen thinks all her problems were from the following...
+  git pull
+  make edits
+  git commit
+  make edits
+  git commit
+  git pull  
+  resolve conflicts
+  git add
+  git commit  (creates a merge commit)
+  make edits
+  git commit
+  make edits
+  git commit
+  git pull --rebase
+  NOW HAVE TO FIX THE SAME CONFLICTS AGAIN -- EEK!
+  
+  Can try
+    git rebase --abort
+  Might leave your commits in a very weird state...they are not attached to
+  anything.  Brent and Jim will prototype to see what happens in this case.
+  
+
+Safe ways to use rebase
+  reorder commits since origin/HEAD
+  squash several commits into one
+  drop a commit
+  change the commit message
+  split commits apart
+Doing "git rebase -i SHA" puts you in an editor with instructions; 
+change the lines in the file.
+
+
+------------
+Finding lost commits:
+  git fsck --lost-found
+Resoring is easy once you know the SHA; then do
+  git cherry-pick SHA 
+to put the commit back.
+
+------------
+When fall off a branch (e.g., because of a rebase or merge), 
+due to a conflict, fix conflict, git add, git commit (but need a special
+command that will be in the original error message), then
+  git rebase --continue
+
+Another way to fall off a branch is by checking out a specific SHA (or,
+e.g., to origin/master).
+Can get back to sane state with "git checkout master"
+But if made commits before returning to sane state, want to keep them.
+Make a branch at this point
+  git branch bad_state
+Points to all commits that made during bad state
+Then
+  git checkout master
+  git log HEAD..bad_state  (shows all differences between master and bad_state)
+    or git log bad_state   (and visually determine what the differences are)
+  git cherry-pick SHA (using SHA from the log command)
 

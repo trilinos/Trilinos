@@ -105,7 +105,7 @@ namespace MueLu {
     //@}
   private:
 
-    std::string getPQParts(GO numProcs, size_t dim) const;
+    std::string getPQParts(const std::string& algo, GO numProcs, size_t dim) const;
 
   };  //class Zoltan2Interface
 

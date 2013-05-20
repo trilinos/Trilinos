@@ -48,6 +48,7 @@
 #include <impl/KokkosArray_Timer.hpp>
 
 #include <KokkosArray_Host.hpp>
+#include <KokkosArray_hwloc.hpp>
 
 #include <PerfTestHexGrad.hpp>
 #include <PerfTestBlasKernels.hpp>
@@ -62,8 +63,13 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
-    KokkosArray::Host::initialize( gang_count , 8 / gang_count );
+    const std::pair<unsigned,unsigned> core_topo = KokkosArray::hwloc::get_core_topology();
+    const unsigned                     core_size = KokkosArray::hwloc::get_core_capacity();
+    const unsigned thread_count = std::min( 8u , core_topo.first *
+                                                 core_topo.second *
+                                                 core_size );
+
+    KokkosArray::Host::initialize( core_topo.first , thread_count / core_topo.first );
   }
 
   static void TearDownTestCase()

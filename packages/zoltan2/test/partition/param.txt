@@ -1,0 +1,11 @@
+dim=3
+#distribution-1=NORMAL,1000,0,0,10000,10000
+distribution-1=NORMAL,2000,0,0,0,10000,10000,10000
+#wdim=1
+#WeightDistribution-1-a1=1
+#WeightDistribution-1-b1=1
+#WeightDistribution-1-x1=0
+#WeightDistribution-1-c=0
+#WeightDistribution-1-steps=0
+#WeightDistribution-1-values=1,10
+

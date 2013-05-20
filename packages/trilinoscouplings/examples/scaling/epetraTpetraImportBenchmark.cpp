@@ -267,6 +267,8 @@ createGidLists (Array<GO>& srcGlobalElts,
 
 
 int main (int argc, char* argv[]) {
+  using std::cout;
+  using std::endl;
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
 
@@ -322,6 +324,16 @@ int main (int argc, char* argv[]) {
   const int numImportCreateTrials = numTrials;
   const int numVectorCreateTrials = numTrials;
   const int numImportExecTrials = numTrials;
+
+  if (myRank == 0) {
+    cout << endl << "---" << endl
+         << "Command-line options:" << endl
+         << "  numEltsPerProc: " << numEltsPerProc << endl
+         << "  numTrials: " << numTrials << endl
+         << "  runEpetra: " << (runEpetra ? "true" : "false") << endl
+         << "  runTpetra: " << (runTpetra ? "true" : "false") << endl
+         << endl;
+  }
 
   // Run the benchmark
   Array<GO> srcGlobalElts, destGlobalElts;

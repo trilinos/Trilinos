@@ -8,7 +8,7 @@
 
 /* #undef HAVE_MUELU_EXPLICIT_INSTANTIATION */
 
-/* #undef HAVE_MUELU_PROFILING */
+#define HAVE_MUELU_PROFILING
 
 /* #undef HAVE_MUELU_GOOGLE_PERFTOOLS */
 
@@ -44,7 +44,7 @@
 
 #define HAVE_MUELU_ZOLTAN
 
-/* #undef HAVE_MUELU_ZOLTAN2 */
+#define HAVE_MUELU_ZOLTAN2
 
 /* Optional TPL */
 

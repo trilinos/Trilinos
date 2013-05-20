@@ -272,13 +272,15 @@ struct Epetra_CrsGraphData::IndexData<int>
   std::vector< EntriesInOneRow<int> > SortedEntries_;
   int* TempColIndices_;
   Epetra_IntSerialDenseVector All_Indices_;
+  Epetra_IntSerialDenseVector All_IndicesPlus1_;
 
   IndexData(int NumMyBlockRows, bool AllocSorted)
     :
     Indices_(NULL),
     SortedEntries_(),
     TempColIndices_(NULL),
-    All_Indices_(0)
+    All_Indices_(0),
+    All_IndicesPlus1_(0)
   {
     Allocate(NumMyBlockRows, AllocSorted);
   }
@@ -306,6 +308,7 @@ struct Epetra_CrsGraphData::IndexData<int>
     TempColIndices_ = 0;
 
     All_Indices_.Resize(0);
+    All_IndicesPlus1_.Resize(0);
   }
 };
 

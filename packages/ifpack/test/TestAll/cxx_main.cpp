@@ -49,6 +49,8 @@
 #include "Ifpack_Amesos.h"
 #include "Ifpack_Utils.h"
 #include "Ifpack_Chebyshev.h"
+#include "Ifpack_Polynomial.h"
+#include "Ifpack_Krylov.h"
 
 template <class T>
 bool Test(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix, Teuchos::ParameterList& List)
@@ -129,6 +131,23 @@ int main(int argc, char *argv[])
   int TestPassed = true;
 
   if (!Test<Ifpack_Chebyshev>(Matrix,List)) 
+  {
+    TestPassed = false;
+  }
+
+  List.set("polynomial: degree",3);
+  if (!Test<Ifpack_Polynomial>(Matrix,List))
+  {
+    TestPassed = false;
+  }
+
+  List = DefaultList;
+  List.set("krylov: tolerance", 1e-14);
+  List.set("krylov: iterations", 100);
+  List.set("krylov: preconditioner", 2);
+  List.set("krylov: block size", 9);
+  List.set("krylov: number of sweeps", 2);
+  if (!Test<Ifpack_Krylov>(Matrix,List))
   {
     TestPassed = false;
   }

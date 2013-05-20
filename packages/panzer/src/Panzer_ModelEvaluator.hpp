@@ -49,6 +49,8 @@
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_ParameterLibrary.hpp"
 #include "Panzer_GlobalEvaluationData.hpp"
+#include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_ResponseMESupportBase.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_AbstractFactory.hpp"
@@ -63,7 +65,6 @@
 namespace panzer {
 
 class FieldManagerBuilder;
-template<typename> class ResponseLibrary;
 template<typename> class LinearObjFactory;
 class GlobalData;
 
@@ -130,6 +131,65 @@ public:
   void addNonParameterGlobalEvaluationData(const std::string & name,
                                            const Teuchos::RCP<GlobalEvaluationData> & ged);
 
+  /** Add a response specified by a list of WorksetDescriptor objects. The specifics of the
+    * response are specified by the response factory builder.
+    *
+    * NOTE: Response factories must use a response of type <code>ResponseMESupportBase</code>. This is
+    * how the model evaluator parses and puts responses in the right location. If this condition is violated
+    * the <code>evalModel</code> call will fail. Furthermore, this method cannot be called after <code>buildRespones</code>
+    * has been called.
+    *
+    * \param[in] responseName Name of the response to be added.
+    * \param[in] wkst_desc A vector of descriptors describing the types of elements
+    *                                that make up the response.
+    * \param[in] builder Builder that builds the correct response object.
+    *
+    * \return The index associated with this response for accessing it through the ModelEvaluator interface.
+    */
+  template <typename ResponseEvaluatorFactory_BuilderT>
+  int addResponse(const std::string & responseName,
+                  const std::vector<WorksetDescriptor> & wkst_desc,
+                  const ResponseEvaluatorFactory_BuilderT & builder);
+
+  /** Build all the responses set on the model evaluator.  Once this method is called
+    * no other responses can be added. An exception is thrown if they are.
+    */
+  void buildResponses(
+       const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+       const panzer::EquationSetFactory & eqset_factory,
+       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+       const Teuchos::ParameterList& closure_models,
+       const Teuchos::ParameterList& user_data,
+       const bool write_graphviz_file=false,
+       const std::string& graphviz_file_prefix="")
+  { responseLibrary_->buildResponseEvaluators(physicsBlocks,eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
+    typedef Thyra::ModelEvaluatorBase MEB;
+    MEB::OutArgsSetup<Scalar> outArgs;
+    outArgs.setModelEvalDescription(this->description());
+    outArgs.set_Np_Ng(p_init_.size(), g_space_.size());
+    outArgs.setSupports(MEB::OUT_ARG_f);
+    outArgs.setSupports(MEB::OUT_ARG_W_op);
+    prototypeOutArgs_ = outArgs; }
+
+  /** Build all the responses set on the model evaluator.  Once this method is called
+    * no other responses can be added. An exception is thrown if they are.
+    */
+  void buildResponses(
+       const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+       const Teuchos::ParameterList& closure_models,
+       const Teuchos::ParameterList& user_data,
+       const bool write_graphviz_file=false,
+       const std::string& graphviz_file_prefix="")
+  { responseLibrary_->buildResponseEvaluators(physicsBlocks,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
+    typedef Thyra::ModelEvaluatorBase MEB;
+    MEB::OutArgsSetup<Scalar> outArgs;
+    outArgs.setModelEvalDescription(this->description());
+    outArgs.set_Np_Ng(p_init_.size(), g_space_.size());
+    outArgs.setSupports(MEB::OUT_ARG_f);
+    outArgs.setSupports(MEB::OUT_ARG_W_op);
+    prototypeOutArgs_ = outArgs; }
+
 private:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
@@ -168,17 +228,18 @@ private: // data members
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
 
+  Teuchos::RCP<panzer::FieldManagerBuilder> fmb_;
+  mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;     // they control and provide access to evaluate
+  std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
+
   // parameters
   std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > p_space_;
   std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > p_init_;
 
   // responses
-  std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > g_space_;
-
-  Teuchos::RCP<panzer::FieldManagerBuilder> fmb_;
   mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
-  mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;     // they control and provide access to evaluate
-  std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
+  std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > g_space_;
+  std::vector<std::string> g_names_;
 
   mutable Teuchos::Array<panzer::ParamVec> parameter_vector_;
   Teuchos::RCP<panzer::GlobalData> global_data_;
@@ -192,6 +253,50 @@ private: // data members
 
   GlobalEvaluationDataContainer nonParamGlobalEvaluationData_;
 };
+
+// Inline definition of the add response (its template on the builder type)
+template<typename Scalar, typename NODE>
+template <typename ResponseEvaluatorFactory_BuilderT>
+int ModelEvaluator<Scalar,NODE>::
+addResponse(const std::string & responseName,
+            const std::vector<WorksetDescriptor> & wkst_desc,
+            const ResponseEvaluatorFactory_BuilderT & builder)
+{
+   // see if the response evaluators have been constucted yet
+   TEUCHOS_TEST_FOR_EXCEPTION(responseLibrary_->responseEvaluatorsBuilt(),std::logic_error,
+                              "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                              "cannot be added to the model evaluator because evalModel has already been called!");
+
+   // add the response, and then push back its name for safe keeping
+   responseLibrary_->addResponse(responseName,wkst_desc,builder);
+
+   // check that the response can be found
+   TEUCHOS_TEST_FOR_EXCEPTION(std::find(g_names_.begin(),g_names_.end(),responseName)!=g_names_.end(),std::logic_error,
+                              "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                              "has already been added to the model evaluator!");
+
+   // check that at least there is a response value
+   Teuchos::RCP<panzer::ResponseBase> respBase = responseLibrary_->getResponse<panzer::Traits::Residual>(responseName);
+   TEUCHOS_TEST_FOR_EXCEPTION(respBase==Teuchos::null,std::logic_error,
+                              "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                              "has no residual type! Not sure what is going on!");
+
+   // check that the response supports interactions with the model evaluator
+   Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(respBase);
+   TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
+                              "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                              "resulted in bad cast to panzer::ResponseMESupportBase, the type of the response is incompatible!");
+
+   // set the response in the model evaluator
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = resp->getVectorSpace();
+   g_space_.push_back(vs);
+   g_names_.push_back(responseName);
+
+   // lets be cautious and set a vector on the response
+   resp->setVector(Thyra::createMember(vs));
+
+   return g_names_.size()-1;
+}
 
 
 }

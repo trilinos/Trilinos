@@ -57,11 +57,6 @@
 #ifndef GALERI_XPETRAMAPS_HPP
 #define GALERI_XPETRAMAPS_HPP
 
-
-//
-// DECL
-//
-
 #include <string.h>
 
 #include <Teuchos_RCP.hpp>
@@ -70,9 +65,25 @@
 
 #include "Galeri_ConfigDefs.h"
 
+#include "Galeri_XpetraCartesian1D.hpp"
+#include "Galeri_XpetraCartesian2D.hpp"
+#include "Galeri_XpetraCartesian3D.hpp"
+
 #ifdef HAVE_GALERI_XPETRA
-#include "Xpetra_Map.hpp" // for enum UnderlyingLib
+#include <Xpetra_ConfigDefs.hpp>
+#include <Xpetra_Exceptions.hpp>
+#include <Xpetra_Map.hpp> // for enum UnderlyingLib
+#ifdef HAVE_XPETRA_TPETRA
+#  include <Xpetra_TpetraMap.hpp>
 #endif
+#ifdef HAVE_XPETRA_EPETRA
+#  include <Xpetra_EpetraMap.hpp>
+#endif
+#endif // HAVE_GALERI_XPETRA
+
+//
+// DECL
+//
 
 namespace Galeri {
   namespace Xpetra {
@@ -92,42 +103,12 @@ namespace Galeri {
   } // namespace Xpetra
 } // namespace Galeri
 
+
 //
 // DEF
 //
 
-#include <string.h>
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_ParameterList.hpp>
-
-#include "Galeri_ConfigDefs.h"
-#include "Galeri_XpetraMaps.hpp"
-
-//#include "Galeri_Utils.h"
-
-//#include "Maps/Galeri_XpetraLinear.hpp"
-//#include "Maps/Galeri_XpetraNodeCartesian2D.hpp"
-#include "Galeri_XpetraCartesian1D.hpp"
-#include "Galeri_XpetraCartesian2D.hpp"
-#include "Galeri_XpetraCartesian3D.hpp"
-//#include "Maps/Galeri_XpetraRandom.hpp"
-//#include "Maps/Galeri_XpetraInterlaced.hpp"
-
-#ifdef HAVE_GALERI_XPETRA
-#include <Xpetra_ConfigDefs.hpp>
-#include <Xpetra_Exceptions.hpp>
-#ifdef HAVE_XPETRA_TPETRA
-#include <Xpetra_TpetraMap.hpp>
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraMap.hpp>
-#endif
-#endif // HAVE_GALERI_XPETRA
-
 namespace Galeri {
-
   namespace Xpetra {
 
     using Teuchos::RCP;
@@ -140,10 +121,8 @@ namespace Galeri {
       if (lib == ::Xpetra::UseTpetra)
         return CreateMap< ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(mapType, comm, list);
 #endif
-
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
       XPETRA_FACTORY_END;
-
     }
 
     //! Map creation function (for Xpetra::Map with UnderlyingLib parameter)
@@ -162,263 +141,141 @@ namespace Galeri {
       if (lib == ::Xpetra::UseEpetra)
         return CreateMap<int, int, ::Xpetra::EpetraMap>(mapType, comm, list);
 #endif
-
       XPETRA_FACTORY_END;
-
     }
-
 #endif // HAVE_GALERI_XPETRA
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Map>
-  RCP<Map> CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list)
-  {
-    // global parameters
-    // GlobalOrdinal n = list.get("n", (GlobalOrdinal) -1);
+  RCP<Map> CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
+    GlobalOrdinal n = -1, nx = -1, ny = -1, nz = -1, mx = -1, my = -1, mz = -1;
+    // Get matrix dimensions
+    if (list.isParameter("n"))  n  = list.get<GlobalOrdinal>("n");
+    if (list.isParameter("nx")) nx = list.get<GlobalOrdinal>("nx");
+    if (list.isParameter("ny")) ny = list.get<GlobalOrdinal>("ny");
+    if (list.isParameter("nz")) nz = list.get<GlobalOrdinal>("nz");
+    if (list.isParameter("mx")) nz = list.get<GlobalOrdinal>("mx");
+    if (list.isParameter("my")) nz = list.get<GlobalOrdinal>("my");
+    if (list.isParameter("mz")) nz = list.get<GlobalOrdinal>("mz");
 
-    // Cycle on map type //
-    /* TODO
-    if (mapType == "Linear")
-      {
-        // get the parameters
-        return(Maps::Linear(comm, n));
-      }
-    else if (mapType == "Interlaced")
-      {
-        return(Maps::Interlaced(comm, n));
-      }
-    else if (mapType == "Random")
-      {
-        return(Maps::Random(comm, n));
-      }
-    else
-    */
     if (mapType == "Cartesian1D") {
-        // Get matrix dimension
-        GlobalOrdinal nx = -1; if (list.isParameter("nx")) nx = list.get<GlobalOrdinal>("nx");
-        if (nx == -1) {
-            GlobalOrdinal n = list.get<GlobalOrdinal>("n", -1);
-            if (n <= 0)
-              throw(Exception(__FILE__, __LINE__,
-                              "If nx is not set, then n must be set"));
+      if (nx == -1) {
+        if (n <= 0)
+          throw Exception(__FILE__, __LINE__, "If nx is not set, then n must be set");
 
-            nx = n;
+        nx = n;
+        list.set("nx", nx);
+      }
+      list.set("n", nx);
 
-            // Add computed value of 'nx' to the list. Users can retrieve the value after the creation of the map.
-            list.set("nx", nx);
-          }
+      if (mx == -1) {
+        mx = Teuchos::as<GlobalOrdinal>(comm->getSize());
+        list.set("mx", mx);
+      }
 
-        list.set("n", nx); // Add computed values of 'n' to the list
-
-        // Get the number of domains
-        GlobalOrdinal mx = list.get<GlobalOrdinal>("mx", -1);
-
-        if (mx == -1) {
-            mx = (GlobalOrdinal)(comm->getSize());
-
-            // Add computed value of 'mx' to the list. Users can retrieve the value after the creation of the map.
-            list.set("mx", mx);
-          }
-        return(Maps::Cartesian1D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, mx));
+      return Maps::Cartesian1D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, mx);
 
     } else if (mapType == "Cartesian2D") {
+      if (nx == -1 || ny == -1) {
+        if (n <= 0)
+          throw Exception(__FILE__, __LINE__, "If nx or ny are not set, then n must be set");
 
-        // Get matrix dimension
-        GlobalOrdinal nx = -1; if (list.isParameter("nx")) nx = list.get<GlobalOrdinal>("nx");
-        GlobalOrdinal ny = -1; if (list.isParameter("ny")) ny = list.get<GlobalOrdinal>("ny");
+        nx = ny = Teuchos::as<GlobalOrdinal>(sqrt(Teuchos::as<double>(n)));
+        if (nx * ny != n)
+          throw Exception(__FILE__, __LINE__,
+                          "The number of global elements (n) must be",
+                          "a perfect square, otherwise set nx and ny");
 
-        if (nx == -1 || ny == -1)
-          {
-            GlobalOrdinal n = -1; if (list.isParameter("n")) list.get<GlobalOrdinal>("n");
-            if (n <= 0)
-              throw(Exception(__FILE__, __LINE__,
-                              "If nx or ny are not set, then n must be set"));
-
-            nx = (GlobalOrdinal)sqrt((double)n);
-            ny = nx;
-            if (nx * ny != n)
-              throw(Exception(__FILE__, __LINE__,
-                              "The number of global elements (n) must be",
-                              "a perfect square, otherwise set nx and ny"));
-
-            // Add computed values of 'nx' and 'ny' to the list. Users can retrieve the values after the creation of the map.
-            list.set("nx", nx);
-            list.set("ny", ny);
-          }
-
-        list.set("n", nx * ny); // Add computed values of 'n' to the list
-
-        // Get the number of domains
-        GlobalOrdinal mx = -1; if (list.isParameter("mx")) mx = list.get<GlobalOrdinal>("mx");
-        GlobalOrdinal my = -1; if (list.isParameter("my")) my = list.get<GlobalOrdinal>("my");
-
-        if (mx == -1 || my == -1)
-          {
-            mx = (GlobalOrdinal)(sqrt((double)(comm->getSize()+.001)));
-            my =  comm->getSize()/mx;
-
-            // simple attempt at trying to find an mx and my such
-            // mx*my = NumProc
-
-            while ( (mx*my) != comm->getSize() ) {
-              mx--;
-              my = comm->getSize()/mx;
-            }
-
-            // Add computed values of 'mx' and 'my' to the list. Users can retrieve the values after the creation of the map.
-            list.set("mx", mx);
-            list.set("my", my);
-          }
-        return(Maps::Cartesian2D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, mx, my));
+        list.set("nx", nx);
+        list.set("ny", ny);
       }
-    /* TODO
-       else if (mapType == "NodeCartesian2D")
-      {
-        // Get matrix dimension
-        int nx = list.get("nx", -1);
-        int ny = list.get("ny", -1);
+      list.set("n", nx * ny);
 
-        if (nx == -1 || ny == -1)
-          {
-            if (n <= 0)
-              throw(Exception(__FILE__, __LINE__,
-                              "If nx or ny are not set, then n must be set"));
+      if (mx == -1 || my == -1) {
+        // Simple method to try to find mx and my such that mx*my = NumProc
+        mx = Teuchos::as<GlobalOrdinal>(sqrt(Teuchos::as<double>(comm->getSize())+.001));
+        my = comm->getSize()/mx;
 
-            nx = (int)sqrt((double)n);
-            ny = nx;
-            if (nx * ny != n)
-              throw(Exception(__FILE__, __LINE__,
-                              "The number of global elements (n) must be",
-                              "a perfect square, otherwise set nx and ny"));
-          }
+        while ((mx*my) != comm->getSize())
+          my = comm->getSize()/(--mx);
 
-        // Get the number of nodes
-        int NumNodes = list.get("number of nodes",-1);
-        int MyNodeID = list.get("node id",-1);
-        int ndx = list.get("ndx", -1);
-        int ndy = list.get("ndy", -1);
-        if (ndx == -1 || ndy == -1)
-          {
-            ndx = (int)(sqrt((double)(NumNodes+.001)));
-            ndy = NumNodes/ndx;
-            while ( (ndx*ndy) != NumNodes ) {
-              ndx--;
-              ndy = NumNodes/ndx;
-            }
-          }
+        list.set("mx", mx);
+        list.set("my", my);
+      }
 
-        // Get the number of processors per node
-        Epetra_comm * Nodecomm= list.get("node communicator",(Epetra_comm*)0);
-        int px = list.get("px", -1);
-        int py = list.get("py", -1);
-        if (px == -1 || py == -1)
-          {
-            px = (int)(sqrt((double)(Nodecomm->NumProc()+.001)));
-            py = Nodecomm->NumProc()/px;
+      return Maps::Cartesian2D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, mx, my);
 
-            // simple attempt at trying to find an ndx and ndy such
-            // ndx*ndy = NumNodes
+    } else if (mapType == "Cartesian3D") {
+      if (nx == -1 || ny == -1 || nz == -1) {
+        if (n <= 0)
+          throw Exception(__FILE__, __LINE__, "If nx or ny or nz are not set, then n must be set");
 
-            while ( (px*py) != Nodecomm->NumProc() ) {
-              px--;
-              py = Nodecomm->NumProc()/px;
-            }
-          }
+        nx = ny = nz = Teuchos::as<GlobalOrdinal>(pow(Teuchos::as<double>(n), 0.333334));
+        if (nx * ny * nz != n)
+          throw Exception(__FILE__, __LINE__,
+                          "The number of global elements n (" +
+                          toString(n) + ") must be",
+                          "a perfect cube, otherwise set nx, ny and nz") ;
 
-        return(Maps::NodeCartesian2D(comm, *Nodecomm, MyNodeID, nx, ny, ndx, ndy, px,py));
-        } */
-    else if (mapType == "Cartesian3D")
-      {
-        // Get matrix dimension
-        GlobalOrdinal nx = -1; if (list.isParameter("nx")) nx = list.get<GlobalOrdinal>("nx");
-        GlobalOrdinal ny = -1; if (list.isParameter("ny")) ny = list.get<GlobalOrdinal>("ny");
-        GlobalOrdinal nz = -1; if (list.isParameter("nz")) nz = list.get<GlobalOrdinal>("nz");
+        list.set("nx", nx);
+        list.set("ny", ny);
+        list.set("nz", nz);
+      }
+      list.set("n", nx * ny * nz);
 
-        if (nx == -1 || ny == -1 || nz == -1)
-          {
-            GlobalOrdinal n = -1; if (list.isParameter("n")) list.get<GlobalOrdinal>("n");
-            if (n <= 0)
-              throw(Exception(__FILE__, __LINE__,
-                              "If nx or ny or nz are not set, then n must be set"));
+      if (mx == -1 || my == -1 || mz == -1) {
+        mx = my = mz = Teuchos::as<GlobalOrdinal>(pow(Teuchos::as<double>(comm->getSize()), 0.333334));
 
-            nx = (int)pow((double)n, 0.333334);
-            ny = nx;
-            nz = nx;
-            if (nx * ny * nz != n)
-              throw(Exception(__FILE__, __LINE__,
-                              "The number of global elements n (" +
-                              toString(n) + ") must be",
-                              "a perfect cube, otherwise set nx, ny and nz"));
+        if (mx * my * mz != comm->getSize())  {
+          // Simple method to find a set of processor assignments
+          mx = my = mz = 1;
 
-            // Add computed values of 'nx', 'ny' and 'nz' to the list. Users can retrieve the values after the creation of the map.
-            list.set("nx", nx);
-            list.set("ny", ny);
-            list.set("nz", nz);
-          }
+          int ProcTemp = comm->getSize();
+          GlobalOrdinal factors[50];
+          for (GlobalOrdinal jj = 0; jj < 50; jj++) factors[jj] = 0;
+          for (GlobalOrdinal jj = 2; jj < 50; jj++) {
+            bool flag = true;
+            while (flag) {
+              GlobalOrdinal temp = ProcTemp/jj;
+              if (temp*jj == ProcTemp) {
+                factors[jj]++;
+                ProcTemp = temp;
 
-        list.set("n", nx * ny * nz); // Add computed values of 'n' to the list
-
-        // Get the number of domains
-        GlobalOrdinal mx = -1; if (list.isParameter("mx")) mx = list.get<GlobalOrdinal>("mx");
-        GlobalOrdinal my = -1; if (list.isParameter("my")) my = list.get<GlobalOrdinal>("my");
-        GlobalOrdinal mz = -1; if (list.isParameter("mz")) mz = list.get<GlobalOrdinal>("mz");
-
-        if (mx == -1 || my == -1 || mz == -1)
-          {
-            mx = (int)pow((double)comm->getSize(), 0.333334);
-            my = mx;
-            mz = mx;
-
-            if (mx * my * mz != comm->getSize())  {
-              // simple attempt to find a set of processor assignments
-              mx = 1; my = 1; mz = 1;
-              int ProcTemp = comm->getSize();
-              GlobalOrdinal factors[50];
-              for (GlobalOrdinal jj = 0; jj < 50; jj++) factors[jj] = 0;
-              for (GlobalOrdinal jj = 2; jj < 50; jj++) {
-                bool flag = true;
-                while (flag) {
-                  GlobalOrdinal temp = ProcTemp/jj;
-                  if (temp*jj == ProcTemp) {
-                    factors[jj]++; ProcTemp = temp;
-                  }
-                  else flag = false;
-                }
+              } else {
+                flag = false;
               }
-              mx = ProcTemp;
-              for (GlobalOrdinal jj = 50-1; jj > 0; jj--) {
-                while (factors[jj] != 0) {
-                  if (  (mx <= my) && (mx <= mz) ) mx = mx*jj;
-                  else if (  (my <= mx) && (my <= mz) ) my = my*jj;
-                  else mz = mz*jj;
-                  factors[jj]--;
-                }
-              }
-
             }
-            // Add computed values of 'mx' and 'my' to the list. Users can retrieve the values after the creation of the map.
-            list.set("mx", mx);
-            list.set("my", my);
-            list.set("mz", mz);
           }
-        else
-          {
-            if (mx * my * mz != comm->getSize())
-              throw(Exception(__FILE__, __LINE__,
-                              "mx * my * mz != number of processes!",
-                              "mx = " + toString(mx) + ", my = " + toString(my)
-                              + ", mz = " + toString(mz)));
+          mx = ProcTemp;
+          for (GlobalOrdinal jj = 50-1; jj > 0; jj--) {
+            while (factors[jj] != 0) {
+              if      ((mx <= my) && (mx <= mz)) mx = mx*jj;
+              else if ((my <= mx) && (my <= mz)) my = my*jj;
+              else                               mz = mz*jj;
+              factors[jj]--;
+            }
           }
+        }
+        list.set("mx", mx);
+        list.set("my", my);
+        list.set("mz", mz);
 
-        return(Maps::Cartesian3D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, nz, mx, my, mz));
+      } else {
+        if (mx * my * mz != comm->getSize())
+          throw Exception(__FILE__, __LINE__,
+                          "mx * my * mz != number of processes!",
+                          "mx = " + toString(mx) + ", my = " + toString(my)
+                          + ", mz = " + toString(mz));
       }
-    else
-      {
-        throw(Exception(__FILE__, __LINE__,
-                        "`mapType' has incorrect value (" + mapType + ")",
-                        "in input to function CreateMap()",
-                        "Check the documentation for a list of valid choices"));
-      }
+
+      return Maps::Cartesian3D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, nz, mx, my, mz);
+
+    } else {
+      throw Exception(__FILE__, __LINE__,
+                      "`mapType' has incorrect value (" + mapType + ")",
+                      "in input to function CreateMap()",
+                      "Check the documentation for a list of valid choices");
+    }
   } // CreateMap()
 
   } // namespace Xpetra

@@ -230,6 +230,12 @@ ENDIF()
 GLOBAL_SET(TEUCHOS_STD_UNIT_TEST_MAIN
   "${PACKAGE_SOURCE_DIR}/core/test/UnitTest/Teuchos_StandardUnitTestMain.cpp")
 
+# For use by other packages as well as Teuchos tests
+IF (${PROJECT_NAME}_ENABLE_TeuchosComm)
+  GLOBAL_SET(TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN
+    "${PACKAGE_SOURCE_DIR}/comm/test/UnitTesting/Teuchos_StandardParallelUnitTestMain.cpp")
+ENDIF()
+
 TRIBITS_PROCESS_SUBPACKAGES()
 
 TRIBITS_PACKAGE_DEF()

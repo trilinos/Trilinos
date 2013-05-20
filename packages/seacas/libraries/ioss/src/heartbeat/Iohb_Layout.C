@@ -115,21 +115,20 @@ namespace Iohb {
       add(name, value[0]);
     } else {
       if (count_++ > 0) {
-	layout_ << ", ";
+        layout_ << ", ";
       }
 
-      if (showLabels && name != "") {
-	layout_ << name;
-	layout_ << "=";
+      if (showLabels && !name.empty()) {
+        layout_ << name;
+        layout_ << "=";
       }
       layout_.setf(std::ios::scientific);
       layout_.setf(std::ios::showpoint);
       for (std::vector<double>::size_type i=0; i < value.size(); i++) {
-	layout_ << std::setprecision(precision_) << value[i];
-	if (i < value.size()-1)
-	  layout_ << ", ";
+        layout_ << std::setprecision(precision_) << value[i];
+        if (i < value.size()-1)
+          layout_ << ", ";
       }
-
     }
   }
 

@@ -225,16 +225,16 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
   int _blockSize, _numBlocks, _stepSize, _nevBlocks, _xtra_nevBlocks;
   int _numIters;
   int _verbosity;
-  bool _inSituRestart;
+  bool _inSituRestart, _dynXtraNev;
 
   std::vector<Value<ScalarType> > _ritzValues;
 
+  int _printNum;
   Teuchos::RCP<Teuchos::Time> _timerSolve, _timerRestarting;
 
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugTest_;
 
-  int _printNum;
 };
 
 
@@ -259,9 +259,12 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _numIters(0),
   _verbosity(Anasazi::Errors),
   _inSituRestart(false),
-  _timerSolve(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchurSolMgr::solve()")),
-  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchurSolMgr restarting")),
+  _dynXtraNev(false),
   _printNum(-1)
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+  ,_timerSolve(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchurSolMgr::solve()")),
+  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchurSolMgr restarting"))
+#endif
 {
   TEUCHOS_TEST_FOR_EXCEPTION(_problem == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
   TEUCHOS_TEST_FOR_EXCEPTION(!_problem->isProblemSet(),               std::invalid_argument, "Problem not set.");
@@ -287,6 +290,17 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
     _nevBlocks = nev/_blockSize + _xtra_nevBlocks + 1;
   } else {
     _nevBlocks = nev/_blockSize + _xtra_nevBlocks;
+  }
+
+  // determine if we should use the dynamic scheme for selecting the current number of retained eigenvalues.
+  // NOTE:  This employs a technique similar to ARPACK in that it increases the number of retained eigenvalues
+  //        by one for every converged eigenpair to accelerate convergence.
+  if (pl.isParameter("Dynamic Extra NEV")) {
+    if (Teuchos::isParameterType<bool>(pl,"Dynamic Extra NEV")) {
+      _dynXtraNev = pl.get("Dynamic Extra NEV",_dynXtraNev);
+    } else {
+      _dynXtraNev = ( Teuchos::getParameter<int>(pl,"Dynamic Extra NEV") != 0 );
+    }
   }
 
   _numBlocks = pl.get("Num Blocks",3*_nevBlocks);
@@ -434,6 +448,16 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     bks_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(probauxvecs) );
   }
 
+  // Check to see if there is enough of a subspace to use the dynamic boundary for restarting.
+  if ( _dynXtraNev && _blockSize==1 ) {
+    int maxNumVecs = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
+    if ( maxNumVecs < _nevBlocks ) {
+      _dynXtraNev = false;
+      printer->stream(Debug) << " Turning OFF dymamic boundary for restarts because nev = " << nev << ", and ncv = " 
+                             << bks_solver->getMaxSubspaceDim() << std::endl << std::endl;
+    }
+  }
+  
   // Create workspace for the Krylov basis generated during a restart
   // Need at most (_nevBlocks*_blockSize+1) for the updated factorization and another block for the current factorization residual block (F).
   //  ---> (_nevBlocks*_blockSize+1) + _blockSize
@@ -446,10 +470,13 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
       workMV = MVT::Clone( *_problem->getInitVec(), 1 );
     }
     else { // inSituRestart == false
+      int maxNumVecs = _nevBlocks*_blockSize;
+      // Additional nev vectors for dynamic restart
+      if ( _dynXtraNev && _blockSize==1 ) maxNumVecs = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
       if (_problem->isHermitian()) {
-        workMV = MVT::Clone( *_problem->getInitVec(), _nevBlocks*_blockSize + _blockSize );
+        workMV = MVT::Clone( *_problem->getInitVec(), maxNumVecs + _blockSize );
       } else {
-        workMV = MVT::Clone( *_problem->getInitVec(), _nevBlocks*_blockSize+1 + _blockSize );
+        workMV = MVT::Clone( *_problem->getInitVec(), maxNumVecs + 1 + _blockSize );
       }
     }
   } else {
@@ -466,7 +493,9 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
   // enter solve() iterations
   {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*_timerSolve);
+#endif
   
     // tell bks_solver to iterate
     while (1) {
@@ -478,7 +507,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
         // check convergence first
         //
         ////////////////////////////////////////////////////////////////////////////////////
-        if (ordertest->getStatus() == Passed ) {
+        if ( ordertest->getStatus() == Passed ) {
           // we have convergence
           // ordertest->whichVecs() tells us which vectors from solver state are the ones we want
           // ordertest->howMany() will tell us how many
@@ -513,8 +542,20 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           }
 
           // Start restarting timer and increment counter 
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor restimer(*_timerRestarting);
+#endif
           numRestarts++;
+
+          int numConv = ordertest->howMany();
+          cur_nevBlocks = _nevBlocks*_blockSize;
+          if ( _dynXtraNev && _blockSize==1 ) {
+            int maxDynNev = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
+            if ( cur_nevBlocks + numConv <= maxDynNev )
+              cur_nevBlocks += numConv;
+            else
+              cur_nevBlocks = maxDynNev;
+          }
   
           printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << std::endl << std::endl;
   
@@ -529,12 +570,11 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
           // Determine if the storage for the nev eigenvalues of interest splits a complex conjugate pair.
           std::vector<int> ritzIndex = bks_solver->getRitzIndex();
-          if (ritzIndex[_nevBlocks*_blockSize-1]==1) {
+          if (ritzIndex[cur_nevBlocks-1]==1) {
             _conjSplit = true;
-            cur_nevBlocks = _nevBlocks*_blockSize+1;
+            cur_nevBlocks++;
           } else {
             _conjSplit = false;
-            cur_nevBlocks = _nevBlocks*_blockSize;
           }
 
           // Update the Krylov-Schur decomposition
@@ -567,7 +607,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             int info;
             lapack.GEQRF(curDim,cur_nevBlocks,copyQnev.values(),copyQnev.stride(),&tau[0],&work[0],work.size(),&info);
             TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error,
-                               "Anasazi::BlockDavidsonSolMgr::solve(): error calling GEQRF during restarting.");
+                               "Anasazi::BlockKrylovSchurSolMgr::solve(): error calling GEQRF during restarting.");
             // we need to get the diagonal of D
             std::vector<ScalarType> d(cur_nevBlocks);
             for (int j=0; j<copyQnev.numCols(); j++) {
@@ -761,7 +801,11 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   bks_solver->currentStatus(printer->stream(FinalSummary));
 
   // print timing information
-  Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+  if ( printer->isVerbosity( TimingDetails ) ) {
+    Teuchos::TimeMonitor::summarize( printer->stream( TimingDetails ) );
+  }
+#endif
 
   _problem->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;

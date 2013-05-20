@@ -51,11 +51,10 @@
 #include "Piro_Test_WeakenedModelEvaluator.hpp"
 
 #include "MockModelEval_A.hpp"
+
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
-
 #include "Thyra_ModelEvaluatorHelpers.hpp"
-
 #include "Thyra_OperatorVectorTypes.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
@@ -145,6 +144,8 @@ void eval_W_op_dynamic(
 }
 
 // Checking support
+
+#include "Thyra_MultiVectorStdOps.hpp"
 
 template <typename Scalar>
 RCP<Thyra::MultiVectorBase<Scalar> >

@@ -94,9 +94,8 @@ void array_check_bounds( const unsigned i , const unsigned count )
 {
   if ( count <= i ) {
     Impl::AssertShapeBoundsAbort< ExecutionSpace >
-      ::apply( 1 ,
-               count, 0, 0, 0, 0, 0, 0, 0,
-               i,     0, 0, 0, 0, 0, 0, 0 );
+      ::apply( 1 , count, 0, 0, 0, 0, 0, 0, 0,
+               1 , i,     0, 0, 0, 0, 0, 0, 0 );
   }
 }
 

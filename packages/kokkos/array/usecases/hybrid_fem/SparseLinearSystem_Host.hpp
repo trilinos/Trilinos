@@ -58,6 +58,7 @@ template< typename AScalarType ,
 struct Multiply< CrsMatrix<AScalarType,Host> ,
                  View<VScalarType*,LayoutType,Host > ,
                  View<VScalarType*,LayoutType,Host > >
+  : public HostThreadWorker
 {
   typedef Host                             device_type ;
   typedef typename device_type::size_type  size_type ;
@@ -78,7 +79,7 @@ public:
   //--------------------------------------------------------------------------
 
   inline
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     const std::pair<size_type,size_type> range =
       this_thread.work_range( m_y.dimension_0() );
@@ -112,7 +113,7 @@ public:
             const vector_type & y )
     : m_A( A ), m_x( x ), m_y( y )
   {
-    HostParallelLaunch< Multiply >( *this );
+    HostThreadWorker::execute();
   }
 };
 

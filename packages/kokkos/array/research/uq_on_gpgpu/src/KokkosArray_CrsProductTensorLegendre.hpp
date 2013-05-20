@@ -63,9 +63,7 @@ enum CrsProductTensorLegendreVariant {
   CrsProductTensorLegendreVariant_Tiled };
 
 template< typename TensorScalar , class Device ,
-          // CrsProductTensorLegendreVariant Variant = CrsProductTensorLegendreVariant_SeparateDiagonal >
 	  CrsProductTensorLegendreVariant Variant = CrsProductTensorLegendreVariant_HalfDiagonal >
-          // CrsProductTensorLegendreVariant Variant = CrsProductTensorLegendreVariant_Tiled >
 struct CrsProductTensorLegendre ;
 
 } // namespace KokkosArray
@@ -77,8 +75,10 @@ namespace KokkosArray {
 
 template< typename TensorScalar , class Device , CrsProductTensorLegendreVariant Variant >
 struct CrsProductTensorLegendre {
-  typedef View< unsigned* ,     Device >  array_unsigned_type ;
-  typedef View< TensorScalar* , Device >  array_scalar_type ;
+  typedef Device device_type ;
+
+  typedef View< unsigned* ,     device_type >  array_unsigned_type ;
+  typedef View< TensorScalar* , device_type >  array_scalar_type ;
 
   typedef typename array_unsigned_type::HostMirror array_unsigned_host_type ;
   typedef typename array_scalar_type  ::HostMirror array_scalar_host_type ;
@@ -146,7 +146,7 @@ struct CrsProductTensorLegendre {
   , m_nonzero_count(0)
   , m_multiply_add_flops(0)
   {
-    enum { Align = Impl::is_same<Device,Cuda>::value ? 32 : 1 };
+    enum { Align = Impl::is_same<device_type,Cuda>::value ? 32 : 1 };
 
     const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
       combinatorial( variable_poly_degree , maximum_poly_degree );

@@ -64,7 +64,6 @@ public:
   //@{
 
   typedef Cuda                  type ;
-  typedef Cuda                  layout_type ;
   typedef Cuda                  device_type ;
   typedef CudaSpace             memory_space ;
   typedef CudaSpace::size_type  size_type ;

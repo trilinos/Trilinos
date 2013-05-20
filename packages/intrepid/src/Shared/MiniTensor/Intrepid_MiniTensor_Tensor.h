@@ -54,17 +54,18 @@
 namespace Intrepid {
 
   ///
-  /// Second order tensor in R^N.
+  /// Second order tensor.
   ///
   template<typename T>
-  class Tensor
+  class Tensor : public TensorBase<T>
   {
   public:
 
     ///
-    /// Component type
+    /// Order
     ///
-    typedef T type;
+    static Index const
+    order = 2U;
 
     ///
     /// Default constructor
@@ -73,34 +74,47 @@ namespace Intrepid {
 
     ///
     /// Constructor that initializes to NaNs
-    /// \param N dimension
+    /// \param dimension
     ///
     explicit
-    Tensor(Index const N);
+    Tensor(Index const dimension);
+
+    ///
+    /// Create tensor from a specified value
+    /// \param dimension
+    /// \param value all components are set equal to this
+    ///
+    explicit
+    Tensor(Index const dimension, ComponentValue value);
 
     ///
     /// Create tensor from a scalar
-    /// \param N dimension
+    /// \param dimension
     /// \param s all components are set equal to this value
     ///
-    Tensor(Index const N, T const & s);
+    Tensor(Index const dimension, T const & s);
 
     ///
     /// Create tensor specifying components
-    /// \param N dimension
     /// \param  s00, s01, ... components in the R^2 canonical basis
     ///
     Tensor(T const & s00, T const & s01, T const & s10, T const & s11);
 
     ///
     /// Create tensor specifying components
-    /// \param N dimension
     /// \param  s00, s01, ... components in the R^3 canonical basis
     ///
     Tensor(
         T const & s00, T const & s01, T const & s02,
         T const & s10, T const & s11, T const & s12,
         T const & s20, T const & s21, T const & s22);
+
+    ///
+    /// Create tensor from array
+    /// \param dimension
+    /// \param data_ptr pointer into the array
+    ///
+    Tensor(Index const dimension, T const * data_ptr);
 
     ///
     /// Component ordering convention
@@ -113,9 +127,9 @@ namespace Intrepid {
     /// \param order component convention (3D only)
     ///
     Tensor(
-        Index const N,
+        Index const dimension,
         T const * data_ptr,
-        ComponentOrder const order = CANONICAL);
+        ComponentOrder const component_order);
 
     ///
     /// Copy constructor
@@ -150,30 +164,11 @@ namespace Intrepid {
     operator()(Index const i, Index const j);
 
     ///
-    /// Linear access to components
-    /// \param i the index
-    ///
-    T const &
-    operator[](Index const i) const;
-
-    ///
-    /// Linear access to components
-    /// \param i the index
-    ///
-    T &
-    operator[](Index const i);
-
-    ///
-    /// \return dimension
-    ///
-    Index
-    get_dimension() const;
-
-    ///
-    /// \param N dimension of 2nd-order tensor
+    /// Fill components with value
+    /// \param value all components are set equal to this
     ///
     void
-    set_dimension(Index const N);
+    fill(ComponentValue value);
 
     ///
     /// Fill components from array defined by pointer.
@@ -181,55 +176,15 @@ namespace Intrepid {
     /// \param order component convention (3D only)
     ///
     void
-    fill(T const * data_ptr, ComponentOrder const order = CANONICAL);
-
-    ///
-    /// Copy assignment
-    /// \param A the values of its components are copied to this tensor
-    ///
-    Tensor<T> &
-    operator=(Tensor<T> const & A);
-
-    ///
-    /// Tensor increment
-    /// \param A added to current tensor
-    ///
-    Tensor<T> &
-    operator+=(Tensor<T> const & A);
-
-    ///
-    /// Tensor decrement
-    /// \param A substracted from current tensor
-    ///
-    Tensor<T> &
-    operator-=(Tensor<T> const & A);
-
-    ///
-    /// Fill with zeros
-    ///
-    void
-    clear();
+    fill(
+        T const * data_ptr,
+        ComponentOrder const component_order = CANONICAL);
 
     ///
     /// Tensor order
     ///
-    static
     Index
-    order() {return 2U;};
-
-  private:
-
-    ///
-    /// Tensor dimension
-    ///
-    Index
-    dimension;
-
-    ///
-    /// Tensor components
-    ///
-    MiniTensor::StorageRCPArray<T>
-    e;
+    get_order() const {return order;};
 
   };
 
@@ -242,7 +197,7 @@ namespace Intrepid {
   operator+(Tensor<S> const & A, Tensor<T> const & B);
 
   ///
-  /// Tensor substraction
+  /// Tensor subtraction
   /// \return \f$ A - B \f$
   ///
   template<typename S, typename T>
@@ -352,6 +307,26 @@ namespace Intrepid {
   template<typename T>
   std::ostream &
   operator<<(std::ostream & os, Tensor<T> const & A);
+
+  ///
+  /// Extract a row as a vector
+  /// \param A tensor
+  /// \param i index of row
+  /// \return \f$ v = A(i,:) \f$
+  ///
+  template<typename T>
+  Vector<T>
+  row(Tensor<T> const & A, Index const i);
+
+  ///
+  /// Extract a column as a vector
+  /// \param A tensor
+  /// \param j index of column
+  /// \return \f$ v = A(:,j) \f$
+  ///
+  template<typename T>
+  Vector<T>
+  col(Tensor<T> const & A, Index const j);
 
   ///
   /// Tensor vector product v = A u

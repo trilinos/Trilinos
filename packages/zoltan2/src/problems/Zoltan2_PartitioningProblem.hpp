@@ -539,6 +539,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   }
   Z2_FORWARD_EXCEPTIONS;
 
+#ifdef KDDKDD_SHOULD_NEVER_CHANGE_PROBLEMCOMM
 #ifdef HAVE_ZOLTAN2_MPI
 
   // The algorithm may have changed the communicator.  Change it back.
@@ -549,6 +550,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
+#endif
 #endif
 
   if (metricsRequested_){
@@ -902,7 +904,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     //KDD Not sure why this shadow declaration is needed
     //KDD Comment out for now; revisit later if problems.
     //KDD const Teuchos::ParameterList pl = this->envConst_->getParameters();
-    bool exceptionThrow = true;
+    //bool exceptionThrow = true;
 
     switch (modelType_) {
 
@@ -940,8 +942,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //
       // this->env_ = rcp(new Environment(newParams, oldComm));
       ////////////////////////////////////////////////////////////////////////////
-
+/*
       if(algorithm == string("multijagged")){
+
           //int coordinateCnt = this->coordinateModel_->getCoordinateDim();
           //cout << coordinateCnt << " " << pl.getPtr<Array <int> >("pqParts")->size() << endl;
           //exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();
@@ -974,7 +977,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
 
       }
-
+*/
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
         this->coordinateModel_);

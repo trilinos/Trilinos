@@ -159,6 +159,8 @@ public:
   ,SILU
 #endif
     ,CHEBYSHEV
+    ,POLYNOMIAL
+    ,KRYLOV
     ,IHSS
     ,SORA
   };
@@ -182,7 +184,7 @@ public:
 #ifdef HAVE_IFPACK_SUPERLU
     +1
 #endif
-    +3
+    +5
     ;
 
   /** \brief List of the preconditioner types as enum values . */

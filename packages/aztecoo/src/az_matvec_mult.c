@@ -62,6 +62,15 @@
 #include "az_aztec.h"
 #include "az_blas_wrappers.h"
 
+/* Set this to 1 if you want to time pieces of mat-vec. */
+#define AZ_TIME_MATVEC_DEFAULT 0
+
+/* Determine whether to time mat-vec's. */
+#if AZ_TIMERS_ENABLED && AZ_TIME_MATVEC_DEFAULT
+#  define AZ_TIME_MATVEC 1
+#else
+#  define AZ_TIME_MATVEC 0
+#endif
 
 extern void dvbr_sparax_basic(int m, double *val, int *bindx, int *rpntr,
                        int *cpntr, int *bpntr, double *b, double *c,
@@ -436,6 +445,10 @@ void AZ_MSR_matvec_mult (double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
  int nzeros, bindx_row, k;
 #endif
 
+#if AZ_TIME_MATVEC
+ AZ_START_TIMER( "AztecOO: MSR mat-vec total", totalID );
+#endif
+
   val = Amat->val;
   bindx = Amat->bindx;
   data_org = Amat->data_org;
@@ -443,9 +456,21 @@ void AZ_MSR_matvec_mult (double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
 
   N = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
+#if AZ_TIME_MATVEC
+  AZ_START_TIMER( "AztecOO: MSR mat-vec import", importID );
+#endif
+
   /* exchange boundary info */
 
   AZ_exchange_bdry(b, data_org, proc_config);
+
+#if AZ_TIME_MATVEC
+ AZ_STOP_TIMER( importID );
+#endif
+
+#if AZ_TIME_MATVEC
+ AZ_START_TIMER( "AztecOO: MSR mat-vec local", localID );
+#endif
 
   /* This is the default */
 #ifndef AZ_DONT_UNROLL_LOOPS
@@ -491,6 +516,14 @@ void AZ_MSR_matvec_mult (double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
     
   }
   
+#endif
+
+#if AZ_TIME_MATVEC
+ AZ_STOP_TIMER( localID );
+#endif
+
+#if AZ_TIME_MATVEC
+ AZ_STOP_TIMER( totalID );
 #endif
 
 } /* AZ_MSR_matvec_mult */

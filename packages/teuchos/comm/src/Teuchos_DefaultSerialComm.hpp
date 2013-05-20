@@ -82,7 +82,7 @@ public:
   ///   It may change or disappear at any time without warning.
   int getTag () const { return 0; }
 
-  //! @name Constructors 
+  //! @name Constructors
   //@{
 
   /** \brief . */
@@ -93,7 +93,7 @@ public:
 
   //@}
 
-  //! @name Overridden from Comm 
+  //! @name Overridden from Comm
   //@{
 
   /** \brief . */
@@ -106,6 +106,11 @@ public:
   virtual void broadcast(
     const int rootRank, const Ordinal bytes, char buffer[]
     ) const;
+  //! Gather values from all processes to the root process.
+  virtual void
+  gather (const Ordinal sendBytes, const char sendBuffer[],
+          const Ordinal recvBytes, char recvBuffer[],
+          const int root) const;
   /** \brief . */
   virtual void gatherAll(
     const Ordinal sendBytes, const char sendBuffer[]
@@ -123,7 +128,7 @@ public:
     ,const Ordinal recvCounts[], char myGlobalReducts[]
     ) const;
   /** \brief . */
-	virtual void scan(
+        virtual void scan(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal bytes, const char sendBuffer[], char scanReducts[]
     ) const;
@@ -132,15 +137,21 @@ public:
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
   /** \brief . */
-  virtual void 
-  send (const Ordinal bytes, 
-	const char sendBuffer[], 
-	const int destRank, 
-	const int tag) const;
+  virtual void
+  send (const Ordinal bytes,
+        const char sendBuffer[],
+        const int destRank,
+        const int tag) const;
   /** \brief . */
   virtual void ssend(
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
+  /** \brief . */
+  virtual void
+  ssend (const Ordinal bytes,
+         const char sendBuffer[],
+         const int destRank,
+         const int tag) const;
   /** \brief . */
   virtual int receive(
     const int sourceRank, const Ordinal bytes, char recvBuffer[]
@@ -151,35 +162,41 @@ public:
     const int destRank
     ) const;
   /** \brief . */
+  virtual void
+  readySend (const Ordinal bytes,
+             const char sendBuffer[],
+             const int destRank,
+             const int tag) const;
+  /** \brief . */
   virtual RCP<CommRequest<Ordinal> > isend(
     const ArrayView<const char> &sendBuffer,
     const int destRank
     ) const;
   //! Variant of isend() that takes a tag.
-  virtual RCP<CommRequest<Ordinal> > 
+  virtual RCP<CommRequest<Ordinal> >
   isend (const ArrayView<const char> &sendBuffer,
-	 const int destRank,
-	 const int tag) const;
+         const int destRank,
+         const int tag) const;
   /** \brief . */
   virtual RCP<CommRequest<Ordinal> > ireceive(
     const ArrayView<char> &Buffer,
     const int sourceRank
     ) const;
   /** \brief . */
-  virtual RCP<CommRequest<Ordinal> > 
+  virtual RCP<CommRequest<Ordinal> >
   ireceive (const ArrayView<char> &Buffer,
-	    const int sourceRank,
-	    const int tag) const;
+            const int sourceRank,
+            const int tag) const;
   /** \brief . */
   virtual void waitAll(
     const ArrayView<RCP<CommRequest<Ordinal> > > &requests
     ) const;
   /** \brief . */
-  virtual void 
+  virtual void
   waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
-	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
+           const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
   /** \brief . */
-  virtual RCP<CommStatus<Ordinal> > 
+  virtual RCP<CommStatus<Ordinal> >
   wait (const Ptr<RCP<CommRequest<Ordinal> > >& request) const;
   /** \brief . */
   virtual RCP< Comm<Ordinal> > duplicate() const;
@@ -191,14 +208,14 @@ public:
 
   //@}
 
-  //! @name Overridden from Describable 
+  //! @name Overridden from Describable
   //@{
 
   /** \brief . */
   std::string description() const;
 
   //@}
-	
+
 };
 
 
@@ -231,28 +248,28 @@ SerialComm<Ordinal>::SerialComm(const SerialComm<Ordinal>& other)
 
 // Overridden from Comm
 
-  
+
 template<typename Ordinal>
 int SerialComm<Ordinal>::getRank() const
 {
   return 0;
 }
 
-  
+
 template<typename Ordinal>
 int SerialComm<Ordinal>::getSize() const
 {
   return 1;
 }
 
-  
+
 template<typename Ordinal>
 void SerialComm<Ordinal>::barrier() const
 {
   // Nothing to do
 }
 
-  
+
 template<typename Ordinal>
 void SerialComm<Ordinal>::broadcast(
   const int /*rootRank*/, const Ordinal /*bytes*/, char []/*buffer*/
@@ -261,7 +278,7 @@ void SerialComm<Ordinal>::broadcast(
   // Nothing to do
 }
 
-  
+
 template<typename Ordinal>
 void SerialComm<Ordinal>::gatherAll(
   const Ordinal sendBytes, const char sendBuffer[]
@@ -278,7 +295,27 @@ void SerialComm<Ordinal>::gatherAll(
   std::copy(sendBuffer,sendBuffer+sendBytes,recvBuffer);
 }
 
-  
+
+template<typename Ordinal>
+void
+SerialComm<Ordinal>::gather (const Ordinal sendBytes,
+                             const char sendBuffer[],
+                             const Ordinal recvBytes,
+                             char recvBuffer[],
+                             const int root) const
+{
+  (void) sendBytes;  // to remove "unused parameter" warning
+  (void) recvBytes;
+  (void) sendBuffer;
+  (void) recvBuffer;
+  (void) root;
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPT(!(sendBytes==recvBytes));
+#endif
+  std::copy (sendBuffer, sendBuffer + sendBytes, recvBuffer);
+}
+
+
 template<typename Ordinal>
 void SerialComm<Ordinal>::reduceAll(
   const ValueTypeReductionOp<Ordinal,char> &reductOp
@@ -289,7 +326,7 @@ void SerialComm<Ordinal>::reduceAll(
   std::copy(sendBuffer,sendBuffer+bytes,globalReducts);
 }
 
-  
+
 template<typename Ordinal>
 void SerialComm<Ordinal>::reduceAllAndScatter(
   const ValueTypeReductionOp<Ordinal,char> &reductOp
@@ -305,12 +342,12 @@ void SerialComm<Ordinal>::reduceAllAndScatter(
   (void)myGlobalReducts;
 
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT( recvCounts==NULL || recvCounts[0] != sendBytes ); 
+  TEUCHOS_TEST_FOR_EXCEPT( recvCounts==NULL || recvCounts[0] != sendBytes );
 #endif
   std::copy(sendBuffer,sendBuffer+sendBytes,myGlobalReducts);
 }
 
-  
+
 template<typename Ordinal>
 void SerialComm<Ordinal>::scan(
   const ValueTypeReductionOp<Ordinal,char> &reductOp
@@ -321,7 +358,7 @@ void SerialComm<Ordinal>::scan(
   std::copy(sendBuffer,sendBuffer+bytes,scanReducts);
 }
 
-  
+
 template<typename Ordinal>
 void SerialComm<Ordinal>::send(
   const Ordinal /*bytes*/, const char []/*sendBuffer*/, const int /*destRank*/
@@ -336,9 +373,9 @@ void SerialComm<Ordinal>::send(
 
 template<typename Ordinal>
 void SerialComm<Ordinal>::
-send (const Ordinal /*bytes*/, 
-      const char []/*sendBuffer*/, 
-      const int /*destRank*/, 
+send (const Ordinal /*bytes*/,
+      const char []/*sendBuffer*/,
+      const int /*destRank*/,
       const int /*tag*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -355,12 +392,25 @@ void SerialComm<Ordinal>::ssend(
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error
-    ,"SerialComm<Ordinal>::send(...): Error, you can not call send(...) when you"
+    ,"SerialComm<Ordinal>::send(...): Error, you can not call ssend(...) when you"
     " only have one process!"
     );
 }
 
-  
+template<typename Ordinal>
+void
+SerialComm<Ordinal>::ssend (const Ordinal bytes,
+                            const char sendBuffer[],
+                            const int destRank,
+                            const int tag) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true, std::logic_error
+    ,"SerialComm<Ordinal>::send(...): Error, you can not call ssend(...) when you"
+    " only have one process!"
+    );
+}
+
 template<typename Ordinal>
 int SerialComm<Ordinal>::receive(
   const int /*sourceRank*/, const Ordinal /*bytes*/, char []/*recvBuffer*/
@@ -372,7 +422,7 @@ int SerialComm<Ordinal>::receive(
     " only have one process!"
     );
   // The next line will never be reached, but a return is required on some platforms
-  return 0; 
+  return 0;
 }
 
 
@@ -389,6 +439,24 @@ void SerialComm<Ordinal>::readySend(
     );
 }
 
+template<typename Ordinal>
+void
+SerialComm<Ordinal>::readySend (const Ordinal bytes,
+                                const char sendBuffer[],
+                                const int destRank,
+                                const int tag) const
+{
+  (void) bytes;
+  (void) sendBuffer;
+  (void) destRank;
+  (void) tag;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true, std::logic_error
+    ,"SerialComm<Ordinal>::readySend(...): Error, you can not call readySend(...) when you"
+    " only have one process!"
+    );
+}
 
 template<typename Ordinal>
 RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::isend(
@@ -402,7 +470,7 @@ RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::isend(
 
 
 template<typename Ordinal>
-RCP<CommRequest<Ordinal> > 
+RCP<CommRequest<Ordinal> >
 SerialComm<Ordinal>::
 isend (const ArrayView<const char> &/*sendBuffer*/,
        const int /*destRank*/,
@@ -425,11 +493,11 @@ RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::ireceive(
 
 
 template<typename Ordinal>
-RCP<CommRequest<Ordinal> > 
+RCP<CommRequest<Ordinal> >
 SerialComm<Ordinal>::
 ireceive (const ArrayView<char> &/*Buffer*/,
-	  const int /*sourceRank*/,
-	  const int /*tag*/) const
+          const int /*sourceRank*/,
+          const int /*tag*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
   return null;
@@ -445,25 +513,25 @@ void SerialComm<Ordinal>::waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >&
 
 
 template<typename Ordinal>
-void 
+void
 SerialComm<Ordinal>::
 waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
-	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const
+         const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(statuses.size() < requests.size(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(statuses.size() < requests.size(),
     std::invalid_argument, "Teuchos::SerialComm::waitAll: There are not enough "
     "entries in the statuses array to hold all the results of the communication"
     " requests.  requests.size() = " << requests.size() << " > statuses.size() "
     "= " << statuses.size() << ".");
 
-  for (typename ArrayView<RCP<CommRequest<Ordinal> > >::iterator it = requests.begin(); 
+  for (typename ArrayView<RCP<CommRequest<Ordinal> > >::iterator it = requests.begin();
        it != requests.end(); ++it) {
     *it = null; // A postcondition of the Teuchos::Comm interface.
   }
 }
 
 template<typename Ordinal>
-RCP<CommStatus<Ordinal> > 
+RCP<CommStatus<Ordinal> >
 SerialComm<Ordinal>::wait (const Ptr<RCP<CommRequest<Ordinal> > > & request) const
 {
   (void) request;

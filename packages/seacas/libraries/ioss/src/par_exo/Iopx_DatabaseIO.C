@@ -240,34 +240,6 @@ namespace {
     return omitted;
   }
 
-  int64_t get_side_offset(const Ioss::SideBlock *sb)
-  {
-    // And yet another idiosyncracy of sidesets...
-    // The side of an element (especially shells) can be
-    // either a face or an edge in the same sideset.  The
-    // ordinal of an edge is (local_edge_number+#faces) on the
-    // database, but needs to be (local_edge_number) for
-    // Sierra...
-    //
-    // If the sideblock has a "parent_element_topology" and a
-    // "topology", then we can determine whether to offset the
-    // side ordinals...
-
-    const Ioss::ElementTopology *side_topo   = sb->topology();
-    const Ioss::ElementTopology *parent_topo = sb->parent_element_topology();
-    int64_t side_offset = 0;
-    if (side_topo && parent_topo) {
-      int side_topo_dim = side_topo->parametric_dimension();
-      int elem_topo_dim = parent_topo->parametric_dimension();
-      int elem_spat_dim = parent_topo->spatial_dimension();
-
-      if (side_topo_dim+1 < elem_spat_dim && side_topo_dim < elem_topo_dim) {
-        side_offset = parent_topo->number_faces();
-      }
-    }
-    return side_offset;
-  }
-
   void get_connectivity_data(int exoid, void *data, ex_entity_type type, ex_entity_id id, int position)
   {
     int ierr = 0;
@@ -2445,7 +2417,7 @@ namespace Iopx {
           // FIXME SIZE
           decomp->get_block_connectivity(get_file_pointer(), data, id, order, element_nodes);
         }
-        else if (field.get_name() == "ids") {
+        else if (field.get_name() == "ids" || field.get_name() == "implicit_ids") {
           // Map the local ids in this element block
           // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
           get_map(EX_ELEM_BLOCK).map_implicit_data(data, field, num_to_get, eb->get_offset());
@@ -2907,7 +2879,7 @@ namespace Iopx {
           // numbers.
 
           // See if edges or faces...
-          int64_t side_offset = get_side_offset(fb);
+          int64_t side_offset = Ioss::Utils::get_side_offset(fb);
 
 
           if (fb->owner()->block_count() == 1) {
@@ -3835,7 +3807,8 @@ namespace Iopx {
         } else if (field.get_name() == "ids") {
           size_t glob_map_offset = eb->get_property("global_map_offset").get_int();
           handle_element_ids(eb, data, num_to_get, glob_map_offset+proc_offset, file_count);
-
+        } else if (field.get_name() == "implicit_ids") {
+          // Do nothing, input only field.
         } else if (field.get_name() == "skin") {
           // This is (currently) for the skinned body. It maps the
           // side element on the skin to the original element/local
@@ -4853,7 +4826,7 @@ namespace Iopx {
           // Allocate space for local side number and element numbers
           // numbers.
           // See if edges or faces...
-          size_t side_offset = get_side_offset(fb);
+          size_t side_offset = Ioss::Utils::get_side_offset(fb);
 
           size_t index = 0;
 
@@ -4905,7 +4878,7 @@ namespace Iopx {
           // The element_id passed in is the local id.
 
           // See if edges or faces...
-          size_t side_offset = get_side_offset(fb);
+          size_t side_offset = Ioss::Utils::get_side_offset(fb);
 
           size_t index = 0;
           if (field.get_type() == Ioss::Field::INTEGER) {

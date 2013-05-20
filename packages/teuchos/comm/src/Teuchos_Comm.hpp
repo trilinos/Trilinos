@@ -370,6 +370,12 @@ public:
     const int rootRank, const Ordinal bytes, char buffer[]
     ) const = 0;
 
+  //! Gather values from all processes to the root process.
+  virtual void
+  gather (const Ordinal sendBytes, const char sendBuffer[],
+          const Ordinal recvBytes, char recvBuffer[],
+          const int root) const = 0;
+
   /** \brief Gather values from each process to collect on all processes.
    *
    * \param sendBytes [in] Number of entires in <tt>sendBuffer[]</tt> on
@@ -519,6 +525,12 @@ public:
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const = 0;
 
+  //! Variant of ssend() that takes a message tag.
+  virtual void
+  ssend (const Ordinal bytes,
+         const char sendBuffer[],
+         const int destRank,
+         const int tag) const = 0;
 
   /** \brief Blocking receive of data from this process to another process.
    *
@@ -561,13 +573,16 @@ public:
     const int destRank
     ) const = 0;
 
+  //! Variant of readySend() that accepts a message tag.
+  virtual void
+  readySend (const Ordinal bytes,
+             const char sendBuffer[],
+             const int destRank,
+             const int tag) const = 0;
 
   //@}
-
-
   //! @name Non-blocking Point-to-Point Operations
   //@{
-
 
   /** \brief Non-blocking send.
    *

@@ -133,9 +133,6 @@ public:
 
   /** \brief  Assert called from the original, master thread.  */
   static void assert_master_thread( const char * const );
-
-  /** \brief  Detect cache line size, if capable */
-  static size_t detect_cache_line_size();
 };
 
 //----------------------------------------------------------------------------

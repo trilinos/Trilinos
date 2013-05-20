@@ -52,6 +52,11 @@
  * ************************************************ */
 #cmakedefine TRIOS_HAVE_GETIFADDRS 1
 
+/* ************************************************
+ * CommSplitter Config
+ * ************************************************ */
+#cmakedefine TRIOS_ENABLE_COMMSPLITTER 1
+
 
 /* ************************************************
  * Semaphore configuration

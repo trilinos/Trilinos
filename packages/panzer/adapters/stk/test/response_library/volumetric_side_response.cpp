@@ -107,7 +107,7 @@ namespace panzer_stk {
 
     template <typename T>
     Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
-    { return Teuchos::rcp(new panzer::ResponseEvaluatorFactory_Functional<T>(comm)); }
+    { return Teuchos::rcp(new panzer::ResponseEvaluatorFactory_Functional<T,int,int>(comm)); }
   };
 
   TEUCHOS_UNIT_TEST(volumetric_side_response, test_wkst)
@@ -146,17 +146,37 @@ namespace panzer_stk {
  
       if(tcomm->getRank()==0) {
         TEST_ASSERT(worksets!=Teuchos::null);
-        TEST_EQUALITY(worksets->size(),2);
+        TEST_EQUALITY(worksets->size(),6);
 
         TEST_EQUALITY((*worksets)[0].num_cells,3);
-        TEST_EQUALITY((*worksets)[0].subcell_dim,1);
-        TEST_EQUALITY((*worksets)[0].subcell_index,3);
+        TEST_EQUALITY((*worksets)[0].subcell_dim,0);
+        TEST_EQUALITY((*worksets)[0].subcell_index,0);
         TEST_ASSERT(!(*worksets)[0].int_rules[0]->int_rule->isSide());
 
         TEST_EQUALITY((*worksets)[1].num_cells,1);
-        TEST_EQUALITY((*worksets)[1].subcell_dim,1);
-        TEST_EQUALITY((*worksets)[1].subcell_index,3);
+        TEST_EQUALITY((*worksets)[1].subcell_dim,0);
+        TEST_EQUALITY((*worksets)[1].subcell_index,0);
         TEST_ASSERT(!(*worksets)[1].int_rules[0]->int_rule->isSide());
+
+        TEST_EQUALITY((*worksets)[2].num_cells,3);
+        TEST_EQUALITY((*worksets)[2].subcell_dim,0);
+        TEST_EQUALITY((*worksets)[2].subcell_index,3);
+        TEST_ASSERT(!(*worksets)[2].int_rules[0]->int_rule->isSide());
+
+        TEST_EQUALITY((*worksets)[3].num_cells,1);
+        TEST_EQUALITY((*worksets)[3].subcell_dim,0);
+        TEST_EQUALITY((*worksets)[3].subcell_index,3);
+        TEST_ASSERT(!(*worksets)[3].int_rules[0]->int_rule->isSide());
+
+        TEST_EQUALITY((*worksets)[4].num_cells,3);
+        TEST_EQUALITY((*worksets)[4].subcell_dim,1);
+        TEST_EQUALITY((*worksets)[4].subcell_index,3);
+        TEST_ASSERT(!(*worksets)[4].int_rules[0]->int_rule->isSide());
+
+        TEST_EQUALITY((*worksets)[5].num_cells,1);
+        TEST_EQUALITY((*worksets)[5].subcell_dim,1);
+        TEST_EQUALITY((*worksets)[5].subcell_index,3);
+        TEST_ASSERT(!(*worksets)[5].int_rules[0]->int_rule->isSide());
       }
       else {
         TEST_ASSERT(worksets!=Teuchos::null);
@@ -242,7 +262,14 @@ namespace panzer_stk {
     Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(aVec)->getNonconstLocalData(Teuchos::outArg(aData));
 
     double aValue = 82.9;
-    TEST_FLOATING_EQUALITY(aData[0],0.125*aValue,1e-14);
+    TEST_FLOATING_EQUALITY(aData[0],3.0*0.125*aValue,1e-14);
+
+    // where does 3.0 and 0.125 come from?
+    //    0.125 comes from the fact you are summing over the first
+    //    column of mesh, this is simply the volume of those elements.
+    //    3.0 comes from the total number of worksets when the "cascade"
+    //    is computed. Essentially each element is included three times
+    //    in the workset.
   }
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,

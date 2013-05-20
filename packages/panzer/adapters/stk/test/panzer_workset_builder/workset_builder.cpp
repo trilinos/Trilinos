@@ -54,6 +54,8 @@ using Teuchos::rcp;
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SquareTriMeshFactory.hpp"
+#include "Panzer_STK_CubeTetMeshFactory.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_PhysicsBlock.hpp"
@@ -310,6 +312,94 @@ namespace panzer {
 
   }
 
+  TEUCHOS_UNIT_TEST(workset_builder, side_element_cascade)
+  {
+    using Teuchos::RCP;
+    
+    // excercise subcell entities capability
+    {
+      RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+      pl->set("X Blocks",1);
+      pl->set("Y Blocks",1);
+      pl->set("Z Blocks",1);
+      pl->set("X Elements",6);
+      pl->set("Y Elements",4);
+      pl->set("Z Elements",2);
+  
+      panzer_stk::CubeTetMeshFactory factory;
+      factory.setParameterList(pl);
+      RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+  
+      std::vector<stk::mesh::Entity*> sideEntities; 
+      mesh->getMySides("left","eblock-0_0_0",sideEntities);
+
+      std::vector<std::vector<stk::mesh::Entity*> > subcells;
+      panzer_stk::workset_utils::getSubcellEntities(*mesh,sideEntities,subcells);
+
+      TEST_EQUALITY(subcells.size(),2);
+      TEST_EQUALITY(subcells[0].size(),15);
+      TEST_EQUALITY(subcells[1].size(),30);
+    }
+
+    {
+      RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+      pl->set("X Blocks",1);
+      pl->set("Y Blocks",1);
+      pl->set("Z Blocks",1);
+      pl->set("X Elements",1);
+      pl->set("Y Elements",1);
+      pl->set("Z Elements",1);
+
+      panzer_stk::CubeTetMeshFactory factory;
+      factory.setParameterList(pl);
+      RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+
+      std::vector<stk::mesh::Entity*> sideEntities; 
+      mesh->getMySides("left","eblock-0_0_0",sideEntities);
+
+      std::vector<std::size_t> localSubcellDim,localSubcellIds;
+      std::vector<stk::mesh::Entity*> elements;
+
+      // TOUCHING TABLE:
+      // the following elements touch the side
+      //    1 2 3 4 5 6 9 10 11 12       // element global IDs
+      //    N E N E F F N  E  E  N       // face (F), edge (E), node (N)
+
+      panzer_stk::workset_utils::getSideElementCascade(*mesh,"eblock-0_0_0",sideEntities,
+                                                       localSubcellDim,localSubcellIds,elements);
+
+      TEST_EQUALITY(elements.size(),30);
+      TEST_EQUALITY(elements.size(),localSubcellDim.size());
+      TEST_EQUALITY(elements.size(),localSubcellIds.size());
+
+      // if you use the "TOUCHING TABLE" you can determine that
+      // 2 elements touch on the face, 10 elements touch on the edge, and 18 elements touch on the node
+      // of course the elements are repeated for multiple edges and nodes that touch. For instance an
+      // edge touches the side, this implies that the nodes also touch that side, an element containing that
+      // edge will then be included once for the edge, and twice for each node contained in that edge. 
+
+      {
+        bool nodes = true; for(int i= 0;i<18;i++) nodes &= (localSubcellDim[i]==0); TEST_ASSERT(nodes);
+        bool edges = true; for(int i=18;i<28;i++) edges &= (localSubcellDim[i]==1); TEST_ASSERT(edges);
+        bool faces = true; for(int i=28;i<30;i++) edges &= (localSubcellDim[i]==2); TEST_ASSERT(faces);
+      }
+
+      // check that each element is assigned the correct dimension
+      {
+        std::set<stk::mesh::EntityId> nodeE, edgeE, faceE;
+        nodeE.insert(1); nodeE.insert(2); nodeE.insert(3); nodeE.insert(4); nodeE.insert(5); 
+        nodeE.insert(6); nodeE.insert(9); nodeE.insert(10); nodeE.insert(11); nodeE.insert(12);
+
+        edgeE.insert(2); edgeE.insert(4); edgeE.insert(10); edgeE.insert(11); edgeE.insert(5); edgeE.insert(6);
+
+        faceE.insert(5); faceE.insert(6);
+
+        bool nodes = true; for(int i= 0;i<18;i++) nodes &= (nodeE.find(elements[i]->identifier())!=nodeE.end()); TEST_ASSERT(nodes);
+        bool edges = true; for(int i=18;i<28;i++) edges &= (edgeE.find(elements[i]->identifier())!=edgeE.end()); TEST_ASSERT(edges);
+        bool faces = true; for(int i=28;i<30;i++) faces &= (faceE.find(elements[i]->identifier())!=faceE.end()); TEST_ASSERT(faces);
+      }
+    }
+  }
 
   void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
 		  std::vector<stk::mesh::EntityId> & nodeIds)

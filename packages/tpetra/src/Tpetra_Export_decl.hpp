@@ -59,6 +59,9 @@ namespace Tpetra {
   class ImportExportData;
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Import;
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -104,10 +107,22 @@ namespace Tpetra {
   /// This class is templated on the same template arguments as Map:
   /// the local ordinal type <tt>LocalOrdinal</tt>, the global ordinal
   /// type <tt>GlobalOrdinal</tt>, and the Kokkos <tt>Node</tt> type.
+  ///
+  /// This method accepts an optional list of parameters, either
+  /// through the constructor or through the setParameterList()
+  /// method.  Most users do not need to worry about these parameters;
+  /// the default values are fine.  However, for expert users, we
+  /// expose the following parameter:
+  /// - "Barrier between receives and sends" (\c bool): Whether to
+  ///   execute a barrier between receives and sends, when executing
+  ///   the Import (i.e., when calling DistObject's doImport()
+  ///   (forward mode) or doExport() (reverse mode)).
+  ///
   template <class LocalOrdinal,
             class GlobalOrdinal = LocalOrdinal,
             class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Export: public Teuchos::Describable {
+      friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
   public:
     //! The specialization of Map used by this class.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
@@ -181,8 +196,22 @@ namespace Tpetra {
     ///   underlying data.
     Export (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
+    /// \brief "Copy" constructor from an Export object.
+    ///
+    /// This constructor creates an Export object from the "reverse"
+    /// of the given Import object.  This method is mainly useful for
+    /// Tpetra developers, for example when building the explicit
+    /// transpose of a sparse matrix.
+    Export (const Import<LocalOrdinal,GlobalOrdinal,Node> & importer);
+
     //! Destructor.
     ~Export();
+
+    /// \brief Set parameters.
+    ///
+    /// Please see the class documentation for a list of all accepted
+    /// parameters and their default values.
+    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     //@}
     //! @name Export Attribute Methods
@@ -223,8 +252,8 @@ namespace Tpetra {
     /// \brief List of processes to which entries will be sent.
     ///
     /// The entry with local ID getExportLIDs()[i] will be sent to
-    /// process getExportImageIDs()[i].
-    ArrayView<const int> getExportImageIDs() const;
+    /// process getExportPiDs()[i].
+    ArrayView<const int> getExportPIDs() const;
 
     //! The source Map used to construct this Export.
     const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getSourceMap() const;
@@ -276,9 +305,9 @@ namespace Tpetra {
     //==============================================================================
     // sets up numSameIDs_, numPermuteIDs_, and the export IDs
     // these variables are already initialized to 0 by the ImportExportData ctr.
-    // also sets up permuteToLIDs_, permuteFromLIDs_, exportGIDs_, and exportLIDs_
-    void setupSamePermuteExport();
-    void setupRemote();
+    // also sets up permuteToLIDs_, permuteFromLIDs_, and exportLIDs_
+    void setupSamePermuteExport(Teuchos::Array<GlobalOrdinal> & exportGIDs);
+    void setupRemote(Teuchos::Array<GlobalOrdinal> & exportGIDs);
     //@}
   }; // class Export
 

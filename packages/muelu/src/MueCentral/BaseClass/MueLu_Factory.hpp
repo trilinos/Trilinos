@@ -66,7 +66,11 @@ namespace MueLu {
     //@{ Constructors/Destructors.
 
     //! Constructor.
-    Factory() { }
+    Factory()
+#ifdef HAVE_MUELU_DEBUG
+      : multipleCallCheck_(FIRSTCALL), lastLevel_(NULL)
+#endif
+    { }
 
     //! Destructor.
     virtual ~Factory() { }
@@ -84,8 +88,11 @@ namespace MueLu {
     //! Default implementation of FactoryAcceptor::GetFactory()
     const RCP<const FactoryBase> GetFactory(const std::string & varName) const {
       if (!GetParameterList().isParameter(varName) && GetValidParameterList() == Teuchos::null) {
-        // If the parameter is not on the list and there is not validator, the defaults values for 'varName' is not set. Failback by using directly the FactoryManager
-        // Note: call to GetValidParameterList() can be costly for classes that validate parameters. But it get called only (lazy '&&' operator) if the parameter 'varName' is not on the paramlist and the parameter 'varName' is always on the list when validator is present and 'varName' is valid (at least the default value is set).
+        // If the parameter is not on the list and there is not validator, the defaults values for 'varName' is not set.
+        // Failback by using directly the FactoryManager
+        // NOTE: call to GetValidParameterList() can be costly for classes that validate parameters.
+        // But it get called only (lazy '&&' operator) if the parameter 'varName' is not on the paramlist and
+        // the parameter 'varName' is always on the list when validator is present and 'varName' is valid (at least the default value is set).
         return Teuchos::null;
       }
 
@@ -101,6 +108,18 @@ namespace MueLu {
     virtual RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const {
       return Teuchos::null;  // Teuchos::null == GetValidParameterList() not implemented == skip validation and no default values (dangerous)
     }
+
+#ifdef HAVE_MUELU_DEBUG
+    void EnableMultipleCallCheck() const       { multipleCallCheck_       = ENABLED;  }
+    void DisableMultipleCallCheck() const      { multipleCallCheck_       = DISABLED; }
+    static void EnableMultipleCheckGlobally()  { multipleCallCheckGlobal_ = ENABLED;  }
+    static void DisableMultipleCheckGlobally() { multipleCallCheckGlobal_ = DISABLED; }
+#else
+    void EnableMultipleCallCheck() const       { }
+    void DisableMultipleCallCheck() const      { }
+    static void EnableMultipleCheckGlobally()  { }
+    static void DisableMultipleCheckGlobally() { }
+#endif
 
   protected:
 
@@ -130,6 +149,15 @@ namespace MueLu {
     bool IsAvailable(Level & level, const std::string & varName) const {
       return level.IsAvailable(varName, GetFactory(varName).get());
     }
+
+#ifdef HAVE_MUELU_DEBUG
+  public:
+    enum           multipleCallCheckEnum { ENABLED, DISABLED, FIRSTCALL };
+  protected:
+    mutable        multipleCallCheckEnum multipleCallCheck_;
+    static         multipleCallCheckEnum multipleCallCheckGlobal_;
+    mutable Level* lastLevel_; // can be a dangling pointers. DO NOT dereference.
+#endif
 
   }; //class Factory
 

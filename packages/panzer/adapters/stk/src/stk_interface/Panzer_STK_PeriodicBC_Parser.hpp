@@ -69,7 +69,7 @@ public:
 
    // parameterlistacceptor required functions
    /////////////////////////////////////
-   virtual void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
+   void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
 
    Teuchos::RCP<Teuchos::ParameterList>  getNonconstParameterList();
 

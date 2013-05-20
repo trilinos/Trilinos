@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -32,23 +33,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 #
 # ************************************************************************
 # @HEADER
@@ -115,6 +99,7 @@ ENDFUNCTION()
 #     | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
 #   [FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
 #   [WILL_FAIL]
+#   [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
 #   [INSTALLABLE]
 #   )
 #
@@ -150,9 +135,9 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE_AND_TEST EXE_NAME)
      #prefix
      PARSE
      #lists
-     "SOURCES;DEPLIBS;NAME;NAME_POSTFIX;NUM_MPI_PROCS;DIRECTORY;KEYWORDS;COMM;ARGS;NAME;PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;XHOST_TEST;HOSTTYPE;XHOSTTYPE;XHOSTTYPE_TEST;FAIL_REGULAR_EXPRESSION;LINKER_LANGUAGE;DEFINES"
+     "SOURCES;DEPLIBS;NAME;NAME_POSTFIX;NUM_MPI_PROCS;DIRECTORY;KEYWORDS;COMM;ARGS;NAME;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;ENVIRONMENT;CATEGORIES;HOST;XHOST;XHOST_TEST;HOSTTYPE;XHOSTTYPE;XHOSTTYPE_TEST;LINKER_LANGUAGE;DEFINES"
      #options
-     "STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;INSTALLABLE;NOEXEPREFIX;NOEXESUFFIX"
+     "STANDARD_PASS_OUTPUT;WILL_FAIL;TIMEOUT;ADD_DIR_TO_NAME;INSTALLABLE;NOEXEPREFIX;NOEXESUFFIX"
      ${ARGN}
      )
 
@@ -203,8 +188,10 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE_AND_TEST EXE_NAME)
   TRIBITS_FWD_PARSE_ARG(CALL_ARGS ARGS)
   TRIBITS_FWD_PARSE_ARG(CALL_ARGS PASS_REGULAR_EXPRESSION)
   TRIBITS_FWD_PARSE_ARG(CALL_ARGS FAIL_REGULAR_EXPRESSION)
+  TRIBITS_FWD_PARSE_ARG(CALL_ARGS ENVIRONMENT)
   TRIBITS_FWD_PARSE_OPT(CALL_ARGS STANDARD_PASS_OUTPUT)
   TRIBITS_FWD_PARSE_OPT(CALL_ARGS WILL_FAIL)
+  TRIBITS_FWD_PARSE_OPT(CALL_ARGS TIMEOUT)
   TRIBITS_FWD_PARSE_OPT(CALL_ARGS ADD_DIR_TO_NAME)
   IF (PARSE_XHOST_TEST)
     SET(CALL_ARGS ${CALL_ARGS} XHOST ${PARSE_XHOST_TEST})

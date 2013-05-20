@@ -1033,6 +1033,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   int *All_Indices() const {
     if (!StorageOptimized()) throw ReportError("This method: int *All_Indices() cannot be called when StorageOptimized()==false", -1);
     else return(CrsGraphData_->data->All_Indices_.Values());}
+#if defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
+  int *All_IndicesPlus1() const;
+#endif
   int *IndexOffset() const {
     if (!StorageOptimized()) throw ReportError("This method: int *IndexOffset()  cannot be called when StorageOptimized()==false", -1);
     else return(CrsGraphData_->IndexOffset_.Values());}

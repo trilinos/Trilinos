@@ -438,10 +438,9 @@ template <typename User>
 
   if (nLocalIds > 0){
     try{
-      size_t coordListSize; 
       const scalar_t *coords;
       int stride;
-      coordListSize = ia->getCoordinates(0, gids, coords, stride);
+      ia->getCoordinates(0, gids, coords, stride);
     }
     Z2_FORWARD_EXCEPTIONS;
 

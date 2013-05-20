@@ -86,7 +86,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "Aggregates");
-    Input(currentLevel,"Nullspace");
+    Input(currentLevel, "Nullspace");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -104,25 +104,21 @@ namespace MueLu {
   void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
-    //TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.GetLevelID() != 0, Exceptions::RuntimeError, "MueLu::NullspaceFactory::Build(): NullspaceFactory can be used for finest level (LevelID == 0) only.");
-
     RCP<Aggregates>  aggregates = Get< RCP<Aggregates> >(currentLevel, "Aggregates");
-    GlobalOrdinal numAggs = aggregates->GetNumAggregates();
-
-    // extract communicator
-    RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
-
-    // determine nullspace dimension
     RCP<MultiVector> nullspace  = Get< RCP<MultiVector> >(currentLevel, "Nullspace");
-    const size_t NSDim = nullspace->getNumVectors();
+
+    GlobalOrdinal                  numAggs = aggregates->GetNumAggregates();
+    const size_t                   NSDim   = nullspace->getNumVectors();
+    RCP<const Teuchos::Comm<int> > comm    = aggregates->GetMap()->getComm();
 
     // check for consistency of striding information with NSDim and nCoarseDofs
-    if( stridedBlockId_== -1 ) {
+    if (stridedBlockId_== -1) {
       // this means we have no real strided map but only a block map with constant blockSize "NSDim"
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() > 1, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
       stridingInfo_.clear();
       stridingInfo_.push_back(NSDim);
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() != 1, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
+
     } else {
       // stridedBlockId_ > -1, set by user
       TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId_ > Teuchos::as<LO>(stridingInfo_.size() - 1) , Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): it is stridingInfo_.size() <= stridedBlockId_. error.");

@@ -83,25 +83,31 @@ namespace MueLu {
     RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
 
     if (rebalanceImporter != Teuchos::null) {
-
       RCP<Matrix> rebalancedAc;
       {
         SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
         RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
 
-	const ParameterList & pL = GetParameterList();
+        const ParameterList & pL = GetParameterList();
 
-	ParameterList XpetraList;
-       	if(pL.get<bool>("useSubcomm") == true) XpetraList.set("Restrict Communicator",true);
-	rebalancedAc = MatrixFactory::Build(originalAc,*rebalanceImporter,targetMap,targetMap,rcp(&XpetraList,false));
-	// Note: If the communicator is restricted away, Build returns Teuchos::null.
-	if(!rebalancedAc.is_null()) rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
+        ParameterList XpetraList;
+        if (pL.get<bool>("useSubcomm") == true) {
+          GetOStream(Runtime0,0) << "Replacing maps with a subcommunicator" << std::endl;
+          XpetraList.set("Restrict Communicator",true);
+        }
+        // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
+        rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
+
+        if (!rebalancedAc.is_null())
+          rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
+
         Set(coarseLevel, "A", rebalancedAc);
       }
-      
+
       if (!rebalancedAc.is_null()) {
-        GetOStream(Statistics0, 0) << RAPFactory::PrintMatrixInfo       (*rebalancedAc, "Ac (rebalanced)");
-        GetOStream(Statistics0, 0) << RAPFactory::PrintLoadBalancingInfo(*rebalancedAc, "Ac (rebalanced)");
+        RCP<ParameterList> params = rcp(new ParameterList());
+        params->set("printLoadBalancingInfo", true);
+        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
       }
 
     } else {

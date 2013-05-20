@@ -139,7 +139,8 @@ static void get_app_args_from_proc(int *argc, char **argv, int max_args)
         if (fread(buf, 1, COMMSPLITTER_PATH_MAX, f) > 0) {
             arg = buf;
             while(*arg != '\0') {
-                argv[i] = strdup(arg);
+                argv[i] = (char *)malloc(strlen(arg));
+                strcpy(argv[i], arg);
                 arg += strlen(argv[i]) + 1;
                 i++;
                 if (i==max_args) {

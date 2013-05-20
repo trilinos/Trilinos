@@ -44,6 +44,8 @@
 #ifndef PARALLELCOMM_HPP
 #define PARALLELCOMM_HPP
 
+#include <string>
+
 //------------------------------------------------------------------------
 
 #if defined( HAVE_MPI )
@@ -91,6 +93,25 @@ double max( Machine machine , double local )
   return global ;
 }
 
+inline
+std::string command_line( Machine machine , const int argc , const char * const * const argv )
+{
+  std::string argline ;
+
+  if ( 0 == rank( machine ) ) {
+    for ( int i = 1 ; i < argc ; ++i ) {
+      argline.append(" ").append( argv[i] );
+    }
+  }
+
+  int length = argline.length();
+  MPI_Bcast( & length , 1 , MPI_INT , 0 , machine.mpi_comm );
+  argline.resize( length , ' ' );
+  MPI_Bcast( (void*) argline.data() , length , MPI_CHAR , 0 , machine.mpi_comm );
+
+  return argline ;
+}
+
 }
 
 #else /* ! defined( HAVE_MPI ) */
@@ -115,6 +136,20 @@ unsigned  rank( Machine ) { return 0 ; }
 inline
 double max( Machine , double local )
 { return local ; }
+
+inline
+std::string command_line( Machine machine , const int argc , const char * const * const argv )
+{
+  std::string argline ;
+
+  if ( 0 == rank( machine ) ) {
+    for ( int i = 1 ; i < argc ; ++i ) {
+      argline.append(" ").append( argv[i] );
+    }
+  }
+
+  return argline ;
+}
 
 }
 

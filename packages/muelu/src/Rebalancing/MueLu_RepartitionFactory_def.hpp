@@ -53,6 +53,7 @@
 
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Hashtable.hpp>
 
 #include <Xpetra_Map.hpp>
@@ -78,11 +79,14 @@ namespace MueLu {
  RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set<int>                     ("startLevel",             1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
-    validParamList->set<LO>                      ("minRowsPerProcessor", 1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
-    validParamList->set<double>                  ("nonzeroImbalance",     1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
-    validParamList->set<bool>                    ("fixedOrder",         false, "Use sorting of recv PIDs to force reproducibility");
-    // validParamList->set<GO>                   ("minNnzPerProcessor",    -1, "Minimum number of nonzeros over all processes. If any process falls below this, repartitioning is initiated."); // FIXME: Unused; LO instead of GO?
+    validParamList->set<int>        ("startLevel",                   1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
+    validParamList->set<LO>         ("minRowsPerProcessor",       1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
+    validParamList->set<double>     ("nonzeroImbalance",           1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by "
+                                                                        "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
+    validParamList->set<bool>       ("fixedOrder",                true, "Use sorting of recv PIDs to force reproducibility");
+    // FIXME: Unused; LO instead of GO?
+    // validParamList->set<GO>         ("minNnzPerProcessor",          -1, "Minimum number of nonzeros over all processes. If any process falls below this, repartitioning is initiated.");
+    validParamList->set<std::string>("adjustNumPartitions",     "none", "Algorithm for adjusting number of partitions (none|2k)");
 
     {
       std::stringstream docDiffusiveHeuristic;
@@ -93,6 +97,7 @@ namespace MueLu {
 
       validParamList->set<LO>("diffusiveHeuristic",     0, docDiffusiveHeuristic.str());
     }
+    validParamList->set<LO>("maxNumArbitrationRounds",     10, "Maximum number of arbitration rounds for diffusive heuristic");
 
     validParamList->set< RCP<const FactoryBase> >("A",                   Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Partition",           Teuchos::null, "Factory of the partition");
@@ -227,6 +232,16 @@ namespace MueLu {
       }
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
+
+      std::string adjustment = pL.get<std::string>("adjustNumPartitions");
+      if (adjustment == "2k") {
+        GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
+
+        int i2 = Teuchos::as<int>(floor(log(numPartitions)/log(2)));
+        numPartitions = Teuchos::as<int>(std::pow(2.,i2));
+
+        GetOStream(Runtime0,0) << "Adjusting number of partitions using \"2k\" algorithm to " << numPartitions << std::endl;
+      }
 
       Set(currentLevel, "number of partitions", numPartitions);
     }
@@ -667,13 +682,15 @@ namespace MueLu {
     hashTable = rcp(new Teuchos::Hashtable<GO, GO>(numPartitions + numPartitions/2));
     Teuchos::Hashtable<GO, GO>& htref = *hashTable;
 
+    //decomposition is a vector such that decomposition[i] is the partition that local row i belongs to
+    //numPartitions is the global # of partitions
     ArrayRCP<const GO> decompEntries;
     if (decomposition->getLocalLength() > 0)
       decompEntries = decomposition->getData(0);
     bool flag=false;
     assert(decompEntries.size() == nnzPerRow.size());
     for (int i=0; i<decompEntries.size(); ++i) {
-      if (decompEntries[i] >= numPartitions) flag = true;
+      if (decompEntries[i] >= numPartitions) flag = true; //error checking (see exception test below)
       if (htref.containsKey(decompEntries[i])) {
         GO count = htref.get(decompEntries[i]);
         count += nnzPerRow[i];
@@ -684,6 +701,7 @@ namespace MueLu {
     }
 
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: arrayify", currentLevel));
+    //error checking FIXME skip the maxall and just throw already
     int problemPid;
     maxAll(comm, (flag ? mypid : -1), problemPid);
     std::ostringstream buf; buf << problemPid;
@@ -695,13 +713,22 @@ namespace MueLu {
     htref.arrayify(allPartitionsIContributeTo, localNnzPerPartition);
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build target map", currentLevel));
     //map in which all pids have all partition numbers as GIDs.
+    //this map has duplicated GIDs, obviously
     //FIXME this next map ctor can be a real time hog in parallel
+    /*
     Array<GO> allPartitions;
     allPartitions.reserve(numPartitions);
     for (int i=0; i<numPartitions; ++i) allPartitions.push_back(i);
     RCP<Map> targetMap = MapFactory::Build(decomposition->getMap()->lib(),
                                            numPartitions*comm->getSize(),
                                            allPartitions(),
+                                           decomposition->getMap()->getIndexBase(),
+                                           comm);
+    */
+    // Locally, this map has only partition GIDs for which the PID has dofs for
+    RCP<Map> targetMap = MapFactory::Build(decomposition->getMap()->lib(),
+                                           Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                           allPartitionsIContributeTo(),
                                            decomposition->getMap()->getIndexBase(),
                                            comm);
 
@@ -749,97 +776,201 @@ namespace MueLu {
 
     int numRounds=0;
     RCP<SubFactoryMonitor> m2 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: Arbitration phase", currentLevel));
-    while (doArbitrate)
+
+    const LO maxRounds = pL.get<LO>("maxNumArbitrationRounds");
+
+    while (doArbitrate && numRounds < maxRounds)
     {
       ++numRounds;
       ArrayRCP<double> globalWeightVecData = globalWeightVec->getDataNonConst(0);
 
-      //If this process doesn't yet own a partition, record all its nonzeros per partition as weights
-      //If it doesn't contribute to a partition, make the weight small (0.1).  In this way, this pid
-      //can become the owner of a partition if no one else can take it.
+      //If this process doesn't yet own a partition, record all its nonzeros per partition as weights.
+      //If it doesn't contribute to a partition, make the weight zero.
       if (myPartitionNumber == -1) {
         for (int i=0; i<globalWeightVecData.size(); ++i)
-          globalWeightVecData[i] = 0.1;
+          globalWeightVecData[i] = 0.0;
         for (int i=0; i<allPartitionsIContributeTo.size(); ++i)
-          globalWeightVecData[ allPartitionsIContributeTo[i] ] = localNnzPerPartition[i];
+          globalWeightVecData[ targetMap->getLocalElement(allPartitionsIContributeTo[i]) ] = localNnzPerPartition[i];
       } else {
         //this process already owns a partition, so record only the #nonzeros in that partition as weights
-        bool noLocalDofsInMyPartition=true;
+        for (int i=0; i<globalWeightVecData.size(); ++i)
+          globalWeightVecData[i] = 0.0;
         for (int i=0; i<allPartitionsIContributeTo.size(); ++i) {
           if (allPartitionsIContributeTo[i] == myPartitionNumber) {
-            globalWeightVecData[ myPartitionNumber ] = localNnzPerPartition[i];
-            noLocalDofsInMyPartition = false;
+            globalWeightVecData[ targetMap->getLocalElement(myPartitionNumber) ] = localNnzPerPartition[i];
             break;
           }
         }
-        //In a previous round I was assigned a leftover partition.
-        //Make sure I keep it by making the weight associated with it equal to 1.
-        //All other PIDs will assign a weight of either 0 (because they own a partition already)
-        //or 0.1 because they don't own a partition yet and don't contribute to this one (otherwise
-        //they'd own this partition already).
-        if (noLocalDofsInMyPartition) globalWeightVecData[ myPartitionNumber ] = 1;
       }
+
       globalWeightVecData = Teuchos::null;
 
       commHelper.ArbitrateAndCommunicate(*globalWeightVec, *procWinnerVec, NULL, true);
 
-      if (procWinnerVec->getLocalLength() > 0)
-        procWinner = procWinnerVec->getDataNonConst(0);
+      procWinner = procWinnerVec->getDataNonConst(0);
 
       // If this process has tentatively been assigned more than one partition,
       // choose the largest as the partition that this process will own.
+      // Due to how ArbitrateAndCommunicate works, do the following:
+      //   + Mark as unowned all other smaller partitions that were tentatively assigned to me.
+      //   + Mark as unowned all partitions that I do not own.
       GO partitionsIOwn=0;
       GO largestPartitionSize=0;
 
-      GO myPartitionNumberLastRound = myPartitionNumber;
+      int lastWon=-1;
       for (int i=0; i<procWinner.size(); ++i) {
         if (procWinner[i] == mypid) {
-          GO partitionSize;
-          //prefer partitions for which this pid has DOFs over partitions for which it doesn't.
-          if (htref.containsKey(i)) partitionSize = htref.get(i);
-          else                           partitionSize = 1;
+          GO partitionSize = htref.get(targetMap->getGlobalElement(i));
           if (partitionSize > largestPartitionSize) {
-            myPartitionNumber = i;
+            myPartitionNumber = targetMap->getGlobalElement(i);
             largestPartitionSize = partitionSize;
-          }
+            if (lastWon>-1)
+              procWinner[lastWon] = -1;
+            lastWon = i;
+          } else
+            procWinner[i] = -1;
           partitionsIOwn++;
+        } else {
+          procWinner[i] = -1;
         }
-      }
+     }
       procWinner = Teuchos::null;
-      //Check to see if my newly assigned partition is one for which I have no DOFs.
-      bool gotALeftoverPartitionThisRound=false;
-      if (myPartitionNumber > -1 && (myPartitionNumber != myPartitionNumberLastRound)) {
-        if (htref.containsKey(myPartitionNumber)) gotALeftoverPartitionThisRound = false;
-        else                                           gotALeftoverPartitionThisRound = true;
-      }
 
-      // If any pid got a leftover partition this round, or if this pid was tentatively assigned
-      // more than one partition, then we need to arbitrate again, because either there are unassigned
-      // partitions, or there are more than one pid claiming ownership of the same partition.
+      // If this pid was tentatively assigned more than one partition, then we can arbitrate again
+      // because there are unassigned partitions.
       int arbitrateAgain;
-      if (partitionsIOwn > 1 || gotALeftoverPartitionThisRound) arbitrateAgain=1;
-      else                                                      arbitrateAgain=0;
+      if (partitionsIOwn > 1) arbitrateAgain=1;
+      else                    arbitrateAgain=0;
       sumAll(comm, arbitrateAgain, doArbitrate);
+
+#     ifdef HAVE_MUELU_DEBUG
+      GetOStream(Statistics0, 0) << "round " << numRounds << " : ";
+      GO ii=0, jj=0;
+      if (partitionsIOwn == 1) ii=1;
+      sumAll(comm, ii,jj);
+      GetOStream(Statistics0, 0) << "#definitely assigned = " << jj;
+      ii=0, jj=0;
+      if (partitionsIOwn > 1) ii=1;
+      sumAll(comm, ii, jj);
+      GetOStream(Statistics0, 0) << ", #pids with > 1 partition =  " << jj;
+      jj=0;
+      maxAll(comm, partitionsIOwn, jj);
+      GetOStream(Statistics0, 0) << ", max# partitions owned by single pid = " << jj;
+      GO kk=0; ii=0;
+      if (partitionsIOwn == jj) kk=1;
+      sumAll(comm, kk, ii);
+      if (ii>1)
+        GetOStream(Statistics0, 0) << "(by " << ii << " procs)";
+      if (ii==1) {
+        ii=0; kk=0;
+        if (partitionsIOwn == jj) kk=Teuchos::as<GO>(comm->getRank());
+        sumAll(comm, kk, ii);
+        GetOStream(Statistics0, 0) << "(by pid " << ii << ")";
+      }
+      comm->barrier();
+      GetOStream(Statistics0, 0) << std::endl;
+#     endif
 
     } //while (doArbitrate)
     m2 = Teuchos::null;
 
-    GetOStream(Statistics0, 0) << "Number of arbitration rounds = " << numRounds << std::endl;
+    RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    if (tmpic == Teuchos::null)
+      throw(Exceptions::RuntimeError("Cannot cast base Teuchos::Comm to Teuchos::MpiComm object."));
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
 
-    ArrayRCP<const LO> procWinnerConst;
-    if (procWinnerVec->getLocalLength() > 0)
-      procWinnerConst = procWinnerVec->getData(0);
+    GO ii=0, numAlreadyOwned=0;
+    if (myPartitionNumber > -1)
+      ii=1;
+    //MPI_Reduce(&ii, &numAlreadyOwned, 1, MPI_INT, MPI_SUM, 0,*rawMpiComm);
+    sumAll(comm, ii, numAlreadyOwned);
+    GetOStream(Statistics0, 0) << "Number of initial arbitration rounds = " << numRounds
+                               << ", number partitions assigned = "
+                               << numAlreadyOwned << std::endl;
+
+    ///////////////////////////////////////////
+    // clean up phase
+    ///////////////////////////////////////////
+
+#ifdef MUELU_NEVER_DROP_PROC0
+    //If all partitions have been assigned but PID 0 doesn't own one, reassign a partition PID 0.
+    if (numAlreadyOwned == numPartitions && mypid==0 && myPartitionNumber==-1 ) {
+      // Grab ownership of the partition for which 0 has the most dofs.
+      GO maxSize=0;
+      for (int i=0; i<allPartitionsIContributeTo.size(); ++i) {
+        if (localNnzPerPartition[i] > maxSize) {
+          maxSize=localNnzPerPartition[i];
+          myPartitionNumber=allPartitionsIContributeTo[i];
+        }
+      }
+      GetOStream(Statistics0, 0) << "Reassigning partition " << myPartitionNumber << " to pid 0." << std::endl;
+    }
+    // Broadcast PID 0's partition number.  Whichever PID was the previous owner gives up ownership.
+    // + It may be that PID 0 didn't own a partition, in which case the number broadcast is -1.
+    //   No other PID gives up ownership because partition numbers start at 0.
+    // + It may be that PID 0 already owns a partition from the arbitration round.  This is ok
+    //   because no other PID will have that partition number.
+    int root=0;
+    int mpn=-1;
+    if (mypid==0) mpn=Teuchos::as<int>(myPartitionNumber);
+    MPI_Bcast(&mpn, 1, MPI_INT, root,*rawMpiComm);
+    if ( (mypid > 0) && (myPartitionNumber >= 0) && (Teuchos::as<int>(myPartitionNumber) == mpn) ) {
+      myPartitionNumber=-1;
+    }
+#endif //ifdef MUELU_NEVER_DROP_PROC0
+
+    // 1) all pids get global snapshot of partition #s and their owners
+    Array<int> allAssignedPartitions(comm->getSize());
+    int pn = Teuchos::as<int>(myPartitionNumber);  
+    MPI_Allgather(&pn, 1, MPI_INT,
+                  allAssignedPartitions.getRawPtr(), 1, MPI_INT,
+                  *rawMpiComm);
+    //at this point, allAssignedPartitions[i] = partition number owned by pid i
+
+    // 2) Assign unowned partitions to lowest pids who don't already own a partition.
+    for (int i=0; i<numPartitions; ++i)
+      partitionOwners.push_back(-1);
+
+    int numAdditionalOwners=0;
+    std::vector<int> owningPids;
+    std::vector<int> eligiblePids;
+    eligiblePids.reserve(comm->getSize()-numAlreadyOwned);
+    for (int i=0; i<allAssignedPartitions.size(); ++i) {
+      if (allAssignedPartitions[i] != -1) {
+        partitionOwners[allAssignedPartitions[i]] = i;
+      } else { //TODO once we have at least numPartitions-numAlreadyOwned PIDs, we can break
+        eligiblePids.push_back(i);
+      }
+    }
+
+    //if all partitions are already owned, then skip this step.
+    if (numAlreadyOwned < numPartitions) {
+      int next=0;
+      for (int i=0; i<partitionOwners.size(); ++i) {
+        if (partitionOwners[i] == -1) {
+          partitionOwners[i] = eligiblePids[next++];
+          allAssignedPartitions[partitionOwners[i]] = i;
+          numAdditionalOwners++;
+        }
+      }
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION((numAlreadyOwned + numAdditionalOwners) != numPartitions, Exceptions::RuntimeError,
+                               "Diffusive clean up phase failed to assign owners to " +
+                               Teuchos::toString(numPartitions-numAlreadyOwned-numAdditionalOwners) + " partitions");
+
+    GetOStream(Statistics0, 0) << "Clean up phase: assigned " << numAdditionalOwners << " additional partitions." << std::endl;
+
+    myPartitionNumber = allAssignedPartitions[mypid];
 
     int numPartitionOwners=0;
-    for (int i=0; i<procWinnerConst.size(); ++i)
-      if (procWinnerConst[i] > -1) ++numPartitionOwners;
-    buf << numPartitionOwners;
+    for (int i=0; i<partitionOwners.size(); ++i)
+      if (partitionOwners[i] > -1) ++numPartitionOwners;
     TEUCHOS_TEST_FOR_EXCEPTION(numPartitionOwners != numPartitions, Exceptions::RuntimeError,
-                               "Number of partition owners (" + buf.str() + ") is not equal to number of partitions");
-    partitionOwners = procWinnerConst(); //only works if procWinner is const ...
+                               "Number of partition owners (" + Teuchos::toString(numPartitionOwners) + ") is not equal to number of partitions");
 
     // print the grid of processors
-    GetOStream(Statistics0, 0) << "Partition distribution over cores, + indicates partition ownership" << std::endl;
+    GetOStream(Statistics1, 0) << "Partition distribution over cores, + indicates partition ownership" << std::endl;
     int numProc = comm->getSize();
     ArrayRCP<char> grid(numProc, '.');
     for (int i=0; i<partitionOwners.size(); ++i) grid[ partitionOwners[i] ] = '+';
@@ -850,17 +981,17 @@ namespace MueLu {
     int pidCtr=0;
     for (int i=0; i<numRows; ++i) {
       for (int j=0; j<sizeOfARow; ++j)
-        GetOStream(Statistics0, 0) << grid[ctr++];
-      GetOStream(Statistics0, 0) << "      " << pidCtr << ":" << pidCtr+sizeOfARow-1 << std::endl;;
+        GetOStream(Statistics1, 0) << grid[ctr++];
+      GetOStream(Statistics1, 0) << "      " << pidCtr << ":" << pidCtr+sizeOfARow-1 << std::endl;;
       pidCtr += sizeOfARow;
     }
     if (leftOvers > 0) {
       for (int i=0; i<leftOvers; ++i)
-        GetOStream(Statistics0, 0) << grid[ctr++];
+        GetOStream(Statistics1, 0) << grid[ctr++];
 
       Array<char> aos(sizeOfARow-leftOvers, ' ');
       std::string spaces(aos.begin(), aos.end());
-      GetOStream(Statistics0, 0) << spaces << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
+      GetOStream(Statistics1, 0) << spaces << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
     }
 
   } //DeterminePartitionPlacement

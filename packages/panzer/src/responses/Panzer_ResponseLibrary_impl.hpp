@@ -46,6 +46,7 @@
 #include "Panzer_ResponseContainer.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_ResponseFactory_BCStrategyAdapter.hpp"
+#include "Panzer_EquationSet_Factory.hpp"
 
 #include <boost/unordered_set.hpp>
 
@@ -461,8 +462,10 @@ namespace {
       Teuchos::RCP<const panzer::ResponseEvaluatorFactoryBase> baseObj = respFact_->template getAsBase<T>();
      
       // only build this templated set of objects if the there is something to build them with
-      if(baseObj!=Teuchos::null) {
-        return baseObj->buildResponseObject(respName_,wkstDesc_); 
+      if(baseObj!=Teuchos::null && baseObj->typeSupported()) {
+        Teuchos::RCP<ResponseBase> resp = baseObj->buildResponseObject(respName_,wkstDesc_); 
+
+        return resp;
       }
 
       return Teuchos::null;
@@ -473,7 +476,7 @@ namespace {
 template <typename TraitsT>
 template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
-addResponse(const std::string responseName,
+addResponse(const std::string & responseName,
             const std::vector<std::string> & blocks,
             const ResponseEvaluatorFactory_BuilderT & builder) 
 {
@@ -503,7 +506,7 @@ addResponse(const std::string responseName,
 template <typename TraitsT>
 template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
-addResponse(const std::string responseName,
+addResponse(const std::string & responseName,
             const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
             const ResponseEvaluatorFactory_BuilderT & builder) 
 {
@@ -543,7 +546,7 @@ addResponse(const std::string responseName,
 template <typename TraitsT>
 template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
-addResponse(const std::string responseName,
+addResponse(const std::string & responseName,
             const std::vector<WorksetDescriptor> & wkst_desc,
             const ResponseEvaluatorFactory_BuilderT & builder) 
 {
@@ -573,7 +576,7 @@ addResponse(const std::string responseName,
 template <typename TraitsT>
 template <typename EvalT>
 Teuchos::RCP<ResponseBase> ResponseLibrary<TraitsT>::
-getResponse(const std::string responseName) const
+getResponse(const std::string & responseName) const
 {
    typedef boost::unordered_map<std::string, Response_TemplateManager> HashMap;
    HashMap::const_iterator itr = responseObjects_.find(responseName);
@@ -635,7 +638,7 @@ public:
            rf_itr!=fact->end();++rf_itr) {
 
          // not setup for this template type, ignore it
-         if(rf_itr.rcp()==Teuchos::null) 
+         if(rf_itr.rcp()==Teuchos::null || !rf_itr.rcp()->typeSupported()) 
            continue;
 
          // build and register evaluators, store field tag, make it required
@@ -745,8 +748,9 @@ addResponsesToInArgs(panzer::AssemblyEngineInArgs & input_args) const
 
    // add all responses to input args  
    for(std::size_t i=0;i<responses.size();i++) {
-     if(responses[i]!=Teuchos::null)
+     if(responses[i]!=Teuchos::null) {
        input_args.addGlobalEvaluationData(responses[i]->getLookupName(),responses[i]);
+      }
    }
 }
 

@@ -54,8 +54,7 @@
 //  Returns:  N_rows and nnz replicated across all processes
 //
 template<typename int_type>
-void TTrilinos_Util_CountMatrixMarket(const char *fmt,
-              const char *data_file, 
+void TTrilinos_Util_CountMatrixMarket( const char *data_file, 
 				      std::vector<int> &non_zeros,
 				      int_type &N_rows, int_type &nnz, 
 				      const Epetra_Comm  &comm) { 
@@ -82,21 +81,20 @@ void TTrilinos_Util_CountMatrixMarket(const char *fmt,
 	exit(1);
       }
     
-    if ( fgets( buffer, BUFSIZE, in_file ) == NULL)
-      assert(false);
+    fgets( buffer, BUFSIZE, in_file ) ;
     bool symmetric = false ; 
     string headerline1 = buffer;
     if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
-    if ( fgets( buffer, BUFSIZE, in_file ) == NULL)
-      assert(false);
+    fgets( buffer, BUFSIZE, in_file ) ;
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int_type i, j; 
-      float val ;
-      // Build the format line.
-      char* formatline = new char[2*strlen(fmt) + 2 + 2];
-      snprintf( formatline, sizeof formatline, "%s %s %s", fmt, fmt, "%f" );
-      sscanf( buffer, formatline, &i, &j, &val ) ;
-      delete[] formatline;
+      float val ; 
+      if(sizeof(int) == sizeof(int_type))
+        sscanf( buffer, "%d %d %f", &i, &j, &val ) ; 
+      else if(sizeof(long long) == sizeof(int_type))
+        sscanf( buffer, "%lld %lld %f", &i, &j, &val ) ; 
+      else
+        assert(false);
       int_type needvecsize = i;
       if (symmetric) needvecsize = EPETRA_MAX(i,j) ;
       if ( needvecsize >= vecsize ) {
@@ -135,7 +133,7 @@ void Trilinos_Util_CountMatrixMarket( const char *data_file,
 				      std::vector<int> &non_zeros,
 				      int &N_rows, int &nnz, 
 				      const Epetra_Comm  &comm) {
-  TTrilinos_Util_CountMatrixMarket<int>("%d", data_file, non_zeros, N_rows, nnz, comm);
+  TTrilinos_Util_CountMatrixMarket<int>(data_file, non_zeros, N_rows, nnz, comm);
 }
 
 #endif
@@ -146,7 +144,7 @@ void Trilinos_Util_CountMatrixMarket( const char *data_file,
 				      std::vector<int> &non_zeros,
 				      long long &N_rows, long long &nnz, 
 				      const Epetra_Comm  &comm) {
-  TTrilinos_Util_CountMatrixMarket<long long>("%lld", data_file, non_zeros, N_rows, nnz, comm);
+  TTrilinos_Util_CountMatrixMarket<long long>(data_file, non_zeros, N_rows, nnz, comm);
 }
 
 #endif

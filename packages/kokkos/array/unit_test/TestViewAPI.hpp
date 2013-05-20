@@ -55,7 +55,7 @@ template< class T , class L , class D , class M , class S >
 size_t allocation_count( const KokkosArray::View<T,L,D,M,S> & view )
 {
   const size_t card  = KokkosArray::Impl::cardinality_count( view.shape() );
-  const size_t alloc = KokkosArray::Impl::ViewAssignment<S>::allocation_count( view );
+  const size_t alloc = view.capacity();
 
   return card <= alloc ? alloc : 0 ;
 }
@@ -70,7 +70,7 @@ struct TestViewOperator
   static const unsigned N = 100 ;
   static const unsigned D = 3 ;
 
-  typedef KokkosArray::View< T[][D] , device_type > view_type ;
+  typedef KokkosArray::View< T*[D] , device_type > view_type ;
 
   const view_type v1 ;
   const view_type v2 ;
@@ -661,6 +661,16 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
       if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
       offset = j ;
     }
+
+    for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
+    for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
+    for ( unsigned i2 = 0 ; i2 < lsh.N2 ; ++i2 )
+    {
+      if ( & left(i0,i1,i2)  != & left(i0,i1,i2,0) )  { update |= 3 ; }
+      if ( & left(i0,i1,i2)  != & left(i0,i1,i2,0,0) )  { update |= 3 ; }
+      if ( & right(i0,i1,i2) != & right(i0,i1,i2,0) ) { update |= 3 ; }
+      if ( & right(i0,i1,i2) != & right(i0,i1,i2,0,0) ) { update |= 3 ; }
+    }
   }
 };
 
@@ -744,6 +754,84 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
       if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
       offset = j ;
     }
+
+    for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
+    for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
+    {
+      if ( & left(i0,i1)  != & left(i0,i1,0) )  { update |= 3 ; }
+      if ( & left(i0,i1)  != & left(i0,i1,0,0) )  { update |= 3 ; }
+      if ( & right(i0,i1) != & right(i0,i1,0) ) { update |= 3 ; }
+      if ( & right(i0,i1) != & right(i0,i1,0,0) ) { update |= 3 ; }
+    }
+  }
+};
+
+template< class DataType , class DeviceType >
+struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
+{
+  typedef DeviceType                          device_type ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  typedef int value_type ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & input )
+    { update |= input ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static void init( value_type & update )
+    { update = 0 ; }
+
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutLeft, device_type > left_view ;
+
+  typedef KokkosArray::
+    View< DataType, KokkosArray::LayoutRight, device_type > right_view ;
+
+  typedef typename left_view ::shape_type  left_shape ;
+  typedef typename right_view::shape_type  right_shape ;
+
+  left_shape   lsh ;
+  right_shape  rsh ;
+  left_view    left ;
+  right_view   right ;
+  long         left_alloc ;
+  long         right_alloc ;
+
+  TestViewOperator_LeftAndRight()
+    : lsh()
+    , rsh()
+    , left(  "left" )
+    , right( "right" )
+    , left_alloc( allocation_count( left ) )
+    , right_alloc( allocation_count( right ) )
+    {}
+
+  static void apply()
+  {
+    TestViewOperator_LeftAndRight driver ;
+
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
+    ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
+
+    const int error_flag = KokkosArray::parallel_reduce( 1 , driver );
+
+    ASSERT_EQ( error_flag , 0 );
+  }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()( const size_type , value_type & update ) const
+  {
+    for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
+    {
+      if ( & left(i0)  != & left(i0,0) )  { update |= 3 ; }
+      if ( & left(i0)  != & left(i0,0,0) )  { update |= 3 ; }
+      if ( & right(i0) != & right(i0,0) ) { update |= 3 ; }
+      if ( & right(i0) != & right(i0,0,0) ) { update |= 3 ; }
+    }
   }
 };
 
@@ -773,6 +861,7 @@ public:
     TestViewOperator_LeftAndRight< int[2][3][4][2] , device >::apply();
     TestViewOperator_LeftAndRight< int[2][3][4] , device >::apply();
     TestViewOperator_LeftAndRight< int[2][3] , device >::apply();
+    TestViewOperator_LeftAndRight< int[2] , device >::apply();
   }
 
   enum { N0 = 1000 ,
@@ -781,19 +870,18 @@ public:
          N3 = 7 };
 
   typedef KokkosArray::View< T , device > dView0 ;
-  typedef KokkosArray::View< T[] , device > dView1 ;
-  typedef KokkosArray::View< T[][N1] , device > dView2 ;
-  typedef KokkosArray::View< T[][N1][N2] , device > dView3 ;
-  typedef KokkosArray::View< T[][N1][N2][N3] , device > dView4 ;
-  typedef KokkosArray::View< const T[][N1][N2][N3] , device > const_dView4 ;
+  typedef KokkosArray::View< T* , device > dView1 ;
+  typedef KokkosArray::View< T*[N1] , device > dView2 ;
+  typedef KokkosArray::View< T*[N1][N2] , device > dView3 ;
+  typedef KokkosArray::View< T*[N1][N2][N3] , device > dView4 ;
+  typedef KokkosArray::View< const T*[N1][N2][N3] , device > const_dView4 ;
 
-  typedef KokkosArray::View< T[][N1][N2][N3], device, KokkosArray::MemoryUnmanaged > dView4_unmanaged ;
+  typedef KokkosArray::View< T*[N1][N2][N3], device, KokkosArray::MemoryUnmanaged > dView4_unmanaged ;
 
   static void run_test_mirror()
   {
     typedef KokkosArray::View< int , host > view_type ;
-    typedef typename view_type::HostMirror view_host_type ;
-    typedef typename KokkosArray::Impl::StaticAssertSame< view_type , view_host_type >::type mirror_type ;
+    typedef typename view_type::HostMirror mirror_type ;
     view_type a("a");
     mirror_type am = KokkosArray::create_mirror_view(a);
     mirror_type ax = KokkosArray::create_mirror(a);
@@ -962,14 +1050,14 @@ public:
 
   static void run_test_vector()
   {
-    enum { Length = 1000 , Count = 8 };
+    static const unsigned Length = 1000 , Count = 8 ;
 
-    typedef KokkosArray::View< T[] , KokkosArray::LayoutRight, host > vector_right_type ;
-    typedef KokkosArray::View< T[] , KokkosArray::LayoutLeft , host > vector_type ;
+    typedef KokkosArray::View< T* , KokkosArray::LayoutRight, host > vector_right_type ;
+    typedef KokkosArray::View< T* , KokkosArray::LayoutLeft , host > vector_type ;
     typedef KokkosArray::View< T** , KokkosArray::LayoutLeft , host > multivector_type ;
 
-    typedef KokkosArray::View< const T[] , KokkosArray::LayoutRight, host > const_vector_right_type ;
-    typedef KokkosArray::View< const T[] , KokkosArray::LayoutLeft , host > const_vector_type ;
+    typedef KokkosArray::View< const T* , KokkosArray::LayoutRight, host > const_vector_right_type ;
+    typedef KokkosArray::View< const T* , KokkosArray::LayoutLeft , host > const_vector_type ;
     typedef KokkosArray::View< const T** , KokkosArray::LayoutLeft , host > const_multivector_type ;
 
     multivector_type mv = multivector_type( "mv" , Length , Count );

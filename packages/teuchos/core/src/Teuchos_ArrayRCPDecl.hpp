@@ -104,7 +104,7 @@ template<class T>
 class ArrayRCP {
 public:
 
-  //! @name Public types 
+  //! @name Public types
   //@{
 
   //! Integer index type used throughout ArrayRCP.
@@ -126,10 +126,10 @@ public:
   typedef  T value_type;
 
   //! Type of a (nonconstant) reference to an array element.
-  typedef T& reference; 
+  typedef T& reference;
 
   //! Type of a (constant) reference to an array element.
-  typedef const T& const_reference; 
+  typedef const T& const_reference;
 
   //! Type of a (raw) (nonconstant) pointer to an array element.
   typedef T* pointer;
@@ -154,7 +154,7 @@ public:
 
   //@}
 
-  //! @name Constructors/Destructors/Initializers 
+  //! @name Constructors/Destructors/Initializers
   //@{
 
   /** \brief Initialize <tt>ArrayRCP<T></tt> to NULL.
@@ -225,7 +225,7 @@ public:
    *
    * \param size [in] Number of elements in the array.
    * \param val [in] Value with which to fill all elements of the
-   *   array.  
+   *   array.
    *
    * This constructor fills the array as if with the following code:
      \code
@@ -289,7 +289,7 @@ public:
      \code
      ArrayRCP<T> x = arcp<T> (10);
      ArrayRCP<T> y = arcp<T> (42);
-     x = y;     
+     x = y;
      \endcode
    *
    * \post <tt>this->get() == r_ptr.get()</tt>
@@ -301,7 +301,7 @@ public:
 
   //@}
 
-  //! @name Object/Pointer Access Functions 
+  //! @name Object/Pointer Access Functions
   //@{
 
   /** \brief Returns true if the underlying pointer is null. */
@@ -348,7 +348,7 @@ public:
 
   //@}
 
-  //! @name Pointer Arithmetic Functions 
+  //! @name Pointer Arithmetic Functions
   //@{
 
   /** \brief Prefix increment of pointer (i.e. ++ptr).
@@ -441,7 +441,7 @@ public:
 
   //@}
 
-  //! @name Standard Container-Like Functions 
+  //! @name Standard Container-Like Functions
   //@{
 
   /** \brief Return an iterator to beginning of the array of data.
@@ -470,7 +470,7 @@ public:
 
   //@}
 
-  //! @name ArrayRCP Views 
+  //! @name ArrayRCP Views
   //@{
 
   /** \brief Return object for only const access to data.
@@ -497,7 +497,7 @@ public:
 
   //@}
 
-  //! @name Size and extent query functions 
+  //! @name Size and extent query functions
   //@{
 
   /** \brief Return the lower offset to valid data. */
@@ -513,7 +513,7 @@ public:
 
   //@}
 
-  //! @name ArrayView views 
+  //! @name ArrayView views
   //@{
 
   /** \brief Return view of a contiguous range of elements.
@@ -595,9 +595,9 @@ public:
    *
    * Return values:<ul>
    * <li><tt>RCP_STRONG</tt>: Underlying reference-counted object will be deleted
-   *     when <tt>*this</tt> is destroyed if <tt>strong_count()==1</tt>. 
+   *     when <tt>*this</tt> is destroyed if <tt>strong_count()==1</tt>.
    * <li><tt>RCP_WEAK</tt>: Underlying reference-counted object will not be deleted
-   *     when <tt>*this</tt> is destroyed if <tt>strong_count() > 0</tt>. 
+   *     when <tt>*this</tt> is destroyed if <tt>strong_count() > 0</tt>.
    * <li><tt>RCP_STRENGTH_INVALID</tt>: <tt>*this</tt> is not strong or weak but
    *     is null.
    * </ul>
@@ -729,7 +729,7 @@ public:
   inline bool shares_resource(const ArrayRCP<T2>& r_ptr) const;
 
   //@}
-  //! @name Assertion Functions. 
+  //! @name Assertion Functions.
   //@{
 
   /** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>,
@@ -830,7 +830,7 @@ template<>
 class ArrayRCP<void> {
 public:
 
-  //! @name Public types 
+  //! @name Public types
   //@{
 
   /** \brief. */
@@ -873,7 +873,7 @@ template<>
 class ArrayRCP<const void> {
 public:
 
-  //! @name Public types 
+  //! @name Public types
   //@{
 
   /** \brief. */
@@ -951,7 +951,7 @@ ArrayRCP<T> arcp(
   Dealloc_T dealloc, bool owns_mem
   );
 
- 
+
 /** \brief Allocate a new array just given a dimension.
  *
  * <b>Warning!</b> The memory is allocated using <tt>new T[size]</tt> and is
@@ -965,7 +965,7 @@ ArrayRCP<T> arcp(
 template<class T>
 ArrayRCP<T> arcp( typename ArrayRCP<T>::size_type size );
 
- 
+
 /** \brief Allocate a new ArrayRCP object with a new RCPNode with memory
  * pointing to the initial node.
  *
@@ -973,7 +973,7 @@ ArrayRCP<T> arcp( typename ArrayRCP<T>::size_type size );
  * memory with its own seprate reference count.  The new ArrayRCP object will
  * have a new RCPNodeTmpl object that has a copy of the input ArrayRCP object
  * embedded in it.  This maintains the correct reference counting behaviors
- * but now gives a private count.  One would want to use arcpCloneNode(...) 
+ * but now gives a private count.  One would want to use arcpCloneNode(...)
  * whenever it is important to keep a private reference count which is needed
  * for some types of use cases.
  *
@@ -982,7 +982,7 @@ ArrayRCP<T> arcp( typename ArrayRCP<T>::size_type size );
 template<class T>
 ArrayRCP<T> arcpCloneNode( const ArrayRCP<T> &a );
 
- 
+
 /** \brief Allocate a new array by cloning data from an input array view.
  *
  * \relates ArrayRCP
@@ -1197,8 +1197,10 @@ operator-( const ArrayRCP<T> &p1, const ArrayRCP<T> &p2 );
 /** \brief Const cast of underlying <tt>ArrayRCP</tt> type from <tt>const T*</tt>
  * to <tt>T*</tt>.
  *
- * The function will compile only if (<tt>const_cast<T2*>(p1.get());</tt>)
- * compiles.
+ * The function will compile only if the following code compiles:
+ * \code
+ * T2* p2 = const_cast<T2*> (p1.get ());
+ * \endcode
  *
  * \relates ArrayRCP
  */
@@ -1210,13 +1212,12 @@ ArrayRCP<T2> arcp_const_cast(const ArrayRCP<T1>& p1);
 /** \brief Reinterpret cast of underlying <tt>ArrayRCP</tt> type from
  * <tt>T1*</tt> to <tt>T2*</tt>.
  *
- * The function will compile only if (<tt>reinterpret_cast<T2*>(p1.get());</tt>) compiles.
+ * The function will compile only if the following code compiles:
+ * \code
+ * T2* p2 = reinterpret_cast<T2*> (p1.get ());
+ * \endcode
  *
- * <b>Warning!</b> Do not use this function unless you absolutely know what
- * you are doing. Doing a reinterpret cast is always a tricking thing and
- * must only be done by developers who are 100% comfortable with what they are
- * doing.
- *
+ * \warning This function is only for advanced users.
  * \relates ArrayRCP
  */
 template<class T2, class T1>
@@ -1229,16 +1230,14 @@ ArrayRCP<T2> arcp_reinterpret_cast(const ArrayRCP<T1>& p1);
  *
  * The function will compile only if (<tt>reinterpret_cast<T2*>(p1.get());</tt>) compiles.
  *
- * This function is used to reinterpret cast an array of plain-old-data (POD)
- * (e.g. <tt>int</tt> or <tt>char</tt>) into an array of real objects.  The
- * constructors will be called on each of the memory locations with placement
- * new and the destructors will get called when the last RCP goes away.
+ * This function is used to reinterpret-cast an array of
+ * plain-old-data (POD) (e.g. <tt>int</tt> or <tt>char</tt>) into an
+ * array of objects of type T2, which is not a plain-old-data type.
+ * The constructors will be called on each of the memory locations
+ * with placement new and the destructors will get called when the
+ * last ArrayRCP goes away.
  *
- * <b>Warning!</b> Do not use this function unless you absolutely know what
- * you are doing. Doing a reinterpret cast is always a tricking thing and
- * must only be done by developers who are 100% comfortable with what they are
- * doing.
- *
+ * \warning This function is only for advanced users.
  * \relates ArrayRCP
  */
 template<class T2, class T1>
@@ -1257,7 +1256,7 @@ ArrayRCP<T2> arcp_reinterpret_cast_nonpod(const ArrayRCP<T1>& p1, const T2& val=
  * casting an array of pointers to non-const objects to an array of const
  * pointers to const objects. For example, the following implicit conversion
  * from a array pointer objects <tt>aptr1</tt> of type
- * <tt>ArrayRCP<T*></tt> to 
+ * <tt>ArrayRCP<T*></tt> to
 
  \code
 

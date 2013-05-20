@@ -139,7 +139,7 @@ CreateTpetraPreconditioner(Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > cons
       for (int i=0; i<nPDE; ++i) {
         Teuchos::ArrayRCP<SC> nsData = nullspace->getDataNonConst(i);
         for (int j=0; j<nsData.size(); ++j) {
-          GO gel = Amuelu->getDomainMap()->getGlobalElement(j);
+          GO gel = Amuelu->getDomainMap()->getGlobalElement(j) - Amuelu->getDomainMap()->getIndexBase();
           if ((gel-i) % nPDE == 0)
             nsData[j] = Teuchos::ScalarTraits<SC>::one();
         }

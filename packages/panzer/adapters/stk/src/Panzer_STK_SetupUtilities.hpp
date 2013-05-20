@@ -73,13 +73,18 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   * \param[in] pb Physics block associated with the element block
   * \param[in] workset_size The size of each workset measured in the number of elements
   * \param[in] sideset The sideset id used to locate volume elements associated with the sideset
+  * \param[in] useCascade If true, worksets will be built for every local node, edge and face
+  *                       that touches the side set. Note that this implies that the workset
+  *                       will have repeated elements. This is useful for higher-order surface
+  *                       flux calculations.
   *
   * \returns vector of worksets for the corresponding element block.
   */
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk::STK_Interface & mesh,
               const panzer::PhysicsBlock & pb,
-              const std::string & sideset);
+              const std::string & sideset,
+              bool useCascade=false);
 
 /** Build boundary condition worksets for a STK mesh
   *
@@ -188,7 +193,48 @@ void getNodeElements(const panzer_stk::STK_Interface & mesh,
 		       const std::string & blockId, 
 		       const std::vector<stk::mesh::Entity*> & nodes,
 		       std::vector<std::size_t> & localNodeIds, 
-		       std::vector<stk::mesh::Entity*> & elements);
+	 	       std::vector<stk::mesh::Entity*> & elements);
+
+/** This function builds the "element cascade" contained within an specfied
+  * element block. That is given a set of "sides" extract all elements that
+  * live in the block and touch those sides on a node, edge or face. It returns
+  * the local sub cell index and sub cell dimension.
+  *
+  * \param[in] 
+  * \param[in] mesh STK mesh interface
+  * \param[in] blockId Requested element block identifier
+  * \param[in] sides Set of sides (entities of dimension-1) where
+  *                  there is assumed part membership (induced or not)
+  *                  in the requested element block.
+  * \param[out] subcellDim On output this will contain the subcell dimensions. 
+  * \param[out] localSubcellIds On output this will contain the local subcell ids. 
+  * \param[out] elements On output this will contain the elements associated
+  *             with each subcell in the requested block. Assumed that on input
+  *             <code>elements.size()==0</code>
+  */
+void getSideElementCascade(const panzer_stk::STK_Interface & mesh,
+                           const std::string & blockId, 
+                           const std::vector<stk::mesh::Entity*> & sides,
+                           std::vector<std::size_t> & localSubcellDim, 
+                           std::vector<std::size_t> & subcellIds, 
+                           std::vector<stk::mesh::Entity*> & elements);
+
+/** Get all the subcells that are contained within the list of entities.
+  * The resulting vector is organized by dimension and it is guranteed that
+  * no entity is included more then once.
+  *
+  * \param[in] mesh STK mesh interface
+  * \param[in] entities Set of entities of the same dimension, these the parent entities
+                        whose subcells are extracted.
+  * \param[out] subcells Set of subcells catoragized by dimension. The first
+  *                      index is the physical dimension. Each 
+  *                      entity in the vector will be unique. Note that this
+  *                      vector is <code>clear</code>ed at the beginning of this method.
+  */
+void getSubcellEntities(const panzer_stk::STK_Interface & mesh,
+		        const std::vector<stk::mesh::Entity*> & entities,
+	 	        std::vector<std::vector<stk::mesh::Entity*> > & subcells);
+
 }
 }
 

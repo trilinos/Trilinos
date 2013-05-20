@@ -56,11 +56,8 @@ void Trilinos_Util_read_vec(const char *filename, int n_equations,double *x)
     return;
   }
  
-  for (i=0; i< n_equations; i++) {
-    int count = fscanf(in_file, "%lf", x+i);
-    assert(count > 0);
-  }
-
+  for (i=0; i< n_equations; i++)
+  fscanf(in_file, "%lf", x+i) ;
 
   fclose(in_file);
 
