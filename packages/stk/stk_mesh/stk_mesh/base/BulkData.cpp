@@ -956,7 +956,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
   // Dump output for metadata first
   m_mesh_meta_data.dump_all_meta_info(out);
 
-  out << "BulkData info...\n";
+  out << "BulkData " << m_bulk_data_id << " info...\n";
 
   const FieldVector& all_fields = m_mesh_meta_data.get_fields();
 
@@ -968,7 +968,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
 
     const std::vector<Bucket*>& buckets = this->buckets(rank);
     BOOST_FOREACH(Bucket* bucket, buckets) {
-      out << "    Found bucket with superset parts: { ";
+      out << "    Found bucket " << bucket->bucket_id() << " with superset parts: { ";
       PartVector supersets;
       bucket->supersets(supersets);
       BOOST_FOREACH(Part* part, supersets) {
@@ -978,7 +978,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
 
       for (size_t b_ord = 0, b_end = bucket->size(); b_ord < b_end; ++b_ord) {
         Entity entity = (*bucket)[b_ord];
-        out << "      " << print_entity_key(m_mesh_meta_data, entity_key(entity)) << std::endl;
+        out << "      " << print_entity_key(m_mesh_meta_data, entity_key(entity)) << "(offset: " << entity.local_offset() << ")" << std::endl;
 
         // Print connectivity
         for (size_t r = 0, re = rank_names.size(); r < re; ++r) {

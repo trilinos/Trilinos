@@ -42,6 +42,9 @@ STKUNIT_UNIT_TEST( UnitTestDebugDump, BulkData )
   // Doesn't check anything, but at least makes sure it passes
   std::ostringstream out;
   hf.m_bulk_data.dump_all_mesh_info(out);
+
+  // Uncomment to see output
+  //std::cout << out.str() << std::endl;
 }
 
 } // namespace
