@@ -1516,7 +1516,7 @@ namespace Tpetra {
     /// \f]
     /// For example, BinaryFunction = std::plus<Scalar> does the same
     /// thing as sumIntoLocalValues(), and BinaryFunction =
-    /// secondArg<Scalar,Scalar> does the same thing as
+    /// project2nd<Scalar,Scalar> does the same thing as
     /// replaceLocalValues().
     ///
     /// \tparam BinaryFunction The type of binary function to apply.
@@ -1610,7 +1610,7 @@ namespace Tpetra {
     /// \f]
     /// For example, BinaryFunction = std::plus<Scalar> does the same
     /// thing as sumIntoLocalValues(), and BinaryFunction =
-    /// secondArg<Scalar,Scalar> does the same thing as
+    /// project2nd<Scalar,Scalar> does the same thing as
     /// replaceLocalValues().
     ///
     /// \tparam BinaryFunction The type of binary function to apply.

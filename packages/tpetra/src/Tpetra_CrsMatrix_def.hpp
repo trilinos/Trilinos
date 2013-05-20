@@ -1420,10 +1420,10 @@ namespace Tpetra {
                       const ArrayView<const LocalOrdinal> &indices,
                       const ArrayView<const Scalar> &values)
   {
-    // secondArg is a binary function that returns its second
+    // project2nd is a binary function that returns its second
     // argument.  This replaces entries in the given row with their
     // corresponding entry of values.
-    typedef secondArg<Scalar, Scalar> f_type;
+    typedef Tpetra::project2nd<Scalar, Scalar> f_type;
     this->template transformLocalValues<f_type> (localRow, indices,
                                                  values, f_type ());
   }
@@ -1440,10 +1440,10 @@ namespace Tpetra {
                        const ArrayView<const GlobalOrdinal> &indices,
                        const ArrayView<const Scalar>        &values)
   {
-    // secondArg is a binary function that returns its second
+    // project2nd is a binary function that returns its second
     // argument.  This replaces entries in the given row with their
     // corresponding entry of values.
-    typedef secondArg<Scalar, Scalar> f_type;
+    typedef Tpetra::project2nd<Scalar, Scalar> f_type;
     this->template transformGlobalValues<f_type> (globalRow, indices,
                                                   values, f_type ());
   }
