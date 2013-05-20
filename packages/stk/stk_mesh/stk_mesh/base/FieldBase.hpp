@@ -144,13 +144,7 @@ class FieldBase
 
   virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const { return out; }
 
-  stk::mesh::BulkData& get_mesh() const
-  { return *m_mesh; }
-
 private:
-
-  void set_mesh(stk::mesh::BulkData* bulk)
-  { m_mesh = bulk; }
 
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
@@ -189,7 +183,6 @@ protected:
 
 private:
 
-  stk::mesh::BulkData* m_mesh;
   impl::FieldBaseImpl  m_impl;
 
   //the following functions are declared but not defined

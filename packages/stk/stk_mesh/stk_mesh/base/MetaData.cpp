@@ -85,14 +85,6 @@ void MetaData::assign_cell_topology(
   ThrowRequireMsg(cell_topology.getCellTopologyData(), "bad topology in MetaData::assign_cell_topology");
 }
 
-void MetaData::set_mesh_on_fields(BulkData* bulk)
-{
-  const FieldVector& fields = get_fields();
-  for(size_t i=0; i<fields.size(); ++i) {
-    fields[i]->set_mesh(bulk);
-  }
-}
-
 MetaData & MetaData::get( const BulkData & bulk_data) {
   return bulk_data.meta_data();
 }

@@ -269,10 +269,6 @@ bool BulkData::modification_begin()
 
   ThrowRequireMsg( m_mesh_finalized == false, "Unable to modifiy, BulkData has been finalized.");
 
-  if (m_sync_count == 0) {
-    m_mesh_meta_data.set_mesh_on_fields(this);
-  }
-
   if ( m_sync_state == MODIFIABLE && m_mesh_finalized == false ) return false ;
 
   if ( ! m_meta_data_verified ) {
