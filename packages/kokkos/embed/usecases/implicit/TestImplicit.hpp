@@ -208,7 +208,7 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
   long global[2] = { linsys_host_solution.dimension_0() , error_count };
 #endif
 
-    if ( 0 == comm_rank ) {
+    if ( 0 == comm_rank && 0 != global[1] ) {
       std::cout << "\"Verify: Comm[" << comm_size << "]"
                 << " , Vector[" << global[0] << "x" << linsys_host_solution.dimension_1() << "]"
                 << " , Error count = " << global[1]

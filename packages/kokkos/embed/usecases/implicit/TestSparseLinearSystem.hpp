@@ -329,7 +329,7 @@ void cgsolve(
     ++iteration ;
   }
 
-  iter_time = wall_clock.seconds();
+  iter_time = iteration ? wall_clock.seconds() / double(iteration) : 0 ;
 }
 
 //----------------------------------------------------------------------------
