@@ -3718,16 +3718,18 @@ void doAll2All(
             }
         }
 
-        env->timerStart(MACRO_TIMERS, "PQJagged Z2PlanCreating-" + iteration);
+        env->timerStart(MACRO_TIMERS, "PQJagged DistPlanCreating-" + iteration);
         Tpetra::Distributor distributor(comm);
 
         ArrayView<const partId_t> pIds( partIds, nLocal);
         numMyNewGnos = distributor.createFromSends(pIds);
-        env->timerStop(MACRO_TIMERS, "PQJagged Z2PlanCreating-" + iteration);
+        env->timerStop(MACRO_TIMERS, "PQJagged DistPlanCreating-" + iteration);
 
         ArrayRCP<gno_t> recvBuf2(distributor.getTotalReceiveLength());
 
+        env->timerStart(MACRO_TIMERS, "PQJagged DistPlanCom-" + iteration);
         distributor.doPostsAndWaits<gno_t>(sendBuf(), 1, recvBuf2());
+        env->timerStop(MACRO_TIMERS, "PQJagged DistPlanCom-" + iteration);
         recvBuf = recvBuf2;
         freeArray<partId_t>(partIds);
 
@@ -3766,9 +3768,11 @@ void doAll2All(
 
 
         message_tag++;
+        env->timerStart(MACRO_TIMERS, "PQJagged Z1PlanComm-" + iteration);
         ierr = Zoltan_Comm_Do(plan, message_tag, (char *) sendBuf.getRawPtr(),
                 sizeof(gno_t),
                 (char *) recieves);
+        env->timerStop(MACRO_TIMERS, "PQJagged Z1PlanComm-" + iteration);
 
         ierr = Zoltan_Comm_Destroy(&plan);
         numMyNewGnos = incoming;
@@ -3999,11 +4003,11 @@ bool migration_refactored(
 
         lno_t *partBeginArray,
         partId_t &partIndexBegin,
-        partId_t futurePartIndex,
+        //partId_t futurePartIndex,
 
         int all2alloption,
         int assignment_type,
-        int migration_proc_assignment_type,
+        int doMigrationType,
         int migration_check_option,
         scalar_t migration_imbalance_cut_off,
         size_t futureReduceAll,
@@ -4013,6 +4017,7 @@ bool migration_refactored(
 ){
 
 
+    int migration_proc_assignment_type = 1;
     partId_t nprocs = comm->getSize();
     partId_t myRank = comm->getRank();
     int multiVectorDim = pqJagged_multiVectorDim;
@@ -4316,7 +4321,7 @@ partId_t getPartitionArrays(
                 }
                 newFuturePartitions->push_back(fNofCuts);
                 //TODO this should be removed.
-                if (fNofCuts > futurePartNumbers) futurePartNumbers = fNofCuts;
+                if (fNofCuts < futurePartNumbers) futurePartNumbers = fNofCuts;
             }
         }
 
@@ -4422,6 +4427,7 @@ void AlgPQJagged(
     std::bitset<NUM_RCB_PARAMS> params;
     int numTestCuts = 5;
 
+    int migration_actualMigration_option = 0;
     int migration_check_option = 0;
     int migration_all2all_option = 1;
     scalar_t migration_imbalance_cut_off = 0.03;
@@ -5282,15 +5288,15 @@ void AlgPQJagged(
                             partitionedPointCoordinates,
                             outTotalCounts //output
                             ,partIndexBegin,
-                            futurePartNumbers,
+                            //futurePartNumbers,
 
                             migration_all2all_option,
                             migration_assignment_type,
-                            migration_all2all_option, //migration_proc_assignment_type
+                            migration_actualMigration_option, //migration_proc_assignment_type
                             migration_check_option,
                             migration_imbalance_cut_off,
                             migration_reduceAllPop,
-                            numLocalCoords / futurePartNumbers,
+                            numLocalCoords / (futurePartNumbers * currentPartitionCount) ,
                             istring
                     )
             )
