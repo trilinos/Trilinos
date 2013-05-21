@@ -846,8 +846,8 @@ void BulkData::new_bucket_callback(EntityRank rank, unsigned const* part_ord_beg
   }
 }
 
-void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, unsigned dst_bucket_ord,
-                                    EntityRank src_rank, unsigned src_bucket_id, unsigned src_bucket_ord)
+void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
+                                    EntityRank src_rank, unsigned src_bucket_id, Bucket::size_type src_bucket_ord)
 {
   for (int i = 0; i < m_num_fields; ++i) {
     const int src_size        = m_field_meta_data[m_num_fields * src_rank + i][src_bucket_id].m_size;
@@ -870,7 +870,7 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
   }
 }
 
-void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, unsigned bucket_ord)
+void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord)
 {
   const std::vector< FieldBase * > & field_set = mesh_meta_data().get_fields();
   for ( int i = 0; i < m_num_fields; ++i) {

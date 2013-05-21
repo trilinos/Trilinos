@@ -898,36 +898,36 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
 namespace {
 
 template <typename T>
-T const* get_begin_itr(const Bucket& bucket, int bucket_ordinal, EntityRank rank);
+T const* get_begin_itr(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank);
 
 template <typename T>
-T const* get_end_itr(const Bucket& bucket, int bucket_ordinal, EntityRank rank);
+T const* get_end_itr(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank);
 
 
 template <>
-Entity const* get_begin_itr<Entity>(const Bucket& bucket, int bucket_ordinal, EntityRank rank)
+Entity const* get_begin_itr<Entity>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.begin(bucket_ordinal, rank); }
 
 template <>
-Entity const* get_end_itr<Entity>(const Bucket& bucket, int bucket_ordinal, EntityRank rank)
+Entity const* get_end_itr<Entity>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.end(bucket_ordinal, rank); }
 
 
 template <>
-ConnectivityOrdinal const* get_begin_itr<ConnectivityOrdinal>(const Bucket& bucket, int bucket_ordinal, EntityRank rank)
+ConnectivityOrdinal const* get_begin_itr<ConnectivityOrdinal>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.begin_ordinals(bucket_ordinal, rank); }
 
 template <>
-ConnectivityOrdinal const* get_end_itr<ConnectivityOrdinal>(const Bucket& bucket, int bucket_ordinal, EntityRank rank)
+ConnectivityOrdinal const* get_end_itr<ConnectivityOrdinal>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.end_ordinals(bucket_ordinal, rank); }
 
 
 template <>
-Permutation const* get_begin_itr<Permutation>(const Bucket& bucket, int bucket_ordinal, EntityRank rank)
+Permutation const* get_begin_itr<Permutation>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.begin_permutations(bucket_ordinal, rank); }
 
 template <>
-Permutation const* get_end_itr<Permutation>(const Bucket& bucket, int bucket_ordinal, EntityRank rank)
+Permutation const* get_end_itr<Permutation>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.end_permutations(bucket_ordinal, rank); }
 
 //
@@ -935,37 +935,37 @@ Permutation const* get_end_itr<Permutation>(const Bucket& bucket, int bucket_ord
 //
 
 template <typename T>
-T const *get_begin_relation_data(const Bucket & bucket, int bucket_ordinal, EntityRank rank);
+T const *get_begin_relation_data(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank);
 
 template <typename T>
-T const *get_end_relation_data(const Bucket & bucket, int bucket_ordinal, EntityRank rank);
+T const *get_end_relation_data(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank);
 
 template <>
-Entity const *get_begin_relation_data<Entity>(const Bucket & bucket, int bucket_ordinal, EntityRank rank)
+Entity const *get_begin_relation_data<Entity>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.begin(bucket_ordinal, rank); }
 
 template <>
-Entity const *get_end_relation_data<Entity>(const Bucket & bucket, int bucket_ordinal, EntityRank rank)
+Entity const *get_end_relation_data<Entity>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.end(bucket_ordinal, rank); }
 
 template <>
-ConnectivityOrdinal const *get_begin_relation_data<ConnectivityOrdinal>(const Bucket & bucket, int bucket_ordinal, EntityRank rank)
+ConnectivityOrdinal const *get_begin_relation_data<ConnectivityOrdinal>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.begin_ordinals(bucket_ordinal, rank); }
 
 template <>
-ConnectivityOrdinal const *get_end_relation_data<ConnectivityOrdinal>(const Bucket & bucket, int bucket_ordinal, EntityRank rank)
+ConnectivityOrdinal const *get_end_relation_data<ConnectivityOrdinal>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.end_ordinals(bucket_ordinal, rank); }
 
 template <>
-Permutation const *get_begin_relation_data<Permutation>(const Bucket & bucket, int bucket_ordinal, EntityRank rank)
+Permutation const *get_begin_relation_data<Permutation>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.begin_permutations(bucket_ordinal, rank); }
 
 template <>
-Permutation const *get_end_relation_data<Permutation>(const Bucket & bucket, int bucket_ordinal, EntityRank rank)
+Permutation const *get_end_relation_data<Permutation>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.end_permutations(bucket_ordinal, rank); }
 
 template <typename T>
-void verify_relation_data(const Bucket & bucket, int bucket_ordinal, EntityRank rank)
+void verify_relation_data(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 {
   T const * old_it = get_begin_relation_data<T>(bucket, bucket_ordinal, rank);
   T const * old_it_end = get_end_relation_data<T>(bucket, bucket_ordinal, rank);
@@ -989,7 +989,7 @@ void verify_relation_data(const Bucket & bucket, int bucket_ordinal, EntityRank 
 
 }
 
-void BulkData::verify_relations(const Bucket & bucket, unsigned bucket_ordinal, EntityRank rank) const
+void BulkData::verify_relations(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank) const
 {
   verify_relation_data<Entity>(bucket, bucket_ordinal, rank);
   verify_relation_data<ConnectivityOrdinal>(bucket, bucket_ordinal, rank);

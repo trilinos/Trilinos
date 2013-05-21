@@ -133,7 +133,7 @@ Bucket * Entity::bucket_ptr() const
 #endif
 }
 
-unsigned Entity::bucket_ordinal() const
+Bucket::size_type Entity::bucket_ordinal() const
 {
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   return BulkData::get(*this).bucket_ordinal(*this);

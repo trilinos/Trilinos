@@ -107,7 +107,7 @@ struct EntityArray< Field<ScalarType,void,void,void,void,void,void,void> >
   typedef shards::Array<ScalarType,shards::RankZero,void,void,void,void,void,void,void>
   array_type ;
 
-  EntityArray( const field_type & f , const Bucket& b, unsigned bucket_ordinal )
+  EntityArray( const field_type & f , const Bucket& b, Bucket::size_type bucket_ordinal )
     : array_type( BulkData::get(b).field_data( f , b, bucket_ordinal ) ) {}
 
 private:
@@ -140,7 +140,7 @@ public:
   shards::Array<ScalarType,shards::FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>
   array_type ;
 
-  EntityArray( const field_type & f , const Bucket& b, unsigned bucket_ordinal) : array_type()
+  EntityArray( const field_type & f , const Bucket& b, Bucket::size_type bucket_ordinal) : array_type()
   {
     if ( BulkData::get(b).field_data_size_per_entity(f, b)) {
       array_type::assign_stride( BulkData::get(b).field_data(f, b, bucket_ordinal),
@@ -262,7 +262,7 @@ public:
     if ( 0 < distance ) {
 
       if ( BulkData::get(b).field_data_size_per_entity(f, b) ) {
-        unsigned bucket_ordinal = i - b.begin();
+        Bucket::size_type bucket_ordinal = i - b.begin();
         array_type::assign_stride( BulkData::get(b).field_data(f, b, bucket_ordinal),
                                    BulkData::get(b).field_data_stride(f, b),
                                    (typename array_type::size_type) distance );

@@ -209,7 +209,7 @@ public:
    */
   bool modification_end();
 
-  void verify_relations(const Bucket & bucket, unsigned bucket_ordinal, EntityRank rank) const;
+  void verify_relations(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank) const;
 
   void verify_SOA_relations() const;
 
@@ -717,7 +717,7 @@ public:
     return mesh_index(entity).bucket;
   }
 
-  unsigned bucket_ordinal(Entity entity) const
+  Bucket::size_type bucket_ordinal(Entity entity) const
   {
     entity_getter_debug_check(entity);
 
@@ -793,7 +793,7 @@ public:
   // Entity setters
   //
 
-  void set_mesh_index(Entity entity, Bucket * in_bucket, unsigned ordinal )
+  void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal )
   {
     // The trace statement forces this method to be defined after Entity
     TraceIfWatching("stk::mesh::BulkData::set_mesh_index", LOG_ENTITY, entity_key(entity));
@@ -974,7 +974,7 @@ public:
 
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
-  field_data(const FieldType & f, const Bucket& b, unsigned bucket_ord = 0) const
+  field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord = 0) const
   {
     const EntityRank rank         = b.entity_rank();
     // TODO - should be const ref?
@@ -1165,15 +1165,15 @@ private:
 
   void new_bucket_callback(EntityRank rank, unsigned const* part_ord_begin, unsigned const* part_ord_end, size_t capacity);
 
-  void copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, unsigned dst_bucket_ord,
-                            EntityRank src_rank, unsigned src_bucket_id, unsigned src_bucket_ord);
+  void copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
+                            EntityRank src_rank, unsigned src_bucket_id, Bucket::size_type src_bucket_ord);
 
   void destroy_bucket_callback(EntityRank rank, unsigned bucket_id, unsigned capacity);
 
   // id_map, indexed by new id, maps to old id
   void reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& id_map);
 
-  void remove_entity_callback(EntityRank rank, unsigned bucket_id, unsigned bucket_ord);
+  void remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
 
   // Misc
 
@@ -1386,7 +1386,7 @@ return_type const* BulkData::begin_##rank_name##data_type(Entity entity) const \
   ThrowAssert(this == &stk::mesh::BulkData::get(entity));               \
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
-  unsigned bucket_ord = mesh_idx.bucket_ordinal;                        \
+  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                        \
   internal_check_unpopulated_relations(entity, RANK_VAL_##rank_name);   \
   return b.begin_##rank_name##data_type(bucket_ord);                    \
 }                                                                       \
@@ -1399,7 +1399,7 @@ return_type const* BulkData::end_##rank_name##data_type(Entity entity) const \
   ThrowAssert(this == &stk::mesh::BulkData::get(entity));               \
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
-  unsigned bucket_ord = mesh_idx.bucket_ordinal;                        \
+  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                        \
   return b.end_##rank_name##data_type(bucket_ord);                      \
 }
 
@@ -1422,7 +1422,7 @@ unsigned BulkData::num_##rank_name##s(Entity entity) const             \
   ThrowAssert(this == &stk::mesh::BulkData::get(entity));              \
   const MeshIndex &mesh_idx = mesh_index(entity);                      \
   const Bucket &b = *mesh_idx.bucket;                                  \
-  unsigned bucket_ord = mesh_idx.bucket_ordinal;                       \
+  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                       \
   return b.num_##rank_name##s(bucket_ord);                             \
 }
 
@@ -1439,7 +1439,7 @@ return_type const* BulkData::begin_str##end_str(Entity entity, EntityRank rank) 
   ThrowAssert(this == &stk::mesh::BulkData::get(entity));               \
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
-  unsigned bucket_ord = mesh_idx.bucket_ordinal;                        \
+  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                        \
   internal_check_unpopulated_relations(entity, rank);                   \
   return b.begin_str##end_str(bucket_ord, rank);                        \
 }
@@ -1628,7 +1628,7 @@ Relation::Relation(const BulkData &mesh,  Entity ent , RelationIdentifier id )
 }
 
 inline
-bool Bucket::other_entities_have_single_rank(unsigned bucket_ordinal, EntityRank rank) const
+bool Bucket::other_entities_have_single_rank(size_type bucket_ordinal, EntityRank rank) const
 {
   Entity const * const other_rels = m_dynamic_other_connectivity.begin(bucket_ordinal);
   Entity const * const other_rels_end = m_dynamic_other_connectivity.end(bucket_ordinal);;
@@ -1646,7 +1646,7 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   if (m_check_invalid_rels) {
     const MeshIndex &mesh_idx = mesh_index(entity);
     const Bucket &b = *mesh_idx.bucket;
-    unsigned bucket_ord = mesh_idx.bucket_ordinal;
+    Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;
     ThrowAssertMsg(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank),
                    "WARNING: entity " << print_entity_key(mesh_meta_data(), entity_key(entity)) << " does not have fully populated connectivity for rank " << mesh_meta_data().entity_rank_name(rank) << ", " << count_valid_connectivity(entity, rank) << "/" << b.num_connectivity(bucket_ord, rank));
   }

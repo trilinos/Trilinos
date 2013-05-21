@@ -154,7 +154,7 @@ union Entity
   const EntityKey key() const;
   Bucket & bucket() const;
   Bucket * bucket_ptr() const;
-  unsigned bucket_ordinal() const;
+  size_t bucket_ordinal() const;
   size_t synchronized_count() const;
   PairIterRelation relations() const;
   PairIterRelation relations( EntityRank type ) const;

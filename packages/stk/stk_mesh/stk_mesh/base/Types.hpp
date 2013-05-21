@@ -97,7 +97,7 @@ template< class FieldType > struct FieldTraits ;
 //Ultimately we want this struct to contain two ints rather than a pointer and an int...
 struct MeshIndex {
   Bucket* bucket;
-  unsigned bucket_ordinal;
+  size_t bucket_ordinal;
 };
 
 typedef unsigned Ordinal;
