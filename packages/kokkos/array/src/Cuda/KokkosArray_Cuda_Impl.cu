@@ -208,6 +208,7 @@ public:
 
 //----------------------------------------------------------------------------
 
+
 void CudaInternal::print_configuration( std::ostream & s ) const
 {
   const CudaInternalDevices & dev_info = CudaInternalDevices::singleton();
@@ -488,6 +489,20 @@ Cuda::size_type Cuda::detect_device_count()
 
 void Cuda::initialize( const Cuda::SelectDevice config )
 { Impl::CudaInternal::raw_singleton().initialize( config.cuda_device_id ); }
+
+std::vector<unsigned>
+Cuda::detect_device_arch()
+{
+  const Impl::CudaInternalDevices & s = Impl::CudaInternalDevices::singleton();
+
+  std::vector<unsigned> output( s.m_cudaDevCount );
+
+  for ( int i = 0 ; i < s.m_cudaDevCount ; ++i ) {
+    output[i] = s.m_cudaProp[i].major * 100 + s.m_cudaProp[i].minor ;
+  }
+
+  return output ;
+}
 
 Cuda::size_type Cuda::device_arch()
 {
