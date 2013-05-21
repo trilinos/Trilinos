@@ -60,8 +60,8 @@
 #include "zoltan_comm_cpp.h"
 #include <algorithm>    // std::sort
 
-#define omitted2
-//#define memory_debug
+
+
 #define enable_migration2
 
 
@@ -966,9 +966,6 @@ void pqJagged_getCutCoord_Weights(
         scalar_t *cutCoordinates /*p - 1 sized, coordinate of each cut line*/,
         scalar_t *cutPartRatios /*cumulative weight ratios, at left side of each cut line. p-1 sized*/,
         int numThreads,
-#ifdef omitted
-        const partId_t *partNo,
-#endif
         vector <partId_t> *currentPartitions,
         vector <partId_t> *futurePartitions,
         partId_t partIndex,
@@ -977,29 +974,6 @@ void pqJagged_getCutCoord_Weights(
 
     scalar_t coordinateRange = maxCoordinate - minCoordinate;
     if(pqJagged_uniformParts){
-#ifdef omitted
-        if(0 && partNo){
-            scalar_t uniform = 1. / (noCuts + 1);
-            scalar_t slice = uniform * coordinateRange;
-
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel
-#endif
-            {
-                partId_t myStart = 0;
-                partId_t myEnd = noCuts;
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp for
-#endif
-                for(partId_t i = myStart; i < myEnd; ++i){
-                    cutPartRatios[i] = uniform * (i + 1);
-                    cutCoordinates[i] = minCoordinate + slice * (i + 1);
-                }
-                cutPartRatios[noCuts] = 1;
-            }
-        }
-        else
-#endif
         {
             partId_t cumulative = 0;
             scalar_t totalInnerPartCount = scalar_t((*currentPartitions)[partIndex]);
@@ -1879,10 +1853,6 @@ else {
  */
 template <typename scalar_t>
 void accumulateThreadResults(
-#ifdef omitted
-        const partId_t *partNoArray,
-
-#endif
         const vector <partId_t> &pVector,
         partId_t vBegin,
 
@@ -1896,51 +1866,6 @@ void accumulateThreadResults(
         scalar_t *totalPartWeights_leftClosest_rightCloset
 
 ){
-#ifdef omitted
-    if (0 && partNoArray){
-
-        partId_t partNo =  pVector[0];
-        partId_t noCuts = partNo - 1;
-        size_t total_part_count = partNo + size_t (noCuts) ;
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp for
-#endif
-        for(partId_t i = 0; i < noCuts * concurrentPartCount; ++i){
-            if(isDone[i]) continue;
-            scalar_t minl = leftClosestDistance[0][i], minr = rightClosestDistance[0][i];
-
-            for (int j = 1; j < numThreads; ++j){
-                if (rightClosestDistance[j][i] < minr ){
-                    minr = rightClosestDistance[j][i];
-                }
-                if (leftClosestDistance[j][i] < minl ){
-                    minl = leftClosestDistance[j][i];
-                }
-            }
-            size_t ishift = i % noCuts + (i / noCuts) * (total_part_count + 2 * noCuts);
-            totalPartWeights_leftClosest_rightCloset[total_part_count + ishift] = minl;
-            totalPartWeights_leftClosest_rightCloset[total_part_count + noCuts + ishift] = minr;
-        }
-
-        // if(1 || useBinarySearch){
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp for
-#endif
-        for(size_t j = 0; j < total_part_count * concurrentPartCount; ++j){
-            size_t actualCutInd = (j % total_part_count);
-            partId_t cutInd = actualCutInd / 2 + (j / total_part_count) * noCuts;
-
-            if(actualCutInd !=  total_part_count - 1 && isDone[cutInd]) continue;
-            double pwj = 0;
-            for (int i = 0; i < numThreads; ++i){
-                pwj += partWeights[i][j];
-            }
-            size_t jshift = j % total_part_count + (j / total_part_count) * (total_part_count + 2 * noCuts);
-            totalPartWeights_leftClosest_rightCloset[jshift] = pwj;
-        }
-    }
-    else {
-#endif
 #ifdef HAVE_ZOLTAN2_OMP
 //needs barrier here, as it requires all threads to finish pqJagged_1DPart_getPartWeights
 #pragma omp barrier
@@ -2003,10 +1928,6 @@ void accumulateThreadResults(
                 totalPartShift += total_part_count;
             }
         }
-
-#ifdef omitted
-    }
-#endif
 }
 
 
@@ -2101,9 +2022,6 @@ void pqJagged_1D_Partition(
         bool useBinarySearch,
 
         partId_t * partIds,
-#ifdef omitted
-        const partId_t *partNoArray,
-#endif
         vector <partId_t> &pVector
 ){
 
@@ -2120,20 +2038,7 @@ void pqJagged_1D_Partition(
     scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
 
     Teuchos::PQJaggedCombinedReductionOp<partId_t, scalar_t> *reductionOp = NULL;
-#ifdef omitted
-    if (partNoArray){
-
-        partId_t partNo =  pVector[0];
-        partId_t noCuts = partNo - 1;
-        size_t total_part_count = partNo + size_t (noCuts) ;
-        reductionOp = new Teuchos::PQJaggedCombinedReductionOp<partId_t, scalar_t>(total_part_count , noCuts  , noCuts , concurrentPartCount);
-    }
-    else {
-#endif
         reductionOp = new Teuchos::PQJaggedCombinedReductionOp<partId_t, scalar_t>(&pVector , currentPartBeginIndex , concurrentPartCount);
-#ifdef omitted
-    }
-#endif
 
 
     size_t totalReductionSize = 0;
@@ -2148,30 +2053,6 @@ void pqJagged_1D_Partition(
         double *myPartWeights = partWeights[me];
         scalar_t *myLeftClosest = leftClosestDistance[me];
         scalar_t *myRightClosest = rightClosestDistance[me];
-#ifdef omitted
-        if(0 && partNoArray){
-
-            partId_t partNo =  pVector[0];
-            partId_t noCuts = partNo - 1;
-            totalReductionSize = (4 * noCuts + 1) * concurrentPartCount;
-            //cout << "kk:" << " partition - 4:" << partNo << endl;
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp for
-#endif
-            for(partId_t i = 0; i < noCuts * concurrentPartCount; ++i){
-                isDone[i] = false;
-                partId_t ind = i / noCuts;
-                cutLowerBounds[i] = globalMinMaxTotal[ind];
-                cutUpperBounds[i] = globalMinMaxTotal[ind + concurrentPartCount];
-                cutUpperWeight[i] = globalMinMaxTotal[ind + 2 * concurrentPartCount];
-                cutLowerWeight[i] = 0;
-                if(allowNonRectelinearPart){
-                    nonRectelinearPartRatios[i] = 0;
-                }
-            }
-        }
-        else {
-#endif
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
@@ -2200,9 +2081,6 @@ void pqJagged_1D_Partition(
                     }
                 }
             }
-#ifdef omitted
-        }
-#endif
 
         //no need to have barrier here.
         //pragma omp single have implicit barrier.
@@ -2216,16 +2094,7 @@ void pqJagged_1D_Partition(
 
             for (partId_t kk = 0; kk < concurrentPartCount; ++kk){
                 partId_t partNo =  -1;
-#ifdef omitted
-                if (partNoArray){
-                    partNo =  pVector[0];
-                }
-                else {
-#endif
                     partNo =  pVector[currentPartBeginIndex + kk];
-#ifdef omitted
-                }
-#endif
 
                 partId_t noCuts = partNo - 1;
                 size_t total_part_count = partNo + size_t (noCuts) ;
@@ -2272,9 +2141,6 @@ void pqJagged_1D_Partition(
 
             //sum up the results of threads
             accumulateThreadResults<scalar_t>(
-#ifdef omitted
-                    partNoArray,
-#endif
                     pVector,
                     currentPartBeginIndex,
                     concurrentPartCount,
@@ -2340,61 +2206,17 @@ void pqJagged_1D_Partition(
                     Z2_THROW_OUTSIDE_ERROR(*env)
                 }
                 else {
-#ifdef omitted
-                    if(partNoArray){
-
-                        partId_t partNo =  pVector[0];
-                        partId_t noCuts = partNo - 1;
-                        size_t total_part_count = partNo + size_t (noCuts) ;
-                        size_t s = (total_part_count + 2 * noCuts) * concurrentPartCount;
-
-                        for(size_t i = 0; i < s; ++i){
-                            global_totalPartWeights_leftClosest_rightCloset[i] = local_totalPartWeights_leftClosest_rightCloset[i];
-                        }
-
-                    }
-                    else {
-#endif
                         memcpy(global_totalPartWeights_leftClosest_rightCloset,
                                 local_totalPartWeights_leftClosest_rightCloset,
                                 totalReductionSize * sizeof(scalar_t)
                         );
-#ifdef omitted
-                        /*
-                        size_t next = 0;
-                        for(partId_t i = 0; i < concurrentPartCount; ++i){
-                            partId_t partNo =  pVector[currentPartBeginIndex + i];
-                            partId_t noCuts = partNo - 1;
-                            size_t total_part_count = partNo + size_t (noCuts) ;
-                            size_t s = (total_part_count + 2 * noCuts);
-
-                            for(size_t j = 0; j < s; ++j){
-                                global_totalPartWeights_leftClosest_rightCloset[j + next] =
-                                        local_totalPartWeights_leftClosest_rightCloset[j + next];
-                            }
-                            next += s;
-                        }
-                        */
-#endif
-#ifdef omitted
-                    }
-#endif
                 }
             }
             partId_t cutShift = 0;
             size_t tlrShift = 0;
             for (partId_t kk = 0; kk < concurrentPartCount; ++kk){
                 partId_t partNo =  -1;
-#ifdef omitted
-                if(partNoArray){
-                    partNo = pVector[0];
-                }
-                else {
-#endif
                     partNo = pVector[currentPartBeginIndex + kk];
-#ifdef omitted
-                }
-#endif
 
                 partId_t noCuts = partNo - 1;
                 size_t total_part_count = partNo + size_t (noCuts) ;
@@ -2497,16 +2319,7 @@ void pqJagged_1D_Partition(
                 partId_t next = 0;
                 for(partId_t i = 0; i < concurrentPartCount; ++i){
                     partId_t partNo = -1;
-#ifdef omitted
-                    if(partNoArray){
-                        partNo = pVector[0];
-                    }
-                    else {
-#endif
                         partNo = pVector[currentPartBeginIndex + i];
-#ifdef omitted
-                    }
-#endif
                     //cout << "kk:" << " partition - 5:" << partNo << endl;
                     partId_t noCuts = partNo - 1;
                     for(partId_t ii = 0; ii < noCuts; ++ii){
@@ -2935,1377 +2748,6 @@ RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_initial_m
 #endif
 
 
-#ifdef enable_migration
-
-
-template <typename gno_t, typename lno_t,typename scalar_t, typename node_t>
-RCP<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_multi_vector(
-        RCP<Comm<int> > &comm,
-        gno_t numGlobalPoints,
-        lno_t numLocalPoints,
-        int coord_dim,
-        scalar_t **coords,
-        int weight_dim,
-        scalar_t **weight,
-#ifdef migrate_gid
-        scalar_t *mappedGnos,
-#endif
-        scalar_t *assigned_parts,
-        int &multiVectorDim,
-        RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > old_mvector
-){
-
-    typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-    RCP<const Tpetra::Map<lno_t, gno_t, node_t> > mp = old_mvector->getMap();
-
-    Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(multiVectorDim + 1);
-
-    for (int i=0; i < coord_dim; i++){
-        if(numLocalPoints > 0){
-            Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalPoints);
-            coordView[i] = a;
-        } else{
-            Teuchos::ArrayView<const scalar_t> a;
-            coordView[i] = a;
-        }
-    }
-    //cout << "coordim:" << coord_dim << endl;
-    for (int i=0; i < weight_dim; i++){
-
-        int j = i + coord_dim;
-#ifdef migrate_gid
-        if (j >= multiVectorDim - 1) break;
-#endif
-#ifndef migrate_gid
-        if (j >= multiVectorDim) break;
-#endif
-        if(numLocalPoints > 0){
-            Teuchos::ArrayView<const scalar_t> a(weight[i], numLocalPoints);
-            coordView[j] = a;
-        } else{
-            Teuchos::ArrayView<const scalar_t> a;
-            coordView[j] = a;
-        }
-    }
-    //cout << "weightdim:" << weight_dim << endl;
-#ifdef migrate_gid
-
-    if(numLocalPoints > 0){
-        //cout << "writing :" << weight_dim + coord_dim << endl;
-        Teuchos::ArrayView<const scalar_t> a(mappedGnos, numLocalPoints);
-        coordView[multiVectorDim - 1] = a;
-    } else{
-        Teuchos::ArrayView<const scalar_t> a;
-        coordView[multiVectorDim - 1] = a;
-    }
-    //multiVectorDim += 1;
-#endif
-    if (assigned_parts){
-        if(numLocalPoints > 0){
-            //cout << "writing :" << weight_dim + coord_dim << endl;
-            Teuchos::ArrayView<const scalar_t> a(assigned_parts, numLocalPoints);
-            coordView[multiVectorDim] = a;
-        } else{
-            Teuchos::ArrayView<const scalar_t> a;
-            coordView[multiVectorDim] = a;
-        }
-        multiVectorDim += 1;
-    }
-    RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmVector = RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >(
-            new Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>( mp, coordView.view(0, multiVectorDim), multiVectorDim));
-
-    RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
-
-    return tmVector;
-}
-
-
-
-template <typename gno_t, typename lno_t,typename scalar_t, typename node_t>
-void get_multi_vector(
-        RCP<Comm<int> > &pcomm,
-
-        RCP<Comm<int> > &comm,
-        lno_t &numLocalPoints, gno_t &numGlobalPoints,
-        int coord_dim,
-        scalar_t **coords,
-        int weight_dim,
-        scalar_t **weight,
-#ifdef migrate_gid
-        scalar_t *&mappedGnos,
-#endif
-        scalar_t *&assigned_parts
-        ,RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > coordsConst
-        ,partId_t out_num_parts, lno_t *&permutations,
-        lno_t *part_begins
-        ,partId_t num_parts, int pqJagged_multiVectorDim,
-        string iteration
-){
-    //numLocalPoints =  coordsConst->getData(0).size();
-
-    //numGlobalPoints = coordsConst->getGlobalLength ();
-    //Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(coord_dim + weight_dim + 1);
-    //  if (iteration != "0")
-    //  cout <<"me:" <<pcomm->getRank() << " start - outnumparts:" << out_num_parts << endl;
-
-    for (int i=0; i < coord_dim; i++){
-        ArrayRCP< const scalar_t >  coord = coordsConst->getData(i);
-        coords[i] =(scalar_t *) coord.getRawPtr();
-    }
-    //  if (iteration != "0")
-    //  cout <<"me:" <<pcomm->getRank() << " then - outnumparts:" << out_num_parts << endl;
-
-    for (int i=0; i < weight_dim; i++){
-#ifdef migrate_gid
-        if (i + coord_dim >= pqJagged_multiVectorDim - 1) break;
-#endif
-#ifndef migrate_gid
-        if (i + coord_dim >= pqJagged_multiVectorDim) break;
-#endif
-        //cout << "reading:" << i+ coord_dim << endl;
-        ArrayRCP< const scalar_t >  wgts = coordsConst->getData(i+ coord_dim);
-        weight[i] = (scalar_t *) wgts.getRawPtr();
-    }
-
-#ifdef migrate_gid
-    mappedGnos =  (scalar_t *)  coordsConst->getData(pqJagged_multiVectorDim - 1).getRawPtr();
-#endif
-
-    /*
-  if (assigned_parts){
-
-    assigned_parts = (scalar_t *)coordsConst->getData (pqJagged_multiVectorDim).getRawPtr();
-  }
-     */
-
-    if (out_num_parts == 1){
-        for(lno_t i = 0; i < numLocalPoints; ++i){
-            permutations[i] = i;
-        }
-        part_begins[0] = numLocalPoints;
-    }
-    else {
-        //cout <<"me:" <<comm->getRank() << " outnumparts bigger than 1:" << out_num_parts << endl;
-
-        //lno_t *counts = new lno_t[num_parts];
-        assigned_parts = (scalar_t *)coordsConst->getData /*getData*/(pqJagged_multiVectorDim).getRawPtr();
-        lno_t *counts = allocMemory<lno_t>(num_parts);
-
-        //partId_t *part_shifts = new partId_t[num_parts];
-        partId_t *part_shifts = allocMemory<partId_t>(num_parts);
-
-        memset(counts, 0, sizeof(lno_t) * num_parts);
-        for(lno_t i = 0; i < numLocalPoints; ++i){
-            partId_t ii = (assigned_parts[i]+1)/2;
-            ++counts[ii];
-            //++counts[partId_t((assigned_parts[i]+1)/2)];
-        }
-        /*
-       for(partId_t i = 0; i < num_parts; ++i){
-       cout << "me:" <<comm->getRank() <<  " p:" << i << " :count:" <<  counts[i] << endl; 
-       }	
-         */
-        partId_t p = 0;
-        lno_t prev_index = 0;
-        for(partId_t i = 0; i < num_parts; ++i){
-            if(counts[i] > 0)  {
-                //cout << "me:" <<comm->getRank() <<  " p:" << i <<" prev_index:"<< prev_index << " :count:" <<  counts[i] << endl;
-
-                part_begins[p] =  prev_index + counts[i];
-                prev_index += counts[i];
-                part_shifts[i] = p++;
-
-            }
-            //counts[i] += counts[i-1];
-        }
-        partId_t assigned_count = p - 1;
-        //cout << "p:" << p << " nump:" << num_parts << " out:" << out_num_parts << endl;
-        for (;p < num_parts; ++p){
-            part_begins[p] =  part_begins[assigned_count ];
-        }
-        for(partId_t i = 0; i < out_num_parts; ++i){
-            counts[i] = part_begins[i];
-
-            //cout <<  "me:" <<comm->getRank() <<  " p:" << i << " partend:" <<  part_begins[i] << endl;
-        }
-        for(lno_t i = numLocalPoints - 1; i >= 0; --i){
-            partId_t part = part_shifts[partId_t((assigned_parts[i]+1)/2)];
-            //cout <<  "me:" <<comm->getRank() <<  " i:" << i << " part[i]:" << part << " placing to:" << counts[part] -1 << endl;
-
-            permutations[--counts[part]] = i;
-        }
-        /*
-       for(lno_t i = 0; i < numLocalPoints; ++i){
-       cout <<  "me:" <<comm->getRank() <<  " i:" << i << " permutations[i]:" << permutations[i] <<endl;
-       }
-         */
-        //delete[]counts;
-        freeArray<lno_t>(counts);
-
-        //delete[]part_shifts;
-        freeArray<partId_t>(part_shifts);
-    }
-}
-
-#define MIGRATIONIMBALANCE 0.03
-template <typename mvector_t, typename gno_t, typename partId_t>
-bool migrateData(
-        RCP<Comm<int> > &pcomm,
-        const RCP<const Environment> &env,
-        RCP<Comm<int> > &comm,
-
-        partId_t *&lrflags,
-        RCP<const mvector_t> &vectors,    // on return is the new data
-
-        partId_t *p_pid_np_num_procs_each_part,
-        partId_t *p_pid_np_work_num_procs_each_part,
-        partId_t num_parts,
-        /*
-       gno_t *p_gno_np_local_num_coord_each_part,
-       gno_t *p_gno_np_work_local_num_coord_each_part,
-       gno_t *p_gno_np_global_num_coord_each_part,
-         */
-        partId_t *ids,
-        partId_t &groupSize,
-
-        partId_t &out_num_part,
-        partId_t &partIndexBegin, partId_t futurePartIndex,
-        int all2alloption,
-        int migration_check_option,
-        scalar_t migration_imbalance_cut_off,
-        string iteration,
-#ifdef omitted2
-        bool pqJagged_uniformWeights,
-        scalar_t *coordWeights,
-        bool allowNonRectelinearPart,
-        float **nonRectelinearRatios,
-        float *actual_ratios,
-        scalar_t *localPartWeights,
-        double **partWeights,
-        scalar_t *cutCoordinates,
-#endif
-        scalar_t *&assigned_parts,
-        int &coord_dim,
-        scalar_t **coords,
-        int &weight_dim,
-        scalar_t **weight,
-        int &multiVectorDim,
-        int assignment_type
-)          // on return is num procs with left data
-{
-
-#ifdef memory_debug
-    sleep(1); env->memory("\t\t\t\tBefore migrateData-" + iteration);
-#endif
-    int migration_proc_assignment_type = 1;
-    typedef typename mvector_t::scalar_type scalar_t;
-    typedef typename mvector_t::local_ordinal_type lno_t;
-
-
-    //int migration_option = 1;
-
-    partId_t nprocs = comm->getSize();
-    partId_t myRank = comm->getRank();
-
-    lno_t nobj = vectors->getLocalLength();
-    size_t nGlobalObj = vectors->getGlobalLength();
-
-    if (nprocs <= num_parts) migration_proc_assignment_type = 1;
-    partId_t allocation_size = num_parts;
-    if (migration_proc_assignment_type == 1){
-        allocation_size = num_parts * (nprocs + 1);
-    }
-    //gno_t *p_gno_np_local_num_coord_each_part_actual = new gno_t[allocation_size];
-    gno_t *p_gno_np_local_num_coord_each_part_actual = allocMemory<gno_t>(allocation_size);
-
-    //gno_t *p_gno_np_work_local_num_coord_each_part_actual = new gno_t[allocation_size];
-    //gno_t *p_gno_np_work_local_num_coord_each_part_actual = allocMemory<gno_t>(allocation_size);
-    //gno_t *p_gno_np_global_num_coord_each_part_actual  = new gno_t[allocation_size];
-    gno_t *p_gno_np_global_num_coord_each_part_actual  = allocMemory<gno_t>(allocation_size);
-
-    gno_t *p_gno_np_local_num_coord_each_part = p_gno_np_local_num_coord_each_part_actual;
-    //gno_t *p_gno_np_work_local_num_coord_each_part = p_gno_np_work_local_num_coord_each_part_actual;
-    gno_t *p_gno_np_global_num_coord_each_part  = p_gno_np_global_num_coord_each_part_actual;
-
-    gno_t *p_gno_np_local_num_coord_each_part_mypart = p_gno_np_local_num_coord_each_part_actual;
-    //gno_t *p_gno_np_work_local_num_coord_each_part_mypart = p_gno_np_work_local_num_coord_each_part_actual;
-    gno_t *p_gno_np_global_num_coord_each_part_mypart  = p_gno_np_global_num_coord_each_part_actual;
-
-
-
-    partId_t shift_amount = nprocs * num_parts;
-    partId_t my_part_shift = myRank * num_parts;
-
-    if (migration_proc_assignment_type == 1){
-
-        p_gno_np_local_num_coord_each_part += shift_amount;
-        //p_gno_np_work_local_num_coord_each_part += shift_amount;
-        p_gno_np_global_num_coord_each_part += shift_amount;
-
-        p_gno_np_local_num_coord_each_part_mypart += my_part_shift;
-        //p_gno_np_work_local_num_coord_each_part_mypart += my_part_shift;
-        p_gno_np_global_num_coord_each_part_mypart  += my_part_shift;
-
-    }
-
-    //needs:
-    //bool pqJagged_uniformWeights,
-    //scalar_t *coordWeights,
-    //bool allowNonRectelinearPart,
-    //float **nonRectelinearRatios,
-    //float **actual_ratios,
-    //scalar_t **localPartWeights,
-    //scalar_t **partWeights,
-    //scalar_t *cutCoordinates,
-
-    memset(p_gno_np_local_num_coord_each_part_actual, 0, sizeof(gno_t)*allocation_size);
-
-    ///////////////
-
-#ifdef omitted2
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel
-#endif
-    {
-        int me = 0;
-        int noThreads = 1;
-#ifdef HAVE_ZOLTAN2_OMP
-        me = omp_get_thread_num();
-        noThreads = omp_get_num_threads();
-#endif
-
-        //lno_t *myStarts = coordinate_starts[me];
-        //lno_t *myEnds = coordinate_ends[me];
-        float *myRatios = NULL;
-        scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
-        partId_t noCuts = num_parts - 1; 
-
-        if (allowNonRectelinearPart){
-
-            myRatios = nonRectelinearRatios[me];
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp for
-#endif
-            for (partId_t i = 0; i < noCuts; ++i){
-                float r = actual_ratios[i];
-
-                //cout << "real i:" << i << " :" << r << " " << endl;
-                scalar_t leftWeight = r * (localPartWeights[i * 2 + 1] - localPartWeights[i * 2]);
-                for(int ii = 0; ii < noThreads; ++ii){
-                    if(leftWeight > _EPSILON){
-
-                        scalar_t ithWeight = partWeights[ii][i * 2 + 1] - partWeights[ii][i * 2 ];
-                        if(ithWeight < leftWeight){
-                            nonRectelinearRatios[ii][i] = ithWeight;
-                        }
-                        else {
-                            nonRectelinearRatios[ii][i] = leftWeight ;
-                        }
-                        leftWeight -= ithWeight;
-                    }
-                    else {
-                        nonRectelinearRatios[ii][i] = 0;
-                    }
-                }
-            }
-
-
-            if(noCuts > 0){
-                for (partId_t i = noCuts - 1; i > 0 ; --i){          if(ABS(cutCoordinates[i] - cutCoordinates[i -1]) < _EPSILON){
-                    myRatios[i] -= myRatios[i - 1] ;
-                }
-                //cout << "i:" << i << " :" << myRatios[i] << " ";
-                myRatios[i] = int ((myRatios[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL) / scalar_t(SIGNIFICANCE_MUL);
-                }
-            }
-            /*
-
-             for (partId_t i = 0; i < noCuts; ++i){
-             cout << "r i:" << i << " :" <<  myRatios[i] << " " << endl;
-             }
-             */
-
-        }
-
-#ifdef HAVE_ZOLTAN2_OMP
-#pragma omp for
-#endif
-        for (lno_t i=0; i < nobj; i++){
-            partId_t pp = lrflags[i];
-            partId_t p = pp / 2;
-
-            if(pp % 2 == 1){
-                if(allowNonRectelinearPart && myRatios[p] > _EPSILON * EPS_SCALE){
-                    //cout << "pa:" << p << endl;
-                    scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
-
-                    myRatios[p] -= w;
-                    if(myRatios[p] < 0 && p < noCuts - 1 && ABS(cutCoordinates[p+1] - cutCoordinates[p]) < _EPSILON){
-                        myRatios[p + 1] += myRatios[p];
-                    }
-                    lrflags[i] = pp - 1;
-                }
-                else{
-                    //scalar_t currentCut = cutCoordinates[p];
-                    //TODO:currently cannot divide 1 line more than 2 parts.
-                    //bug cannot be divided, therefore this part should change.
-                    //cout << "p:" << p+1 << endl;
-                    lrflags[i] = pp + 1;
-
-
-                }
-
-            }
-            ++p_gno_np_local_num_coord_each_part[(lrflags[i])/2];
-        }
-
-
-    }
-#endif
-    /*
-  scalar_t *&assigned_parts,
-  int &coord_dim,
-  scalar_t **coords,
-  int &weight_dim,
-  scalar_t **weight,
-  int &multiVectorDim,
-
-     */
-
-
-
-    if (migration_proc_assignment_type == 1){
-        memcpy (p_gno_np_local_num_coord_each_part_mypart,
-                p_gno_np_local_num_coord_each_part,
-                sizeof(gno_t) * (num_parts) );
-    }
-
-
-    env->timerStart(MACRO_TIMERS, "PQJagged ReduceAll-" + iteration);
-
-    try{
-        reduceAll<int, gno_t>(
-                *comm,
-                Teuchos::REDUCE_SUM,
-                allocation_size,
-                p_gno_np_local_num_coord_each_part_actual,
-                p_gno_np_global_num_coord_each_part_actual);
-    }
-    Z2_THROW_OUTSIDE_ERROR(*env)
-    env->timerStop(MACRO_TIMERS, "PQJagged ReduceAll-" + iteration);
-
-    if (migration_check_option == 0){
-        scalar_t diff = 0, global_diff = 0;
-        if (migration_proc_assignment_type == 0 )
-        {
-
-            for (partId_t i = 0; i < num_parts; ++i){
-                scalar_t ideal_num = p_gno_np_global_num_coord_each_part[i] /  scalar_t(nprocs);
-                diff += ABS(ideal_num -
-                        p_gno_np_local_num_coord_each_part_mypart[i]) /  (ideal_num);
-            }
-            diff /= num_parts;
-            reduceAll<int, scalar_t>(
-                    *comm,
-                    Teuchos::REDUCE_SUM,
-                    1,
-                    &diff,
-                    &global_diff);
-        }
-        else {
-            for (partId_t ii = 0; ii < nprocs; ++ii){
-                for (partId_t i = 0; i < num_parts; ++i){
-                    scalar_t ideal_num = p_gno_np_global_num_coord_each_part[i] /  scalar_t(nprocs);
-                    /*
-            global_diff += ABS(ideal_num -
-              p_gno_np_local_num_coord_each_part_mypart[i]) /  (ideal_num);
-                     */
-                    global_diff += ABS(ideal_num -
-                            p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i]) /  (ideal_num);
-
-
-                }
-            }
-            global_diff /= num_parts;
-
-        }
-        global_diff /= nprocs;
-        if (myRank == 0) {
-            cout << "imbalance for next iteration:" << global_diff << endl;
-        }
-
-
-
-        if(global_diff <= migration_imbalance_cut_off){
-            //delete []p_gno_np_local_num_coord_each_part_actual;
-            freeArray<gno_t>(p_gno_np_local_num_coord_each_part_actual);
-            //delete []p_gno_np_work_local_num_coord_each_part_actual;
-            //freeArray<gno_t>(p_gno_np_work_local_num_coord_each_part_actual);
-            //delete []p_gno_np_global_num_coord_each_part_actual;
-            freeArray<gno_t>(p_gno_np_global_num_coord_each_part_actual);
-
-            return false;
-        }
-
-    }
-
-
-    if (nprocs < num_parts){
-        //assigned_parts = new scalar_t[nobj];
-        assigned_parts = allocMemory<scalar_t>(nobj);
-        for (lno_t i = 0; i < nobj; ++i){
-            assigned_parts[i] = scalar_t (lrflags[i]);
-        }
-#ifdef memory_debug
-        sleep(1); env->memory("\t\t\t\tBefore create multi");
-#endif
-        RCP<const mvector_t> tmpvectors = create_multi_vector <gno_t,lno_t,scalar_t,node_t>(
-                comm,
-                nGlobalObj,
-                nobj,
-                coord_dim,
-                coords,
-                weight_dim,
-                weight,
-#ifdef migrate_gid
-                mappedGnos,
-#endif
-                assigned_parts, multiVectorDim,
-                vectors
-        );
-#ifdef memory_debug
-        sleep(1); env->memory("\t\t\t\tAfter create multi");
-#endif
-
-        vectors = tmpvectors;
-#ifdef memory_debug
-        sleep(1); env->memory("\t\t\t\tAfter release multi");
-#endif
-    }
-
-    ///////////////////////////////////////////////////////
-    // Get a list of my new global numbers.
-
-    Array<lno_t> sendCount(nprocs, 0);
-    Array<lno_t> recvCount(nprocs, 0);
-    Array<gno_t> sendBuf(nobj, 0);
-    out_num_part = 0;
-    //int assigned_part_count = 0;
-    if (1 || nobj > 0){
-        if (nprocs > num_parts){
-            if(migration_proc_assignment_type == 1){
-                /*
-    	if(comm->getRank() == 0){
-          cout << "smart migration" << endl;
-        }
-                 */
-                //partId_t *part_assign_begins = new partId_t [num_parts];
-                partId_t *part_assign_begins = allocMemory<partId_t>(num_parts);
-                //partId_t *proc_chains = new partId_t [nprocs];
-                partId_t *proc_chains = allocMemory<partId_t>(nprocs);
-
-                partId_t left_proc = nprocs;
-                partId_t min_required_for_rest = num_parts - 1;
-                //find how many processors is needed for each part.
-
-                bool did_i_find_my_group = false;
-
-                partId_t next_proc_to_assign = 0;
-                for (partId_t i=0; i < num_parts; i++){
-                    partId_t required_proc = static_cast<partId_t>(floor(0.5f + nprocs * (scalar_t (p_gno_np_global_num_coord_each_part[i]) / scalar_t(nGlobalObj))));
-                    if (left_proc - required_proc < min_required_for_rest){
-                        required_proc = left_proc - (min_required_for_rest);
-                    }
-                    left_proc -= required_proc;
-                    --min_required_for_rest;
-                    p_pid_np_num_procs_each_part[i] = required_proc;
-                }
-                if (left_proc > 0){
-                    p_pid_np_num_procs_each_part[0] +=  left_proc;
-                }
-                //now find what are the best processors with least migration for each part.
-
-                //partId_t *proc_part_assignments = new partId_t[nprocs];
-                partId_t *proc_part_assignments = allocMemory<partId_t>(nprocs);
-
-                for (int i = 0; i < nprocs; ++i ){
-                    proc_part_assignments[i] = -1;
-                    proc_chains[i] = -1;
-                }
-                for (int i = 0; i < num_parts; ++i ){
-                    part_assign_begins[i] = -1;
-                }
-
-                //uSortItem<partId_t, lno_t> * proc_points_in_part = new uSortItem<partId_t, partId_t>[nprocs];
-                uSortItem<partId_t, lno_t> * proc_points_in_part = allocMemory <uSortItem<partId_t, partId_t> > (nprocs);
-
-                for(partId_t i = 0; i < num_parts; ++i){
-
-
-                    gno_t total_num_points_in_part = p_gno_np_global_num_coord_each_part[i];
-                    if(assignment_type == 0){
-                        //cout << "assign=0" << endl;
-                        for(partId_t ii = 0; ii < nprocs; ++ii){
-                            proc_points_in_part[ii].id = ii;
-
-                            if (proc_part_assignments[ii] == -1){
-
-                                proc_points_in_part[ii].val = p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
-                            }
-                            else {
-                                proc_points_in_part[ii].val = -p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i] - 1;
-                            }
-                        }
-                    }
-                    else {
-                        //cout << "assign=1" << endl;
-
-                        partId_t required_proc = p_pid_np_num_procs_each_part[i];
-                        partId_t last_proc_to_assign = next_proc_to_assign + required_proc;
-                        for(partId_t ii = 0; ii < nprocs; ++ii){
-                            proc_points_in_part[ii].id = ii;
-
-                            if (ii >= next_proc_to_assign && ii < last_proc_to_assign){
-
-                                proc_points_in_part[ii].val = p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
-                            }
-                            else {
-                                proc_points_in_part[ii].val = -p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i] - 1;
-                            }
-                        }
-                        next_proc_to_assign = last_proc_to_assign;
-
-
-                    }
-
-                    env->timerStart(MACRO_TIMERS, "PQJagged Sort-" + iteration);
-                    uqsort<partId_t, partId_t>(nprocs, proc_points_in_part);
-                    env->timerStop(MACRO_TIMERS, "PQJagged Sort-" + iteration);
-
-                    partId_t required_proc_count =  p_pid_np_num_procs_each_part[i];
-
-
-                    gno_t ideal_num_points_in_procs =
-                            ceil (total_num_points_in_part / scalar_t (required_proc_count));
-                    //if(myRank == 0)
-                    //cout <<"i:" << i << " assign ideal_num_points_in_procs:" << ideal_num_points_in_procs << endl;
-
-                    partId_t next_part_to_send = nprocs - 1;
-                    partId_t next_part_to_send_id = proc_points_in_part[next_part_to_send].id;
-                    lno_t space_left = 	ideal_num_points_in_procs - proc_points_in_part[next_part_to_send].val;
-                    /*
-             if(myRank == 1) cout << "I:" << i << " NEXTnext_part_to_send_id:"<< next_part_to_send_id << " proc_part_assignments:" << proc_part_assignments[next_part_to_send_id]<<endl;
-                     */
-                    for(partId_t ii = nprocs - 1; ii >= nprocs - required_proc_count; --ii){
-                        partId_t partid = proc_points_in_part[ii].id;
-                        proc_part_assignments[partid] = i;
-                    }
-                    if (!did_i_find_my_group){
-                        for(partId_t ii = nprocs - 1; ii >= nprocs - required_proc_count; --ii){
-                            partId_t partid = proc_points_in_part[ii].id;
-                            ids[nprocs - 1 - ii] = partid;
-                            //proc_part_assignments[partid] = i;
-
-                            if(partid == myRank){
-                                did_i_find_my_group = true;
-                                part_assign_begins[i] = myRank;
-                                proc_chains[myRank] = -1;
-                                sendCount[myRank] = proc_points_in_part[ii].val;
-                                partIndexBegin += i * futurePartIndex;
-                            }
-                        }
-                        if (did_i_find_my_group){
-                            groupSize = required_proc_count;
-                            //cout << "beginningme:" << myRank << " assigned to :" << i << " with group:" << groupSize  << " id:" << ids[0]<< endl;
-                        }
-                    }
-                    for(partId_t ii = nprocs - required_proc_count - 1; ii >= 0; --ii){
-                        partId_t partid = proc_points_in_part[ii].id;
-                        lno_t to_sent = proc_points_in_part[ii].val;
-                        if (to_sent < 0) to_sent = -to_sent - 1;
-                        /*
-                if(myRank == 1) cout << "i:" << i << " ii:" << ii << " p:" << partid<< " to_sent:" <<to_sent << " next_part_to_send:" << next_part_to_send_id << " space:" << space_left << endl;
-                         */
-                        while (to_sent > 0){
-                            if (to_sent <= space_left){
-                                space_left -= to_sent;
-                                if (myRank == partid){
-
-                                    sendCount[next_part_to_send_id] = to_sent;
-
-                                    partId_t prev_begin = part_assign_begins[i];
-                                    part_assign_begins[i] = next_part_to_send_id;
-                                    proc_chains[next_part_to_send_id] = prev_begin;
-                                }
-                                to_sent = 0;
-                            }
-                            else {
-                                to_sent -= space_left;
-
-
-                                if (myRank == partid){
-                                    sendCount[next_part_to_send_id] = space_left;
-                                    partId_t prev_begin = part_assign_begins[i];
-                                    part_assign_begins[i] = next_part_to_send_id;
-                                    proc_chains[next_part_to_send_id] = prev_begin;
-
-                                }
-
-                                --next_part_to_send;
-
-#ifdef debug_ 
-                                //TODO remove comment
-                                if(next_part_to_send <  nprocs - required_proc_count ){
-                                    cout << "this should not happen next part to send:" << next_part_to_send << endl;
-
-                                }
-#endif
-                                next_part_to_send_id =  proc_points_in_part[next_part_to_send].id;
-                                space_left = ideal_num_points_in_procs - proc_points_in_part[next_part_to_send].val;
-                            }
-                        }
-                    }
-
-                }
-                //lno_t *_sendCount_psum = new lno_t[nprocs];
-                lno_t *_sendCount_psum = allocMemory<lno_t>(nprocs);
-
-                //lno_t *sendCount_copy = new lno_t[nprocs];
-                lno_t *sendCount_copy = allocMemory<lno_t>(nprocs);
-                lno_t prefixsum = 0;
-
-                for (int i = 0; i < nprocs; ++i ){
-                    _sendCount_psum[i] = prefixsum;
-                    //cout << "me:" << myRank << " to:" << i << " many points:" <<  sendCount[i] << endl;
-                    prefixsum += sendCount[i];
-                    sendCount_copy[i] = sendCount[i];
-                }
-                ArrayView<const gno_t> gnoList = vectors->getMap()->getNodeElementList();
-                for (lno_t i=0; i < nobj; i++){
-                    partId_t p = (lrflags[i]+1)/2;
-                    gno_t to_send = gnoList[i];
-                    partId_t proc_to_sent = part_assign_begins[p];
-                    partId_t left_coordinates_to_that_part = sendCount_copy[proc_to_sent];
-                    if (left_coordinates_to_that_part == 0){
-                        part_assign_begins[p] = proc_chains[proc_to_sent];
-                        proc_chains[proc_to_sent] = -1;
-                        proc_to_sent = part_assign_begins[p];
-                    }
-                    sendBuf[_sendCount_psum[proc_to_sent]++] = to_send;
-                    --sendCount_copy[proc_to_sent];
-                }
-
-                out_num_part = 1;
-                //delete []part_assign_begins;
-                freeArray<partId_t>(part_assign_begins);
-                //delete []proc_chains;
-                freeArray<partId_t>(proc_chains);
-                //delete []proc_part_assignments;
-                freeArray<partId_t>(proc_part_assignments);
-                //delete []proc_points_in_part;
-                freeArray<uSortItem<partId_t, partId_t> > (proc_points_in_part);
-                //delete []_sendCount_psum;
-                freeArray<lno_t>(_sendCount_psum);
-                //delete []sendCount_copy;
-                freeArray<lno_t>(sendCount_copy);
-            } else {
-                if(comm->getRank() == 0){
-                    cout << "easy migration" << endl;
-                }
-
-                partId_t left_proc = nprocs;
-                partId_t min_required_for_rest = num_parts - 1;
-                for (partId_t i=0; i < num_parts; i++){
-
-                    partId_t required_proc = static_cast<partId_t>(floor(0.5f + nprocs * (scalar_t (p_gno_np_global_num_coord_each_part[i]) / scalar_t(nGlobalObj))));
-                    /*		if(comm->getRank() == 0){
-                cout << "############part:" << i << " left_proc:" << left_proc <<  " required1:" << required_proc << endl;
-                }
-                     */
-
-                    //if (required_proc > left_proc) required_proc = left_proc;
-                    if (left_proc - required_proc < min_required_for_rest){
-                        required_proc = left_proc - (min_required_for_rest);
-                    }
-                    left_proc -= required_proc;
-                    --min_required_for_rest;
-                    p_pid_np_num_procs_each_part[i] = required_proc;
-                    /*if(comm->getRank() == 0){
-            cout << "############part:" << i << " required:" << required_proc << endl;
-            }*/
-                }
-                partId_t begin = 0;
-                partId_t group_begin = -1, group_end = -1;
-
-                for (partId_t i=0; i < num_parts; i++){
-                    if (myRank >= begin && myRank < begin + p_pid_np_num_procs_each_part[i]){
-                        group_begin = begin;
-                        group_end = begin + p_pid_np_num_procs_each_part[i];
-                        partIndexBegin += i * futurePartIndex;
-                        break;
-                    }
-                    begin +=  p_pid_np_num_procs_each_part[i];
-                }
-                //cout << "me:" << comm->getRank() << " begin:" << group_begin << " end:" << group_end << endl;
-                groupSize = group_end - group_begin;
-                for (partId_t i = 0; i < groupSize; ++i){
-                    ids[i] = begin + i;
-                }
-
-                //++assigned_part_count;
-                partId_t assigned_part = 0;
-                partId_t assign_count = 1;
-                for(partId_t i = 0; i < nprocs; ++i){
-
-                    lno_t to_assign = 0;
-                    if(assign_count < p_pid_np_num_procs_each_part[assigned_part]){
-                        to_assign = p_gno_np_local_num_coord_each_part[assigned_part] / p_pid_np_num_procs_each_part[assigned_part];
-                        ++assign_count;
-
-                    }
-                    else {
-                        to_assign = p_gno_np_local_num_coord_each_part[assigned_part] -
-                                (p_pid_np_num_procs_each_part[assigned_part] - 1 ) * (p_gno_np_local_num_coord_each_part[assigned_part] / p_pid_np_num_procs_each_part[assigned_part]);
-                        assign_count = 1;
-                        ++assigned_part;
-                    }
-                    sendCount[i] = to_assign;
-                }
-
-                for(partId_t i = 1; i < num_parts; ++i){
-                    p_gno_np_local_num_coord_each_part[i] += p_gno_np_local_num_coord_each_part[i - 1];
-                }
-                out_num_part = 1;
-                ArrayView<const gno_t> gnoList = vectors->getMap()->getNodeElementList();
-                for (lno_t i=0; i < nobj; i++){
-                    partId_t p = (lrflags[i]+1)/2;
-                    gno_t to_send = gnoList[i];
-                    sendBuf[--p_gno_np_local_num_coord_each_part[p]] = to_send;
-                }
-
-            }
-        }
-        else {
-            groupSize = 1;
-            ids[0] = myRank;
-
-            //calculate the optimal number of coordiates to each part.
-            lno_t work_each = nGlobalObj / (scalar_t (nprocs)) + 0.5f;
-            //cout << "work each:" << work_each << endl;
-            //to hold the index of the processors that is assigned to the part.
-            //partId_t *assigned_processor = new partId_t[num_parts];
-            //to hold the left space as the number of coordiantes to the optomal number in each proc.
-            //lno_t *space_in_each_processor = new lno_t[nprocs];
-            lno_t *space_in_each_processor = allocMemory <lno_t>(nprocs);
-
-
-            //to sort the parts with decreasing order of their coordiantes.
-            //id are the part numbers, sort value is the number of points in each.
-            //uSortItem<partId_t, gno_t> * part_loads = new uSortItem<partId_t, gno_t>[num_parts];
-
-            uSortItem<partId_t, gno_t> * part_loads  = allocMemory <uSortItem<partId_t, gno_t> >(num_parts);
-
-            //to sort the parts that is assigned to the processors.
-            //id is the part number, sort value is the assigned processor id.
-            //uSortItem<partId_t, partId_t> * part_assignment = new uSortItem<partId_t, partId_t>[num_parts];
-            uSortItem<partId_t, partId_t> * part_assignment  = allocMemory <uSortItem<partId_t, partId_t> >(num_parts);
-
-            //uSortItem<partId_t, gno_t> * proc_load_sort = new uSortItem<partId_t, gno_t>[nprocs];
-            uSortItem<partId_t, gno_t> * proc_load_sort = allocMemory <uSortItem<partId_t, gno_t> >(nprocs);
-
-            for (partId_t i = 0; i < num_parts; ++i){
-                part_loads[i].id = i;
-                part_loads[i].val = p_gno_np_global_num_coord_each_part[i];
-            }
-            //sort parts with increasing order of loads.
-            uqsort<partId_t, gno_t>(num_parts, part_loads);
-
-            //initialize left space in each.
-            for (partId_t i = 0; i < nprocs; ++i){
-                space_in_each_processor[i] = work_each;
-            }
-
-            //assigning parts to the processors
-            for (partId_t j = 0; j < num_parts; ++j){
-                //sorted with increasing order, traverse inverse.
-                partId_t i = part_loads[num_parts - 1 - j].id;
-
-                //assigned processors
-                partId_t assignment = -1;
-                //if not fit best processor.
-                partId_t best_part = 0;
-                //load of the part
-                gno_t load = p_gno_np_global_num_coord_each_part[i];
-
-                for (partId_t ii = 0; ii < nprocs; ++ii){
-                    proc_load_sort[ii].id = ii;
-                    proc_load_sort[ii].val =  p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
-
-                }
-                uqsort<partId_t, gno_t>(nprocs, proc_load_sort);
-
-                //traverse all processors.
-                for (partId_t iii = 0; iii < nprocs; ++iii){
-                    partId_t ii = proc_load_sort[iii].id;
-                    lno_t left_space = space_in_each_processor[ii] - load;
-                    //if enought space, assign to this part.
-                    if(left_space >= 0 ){
-                        assignment = ii;
-                        break;
-                    }
-                    //if space is not enough, store the best candidate part.
-                    if (space_in_each_processor[best_part] < space_in_each_processor[ii]){
-                        best_part = ii;
-                    }
-
-                }
-                if (assignment == -1){
-                    assignment = best_part;
-                }
-                space_in_each_processor[assignment] -= load;
-
-                //to sort later, part-i is assigned to the proccessor - assignment.
-                part_assignment[j].id = i;
-                part_assignment[j].val = assignment;
-                //cout << "part:" << i << " with " <<  p_gno_np_global_num_coord_each_part[i] << " coordiantes is assigned to " << assignment << endl;
-                //if assigned processor is me, increase the number.
-                if (assignment == myRank){
-                    out_num_part++;//assigned_part_count;
-                }
-                //increase the send to that processor by the number of points in that part.
-                sendCount[assignment] += p_gno_np_local_num_coord_each_part[i];
-            }
-            delete []proc_load_sort;
-            //sort assignments with respect to the assigned processors.
-            uqsort<partId_t, partId_t>(num_parts, part_assignment);
-            //calculate the prefix sum for send buffer array.
-
-            lno_t prefix_sum = p_gno_np_local_num_coord_each_part[part_assignment[0].id];
-
-            for(partId_t i = 1; i < num_parts; ++i){
-
-                partId_t id = part_assignment[i].id;
-                //cout << "id:" << id << endl;
-                p_gno_np_local_num_coord_each_part[id] += prefix_sum;
-                prefix_sum = p_gno_np_local_num_coord_each_part[id];
-                //cout << "me:" << myRank << " pf: "<< prefix_sum << endl;
-            }
-            partId_t previous_part = -1;
-            lno_t prefix_sum_assigned_part = partIndexBegin;
-            for(partId_t i = 0; i < num_parts; ++i){
-                if(previous_part !=  part_assignment[i].val){
-                    if(myRank == part_assignment[i].val){
-                        partIndexBegin = prefix_sum_assigned_part;
-                    }
-                    previous_part = part_assignment[i].val;
-                }
-                prefix_sum_assigned_part += futurePartIndex;
-
-            }
-
-
-            //delete []part_assignment;
-            freeArray<uSortItem<partId_t, partId_t> >(part_assignment);
-            //delete []part_loads;
-            freeArray<uSortItem<partId_t, gno_t> >(part_loads);
-
-            //delete []space_in_each_processor;
-            freeArray<lno_t >(space_in_each_processor);
-
-            ArrayView<const gno_t> gnoList = vectors->getMap()->getNodeElementList();
-            for (lno_t i=0; i < nobj; i++){
-                partId_t p = (lrflags[i]+1)/2;
-                gno_t to_send = gnoList[i];
-                sendBuf[--p_gno_np_local_num_coord_each_part[p]] = to_send;
-            }
-
-        }
-
-    }
-
-    env->timerStart(MACRO_TIMERS, "PQJagged AlltoAll-" + iteration);
-    gno_t numMyNewGnos = 0;
-    ArrayRCP<gno_t> recvBuf;
-
-#ifdef memory_debug
-    sleep(1); env->memory("\t\t\t\tbefore alltoall-" + iteration);
-#endif
-    if (all2alloption == 2) {
-        //partId_t *partIds = new partId_t[nobj];
-        partId_t *partIds = allocMemory< partId_t>(nobj);
-        partId_t *p = partIds;
-
-        for (int i = 0; i < nprocs; ++i){
-            lno_t sendC = sendCount[i];
-            for (int ii = 0; ii < sendC; ++ii){
-                *(p++) = i;
-            }
-        }
-
-        env->timerStart(MACRO_TIMERS, "PQJagged Z2PlanCreating-" + iteration);
-        Tpetra::Distributor distributor(comm);
-
-        ArrayView<const partId_t> pIds( partIds, nobj);
-        numMyNewGnos = distributor.createFromSends(pIds);
-        env->timerStop(MACRO_TIMERS, "PQJagged Z2PlanCreating-" + iteration);
-        /*
-      if (numMyNewGnos!=distributor.getTotalReceiveLength())
-          fprintf(stderr, "UVC: SOMETHING is wrong %d != %d\n", numMyNewGnos, distributor.getTotalReceiveLength());
-         */
-        ArrayRCP<gno_t> recvBuf2(distributor.getTotalReceiveLength());
-        //recvBuf.reserve(distributor.getTotalReceiveLength());
-        distributor.doPostsAndWaits<gno_t>(sendBuf(), 1, recvBuf2());
-        recvBuf = recvBuf2;
-        //delete []partIds;
-        freeArray<partId_t>(partIds);
-
-    } else if (all2alloption == 1){
-        //partId_t *partIds = new partId_t[nobj];
-        partId_t *partIds = allocMemory< partId_t>(nobj);
-        partId_t *p = partIds;
-
-        for (int i = 0; i < nprocs; ++i){
-            lno_t sendC = sendCount[i];
-            for (int ii = 0; ii < sendC; ++ii){
-                *(p++) = i;
-            }
-        }
-        ZOLTAN_COMM_OBJ *plan = NULL;     /* pointer for communication object */
-
-
-        MPI_Comm mpi_comm = Teuchos2MPI (comm);
-        lno_t incoming = 0;
-        int message_tag = 7859;
-
-        env->timerStart(MACRO_TIMERS, "PQJagged Z1PlanCreating-" + iteration);
-        int ierr = Zoltan_Comm_Create(&plan, nobj, partIds, mpi_comm, message_tag,
-                &incoming);
-        env->timerStop(MACRO_TIMERS, "PQJagged Z1PlanCreating-" + iteration);
-
-
-        ArrayRCP<gno_t> recvBuf2(incoming);
-        gno_t *recieves  = recvBuf2.getRawPtr();
-        //gno_t *recieves  = new gno_t [incoming];
-
-
-        message_tag++;
-        ierr = Zoltan_Comm_Do(plan, message_tag, (char *) sendBuf.getRawPtr(),
-                sizeof(gno_t),
-                (char *) recieves);
-
-        ierr = Zoltan_Comm_Destroy(&plan);
-        //ArrayView<gno_t> rec(recieves, incoming);
-        //recvBuf = arcpFromArrayView(rec);
-        numMyNewGnos = incoming;
-        recvBuf = recvBuf2;
-        //delete []partIds;
-        freeArray<partId_t>(partIds);
-
-    } else {
-        try{
-            AlltoAllv<gno_t>(*comm, *env,
-                    sendBuf(), sendCount(),
-                    recvBuf, recvCount());
-        }
-        Z2_FORWARD_EXCEPTIONS
-        for (int i=0; i < nprocs; i++){
-            numMyNewGnos += recvCount[i];
-        }
-    }
-
-
-#ifdef memory_debug
-    sleep(1); env->memory("\t\t\t\tafter alltoall-" + iteration);
-#endif
-    env->timerStop(MACRO_TIMERS, "PQJagged AlltoAll-" + iteration);
-
-    sendCount.clear();
-    sendBuf.clear();
-    ///////////////////////////////////////////////////////
-    // Migrate the multivector of data.
-    ///////////////////////////////////////////////////////
-
-    recvCount.clear();
-
-
-
-    //delete []p_gno_np_local_num_coord_each_part_actual;
-    freeArray<gno_t>(p_gno_np_local_num_coord_each_part_actual);
-    //delete []p_gno_np_work_local_num_coord_each_part_actual;
-    //freeArray<gno_t>(p_gno_np_work_local_num_coord_each_part_actual);
-    //delete []p_gno_np_global_num_coord_each_part_actual;
-    freeArray<gno_t>(p_gno_np_global_num_coord_each_part_actual);
-
-    env->timerStart(MACRO_TIMERS, "PQJagged Actual_Migration-" + iteration);
-
-    try{
-        /*
-	if (pcomm->getRank() == 0) {
-		//cout << " before mig vector count:" << vectors.count() << endl;
-		cout << "nobj:" << nobj <<  " numMyNewGnos:" << numMyNewGnos << endl;
-
-	}
-         */
-        typedef const Tpetra::Map<lno_t, gno_t, node_t> map_t;
-
-#ifdef memory_debug
-        sleep(1); env->memory("\t\t\t\tbefore do migration-" + iteration);
-#endif
-
-        if (pcomm->getRank() == 0)
-            cout << "\t\t\t\tbefore mig map reference count:" << vectors->getMap().count() << endl;
-
-        RCP<const mvector_t> vvectors = XpetraTraits<mvector_t>::doMigration2(
-                vectors, numMyNewGnos, recvBuf.getRawPtr(), env);
-
-        if (pcomm->getRank() == 0){
-            cout << "\t\t\t\tafter mig old map reference count:" << vectors->getMap().count() << endl;
-            cout << "\t\t\t\tafter mig new map reference count:" << vvectors->getMap().count() << endl;
-        }
-        {
-            Teuchos::ArrayRCP< const scalar_t > r;
-            Teuchos::ArrayRCP< const scalar_t > r0 = vectors->getData(0);
-            Teuchos::ArrayRCP< const scalar_t > r1 = vectors->getData(1);
-
-            Teuchos::ArrayRCP< const scalar_t > rr0 = vvectors->getData(0);
-            Teuchos::ArrayRCP< const scalar_t > rr1 = vvectors->getData(1);
-
-            if (pcomm->getRank() == 0){
-                cout << "\t\t\t\t old array r0: " << r0.getRawPtr() << " r1:" << r1.getRawPtr() << endl;
-                cout << "\t\t\t\t new rr0: " << rr0.getRawPtr() << " rr1:" << rr1.getRawPtr() << endl;
-                cout << "\t\t\t\t old ar reference count:" << r0.count() << " "<< r1.count() << " scalar_t size:" << sizeof(scalar_t) << " gno:" << sizeof(gno_t)<< endl;
-                cout << "\t\t\t\t new arr reference count:" << rr0.count() << " "<< rr1.count() << " scalar_t size:" << sizeof(scalar_t) << " gno:" << sizeof(gno_t)<< endl;
-            }
-            {
-
-
-#ifdef memory_debug
-                sleep(1); env->memory("\t\t\t\tafter do migration-" + iteration);
-#endif
-                RCP<map_t> subMap = vectors->getMap();
-
-#ifdef memory_debug
-                sleep(1); env->memory("\t\t\t\tafter old map is duplicated-" + iteration);
-#endif
-
-                if (pcomm->getRank() == 0){
-                    cout << "subMap pointer:" << subMap.getRawPtr() << endl;
-                    cout << "newMap pointer:" << vvectors->getMap().getRawPtr() << endl;
-                }
-                if (0 && pcomm->getRank() == 0){
-                    cout << "\t\t\t\tduplicated map reference count:" << subMap.count() << endl;
-                    cout << "\t\t\t\tafter duplicated old map reference count:" << vectors->getMap().count() << endl;
-                    cout << "\t\t\t\tafter duplicated new map reference count:" << vvectors->getMap().count() << endl;
-                }
-
-
-                vectors = vvectors;
-
-#ifdef memory_debug
-                sleep(1); env->memory("\t\t\t\tafter release of old multivector-" + iteration);
-#endif
-                if (0 && pcomm->getRank() == 0){
-                    cout << "\t\t\t\t old array r0: " << r0.getRawPtr() << " r1:" << r1.getRawPtr() << endl;
-                    cout << "\t\t\t\t new rr0: " << rr0.getRawPtr() << " rr1:" << rr1.getRawPtr() << endl;
-                    cout << "\t\t\t\t old ar reference count:" << r0.count() << " "<< r1.count() << " scalar_t size:" << sizeof(scalar_t) << " gno:" << sizeof(gno_t)<< endl;
-                    cout << "\t\t\t\t new arr reference count:" << rr0.count() << " "<< rr1.count() << " scalar_t size:" << sizeof(scalar_t) << " gno:" << sizeof(gno_t)<< endl;
-                    cout << "\t\t\t\tduplicated map reference count:" << subMap.count() << endl;
-                    cout << "\t\t\t\tafter release new map reference count:" << vvectors->getMap().count() << endl;
-                }
-                subMap = vvectors->getMap();
-#ifdef memory_debug
-                sleep(1); env->memory("\t\t\t\tafter old subMap set to new-" + iteration);
-#endif
-            }
-
-#ifdef memory_debug
-            sleep(1); env->memory("\t\t\t\tafter old subMap release-" + iteration);
-#endif
-
-            if (0 && pcomm->getRank() == 0){
-                cout << "\t\t\t\t old array r0: " << r0.getRawPtr() << " r1:" << r1.getRawPtr() << endl;
-                cout << "\t\t\t\t new rr0: " << rr0.getRawPtr() << " rr1:" << rr1.getRawPtr() << endl;
-                cout << "\t\t\t\t old ar reference count:" << r0.count() << " "<< r1.count() << " scalar_t size:" << sizeof(scalar_t) << " gno:" << sizeof(gno_t)<< endl;
-                cout << "\t\t\t\t new arr reference count:" << rr0.count() << " "<< rr1.count() << " scalar_t size:" << sizeof(scalar_t) << " gno:" << sizeof(gno_t)<< endl;
-                cout << "\t\t\t\tafter release new map reference count:" << vvectors->getMap().count() << endl;
-            }
-
-            r1 = r;
-#ifdef memory_debug
-            sleep(1); env->memory("\t\t\t\tafter r1 release-" + iteration);
-#endif
-
-            if (0 && pcomm->getRank() == 0){
-                cout << "\t\t\t\t old array r0: " << r0.getRawPtr() << " r1:" << r1.getRawPtr() << endl;
-                cout << "\t\t\t\t new rr0: " << rr0.getRawPtr() << " rr1:" << rr1.getRawPtr() << endl;
-                cout << "\t\t\t\t old ar reference count:" << r0.count() << " "<< r1.count() << " scalar_t size:" << sizeof(scalar_t) << " gno:" << sizeof(gno_t)<< endl;
-                cout << "\t\t\t\t new arr reference count:" << rr0.count() << " "<< rr1.count() << " scalar_t size:" << sizeof(scalar_t) << " gno:" << sizeof(gno_t)<< endl;
-                cout << "\t\t\t\tafter release new map reference count:" << vvectors->getMap().count() << endl;
-            }
-            r0 = r;
-#ifdef memory_debug
-            sleep(1); env->memory("\t\t\t\tafter r0 release-" + iteration);
-#endif
-
-
-            if (0 && pcomm->getRank() == 0){
-                cout << "\t\t\t\t old array r0: " << r0.getRawPtr() << " r1:" << r1.getRawPtr() << endl;
-                cout << "\t\t\t\t new rr0: " << rr0.getRawPtr() << " rr1:" << rr1.getRawPtr() << endl;
-                cout << "\t\t\t\t old ar reference count:" << r0.count() << " "<< r1.count() << " scalar_t size:" << sizeof(scalar_t) << " gno:" << sizeof(gno_t)<< endl;
-                cout << "\t\t\t\t new arr reference count:" << rr0.count() << " "<< rr1.count() << " scalar_t size:" << sizeof(scalar_t) << " gno:" << sizeof(gno_t)<< endl;
-                cout << "\t\t\t\tafter release new map reference count:" << vvectors->getMap().count() << endl;
-            }
-        }
-
-#ifdef memory_debug
-        sleep(1); env->memory("\t\t\t\tafter r0 r1 release-" + iteration);
-#endif
-
-    }
-    Z2_FORWARD_EXCEPTIONS
-    env->timerStop(MACRO_TIMERS, "PQJagged Actual_Migration-" + iteration);
-
-#ifdef memory_debug
-    sleep(1); env->memory("\t\t\t\tAfter migrateData-" + iteration);
-#endif
-    return true;
-}
-template <typename mvector_t, typename lno_t, typename gno_t, typename part_id>
-void create_sub_communicatior(
-        const RCP<const Environment> &env,
-
-        RCP<Comm<int> > &pcomm,
-        RCP<Comm<int> > &comm,
-        partId_t groupSize,
-        partId_t *ids,
-        RCP <const mvector_t> &mvector,
-        int multiVectorDim,
-        lno_t &numLocalCoords,
-        gno_t &numGlobalCoords
-){
-    typedef ArrayView<const scalar_t> coordList_t;
-    typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-
-    //#ifdef memory_debug
-#ifdef memory_debug
-    sleep(1); env->memory("Sub Comm -1 ");
-#endif
-    ArrayView<const partId_t> idView(ids, groupSize);
-
-    //#ifdef memory_debug
-#ifdef memory_debug
-    sleep(1); env->memory("Sub Comm -2 ");
-#endif
-
-    /*
-     cout << "###me:" << comm->getRank() << " groupSize:" << groupSize << endl;
-
-     for(int i = 0; i < groupSize; ++i){
-     cout << "####me:" << comm->getRank() << " id:" << ids[i]<< endl;
-     }
-     */
-#ifdef memory_debug
-    sleep(1); env->memory("\t\t\t\t\tsub before creating sub com");
-#endif
-
-    comm = comm->createSubcommunicator(idView);
-
-#ifdef memory_debug
-    sleep(1); env->memory("\t\t\t\t\tsub after creating sub com");
-#endif
-    //#ifdef memory_debug
-#ifdef memory_debug
-    sleep(1); env->memory("Sub Comm -3 ");
-#endif
-    ArrayView<const gno_t> gnoList = mvector->getMap()->getNodeElementList();
-    //#ifdef memory_debug
-#ifdef memory_debug
-    sleep(1); env->memory("Sub Comm -4 ");
-#endif
-    size_t localSize = mvector->getLocalLength();
-    // Tpetra will calculate the globalSize.
-    size_t globalSize = Teuchos::OrdinalTraits<size_t>::invalid();
-
-#ifdef memory_debug
-    sleep(1); env->memory("Sub Comm -5 ");
-#endif
-    //TODO NOT SURE if the global size invalid is what I should do.
-    //globalSize = mvector->getGlobalLength();
-    //RCP<Comm<int> > comm2 = comm->duplicate();
-#ifdef memory_debug
-    sleep(1); env->memory("\t\t\t\t\tsub before creating submap");
-#endif
-    RCP<map_t> subMap;
-    try{
-        subMap= rcp(new map_t(globalSize, gnoList, 0, comm));
-    }
-    Z2_THROW_OUTSIDE_ERROR(*env)
-#ifdef memory_debug
-    sleep(1); env->memory("\t\t\t\t\tsub  after creating submap");
-#endif
-
-#ifdef memory_debug
-    sleep(1); env->memory("Sub Comm -6 ");
-#endif
-    //coordList_t *avSubList = new coordList_t [multiVectorDim];
-    coordList_t *avSubList = allocMemory<coordList_t>(multiVectorDim);
-
-
-#ifdef memory_debug
-    sleep(1); env->memory("Sub Comm -7 ");
-#endif
-    for (int dim=0; dim < multiVectorDim; dim++)
-        avSubList[dim] = mvector->getData(dim).view(0, localSize);
-
-#ifdef memory_debug
-    sleep(1); env->memory("Sub Comm -8 ");
-#endif
-
-    ArrayRCP<const ArrayView<const scalar_t> > subVectors =
-            arcp(avSubList, 0, multiVectorDim);
-
-#ifdef memory_debug
-    sleep(1); env->memory("Sub Comm -9 ");
-#endif
-
-
-#ifdef memory_debug
-    sleep(1); env->memory("\t\t\t\t\tsub  before creating new multivector");
-#endif
-    RCP<const mvector_t> subMvector;
-
-    try{
-        subMvector = rcp(new mvector_t(
-                subMap, subVectors.view(0, multiVectorDim), multiVectorDim));
-    }
-    Z2_THROW_OUTSIDE_ERROR(*env)
-#ifdef memory_debug
-    sleep(1); env->memory("\t\t\t\t\tsub  after creating new multivector");
-
-    sleep(1); env->memory("Sub Comm -10 ");
-#endif
-    //if (comm->getRank() == 0) cout << " before sub mvector count:" << mvector.count() << endl;
-    {
-        RCP<const map_t> oldMap = mvector->getMap();
-        mvector = subMvector;
-#ifdef memory_debug
-        sleep(1); env->memory("\t\t\t\t\tsub  after releasing old multivector");
-#endif
-        if(pcomm->getRank() == 0) {
-            cout << "oldMap:" << oldMap.getRawPtr() << endl;
-            cout << "newMap:" << subMap.getRawPtr() << endl;
-        }
-    }
-#ifdef memory_debug
-    sleep(1); env->memory("\t\t\t\t\tsub  after releasing old map");
-
-    sleep(1); env->memory("Sub Comm -11 ");
-#endif
-    numLocalCoords = mvector->getLocalLength();
-    numGlobalCoords = mvector->getGlobalLength();
-
-}
-#endif
 //fills up the p_gno_np_global_num_coord_each_part_actual array and
 //returns the allocation size of arrays.
 template <typename gno_t,
@@ -4611,7 +3053,10 @@ void fillContinousSendBuffer2(partId_t num_parts,
 }
 
 template <typename partId_t, typename lno_t, typename gno_t>
-void fillContinousSendBuffer1(partId_t numParts,
+void fillContinousSendBuffer1(
+
+                            RCP<Comm<int> > &pcomm, //original communication.
+                            partId_t numParts,
                              lno_t *partBegins,
                              lno_t *permutation,
 
@@ -4635,6 +3080,13 @@ void fillContinousSendBuffer1(partId_t numParts,
         prefixsum += sendCount[i];
     }
 
+    /*
+    for (int i = 0; i < nprocs; ++i ){
+        cout << "me:" << pcomm->getRank() << " i:" << i << " _sendCount_psum:" << _sendCount_psum[i] << endl;
+    }
+    pcomm->barrier();
+    cout << "me:" << pcomm->getRank() << " reached -1" << endl;
+    */
     //now distribute all parts.
     for (partId_t p = 0; p < numParts; ++p){
         lno_t pBegin = 0;
@@ -4818,6 +3270,7 @@ void procAssignment2(
 
 template <typename partId_t, typename lno_t, typename gno_t>
 void procAssignment1(
+        RCP<Comm<int> > &pcomm, //original communication.
         int assignment_type, //either assign to minimize migration, or assign to increase locality.
         gno_t * p_gno_np_global_num_coord_each_part_actual,
         gno_t nGlobalObj,
@@ -4893,6 +3346,10 @@ void procAssignment1(
         }
     }
 
+    /*
+    pcomm->barrier();
+    cout << "me:" << pcomm->getRank() << " reached 1" << endl;
+    */
     //assign extra processors to those parts.
     if (left_proc > 0){
         p_pid_np_num_procs_each_part[max_differ_part] +=  left_proc;
@@ -4922,6 +3379,10 @@ void procAssignment1(
 
     partId_t next_proc_to_assign = 0;
 
+    /*
+    pcomm->barrier();
+    cout << "me:" << pcomm->getRank() << " reached 2" << endl;
+     */
     //Allocate memory for sorting data structure.
     uSortItem<partId_t, lno_t> * proc_points_in_part = allocMemory <uSortItem<partId_t, partId_t> > (nprocs);
     for(partId_t i = 0; i < num_parts; ++i){
@@ -5043,7 +3504,7 @@ void procAssignment1(
                 }
                 else {
                     //there might be no space left in the processor.
-                    if(space_left){
+                    if(space_left > 0){
                         to_sent -= space_left;
 
                         //send as the space left in the processor.
@@ -5073,7 +3534,12 @@ void procAssignment1(
 
     }
 
+    /*
+    pcomm->barrier();
+    cout << "me:" << pcomm->getRank() << " reached 3:" << nLocal << endl;
+    */
     fillContinousSendBuffer1 <partId_t, lno_t, gno_t> (
+            pcomm,
             num_parts,
             partBegins,
             permutation,
@@ -5087,6 +3553,10 @@ void procAssignment1(
             sendCount,
             sendBuf
             );
+    /*
+    pcomm->barrier();
+    cout << "me:" << pcomm->getRank() << " reached 4" << endl;
+    */
     freeArray<partId_t>(part_assign_begins);
     freeArray<partId_t>(proc_chains);
     freeArray<partId_t>(proc_part_assignments);
@@ -5097,6 +3567,8 @@ void procAssignment1(
 
 template <typename partId_t, typename lno_t, typename gno_t>
 void getProcGroups_SendCounts_SendBuff(
+
+        RCP<Comm<int> > &pcomm, //original communication.
         int migration_proc_assignment_type,
         int assignment_type, //either assign to minimize migration, or assign to increase locality.
 
@@ -5140,7 +3612,12 @@ void getProcGroups_SendCounts_SendBuff(
         if (nprocs > num_parts){
 
             partId_t out_part_index = 0;
+            /*
+            pcomm->barrier();
+            cout << "me:" << pcomm->getRank() << endl;
+            */
             procAssignment1<partId_t, lno_t, gno_t>(
+                    pcomm,
                     assignment_type, //either assign to minimize migration, or assign to increase locality.
                     p_gno_np_global_num_coord_each_part_actual,
                     nGlobalObj,
@@ -5165,9 +3642,18 @@ void getProcGroups_SendCounts_SendBuff(
                     out_part_index, //output: the part index which the processor is assigned to.
                     partIndexBegin //output: how much the part number should be shifted when setting the solution
                     );
+
+            /*
+            pcomm->barrier();
+            cout << "me:" << pcomm->getRank() << " out"<< endl;
+            */
             out_num_part = 1;
             out_part_indices.clear();
             out_part_indices.push_back(out_part_index);
+            /*
+            pcomm->barrier();
+            cout << "me:" << pcomm->getRank() << " finish out"<< endl;
+            */
         }
         else {
             ids.push_back(myRank);
@@ -5246,12 +3732,11 @@ void doAll2All(
         freeArray<partId_t>(partIds);
 
     } else if (all2alloption == 1){
-        //cout << "ALL2ALL Z1" << endl;
+
 
         partId_t *partIds = allocMemory< partId_t>(nLocal);
         partId_t *p = partIds;
 
-        //cout << "me:" << comm->getRank() << " nLocal:" << nLocal<< endl;
         //write which processor each point is going.
 
         for (int i = 0; i < nprocs; ++i){
@@ -5606,7 +4091,12 @@ bool migration_refactored(
     vector<partId_t> ids;
     vector<partId_t> out_part_indices;
 
+    /*
+    pcomm->barrier();
+    cout << "it:" << iteration << " getProcGroups_SendCounts_SendBuff:" << endl;
+    */
     getProcGroups_SendCounts_SendBuff<partId_t, lno_t, gno_t>(
+            pcomm,
             migration_proc_assignment_type,
             assignment_type, //either assign to minimize migration, or assign to increase locality.
 
@@ -5634,6 +4124,10 @@ bool migration_refactored(
             partIndexBegin //output: how much the part number should be shifted when setting the solution
                );
 
+    /*
+    pcomm->barrier();
+    cout << "it:" << iteration << " out getProcGroups_SendCounts_SendBuff:" << endl;
+    */
     vector <partId_t> tmpv;
     std::sort (out_part_indices.begin(), out_part_indices.end());
     partId_t outP = out_part_indices.size();
@@ -5653,6 +4147,11 @@ bool migration_refactored(
     ArrayRCP<gno_t> recvBuf;
     gno_t numMyNewGnos = 0;
 
+
+    /*
+    pcomm->barrier();
+    cout << "it:" << iteration << " in doAll2All:" << endl;
+    */
     env->timerStart(MACRO_TIMERS, "PQJagged AlltoAll-" + iteration);
     doAll2All(
             env, //environment
@@ -5666,6 +4165,11 @@ bool migration_refactored(
             numMyNewGnos,
             iteration
             );
+
+    /*
+    pcomm->barrier();
+    cout << "it:" << iteration << " out doAll2All:" << endl;
+    */
 
     env->timerStop(MACRO_TIMERS, "PQJagged AlltoAll-" + iteration);
 
@@ -5681,6 +4185,7 @@ bool migration_refactored(
                             vectors,    // on return is the new data,
                             numMyNewGnos,
                             recvBuf);
+
     env->timerStop(MACRO_TIMERS, "PQJagged doActualMigration-" + iteration);
 
     createSubCommunicator <partId_t>(comm, ids);
@@ -5723,205 +4228,6 @@ bool migration_refactored(
 
     return true;
 }
-
-#ifdef enable_migration
-template <typename gno_t, typename lno_t,typename scalar_t, typename node_t, typename partId_t>
-bool migration(
-        RCP<Comm<int> > &pcomm, //original communication.
-        const RCP<const Environment> &env, //environment
-        RCP<Comm<int> > &comm, //current communication object.
-        RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > &mvector, //multivector
-        int pqJagged_multiVectorDim, //multivector dimension
-
-        gno_t &numGlobalPoints, //numGlobal points, output
-        lno_t &numLocalPoints, //numLocal points, output
-        int coord_dim, // coordinate dimension
-        scalar_t **coords, //coordinates.
-        int weight_dim, //weight dimension
-        scalar_t **weight, //weights
-#ifdef migrate_gid
-        scalar_t *&mappedGnos,
-#endif
-
-        partId_t * &assigned_parts_, //this should not be necessary anymore.
-        partId_t num_parts, //current num parts
-        partId_t &out_num_part, //output num parts.
-
-        lno_t *&permutation,
-        lno_t *&old_permutation,
-        lno_t *part_begins,
-        partId_t &partIndexBegin,
-        partId_t futurePartIndex,
-        int migration_option,
-        int migration_check_option,
-        scalar_t migration_imbalance_cut_off,
-        string iteration,
-
-
-        bool pqJagged_uniformWeights,
-        scalar_t *coordWeights,
-        bool allowNonRectelinearPart,
-        float **nonRectelinearRatios,
-        float *actual_ratios,
-        scalar_t *localPartWeights,
-        double **partWeights,
-        scalar_t *cutCoordinates,
-        int assignment_type
-){
-
-
-#ifdef memory_debug
-    sleep(1); env->memory("Migration Start-" +iteration);
-#endif
-    partId_t nprocs = comm->getSize();
-    scalar_t *assigned_parts = NULL;
-    int multiVectorDim = pqJagged_multiVectorDim;
-    int prev_num_local = numLocalPoints;
-
-    typedef RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >  tmv;
-    typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mvector_t;
-
-
-    //partId_t *p_pid_np_num_procs_each_part = new partId_t[num_parts];
-    partId_t *p_pid_np_num_procs_each_part = allocMemory<partId_t>(num_parts);
-
-    //partId_t *p_pid_np_work_num_procs_each_part = new partId_t[num_parts];
-    partId_t *p_pid_np_work_num_procs_each_part = allocMemory<partId_t>(num_parts);
-
-    //partId_t *ids = new partId_t[nprocs];
-    partId_t *ids = allocMemory<partId_t>(nprocs);
-    partId_t groupSize = 0;
-
-    if (
-            !migrateData <mvector_t, gno_t, partId_t>(
-                    pcomm,
-                    env,
-                    comm,
-                    assigned_parts_,
-                    mvector,
-                    p_pid_np_num_procs_each_part,
-                    p_pid_np_work_num_procs_each_part,
-                    num_parts,
-                    ids, groupSize,
-                    out_num_part//, permutation
-                    ,partIndexBegin,
-                    futurePartIndex,
-                    migration_option,
-                    migration_check_option,
-                    migration_imbalance_cut_off,
-                    iteration,
-#ifdef omitted2
-                    pqJagged_uniformWeights,
-                    coordWeights,
-                    allowNonRectelinearPart,
-                    nonRectelinearRatios,
-                    actual_ratios,
-                    localPartWeights,
-                    partWeights,
-                    cutCoordinates,
-#endif
-                    assigned_parts,
-                    coord_dim,
-                    coords,
-                    weight_dim,
-                    weight,
-                    multiVectorDim,
-                    assignment_type
-
-            )
-    )
-    {
-
-#ifdef memory_debug
-        sleep(1); env->memory("\t\tafter migrate data comp-" + iteration);
-#endif
-        //delete []assigned_parts;
-        freeArray<scalar_t>(assigned_parts);
-        //delete []p_pid_np_num_procs_each_part;
-        freeArray<partId_t>(p_pid_np_num_procs_each_part);
-        //delete []p_pid_np_work_num_procs_each_part;
-        freeArray<partId_t>(p_pid_np_work_num_procs_each_part);
-        //delete []ids;
-        freeArray<partId_t>(ids);
-        return false;
-    }
-#ifdef memory_debug
-    sleep(1); env->memory("\t\tafter migrate data comp-" + iteration);
-#endif
-    //delete []assigned_parts;
-    freeArray<scalar_t>(assigned_parts);
-    //delete []p_pid_np_num_procs_each_part;
-    freeArray<partId_t>(p_pid_np_num_procs_each_part);
-    //delete []p_pid_np_work_num_procs_each_part;
-    freeArray<partId_t>(p_pid_np_work_num_procs_each_part);
-
-#ifdef memory_debug
-    sleep(1); env->memory("\t\tBefore subcommunicator creation-" + iteration);
-#endif
-    create_sub_communicatior<mvector_t, lno_t, gno_t, partId_t>(
-            env,pcomm, comm,
-            groupSize,
-            ids,
-            mvector, multiVectorDim,numLocalPoints,
-            numGlobalPoints
-    );
-#ifdef memory_debug
-    sleep(1); env->memory("\t\tAfter subcommunicator creation-" + iteration);
-#endif
-    //delete []ids;
-    freeArray<partId_t>(ids);
-
-    if (prev_num_local != numLocalPoints){
-        //cout << "reallocating:" << prev_num_local << " now:" << numLocalPoints << endl;
-        //delete []assigned_parts_;
-        freeArray<partId_t>(assigned_parts_);
-        //assigned_parts_ = new partId_t[numLocalPoints];
-        assigned_parts_ = allocMemory<partId_t>(numLocalPoints);
-
-        //delete []permutation;
-        freeArray<lno_t>(permutation);
-        //delete []old_permutation;
-        freeArray<lno_t>(old_permutation);
-#ifdef migrate_gid
-        //delete [] mappedGnos;
-        mappedGnos = new scalar_t [numLocalPoints];
-#endif
-        //old_permutation = new lno_t[numLocalPoints];
-        old_permutation = allocMemory<lno_t>(numLocalPoints);
-        //permutation = new lno_t[numLocalPoints];
-        permutation = allocMemory<lno_t>(numLocalPoints);
-    }
-
-
-#ifdef memory_debug
-    sleep(1); env->memory("\t\tBefore get multi-" + iteration);
-#endif
-    get_multi_vector<gno_t,lno_t,scalar_t,node_t>(pcomm,
-            comm,
-            numLocalPoints, numGlobalPoints,
-            coord_dim,
-            coords,
-            weight_dim,
-            weight,
-#ifdef migrate_gid
-            mappedGnos,
-#endif
-            assigned_parts,
-            mvector,
-            out_num_part, permutation,
-            part_begins,
-            num_parts,pqJagged_multiVectorDim, iteration);
-
-#ifdef memory_debug
-    sleep(1); env->memory("\t\tAfter get multi-" + iteration);
-
-    sleep(1); env->memory("Migration End-" +iteration);
-#endif
-    return true;
-}
-
-#endif
-
 
 
 template <typename partId_t>
@@ -6609,10 +4915,7 @@ void AlgPQJagged(
         int worldSize = comm->getSize();
         long migration_reduceAllPop = reduceAllCount * worldSize;
 #endif
-#ifdef enable_migration
-        int worldSize = comm->getSize();
-        long reduceAllPop = reduceAllCount * worldSize;
-#endif
+
 
         //get the coordinate axis along which the partitioning will be done.
         int coordInd = i % coordDim;
@@ -6741,9 +5044,6 @@ void AlgPQJagged(
                                 usedCutCoordinate,
                                 usedCutPartRatios,
                                 numThreads,
-#ifdef omitted
-                                partNo,
-#endif
                                 currentPartitions,
                                 newFuturePartitions,
                                 currentPart,
@@ -6815,9 +5115,6 @@ void AlgPQJagged(
                         myNonDoneCount,
                         useBinarySearch, // istring,
                         partIds,
-#ifdef omitted
-                        partNo,
-#endif
                         pAlongI
                 );
 
@@ -6825,75 +5122,6 @@ void AlgPQJagged(
 
             }
 
-#ifdef enable_migration
-            if (futurePartNumbers > 1 && migration_check_option >= 0 && worldSize > 1 && currentPartitionCount == 1){
-                env->timerStart(MACRO_TIMERS, "PQJagged Problem_Migration-" + istring);
-                int mco = migration_check_option;
-                if (reduceAllPop >= forceMigration ){
-                    mco = 1;
-                }
-                partId_t num_parts = pAlongI[0];
-                if (
-                        migration<gno_t, lno_t, scalar_t, node_t, partId_t>(
-                                problemComm,
-                                env, comm,
-                                mvector, pqJagged_multiVectorDim,
-                                numGlobalCoords,//numGlobalPoints,
-                                numLocalCoords,
-                                coordDim,
-                                pqJagged_coordinates, //outout will be modified.
-                                weightDim,
-                                pqJagged_weights,// output will be modified.
-#ifdef migrate_gid
-                                mappedGnos,
-#endif
-                                partIds, num_parts,
-                                currentPartitionCount, //output
-                                newpartitionedPointCoordinates, //output
-                                partitionedPointCoordinates,
-                                outTotalCounts //output
-                                ,partIndexBegin,
-                                futurePartNumbers,
-                                migration_option,
-                                mco, //migration_check_option,
-                                migration_imbalance_cut_off,
-                                istring,
-
-                                pqJagged_uniformWeights[0],
-                                pqJagged_weights[0],
-                                allowNonRectelinearPart,
-                                nonRectRatios,
-                                nonRectelinearPart,
-                                totalPartWeights_leftClosests_rightClosests,
-                                partWeights,
-                                cutCoordinates,
-                                assignment_type
-                        )
-                )
-                {
-
-                    is_migrated_in_current = true;
-                    is_data_migrated = true;
-                    env->timerStop(MACRO_TIMERS, "PQJagged Problem_Migration-" + istring);
-                    reduceAllCount /= num_parts;
-
-                    break;
-
-                }
-                else {
-                    //          cout <<"me:" <<problemComm->getRank()<< " me2:" << comm->getRank() << " i:" << i << " migration is not done" << endl;
-                    //          cout  <<"me:" <<problemComm->getRank()<< " me2:" << comm->getRank() << pqJagged_coordinates[0][0] << endl;
-                    env->timerStop(MACRO_TIMERS, "PQJagged Problem_Migration-" + istring);
-
-                    is_migrated_in_current = false;
-                    migration_check = true;
-
-
-                }
-                //cout << "numGlobal:" << numGlobalCoords << " numLocal:" << numLocalCoords << endl;
-                //break;
-            }
-#endif
 
             //create part chunks
             {
@@ -6905,15 +5133,8 @@ void AlgPQJagged(
 
                 for(int kk = 0; kk < concurrentPart; ++kk){
                     partId_t curr = currentWorkPart + kk;
-#ifdef omitted
-                    partId_t noParts = pAlongI[0];
-                    if(!partNo){
-                        noParts = pAlongI[curr];
-                    }
-#endif
-#ifndef omitted
                     partId_t noParts = pAlongI[curr];
-#endif
+
                     //if the part is empty, skip the part.
                     if((noParts != 1  )&& globalMinMaxTotal[kk] > globalMinMaxTotal[kk + concurrentPart]) {
 
@@ -7015,15 +5236,7 @@ void AlgPQJagged(
                 //wrote the indices as if there were a single part.
                 //now we need to shift the beginning indices.
                 for(partId_t kk = 0; kk < concurrentPart; ++kk){
-#ifdef omitted
-                    partId_t noParts = pAlongI[0];
-                    if(!partNo){
-                        noParts = pAlongI[ currentWorkPart + kk];
-                    }
-#endif
-#ifndef omitted
                     partId_t noParts = pAlongI[ currentWorkPart + kk];
-#endif
                     for (partId_t ii = 0;ii < noParts ; ++ii){
                         //shift it by previousCount
                         outTotalCounts[currentOut+ii] += previousEnd;
