@@ -62,7 +62,7 @@
 
 
 
-#define enable_migration2
+//#define enable_migration2
 
 
 //#define FIRST_TOUCH
