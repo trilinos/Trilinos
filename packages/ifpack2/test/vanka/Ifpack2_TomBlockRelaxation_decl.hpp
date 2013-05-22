@@ -36,6 +36,8 @@
 #include "Ifpack2_Parameters.hpp"
 #include "Ifpack2_Partitioner.hpp"
 
+#include "Ifpack2_Tpetra_RowGraph_decl.hpp"
+
 #include <Tpetra_Vector.hpp>
 
 #include <Teuchos_Assert.hpp>

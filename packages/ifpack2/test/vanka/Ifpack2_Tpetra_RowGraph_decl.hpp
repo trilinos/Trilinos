@@ -47,12 +47,12 @@ namespace Ifpack2 {
 ///
 template<class MatrixType>
 class Tpetra_RowGraph :
-    virtual public Tpetra::RowGraph<typename MatrixType::scalar_type,
-                                    typename MatrixType::local_ordinal_type,
+    virtual public Tpetra::RowGraph<typename MatrixType::local_ordinal_type,
                                     typename MatrixType::global_ordinal_type,
                                     typename MatrixType::node_type>
 {
 public:
+
   //! \name Typedefs
   //@{
 
@@ -149,6 +149,13 @@ public:
   //! Returns the local number of entries in this matrix.
   virtual size_t getNodeNumEntries() const;
 
+  //! Does nothing.
+  virtual Teuchos::RCP<const Tpetra::Import<typename MatrixType::local_ordinal_type,global_ordinal_type,node_type> > getImporter() const;
+
+  //! Does nothing.
+  virtual Teuchos::RCP<const Tpetra::Export<local_ordinal_type,global_ordinal_type,node_type> > getExporter() const;
+
+
   /// \brief The current number of entries on this node in the specified global row.
   ///
   /// \return <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt> if
@@ -193,6 +200,8 @@ public:
   //! Returns \c true if fillComplete() has been called.
   virtual bool isFillComplete() const;
 
+  
+
   //@}
 
   //! @name Extraction Methods
@@ -212,7 +221,6 @@ public:
   virtual void
   getGlobalRowCopy (global_ordinal_type GlobalRow,
                     const Teuchos::ArrayView<global_ordinal_type> &Indices,
-                    const Teuchos::ArrayView<scalar_type> &Values,
                     size_t &NumEntries) const;
 
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
@@ -229,7 +237,6 @@ public:
   virtual void
   getLocalRowCopy (local_ordinal_type LocalRow,
                    const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                   const Teuchos::ArrayView<scalar_type> &Values,
                    size_t &NumEntries) const ;
 
 
@@ -240,22 +247,7 @@ private:
 
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> > A_;
-  //! Map based on SerialComm_, containing the local rows only.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > LocalMap_;
-  //! Number of rows in the local matrix.
-  size_t NumRows_;
-  //! Number of nonzeros in the local matrix.
-  size_t NumNonzeros_;
-  //! Maximum number of nonzero entries in a row for the filtered matrix.
-  size_t MaxNumEntries_;
-  //! Maximum number of nonzero entries in a row for the unfiltered matrix.
-  size_t MaxNumEntriesA_;
-  //! NumEntries_[i] contains the nonzero entries in row `i'.
-  std::vector<size_t> NumEntries_;
-  //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable Teuchos::Array<local_ordinal_type> Indices_;
-  //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable Teuchos::Array<scalar_type> Values_;
+
 
 };// class Tpetra_RowGraph
 

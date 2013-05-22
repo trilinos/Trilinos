@@ -33,6 +33,7 @@
 #include "Ifpack2_TomBlockRelaxation_decl.hpp"
 #include "Ifpack2_LinearPartitioner_decl.hpp"
 #include "Ifpack2_TomMHDPartitioner_decl.hpp"
+#include "Ifpack2_Tpetra_RowGraph_def.hpp"
 
 namespace Ifpack2 {
 
@@ -345,10 +346,12 @@ void TomBlockRelaxation<MatrixType,ContainerType>::initialize() {
   // NTS: Will need to add support for Zoltan2 partitions later
   // Also, will need a better way of handling the Graph typing issue.  Especially with ordinal types w.r.t the container
 
+  Teuchos::RCP<Ifpack2::Tpetra_RowGraph<MatrixType> > Graph = Teuchos::rcp( new Ifpack2::Tpetra_RowGraph< MatrixType >(A_) );
+
   if (PartitionerType_ == "linear")
-    Partitioner_ = Teuchos::rcp( new Ifpack2::LinearPartitioner<Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >(A_->getGraph()) );
+    Partitioner_ = Teuchos::rcp( new Ifpack2::LinearPartitioner<Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >(Graph) );
   else if (PartitionerType_ == "TomMHD")
-    Partitioner_ = Teuchos::rcp( new Ifpack2::TomMHDPartitioner<Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >(A_->getGraph()) );
+    Partitioner_ = Teuchos::rcp( new Ifpack2::TomMHDPartitioner<Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >(Graph) );
   else
     TEUCHOS_TEST_FOR_EXCEPTION(0, std::runtime_error,"Ifpack2::TomBlockRelaxation::initialize, invalid partitioner type.");
 

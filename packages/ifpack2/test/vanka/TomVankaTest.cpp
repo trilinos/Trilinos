@@ -127,20 +127,22 @@ int main(int argc, char *argv[]){
   
   prec.setParameters(MHDList);
   prec.initialize();
-  //prec.compute();
+  prec.compute();
   */
 
   ///////////////////////////////////////
 
-  std::cout << *myMHDA << std::endl;
+  std::cout << "Beginning construction of AdditiveSchwarz stuff...\n\n";
   
-  myMHDA->getGraph();
-
   int overlapLevel=0;
   Ifpack2::AdditiveSchwarz<CRS,Ifpack2::TomBlockRelaxation<CRS, Ifpack2::SparseContainer<CRS,Ifpack2::ILUT<CRS> > > > myprec(myMHDA,overlapLevel);
   myprec.setParameters(MHDList);
+
+  std::cout << "Beginning AdditiveSchwarz::initialize()...\n\n";
   myprec.initialize();
 
+  std::cout << "Beginning AdditiveSchwarz::compute()...\n\n";
+  myprec.compute();  
 
   //  Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>, Ifpack2::TomBlockRelaxation< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>, Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > > addschw(myMHDA,0);
 

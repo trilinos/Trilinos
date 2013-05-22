@@ -156,14 +156,14 @@ protected:
   Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> > Parts_;
   //! Reference to the graph to be partitioned
   Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > Graph_;
-  //! User-defined Overlapping partition.
-  Ifpack2::UserPartitioner<GraphType> UserPart_;
   //! Overlapping level.
   size_t OverlappingLevel_;
   //! If \c true,  the graph has been successfully partitioned.
   bool IsComputed_;
   //! If \c true, information are reported on cout.
   bool verbose_;
+  //! User-defined Overlapping partition.
+  Ifpack2::UserPartitioner<GraphType> UserPart_;
   //! User-input non-overlapping partition.
   Teuchos::ArrayRCP<LocalOrdinal> Map_;
   //! Number of velocity rows in A

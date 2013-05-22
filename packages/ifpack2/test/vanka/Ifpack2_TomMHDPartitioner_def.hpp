@@ -47,7 +47,6 @@ TomMHDPartitioner<GraphType>::TomMHDPartitioner(const Teuchos::RCP<const Tpetra:
   verbose_(false),
   UserPart_(Graph)
 {
-  //  Ifpack2::UserPartitioner<GraphType> UserPart_(Graph);
 }
 
 //==============================================================================
