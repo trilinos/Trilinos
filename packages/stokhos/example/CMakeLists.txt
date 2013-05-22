@@ -463,6 +463,28 @@ IF(Stokhos_ENABLE_Isorropia)
 
 ENDIF()
 
+IF(Stokhos_ENABLE_Zoltan)
+
+  TRIBITS_ADD_EXECUTABLE(
+    cijk_partition_zoltan
+    SOURCES cijk_partition_zoltan.cpp
+    DEPLIBS stokhos
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    cijk_partition_zoltan_3d
+    SOURCES cijk_partition_zoltan_3d.cpp
+    DEPLIBS stokhos
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    cijk_partition_zoltan_rcb
+    SOURCES cijk_partition_zoltan_rcb.cpp
+    DEPLIBS stokhos
+    )
+
+ENDIF()
+
 IF(Stokhos_ENABLE_Experimental)
   ADD_SUBDIRECTORY(experimental)
 ENDIF()

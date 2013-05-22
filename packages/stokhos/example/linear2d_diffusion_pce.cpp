@@ -150,7 +150,8 @@ int main(int argc, char *argv[]) {
       sgParams->set("Jacobian Expansion Type", "Linear");
     }
     sgOpParams.set("Operator Method", "Matrix Free");
-    sgPrecParams.set("Preconditioner Method", "Approximate Gauss-Seidel");
+    sgPrecParams.set("Preconditioner Method", "Mean-based");
+    //sgPrecParams.set("Preconditioner Method", "Approximate Gauss-Seidel");
     //sgPrecParams.set("Preconditioner Method", "Approximate Schur Complement");
     sgPrecParams.set("Symmetric Gauss-Seidel", symmetric);
     sgPrecParams.set("Mean Preconditioner Type", "ML");
