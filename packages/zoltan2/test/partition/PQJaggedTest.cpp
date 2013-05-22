@@ -195,7 +195,8 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
         int migration_check_option,
         int migration_all_to_all_type,
         scalar_t migration_imbalance_cut_off,
-        int migration_processor_assignment_type
+        int migration_processor_assignment_type,
+        int migration_doMigration_type
 
 )
 {
@@ -302,6 +303,9 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
     if(migration_imbalance_cut_off > 0){
         params->set("migration_imbalance_cut_off", double (migration_imbalance_cut_off));
     }
+    if (migration_doMigration_type > 0){
+        params->set("migration_doMigration_type", int (migration_doMigration_type));
+    }
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
@@ -347,7 +351,8 @@ int testFromDataFile(
         int migration_check_option,
         int migration_all_to_all_type,
         scalar_t migration_imbalance_cut_off,
-        int migration_processor_assignment_type
+        int migration_processor_assignment_type,
+        int migration_doMigration_type
 )
 {
     //std::string fname("simple");
@@ -418,6 +423,9 @@ int testFromDataFile(
     }
     if(migration_imbalance_cut_off > 0){
         params->set("migration_imbalance_cut_off", double (migration_imbalance_cut_off));
+    }
+    if (migration_doMigration_type > 0){
+        params->set("migration_doMigration_type", int (migration_doMigration_type));
     }
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
@@ -490,7 +498,8 @@ void getArgVals(
         int &migration_check_option,
         int &migration_all_to_all_type,
         scalar_t &migration_imbalance_cut_off,
-        int &migration_processor_assignment_type){
+        int &migration_processor_assignment_type,
+        int &migration_doMigration_type){
 
     bool isCset = false;
     bool isPset = false;
@@ -547,6 +556,13 @@ void getArgVals(
         else if(identifier == "MT"){
             if(value >=0 ){
                 migration_all_to_all_type = value;
+            } else {
+                throw "Invalid argument at " + tmp;
+            }
+        }
+        else if(identifier == "DM"){
+            if(value >=0 ){
+                migration_doMigration_type = value;
             } else {
                 throw "Invalid argument at " + tmp;
             }
@@ -631,6 +647,7 @@ int main(int argc, char *argv[])
     int migration_all_to_all_type = -1;
     scalar_t migration_imbalance_cut_off = -1.15;
     int migration_processor_assignment_type = -1;
+    int migration_doMigration_type = -1;
 
     try{
         try {
@@ -647,7 +664,8 @@ int main(int argc, char *argv[])
                     migration_check_option,
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
-                    migration_processor_assignment_type);
+                    migration_processor_assignment_type,
+                    migration_doMigration_type);
         }
         catch(std::string s){
             if(tcomm->getRank() == 0){
@@ -677,14 +695,17 @@ int main(int argc, char *argv[])
             ierr = testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, paramFile, k,
                     migration_check_option,
                     migration_all_to_all_type,
-                    migration_imbalance_cut_off,migration_processor_assignment_type);
+                    migration_imbalance_cut_off,
+                    migration_processor_assignment_type,
+                    migration_doMigration_type);
             break;
         default:
             GeometricGen(tcomm, numParts, imbalance, fname, pqParts, paramFile, k,
                     migration_check_option,
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
-                    migration_processor_assignment_type);
+                    migration_processor_assignment_type,
+                    migration_doMigration_type);
             break;
         }
 
