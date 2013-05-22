@@ -3824,7 +3824,7 @@ void getProcGroups_SendCounts_SendBuff(
 }
 
 
-template <typename partId_t, typename lno_t, typename gno_t>
+template <typename partId_t, typename lno_t, typename gno_t, typename scalar_t>
 void doAll2All(
         const RCP<const Environment> &env, //environment
         RCP<Comm<int> > &comm, //current communication object.
@@ -4097,7 +4097,7 @@ void createSubCommunicator(
 
 }
 
-template <typename mvector_t, typename lno_t, typename gno_t>
+template <typename mvector_t, typename lno_t, typename gno_t, typename scalar_t>
 void create_new_multi_vector(
         const RCP<const Environment> &env,
         RCP<Comm<int> > &comm,
@@ -4530,7 +4530,7 @@ bool migration_refactored(
     cout << "it:" << iteration << " in doAll2All:" << endl;
     */
     env->timerStart(MACRO_TIMERS, "PQJagged Migration AlltoAll-" + iteration);
-    doAll2All(
+    doAll2All<partId_t, lno_t, gno_t, scalar_t>(
             env, //environment
             comm, //current communication object.
             doMigrationType,
@@ -4595,7 +4595,7 @@ bool migration_refactored(
     ids.clear();
 
     if(doMigrationType == 0){
-        create_new_multi_vector<mvector_t, lno_t, gno_t>(
+        create_new_multi_vector<mvector_t, lno_t, gno_t,scalar_t>(
                 env, comm,
                 vectors,
                 multiVectorDim
