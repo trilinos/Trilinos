@@ -2878,12 +2878,12 @@ bool checkMigration(
     if (numCoordinatesForLastDimPartitioning < MIN_WORK_LAST_DIM) return true;
 
     if (migration_check_option == 0){
-        scalar_t diff = 0, global_diff = 0;
+        double diff = 0, global_diff = 0;
         if (migration_proc_assignment_type == 0 )
         {
 
             for (partId_t i = 0; i < num_parts; ++i){
-                scalar_t ideal_num = p_gno_np_global_num_coord_each_part_actual[i] /  scalar_t(nprocs);
+                double ideal_num = p_gno_np_global_num_coord_each_part_actual[i] /  double(nprocs);
 
                 lno_t pBegin = 0;
                 if (i > 0){
@@ -2894,7 +2894,7 @@ bool checkMigration(
                         (pEnd - pEnd)) /  (ideal_num);
             }
             diff /= num_parts;
-            reduceAll<int, scalar_t>(
+            reduceAll<int, double>(
                     *comm,
                     Teuchos::REDUCE_SUM,
                     1,
@@ -2905,7 +2905,7 @@ bool checkMigration(
             size_t global_shift = nprocs * num_parts;
             for (partId_t ii = 0; ii < nprocs; ++ii){
                 for (partId_t i = 0; i < num_parts; ++i){
-                    scalar_t ideal_num = p_gno_np_global_num_coord_each_part_actual[global_shift + i] /  scalar_t(nprocs);
+                    double ideal_num = p_gno_np_global_num_coord_each_part_actual[global_shift + i] /  double(nprocs);
                     global_diff += ABS(ideal_num -
                             p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i]) /  (ideal_num);
                 }
