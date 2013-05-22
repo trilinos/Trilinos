@@ -52,7 +52,6 @@
 
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
-#include <Zoltan2_Remap.hpp>
 
 #include <cmath>
 #include <algorithm>
