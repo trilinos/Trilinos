@@ -2749,7 +2749,6 @@ RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_initial_m
 #endif
     return coordsConst;
 }
-#endif
 
 
 //fills up the p_gno_np_global_num_coord_each_part_actual array and
@@ -4650,6 +4649,7 @@ bool migration_refactored(
     return true;
 }
 
+#endif
 
 template <typename partId_t>
 partId_t getPartitionArrays(
@@ -4924,9 +4924,11 @@ void AlgPQJagged(
             pqJagged_partSizes
     );
 
+#ifdef enable_migration2
     const gno_t *actual_pqgnos = pqJagged_gnos.getRawPtr();
     gno_t *pq_gnos = (gno_t *)actual_pqgnos;
     int *actual_owner_of_coordinate  = NULL;
+#endif
 
     int numThreads = 1;
 
