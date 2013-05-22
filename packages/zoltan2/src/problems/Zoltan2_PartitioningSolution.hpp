@@ -52,6 +52,7 @@
 
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
+#include <Zoltan2_GreedyMWM.hpp>
 
 #include <cmath>
 #include <algorithm>
@@ -60,7 +61,6 @@
 namespace Zoltan2 {
 
 long measure_stays(partId_t *, int *, partId_t *, long *, partId_t, partId_t);
-partId_t matching(int *, partId_t *, long *, partId_t, partId_t *);
 
 
 /*! \brief A PartitioningSolution is a solution to a partitioning problem.
@@ -1964,7 +1964,8 @@ void PartitioningSolution<Adapter>::RemapParts()
     // Perform matching on the graph
     partId_t *match = new partId_t[tnVtx];
     for (partId_t i = 0; i < tnVtx; i++) match[i] = i;
-    partId_t nmatches = Zoltan2::matching(idx, adj, wgt, tnVtx, match);
+    partId_t nmatches =
+             Zoltan2::GreedyMWM<partId_t, long>(idx, adj, wgt, tnVtx, match);
 
 //KDD    cout << "After matching:  " << nmatches << " found" << endl;
 //KDD    for (partId_t i = 0; i < tnVtx; i++)
