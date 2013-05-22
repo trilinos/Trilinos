@@ -5952,7 +5952,7 @@ void AlgPQJagged(
     env->timerStop(MACRO_TIMERS, "PQJagged Solution_Part_Assignment");
 
     env->timerStart(MACRO_TIMERS, "PQJagged Problem_Free");
-
+#ifdef enable_migration2
     if (migration_actualMigration_option != 0){
 
         for (int i=0; i < coordDim; i++){
@@ -5967,6 +5967,7 @@ void AlgPQJagged(
         freeArray<gno_t>(pq_gnos);
         freeArray<int>(actual_owner_of_coordinate);
     }
+#endif
 
     for(int i = 0; i < numThreads; ++i){
         freeArray<lno_t>(partPointCounts[i]);
