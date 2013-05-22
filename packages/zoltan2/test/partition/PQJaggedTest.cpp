@@ -291,19 +291,19 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
     if (k > 0){
         params->set("parallel_part_calculation_count", k);
     }
-    if(migration_processor_assignment_type > 0){
+    if(migration_processor_assignment_type >= 0){
         params->set("migration_processor_assignment_type", migration_processor_assignment_type);
     }
-    if(migration_check_option > 0){
+    if(migration_check_option >= 0){
         params->set("migration_check_option", migration_check_option);
     }
-    if(migration_all_to_all_type > 0){
+    if(migration_all_to_all_type >= 0){
         params->set("migration_all_to_all_type", migration_all_to_all_type);
     }
-    if(migration_imbalance_cut_off > 0){
+    if(migration_imbalance_cut_off >= 0){
         params->set("migration_imbalance_cut_off", double (migration_imbalance_cut_off));
     }
-    if (migration_doMigration_type > 0){
+    if (migration_doMigration_type >= 0){
         params->set("migration_doMigration_type", int (migration_doMigration_type));
     }
 
@@ -412,19 +412,19 @@ int testFromDataFile(
     if (k > 0){
         params->set("parallel_part_calculation_count", k);
     }
-    if(migration_processor_assignment_type > 0){
+    if(migration_processor_assignment_type >= 0){
         params->set("migration_processor_assignment_type", migration_processor_assignment_type);
     }
-    if(migration_check_option > 0){
+    if(migration_check_option >= 0){
         params->set("migration_check_option", migration_check_option);
     }
-    if(migration_all_to_all_type > 0){
+    if(migration_all_to_all_type >= 0){
         params->set("migration_all_to_all_type", migration_all_to_all_type);
     }
-    if(migration_imbalance_cut_off > 0){
+    if(migration_imbalance_cut_off >= 0){
         params->set("migration_imbalance_cut_off", double (migration_imbalance_cut_off));
     }
-    if (migration_doMigration_type > 0){
+    if (migration_doMigration_type >= 0){
         params->set("migration_doMigration_type", int (migration_doMigration_type));
     }
 
