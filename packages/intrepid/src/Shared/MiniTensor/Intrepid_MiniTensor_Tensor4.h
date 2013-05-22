@@ -72,6 +72,14 @@ public:
   Tensor4(Index const dimension);
 
   ///
+  /// Create 4th-order tensor from a specified value
+  /// \param dimension
+  /// \param value all components are set equal to this
+  ///
+  explicit
+  Tensor4(Index const dimension, ComponentValue value);
+
+  ///
   /// 4th-order tensor constructor with a scalar
   /// \param s all components set to this scalar
   ///

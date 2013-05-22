@@ -240,40 +240,6 @@ bool operator != ( const View<LT,LL,LD,LM,LS> & lhs ,
 }
 
 //----------------------------------------------------------------------------
-/** \brief  Deep copy data from compatible value type, layout, rank, and specialization.
- *          Check the dimensions and allocation lengths at runtime.
- */
-template< class DT , class DL , class DD , class DM , class Spec ,
-          class ST , class SL , class SD , class SM >
-inline
-void deep_copy( const View<DT,DL,DD,DM,Spec> & dst ,
-                const View<ST,SL,SD,SM,Spec> & src ,
-                const typename Impl::enable_if<(
-                  Impl::is_same< typename ViewTraits<ST,SL,SD,SM>::non_const_value_type ,
-                                 typename ViewTraits<DT,DL,DD,DM>::value_type >::value
-                  &&
-                  Impl::is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout ,
-                                 typename ViewTraits<DT,DL,DD,DM>::array_layout >::value
-                  &&
-                  ( unsigned(ViewTraits<ST,SL,SD,SM>::rank) ==
-                    unsigned(ViewTraits<DT,DL,DD,DM>::rank) )
-                )>::type * = 0 )
-{
-  typedef ViewTraits<ST,SL,SD,SM> src_traits ;
-  typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
-
-  if ( dst != src ) {
-
-    const size_t n_dst = sizeof(typename dst_traits::scalar_type) * dst.capacity();
-    const size_t n_src = sizeof(typename src_traits::scalar_type) * src.capacity();
-
-    Impl::assert_counts_are_equal( n_dst , n_src );
-    Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
-
-    DeepCopy< typename dst_traits::memory_space ,
-              typename src_traits::memory_space >( dst.ptr_on_device() , src.ptr_on_device() , n_dst );
-  }
-}
 
 } // namespace KokkosArray
 
@@ -293,6 +259,29 @@ struct ViewAssignment ;
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
+
+//----------------------------------------------------------------------------
+/** \brief  A deep copy between views of the same specialization, compatible type,
+ *          same rank, same layout are handled by that specialization.
+ */
+
+template< class DT , class DL , class DD , class DM , class DS ,
+          class ST , class SL , class SD , class SM , class SS >
+inline
+void deep_copy( const View<DT,DL,DD,DM,DS> & dst ,
+                const View<ST,SL,SD,SM,SS> & src ,
+                typename Impl::enable_if<(
+                  Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::scalar_type ,
+                                 typename ViewTraits<ST,SL,SD,SM>::non_const_scalar_type >::value
+                  &&
+                  Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
+                                 typename ViewTraits<ST,SL,SD,SM>::array_layout >::value
+                  &&
+                  ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) == unsigned(ViewTraits<ST,SL,SD,SM>::rank) )
+                )>::type * = 0 )
+{ Impl::ViewAssignment<DS,SS>::deep_copy( dst , src ); }
+
+//----------------------------------------------------------------------------
 
 template< class DstViewType ,
           class T , class L , class D , class M , class S ,

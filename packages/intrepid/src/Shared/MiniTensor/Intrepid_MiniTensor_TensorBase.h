@@ -51,6 +51,11 @@
 #include "Intrepid_MiniTensor_Storage.h"
 #include "Intrepid_MiniTensor_Utilities.h"
 
+///
+/// Type for setting components all at once
+///
+enum ComponentValue {ZEROS, ONES, RANDOM};
+
 namespace Intrepid {
 
 ///
@@ -76,6 +81,13 @@ public:
   /// \param dimension, order
   ///
   TensorBase(Index const dimension, Index const order);
+
+  ///
+  /// Create with specified value
+  /// \param dimension, order
+  /// \param value all components are set equal to this
+  ///
+  TensorBase(Index const dimension, Index const order, ComponentValue value);
 
   ///
   /// Create from a scalar
@@ -124,16 +136,23 @@ public:
   get_dimension() const;
 
   ///
-  /// \param N dimension of vector
+  /// \param dimension of vector
   ///
   void
-  set_dimension(Index const N);
+  set_dimension(Index const dimension);
 
   ///
   /// \return total number of components
   ///
   Index
   get_number_components() const;
+
+  ///
+  /// Fill components with value
+  /// \param value all components are set equal to this
+  ///
+  void
+  fill(ComponentValue value);
 
   ///
   /// Fill components from array defined by pointer.
@@ -204,6 +223,13 @@ protected:
 template<typename T>
 T
 norm_f(TensorBase<T> const & X);
+
+///
+/// Square of Frobenius norm
+///
+template<typename T>
+T
+norm_f_square(TensorBase<T> const & X);
 
 ///
 /// Base addition

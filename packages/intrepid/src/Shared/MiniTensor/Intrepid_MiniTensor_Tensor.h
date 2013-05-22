@@ -80,6 +80,14 @@ namespace Intrepid {
     Tensor(Index const dimension);
 
     ///
+    /// Create tensor from a specified value
+    /// \param dimension
+    /// \param value all components are set equal to this
+    ///
+    explicit
+    Tensor(Index const dimension, ComponentValue value);
+
+    ///
     /// Create tensor from a scalar
     /// \param dimension
     /// \param s all components are set equal to this value
@@ -156,6 +164,13 @@ namespace Intrepid {
     operator()(Index const i, Index const j);
 
     ///
+    /// Fill components with value
+    /// \param value all components are set equal to this
+    ///
+    void
+    fill(ComponentValue value);
+
+    ///
     /// Fill components from array defined by pointer.
     /// \param data_ptr pointer into array for filling components
     /// \param order component convention (3D only)
@@ -182,7 +197,7 @@ namespace Intrepid {
   operator+(Tensor<S> const & A, Tensor<T> const & B);
 
   ///
-  /// Tensor substraction
+  /// Tensor subtraction
   /// \return \f$ A - B \f$
   ///
   template<typename S, typename T>

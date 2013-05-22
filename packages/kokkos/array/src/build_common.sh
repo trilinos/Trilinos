@@ -27,7 +27,8 @@ HWLOC | hwloc ) HAVE_HWLOC=${1} ; shift 1 ;;
 #-------------------------------
 MPI | mpi )
   HAVE_MPI=${1} ; shift 1
-  CXX="${HAVE_MPI}/bin/mpiCC"
+  CXX="${HAVE_MPI}/bin/mpicxx"
+  LINK="${HAVE_MPI}/bin/mpicxx"  
   INC_PATH="${INC_PATH} -I${HAVE_MPI}/include"
   OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
   ;;
@@ -45,7 +46,7 @@ CUDA | Cuda | cuda )
   # -lib -o : produce library
   #
   NVCC="nvcc"
-  NVCC="${NVCC} -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,code=sm_30"
+  NVCC="${NVCC} -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -maxrregcount=64"
   NVCC="${NVCC} -Xcompiler -Wall,-ansi"
   NVCC="${NVCC} -lib -o libCuda.a -x cu"
 
@@ -57,6 +58,7 @@ GNU | gnu | g++ )
   # The Trilinos build system requires '-pedantic'
   # 
   CXX="g++ -Wall -Wextra -ansi -pedantic"
+  LINK="g++"
   CXX="${CXX} -rdynamic -DENABLE_TRACEBACK"
   LIB="${LIB} -ldl"
   ;;
@@ -64,28 +66,41 @@ GNU | gnu | g++ )
 INTEL | intel | icc | icpc )
   # -xW = use SSE and SSE2 instructions
   CXX="icpc -Wall"
+  LINK="icpc"
   LIB="${LIB} -lstdc++"
   ;;
 #-------------------------------
+MPIINTEL | mpiintel | mpiicc | mpiicpc )
+  # -xW = use SSE and SSE2 instructions
+  CXX="mpiicpc -Wall"
+  LINK="mpiicpc"
+  LIB="${LIB} -lstdc++"
+;;
+#-------------------------------
 MIC | mic )
   CXX="icpc -mmic -ansi-alias -Wall"
+  LINK="icpc -mmic"
   CXX="${CXX} -mGLOB_default_function_attrs=knc_stream_store_controls=2"
   # CXX="${CXX} -vec-report6"
   # CXX="${CXX} -guide-vec"
   LIB="${LIB} -lstdc++"
+  COMPILE_MIC="on"
   ;;
 #-------------------------------
 MPIMIC | mpimic )
   CXX="mpiicpc -mmic -ansi-alias -Wall"
+  LINK="mpiicpc -mmic"
   CXX="${CXX} -DHAVE_MPI"
   CXX="${CXX} -mGLOB_default_function_attrs=knc_stream_store_controls=2"
   # CXX="${CXX} -vec-report6"
   # CXX="${CXX} -guide-vec"
   LIB="${LIB} -lstdc++"
+  COMPILE_MIC="on"
   ;;
 #-------------------------------
 curie )
   CXX="CC"
+  LINK="CC"
   HAVE_MPI="/opt/cray/mpt/default/gni/mpich2-cray/74"
   INC_PATH="${INC_PATH} -I${HAVE_MPI}/include"
   OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
@@ -94,7 +109,12 @@ curie )
 MKL | mkl )
   HAVE_MKL=${1} ; shift 1 ;
   CXX_FLAGS="${CXX_FLAGS} -DKOKKOS_USE_MKL -I${HAVE_MKL}/include/"
-  LIB="${LIB}  -L${HAVE_MKL}/lib/intel64/ -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core"
+  ARCH="intel64"
+  if [ -n "${COMPILE_MIC}" ] ;
+  then
+    ARCH="mic"
+  fi
+  LIB="${LIB}  -L${HAVE_MKL}/lib/${ARCH}/ -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core"
   NVCC_FLAGS="${NVCC_FLAGS} -DKOKKOS_USE_MKL"
 ;;
 #-------------------------------

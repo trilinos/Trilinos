@@ -830,7 +830,7 @@ log_rotation_pi(Tensor<T> const & R)
 
       normal = normal / norm(normal);
 
-      r.clear();
+      r.fill(ZEROS);
       r(0,1) = -normal(2);
       r(0,2) =  normal(1);
       r(1,0) =  normal(2);

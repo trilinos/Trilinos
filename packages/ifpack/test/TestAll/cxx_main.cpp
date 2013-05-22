@@ -49,6 +49,7 @@
 #include "Ifpack_Amesos.h"
 #include "Ifpack_Utils.h"
 #include "Ifpack_Chebyshev.h"
+#include "Ifpack_Polynomial.h"
 #include "Ifpack_Krylov.h"
 
 template <class T>
@@ -130,6 +131,12 @@ int main(int argc, char *argv[])
   int TestPassed = true;
 
   if (!Test<Ifpack_Chebyshev>(Matrix,List)) 
+  {
+    TestPassed = false;
+  }
+
+  List.set("polynomial: degree",3);
+  if (!Test<Ifpack_Polynomial>(Matrix,List))
   {
     TestPassed = false;
   }

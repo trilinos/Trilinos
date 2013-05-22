@@ -76,5 +76,6 @@ int main(int narg, char **arg)
   }
   defEnv->memory("After map construction");
 
+  delete defEnv;
 
 }

@@ -60,6 +60,7 @@
 #include <MueLu_CoupledRBMFactory.hpp>
 #include <MueLu_RAPShiftFactory.hpp>
 #include <MueLu_ShiftedLaplacian_fwd.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 
 // Belos
 #include <BelosConfigDefs.hpp>
@@ -96,9 +97,9 @@ namespace MueLu {
 
     //! Constructors
     ShiftedLaplacian()
-      : Problem_("acoustic"), numPDEs_(1), Smoother_("gmres"), Aggregation_("coupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(500),
+      : Problem_("acoustic"), numPDEs_(1), Smoother_("gmres"), Aggregation_("uncoupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(1000),
 	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0),
-	iters_(100), tol_(1.0e-4), blksize_(1), FGMRESoption_(true),
+	iters_(500), tol_(1.0e-4), blksize_(1), FGMRESoption_(true),
 	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
 	LaplaceOperatorSet_(false), ProblemMatrixSet_(false), PreconditioningMatrixSet_(false),
 	StiffMatrixSet_(false), MassMatrixSet_(false), DampMatrixSet_(false),
@@ -190,17 +191,18 @@ namespace MueLu {
     RCP<FactoryManager>             Manager_;
 
     // Factories and prototypes
-    RCP<TentativePFactory>          TentPfact_;
-    RCP<SaPFactory>                 Pfact_;
-    RCP<TransPFactory>              Rfact_;
-    RCP<RAPFactory>                 Acfact_;
-    RCP<RAPShiftFactory>            Acshift_;
-    RCP<CoupledAggregationFactory>  Aggfact_;
-    RCP<SmootherPrototype>          smooProto_, coarsestSmooProto_;
-    RCP<SmootherFactory>            smooFact_,  coarsestSmooFact_;
-    Teuchos::ParameterList          coarsestSmooList_;
-    std::string                     ifpack2Type_;
-    Teuchos::ParameterList          ifpack2List_;
+    RCP<TentativePFactory>            TentPfact_;
+    RCP<SaPFactory>                   Pfact_;
+    RCP<TransPFactory>                Rfact_;
+    RCP<RAPFactory>                   Acfact_;
+    RCP<RAPShiftFactory>              Acshift_;
+    RCP<CoupledAggregationFactory>    Aggfact_;
+    RCP<UncoupledAggregationFactory>  UCaggfact_;
+    RCP<SmootherPrototype>            smooProto_, coarsestSmooProto_;
+    RCP<SmootherFactory>              smooFact_,  coarsestSmooFact_;
+    Teuchos::ParameterList            coarsestSmooList_;
+    std::string                       ifpack2Type_;
+    Teuchos::ParameterList            ifpack2List_;
 
     // Belos Linear Problem and Solver
     RCP<BelosLinearProblem>         BelosLinearProblem_;

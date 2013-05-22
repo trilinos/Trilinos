@@ -344,6 +344,7 @@ int nssi_rpc_fini(const nssi_rpc_transport rpc_transport)
 
 static void config_init(nssi_config_t *c)
 {
+    c->put_data_in_request=false;
     c->use_buffer_queue            =false;
     c->buffer_queue_initial_size   =50;
     c->buffer_queue_max_size       =1000;
@@ -351,12 +352,24 @@ static void config_init(nssi_config_t *c)
     c->rdma_buffer_queue_initial_size   =5;
     c->rdma_buffer_queue_max_size       =10;
     c->rdma_buffer_queue_create_if_empty=true;
-    c->rdma_buffer_queue_buffer_size    =1*1024*1024; /* 1 megabyte */
+    c->rdma_buffer_queue_buffer_size    =0; /*1*1024*1024; /* 1 megabyte */
 }
 static void config_get_from_env(nssi_config_t *c)
 {
     char *env_str=NULL;
 
+    if ((env_str=getenv("TRIOS_NSSI_PUT_DATA_IN_REQUEST")) != NULL) {
+        if ((!strcasecmp(env_str, "TRUE")) ||
+            (!strcmp(env_str, "1"))) {
+            log_debug(rpc_debug_level, "setting c->put_data_in_request to TRUE");
+            c->put_data_in_request=true;
+        } else {
+            log_debug(rpc_debug_level, "setting c->put_data_in_request to FALSE");
+            c->put_data_in_request=false;
+        }
+    } else {
+        log_debug(rpc_debug_level, "TRIOS_NNTI_PUT_DATA_IN_REQUEST is undefined.  using c->put_data_in_request default");
+    }
     if ((env_str=getenv("TRIOS_NSSI_USE_BUFFER_QUEUE")) != NULL) {
         if ((!strcasecmp(env_str, "TRUE")) ||
             (!strcmp(env_str, "1"))) {

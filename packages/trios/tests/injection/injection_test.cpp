@@ -418,6 +418,7 @@ int main(int argc, char *argv[])
 
     // Print the arguments after they've all been set.
     args.io_method_name = io_method_names[args.io_method];
+    args.transport_name = nssi_transport_names[args.transport];
     print_args(out, args, "%");
 
 

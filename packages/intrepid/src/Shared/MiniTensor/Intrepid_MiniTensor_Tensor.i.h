@@ -57,12 +57,7 @@ greater_than(S const & a, S const & b)
 
 //
 // Sort and index in descending order. Useful for ordering singular values
-// and eigenvalues and corresponding vectors in the
-// respective decompositions.
-// \param u vector to sort
-// \return pair<v, P>
-// \return v sorted vector
-// \return P permutation matrix such that v = P^T u
+// and eigenvalues and corresponding vectors in the respective decompositions.
 //
 template<typename T>
 std::pair<Vector<T>, Tensor<T> >
@@ -97,9 +92,19 @@ sort_permutation(Vector<T> const & u)
 }
 
 //
+// Fill components with value.
+//
+template<typename T>
+inline
+void
+Tensor<T>::fill(ComponentValue value)
+{
+  TensorBase<T>::fill(value);
+  return;
+}
+
+//
 // Fill components from array defined by pointer.
-// \param data_ptr pointer into array for filling components
-// \param order component convention (3D only)
 //
 template<typename T>
 inline
@@ -193,6 +198,17 @@ template<typename T>
 inline
 Tensor<T>::Tensor(Index const dimension) :
 TensorBase<T>::TensorBase(dimension, order)
+{
+  return;
+}
+
+///
+/// Create tensor from a specified value
+///
+template<typename T>
+inline
+Tensor<T>::Tensor(Index const dimension, ComponentValue value) :
+TensorBase<T>::TensorBase(dimension, order, value)
 {
   return;
 }
@@ -1171,7 +1187,7 @@ diag(Tensor<T> const & A)
 }
 
 //
-// R^N zero 2nd-order tensor
+// Zero 2nd-order tensor
 // All components are zero
 //
 template<typename T>
@@ -1179,7 +1195,7 @@ inline
 Tensor<T> const
 zero(Index const N)
 {
-  return Tensor<T>(N, 0.0);
+  return Tensor<T>(N, ZEROS);
 }
 
 //
@@ -1191,7 +1207,7 @@ Tensor<T> const
 identity(Index const N)
 {
   Tensor<T>
-  A(N, 0.0);
+  A(N, ZEROS);
 
   switch (N) {
 

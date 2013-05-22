@@ -163,6 +163,17 @@ FixedHashTable (const ArrayView<const KeyType>& keys,
 }
 
 template<typename KeyType, typename ValueType>
+FixedHashTable<KeyType, ValueType>::
+FixedHashTable (const ArrayView<const KeyType>& keys,
+                const ArrayView<const ValueType>& vals) :
+  size_ (0),
+  rawPtr_ (NULL),
+  rawVal_ (NULL)
+{
+  init (keys, vals);
+}
+
+template<typename KeyType, typename ValueType>
 void
 FixedHashTable<KeyType, ValueType>::
 init (const ArrayView<const KeyType>& keys,
@@ -260,6 +271,107 @@ init (const ArrayView<const KeyType>& keys,
   //  rawVal_ = val_.getRawPtr ();
   rawVal_ = valRaw;
 }
+
+
+template<typename KeyType, typename ValueType>
+void
+FixedHashTable<KeyType, ValueType>::
+init (const ArrayView<const KeyType>& keys,
+      const ArrayView<const ValueType>& vals)
+{
+  using Teuchos::arcp;
+  using Teuchos::arcp_const_cast;
+  using Teuchos::ArrayRCP;
+  using Teuchos::as;
+
+  const size_type numKeys = keys.size ();
+  const size_type size = getRecommendedSize (as<int> (numKeys));
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    size == 0 && numKeys != 0, std::logic_error,
+    "Tpetra::Details::FixedHashTable constructor: "
+    "getRecommendedSize(" << numKeys << ") returned zero, "
+    "even though the number of keys " << numKeys << " is nonzero.  "
+    "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+  // We have to set the size_ internal state before calling the hash
+  // function, since the hash function uses it.
+  size_ = as<KeyType> (size);
+
+  ArrayRCP<size_type> ptr (size + 1, 0);
+  // The constructor that takes just a size argument automatically
+  // fills the data.  We don't need to waste time filling it here
+  // because we will do so below.  The try/catch block isn't strictly
+  // necessary; we could just give "new std::pair<...> [numKeys]" to
+  // the ArrayRCP constructor, since no other arguments of the
+  // constructor might throw before entering the constructor.
+  ArrayRCP<std::pair<KeyType, ValueType> > val;
+  std::pair<KeyType, ValueType>* rawVal = NULL;
+  try {
+    rawVal = new std::pair<KeyType, ValueType> [numKeys];
+    val = arcp<std::pair<KeyType, ValueType> > (rawVal, 0, numKeys, true);
+  } catch (...) {
+    if (rawVal != NULL) {
+      delete [] rawVal;
+    }
+    throw;
+  }
+
+  // Compute number of entries in each hash table position.
+  for (size_type k = 0; k < numKeys; ++k) {
+    const int hashVal = hashFunc (keys[k]);
+    // Shift over one, so that counts[j] = ptr[j+1].  See below.
+    ++ptr[hashVal+1];
+  }
+
+  // Compute row offsets via prefix sum:
+  //
+  // ptr[i+1] = \sum_{j=0}^{i} counts[j].
+  //
+  // Thus, ptr[i+1] - ptr[i] = counts[i], so that ptr[i+1] = ptr[i] +
+  // counts[i].  If we stored counts[i] in ptr[i+1] on input, then the
+  // formula is ptr[i+1] += ptr[i].
+  for (size_type i = 0; i < size; ++i) {
+    ptr[i+1] += ptr[i];
+  }
+  //ptr[0] = 0; // We've already done this when initializing ptr above.
+
+  // curRowStart[i] is the offset of the next element in row i.
+  ArrayRCP<size_type> curRowStart (size, 0);
+
+  // Fill in the hash table.
+  for (size_type k = 0; k < numKeys; ++k) {
+    const KeyType key = keys[k];
+    const ValueType theVal = vals[k];
+    const int hashVal = hashFunc (key);
+
+    const size_type offset = curRowStart[hashVal];
+    const size_type curPos = ptr[hashVal] + offset;
+
+    val[curPos].first = key;
+    val[curPos].second = theVal;
+    ++curRowStart[hashVal];
+  }
+
+  // "Commit" the computed arrays.
+  ptr_ = arcp_const_cast<const size_type> (ptr);
+
+  // FIXME (mfh 25 Apr 2013) arcp_const_cast on val_ and
+  // val_.getRawPtr() both cause a hang with MPI for some reason.  Not
+  // sure what's going on.  Anyway, calling val.release(), recreating
+  // val_ by hand, and using the released raw pointer as rawVal_,
+  // seems to fix the problem.
+
+  //val_ = arcp_const_cast<const std::pair<KeyType, ValueType> > (val);
+  const std::pair<KeyType, ValueType>* valRaw = val.release ();
+  val_ = ArrayRCP<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
+  //val_ = arcp<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
+  rawPtr_ = ptr_.getRawPtr ();
+  //  rawVal_ = val_.getRawPtr ();
+  rawVal_ = valRaw;
+}
+
 
 template<typename KeyType, typename ValueType>
 FixedHashTable<KeyType, ValueType>::

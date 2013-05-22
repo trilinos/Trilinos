@@ -81,6 +81,14 @@ public:
   Vector(Index const dimension);
 
   ///
+  /// Create vector from a specified value
+  /// \param dimension
+  /// \param value all components are set equal to this
+  ///
+  explicit
+  Vector(Index const dimension, ComponentValue value);
+
+  ///
   /// Create vector from a scalar
   /// \param dimension
   /// \param s all components are set equal to this value

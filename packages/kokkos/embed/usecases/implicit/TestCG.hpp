@@ -45,14 +45,15 @@
 #define KOKKOSARRAY_CG_HPP
 
 #include <cmath>
+#include <istream>
 
 #include <KokkosArray_View.hpp>
 #include <KokkosArray_Array.hpp>
 #include <impl/KokkosArray_ArrayAnalyzeShape.hpp>
 #include <impl/KokkosArray_ArrayViewDefault.hpp>
-
 #include <impl/KokkosArray_Timer.hpp>
 
+#include <ParallelComm.hpp>
 #include <TestBlas1.hpp>
 #include <TestCrsMatrix.hpp>
 #include <TestGenerateSystem.hpp>
@@ -131,9 +132,10 @@ struct PerfCGSolve {
 };
 
 template< typename Scalar , class Device >
-PerfCGSolve test_cgsolve_scalar( const int nGrid ,
-                                const int iterMax ,
-                                const char * const /* verify_label */ )
+PerfCGSolve test_cgsolve_scalar( comm::Machine machine ,
+                                 const int nGrid ,
+                                 const int iterMax ,
+                                 const char * const /* verify_label */ )
 {
   typedef Scalar value_type ;
 
@@ -212,7 +214,8 @@ PerfCGSolve test_cgsolve_scalar( const int nGrid ,
 //----------------------------------------------------------------------------
 
 template< typename Scalar , unsigned N , class Device >
-PerfCGSolve test_cgsolve_array( const int nGrid ,
+PerfCGSolve test_cgsolve_array( comm::Machine machine ,
+                                const int nGrid ,
                                 const int iterMax ,
                                 const char * const /* verify_label */ )
 {
@@ -298,16 +301,22 @@ PerfCGSolve test_cgsolve_array( const int nGrid ,
 //----------------------------------------------------------------------------
 
 template< class Device >
-void test_cgsolve_driver( const char * const label )
+void test_cgsolve_driver( const char * label , comm::Machine machine , std::istream & input )
 {
+  unsigned grid_max = 128 ; 
+  unsigned time_iter = 10 ; 
+
+  input >> grid_max ;
+  input >> time_iter ;
+
   PerfCGSolve perf_array ;
 
   std::cout << std::endl ;
   std::cout << "\"CGSolve " << label << "\" Samples: scalar\"" << std::endl ;
   std::cout << "\"FEM-ROWS\" , \"FEM-ENTRIES\" , \"TIME/ITER\" , \"TIME/ITER/ROW\"" << std::endl ;
 
-  for ( unsigned j = 4 ; j <= 128 ; j *= 2 ) {
-    perf_array = test_cgsolve_scalar<double,Device>( j , 100 , 0 );
+  for ( unsigned j = 4 ; j <= grid_max ; j *= 2 ) {
+    perf_array = test_cgsolve_scalar<double,Device>( machine , j , time_iter , 0 );
 
     std::cout << perf_array.row_count << " , "
               << perf_array.entry_count << " , "
@@ -320,8 +329,8 @@ void test_cgsolve_driver( const char * const label )
   std::cout << "\"CGSolve " << label << "\" Samples: Array<32>\"" << std::endl ;
   std::cout << "\"FEM-ROWS\" , \"FEM-ENTRIES\" , \"TOTAL-ROWS\" , \"TOTAL-ENTRIES\" , \"TIME/ITER\" , \"TIME/ITER/ROW\"" << std::endl ;
 
-  for ( unsigned j = 4 ; j <= 128 ; j *= 2 ) {
-    perf_array = test_cgsolve_array<double,32,Device>( j , 100 , 0 );
+  for ( unsigned j = 4 ; j <= grid_max ; j *= 2 ) {
+    perf_array = test_cgsolve_array<double,32,Device>( machine , j , time_iter , 0 );
 
     std::cout << perf_array.row_count << " , "
               << perf_array.entry_count << " , "

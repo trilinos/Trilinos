@@ -45,6 +45,200 @@
 namespace Intrepid {
 
 //
+// 3rd-order tensor default constructor
+//
+template<typename T>
+inline
+Tensor3<T>::Tensor3() :
+TensorBase<T>::TensorBase()
+{
+  return;
+}
+
+//
+// 3rd-order tensor constructor with NaNs
+//
+template<typename T>
+inline
+Tensor3<T>::Tensor3(Index const dimension) :
+TensorBase<T>::TensorBase(dimension, order)
+{
+  return;
+}
+
+//
+// 3rd-order tensor constructor with a specified value
+//
+template<typename T>
+inline
+Tensor3<T>::Tensor3(Index const dimension, ComponentValue value) :
+TensorBase<T>::TensorBase(dimension, order, value)
+{
+  return;
+}
+
+//
+// 3rd-order tensor constructor with a scalar
+//
+template<typename T>
+inline
+Tensor3<T>::Tensor3(Index const dimension, T const & s) :
+TensorBase<T>::TensorBase(dimension, order, s)
+{
+  return;
+}
+
+//
+//  Create 3rd-order tensor from array
+//
+template<typename T>
+inline
+Tensor3<T>::Tensor3(Index const dimension, T const * data_ptr) :
+TensorBase<T>::TensorBase(dimension, order, data_ptr)
+{
+  return;
+}
+
+//
+// Copy constructor
+//
+template<typename T>
+inline
+Tensor3<T>::Tensor3(Tensor3<T> const & A) :
+TensorBase<T>::TensorBase(A)
+{
+  return;
+}
+
+//
+// 3rd-order tensor simple destructor
+//
+template<typename T>
+inline
+Tensor3<T>::~Tensor3()
+{
+  return;
+}
+
+//
+// 3rd-order tensor addition
+//
+template<typename S, typename T>
+inline
+Tensor3<typename Promote<S, T>::type>
+operator+(Tensor3<S> const & A, Tensor3<T> const & B)
+{
+  Tensor3<typename Promote<S, T>::type>
+  C;
+
+  add(A, B, C);
+
+  return C;
+}
+
+//
+// 3rd-order tensor subtraction
+//
+template<typename S, typename T>
+inline
+Tensor3<typename Promote<S, T>::type>
+operator-(Tensor3<S> const & A, Tensor3<T> const & B)
+{
+  Tensor3<typename Promote<S, T>::type>
+  C;
+
+  subtract(A, B, C);
+
+  return C;
+}
+
+//
+// 3rd-order tensor minus
+//
+template<typename T>
+inline
+Tensor3<T>
+operator-(Tensor3<T> const & A)
+{
+  Tensor3<T>
+  B;
+
+  minus(A, B);
+
+  return B;
+}
+
+//
+// 3rd-order tensor equality
+//
+template<typename T>
+inline
+bool
+operator==(Tensor3<T> const & A, Tensor3<T> const & B)
+{
+  return equal(A, B);
+}
+
+//
+// 3rd-order tensor inequality
+//
+template<typename T>
+inline
+bool
+operator!=(Tensor3<T> const & A, Tensor3<T> const & B)
+{
+  return not_equal(A, B);
+}
+
+//
+// Scalar 3rd-order tensor product
+//
+template<typename S, typename T>
+inline
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
+operator*(S const & s, Tensor3<T> const & A)
+{
+  Tensor3<typename Promote<S, T>::type>
+  B;
+
+  scale(A, s, B);
+
+  return B;
+}
+
+//
+// 3rd-order tensor scalar product
+//
+template<typename S, typename T>
+inline
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
+operator*(Tensor3<T> const & A, S const & s)
+{
+  Tensor3<typename Promote<S, T>::type>
+  B;
+
+  scale(A, s, B);
+
+  return B;
+}
+
+//
+// 3rd-order tensor scalar division
+//
+template<typename S, typename T>
+inline
+Tensor3<typename Promote<S, T>::type>
+operator/(Tensor3<T> const & A, S const & s)
+{
+  Tensor3<typename Promote<S, T>::type>
+  B;
+
+  divide(A, s, B);
+
+  return B;
+}
+
+//
 // Indexing for constant 3rd order tensor
 //
 template<typename T>

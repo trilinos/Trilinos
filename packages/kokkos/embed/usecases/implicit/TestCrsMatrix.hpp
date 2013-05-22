@@ -72,8 +72,11 @@ public:
   typedef Device     device_type ;
   typedef ValueType  value_type ;
 
-  View< value_type * , LayoutRight , device_type >   values ;
-  CrsArray< int , device_type , void , int >  graph ;
+  typedef View< value_type * , LayoutRight , device_type >   values_type ;
+  typedef CrsArray< int , device_type , void , int >  graph_type ;
+
+  values_type values ;
+  graph_type  graph ;
 };
 
 
@@ -83,8 +86,11 @@ public:
   typedef Device               device_type ;
   typedef Array<ScalarType,N>  value_type ;
 
-  View< value_type * , LayoutRight , device_type >   values ;
-  CrsArray< int , device_type , void , int >  graph ;
+  typedef View< value_type * , LayoutRight , device_type >   values_type ;
+  typedef CrsArray< int , device_type , void , int >  graph_type ;
+
+  values_type values ;
+  graph_type  graph ;
 };
 
 
@@ -139,11 +145,12 @@ public:
   }
 
   Multiply( const matrix_type  & A ,
+            const unsigned       nRow ,
+            const unsigned       /* nCol */ ,
             const input_type   & x ,
             const output_type  & y )
     : m_A( A ), m_x( x ), m_y( y )
   {
-    const int nRow = m_A.graph.row_map.dimension_0() - 1 ;
     parallel_for( nRow , *this );
   }
 };
@@ -185,11 +192,12 @@ public:
   }
 
   Multiply( const matrix_type  & A ,
+            const unsigned       nRow ,
+            const unsigned       /* nCol */ ,
             const input_type   & x ,
             const output_type  & y )
     : m_A( A ), m_x( x ), m_y( y )
   {
-    const int nRow = m_A.graph.row_map.dimension_0() - 1 ;
     parallel_for( nRow , *this );
   }
 };
@@ -224,11 +232,14 @@ public:
     const int iRow = threadIdx.y + blockDim.y * blockIdx.x ;
 
     if ( threadIdx.x < N && iRow < m_y.dimension_0() ) {
+      const int iEntryBeg = m_A.graph.row_map(iRow);
       const int iEntryEnd = m_A.graph.row_map(iRow+1);
 
       OutputValueType y = 0 ;
 
-      for ( int iEntry = m_A.graph.row_map(iRow) ; iEntry < iEntryEnd ; ++iEntry ) {
+      for ( int iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
+        // m_A.graph.entries(iEntry) is read by the entire warp.
+        // ... Perhaps read the sequence to shared memory ?  Complexity of determining length, thread-sync ...
         y += m_A.values(iEntry,threadIdx.x) * m_x( m_A.graph.entries(iEntry) , threadIdx.x );
       }
 
@@ -237,17 +248,18 @@ public:
   }
 
   Multiply( const matrix_type & A ,
+            const unsigned      nRow ,
+            const unsigned      /* nCol */ ,
             const input_type  & x ,
             const output_type & y )
     : m_A( A ), m_x( x ), m_y( y )
   {
     enum { W = CudaTraits::WarpSize };
-    enum { NX = ( N + W - 1 ) / W };
-    enum { NY = NX < 4 ? 16 / NX : 1 };
-    const int nRow = m_A.graph.row_map.dimension_0() - 1 ;
+    enum { WX = ( N + W - 1 ) / W };
+    enum { WY = WX <= 8 ? 16 / WX : 1 };
 
-    const dim3 dBlock( W * NX , NY , 1 );
-    const dim3 dGrid( ( nRow + NY - 1 ) / NY , 1 , 1 );
+    const dim3 dBlock( W * WX , WY , 1 );
+    const dim3 dGrid( ( nRow + WY - 1 ) / WY , 1 , 1 );
 
     cuda_parallel_launch_local_memory< Multiply ><<< dGrid , dBlock >>>( *this );
   }
@@ -288,11 +300,11 @@ public:
   typedef View<       double * , LayoutRight , device_type > output_type ;
 
   Multiply( const matrix_type & A ,
+            const unsigned      nRow ,
+            const unsigned      nCol ,
             const input_type  & x ,
             const output_type & y )
   {
-    const int n = y.dimension_0();
-
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
 
     const double alpha = 1 , beta = 0 ;
@@ -300,7 +312,7 @@ public:
     cusparseStatus_t status =
       cusparseDcsrmv( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
-                      n , n ,
+                      nRow , nCol ,
                       alpha ,
                       s.descra ,
                       A.values.ptr_on_device() ,

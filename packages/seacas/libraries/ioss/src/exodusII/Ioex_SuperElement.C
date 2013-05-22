@@ -100,7 +100,7 @@ namespace {
 Ioex::SuperElement::SuperElement(const std::string &filename,
 				 const std::string &my_name)
   : Ioss::GroupingEntity(NULL, my_name, 1), fileName(filename),
-    numDOF(0), numEIG(0), filePtr(-1)
+    numDOF(0), num_nodes(0), numEIG(0), filePtr(-1)
 {
 
   // For now, we will open the raw netcdf file here and parse the
@@ -126,6 +126,10 @@ Ioex::SuperElement::SuperElement(const std::string &filename,
 			    "number of degrees of freedom",
 			    &numDOF);
   
+  status = nc_get_dimension(filePtr, "num_nodes",
+			    "number of nodes",
+			    &num_nodes);
+
   status = nc_get_dimension(filePtr, "NumEig",
 			    "number of eigenvalues",
 			    &numEIG);
@@ -139,27 +143,40 @@ Ioex::SuperElement::SuperElement(const std::string &filename,
   // NumCols and NumDof are redundant dimensions in the netcdf file.
   // Eventually, NumCols will be removed and NumDof is the long-term value.
   // Verify that they match.
-  size_t numCols = 0;
-  status = nc_get_dimension(filePtr, "NumCols",
-			    "number of matrix columns",
-			    &numCols);
+  size_t numCols = numDOF;
+  //size_t numCols = 0;
+  //status = nc_get_dimension(filePtr, "NumCols",
+			    //"number of matrix columns",
+			    //&numCols);
   assert(numCols == numDOF);
-  
 
   // Add the standard properties...
   properties.add(Ioss::Property(this, "numDOF",
-				Ioss::Property::INTEGER));
+                                Ioss::Property::INTEGER));
+  if( num_nodes > 0) {
+     properties.add(Ioss::Property(this, "num_nodes",
+                                Ioss::Property::INTEGER));
+  }
   properties.add(Ioss::Property(this, "numEIG",
-				Ioss::Property::INTEGER));
+                                Ioss::Property::INTEGER));
   properties.add(Ioss::Property(this, "numConstraints",
-				Ioss::Property::INTEGER));
+                                Ioss::Property::INTEGER));
 
   // Add the standard fields...
+  if( num_nodes > 0) {
+     fields.add(Ioss::Field("coordx", Ioss::Field::REAL, SCALAR(),
+                         Ioss::Field::MESH, num_nodes));
+     fields.add(Ioss::Field("coordy", Ioss::Field::REAL, SCALAR(),
+                         Ioss::Field::MESH, num_nodes));
+     fields.add(Ioss::Field("coordz", Ioss::Field::REAL, SCALAR(),
+                         Ioss::Field::MESH, num_nodes));
+  }
+
   fields.add(Ioss::Field("Kr", Ioss::Field::REAL, SCALAR(),
-			 Ioss::Field::MESH, numDOF*numDOF));
+                         Ioss::Field::MESH, numDOF*numDOF));
 
   fields.add(Ioss::Field("Mr", Ioss::Field::REAL, SCALAR(),
-			 Ioss::Field::MESH, numDOF*numDOF));
+                         Ioss::Field::MESH, numDOF*numDOF));
 
 
   // There are additional properties and fields on the netcdf file,
@@ -170,9 +187,39 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   size_t num_to_get = field.verify(data_size);
-  assert(num_to_get == numDOF * numDOF);
   
-  if (field.get_name() == "Kr") {
+  if (field.get_name() == "coordx") {
+    assert(num_to_get == num_nodes);
+    int status = nc_get_array(filePtr, "coordx", (double*)data);
+    if (status != 0) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Could not load coodintate data field 'coordx' from file '"
+	     << fileName << "'.";
+      IOSS_ERROR(errmsg);
+    }
+  }
+  else if (field.get_name() == "coordy") {
+    assert(num_to_get == num_nodes);
+    int status = nc_get_array(filePtr, "coordy", (double*)data);
+    if (status != 0) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Could not load coodintate data field 'coordy' from file '"
+	     << fileName << "'.";
+      IOSS_ERROR(errmsg);
+    }
+  }
+  else if (field.get_name() == "coordz") {
+    assert(num_to_get == num_nodes);
+    int status = nc_get_array(filePtr, "coordz", (double*)data);
+    if (status != 0) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Could not load coodintate data field 'coordz' from file '"
+	     << fileName << "'.";
+      IOSS_ERROR(errmsg);
+    }
+  }
+  else if (field.get_name() == "Kr") {
+    assert(num_to_get == numDOF*numDOF);
     int status = nc_get_array(filePtr, "Kr", (double*)data);
     if (status != 0) {
       std::ostringstream errmsg;
@@ -182,6 +229,7 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field& field,
     }
   }
   else if (field.get_name() == "Mr") {
+    assert(num_to_get == numDOF*numDOF);
     int status = nc_get_array(filePtr, "Mr", (double*)data);
     if (status != 0) {
       std::ostringstream errmsg;
@@ -213,6 +261,9 @@ Ioss::Property Ioex::SuperElement::get_implicit_property(const std::string& the_
 {
   if (Ioss::Utils::case_strcmp(the_name, "numDOF") == 0) {
     return Ioss::Property(the_name, (int)numDOF);
+  }
+  else if (Ioss::Utils::case_strcmp(the_name, "num_nodes") == 0) {
+    return Ioss::Property(the_name, (int)num_nodes);
   }
   else if (Ioss::Utils::case_strcmp(the_name, "numEIG") == 0) {
     return Ioss::Property(the_name, (int)numEIG);

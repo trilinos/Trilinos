@@ -229,9 +229,6 @@ namespace Tpetra {
 
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
     ///
-    /// The column Map will be used to filter any graph indices
-    /// inserted using insertLocalIndices() or insertGlobalIndices().
-    ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
@@ -256,9 +253,6 @@ namespace Tpetra {
               const RCP<ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
-    ///
-    /// The column Map will be used to filter any graph indices
-    /// inserted using insertLocalIndices() or insertGlobalIndices().
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -555,9 +549,9 @@ namespace Tpetra {
     insertGlobalIndices (GlobalOrdinal globalRow,
                          const ArrayView<const GlobalOrdinal>& indices);
 
-    //! Insert graph indices, using local IDs.
+    //! Insert local indices into the graph.
     /**
-       \pre \c localRow is a local row belonging to the graph on this node
+       \pre \c localRow is a local row belonging to the graph on this process.
        \pre <tt>isGloballyIndexed() == false</tt>
        \pre <tt>isStorageOptimized() == false</tt>
        \pre <tt>hasColMap() == true</tt>
@@ -571,7 +565,7 @@ namespace Tpetra {
          during the next call to fillComplete().
     */
     void
-    insertLocalIndices (LocalOrdinal localRow,
+    insertLocalIndices (const LocalOrdinal localRow,
                         const ArrayView<const LocalOrdinal> &indices);
 
     //! Remove all graph indices from the specified local row.
@@ -1155,6 +1149,15 @@ namespace Tpetra {
     void
     insertLocalIndicesImpl (const LocalOrdinal myRow,
                             const ArrayView<const LocalOrdinal> &indices);
+    //! Like insertLocalIndices(), but with column Map filtering.
+    void
+    insertLocalIndicesFiltered (const LocalOrdinal localRow,
+                                const ArrayView<const LocalOrdinal> &indices);
+
+    //! Like insertGlobalIndices(), but with column Map filtering.
+    void
+    insertGlobalIndicesFiltered (const GlobalOrdinal localRow,
+                                 const ArrayView<const GlobalOrdinal> &indices);
 
     /// \brief Transform the given values using local indices.
     ///
@@ -1520,11 +1523,6 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
       return haveRowInfo_;
     }
-
-    //! Whether this instance's insertGlobalIndices() method has triggered an efficiency warning yet.
-    bool insertGlobalIndicesWarnedEfficiency_;
-    //! Whether this instance's insertLocalIndices() method has triggered an efficiency warning yet.
-    bool insertLocalIndicesWarnedEfficiency_;
   }; // class CrsGraph
 
   /** \brief Non-member function to create an empty CrsGraph given a row map and a non-zero profile.
