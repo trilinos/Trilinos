@@ -62,7 +62,7 @@ int main(int narg, char **arg)
   typedef Tpetra::MultiVector<Scalar, LO, GO> mvector_t;
 
   defEnv->memory("Before map construction");
-  for (int i = 0 ; i < 1000; i++)
+  for (int i = 0 ; i < 100; i++)
   {
       defEnv->memory("Inside the loop");
       Teuchos::RCP<const map_t> tmap = rcp(new map_t(numGlobalCoords, 
