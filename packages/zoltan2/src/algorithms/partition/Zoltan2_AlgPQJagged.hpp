@@ -3308,7 +3308,7 @@ void procAssignment2(
         //should traverse from end to beginning.
         //currently gets the processors with least number of coordinates,
         //and assings the part to this part.
-        for (partId_t iii = 0; iii < nprocs; ++iii){
+        for (partId_t iii = nprocs - 1; iii >= 0; --iii){
 
             partId_t ii = proc_load_sort[iii].id;
             lno_t left_space = space_in_each_processor[ii] - load;
@@ -3543,15 +3543,56 @@ void procAssignment1(
                 ceil (total_num_points_in_part / float (required_proc_count));
 
         //starts sending to heaviest part.
-        partId_t next_part_to_send = nprocs - 1;
+        partId_t next_part_to_send = nprocs - required_proc_count;
         partId_t next_part_to_send_id = proc_points_in_part[next_part_to_send].id;
         lno_t space_left =  ideal_num_points_in_procs - proc_points_in_part[next_part_to_send].val;
 
         //find the assigned processors.
         for(partId_t ii = nprocs - 1; ii >= nprocs - required_proc_count; --ii){
+
             partId_t partid = proc_points_in_part[ii].id;
             proc_part_assignments[partid] = i;
+
+            /*
+            if(myRank == 0){
+                cout << "proc:" << partid <<
+                        " assigned to part:" << i <<
+                        " as it has:" << proc_points_in_part[ii].val <<
+                        " points in this part." << endl;
+            }
+            */
         }
+
+
+        bool did_change_anything = false;
+        for(partId_t ii = 0; ii < nprocs; ++ii){
+            if (proc_points_in_part[ii].val < 0){
+                did_change_anything = true;
+                proc_points_in_part[ii].val = -proc_points_in_part[ii].val - 1;
+            }
+            else {
+                break;
+            }
+        }
+
+        if(did_change_anything){
+            //resort the processors in the part.
+            uqsort<partId_t, partId_t>(nprocs - required_proc_count, proc_points_in_part);
+        }
+
+        /*
+        for(partId_t ii = nprocs - required_proc_count - 1; ii >= 0; --ii){
+
+            partId_t partid = proc_points_in_part[ii].id;
+
+            if(myRank == 0){
+                cout << "proc:" << partid <<
+                        " is not assigned to part:" << i <<
+                        " as it has:" << proc_points_in_part[ii].val <<
+                        " points in this part." << endl;
+            }
+        }
+        */
 
         //check if this processors is one of the procs assigned to this part.
         //if it is, then get the group.
@@ -3600,7 +3641,18 @@ void procAssignment1(
             //now sends the
             while (to_sent > 0){
                 //if the processor has enough space.
+
                 if (to_sent <= space_left){
+                    /*
+                    if(myRank == 0){
+                        cout << " proc:" << partid
+                                << " needs to send:"
+                                << to_sent << " and left space:"
+                                << space_left << " on proc:"
+                                << next_part_to_send_id << " because of part:" << i << endl;
+                    }
+                    */
+
                     space_left -= to_sent;
 
                     if (myRank == partid){
@@ -3616,6 +3668,15 @@ void procAssignment1(
                     to_sent = 0;
                 }
                 else {
+                    /*
+                    if(myRank == 0){
+                        cout << " proc:" << partid
+                                << " needs to send:"
+                                << to_sent << " but left space:"
+                                << space_left << " on proc:"
+                                << next_part_to_send_id << " because of part:" << i << endl;
+                    }
+                    */
                     //there might be no space left in the processor.
                     if(space_left > 0){
                         to_sent -= space_left;
@@ -3630,7 +3691,7 @@ void procAssignment1(
                         }
                     }
                     //change the sent part
-                    --next_part_to_send;
+                    ++next_part_to_send;
 
 #ifdef debug_
                     //TODO remove comment
@@ -3740,6 +3801,11 @@ void getProcGroups_SendCounts_SendBuff(
     */
 
     ids.clear();
+    /*
+    if (myRank == 0){
+        cout << endl << endl;
+    }
+    */
     if (1 || nLocal > 0){
         if (nprocs > num_parts){
 
@@ -3788,6 +3854,32 @@ void getProcGroups_SendCounts_SendBuff(
             pcomm->barrier();
             cout << "me:" << pcomm->getRank() << " finish out"<< endl;
             */
+
+
+            /*
+            int partsendCount = 0;
+            lno_t sc = 0;
+            for(int i = 0; i < nprocs; ++i){
+
+                if(sendCount[i] > 0){
+                    partsendCount++;
+                    sc += sendCount[i];
+                }
+            }
+            cout << "me:" << myRank <<
+                    " sending to:" << partsendCount <<
+                    " many processors with assignment-1:" <<
+                    " I am assigned to:" << out_part_index << endl;
+
+
+
+            for(int i = 0; i < num_parts; ++i){
+                cout << "me:" << myRank <<
+                        " have " << p_gno_np_global_num_coord_each_part_actual[myRank * num_parts + i] <<
+                        " in part:" << i << endl;
+            }
+            */
+
         }
         else {
             ids.push_back(myRank);
@@ -3817,6 +3909,33 @@ void getProcGroups_SendCounts_SendBuff(
                     doMigrationType,
                     coordinate_destionations
                     );
+
+
+            /*
+            lno_t sc = 0;
+            int partsendCount = 0;
+            for(int i = 0; i < nprocs; ++i){
+                if(sendCount[i] > 0){
+                    partsendCount++;
+                    sc += sendCount[i];
+                }
+            }
+
+            cout << "me:" << myRank <<
+                    " sending to:" << partsendCount <<
+                    " many processors with assignment-2:" << endl;
+
+            for (int i = 0; i < out_num_part; ++i){
+                cout << "me:" << myRank << " I am assigned to:" << out_part_indices[i] << endl;
+            }
+
+
+            for(int i = 0; i < num_parts; ++i){
+                cout << "me:" << myRank <<
+                        " have " << p_gno_np_global_num_coord_each_part_actual[myRank * num_parts + i] <<
+                        " in part:" << i << endl;
+            }
+            */
         }
 
     }
