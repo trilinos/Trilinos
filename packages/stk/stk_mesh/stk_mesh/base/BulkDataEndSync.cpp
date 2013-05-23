@@ -188,7 +188,7 @@ void BulkData::internal_update_distributed_index(
 
     Entity entity = i->second ;
 
-    if ( entity.state() != Unchanged &&
+    if ( state(entity) != Unchanged &&
          in_owned_closure( *this, entity , m_parallel_rank ) ) {
       // Has been changed and is in owned closure, may be shared
       ++num_created_or_modified;
