@@ -94,21 +94,14 @@ int main(int argc, char *argv[]) {
   LHS->PutScalar(0.0); RHS->Random();
 
   // ========================================= //
-  // Compare IC preconditioners to DiagPrecond //
+  // Compare IC preconditioners to no precond. //
   // ----------------------------------------- //
 
   const double tol = 1e-5;
   const int maxIter = 500;
 
-  // Baseline: Diagonal preconditioner
+  // Baseline: No preconditioning
   // Compute number of iterations, to compare to IC later.
-
-  // Extract diagonal and set up DiagPreconditioner
-  Epetra_Vector diag(A->RowMap());
-  IFPACK_CHK_ERR(A->ExtractDiagonalCopy(diag));
-  Teuchos::RefCountPtr<Ifpack_DiagPreconditioner> PrecDiag = Teuchos::rcp( new Ifpack_DiagPreconditioner(A->DomainMap(), A->RangeMap(), diag));
-
-  //IFPACK_CHK_ERR(PrecDiag->Compute());
 
   // Here we create an AztecOO object
   LHS->PutScalar(0.0);
@@ -118,12 +111,12 @@ int main(int argc, char *argv[]) {
   solver.SetLHS(&*LHS);
   solver.SetRHS(&*RHS);
   solver.SetAztecOption(AZ_solver,AZ_cg);
-  solver.SetPrecOperator(&*PrecDiag);
+  //solver.SetPrecOperator(&*PrecDiag);
   solver.SetAztecOption(AZ_output, 16); 
   solver.Iterate(maxIter, tol);
 
-  int DiagIters = solver.NumIters();
-  cout << "Ifpack_Diag iterations: " << DiagIters << endl;
+  int Iters = solver.NumIters();
+  cout << "No preconditioner iterations: " << Iters << endl;
 
 #if 0 
   // Not sure how to use Ifpack_CrsRick - leave out for now.
@@ -171,8 +164,8 @@ int main(int argc, char *argv[]) {
   int RickIters = solver.NumIters();
   cout << "Ifpack_Rick iterations: " << RickIters << endl;
 
-  // Compare to diagonal preconditioning
-  if (RickIters > DiagIters)
+  // Compare to no preconditioning
+  if (RickIters > Iters/2)
     IFPACK_CHK_ERR(-1);
 
 #endif
@@ -209,8 +202,8 @@ int main(int argc, char *argv[]) {
   int ICIters = solver.NumIters();
   cout << "Ifpack_IC iterations: " << ICIters << endl;
 
-  // Compare to diagonal preconditioning
-  if (ICIters > DiagIters)
+  // Compare to no preconditioning
+  if (ICIters > Iters/2)
     IFPACK_CHK_ERR(-1);
 
   //////////////////////////////////////////////////////
@@ -243,8 +236,8 @@ int main(int argc, char *argv[]) {
   int ICTIters = solver.NumIters();
   cout << "Ifpack_ICT iterations: " << ICTIters << endl;
 
-  // Compare to diagonal preconditioning
-  if (ICTIters > DiagIters)
+  // Compare to no preconditioning
+  if (ICTIters > Iters/2)
     IFPACK_CHK_ERR(-1);
 
 #ifdef HAVE_MPI
