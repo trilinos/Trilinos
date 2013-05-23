@@ -842,7 +842,7 @@ namespace stk
 
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tri_to_tri_N_5_EdgeBased_moving_shock_square_sidesets)
       {
-        bool do_test=true;
+        bool do_test=false;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
         if (do_test) {
