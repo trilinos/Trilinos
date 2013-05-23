@@ -64,7 +64,7 @@ namespace stk {
         FACE_HEX_6
       };
 
-      using namespace shards;
+      //using namespace shards;
 
       typedef shards::CellTopology CellTopology;
 
