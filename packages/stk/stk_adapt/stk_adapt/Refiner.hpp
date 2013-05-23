@@ -226,11 +226,6 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destro
       //============= unrefine
 
     public:
-      void
-      preUnrefine(ElementUnrefineCollection& elements_to_unref, stk::mesh::EntityRank rank);
-
-      void
-      remeshDuringRefine(stk::mesh::EntityRank rank);
 
       void
       replaceNodeRegistryOwnership(ElementUnrefineCollection& elements_to_delete, stk::mesh::EntityRank rank);
@@ -352,9 +347,6 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destro
 
       bool
       sharesElementFace(stk::mesh::Entity side_elem);
-
-      void
-      remove_dangling_sidesets();
 
       void
       removeFamilyTrees();

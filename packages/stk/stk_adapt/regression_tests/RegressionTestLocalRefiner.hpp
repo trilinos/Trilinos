@@ -340,7 +340,6 @@ namespace stk
         shock.setCurrentPlanePoint(shock_displacement);
         double *plane_point = shock.plane_point;
         double *plane_normal = shock.plane_normal;
-        double shock_w = shock.shock_width;
 
         if (distance(coord0, coord1) < 1./200.)
           return DO_UNREFINE;

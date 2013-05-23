@@ -24,136 +24,6 @@ namespace stk {
     // ====================================================================================================
     // ====================================================================================================
 
-    void Refiner::remove_dangling_sidesets()
-    {
-      SetOfEntities sides_to_delete(*m_eMesh.get_bulk_data());
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.side_rank() );
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-        {
-          stk::mesh::Bucket & bucket = **k ;
-          const unsigned num_entity_in_bucket = bucket.size();
-          for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-            {
-              stk::mesh::Entity side = bucket[ientity];
-              if (!sharesElementFace(side))
-                sides_to_delete.insert(side);
-            }
-        }
-
-      const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
-      SetOfEntities family_trees(*m_eMesh.get_bulk_data());
-      for (SetOfEntities::iterator siter=sides_to_delete.begin(); siter != sides_to_delete.end(); ++siter)
-        {
-          stk::mesh::Entity side = *siter;
-
-          while (true)
-            {
-              percept::MyPairIterRelation rels (m_eMesh, side, FAMILY_TREE_RANK);
-              if (!rels.size())
-                break;
-              stk::mesh::Entity to_rel = rels[0].entity();
-              family_trees.insert(to_rel);
-              stk::mesh::RelationIdentifier to_id = rels[0].relation_ordinal();
-
-              bool del = m_eMesh.get_bulk_data()->destroy_relation( to_rel, side, to_id);
-              if (!del)
-                throw std::runtime_error("remove_dangling_sidesets:: destroy_relation failed 4");
-            }
-
-          if ( ! m_eMesh.get_bulk_data()->destroy_entity( side ) )
-            {
-              throw std::runtime_error("remove_dangling_sidesets error 4 - couldn't delete");
-            }
-        }
-      for (SetOfEntities::iterator fiter=family_trees.begin(); fiter != family_trees.end(); fiter++)
-        {
-          stk::mesh::Entity family_tree = *fiter;
-          percept::MyPairIterRelation rels (m_eMesh, family_tree, m_eMesh.side_rank());
-          if (rels.size() == 1)
-            {
-              if ( ! m_eMesh.get_bulk_data()->destroy_entity( family_tree ) )
-                {
-                  throw std::runtime_error("remove_dangling_sidesets error 4.1 - couldn't delete family_tree");
-                }
-            }
-        }
-
-    }
-
-    static void getLevels(PerceptMesh& eMesh, ElementUnrefineCollection& elements_to_unref, int& min_level, int& max_level)
-    {
-      stk::mesh::FieldBase *refine_level = eMesh.get_field("refine_level");
-      if (!refine_level) return;
-      min_level=std::numeric_limits<int>::max();
-      max_level=0;
-
-      for (ElementUnrefineCollection::iterator it=elements_to_unref.begin(); it != elements_to_unref.end(); ++it)
-        {
-          stk::mesh::Entity element = *it;
-          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-          if (!cell_topo_data) continue;
-          double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(refine_level) , element );
-          if (fdata)
-            {
-              min_level = std::min(min_level, (int)fdata[0]);
-              max_level = std::max(max_level, (int)fdata[0]);
-            }
-        }
-      if (DEBUG_UNREF_1)
-        std::cout << "min_level= " << min_level << " max_level= " << max_level << std::endl;
-    }
-
-    void getLevels(PerceptMesh& eMesh, unsigned rank, int& min_level, int& max_level)
-    {
-      const vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( rank );
-      stk::mesh::FieldBase *refine_level = eMesh.get_field("refine_level");
-      if (!refine_level) return;
-      min_level=std::numeric_limits<int>::max();
-      max_level=0;
-
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-        {
-          stk::mesh::Bucket & bucket = **k ;
-          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
-          if (!cell_topo_data) continue;
-          const unsigned num_entity_in_bucket = bucket.size();
-          for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-            {
-              stk::mesh::Entity element = bucket[ientity];
-              if (refine_level)
-                {
-                  double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(refine_level) , element );
-                  if (fdata)
-                    {
-                      min_level = std::min(min_level, (int)fdata[0]);
-                      max_level = std::max(max_level, (int)fdata[0]);
-                    }
-                }
-            }
-        }
-      if (DEBUG_UNREF_1)
-        std::cout << "min_level= " << min_level << " max_level= " << max_level << std::endl;
-    }
-
-    static void filterForLevel(PerceptMesh& eMesh, ElementUnrefineCollection& elements_to_unref, int level)
-    {
-      stk::mesh::FieldBase *refine_level = eMesh.get_field("refine_level");
-      if (!refine_level) return;
-
-      ElementUnrefineCollection new_set(*eMesh.get_bulk_data());
-      for (ElementUnrefineCollection::iterator it=elements_to_unref.begin(); it != elements_to_unref.end(); ++it)
-        {
-          stk::mesh::Entity element = *it;
-          double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(refine_level) , element );
-          if (fdata && (int)fdata[0] >= level)
-            {
-              //std::cout << "insert fdata[0] = " << fdata[0] << " level= " << level << std::endl;
-              new_set.insert(element);
-            }
-        }
-      elements_to_unref = new_set;
-    }
-
     void Refiner::
     replaceNodeRegistryOwnership(ElementUnrefineCollection& elements_to_delete, stk::mesh::EntityRank rank)
     {
@@ -198,192 +68,6 @@ namespace stk {
         }
     }
 
-    void Refiner::
-    remeshDuringRefine(stk::mesh::EntityRank rank)
-    {
-      const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
-
-      SetOfEntities parents(*m_eMesh.get_bulk_data());
-
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( rank );
-
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-        {
-            stk::mesh::Bucket & bucket = **k ;
-
-            const unsigned num_entity_in_bucket = bucket.size();
-            for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-              {
-                stk::mesh::Entity element = bucket[ientity];
-
-                if (m_eMesh.hasFamilyTree(element))
-                  {
-                    stk::mesh::Entity parent = m_eMesh.getParent(element, true);
-                    if (parent.is_valid())
-                      {
-                        if (!m_eMesh.hasGrandChildren(parent, true))
-                          {
-                            parents.insert(parent);
-                          }
-                      }
-                  }
-              }
-        }
-
-      for (SetOfEntities::iterator pIter = parents.begin(); pIter != parents.end(); ++pIter)
-        {
-          stk::mesh::Entity parent = *pIter;
-
-          //std::cout << "\n parent= " << parent.identifier() << std::endl;
-
-          std::vector<stk::mesh::Entity> children;
-          m_eMesh.getChildren(parent, children, true, false);
-          VERIFY_OP_ON(children.size(), !=, 0, "hmmm");
-          SetOfEntities familyTrees(*m_eMesh.get_bulk_data());
-          SetOfEntities childrenSet(children.begin(), children.end(), *m_eMesh.get_bulk_data());
-
-          for (SetOfEntities::iterator icgp = childrenSet.begin(); icgp != childrenSet.end(); ++icgp)
-            {
-              stk::mesh::Entity child = *icgp;
-              //std::cout << "childOrGrandChild= " << childOrGrandChild.identifier() << " isGranchChild= " << (childrenSet.find(childOrGrandChild) == childrenSet.end()) << std::endl;
-
-              unsigned child_ft_level_0 = m_eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, child);
-              const percept::MyPairIterRelation child_to_family_tree_relations (m_eMesh, child,FAMILY_TREE_RANK);
-              if (child_to_family_tree_relations.size() == 0)
-                {
-                  throw std::logic_error("Refiner::remeshDuringRefine child_to_family_tree_relations.size == 0");
-                }
-              stk::mesh::Entity family_tree = child_to_family_tree_relations[child_ft_level_0].entity();
-              percept::MyPairIterRelation family_tree_relations (m_eMesh, family_tree,rank);
-              if (family_tree_relations.size() == 0)
-                {
-                  throw std::logic_error("Refiner::remeshDuringRefine family_tree_relations.size() == 0");
-                }
-
-              familyTrees.insert(family_tree);
-            }
-
-          removeFamilyTrees(familyTrees);
-          removeChildElements(childrenSet);
-
-          SetOfEntities parent1(&parent, (&parent)+1, *m_eMesh.get_bulk_data());
-          remesh(parent1);
-
-        }
-
-      m_nodeRegistry->clear_element_owner_data_phase_2(false, false);
-      SetOfEntities emptySet(*m_eMesh.get_bulk_data());
-      replaceNodeRegistryOwnership(emptySet, rank);
-      m_nodeRegistry->clear_element_owner_data_phase_2(true, false);
-
-    }
-
-    void Refiner::
-    preUnrefine(ElementUnrefineCollection& elements_to_unref, stk::mesh::EntityRank rank)
-    {
-      int print_filter_info = 1 || DEBUG_UNREF_1;
-      if (print_filter_info)  std::cout << "\n\nP["<< m_eMesh.get_rank() << "] preUnrefine: initial set size = " << elements_to_unref.size() << std::endl;
-
-      const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
-
-      SetOfEntities grandParents(*m_eMesh.get_bulk_data());
-
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( rank );
-
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-        {
-          {
-            stk::mesh::Bucket & bucket = **k ;
-
-            const unsigned num_entity_in_bucket = bucket.size();
-            for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-              {
-                stk::mesh::Entity element = bucket[ientity];
-
-                if (m_eMesh.hasFamilyTree(element))
-                  {
-                    stk::mesh::Entity gp = m_eMesh.getGrandParent(element, true);
-                    if (gp.is_valid())
-                      {
-                        if (!m_eMesh.hasGreatGrandChildren(gp, true))
-                          {
-                            grandParents.insert(gp);
-                          }
-                      }
-                  }
-              }
-          }
-        }
-
-      for (SetOfEntities::iterator gpIter = grandParents.begin(); gpIter != grandParents.end(); ++gpIter)
-        {
-          stk::mesh::Entity grandParent = *gpIter;
-
-          //std::cout << "\n grandParent= " << grandParent.identifier() << std::endl;
-
-          std::vector<stk::mesh::Entity> children;
-          m_eMesh.getChildren(grandParent, children, true, false);
-          VERIFY_OP_ON(children.size(), !=, 0, "hmmm");
-          SetOfEntities familyTrees(*m_eMesh.get_bulk_data());
-          SetOfEntities childrenOrGrandChildrenSet(children.begin(), children.end(), *m_eMesh.get_bulk_data());
-          SetOfEntities childrenSet(children.begin(), children.end(), *m_eMesh.get_bulk_data());
-
-          for (unsigned ichild=0; ichild < children.size(); ichild++)
-            {
-              std::vector<stk::mesh::Entity> grandChildren;
-              m_eMesh.getChildren(children[ichild], grandChildren, true, false);
-              if (grandChildren.size())
-                {
-                  childrenOrGrandChildrenSet.insert(grandChildren.begin(), grandChildren.end());
-                }
-            }
-
-          for (SetOfEntities::iterator icgp = childrenOrGrandChildrenSet.begin(); icgp != childrenOrGrandChildrenSet.end(); ++icgp)
-            {
-              stk::mesh::Entity childOrGrandChild = *icgp;
-              //std::cout << "childOrGrandChild= " << childOrGrandChild.identifier() << " isGranchChild= " << (childrenSet.find(childOrGrandChild) == childrenSet.end()) << std::endl;
-
-
-              unsigned child_ft_level_0 = m_eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, childOrGrandChild);
-              const percept::MyPairIterRelation child_to_family_tree_relations (m_eMesh, childOrGrandChild,FAMILY_TREE_RANK);
-              if (child_to_family_tree_relations.size() == 0)
-                {
-                  throw std::logic_error("Refiner::preUnrefine child_to_family_tree_relations.size == 0");
-                }
-              stk::mesh::Entity family_tree = child_to_family_tree_relations[child_ft_level_0].entity();
-              percept::MyPairIterRelation family_tree_relations (m_eMesh, family_tree,rank);
-              if (family_tree_relations.size() == 0)
-                {
-                  throw std::logic_error("Refiner::preUnrefine family_tree_relations.size() == 0");
-                }
-
-              familyTrees.insert(family_tree);
-            }
-
-          removeFamilyTrees(familyTrees);
-          removeChildElements(childrenOrGrandChildrenSet);
-
-          SetOfEntities grandParent1(&grandParent, (&grandParent)+1, *m_eMesh.get_bulk_data());
-          remesh(grandParent1);
-          std::vector<stk::mesh::Entity> gpChildren;
-          m_eMesh.getChildren(grandParent, gpChildren, false, false);
-          for (unsigned igpc=0; igpc < gpChildren.size(); igpc++)
-            {
-              stk::mesh::Entity gpc = gpChildren[igpc];
-              SetOfEntities gpc1(&gpc, (&gpc)+1, *m_eMesh.get_bulk_data());
-              remesh(gpc1);
-            }
-
-        }
-
-      m_nodeRegistry->clear_element_owner_data_phase_2(false, false);
-      SetOfEntities emptySet(*m_eMesh.get_bulk_data());
-      replaceNodeRegistryOwnership(emptySet, rank);
-      m_nodeRegistry->clear_element_owner_data_phase_2(true, false);
-
-      set_active_part();
-
-    }
 
     // get set of children with no nieces that are to be removed; put their parents in a list;
     //   put the children's family trees in a list to be removed
@@ -781,45 +465,8 @@ namespace stk {
       int print_filter_info = DEBUG_UNREF_1;
       if (print_filter_info)  std::cout << "P["<< m_eMesh.get_rank() << "] filterUnrefSet: initial set size = " << elements_to_unref.size() << std::endl;
 
-      stk::mesh::FieldBase *refine_field = m_eMesh.get_field("refine_field");
-      stk::mesh::FieldBase *refine_field_filtered = m_eMesh.get_field("refine_field_filtered");
-
       const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
       ElementUnrefineCollection elements_to_unref_copy(*m_eMesh.get_bulk_data());
-
-      {
-        const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
-
-        for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-          {
-            //if (removePartSelector(**k))
-            {
-              stk::mesh::Bucket & bucket = **k ;
-
-              const unsigned num_entity_in_bucket = bucket.size();
-              for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-                {
-                  stk::mesh::Entity element = bucket[ientity];
-                  {
-                    double *f_data = PerceptMesh::field_data_entity(refine_field, element);
-                    //if (f_data) f_data[0] = -1;
-                    if (f_data) f_data[0] = 10;
-                  }
-                }
-            }
-          }
-        for (ElementUnrefineCollection::iterator u_iter = elements_to_unref.begin();
-             u_iter != elements_to_unref.end(); ++u_iter)
-          {
-            stk::mesh::Entity element = *u_iter;
-
-            {
-              double *f_data = PerceptMesh::field_data_entity(refine_field, element);
-              //if (f_data) f_data[0] = -1;
-              if (f_data) f_data[0] = -30;
-            }
-          }
-      }
 
       typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> SetOfEntities;
 
@@ -848,9 +495,6 @@ namespace stk {
 
           if (!elem_nodes_size) num_elem_nodes_0++;
           if (!has_no_nieces) {
-            double *f_data = PerceptMesh::field_data_entity(refine_field, element);
-             if (f_data) f_data[0] = -10;
-
             num_has_nieces++;
           }
           if (elem_nodes_size && has_no_nieces)
@@ -883,8 +527,6 @@ namespace stk {
                   bool in_unref_set = elements_to_unref.find(child) != elements_to_unref.end();
                   if (!in_unref_set)
                     {
-                      //double *f_data = PerceptMesh::field_data_entity(refine_field, child);
-                      //   if (f_data) f_data[0] = -20;
                       all_siblings_in_unref_set = false;
                       break;
                     }
@@ -975,78 +617,16 @@ namespace stk {
                                        << std::endl;
       elements_to_unref = elements_to_unref_copy;
 
-      {
-        const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
-
-        for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-          {
-            //if (removePartSelector(**k))
-            {
-              stk::mesh::Bucket & bucket = **k ;
-
-              const unsigned num_entity_in_bucket = bucket.size();
-              for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-                {
-                  stk::mesh::Entity element = bucket[ientity];
-                  {
-                    double *f_data = PerceptMesh::field_data_entity(refine_field_filtered, element);
-                    //if (f_data) f_data[0] = -1;
-                    if (f_data) f_data[0] = 10;
-                  }
-                }
-            }
-          }
-
-        for (ElementUnrefineCollection::iterator u_iter = elements_to_unref.begin();
-             u_iter != elements_to_unref.end(); ++u_iter)
-          {
-            stk::mesh::Entity element = *u_iter;
-
-            {
-              double *f_data = PerceptMesh::field_data_entity(refine_field_filtered, element);
-              //if (f_data) f_data[0] = -1;
-              if (f_data) f_data[0] = -10;
-            }
-          }
-      }
-
     }
 
     void Refiner::
     getKeptNodes(NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref)
     {
-      //bool doTest=true;
-
-      stk::mesh::FieldBase *normal_kept_deleted = m_eMesh.get_field("normal_kept_deleted");
-
-      {
-        const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.node_rank() );
-
-        for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-          {
-            //if (removePartSelector(**k))
-            {
-              stk::mesh::Bucket & bucket = **k ;
-
-              const unsigned num_entity_in_bucket = bucket.size();
-              for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-                {
-                  stk::mesh::Entity node = bucket[ientity];
-                  {
-                    double *f_data = PerceptMesh::field_data_entity(normal_kept_deleted, node);
-                    if (f_data) f_data[0] = 0;  // kept
-                  }
-                }
-            }
-          }
-      }
-
       // mark kept nodes
       const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          //if (removePartSelector(**k))
           {
             stk::mesh::Bucket & bucket = **k ;
 
@@ -1060,13 +640,7 @@ namespace stk {
                 bool tt = (elem_nodes.size() && m_eMesh.isLeafElement(element));
                 tt =  !m_eMesh.hasFamilyTree(element) || m_eMesh.numChildren(element) == 0 || !m_eMesh.hasGrandChildren(element, true);
 
-                if (Util::getFlag(1256))
-                  {
-                    //tt = !m_eMesh.hasFamilyTree(element) || m_eMesh.numChildren(element) == 0;
-                  }
-
                 if (tt)
-                  //if (!doTest || elem_nodes.size())
                   {
                     bool in_unref_set = elements_to_unref.find( element ) != elements_to_unref.end();
                     //bool isGhostElement = m_eMesh.isGhostElement(element);
@@ -1077,10 +651,6 @@ namespace stk {
                           {
                             stk::mesh::Entity node = elem_nodes[inode].entity();
                             kept_nodes.insert(node);
-                            {
-                              double *f_data = PerceptMesh::field_data_entity(normal_kept_deleted, node);
-                              if (f_data) f_data[0] = 1;  // kept
-                            }
 #if DEBUG_UNREF_2
                             std::cout << "tmp kept node: " << *node << " ";
                             m_eMesh.print_entity(std::cout, *node);
@@ -1103,7 +673,6 @@ namespace stk {
     void Refiner::
     getDeletedNodes(NodeSetType& deleted_nodes, const NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref)
     {
-      stk::mesh::FieldBase *normal_kept_deleted = m_eMesh.get_field("normal_kept_deleted");
       // mark deleted nodes (nodes in list of elements_to_unref
       unsigned count_candidate_elements = 0;
       unsigned count_in_kept_nodes_set = 0;
@@ -1116,7 +685,6 @@ namespace stk {
 
           const percept::MyPairIterRelation elem_nodes (m_eMesh, element,  stk::mesh::MetaData::NODE_RANK);
 
-          //if (!doTest ||
           if (!m_eMesh.isGhostElement(element) && ((elem_nodes.size() && (!m_eMesh.hasFamilyTree(element) || !m_eMesh.isParentElement(element)))))
             //if (m_eMesh.isChildElement(*element) && !m_eMesh.isGhostElement(*element))
             {
@@ -1131,10 +699,6 @@ namespace stk {
                     {
                       ++count_not_in_kept_nodes_set;
                       deleted_nodes.insert(node);
-                      {
-                        double *f_data = PerceptMesh::field_data_entity(normal_kept_deleted, node);
-                        if (f_data) f_data[0] = -1;  // deleted
-                      }
 #if DEBUG_UNREF_2
                       std::cout << "tmp deleted node: " << *node << " ";
                       m_eMesh.print_entity(std::cout, *node);
@@ -1156,23 +720,6 @@ namespace stk {
 
     }
 
-    static void merge(ElementUnrefineCollection& kept_nodes, ElementUnrefineCollection& kept_nodes_orig)
-    {
-      for (ElementUnrefineCollection::iterator it=kept_nodes_orig.begin(); it != kept_nodes_orig.end(); ++it)
-        {
-          kept_nodes.insert(*it);
-        }
-    }
-
-    static void subtract(ElementUnrefineCollection& kept_nodes, ElementUnrefineCollection& kept_nodes_orig)
-    {
-      for (ElementUnrefineCollection::iterator it=kept_nodes.begin(); it != kept_nodes.end(); ++it)
-        {
-          if (kept_nodes_orig.find(*it) != kept_nodes_orig.end())
-            kept_nodes_orig.erase(*it);
-        }
-    }
-
     void
     Refiner::
     unrefineTheseElements(ElementUnrefineCollection& elements_to_unref)
@@ -1186,25 +733,7 @@ namespace stk {
 
       m_eMesh.get_bulk_data()->modification_begin();
 
-      int min_level=0, max_level=0;
-      ElementUnrefineCollection elements_to_unref_0 = elements_to_unref;
-
-      if (getDoLevelBasedUnrefinement())
-        getLevels(m_eMesh, elements_to_unref, min_level, max_level);
-      for (int ilevel=max_level; ilevel >= min_level; --ilevel)
         {
-          if (DEBUG_UNREF_1) std::cout << "ilevel= " << ilevel << std::endl;
-          elements_to_unref = elements_to_unref_0;
-          //std::cout << "tmp srk ilevel= " << ilevel << "  elements_to_unref.size= " << elements_to_unref.size() << std::endl;
-          if (getDoLevelBasedUnrefinement())
-            {
-              //std::cout << "tmp srk before filterForLevel elements_to_unref.size= " << elements_to_unref.size() << std::endl;
-              filterForLevel(m_eMesh, elements_to_unref, ilevel);
-              //std::cout << "tmp srk after filterForLevel elements_to_unref.size= " << elements_to_unref.size() << std::endl;
-            }
-
-          //check_sidesets_2(" unrefineTheseElements:: start");
-
           // mark nodes
           // set<> kept_nodes
           // set<> deleted_nodes
@@ -1253,108 +782,16 @@ namespace stk {
           //std::cout << "tmp elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
 
           NodeSetType kept_nodes(*m_eMesh.get_bulk_data());
-          NodeSetType kept_nodes_orig(*m_eMesh.get_bulk_data());
-          NodeSetType kept_nodes_orig_minus_kept_nodes(*m_eMesh.get_bulk_data());
           NodeSetType deleted_nodes(*m_eMesh.get_bulk_data());
-
-          // get kept nodes - original
-          getKeptNodes(kept_nodes_orig, elements_to_unref);
 
           // filter unref set
           filterUnrefSet(elements_to_unref);
 
-          //           if (Util::getFlag(1256))
-          //             {
-          //               m_eMesh.save_as("filtered.e");
-          //               //exit(1);
-          //             }
-
-          //            if (Util::getFlag(1257))
-          //              {
-          //                m_eMesh.save_as("filtereda.e");
-          //                exit(1);
-          //              }
-
-          if (0)
-            {
-              elements_to_unref.clear();
-              const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
-              for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-                {
-                  stk::mesh::Bucket & bucket = **k ;
-                  const unsigned num_entity_in_bucket = bucket.size();
-                  for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-                    {
-                      stk::mesh::Entity element = bucket[ientity];
-                      if (m_eMesh.hasFamilyTree(element) && m_eMesh.isChildWithoutNieces(element))
-                        elements_to_unref.insert(element);
-                    }
-                }
-            }
           // get kept nodes
           getKeptNodes(kept_nodes, elements_to_unref);
 
           // get deleted nodes
           getDeletedNodes(deleted_nodes, kept_nodes, elements_to_unref);
-
-          if (Util::getFlag(1256))
-            {
-              m_eMesh.save_as("filtereda.e");
-
-              if (1)
-                {
-
-                  elements_to_unref = elements_to_unref_0;
-
-                  if (1)
-                    {
-                      preUnrefine(elements_to_unref, m_eMesh.element_rank());
-                      elements_to_unref.clear();
-                      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
-                      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-                        {
-                          stk::mesh::Bucket & bucket = **k ;
-                          const unsigned num_entity_in_bucket = bucket.size();
-                          for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-                            {
-                              stk::mesh::Entity element = bucket[ientity];
-                              //if (m_eMesh.hasFamilyTree(element) && m_eMesh.isChildWithoutNieces(element))
-                              if (m_eMesh.hasFamilyTree(element) && !m_eMesh.isParentElement(element))
-                                elements_to_unref.insert(element);
-                            }
-                        }
-                    }
-
-                  filterUnrefSet(elements_to_unref);
-                  kept_nodes.clear();
-                  deleted_nodes.clear();
-                  getKeptNodes(kept_nodes, elements_to_unref);
-                  getDeletedNodes(deleted_nodes, kept_nodes, elements_to_unref);
-
-                  m_eMesh.save_as("filteredb.e");
-                }
-
-              exit(1);
-            }
-
-          if (0)
-            {
-              if (0) merge(kept_nodes, kept_nodes_orig);
-              // kept_nodes_orig -= kept_nodes
-              if (0) subtract(kept_nodes, kept_nodes_orig);
-              kept_nodes_orig.clear();
-              deleted_nodes.clear();
-              getDeletedNodes(deleted_nodes, kept_nodes, elements_to_unref);
-              std::cout << "kept_nodes_orig.size= " << kept_nodes_orig.size() << " after subtract kept_nodes.size= " << kept_nodes.size()
-                        << " deleted_nodes.size= " << deleted_nodes.size()
-                        << std::endl;
-            }
-
-//           if (Util::getFlag(1257))
-//             {
-//               m_eMesh.save_as("filtereda.e");
-//               exit(1);
-//             }
 
           // nothing to be done
           if (0 && deleted_nodes.size() == 0)
@@ -1367,8 +804,8 @@ namespace stk {
           // remove deleted nodes and their associated sub-dim entities from NodeRegistry's db
           //   save kept_nodes_orig on NodeRegistry
           SubDimCellToDataMap to_save;
+          NodeSetType kept_nodes_orig(*m_eMesh.get_bulk_data());
           m_nodeRegistry->cleanDeletedNodes(deleted_nodes, kept_nodes_orig, to_save);
-          //std::cout << "to_save.size= " << to_save.size() << std::endl;
 
           // remove elements to be unrefined
           ElementUnrefineCollection copied_children_to_be_removed = elements_to_unref;
@@ -1411,7 +848,7 @@ namespace stk {
           removeFamilyTrees(family_trees_to_be_removed);
 
           // remove children
-          removeChildElements(children_to_be_removed, &elements_to_unref_0);
+          removeChildElements(children_to_be_removed);
 
           // FIXME - this is to be deprecated, but leaving it in for now
 #if 0
@@ -1434,11 +871,6 @@ namespace stk {
               remesh(parent_elements);
               remesh(parent_side_elements);
             }
-//           if (Util::getFlag(1256))
-//             {
-//               m_eMesh.save_as("filtered.e");
-//               exit(1);
-//             }
 
 #if CHECK_DEBUG
           check_db("after unrefineTheseElements, b4 mod end");
@@ -1447,51 +879,11 @@ namespace stk {
           // remove any elements that are empty (these can exist when doing local refinement)
           removeEmptyElements();
 
-          if (0)
-          {
-            // 1. add kept_nodes_orig back into NodeRegistry
-            // 2. remove kept_nodes_orig from deleted_nodes
-            // 3. remesh
-            // 4.
-
-            SubDimCellToDataMap& map = m_nodeRegistry->getMap();
-            for (SubDimCellToDataMap::iterator it=to_save.begin(); it != to_save.end(); ++it)
-              {
-                map[it->first]=it->second;
-              }
-            SetOfEntities current_elements(*m_eMesh.get_bulk_data());
-            const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
-            for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-              {
-                stk::mesh::Bucket & bucket = **k ;
-                const unsigned num_entity_in_bucket = bucket.size();
-                for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-                  {
-                    stk::mesh::Entity element = bucket[ientity];
-                    if (!m_eMesh.hasFamilyTree(element) || m_eMesh.numChildren(element) == 0)
-                      {
-                        current_elements.insert(element);
-                      }
-                  }
-              }
-            //std::cout << "current_elements.size= " << current_elements.size() << " all elem= " << m_eMesh.get_number_elements() << std::endl;
-            remesh(current_elements);
-            //std::cout << "after remesh current_elements.size= " << current_elements.size() << " all elem= " << m_eMesh.get_number_elements() << std::endl;
-          }
-
           removeDeletedNodes(deleted_nodes);
 
           set_active_part();
 
-          //remove_dangling_sidesets();
-          if (Util::getFlag(1256))
-            {
-              m_eMesh.save_as("filtered.e");
-              //exit(1);
-            }
-
           fix_side_sets_2();
-
 
         } // ilevel
 
@@ -1639,72 +1031,6 @@ namespace stk {
       ElementUnrefineCollection new_set(*m_eMesh.get_bulk_data());
       ElementUnrefineCollection new_root(*m_eMesh.get_bulk_data());
 
-      if (0)
-        {
-          // is root and all Desc are in U
-          // is not in U, but all Desc are in U
-
-          const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
-          for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-            {
-              stk::mesh::Bucket & bucket = **k ;
-              const unsigned num_entity_in_bucket = bucket.size();
-              for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-                {
-                  stk::mesh::Entity element = bucket[ientity];
-                  {
-                    double *f_data = PerceptMesh::field_data_entity(refine_field, element);
-                    if (f_data) f_data[0] = 0;
-                  }
-
-                  bool in_set = (elements_to_unref.find(element) != elements_to_unref.end());
-
-                  bool is_root = !m_eMesh.hasFamilyTree(element) || !m_eMesh.isChildElement(element,true);
-
-                  if (is_root || !in_set)
-                    {
-
-                      SetOfEntities allD(*m_eMesh.get_bulk_data());
-                      bool only_leaves=false;
-                      unsigned nlevels=0;
-                      allDescendants(element, allD, nlevels, only_leaves);
-                      bool allIn = true;
-                      for (SetOfEntities::iterator it=allD.begin(); it != allD.end(); ++it)
-                        {
-                          if (elements_to_unref.find(*it) == elements_to_unref.end())
-                            {
-                              allIn = false;
-                              break;
-                            }
-                        }
-                      //if (print_filter_info) std::cout << "element= " << element.identifier() << " allIn= " << allIn << std::endl;
-                      if (allIn)
-                        {
-                          //if (print_filter_info && (!in_set && !is_root) ) std::cout << "element= " << element.identifier() << " in_set= " << in_set << " is_root= " << is_root << std::endl;
-                          new_root.insert(element);
-                          {
-                            double *f_data = PerceptMesh::field_data_entity(refine_field, element);
-                            if (f_data) f_data[0] = 10*(is_root?1:0) + 20*(!in_set?1:0);
-                          }
-
-                          for (SetOfEntities::iterator it=allD.begin(); it != allD.end(); ++it)
-                            {
-                              new_set.insert(*it);
-                              {
-                                double *f_data = PerceptMesh::field_data_entity(refine_field, *it);
-                                if (f_data) f_data[0] = -10;
-                              }
-
-                            }
-                        }
-                    }
-                }
-            }
-          rootElements = new_root;
-          elements_to_unref = new_set;
-
-        }
-      else
         {
           const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
           for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -1751,21 +1077,12 @@ namespace stk {
                 }
               VERIFY_OP_ON((allIn && allD.size()), == , true, "hmm");
 
-              //if (print_filter_info) std::cout << "element= " << element.identifier() << " allIn= " << allIn << std::endl;
               if (allIn && allD.size())
                 {
                   //if (print_filter_info && (!in_set && !is_root) ) std::cout << "element= " << element.identifier() << " in_set= " << in_set << " is_root= " << is_root << std::endl;
 
                   new_root.insert(element);
 
-                  if (0 && m_eMesh.hasFamilyTree(element) && m_eMesh.isChildElement(element,true))
-                    {
-                      exit(1);
-                    }
-//                   {
-//                     double *f_data = PerceptMesh::field_data_entity(refine_field, element);
-//                     if (f_data) f_data[0] = 10*(is_root?1:0) + 20*(!in_set?1:0);
-//                   }
                    {
                      double *f_data = PerceptMesh::field_data_entity(refine_field, element);
                      if (f_data) f_data[0] = 10;
@@ -1788,7 +1105,7 @@ namespace stk {
       if (print_filter_info)  std::cout << "\n\nP["<< m_eMesh.get_rank() << "] filterUnrefSetPass2: final elements_to_unref size = " << elements_to_unref.size() << std::endl;
 
       // check
-      if (1 || DEBUG_UNREF)
+      if (DEBUG_UNREF)
       {
         for (ElementUnrefineCollection::iterator it=new_root.begin(); it != new_root.end(); ++it)
           {
@@ -1821,18 +1138,6 @@ namespace stk {
 
       //unsigned elsizeb4 = elements_to_unref.size();
       filterUnrefSetPass2(elements_to_unref, rootElements);
-
-      if (Util::getFlag(1256))
-        {
-          static int cnt1=0;
-          char buf[1000];
-          sprintf(buf, "%04d", cnt1);
-          if (cnt1==0)
-            m_eMesh.save_as("P2filt.e");
-          else
-            m_eMesh.save_as("P2filt.e-s"+std::string(buf));
-          ++cnt1;
-        }
 
       // get kept nodes
       // FIXME - check conditions inside getKeptNodes
@@ -1910,7 +1215,6 @@ namespace stk {
 
           SetOfEntities family_trees(*m_eMesh.get_bulk_data());
 
-          // FIXME - needs loop over elements_to_unref
           for (ElementUnrefineCollection::iterator it=elements_to_unref.begin(); it != elements_to_unref.end(); ++it)
             {
               stk::mesh::Entity element = *it;
