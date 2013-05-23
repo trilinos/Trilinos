@@ -892,6 +892,33 @@ namespace MueLu {
     // clean up phase
     ///////////////////////////////////////////
 
+#ifdef MUELU_NEVER_DROP_PROC0
+    //If all partitions have been assigned but PID 0 doesn't own one, reassign a partition PID 0.
+    if (numAlreadyOwned == numPartitions && mypid==0 && myPartitionNumber==-1 ) {
+      // Grab ownership of the partition for which 0 has the most dofs.
+      GO maxSize=0;
+      for (int i=0; i<allPartitionsIContributeTo.size(); ++i) {
+        if (localNnzPerPartition[i] > maxSize) {
+          maxSize=localNnzPerPartition[i];
+          myPartitionNumber=allPartitionsIContributeTo[i];
+        }
+      }
+      GetOStream(Statistics0, 0) << "Reassigning partition " << myPartitionNumber << " to pid 0." << std::endl;
+    }
+    // Broadcast PID 0's partition number.  Whichever PID was the previous owner gives up ownership.
+    // + It may be that PID 0 didn't own a partition, in which case the number broadcast is -1.
+    //   No other PID gives up ownership because partition numbers start at 0.
+    // + It may be that PID 0 already owns a partition from the arbitration round.  This is ok
+    //   because no other PID will have that partition number.
+    int root=0;
+    int mpn=-1;
+    if (mypid==0) mpn=Teuchos::as<int>(myPartitionNumber);
+    MPI_Bcast(&mpn, 1, MPI_INT, root,*rawMpiComm);
+    if ( (mypid > 0) && (myPartitionNumber >= 0) && (Teuchos::as<int>(myPartitionNumber) == mpn) ) {
+      myPartitionNumber=-1;
+    }
+#endif //ifdef MUELU_NEVER_DROP_PROC0
+
     // 1) all pids get global snapshot of partition #s and their owners
     Array<int> allAssignedPartitions(comm->getSize());
     int pn = Teuchos::as<int>(myPartitionNumber);  
@@ -943,8 +970,7 @@ namespace MueLu {
                                "Number of partition owners (" + Teuchos::toString(numPartitionOwners) + ") is not equal to number of partitions");
 
     // print the grid of processors
-    /*
-    GetOStream(Statistics0, 0) << "Partition distribution over cores, + indicates partition ownership" << std::endl;
+    GetOStream(Statistics1, 0) << "Partition distribution over cores, + indicates partition ownership" << std::endl;
     int numProc = comm->getSize();
     ArrayRCP<char> grid(numProc, '.');
     for (int i=0; i<partitionOwners.size(); ++i) grid[ partitionOwners[i] ] = '+';
@@ -955,19 +981,18 @@ namespace MueLu {
     int pidCtr=0;
     for (int i=0; i<numRows; ++i) {
       for (int j=0; j<sizeOfARow; ++j)
-        GetOStream(Statistics0, 0) << grid[ctr++];
-      GetOStream(Statistics0, 0) << "      " << pidCtr << ":" << pidCtr+sizeOfARow-1 << std::endl;;
+        GetOStream(Statistics1, 0) << grid[ctr++];
+      GetOStream(Statistics1, 0) << "      " << pidCtr << ":" << pidCtr+sizeOfARow-1 << std::endl;;
       pidCtr += sizeOfARow;
     }
     if (leftOvers > 0) {
       for (int i=0; i<leftOvers; ++i)
-        GetOStream(Statistics0, 0) << grid[ctr++];
+        GetOStream(Statistics1, 0) << grid[ctr++];
 
       Array<char> aos(sizeOfARow-leftOvers, ' ');
       std::string spaces(aos.begin(), aos.end());
-      GetOStream(Statistics0, 0) << spaces << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
+      GetOStream(Statistics1, 0) << spaces << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
     }
-    */
 
   } //DeterminePartitionPlacement
 

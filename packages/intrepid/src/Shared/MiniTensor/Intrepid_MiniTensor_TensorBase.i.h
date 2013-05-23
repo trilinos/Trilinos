@@ -418,10 +418,7 @@ norm_f_square(TensorBase<T> const & X)
   T
   s = 0.0;
 
-  Index const
-  number_components = X.get_number_components();
-
-  for (Index i = 0; i < number_components; ++i) {
+  for (Index i = 0; i < X.get_number_components(); ++i) {
     s += X[i] * X[i];
   }
 
@@ -445,22 +442,13 @@ template<typename R, typename S, typename T>
 void
 add(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C)
 {
-  Index const
-  dimension = A.get_dimension();
+  assert(B.get_dimension() == A.get_dimension());
+  assert(B.get_order() == A.get_order());
+  assert(C.get_order() == A.get_order());
 
-  Index const
-  order = A.get_order();
+  C.set_dimension(A.get_dimension());
 
-  assert(B.get_dimension() == dimension);
-  assert(B.get_order() == order);
-  assert(C.get_order() == order);
-
-  C.set_dimension(dimension);
-
-  Index const
-  number_components = C.get_number_components();
-
-  for (Index i = 0; i < number_components; ++i) {
+  for (Index i = 0; i < C.get_number_components(); ++i) {
     C[i] = A[i] + B[i];
   }
 
@@ -474,22 +462,13 @@ template<typename R, typename S, typename T>
 void
 subtract(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C)
 {
-  Index const
-  dimension = A.get_dimension();
+  assert(B.get_dimension() == A.get_dimension());
+  assert(B.get_order() == A.get_order());
+  assert(C.get_order() == A.get_order());
 
-  Index const
-  order = A.get_order();
+  C.set_dimension(A.get_dimension());
 
-  assert(B.get_dimension() == dimension);
-  assert(B.get_order() == order);
-  assert(C.get_order() == order);
-
-  C.set_dimension(dimension);
-
-  Index const
-  number_components = C.get_number_components();
-
-  for (Index i = 0; i < number_components; ++i) {
+  for (Index i = 0; i < C.get_number_components(); ++i) {
     C[i] = A[i] - B[i];
   }
 
@@ -503,20 +482,11 @@ template<typename T>
 void
 minus(TensorBase<T> const & A, TensorBase<T> & B)
 {
-  Index const
-  dimension = A.get_dimension();
+  assert(B.get_order() == A.get_order());
 
-  Index const
-  order = A.get_order();
+  B.set_dimension(A.get_dimension());
 
-  assert(B.get_order() == order);
-
-  B.set_dimension(dimension);
-
-  Index const
-  number_components = B.get_number_components();
-
-  for (Index i = 0; i < number_components; ++i) {
+  for (Index i = 0; i < B.get_number_components(); ++i) {
     B[i] = - A[i];
   }
 
@@ -533,10 +503,7 @@ equal(TensorBase<T> const & A, TensorBase<T> const & B)
   assert(A.get_order() == B.get_order());
   assert(A.get_dimension() == B.get_dimension());
 
-  Index const
-  number_components = A.get_number_components();
-
-  for (Index i = 0; i < number_components; ++i) {
+  for (Index i = 0; i < A.get_number_components(); ++i) {
     if (A[i] != B[i]) return false;
   }
 
@@ -560,20 +527,11 @@ template<typename R, typename S, typename T>
 void
 scale(TensorBase<R> const & A, S const & s, TensorBase<T> & B)
 {
-  Index const
-  dimension = A.get_dimension();
+  assert(B.get_order() == A.get_order());
 
-  Index const
-  order = A.get_order();
+  B.set_dimension(A.get_dimension());
 
-  assert(B.get_order() == order);
-
-  B.set_dimension(dimension);
-
-  Index const
-  number_components = B.get_number_components();
-
-  for (Index i = 0; i < number_components; ++i) {
+  for (Index i = 0; i < B.get_number_components(); ++i) {
     B[i] = s * A[i];
   }
 
@@ -587,20 +545,11 @@ template<typename R, typename S, typename T>
 void
 divide(TensorBase<R> const & A, S const & s, TensorBase<T> & B)
 {
-  Index const
-  dimension = A.get_dimension();
+  assert(B.get_order() == A.get_order());
 
-  Index const
-  order = A.get_order();
+  B.set_dimension(A.get_dimension());
 
-  assert(B.get_order() == order);
-
-  B.set_dimension(dimension);
-
-  Index const
-  number_components = B.get_number_components();
-
-  for (Index i = 0; i < number_components; ++i) {
+  for (Index i = 0; i < B.get_number_components(); ++i) {
     B[i] = A[i] / s;
   }
 

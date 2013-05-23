@@ -1062,7 +1062,70 @@ void performance_test_driver_poly( const int pdeg ,
 
   //------------------------------
 }
+
+#else
+
+template< class Scalar, class Device >
+void performance_test_driver_poly( const int pdeg ,
+				   const int minvar ,
+				   const int maxvar ,
+				   const int nGrid ,
+				   const int nIter ,
+				   const bool print ,
+				   const bool test_block ,
+				   const bool check )
+{
+  std::cout.precision(8);
+
+  //------------------------------
+
+  std::vector< std::vector<size_t> > fem_graph ;
+  const size_t graph_length =
+    unit_test::generate_fem_graph( nGrid , fem_graph );
+  std::cout << std::endl << "\"FEM NNZ = " << graph_length << "\"" << std::endl;
+
+  std::cout << std::endl
+	    << "\"#nGrid\" , "
+            << "\"#Variable\" , \"PolyDegree\" , \"#Bases\" , "
+            << "\"#TensorEntry\" , "
+            << "\"VectorSize\" , "
+            << "\"Block-Crs-Legendre-Legendre MXV-GFLOPS\""
+            << std::endl ;
+
+  for ( int nvar = minvar ; nvar <= maxvar ; ++nvar ) {
+
+    std::vector<int> var_degree( nvar , pdeg );
+
+    const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
+      tensor( std::vector<unsigned>( nvar , unsigned(pdeg) ) );
+
+    const size_t stoch_length = tensor.bases_count();
+    size_t stoch_nonzero = 0 ;
+
+    for ( size_t i = 0 ; i < stoch_length ; ++i ) {
+    for ( size_t j = i ; j < stoch_length ; ++j ) {
+    for ( size_t k = j ; k < stoch_length ; ++k ) {
+      if ( tensor.is_non_zero(i,j,k) ) ++stoch_nonzero ;
+    }}}
+
+    const std::vector<double> perf_crs_product_tensor_legendre =
+      test_product_tensor_legendre< KokkosArray::CrsProductTensorLegendre< Scalar , Device > , Scalar , Scalar >(
+	var_degree , nGrid , nIter , check );
+
+    std::cout << nGrid << " , "
+	      << nvar << " , " << pdeg << " , "
+	      << tensor.bases_count() << " , "
+	      << stoch_nonzero << " , "
+	      << perf_crs_product_tensor_legendre[0] << " , "
+	      << perf_crs_product_tensor_legendre[2]
+	      << std::endl ;
+  }
+
+  //------------------------------
+}
 #endif
+
+
 
 template< class Scalar, class Device >
 struct performance_test_driver {

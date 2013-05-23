@@ -234,6 +234,8 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     for (int part = 0 ; part < NumLocalParts_ ; ++part) {
       for (size_t i = 0; i < (size_t)Parts_[part].size() ; ++i) {  
 	LocalOrdinal LRID = Parts_[part][i];
+        tmp[part].push_back(LRID);
+
 	size_t NumIndices;
 	Graph_->getLocalRowCopy(LRID,Indices(),NumIndices);
 

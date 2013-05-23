@@ -37,14 +37,27 @@ int test_cuda( comm::Machine machine , std::istream & input )
     }
   }
 
-  std::ostringstream label ;
+  device += parallel_rank % device_count ;
 
-  label << "Cuda[" << device << "]" ;
+  KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice( device ) );
 
-  KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice( ( device + parallel_rank ) % device_count ) );
+  {
+    std::ostringstream label ;
 
-  implicit_driver<double,KokkosArray::Cuda>( label.str().c_str() , machine , 1 ,
-                                             elem_beg , elem_end , run );
+    label << "Scalar, CudaArch[" << KokkosArray::Cuda::detect_device_arch()[device] << "]" ;
+
+    implicit_driver<double,KokkosArray::Cuda>(
+      label.str().c_str() , machine , 1 , elem_beg , elem_end , run );
+  }
+
+  {
+    std::ostringstream label ;
+
+    label << "Ensemble[32], CudaArch[" << KokkosArray::Cuda::detect_device_arch()[device] << "]" ;
+
+    implicit_driver< KokkosArray::Array<double,32> , KokkosArray::Cuda>(
+      label.str().c_str() , machine , 1 , elem_beg , elem_end , run );
+  }
 
   KokkosArray::Cuda::finalize();
 

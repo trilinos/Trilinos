@@ -57,62 +57,6 @@
 namespace {
   // Default value of Import's "Debug" parameter.
   const bool tpetraImportDebugDefault = false;
-
-#ifdef TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
-  /// \class project1st
-  /// \brief Binary function that returns its first argument.
-  /// \tparam Arg1 Type of the first argument, and type of the
-  ///   return value.
-  /// \tparam Arg2 Type of the second argument.  It may differ from
-  ///   the type of the first argument.
-  ///
-  /// This function object is actually an SGI extension to the STL.
-  /// We can't count on it living in the std namespace, but it's
-  /// useful, so we define it here.
-  ///
-  /// If you apply <tt>using namespace std;</tt> to the global
-  /// namespace, and if your STL implementation includes project1st,
-  /// it will cause collisions with this definition.  We recommend for
-  /// this and other reasons not to state <tt>using namespace
-  /// std;</tt> in the global namespace.
-  template<class Arg1, class Arg2>
-  class project1st : public std::binary_function<Arg1, Arg2, Arg1> {
-  public:
-    typedef Arg1 first_argument_type;
-    typedef Arg2 second_argument_type;
-    typedef Arg1 result_type;
-    Arg1 operator () (const Arg1& x, const Arg2& ) const {
-      return x;
-    }
-  };
-
-  /// \class project2nd
-  /// \brief Binary function that returns its second argument.
-  /// \tparam Arg1 Type of the first argument.
-  /// \tparam Arg2 Type of the second argument, and type of the return
-  ///   value.  It may differ from the type of the first argument.
-  ///
-  /// This function object is actually an SGI extension to the STL.
-  /// We can't count on it living in the std namespace, but it's
-  /// useful, so we define it here.
-  ///
-  /// If you apply <tt>using namespace std;</tt> to the global
-  /// namespace, and if your STL implementation includes project1st,
-  /// it will cause collisions with this definition.  We recommend for
-  /// this and other reasons not to state <tt>using namespace
-  /// std;</tt> in the global namespace.
-  template<class Arg1, class Arg2>
-  class project2nd : public std::binary_function<Arg1, Arg2, Arg2> {
-  public:
-    typedef Arg1 first_argument_type;
-    typedef Arg2 second_argument_type;
-    typedef Arg2 result_type;
-    Arg2 operator () (const Arg1& , const Arg2& y) const {
-      return y;
-    }
-  };
-#endif // TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
-
 } // namespace (anonymous)
 
 namespace Tpetra {

@@ -18,7 +18,6 @@ int test_host( comm::Machine machine , std::istream & input )
   unsigned elem_beg = 3 ;
   unsigned elem_end = 4 ;
   unsigned run = 1 ;
-  bool     ensemble = false ;
 
   while ( ! input.eof() ) {
     std::string which ;
@@ -34,9 +33,6 @@ int test_host( comm::Machine machine , std::istream & input )
       input >> elem_end ;
       input >> run ;
     }
-    else if ( which == std::string("ensemble") ) {
-      ensemble = true ;
-    }
     else {
       std::cerr << "Expected \"gang #Gang #Worker\" OR \"implicit #ElemBeg #ElemEnd #Run\""
                 << std::endl ;
@@ -44,20 +40,34 @@ int test_host( comm::Machine machine , std::istream & input )
     }
   }
 
-  std::ostringstream label ;
-
-  label << "Host[" << gang_top.first << "x" << gang_top.second << "]" ;
+  if ( 0 == comm::rank( machine ) ) {
+    std::cout << "\"P" << comm::rank( machine )
+              << ": hwloc[ " << core_top.first
+              << " x " << core_top.second
+              << " x " << core_size
+              << " ] Host[ " << gang_top.first
+              << " x " << gang_top.second
+              << " ]\"" << std::endl ;
+  }
 
   KokkosArray::Host::initialize( gang_top , core_top );
 
-  if ( ensemble ) {
-    implicit_driver< KokkosArray::Array<double,32> ,
-                     KokkosArray::Host>( label.str().c_str() , machine , gang_top.first ,
-                                         elem_beg , elem_end , run );
+  {
+    std::ostringstream label ;
+
+    label << "Scalar, Host[" << gang_top.first << "x" << gang_top.second << "]" ;
+
+    implicit_driver<double,KokkosArray::Host>(
+      label.str().c_str() , machine , gang_top.first , elem_beg , elem_end , run );
   }
-  else {
-    implicit_driver<double,KokkosArray::Host>( label.str().c_str() , machine , gang_top.first ,
-                                               elem_beg , elem_end , run );
+
+  {
+    std::ostringstream label ;
+
+    label << "Ensemble[32], Host[" << gang_top.first << "x" << gang_top.second << "]" ;
+
+    implicit_driver< KokkosArray::Array<double,32> , KokkosArray::Host>(
+      label.str().c_str() , machine , gang_top.first , elem_beg , elem_end , run );
   }
 
   KokkosArray::Host::finalize();
