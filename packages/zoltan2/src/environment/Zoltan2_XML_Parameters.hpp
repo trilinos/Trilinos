@@ -238,6 +238,10 @@
     id=\"40\" name=\"remap_parts\" type=\"string\" validatorId=\"40\" value=\"no\" \
     docString='  remap part numbers to minimize migration between old and new partitions' \
     /> \
+   <Parameter  \
+    id=\"41\" name=\"migration_doMigration_type\" type=\"int\" validatorId=\"41\" value=\"1\" \
+    docString=\"Migration doMigration type, 0 for using tpetra::multivector doMigration, 1 for Zoltan1_Comm\" \
+    /> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
         <String integralValue=\"0\" stringDoc=\"no assertions will be performed\" stringValue=\"no_assertions\"/> \
@@ -426,6 +430,7 @@
       <Validator defaultParameterName=\"migration_all_to_all_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"37\"/> \
       <Validator defaultParameterName=\"migration_check_option\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"38\"/> \
       <Validator defaultParameterName=\"migration_processor_assignment_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"39\"/> \
+      <Validator defaultParameterName=\"migration_doMigration_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"41\"/> \
       <Validator defaultParameterName=\"remap_parts\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"40\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
         <String integralValue=\"1\" stringValue=\"yes\"/> \

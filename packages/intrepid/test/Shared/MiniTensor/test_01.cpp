@@ -608,6 +608,33 @@ TEUCHOS_UNIT_TEST(MiniTensor, Tensor4Filling)
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
 }
 
+TEUCHOS_UNIT_TEST(MiniTensor, Tensor4Products)
+{
+  Index const
+  dimension = 3;
+
+  Tensor4<Real> const
+  A(dimension, ONES);
+
+  Real const
+  factor = 2.0;
+
+  Tensor4<Real> const
+  B = factor * A;
+
+  Real
+  error = norm_f_square(B) - factor * factor * B.get_number_components();
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  Tensor4<Real> const
+  C = A * factor;
+
+  error = norm_f_square(C) - factor * factor * C.get_number_components();
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+}
+
 TEUCHOS_UNIT_TEST(MiniTensor, Initialization)
 {
   FieldContainer<Real> FC(3, 3);

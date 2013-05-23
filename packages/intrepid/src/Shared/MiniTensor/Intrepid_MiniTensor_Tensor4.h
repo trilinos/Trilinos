@@ -336,6 +336,16 @@ Tensor4<typename Promote<S, T>::type>
 tensor2(Tensor<S> const & A, Tensor<T> const & B);
 
 ///
+/// 2nd-order tensor 2nd-order tensor tensor product
+/// \param A 2nd-order tensor
+/// \param B 2nd-order tensor
+/// \return \f$ C_{ijkl} = A_{il} B_{kj} \f$
+///
+template<typename S, typename T>
+Tensor4<typename Promote<S, T>::type>
+tensor3(Tensor<S> const & A, Tensor<T> const & B);
+
+///
 /// 4th-order tensor 2nd-order tensor dot product
 /// \param A 4th-order tensor
 /// \param B 2nd-order tensor

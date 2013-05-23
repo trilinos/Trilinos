@@ -136,10 +136,10 @@ public:
   get_dimension() const;
 
   ///
-  /// \param N dimension of vector
+  /// \param dimension of vector
   ///
   void
-  set_dimension(Index const N);
+  set_dimension(Index const dimension);
 
   ///
   /// \return total number of components

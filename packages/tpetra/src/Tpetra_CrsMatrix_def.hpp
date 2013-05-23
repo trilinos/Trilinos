@@ -1456,7 +1456,7 @@ namespace Tpetra {
            class LocalMatOps>
   void
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  sumIntoGlobalValues (GlobalOrdinal globalRow,
+  sumIntoGlobalValues (const GlobalOrdinal globalRow,
                        const ArrayView<const GlobalOrdinal> &indices,
                        const ArrayView<const Scalar>        &values)
 
@@ -1483,7 +1483,7 @@ namespace Tpetra {
             class LocalMatOps>
   void
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  sumIntoLocalValues (LocalOrdinal localRow,
+  sumIntoLocalValues (const LocalOrdinal localRow,
                       const ArrayView<const LocalOrdinal>  &indices,
                       const ArrayView<const Scalar>        &values)
   {
