@@ -345,6 +345,99 @@ minimum_distances(std::vector< std::vector<T> > const & distances);
 ELEMENT::Type
 find_type(Index const dimension, Index const number_nodes);
 
+///
+/// Spherical parametrization functor
+///
+template<typename T>
+class SphericalParametrization
+{
+public:
+
+  ///
+  /// Constructor that takes material tangent
+  ///
+  SphericalParametrization(Tensor4<T> const & A = identity_1<T>(3));
+
+  ///
+  ///
+  ///
+  void
+  operator()(Vector<T> const & parameters);
+
+  T
+  get_minimum() const {return minimum_;};
+
+  T
+  get_maximum() const {return maximum_;};
+
+  Vector<T>
+  get_arg_minimum() const {return arg_minimum_;};
+
+  Vector<T>
+  get_arg_maximum() const {return arg_maximum_;};
+
+private:
+
+  Tensor4<T> const &
+  tangent_;
+
+  T
+  minimum_;
+
+  Vector<T>
+  arg_minimum_;
+
+  T
+  maximum_;
+
+  Vector<T>
+  arg_maximum_;
+};
+
+///
+/// Parametric grid class
+///
+template<typename T>
+class ParametricGrid
+{
+
+public:
+
+  ///
+  /// Default constructor
+  ///
+  ParametricGrid() {};
+
+  ///
+  /// Constructor that defines grid limits
+  /// \param lower limit
+  /// \param upper limit
+  /// \param vector that defines the number of points in each dimension
+  ///
+  ParametricGrid(
+      Vector<T> const & lower,
+      Vector<T> const & upper,
+      Vector<Index> const & points_per_dimension);
+
+  ///
+  ///
+  template<typename Visitor>
+  void
+  traverse(Visitor & visitor) const;
+
+private:
+
+  Vector<T>
+  lower_;
+
+  Vector<T>
+  upper_;
+
+  Vector<Index>
+  points_per_dimension_;
+
+};
+
 } // namespace Intrepid
 
 #include "Intrepid_MiniTensor_Geometry.i.h"

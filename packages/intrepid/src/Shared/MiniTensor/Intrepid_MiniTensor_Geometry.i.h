@@ -146,6 +146,151 @@ find_type(Index const dimension, Index const number_nodes)
   return type;
 }
 
+//
+// Constructor for SphericalParametrization
+//
+template<typename T>
+inline
+SphericalParametrization<T>::SphericalParametrization(
+    Tensor4<T> const & A) : tangent_(A)
+{
+  minimum_ = std::numeric_limits<T>::max();
+  maximum_ = std::numeric_limits<T>::min();
+  return;
+}
+
+//
+// Evaluation for SphericalParemetrization
+//
+template<typename T>
+inline
+void
+SphericalParametrization<T>::operator()(Vector<T> const & parameters)
+{
+  assert(parameters.get_dimension() == 2);
+
+  T const &
+  phi = parameters(0);
+
+  T const &
+  theta = parameters(1);
+
+  Vector<T> const
+  normal(sin(phi) * sin(theta), cos(phi), sin(phi) * cos(theta));
+
+  // Localization tensor
+  Tensor<T> const
+  Q = dot(normal, dot(tangent_, normal));
+
+  T const
+  determinant = det(Q);
+
+  if (determinant < minimum_) {
+    minimum_ = determinant;
+    arg_minimum_ = parameters;
+  }
+
+  if (determinant > maximum_) {
+    maximum_ = determinant;
+    arg_maximum_ = parameters;
+  }
+
+  return;
+}
+
+//
+// Constructor for ParametricGrid
+//
+template<typename T>
+inline
+ParametricGrid<T>::ParametricGrid(
+    Vector<T> const & lower,
+    Vector<T> const & upper,
+    Vector<Index> const & points_per_dimension)
+{
+  assert(lower.get_dimension() == upper.get_dimension());
+  assert(lower.get_dimension() == points_per_dimension.get_dimension());
+
+  lower_ = lower;
+  upper_ = upper;
+  points_per_dimension_ = points_per_dimension;
+
+  return;
+}
+
+//
+// Find minimum for ParametricGrid
+//
+template<typename T>
+template<typename Visitor>
+inline
+void
+ParametricGrid<T>::traverse(Visitor & visitor) const
+{
+  // Loop over the grid
+  Index const
+  number_parameters = lower_.get_dimension();
+
+  LongCount
+  total_number_points = 1;
+
+  for (Index dimension = 0; dimension < number_parameters; ++dimension) {
+    total_number_points *= points_per_dimension_(dimension);
+  }
+
+  //std::cout << "Total number of points: " << total_number_points << std::endl;
+
+  Vector<LongCount>
+  steps(number_parameters, ONES);
+
+  for (Index dimension = 1; dimension < number_parameters; ++dimension) {
+    steps(dimension) =
+        steps(dimension - 1) * points_per_dimension_(dimension - 1);
+  }
+
+  //std::cout << "Points per dimension  : " << points_per_dimension_ << std::endl;
+  //std::cout << "Steps                 : " << steps << std::endl;
+
+  Vector<Index>
+  indices(number_parameters, ZEROS);
+
+  Vector<T>
+  position_in_grid(number_parameters, ZEROS);
+
+  Vector<T>
+  span = upper_ - lower_;
+
+  for (LongCount point = 1;  point <= total_number_points; ++point) {
+
+    //std::cout << "Indices : ";
+
+    for (Index dimension = 0; dimension < number_parameters; ++dimension) {
+
+      position_in_grid(dimension) = indices(dimension) * span(dimension) /
+          (points_per_dimension_(dimension) - 1) + lower_(dimension);
+
+      visitor(position_in_grid);
+
+      //std::cout << indices(dimension) << " ";
+
+      // Check if index needs to be increased or rolled back
+      if (point % steps(dimension) == 0) {
+        ++indices(dimension);
+      }
+      if (indices(dimension) == points_per_dimension_(dimension)) {
+        indices(dimension) = 0;
+      }
+
+    }
+
+    //std::cout << std::endl;
+    //std::cout << "Position : " << position_in_grid << std::endl;
+
+  }
+
+  return;
+}
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Geometry_i_h

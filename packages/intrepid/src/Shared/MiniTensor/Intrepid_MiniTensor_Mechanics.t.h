@@ -547,6 +547,47 @@ piola_inverse(Tensor<T> const & F, Tensor<T> const & P)
   return dot_t(P, F) / J;
 }
 
+//
+// Check strict ellipticity condition for 4th-order tensor.
+// Assume A has major symmetries.
+//
+template<typename T>
+bool
+check_strict_ellipticity(Tensor4<T> const & A)
+{
+  // Convert to 2nd-order tensor
+  Tensor<T> const
+  B(A);
+
+  // Check bounds for eigenvalues
+  T const
+  lower_bound = bounds_eigenvalues(B).first;
+
+  if (lower_bound > 0.0) {
+    return true;
+  }
+
+  // Get eigenvalues only
+  Vector<T> const
+  D = diag(eig_sym(B).second);
+
+  T const
+  smallest_eigenvalue = D(B.get_dimension() - 1);
+
+  if (smallest_eigenvalue > 0.0) {
+    return true;
+  }
+
+  return false;
+}
+
+//
+// Check strong ellipticity condition for 4th-order tensor.
+// Assume A has major symmetries.
+//
+template<typename T>
+bool
+check_strong_ellipticity(Tensor4<T> const & A);
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Mechanics_t_h

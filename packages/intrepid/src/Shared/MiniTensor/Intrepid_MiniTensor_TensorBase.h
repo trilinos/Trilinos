@@ -51,12 +51,12 @@
 #include "Intrepid_MiniTensor_Storage.h"
 #include "Intrepid_MiniTensor_Utilities.h"
 
+namespace Intrepid {
+
 ///
 /// Type for setting components all at once
 ///
 enum ComponentValue {ZEROS, ONES, RANDOM};
-
-namespace Intrepid {
 
 ///
 /// Base class for all vector and tensor types.
