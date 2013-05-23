@@ -690,8 +690,9 @@ namespace stk
             // x,y,z: [-.08,.08],[-.08,.08],[-.5,-.2]
             double delta_shock_displacement = 0.02;
             double shock_displacement = 0.0;
-            int num_ref_passes = 1;
+            int num_ref_passes = 3;
             int num_unref_passes = 1;
+            static int cnt1=0;
 
             for (int istep = 0; istep < num_time_steps; istep++)
               {
@@ -716,6 +717,23 @@ namespace stk
 #endif
 
                 eMesh.save_as(output_files_loc+prefix+"tmp_square_sidesets_moving_shock_ref_"+post_fix[p_size]+".e.s-"+toString(istep+1));
+
+                if (1)
+                  {
+                    eMesh.nodalOpLoop(srp, nodal_refine_field);
+                  }
+
+                if (1)
+                  {
+                    char buf[1000];
+                    sprintf(buf, "%04d", cnt1);
+                    if (cnt1==0)
+                      eMesh.save_as(prefix+"ref.e");
+                    else
+                      eMesh.save_as(prefix+"ref.e-s"+std::string(buf));
+                    ++cnt1;
+                  }
+ 
                 if (0)
                   {
                     char buf[1000];
@@ -732,7 +750,7 @@ namespace stk
                     std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass <<  std::endl;
 
                     // preUnrefine - remove children and grandchildren, remesh
-                    if (1)
+                    if (0)
                       {
                         if (0)  // plotting
                           {
@@ -836,7 +854,7 @@ namespace stk
 
                       }
 
-                    if (istep == 82)
+                    if (istep == 12)
                       {
                         Util::setFlag(1256,true);
                       }
@@ -845,14 +863,17 @@ namespace stk
                         Util::setFlag(1257,true);
                       }
 
-                    ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
-                    breaker.unrefineTheseElements(elements_to_unref);
+                    if (0)
+                      {
+                        ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+                        breaker.unrefineTheseElements(elements_to_unref);
+                      }
 
                     if (1)
-                    {
-                      elements_to_unref = breaker.buildUnrefineList();
-                      breaker.unrefinePass2(elements_to_unref);
-                    }
+                      {
+                        ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+                        breaker.unrefinePass2(elements_to_unref);
+                      }
 
                     if (istep==11)
                       {
@@ -867,6 +888,23 @@ namespace stk
 
                     std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
                   }
+                if (1)
+                  {
+                    eMesh.nodalOpLoop(srp, nodal_refine_field);
+                  }
+
+
+                if (1)
+                  {
+                    char buf[1000];
+                    sprintf(buf, "%04d", cnt1);
+                    if (cnt1==0)
+                      eMesh.save_as(prefix+"ref.e");
+                    else
+                      eMesh.save_as(prefix+"ref.e-s"+std::string(buf));
+                    ++cnt1;
+                  }
+
                 if (1)
                   {
                     char buf[1000];
@@ -968,7 +1006,7 @@ namespace stk
             eMesh2.open(input_files_loc+"square_tri3_uns_xformed.e");
             //int num_time_steps = 10;  // 10 for stress testing
             //for (int istep=1; istep <= num_time_steps; istep++)
-            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh2, 84, false, false);
+            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh2, 84, false, false); 
           }
         }
       }

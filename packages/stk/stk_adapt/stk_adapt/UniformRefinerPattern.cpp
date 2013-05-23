@@ -217,7 +217,9 @@ namespace stk {
               if (family_tree_relations[i].relation_ordinal() == (ordinal + 1))
                 {
                   std::cout << "UniformRefinerPatternBase::set_parent_child_relations trying to refine a parent element again, or error in ordinal ["
-                            << ordinal << "]" << " family_tree_relations.size= " << family_tree_relations.size() << std::endl;
+                            << ordinal << "]" << " family_tree_relations.size= " << family_tree_relations.size() 
+                            << " parent_elem= " << parent_elem.identifier()
+                            << std::endl;
                   throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations trying to refine a parent element again, or error in ordinal");
                 }
             }

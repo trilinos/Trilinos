@@ -257,7 +257,8 @@ namespace stk
         double plane_point_init[3]; // = {2 + shock_displacement,0,0};
         double plane_normal[3]; // = {1, 0, 0};
         double plane_point[3]; // = {2 + shock_displacement,0,0};
-
+        double shock_width;
+        
         PlaneShock()
         {
           plane_point_init[0]=0;
@@ -269,6 +270,7 @@ namespace stk
           plane_normal[0]=1;
           plane_normal[1]=0;
           plane_normal[2]=0;
+          shock_width = 0.0;
         }
 
         void setCurrentPlanePoint(double shock_displacement)
@@ -338,12 +340,21 @@ namespace stk
         shock.setCurrentPlanePoint(shock_displacement);
         double *plane_point = shock.plane_point;
         double *plane_normal = shock.plane_normal;
+        double shock_w = shock.shock_width;
 
         if (distance(coord0, coord1) < 1./200.)
           return DO_UNREFINE;
 
         double dot_0 = plane_dot_product(plane_point, plane_normal, coord0);
         double dot_1 = plane_dot_product(plane_point, plane_normal, coord1);
+
+        if (nodal_refine_field)
+          {
+            double *fd0 = eMesh.field_data(nodal_refine_field, node0);
+            double *fd1 = eMesh.field_data(nodal_refine_field, node1);
+            fd0[0] = dot_0 < 0? -1 : 1;
+            fd1[0] = dot_1 < 0? -1 : 1;
+          }
 
         if (dot_0*dot_1 < 0)
           return DO_REFINE;
@@ -450,7 +461,7 @@ namespace stk
 
       // This can be used as an edge or element-based predicate
 
-      struct ShockBasedRefinePredicate1 : public IEdgeBasedAdapterPredicate, IElementBasedAdapterPredicate, percept::ElementOp {
+      struct ShockBasedRefinePredicate1 : public IEdgeBasedAdapterPredicate, IElementBasedAdapterPredicate, percept::ElementOp,  GenericFunction {
 
         percept::PerceptMesh& m_eMesh;
         stk::mesh::FieldBase * m_nodal_refine_field;
@@ -567,6 +578,22 @@ namespace stk
         }
         virtual void init_elementOp() {}
         virtual void fini_elementOp() {}
+
+        // nodal op
+        virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
+        {
+          double x = domain(0);
+          double y = domain(1);
+          int spatialDimension = m_eMesh.get_spatial_dim();
+          double z = (spatialDimension==3?domain(2):0);
+          m_shock.setCurrentPlanePoint(m_shock_displacement);
+          double *plane_point = m_shock.plane_point;
+          double *plane_normal = m_shock.plane_normal;
+
+          double coord0[] = {x,y,z};
+          double dot_0 = plane_dot_product(plane_point, plane_normal, coord0);
+          codomain(0) = dot_0 < 0? -1 : 1;
+        }
 
       };
 

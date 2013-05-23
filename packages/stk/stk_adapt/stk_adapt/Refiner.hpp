@@ -248,10 +248,19 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destro
       unrefinePass2(ElementUnrefineCollection& elements_to_unref);
 
     protected:
+
       void
-      remeshGrandParents(SetOfEntities& grandParents);
+      remeshRecurse(stk::mesh::Entity element);
+
+      void
+      remeshElements(SetOfEntities& rootElements);
+
+      void allDescendants(stk::mesh::Entity element, SetOfEntities& descendants, unsigned& nlevels, bool only_leaves=false);
       void
       filterUnrefSetPass2(ElementUnrefineCollection& elements_to_unref,   SetOfEntities& grandParents);
+      void
+      filterRecurse(stk::mesh::Entity element, ElementUnrefineCollection& rootElements, ElementUnrefineCollection& elements_to_unref);
+
 
       void
       removeDeletedNodes(NodeSetType& deleted_nodes);

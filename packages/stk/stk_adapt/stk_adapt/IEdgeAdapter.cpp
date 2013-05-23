@@ -162,11 +162,11 @@ namespace stk {
 
                 // FIXME
                 // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error is isParentElement)
-                const bool check_for_family_tree = false;
-                bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
-                bool hasFamilyTree = m_eMesh.hasFamilyTree(element);
+                //const bool check_for_family_tree = false;
+                //bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
+                //bool hasFamilyTree = m_eMesh.hasFamilyTree(element);
 
-                if (hasFamilyTree && !isParent)
+                //if (hasFamilyTree && !isParent)
                   {
                     const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
@@ -185,7 +185,6 @@ namespace stk {
           }
         }
 
-      std::cout << "srk tmp IEdgeAdapter::buildUnrefineList size = " << elements_to_unref.size() << std::endl;
       return elements_to_unref;
     }
 

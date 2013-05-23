@@ -699,7 +699,7 @@ namespace stk {
         else
           {
             PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
-            basis->getValues(basis_val, input_param_coords, OPERATOR_VALUE);
+            basis->getValues(basis_val, input_param_coords, Intrepid::OPERATOR_VALUE);
           }
         if (0)
           std::cout << "\n tmp input_param_coords= "
@@ -809,7 +809,7 @@ namespace stk {
                         input_param_coords_tmp(0, ip) = param_coord[ip];
                       }
 
-                    basis->getValues(output_tmp, input_param_coords_tmp, OPERATOR_VALUE);
+                    basis->getValues(output_tmp, input_param_coords_tmp, Intrepid::OPERATOR_VALUE);
                     bool found = false;
                     for (unsigned ii=0; ii < elem_nodes.size(); ii++)
                       {
