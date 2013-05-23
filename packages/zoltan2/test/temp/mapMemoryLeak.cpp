@@ -129,6 +129,7 @@ int main(int narg, char **arg)
 
   if (me == 0) {
     if (weAreOK) std::cout << "PASS" << std::endl;
-    else         std::cout << "FAIL" << std::endl;
+    else         std::cout << "FAIL before " << before
+                           << " != after " << after << std::endl;
   }
 }
