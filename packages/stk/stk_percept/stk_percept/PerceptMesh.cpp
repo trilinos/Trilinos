@@ -2582,7 +2582,7 @@ namespace stk {
     // static
     void PerceptMesh::
     findMinMaxEdgeLength(const stk::mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
-                         FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length)
+                         Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length)
     {
       const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
 

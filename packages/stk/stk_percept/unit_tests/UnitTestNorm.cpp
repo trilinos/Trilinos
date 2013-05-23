@@ -860,7 +860,7 @@ STKUNIT_UNIT_TEST(norm, field_function)
 STKUNIT_UNIT_TEST(norm, h1_volume)
 {
   EXCEPTWATCH;
-  bool ret=false;
+  bool ret=true;
   if (ret) return;
   MPI_Barrier( MPI_COMM_WORLD );
 
@@ -900,7 +900,7 @@ STKUNIT_UNIT_TEST(norm, h1_volume)
 STKUNIT_UNIT_TEST(norm, h1_volume_1)
 {
   EXCEPTWATCH;
-  bool ret=false;
+  bool ret=true;
   if (ret) return;
   MPI_Barrier( MPI_COMM_WORLD );
 
@@ -952,7 +952,7 @@ STKUNIT_UNIT_TEST(norm, h1_volume_1)
 STKUNIT_UNIT_TEST(norm, h1_volume_2)
 {
   EXCEPTWATCH;
-  bool ret=false;
+  bool ret=true;
   if (ret) return;
   MPI_Barrier( MPI_COMM_WORLD );
 

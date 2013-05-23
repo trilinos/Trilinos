@@ -48,6 +48,9 @@
 #include <stk_percept/function/internal/ComputeBases.hpp>
 #include <stk_percept/function/internal/ComputeFieldValues.hpp>
 
+//using namespace std;
+using namespace Intrepid;
+
 namespace stk
 {
   namespace percept
@@ -318,7 +321,7 @@ namespace stk
     IntrepidManager::IntegrandValuesDOF::
     copyFrom(MDArray& mda)
     {
-      copy(&mda[0], &mda[0] + mda.size(), this->contiguous_data());
+      std::copy(&mda[0], &mda[0] + mda.size(), this->contiguous_data());
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -333,7 +336,7 @@ namespace stk
     IntrepidManager::IntegrandValues::
     copyFrom(MDArray& mda)
     {
-      copy(&mda[0], &mda[0] + mda.size(), this->contiguous_data());
+      std::copy(&mda[0], &mda[0] + mda.size(), this->contiguous_data());
     }
     void
     IntrepidManager::IntegrandValues::
