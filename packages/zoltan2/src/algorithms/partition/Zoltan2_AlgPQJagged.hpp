@@ -56,15 +56,13 @@
 #include <Tpetra_Distributor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <new>          // ::operator new[]
-
-#include "zoltan_comm_cpp.h"
 #include <algorithm>    // std::sort
-
-
 
 //#define enable_migration2
 
-
+#ifdef enable_migration2
+#include "zoltan_comm_cpp.h"
+#endif
 //#define FIRST_TOUCH
 //#define BINARYCUTSEARCH
 //#define Zoltan_Comm
@@ -2711,7 +2709,7 @@ RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_initial_m
 #endif
     for (int i=0;  i < weight_dim; ++i){
         int j = i + coord_dim;
-        if (j >= pqJagged_multiVectorDim - 1) break;
+        //if (j >= pqJagged_multiVectorDim - 1) break;
         //cout << "setting j:" << j << endl;
         if(numLocalPoints > 0){
             Teuchos::ArrayView<const scalar_t> a(weight[i], numLocalPoints);
@@ -4137,7 +4135,7 @@ void doAll2All(
             weights[i] = allocMemory<scalar_t>(incoming);
             ierr = Zoltan_Comm_Do(
                     plan, message_tag,
-                    (char *) weights,
+                    (char *) weight,
                     sizeof(scalar_t), (char *) weights[i]);
             freeArray<scalar_t>(weight);
         }
@@ -5366,6 +5364,7 @@ void AlgPQJagged(
 #endif
     RCP<const mvector_t> mvector;
     if(migration_actualMigration_option == 0){
+
             mvector =  create_initial_multi_vector <gno_t,lno_t,scalar_t,node_t>(
                     env,
                     comm,
@@ -5377,6 +5376,7 @@ void AlgPQJagged(
                     pqJagged_weights,  //weight,
                     pqJagged_multiVectorDim// multiVectorDim
             );
+
     }
     else {
         for (int i=0; i < coordDim; i++){
@@ -5975,13 +5975,13 @@ void AlgPQJagged(
     env->timerStop(MACRO_TIMERS, "PQJagged Part_Assignment");
     ArrayRCP<const gno_t> gnoList;
     if(!is_data_migrated){
+
         if(numLocalCoords > 0){
             gnoList = arcpFromArrayView(pqJagged_gnos);
         }
     }
 #ifdef enable_migration2
     else {
-
         if(migration_actualMigration_option == 0){
             gnoList = arcpFromArrayView(mvector->getMap()->getNodeElementList());
         }
