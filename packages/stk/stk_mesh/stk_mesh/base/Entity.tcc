@@ -6,7 +6,9 @@
 // but throw for now.
 #define STK_MESH_ENTITY_IS_POD
 
+#ifndef STK_MESH_DISALLOW_DEPRECATED_ENTITY_FNS
 #define STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
+#endif
 
 namespace stk {
 namespace adapt {
@@ -147,6 +149,7 @@ union Entity
   // NEED TO REFACTOR CALLERS TO ELIMINATE THE FOLLOWING
   //
 
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   bool is_valid() const;
   EntityState state() const;
   EntityRank entity_rank() const;
@@ -160,6 +163,7 @@ union Entity
   PairIterRelation relations( EntityRank type ) const;
   PairIterRelation node_relations() const;
   int owner_rank() const;
+#endif
 
 
 #ifdef SIERRA_MIGRATION
@@ -190,6 +194,7 @@ union Entity
     const int         owner,
     const int         parallel_rank);
 
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   int global_id() const ;
   unsigned local_id() const;
   void set_local_id(unsigned int l_id);
@@ -200,8 +205,6 @@ union Entity
   unsigned size_connection() const;
   unsigned inc_connection();
   unsigned dec_connection();
-
-  bool is_handled_generically(const RelationType relation_type) const;
 
   RelationIterator aux_relation_begin() const;
   RelationIterator aux_relation_end() const;
@@ -214,6 +217,9 @@ union Entity
   const void* get_shared_attr() const;
 
   void set_relation_orientation(RelationIterator rel, unsigned orientation);
+#endif
+
+  bool is_handled_generically(const RelationType relation_type) const;
 
 private:
 
