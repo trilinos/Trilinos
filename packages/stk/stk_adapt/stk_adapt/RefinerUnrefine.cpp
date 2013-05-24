@@ -1139,6 +1139,18 @@ namespace stk {
       //unsigned elsizeb4 = elements_to_unref.size();
       filterUnrefSetPass2(elements_to_unref, rootElements);
 
+      if (DEBUG_UNREF_1)
+        {
+          static int cnt1=0;
+          char buf[1000];
+          sprintf(buf, "%04d", cnt1);
+          if (cnt1==0)
+            m_eMesh.save_as("fref.e");
+          else
+            m_eMesh.save_as("fref.e-s"+std::string(buf));
+          ++cnt1;
+        }
+
       // get kept nodes
       // FIXME - check conditions inside getKeptNodes
       //getKeptNodes(kept_nodes, all_kept_nodes_elements);
@@ -1267,10 +1279,12 @@ namespace stk {
       fix_side_sets_2(allow_not_found);
 
       // FIXME
-      // getSideParentsToBeRemeshed(parent_elements, parent_side_elements);
+      SetOfEntities parent_side_elements(*m_eMesh.get_bulk_data());
+      getSideParentsToBeRemeshed(rootElements, parent_side_elements);
 
       // remesh the holes left by removing child elems (quad/hex hanging node doesn't need this)
       remeshElements(rootElements);
+      remeshElements(parent_side_elements);
       // FIXME side sets...
 
       // remove any elements that are empty (these can exist when doing local refinement)

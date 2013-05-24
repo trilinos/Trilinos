@@ -870,14 +870,14 @@ namespace stk
           }
 
           // structured mesh
-          if (0)
+          if (1)
           {
             PerceptMesh eMesh;
             eMesh.open(input_files_loc+"square_tri3_0.e");
 
             //int num_time_steps = 10;  // 10 for stress testing
             //for (int istep=1; istep <= num_time_steps; istep++)
-            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh, 10, false, true);
+            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh, 80, false, true, "str-");
           }
 
           if (do_bootstrap_mesh)
@@ -900,7 +900,7 @@ namespace stk
             eMesh2.open(input_files_loc+"square_tri3_uns_xformed.e");
             //int num_time_steps = 10;  // 10 for stress testing
             //for (int istep=1; istep <= num_time_steps; istep++)
-            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh2, 84, false, false); 
+            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh2, 84, false, false, "uns-"); 
           }
         }
       }

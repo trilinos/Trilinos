@@ -355,7 +355,7 @@ namespace stk
             fd1[0] = dot_1 < 0? -1 : 1;
           }
 
-        if (dot_0*dot_1 < 0)
+        if (dot_0*dot_1 < 1.e-6)
           return DO_REFINE;
         else
           return DO_UNREFINE;
