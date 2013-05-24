@@ -11,10 +11,10 @@
 
 #include <vector>
 
-using namespace std;
+//using namespace std;
 
 #if 0
-template<typename T> void push_back( vector<T>& dst, const vector<T>& src)
+template<typename T> void push_back( std::vector<T>& dst, const std::vector<T>& src)
 {
   dst.insert(dst.end(), src.begin(), src.end());
 }
@@ -28,16 +28,16 @@ namespace stk {
 
       /** example usage
        *
-       *   GeneralFunction<double, vector<double> > f;
-       *   GeneralFunction<vector<double>, int > g;
-       *   vector<double> y;
+       *   GeneralFunction<double, std::vector<double> > f;
+       *   GeneralFunction<std::vector<double>, int > g;
+       *   std::vector<double> y;
        *   double x;
        *   y = f(x);
        *   f(x, y);
        *
        *   // multiple points
-       *   vector<double> xv;
-       *   vector< vector<double> > yv;
+       *   std::vector<double> xv;
+       *   std::vector< std::vector<double> > yv;
        *   f(xv, yv);
        *
        *   // function composition
@@ -46,7 +46,7 @@ namespace stk {
        *   iy = g_of_f(x);
        *
        *   // gradient
-       *   GeneralFunction<double, vector<vector<double> > > grad_f = f.grad();
+       *   GeneralFunction<double, std::vector<std::vector<double> > > grad_f = f.grad();
        *
        */
   
@@ -64,18 +64,18 @@ namespace stk {
         virtual void operator()(const domain& x, codomain& y) { y = x; }
 
         // multiple values
-        virtual vector<codomain> operator()(const vector<domain>& x) 
+        virtual std::vector<codomain> operator()(const std::vector<domain>& x) 
         {
           // inefficient default impl
           int n = x.size();
-          vector<codomain> y(n);
+          std::vector<codomain> y(n);
           for(int i = 0; i < n; i++)
             {
               y[i] = (*this)(x[i]);
             }
           return y;
         };  // return value or reference?
-        virtual void operator()(const vector<domain>& x, vector<codomain>& y) 
+        virtual void operator()(const std::vector<domain>& x, std::vector<codomain>& y) 
         {
           // inefficient default impl
           int n = x.size();
@@ -98,7 +98,7 @@ namespace stk {
       class GeneralFunctionWithGrad : public GeneralFunction<domain, codomain>
       {
         // return a function that computes the gradient of this
-        virtual GeneralFunction<domain, vector<codomain> > grad()=0;  // return GeneralFunction<domain, vector<codomain> >(); }
+        virtual GeneralFunction<domain, std::vector<codomain> > grad()=0;  // return GeneralFunction<domain, std::vector<codomain> >(); }
       };
 
       template<typename domain_f, typename codomain_f_and_domain_g, typename codomain_g> 

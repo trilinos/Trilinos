@@ -105,7 +105,7 @@ namespace stk
     typedef std::vector< Coord > VectorOfCoord;
     typedef std::vector<unsigned> VectorOfInt;
 
-    using namespace shards ;
+    //using namespace shards ;
 
     //typedef ArrayVector<unsigned,NaturalOrder,Tag1,Tag2> ArrayInt2 ;
 

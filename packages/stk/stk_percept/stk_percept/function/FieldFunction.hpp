@@ -38,7 +38,6 @@
 #include <Intrepid_FunctionSpaceTools.hpp>
 
 //using namespace sierra;
-using namespace Intrepid;
 
 namespace stk
 {
@@ -253,8 +252,8 @@ namespace stk
           PerceptMesh::fillCellNodes(bucket_or_element,  m_coordinatesField, cellWorkset, spatialDim);
           Jac.resize(numCells, numInterpPoints, spatialDim, spatialDim);
           JacInverse.resize(numCells, numInterpPoints, spatialDim, spatialDim);
-          CellTools<double>::setJacobian(Jac, parametric_coordinates, cellWorkset, topo);
-          CellTools<double>::setJacobianInv(JacInverse, Jac);
+          Intrepid::CellTools<double>::setJacobian(Jac, parametric_coordinates, cellWorkset, topo);
+          Intrepid::CellTools<double>::setJacobianInv(JacInverse, Jac);
         }
       
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) 4" << std::endl;
@@ -278,11 +277,11 @@ namespace stk
       // this function just spreads (copies) the values of the basis to all elements in the workset (numCells)
       if (m_get_derivative)
         {
-          FunctionSpaceTools::HGRADtransformGRAD<double>(transformed_basis_values, JacInverse, basis_values);
+          Intrepid::FunctionSpaceTools::HGRADtransformGRAD<double>(transformed_basis_values, JacInverse, basis_values);
         }
       else
         {
-          FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_basis_values, basis_values);
+          Intrepid::FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_basis_values, basis_values);
         }
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) transformed_basis_values =  " << transformed_basis_values << std::endl;
 
@@ -310,7 +309,7 @@ namespace stk
           /// NOTE: this is needed since FunctionSpaceTools::evaluate method assumes the output array is initialized to 0
           if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) evaluate ... " << std::endl;
           loc_output_field_values.initialize(0.0);
-          FunctionSpaceTools::evaluate<double>(loc_output_field_values, field_data_values, transformed_basis_values);
+          Intrepid::FunctionSpaceTools::evaluate<double>(loc_output_field_values, field_data_values, transformed_basis_values);
           if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) evaluate done " << std::endl;
 
           VERIFY_OP_ON(numCells, ==, 1, "numCells...");

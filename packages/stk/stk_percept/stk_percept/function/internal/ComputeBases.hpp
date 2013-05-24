@@ -109,7 +109,7 @@ namespace stk
         basis->getValues(basis_values, parametric_coordinates, Intrepid::OPERATOR_VALUE);
 
         // this function just spreads (copies) the values of the basis to all elements in the workset (numCells)
-        FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_basis_values, basis_values);
+        Intrepid::FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_basis_values, basis_values);
       }
 
       void getBases(const stk::mesh::Entity &element, const MDArray& parametric_coordinates, MDArray& transformed_basis_values)
