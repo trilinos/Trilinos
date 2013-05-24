@@ -99,7 +99,7 @@ int main(int narg, char **arg)
               << "   Before map construction " 
               << std::endl;
 
-  for (int i = 0 ; i < 100; i++)
+  for (int i = 0 ; i < 20; i++)
   {
       if (me == 0) 
         std::cout << me << " "
