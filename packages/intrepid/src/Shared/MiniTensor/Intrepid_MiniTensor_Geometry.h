@@ -356,7 +356,7 @@ public:
   ///
   /// Constructor that takes material tangent
   ///
-  SphericalParametrization(Tensor4<T> const & A = identity_1<T>(3));
+  SphericalParametrization(Tensor4<T> const & A = Tensor4<T>());
 
   ///
   ///
