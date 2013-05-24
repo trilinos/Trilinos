@@ -56,15 +56,13 @@
 #include <Tpetra_Distributor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <new>          // ::operator new[]
-
-#include "zoltan_comm_cpp.h"
 #include <algorithm>    // std::sort
-
-
 
 //#define enable_migration2
 
-
+#ifdef enable_migration2
+#include "zoltan_comm_cpp.h"
+#endif
 //#define FIRST_TOUCH
 //#define BINARYCUTSEARCH
 //#define Zoltan_Comm
