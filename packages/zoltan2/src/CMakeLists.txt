@@ -50,6 +50,9 @@ APPEND_GLOB(SOURCES ${DIR}/algorithms/order/*.cpp)
 APPEND_GLOB(HEADERS ${DIR}/algorithms/partition/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/algorithms/partition/*.cpp)
 
+APPEND_GLOB(HEADERS ${DIR}/algorithms/match/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/algorithms/match/*.cpp)
+
 APPEND_GLOB(HEADERS ${DIR}/environment/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/environment/*.cpp)
 
