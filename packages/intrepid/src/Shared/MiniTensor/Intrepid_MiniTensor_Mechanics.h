@@ -193,7 +193,7 @@ check_strict_ellipticity(Tensor4<T> const & A);
 /// \return whether \f$ (m\odot n):A:(m\odot n) > 0 \forall m,n \neq 0 \f$.
 ///
 template<typename T>
-bool
+std::pair<bool, Vector<T> >
 check_strong_ellipticity(Tensor4<T> const & A);
 
 } // namespace Intrepid
