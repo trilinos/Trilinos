@@ -64,6 +64,7 @@
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Panzer_InitialCondition_Builder.hpp"
 #include "Panzer_ResponseUtilities.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
@@ -342,7 +343,7 @@ namespace panzer_stk {
 
     bool blockedAssembly = false;
 
-    if(panzer::BlockedDOFManagerFactory<int,int>::requiresBlocking(field_order)) {
+    if(panzer::BlockedDOFManagerFactory<int,int>::requiresBlocking(field_order) && !useTpetra) {
        // use a blocked DOF manager
        blockedAssembly = true;
 
@@ -355,6 +356,41 @@ namespace panzer_stk {
     
        Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > bloLinObjFactory
         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,
+                                                          Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager<int,int> >(dofManager)));
+ 
+       // parse any explicitly excluded pairs or blocks
+       const std::string excludedBlocks = assembly_params.get<std::string>("Excluded Blocks");
+       std::vector<std::string> stringPairs;
+       panzer::StringTokenizer(stringPairs,excludedBlocks,";",true);
+       for(std::size_t i=0;i<stringPairs.size();i++) {
+          std::vector<std::string> sPair; 
+          std::vector<int> iPair; 
+          panzer::StringTokenizer(sPair,stringPairs[i],",",true);
+          panzer::TokensToInts(iPair,sPair);
+
+          TEUCHOS_TEST_FOR_EXCEPTION(iPair.size()!=2,std::logic_error,
+                        "Input Error: The correct format for \"Excluded Blocks\" parameter in \"Assembly\" sub list is:\n"
+                        "   <int>,<int>; <int>,<int>; ...; <int>,<int>\n"
+                        "Failure on string pair " << stringPairs[i] << "!");
+
+          bloLinObjFactory->addExcludedPair(iPair[0],iPair[1]);
+       }
+
+       linObjFactory = bloLinObjFactory;
+    }
+    else if(panzer::BlockedDOFManagerFactory<int,int>::requiresBlocking(field_order) && useTpetra) {
+       // use a blocked DOF manager
+       blockedAssembly = true;
+
+       panzer::BlockedDOFManagerFactory<int,int> globalIndexerFactory;
+       globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
+
+       Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > dofManager 
+         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
+       globalIndexer = dofManager;
+    
+       Teuchos::RCP<panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,int> > bloLinObjFactory
+        = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,int>(mpi_comm,
                                                           Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager<int,int> >(dofManager)));
  
        // parse any explicitly excluded pairs or blocks

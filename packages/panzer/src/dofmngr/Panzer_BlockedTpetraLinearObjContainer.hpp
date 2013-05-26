@@ -117,6 +117,9 @@ public:
    void set_A_th(const Teuchos::RCP<CrsMatrixType> & in) { A = in; }
    Teuchos::RCP<CrsMatrixType> get_A_th() const { return A; }
 
+   void beginFill();
+   void endFill();
+
 private:
    Teuchos::RCP<VectorType> x, dxdt, f;
    Teuchos::RCP<CrsMatrixType> A;
