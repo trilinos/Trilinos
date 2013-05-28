@@ -133,6 +133,8 @@ public:
    */
   ~MetaData();
 
+  void set_mesh_on_fields(BulkData* bulk);
+
   //------------------------------------
   /** \name Predefined Parts
    *  \{
