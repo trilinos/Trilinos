@@ -991,6 +991,7 @@ public:
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, Entity e) const
   {
+    ThrowAssert(&f.get_mesh() == &stk::mesh::BulkData::get(e));
     const MeshIndex& mi           = mesh_index(e);
     return field_data(f, *mi.bucket, mi.bucket_ordinal);
   }
