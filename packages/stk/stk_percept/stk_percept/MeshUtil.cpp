@@ -250,7 +250,7 @@ namespace stk {
               if (!stk::percept::PerceptMesh::get_cell_topology(element))
                 {
                   // an empty element
-                  if (element.relations(stk::mesh::MetaData::NODE_RANK).size() == 0)
+                  if (eMesh.get_bulk_data()->count_valid_connectivity(element, stk::mesh::MetaData::NODE_RANK) == 0)
                     continue;
 
                   std::cout << "Error MeshUtil::checkTopology null" << std::endl;

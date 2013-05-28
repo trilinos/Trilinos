@@ -102,7 +102,7 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
     stk::mesh::PartVector partvector;
     partvector.push_back(&bcpart);
     bulk_data.change_entity_parts(local_nodes[0], partvector);
-    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0].identifier());
+    bc_node_id = stk::linsys::impl::entityid_to_int(bulk_data.identifier(local_nodes[0]));
   }
   (void)bc_node_id; // to avoid a set but not used warning from gcc 4.6.3
 
@@ -211,7 +211,7 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
     stk::mesh::PartVector partvector;
     partvector.push_back(&bcpart);
     bulk_data.change_entity_parts(local_nodes[0], partvector);
-    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0].identifier());
+    bc_node_id = stk::linsys::impl::entityid_to_int(bulk_data.identifier(local_nodes[0]));
   }
   (void)bc_node_id; // to avoid a set but not used warning from gcc 4.6.3
 

@@ -308,13 +308,10 @@ bool Bucket::member_any( const OrdinalVector & parts ) const
   return ! result_none ;
 }
 
-#ifdef STK_MESH_BACKWARDS_COMPATIBILITY
 unsigned char* Bucket::field_data_location(const FieldBase& field) const
 {
   return reinterpret_cast<unsigned char*>(mesh().field_data(field, *this, 0));
 }
-#endif
-
 
 //----------------------------------------------------------------------
 
@@ -585,7 +582,7 @@ void Bucket::add_entity(Entity entity)
   ThrowAssert(mesh().is_valid(entity));
   ThrowAssert(!mesh().is_valid(m_entities[m_size]));
   ThrowAssert(mesh().bucket_ptr(entity) == NULL);
-  ThrowAssert(entity.key().rank() == m_entity_rank);
+  ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
 
   initialize_slot(m_size, entity);
 
@@ -645,7 +642,7 @@ void Bucket::move_entity(Entity entity)
   ThrowAssert(mesh().bucket_ptr(entity) != NULL);
   ThrowAssert(mesh().bucket_ptr(entity) != this);
   ThrowAssert(mesh().bucket_ordinal(entity) == mesh().bucket(entity).size() - 1); // needs to come from the end
-  ThrowAssert(entity.key().rank() == m_entity_rank);
+  ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
 
   Bucket* old_bucket = mesh().bucket_ptr(entity);
   internal_move_entity(entity, m_size);
@@ -717,8 +714,7 @@ void Bucket::replace_entity(size_type new_ordinal, Entity entity)
   ThrowAssert(new_ordinal < m_capacity);
   ThrowAssert(mesh().is_valid(entity));
   ThrowAssert(mesh().bucket_ptr(entity) != NULL);
-  ThrowAssert(entity.key().rank() == m_entity_rank);
-
+  ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
 
   const MeshIndex old_index = m_mesh.mesh_index(entity);
   internal_move_entity(entity, new_ordinal);

@@ -317,7 +317,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
     if ( p_rank==0 or p_rank==1 )
     {
-      ThrowErrorMsgIf( !bulk_data.in_shared( n10.key() ), "NODE[10] not shared" );
+      ThrowErrorMsgIf( !bulk_data.in_shared( bulk_data.entity_key(n10) ), "NODE[10] not shared" );
     }
 
     bulk_data.modification_begin();
@@ -336,7 +336,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
     if ( p_rank==0 or p_rank==1 )
     {
-      ThrowErrorMsgIf( bulk_data.in_shared( n10.key() ), "NODE[10] shared" );
+      ThrowErrorMsgIf( bulk_data.in_shared( bulk_data.entity_key(n10) ), "NODE[10] shared" );
     }
   }
 

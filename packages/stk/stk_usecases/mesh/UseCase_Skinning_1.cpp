@@ -89,7 +89,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     //all nodes connected to the single element that has been broken off
     //should have relations.size() == 4 and comm.size() == 0
-    if (middle_element.is_valid() && middle_element.owner_rank() == mesh.parallel_rank()) {
+    if (mesh.is_valid(middle_element) && mesh.parallel_owner_rank(middle_element) == mesh.parallel_rank()) {
 
       stk::mesh::Entity const *rel_nodes_iter = mesh.begin_nodes(middle_element);
       stk::mesh::Entity const *rel_nodes_end = mesh.end_nodes(middle_element);
@@ -99,7 +99,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
         //each node should be attached to only 1 element and 3 faces
         correct_relations &= ( mesh.count_relations(current_node) == 4 );
         //the entire closure of the element should exist on a single process
-        correct_comm      &= ( mesh.entity_comm(current_node.key()).size() == 0 );
+        correct_comm      &= ( mesh.entity_comm(mesh.entity_key(current_node)).size() == 0 );
       }
     }
     passed &= (correct_skin && correct_relations && correct_comm);

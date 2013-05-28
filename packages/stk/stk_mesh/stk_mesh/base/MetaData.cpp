@@ -998,8 +998,10 @@ FieldBase* MetaData::get_field( const std::string& name ) const
   return NULL;
 }
 
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
 CellTopology get_cell_topology(Entity entity)
 { return get_cell_topology(entity.bucket()); }
+#endif
 
 void MetaData::dump_all_meta_info(std::ostream& out) const
 {

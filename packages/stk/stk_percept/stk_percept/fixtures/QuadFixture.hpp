@@ -393,9 +393,10 @@ namespace stk {
                                 }
                               else
                                 {
+                                  stk::mesh::Entity const* nodes = bulk_data.begin_nodes(element);
                                   stk::mesh::EntityId elem_node[2];
-                                  elem_node[0] = (element.relations(0)[j_side]).entity().identifier();
-                                  elem_node[1] = (element.relations(0)[(j_side+1)%4]).entity().identifier();
+                                  elem_node[0] = bulk_data.identifier(nodes[j_side]);
+                                  elem_node[1] = bulk_data.identifier(nodes[(j_side+1)%4]);
                                   stk::mesh::declare_element( bulk_data, *side_parts[i_side], side_id + (2*NX*NY+2) , elem_node);
 
                                 }
