@@ -249,6 +249,7 @@ static void update_lists_newcol(
  * Adiag = diagonal part of A
  * droptol = drop tolerance
  * lfil  = max nonzeros per col in L factor or per row in U factor
+ *   TODO: lfil should rather be a fill ratio applied to each column
  *
  * OUTPUTS
  * L     = lower triangular factor stored by columns
@@ -387,6 +388,7 @@ void crout_ict(
 	 * part into the factors
 	 */
 
+        // TODO: keep different #nonzeros per column depending on original matrix
 	count_l = MIN(len_l, lfil);
 	qsplit(work_l, ind_l, len_l, count_l);
 	ifpack_multilist_sort(ind_l, work_l, count_l);

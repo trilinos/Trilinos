@@ -332,7 +332,7 @@ class Ifpack_IC: public Ifpack_Preconditioner {
   double Athresh_;
   double Rthresh_;
   double Droptol_;
-  int Lfil_;
+  double Lfil_;
 
   void * Aict_;
   void * Lict_;
