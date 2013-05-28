@@ -300,11 +300,17 @@ The complete list of supported parameters is reported below.
   - \c "Amesos_Mumps" (use MUMPS interface);
   - \c "Amesos_Dscpack" (use DSCPACK interface).
  
-- \c "fact: level-of-fill": defines the level of fill for IC and ILU
-  factorizations.
+- \c "fact: level-of-fill": defines the level of fill for ILU
+  factorizations. This is based on powers of the graph, so 
+  the value 0 means no-fill.
 
-- \c "fact: ilut level-of-fill": defines the level of fill for ICT and ILUT
-  factorizations.
+- \c "fact: ilut level-of-fill": defines the level of fill for ILUT
+  factorizations. This is a ratio, so 1.0 means same number of
+  nonzeros for the ILU factors as in the original matrix.
+
+- \c "fact: ict level-of-fill": defines the level of fill for ICT
+  factorizations, and is a fill-ratio as for ILUT. 
+  Currently this parameter is used in both Ifpack_IC and Ifpack_ICT.
 
 - \c "fact: absolute threshold": defines the value \f$\alpha\f$ 
   to add to each diagonal
