@@ -63,8 +63,13 @@ public:
     const_iterator begin() const { return m_entities.begin(); }
     const_iterator end() const { return m_entities.end(); }
 
+#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1
+    //The following begin_rank/end_rank methods use std::map::lower_bound, which won't work
+    //if we're using an unordered map.
+#else
     const_iterator begin_rank(EntityRank ent_rank) const { return m_entities.lower_bound(EntityKey(ent_rank, 0)); }
     const_iterator end_rank(EntityRank ent_rank) const { return m_entities.upper_bound(EntityKey(ent_rank+1, 0)); }
+#endif
 
     // Return a pair: the relevant entity, and whether it had to be created
     // or not. If there was already an active entity, the second item in the
