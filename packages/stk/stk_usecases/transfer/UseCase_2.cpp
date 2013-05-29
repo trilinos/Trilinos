@@ -86,7 +86,7 @@ void get_idents(stk::mesh::BulkData &bulk_data,
 
   for (size_t i = 0; i < num_entities; ++i) {
 //    const ParallelIndex::Key   p = entities[i]->key().value();
-    const ParallelIndex::Key   p = bulk_data.entity_key(entities[i]);
+    const ParallelIndex::Key   p = entities[i].key();
     ident_vector.push_back(p);
   }
 }

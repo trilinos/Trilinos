@@ -24,10 +24,6 @@
 
 #include <stk_topology/topology.hpp>
 
-#ifndef STK_MESH_DISALLOW_DEPRECATED_ENTITY_FNS
-#define STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-#endif
-
 namespace stk {
 namespace mesh {
 

@@ -82,17 +82,19 @@ Relation::Relation(EntityRank rel_rank, Entity obj, const unsigned relation_type
       "orientation " << orient << " exceeds maximum allowed value");
 }
 
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
 inline
 Relation::Relation(Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient)
   : m_raw_relation( Relation::raw_relation_id(obj.entity_rank(), ordinal )),
     m_attribute( (relation_type << fmwk_orientation_digits) | orient ),
     m_target_entity(obj)
 {
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   ThrowAssertMsg( orient <= fmwk_orientation_mask,
                   "orientation " << orient << " exceeds maximum allowed value");
-}
+#else
+  ThrowErrorMsg("Relation::Relation(Entity, unsigned, unsigned, unsigned) has been deprecated, use the construct that takes the entity rank");
 #endif
+}
 
 inline
 void Relation::setMeshObj(Entity object, EntityRank object_rank )

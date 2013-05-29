@@ -167,7 +167,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
 
       // For each node in the bucket populate its nodal coordinates.
       for ( int i=0 ; i < num_nodes_in_bucket ; ++i ) {
-        const unsigned node_id = m_bulkData.identifier(bucket[i]);
+        const unsigned node_id = bucket[i].identifier();
         usecase_2_node_coordinates( node_id, & coordinates_array(0,i) );
       }
 
@@ -356,7 +356,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
 
         // Query the node ids for this element.
         stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
-        usecase_2_elem_node_ids( bulkData.identifier(elem) , node_ids );
+        usecase_2_elem_node_ids( elem.identifier() , node_ids );
 
         // Pair of iterators for all of the element's relations.
         // This class has convenience functions for size and indexing.
@@ -386,7 +386,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
         for ( unsigned k = 0 ; k < shards::Hexahedron<8> ::node_count ; ++k ) {
           stk::mesh::Entity rel_node = node_rels[k];
           if ( node_ids[k] != bulkData.identifier(rel_node) ||
-               ! bulkData.bucket(rel_node).member(**iter_part) ) {
+               ! rel_node.bucket().member(**iter_part) ) {
               std::cerr << "Error, an element's node is just plain wrong!"
                         << std::endl;
               result = false;

@@ -209,17 +209,17 @@ bool use_case_2_driver( MPI_Comm comm ,
 
     for(size_t i=0; i<nodes.size(); i+=1000) {
       //is the i-th node in the locally-used part? If not, continue.
-      if (! owned_and_shared( mesh_bulk_data.bucket(nodes[i]))) continue;
+      if (! owned_and_shared( nodes[i].bucket())) continue;
 
-      global_index = dof_mapper.get_global_index(stk::mesh::MetaData::NODE_RANK, mesh_bulk_data.identifier(nodes[i]), displacements_field);
-      std::cout << "Proc " << myProc << ", global index for node " << mesh_bulk_data.identifier(nodes[i])
-                << ", field '"<<displacements_field.name()<<"' is: " << global_index << std::endl;
+      global_index = dof_mapper.get_global_index(stk::mesh::MetaData::NODE_RANK, nodes[i].identifier(), displacements_field);
+      std::cout << "Proc " << myProc << ", global index for node " << nodes[i].identifier()
+        << ", field '"<<displacements_field.name()<<"' is: " << global_index << std::endl;
       stk::mesh::EntityRank ent_type;
       stk::mesh::EntityId ent_id;
       const stk::mesh::FieldBase* field = NULL;
       int offset_into_field;
       dof_mapper.get_dof(global_index, ent_type, ent_id, field, offset_into_field);
-      if (ent_type != stk::mesh::MetaData::NODE_RANK || ent_id != mesh_bulk_data.identifier(nodes[i]) ||
+      if (ent_type != stk::mesh::MetaData::NODE_RANK || ent_id != nodes[i].identifier() ||
           field->name() != displacements_field.name()) {
         std::cout << "Reverse-lookup Test Failed" << std::endl;
       }
@@ -227,17 +227,17 @@ bool use_case_2_driver( MPI_Comm comm ,
 
     for(size_t i=0; i<elems.size(); i+=1000) {
       //is the i-th elem in the locally-owned part? If not, continue.
-      if (!mesh_bulk_data.bucket(elems[i]).member(fem_meta.locally_owned_part())) continue;
+      if (!elems[i].bucket().member(fem_meta.locally_owned_part())) continue;
 
-      global_index = dof_mapper.get_global_index(element_rank, mesh_bulk_data.identifier(elems[i]), pressure_field);
-      std::cout << "Proc " << myProc << ", global index for element " << mesh_bulk_data.identifier(elems[i])
-                << ", field '"<<pressure_field.name()<<"' is: " << global_index << std::endl;
+      global_index = dof_mapper.get_global_index(element_rank, elems[i].identifier(), pressure_field);
+      std::cout << "Proc " << myProc << ", global index for element " << elems[i].identifier()
+        << ", field '"<<pressure_field.name()<<"' is: " << global_index << std::endl;
       stk::mesh::EntityRank ent_type;
       stk::mesh::EntityId ent_id;
       const stk::mesh::FieldBase* field = NULL;
       int offset_into_field;
       dof_mapper.get_dof(global_index, ent_type, ent_id, field, offset_into_field);
-      if (ent_type != element_rank || ent_id != mesh_bulk_data.identifier(elems[i]) ||
+      if (ent_type != element_rank || ent_id != elems[i].identifier() ||
           field->name() != pressure_field.name()) {
         std::cout << "Reverse-lookup Test Failed" << std::endl;
       }
@@ -399,7 +399,7 @@ void use_case_2_generate_mesh(
 
       stk::mesh::Entity const node = mesh.get_entity( stk::mesh::MetaData::NODE_RANK , node_map[i] );
 
-      if ( !mesh.is_valid(node) ) {
+      if ( !node.is_valid() ) {
         std::ostringstream msg ;
         msg << "  P:" << mesh.parallel_rank()
             << " ERROR, Node not found: "

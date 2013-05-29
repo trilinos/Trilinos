@@ -422,7 +422,7 @@ void use_case_3_generate_mesh(
 
       stk::mesh::Entity const node = mesh.get_entity( stk::mesh::MetaData::NODE_RANK , node_map[i] );
 
-      if ( !mesh.is_valid(node) ) {
+      if ( !node.is_valid() ) {
         std::ostringstream msg ;
         msg << "  P:" << mesh.parallel_rank()
             << " ERROR, Node not found: "

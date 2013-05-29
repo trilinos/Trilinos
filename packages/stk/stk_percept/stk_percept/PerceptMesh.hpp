@@ -726,12 +726,6 @@ namespace stk {
         return cell_topo_data;
       }
 
-      static
-      const CellTopologyData * get_cell_topology(const stk::mesh::BulkData& mesh, stk::mesh::Entity entity)
-      {
-        return get_cell_topology(mesh.bucket(entity));
-      }
-
       const stk::mesh::PartVector& get_io_omitted_parts() { return m_io_omitted_parts; }
       void add_io_omitted_part(stk::mesh::Part * omitted_part) { m_io_omitted_parts.push_back(omitted_part); }
 

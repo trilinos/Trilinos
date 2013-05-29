@@ -31,10 +31,10 @@ size_t is_in_element(const stk::mesh::BulkData &domain_mesh, const stk::mesh::Bu
 
   for (std::size_t i = 0; i < num_entities; ++i) {
     stk::mesh::Entity domain_entity = entity_map[i].first;
-    assert(domain_mesh.entity_rank(domain_entity) > stk::mesh::MetaData::NODE_RANK);
+    assert(domain_entity.entity_rank() > stk::mesh::MetaData::NODE_RANK);
 
     stk::mesh::Entity range_entity  = entity_map[i].second;
-    assert(range_mesh.entity_rank(range_entity) == stk::mesh::MetaData::NODE_RANK);
+    assert(range_entity.entity_rank() == stk::mesh::MetaData::NODE_RANK);
 
     const CellTopologyData * const cell_topo =
         stk::mesh::get_cell_topology(domain_mesh.bucket(domain_entity)).getCellTopologyData();

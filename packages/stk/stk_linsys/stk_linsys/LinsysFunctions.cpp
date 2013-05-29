@@ -96,7 +96,7 @@ void dirichlet_bc(stk::linsys::LinearSystemInterface& ls,
       iter = buckets[i]->begin(), iend = buckets[i]->end();
     for(; iter!=iend; ++iter) {
       const stk::mesh::Entity entity = *iter;
-      entity_ids.push_back(stk::linsys::impl::entityid_to_int(mesh.identifier(entity)));
+      entity_ids.push_back(stk::linsys::impl::entityid_to_int(entity.identifier()));
     }
   }
 
@@ -204,8 +204,8 @@ void copy_vector_to_mesh( fei::Vector & vec,
     if(!(field->type_is<double>()) || data == NULL) {
       std::ostringstream oss;
       oss << "stk::linsys::copy_vector_to_mesh ERROR, bad data type, or ";
-      oss << " field (" << field->name() << ") not found on entity with type " << mesh_bulk_data.entity_rank(entity);
-      oss << " and ID " << mesh_bulk_data.identifier(entity);
+      oss << " field (" << field->name() << ") not found on entity with type " << entity.entity_rank();
+      oss << " and ID " << entity.identifier();
       std::string str = oss.str();
       throw std::runtime_error(str.c_str());
     }

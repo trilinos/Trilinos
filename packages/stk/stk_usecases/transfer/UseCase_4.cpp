@@ -122,7 +122,7 @@ void get_idents(stk::mesh::BulkData &bulk_data,
 
   for (size_t i = 0; i < num_entities; ++i) {
 //    const ParallelIndex::Key   p = entities[i]->key().value();
-    const ParallelIndex::Key   p = bulk_data.entity_key(entities[i]);
+    const ParallelIndex::Key   p = entities[i].key();
     ident_vector.push_back(p);
   }
 }
@@ -412,7 +412,7 @@ use_case_4_driver(stk::ParallelMachine  comm,
       if (*entity_coord_sum != entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2]) {
         static stk::MessageCode x;
 
-        stk::RuntimeDoomedDeferred(x) << "Incorrect or missing coordinate sum of entity " << range_bulk_data.entity_key(entity) << " do not sum to " << entity_coord_sum;
+        stk::RuntimeDoomedDeferred(x) << "Incorrect or missing coordinate sum of entity " << entity.key().id() << " do not sum to " << entity_coord_sum;
       }
     }
   }

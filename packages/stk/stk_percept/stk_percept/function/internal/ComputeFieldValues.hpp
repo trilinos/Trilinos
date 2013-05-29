@@ -79,8 +79,7 @@ namespace stk
         // ([C],[F])
         MDArray field_data_values(numCells, numBases);
 
-        stk::mesh::BulkData & bulk = stk::mesh::BulkData::get(element);
-        stk::mesh::Entity const* elem_nodes = bulk.begin_nodes(element);
+        const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
 
         // ([P],[D])  [P] points in [D] dimensions
 
@@ -96,7 +95,7 @@ namespace stk
               {
                 for (int iNode = 0; iNode < numNodes; iNode++)
                   {
-                    mesh::Entity node = elem_nodes[iNode];
+                    mesh::Entity node = elem_nodes[iNode].entity();
                     double * fdata = PerceptMesh::field_data( field , node, &stride_node);
                     field_data_values(iCell, iNode) = fdata[iDOF];
                   }

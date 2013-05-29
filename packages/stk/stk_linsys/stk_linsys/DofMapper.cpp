@@ -84,7 +84,7 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
 
     for(; iter != iter_end; ++iter) {
       stk::mesh::Entity entity = *iter;
-      ids[num_ids++] = impl::entityid_to_int(mesh_bulk.identifier(entity));
+      ids[num_ids++] = impl::entityid_to_int(entity.identifier());
     }
 
     int err = m_fei_vecspace->addDOFs(field_id, idType, num_ids, &ids[0]);

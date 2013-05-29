@@ -955,11 +955,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
   // Dump output for metadata first
   m_mesh_meta_data.dump_all_meta_info(out);
 
-  out << "BulkData "
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-      << m_bulk_data_id
-#endif
-      << " info...\n";
+  out << "BulkData " << m_bulk_data_id << " info...\n";
 
   const FieldVector& all_fields = m_mesh_meta_data.get_fields();
 

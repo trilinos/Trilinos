@@ -140,7 +140,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
     stk::mesh::PartVector partvector;
     partvector.push_back(&bcpart);
     bulk_data.change_entity_parts(local_nodes[0], partvector);
-    bc_node_id = stk::linsys::impl::entityid_to_int(bulk_data.identifier(local_nodes[0]));
+    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0].identifier());
   }
 
   bulk_data.modification_end();
@@ -209,7 +209,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
   stk::linsys::copy_vector_to_mesh( *rhsvec, ls.get_DofMapper(), bulk_data);
 
-  stk::mesh::Entity bc_node = bulk_data.get_entity(NODE_RANK, bulk_data.identifier(local_nodes[0]));
+  stk::mesh::Entity bc_node = bulk_data.get_entity(NODE_RANK, local_nodes[0].identifier());
 
   stk::mesh::FieldTraits<ScalarField>::data_type* bc_node_data = bulk_data.field_data(*temperature_field, bc_node);
 

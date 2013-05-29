@@ -39,7 +39,7 @@ unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin
 // have any upward relations.
 void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity entity)
 {
-  stk::mesh::EntityRank entity_rank = mesh.entity_rank(entity);
+  stk::mesh::EntityRank entity_rank = entity.entity_rank();
 
   for (stk::mesh::EntityRank irank = stk::topology::END_RANK;
          irank != stk::topology::BEGIN_RANK;)
@@ -158,7 +158,7 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
     // Kill element on the "left" of the shell:
     fixture.m_bulk_data.modification_begin();
     stk::mesh::Entity elem_to_kill = fixture.elem( 0 , 0 , 0 ); // (i,j,k) indices
-    if ( fixture.m_bulk_data.is_valid(elem_to_kill) && p_rank == fixture.m_bulk_data.parallel_owner_rank(elem_to_kill) ) {
+    if ( elem_to_kill.is_valid() && p_rank == elem_to_kill.owner_rank() ) {
       // Destroy element and its sides and nodes
       // that are not in the closure of another element.
       destroy_entity_closure( fixture.m_bulk_data, elem_to_kill);

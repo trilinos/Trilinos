@@ -179,7 +179,7 @@ use_case_3_driver(stk::ParallelMachine  comm,
     const int range_owning_rank  = i->second.proc;
     if (domain_owning_proc != my_rank && range_owning_rank == my_rank) {
       stk::mesh::Entity r_entity = range_bulk_data.get_entity(range_entity_key.rank(), range_entity_key.id());
-      if (range_bulk_data.parallel_owner_rank(r_entity) == my_rank) {
+      if (r_entity.owner_rank() == my_rank) {
         stk::mesh::EntityProc ep(r_entity, domain_owning_proc);
         range_to_ghost.push_back(ep);
       }

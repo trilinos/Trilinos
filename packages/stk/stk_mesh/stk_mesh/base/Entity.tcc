@@ -2,6 +2,14 @@
  * \{
  */
 
+// Help to find things that need to be refactored for framework and app support/ports
+// but throw for now.
+#define STK_MESH_ENTITY_IS_POD
+
+#ifndef STK_MESH_DISALLOW_DEPRECATED_ENTITY_FNS
+#define STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
+#endif
+
 namespace stk {
 namespace adapt {
 struct my_tuple_hash;
@@ -59,26 +67,16 @@ class EntityRepository;
 union Entity
 {
   enum Entity_t {
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
     BULK_DATA_ID_SHIFT = 48ull,
-#endif
     InvalidEntity = 0ull,
     MinEntity = 1ull,
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
     MaxEntity = (1ull << BULK_DATA_ID_SHIFT) - 1,
-    ForceEnumToBeUint64 = ~0ull,
-#else
-    MaxEntity = ~0ull,
-#endif
-    LOCAL_OFFSET_MASK = MaxEntity
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    , BULK_DATA_ID_MASK = (1ull << 16) - 1
-#endif
+    LOCAL_OFFSET_MASK = MaxEntity,
+    BULK_DATA_ID_MASK = (1ull << 16) - 1
   };
 
-  uint64_t m_value;
+  int64_t m_value;
 
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   struct {
     unsigned char bulk_data_id_part;
     uint32_t local_offset32_part;
@@ -88,7 +86,7 @@ union Entity
     uint32_t local_offset32_part;
     unsigned char bulk_data_id_part;
   } view2;
-#endif
+
 
   Entity operator=(Entity_t val) { m_value = val; return *this;}
 
@@ -111,22 +109,16 @@ union Entity
    * Erroneous calls will lead to undefined (and probably disastrous) behavior.
    */
   void set_local_offset(size_t localOffset) {
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
     int bdi = bulk_data_id();
-#endif
     m_value = static_cast<Entity_t>(localOffset);
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
     set_bulk_data_id(bdi);
-#endif
   }
 
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   void set_bulk_data_id(int bdi) {
     int64_t val = bdi;
     val = val << BULK_DATA_ID_SHIFT;
     m_value |= val;
   }
-#endif
 
   bool operator==(Entity entity) const { return m_value == entity.m_value; }
 
@@ -152,6 +144,7 @@ union Entity
 
 #endif
 
+
   //
   // NEED TO REFACTOR CALLERS TO ELIMINATE THE FOLLOWING
   //
@@ -166,12 +159,16 @@ union Entity
   Bucket * bucket_ptr() const;
   size_t bucket_ordinal() const;
   size_t synchronized_count() const;
+  PairIterRelation relations() const;
+  PairIterRelation relations( EntityRank type ) const;
+  PairIterRelation node_relations() const;
   int owner_rank() const;
 #endif
 
 
 #ifdef SIERRA_MIGRATION
 
+  RelationIterator node_relation(unsigned ordinal) const;
   void compress_relation_capacity();
 
   friend class sierra::Fmwk::MeshObjRoster;
@@ -189,7 +186,6 @@ union Entity
 
   typedef unsigned DerivedType; ///< Derived type identifier, the admissible values may be extended
 
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   template <class Mesh, class SharedAttr>
   void init_fmwk(
     Mesh& mesh,
@@ -198,6 +194,7 @@ union Entity
     const int         owner,
     const int         parallel_rank);
 
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   int global_id() const ;
   unsigned local_id() const;
   void set_local_id(unsigned int l_id);
@@ -213,6 +210,8 @@ union Entity
   RelationIterator aux_relation_end() const;
   RelationVector& aux_relations();
   const RelationVector& aux_relations() const;
+  RelationIterator internal_begin_relation(const RelationType relation_type) const;
+  RelationIterator internal_end_relation(const RelationType relation_type) const;
 
   void set_shared_attr(const void* attr);
   const void* get_shared_attr() const;
@@ -227,6 +226,7 @@ private:
   void reserve_relation(const unsigned num);
   RelationIterator find_aux_relation(const Relation& relation) const;
   void erase_and_clear_if_empty(RelationIterator rel_itr);
+  void internal_verify_meshobj_invariant() const;
   void internal_verify_initialization_invariant();
 
 #endif
@@ -249,7 +249,6 @@ public:
 // NEED TO REFACTOR CALLERS TO ELIMINATE THE FOLLOWING
 //
 
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
 template <class Mesh, class SharedAttr>
 void Entity::init_fmwk(
   Mesh& mesh,
@@ -258,6 +257,7 @@ void Entity::init_fmwk(
   const int         owner,
   const int         parallel_rank)
 {
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   mesh.set_global_id(*this, id);
   mesh.set_shared_attr(*this, attr);
   if (attr->locally_owned() && owner == -1) {
@@ -266,11 +266,13 @@ void Entity::init_fmwk(
   else {
     mesh.set_parallel_owner_rank(*this, owner);
   }
+#else
   ThrowErrorMsg("template <class SharedAttr> void Entity::init_fmwk(..) has been deprecated");
-}
 #endif
+}
 
 /** \} */
+
 
 } // namespace mesh
 } // namespace stk

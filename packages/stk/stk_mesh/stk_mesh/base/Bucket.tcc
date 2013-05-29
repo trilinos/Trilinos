@@ -16,6 +16,8 @@ class MeshBulkData;
 
 #endif // SIERRA_MIGRATION
 
+#define STK_MESH_BACKWARDS_COMPATIBILITY
+
 namespace stk {
 namespace mesh {
 
@@ -230,7 +232,9 @@ public:
 
   impl::Partition *getPartition() const { return m_partition; }
 
+#ifdef STK_MESH_BACKWARDS_COMPATIBILITY
   unsigned char* field_data_location(const FieldBase& field) const;
+#endif
 
   ///
   /// Entity member functions are moved here:

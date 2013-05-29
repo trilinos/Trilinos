@@ -304,7 +304,7 @@ namespace app {
 	std::vector<stk::mesh::Entity> nodes(node_count);
 	for(int i=0; i<node_count; ++i) {
 	  nodes[i] = bulk.get_entity( stk::mesh::MetaData::NODE_RANK, node_ids[i] );
-	  if (bulk.is_valid(nodes[i]))
+	  if (nodes[i].is_valid())
 	    bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, node_ids[i], add_parts );
 	}
 
@@ -358,7 +358,7 @@ namespace app {
 	  // element block that appears in the database, but was
 	  // subsetted out of the analysis mesh. Only process if
 	  // non-null.
-	  if (bulk.is_valid(elem)) {
+	  if (elem.is_valid()) {
 	    stk::mesh::Entity side =
 	      stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
 	    bulk.change_entity_parts( side, add_parts );

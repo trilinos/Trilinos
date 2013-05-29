@@ -1,6 +1,12 @@
 namespace stk {
 namespace mesh {
 
+#define RELATION_HAS_ENTITY_NOT_ENTITY_IMPL 1
+
+namespace impl {
+class EntityImpl;
+}
+
 /** \addtogroup stk_mesh_module
  *  \{
  */
@@ -66,6 +72,9 @@ public:
   /** \brief  Inequality operator */
   bool operator != ( const Relation & r ) const
   { return !(*this == r); }
+
+  /** \brief  Ordering operator */
+  bool operator < ( const Relation & r ) const ;
 
 private:
 
@@ -168,9 +177,7 @@ private:
   // Only needed by Framework and Framework-based apps.
   Relation(EntityRank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient = 0);
 
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   Relation(Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient = 0);
-#endif
 
   // Only needed by Framework and Framework-based apps.
   void setMeshObj(Entity object, EntityRank object_rank);
@@ -341,6 +348,39 @@ bool Relation::operator == ( const Relation & rhs ) const
     && m_attribute == rhs.m_attribute
 #endif
     ;
+}
+
+inline
+bool Relation::operator < ( const Relation & rhs ) const
+{
+#ifdef STK_MESH_ENTITY_IS_POD
+  ThrowErrorMsg("Relation::operator < ( const Relation & rhs ) is deprecated.");
+  return false;
+#else
+  bool result = false;
+
+#ifdef SIERRA_MIGRATION
+  if (entity_rank() != rhs.entity_rank()) {
+    result = entity_rank() < rhs.entity_rank();
+  }
+  else if (getRelationType() != rhs.getRelationType()) {
+    result = getRelationType() < rhs.getRelationType();
+  }
+  else if (relation_ordinal() != rhs.relation_ordinal()) {
+    result = relation_ordinal() < rhs.relation_ordinal();
+  }
+#else
+  if ( m_raw_relation.value != rhs.m_raw_relation.value ) {
+    result = m_raw_relation.value < rhs.m_raw_relation.value ;
+  }
+#endif
+  else {
+    const EntityKey lhs_key = m_target_entity     ? m_target_entity->key()     : EntityKey();
+    const EntityKey rhs_key = rhs.m_target_entity ? rhs.m_target_entity->key() : EntityKey();
+    result = lhs_key < rhs_key ;
+  }
+  return result ;
+#endif // STK_MESH_ENTITY_IS_POD
 }
 
 inline

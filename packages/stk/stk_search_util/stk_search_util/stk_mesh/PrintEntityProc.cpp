@@ -89,16 +89,17 @@ void print_entity_proc_map(stk::diag::Writer &writer,
     size_t size = entity_proc.size();
     for (size_t i=0; i < size; i++) {
       stk::mesh::EntityKey key = mesh.entity_key(entity_proc[i]);
-      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get( mesh );
+      const stk::mesh::MetaData& meta = stk::mesh::MetaData::get( entity_proc[i].bucket() );
 
       writer << "[" << i << "] "
              << action
              << meta.entity_rank_name(key.rank()) << " "
              << key.id() << " " << to_from << " processor "
-             << mesh.parallel_owner_rank(entity_proc[i]) << "\n";
+             << entity_proc[i].owner_rank() << "\n";
     }
   }
 }
+
 
 void print_entity_proc_map( stk::diag::Writer & writer ,
                             const stk::mesh::BulkData & mesh )

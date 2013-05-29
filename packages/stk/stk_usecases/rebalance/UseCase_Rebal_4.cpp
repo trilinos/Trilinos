@@ -107,7 +107,7 @@ void GreedySideset::set_mesh_info ( mesh::BulkData& mesh,
 
   mesh_info.mesh_keys.resize(mesh_entities.size());
   for (size_t i = 0; i < mesh_info.mesh_keys.size(); ++i) {
-    mesh_info.mesh_keys[i] = mesh.entity_key(mesh_info.mesh_entities[i]);
+    mesh_info.mesh_keys[i] = mesh_info.mesh_entities[i].key();
   }
 
   /** Default destination for an entity is the processor
@@ -184,7 +184,7 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
   for(unsigned iSide = 0; iSide < nSide; ++iSide)
   {
     const mesh::Entity side = sides[iSide];
-    const int sideProc = bulk_data_.parallel_owner_rank(side);
+    const int sideProc = side.owner_rank();
     ThrowRequireMsg(sideProc!=p_rank,
      "When iterating Non-locally owned sides, found a locally owned side.");
 
@@ -195,7 +195,7 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
       unsigned moid;
       const bool mesh_entity_found = find_mesh_entity(elem, moid);
       if (mesh_entity_found) {
-        const int elemProc = bulk_data_.parallel_owner_rank(elem);
+        const int elemProc = elem.owner_rank();
         ThrowRequireMsg(elemProc==p_rank,
           "When iterating locally owned elements, found a non-locally owned element.");
         const int destProc = destination_proc(moid);
@@ -305,7 +305,7 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     for(unsigned iSide = 0; iSide < nSide; ++iSide)
     {
       mesh::Entity side = sides[iSide];
-      if (bulk_data.identifier(side)==7) {
+      if (side.identifier()==7) {
         bulk_data.change_entity_parts(side, surfaces, empty_remove_parts);
       }
     }
@@ -341,12 +341,12 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
       const mesh::Entity s = bulk_data.get_entity(side_rank,7);
       if (bulk_data.is_valid(s)) {
         const mesh::Entity side = s;
-        if (p_rank == bulk_data.parallel_owner_rank(side)) {
+        if (p_rank == side.owner_rank()) {
           stk::mesh::Entity const * iElem = bulk_data.begin(side, elem_rank);
           stk::mesh::Entity const * eElem = bulk_data.end(side, elem_rank);
           for ( ; iElem != eElem; ++iElem ) {
             const mesh::Entity elem = *iElem;
-            const int elemProc = bulk_data.parallel_owner_rank(elem);
+            const int elemProc = elem.owner_rank();
             if (elemProc!=p_rank) {
               std::cout <<p_rank<<" Good: Found element of of side 7 not owned."
                         <<" Element "<<elemProc
@@ -382,14 +382,14 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     const stk::mesh::EntityRank side_rank = fmeta.side_rank();
     const stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
     mesh::Entity s = bulk_data.get_entity(side_rank,7);
-    if (bulk_data.is_valid(s)) {
+    if (s.is_valid()) {
       mesh::Entity side = s;
-      if (p_rank == bulk_data.parallel_owner_rank(s)) {
+      if (p_rank == side.owner_rank()) {
         stk::mesh::Entity const * iElem = bulk_data.begin(side, elem_rank);
         stk::mesh::Entity const * eElem = bulk_data.end(side, elem_rank);
         for ( ; iElem != eElem; ++iElem ) {
           const mesh::Entity elem = *iElem;
-          const int elemProc = bulk_data.parallel_owner_rank(elem);
+          const int elemProc = elem.owner_rank();
           if (elemProc!=p_rank) {
             std::cerr <<p_rank<<" Error: Found element of of side 7 not owned:"<<elemProc<<std::endl;
           }

@@ -40,7 +40,7 @@ void destroy_entity_and_create_particles(
 
   // forumlate request for 8 particles on owning process
   std::vector<size_t> requests(fixture.m_fem_meta.entity_rank_count(), 0);
-  if ( fixture.m_bulk_data.is_valid(elem) && p_rank == fixture.m_bulk_data.parallel_owner_rank(elem) ) {
+  if ( elem.is_valid() && p_rank == elem.owner_rank() ) {
     requests[particle_rank] = 8;
   }
 
@@ -67,7 +67,7 @@ void destroy_entity_and_create_particles(
   }
 
   // delete element and entities in closure that have been orphaned
-  if ( fixture.m_bulk_data.is_valid(elem) ) {
+  if ( elem.is_valid() ) {
 
     stk::mesh::EntityVector downward_relations;
 
