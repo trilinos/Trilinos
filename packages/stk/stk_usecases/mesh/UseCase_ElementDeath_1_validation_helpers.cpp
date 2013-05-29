@@ -190,7 +190,7 @@ EntityVector entities_to_be_killed(
       itr != entity_ids_to_kill.end(); ++itr) {
     stk::mesh::Entity temp = mesh.get_entity(entity_rank, *itr);
     //select the entity only if the current process in the owner
-    if (temp.is_valid() && mesh.parallel_owner_rank(temp) == mesh.parallel_rank()) {
+    if (mesh.is_valid(temp) && mesh.parallel_owner_rank(temp) == mesh.parallel_rank()) {
       entities_to_kill.push_back(temp);
     }
   }
@@ -574,7 +574,7 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
     stk::mesh::Entity entity = mesh.get_entity(element_rank, itr->entity_id);
     //select the entity only if the current process in the owner
     // TODO fix the aura to correctly ghost the sides
-    if (mesh.is_valid(entity) && entity.owner_rank() == mesh.parallel_rank()) {
+    if (mesh.is_valid(entity) && mesh.parallel_owner_rank(entity) == mesh.parallel_rank()) {
     //if (entity != NULL) {
       //make sure the side exist
       int side_ordinal = itr->side_ordinal;

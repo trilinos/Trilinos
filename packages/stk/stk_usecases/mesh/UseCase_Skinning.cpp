@@ -106,7 +106,7 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
         stk::mesh::Entity current_entity = relations[j];
         unsigned side_ordinal = relation_ordinals[j];
 
-        if (mesh.in_receive_ghost(current_entity.key())) {
+        if (mesh.in_receive_ghost(mesh.entity_key(current_entity))) {
           // TODO deleteing the ghost triggers a logic error at the
           // end of the NEXT modification cycle.  We need to fix this!
           //mesh.destroy_entity(current_entity);
@@ -158,13 +158,13 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     stk::mesh::Entity node = nodes[i];
     stk::mesh::Entity new_node = new_nodes[i];
 
-    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_sharing(node.key());
+    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_sharing(mesh.entity_key(node));
 
     for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
 
       int proc = entity_comm.first->proc;
-      comm.send_buffer(proc).pack<stk::mesh::EntityKey>(node.key())
-        .pack<stk::mesh::EntityKey>(new_node.key());
+      comm.send_buffer(proc).pack<stk::mesh::EntityKey>(mesh.entity_key(node))
+        .pack<stk::mesh::EntityKey>(mesh.entity_key(new_node));
 
     }
   }
@@ -175,13 +175,13 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     stk::mesh::Entity node = nodes[i];
     stk::mesh::Entity new_node = new_nodes[i];
 
-    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_sharing(node.key());
+    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_sharing(mesh.entity_key(node));
 
     for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
 
       int proc = entity_comm.first->proc;
-      comm.send_buffer(proc).pack<stk::mesh::EntityKey>(node.key())
-                            .pack<stk::mesh::EntityKey>(new_node.key());
+      comm.send_buffer(proc).pack<stk::mesh::EntityKey>(mesh.entity_key(node))
+                            .pack<stk::mesh::EntityKey>(mesh.entity_key(new_node));
 
     }
   }
@@ -226,7 +226,7 @@ void separate_and_skin_mesh(
       itr != elements_to_separate.end(); ++itr)
   {
     stk::mesh::Entity element = mesh.get_entity(rank_of_element, *itr);
-    if (element.is_valid() && mesh.parallel_owner_rank(element) == mesh.parallel_rank()) {
+    if (mesh.is_valid(element) && mesh.parallel_owner_rank(element) == mesh.parallel_rank()) {
       entities_to_separate.push_back(element);
     }
   }

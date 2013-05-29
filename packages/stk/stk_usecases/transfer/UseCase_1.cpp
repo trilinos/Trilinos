@@ -75,7 +75,7 @@ use_case_1_driver(
   range_mesh_data.open_mesh_database(filename, range_mesh_type);
   range_mesh_data.create_input_mesh();
   stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
-				    
+
   range_meta_data.commit();
 
   range_mesh_data.populate_bulk_data();
@@ -168,7 +168,7 @@ use_case_1_driver(
       stk::mesh::EntityKey entity_key(i->second.ident);
 
       stk::mesh::Entity r_entity = range_bulk_data.get_entity(entity_key.rank(), entity_key.id());
-      if (r_entity.owner_rank() == my_rank) {
+      if (range_bulk_data.parallel_owner_rank(r_entity) == my_rank) {
         stk::mesh::EntityProc ep(r_entity, domain_owning_proc);
         range_to_ghost.push_back(ep);
       }

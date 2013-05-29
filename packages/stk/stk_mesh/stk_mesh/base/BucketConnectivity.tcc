@@ -1082,30 +1082,28 @@ private:
         if (m_direction == Higher) { // back rel
           if (target_rank <= stk::topology::ELEMENT_RANK) {
             ThrowAssertMsg(HigherConnectivityCompare()(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
-                                    "Connectivity out of order; data at " << kitr - keys_begin <<
-                                   "\nis (" << *oitr << ", " << kitr->local_offset() << ") rank=" << kitr->entity_rank()
-                                   << ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ") rank=" <<  (kitr + 1)->entity_rank());
+                           "Connectivity out of order; data at " << kitr - keys_begin <<
+                           "\nis (" << *oitr << ", " << kitr->local_offset() << ") rank=?" <<
+                           ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ") rank=?");
           }
           else {
           ThrowAssertMsg(m_rank_sensitive_higher_connectivity_cmp(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
                          "Connectivity out of order; data at " << kitr - keys_begin <<
-                        "\nis (" << *oitr << ", " << kitr->local_offset() << ") rank=" << kitr->entity_rank()
-                        << ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ") rank=" <<  (kitr + 1)->entity_rank());
+                         "\nis (" << *oitr << ", " << kitr->local_offset() << ") rank=?" <<
+                         ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ") rank=?");
           }
-          // sierra::out() << " good that data at " << kitr - keys_begin << " is (" << *oitr << ", " << kitr->local_offset()
-          //     << "),  data at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ")" << std::endl;
         }
         else {
           if (target_rank <= stk::topology::ELEMENT_RANK) {
             ThrowAssertMsg(LowerConnectivityCompare()(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
-                                    "Connectivity out of order; data at " << kitr - keys_begin <<
-                                   "\nis (" << *oitr << ", " << kitr->local_offset() << ") rank=" << kitr->entity_rank()
-                                   << ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ") rank=" <<  (kitr + 1)->entity_rank());
+                           "Connectivity out of order; data at " << kitr - keys_begin <<
+                           "\nis (" << *oitr << ", " << kitr->local_offset() << ") rank=?" <<
+                           ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ") rank=?");
           }
           else {
             ThrowAssertMsg(m_rank_sensitive_lower_connectivity_cmp(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
-                         "Connectivity out of order; data at " << kitr - keys_begin <<
-                         "\nis (" << *oitr << ", " << kitr->local_offset() << "),\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ")");
+                           "Connectivity out of order; data at " << kitr - keys_begin <<
+                           "\nis (" << *oitr << ", " << kitr->local_offset() << "),\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ")");
           }
         }
       }

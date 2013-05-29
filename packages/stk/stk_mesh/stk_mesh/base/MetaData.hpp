@@ -545,13 +545,12 @@ inline void set_cell_topology(Part & part)
 /** Get the cell_topology off a bucket */
 CellTopology get_cell_topology(const Bucket &bucket);
 
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
 CellTopology get_cell_topology(Entity entity);
+#endif
 
 /** set a stk::topology on a part */
 void set_topology(Part &part, stk::topology topology);
-
-/** Get the cell_topology off an entity */
-CellTopology get_cell_topology(const Entity entity);
 
 /** get the stk::topology given a Shards Cell Topology */
 stk::topology get_topology(CellTopology shards_topology, int spatial_dimension = 3);

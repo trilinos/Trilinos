@@ -617,8 +617,13 @@ public:
 
   bool check_bulk_data(Entity entity) const
   {
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
     // if entity is invalid, we can't check bulk data
     return entity.local_offset() == 0 || this == &BulkData::get(entity);
+#else
+    // remove this function once backwards compat layer is gone
+    return true;
+#endif
   }
 
   bool in_index_range(Entity entity) const
@@ -647,7 +652,7 @@ public:
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
     ThrowAssertMsg(check_bulk_data(entity), "Entity with bulk_data: " << BulkData::get(entity).m_bulk_data_id << " was given to bulk_data: " << m_bulk_data_id << "; entity has local_offset: "<< entity.local_offset());
 #endif
-    ThrowAssertMsg(in_index_range(entity) , "In bulk_data: " << m_bulk_data_id << ", entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_states.size() - 1);
+    ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_states.size() - 1);
   }
 
   //
@@ -1383,7 +1388,7 @@ return_type const* BulkData::begin_##rank_name##data_type(Entity entity) const \
 {                                                                       \
   ThrowAssert(is_valid(entity));                                        \
   ThrowAssert(bucket_ptr(entity));                                      \
-  ThrowAssert(this == &stk::mesh::BulkData::get(entity));               \
+  ThrowAssert(check_bulk_data(entity));                                 \
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
   Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                        \
@@ -1396,7 +1401,7 @@ return_type const* BulkData::end_##rank_name##data_type(Entity entity) const \
 {                                                                       \
   ThrowAssert(is_valid(entity));                                        \
   ThrowAssert(bucket_ptr(entity));                                      \
-  ThrowAssert(this == &stk::mesh::BulkData::get(entity));               \
+  ThrowAssert(check_bulk_data(entity));                                 \
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
   Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                        \
@@ -1419,7 +1424,7 @@ unsigned BulkData::num_##rank_name##s(Entity entity) const             \
 {                                                                      \
   ThrowAssert(is_valid(entity));                                       \
   ThrowAssert(bucket_ptr(entity));                                     \
-  ThrowAssert(this == &stk::mesh::BulkData::get(entity));              \
+  ThrowAssert(check_bulk_data(entity));                                \
   const MeshIndex &mesh_idx = mesh_index(entity);                      \
   const Bucket &b = *mesh_idx.bucket;                                  \
   Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                       \
@@ -1436,7 +1441,7 @@ return_type const* BulkData::begin_str##end_str(Entity entity, EntityRank rank) 
 {                                                                       \
   ThrowAssert(is_valid(entity));                                        \
   ThrowAssert(bucket_ptr(entity));                                      \
-  ThrowAssert(this == &stk::mesh::BulkData::get(entity));               \
+  ThrowAssert(check_bulk_data(entity));                                 \
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
   Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                        \

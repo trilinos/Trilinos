@@ -41,15 +41,6 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
   m_entities.erase( i );
 }
 
-//Entity
-//EntityRepository::internal_allocate_entity(EntityKey entity_key)
-//{
-//  Entity new_entity = allocate_entity(m_use_pool);
-//  // This makes no sense (not yet added to m_mesh!)and breaks things!
-//  m_mesh.set_entity_key(new_entity, entity_key);
-//  return new_entity;
-//}
-
 std::pair<Entity ,bool>
 EntityRepository::internal_create_entity( const EntityKey & key )
 {
@@ -60,7 +51,9 @@ EntityRepository::internal_create_entity( const EntityKey & key )
 
   if (iter == m_entities.end() || iter->first != key) {
     Entity next_entity = {Entity::InvalidEntity};
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
     next_entity.set_bulk_data_id(m_mesh.bulk_data_id());
+#endif
     next_entity.set_local_offset(m_mesh.generate_next_local_offset());
     m_mesh.set_entity_key(next_entity, key);
 

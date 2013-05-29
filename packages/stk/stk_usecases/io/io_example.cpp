@@ -659,8 +659,9 @@ namespace stk_example_io {
         std::vector<stk::mesh::Entity> nodes(node_count);
         for(int i=0; i<node_count; ++i) {
           nodes[i] = bulk.get_entity( stk::mesh::MetaData::NODE_RANK, node_ids[i] );
-          if (nodes[i].is_valid())
+          if (bulk.is_valid(nodes[i])) {
             bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, node_ids[i], add_parts );
+          }
         }
 
         /** \todo REFACTOR Application would probably store this field
@@ -712,7 +713,7 @@ namespace stk_example_io {
           // element block that appears in the database, but was
           // subsetted out of the analysis mesh. Only process if
           // non-null.
-          if (elem.is_valid()) {
+          if (bulk.is_valid(elem)) {
             // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
             // Hence the '-1' in the following line.
             int side_ordinal = elem_side[is*2+1] - 1 ;
