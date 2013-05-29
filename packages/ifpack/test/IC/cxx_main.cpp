@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RefCountPtr<Ifpack_Preconditioner> PrecIC = Teuchos::rcp( Factory.Create("IC", &*A) );
 
   Teuchos::ParameterList List;
-  List.get("fact: level-of-fill", 10);
+  //List.get("fact: ict level-of-fill", 2.);
   //List.get("fact: drop tolerance", 0.3333);
   //List.get("fact: absolute threshold", 0.00123);
   //List.get("fact: relative threshold", 0.9876);
