@@ -105,20 +105,6 @@ bool MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::i
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applySupportsConj(EConj conj) const
-{
-  return false;
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyTransposeSupportsConj(EConj conj) const
-{
-  return false;
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<PreconditionerBase<Scalar> >
 MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createPrec() const
 {
