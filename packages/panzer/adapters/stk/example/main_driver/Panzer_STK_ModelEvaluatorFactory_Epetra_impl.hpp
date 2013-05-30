@@ -113,6 +113,7 @@
 
 #ifdef HAVE_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
+#include "Stratimikos_MueluTpetraHelpers.hpp"
 #endif
 
 namespace panzer_stk {
@@ -1186,6 +1187,7 @@ namespace panzer_stk {
     #ifdef HAVE_MUELU
     {
       Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy.
+      Stratimikos::enableMueLuTpetra(linearSolverBuilder,"MueLu-Tpetra");
     }
     #endif // MUELU
 
