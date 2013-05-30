@@ -44,6 +44,8 @@
 
 #include "Thyra_TpetraLinearOp_decl.hpp"
 #include "Thyra_TpetraVectorSpace.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 #ifdef HAVE_THYRA_TPETRA_EPETRA
 #  include "Thyra_EpetraThyraWrappers.hpp"
@@ -93,6 +95,38 @@ public:
 
 
 #endif // HAVE_THYRA_TPETRA_EPETRA
+
+
+template <class Scalar>
+inline
+Teuchos::ETransp
+convertConjNoTransToTeuchosTransMode()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      Teuchos::ScalarTraits<Scalar>::isComplex,
+      Exceptions::OpNotSupported,
+      "For complex scalars such as " + Teuchos::TypeNameTraits<Scalar>::name() +
+      ", Tpetra does not support conjugation without transposition."
+      );
+  return Teuchos::NO_TRANS; // For non-complex scalars, CONJ is equivalent to NOTRANS.
+}
+
+
+template <class Scalar>
+inline
+Teuchos::ETransp
+convertToTeuchosTransMode(const Thyra::EOpTransp transp)
+{
+  switch (transp) {
+    case NOTRANS:   return Teuchos::NO_TRANS;
+    case CONJ:      return convertConjNoTransToTeuchosTransMode<Scalar>();
+    case TRANS:     return Teuchos::TRANS;
+    case CONJTRANS: return Teuchos::CONJ_TRANS;
+  }
+
+  // Should not escape the switch
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+}
 
 
 // Constructors/initializers
@@ -217,8 +251,16 @@ bool TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::opSupportedImpl(
 {
   if (is_null(tpetraOperator_))
     return false;
+
   if (M_trans == NOTRANS)
     return true;
+
+  if (M_trans == CONJ) {
+    // For non-complex scalars, CONJ is always supported since it is equivalent to NO_TRANS.
+    // For complex scalars, Tpetra does not support conjugation without transposition.
+    return !Teuchos::ScalarTraits<Scalar>::isComplex;
+  }
+
   return tpetraOperator_->hasTransposeApply();
 }
 
@@ -247,8 +289,7 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
   const RCP<TpetraMultiVector_t> tY =
     ConverterT::getTpetraMultiVector(rcpFromPtr(Y_inout));
 
-  const Teuchos::ETransp tTransp =
-    ( M_trans == NOTRANS ? Teuchos::NO_TRANS : Teuchos::CONJ_TRANS );
+  const Teuchos::ETransp tTransp = convertToTeuchosTransMode<Scalar>(M_trans);
 
   // Apply the operator
 
