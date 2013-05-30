@@ -65,12 +65,12 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
     for(size_t i=0; i<b.size(); ++i) {
       Entity elem = b[i];
       Entity const* node_rels = bulk.begin_nodes(elem);
-      const int num_nodes = bulk.num_nodes(elem);
+      const int num_elem_nodes = bulk.num_nodes(elem);
 
       //here's the gather:
 
       unsigned offset = 0;
-      for(int n = 0; n < num_nodes; ++n) {
+      for(int n = 0; n < num_elem_nodes; ++n) {
         Entity node = node_rels[n];
         double* node_coords = bulk.field_data(coord_field, node);
         elem_node_coords[offset++] = node_coords[0];
@@ -78,7 +78,7 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
         elem_node_coords[offset++] = node_coords[2];
       }
 
-      stk::performance_tests::calculate_centroid_3d(num_nodes, &elem_node_coords[0], &elem_centroid[0]);
+      stk::performance_tests::calculate_centroid_3d(num_elem_nodes, &elem_node_coords[0], &elem_centroid[0]);
 
       //add this element-centroid to the sum_centroid vector, and
       //re-zero the element-centroid vector:
