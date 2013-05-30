@@ -63,19 +63,20 @@ public:
   ///
   /// Default constructor
   ///
-  Storage() {};
+  Storage() {}
 
   ///
   /// Constructor to given size
+  /// \param number_entries number of entries
   ///
   explicit
-  Storage(Index const number_entries) {};
+  Storage(Index const number_entries) {resize(number_entries);}
 
   ///
   /// Simple destructor
   ///
   virtual
-  ~Storage() {};
+  ~Storage() {}
 
   ///
   /// Entry access
@@ -102,7 +103,7 @@ public:
 
   ///
   /// Resize the storage (assume destructive)
-  /// \param number_entries
+  /// \param number_entries number of entries
   ///
   virtual
   void
@@ -144,7 +145,8 @@ public:
 
   ///
   /// Constructor to given size
-  ///
+  /// \param number_entries number of entries
+ ///
   explicit
   StorageRaw(Index const number_entries);
 
@@ -175,7 +177,7 @@ public:
 
   ///
   /// Resize the storage (assume destructive)
-  /// \param number_entries
+  /// \param number_entries number of entries
   ///
   void
   resize(Index const number_entries);
@@ -227,6 +229,7 @@ public:
 
   ///
   /// Constructor to given size
+  /// \param number_entries number of entries
   ///
   explicit
   StorageSTLVector(Index const number_entries);
@@ -258,7 +261,7 @@ public:
 
   ///
   /// Resize the storage (assume destructive)
-  /// \param number_entries
+  /// \param number_entries number of entries
   ///
   void
   resize(Index const number_entries);
@@ -304,7 +307,7 @@ public:
 
   ///
   /// Constructor that initializes to NaNs
-  /// \param N dimension
+  /// \param number_entries number of entries
   ///
   explicit
   StorageRCPArray(Index const number_entries);
@@ -336,7 +339,7 @@ public:
 
   ///
   /// Resize the storage (assume destructive)
-  /// \param number_entries
+  /// \param number_entries number of entries
   ///
   void
   resize(Index const number_entries);

@@ -364,18 +364,18 @@ cross(Vector<S> const & u, Vector<T> const & v)
 
   switch (N) {
 
+    case 3:
+      w(0) = u(1) * v(2) - u(2) * v(1);
+      w(1) = u(2) * v(0) - u(0) * v(2);
+      w(2) = u(0) * v(1) - u(1) * v(0);
+      break;
+
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
       std::cerr << std::endl;
       std::cerr << "Cross product undefined for R^" << N;
       std::cerr << std::endl;
       exit(1);
-      break;
-
-    case 3:
-      w(0) = u(1) * v(2) - u(2) * v(1);
-      w(1) = u(2) * v(0) - u(0) * v(2);
-      w(2) = u(0) * v(1) - u(1) * v(0);
       break;
 
   }

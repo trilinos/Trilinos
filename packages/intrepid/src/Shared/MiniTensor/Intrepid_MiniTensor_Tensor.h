@@ -74,14 +74,14 @@ namespace Intrepid {
 
     ///
     /// Constructor that initializes to NaNs
-    /// \param dimension
+    /// \param dimension the space dimension
     ///
     explicit
     Tensor(Index const dimension);
 
     ///
     /// Create tensor from a specified value
-    /// \param dimension
+    /// \param dimension the space dimension
     /// \param value all components are set equal to this
     ///
     explicit
@@ -89,20 +89,20 @@ namespace Intrepid {
 
     ///
     /// Create tensor from a scalar
-    /// \param dimension
+    /// \param dimension the space dimension
     /// \param s all components are set equal to this value
     ///
     Tensor(Index const dimension, T const & s);
 
     ///
     /// Create tensor specifying components
-    /// \param  s00, s01, ... components in the R^2 canonical basis
+    /// \param  s00 s01 ... components in the R^2 canonical basis
     ///
     Tensor(T const & s00, T const & s01, T const & s10, T const & s11);
 
     ///
     /// Create tensor specifying components
-    /// \param  s00, s01, ... components in the R^3 canonical basis
+    /// \param  s00 s01 ... components in the R^3 canonical basis
     ///
     Tensor(
         T const & s00, T const & s01, T const & s02,
@@ -111,7 +111,7 @@ namespace Intrepid {
 
     ///
     /// Create tensor from array
-    /// \param dimension
+    /// \param dimension the space dimension
     /// \param data_ptr pointer into the array
     ///
     Tensor(Index const dimension, T const * data_ptr);
@@ -124,7 +124,7 @@ namespace Intrepid {
     ///
     /// Create tensor from array
     /// \param data_ptr pointer into the array
-    /// \param order component convention (3D only)
+    /// \param component_order component convention (3D only)
     ///
     Tensor(
         Index const dimension,
@@ -133,7 +133,6 @@ namespace Intrepid {
 
     ///
     /// Copy constructor
-    /// \param A the values of its components are copied to the new tensor
     ///
     Tensor(Tensor<T> const & A);
 
@@ -173,7 +172,7 @@ namespace Intrepid {
     ///
     /// Fill components from array defined by pointer.
     /// \param data_ptr pointer into array for filling components
-    /// \param order component convention (3D only)
+    /// \param component_order component convention (3D only)
     ///
     void
     fill(
@@ -184,7 +183,7 @@ namespace Intrepid {
     /// Tensor order
     ///
     Index
-    get_order() const {return order;};
+    get_order() const {return order;}
 
   };
 
