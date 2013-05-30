@@ -195,7 +195,10 @@ add (const Scalar& alpha,
 ///
 /// \warning The case where C == null on input does not actually work.
 ///   In order for it to work, we would need to change the interface
-///   of this function to pass in C as a Ptr<RCP<CrsMatrix> >.
+///   of this function (for example, to pass in C as a (pointer or
+///   nonconst reference) to a Teuchos::RCP).  Please use add() (which
+///   see) if you want matrix-matrix add to return a new instance of
+///   CrsMatrix.
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
