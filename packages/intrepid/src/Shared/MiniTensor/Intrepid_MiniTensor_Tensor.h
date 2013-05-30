@@ -53,459 +53,459 @@
 
 namespace Intrepid {
 
-  ///
-  /// Second order tensor.
-  ///
-  template<typename T>
-  class Tensor : public TensorBase<T>
-  {
-  public:
+///
+/// Component ordering convention
+///
+enum ComponentOrder {CANONICAL, SIERRA_FULL, SIERRA_SYMMETRIC};
 
-    ///
-    /// Order
-    ///
-    static Index const
-    order = 2U;
-
-    ///
-    /// Default constructor
-    ///
-    Tensor();
-
-    ///
-    /// Constructor that initializes to NaNs
-    /// \param dimension the space dimension
-    ///
-    explicit
-    Tensor(Index const dimension);
-
-    ///
-    /// Create tensor from a specified value
-    /// \param dimension the space dimension
-    /// \param value all components are set equal to this
-    ///
-    explicit
-    Tensor(Index const dimension, ComponentValue value);
-
-    ///
-    /// Create tensor from a scalar
-    /// \param dimension the space dimension
-    /// \param s all components are set equal to this value
-    ///
-    Tensor(Index const dimension, T const & s);
-
-    ///
-    /// Create tensor specifying components
-    /// \param  s00 s01 ... components in the R^2 canonical basis
-    ///
-    Tensor(T const & s00, T const & s01, T const & s10, T const & s11);
-
-    ///
-    /// Create tensor specifying components
-    /// \param  s00 s01 ... components in the R^3 canonical basis
-    ///
-    Tensor(
-        T const & s00, T const & s01, T const & s02,
-        T const & s10, T const & s11, T const & s12,
-        T const & s20, T const & s21, T const & s22);
-
-    ///
-    /// Create tensor from array
-    /// \param dimension the space dimension
-    /// \param data_ptr pointer into the array
-    ///
-    Tensor(Index const dimension, T const * data_ptr);
-
-    ///
-    /// Component ordering convention
-    ///
-    enum ComponentOrder {CANONICAL, SIERRA_FULL, SIERRA_SYMMETRIC};
-
-    ///
-    /// Create tensor from array
-    /// \param data_ptr pointer into the array
-    /// \param component_order component convention (3D only)
-    ///
-    Tensor(
-        Index const dimension,
-        T const * data_ptr,
-        ComponentOrder const component_order);
-
-    ///
-    /// Copy constructor
-    ///
-    Tensor(Tensor<T> const & A);
-
-    ///
-    /// 2nd-order tensor from 4th-order tensor
-    ///
-    Tensor(Tensor4<T> const & A);
-
-    ///
-    /// Simple destructor
-    ///
-    ~Tensor();
-
-    ///
-    /// Indexing for constant tensor
-    /// \param i index
-    /// \param j index
-    ///
-    T const &
-    operator()(Index const i, Index const j) const;
-
-    ///
-    /// Tensor indexing
-    /// \param i index
-    /// \param j index
-    ///
-    T &
-    operator()(Index const i, Index const j);
-
-    ///
-    /// Fill components with value
-    /// \param value all components are set equal to this
-    ///
-    void
-    fill(ComponentValue value);
-
-    ///
-    /// Fill components from array defined by pointer.
-    /// \param data_ptr pointer into array for filling components
-    /// \param component_order component convention (3D only)
-    ///
-    void
-    fill(
-        T const * data_ptr,
-        ComponentOrder const component_order = CANONICAL);
-
-    ///
-    /// Tensor order
-    ///
-    Index
-    get_order() const {return order;}
-
-  };
+///
+/// Second order tensor.
+///
+template<typename T>
+class Tensor : public TensorBase<T>
+{
+public:
 
   ///
-  /// Tensor addition
-  /// \return \f$ A + B \f$
+  /// Order
   ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  operator+(Tensor<S> const & A, Tensor<T> const & B);
+  static Index const
+  order = 2U;
 
   ///
-  /// Tensor subtraction
-  /// \return \f$ A - B \f$
+  /// Default constructor
   ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  operator-(Tensor<S> const & A, Tensor<T> const & B);
+  Tensor();
 
   ///
-  /// Tensor minus
-  /// \return \f$ -A \f$
+  /// Constructor that initializes to NaNs
+  /// \param dimension the space dimension
   ///
-  template<typename T>
-  Tensor<T>
-  operator-(Tensor<T> const & A);
+  explicit
+  Tensor(Index const dimension);
 
   ///
-  /// Tensor equality
-  /// Tested by components
-  /// \return \f$ A \equiv B \f$
+  /// Create tensor from a specified value
+  /// \param dimension the space dimension
+  /// \param value all components are set equal to this
   ///
-  template<typename T>
-  bool
-  operator==(Tensor<T> const & A, Tensor<T> const & B);
+  explicit
+  Tensor(Index const dimension, ComponentValue value);
 
   ///
-  /// Tensor inequality
-  /// Tested by components
-  /// \return \f$ A \neq B \f$
+  /// Create tensor from a scalar
+  /// \param dimension the space dimension
+  /// \param s all components are set equal to this value
   ///
-  template<typename T>
-  bool
-  operator!=(Tensor<T> const & A, Tensor<T> const & B);
+  Tensor(Index const dimension, T const & s);
 
   ///
-  /// Tensor vector product v = A u
-  /// \param A tensor
-  /// \param u vector
-  /// \return \f$ A u \f$
+  /// Create tensor specifying components
+  /// \param  s00 s01 ... components in the R^2 canonical basis
   ///
-  template<typename S, typename T>
-  Vector<typename Promote<S, T>::type>
-  operator*(Tensor<T> const & A, Vector<S> const & u);
+  Tensor(T const & s00, T const & s01, T const & s10, T const & s11);
 
   ///
-  /// Vector tensor product v = u A
-  /// \param A tensor
-  /// \param u vector
-  /// \return \f$ u A = A^T u \f$
+  /// Create tensor specifying components
+  /// \param  s00 s01 ... components in the R^3 canonical basis
   ///
-  template<typename S, typename T>
-  Vector<typename Promote<S, T>::type>
-  operator*(Vector<S> const & u, Tensor<T> const & A);
+  Tensor(
+      T const & s00, T const & s01, T const & s02,
+      T const & s10, T const & s11, T const & s12,
+      T const & s20, T const & s21, T const & s22);
 
   ///
-  /// Tensor dot product C = A B
-  /// \return \f$ A \cdot B \f$
+  /// Create tensor from array
+  /// \param dimension the space dimension
+  /// \param data_ptr pointer into the array
   ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  operator*(Tensor<S> const & A, Tensor<T> const & B);
+  Tensor(Index const dimension, T const * data_ptr);
 
   ///
-  /// Scalar tensor product
-  /// \param s scalar
-  /// \param A tensor
-  /// \return \f$ s A \f$
+  /// Create tensor from array
+  /// \param data_ptr pointer into the array
+  /// \param component_order component convention (3D only)
   ///
-  template<typename S, typename T>
-  typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
-  operator*(S const & s, Tensor<T> const & A);
+  Tensor(
+      Index const dimension,
+      T const * data_ptr,
+      ComponentOrder const component_order);
 
   ///
-  /// Tensor scalar product
-  /// \param A tensor
-  /// \param s scalar
-  /// \return \f$ s A \f$
+  /// Copy constructor
   ///
-  template<typename S, typename T>
-  typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
-  operator*(Tensor<T> const & A, S const & s);
+  Tensor(Tensor<T> const & A);
 
   ///
-  /// Tensor scalar division
-  /// \param A tensor
-  /// \param s scalar
-  /// \return \f$ A / s \f$
+  /// 2nd-order tensor from 4th-order tensor
   ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  operator/(Tensor<T> const & A, S const & s);
+  Tensor(Tensor4<T> const & A);
 
   ///
-  /// Tensor input
-  /// \param A tensor
-  /// \param is input stream
-  /// \return is input stream
+  /// Simple destructor
   ///
-  template<typename T>
-  std::istream &
-  operator>>(std::istream & is, Tensor<T> & A);
+  ~Tensor();
 
   ///
-  /// Tensor output
-  /// \param A tensor
-  /// \param os output stream
-  /// \return os output stream
+  /// Indexing for constant tensor
+  /// \param i index
+  /// \param j index
   ///
-  template<typename T>
-  std::ostream &
-  operator<<(std::ostream & os, Tensor<T> const & A);
+  T const &
+  operator()(Index const i, Index const j) const;
 
   ///
-  /// Extract a row as a vector
-  /// \param A tensor
-  /// \param i index of row
-  /// \return \f$ v = A(i,:) \f$
+  /// Tensor indexing
+  /// \param i index
+  /// \param j index
   ///
-  template<typename T>
-  Vector<T>
-  row(Tensor<T> const & A, Index const i);
+  T &
+  operator()(Index const i, Index const j);
 
   ///
-  /// Extract a column as a vector
-  /// \param A tensor
-  /// \param j index of column
-  /// \return \f$ v = A(:,j) \f$
+  /// Fill components with value
+  /// \param value all components are set equal to this
   ///
-  template<typename T>
-  Vector<T>
-  col(Tensor<T> const & A, Index const j);
+  void
+  fill(ComponentValue value);
 
   ///
-  /// Tensor vector product v = A u
-  /// \param A tensor
-  /// \param u vector
-  /// \return \f$ A u \f$
+  /// Fill components from array defined by pointer.
+  /// \param data_ptr pointer into array for filling components
+  /// \param component_order component convention (3D only)
   ///
-  template<typename S, typename T>
-  Vector<typename Promote<S, T>::type>
-  dot(Tensor<T> const & A, Vector<S> const & u);
+  void
+  fill(
+      T const * data_ptr,
+      ComponentOrder const component_order = CANONICAL);
 
   ///
-  /// Vector tensor product v = u A
-  /// \param A tensor
-  /// \param u vector
-  /// \return \f$ u A = A^T u \f$
+  /// Tensor order
   ///
-  template<typename S, typename T>
-  Vector<typename Promote<S, T>::type>
-  dot(Vector<S> const & u, Tensor<T> const & A);
+  Index
+  get_order() const {return order;}
 
-  ///
-  /// Tensor tensor product C = A B
-  /// \param A tensor
-  /// \param B tensor
-  /// \return a tensor \f$ A \cdot B \f$
-  ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  dot(Tensor<S> const & A, Tensor<T> const & B);
+};
 
-  ///
-  /// Tensor tensor product C = A^T B
-  /// \param A tensor
-  /// \param B tensor
-  /// \return a tensor \f$ A^T \cdot B \f$
-  ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  t_dot(Tensor<S> const & A, Tensor<T> const & B);
+///
+/// Tensor addition
+/// \return \f$ A + B \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+operator+(Tensor<S> const & A, Tensor<T> const & B);
 
-  ///
-  /// Tensor tensor product C = A B^T
-  /// \param A tensor
-  /// \param B tensor
-  /// \return a tensor \f$ A \cdot B^T \f$
-  ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  dot_t(Tensor<S> const & A, Tensor<T> const & B);
+///
+/// Tensor subtraction
+/// \return \f$ A - B \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+operator-(Tensor<S> const & A, Tensor<T> const & B);
 
-  ///
-  /// Tensor tensor product C = A^T B^T
-  /// \param A tensor
-  /// \param B tensor
-  /// \return a tensor \f$ A^T \cdot B^T \f$
-  ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  t_dot_t(Tensor<S> const & A, Tensor<T> const & B);
+///
+/// Tensor minus
+/// \return \f$ -A \f$
+///
+template<typename T>
+Tensor<T>
+operator-(Tensor<T> const & A);
 
-  ///
-  /// Tensor tensor double dot product (contraction)
-  /// \param A tensor
-  /// \param B tensor
-  /// \return a scalar \f$ A : B \f$
-  ///
-  template<typename S, typename T>
-  typename Promote<S, T>::type
-  dotdot(Tensor<S> const & A, Tensor<T> const & B);
+///
+/// Tensor equality
+/// Tested by components
+/// \return \f$ A \equiv B \f$
+///
+template<typename T>
+bool
+operator==(Tensor<T> const & A, Tensor<T> const & B);
 
-  ///
-  /// Dyad
-  /// \param u vector
-  /// \param v vector
-  /// \return \f$ u \otimes v \f$
-  ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  dyad(Vector<S> const & u, Vector<T> const & v);
+///
+/// Tensor inequality
+/// Tested by components
+/// \return \f$ A \neq B \f$
+///
+template<typename T>
+bool
+operator!=(Tensor<T> const & A, Tensor<T> const & B);
 
-  ///
-  /// Bun operator, just for Jay
-  /// \param u vector
-  /// \param v vector
-  /// \return \f$ u \otimes v \f$
-  ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  bun(Vector<S> const & u, Vector<T> const & v);
+///
+/// Tensor vector product v = A u
+/// \param A tensor
+/// \param u vector
+/// \return \f$ A u \f$
+///
+template<typename S, typename T>
+Vector<typename Promote<S, T>::type>
+operator*(Tensor<T> const & A, Vector<S> const & u);
 
-  ///
-  /// Tensor product
-  /// \param u vector
-  /// \param v vector
-  /// \return \f$ u \otimes v \f$
-  ///
-  template<typename S, typename T>
-  Tensor<typename Promote<S, T>::type>
-  tensor(Vector<S> const & u, Vector<T> const & v);
+///
+/// Vector tensor product v = u A
+/// \param A tensor
+/// \param u vector
+/// \return \f$ u A = A^T u \f$
+///
+template<typename S, typename T>
+Vector<typename Promote<S, T>::type>
+operator*(Vector<S> const & u, Tensor<T> const & A);
 
-  ///
-  /// Diagonal tensor from vector
-  /// \param v vector
-  /// \return A = diag(v)
-  ///
-  template<typename T>
-  Tensor<T>
-  diag(Vector<T> const & v);
+///
+/// Tensor dot product C = A B
+/// \return \f$ A \cdot B \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+operator*(Tensor<S> const & A, Tensor<T> const & B);
 
-  ///
-  /// Diagonal of tensor in a vector
-  /// \param A tensor
-  /// \return v = diag(A)
-  ///
-  template<typename T>
-  Vector<T>
-  diag(Tensor<T> const & A);
+///
+/// Scalar tensor product
+/// \param s scalar
+/// \param A tensor
+/// \return \f$ s A \f$
+///
+template<typename S, typename T>
+typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
+operator*(S const & s, Tensor<T> const & A);
 
-  ///
-  /// Zero 2nd-order tensor
-  /// All components are zero
-  ///
-  template<typename T>
-  const Tensor<T>
-  zero(Index const N);
+///
+/// Tensor scalar product
+/// \param A tensor
+/// \param s scalar
+/// \return \f$ s A \f$
+///
+template<typename S, typename T>
+typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
+operator*(Tensor<T> const & A, S const & s);
 
-  ///
-  /// 2nd-order identity tensor
-  ///
-  template<typename T>
-  const Tensor<T>
-  identity(Index const N);
+///
+/// Tensor scalar division
+/// \param A tensor
+/// \param s scalar
+/// \return \f$ A / s \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+operator/(Tensor<T> const & A, S const & s);
 
-  ///
-  /// 2nd-order identity tensor, à la Matlab
-  ///
-  template<typename T>
-  const Tensor<T>
-  eye(Index const N);
+///
+/// Tensor input
+/// \param A tensor
+/// \param is input stream
+/// \return is input stream
+///
+template<typename T>
+std::istream &
+operator>>(std::istream & is, Tensor<T> & A);
 
-  ///
-  /// R^N 2nd-order tensor transpose
-  ///
-  template<typename T>
-  Tensor<T>
-  transpose(Tensor<T> const & A);
+///
+/// Tensor output
+/// \param A tensor
+/// \param os output stream
+/// \return os output stream
+///
+template<typename T>
+std::ostream &
+operator<<(std::ostream & os, Tensor<T> const & A);
 
-  ///
-  /// C^N 2nd-order tensor adjoint
-  ///
-  template<typename T>
-  Tensor<T>
-  adjoint(Tensor<T> const & A);
+///
+/// Extract a row as a vector
+/// \param A tensor
+/// \param i index of row
+/// \return \f$ v = A(i,:) \f$
+///
+template<typename T>
+Vector<T>
+row(Tensor<T> const & A, Index const i);
 
-  ///
-  /// Symmetric part of 2nd-order tensor
-  /// \return \f$ \frac{1}{2}(A + A^T) \f$
-  ///
-  template<typename T>
-  Tensor<T>
-  sym(Tensor<T> const & A);
+///
+/// Extract a column as a vector
+/// \param A tensor
+/// \param j index of column
+/// \return \f$ v = A(:,j) \f$
+///
+template<typename T>
+Vector<T>
+col(Tensor<T> const & A, Index const j);
 
-  ///
-  /// Skew symmetric part of 2nd-order tensor
-  /// \return \f$ \frac{1}{2}(A - A^T) \f$
-  ///
-  template<typename T>
-  Tensor<T>
-  skew(Tensor<T> const & A);
+///
+/// Tensor vector product v = A u
+/// \param A tensor
+/// \param u vector
+/// \return \f$ A u \f$
+///
+template<typename S, typename T>
+Vector<typename Promote<S, T>::type>
+dot(Tensor<T> const & A, Vector<S> const & u);
 
-  ///
-  /// Skew symmetric 2nd-order tensor from vector valid for R^3 only.
-  /// R^N with N != 3 will produce an error
-  /// \param u vector
-  /// \return \f$ {{0, -u_2, u_1}, {u_2, 0, -u_0}, {-u_1, u+0, 0}} \f$
-  ///
-  template<typename T>
-  Tensor<T>
-  skew(Vector<T> const & u);
+///
+/// Vector tensor product v = u A
+/// \param A tensor
+/// \param u vector
+/// \return \f$ u A = A^T u \f$
+///
+template<typename S, typename T>
+Vector<typename Promote<S, T>::type>
+dot(Vector<S> const & u, Tensor<T> const & A);
+
+///
+/// Tensor tensor product C = A B
+/// \param A tensor
+/// \param B tensor
+/// \return a tensor \f$ A \cdot B \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+dot(Tensor<S> const & A, Tensor<T> const & B);
+
+///
+/// Tensor tensor product C = A^T B
+/// \param A tensor
+/// \param B tensor
+/// \return a tensor \f$ A^T \cdot B \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+t_dot(Tensor<S> const & A, Tensor<T> const & B);
+
+///
+/// Tensor tensor product C = A B^T
+/// \param A tensor
+/// \param B tensor
+/// \return a tensor \f$ A \cdot B^T \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+dot_t(Tensor<S> const & A, Tensor<T> const & B);
+
+///
+/// Tensor tensor product C = A^T B^T
+/// \param A tensor
+/// \param B tensor
+/// \return a tensor \f$ A^T \cdot B^T \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+t_dot_t(Tensor<S> const & A, Tensor<T> const & B);
+
+///
+/// Tensor tensor double dot product (contraction)
+/// \param A tensor
+/// \param B tensor
+/// \return a scalar \f$ A : B \f$
+///
+template<typename S, typename T>
+typename Promote<S, T>::type
+dotdot(Tensor<S> const & A, Tensor<T> const & B);
+
+///
+/// Dyad
+/// \param u vector
+/// \param v vector
+/// \return \f$ u \otimes v \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+dyad(Vector<S> const & u, Vector<T> const & v);
+
+///
+/// Bun operator, just for Jay
+/// \param u vector
+/// \param v vector
+/// \return \f$ u \otimes v \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+bun(Vector<S> const & u, Vector<T> const & v);
+
+///
+/// Tensor product
+/// \param u vector
+/// \param v vector
+/// \return \f$ u \otimes v \f$
+///
+template<typename S, typename T>
+Tensor<typename Promote<S, T>::type>
+tensor(Vector<S> const & u, Vector<T> const & v);
+
+///
+/// Diagonal tensor from vector
+/// \param v vector
+/// \return A = diag(v)
+///
+template<typename T>
+Tensor<T>
+diag(Vector<T> const & v);
+
+///
+/// Diagonal of tensor in a vector
+/// \param A tensor
+/// \return v = diag(A)
+///
+template<typename T>
+Vector<T>
+diag(Tensor<T> const & A);
+
+///
+/// Zero 2nd-order tensor
+/// All components are zero
+///
+template<typename T>
+const Tensor<T>
+zero(Index const N);
+
+///
+/// 2nd-order identity tensor
+///
+template<typename T>
+const Tensor<T>
+identity(Index const N);
+
+///
+/// 2nd-order identity tensor, à la Matlab
+///
+template<typename T>
+const Tensor<T>
+eye(Index const N);
+
+///
+/// R^N 2nd-order tensor transpose
+///
+template<typename T>
+Tensor<T>
+transpose(Tensor<T> const & A);
+
+///
+/// C^N 2nd-order tensor adjoint
+///
+template<typename T>
+Tensor<T>
+adjoint(Tensor<T> const & A);
+
+///
+/// Symmetric part of 2nd-order tensor
+/// \return \f$ \frac{1}{2}(A + A^T) \f$
+///
+template<typename T>
+Tensor<T>
+sym(Tensor<T> const & A);
+
+///
+/// Skew symmetric part of 2nd-order tensor
+/// \return \f$ \frac{1}{2}(A - A^T) \f$
+///
+template<typename T>
+Tensor<T>
+skew(Tensor<T> const & A);
+
+///
+/// Skew symmetric 2nd-order tensor from vector valid for R^3 only.
+/// R^N with N != 3 will produce an error
+/// \param u vector
+/// \return \f$ {{0, -u_2, u_1}, {u_2, 0, -u_0}, {-u_1, u+0, 0}} \f$
+///
+template<typename T>
+Tensor<T>
+skew(Vector<T> const & u);
 
 } // namespace Intrepid
 
