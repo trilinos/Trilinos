@@ -54,9 +54,6 @@
  */
 
 namespace Tpetra {
-
-/// \namespace MatrixMatrix
-/// \brief Sparse matrix-matrix multiply for Tpetra::CrsMatrix objects.
 namespace MatrixMatrix {
 
 /// \brief Sparse matrix-matrix multiply
