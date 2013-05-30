@@ -67,13 +67,14 @@ public:
 
   ///
   /// 3rd-order tensor constructor with NaNs
+  /// \param dimension the space dimension
   ///
   explicit
   Tensor3(Index const dimension);
 
   ///
   /// Create 3rd-order tensor from a specified value
-  /// \param dimension
+  /// \param dimension the space dimension
   /// \param value all components are set equal to this
   ///
   explicit
@@ -81,13 +82,14 @@ public:
 
   ///
   /// 3rd-order tensor constructor with a scalar
+  /// \param dimension the space dimension
   /// \param s all components set to this scalar
   ///
   Tensor3(Index const dimension, T const & s);
 
   ///
   /// Create 3rd-order tensor from array
-  /// \param dimension
+  /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
   Tensor3(Index const dimension, T const * data_ptr);
@@ -95,7 +97,6 @@ public:
   ///
   /// Copy constructor
   /// 3rd-order tensor constructor from 3rd-order tensor
-  /// \param A from which components are copied
   ///
   Tensor3(Tensor3<T> const & A);
 
@@ -126,7 +127,7 @@ public:
   /// Tensor order
   ///
   Index
-  get_order() const {return order;};
+  get_order() const {return order;}
 
 };
 

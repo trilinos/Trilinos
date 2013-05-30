@@ -114,14 +114,6 @@ TensorBase<T>::fill(ComponentValue value)
 
   switch (value) {
 
-    default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Unknown specification of value for filling components.";
-      std::cerr << std::endl;
-      exit(1);
-      break;
-
     case ZEROS:
       for (Index i = 0; i < number_components; ++i) {
         (*this)[i] = 0;
@@ -138,6 +130,14 @@ TensorBase<T>::fill(ComponentValue value)
       for (Index i = 0; i < number_components; ++i) {
         (*this)[i] = Teuchos::ScalarTraits<T>().random();
       }
+      break;
+
+    default:
+      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+      std::cerr << std::endl;
+      std::cerr << "Unknown specification of value for filling components.";
+      std::cerr << std::endl;
+      exit(1);
       break;
   }
 
