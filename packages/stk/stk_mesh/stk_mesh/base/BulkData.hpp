@@ -642,11 +642,13 @@ public:
 
   bool in_index_range(Entity entity) const
   {
+    ThrowAssert(check_bulk_data(entity));
     return entity.local_offset() < m_entity_states.size();
   }
 
   bool is_valid(Entity entity) const
   {
+    ThrowAssert(check_bulk_data(entity));
     return (entity.local_offset() < m_entity_states.size()) && (m_entity_states[entity.local_offset()] != Deleted);
   }
 
