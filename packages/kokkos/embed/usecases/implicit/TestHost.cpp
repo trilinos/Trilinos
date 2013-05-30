@@ -1,9 +1,9 @@
+#include <ParallelComm.hpp>
 
 #include <sstream>
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_hwloc.hpp>
 
-#include <ParallelComm.hpp>
 #include <TestImplicit.hpp>
 
 namespace Test {
