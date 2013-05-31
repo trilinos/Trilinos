@@ -78,34 +78,38 @@ public:
 
   ///
   /// Constructor that initializes to NaNs
-  /// \param dimension, order
+  /// \param dimension the space dimension
+  /// \param order the order of the tensor
   ///
   TensorBase(Index const dimension, Index const order);
 
   ///
   /// Create with specified value
-  /// \param dimension, order
+  /// \param dimension the space dimension
+  /// \param order the order of the tensor
   /// \param value all components are set equal to this
   ///
   TensorBase(Index const dimension, Index const order, ComponentValue value);
 
   ///
   /// Create from a scalar
-  /// \param dimension, order
+  /// \param dimension the space dimension
+  /// \param order the order of the tensor
   /// \param s all components are set equal to this value
   ///
   TensorBase(Index const dimension, Index const order, T const & s);
 
   ///
   /// Create from array
-  /// \param dimension, order
+  /// \param dimension the space dimension
+  /// \param order the order of the tensor
   /// \param data_ptr pointer into the array
   ///
   TensorBase(Index const dimension, Index const order, T const * data_ptr);
 
   ///
   /// Copy constructor
-  /// \param v the values of its components are copied to the new vector
+  /// \param X the values of its components are copied to the new vector
   ///
   TensorBase(TensorBase<T> const & X);
 
@@ -163,21 +167,21 @@ public:
 
   ///
   /// Copy assignment
-  /// \param v the values of its components are copied to this vector
+  /// \param X the values of its components are copied to this vector
   ///
   TensorBase<T> &
   operator=(TensorBase<T> const & X);
 
   ///
   /// Component increment
-  /// \param components of X added to current components
+  /// \param X components are added to current components
   ///
   TensorBase<T> &
   operator+=(TensorBase<T> const & X);
 
   ///
   /// Component decrement
-  /// \param components of X subtracted to current components
+  /// \param X components are subtracted to current components
   ///
   TensorBase<T> &
   operator-=(TensorBase<T> const & X);
@@ -198,7 +202,7 @@ public:
 protected:
 
   ///
-  /// \param set storage for components
+  /// \param number_components set storage for this number of components
   ///
   void
   set_number_components(Index const number_components);

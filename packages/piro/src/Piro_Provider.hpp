@@ -130,10 +130,12 @@ makeSharingProviderFunctor(const Teuchos::RCP<T> &instance)
 
 /*! \brief Handle for auxiliary object factories
  *
- *  A Provider is a smart handle that offers functor (function object) and value semantics
- *  as well as several implicit conversions as a convenience to manipulate objects that implement the ProviderBase interface.
+ *  A Provider is a smart handle that offers function semantics (i.e. can be called as a function)
+ *  as well as several implicit conversions as a convenience to manipulate objects
+ *  that implement the ProviderBase interface.
  *
- *  It is essentially a thin wrapper around <tt>Teuchos::RCP<ProviderBase<T>></tt>.
+ *  It is essentially a thin wrapper around <tt>Teuchos::RCP<ProviderBase<T>></tt>
+ *  that preserves its core functionality including sharing and reference counting.
  *
  *  The solver factory Piro::Epetra::SolverFactory uses \link Provider Providers\endlink
  *  as sources of auxiliary objects for the different %Piro solvers.
@@ -163,8 +165,8 @@ public:
     ptr_(Teuchos::rcp(new ProviderImpl<T, SharingProviderFunctor<T> >(makeSharingProviderFunctor<T>(instance))))
   {}
 
-  //! \brief Constructs a Provider from a function object.
-  //! \details The template parameter \c P must refer to a copy-constructible function object type
+  //! \brief Constructs a Provider from a callable object, either a function object (functor) or a function pointer.
+  //! \details The template parameter \c P must refer to a copy-constructible callable object type
   //!          such that the following code is valid
   //!          \code Teuchos::RCP<T> instance = p(params); \endcode
   //!          where \c params denotes a variable of type <tt>Teuchos::RCP<Teuchos::ParameterList><tt/>.

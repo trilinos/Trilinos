@@ -75,14 +75,14 @@ public:
 
   ///
   /// Construction that initializes to NaNs
-  /// \param dimension
+  /// \param dimension the space dimension
   ///
   explicit
   Vector(Index const dimension);
 
   ///
   /// Create vector from a specified value
-  /// \param dimension
+  /// \param dimension the space dimension
   /// \param value all components are set equal to this
   ///
   explicit
@@ -90,7 +90,7 @@ public:
 
   ///
   /// Create vector from a scalar
-  /// \param dimension
+  /// \param dimension the space dimension
   /// \param s all components are set equal to this value
   ///
   explicit
@@ -98,29 +98,26 @@ public:
 
   ///
   /// Create vector specifying components
-  /// \param s0, s1 are the vector components in the R^2 canonical basis
+  /// \param s0 s1 are the vector components in the R^2 canonical basis
   ///
   Vector(T const & s0, T const & s1);
 
   ///
   /// Create vector specifying components
   /// the vector components in the R^3 canonical basis
-  /// \param s0
-  /// \param s1
-  /// \param s2
+  /// \param s0 s1 s2 are the vector components in the R^3 canonical basis
   ///
   Vector(T const & s0, T const & s1, T const & s2);
 
   ///
   /// Create vector from array.
-  /// \param N dimension
+  /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
   Vector(Index const dimension, T const * data_ptr);
 
   ///
   /// Copy constructor
-  /// \param v the values of its components are copied to the new vector
   ///
   Vector(Vector<T> const & v);
 
@@ -147,14 +144,12 @@ public:
   /// Vector order
   ///
   Index
-  get_order() const {return order;};
+  get_order() const {return order;}
 
 };
 
 ///
 /// Vector addition
-/// \param u
-/// \param v the operands
 /// \return \f$ u + v \f$
 ///
 template<typename S, typename T>
@@ -163,8 +158,6 @@ operator+(Vector<S> const & u, Vector<T> const & v);
 
 ///
 /// Vector substraction
-/// \param u
-/// \param v the operands
 /// \return \f$ u - v \f$
 ///
 template<typename S, typename T>
@@ -173,7 +166,6 @@ operator-(Vector<S> const & u, Vector<T> const & v);
 
 ///
 /// Vector minus
-/// \param u
 /// \return \f$ -u \f$
 ///
 template<typename T>
@@ -182,8 +174,6 @@ operator-(Vector<T> const & u);
 
 ///
 /// Vector dot product
-/// \param u
-/// \param v the operands
 /// \return \f$ u \cdot v \f$
 ///
 template<typename S, typename T>
@@ -192,8 +182,6 @@ operator*(Vector<S> const & u, Vector<T> const & v);
 
 ///
 /// Vector equality tested by components
-/// \param u
-/// \param v the operands
 /// \return \f$ u \equiv v \f$
 ///
 template<typename T>
@@ -202,8 +190,6 @@ operator==(Vector<T> const & u, Vector<T> const & v);
 
 ///
 /// Vector inequality tested by components
-/// \param u
-/// \param v the operands
 /// \return \f$ u \neq v \f$
 ///
 template<typename T>
@@ -242,8 +228,6 @@ operator/(Vector<T> const & u, S const & s);
 
 ///
 /// Vector dot product
-/// \param u
-/// \param v operands
 /// \return \f$ u \cdot v \f$
 ///
 template<typename S, typename T>
@@ -253,8 +237,6 @@ dot(Vector<S> const & u, Vector<T> const & v);
 ///
 /// Cross product only valid for R^3.
 /// R^N with N != 3 will produce an error.
-/// \param u
-/// \param v operands
 /// \return \f$ u \times v \f$
 ///
 template<typename S, typename T>

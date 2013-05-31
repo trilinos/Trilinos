@@ -73,10 +73,6 @@ public:
   /** \brief . */
   bool isCompatible( const LinearOpSourceBase<Scalar> &fwdOp ) const;
   /** \brief . */
-  bool applySupportsConj(EConj conj) const;
-  /** \brief . */
-  bool applyTransposeSupportsConj(EConj conj) const;
-  /** \brief . */
   Teuchos::RCP<PreconditionerBase<Scalar> > createPrec() const;
   /** \brief . */
   void initializePrec(

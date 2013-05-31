@@ -321,7 +321,13 @@ namespace Tpetra {
   //! Namespace for external %Tpetra functionality
   namespace Ext {
   }
-  //! Collection of matrix-matrix operations.
+
+  /// \namespace MatrixMatrix
+  /// \brief Distributed sparse matrix-matrix multiply and add.
+  ///
+  /// This namespace includes functions for computing the sum or product
+  /// of two distributed sparse matrices, each of which is represented
+  /// as a Tpetra::CrsMatrix.
   namespace MatrixMatrix {
   }
 }

@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
   solver.Iterate(maxIter, tol);
 
   int Iters = solver.NumIters();
-  cout << "No preconditioner iterations: " << Iters << endl;
+  //cout << "No preconditioner iterations: " << Iters << endl;
 
 #if 0 
   // Not sure how to use Ifpack_CrsRick - leave out for now.
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
   solver.Iterate(maxIter, tol);
 
   int RickIters = solver.NumIters();
-  cout << "Ifpack_Rick iterations: " << RickIters << endl;
+  //cout << "Ifpack_Rick iterations: " << RickIters << endl;
 
   // Compare to no preconditioning
   if (RickIters > Iters/2)
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RefCountPtr<Ifpack_Preconditioner> PrecIC = Teuchos::rcp( Factory.Create("IC", &*A) );
 
   Teuchos::ParameterList List;
-  //List.get("fact: level-of-fill", 2);
+  //List.get("fact: ict level-of-fill", 2.);
   //List.get("fact: drop tolerance", 0.3333);
   //List.get("fact: absolute threshold", 0.00123);
   //List.get("fact: relative threshold", 0.9876);
@@ -200,15 +200,16 @@ int main(int argc, char *argv[]) {
   solver.Iterate(maxIter, tol);
 
   int ICIters = solver.NumIters();
-  cout << "Ifpack_IC iterations: " << ICIters << endl;
+  //cout << "Ifpack_IC iterations: " << ICIters << endl;
 
   // Compare to no preconditioning
   if (ICIters > Iters/2)
     IFPACK_CHK_ERR(-1);
 
+#if 0
   //////////////////////////////////////////////////////
-  // Same test with Ifpack_ICT
-  // This is threshold Cholesky, so different than IC(0)
+  // Same test with Ifpack_ICT 
+  // This is another threshold Cholesky
 
   Teuchos::RefCountPtr<Ifpack_Preconditioner> PrecICT = Teuchos::rcp( Factory.Create("ICT", &*A) );
 
@@ -234,11 +235,12 @@ int main(int argc, char *argv[]) {
   solver.Iterate(maxIter, tol);
 
   int ICTIters = solver.NumIters();
-  cout << "Ifpack_ICT iterations: " << ICTIters << endl;
+  //cout << "Ifpack_ICT iterations: " << ICTIters << endl;
 
   // Compare to no preconditioning
   if (ICTIters > Iters/2)
     IFPACK_CHK_ERR(-1);
+#endif
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
