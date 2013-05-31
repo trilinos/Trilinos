@@ -189,6 +189,7 @@ namespace stk
                   // choose edges to be used for new node locations (i.e., this would model a serendipity-like element with only edge Lagrange nodes)
                   NeededEntityType needed_entity_rank(eMesh.edge_rank(), 1u);
                   std::vector<NeededEntityType> needed_entity_ranks(1, needed_entity_rank);
+                  std::cout << "P["<< eMesh.get_rank() <<"] here 0" << std::endl;
 
                   /*
                    * 1st of three steps to create and associate new nodes - register need for new nodes, then check if node is remote, then get
@@ -205,6 +206,8 @@ namespace stk
                       nodeRegistry.doForAllSubEntities(&NodeRegistry::registerNeedNewNode, element_ghost, needed_entity_ranks);
                     }
                   nodeRegistry.endRegistration();
+
+                  std::cout << "P["<< eMesh.get_rank() <<"] here 0.1" << std::endl;
 
                   std::cout << "P["<<p_rank<<"] nodeRegistry size  = " << nodeRegistry.total_size() << std::endl;
                   std::cout << "P["<<p_rank<<"] nodeRegistry lsize = " << nodeRegistry.local_size() << std::endl;
@@ -234,6 +237,7 @@ namespace stk
                     }
                   nodeRegistry.endGetFromRemote();
 
+                  std::cout << "P["<< eMesh.get_rank() <<"] here 2" << std::endl;
                   if (0)
                     {
                       MPI_Barrier( MPI_COMM_WORLD );
@@ -265,6 +269,8 @@ namespace stk
                       EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 41u);
                       // should be the same node on each proc
                       std::cout << "P[" << p_rank << "] nodeId = " << nodeIds_onSE << " node= " << node << std::endl;
+                  std::cout << "P["<< eMesh.get_rank() <<"] here 3" << std::endl;
+
                     }
 
                   // end_demo
@@ -279,6 +285,8 @@ namespace stk
                     exit(1);
                   }
               }
+
+
           }
         //exit(123);
 

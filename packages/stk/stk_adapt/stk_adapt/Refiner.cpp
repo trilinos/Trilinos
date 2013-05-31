@@ -3579,6 +3579,16 @@ namespace stk {
         progress_meter_when_to_post = 1;
       double d_progress_meter_num_total = progress_meter_num_total;
 
+      if (m_eMesh.getEntityPool().size() > irank)
+        {
+          for (unsigned ii=0; ii < m_eMesh.getEntityPool()[irank].size(); ii++)
+            {
+              if (elements_to_be_destroyed.find(m_eMesh.getEntityPool()[irank][ii]) != elements_to_be_destroyed.end())
+                {
+                  m_eMesh.getEntityPool()[irank][ii] = stk::mesh::Entity();
+                }
+            }
+        }
       for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed.begin(); itbd != elements_to_be_destroyed.end();  ++itbd)
         {
           stk::mesh::Entity element_p = *itbd;

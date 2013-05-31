@@ -463,13 +463,15 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
-            stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
-            stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_level = eMesh.add_field("refine_level", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field       = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field          = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field_filtered = eMesh.add_field("refine_field_filtered", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            (void)refine_field_filtered;
+            stk::mesh::FieldBase* nodal_refine_field    = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
+            stk::mesh::FieldBase* refine_level          = eMesh.add_field("refine_level", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.commit();
-            //eMesh.delete_side_sets();
-            //eMesh.output_active_children_only(true);
+            eMesh.delete_side_sets();
+            eMesh.output_active_children_only(true);
             if (1)
               {
                 SetElementField1 set_ref_field(eMesh);
@@ -502,7 +504,7 @@ namespace stk
             double delta_shock_displacement = 0.02;
             double shock_displacement = 0.0;
             int num_ref_passes = 1;
-            int num_unref_passes = 3;
+            int num_unref_passes = 1;
 
             for (int istep = 0; istep < num_time_steps; istep++)
               {
@@ -532,7 +534,9 @@ namespace stk
                     std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << " number elements before unrefine= " << eMesh.get_number_elements() <<  std::endl;
                     ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
                     size_t unref_sz = elements_to_unref.size();
-                    breaker.unrefineTheseElements(elements_to_unref);
+                    //breaker.unrefineTheseElements(elements_to_unref);
+                    breaker.unrefinePass2(elements_to_unref);
+
                     std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " unref list size = " << unref_sz << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
                   }
 

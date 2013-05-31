@@ -250,7 +250,9 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destro
       void
       remeshElements(SetOfEntities& rootElements);
 
-      void allDescendants(stk::mesh::Entity element, SetOfEntities& descendants, unsigned& nlevels, bool only_leaves=false);
+      bool allDescendants(stk::mesh::Entity element, SetOfEntities& descendants, unsigned& nlevels, bool only_leaves=false,
+                          ElementUnrefineCollection *elements_to_unref=0);
+
       void
       filterUnrefSetPass2(ElementUnrefineCollection& elements_to_unref,   SetOfEntities& grandParents);
       void

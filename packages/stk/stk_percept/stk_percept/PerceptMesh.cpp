@@ -1464,12 +1464,85 @@ namespace stk {
         }
     }
 
-    void PerceptMesh::
-    createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities)
+    static bool check_entities(stk::mesh::BulkData& bulkData, std::vector<stk::mesh::Entity>& entities, const std::string str)
     {
-      std::vector<size_t> requests(  m_metaData->entity_rank_count() , 0 );
-      requests[entityRank] = count;
-      get_bulk_data()->generate_new_entities( requests, requested_entities );
+      for (unsigned ii=0; ii < entities.size(); ii++)
+        {
+          if (!bulkData.is_valid(entities[ii]))
+            {
+              std::cout << "PerceptMesh::check_entities invalid str= " << str << " entity = " << entities[ii] << std::endl;
+              return true;
+            }
+        }
+      return false;
+    }
+
+    void PerceptMesh::
+    createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities, int pool_size)
+    {
+      bool debug = false;
+      if (!count)
+        {
+          requested_entities.resize(0);
+          return;
+        }
+      if (count > pool_size)
+        {
+          std::vector<size_t> requests(  m_metaData->entity_rank_count() , 0 );
+          requests[entityRank] = count;
+          get_bulk_data()->generate_new_entities( requests, requested_entities );
+        }
+      else
+        {
+          if (m_entity_pool.size() == 0)
+            m_entity_pool.resize(get_fem_meta_data()->entity_rank_count());
+          int current_pool_size = m_entity_pool[entityRank].size();
+          if (count > current_pool_size)
+            {
+              // replenish
+              std::vector<stk::mesh::Entity> entity_pool_add;
+              createEntities(entityRank, pool_size - current_pool_size, entity_pool_add, 0);
+              m_entity_pool[entityRank].insert(m_entity_pool[entityRank].end(), entity_pool_add.begin(), entity_pool_add.end());
+            }
+          current_pool_size = m_entity_pool[entityRank].size();
+          requested_entities.resize(0);
+          if (m_entity_pool[entityRank].end() - count < m_entity_pool[entityRank].begin()) throw std::runtime_error("bad m_entity_pool");
+          requested_entities.resize(count);
+          std::copy( m_entity_pool[entityRank].end() - count, m_entity_pool[entityRank].end(), requested_entities.begin());
+          m_entity_pool[entityRank].erase(m_entity_pool[entityRank].end() - count, m_entity_pool[entityRank].end());
+        }
+      if (debug) {
+        EXCEPTWATCH;
+        if (check_entities(*get_bulk_data(), requested_entities, "requested_entities"))
+          {
+            throw std::runtime_error("PerceptMesh::check_entities invalid entity - requested_entities");
+          }
+        if (pool_size && check_entities(*get_bulk_data(), m_entity_pool[entityRank], "m_entity_pool"))
+          {
+            std::cout << "entityRank= " << entityRank << " pool_size= " << pool_size << std::endl;
+            throw std::runtime_error("PerceptMesh::check_entities invalid entity - m_entity_pool");
+
+          }
+      }
+    }
+
+    void PerceptMesh::
+    destroyEntityPool()
+    {
+      for (unsigned entityRank=0; entityRank < m_entity_pool.size(); entityRank++)
+        {
+          for (unsigned ii=0; ii < m_entity_pool[entityRank].size(); ii++)
+            {
+              if ( get_bulk_data()->is_valid( m_entity_pool[entityRank][ii]) &&
+                   (! get_bulk_data()->destroy_entity( m_entity_pool[entityRank][ii] )) )
+                {
+                  std::cout << "entityRank = " << entityRank << std::endl;
+                  throw std::logic_error("PerceptMesh::destroyEntityPool couldn't remove element, destroy_entity returned false for elem.");
+                }
+            }
+          m_entity_pool[entityRank].resize(0);
+        }
+      m_entity_pool.resize(0);
     }
 
     // static
@@ -5077,7 +5150,7 @@ namespace stk {
           percept::MyPairIterRelation family_tree_1_relations((*this), family_tree_1, element.entity_rank());
           //if ( (family_tree_0.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 1;
           //else if ( (family_tree_1.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 0;
-          if ( family_tree_0_relations[FAMILY_TREE_PARENT].entity() == element) 
+          if ( family_tree_0_relations[FAMILY_TREE_PARENT].entity() == element)
             return 1;
           else if (family_tree_1_relations[FAMILY_TREE_PARENT].entity() == element)
             return 0;
@@ -5103,7 +5176,7 @@ namespace stk {
           percept::MyPairIterRelation family_tree_1_relations((*this), family_tree_1, element.entity_rank());
           //if ( (family_tree_0.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 0;
           //else if ( (family_tree_1.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 1;
-          if ( family_tree_0_relations[FAMILY_TREE_PARENT].entity() == element) 
+          if ( family_tree_0_relations[FAMILY_TREE_PARENT].entity() == element)
             return 0;
           else if (family_tree_1_relations[FAMILY_TREE_PARENT].entity() == element)
             return 1;

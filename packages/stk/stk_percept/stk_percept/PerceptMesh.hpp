@@ -637,8 +637,10 @@ namespace stk {
 
       stk::mesh::Entity createOrGetNode(stk::mesh::EntityId nid, double* x=0);
 
-      void createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities);
-
+      // if pool_size is set, use a pooling scheme with that pool size
+      void createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities, int pool_size=0);
+      std::vector<std::vector<stk::mesh::Entity> > & getEntityPool() { return m_entity_pool; }
+      void destroyEntityPool();
 
       static double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
       static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity node, unsigned *stride=0);
@@ -826,6 +828,8 @@ namespace stk {
 
       std::string                           m_ioss_read_options;
       std::string                           m_ioss_write_options;
+
+      std::vector<std::vector<stk::mesh::Entity> >        m_entity_pool;
 
     private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
