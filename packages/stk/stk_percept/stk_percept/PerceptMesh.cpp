@@ -1481,12 +1481,7 @@ namespace stk {
     createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities, int pool_size)
     {
       bool debug = false;
-      if (!count)
-        {
-          requested_entities.resize(0);
-          return;
-        }
-      if (count > pool_size)
+      if (count > pool_size || !pool_size)
         {
           std::vector<size_t> requests(  m_metaData->entity_rank_count() , 0 );
           requests[entityRank] = count;
