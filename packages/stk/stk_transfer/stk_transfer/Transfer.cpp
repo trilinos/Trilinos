@@ -21,6 +21,21 @@
 namespace stk {
 namespace transfer {
 
+namespace {
+stk::diag::TimerSet &HintsTimerSet()
+{
+  static stk::diag::TimerSet s_HintTimerSet(0);
+  return s_HintTimerSet;
+}
+}
+
+Transfer::Hints::Hints(stk::diag::Timer *timer) : 
+      Tolerance      (0.1), 
+      ExpansionFactor(1.5),
+      Timer          (timer ? stk::diag::Timer("Transfer",*timer) : 
+                              stk::diag::createRootTimer("Transfer", HintsTimerSet())){}
+
+
 using namespace STK_TransferP2P;
 
 Transfer::Transfer(const std::string &name,

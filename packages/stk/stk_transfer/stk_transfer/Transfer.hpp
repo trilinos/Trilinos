@@ -23,11 +23,7 @@ public:
   typedef Intrepid::FieldContainer<double> MDArray;
 
   struct Hints {
-    Hints(stk::diag::Timer *timer=0) : 
-      Tolerance      (0.1), 
-      ExpansionFactor(1.5),
-      Timer          (timer ? stk::diag::Timer("Transfer",*timer) : 
-                              stk::diag::createRootTimer("Transfer",stk::diag::TimerSet(0))){}
+    Hints(stk::diag::Timer *timer=0); 
     double Tolerance;
     double ExpansionFactor;
     stk::diag::Timer Timer;
