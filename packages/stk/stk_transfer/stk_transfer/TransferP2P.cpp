@@ -404,8 +404,8 @@ void linear_interpolation (MDArray          &ToValues,
   for (unsigned i=0; i<numValues; ++i)  {
     MDArray Corners(DIM+1,DIM);
     for (unsigned j=0; j<DIM+1; ++j) {
-      const IdentProc::Key k = RangeToDomain[4*i+j].second.ident;
-      const double *c = entity_coord<MeshClass>(FromPoints, k); 
+      const IdentProc::Key key = RangeToDomain[4*i+j].second.ident;
+      const double *c = entity_coord<MeshClass>(FromPoints, key); 
       for (unsigned k=0; k<DIM; ++k) Corners(j,k) = c[k];
     } 
     MDArray SpanVectors(DIM,DIM);
