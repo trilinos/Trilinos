@@ -129,14 +129,15 @@ namespace stk {
       std::size_t m_hash;
     public:
       HC m_HashCode;
+      CompareClass m_CompareClass;
       typedef stk::percept::NoMallocArray<T,N> base_type;
       typedef std::size_t    size_type;
 
       typedef SubDimCell<T,N,CompareClass,HC> VAL;
 
       //repo always init to 0 size: SubDimCell(unsigned n=4) : base_type(n), m_hash(0u) {}
-      SubDimCell() : base_type(), m_hash(0u), m_HashCode() {}
-      SubDimCell(unsigned n) : base_type(), m_hash(0u), m_HashCode() {}
+      SubDimCell() : base_type(), m_hash(0u), m_HashCode(), m_CompareClass() {}
+      SubDimCell(unsigned n) : base_type(), m_hash(0u), m_HashCode(), m_CompareClass() {}
 #if 0
       SubDimCell(const SubDimCell& sdc) : base_type(sdc), m_hash(sdc.m_hash) {}
 #endif
@@ -158,12 +159,12 @@ namespace stk {
             base_type::insert(val);
 #ifdef __GNUC__
 #if (__GNUC__ == 4) && (__GNUC_MINOR__ == 4)
-            std::stable_sort( base_type::begin(), base_type::end(), CompareClass() );
+            std::stable_sort( base_type::begin(), base_type::end(), m_CompareClass );
 #else
-            std::sort( base_type::begin(), base_type::end(), CompareClass() );
+            std::sort( base_type::begin(), base_type::end(), m_CompareClass );
 #endif
 #else
-            std::sort( base_type::begin(), base_type::end(), CompareClass() );
+            std::sort( base_type::begin(), base_type::end(), m_CompareClass );
 #endif
           }
         m_hash = hashCode();

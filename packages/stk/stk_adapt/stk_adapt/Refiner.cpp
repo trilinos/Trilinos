@@ -555,13 +555,13 @@ namespace stk {
                       int topoDim = UniformRefinerPatternBase::getTopoDim(element_topo);
 
                       bool isShell = false;
-                      if (topoDim < (int)element.entity_rank())
+                      if (topoDim < (int)eMesh.entity_rank(element))
                         {
                           isShell = true;
                         }
 
                       eMesh.element_side_permutation(element, side, k_element_side, permIndex, permPolarity, false, false);
-                      //std::cout << "element= " << element.identifier() << std::endl;
+                      //std::cout << "element= " << element) << std::endl;
                       if (!isShell && (permIndex < 0 || permPolarity < 0))
                         {
                           std::cout << "element/side polarity problem: permIndex = " << permIndex << " permPolarity= " << permPolarity << std::endl;
@@ -1764,7 +1764,7 @@ namespace stk {
           unsigned numSubDimNeededEntities = 0;
 
           // special case of face in 3d or edge in 2d
-          if (needed_entity_ranks[ineed_ent].first == element.entity_rank())
+          if (needed_entity_ranks[ineed_ent].first == m_eMesh.entity_rank(element))
             {
               numSubDimNeededEntities = 1;
             }
@@ -1890,7 +1890,7 @@ namespace stk {
                 {
                   throw std::logic_error("Refiner::createNewNeededNodeIds logic err #2");
                 }
-              //std::cout << "tmp elementid, iSubDimOrd, num_new_nodes_needed = " << element.identifier() << " " << iSubDimOrd << " " << num_new_nodes_needed << std::endl;
+              //std::cout << "tmp elementid, iSubDimOrd, num_new_nodes_needed = " << element) << " " << iSubDimOrd << " " << num_new_nodes_needed << std::endl;
               new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd].resize(num_new_nodes_needed);
               if (num_new_nodes_needed > nodeIds_onSE.size())
                 {
@@ -1951,18 +1951,18 @@ namespace stk {
                           }
                         }
                       nodeIds_onSE[i_new_node] = node1;
-                      VERIFY_OP_ON(node1.identifier(), ==, nodeIds_onSE.m_entity_id_vector[i_new_node], "Refiner::createNewNeededNodeIds logic err #4.1");
+                      VERIFY_OP_ON(m_eMesh.identifier(node1), ==, nodeIds_onSE.m_entity_id_vector[i_new_node], "Refiner::createNewNeededNodeIds logic err #4.1");
                     }
-                  new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd][i_new_node] = nodeIds_onSE[i_new_node].identifier();
+                  new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd][i_new_node] = m_eMesh.identifier(nodeIds_onSE[i_new_node]);
 
 #ifndef NDEBUG
-                  stk::mesh::Entity node2 = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE[i_new_node].identifier() );
+                  stk::mesh::Entity node2 = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, m_eMesh.identifier(nodeIds_onSE[i_new_node]) );
                   if (!node2.is_valid())
                     {
                       std::cout << "P[" << m_eMesh.get_rank() << "] element is ghost = " << m_eMesh.isGhostElement(element)
                                 << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first << " iSubDimOrd= " << iSubDimOrd
                                 << " i_new_node= " << i_new_node
-                                << " id= " << nodeIds_onSE[i_new_node].identifier()
+                                << " id= " << m_eMesh.identifier(nodeIds_onSE[i_new_node])
                                 << " entity_vec_id= " << nodeIds_onSE.m_entity_id_vector[i_new_node]
                                 << std::endl;
 
@@ -2493,8 +2493,8 @@ namespace stk {
                               found = true;
                               if (1)
                                 {
-                                  std::cout << "found side element needing fixing, id= " << side.identifier() <<  std::endl;
-                                  std::cout << "found side element needing fixing, ele id= " << element.identifier() <<  std::endl;
+                                  std::cout << "found side element needing fixing, id= " << m_eMesh.identifier(side) <<  std::endl;
+                                  std::cout << "found side element needing fixing, ele id= " << m_eMesh.identifier(element) <<  std::endl;
                                   //exit(123);
                                   throw std::logic_error("fix_side_sets_1 error 1");
                                 }
@@ -2502,7 +2502,7 @@ namespace stk {
 
                               percept::MyPairIterRelation rels  (m_eMesh,element,side_rank);
 
-                              //std::cout << "found 1 side element needing fixing, id= " << side.identifier() <<  std::endl;
+                              //std::cout << "found 1 side element needing fixing, id= " << side) <<  std::endl;
 
                               bool found_existing_rel = false;
                               for (unsigned irels=0; irels < rels.size(); irels++)
@@ -2971,7 +2971,7 @@ namespace stk {
                                   && m_eMesh.match(side_node, elem_node, true, ave_edge_length))
                                 {
                                   EXCEPTWATCH;
-                                  std::cout << "fix_side_sets_2: reconnecting side_node= " << side_node.identifier() << " to " << elem_node.identifier() << std::endl;
+                                  std::cout << "fix_side_sets_2: reconnecting side_node= " << m_eMesh.identifier(side_node) << " to " << m_eMesh.identifier(elem_node) << std::endl;
                                   bool del = m_eMesh.get_bulk_data()->destroy_relation( side, side_node, side_nodes[isnode].relation_ordinal());
                                   if (!del)
                                     {
@@ -2999,14 +2999,14 @@ namespace stk {
                       std::cout << "ERROR: side = " << side << " side-is-leaf? " << m_eMesh.isLeafElement(side) << std::endl;
                       m_eMesh.print(side);
                       stk::mesh::PartVector side_parts;
-                      side.bucket().supersets(side_parts);
+                      m_eMesh.bucket(side).supersets(side_parts);
                       for (unsigned isp = 0; isp < side_parts.size(); isp++)
                         {
                           std::cout << "side parts= " << side_parts[isp]->name() << std::endl;
                         }
 #if 0
                       stk::mesh::PartVector elem_parts;
-                      elem.bucket().supersets(elem_parts);
+                      m_eMesh.bucket(elem).supersets(elem_parts);
                       for (unsigned isp = 0; isp < elem_parts.size(); isp++)
                         {
                           std::cout << "elem parts= " << elem_parts[isp]->name() << std::endl;
@@ -3090,8 +3090,8 @@ namespace stk {
         {
           bool valid = false;
           stk::mesh::PartVector side_parts, elem_parts;
-          element.bucket().supersets(elem_parts);
-          side_elem.bucket().supersets(side_parts);
+          m_eMesh.bucket(element).supersets(elem_parts);
+          m_eMesh.bucket(side_elem).supersets(side_parts);
           for (unsigned isp = 0; isp < side_parts.size(); isp++)
             {
               if ( stk::mesh::is_auto_declared_part(*side_parts[isp]) )
@@ -3129,12 +3129,12 @@ namespace stk {
       int topoDim = UniformRefinerPatternBase::getTopoDim(element_topo);
 
       bool isShell = false;
-      if (topoDim < (int)element.entity_rank())
+      if (topoDim < (int)m_eMesh.entity_rank(element))
         {
           isShell = true;
         }
       int spatialDim = m_eMesh.get_spatial_dim();
-      if (spatialDim == 3 && isShell && side_elem.entity_rank() == m_eMesh.edge_rank())
+      if (spatialDim == 3 && isShell && m_eMesh.entity_rank(side_elem) == m_eMesh.edge_rank())
         {
           element_nsides = (unsigned) element_topo.getEdgeCount();
         }
@@ -3171,9 +3171,9 @@ namespace stk {
           if (isShell)
             {
               // FIXME for 2D
-              if (side_elem.entity_rank() == m_eMesh.face_rank())
+              if (m_eMesh.entity_rank(side_elem) == m_eMesh.face_rank())
                 {
-                  percept::MyPairIterRelation elem_sides (m_eMesh, element, side_elem.entity_rank());
+                  percept::MyPairIterRelation elem_sides (m_eMesh, element, m_eMesh.entity_rank(side_elem));
                   unsigned elem_sides_size= elem_sides.size();
                   if (debug) std::cout << "tmp srk found shell, elem_sides_size= " << elem_sides_size << std::endl;
                   if (elem_sides_size == 1)
@@ -3188,7 +3188,7 @@ namespace stk {
             }
 
           int exists=0;
-          percept::MyPairIterRelation elem_sides (m_eMesh, element, side_elem.entity_rank());
+          percept::MyPairIterRelation elem_sides (m_eMesh, element, m_eMesh.entity_rank(side_elem));
           unsigned elem_sides_size= elem_sides.size();
           unsigned rel_id = 0;
           for (unsigned iside=0; iside < elem_sides_size; iside++)
@@ -3202,8 +3202,8 @@ namespace stk {
 
               if (elem_sides[iside].relation_ordinal() == k_element_side ) {
                 std::cout << "ERROR: Relation already exists: connectSidesForced element= "; m_eMesh.print(element, true, true);
-                std::cout << " side= " << side_elem.identifier() << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, side_elem.bucket()); m_eMesh.print(side_elem, true, true);
-                std::cout << " existing_side= " << existing_side.identifier() << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, existing_side.bucket()); m_eMesh.print(existing_side, true, true);
+                std::cout << " side= " << m_eMesh.identifier(side_elem) << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, m_eMesh.bucket(side_elem)); m_eMesh.print(side_elem, true, true);
+                std::cout << " existing_side= " << m_eMesh.identifier(existing_side) << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, m_eMesh.bucket(existing_side)); m_eMesh.print(existing_side, true, true);
                 VERIFY_OP_ON(elem_sides[iside].relation_ordinal(), !=, k_element_side, "Relation already exists!");
               }
 
@@ -3230,13 +3230,13 @@ namespace stk {
               m_eMesh.print(element);
 
               stk::mesh::PartVector side_parts;
-              side_elem.bucket().supersets(side_parts);
+              m_eMesh.bucket(side_elem).supersets(side_parts);
               for (unsigned isp = 0; isp < side_parts.size(); isp++)
                 {
                   std::cout << "side parts= " << side_parts[isp]->name() << std::endl;
                 }
               stk::mesh::PartVector elem_parts;
-              element.bucket().supersets(elem_parts);
+              m_eMesh.bucket(element).supersets(elem_parts);
               for (unsigned isp = 0; isp < elem_parts.size(); isp++)
                 {
                   std::cout << "elem parts= " << elem_parts[isp]->name() << std::endl;
@@ -3268,12 +3268,12 @@ namespace stk {
               int topoDim = UniformRefinerPatternBase::getTopoDim(element_topo);
 
               bool isShell = false;
-              if (topoDim < (int)element.entity_rank())
+              if (topoDim < (int)m_eMesh.entity_rank(element))
                 {
                   isShell = true;
                 }
               int spatialDim = m_eMesh.get_spatial_dim();
-              if (spatialDim == 3 && isShell && side_elem.entity_rank() == m_eMesh.edge_rank())
+              if (spatialDim == 3 && isShell && m_eMesh.entity_rank(side_elem) == m_eMesh.edge_rank())
                 {
                   element_nsides = (unsigned) element_topo.getEdgeCount();
                 }
@@ -3606,7 +3606,7 @@ namespace stk {
           if (0)
             {
               std::cout << "tmp removeElements removing element_p = " << element_p << std::endl;
-              if (element_p.is_valid()) std::cout << "tmp removeElements removing id= " << element_p.identifier() << std::endl;
+              if (element_p.is_valid()) std::cout << "tmp removeElements removing id= " << m_eMesh.identifier(element_p) << std::endl;
             }
 
           if ( ! m_eMesh.get_bulk_data()->destroy_entity( element_p ) )
@@ -3637,7 +3637,7 @@ namespace stk {
             {
               shards::CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element_p));
               std::cout << "tmp Refiner::removeElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
-              const percept::MyPairIterRelation elem_relations (m_eMesh, element_p, element_p.entity_rank()+1);
+              const percept::MyPairIterRelation elem_relations (m_eMesh, element_p, m_eMesh.entity_rank(element_p)+1);
               std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
 
               throw std::logic_error("Refiner::removeElements couldn't remove element, destroy_entity returned false.");
@@ -3950,11 +3950,11 @@ namespace stk {
                 {
                   stk::mesh::Entity element = bucket[ientity];
                   VERIFY_OP_ON(element.is_valid(), ==, true, "check_db_entities_exist bad element");
-                  stk::mesh::Entity element_1 = m_eMesh.get_bulk_data()->get_entity(ranks_to_check[irank], element.identifier());
-                  if (element != element_1 || element.identifier() != element_1.identifier())
+                  stk::mesh::Entity element_1 = m_eMesh.get_bulk_data()->get_entity(ranks_to_check[irank], m_eMesh.identifier(element));
+                  if (element != element_1 || m_eMesh.identifier(element) != m_eMesh.identifier(element_1))
                     {
                       std::cout << "msg= " << msg << " error element, element_1, ids= "
-                                << &element << " " << element_1 << " " << element.identifier() << " " << element_1.identifier() << std::endl;
+                                << &element << " " << element_1 << " " << m_eMesh.identifier(element) << " " << m_eMesh.identifier(element_1) << std::endl;
                       throw std::logic_error("check_db_entities_exist:: error #1");
                     }
 
@@ -3998,10 +3998,10 @@ namespace stk {
                 }
 
 
-              if (owning_element.identifier() != owning_elementId)
+              if (m_eMesh.identifier(owning_element) != owning_elementId)
                 {
                   std::cout << "msg= " << msg << " check_db_ownership_consistency error element, element_1, ids= "
-                            << owning_elementId << " " << owning_element.identifier() << std::endl;
+                            << owning_elementId << " " << m_eMesh.identifier(owning_element) << std::endl;
                   throw std::logic_error("check_db_ownership_consistency:: error #1.1, msg= "+msg);
                 }
 
@@ -4018,7 +4018,7 @@ namespace stk {
                       if (!node1.is_valid())
                         throw std::logic_error("check_db_ownership_consistency:: error #3a, msg= "+msg);
 
-                      stk::mesh::Entity node2 = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, node.identifier() );
+                      stk::mesh::Entity node2 = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, m_eMesh.identifier(node) );
                       if (!node2.is_valid())
                         throw std::logic_error("check_db_ownership_consistency:: error #3b, msg= "+msg);
                       if (node != node2)

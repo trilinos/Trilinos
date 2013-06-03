@@ -647,7 +647,10 @@ namespace stk {
 
       static double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
       static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity node, unsigned *stride=0);
-      static double * field_data_entity(const stk::mesh::FieldBase *field, const mesh::Entity entity, unsigned *stride=0);
+      double * field_data_entity(const stk::mesh::FieldBase *field, const mesh::Entity entity, unsigned *stride=0);
+
+      double * field_data(const stk::mesh::FieldBase& field, const stk::mesh::Bucket & bucket, unsigned *stride=0) { return PerceptMesh::field_data(&field, bucket, stride); }
+      double * field_data(const stk::mesh::FieldBase& field, const mesh::Entity node, unsigned *stride=0) { return PerceptMesh::field_data(&field, node, stride); }
 
       static inline double *
       field_data_inlined(const mesh::FieldBase *field, const mesh::Entity node)
@@ -782,9 +785,11 @@ namespace stk {
 
     public:
       //static void transformMesh(GenericFunction& coordinate_transform);
+      bool is_valid(stk::mesh::Entity entity) const { return m_bulkData->is_valid(entity); }
       stk::mesh::EntityId identifier(stk::mesh::Entity entity) const { return m_bulkData->identifier(entity); }
       stk::mesh::EntityRank entity_rank(stk::mesh::Entity entity) const { return m_bulkData->entity_rank(entity); }
       stk::mesh::EntityKey entity_key(stk::mesh::Entity entity) const { return m_bulkData->entity_key(entity); }
+      stk::mesh::EntityKey key(stk::mesh::Entity entity) const { return m_bulkData->entity_key(entity); }
       stk::mesh::EntityState state(stk::mesh::Entity entity) const { return m_bulkData->state(entity); }
       stk::mesh::Bucket & bucket(stk::mesh::Entity entity) const { return m_bulkData->bucket(entity); }
       int parallel_owner_rank(stk::mesh::Entity entity) const { return m_bulkData->parallel_owner_rank(entity); }

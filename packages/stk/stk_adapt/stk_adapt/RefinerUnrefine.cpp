@@ -1085,7 +1085,7 @@ namespace stk {
                 {
                   stk::mesh::Entity element = bucket[ientity];
                   {
-                    double *f_data = PerceptMesh::field_data_entity(refine_field, element);
+                    double *f_data = m_eMesh.field_data_entity(refine_field, element);
                     if (f_data) f_data[0] = 0;
                   }
 
@@ -1094,7 +1094,7 @@ namespace stk {
                   if (is_root)
                     {
                       {
-                        double *f_data = PerceptMesh::field_data_entity(refine_field, element);
+                        double *f_data = m_eMesh.field_data_entity(refine_field, element);
                         if (f_data) f_data[0] = 20;
                       }
                       filterRecurse(element, new_root, elements_to_unref);
@@ -1133,7 +1133,7 @@ namespace stk {
                   new_root.insert(element);
 
                    {
-                     double *f_data = PerceptMesh::field_data_entity(refine_field, element);
+                     double *f_data = m_eMesh.field_data_entity(refine_field, element);
                      if (f_data) f_data[0] = 10;
                    }
 
@@ -1141,7 +1141,7 @@ namespace stk {
                     {
                       new_set.insert(*it);
                       {
-                        double *f_data = PerceptMesh::field_data_entity(refine_field, *it);
+                        double *f_data = m_eMesh.field_data_entity(refine_field, *it);
                         if (f_data) f_data[0] = -10;
                       }
                     }

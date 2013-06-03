@@ -1601,7 +1601,7 @@ namespace stk {
         {
           const percept::MyPairIterRelation elem_nodes (m_eMesh, element,  stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
-          double *f_data = PerceptMesh::field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
           bool found = true;
@@ -1638,7 +1638,7 @@ namespace stk {
         {
           const percept::MyPairIterRelation elem_nodes (m_eMesh, element,  stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
-          double *f_data = PerceptMesh::field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
           bool found = true;

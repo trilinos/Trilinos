@@ -146,7 +146,7 @@ namespace stk
 
           unsigned num_node = elem_nodes.size();
           //unsigned num_node = m_eMesh.get_bulk_data()->num_connectivity(element, stk::mesh::MetaData::NODE_RANK );
-          double *f_data = PerceptMesh::field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
           bool found = false;
@@ -192,7 +192,7 @@ namespace stk
         {
           const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
-          double *f_data = PerceptMesh::field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
           bool found = true;
@@ -545,7 +545,7 @@ namespace stk
 
           unsigned num_node = elem_nodes.size();
           //unsigned num_node = m_eMesh.get_bulk_data()->num_connectivity(element, stk::mesh::MetaData::NODE_RANK );
-          double *f_data = PerceptMesh::field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
           bool found = false;
@@ -607,7 +607,7 @@ namespace stk
         {
           bool isParent = m_breaker.getMesh().isParentElement(element, false);
           bool hasFamilyTree = m_breaker.getMesh().hasFamilyTree(element);
-          double *f_data = PerceptMesh::field_data_entity(field, element);
+          double *f_data = m_breaker.getMesh().field_data_entity(field, element);
           int mark = m_breaker.markUnrefine(element);
           f_data[0] = 0.0;
           if (hasFamilyTree && !isParent)

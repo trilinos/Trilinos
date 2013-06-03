@@ -386,7 +386,7 @@ namespace stk {
               if (field_rank == old_owning_elem.entity_rank())
                 {
                   unsigned stride_old=0, stride_new=0;
-                  double *fdata_old = PerceptMesh::field_data_entity(field, old_owning_elem, &stride_old);
+                  double *fdata_old = eMesh.field_data_entity(field, old_owning_elem, &stride_old);
                   if (!fdata_old)
                     continue;
                   if ((int)stride_old != field_dimension)
@@ -394,7 +394,7 @@ namespace stk {
                       VERIFY_OP_ON((int)stride_old, ==, field_dimension, "interpolateElementFields err1");
                       throw std::runtime_error("interpolateElementFields err1");
                     }
-                  double *fdata_new = PerceptMesh::field_data_entity(field, newElement,  &stride_new);
+                  double *fdata_new = eMesh.field_data_entity(field, newElement,  &stride_new);
                   if (!fdata_new)
                     continue;
                   if ((int)stride_new != field_dimension || stride_new != stride_old)

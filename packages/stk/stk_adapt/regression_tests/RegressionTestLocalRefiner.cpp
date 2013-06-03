@@ -97,7 +97,7 @@ namespace stk
 
         virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
-          double *f_data = PerceptMesh::field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data_entity(field, element);
           f_data[0] = (double)(0);
 
           return false;  // don't terminate the loop
@@ -610,7 +610,7 @@ namespace stk
 
         virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
-          double *f_data = PerceptMesh::field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data_entity(field, element);
           int unref = m_iea->markUnrefine(element);
           int ref_count = m_iea->markCountRefinedEdges(element);
           f_data[0] = (double)((unref & DO_UNREFINE ? -1 : 0));
@@ -924,7 +924,7 @@ namespace stk
 
         virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
-          double *f_data = PerceptMesh::field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data_entity(field, element);
           stk::mesh::FieldBase* coord_field = m_eMesh.get_coordinates_field();
 
           const MyPairIterRelation elem_nodes(bulkData, element, stk::mesh::MetaData::NODE_RANK );
