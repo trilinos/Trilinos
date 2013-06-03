@@ -400,9 +400,9 @@ collect_timers(
     const int recv_size = recv_displ[parallel_size] ;
   
     buffer.assign(recv_size, 0);
-    if (recv_size > 0) {
-      std::cerr<<"collect_timers: proc "<<parallel_rank<<", recv_size: "<<recv_size<<std::endl;
-    }
+//    if (recv_size > 0) {
+//      std::cerr<<"collect_timers: proc "<<parallel_rank<<", recv_size: "<<recv_size<<std::endl;
+ //   }
   
     {
       const char * const send_ptr = send_string.data();
