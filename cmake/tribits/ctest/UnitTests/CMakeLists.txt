@@ -190,6 +190,33 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableRTOp_DisableTeuchos
+  ARGS Trilinos_PACKAGES=RTOp Trilinos_EXCLUDE_PACKAGES=Teuchos
+  PASS_REGULAR_EXPRESSION_ALL
+    "Explicitly enabled packages on input .by user.:  RTOp 1"
+    "WARNING: Setting Trilinos_ENABLE_RTOp=OFF which was 'ON' because RTOp has a required library dependence on disabled package Teuchos but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON!"
+    "Final set of enabled packages:  0"
+    "Trilinos_NUM_ENABLED_PACKAGES=0:  Exiting the script!"
+  )
+# NOTE: The above test ensures that disabled packages turn off explicitly
+#  enabled downstream packages.
+
+
+CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableTeuchos_DisableTPLBLAS
+  ARGS Trilinos_PACKAGES=Teuchos Trilinos_EXCLUDE_TPLS=BLAS
+  PASS_REGULAR_EXPRESSION_ALL
+    "Explicitly enabled packages on input .by user.:  Teuchos 1"
+    "Explicitly disabled TPLs on input .by user or by default.:  BLAS 1"
+    "WARNING: Setting Trilinos_ENABLE_Teuchos=OFF which was 'ON' because Teuchos has a required library dependence on disabled TPL BLAS but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON!"
+    "Final set of enabled packages:  0"
+    "Trilinos_NUM_ENABLED_PACKAGES=0:  Exiting the script!"
+  )
+# NOTE: The above test ensures that disabled TPLS turn off explicitly
+#  enabled downstream packages.
+
+
+CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableThyra
   ARGS Trilinos_PACKAGES=Thyra Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Experimental
   PASS_REGULAR_EXPRESSION_ALL
