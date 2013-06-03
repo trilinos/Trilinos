@@ -376,8 +376,15 @@ void STK_Interface::writeToExodus(double timestep)
    PANZER_FUNC_TIME_MONITOR("STK_Interface::writeToExodus(timestep)");
 
    #ifdef HAVE_IOSS
-      currentStateTime_ = timestep;
-      stk::io::process_output_request(*meshData_, *bulkData_, timestep);
+      if(meshData_!=Teuchos::null) {
+        currentStateTime_ = timestep;
+        stk::io::process_output_request(*meshData_, *bulkData_, timestep);
+      }
+      else {
+        Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+        out.setOutputToRootOnly(0);
+        out << "WARNING: Exodus I/O has been disabled or not setup properly, not writting to Exodus" << std::endl;
+      }
    #else 
       TEUCHOS_ASSERT(false);
    #endif
