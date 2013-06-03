@@ -1541,7 +1541,7 @@ namespace stk {
                   //typedef stk::mesh::Entity SDSEntityType;
                   SDSEntityType_ID key_quantum;
                   //typedef SubDimCell<SDSEntityType> SubDimCell_SDSEntityType;
-                  SubDimCell_SDSEntityType key; // subDimEntity = (*iter).first;
+                  SubDimCell_SDSEntityType key(eMesh); // subDimEntity = (*iter).first;
 
                   //struct NodeIdsOnSubDimEntityType : public std::vector<NodeIdsOnSubDimEntityTypeQuantum>
                   // {

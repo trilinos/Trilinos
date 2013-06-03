@@ -4079,7 +4079,7 @@ namespace stk {
                               for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
                                 {
                                   static SubDimCellData empty_SubDimCellData;
-                                  SubDimCell_SDSEntityType subDimEntity;
+                                  SubDimCell_SDSEntityType subDimEntity(m_eMesh);
                                   m_nodeRegistry->getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
 
                                   SubDimCellData* nodeId_elementOwnderId_ptr = m_nodeRegistry->getFromMapPtr(subDimEntity);

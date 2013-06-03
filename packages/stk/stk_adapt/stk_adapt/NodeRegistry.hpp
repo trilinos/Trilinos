@@ -144,7 +144,7 @@ namespace stk {
         base_type::resize(sz);
       }
 
-      void pack(CommBuffer& buff)
+      void pack(PerceptMesh& eMesh, CommBuffer& buff)
       {
         buff.pack< unsigned > ( this->size() );
         m_entity_id_vector.resize( this->size() );
@@ -152,7 +152,7 @@ namespace stk {
           {
             if (!(*this)[ii].is_valid())
               throw std::logic_error("logic err in NodeIdsOnSubDimEntityType::pack");
-            stk::mesh::EntityId id = ((*this)[ii]).identifier();
+            stk::mesh::EntityId id = eMesh.identifier((*this)[ii]);
             VERIFY_OP_ON(id, != , 0, "logic err 2 in NodeIdsOnSubDimEntityType::pack");
             m_entity_id_vector[ii] = id;
             buff.pack<stk::mesh::EntityId>( id );
@@ -193,6 +193,7 @@ namespace stk {
 
 #else
     typedef stk::mesh::Entity SDSEntityType;
+    //typedef MyEntity SDSEntityType;
 
     class MyEntityLess {
     public:
@@ -239,32 +240,49 @@ namespace stk {
       }
     };
 
-    // SubDimCellCompare<SDSEntityType>
-    template<>
-    inline int SubDimCell<SDSEntityType, 4, CompareSDSEntityType >::hashCode()
+    template<class T, std::size_t N=4>
+    class MySDCHashCode
     {
-      typedef stk::percept::NoMallocArray<SDSEntityType,4> base_type;
+    public:
 
-      std::size_t sum = 0;
-      for ( base_type::iterator i = this->begin(); i != this->end(); i++)
-        {
+      typedef  stk::percept::NoMallocArray<T, N> sdc_type;
 
-          if (s_compare_using_entity_impl)
-            {
-              sum += size_t(i->local_offset());
-            }
-          else
-            {
-              sum += static_cast<std::size_t>((*i).identifier());
-            }
-        }
-      return sum;
-    }
+      int operator()(sdc_type& sdc)
+      {
+        size_t sum = 0;
+        for ( typename sdc_type::iterator i = sdc.begin(); i != sdc.end(); i++)
+          {
+
+            if (s_compare_using_entity_impl)
+              {
+                sum += size_t(i->local_offset());
+              }
+            else
+              {
+                sum += static_cast<size_t>((*i).identifier());
+              }
+          }
+        return sum;
+      }
+    };
+
+    template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T>, class HC = MySDCHashCode<T, N> >
+    class MySubDimCell : public SubDimCell<T, N, CompareClass, HC>
+    {
+    public:
+      typedef SubDimCell<T, N, CompareClass, HC> base_type;
+
+      PerceptMesh& m_eMesh;
+      MySubDimCell(PerceptMesh& eMesh) : base_type(), m_eMesh(eMesh) {}
+      MySubDimCell(PerceptMesh& eMesh, unsigned num_ids) : base_type(num_ids), m_eMesh(eMesh) {}
+
+    };
+
 
     template<>
-    struct my_fast_hash<SDSEntityType, 4> : public std::unary_function< SubDimCell<SDSEntityType, 4, CompareSDSEntityType>, std::size_t>
+    struct my_fast_hash<SDSEntityType, 4> : public std::unary_function< MySubDimCell<SDSEntityType, 4, CompareSDSEntityType>, std::size_t>
     {
-      typedef SubDimCell<SDSEntityType, 4, CompareSDSEntityType> _Tp ;
+      typedef MySubDimCell<SDSEntityType, 4, CompareSDSEntityType> _Tp ;
 
       inline std::size_t
       operator()(const _Tp& x) const
@@ -276,10 +294,10 @@ namespace stk {
 
 
     template<>
-    struct my_fast_equal_to<SDSEntityType, 4> :  public std::binary_function<SubDimCell<SDSEntityType, 4, CompareSDSEntityType>,
-                                                           SubDimCell<SDSEntityType, 4, CompareSDSEntityType>, bool>
+    struct my_fast_equal_to<SDSEntityType, 4> :  public std::binary_function< MySubDimCell<SDSEntityType, 4, CompareSDSEntityType>,
+                                                                              MySubDimCell<SDSEntityType, 4, CompareSDSEntityType>, bool>
     {
-      typedef SubDimCell<SDSEntityType, 4, CompareSDSEntityType> _Tp ;
+      typedef MySubDimCell<SDSEntityType, 4, CompareSDSEntityType> _Tp ;
       inline bool
       operator()(const _Tp& x, const _Tp& y) const
       {
@@ -299,7 +317,7 @@ namespace stk {
 #endif
 
     //typedef SubDimCell<SDSEntityType> SubDimCell_SDSEntityType;
-    typedef SubDimCell<SDSEntityType, 4, CompareSDSEntityType> SubDimCell_SDSEntityType;
+    typedef MySubDimCell<SDSEntityType, 4, CompareSDSEntityType> SubDimCell_SDSEntityType;
 
     inline std::ostream& operator<<(std::ostream& out,  SubDimCellData& val)
     {
@@ -500,7 +518,7 @@ namespace stk {
         SubDimCellToDataMap::iterator iter;
         SubDimCellToDataMap& map = getMap();
 
-        std::vector<SubDimCell_SDSEntityType> to_erase;
+        std::vector<const SubDimCell_SDSEntityType *> to_erase;
         int num_delete=0;
 
         for (iter = map.begin(); iter != map.end(); ++iter)
@@ -545,7 +563,9 @@ namespace stk {
             VERIFY_OP_ON(nodeIds_onSE.size(), ==, nodeIds_onSE.m_entity_id_vector.size(), "NodeRegistry::clear_dangling_nodes id vector/size mismatch 1");
 
             if (nodeIds_onSE.size() == 0)
-              to_erase.push_back(iter->first);
+              {
+                to_erase.push_back(&(iter->first));
+              }
 
           }
         if (debug) std::cout << "tmp srk NodeRegistry::clear_dangling_nodes num_delete= " << num_delete <<  std::endl;
@@ -555,9 +575,9 @@ namespace stk {
             if (debug) std::cout << "tmp srk NodeRegistry::clear_dangling_nodes nodeIds_onSE.size() != node_to_keep.size()), to_erase= " << to_erase.size() <<  std::endl;
             for (unsigned i=0; i < to_erase.size(); i++)
               {
-                if ( to_erase[i].size() &&  map.find(to_erase[i]) != map.end())
+                if ( to_erase[i]->size() &&  map.find(*to_erase[i]) != map.end())
                   {
-                    map.erase(to_erase[i]);
+                    map.erase(*to_erase[i]);
                   }
               }
             s_compare_using_entity_impl = false;
@@ -842,7 +862,7 @@ namespace stk {
       /// can be determined by the locality of the element (ghost or not).
       bool registerNeedNewNode(const stk::mesh::Entity element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes)
       {
-        static SubDimCell_SDSEntityType subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
 
         static SubDimCellData new_SubDimCellData;
@@ -945,7 +965,7 @@ namespace stk {
       /// When remeshing during unrefinement, replace ownership of sub-dim entities by non-deleted elements
       bool replaceElementOwnership(const stk::mesh::Entity element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes)
       {
-        static SubDimCell_SDSEntityType subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         noInline_getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
 
         static SubDimCellData new_SubDimCellData;
@@ -994,7 +1014,7 @@ namespace stk {
 
         if (!isGhost) return true;
 
-        static SubDimCell_SDSEntityType subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
 
         stk::CommAll& comm_all = *m_comm_all;
@@ -1100,7 +1120,7 @@ namespace stk {
                     //std::cout << "P[" << proc_rank << "] : pack " << buffer_entry << " owner_proc_rank= " << owner_proc_rank << std::endl;
                     m_comm_all->send_buffer( owner_proc_rank ).pack< CommDataType > (buffer_entry);
                     NodeIdsOnSubDimEntityType& nids = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-                    nids.pack(m_comm_all->send_buffer( owner_proc_rank ));
+                    nids.pack(m_eMesh, m_comm_all->send_buffer( owner_proc_rank ));
                   }
                 else
                   {
@@ -1255,7 +1275,7 @@ namespace stk {
           }
 
         unsigned *null_u = 0;
-        static SubDimCell_SDSEntityType subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         //subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static SubDimCellData empty_SubDimCellData;
@@ -1437,7 +1457,7 @@ namespace stk {
         unsigned nparts = parts.size();
 
         //CHECK
-        static SubDimCell_SDSEntityType subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         //subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static  SubDimCellData empty_SubDimCellData;
@@ -2405,7 +2425,7 @@ namespace stk {
             throw std::logic_error("logic: element shouldn't be null in createNodeAndConnect");
           }
 
-        static SubDimCell_SDSEntityType subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         SubDimCellData& subDimCellData = getNewNodeAndOwningElement(subDimEntity);
         // assert it is empty?

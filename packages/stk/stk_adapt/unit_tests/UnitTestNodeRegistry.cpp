@@ -236,7 +236,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_0)
     stk::mesh::EntityRank needed_entity_rank = stk_mesh_Edge;
     for (unsigned iSubDimOrd = 0; iSubDimOrd < 12; iSubDimOrd++)
     {
-      SubDimCell_SDSEntityType subDimEntity;
+      SubDimCell_SDSEntityType subDimEntity(eMesh);
       nodeRegistry.getSubDimEntity(subDimEntity, element_local, needed_entity_rank, iSubDimOrd);
       std::cout << "P[" << p_rank << "] element_local edge " << iSubDimOrd << " = " << subDimEntity << std::endl;
     }

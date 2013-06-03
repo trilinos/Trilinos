@@ -112,8 +112,18 @@ namespace stk {
 
     //typedef array<int, 3> SubDimCell;
 
+    
+
+    template<class T, std::size_t N=4>
+    class SDCHashCode
+    {
+    public:
+      typedef stk::percept::NoMallocArray<T,N> base_type;
+      int operator()(base_type& sdc);
+    };
+
     /// We assume we don't have any sub-dimensional entities with more than 4 nodes
-    template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T> >
+    template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T>, class HC = SDCHashCode<T,N>  >
     class SubDimCell : public stk::percept::NoMallocArray<T,N>
     {
       std::size_t m_hash;
@@ -122,7 +132,7 @@ namespace stk {
       typedef stk::percept::NoMallocArray<T,N> base_type;
       typedef std::size_t    size_type;
 
-      typedef SubDimCell<T,N> VAL;
+      typedef SubDimCell<T,N,CompareClass,HC> VAL;
 
       //repo always init to 0 size: SubDimCell(unsigned n=4) : base_type(n), m_hash(0u) {}
       SubDimCell() : base_type(), m_hash(0u) {}
@@ -159,7 +169,10 @@ namespace stk {
         m_hash = hashCode();
       }
 
-      int hashCode();
+      int hashCode()
+      {
+        return HC()(*this);
+      }
 
       inline unsigned getHash() const
       {
@@ -185,14 +198,12 @@ namespace stk {
 
     };
 
-    template<class T, std::size_t N, class CompareClass >
-    inline int SubDimCell<T,N,CompareClass>::hashCode()
+    template<class T, std::size_t N>
+    inline int SDCHashCode<T,N>::operator()(SDCHashCode<T,N>::base_type& sdc)
     {
-      typedef stk::percept::NoMallocArray<T,N> base_type;
-
       std::size_t sum = 0;
 
-      for (typename base_type::iterator i = this->begin(); i != this->end(); i++)
+      for (typename base_type::iterator i = sdc.begin(); i != sdc.end(); i++)
         {
           //sum += static_cast<std::size_t>(const_cast<T>(*i));
           //sum += static_cast<std::size_t>((*i)->identifier());
@@ -201,8 +212,9 @@ namespace stk {
       return sum;
     }
 
-    template<class T, std::size_t N, class CompareClass >
-    inline bool SubDimCell<T,N,CompareClass>::
+
+    template<class T, std::size_t N, class CompareClass, class HC >
+    inline bool SubDimCell<T,N,CompareClass,HC>::
     operator==(const VAL& rhs) const
     {
       if (base_type::size() != rhs.size())
@@ -215,8 +227,8 @@ namespace stk {
       return true;
     }
 
-    template<class T, std::size_t N, class CompareClass >
-    inline bool SubDimCell<T,N,CompareClass>::
+    template<class T, std::size_t N, class CompareClass, class HC >
+    inline bool SubDimCell<T,N,CompareClass, HC>::
     operator<(const VAL& rhs) const
     {
       if (base_type::size() < rhs.size())

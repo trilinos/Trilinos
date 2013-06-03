@@ -780,7 +780,15 @@ namespace stk {
       stk::mesh::FieldBase * createField(const std::string& name, const unsigned entity_rank, const std::vector<int>& dimensions,
                                          const stk::mesh::Part* arg_part=0, bool add_to_io=true);
 
+    public:
       //static void transformMesh(GenericFunction& coordinate_transform);
+      stk::mesh::EntityId identifier(stk::mesh::Entity entity) const { return m_bulkData->identifier(entity); }
+      stk::mesh::EntityRank entity_rank(stk::mesh::Entity entity) const { return m_bulkData->entity_rank(entity); }
+      stk::mesh::EntityKey entity_key(stk::mesh::Entity entity) const { return m_bulkData->entity_key(entity); }
+      stk::mesh::EntityState state(stk::mesh::Entity entity) const { return m_bulkData->state(entity); }
+      stk::mesh::Bucket & bucket(stk::mesh::Entity entity) const { return m_bulkData->bucket(entity); }
+      int parallel_owner_rank(stk::mesh::Entity entity) const { return m_bulkData->parallel_owner_rank(entity); }
+      int owner_rank(stk::mesh::Entity entity) const { return m_bulkData->parallel_owner_rank(entity); }
 
 #endif // SWIG
 

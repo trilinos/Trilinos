@@ -126,7 +126,7 @@ namespace stk {
                                         unsigned iv0, unsigned iv1, unsigned nsz, unsigned nsp,  double lspc[8][3], double den_xyz[3], double *coord[8])
       {
         VERIFY_OP_ON(nsz, ==, 2, "hmmm");
-        static SubDimCell_SDSEntityType subDimEntity;
+        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         subDimEntity.clear();
         subDimEntity.insert(nodes[iv0]);
         subDimEntity.insert(nodes[iv1]);
