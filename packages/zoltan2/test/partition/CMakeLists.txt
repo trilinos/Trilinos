@@ -31,6 +31,8 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     SOURCES taskMappingTest.cpp
     NUM_MPI_PROCS 1
     COMM serial mpi
+    ARGS 
+    "PART=../../../../../../zoltan2/test/data/part.txt PROC=../../../../../../zoltan2/test/data/proc.txt"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )

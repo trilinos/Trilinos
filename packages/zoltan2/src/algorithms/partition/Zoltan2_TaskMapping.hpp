@@ -1,4 +1,5 @@
 #include <fstream>
+#include <ctime>
 #include <vector>
 #include "Zoltan2_AlgPQJagged.hpp"
 #include "Teuchos_ArrayViewDecl.hpp"
@@ -32,12 +33,14 @@ void freeArray(T *&array){
 template <typename T>
 void fillContinousArray(T *arr, size_t arrSize, T *val){
     if(val == NULL){
+
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
         for(size_t i = 0; i < arrSize; ++i){
             arr[i] = i;
         }
+
     }
     else {
         T v = *val;
@@ -85,7 +88,72 @@ public:
 
 
     void getClosestSubset(procId_t *permutation, procId_t nprocs, procId_t ntasks){
-        fillContinousArray<procId_t>(permutation, ntasks, NULL);
+
+        fillContinousArray<procId_t>(permutation, nprocs, NULL);
+        int _u_umpa_seed = 847449649;
+        srand (time(NULL));
+        int a = rand() % 1000 + 1;
+        _u_umpa_seed -= a;
+        update_visit_order(permutation, nprocs,_u_umpa_seed, 1);
+
+    }
+
+    static procId_t umpa_uRandom(procId_t l, int &_u_umpa_seed)
+    {
+        int   a = 16807;
+        int   m = 2147483647;
+        int   q = 127773;
+        int   r = 2836;
+        int   lo, hi, test;
+        double d;
+
+        lo = _u_umpa_seed % q;
+        hi = _u_umpa_seed / q;
+        test = (a*lo)-(r*hi);
+        if (test>0)
+            _u_umpa_seed = test;
+        else
+            _u_umpa_seed = test + m;
+        d = (double) ((double) _u_umpa_seed / (double) m);
+        return (procId_t) (d*(double)l);
+    }
+
+
+    void update_visit_order(procId_t* visitOrder, procId_t n, int &_u_umpa_seed, procId_t rndm) {
+        procId_t *a = visitOrder;
+
+
+        if (rndm){
+            procId_t i, u, v, tmp;
+
+            if (n <= 4)
+                return;
+
+            //srand ( time(NULL) );
+
+            //_u_umpa_seed = _u_umpa_seed1 - (rand()%100);
+            for (i=0; i<n; i+=16)
+            {
+                u = umpa_uRandom(n-4, _u_umpa_seed);
+                v = umpa_uRandom(n-4, _u_umpa_seed);
+                SWAP(a[v], a[u], tmp);
+                SWAP(a[v+1], a[u+1], tmp);
+                SWAP(a[v+2], a[u+2], tmp);
+                SWAP(a[v+3], a[u+3], tmp);
+            }
+        }
+        else {
+            procId_t i, end = n / 4;
+
+            for (i=1; i<end; i++)
+            {
+                procId_t j=umpa_uRandom(n-i, _u_umpa_seed);
+                procId_t t=a[j];
+                a[j] = a[n-i];
+                a[n-i] = t;
+            }
+        }
+        //PermuteInPlace(visitOrder, n);
     }
 
 
@@ -126,7 +194,7 @@ public:
         */
         procId_t used_num_procs = this->no_procs;
         if(this->no_procs > this->no_tasks){
-            proc_permutation = allocMemory<procId_t>(this->no_tasks);
+            proc_permutation = allocMemory<procId_t>(this->no_procs);
             assigned_task_permutation = allocMemory<procId_t>(this->no_tasks);
             this->getClosestSubset(proc_permutation, this->no_procs, this->no_tasks);
             fillContinousArray<procId_t>(assigned_task_permutation,this->no_tasks, NULL);
@@ -140,8 +208,13 @@ public:
             fillContinousArray<procId_t>(assigned_task_permutation,this->no_tasks, NULL);
         }
 
+        for (int i = 0; i < used_num_procs; ++i){
+            cout << "i:" << i << " proc_permutation:" << proc_permutation[i] << endl;
+        }
+        cout << "seq1" << endl;
         sequentialTaskPartitioning<pcoord_t, procId_t, procId_t>(
                 env,
+                this->no_procs,
                 used_num_procs,
                 num_parts,
                 minCoordDim,
@@ -151,8 +224,10 @@ public:
                 "proc_partitioning"
                 );
 
+        cout << "seq2" << endl;
         sequentialTaskPartitioning<tcoord_t, procId_t, procId_t>(
                         env,
+                        this->no_tasks,
                         this->no_tasks,
                         num_parts,
                         minCoordDim,
@@ -300,17 +375,20 @@ public:
     }
 
     ArrayView<procId_t> getAssignedTaksForProc(procId_t procId){
-        if(procId < this->nprocs){
-            procId_t mapped_part =  this->processor_to_part[procId];
-
+        //cout << "proc id:" << procId << endl;
+        procId_t mapped_part =  this->processor_to_part[procId];
+        if(mapped_part != -1){
             procId_t partbegin = 0;
             if (mapped_part > 0) partbegin = this->assigned_task_begins[mapped_part - 1];
             procId_t partend = this->assigned_task_begins[mapped_part];
             //create and return arrayview here.
+            //cout << "task for proc:" << endl;
             ArrayView <procId_t> assignedParts(this->assigned_task_permutation + partbegin, partend - partbegin);
             return assignedParts;
         } else {
+            //cout << "return empty" << endl;
             ArrayView <procId_t> a(NULL,0);
+            //cout << "return empty done" << endl;
             return a;
         }
     }
@@ -321,6 +399,7 @@ public:
         int mindim = MINOF(proc_task_comm->proc_coord_dim, proc_task_comm->task_coord_dim);
         string ss = "";
         for(procId_t i = 0; i < this->nprocs; ++i){
+
             std::string procFile = toString<int>(i) + "_mapping.txt";
             if (i == 0){
                 gnuPlotCode << "plot \"" << procFile << "\"\n";
@@ -378,7 +457,7 @@ public:
 
 
     void writeMapping2(){
-/*
+
         for(procId_t i = 0; i < this->nprocs; ++i){
             cout << "Proc:" << i << " assignedParts:" << this->getAssignedTaksForProc(i) << endl;
         }
@@ -386,13 +465,19 @@ public:
         for(procId_t i = 0; i < this->ntasks; ++i){
             cout << "Part:" << i << " assignedProcs:" << this->getAssignedProcsForTask(i) << endl;
         }
-*/
+
         std::ofstream gnuPlotCode ("gnuPlot2.plot", std::ofstream::out);
 
         int mindim = MINOF(proc_task_comm->proc_coord_dim, proc_task_comm->task_coord_dim);
         string ss = "";
         string procs = "", parts = "";
         for(procId_t i = 0; i < this->nprocs; ++i){
+
+            //inpFile << std::endl;
+            ArrayView<procId_t> a = this->getAssignedTaksForProc(i);
+            if (a.size() == 0){
+                continue;
+            }
             /*
             std::string procFile = toString<int>(i) + "_mapping.txt";
             if (i == 0){
@@ -425,8 +510,6 @@ public:
             gnuPlotArrow += " to ";
 
 
-            //inpFile << std::endl;
-            ArrayView<procId_t> a = this->getAssignedTaksForProc(i);
             for(int k = 0; k <  a.size(); ++k){
                 int j = a[k];
                 //cout << "i:" << i << " j:"

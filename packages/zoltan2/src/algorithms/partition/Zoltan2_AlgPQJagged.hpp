@@ -5379,6 +5379,7 @@ template <typename scalar_t, typename lno_t, typename partId_t>
 void sequentialTaskPartitioning(
         const RCP<const Environment> &env,
         lno_t numLocalCoords,
+        lno_t actualNumCoords,
         size_t numGlobalParts,
         int coordDim,
         scalar_t **pqJagged_coordinates,
@@ -5443,7 +5444,7 @@ void sequentialTaskPartitioning(
     //inTotalCounts array holds the end points in partitionedPointCoordinates array
     //for each partition. Initially sized 1, and single element is set to numLocalCoords.
     lno_t *inTotalCounts = allocMemory<lno_t>(1);
-    inTotalCounts[0] = static_cast<lno_t>(numLocalCoords);//the end of the initial partition is the end of coordinates.
+    inTotalCounts[0] = static_cast<lno_t>(actualNumCoords);//the end of the initial partition is the end of coordinates.
     //the ends points of the output.
     lno_t *outTotalCounts = NULL;
 

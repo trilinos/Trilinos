@@ -121,7 +121,66 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
         getline (inParam,str);
     }
 }
+string convert_to_string(char *args){
+    string tmp = "";
+    for(int i = 0; args[i] != 0; i++)
+        tmp += args[i];
+    return tmp;
+}
+bool getArgumentValue(string &argumentid, double &argumentValue, string argumentline){
+    stringstream stream(stringstream::in | stringstream::out);
+    stream << argumentline;
+    getline(stream, argumentid, '=');
+    if (stream.eof()){
+        return false;
+    }
+    stream >> argumentValue;
+    return true;
+}
 
+void getArgVals(
+        int argc,
+        char **argv,
+        std::string &procF,
+        std::string &partF){
+
+    bool isprocset = false;
+    bool ispartset = false;
+
+    for(int i = 0; i < argc; ++i){
+        string tmp = convert_to_string(argv[i]);
+        string identifier = "";
+        long long int value = -1; double fval = -1;
+        if(!getArgumentValue(identifier, fval, tmp)) continue;
+        value = (long long int) (fval);
+
+        if(identifier == "PROC"){
+            stringstream stream(stringstream::in | stringstream::out);
+            stream << tmp;
+            getline(stream, procF, '=');
+
+            stream >> procF;
+            isprocset = true;
+        }
+        else if(identifier == "PART"){
+            stringstream stream(stringstream::in | stringstream::out);
+            stream << tmp;
+            getline(stream, partF, '=');
+
+            stream >> partF;
+            ispartset = true;
+        }
+
+        else {
+            throw "Invalid argument at " + tmp;
+        }
+
+    }
+    if(!(ispartset && isprocset)){
+        throw "(PROC && PART) are mandatory arguments.";
+    }
+
+}
 int main(int argc, char *argv[]){
     Teuchos::GlobalMPISession session(&argc, &argv);
     if (argc != 3){
@@ -140,6 +199,7 @@ int main(int argc, char *argv[]){
 
     string partfile = "";
     string procfile = "";
+    /*
     char *tmp = argv[1];
     stringstream stream(stringstream::in | stringstream::out);
     stream << tmp;
@@ -148,6 +208,7 @@ int main(int argc, char *argv[]){
     tmp = argv[2];
     stream << tmp;
     stream >> procfile;
+    */
 
     const RCP<Comm<int> > commN;
     RCP<Comm<int> >comm =  Teuchos::rcp_const_cast<Comm<int> >
@@ -155,61 +216,68 @@ int main(int argc, char *argv[]){
 
 
     try {
-    {
-        Teuchos::ParameterList geoparams;
-        //getPartCenters(partCenters, numParts, coordDim);
-        readGeoGenParams(partfile, geoparams, comm);
-        GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
-        coordDim = gg->getCoordinateDimension();
-        numParts = gg->getNumLocalCoords();
-        partCenters = new scalar_t * [coordDim];
-        for(int i = 0; i < coordDim; ++i){
-            partCenters[i] = new scalar_t[numParts];
-        }
-        gg->getLocalCoordinatesCopy(partCenters);
-        /*
+
+        getArgVals(
+                argc,
+                argv,
+                procfile ,
+                partfile);
+        //cout << "part:" << partfile << " proc:" << procfile << endl;
+        {
+            Teuchos::ParameterList geoparams;
+            //getPartCenters(partCenters, numParts, coordDim);
+            readGeoGenParams(partfile, geoparams, comm);
+            GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+            coordDim = gg->getCoordinateDimension();
+            numParts = gg->getNumLocalCoords();
+            partCenters = new scalar_t * [coordDim];
+            for(int i = 0; i < coordDim; ++i){
+                partCenters[i] = new scalar_t[numParts];
+            }
+            gg->getLocalCoordinatesCopy(partCenters);
+            /*
         for(int i = 0; i < coordDim; ++i){
             for(int j = 0; j < numParts; ++j){
                 cout << partCenters[i][j] << " ";
             }
             cout << endl;
         }
-        */
-        delete gg;
-    }
-
-    //getProcCenters(procCoordinates, numProcs, procDim);
-    {
-        Teuchos::ParameterList geoparams2;
-        readGeoGenParams(procfile, geoparams2, comm);
-        GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams2,comm);
-
-        procDim = gg->getCoordinateDimension();
-        numProcs = gg->getNumLocalCoords();
-        procCoordinates = new scalar_t * [procDim];
-        for(int i = 0; i < procDim; ++i){
-            procCoordinates[i] = new scalar_t[numProcs];
+             */
+            delete gg;
         }
-        gg->getLocalCoordinatesCopy(procCoordinates);
 
-        delete gg;
-    }
+        //getProcCenters(procCoordinates, numProcs, procDim);
+        {
+            Teuchos::ParameterList geoparams2;
+            readGeoGenParams(procfile, geoparams2, comm);
+            GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams2,comm);
 
-    Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t> *cm =
-            new Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>(
-            procDim, procCoordinates,
-            coordDim, partCenters,
-            numProcs, numParts);
+            procDim = gg->getCoordinateDimension();
+            numProcs = gg->getNumLocalCoords();
+            procCoordinates = new scalar_t * [procDim];
+            for(int i = 0; i < procDim; ++i){
+                procCoordinates[i] = new scalar_t[numProcs];
+            }
+            gg->getLocalCoordinatesCopy(procCoordinates);
 
-    Zoltan2::TaskMapper <Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>, zoltan2_partId_t> *ctm=
-            new Zoltan2::TaskMapper<Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>,zoltan2_partId_t>(cm);
+            delete gg;
+        }
+
+        Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t> *cm =
+                new Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>(
+                        procDim, procCoordinates,
+                        coordDim, partCenters,
+                        numProcs, numParts);
+
+        Zoltan2::TaskMapper <Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>, zoltan2_partId_t> *ctm=
+                new Zoltan2::TaskMapper<Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>,zoltan2_partId_t>(cm);
 
 
 
-    ctm->writeMapping2();
-    cout << "PASS" << endl;
-    delete ctm;
-    delete cm;
+        //ctm->writeMapping2();
+        cout << "PASS" << endl;
+        delete ctm;
+        delete cm;
     }
     catch(std::string s){
         cerr << s << endl;
