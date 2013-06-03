@@ -12,6 +12,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Amesos.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Array.hpp"
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 
@@ -73,8 +74,8 @@ bool TestAmesos(char ProblemType[],
   A.Multiply(false,x2, temp) ; //  temp = A^3 x2
   residual.Update( 1.0, temp, -1.0, b, 0.0 ) ;
 
-  double norm_residual ;
-  residual.Norm2( &norm_residual ) ; 
+  Teuchos::Array<double> norm_residual(NumVectors);
+  residual.Norm2( norm_residual.getRawPtr() ) ; 
 
   if (A.Comm().MyPID() == 0) {
     std::cout << "norm2(A^3 x-b) = " << norm_residual << std::endl ; 
@@ -82,11 +83,11 @@ bool TestAmesos(char ProblemType[],
 
   delete Abase;
 
-  if (norm_residual < (1e-5))
-    return(true);
-  else
-    return(false);
-  
+  for (Teuchos::Array<double>::const_iterator it = norm_residual.begin(); it != norm_residual.end(); ++it) {
+    if (!(*it < (1e-5)))
+      return(false);
+  }
+  return(true);
 }
 
 int main(int argc, char *argv[]) {
