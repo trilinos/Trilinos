@@ -113,6 +113,7 @@
 
 #ifdef HAVE_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
+#include "Stratimikos_MueluTpetraHelpers.hpp"
 #endif
 
 namespace panzer_stk {
@@ -141,6 +142,7 @@ namespace panzer_stk {
       pl->sublist("Initial Conditions").sublist("Transient Parameters").disableRecursiveValidation();
       // pl->sublist("Output").disableRecursiveValidation();
       pl->sublist("Output").set("File Name","panzer.exo"); 
+      pl->sublist("Output").set("Write to Exodus",true); 
       pl->sublist("Output").sublist("Cell Average Quantities").disableRecursiveValidation();
       pl->sublist("Output").sublist("Cell Quantities").disableRecursiveValidation();
  
@@ -322,7 +324,8 @@ namespace panzer_stk {
     }
 
     mesh->print(fout);
-    mesh->setupTransientExodusFile(p.sublist("Output").get<std::string>("File Name")); 
+    if(p.sublist("Output").get<bool>("Write to Exodus"))
+      mesh->setupTransientExodusFile(p.sublist("Output").get<std::string>("File Name")); 
 
     // build worksets
     //////////////////////////////////////////////////////////////
@@ -1186,6 +1189,7 @@ namespace panzer_stk {
     #ifdef HAVE_MUELU
     {
       Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy.
+      Stratimikos::enableMueLuTpetra(linearSolverBuilder,"MueLu-Tpetra");
     }
     #endif // MUELU
 
