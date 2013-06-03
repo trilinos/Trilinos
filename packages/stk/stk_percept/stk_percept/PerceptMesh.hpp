@@ -638,7 +638,10 @@ namespace stk {
       stk::mesh::Entity createOrGetNode(stk::mesh::EntityId nid, double* x=0);
 
       // if pool_size is set, use a pooling scheme with that pool size
-      void createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities, int pool_size=0);
+      void createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities);
+
+      void initializeEntityPool(stk::mesh::EntityRank entityRank, int pool_size);
+      bool getEntitiesFromPool(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities);
       std::vector<std::vector<stk::mesh::Entity> > & getEntityPool() { return m_entity_pool; }
       void destroyEntityPool();
 

@@ -370,8 +370,18 @@ namespace stk {
 
           // create new entities on this proc
           new_elements.resize(0);
-          int pool_size = 10000;
-          m_eMesh.createEntities( m_ranks[irank], num_elem_needed, new_elements, pool_size);
+          //int pool_size = 10000;
+          if (m_eMesh.getEntityPool().size())
+            {
+              if (!m_eMesh.getEntitiesFromPool(m_ranks[irank], num_elem_needed, new_elements))
+                {
+                  throw std::logic_error("entity pool deplenished");
+                }
+            }
+          else
+            {
+              m_eMesh.createEntities( m_ranks[irank], num_elem_needed, new_elements);
+            }
           vector<stk::mesh::Entity>::iterator element_pool_it = new_elements.begin();
 
           // FIXME - we could directly call this with a refactor to change elementColors passed in here as a generic collection + checking for element Type
@@ -940,11 +950,17 @@ namespace stk {
     }
 
     void Refiner::
-    remeshElements(SetOfEntities& rootElements)
+    remeshElements(SetOfEntities& rootElements, stk::mesh::EntityRank rank, int pool_size_hint)
     {
-      //const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
-      unsigned rank = m_eMesh.element_rank();
-
+      bool use_pool = true;
+      if (use_pool)
+      {
+        int pool_size = rootElements.size()*100;
+        if (pool_size_hint)
+          pool_size = std::max(pool_size, pool_size_hint);
+        pool_size *= 2; // safety factor
+        m_eMesh.initializeEntityPool(rank, pool_size);
+      }
       for (SetOfEntities::iterator elIter = rootElements.begin(); elIter != rootElements.end(); ++elIter)
         {
           stk::mesh::Entity element = *elIter;
@@ -960,6 +976,10 @@ namespace stk {
       m_nodeRegistry->clear_element_owner_data_phase_2(true, false);
 
       set_active_part();
+      if (use_pool)
+        {
+          m_eMesh.destroyEntityPool();
+        }
     }
 
     // get a breadth-first list of descendants - if only_leaves is set, then
@@ -1146,19 +1166,6 @@ namespace stk {
 
     }
 
-    static void check_entities(stk::mesh::BulkData& bulkData, std::vector<stk::mesh::Entity>& entities)
-    {
-      for (unsigned ii=0; ii < entities.size(); ii++)
-        {
-          if (!bulkData.is_valid(entities[ii]))
-            {
-              std::cout << "Refiner::check_entities invalid = " << entities[ii] << std::endl;
-              throw std::runtime_error("Refiner::check_entities invalid entity");
-            }
-
-        }
-    }
-
     void
     Refiner::
     unrefinePass2(ElementUnrefineCollection& elements_to_unref)
@@ -1263,9 +1270,7 @@ namespace stk {
 
       // first have to delete the family tree (higher ranks have to be deleted first)
 
-      if (0 && m_eMesh.getEntityPool().size())
-        check_entities(*m_eMesh.get_bulk_data(), m_eMesh.getEntityPool()[m_eMesh.element_rank()]);
-
+      size_t elements_to_unref_sz = elements_to_unref.size();
       // remove children
       if (1)
         {
@@ -1319,9 +1324,6 @@ namespace stk {
             }
         }
 
-      if (0 && m_eMesh.getEntityPool().size())
-        check_entities(*m_eMesh.get_bulk_data(), m_eMesh.getEntityPool()[m_eMesh.element_rank()]);
-
       // reconnect and remove any dangling side elements
       bool allow_not_found = true;
       fix_side_sets_2(allow_not_found);
@@ -1331,8 +1333,8 @@ namespace stk {
       getSideParentsToBeRemeshed(rootElements, parent_side_elements);
 
       // remesh the holes left by removing child elems (quad/hex hanging node doesn't need this)
-      remeshElements(rootElements);
-      remeshElements(parent_side_elements);
+      remeshElements(rootElements, m_eMesh.element_rank(), elements_to_unref_sz);
+      remeshElements(parent_side_elements, m_eMesh.side_rank(), elements_to_unref_sz);
       // FIXME side sets...
 
       // remove any elements that are empty (these can exist when doing local refinement)

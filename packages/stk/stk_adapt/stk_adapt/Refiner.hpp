@@ -248,7 +248,7 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destro
       remeshRecurse(stk::mesh::Entity element);
 
       void
-      remeshElements(SetOfEntities& rootElements);
+      remeshElements(SetOfEntities& rootElements, stk::mesh::EntityRank rank, int pool_size_hint=0);
 
       bool allDescendants(stk::mesh::Entity element, SetOfEntities& descendants, unsigned& nlevels, bool only_leaves=false,
                           ElementUnrefineCollection *elements_to_unref=0);

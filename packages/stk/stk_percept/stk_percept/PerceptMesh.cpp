@@ -1464,7 +1464,7 @@ namespace stk {
         }
     }
 
-    static bool check_entities(stk::mesh::BulkData& bulkData, std::vector<stk::mesh::Entity>& entities, const std::string str)
+    bool check_entities(stk::mesh::BulkData& bulkData, std::vector<stk::mesh::Entity>& entities, const std::string str)
     {
       for (unsigned ii=0; ii < entities.size(); ii++)
         {
@@ -1478,47 +1478,33 @@ namespace stk {
     }
 
     void PerceptMesh::
-    createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities, int pool_size)
+    createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities)
     {
-      bool debug = false;
-      if (count > pool_size || !pool_size)
-        {
-          std::vector<size_t> requests(  m_metaData->entity_rank_count() , 0 );
-          requests[entityRank] = count;
-          get_bulk_data()->generate_new_entities( requests, requested_entities );
-        }
-      else
-        {
-          if (m_entity_pool.size() == 0)
-            m_entity_pool.resize(get_fem_meta_data()->entity_rank_count());
-          int current_pool_size = m_entity_pool[entityRank].size();
-          if (count > current_pool_size)
-            {
-              // replenish
-              std::vector<stk::mesh::Entity> entity_pool_add;
-              createEntities(entityRank, pool_size - current_pool_size, entity_pool_add, 0);
-              m_entity_pool[entityRank].insert(m_entity_pool[entityRank].end(), entity_pool_add.begin(), entity_pool_add.end());
-            }
-          current_pool_size = m_entity_pool[entityRank].size();
-          requested_entities.resize(0);
-          if (m_entity_pool[entityRank].end() - count < m_entity_pool[entityRank].begin()) throw std::runtime_error("bad m_entity_pool");
-          requested_entities.resize(count);
-          std::copy( m_entity_pool[entityRank].end() - count, m_entity_pool[entityRank].end(), requested_entities.begin());
-          m_entity_pool[entityRank].erase(m_entity_pool[entityRank].end() - count, m_entity_pool[entityRank].end());
-        }
-      if (debug) {
-        EXCEPTWATCH;
-        if (check_entities(*get_bulk_data(), requested_entities, "requested_entities"))
-          {
-            throw std::runtime_error("PerceptMesh::check_entities invalid entity - requested_entities");
-          }
-        if (pool_size && check_entities(*get_bulk_data(), m_entity_pool[entityRank], "m_entity_pool"))
-          {
-            std::cout << "entityRank= " << entityRank << " pool_size= " << pool_size << std::endl;
-            throw std::runtime_error("PerceptMesh::check_entities invalid entity - m_entity_pool");
+      std::vector<size_t> requests(  m_metaData->entity_rank_count() , 0 );
+      requests[entityRank] = count;
+      get_bulk_data()->generate_new_entities( requests, requested_entities );
+    }
 
-          }
-      }
+    void PerceptMesh::
+    initializeEntityPool(stk::mesh::EntityRank entityRank, int pool_size)
+    {
+      if (m_entity_pool.size() == 0)
+        m_entity_pool.resize(get_fem_meta_data()->entity_rank_count());
+      createEntities(entityRank, pool_size , m_entity_pool[entityRank]);
+    }
+
+    bool PerceptMesh::
+    getEntitiesFromPool(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities)
+    {
+      VERIFY_OP_ON(m_entity_pool.size(), !=, 0, "hmmm");
+      int current_pool_size = m_entity_pool[entityRank].size();
+      requested_entities.resize(0);
+      if (count > current_pool_size)
+        return false;
+      requested_entities.resize(count);
+      std::copy( m_entity_pool[entityRank].end() - count, m_entity_pool[entityRank].end(), requested_entities.begin());
+      m_entity_pool[entityRank].erase(m_entity_pool[entityRank].end() - count, m_entity_pool[entityRank].end());
+      return true;
     }
 
     void PerceptMesh::
