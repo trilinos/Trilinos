@@ -359,9 +359,11 @@ collect_timers(
   //runs on very large numbers of processors if the 'root' processor tries
   //to allocate a buffer large enough to hold timing data from all other
   //procesors.
-  int num_cycles = 16;
-  if (parallel_size < 1024) {
-    //If less than 1024 processors, just do them all at once.
+  //We will set an arbitrary limit for now, making sure that no more than
+  //64 processors' worth of timer data is gathered at a time.
+  const int max_procs_per_gather = 64;
+  int num_cycles = parallel_size/max_procs_per_gather;
+  if (parallel_size < max_procs_per_gather || num_cycles < 1) {
     num_cycles = 1;
   }
 
@@ -398,6 +400,9 @@ collect_timers(
     const int recv_size = recv_displ[parallel_size] ;
   
     buffer.assign(recv_size, 0);
+    if (recv_size > 0) {
+      std::cerr<<"collect_timers: proc "<<parallel_rank<<", recv_size: "<<recv_size<<std::endl;
+    }
   
     {
       const char * const send_ptr = send_string.data();
