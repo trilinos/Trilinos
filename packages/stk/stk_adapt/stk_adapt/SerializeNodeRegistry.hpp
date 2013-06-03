@@ -1084,7 +1084,7 @@ namespace stk {
                   {
                     if (m_debug) std::cout << "DIFF m_iM= " << m_iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
                     stk::mesh::Entity local_node_new_id_check = m_eMesh.get_bulk_data()->get_entity(0, id_new);
-                    if (!local_node_new_id_check.is_valid())
+                    if (!m_eMesh.is_valid(local_node_new_id_check))
                       {
                         m_eMesh.get_bulk_data()->change_entity_id(id_new, local_node_to_change);
                       }
@@ -1569,7 +1569,7 @@ namespace stk {
                     if (DEBUG_YAML) std::cout << "s_r key_quantum= " << key_quantum << std::endl;
                     SDSEntityType node = eMesh.get_bulk_data()->get_entity(0, key_quantum);
                     //key.insert(const_cast<stk::mesh::Entity>(&element) );
-                    if (!node.is_valid())
+                    if (!eMesh.is_valid(node))
                       {
                         if (force_have_node)
                           throw std::runtime_error("NodeRegistry::serialize_read: null node returned from get_entity");
@@ -1610,7 +1610,7 @@ namespace stk {
                         //stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
                         nodeIds_onSE.m_entity_id_vector.push_back(value_tuple_0_quantum);
                         stk::mesh::Entity entity = eMesh.get_bulk_data()->get_entity(0, value_tuple_0_quantum);
-                        if (!entity.is_valid())
+                        if (!eMesh.is_valid(entity))
                           {
                             if (force_have_node)
                               throw std::runtime_error("NodeRegistry::serialize_read: null node returned from get_entity 2");

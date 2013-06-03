@@ -736,7 +736,7 @@ void process_surface_entity(const Ioss::SideSet* io ,
         // element block that appears in the database, but was
         // subsetted out of the analysis mesh. Only process if
         // non-null.
-        if (elem.is_valid()) {
+        if (m_eMesh.is_valid(elem)) {
           stk::mesh::Entity side =
             stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
           bulk.change_entity_parts( side, add_parts );

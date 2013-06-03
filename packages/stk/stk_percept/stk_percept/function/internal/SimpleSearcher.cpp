@@ -35,7 +35,7 @@ namespace stk
       IsInElement isIn(input_phy_points, found_parametric_coordinates);
 
       // check first using the hint
-      if (hint_element.is_valid())
+      if (bulkData.is_valid(hint_element))
         {
           IsInElement isIn_hint(input_phy_points, found_parametric_coordinates);
           isIn_hint(hint_element,  bulkData);

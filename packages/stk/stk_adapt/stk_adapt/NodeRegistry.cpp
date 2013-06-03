@@ -510,7 +510,7 @@ namespace stk {
 
             stk::mesh::Entity c_node = nodeIds_onSE[0];
 
-            if (!c_node.is_valid())
+            if (!m_eMesh.is_valid(c_node))
               {
                 throw std::runtime_error("makeCentroid(field): bad node found 0.0");
               }
@@ -528,7 +528,7 @@ namespace stk {
                   SDSEntityType elementId = *subDimEntity.begin();
                   //!!element_p = get_entity_element(*m_eMesh.get_bulk_data(), stk::mesh::MetaData::ELEMENT_RANK, elementId);
                   element_p = elementId;
-                  if (!element_p.is_valid())
+                  if (!m_eMesh.is_valid(element_p))
                     {
                       throw std::runtime_error("makeCentroid(field): bad elem found 2");
                     }
@@ -565,7 +565,7 @@ namespace stk {
                     for (unsigned ipts = 0; ipts < npts; ipts++)
                       {
                         stk::mesh::Entity node = elem_nodes[ipts].entity();
-                        if (!node.is_valid())
+                        if (!m_eMesh.is_valid(node))
                           {
                             throw std::runtime_error("makeCentroid(field): bad node found 1.0");
                           }
@@ -710,7 +710,7 @@ namespace stk {
                   for (ipts=0; ipts < nsz; ipts++)
                     {
                       stk::mesh::Entity node = nodes[ipts];
-                      if (!node.is_valid())
+                      if (!m_eMesh.is_valid(node))
                         {
                           throw std::runtime_error("makeCentroid(field): bad node found 2.0");
                         }
@@ -995,7 +995,7 @@ namespace stk {
                     {
                       stk::mesh::Entity c_node = nodeIds_onSE[i_nid];
 
-                      if (!c_node.is_valid())
+                      if (!m_eMesh.is_valid(c_node))
                         {
                           continue;
                         }

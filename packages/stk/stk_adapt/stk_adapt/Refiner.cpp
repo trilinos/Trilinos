@@ -356,7 +356,7 @@ namespace stk {
                 {
                   EXCEPTWATCH;
                   stk::mesh::Entity element = bucket[i_element];
-                  if (!element.is_valid())
+                  if (!m_eMesh.is_valid(element))
                     {
                       std::cout << "element = 0" << std::endl;
                       throw std::runtime_error("element = 0");
@@ -1565,7 +1565,7 @@ namespace stk {
           if (!elementIsGhost)
             ++num_elem;
 
-          VERIFY_OP_ON(element.is_valid(), ==, true, "doForAllElements bad element");
+          VERIFY_OP_ON(m_eMesh.is_valid(element), ==, true, "doForAllElements bad element");
           if (!only_count && (doAllElements || elementIsGhost))
             {
               refineMethodApply(function, element, needed_entity_ranks);
@@ -1669,7 +1669,7 @@ namespace stk {
           stk::mesh::Entity element = elems[iElement];
           const stk::mesh::Entity element_p = element;
 
-          if (!element_p.is_valid())
+          if (!m_eMesh.is_valid(element_p))
             {
               throw std::runtime_error("Refiner::createElementsAndNodesAndConnectLocal");
             }
@@ -3606,7 +3606,7 @@ namespace stk {
           if (0)
             {
               std::cout << "tmp removeElements removing element_p = " << element_p << std::endl;
-              if (element_p.is_valid()) std::cout << "tmp removeElements removing id= " << m_eMesh.identifier(element_p) << std::endl;
+              if (m_eMesh.is_valid(element_p)) std::cout << "tmp removeElements removing id= " << m_eMesh.identifier(element_p) << std::endl;
             }
 
           if ( ! m_eMesh.get_bulk_data()->destroy_entity( element_p ) )
@@ -3949,7 +3949,7 @@ namespace stk {
               for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                 {
                   stk::mesh::Entity element = bucket[ientity];
-                  VERIFY_OP_ON(element.is_valid(), ==, true, "check_db_entities_exist bad element");
+                  VERIFY_OP_ON(m_eMesh.is_valid(element), ==, true, "check_db_entities_exist bad element");
                   stk::mesh::Entity element_1 = m_eMesh.get_bulk_data()->get_entity(ranks_to_check[irank], m_eMesh.identifier(element));
                   if (element != element_1 || m_eMesh.identifier(element) != m_eMesh.identifier(element_1))
                     {
@@ -3983,7 +3983,7 @@ namespace stk {
 
               stk::mesh::Entity owning_element = m_eMesh.get_bulk_data()->get_entity(owning_elementRank, owning_elementId);
 
-              if (!owning_element.is_valid())
+              if (!m_eMesh.is_valid(owning_element))
                 {
                   std::cout << "P[" << m_eMesh.get_rank() << "] "
                             << " error check_db_ownership_consistency: msg= " << msg << " owning_elementId= " << owning_elementId << std::endl;
@@ -4011,7 +4011,7 @@ namespace stk {
                   for (unsigned inode = 0; inode < nodeIds_onSE.size(); inode++)
                     {
                       stk::mesh::Entity node = nodeIds_onSE[inode];
-                      if (!node.is_valid())
+                      if (!m_eMesh.is_valid(node))
                         throw std::logic_error("check_db_ownership_consistency:: error #3, msg= "+msg);
 
                       stk::mesh::Entity node1 = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[inode]);

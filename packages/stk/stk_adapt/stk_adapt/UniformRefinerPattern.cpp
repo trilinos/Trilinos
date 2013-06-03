@@ -115,7 +115,7 @@ namespace stk {
       VERIFY_OP(parent_elem, != , stk::mesh::Entity(), "set_parent_child_relations: parent_elem is null");
       VERIFY_OP(newElement, != , stk::mesh::Entity(), "set_parent_child_relations: newElement is null");
 
-      if (!parent_elem.is_valid())
+      if (!eMesh.is_valid(parent_elem))
         {
           throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations parent_elem is null");
         }

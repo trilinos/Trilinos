@@ -241,7 +241,7 @@ namespace stk{
       // Check that all the nodes were allocated.
       for ( unsigned i = 0 ; i < node_count ; ++i ) {
         stk::mesh::Entity const node = bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
-        if ( !node.is_valid() ) {
+        if ( !bulkData.is_valid(node) ) {
           std::cerr << "Error!  Invalid null pointer for node returned from "
                     << "bulkData.get_entity( stk::mesh::MetaData::NODE_RANK, " << i+1 << " ) " << std::endl;
           result = false;

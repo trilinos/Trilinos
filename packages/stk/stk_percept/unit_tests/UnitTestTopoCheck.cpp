@@ -673,7 +673,7 @@ void use_encr_case_1_generate_mesh(
 
       mesh::Entity const node = mesh.get_entity( mesh::MetaData::NODE_RANK , node_map[i] );
 
-      if ( !node.is_valid() ) {
+      if ( !m_eMesh.is_valid(node) ) {
         std::ostringstream msg ;
         msg << "  P:" << mesh.parallel_rank()
             << " ERROR, Node not found: "

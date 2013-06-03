@@ -216,7 +216,7 @@ namespace stk {
                 stk::mesh::Entity const node =
                   bulk_data.get_entity( stk::mesh::MetaData::NODE_RANK , elem_node[i] );
 
-                if ( node.is_valid() ) {
+                if ( bulk_data.is_valid(node) ) {
 
                   unsigned nx = 0, ny = 0;
                   node_ix_iy(elem_node[i], nx, ny);

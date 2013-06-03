@@ -1281,7 +1281,7 @@ namespace stk {
 
               //stk::mesh::Entity node_p = m_eMesh->get_bulk_data()->get_entity(0, ids[i_node]);
               stk::mesh::Entity node_p = m_eMesh->get_bulk_data()->get_entity(0, i_node+1);
-              if (node_p.is_valid())
+              if (m_eMesh->is_valid(node_p))
                 {
                   stk::mesh::Entity node = node_p;
 

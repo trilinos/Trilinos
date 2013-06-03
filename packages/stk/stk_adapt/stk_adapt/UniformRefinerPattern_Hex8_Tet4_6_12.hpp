@@ -360,7 +360,7 @@ namespace stk {
               }
             //nodes_to_destroy.push_back(CENTROID_N)
             stk::mesh::Entity node = eMesh.get_bulk_data()->get_entity( stk::mesh::MetaData::NODE_RANK, CENTROID_N);
-            if (!node.is_valid())
+            if (!m_eMesh.is_valid(node))
               {
                 throw std::logic_error("UniformRefinerPattern_Hex8_Tet4_6_12:: node is null");
               }

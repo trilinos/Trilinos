@@ -333,7 +333,7 @@ namespace stk {
                 if (0)
                   {
                     stk::mesh::Entity node = createOrGetNode(nodeRegistry, eMesh, kc);
-                    VERIFY_OP_ON(node.is_valid(), ==, true, " hmmm");
+                    VERIFY_OP_ON(m_eMesh.is_valid(node), ==, true, " hmmm");
                     double *coord = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
                     std::cout << "P[" << eMesh.get_rank() << "] tmp srk createOrGetNode id= " << kc 
                               << " coord = " << coord[0] << " " << coord[1] << " " << coord[2]

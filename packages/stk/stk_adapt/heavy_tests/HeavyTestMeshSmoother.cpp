@@ -250,7 +250,7 @@ namespace stk
             unsigned center_node_id = 5;
             stk::mesh::Entity node = eMesh.get_bulk_data()->get_entity(0, center_node_id);
             double *data = 0;
-            if (node.is_valid())
+            if (eMesh.is_valid(node))
               {
                 data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
                 //std::cout << "tmp srk  center node= " << data[0] << " " << data[1] << std::endl;
@@ -269,7 +269,7 @@ namespace stk
               pmmpsi.run(true, 0);
             }
 
-            if (node.is_valid())
+            if (eMesh.is_valid(node))
               {
                 STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[0], 1.0);
                 STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[1], 1.0);

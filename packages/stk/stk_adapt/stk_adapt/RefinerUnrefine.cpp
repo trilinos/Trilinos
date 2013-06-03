@@ -108,7 +108,7 @@ namespace stk {
             }
 
           stk::mesh::Entity parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
-          if (!parent.is_valid())
+          if (!m_eMesh.is_valid(parent))
             {
               throw std::logic_error("Refiner::unrefineTheseElements parent == null");
             }
