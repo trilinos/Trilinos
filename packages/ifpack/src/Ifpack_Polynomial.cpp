@@ -73,6 +73,8 @@ Ifpack_Polynomial::
 Ifpack_Polynomial(const Epetra_Operator* Operator) :
   IsInitialized_(false),
   IsComputed_(false),
+  IsIndefinite_(false),
+  IsComplex_(false),
   NumInitialize_(0),
   NumCompute_(0),
   NumApplyInverse_(0),
@@ -81,9 +83,9 @@ Ifpack_Polynomial(const Epetra_Operator* Operator) :
   ApplyInverseTime_(0.0),
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
-  PolyDegree_(5),
-  LSPointsReal_(50),
-  LSPointsImag_(50),
+  PolyDegree_(3),
+  LSPointsReal_(10),
+  LSPointsImag_(10),
   UseTranspose_(false),
   Condest_(-1.0),
   ComputeCondest_(false),
@@ -120,6 +122,8 @@ Ifpack_Polynomial::
 Ifpack_Polynomial(const Epetra_RowMatrix* Operator) :
   IsInitialized_(false),
   IsComputed_(false),
+  IsIndefinite_(false),
+  IsComplex_(false),
   NumInitialize_(0),
   NumCompute_(0),
   NumApplyInverse_(0),
@@ -128,9 +132,9 @@ Ifpack_Polynomial(const Epetra_RowMatrix* Operator) :
   ApplyInverseTime_(0.0),
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
-  PolyDegree_(5),
-  LSPointsReal_(50),
-  LSPointsImag_(50),
+  PolyDegree_(3),
+  LSPointsReal_(10),
+  LSPointsImag_(10),
   UseTranspose_(false),
   Condest_(-1.0),
   ComputeCondest_(false),
@@ -169,6 +173,8 @@ int Ifpack_Polynomial::SetParameters(Teuchos::ParameterList& List)
   PolyDegree_           = List.get("polynomial: degree",PolyDegree_);
   LSPointsReal_         = List.get("polynomial: real interp points",LSPointsReal_);
   LSPointsImag_         = List.get("polynomial: imag interp points",LSPointsImag_);
+  IsIndefinite_         = List.get("polynomial: indefinite",IsIndefinite_);
+  IsComplex_            = List.get("polynomial: complex",IsComplex_);
   MinDiagonalValue_     = List.get("polynomial: min diagonal value", 
                                    MinDiagonalValue_);
   ZeroStartingSolution_ = List.get("polynomial: zero starting solution", 
@@ -337,21 +343,19 @@ int Ifpack_Polynomial::Compute()
       else
         (*InvDiagonal_)[i] = 1.0 / diag;
     }
-    // Automatically compute maximum eigenvalue estimate of D^{-1}A if user hasn't provided one 
-    double lambda_max=0;
-    if (LambdaRealMax_ == -1) {
-      PowerMethod(Matrix(), *InvDiagonal_, EigMaxIters_, lambda_max);
-      LambdaRealMax_=lambda_max;
-      // Test for Exact Preconditioned case
-      if (ABS(LambdaRealMax_-1) < 1e-6) LambdaRealMax_ =  LambdaRealMin_ = 1.0;
-      else                              LambdaRealMin_ = -LambdaRealMax_/RealEigRatio_;
-      if (LambdaImagMax_ == 0.0 && LambdaImagMin_==0.0) {
-	// Estimate height of spectrum (imaginary part)
-	LambdaImagMax_=LambdaRealMax_/ImagEigRatio_;
-	LambdaImagMin_=-LambdaImagMax_;
-      }
-    }
-    // otherwise the inverse of the diagonal has been given by the user
+  }
+
+  // Automatically compute maximum eigenvalue estimate of D^{-1}A if user hasn't provided one 
+  double lambda_real_min, lambda_real_max, lambda_imag_min, lambda_imag_max;
+  if (LambdaRealMax_ == -1) {
+    //PowerMethod(Matrix(), *InvDiagonal_, EigMaxIters_, lambda_max);
+    GMRES(Matrix(), *InvDiagonal_, EigMaxIters_, lambda_real_min, lambda_real_max, lambda_imag_min, lambda_imag_max);
+    LambdaRealMin_=lambda_real_min;  LambdaImagMin_=lambda_imag_min;
+    LambdaRealMax_=lambda_real_max;  LambdaImagMax_=lambda_imag_max;
+    //std::cout<<"LambdaRealMin: "<<LambdaRealMin_<<std::endl;
+    //std::cout<<"LambdaRealMax: "<<LambdaRealMax_<<std::endl;
+    //std::cout<<"LambdaImagMin: "<<LambdaImagMin_<<std::endl;
+    //std::cout<<"LambdaImagMax: "<<LambdaImagMax_<<std::endl;
   }
 
   // find least squares polynomial for (LSPointsReal_*LSPointsImag_) zeros
@@ -363,26 +367,36 @@ int Ifpack_Polynomial::Compute()
 
   // Compute points in complex plane
   double lenx = LambdaRealMax_-LambdaRealMin_;
-  double   hx = lenx/((double) LSPointsReal_);
+  int      nx = ceil(lenx*((double) LSPointsReal_));
+  if (nx<2) { nx = 2; }
+  double   hx = lenx/((double) nx);
   std::vector<double> xs;
-  for( int pt=0; pt<=LSPointsReal_; pt++ ) {
-    xs.push_back(hx*pt+LambdaRealMin_);
+  if(abs(lenx)>1.0e-8) {
+    for( int pt=0; pt<=nx; pt++ ) {
+      xs.push_back(hx*pt+LambdaRealMin_);
+    }
+  }
+  else {
+    xs.push_back(LambdaRealMax_);
+    nx=1;
   }
   double leny = LambdaImagMax_-LambdaImagMin_;
-  double   hy = leny/((double) LSPointsImag_);
+  int      ny = ceil(leny*((double) LSPointsImag_));
+  if (ny<2) { ny = 2; }
+  double   hy = leny/((double) ny);
   std::vector<double> ys;
   if(abs(leny)>1.0e-8) {
-    for( int pt=0; pt<=LSPointsImag_; pt++ ) {
+    for( int pt=0; pt<=ny; pt++ ) {
       ys.push_back(hy*pt+LambdaImagMin_);
     }
   }
   else {
     ys.push_back(LambdaImagMax_);
-    LSPointsImag_=1;
+    ny=1;
   }
   std::vector< std::complex<double> > cpts;
-  for( int jj=0; jj<=LSPointsImag_; jj++ ) {
-    for( int ii=0; ii<=LSPointsReal_; ii++ ) {
+  for( int jj=0; jj<ny; jj++ ) {
+    for( int ii=0; ii<nx; ii++ ) {
       std::complex<double> cpt(xs[ii],ys[jj]);
       cpts.push_back(cpt);
     }
@@ -444,6 +458,7 @@ int Ifpack_Polynomial::Compute()
     //			       "imaginary part of polynomial coefficients is nonzero! coeff = "
     //			       << RHS(ii,0));
     coeff_[ii]=real(RHS(ii,0)/c0);
+    //std::cout<<"coeff["<<ii<<"]="<<coeff_[ii]<<std::endl;
   }
 
 #else
@@ -786,3 +801,39 @@ CG(const int MaximumIterations,
 #endif
 }
 #endif
+
+//==============================================================================
+int Ifpack_Polynomial::
+GMRES(const Epetra_Operator& Operator,
+      const Epetra_Vector& InvPointDiagonal,
+      const int MaximumIterations,
+      double& lambda_real_min, double& lambda_real_max,
+      double& lambda_imag_min, double& lambda_imag_max)
+{
+#ifdef HAVE_IFPACK_AZTECOO
+  Epetra_Vector x(Operator_->OperatorDomainMap());
+  Epetra_Vector y(Operator_->OperatorRangeMap());
+  x.Random();
+  y.PutScalar(0.0);
+  Epetra_LinearProblem LP(const_cast<Epetra_RowMatrix*>(&*Matrix_), &x, &y);
+  AztecOO solver(LP);
+  solver.SetAztecOption(AZ_solver, AZ_gmres_condnum);
+  solver.SetAztecOption(AZ_output, AZ_none);
+  Ifpack_DiagPreconditioner diag(Operator.OperatorDomainMap(),
+                                 Operator.OperatorRangeMap(),
+                                 InvPointDiagonal);
+  solver.SetPrecOperator(&diag);
+  solver.Iterate(MaximumIterations, 1e-10);
+  const double* status = solver.GetAztecStatus();
+  lambda_real_min = status[AZ_lambda_real_min];
+  lambda_real_max = status[AZ_lambda_real_max];
+  lambda_imag_min = status[AZ_lambda_imag_min];
+  lambda_imag_max = status[AZ_lambda_imag_max];
+  return(0);
+#else
+  cout << "You need to configure IFPACK with support for AztecOO" << endl;
+  cout << "to use the GMRES estimator. This may require --enable-aztecoo" << endl;
+  cout << "in your configure script." << endl;
+  IFPACK_CHK_ERR(-1);
+#endif
+}
