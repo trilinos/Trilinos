@@ -10,7 +10,7 @@ namespace stk {
                                                                        unsigned iSubDimOrd)
     {
       EXCEPTWATCH;
-      static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
+      SubDimCell_SDSEntityType subDimEntity(m_eMesh);
       getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
       static  SubDimCellData empty_SubDimCellData;
 
@@ -42,7 +42,7 @@ namespace stk {
 
     bool NodeRegistry::is_empty( const stk::mesh::Entity element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
     {
-      static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
+      SubDimCell_SDSEntityType subDimEntity(m_eMesh);
       getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
       static SubDimCellData empty_SubDimCellData;
 

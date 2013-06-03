@@ -247,6 +247,9 @@ namespace stk {
 
       typedef  stk::percept::NoMallocArray<T, N> sdc_type;
 
+      PerceptMesh* m_eMesh;
+      MySDCHashCode(PerceptMesh* eMesh=0) : m_eMesh(eMesh) {}
+
       int operator()(sdc_type& sdc)
       {
         size_t sum = 0;
@@ -255,11 +258,13 @@ namespace stk {
 
             if (s_compare_using_entity_impl)
               {
+                //sum += size_t(i->local_offset());
                 sum += size_t(i->local_offset());
               }
             else
               {
-                sum += static_cast<size_t>((*i).identifier());
+                //sum += static_cast<size_t>((*i).identifier());
+                sum += static_cast<size_t>(m_eMesh->identifier(*i));
               }
           }
         return sum;
@@ -273,8 +278,13 @@ namespace stk {
       typedef SubDimCell<T, N, CompareClass, HC> base_type;
 
       PerceptMesh& m_eMesh;
-      MySubDimCell(PerceptMesh& eMesh) : base_type(), m_eMesh(eMesh) {}
-      MySubDimCell(PerceptMesh& eMesh, unsigned num_ids) : base_type(num_ids), m_eMesh(eMesh) {}
+      MySubDimCell(PerceptMesh& eMesh) : base_type(), m_eMesh(eMesh) {
+        base_type::m_HashCode = HC(&eMesh);
+      }
+      MySubDimCell(PerceptMesh& eMesh, unsigned num_ids) : base_type(num_ids), m_eMesh(eMesh)
+      {
+        base_type::m_HashCode = HC(&eMesh);
+      }
 
     };
 
@@ -862,7 +872,7 @@ namespace stk {
       /// can be determined by the locality of the element (ghost or not).
       bool registerNeedNewNode(const stk::mesh::Entity element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes)
       {
-        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
+        SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
 
         static SubDimCellData new_SubDimCellData;
@@ -965,7 +975,7 @@ namespace stk {
       /// When remeshing during unrefinement, replace ownership of sub-dim entities by non-deleted elements
       bool replaceElementOwnership(const stk::mesh::Entity element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes)
       {
-        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
+        SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         noInline_getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
 
         static SubDimCellData new_SubDimCellData;
@@ -1014,7 +1024,7 @@ namespace stk {
 
         if (!isGhost) return true;
 
-        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
+        SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
 
         stk::CommAll& comm_all = *m_comm_all;
@@ -1275,7 +1285,7 @@ namespace stk {
           }
 
         unsigned *null_u = 0;
-        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
+        SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         //subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static SubDimCellData empty_SubDimCellData;
@@ -1457,7 +1467,7 @@ namespace stk {
         unsigned nparts = parts.size();
 
         //CHECK
-        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
+        SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         //subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static  SubDimCellData empty_SubDimCellData;
@@ -2425,7 +2435,7 @@ namespace stk {
             throw std::logic_error("logic: element shouldn't be null in createNodeAndConnect");
           }
 
-        static SubDimCell_SDSEntityType subDimEntity(m_eMesh);
+        SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         SubDimCellData& subDimCellData = getNewNodeAndOwningElement(subDimEntity);
         // assert it is empty?

@@ -112,7 +112,7 @@ namespace stk {
 
     //typedef array<int, 3> SubDimCell;
 
-    
+
 
     template<class T, std::size_t N=4>
     class SDCHashCode
@@ -127,16 +127,16 @@ namespace stk {
     class SubDimCell : public stk::percept::NoMallocArray<T,N>
     {
       std::size_t m_hash;
-
     public:
+      HC m_HashCode;
       typedef stk::percept::NoMallocArray<T,N> base_type;
       typedef std::size_t    size_type;
 
       typedef SubDimCell<T,N,CompareClass,HC> VAL;
 
       //repo always init to 0 size: SubDimCell(unsigned n=4) : base_type(n), m_hash(0u) {}
-      SubDimCell() : base_type(), m_hash(0u) {}
-      SubDimCell(unsigned n) : base_type(), m_hash(0u) {}
+      SubDimCell() : base_type(), m_hash(0u), m_HashCode() {}
+      SubDimCell(unsigned n) : base_type(), m_hash(0u), m_HashCode() {}
 #if 0
       SubDimCell(const SubDimCell& sdc) : base_type(sdc), m_hash(sdc.m_hash) {}
 #endif
@@ -171,7 +171,7 @@ namespace stk {
 
       int hashCode()
       {
-        return HC()(*this);
+        return m_HashCode(*this);
       }
 
       inline unsigned getHash() const
