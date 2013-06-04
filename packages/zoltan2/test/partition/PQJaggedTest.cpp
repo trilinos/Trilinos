@@ -629,6 +629,7 @@ void print_usage(char *executable){
 int main(int argc, char *argv[])
 {
     Teuchos::GlobalMPISession session(&argc, &argv);
+    //cout << argv << endl;
 
     RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
     int rank = tcomm->getRank();
