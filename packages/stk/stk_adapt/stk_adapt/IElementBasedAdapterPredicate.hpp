@@ -46,7 +46,7 @@ namespace stk {
       int operator()(const stk::mesh::Entity entity) {
         double *fdata = 0;
         if (m_field)
-          fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
+          fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
         bool selected = (m_eb_selector==0 || (*m_eb_selector)(m_eMesh.bucket(entity)));
         bool ref_field_criterion = (fdata  && fdata[0] > 0);
         bool unref_field_criterion = (fdata && fdata[0] < 0);

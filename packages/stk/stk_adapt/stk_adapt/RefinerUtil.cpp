@@ -312,7 +312,7 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
       if ( stk::mesh::is_auto_declared_part(*surfacePart) )
         continue;
 
-      const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*surfacePart);
+      const CellTopologyData * part_cell_topo_data = m_eMesh.get_cell_topology(*surfacePart);
       CellTopology surf_topo(part_cell_topo_data);
       //if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "tmp srk surfacePart= " << surfacePart->name() << " topo= " << (part_cell_topo_data?surf_topo.getName() : "NULL") << std::endl;
 

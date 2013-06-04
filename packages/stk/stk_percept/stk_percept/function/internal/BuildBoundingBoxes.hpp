@@ -77,7 +77,7 @@ namespace stk
         for (unsigned iNode = 0; iNode < numNodes; iNode++)
           {
             mesh::Entity node = elem_nodes[iNode].entity();
-            double * coord_data = mesh::field_data( *m_coords_field, node);
+            double * coord_data = bulkData.field_data( *m_coords_field, node);
             if (iNode == 0)
               {
                 for (unsigned iDim = 0; iDim < SpatialDim; iDim++)

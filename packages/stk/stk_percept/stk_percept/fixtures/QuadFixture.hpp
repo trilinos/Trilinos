@@ -221,7 +221,7 @@ namespace stk {
                   unsigned nx = 0, ny = 0;
                   node_ix_iy(elem_node[i], nx, ny);
 
-                  Scalar * data = stk::mesh::field_data( coord_field , node );
+                  Scalar * data = bulk_data.field_data( coord_field , node );
 
                   //data[0] = nx ;
                   // data[1] = ny ;
@@ -365,7 +365,7 @@ namespace stk {
                 {
                   for (unsigned iy = iy0; iy < iy1; iy++)
                     {
-                      if (elem(ix,iy).is_valid() &&
+                      if (bulk_data.is_valid(elem(ix,iy)) &&
                           (NodesPerElem == 4 || i_side <= 1))
                         {
                           mesh::Entity element = elem(ix, iy);
@@ -404,7 +404,7 @@ namespace stk {
                             }
 
                         }
-                      if (NodesPerElem == 3 && elem(ix,iy).is_valid() && i_side >=2 )
+                      if (NodesPerElem == 3 && bulk_data.is_valid(elem(ix,iy)) && i_side >=2 )
                         {
                           mesh::Entity element = bulk_data.get_entity(stk::mesh::MetaData::ELEMENT_RANK, (NX*NY+1)+elem_id(ix, iy));
 

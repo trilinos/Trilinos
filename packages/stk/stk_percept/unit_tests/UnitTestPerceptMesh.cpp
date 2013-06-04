@@ -236,7 +236,7 @@ namespace stk
                     stk::mesh::Bucket & bucket = **k ;
 
                     // in case the cell topology is needed
-                    const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+                    const CellTopologyData * const cell_topo_data = eMesh.get_cell_topology(bucket);
                     shards::CellTopology cell_topo(cell_topo_data);
 
                     const unsigned num_elements_in_bucket = bucket.size();
@@ -253,7 +253,7 @@ namespace stk
                             stk::mesh::Entity node = elem_nodes[ inode ].entity();
                             //stk::mesh::EntityId nid = m_eMesh.identifier(node);
 
-                            double * const coord = stk::mesh::field_data( *coordField , node );
+                            double * const coord = eMesh.field_data( *coordField , node );
                             // do something with coord's
                             sum += coord[0]*coord[0] + coord[1]*coord[1];
                           }
@@ -359,7 +359,7 @@ namespace stk
                     {
                       stk::mesh::Entity entity = bucket[iEntity];
 
-                      double * const coord = stk::mesh::field_data( *coordField_1 , entity );
+                      double * const coord = eMesh_1.field_data( *coordField_1 , entity );
 
                       coord[0] += 0.01;
                     }
@@ -436,7 +436,7 @@ namespace stk
                       stk::mesh::Entity node = bucket[iNode];
                       //stk::mesh::EntityId nid = m_eMesh.identifier(node);
 
-                      double * const coord = stk::mesh::field_data( *coordField , node );
+                      double * const coord = eMesh.field_data( *coordField , node );
 
                       coord[0] += dxdy*coord[1];
                       coord[1] += dydx*coord[0];

@@ -34,7 +34,7 @@ namespace stk {
     void TestLocalRefinerTri2::
     refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, vector<NeededEntityType>& needed_entity_ranks)
     {
-      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
 
       CellTopology cell_topo(cell_topo_data);
       const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
@@ -82,8 +82,8 @@ namespace stk {
                 {
                   stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
                   stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-                  double * const coord0 = stk::mesh::field_data( *coordField , node0 );
-                  double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+                  double * const coord0 = eMesh.field_data( *coordField , node0 );
+                  double * const coord1 = eMesh.field_data( *coordField , node1 );
 
                   // only refine diagonals of the split quads
                   if (m_diagonals)

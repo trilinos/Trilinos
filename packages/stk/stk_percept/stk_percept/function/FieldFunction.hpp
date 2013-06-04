@@ -141,13 +141,19 @@ namespace stk
       void setup_searcher(int D_);
 
       template<class BucketOrEntity>
-      void helper(MDArray& input_phy_points, MDArray& output_field_values,
+      void helper(const stk::mesh::BulkData& bulk, MDArray& input_phy_points, MDArray& output_field_values,
                   const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double time_value_optional);
 
       mesh::BulkData *get_bulk_data();
 
       //void setBulkData(mesh::BulkData *bulk) { m_bulkData = bulk; }
       bool getFoundOnLocalOwnedPart() { return m_found_on_local_owned_part; }
+
+      const stk::mesh::Bucket& mybucket(const stk::mesh::BulkData& bulkData, const stk::mesh::Bucket& bucket_or_element) const { return bucket_or_element; }
+      const stk::mesh::Bucket& mybucket(const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& bucket_or_element) const { return bulkData.bucket(bucket_or_element); }
+      stk::mesh::Bucket& mybucket( stk::mesh::BulkData& bulkData,  stk::mesh::Bucket& bucket_or_element)  { return bucket_or_element; }
+      stk::mesh::Bucket& mybucket( stk::mesh::BulkData& bulkData,  stk::mesh::Entity& bucket_or_element)  { return bulkData.bucket(bucket_or_element); }
+
 
     private:
       mesh::FieldBase *m_my_field;
@@ -168,7 +174,9 @@ namespace stk
 
       bool m_get_derivative;
       MDArrayString m_deriv_spec;
+
       mesh::FieldBase *m_coordinatesField;
+
     };
 
     /** Evaluate the function on this element at the parametric coordinates and return in output_field_values.
@@ -179,7 +187,7 @@ namespace stk
      */
 #define EXTRA_PRINT_FF_HELPER 0
     template<class BucketOrEntity>
-    void FieldFunction::helper(MDArray& input_phy_points, MDArray& output_field_values,
+    void FieldFunction::helper(const stk::mesh::BulkData& bulk, MDArray& input_phy_points, MDArray& output_field_values,
                                const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double time_value_optional)
     {
       VERIFY_OP(parametric_coordinates.rank(), ==, 2, "FieldFunction::operator() parametric_coordinates bad rank");
@@ -191,10 +199,15 @@ namespace stk
 
       VERIFY_OP(output_field_values.dimension(0), ==, numInterpPoints, "FieldFunction::operator() output_field_values bad dim(0)");
 
-      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(bucket_or_element);
+      const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(mybucket(bulk, bucket_or_element)).getCellTopologyData();
 
       unsigned stride = 0;
-      PerceptMesh::field_data( m_my_field , bucket_or_element, &stride);
+      bulk.field_data( *m_my_field , bucket_or_element);
+      {
+        unsigned er = mybucket(bulk, bucket_or_element).entity_rank();
+        const stk::mesh::FieldBase::Restriction & r = m_my_field->restriction(er, stk::mesh::MetaData::get(*m_my_field).universal_part());
+        stride = r.dimension() ;
+      }
 
       unsigned nDOF = stride;
 #ifndef NDEBUG
@@ -254,7 +267,7 @@ namespace stk
           basis_values.resize(numBases, numInterpPoints, spatialDim);
           transformed_basis_values.resize(numCells, numBases, numInterpPoints, spatialDim);
           MDArray cellWorkset(numCells, numNodes, spatialDim);
-          PerceptMesh::fillCellNodes(bucket_or_element,  m_coordinatesField, cellWorkset, spatialDim);
+          PerceptMesh::fillCellNodes(*get_bulk_data(), bucket_or_element,  m_coordinatesField, cellWorkset, spatialDim);
           Jac.resize(numCells, numInterpPoints, spatialDim, spatialDim);
           JacInverse.resize(numCells, numInterpPoints, spatialDim, spatialDim);
           CellTools<double>::setJacobian(Jac, parametric_coordinates, cellWorkset, topo);
@@ -297,7 +310,7 @@ namespace stk
           loc_output_field_values.resize(numCells, numInterpPoints, spatialDim);
         }
 
-      PerceptMesh::fillCellNodes(bucket_or_element, m_my_field, field_data_values_dof);
+      PerceptMesh::fillCellNodes(*get_bulk_data(), bucket_or_element, m_my_field, field_data_values_dof);
 
       // gather
       for (unsigned iDOF = 0; iDOF < nDOF; iDOF++)

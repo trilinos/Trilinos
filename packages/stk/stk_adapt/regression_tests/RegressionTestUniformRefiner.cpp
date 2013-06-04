@@ -3462,7 +3462,7 @@ namespace stk
                       {
                         stk::mesh::Entity entity = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double * data = eMesh.field_data( *eMesh.get_coordinates_field() , entity );
                         data[2] = data[2]*data[2];
                       }
                   }
@@ -3485,7 +3485,7 @@ namespace stk
                       {
                         stk::mesh::Entity entity = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double * data = eMesh.field_data( *eMesh.get_coordinates_field() , entity );
                         double ix = data[0];
                         double iy = data[1];
                         data[2] = (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*4.;

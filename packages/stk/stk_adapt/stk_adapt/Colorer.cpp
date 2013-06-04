@@ -87,7 +87,7 @@ namespace stk {
                     stk::mesh::Bucket & bucket = **k ;
 
                     bool doThisBucket = true;
-                    const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+                    const CellTopologyData * const bucket_cell_topo_data = m_eMesh.get_cell_topology(bucket);
                     shards::CellTopology topo(bucket_cell_topo_data);
                     if (elementType && (topo.getKey() != *elementType))
                       {
@@ -144,7 +144,7 @@ namespace stk {
                                 ++num_colored_this_pass;
                                 if (element_color_field)
                                   {
-                                    double *fdata = stk::mesh::field_data( *static_cast<const percept::ScalarFieldType *>(element_color_field) , element );
+                                    double *fdata = eMesh.field_data( *static_cast<const percept::ScalarFieldType *>(element_color_field) , element );
                                     fdata[0] = double(icolor);
                                   }
 #if STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR

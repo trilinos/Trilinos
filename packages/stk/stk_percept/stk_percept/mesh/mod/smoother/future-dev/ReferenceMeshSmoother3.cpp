@@ -85,7 +85,7 @@ namespace stk {
                         if (fixed || isGhostNode)
                           continue;
 
-                        double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                        double *cg_g = m_eMesh.field_data(cg_g_field, node);
                         
                         for (int idim=0; idim < spatialDim; idim++)
                           {
@@ -129,7 +129,7 @@ namespace stk {
                       continue;
 
                     double edge_length_ave = nodal_edge_length_ave(node);
-                    double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                    double *cg_g = m_eMesh.field_data(cg_g_field, node);
                         
                     double sum=0.0;
                     for (int idim=0; idim < spatialDim; idim++)

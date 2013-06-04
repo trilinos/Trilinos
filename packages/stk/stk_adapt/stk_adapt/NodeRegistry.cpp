@@ -64,7 +64,7 @@ namespace stk {
             return;
           }
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
 
         //CellTopology cell_topo(cell_topo_data);
         const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
@@ -719,7 +719,7 @@ namespace stk {
 
                       if (doPrint && field_data)
                         {
-                          //const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+                          //const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
                           //CellTopology cell_topo(cell_topo_data);
 
                           std::cout << "tmp NodeRegistry::makeCentroid(field) npts= " << subDimEntity.size() << " ipts= " << ipts
@@ -886,7 +886,7 @@ namespace stk {
           if (stk::mesh::is_auto_declared_part(part))
             continue;
 
-          const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(part);
+          const CellTopologyData *const topology = m_eMesh.get_cell_topology(part);
           (void)topology;
           stk::mesh::Selector selector(part);
 

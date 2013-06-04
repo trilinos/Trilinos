@@ -448,7 +448,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
                                 *part,
                                 stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ) );
 
-      const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(*part);
+      const CellTopologyData* cell_topo = meta.get_cell_topology(*part).getCellTopologyData();
       std::string cell_topo_name = "UNKNOWN";
       if (cell_topo != NULL)
         cell_topo_name = cell_topo->name;
@@ -611,10 +611,10 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
       stk::mesh::Part* const part = meta.get_part(name);
       assert(part != NULL);
 
-      const CellTopologyData* cell_topo = stk::percept::PerceptMesh::get_cell_topology(*part);
+      const CellTopologyData* cell_topo = stk::mesh::MetaData::get(bulk).get_cell_topology(*part).getCellTopologyData();
       if (cell_topo == NULL) {
         std::ostringstream msg ;
-        msg << " UnitTestUtilities::process_elementblocks::INTERNAL_ERROR: Part " << part->name() << " returned NULL from stk::percept::PerceptMesh::get_cell_topology()";
+        msg << " UnitTestUtilities::process_elementblocks::INTERNAL_ERROR: Part " << part->name() << " returned NULL from m_eMesh.get_cell_topology()";
         throw std::runtime_error( msg.str() );
       }
 
@@ -680,7 +680,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
       std::vector<stk::mesh::Entity> nodes(node_count);
       for(int i=0; i<node_count; ++i) {
         nodes[i] = bulk.get_entity( stk::mesh::MetaData::NODE_RANK, node_ids[i] );
-        if (nodes[i].is_valid())
+        if (bulk.is_valid(nodes[i]))
           bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, node_ids[i], add_parts );
       }
 
@@ -934,7 +934,7 @@ void my_test(
       ThrowAssert(number > 0);
 
       //double * elem_node_data = field_data( coord_field , bucket.begin() );
-      double * elem_centroid_data = field_data( elem_centroid_field , *bucket.begin() );
+      double * elem_centroid_data = M.field_data( elem_centroid_field , *bucket.begin() );
 
       for ( int i = 0 ; i < number ; ++i, elem_centroid_data += 3) {
 
@@ -951,7 +951,7 @@ void my_test(
           {
             mesh::Entity node = elem_nodes[inode];
 
-            double * const node_data = field_data(coord_field , node );
+            double * const node_data = M.field_data(coord_field , node );
             for (int ic=0; ic < 3; ic++) {
               elem_centroid_data[ic] += node_data[ic]/8.;
             }

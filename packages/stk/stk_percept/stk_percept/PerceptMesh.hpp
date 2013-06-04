@@ -244,13 +244,13 @@ namespace stk {
       /// get the value of a field on the given entity; if a vector field, pass in the index of the vector required (ordinal)
       double get_field_data(const stk::mesh::FieldBase *field, const mesh::Entity entity, unsigned ordinal=0)
       {
-        double *val= field_data_entity(field, entity);
+        double *val= field_data(field, entity);
         return val ? val[ordinal] : 0.0;
       }
       /// set the value of a field on the given entity; if a vector field, pass in the index of the vector required (ordinal)
       void set_field_data(double value, const stk::mesh::FieldBase *field, const mesh::Entity entity, unsigned ordinal=0 )
       {
-        double *val= field_data_entity(field, entity);
+        double *val= field_data(field, entity);
         if( val) val[ordinal] = value;
       }
 
@@ -444,6 +444,9 @@ namespace stk {
 
       /// print mesh spacing normal to each surface part - see below (hmesh_surface_normal)
       void print_hmesh_surface_normal(std::string msg="", std::ostream& out = std::cout);
+
+      void get_face_normal(stk::mesh::FieldBase *coord_field, stk::mesh::Entity nodes[3], double normal[3]);
+      void get_line_normal(stk::mesh::FieldBase *coord_field, stk::mesh::Entity nodes[2], double normal[3]);
 
       /// check if element volumes are positive
       bool check_mesh_volumes(bool print_table=false, double badJac=1.e-10, int dump_all_elements=0);
@@ -645,22 +648,21 @@ namespace stk {
       std::vector<std::vector<stk::mesh::Entity> > & getEntityPool() { return m_entity_pool; }
       void destroyEntityPool();
 
-      static double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
-      static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity node, unsigned *stride=0);
-      double * field_data_entity(const stk::mesh::FieldBase *field, const mesh::Entity entity, unsigned *stride=0);
+      double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
+      double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity node, unsigned *stride=0);
 
-      double * field_data(const stk::mesh::FieldBase& field, const stk::mesh::Bucket & bucket, unsigned *stride=0) { return PerceptMesh::field_data(&field, bucket, stride); }
-      double * field_data(const stk::mesh::FieldBase& field, const mesh::Entity node, unsigned *stride=0) { return PerceptMesh::field_data(&field, node, stride); }
+      double * field_data(const stk::mesh::FieldBase& field, const stk::mesh::Bucket & bucket, unsigned *stride=0) { return field_data(&field, bucket, stride); }
+      double * field_data(const stk::mesh::FieldBase& field, const mesh::Entity node, unsigned *stride=0) { return field_data(&field, node, stride); }
 
-      static inline double *
+      inline double *
       field_data_inlined(const mesh::FieldBase *field, const mesh::Entity node)
       {
         return field_data(field, node);
 //         return
 //           field->rank() == 0 ?
-//           stk::mesh::field_data( *static_cast<const ScalarFieldType *>(field) , node )
+//           eMesh.field_data( *static_cast<const ScalarFieldType *>(field) , node )
 //           :
-//           stk::mesh::field_data( *static_cast<const VectorFieldType *>(field) , node );
+//           eMesh.field_data( *static_cast<const VectorFieldType *>(field) , node );
       }
 
 
@@ -683,7 +685,7 @@ namespace stk {
       /// in some cases you may want to pass in an array where nDof is less than the stride (e.g., pull out 2
       /// coordinates from a 3D coordinate field).  In that case, the dataStride argument can be set (to e.g. "2").
       template<class ArrayType>
-      static void fillCellNodes( const stk::mesh::Bucket &bucket,
+      static void fillCellNodes(const stk::mesh::BulkData & mesh, const stk::mesh::Bucket &bucket,
                                  //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                  //VectorFieldType& coord_field,
                                  mesh::FieldBase* field,
@@ -691,7 +693,7 @@ namespace stk {
 
       /// \brief see comment for fillCellNodes(Bucket& ...)
       template<class ArrayType>
-      static void fillCellNodes( const stk::mesh::Entity element,
+      static void fillCellNodes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element,
                                  //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                  //VectorFieldType& coord_field,
                                  mesh::FieldBase* field,
@@ -726,18 +728,27 @@ namespace stk {
       }
 
       /// here @param thing is a Part, Bucket, Entity
-      template<class T>
-      static
-      const CellTopologyData * get_cell_topology(const T& thing)
+      //template<class T>
+      const CellTopologyData * get_cell_topology(const stk::mesh::Entity& thing)
       {
-        const CellTopologyData * cell_topo_data = mesh::get_cell_topology(thing).getCellTopologyData();
+        const CellTopologyData * cell_topo_data = stk::mesh::get_cell_topology(get_bulk_data()->bucket(thing)).getCellTopologyData();
+        return cell_topo_data;
+      }
+      const CellTopologyData * get_cell_topology(const stk::mesh::Bucket& thing)
+      {
+        const CellTopologyData * cell_topo_data = stk::mesh::get_cell_topology(thing).getCellTopologyData();
+        return cell_topo_data;
+      }
+      const CellTopologyData * get_cell_topology(const stk::mesh::Part& thing)
+      {
+        const CellTopologyData * cell_topo_data = get_fem_meta_data()->get_cell_topology(thing).getCellTopologyData();
         return cell_topo_data;
       }
 
       static
       const CellTopologyData * get_cell_topology(const stk::mesh::BulkData& mesh, stk::mesh::Entity entity)
       {
-        return get_cell_topology(mesh.bucket(entity));
+        return stk::mesh::get_cell_topology(mesh.bucket(entity)).getCellTopologyData();
       }
 
       const stk::mesh::PartVector& get_io_omitted_parts() { return m_io_omitted_parts; }
@@ -925,9 +936,9 @@ namespace stk {
 
     };
 
-    template<>
-    const CellTopologyData *
-    PerceptMesh::get_cell_topology(const mesh::Part& part) ;
+//     template<>
+//     const CellTopologyData *
+//     PerceptMesh::get_cell_topology(const mesh::Part& part) ;
 
 
 
@@ -941,15 +952,14 @@ namespace stk {
 
     // static
     template<class ArrayType>
-    void PerceptMesh::fillCellNodes( const mesh::Bucket &bucket,
+    void PerceptMesh::fillCellNodes(const stk::mesh::BulkData & bulkD, const mesh::Bucket &bucket,
                                   //stk::mesh::Cartesian>& coord_field,
                                   //VectorFieldType& coord_field,
                                   mesh::FieldBase* field,
                                   ArrayType& cellNodes, unsigned dataStrideArg)
     {
       unsigned number_elems = bucket.size();
-      //const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket).getCellTopologyData();
-      const CellTopologyData * const bucket_cell_topo_data = get_cell_topology(bucket);
+      const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket).getCellTopologyData();
 
       shards::CellTopology cell_topo(bucket_cell_topo_data);
       //unsigned numCells = number_elems;
@@ -969,13 +979,13 @@ namespace stk {
           mesh::Entity elem = bucket[iElemInBucketOrd] ;
 
           if (0) std::cout << "elemOfBucket= " << elem << std::endl;
-          stk::mesh::Entity const* elem_nodes = bucket.begin_nodes(elem.bucket_ordinal());
+          stk::mesh::Entity const* elem_nodes = bucket.begin_nodes(stk::mesh::BulkData::get(bucket).bucket_ordinal(elem));
 
           // FIXME: fill field data (node coordinates)
           for (unsigned iNodeOrd = 0; iNodeOrd < numNodes; iNodeOrd++)
             {
               mesh::Entity node = elem_nodes[iNodeOrd];
-              double * node_coord_data = PerceptMesh::field_data( field , node);
+              double * node_coord_data = static_cast<double *>(bulkD.field_data( *field , node));
 
               for (unsigned iDOFOrd = 0; iDOFOrd < dataStride; iDOFOrd++)
                 {
@@ -990,7 +1000,7 @@ namespace stk {
 
     // static
     template<class ArrayType>
-    void PerceptMesh::fillCellNodes( const stk::mesh::Entity element,
+    void PerceptMesh::fillCellNodes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element,
                                   //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                   //VectorFieldType& coord_field,
                                   mesh::FieldBase* field,
@@ -1004,7 +1014,7 @@ namespace stk {
           dataStride = r.dimension() ;
         }
       //std::cout << "element dataStride= " << dataStride << std::endl;
-      const stk::mesh::BulkData & mesh = stk::mesh::BulkData::get(element);
+      //const stk::mesh::BulkData & mesh = stk::mesh::BulkData::get(element);
       stk::mesh::Entity const* element_nodes = mesh.begin_nodes(element);
 
       unsigned numNodes = mesh.num_nodes(element);
@@ -1013,7 +1023,7 @@ namespace stk {
       for (unsigned iNodeOrd = 0; iNodeOrd < numNodes; iNodeOrd++)
         {
           mesh::Entity node = element_nodes[iNodeOrd];
-          double * node_coord_data = PerceptMesh::field_data( field , node);
+          double * node_coord_data = static_cast<double *>(mesh.field_data( *field , node));
 
           for (unsigned iDOFOrd = 0; iDOFOrd < dataStride; iDOFOrd++)
             {

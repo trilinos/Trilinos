@@ -230,12 +230,12 @@ namespace stk {
                         }
 
                       double edge_length_ave = 0; //nodal_edge_length_ave(node);
-                      double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
+                      double *cg_edge_length = m_eMesh->field_data(cg_edge_length_field, node);
                       edge_length_ave = cg_edge_length[0];
 
-                      double *coord_current = PerceptMesh::field_data(coord_field_current, node);
-                      double *cg_d = PerceptMesh::field_data(cg_d_field, node);
-                      double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                      double *coord_current = m_eMesh->field_data(coord_field_current, node);
+                      double *cg_d = m_eMesh->field_data(cg_d_field, node);
+                      double *cg_g = m_eMesh->field_data(cg_g_field, node);
 
                       m_metric->set_node(node);
 
@@ -309,7 +309,7 @@ namespace stk {
                                   if (fixed || isGhostNode)
                                     continue;
 
-                                  double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                                  double *cg_g = m_eMesh->field_data(cg_g_field, node);
                                   for (int jdim=0; jdim < spatialDim; jdim++)
                                     {
                                       if (node_locally_owned)
@@ -334,16 +334,16 @@ namespace stk {
                             continue;
 
                           // FIXME
-                          double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
+                          double *cg_edge_length = m_eMesh->field_data(cg_edge_length_field, node);
 
                           //edge_length_ave = nodal_edge_length_ave(node);
                           edge_length_ave = cg_edge_length[0];
 
                           m_metric->set_node(node);
-                          double *coord_current = PerceptMesh::field_data(coord_field_current, node);
-                          double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                          double *coord_current = m_eMesh->field_data(coord_field_current, node);
+                          double *cg_g = m_eMesh->field_data(cg_g_field, node);
                           unsigned stride_h=0;
-                          double *cg_h = (m_use_hessian_scaling ? PerceptMesh::field_data(cg_h_field, node, &stride_h) : 0);
+                          double *cg_h = (m_use_hessian_scaling ? m_eMesh->field_data(cg_h_field, node, &stride_h) : 0);
                           if (m_use_hessian_scaling) VERIFY_OP_ON(int(stride_h), ==, spatialDim*spatialDim, "hmm");
 
                           //double eps = 1.e-6;
@@ -588,7 +588,7 @@ namespace stk {
                         continue;
                       }
 
-                    double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                    double *cg_g = m_eMesh->field_data(cg_g_field, node);
 
                     if (fixed.second == MS_SURFACE)
                       {
@@ -665,7 +665,7 @@ namespace stk {
                       {
                         mesh::Entity node = elem_nodes[ inode ].entity();
 
-                        double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
+                        double *cg_edge_length = m_eMesh->field_data(cg_edge_length_field, node);
                         edge_length_ave = cg_edge_length[0];
 
                         bool isGhostNode = !(on_locally_owned_part(m_eMesh->bucket(node)) || on_globally_shared_part(m_eMesh->bucket(node)));
@@ -674,7 +674,7 @@ namespace stk {
                         if (fixed || isGhostNode)
                           continue;
 
-                        double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                        double *cg_g = m_eMesh->field_data(cg_g_field, node);
 
                         for (int idim=0; idim < spatialDim; idim++)
                           {
@@ -728,11 +728,11 @@ namespace stk {
                       continue;
 
                     double edge_length_ave = 0; //nodal_edge_length_ave(node);
-                    double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
+                    double *cg_edge_length = m_eMesh->field_data(cg_edge_length_field, node);
                     edge_length_ave = cg_edge_length[0];
 
-                    double *cg_g = PerceptMesh::field_data(cg_g_field, node);
-                    double *cg_h = (m_use_hessian_scaling ? PerceptMesh::field_data(cg_h_field, node) : 0);
+                    double *cg_g = m_eMesh->field_data(cg_g_field, node);
+                    double *cg_h = (m_use_hessian_scaling ? m_eMesh->field_data(cg_h_field, node) : 0);
 
                     double sum=0.0;
                     for (int idim=0; idim < spatialDim; idim++)
@@ -804,8 +804,8 @@ namespace stk {
                     if (m_use_local_scaling && m_stage==1)
                       //if (m_use_local_scaling)
                       {
-                        double *cg_r = PerceptMesh::field_data(cg_r_field, node);
-                        double *cg_s = PerceptMesh::field_data(cg_s_field, node);
+                        double *cg_r = m_eMesh->field_data(cg_r_field, node);
+                        double *cg_s = m_eMesh->field_data(cg_s_field, node);
                         double len=0.0;
                         for (int idim=0; idim < spatialDim; idim++)
                           {
@@ -856,9 +856,9 @@ namespace stk {
 
                   //                 }
                   //double ReferenceMeshSmoother1::nodal_metric(stk::mesh::Entity node, double alpha, double *coord_current, double *cg_d, bool& valid)
-                  double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
+                  double *coord_current = m_eMesh->field_data(m_coord_field_current, node);
 
-                  double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                  double *cg_g = m_eMesh->field_data(cg_g_field, node);
                   bool valid=true;
                   double nm = nodal_metric(node, 0.0, coord_current, cg_g, valid);
                   double nm1 = nodal_metric(node, -1.e-6/m_grad_norm_scaled, coord_current, cg_g, valid);
@@ -887,7 +887,7 @@ namespace stk {
               for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                 {
                   stk::mesh::Entity node = bucket[i_node];
-                  double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
+                  double *cg_edge_length = m_eMesh->field_data(cg_edge_length_field, node);
 
                   //if (on_locally_owned_part(node) || on_globally_shared_part(node))
                     {
@@ -1230,11 +1230,11 @@ namespace stk {
                   {
                     stk::mesh::Entity node = bucket[i_node];
 
-                    double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
-                    double *cg_d = PerceptMesh::field_data(cg_d_field, node);
-                    double *cg_g = PerceptMesh::field_data(cg_g_field, node);
-                    double *cg_r = PerceptMesh::field_data(cg_r_field, node);
-                    double *cg_s = PerceptMesh::field_data(cg_s_field, node);
+                    double *coord_current = m_eMesh->field_data(m_coord_field_current, node);
+                    double *cg_d = m_eMesh->field_data(cg_d_field, node);
+                    double *cg_g = m_eMesh->field_data(cg_g_field, node);
+                    double *cg_r = m_eMesh->field_data(cg_r_field, node);
+                    double *cg_s = m_eMesh->field_data(cg_s_field, node);
 
                     bool dopr=false;
                     unsigned nid = m_eMesh->identifier(node);
@@ -1285,11 +1285,11 @@ namespace stk {
                 {
                   stk::mesh::Entity node = node_p;
 
-                  double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
-                  double *cg_d = PerceptMesh::field_data(cg_d_field, node);
-                  double *cg_g = PerceptMesh::field_data(cg_g_field, node);
-                  double *cg_r = PerceptMesh::field_data(cg_r_field, node);
-                  double *cg_s = PerceptMesh::field_data(cg_s_field, node);
+                  double *coord_current = m_eMesh->field_data(m_coord_field_current, node);
+                  double *cg_d = m_eMesh->field_data(cg_d_field, node);
+                  double *cg_g = m_eMesh->field_data(cg_g_field, node);
+                  double *cg_r = m_eMesh->field_data(cg_r_field, node);
+                  double *cg_s = m_eMesh->field_data(cg_s_field, node);
 
                   bool dopr=true;
                   unsigned nid = m_eMesh->identifier(node);
@@ -1368,8 +1368,8 @@ namespace stk {
                         continue;
                       }
 
-                    double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
-                    double *cg_d = PerceptMesh::field_data(cg_d_field, node);
+                    double *coord_current = m_eMesh->field_data(m_coord_field_current, node);
+                    double *cg_d = m_eMesh->field_data(cg_d_field, node);
 
                     for (int i=0; i < spatialDim; i++)
                       {
@@ -1436,8 +1436,8 @@ namespace stk {
                         continue;
                       }
 
-                    double *coord_current = PerceptMesh::field_data(coord_field_current, node);
-                    double *cg_d = PerceptMesh::field_data(cg_d_field, node);
+                    double *coord_current = m_eMesh->field_data(coord_field_current, node);
+                    double *cg_d = m_eMesh->field_data(cg_d_field, node);
 
                     // shouldn't be necessary
                     if (0 && fixed.second == MS_SURFACE)
@@ -1482,8 +1482,8 @@ namespace stk {
                           continue;
                         }
 
-                      double *coord_current = PerceptMesh::field_data(coord_field_current, node);
-                      double *cg_d = PerceptMesh::field_data(cg_d_field, node);
+                      double *coord_current = m_eMesh->field_data(coord_field_current, node);
+                      double *cg_d = m_eMesh->field_data(cg_d_field, node);
 
                       bool local_valid = true;
                       double nm = nodal_metric(node, 0.0, coord_current, cg_d, local_valid);
@@ -1571,7 +1571,7 @@ namespace stk {
                         continue;
                       }
 
-                    double *coord_current = PerceptMesh::field_data(coord_field_current, node);
+                    double *coord_current = m_eMesh->field_data(coord_field_current, node);
 
                     double coord_project[3] = {0,0,0};
                     double coord_old[3] = {0,0,0};

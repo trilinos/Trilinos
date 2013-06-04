@@ -183,7 +183,7 @@ namespace stk{
             for ( unsigned jj = 0 ; jj < Wedge6::node_count ; ++jj ) {
               unsigned j = wedge_node_ids[i][jj] - 1;
               stk::mesh::Entity const node = m_bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , j + 1 );
-              double * const coord = field_data( m_coordinates_field , node );
+              double * const coord = m_bulkData.field_data( m_coordinates_field , node );
               coord[0] = node_coord_data[j][0] ;
               coord[1] = node_coord_data[j][1] ;
               coord[2] = node_coord_data[j][2] ;
@@ -195,7 +195,7 @@ namespace stk{
             for ( unsigned jj = 0 ; jj < Tet4::node_count ; ++jj ) {
               unsigned j = tetra_node_ids[i][jj] - 1;
               stk::mesh::Entity const node = m_bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , j + 1 );
-              double * const coord = field_data( m_coordinates_field , node );
+              double * const coord = m_bulkData.field_data( m_coordinates_field , node );
               coord[0] = node_coord_data[j][0] ;
               coord[1] = node_coord_data[j][1] ;
               coord[2] = node_coord_data[j][2] ;

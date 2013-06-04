@@ -19,7 +19,7 @@ namespace stk {
 
     void MeshUtil::fillSideNodes(percept::PerceptMesh& eMesh, stk::mesh::Entity element, unsigned iside, std::vector<stk::mesh::EntityId>& side_nodes)
     {
-      CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+      CellTopology cell_topo(eMesh.get_cell_topology(element));
       const MyPairIterRelation elem_nodes(eMesh, element, stk::mesh::MetaData::NODE_RANK );
 
       int nfn = cell_topo.getCellTopologyData()->side[iside].topology->vertex_count;
@@ -27,13 +27,13 @@ namespace stk {
       for (int inode = 0; inode < nfn; inode++)
         {
           int jnode = cell_topo.getCellTopologyData()->side[iside].node[inode];
-          side_nodes[inode] = elem_nodes[jnode].entity().identifier();
+          side_nodes[inode] = eMesh.identifier(elem_nodes[jnode].entity());
         }
     }
 
     void MeshUtil::fillSideNodes(percept::PerceptMesh& eMesh, stk::mesh::Entity element, unsigned iside, std::vector<stk::mesh::Entity>& side_nodes)
     {
-      CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+      CellTopology cell_topo(eMesh.get_cell_topology(element));
       const MyPairIterRelation elem_nodes(eMesh, element, stk::mesh::MetaData::NODE_RANK );
 
       int nfn = cell_topo.getCellTopologyData()->side[iside].topology->vertex_count;
@@ -55,9 +55,9 @@ namespace stk {
       double b[3]={0,0,0};
       double c[3]={0,0,0};
 
-      double *fdata0 = stk::mesh::field_data( *eMesh.get_coordinates_field() , side_nodes[0]);
-      double *fdata1 = stk::mesh::field_data( *eMesh.get_coordinates_field() , side_nodes[1]);
-      double *fdata2 = stk::mesh::field_data( *eMesh.get_coordinates_field() , side_nodes[2]);
+      double *fdata0 = eMesh.field_data( *eMesh.get_coordinates_field() , side_nodes[0]);
+      double *fdata1 = eMesh.field_data( *eMesh.get_coordinates_field() , side_nodes[1]);
+      double *fdata2 = eMesh.field_data( *eMesh.get_coordinates_field() , side_nodes[2]);
       for (int idim=0; idim < 3; idim++)
         {
           a[idim] = fdata1[idim] - fdata0[idim];
@@ -112,8 +112,8 @@ namespace stk {
 
     bool MeshUtil::sharesFace(percept::PerceptMesh& eMesh, stk::mesh::Entity element1, stk::mesh::Entity element2, unsigned& iside1, unsigned& iside2)
     {
-      CellTopology cell_topo1(stk::percept::PerceptMesh::get_cell_topology(element1));
-      CellTopology cell_topo2(stk::percept::PerceptMesh::get_cell_topology(element2));
+      CellTopology cell_topo1(eMesh.get_cell_topology(element1));
+      CellTopology cell_topo2(eMesh.get_cell_topology(element2));
       if (cell_topo1.getKey() != cell_topo2.getKey())
         return false;
 
@@ -144,8 +144,8 @@ namespace stk {
       //unsigned side_rank = (spatialDim == 3 ? m_eMesh.face_rank() : m_eMesh.edge_rank());
       double tol = 1.e-5;
 
-      CellTopology cell_topo1(stk::percept::PerceptMesh::get_cell_topology(element1));
-      CellTopology cell_topo2(stk::percept::PerceptMesh::get_cell_topology(element2));
+      CellTopology cell_topo1(eMesh.get_cell_topology(element1));
+      CellTopology cell_topo2(eMesh.get_cell_topology(element2));
 
       if (cell_topo1.getKey() != cell_topo2.getKey())
         return false;
@@ -247,7 +247,7 @@ namespace stk {
           for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
             {
               stk::mesh::Entity element = bucket[iElement];
-              if (!stk::percept::PerceptMesh::get_cell_topology(element))
+              if (!eMesh.get_cell_topology(element))
                 {
                   // an empty element
                   if (eMesh.get_bulk_data()->count_valid_connectivity(element, stk::mesh::MetaData::NODE_RANK) == 0)

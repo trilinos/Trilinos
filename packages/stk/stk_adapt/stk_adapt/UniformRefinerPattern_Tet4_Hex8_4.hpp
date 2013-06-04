@@ -123,7 +123,7 @@ namespace stk {
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         EXCEPTWATCH;
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
         static stk::mesh::EntityId elems[4][8];
 
         shards::CellTopology cell_topo(cell_topo_data);
@@ -214,7 +214,7 @@ namespace stk {
 
             if (proc_rank_field)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(eMesh.owner_rank(newElement));
               }
 

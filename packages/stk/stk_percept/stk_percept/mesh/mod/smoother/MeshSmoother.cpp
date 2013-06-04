@@ -289,7 +289,7 @@ namespace stk {
 
       if (!m_meshGeometry) return;
       stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
-      double *f_data = PerceptMesh::field_data(field, node_ptr);
+      double *f_data = m_eMesh->field_data(field, node_ptr);
       double f_data_save[3] = {f_data[0], f_data[1], 0};
       if (m_eMesh->get_spatial_dim() > 2) f_data_save[2] = f_data[2];
 

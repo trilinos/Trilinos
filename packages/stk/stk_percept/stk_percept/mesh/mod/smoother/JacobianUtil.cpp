@@ -242,7 +242,7 @@ namespace stk {
       //static const Vector3D d_con(1.0, 1.0, 1.0);
 
       bool metric_valid = false;
-      if (!topology_data) topology_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      if (!topology_data) topology_data = eMesh.get_cell_topology(element);
 
       const MyPairIterRelation v_i(eMesh, element, eMesh.node_rank() );
       m_num_nodes = v_i.size();
@@ -250,7 +250,7 @@ namespace stk {
       const double *x2d[3] = {0,0,0};
       //const double *x3d[4] = {0,0,0,0};
 
-#define VERTEX(vi)  stk::mesh::field_data( *static_cast<const VectorFieldType *>(coord_field) , vi.entity() )
+#define VERTEX(vi)  eMesh.field_data( *static_cast<const VectorFieldType *>(coord_field) , vi.entity() )
 
       switch(topology_data->key)
         {
@@ -411,7 +411,7 @@ namespace stk {
       //static const Vector3D d_con(1.0, 1.0, 1.0);
 
       bool metric_valid = false;
-      if (!topology_data) topology_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      if (!topology_data) topology_data = eMesh.get_cell_topology(element);
 
       const MyPairIterRelation v_i(eMesh, element, eMesh.node_rank() );
       m_num_nodes = v_i.size();
@@ -531,7 +531,7 @@ namespace stk {
                                     stk::mesh::FieldBase *coord_field ,
                                     const CellTopologyData * topology_data_in  )
     {
-      if (!topology_data_in) topology_data_in = stk::percept::PerceptMesh::get_cell_topology(element);
+      if (!topology_data_in) topology_data_in = eMesh.get_cell_topology(element);
       if (!coord_field) coord_field = eMesh.get_coordinates_field();
       ave_edge_length = eMesh.edge_length_ave(element, coord_field,  &min_edge_length, &max_edge_length, topology_data_in);
     }
@@ -541,7 +541,7 @@ namespace stk {
                                       stk::mesh::FieldBase *coord_field ,
                                       const CellTopologyData * topology_data_in  )
     {
-      if (!topology_data_in) topology_data_in = stk::percept::PerceptMesh::get_cell_topology(element);
+      if (!topology_data_in) topology_data_in = eMesh.get_cell_topology(element);
       if (!coord_field) coord_field = eMesh.get_coordinates_field();
       double averageDetJ = 0.0;
       bool valid = this->operator()(averageDetJ, eMesh, element, coord_field, topology_data_in);

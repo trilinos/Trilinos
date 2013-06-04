@@ -273,7 +273,7 @@ namespace stk
                                    const stk::mesh::Entity element, const MDArray& parametric_coordinates, double time_value_optional)
     {
       EXCEPTWATCH;
-      helper(input_phy_points, output_field_values, element, parametric_coordinates, time_value_optional);
+      helper(*m_bulkData, input_phy_points, output_field_values, element, parametric_coordinates, time_value_optional);
     }
 
     void FieldFunction::operator()(MDArray& input_phy_points, MDArray& output_field_values,
@@ -285,7 +285,7 @@ namespace stk
       VERIFY_OP(input_phy_points.dimension(0), ==, num_elements_in_bucket, "FieldFunction::operator() mismatch in input_phy_points and num_elements_in_bucket");
       VERIFY_OP(output_field_values.dimension(0), ==, num_elements_in_bucket, "FieldFunction::operator() mismatch in input_phy_points and num_elements_in_bucket");
 #endif
-      helper(input_phy_points, output_field_values, bucket, parametric_coordinates, time_value_optional);
+      helper(*m_bulkData, input_phy_points, output_field_values, bucket, parametric_coordinates, time_value_optional);
     }
 
 

@@ -60,7 +60,7 @@ namespace stk
     /// return true if topology is bad
     bool TopologyVerifier::isTopologyBad(stk::mesh::BulkData& bulkData, mesh::Entity elem)
     {
-      const CellTopologyData * const top = stk::percept::PerceptMesh::get_cell_topology(elem);
+      const CellTopologyData * const top = stk::mesh::get_cell_topology(bulkData.bucket(elem)).getCellTopologyData();
 
       const MyPairIterRelation elem_nodes(bulkData, elem, stk::mesh::MetaData::NODE_RANK );
 
@@ -121,7 +121,8 @@ namespace stk
           if (0) { elem_node_data[0]++;}
 
 #if 1
-          const CellTopologyData * const bucket_cell_topo = stk::percept::PerceptMesh::get_cell_topology(bucket);
+          //const CellTopologyData * const bucket_cell_topo = m_eMesh.get_cell_topology(bucket);
+          const CellTopologyData * const bucket_cell_topo = stk::mesh::get_cell_topology(bucket).getCellTopologyData();
           int bucket_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(bucket_cell_topo->name);
 #endif
 
@@ -142,8 +143,8 @@ namespace stk
               if (0) std::cout << "elemOfBucket= " << elem << std::endl;
               const MyPairIterRelation elem_nodes(bulk, elem, stk::mesh::MetaData::NODE_RANK );
 
-              //const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
-              const CellTopologyData * const cell_topo = stk::percept::PerceptMesh::get_cell_topology(elem);
+              const CellTopologyData * const cell_topo = stk::mesh::get_cell_topology(bulk.bucket(elem)).getCellTopologyData();
+
               int shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(cell_topo->name);
               if (0) { std::cout << "shardsId= " << shardsId << " name= " << cell_topo->name <<  std::endl; }
 
@@ -154,7 +155,7 @@ namespace stk
                   unsigned in0 = cell_topo->edge[iedgeOrd].node[0];
                   unsigned in1 = cell_topo->edge[iedgeOrd].node[1];
 
-                  MyEdge<unsigned> potential_bad_edge(elem_nodes[in0].entity().identifier(), elem_nodes[in1].entity().identifier());
+                  MyEdge<unsigned> potential_bad_edge(bulk.identifier(elem_nodes[in0].entity()), bulk.identifier(elem_nodes[in1].entity()));
                   //if (potential_bad_edge.getId0() == 3 && potential_bad_edge.getId1() == 6)
                   if (0) std::cout << "potential_bad_edge: " << potential_bad_edge.getId0() << " " << potential_bad_edge.getId1() << std::endl;
                 }
@@ -165,7 +166,7 @@ namespace stk
                   unsigned in0 = cell_topo->edge[iedgeOrd].node[0];
                   unsigned in1 = cell_topo->edge[iedgeOrd].node[1];
 
-                  MyEdge<unsigned> potential_bad_edge(elem_nodes[in0].entity().identifier(), elem_nodes[in1].entity().identifier());
+                  MyEdge<unsigned> potential_bad_edge(bulk.identifier(elem_nodes[in0].entity()), bulk.identifier(elem_nodes[in1].entity() ));
                   //if (potential_bad_edge.getId0() == 3 && potential_bad_edge.getId1() == 6)
                   if (0) std::cout << "potential_bad_edge: " << potential_bad_edge.getId0() << " " << potential_bad_edge.getId1() << std::endl;
 
@@ -186,7 +187,8 @@ namespace stk
                           mesh::Entity elemOnNode = node_elems[iele].entity();
                           const MyPairIterRelation elemOnNode_nodes(bulk, elemOnNode, stk::mesh::MetaData::NODE_RANK );
 
-                          const CellTopologyData * const local_cell_topo = stk::percept::PerceptMesh::get_cell_topology(elemOnNode);
+                          //const CellTopologyData * const local_cell_topo = m_eMesh.get_cell_topology(elemOnNode);
+                          const CellTopologyData * const local_cell_topo = stk::mesh::get_cell_topology(bulk.bucket(elemOnNode)).getCellTopologyData();
                           int local_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(local_cell_topo->name);
                           //if (1) { std::cout << "shardsId= " << shardsId << " name= " << cell_topo->name <<  std::endl; }
 
@@ -196,8 +198,8 @@ namespace stk
                           for (invalid_edge_set_type::iterator inv_edge = m_invalid_edge_set[local_shardsId].begin();
                                inv_edge != m_invalid_edge_set[local_shardsId].end(); inv_edge++)
                             {
-                              MyEdge<unsigned> globalIdInvEdge( elemOnNode_nodes[ (*inv_edge).getId0()].entity().identifier(),
-                                                                elemOnNode_nodes[ (*inv_edge).getId1()].entity().identifier() );
+                              MyEdge<unsigned> globalIdInvEdge( bulk.identifier(elemOnNode_nodes[ (*inv_edge).getId0()].entity()),
+                                                                bulk.identifier(elemOnNode_nodes[ (*inv_edge).getId1()].entity()) );
 
                               if (0) std::cout << "globalIdInvEdge: " << globalIdInvEdge.getId0() << " " << globalIdInvEdge.getId1() << std::endl;
                               if(potential_bad_edge == globalIdInvEdge)

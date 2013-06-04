@@ -203,8 +203,8 @@ namespace stk {
                         node_1 = node_temp;
                       }
 
-                    double * const coord_0 = stk::mesh::field_data( *coordField , node_0 );
-                    double * const coord_1 = stk::mesh::field_data( *coordField , node_1 );
+                    double * const coord_0 = eMesh.field_data( *coordField , node_0 );
+                    double * const coord_1 = eMesh.field_data( *coordField , node_1 );
                     double edge_len_squared = 0.0;
 
                     edge_len_squared =
@@ -321,7 +321,7 @@ namespace stk {
             throw std::logic_error("RefinerPattern_Tri3_Tri3_N::createNewElements bad duplicate element of PARENT!");
           }
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
         typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
         typedef boost::tuple<int, int, int> tri_tuple_type_int;
         static vector<tri_tuple_type> elems(4);
@@ -376,7 +376,7 @@ namespace stk {
 
             if (proc_rank_field)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.get_rank());
                 if (fdata)
                   fdata[0] = double(eMesh.owner_rank(newElement));

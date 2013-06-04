@@ -95,13 +95,18 @@ namespace stk
 
     private:
 
+      const stk::mesh::Bucket& mybucket(const stk::mesh::BulkData& bulkData, const stk::mesh::Bucket& bucket_or_element) const { return bucket_or_element; }
+      const stk::mesh::Bucket& mybucket(const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& bucket_or_element) const { return bulkData.bucket(bucket_or_element); }
+      stk::mesh::Bucket& mybucket( stk::mesh::BulkData& bulkData,  stk::mesh::Bucket& bucket_or_element)  { return bucket_or_element; }
+      stk::mesh::Bucket& mybucket( stk::mesh::BulkData& bulkData,  stk::mesh::Entity& bucket_or_element)  { return bulkData.bucket(bucket_or_element); }
+
 
       template<class BucketOrEntity>
       bool helper(const BucketOrEntity& bucket_or_element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
       {
         EXCEPTWATCH;
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket_or_element);
+        const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(mybucket(bulkData, bucket_or_element)).getCellTopologyData();
         CellTopology cell_topo(cell_topo_data);
 
         int cell_dimension = cell_topo.getDimension();
@@ -154,7 +159,7 @@ namespace stk
 
         unsigned spaceDim = im.m_Spatial_Dim_Tag.num;
 
-        PerceptMesh::fillCellNodes(bucket_or_element,  &coord_field, cn, spaceDim);
+        PerceptMesh::fillCellNodes(bulkData, bucket_or_element,  &coord_field, cn, spaceDim);
 
         // get jacobian
         J(xi, cn, cell_topo);
@@ -287,7 +292,7 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        const CellTopologyData * const child_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(child_element);
+        const CellTopologyData * const child_cell_topo_data = stk::mesh::get_cell_topology(mybucket(bulkData, child_element)).getCellTopologyData();
         CellTopology child_cell_topo(child_cell_topo_data);
         int child_cell_dimension = child_cell_topo.getDimension();
         int meta_dimension = mesh::MetaData::get(bulkData).spatial_dimension();
@@ -310,7 +315,7 @@ namespace stk
         const stk::mesh::Entity element = parent_elements[0].entity();
         unsigned i_face = parent_elements[0].relation_ordinal();
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk::mesh::get_cell_topology(mybucket(bulkData, element)).getCellTopologyData();
         CellTopology cell_topo(cell_topo_data);
         int cell_dimension = cell_topo.getDimension();
         VERIFY_OP_ON(cell_dimension, ==, meta_dimension , "Dimensions don't match");
@@ -354,7 +359,7 @@ namespace stk
 
         unsigned spaceDim = im.m_Spatial_Dim_Tag.num;
 
-        PerceptMesh::fillCellNodes(element,  &coord_field, cn, spaceDim);
+        PerceptMesh::fillCellNodes(bulkData, element,  static_cast<stk::mesh::FieldBase *>(&coord_field), cn, spaceDim);
 
         // get parent cell integration points
         // Map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints

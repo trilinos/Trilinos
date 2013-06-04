@@ -113,7 +113,7 @@ namespace stk{
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < npts ; ++i ) {
             stk::mesh::Entity const node = m_bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
-            double * const coord = field_data( m_coordinates_field , node );
+            double * const coord = m_bulkData.field_data( m_coordinates_field , node );
             coord[0] = pts[i][0] ;
             coord[1] = pts[i][1] ;
             coord[2] = pts[i][2] ;

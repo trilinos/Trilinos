@@ -7,7 +7,7 @@ namespace stk {
     refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element,
                                             vector<NeededEntityType>& needed_entity_ranks)
     {
-      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
 
       int spatialDimension = m_eMesh.get_spatial_dim();
 
@@ -58,8 +58,8 @@ namespace stk {
                 {
                   stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
                   stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-                  double * const coord0 = stk::mesh::field_data( *coordField , node0 );
-                  double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+                  double * const coord0 = eMesh.field_data( *coordField , node0 );
+                  double * const coord1 = eMesh.field_data( *coordField , node1 );
                   double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
                   double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
@@ -77,7 +77,7 @@ namespace stk {
 
     int IEdgeAdapter::markCountRefinedEdges(const stk::mesh::Entity element)
     {
-      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
       int spatialDimension = m_eMesh.get_spatial_dim();
       CellTopology cell_topo(cell_topo_data);
       const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
@@ -92,8 +92,8 @@ namespace stk {
         {
           stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
           stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-          double * const coord0 = stk::mesh::field_data( *coordField , node0 );
-          double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+          double * const coord0 = eMesh.field_data( *coordField , node0 );
+          double * const coord1 = eMesh.field_data( *coordField , node1 );
           double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
           double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
@@ -109,7 +109,7 @@ namespace stk {
 
     int IEdgeAdapter::markUnrefine(const stk::mesh::Entity element)
     {
-      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
 
       CellTopology cell_topo(cell_topo_data);
       const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
@@ -125,8 +125,8 @@ namespace stk {
         {
           stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
           stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-          double * const coord0 = stk::mesh::field_data( *coordField , node0 );
-          double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+          double * const coord0 = eMesh.field_data( *coordField , node0 );
+          double * const coord1 = eMesh.field_data( *coordField , node1 );
           double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
           double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 

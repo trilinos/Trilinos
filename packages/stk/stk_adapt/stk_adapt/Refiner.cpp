@@ -347,7 +347,7 @@ namespace stk {
           if (on_locally_owned_part(**k) && fromPartsSelector(**k) )
             {
               stk::mesh::Bucket & bucket = **k ;
-              const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+              const CellTopologyData * const bucket_cell_topo_data = m_eMesh.get_cell_topology(bucket);
               shards::CellTopology topo(bucket_cell_topo_data);
 
               const unsigned num_elements_in_bucket = bucket.size();
@@ -495,7 +495,7 @@ namespace stk {
     void Refiner::
     refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, vector<NeededEntityType>& needed_entity_ranks)
     {
-      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
 
       shards::CellTopology cell_topo(cell_topo_data);
       const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
@@ -551,7 +551,7 @@ namespace stk {
                       unsigned k_element_side = side_to_elem[ie].relation_ordinal();
                       stk::mesh::Entity element = side_to_elem[ie].entity();
 
-                      shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+                      shards::CellTopology element_topo(m_eMesh.get_cell_topology(element));
                       int topoDim = UniformRefinerPatternBase::getTopoDim(element_topo);
 
                       bool isShell = false;
@@ -633,7 +633,7 @@ namespace stk {
                       if (1 && m_eMesh.get_rank()==0)
                         {
                           mesh::Part *part = (*fromParts)[ipart];
-                          const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*part);
+                          const CellTopologyData * part_cell_topo_data = m_eMesh.get_cell_topology(*part);
                           if (part_cell_topo_data)
                             {
                               shards::CellTopology part_cell_topo(part_cell_topo_data);
@@ -664,7 +664,7 @@ namespace stk {
                   for (unsigned ipart = 0; ipart < fromPartsAll.size(); ipart++)
                     {
                       mesh::Part *part = fromPartsAll[ipart];
-                      const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*part);
+                      const CellTopologyData * part_cell_topo_data = m_eMesh.get_cell_topology(*part);
                       if (part_cell_topo_data)
                         {
                           shards::CellTopology part_cell_topo(part_cell_topo_data);
@@ -1430,7 +1430,7 @@ namespace stk {
                       for (unsigned ip=0; ip < parts.size(); ip++)
                         {
                           bool stk_auto= stk::mesh::is_auto_declared_part(*parts[ip]);
-                          //const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*parts[ip]);
+                          //const CellTopologyData *const topology = m_eMesh.get_cell_topology(*parts[ip]);
                           if (stk_auto) continue;
                           unsigned per = parts[ip]->primary_entity_rank();
                           //std::cout << " per,part = " << per << " " << parts[ip]->name() << std::endl;
@@ -1529,7 +1529,7 @@ namespace stk {
           stk::mesh::Bucket & bucket = **k ;
           if (selector(bucket))
             {
-              const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+              const CellTopologyData * const bucket_cell_topo_data = m_eMesh.get_cell_topology(bucket);
               shards::CellTopology topo(bucket_cell_topo_data);
               if (topo.getKey() == elementType)
                 {
@@ -1624,7 +1624,7 @@ namespace stk {
           stk::mesh::Bucket & bucket = **k ;
           if (selector(bucket))
             {
-              const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+              const CellTopologyData * const bucket_cell_topo_data = m_eMesh.get_cell_topology(bucket);
               shards::CellTopology topo(bucket_cell_topo_data);
               if (topo.getKey() == elementType)
                 {
@@ -1661,7 +1661,7 @@ namespace stk {
         return;
 
       stk::mesh::Entity first_element = elems[0];
-      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(first_element);
+      const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(first_element);
       shards::CellTopology cell_topo(cell_topo_data);
 
       for (int iElement = 0; iElement < nele; iElement++)
@@ -1688,7 +1688,7 @@ namespace stk {
 
           if (m_proc_rank_field && rank == stk::mesh::MetaData::ELEMENT_RANK)
             {
-              double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
+              double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
               fdata[0] = double(m_eMesh.owner_rank(element));
               //if (1 || eMesh.owner_rank(element) == 3)
               //  std::cout << "tmp eMesh.owner_rank(element) = " << eMesh.owner_rank(element) << std::endl;
@@ -1870,7 +1870,7 @@ namespace stk {
               unsigned num_new_nodes_needed = needed_entity_ranks[ineed_ent].second;
               if (0)
                 {
-                  const CellTopologyData * const cell_topo_data_0 = stk::percept::PerceptMesh::get_cell_topology(element);
+                  const CellTopologyData * const cell_topo_data_0 = m_eMesh.get_cell_topology(element);
                   shards::CellTopology cell_topo_0(cell_topo_data_0);
 
                   std::cout << "tmp 43 cell_topo= " << cell_topo_0.getName() << " ineed_ent= " << ineed_ent << " needed_entity_ranks[ineed_ent].first/second = "
@@ -2073,13 +2073,13 @@ namespace stk {
               throw std::logic_error("Refiner::fixElementSides1 parent is null");
             }
 
-          const CellTopologyData *parent_topo_data = stk::percept::PerceptMesh::get_cell_topology(*parent);
+          const CellTopologyData *parent_topo_data = m_eMesh.get_cell_topology(*parent);
           if (0 == parent_topo_data)
             {
               throw std::logic_error("Refiner::fixElementSides1 parent_topo_data is null");
             }
 
-          shards::CellTopology parent_topo(stk::percept::PerceptMesh::get_cell_topology(*parent));
+          shards::CellTopology parent_topo(m_eMesh.get_cell_topology(*parent));
           //unsigned parent_nsides = (unsigned)parent_topo.getSideCount();
 
           for (unsigned i_child = 0; i_child < child_vector.size(); i_child++)
@@ -2092,7 +2092,7 @@ namespace stk {
                   throw std::runtime_error("fixElementSides1: child == null");
                 }
 
-              shards::CellTopology child_topo(stk::percept::PerceptMesh::get_cell_topology(*child));
+              shards::CellTopology child_topo(m_eMesh.get_cell_topology(*child));
               unsigned child_nsides = (unsigned)child_topo.getSideCount();
 
               // if parent has any side relations, check if any of the sides' children match the parent's children's faces
@@ -2230,7 +2230,7 @@ namespace stk {
                           if (m_eMesh.get_bulk_data()->num_connectivity(element, node_rank) == 0)
                             continue;
 
-                          shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+                          shards::CellTopology element_topo(m_eMesh.get_cell_topology(element));
                           unsigned element_nsides = (unsigned)element_topo.getSideCount();
 
                           for (unsigned j_element_side = 0; j_element_side < element_nsides; j_element_side++)
@@ -2366,7 +2366,7 @@ namespace stk {
                       // FIXME
                       //if (m_eMesh.isLeafElement(element))
                       {
-                        shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+                        shards::CellTopology element_topo(m_eMesh.get_cell_topology(element));
                         unsigned element_nsides = (unsigned)element_topo.getSideCount();
 
                         for (unsigned j_element_side = 0; j_element_side < element_nsides; j_element_side++)
@@ -2480,7 +2480,7 @@ namespace stk {
 
                   if (!m_eMesh.hasFamilyTree(element) || m_eMesh.isChildElement(element, true))
                     {
-                      shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+                      shards::CellTopology element_topo(m_eMesh.get_cell_topology(element));
                       unsigned element_nsides = (unsigned)element_topo.getSideCount();
 
                       for (unsigned j_element_side = 0; j_element_side < element_nsides; j_element_side++)
@@ -2606,7 +2606,7 @@ namespace stk {
           for (unsigned ip=0; ip < parts.size(); ip++)
             {
               bool stk_auto= stk::mesh::is_auto_declared_part(*parts[ip]);
-              //const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*parts[ip]);
+              //const CellTopologyData *const topology = m_eMesh.get_cell_topology(*parts[ip]);
               if (stk_auto) continue;
               if (DEBUG_GSPR) std::cout << "parts[ip]-> == " << parts[ip]->name() << std::endl;
             }
@@ -2628,7 +2628,7 @@ namespace stk {
                   for (unsigned isp=0; isp < side_parts.size(); isp++)
                     {
                       bool stk_auto= stk::mesh::is_auto_declared_part(*side_parts[isp]);
-                      const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*side_parts[isp]);
+                      const CellTopologyData *const topology = m_eMesh.get_cell_topology(*side_parts[isp]);
                       unsigned per = side_parts[isp]->primary_entity_rank();
                       std::cout << "side_part= " << side_parts[isp]->name() << " stk_auto= " << stk_auto << " topology= " << topology << " primary_entity_rank= " << per << std::endl;
                     }
@@ -2639,7 +2639,7 @@ namespace stk {
                 {
                   if ( stk::mesh::is_auto_declared_part(*side_parts[isp]) )
                     continue;
-                  //const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*side_parts[isp]);
+                  //const CellTopologyData *const topology = m_eMesh.get_cell_topology(*side_parts[isp]);
                   //if (!topology)
                   //  continue;
                   unsigned per = side_parts[isp]->primary_entity_rank();
@@ -3077,7 +3077,7 @@ namespace stk {
       //         debug = true;
       //       }
 
-      shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+      shards::CellTopology element_topo(m_eMesh.get_cell_topology(element));
       unsigned element_nsides = (unsigned)element_topo.getSideCount();
 
       if (debug) {
@@ -3261,7 +3261,7 @@ namespace stk {
             {
               stk::mesh::Entity element = node_elements[ii].entity();
 
-              shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+              shards::CellTopology element_topo(m_eMesh.get_cell_topology(element));
               unsigned element_nsides = (unsigned)element_topo.getSideCount();
 
               // special case for shells
@@ -3489,7 +3489,7 @@ namespace stk {
 
       if (1 && oldPart)
         {
-          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*oldPart);
+          const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(*oldPart);
           std::string ct_name = (cell_topo_data ? cell_topo_data->name : "");
           //std::cout << "tmp removeOldElements::name= " << oldPart->name() << " for rank= " << rank << " topology= " << ct_name << std::endl;
         }
@@ -3635,7 +3635,7 @@ namespace stk {
           stk::mesh::Entity element_p = *itbd;
           if ( ! m_eMesh.get_bulk_data()->destroy_entity( element_p ) )
             {
-              shards::CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element_p));
+              shards::CellTopology cell_topo(m_eMesh.get_cell_topology(element_p));
               std::cout << "tmp Refiner::removeElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
               const percept::MyPairIterRelation elem_relations (m_eMesh, element_p, m_eMesh.entity_rank(element_p)+1);
               std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
@@ -4052,7 +4052,7 @@ namespace stk {
                       vector<NeededEntityType> needed_entity_ranks;
                       m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
-                      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+                      const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
                       shards::CellTopology cell_topo(cell_topo_data);
                       unsigned elementType = cell_topo.getKey();
                       unsigned bpElementType = m_breakPattern[irank]->getFromTypeKey();

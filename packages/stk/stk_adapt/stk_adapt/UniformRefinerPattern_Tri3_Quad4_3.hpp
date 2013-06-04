@@ -106,7 +106,7 @@ namespace stk {
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
         static stk::mesh::EntityId elems[3][4];
 
         CellTopology cell_topo(cell_topo_data);
@@ -157,7 +157,7 @@ namespace stk {
 
             if (proc_rank_field && m_eMesh.entity_rank(element) == stk::mesh::MetaData::ELEMENT_RANK)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(eMesh.owner_rank(newElement));
               }
 

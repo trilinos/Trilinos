@@ -22,7 +22,7 @@ namespace stk {
         {
           if (0)
             {
-              const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+              const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
               CellTopology cell_topo(cell_topo_data);
 
               std::cout << "NodeRegistry::getNewNodesOnSubDimEntity: no node found, cell_topo = " << cell_topo.getName()

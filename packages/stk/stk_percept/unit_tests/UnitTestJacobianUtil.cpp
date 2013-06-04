@@ -88,7 +88,7 @@ namespace stk
                     stk::mesh::Bucket & bucket = **k ;
 
                     // in case the cell topology is needed
-                    const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+                    const CellTopologyData * const cell_topo_data = eMesh.get_cell_topology(bucket);
                     shards::CellTopology cell_topo(cell_topo_data);
 
                     const unsigned num_elements_in_bucket = bucket.size();
@@ -149,7 +149,7 @@ namespace stk
                     stk::mesh::Bucket & bucket = **k ;
 
                     // in case the cell topology is needed
-                    const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+                    const CellTopologyData * const cell_topo_data = eMesh.get_cell_topology(bucket);
                     shards::CellTopology cell_topo(cell_topo_data);
 
                     const unsigned num_elements_in_bucket = bucket.size();
@@ -213,7 +213,7 @@ namespace stk
                     stk::mesh::Bucket & bucket = **k ;
 
                     // in case the cell topology is needed
-                    const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+                    const CellTopologyData * const cell_topo_data = eMesh.get_cell_topology(bucket);
                     shards::CellTopology cell_topo(cell_topo_data);
 
                     const unsigned num_elements_in_bucket = bucket.size();

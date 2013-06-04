@@ -54,8 +54,8 @@ namespace stk {
                     for (unsigned inode=0; inode < num_node; inode++)
                       {
                         mesh::Entity node = elem_nodes[ inode ].entity();
-                        double *spacing = PerceptMesh::field_data(spacing_field, node);
-                        double *spacing_counter = PerceptMesh::field_data(spacing_field_counter, node);
+                        double *spacing = m_eMesh.field_data(spacing_field, node);
+                        double *spacing_counter = m_eMesh.field_data(spacing_field_counter, node);
                         if (m_type == SPACING_AVE)
                           spacing_counter[0] += 1.0;
                         else
@@ -115,8 +115,8 @@ namespace stk {
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
                     stk::mesh::Entity node = bucket[i_node];
-                    double *spacing = PerceptMesh::field_data(spacing_field, node);
-                    double *spacing_counter = PerceptMesh::field_data(spacing_field_counter, node);
+                    double *spacing = m_eMesh.field_data(spacing_field, node);
+                    double *spacing_counter = m_eMesh.field_data(spacing_field_counter, node);
 
                     for (int idim=0; idim < spatial_dim; idim++)
                       {
@@ -135,7 +135,7 @@ namespace stk {
       int spatial_dim = m_eMesh.get_spatial_dim();
 
       double spacing_ave=0.0;
-      double *coord = stk::mesh::field_data( *static_cast<const VectorFieldType *>(m_eMesh.get_coordinates_field()) , node );
+      double *coord = m_eMesh.field_data( *static_cast<const VectorFieldType *>(m_eMesh.get_coordinates_field()) , node );
 
       const MyPairIterRelation node_elems(m_eMesh, node, m_eMesh.element_rank() );
       double num_elem = 0;
@@ -161,7 +161,7 @@ namespace stk {
               unsigned inode = node_elems[i_element].relation_ordinal();
               const MyPairIterRelation elem_nodes(m_eMesh, element, m_eMesh.node_rank() );
               VERIFY_OP_ON(inode, <, elem_nodes.size(), "elem_nodes 2");
-              VERIFY_OP_ON(elem_nodes[inode].entity().identifier(), ==, m_eMesh.identifier(node), "elem_nodes 3");
+              VERIFY_OP_ON(m_eMesh.identifier(elem_nodes[inode].entity()), ==, m_eMesh.identifier(node), "elem_nodes 3");
 
               DenseMatrix<3,3>& A = jacA.m_J[inode];
               double detJ = jacA.m_detJ[inode];
@@ -170,7 +170,7 @@ namespace stk {
                   std::cout << "ERROR: bad Jacobian in SpacingFieldUtil, detJ = " << detJ << std::endl;
                   for (unsigned jn=0; jn < elem_nodes.size(); jn++)
                     {
-                      double *cr = stk::mesh::field_data( *static_cast<const VectorFieldType *>(m_eMesh.get_coordinates_field()) , elem_nodes[jn].entity() );
+                      double *cr = m_eMesh.field_data( *static_cast<const VectorFieldType *>(m_eMesh.get_coordinates_field()) , elem_nodes[jn].entity() );
                       for (int idim=0; idim < spatial_dim; idim++)
                         {
                           std::cout << "coord[node-" << jn << ", " << idim << "]= " << cr[idim] << std::endl;

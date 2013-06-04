@@ -53,7 +53,7 @@ namespace stk {
       //static int n_seq = 400;
       static std::vector<unsigned> random_sequence = get_random_sequence(1, 50, 50);
 
-      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
 
       CellTopology cell_topo(cell_topo_data);
       const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
@@ -101,8 +101,8 @@ namespace stk {
                 {
                   stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
                   stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-                  //double * const coord0 = stk::mesh::field_data( *coordField , node0 );
-                  //double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+                  //double * const coord0 = eMesh.field_data( *coordField , node0 );
+                  //double * const coord1 = eMesh.field_data( *coordField , node1 );
 
                   // choose to refine or not
                   if (random_sequence[ m_eMesh.identifier(node0) + m_eMesh.identifier(node1) ] < m_eMesh.identifier(node0) + m_eMesh.identifier(node1))
@@ -146,7 +146,7 @@ namespace stk {
                     for (unsigned inode=0; inode < elem_nodes.size(); inode++)
                       {
                         stk::mesh::Entity node = elem_nodes[inode].entity();
-                        double *coord = stk::mesh::field_data( *m_eMesh.get_coordinates_field(), node );
+                        double *coord = eMesh.field_data( *m_eMesh.get_coordinates_field(), node );
                         if (coord[0] > 2.1 || coord[1] > 2.1)
                           {
                             found = false;

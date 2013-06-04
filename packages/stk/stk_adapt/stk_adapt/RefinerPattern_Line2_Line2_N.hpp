@@ -40,7 +40,7 @@ namespace stk {
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
         typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId> line_tuple_type;
         static vector<line_tuple_type> elems(2);
 
@@ -131,7 +131,7 @@ namespace stk {
 #if 0
             if (proc_rank_field && proc_rank_field->rank() == m_eMesh.edge_rank()) //&& m_eMesh.get_spatial_dim()==1)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.get_rank());
                 fdata[0] = double(eMesh.owner_rank(newElement));
               }
@@ -139,7 +139,7 @@ namespace stk {
             stk::mesh::FieldBase * proc_rank_field_edge = m_eMesh.get_field("proc_rank_edge");
             if (proc_rank_field_edge)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field_edge) , newElement );
+                double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field_edge) , newElement );
                 fdata[0] = double(eMesh.owner_rank(newElement));
                 //fdata[0] = 1234.56;
                 if (0)

@@ -156,7 +156,7 @@ namespace stk {
                 for (unsigned inode=0; inode < elem_nodes.size(); inode++)
                   {
                     stk::mesh::Entity node = elem_nodes[inode].entity();
-                    double *fdata = stk::mesh::field_data( *eMesh.get_coordinates_field() , node);
+                    double *fdata = eMesh.field_data( *eMesh.get_coordinates_field() , node);
                     node_coord_data[inode][0] = fdata[0];
                     node_coord_data[inode][1] = fdata[1];
                     node_coord_data[inode][2] = fdata[2];
@@ -1601,14 +1601,14 @@ namespace stk {
         {
           const percept::MyPairIterRelation elem_nodes (m_eMesh, element,  stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
-          double *f_data = m_eMesh.field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
           bool found = true;
           for (unsigned inode=0; inode < num_node; inode++)
             {
               mesh::Entity node = elem_nodes[ inode ].entity();
-              double *coord_data = PerceptMesh::field_data(coordField, node);
+              double *coord_data = m_eMesh.field_data(coordField, node);
 
               //std::cout << "tmp coord_data= " << coord_data[0] << std::endl;
 
@@ -1638,14 +1638,14 @@ namespace stk {
         {
           const percept::MyPairIterRelation elem_nodes (m_eMesh, element,  stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
-          double *f_data = m_eMesh.field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
           bool found = true;
           for (unsigned inode=0; inode < num_node; inode++)
             {
               mesh::Entity node = elem_nodes[ inode ].entity();
-              double *coord_data = PerceptMesh::field_data(coordField, node);
+              double *coord_data = m_eMesh.field_data(coordField, node);
 
               //std::cout << "tmp coord_data= " << coord_data[0] << std::endl;
 
@@ -1748,7 +1748,7 @@ namespace stk {
         for (unsigned inode=0; inode < elem_nodes.size(); inode++)
           {
             stk::mesh::Entity node = elem_nodes[inode].entity();
-            double *fdata = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
+            double *fdata = eMesh.field_data( *eMesh.get_coordinates_field() , node );
             for (int dim=0; dim < eMesh.get_spatial_dim(); dim++)
               {
                 fdata[dim] = tri_coords[inode][dim];

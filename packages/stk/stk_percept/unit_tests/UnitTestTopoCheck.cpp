@@ -681,7 +681,7 @@ void use_encr_case_1_generate_mesh(
         throw std::runtime_error( msg.str() );
       }
 
-      double * const data = field_data( node_coord_field , node );
+      double * const data = mesh.field_data( node_coord_field , node );
       data[0] = node_coordinates[ i3 + 0 ];
       data[1] = node_coordinates[ i3 + 1 ];
       data[2] = node_coordinates[ i3 + 2 ];

@@ -201,7 +201,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
     // keep the best one.
     if(evaluators.size() > 1)
     {
-      double * coords = stk::mesh::field_data(*coordField , cur_node);
+      double * coords = eMesh->field_data(*coordField , cur_node);
       double orig_pos[3] = {coords[0], coords[1], coords[2]};
       double smallest_dist_sq = 9999999.9;
       double best_pos[3] = {0,0,0};
@@ -280,7 +280,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity node, std::vector<double>& normal)
 {
   {
-    Bucket& bucket = m_eMesh.bucket(node);
+    Bucket& bucket = eMesh->bucket(node);
 
     // Each bucket contains the set of nodes with unique part intersections.
     // This means that every nodes will be in exactly one bucket.  But, the
@@ -323,7 +323,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::
 {
   for (unsigned inode=0; inode < nodes.size(); inode++)
   {
-    Bucket& bucket = nodes[inode].bucket();
+    Bucket& bucket = eMesh->bucket(nodes[inode]);
 
 #if CONTAINS_DEBUG_NODE
     if ( contains_dbg_node( eMesh, bucket ) )
@@ -387,7 +387,7 @@ void MeshGeometry::snap_node
 
   {
 
-    double * coord = stk::mesh::field_data( *coordField , node );
+    double * coord = eMesh->field_data( *coordField , node );
     double delta[3] = {coord[0], coord[1], coord[2]};
     double coord_0[3] = {coord[0], coord[1], coord[2]};
     bool doPrint = m_doPrint; //DEBUG_GEOM_SNAP
@@ -522,7 +522,7 @@ void MeshGeometry::normal_at
 
   {
 
-    double * coord = stk::mesh::field_data( *coordField , node );
+    double * coord = eMesh->field_data( *coordField , node );
     bool doPrint = DEBUG_GEOM_SNAP;
     if (doPrint)
     {
@@ -582,7 +582,7 @@ bool MeshGeometry::contains_dbg_node
   {
     Entity node = bucket[iNode];
 
-    double * coord = stk::mesh::field_data( *coordField , node );
+    double * coord = eMesh->field_data( *coordField , node );
     if ( is_dbg_node( coord ) )
     {
       return true;

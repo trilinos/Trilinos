@@ -443,15 +443,15 @@ namespace stk
     IntrepidManager::FieldValues::
     FieldValues(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag)) {}
 
-    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field)
+    void IntrepidManager::FieldValues::operator()(const stk::mesh::BulkData& bulk, const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field)
     {
       ComputeFieldValues cfv;
-      cfv.get_fieldValues(element, transformed_basis_values, field, *this);
+      cfv.get_fieldValues(bulk, element, transformed_basis_values, field, *this);
     }
-    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
+    void IntrepidManager::FieldValues::operator()(const stk::mesh::BulkData& bulk, const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
     {
       ComputeFieldValues cfv;
-      cfv.get_fieldValues(element, transformed_basis_values, field, output_field_values);
+      cfv.get_fieldValues(bulk, element, transformed_basis_values, field, output_field_values);
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -566,7 +566,7 @@ namespace stk
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
       const mesh::Bucket & bucket = bulkData.bucket(element);
-      const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
+      const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket).getCellTopologyData();
       if (!bucket_cell_topo_data)
         {
           mesh::EntityRank bucket_rank = bucket.entity_rank();
@@ -590,7 +590,7 @@ namespace stk
           for (unsigned iNode = 0; iNode < numNodes; iNode++)
             {
               mesh::Entity node = elem_nodes[iNode].entity();
-              double * node_coord_data = stk::mesh::field_data( *coords_field , node);
+              double * node_coord_data = bulkData.field_data( *coords_field , node);
               for (unsigned iDim=0; iDim < cellDim; iDim++)
                 {
                   cellWorkset(iCell, iNode, iDim) = node_coord_data[iDim];

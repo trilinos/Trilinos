@@ -32,7 +32,7 @@ namespace stk
 
       // transformed_basis_values: ([C],[F],[P]), or ([C],[F],[P],[D]) for GRAD
       // output_field_values: ([C],[P],[DOF])
-      void get_fieldValues(const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
+      void get_fieldValues(const stk::mesh::BulkData& bulk, const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
       {
         VERIFY_OP(output_field_values.rank(), ==, 3, "FieldValuesComputer::get_fieldValues output_field_values bad rank");
         VERIFY_OP(transformed_basis_values.rank(), ==, 3, "FieldValuesComputer::get_fieldValues transformed_basis_values bad rank");
@@ -45,9 +45,9 @@ namespace stk
         int numInterpPoints = transformed_basis_values.dimension(2);
 
         unsigned stride = 0;
-        //double * fdata_bucket = PerceptMesh::field_data( m_my_field , bucket, &stride);
+        //double * fdata_bucket = m_eMesh.field_data( m_my_field , bucket, &stride);
         // intentionally ignoring return value to get around compiler warning
-        //PerceptMesh::field_data( field , bucket, &stride);
+        //m_eMesh.field_data( field , bucket, &stride);
         unsigned nDOF = stride;
 
 #ifndef NDEBUG
@@ -79,15 +79,12 @@ namespace stk
         // ([C],[F])
         MDArray field_data_values(numCells, numBases);
 
-        stk::mesh::BulkData & bulk = stk::mesh::BulkData::get(element);
         stk::mesh::Entity const* elem_nodes = bulk.begin_nodes(element);
 
         // ([P],[D])  [P] points in [D] dimensions
 
         // ([C],[P]) - place for results of evaluation
         MDArray loc_output_field_values(numCells, numInterpPoints);
-
-        unsigned stride_node = 0;
 
         // gather
         for (unsigned iDOF = 0; iDOF < nDOF; iDOF++)
@@ -97,7 +94,7 @@ namespace stk
                 for (int iNode = 0; iNode < numNodes; iNode++)
                   {
                     mesh::Entity node = elem_nodes[iNode];
-                    double * fdata = PerceptMesh::field_data( field , node, &stride_node);
+                    double * fdata = (double*)bulk.field_data( *field , node);
                     field_data_values(iCell, iNode) = fdata[iDOF];
                   }
               }

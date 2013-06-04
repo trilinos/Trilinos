@@ -146,7 +146,7 @@ namespace stk
 
           unsigned num_node = elem_nodes.size();
           //unsigned num_node = m_eMesh.get_bulk_data()->num_connectivity(element, stk::mesh::MetaData::NODE_RANK );
-          double *f_data = m_eMesh.field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
           bool found = false;
@@ -154,12 +154,12 @@ namespace stk
             {
               mesh::Entity node_i = elem_nodes[ inode ].entity();
               //mesh::Entity node_i = elem_nodes_e[ inode ];
-              double *coord_data_i = PerceptMesh::field_data(coordField, node_i);
+              double *coord_data_i = m_eMesh.field_data(coordField, node_i);
 
               for (unsigned jnode=inode+1; jnode < num_node; jnode++)
                 {
                   mesh::Entity node_j = elem_nodes[ jnode ].entity();
-                  double *coord_data_j = PerceptMesh::field_data(coordField, node_j);
+                  double *coord_data_j = m_eMesh.field_data(coordField, node_j);
 
                   double dot_0 = plane_dot_product(plane_point, plane_normal, coord_data_i);
                   double dot_1 = plane_dot_product(plane_point, plane_normal, coord_data_j);
@@ -192,14 +192,14 @@ namespace stk
         {
           const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
-          double *f_data = m_eMesh.field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
           bool found = true;
           for (unsigned inode=0; inode < num_node; inode++)
             {
               mesh::Entity node = elem_nodes[ inode ].entity();
-              double *coord_data = PerceptMesh::field_data(coordField, node);
+              double *coord_data = m_eMesh.field_data(coordField, node);
 
               if (coord_data[0] < 0.0 || coord_data[1] < 0.0) // || coord_data[2] > 1.1)
                 {
@@ -388,7 +388,7 @@ namespace stk
           if (0 == m_eb_selector || (*m_eb_selector)(element.bucket()))
             {
 
-              const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+              const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
               int spatialDimension = m_eMesh.get_spatial_dim();
               CellTopology cell_topo(cell_topo_data);
               const percept::MyPairIterRelation elem_nodes (m_eMesh, element,stk::mesh::MetaData::NODE_RANK);
@@ -403,8 +403,8 @@ namespace stk
                 {
                   stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
                   stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-                  double * const coord0 = stk::mesh::field_data( *coordField , node0 );
-                  double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+                  double * const coord0 = eMesh.field_data( *coordField , node0 );
+                  double * const coord1 = eMesh.field_data( *coordField , node1 );
                   double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
                   double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
@@ -454,7 +454,7 @@ namespace stk
           return mark;
         }
 
-        //double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
+        //double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
         //return m_selector(entity) && fdata[0] > 0;
       };
 
@@ -483,7 +483,7 @@ namespace stk
           if (0 == m_eb_selector || (*m_eb_selector)(element.bucket()))
             {
 
-              const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+              const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
               int spatialDimension = m_eMesh.get_spatial_dim();
               CellTopology cell_topo(cell_topo_data);
               const percept::MyPairIterRelation elem_nodes (m_eMesh, element,stk::mesh::MetaData::NODE_RANK);
@@ -498,8 +498,8 @@ namespace stk
                 {
                   stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
                   stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-                  double * const coord0 = stk::mesh::field_data( *coordField , node0 );
-                  double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+                  double * const coord0 = eMesh.field_data( *coordField , node0 );
+                  double * const coord1 = eMesh.field_data( *coordField , node1 );
                   double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
                   double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
@@ -545,7 +545,7 @@ namespace stk
 
           unsigned num_node = elem_nodes.size();
           //unsigned num_node = m_eMesh.get_bulk_data()->num_connectivity(element, stk::mesh::MetaData::NODE_RANK );
-          double *f_data = m_eMesh.field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
           bool found = false;
@@ -553,12 +553,12 @@ namespace stk
             {
               mesh::Entity node_i = elem_nodes[ inode ].entity();
               //mesh::Entity node_i = elem_nodes_e[ inode ];
-              double *coord_data_i = PerceptMesh::field_data(coordField, node_i);
+              double *coord_data_i = m_eMesh.field_data(coordField, node_i);
 
               for (unsigned jnode=inode+1; jnode < num_node; jnode++)
                 {
                   mesh::Entity node_j = elem_nodes[ jnode ].entity();
-                  double *coord_data_j = PerceptMesh::field_data(coordField, node_j);
+                  double *coord_data_j = m_eMesh.field_data(coordField, node_j);
 
                   int mark = shock_diff1(m_nodal_refine_field, m_eMesh, node_i, node_j, coord_data_i, coord_data_j, m_shock, m_shock_displacement);
                   if (mark & DO_REFINE)
@@ -607,7 +607,7 @@ namespace stk
         {
           bool isParent = m_breaker.getMesh().isParentElement(element, false);
           bool hasFamilyTree = m_breaker.getMesh().hasFamilyTree(element);
-          double *f_data = m_breaker.getMesh().field_data_entity(field, element);
+          double *f_data = m_breaker.getMesh().field_data(field, element);
           int mark = m_breaker.markUnrefine(element);
           f_data[0] = 0.0;
           if (hasFamilyTree && !isParent)

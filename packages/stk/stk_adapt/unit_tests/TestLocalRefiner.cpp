@@ -76,7 +76,7 @@ namespace stk {
             stk::mesh::Bucket & bucket = **k ;
 
             // in case the cell topology is needed
-            const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+            const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(bucket);
             shards::CellTopology cell_topo(cell_topo_data);
 
             if (cell_topo.getKey() != elementType)
@@ -124,7 +124,7 @@ namespace stk {
     void TestLocalRefiner::
     refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, vector<NeededEntityType>& needed_entity_ranks)
     {
-      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
                 
       CellTopology cell_topo(cell_topo_data);
       const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);

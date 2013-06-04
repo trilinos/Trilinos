@@ -59,7 +59,7 @@ namespace stk
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
       const mesh::Bucket & bucket = eMesh.bucket(element);
-      const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+      const CellTopologyData * const bucket_cell_topo_data = m_eMesh.get_cell_topology(bucket);
 
       unsigned numCells = 1; // FIXME
 
@@ -76,7 +76,7 @@ namespace stk
           for (unsigned iNode = 0; iNode < numNodes; iNode++)
             {
               mesh::Entity node = *elem_nodes[iNode].entity();
-              double * node_coord_data = stk::mesh::field_data( *coords_field , node);
+              double * node_coord_data = eMesh.field_data( *coords_field , node);
               for (unsigned iDim=0; iDim < cellDim; iDim++)
                 {
                   cellWorkset(iCell, iNode, iDim) = node_coord_data[iDim];

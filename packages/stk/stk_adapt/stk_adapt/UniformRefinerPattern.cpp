@@ -123,8 +123,8 @@ namespace stk {
       stk::mesh::FieldBase *refine_level = eMesh.get_field("refine_level");
       if (refine_level)
         {
-          double *fdata_new = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(refine_level) , newElement );
-          double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(refine_level) , parent_elem );
+          double *fdata_new = eMesh.field_data( *static_cast<const ScalarFieldType *>(refine_level) , newElement );
+          double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(refine_level) , parent_elem );
           if (fdata && fdata_new)
             fdata_new[0] = fdata[0] + 1.0;
           //std::cout << "fdata= " << fdata << " fdata_new= " << fdata_new[0] << std::endl;
@@ -386,7 +386,7 @@ namespace stk {
               if (field_rank == eMesh.entity_rank(old_owning_elem))
                 {
                   unsigned stride_old=0, stride_new=0;
-                  double *fdata_old = eMesh.field_data_entity(field, old_owning_elem, &stride_old);
+                  double *fdata_old = eMesh.field_data(field, old_owning_elem, &stride_old);
                   if (!fdata_old)
                     continue;
                   if ((int)stride_old != field_dimension)
@@ -394,7 +394,7 @@ namespace stk {
                       VERIFY_OP_ON((int)stride_old, ==, field_dimension, "interpolateElementFields err1");
                       throw std::runtime_error("interpolateElementFields err1");
                     }
-                  double *fdata_new = eMesh.field_data_entity(field, newElement,  &stride_new);
+                  double *fdata_new = eMesh.field_data(field, newElement,  &stride_new);
                   if (!fdata_new)
                     continue;
                   if ((int)stride_new != field_dimension || stride_new != stride_old)
@@ -473,7 +473,7 @@ namespace stk {
       //         debug = true;
       //       }
 
-      shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+      shards::CellTopology element_topo(m_eMesh.get_cell_topology(element));
       unsigned element_nsides = (unsigned)element_topo.getSideCount();
 
       if (debug) {

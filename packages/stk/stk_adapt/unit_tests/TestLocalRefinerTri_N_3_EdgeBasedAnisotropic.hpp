@@ -86,8 +86,8 @@ namespace stk {
 
 	  stk::mesh::Entity node = bucket[i];
 
-	  const double *coords = stk::mesh::field_data( *eMesh.get_coordinates_field() , node);
-	  double *hess = stk::mesh::field_data( *nodal_hessian_field , node);
+	  const double *coords = eMesh.field_data( *eMesh.get_coordinates_field() , node);
+	  double *hess = eMesh.field_data( *nodal_hessian_field , node);
 
 	  exact_hessian(hess_id, coords, hess, spatial_dim);
 	}
@@ -156,8 +156,8 @@ namespace stk {
       std::vector<double> hessian(spatial_dim*spatial_dim, 0.0);
 
       // Hessian from midpoint interp of nodal Hessian field
-      const double *hess0 = stk::mesh::field_data( *m_nodal_hessian_field , node0);
-      const double *hess1 = stk::mesh::field_data( *m_nodal_hessian_field , node1);
+      const double *hess0 = eMesh.field_data( *m_nodal_hessian_field , node0);
+      const double *hess1 = eMesh.field_data( *m_nodal_hessian_field , node1);
       for (int d=0; d<spatial_dim*spatial_dim; d++) {
  	hessian[d] += 0.5*(hess0[d]+hess1[d]);
       }

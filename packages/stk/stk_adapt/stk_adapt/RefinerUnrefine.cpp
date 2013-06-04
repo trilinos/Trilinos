@@ -43,7 +43,7 @@ namespace stk {
                 {
                   {
                     stk::mesh::Bucket & bucket = **k ;
-                    const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+                    const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(bucket);
 
                     // this can happen for empty elements (created as a pool to be used for creating new refined elems)
                     if (!cell_topo_data) continue;
@@ -263,7 +263,7 @@ namespace stk {
           }
           if ( ! m_eMesh.get_bulk_data()->destroy_entity( child ) )
             {
-              CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(child));
+              CellTopology cell_topo(m_eMesh.get_cell_topology(child));
 
               //const percept::MyPairIterRelation elem_relations ( child->relations(child->entity_rank(m_eMesh,)+1);
               const percept::MyPairIterRelation child_to_ft_relations (m_eMesh, child,FAMILY_TREE_RANK);
@@ -346,7 +346,7 @@ namespace stk {
 
               stk::mesh::Entity element = parent;
 
-              const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+              const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
               CellTopology cell_topo(cell_topo_data);
               unsigned elementType = cell_topo.getKey();
               unsigned bpElementType = m_breakPattern[irank]->getFromTypeKey();
@@ -392,7 +392,7 @@ namespace stk {
                p_iter != parent_elements.end(); ++p_iter)
             {
               stk::mesh::Entity parent_p = *p_iter;
-              const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(parent_p);
+              const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(parent_p);
               CellTopology cell_topo(cell_topo_data);
               unsigned elementType = cell_topo.getKey();
               unsigned bpElementType = m_breakPattern[irank]->getFromTypeKey();
@@ -1085,7 +1085,7 @@ namespace stk {
                 {
                   stk::mesh::Entity element = bucket[ientity];
                   {
-                    double *f_data = m_eMesh.field_data_entity(refine_field, element);
+                    double *f_data = m_eMesh.field_data(refine_field, element);
                     if (f_data) f_data[0] = 0;
                   }
 
@@ -1094,7 +1094,7 @@ namespace stk {
                   if (is_root)
                     {
                       {
-                        double *f_data = m_eMesh.field_data_entity(refine_field, element);
+                        double *f_data = m_eMesh.field_data(refine_field, element);
                         if (f_data) f_data[0] = 20;
                       }
                       filterRecurse(element, new_root, elements_to_unref);
@@ -1133,7 +1133,7 @@ namespace stk {
                   new_root.insert(element);
 
                    {
-                     double *f_data = m_eMesh.field_data_entity(refine_field, element);
+                     double *f_data = m_eMesh.field_data(refine_field, element);
                      if (f_data) f_data[0] = 10;
                    }
 
@@ -1141,7 +1141,7 @@ namespace stk {
                     {
                       new_set.insert(*it);
                       {
-                        double *f_data = m_eMesh.field_data_entity(refine_field, *it);
+                        double *f_data = m_eMesh.field_data(refine_field, *it);
                         if (f_data) f_data[0] = -10;
                       }
                     }

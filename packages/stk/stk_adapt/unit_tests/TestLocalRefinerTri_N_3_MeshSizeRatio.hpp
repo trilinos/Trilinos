@@ -77,7 +77,7 @@ namespace stk {
 	  percept::MyPairIterRelation elem_nodes (eMesh, element, stk::mesh::MetaData::NODE_RANK);
 	  for (unsigned inode=0; inode < elem_nodes.size(); inode++) {
 	    stk::mesh::Entity node = elem_nodes[inode].entity();
-	    double *coords = stk::mesh::field_data( *eMesh.get_coordinates_field() , node);
+	    double *coords = eMesh.field_data( *eMesh.get_coordinates_field() , node);
 
 	    for (int d=0; d<spatial_dim; d++) {
 	      centroid[d] += coords[d];
@@ -108,7 +108,7 @@ namespace stk {
 
 	  const double local_error = fabs(err_centroid) * area;
 
-	  double *ratio = stk::mesh::field_data( *elem_ratio_field , element);
+	  double *ratio = eMesh.field_data( *elem_ratio_field , element);
 
 	  // calc elem ratio
 	  *ratio = sqrt(local_error / local_error_tol);
@@ -161,7 +161,7 @@ namespace stk {
       int mark=0;
 
       // TEST simplest case: ratio > Rup
-      const double & ratio = *( stk::mesh::field_data( *m_elem_ratio_field , element) );
+      const double & ratio = *( eMesh.field_data( *m_elem_ratio_field , element) );
 
       if (ratio > m_Rup)
 	mark |= DO_REFINE;

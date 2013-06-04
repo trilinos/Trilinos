@@ -499,8 +499,9 @@ namespace stk
       public:
         typedef MDArray BaseType;
         FieldValues(IM& im);
-        void operator()(const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field);
-        void operator()(const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values);
+
+        void operator()(const stk::mesh::BulkData & bulk, const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field);
+        void operator()(const stk::mesh::BulkData & bulk, const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values);
       };
 
       // FIXME - change to shards array

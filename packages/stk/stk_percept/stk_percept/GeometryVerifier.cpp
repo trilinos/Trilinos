@@ -259,7 +259,7 @@ namespace stk
           if ( stk::mesh::is_auto_declared_part(*part) )
             continue;
 
-          const CellTopologyData * const part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*part);
+          const CellTopologyData * const part_cell_topo_data = stk::mesh::MetaData::get(bulk).get_cell_topology(*part).getCellTopologyData();
           //std::cout << "P[" << p_rank << "] part = " << part->name() << " part_cell_topo_data= " << part_cell_topo_data << " topo-name= "
           //          << (part_cell_topo_data ? part_cell_topo_data->name : "null") << std::endl;
 
@@ -286,7 +286,7 @@ namespace stk
               if (0) { elem_node_data[0]++;}
 
 #if 1
-              const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+              const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket).getCellTopologyData();
               int bucket_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(bucket_cell_topo_data->name);
 #endif
 
@@ -304,7 +304,7 @@ namespace stk
 
               // Rank-3 array with dimensions (C,N,D) for the node coordinates of 3 traingle cells
               FieldContainer<double> cellNodes(numCells, numNodes, spaceDim);
-              PerceptMesh::fillCellNodes(bucket,  coord_field, cellNodes, spaceDim);
+              PerceptMesh::fillCellNodes(bulk, bucket,  coord_field, cellNodes, spaceDim);
 
               FieldContainer<double> volume(numCells);
 

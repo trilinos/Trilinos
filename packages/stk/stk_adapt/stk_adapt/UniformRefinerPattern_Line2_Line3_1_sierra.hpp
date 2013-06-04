@@ -62,7 +62,7 @@ namespace stk {
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
         typedef boost::array<unsigned,3> quadratic_type;
         static vector<quadratic_type> elems(1);
 
@@ -123,7 +123,7 @@ namespace stk {
             // FIXME
             if (0 && proc_rank_field)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(eMesh.owner_rank(newElement));
               }
 

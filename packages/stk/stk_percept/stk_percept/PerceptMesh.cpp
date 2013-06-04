@@ -404,7 +404,7 @@ namespace stk {
             {
               stk::mesh::Part& part = *parts[ipart];
               //const CellTopologyData *const topology = PerceptMesh::get_cell_topology(part);
-              const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(part);
+              const CellTopologyData *const topology = metaData.get_cell_topology(part).getCellTopologyData();
               std::string subsets = "{";
               const stk::mesh::PartVector &part_subsets = part.subsets();
               if (part_subsets.size() > 0) {
@@ -501,7 +501,7 @@ namespace stk {
                           {
                             stk::mesh::Entity element = bucket[iElement];
 
-                            double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(field) , element );
+                            double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(field) , element );
                             if (fdata)
                               {
                                 for (unsigned istride = 0; istride < stride; istride++)
@@ -756,7 +756,7 @@ namespace stk {
         {
           out << "Node: " << identifier(entity) << " rank= " << entity_rank(entity) << " nodes: \n";
 
-          double *f_data = PerceptMesh::field_data(field, entity);
+          double *f_data = this->field_data(*field, entity);
           out << " data = " ;
           for (int ifd=0; ifd < fieldStride; ifd++)
             {
@@ -777,7 +777,7 @@ namespace stk {
               mesh::Entity node = elem_nodes[ inode ];
 
               out << "inode= " << inode << " id= " << identifier(node) << " ";
-              double *f_data = PerceptMesh::field_data(field, node);
+              double *f_data = this->field_data(field, node);
               out << " data = " ;
               for (int ifd=0; ifd < fieldStride; ifd++)
                 {
@@ -877,7 +877,7 @@ namespace stk {
                   mesh::Entity node = elem_nodes[ inode ].entity();
 
                   out << "{ ";
-                  double *f_data = PerceptMesh::field_data(field, node);
+                  double *f_data = this->field_data(field, node);
                   for (int ifd=0; ifd < fieldStride; ifd++)
                     {
                       min[ifd] = std::min(f_data[ifd], min[ifd]);
@@ -913,11 +913,11 @@ namespace stk {
     //     NormalVector normal;
     //     JacobianUtil jac;
 
-    static void get_face_normal(stk::mesh::FieldBase *coord_field, stk::mesh::Entity nodes[3], double normal[3])
+    void PerceptMesh::get_face_normal(stk::mesh::FieldBase *coord_field, stk::mesh::Entity nodes[3], double normal[3])
     {
-      double *coord[3] = {PerceptMesh::field_data(coord_field, nodes[0]),
-                          PerceptMesh::field_data(coord_field, nodes[1]),
-                          PerceptMesh::field_data(coord_field, nodes[2])};
+      double *coord[3] = {this->field_data(coord_field, nodes[0]),
+                          this->field_data(coord_field, nodes[1]),
+                          this->field_data(coord_field, nodes[2])};
       double x[2][3];
       for (int isp=0; isp < 3; isp++)
         {
@@ -928,10 +928,10 @@ namespace stk {
       Math::normalize_3d(normal);
     }
 
-    static void get_line_normal(stk::mesh::FieldBase *coord_field, stk::mesh::Entity nodes[2], double normal[3])
+    void PerceptMesh::get_line_normal(stk::mesh::FieldBase *coord_field, stk::mesh::Entity nodes[2], double normal[3])
     {
-      double *coord[2] = {PerceptMesh::field_data(coord_field, nodes[0]),
-                          PerceptMesh::field_data(coord_field, nodes[1])};
+      double *coord[2] = {this->field_data(coord_field, nodes[0]),
+                          this->field_data(coord_field, nodes[1])};
 
       for (int isp=0; isp < 2; isp++)
         {
@@ -1414,7 +1414,7 @@ namespace stk {
       stk::mesh::Entity node = get_bulk_data()->get_entity( stk::mesh::MetaData::NODE_RANK, node_id );
       if (is_valid(node))
         {
-          double * const coord = stk::mesh::field_data( *get_coordinates_field() , node );
+          double * const coord = this->field_data( *get_coordinates_field() , node );
 
           if (coord_in)
             {
@@ -1433,7 +1433,7 @@ namespace stk {
           static stk::mesh::PartVector empty ;
           stk::mesh::Entity node_0 = get_bulk_data()->declare_entity( stk::mesh::MetaData::NODE_RANK, node_id, empty );
 
-          double * const coord = stk::mesh::field_data( *get_coordinates_field() , node_0 );
+          double * const coord = this->field_data( *get_coordinates_field() , node_0 );
 
           if (!coord_in)
             {
@@ -1526,7 +1526,6 @@ namespace stk {
       m_entity_pool.resize(0);
     }
 
-    // static
     double * PerceptMesh::
     field_data(const stk::mesh::FieldBase *field, const stk::mesh::Entity node, unsigned *stride)
     {
@@ -1543,75 +1542,19 @@ namespace stk {
         {
         case 0:
           {
-            fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(field) , node );
+            fdata = get_bulk_data()->field_data( *static_cast<const ScalarFieldType *>(field) , node );
           }
           break;
         case 1:
           {
-            fdata = stk::mesh::field_data( *static_cast<const VectorFieldType *>(field) , node );
+            fdata = get_bulk_data()->field_data( *static_cast<const VectorFieldType *>(field) , node );
           }
           break;
         default:
           {
             // error
             std::ostringstream msg;
-            msg << "PerceptMesh::field_data unknown field rank = " << rank << "\n";
-            throw new std::runtime_error(msg.str());
-          }
-        }
-      return fdata;
-    }
-
-    // static
-    double * PerceptMesh::
-    field_data_entity(const stk::mesh::FieldBase *field, const stk::mesh::Entity entity, unsigned *stride)
-    {
-      EXCEPTWATCH;
-      // this "rank" is not the same as the entity_rank, it is the "rank" of the data in the field, 0 for scalar, 1 for vector, 2 for tensor, etc
-      unsigned rank = field->rank();
-      double * fdata = 0;
-
-      if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(entity_rank(entity), stk::mesh::MetaData::get(*field).universal_part());
-        static const stk::mesh::FieldBase::Restriction empty ;
-
-        if (r == empty)
-          {
-            unsigned nfr = field->restrictions().size();
-            for (unsigned ifr = 0; ifr < nfr; ifr++)
-              {
-                const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-                //unsigned field_rank = fr . entity_rank();
-                unsigned field_dimension = fr.dimension() ;
-                if (field_dimension > 0)
-                  {
-                    *stride = field_dimension;
-                  }
-              }
-          }
-        else
-          {
-            *stride = r.dimension() ;
-          }
-      }
-
-      switch(rank)
-        {
-        case 0:
-          {
-            fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(field) , entity );
-          }
-          break;
-        case 1:
-          {
-            fdata = stk::mesh::field_data( *static_cast<const VectorFieldType *>(field) , entity );
-          }
-          break;
-        default:
-          {
-            // error
-            std::ostringstream msg;
-            msg << "PerceptMesh::field_data unknown field rank = " << rank << "\n";
+            msg << "m_eMesh.field_data unknown field rank = " << rank << "\n";
             throw new std::runtime_error(msg.str());
           }
         }
@@ -1649,7 +1592,7 @@ namespace stk {
           {
             // error
             std::ostringstream msg;
-            msg << "PerceptMesh::field_data unknown field rank = " << rank << "\n";
+            msg << "m_eMesh.field_data unknown field rank = " << rank << "\n";
             throw new std::runtime_error(msg.str());
           }
         }
@@ -1664,89 +1607,6 @@ namespace stk {
       //field_data( const_cast<std::mesh::FieldBase *>(field),  get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, node_id);
       return field_data( field, get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, node_id) );
     }
-
-#if 0
-    stk::mesh::FieldBase* PerceptMesh::get_field(const std::string& name, const unsigned entity_rank,
-                                    const std::vector<int>& dimensions, const stk::mesh::Part* arg_part)
-    {
-      stk::mesh::FieldBase *field=0;
-      const stk::mesh::Part* part = (arg_part ? arg_part : &m_metaData->universal_part());
-
-      switch(dimensions.size())
-        {
-        case 0:
-          // scalar
-          {
-            ScalarFieldType & sfield =  m_metaData->declare_field<ScalarFieldType>(name);
-            stk::mesh::put_field( sfield , entity_rank , *part );
-            field = &sfield;
-          }
-          break;
-        case 1:
-          // vector
-          {
-            VectorFieldType & vfield =  m_metaData->declare_field<VectorFieldType>(name);
-            stk::mesh::put_field( vfield , entity_rank , *part, dimensions[0] );
-            field = &vfield;
-          }
-          break;
-        default:
-          // error FIXME
-          {
-            std::ostringstream msg;
-            msg << "PerceptMesh::createField unknown field dimensions = " << dimensions.size() << "\n";
-            throw new std::runtime_error(msg.str());
-          }
-          break;
-        }
-
-      // set this field to have an Ioss role of transient
-      stk::io::set_field_role(*field, Ioss::Field::TRANSIENT);
-
-      return field;
-    }
-#endif
-#if 0
-    /// A "safe" array is returned (it's only safe if you compile Intrepid with HAVE_INTREPID_DEBUG)
-    /// where "safe" means that indices are checked for being in bounds.
-    void PerceptMesh::field_data_safe(stk::mesh::FieldBase *field, stk::mesh::Bucket & bucket, unsigned *stride, MDArray& mda)
-    {
-      unsigned rank = field->rank();
-      double * fdata = 0;
-
-      if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::MetaData::NODE_RANK, stk::mesh::MetaData::get(*field).universal_part());
-        *stride = r.dimension() ;
-      }
-
-      switch(rank)
-        {
-        case 0:
-          {
-            fdata = stk::mesh::field_data( *static_cast<ScalarFieldType *>(field) , bucket.begin() );
-            Teuchos::Array<int> dims(1);
-            dims(0) = bucket.size();
-            MDArray md(dims, fdata);
-            return md;
-          }
-          break;
-        case 1:
-          {
-            fdata = stk::mesh::field_data( *static_cast<VectorFieldType *>(field) , bucket.begin() );
-          }
-          break;
-        default:
-          {
-            // error
-            std::ostringstream msg;
-            msg << "PerceptMesh::field_data unknown field rank = " << rank << "\n";
-            throw new std::runtime_error(msg.str());
-          }
-        }
-      return fdata;
-    }
-#endif
-
 
     void PerceptMesh::readModel( const std::string& in_filename )
     {
@@ -1791,7 +1651,7 @@ namespace stk {
             for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
               {
                 stk::mesh::Entity node = bucket[iElement];
-                double * node_coord_data = (double*)stk::mesh::field_data( coord_field , node);
+                double * node_coord_data = (double*)this->field_data( coord_field , node);
                 //for (int ii=0; ii < get_spatial_dim(); ii++)
                 double sum=0.0;
                 sum += square(node_coord_data[0] - x);
@@ -2732,12 +2592,12 @@ namespace stk {
             const unsigned num_nodes_in_bucket   = bucket.size();
 
             unsigned spatialDim = 0;
-            //double * coord = stk::mesh::field_data( *coords_field , bucket.begin() );
-            double * coord = PerceptMesh::field_data( coords_field , bucket, &spatialDim );
+            //double * coord = eMesh.field_data( *coords_field , bucket.begin() );
+            double * coord = this->field_data( coords_field , bucket, &spatialDim );
             //if (Util::getFlag(9829)) std::cout << "spatialDim= " << spatialDim << std::endl;
 
             unsigned stride = 0;
-            double * output_nodal_field = (field ? PerceptMesh::field_data( field , bucket,  &stride) : 0);
+            double * output_nodal_field = (field ? this->field_data( field , bucket,  &stride) : 0);
             if (!field) stride = (nodalOp.getCodomainDimensions().size() ? nodalOp.getCodomainDimensions()[0] : 0);
 
             //int inDim = nodalOp.getDomainDimensions()[0];
@@ -2897,8 +2757,8 @@ namespace stk {
         {
           unsigned in0 = cell_topo_data->edge[iedgeOrd].node[0];
           unsigned in1 = cell_topo_data->edge[iedgeOrd].node[1];
-          double * node_coord_data_0 = (double*)stk::mesh::field_data( coord_field , elem_nodes[in0].entity());
-          double * node_coord_data_1 = (double*)stk::mesh::field_data( coord_field , elem_nodes[in1].entity());
+          double * node_coord_data_0 = (double*)this->field_data( coord_field , elem_nodes[in0].entity());
+          double * node_coord_data_1 = (double*)this->field_data( coord_field , elem_nodes[in1].entity());
 
           double edge_length = 0.0;
           for (int iSpaceDimOrd = 0; iSpaceDimOrd < spaceDim; iSpaceDimOrd++)
@@ -2930,7 +2790,7 @@ namespace stk {
     findMinMaxEdgeLength(stk::mesh::BulkData& bulkData, const stk::mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                          FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length)
     {
-      const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
+      const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket).getCellTopologyData();
 
       shards::CellTopology cell_topo(bucket_cell_topo_data);
       unsigned number_elems = bucket.size();
@@ -2953,8 +2813,8 @@ namespace stk {
 
               unsigned in0 = bucket_cell_topo_data->edge[iedgeOrd].node[0];
               unsigned in1 = bucket_cell_topo_data->edge[iedgeOrd].node[1];
-              double * node_coord_data_0 = stk::mesh::field_data( coord_field , elem_nodes[in0].entity());
-              double * node_coord_data_1 = stk::mesh::field_data( coord_field , elem_nodes[in1].entity());
+              double * node_coord_data_0 = (double*)bulkData.field_data( coord_field , elem_nodes[in0].entity());
+              double * node_coord_data_1 = (double*)bulkData.field_data( coord_field , elem_nodes[in1].entity());
 
               //elem_nodes[in0].entity()->identifier(), elem_nodes[in1].entity()->identifier());
               double edge_length = 0.0;
@@ -3319,16 +3179,6 @@ namespace stk {
     }
 
 
-    template<>
-    const CellTopologyData *
-    PerceptMesh::get_cell_topology(const stk::mesh::Part& part)
-    {
-      const stk::mesh::MetaData & fem_meta = get_fem_meta_data(part);
-
-      const CellTopologyData * cell_topo_data = fem_meta.get_cell_topology(part).getCellTopologyData();
-      return cell_topo_data;
-    }
-
     struct part_compare {
       bool operator() (stk::mesh::Part *i, stk::mesh::Part *j) { return (i->name() < j->name()); }
     };
@@ -3342,6 +3192,9 @@ namespace stk {
                     bool print, bool print_all_field_diffs)
     {
       EXCEPTWATCH;
+
+      PerceptMesh eMesh1(&metaData_1, &bulkData_1);
+      PerceptMesh eMesh2(&metaData_2, &bulkData_2);
 
       bool diff = false;
 
@@ -3411,8 +3264,8 @@ namespace stk {
             {
               stk::mesh::Part& part_1 = *parts_1[ipart];
               stk::mesh::Part& part_2 = *parts_2[ipart];
-              const CellTopologyData *const topology_1 = stk::percept::PerceptMesh::get_cell_topology(part_1);
-              const CellTopologyData *const topology_2 = stk::percept::PerceptMesh::get_cell_topology(part_2);
+              const CellTopologyData *const topology_1 = metaData_1.get_cell_topology(part_1).getCellTopologyData();
+              const CellTopologyData *const topology_2 = metaData_2.get_cell_topology(part_2).getCellTopologyData();
               if (part_1.subsets().size() != part_2.subsets().size())
                 {
                   msg += std::string("| parts subsets size diff ")+part_1.name()+" "+part_2.name()+" | ";
@@ -3687,8 +3540,8 @@ namespace stk {
 
                                     unsigned loc_stride_1 = 0;
                                     unsigned loc_stride_2 = 0;
-                                    double * fdata_1 = PerceptMesh::field_data( field_1 , entity_1,  &loc_stride_1);
-                                    double * fdata_2 = PerceptMesh::field_data( field_2 , entity_2,  &loc_stride_2);
+                                    double * fdata_1 = eMesh1.field_data( field_1 , entity_1,  &loc_stride_1);
+                                    double * fdata_2 = eMesh2.field_data( field_2 , entity_2,  &loc_stride_2);
 
                                     if ((fdata_1 == 0) != (fdata_2 == 0) || (loc_stride_1 != loc_stride_2))
                                       {
@@ -3960,7 +3813,7 @@ namespace stk {
                 for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                   {
                     stk::mesh::Entity element = bucket[ientity];
-                    double *fdata = PerceptMesh::field_data( field , element );
+                    double *fdata = this->field_data( field , element );
                     if (fdata) fdata[0] = owner_rank(element);
                   }
               }
@@ -3983,10 +3836,10 @@ namespace stk {
                 for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                   {
                     stk::mesh::Entity node = bucket[ientity];
-                    double *fdata_gid = PerceptMesh::field_data( field_gid , node );
-                    double *fdata_pid = PerceptMesh::field_data( field_pid , node );
-                    double *fdata_lid = PerceptMesh::field_data( field_lid , node );
-                    double *fdata_fix = PerceptMesh::field_data( field_fix , node );
+                    double *fdata_gid = this->field_data( field_gid , node );
+                    double *fdata_pid = this->field_data( field_pid , node );
+                    double *fdata_lid = this->field_data( field_lid , node );
+                    double *fdata_fix = this->field_data( field_fix , node );
                     if (fdata_gid) fdata_gid[0] = identifier(node);
                     if (fdata_pid) fdata_pid[0] = owner_rank(node);
                     if (fdata_lid) fdata_lid[0] = lid++;
@@ -4081,9 +3934,9 @@ namespace stk {
                 {
                   stk::mesh::Entity node = bucket[iNode];
                   unsigned stride0=0;
-                  double *fdata_dest = PerceptMesh::field_data( field_dest , node, &stride0 );
+                  double *fdata_dest = this->field_data( field_dest , node, &stride0 );
                   VERIFY_OP_ON(stride, ==, stride0,"strides...");
-                  double *fdata_src = PerceptMesh::field_data( field_src , node );
+                  double *fdata_src = this->field_data( field_src , node );
                   if (fdata_dest && fdata_src)
                     {
                       for (unsigned istride = 0; istride < stride; istride++)
@@ -4136,9 +3989,9 @@ namespace stk {
                 {
                   stk::mesh::Entity node = bucket[iNode];
                   unsigned stride0=0;
-                  double *fdata_y = PerceptMesh::field_data( field_y , node, &stride0 );
+                  double *fdata_y = this->field_data( field_y , node, &stride0 );
                   VERIFY_OP_ON(stride, ==, stride0,"strides...");
-                  double *fdata_x = PerceptMesh::field_data( field_x , node );
+                  double *fdata_x = this->field_data( field_x , node );
                   if (fdata_y && fdata_x)
                     {
                       for (unsigned istride = 0; istride < stride; istride++)
@@ -4182,9 +4035,9 @@ namespace stk {
                 {
                   stk::mesh::Entity node = bucket[iNode];
                   unsigned stride0=0;
-                  double *fdata_y = PerceptMesh::field_data( field_y , node, &stride0 );
+                  double *fdata_y = this->field_data( field_y , node, &stride0 );
                   VERIFY_OP_ON(stride, ==, stride0,"strides...");
-                  double *fdata_x = PerceptMesh::field_data( field_x , node );
+                  double *fdata_x = this->field_data( field_x , node );
                   if (fdata_y && fdata_x)
                     {
                       for (unsigned istride = 0; istride < stride; istride++)
@@ -4219,7 +4072,7 @@ namespace stk {
                 {
                   stk::mesh::Entity node = bucket[iNode];
                   unsigned stride0=0;
-                  double *fdata_x = PerceptMesh::field_data( field_x , node, &stride0 );
+                  double *fdata_x = this->field_data( field_x , node, &stride0 );
                   VERIFY_OP_ON(stride, ==, stride0,"strides...");
                   if (fdata_x)
                     {
@@ -4271,10 +4124,10 @@ namespace stk {
                 {
                   stk::mesh::Entity node = bucket[iNode];
                   unsigned stride0=0;
-                  double *fdata_y = PerceptMesh::field_data( field_y , node, &stride0 );
-                  double *fdata_z = PerceptMesh::field_data( field_z , node, &stride0 );
+                  double *fdata_y = this->field_data( field_y , node, &stride0 );
+                  double *fdata_z = this->field_data( field_z , node, &stride0 );
                   VERIFY_OP_ON(stride, ==, stride0,"strides...");
-                  double *fdata_x = PerceptMesh::field_data( field_x , node );
+                  double *fdata_x = this->field_data( field_x , node );
                   if (fdata_y && fdata_x && fdata_z)
                     {
                       for (unsigned istride = 0; istride < stride; istride++)
@@ -4323,9 +4176,10 @@ namespace stk {
 #endif
     }
 
-    static std::string vtk_type(stk::mesh::Entity element)
+    static std::string vtk_type(PerceptMesh& eMesh, stk::mesh::Entity element)
     {
-      const CellTopologyData * topology_data = PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * topology_data = eMesh.get_cell_topology(element);
+      
       switch(topology_data->key)
         {
         case shards::Triangle<3>::key:
@@ -4431,7 +4285,7 @@ namespace stk {
       for (NodeMap::iterator inode=node_map.begin(); inode != node_map.end(); ++inode)
         {
           stk::mesh::Entity node_i = inode->first;
-          double *coord = PerceptMesh::field_data(get_coordinates_field(), node_i);
+          double *coord = this->field_data(get_coordinates_field(), node_i);
           for (int idim=0; idim < get_spatial_dim(); idim++)
             {
               file << coord[idim] << " ";
@@ -4462,7 +4316,7 @@ namespace stk {
           stk::mesh::Entity element = node_elems[ielem];
           if (!selector || (*selector)(this->bucket(element)))
             {
-              file << vtk_type(element) << "\n";
+              file << vtk_type(*this, element) << "\n";
             }
         }
       file << "POINT_DATA " << node_map.size() << "\n";
@@ -4525,7 +4379,7 @@ namespace stk {
       for (NodeMap::iterator inode=node_map.begin(); inode != node_map.end(); ++inode)
         {
           stk::mesh::Entity node_i = inode->first;
-          double *coord = PerceptMesh::field_data(get_coordinates_field(), node_i);
+          double *coord = this->field_data(get_coordinates_field(), node_i);
           for (int idim=0; idim < get_spatial_dim(); idim++)
             {
               file << coord[idim] << " ";
@@ -4567,7 +4421,7 @@ namespace stk {
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
                   stk::mesh::Entity element = bucket[iElement];
-                  file << vtk_type(element) << "\n";
+                  file << vtk_type(*this, element) << "\n";
                 }
             }
         }
@@ -4578,7 +4432,7 @@ namespace stk {
       std::ostream& out = std::cout;
       if (entity_rank(entity) != stk::mesh::MetaData::NODE_RANK)
         {
-          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(entity);
+          const CellTopologyData * const cell_topo_data = this->get_cell_topology(entity);
           shards::CellTopology cell_topo(cell_topo_data);
           out << " Elem: " << identifier(entity) << " rank= " << entity_rank(entity) << " topo: " << cell_topo.getName() << " nodes: [";
 
@@ -4596,7 +4450,7 @@ namespace stk {
               for (unsigned inode=0; inode < num_node; inode++)
                 {
                   mesh::Entity node = elem_nodes[ inode ].entity();
-                  double *coord = PerceptMesh::field_data( get_coordinates_field() , node );
+                  double *coord = this->field_data( get_coordinates_field() , node );
 
                   out << " id: [" <<  identifier(node) << "] x: {";
                   for (int i=0; i < get_spatial_dim(); i++)
@@ -4613,7 +4467,7 @@ namespace stk {
       else if (entity_rank(entity) == stk::mesh::MetaData::NODE_RANK)
         {
           out << " Node: id: " << identifier(entity) << " x: ";
-          double *coord = PerceptMesh::field_data( get_coordinates_field() ,entity );
+          double *coord = this->field_data( get_coordinates_field() ,entity );
 
           for (int i=0; i < get_spatial_dim(); i++)
             {
@@ -4646,7 +4500,7 @@ namespace stk {
         {
           stk::mesh::Bucket & bucket = **k ;
           const unsigned num_elements_in_bucket = bucket.size();
-          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+          const CellTopologyData * const cell_topo_data = this->get_cell_topology(bucket);
           shards::CellTopology cell_topo(cell_topo_data);
 
           for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
@@ -4690,7 +4544,7 @@ namespace stk {
         {
           stk::mesh::Bucket & bucket = **k ;
           const unsigned num_elements_in_bucket = bucket.size();
-          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+          const CellTopologyData * const cell_topo_data = this->get_cell_topology(bucket);
           shards::CellTopology cell_topo(cell_topo_data);
 
           for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
@@ -4741,9 +4595,9 @@ namespace stk {
 
     static void get_nodes_on_side(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned element_side_ordinal, std::vector<stk::mesh::Entity>& node_vector)
     {
-      stk::mesh::EntityRank side_entity_rank = stk::mesh::BulkData::get(element).mesh_meta_data().side_rank();
+      stk::mesh::EntityRank side_entity_rank = bulkData.mesh_meta_data().side_rank();
 
-      const CellTopologyData * const element_topo_data = PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const element_topo_data = stk::mesh::get_cell_topology(bulkData.bucket(element)).getCellTopologyData();
       shards::CellTopology element_topo(element_topo_data);
       const MyPairIterRelation elem_nodes(bulkData, element, stk::mesh::MetaData::NODE_RANK );
       const unsigned *  inodes = 0;
@@ -4822,7 +4676,7 @@ namespace stk {
           unsigned per = parts[ip]->primary_entity_rank();
           if (per == element_rank())
             {
-              const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*parts[ip]);
+              const CellTopologyData *const topology = this->get_cell_topology(*parts[ip]);
               if (!topology || topology->dimension != per)
                 {
                   std::cout << "Warning: PerceptMesh::get_skin_part: skipping part with dimension < element_rank, part name= " << parts[ip]->name() << std::endl;
@@ -5129,8 +4983,8 @@ namespace stk {
           //   with this element when viewed as a child, not a parent.
           percept::MyPairIterRelation family_tree_0_relations((*this), family_tree_0, entity_rank(element));
           percept::MyPairIterRelation family_tree_1_relations((*this), family_tree_1, entity_rank(element));
-          //if ( (family_tree_0.relations(m_eMesh.entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 1;
-          //else if ( (family_tree_1.relations(m_eMesh.entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 0;
+          //if ( (family_tree_0.relations(this->entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 1;
+          //else if ( (family_tree_1.relations(this->entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 0;
           if ( family_tree_0_relations[FAMILY_TREE_PARENT].entity() == element)
             return 1;
           else if (family_tree_1_relations[FAMILY_TREE_PARENT].entity() == element)
@@ -5155,8 +5009,8 @@ namespace stk {
 
           percept::MyPairIterRelation family_tree_0_relations((*this), family_tree_0, entity_rank(element));
           percept::MyPairIterRelation family_tree_1_relations((*this), family_tree_1, entity_rank(element));
-          //if ( (family_tree_0.relations(m_eMesh.entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 0;
-          //else if ( (family_tree_1.relations(m_eMesh.entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 1;
+          //if ( (family_tree_0.relations(this->entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 0;
+          //else if ( (family_tree_1.relations(this->entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 1;
           if ( family_tree_0_relations[FAMILY_TREE_PARENT].entity() == element)
             return 0;
           else if (family_tree_1_relations[FAMILY_TREE_PARENT].entity() == element)

@@ -97,7 +97,7 @@ namespace stk
 
         virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
-          double *f_data = m_eMesh.field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data(field, element);
           f_data[0] = (double)(0);
 
           return false;  // don't terminate the loop
@@ -610,7 +610,7 @@ namespace stk
 
         virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
-          double *f_data = m_eMesh.field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data(field, element);
           int unref = m_iea->markUnrefine(element);
           int ref_count = m_iea->markCountRefinedEdges(element);
           f_data[0] = (double)((unref & DO_UNREFINE ? -1 : 0));
@@ -924,7 +924,7 @@ namespace stk
 
         virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
-          double *f_data = m_eMesh.field_data_entity(field, element);
+          double *f_data = m_eMesh.field_data(field, element);
           stk::mesh::FieldBase* coord_field = m_eMesh.get_coordinates_field();
 
           const MyPairIterRelation elem_nodes(bulkData, element, stk::mesh::MetaData::NODE_RANK );
@@ -934,7 +934,7 @@ namespace stk
           for (unsigned inode=0; inode < num_node; inode++)
             {
               mesh::Entity node = elem_nodes[ inode ].entity();
-              double *c_data = PerceptMesh::field_data(coord_field, node);
+              double *c_data = m_eMesh.field_data(coord_field, node);
               c[0] += c_data[0]/double(num_node);
               c[1] += c_data[1]/double(num_node);
             }
@@ -1185,7 +1185,7 @@ namespace stk
           }
           else
           {
-            my_markers[i] = *((Int *)stk::mesh::field_data( *my_marker_field, my_entities[i] ));
+            my_markers[i] = *((Int *)eMesh.field_data( *my_marker_field, my_entities[i] ));
           }
           //std::cout << "Storing element marker for element " << m_eMesh.identifier(elem) << " = " << my_markers[i] << std::endl;
         }
@@ -1217,8 +1217,8 @@ namespace stk
         for (unsigned i=0; i<entities.size(); ++i)
         {
           mesh::Entity node = entities[i];
-          double *coord_data = PerceptMesh::field_data(coordField, node);
-          double *function_data = PerceptMesh::field_data(&function_field, node);
+          double *coord_data = m_eMesh.field_data(coordField, node);
+          double *function_data = m_eMesh.field_data(&function_field, node);
           *function_data = (2.0*time-10.0-coord_data[0]-coord_data[1])*(2.0*time-10.0-coord_data[0]-coord_data[1]);
         }
 
@@ -1244,7 +1244,7 @@ namespace stk
           for (unsigned inode=0; inode < num_node; inode++)
           {
             mesh::Entity node = elem_nodes[ inode ].entity();
-            double cur_value = *(PerceptMesh::field_data(&function_field, node));
+            double cur_value = *(m_eMesh.field_data(&function_field, node));
 
             //If one of the values is in the refine region, immediately mark and return
             if(refine_upper>=cur_value && cur_value>=refine_lower)
@@ -1257,7 +1257,7 @@ namespace stk
               elem_mark = -1;
             }
           }
-          Int * marker_data = stk::mesh::field_data( marker_field, elem );
+          Int * marker_data = eMesh.field_data( marker_field, elem );
           *marker_data = elem_mark;
         }
       }

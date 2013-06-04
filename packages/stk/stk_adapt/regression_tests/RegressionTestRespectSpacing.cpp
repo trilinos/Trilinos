@@ -257,7 +257,7 @@ namespace stk {
                       {
                         stk::mesh::Entity node = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
+                        double * data = eMesh.field_data( *eMesh.get_coordinates_field() , node );
                         double iy = data[1]; // /double(nele);
                         iy = iy*iy;
                         data[1] = iy; // *double(nele);
@@ -345,7 +345,7 @@ namespace stk {
                       {
                         stk::mesh::Entity node = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
+                        double * data = eMesh.field_data( *eMesh.get_coordinates_field() , node );
                         double iy = data[1]; // /double(nele);
                         iy = iy*iy;
                         data[1] = iy; // *double(nele);
@@ -415,7 +415,7 @@ namespace stk {
                       {
                         stk::mesh::Entity entity = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double * data = eMesh.field_data( *eMesh.get_coordinates_field() , entity );
                         data[2] = data[2]*data[2];
                       }
                   }

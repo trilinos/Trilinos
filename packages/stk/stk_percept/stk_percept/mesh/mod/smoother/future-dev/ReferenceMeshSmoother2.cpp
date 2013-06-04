@@ -89,9 +89,9 @@ namespace stk {
                     //double edge_length_ave = m_eMesh->edge_length_ave(element);
                     double edge_length_ave = nodal_edge_length_ave(node);
 
-                    double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
-                    double *cg_d = PerceptMesh::field_data(cg_d_field, node);
-                    double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                    double *coord_current = m_eMesh.field_data(m_coord_field_current, node);
+                    double *cg_d = m_eMesh.field_data(cg_d_field, node);
+                    double *cg_g = m_eMesh.field_data(cg_g_field, node);
 
                     double local_scale = 0.0;
                     for (int i=0; i < spatialDim; i++)
