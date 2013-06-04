@@ -176,7 +176,7 @@ namespace stk {
                         if (markInfo & DO_UNREFINE)
                           {
                             elements_to_unref.insert(element);
-                            //std::cout << "tmp unref element id= " << element.identifier() << std::endl;
+                            //std::cout << "tmp unref element id= " << m_eMesh.identifier(element) << std::endl;
                             //m_eMesh.print_entity(std::cout, element);
                           }
                       }

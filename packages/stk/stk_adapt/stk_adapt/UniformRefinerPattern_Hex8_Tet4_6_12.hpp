@@ -163,7 +163,7 @@ namespace stk {
           for (int inode=0; inode < 8; inode++)
             {
               stk::mesh::Entity node = elem_nodes[inode].entity();
-              element_globalIds[inode] = node.identifier();
+              element_globalIds[inode] = m_eMesh.identifier(node);
             }
 
           // build quad face break patterns - use simple min node index as first node
@@ -325,7 +325,7 @@ namespace stk {
             if (proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
-                fdata[0] = double(newElement.owner_rank());
+                fdata[0] = double(eMesh.owner_rank(newElement));
               }
 
             change_entity_parts(eMesh, element, newElement);

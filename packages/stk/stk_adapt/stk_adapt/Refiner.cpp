@@ -1367,7 +1367,7 @@ namespace stk {
       double doCheckCPUTime = 0.0;
       //double doCheckCPUTime = 0.1;
 
-      MeshGeometry mesh_geometry(&gk, doCheckMovement, doCheckCPUTime);
+      MeshGeometry mesh_geometry(m_eMesh, &gk, doCheckMovement, doCheckCPUTime);
       GeometryFactory factory(&gk, &mesh_geometry);
       if (geomFile != "") factory.read_file(geomFile, &m_eMesh);
 
@@ -1689,9 +1689,9 @@ namespace stk {
           if (m_proc_rank_field && rank == stk::mesh::MetaData::ELEMENT_RANK)
             {
               double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
-              fdata[0] = double(element.owner_rank());
-              //if (1 || element.owner_rank() == 3)
-              //  std::cout << "tmp element.owner_rank() = " << element.owner_rank() << std::endl;
+              fdata[0] = double(m_eMesh.owner_rank(element));
+              //if (1 || eMesh.owner_rank(element) == 3)
+              //  std::cout << "tmp eMesh.owner_rank(element) = " << eMesh.owner_rank(element) << std::endl;
             }
           // FIXME
 
@@ -1714,7 +1714,7 @@ namespace stk {
 
           if (!m_eMesh.isGhostElement(element))
             {
-              //std::cout << "P["<< m_eMesh.get_rank() << "] element.owner_rank() = " << element.owner_rank() << std::endl;
+              //std::cout << "P["<< m_eMesh.get_rank() << "] eMesh.owner_rank(element) = " << eMesh.owner_rank(element) << std::endl;
               /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_createNewNeededNodes);
 
               if (createNewNeededNodeIds(cell_topo_data, element, needed_entity_ranks, new_sub_entity_nodes))
@@ -2377,8 +2377,8 @@ namespace stk {
                             if (permIndex >= 0)
                               {
                                 found = true;
-                                //std::cout << "found side element needing fixing, id= " << side.identifier()
-                                //          <<  " ele id= " << element.identifier() <<  std::endl;
+                                //std::cout << "found side element needing fixing, id= " << m_eMesh.identifier(side)
+                                //          <<  " ele id= " << m_eMesh.identifier(element) <<  std::endl;
                                 //m_eMesh.get_bulk_data()->declare_relation(element, side, j_element_side);
                               }
                             if (found) break;
@@ -2509,7 +2509,7 @@ namespace stk {
                                 {
                                   if (rels[irels].entity() == side)
                                     {
-                                      //std::cout << "found 2 side element needing fixing, id= " << side.identifier() <<  std::endl;
+                                      //std::cout << "found 2 side element needing fixing, id= " << m_eMesh.identifier(side) <<  std::endl;
                                       found_existing_rel = true;
                                       break;
                                     }
@@ -2520,9 +2520,9 @@ namespace stk {
                                 }
                               else
                                 {
-                                  //std::cout << "found 3 side element needing fixing, id= " << side.identifier() <<  std::endl;
+                                  //std::cout << "found 3 side element needing fixing, id= " << m_eMesh.identifier(side) <<  std::endl;
                                   m_eMesh.get_bulk_data()->declare_relation(element, side, j_element_side);
-                                  //std::cout << "found 4 side element needing fixing, id= " << side.identifier() <<  std::endl;
+                                  //std::cout << "found 4 side element needing fixing, id= " << m_eMesh.identifier(side) <<  std::endl;
                                 }
 
                               break;
@@ -3067,13 +3067,13 @@ namespace stk {
     {
       EXCEPTWATCH;
       bool debug = false;
-      //if (side_elem.identifier() == 4348) debug = true;
-      //       if (element.identifier() == 71896)
+      //if (m_eMesh.identifier(side_elem) == 4348) debug = true;
+      //       if (m_eMesh.identifier(element) == 71896)
       //         {
-      //           if (side_elem.identifier() == 11174) debug = true;
-      //           if (side_elem.identifier() == 10190) debug = true;
+      //           if (m_eMesh.identifier(side_elem) == 11174) debug = true;
+      //           if (m_eMesh.identifier(side_elem) == 10190) debug = true;
       //         }
-      //       if (side_elem.identifier() == 5 && element.identifier() == 473) {
+      //       if (m_eMesh.identifier(side_elem) == 5 && m_eMesh.identifier(element) == 473) {
       //         debug = true;
       //       }
 

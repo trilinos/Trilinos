@@ -151,7 +151,7 @@ namespace stk {
                     if (found)
                       {
                         elements_to_unref.insert(element);
-                        //std::cout << "tmp element id= " << element.identifier() << " ";
+                        //std::cout << "tmp element id= " << m_eMesh.identifier(element) << " ";
                         //m_eMesh.print_entity(std::cout, element);
                       }
                   }

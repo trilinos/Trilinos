@@ -754,7 +754,7 @@ namespace stk {
           for (unsigned ifr = 0; ifr < nfr; ifr++)
             {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-              fr_type = fr.entity_rank();
+              fr_type = fr . entity_rank();
               fieldStride = fr.dimension() ;
               stk::mesh::Part& frpart = eMesh.get_fem_meta_data()->get_part(fr.part_ordinal());
               if (EXTRA_PRINT_URP_IF && nfr != 1 ) std::cout << "tmp P[" << 0 << "] info>    number of field restrictions= " << nfr << " fr_type= " << fr_type
@@ -1062,7 +1062,7 @@ namespace stk {
             if (m_primaryEntityRank == stk::mesh::MetaData::ELEMENT_RANK &&  proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
-                fdata[0] = double(newElement.owner_rank());
+                fdata[0] = double(eMesh.owner_rank(newElement));
               }
 
             change_entity_parts(eMesh, element, newElement);
@@ -1559,7 +1559,7 @@ namespace stk {
             if (m_primaryEntityRank == stk::mesh::MetaData::ELEMENT_RANK &&  proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
-                fdata[0] = double(newElement.owner_rank());
+                fdata[0] = double(eMesh.owner_rank(newElement));
               }
 
             change_entity_parts(eMesh, element, newElement);
@@ -2808,17 +2808,17 @@ namespace stk {
         bool found = false;
         for (unsigned i_part = 0; i_part < m_fromParts.size(); i_part++)
           {
-            if (old_owning_elem.bucket().member(*m_fromParts[i_part]))
+            if (eMesh.bucket(old_owning_elem).member(*m_fromParts[i_part]))
               {
                 add_parts[0] = m_toParts[i_part];
                 if (DEBUG_CHANGE_ENTITY_PARTS)
                   {
-                    std::cout << "tmp changing newElement " << newElement.identifier()
-                              << " rank= " << newElement.entity_rank()
+                    std::cout << "tmp changing newElement " << m_eMesh.identifier(newElement)
+                              << " rank= " << m_eMesh.entity_rank(newElement)
                               << " from part= " << m_fromParts[i_part]->name()
                               << " to part= " << m_toParts[i_part]->name()
-                              << " for old elem= " << old_owning_elem.identifier()
-                              << " rank= " << old_owning_elem.entity_rank()
+                              << " for old elem= " << m_eMesh.identifier(old_owning_elem)
+                              << " rank= " << m_eMesh.entity_rank(old_owning_elem)
                               << std::endl;
                   }
                 eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
@@ -2840,7 +2840,7 @@ namespace stk {
               {
                 stk::mesh::Part *  part = *i_part ;
 
-                if (old_owning_elem.bucket().member(*part))
+                if (eMesh.bucket(old_owning_elem).member(*part))
                   {
                     std::cout << "found_in_another_part part name= " << part->name() << std::endl;
                     //found_in_another_part = true;

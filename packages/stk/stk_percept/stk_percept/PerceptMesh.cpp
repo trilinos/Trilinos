@@ -472,9 +472,9 @@ namespace stk {
                   const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
                   stk::mesh::Part& frpart = metaData.get_part(fr.part_ordinal());
                   stride = fr.dimension();
-                  field_rank = fr.entity_rank();
+                  field_rank = fr . entity_rank();
                   if (print_info) stream << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr.dimension() <<
-                    " type= " << fr.entity_rank() << " ord= " << fr.part_ordinal() <<
+                    " type= " << fr . entity_rank() << " ord= " << fr.part_ordinal() <<
                     " which corresponds to Part= " << frpart.name() << mendl;
                 }
 
@@ -539,10 +539,10 @@ namespace stk {
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
                   stk::mesh::Entity element = bucket[iElement];
-                  //stream << "element id = " << element.identifier() << mendl;
+                  //stream << "element id = " << m_eMesh.identifier(element) << mendl;
                   if (1)
                     {
-                      //stream << " " << element.identifier();
+                      //stream << " " << m_eMesh.identifier(element);
                       outstr << " " << identifier(element);
                       if ((iElement+1) % 20 == 0)
                         outstr << mendl;
@@ -621,7 +621,7 @@ namespace stk {
                 {
                   const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
                   //std::cout << fr.key.rank();
-                  if (fr.entity_rank() == stk::mesh::MetaData::NODE_RANK)
+                  if (fr . entity_rank() == stk::mesh::MetaData::NODE_RANK)
                     {
 
                       if (print_info) std::cout << "P[" << p_rank << "] info>   stride = "<< fr.dimension() << std::endl;
@@ -1097,8 +1097,8 @@ namespace stk {
                           for (int inode = 0; inode < nen; ++inode)
                             {
                               stk::mesh::Entity node = elem_nodes[inode].entity();
-                              //if (node.bucket().member(part))
-                              if (this_part(node.bucket()))
+                              //if (eMesh.bucket(node).member(part))
+                              if (this_part(this->bucket(node)))
                                 {
                                   NormalVector& normal = node_normals[identifier(node)];
                                   double detJ=0;
@@ -1581,7 +1581,7 @@ namespace stk {
             for (unsigned ifr = 0; ifr < nfr; ifr++)
               {
                 const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-                //unsigned field_rank = fr.entity_rank();
+                //unsigned field_rank = fr . entity_rank();
                 unsigned field_dimension = fr.dimension() ;
                 if (field_dimension > 0)
                   {
@@ -2503,7 +2503,7 @@ namespace stk {
             {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
               stk::mesh::Part& frpart = metaData.get_part(fr.part_ordinal());
-              std::cout << "PerceptMesh::dump: field restriction " << ifr << " stride[0] = " << fr.dimension() << " type= " << fr.entity_rank() << " ord= " << fr.part_ordinal() <<
+              std::cout << "PerceptMesh::dump: field restriction " << ifr << " stride[0] = " << fr.dimension() << " type= " << fr . entity_rank() << " ord= " << fr.part_ordinal() <<
                 " which corresponds to Part= " << frpart.name() << std::endl;
             }
         }
@@ -3067,7 +3067,7 @@ namespace stk {
     element_side_permutation(const stk::mesh::Entity element, const stk::mesh::Entity side, unsigned element_side_ordinal,
                              int& returnedIndex, int& returnedPolarity, bool use_coordinate_compare, bool debug)
     {
-      //if (side.identifier() == 5 && element.identifier() == 473) debug = true;
+      //if (m_eMesh.identifier(side) == 5 && m_eMesh.identifier(element) == 473) debug = true;
       if (debug) {
         std::cout << "tmp srk esp element_side_permutation: element_side_ordinal= " << element_side_ordinal << "  ielement.isLeaf= " << isLeafElement(element) << " element= "; print(element);
         std::cout << " side= "; print(side);
@@ -3246,10 +3246,10 @@ namespace stk {
                   for (unsigned inode=0; inode < num_node; inode++)
                     {
                       stk::mesh::Entity node = elem_nodes[ inode ].entity();
-                      //stk::mesh::EntityId nid = node.identifier();
+                      //stk::mesh::EntityId nid = m_eMesh.identifier(node);
 
                       // this element is a candidate for sharing a face with surface
-                      if (node.bucket().member(surface))
+                      if (this->bucket(node).member(surface))
                         {
                           isCandidate = true;
                           // FIXME at this point we know block shares at least one node with surface, which may be enough to return true here?
@@ -3993,7 +3993,7 @@ namespace stk {
                     if (fdata_fix)
                       {
                         if (fixed_node_selector)
-                          fdata_fix[0] = (*fixed_node_selector)(node.bucket()) ? 1 : 0;
+                          fdata_fix[0] = (*fixed_node_selector)(this->bucket(node)) ? 1 : 0;
                         else
                           fdata_fix[0] = 0;
                       }
@@ -4308,7 +4308,7 @@ namespace stk {
       double doCheckCPUTime = 0.0;
       //double doCheckCPUTime = 0.1;
 
-      MeshGeometry mesh_geometry(&gk, doCheckMovement, doCheckCPUTime);
+      MeshGeometry mesh_geometry(*this, &gk, doCheckMovement, doCheckCPUTime);
       GeometryFactory factory(&gk, &mesh_geometry);
       factory.read_file(geometry_file_name, this);
 
@@ -4405,7 +4405,7 @@ namespace stk {
           for (unsigned ielem = 0; ielem < node_elems_1.size(); ielem++)
             {
               stk::mesh::Entity element = node_elems_1[ielem].entity();
-              if (!selector || (*selector)(element.bucket()))
+              if (!selector || (*selector)(this->bucket(element)))
                 {
                   ++num_elem;
                   node_elems.push_back(element);
@@ -4443,7 +4443,7 @@ namespace stk {
       for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
         {
           stk::mesh::Entity element = node_elems[ielem];
-          if (!selector || (*selector)(element.bucket()))
+          if (!selector || (*selector)(this->bucket(element)))
             {
               const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
               file << elem_nodes.size() << " ";
@@ -4460,7 +4460,7 @@ namespace stk {
       for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
         {
           stk::mesh::Entity element = node_elems[ielem];
-          if (!selector || (*selector)(element.bucket()))
+          if (!selector || (*selector)(this->bucket(element)))
             {
               file << vtk_type(element) << "\n";
             }
@@ -4874,7 +4874,7 @@ namespace stk {
             get_nodes_on_side(*get_bulk_data(), es.outside.entity, es.outside.side_ordinal, node_vector);
           for (unsigned inv=0; inv < node_vector.size(); inv++)
             {
-              if (node_vector[inv].bucket().owned())
+              if (this->bucket(node_vector[inv]).owned())
                 node_set.insert(node_vector[inv]);
             }
         }
@@ -4901,7 +4901,7 @@ namespace stk {
           const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
           //stk::mesh::Part& frpart = metaData.get_part(fr.part_ordinal());
           stride = fr.dimension();
-          field_rank = fr.entity_rank();
+          field_rank = fr . entity_rank();
 
           //stk::mesh::Selector not_aura =   get_fem_meta_data()->locally_owned_part() | get_fem_meta_data()->globally_shared_part() ;
           stk::mesh::Selector locally_owned = get_fem_meta_data()->locally_owned_part();
@@ -5066,7 +5066,7 @@ namespace stk {
           double doCheckCPUTime = 0.0;
           //double doCheckCPUTime = 0.1;
 
-          MeshGeometry mesh_geometry(&gk, doCheckMovement, doCheckCPUTime);
+          MeshGeometry mesh_geometry(*this, &gk, doCheckMovement, doCheckCPUTime);
           GeometryFactory factory(&gk, &mesh_geometry);
           factory.read_file(geometry_file_name, this);
 
@@ -5129,8 +5129,8 @@ namespace stk {
           //   with this element when viewed as a child, not a parent.
           percept::MyPairIterRelation family_tree_0_relations((*this), family_tree_0, entity_rank(element));
           percept::MyPairIterRelation family_tree_1_relations((*this), family_tree_1, entity_rank(element));
-          //if ( (family_tree_0.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 1;
-          //else if ( (family_tree_1.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 0;
+          //if ( (family_tree_0.relations(m_eMesh.entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 1;
+          //else if ( (family_tree_1.relations(m_eMesh.entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 0;
           if ( family_tree_0_relations[FAMILY_TREE_PARENT].entity() == element)
             return 1;
           else if (family_tree_1_relations[FAMILY_TREE_PARENT].entity() == element)
@@ -5155,8 +5155,8 @@ namespace stk {
 
           percept::MyPairIterRelation family_tree_0_relations((*this), family_tree_0, entity_rank(element));
           percept::MyPairIterRelation family_tree_1_relations((*this), family_tree_1, entity_rank(element));
-          //if ( (family_tree_0.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 0;
-          //else if ( (family_tree_1.relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == element) return 1;
+          //if ( (family_tree_0.relations(m_eMesh.entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 0;
+          //else if ( (family_tree_1.relations(m_eMesh.entity_rank(element))[FAMILY_TREE_PARENT]).entity() == element) return 1;
           if ( family_tree_0_relations[FAMILY_TREE_PARENT].entity() == element)
             return 0;
           else if (family_tree_1_relations[FAMILY_TREE_PARENT].entity() == element)

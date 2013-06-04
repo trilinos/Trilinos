@@ -393,7 +393,7 @@ namespace stk
                   double cellVol = cellVolActual/volEqui; // scaled so that equilateral cell has vol=1.0
                   if (m_dump > 0)
                     {
-                      std::cout << cell_topo.getName() << ":: id= " << elem.identifier()  << " volume= " << cellVolActual << std::endl;
+                      std::cout << cell_topo.getName() << ":: id= " << bulk.identifier(elem)  << " volume= " << cellVolActual << std::endl;
                     }
 
                   for (unsigned iCubPt = 0; iCubPt < numCubPoints; iCubPt++)
@@ -417,9 +417,9 @@ namespace stk
 
                       if (ipass == 0)
                         {
-                          jdata.jac.registerValue(elem.identifier(), jacDet);
-                          jdata.QM_1.registerValue(elem.identifier(),  quality_measure_1);
-                          jdata.QM_2.registerValue(elem.identifier(),  quality_measure_2);
+                          jdata.jac.registerValue(bulk.identifier(elem), jacDet);
+                          jdata.QM_1.registerValue(bulk.identifier(elem),  quality_measure_1);
+                          jdata.QM_2.registerValue(bulk.identifier(elem),  quality_measure_2);
                         }
                     }
                 }
@@ -432,7 +432,7 @@ namespace stk
                       for (unsigned iCubPt = 0; iCubPt < numCubPoints; iCubPt++)
                         {
                           stk::PrintTable table;
-                          std::ostringstream msg; msg << "Jacobian"<<" iCell= "<<iCell<< " id= " << elem.identifier() << " iCubPt= "<<iCubPt << " Det= " << jacobian_det(iCell, iCubPt) << " Vol= " << volume(iCell);
+                          std::ostringstream msg; msg << "Jacobian"<<" iCell= "<<iCell<< " id= " << bulk.identifier(elem) << " iCubPt= "<<iCubPt << " Det= " << jacobian_det(iCell, iCubPt) << " Vol= " << volume(iCell);
                           table.setTitle(msg.str());
 
                           for (unsigned id = 0; id < spaceDim; id++)

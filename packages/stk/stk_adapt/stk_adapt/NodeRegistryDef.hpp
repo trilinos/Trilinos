@@ -28,7 +28,7 @@ namespace stk {
               std::cout << "NodeRegistry::getNewNodesOnSubDimEntity: no node found, cell_topo = " << cell_topo.getName()
                         << "\n subDimEntity= " << subDimEntity 
                         << "\n element= " << element 
-                        << "\n element.entity_rank() = " << element.entity_rank()
+                        << "\n eMesh.entity_rank(element) = " << m_eMesh.entity_rank(element)
                         << "\n needed_entity_rank= " << needed_entity_rank
                         << "\n iSubDimOrd= " << iSubDimOrd << std::endl;
               throw std::runtime_error("NodeRegistry::getNewNodesOnSubDimEntity: no node found");

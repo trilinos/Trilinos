@@ -116,10 +116,10 @@ namespace stk {
 
 #endif
                   // mark first m_edge_mark_bitcode edges 
-                  std::cout << "tmp TestLocalRefinerTet_N_2_1 element.identifier() = " << element.identifier() 
+                  std::cout << "tmp TestLocalRefinerTet_N_2_1 m_eMesh.identifier(element) = " << m_eMesh.identifier(element) 
                             << " m_edge_mark_bitcode= " << m_edge_mark_bitcode << std::endl;
 
-                  if ( ((1 << iSubDimOrd) & m_edge_mark_bitcode) && element.identifier() == 1)
+                  if ( ((1 << iSubDimOrd) & m_edge_mark_bitcode) && m_eMesh.identifier(element) == 1)
                     (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
 
                 }

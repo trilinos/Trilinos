@@ -81,7 +81,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, createAddNodes_serial_and_1st_parallel)
     unsigned elem_num=(12/p_size)*3*3;
 
     const stk::mesh::Entity element_1_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
-    dw() << "P["<<p_rank<<"] element_1_p = " << element_1_p.identifier() << DWENDL;
+    dw() << "P["<<p_rank<<"] element_1_p = " << eMesh.identifier(element_1_p) << DWENDL;
     stk::mesh::EntityRank stk_mesh_Edge = 1;
 
     NeededEntityType entity_rank(stk_mesh_Edge, 1u);

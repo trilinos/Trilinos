@@ -196,7 +196,7 @@ namespace stk {
 
                 percept::MyPairIterRelation side_element_to_family_tree_relations (m_eMesh, side_element,FAMILY_TREE_RANK);
                 stk::mesh::Entity family_tree = side_element_to_family_tree_relations[side_elem_child_ft_level_0].entity();
-                percept::MyPairIterRelation family_tree_relations (m_eMesh, family_tree,side_element.entity_rank());
+                percept::MyPairIterRelation family_tree_relations (m_eMesh, family_tree,m_eMesh.entity_rank(side_element));
                 if (family_tree_relations.size() == 0)
                   {
                     throw std::logic_error("Refiner::getSideElemsToBeRemoved family_tree_relations.size() == 0 [1]");
@@ -403,7 +403,7 @@ namespace stk {
                   if (!m_eMesh.isGhostElement(parent))
                     {
 #if DEBUG_UNREF_2
-                      //std::cout << "P["<< m_eMesh.get_rank() << "] parent.owner_rank() = " << parent.owner_rank() << std::endl;
+                      //std::cout << "P["<< m_eMesh.get_rank() << "] eMesh.owner_rank(parent) = " << eMesh.owner_rank(parent) << std::endl;
                       std::cout << "tmp Parent to be remeshed = ";
                       m_eMesh.print_entity(std::cout, parent);
 #endif
@@ -554,7 +554,7 @@ namespace stk {
                         {
                           percept::MyPairIterRelation side_elem_to_family_tree_relations (m_eMesh, side_element,  FAMILY_TREE_RANK);
                             stk::mesh::Entity side_elem_family_tree_0 = side_elem_to_family_tree_relations[0].entity();
-                            std::cout << "side_elem_family_tree_0= " << side_elem_family_tree_0.identifier() << std::endl;
+                            std::cout << "side_elem_family_tree_0= " << m_eMesh.identifier(side_elem_family_tree_0) << std::endl;
                         }
 
                         // FIXME if (!m_eMesh.hasFamilyTree(*side_element) || !m_eMesh.isChildWithoutNieces(*side_element))
@@ -964,7 +964,7 @@ namespace stk {
       for (SetOfEntities::iterator elIter = rootElements.begin(); elIter != rootElements.end(); ++elIter)
         {
           stk::mesh::Entity element = *elIter;
-          //std::cout << "element= " << element.identifier() << std::endl;
+          //std::cout << "element= " << m_eMesh.identifier(element) << std::endl;
           VERIFY_OP_ON(m_eMesh.numChildren(element), ==, 0, "hmmm");
 
           remeshRecurse(element);
@@ -1128,7 +1128,7 @@ namespace stk {
 
               if (allIn && allD.size())
                 {
-                  //if (print_filter_info && (!in_set && !is_root) ) std::cout << "element= " << element.identifier() << " in_set= " << in_set << " is_root= " << is_root << std::endl;
+                  //if (print_filter_info && (!in_set && !is_root) ) std::cout << "element= " << m_eMesh.identifier(element) << " in_set= " << in_set << " is_root= " << is_root << std::endl;
 
                   new_root.insert(element);
 

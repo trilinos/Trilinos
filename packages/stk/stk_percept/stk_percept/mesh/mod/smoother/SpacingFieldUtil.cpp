@@ -143,13 +143,13 @@ namespace stk {
       for (unsigned i_element = 0; i_element < node_elems.size(); i_element++)
         {
           stk::mesh::Entity element = node_elems[i_element].entity();
-          if (!MeshSmoother::select_bucket(element.bucket(), &m_eMesh))
+          if (!MeshSmoother::select_bucket(m_eMesh.bucket(element), &m_eMesh))
             continue;
 
-          if (!element_selector || (*element_selector)(element.bucket()))
+          if (!element_selector || (*element_selector)(m_eMesh.bucket(element)))
             {
               ++num_elem;
-              //if (element.entity_rank() == m_eMesh.element_rank() );
+              //if (m_eMesh.entity_rank(element) == m_eMesh.element_rank() );
               const CellTopologyData *topology_data = m_eMesh.get_cell_topology(element);
               shards::CellTopology topo(topology_data);
               JacobianUtil jacA;
@@ -161,7 +161,7 @@ namespace stk {
               unsigned inode = node_elems[i_element].relation_ordinal();
               const MyPairIterRelation elem_nodes(m_eMesh, element, m_eMesh.node_rank() );
               VERIFY_OP_ON(inode, <, elem_nodes.size(), "elem_nodes 2");
-              VERIFY_OP_ON(elem_nodes[inode].entity().identifier(), ==, node.identifier(), "elem_nodes 3");
+              VERIFY_OP_ON(elem_nodes[inode].entity().identifier(), ==, m_eMesh.identifier(node), "elem_nodes 3");
 
               DenseMatrix<3,3>& A = jacA.m_J[inode];
               double detJ = jacA.m_detJ[inode];
@@ -204,9 +204,9 @@ namespace stk {
               double sum=0.0;
               for (int jdim=0; jdim < spatial_dim; jdim++)
                 {
-                  if ( 0 && element.identifier() == 6659) 
+                  if ( 0 && m_eMesh.identifier(element) == 6659) 
                     {
-                      std::cout << " nodeid= " << node.identifier() << " spacing[" << jdim << "]= " << spacing[jdim] << " unit_vector_dir= " << unit_vector_dir[jdim] << std::endl;
+                      std::cout << " nodeid= " << m_eMesh.identifier(node) << " spacing[" << jdim << "]= " << spacing[jdim] << " unit_vector_dir= " << unit_vector_dir[jdim] << std::endl;
                       PerceptMesh::get_static_instance()->print(element);
                     }
                   sum += spacing[jdim]*spacing[jdim];
@@ -215,10 +215,10 @@ namespace stk {
               VERIFY_OP_ON(sum, >, 1.e-12, "bad sum");
               spacing_ave += 1.0/sum;
 
-              if (0 && element.identifier() == 6659) 
+              if (0 && m_eMesh.identifier(element) == 6659) 
                 {
                   PerceptMesh::get_static_instance()->print(element, false);
-                  std::cout << " nodeid= " << node.identifier() << " spacing= " << 1.0/sum << std::endl;
+                  std::cout << " nodeid= " << m_eMesh.identifier(node) << " spacing= " << 1.0/sum << std::endl;
                 }
 
             }

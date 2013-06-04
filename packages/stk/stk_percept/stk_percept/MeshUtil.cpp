@@ -188,7 +188,7 @@ namespace stk {
                 }
               if (m_debug)
                 {
-                  std::cout << "E1= " << element1.identifier() << " E2= " << element2.identifier() << " cfaceTot= " << cfaceTot
+                  std::cout << "E1= " << eMesh.identifier(element1) << " E2= " << eMesh.identifier(element2) << " cfaceTot= " << cfaceTot
                             << " ptriFaceArea1= " << ptriFaceArea1 << std::endl;
                 }
               if (std::abs(cfaceTot - ptriFaceArea1) > tol*(cfaceTot+ptriFaceArea1)/2.)

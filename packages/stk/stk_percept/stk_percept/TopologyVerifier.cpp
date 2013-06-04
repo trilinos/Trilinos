@@ -77,7 +77,7 @@ namespace stk
           for ( unsigned i = j+1 ; i < top->node_count ; ++i ) {
             {
               mesh::Entity nodei = elem_nodes[ i ].entity();
-              if (node.identifier() == nodei.identifier())
+              if (bulkData.identifier(node) == bulkData.identifier(nodei))
                 {
                   return true;
                 }

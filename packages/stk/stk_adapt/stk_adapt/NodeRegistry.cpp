@@ -60,7 +60,7 @@ namespace stk {
         if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
           {
             subDimEntity.insert( element );
-            //!!subDimEntity.insert(element.identifier());
+            //!!subDimEntity.insert(m_eMesh.identifier(element));
             return;
           }
 
@@ -76,7 +76,7 @@ namespace stk {
         static const unsigned face_nodes_4[4] = {0,1,2,3};
 
         // special case for faces in 3D
-        if (needed_entity_rank == m_eMesh.face_rank() && needed_entity_rank == element.entity_rank())
+        if (needed_entity_rank == m_eMesh.face_rank() && needed_entity_rank == m_eMesh.entity_rank(element))
           {
             nSubDimNodes = cell_topo_data->vertex_count;
 
@@ -88,7 +88,7 @@ namespace stk {
 
           }
         // special case for edges in 2D
-        else if (needed_entity_rank == m_eMesh.edge_rank() && needed_entity_rank == element.entity_rank())
+        else if (needed_entity_rank == m_eMesh.edge_rank() && needed_entity_rank == m_eMesh.entity_rank(element))
           {
             nSubDimNodes = cell_topo_data->vertex_count;
 
@@ -313,7 +313,7 @@ namespace stk {
                 double y = 0.5*(alp12+alp03);
                 if (isp == 0)
                   {
-                    if (0 && element.identifier() == 6659)
+                    if (0 && m_eMesh.identifier(element) == 6659)
                       {
                         PerceptMesh::get_static_instance()->print(element, false);
                         std::cout
@@ -442,7 +442,7 @@ namespace stk {
             {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
               //mesh::Part& frpart = metaData.get_part(fr.ordinal());
-              field_rank = fr.entity_rank();
+              field_rank = fr . entity_rank();
               fieldDim = fr.dimension() ;
             }
         }
@@ -943,7 +943,7 @@ namespace stk {
                             {
                               percept::MyPairIterRelation beam_nodes (m_eMesh, beams[ii].entity(), m_eMesh.node_rank());
                               VERIFY_OP_ON(beam_nodes.size(), ==, 2, "rbar issue");
-                              std::cout << "node= " << node.identifier() << " beam_nodes[" << beams[ii].entity().identifier() << "]= { "
+                              std::cout << "node= " << m_eMesh.identifier(node) << " beam_nodes[" << beams[ii].entity().identifier() << "]= { "
                                         << std::setw(20) << beam_nodes[0].entity().identifier()
                                         << std::setw(20) << beam_nodes[1].entity().identifier()
                                         << std::endl;
@@ -971,7 +971,7 @@ namespace stk {
                                 {
                                   if (common_node_is_valid)
                                     {
-                                      VERIFY_OP_ON(common_node.identifier(), ==, beam_nodes[jj].entity().identifier(), "rbar issue2: please rerun and exclude rbar blocks from refinement using --block_name option ");
+                                      VERIFY_OP_ON(m_eMesh.identifier(common_node), ==, beam_nodes[jj].entity().identifier(), "rbar issue2: please rerun and exclude rbar blocks from refinement using --block_name option ");
                                     }
                                   else
                                     {
@@ -1001,7 +1001,7 @@ namespace stk {
                         }
 
                       // only try to add element if I am the owner
-                      if (c_node.owner_rank() == m_eMesh.get_parallel_rank())
+                      if (m_eMesh.owner_rank(c_node) == m_eMesh.get_parallel_rank())
                         {
                           NewBarType new_elem(c_node, common_node);
                           new_elems.push_back(new_elem);

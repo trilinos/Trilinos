@@ -206,7 +206,7 @@ namespace stk
                 {
                   m_found_on_local_owned_part = true;
                   if (( EXTRA_PRINT) && m_searchType==STK_SEARCH)
-                    std::cout << "FieldFunction::operator() found element # = " << found_element.identifier() << std::endl;
+                    std::cout << "FieldFunction::operator() found element # = " << m_bulkData->identifier(found_element) << std::endl;
 
                   (*this)(input_phy_points_one, output_field_values_one, found_element, found_parametric_coordinates_one);
 

@@ -117,9 +117,9 @@ namespace stk {
 
 #endif
                   // mark first m_mark_first_n_edges edges 
-                  //std::cout << "element.identifier() = " << element.identifier() << std::endl;
+                  //std::cout << "m_eMesh.identifier(element) = " << m_eMesh.identifier(element) << std::endl;
 
-                  if (iSubDimOrd < m_mark_first_n_edges && element.identifier() == 1)
+                  if (iSubDimOrd < m_mark_first_n_edges && m_eMesh.identifier(element) == 1)
                     (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
 
                 }

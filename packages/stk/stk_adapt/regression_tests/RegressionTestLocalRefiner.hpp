@@ -220,8 +220,8 @@ namespace stk
 
       struct MyEdgeBasedRefinePredicate : public IEdgeBasedAdapterPredicate {
 
-        MyEdgeBasedRefinePredicate(stk::mesh::Selector * selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
-          IEdgeBasedAdapterPredicate(selector, field, tolerance) {}
+        MyEdgeBasedRefinePredicate(PerceptMesh& eMesh, stk::mesh::Selector * selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
+          IEdgeBasedAdapterPredicate(eMesh, selector, field, tolerance) {}
 
         /// Return DO_NOTHING, DO_REFINE, DO_UNREFINE or sum of these
         int operator()(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
@@ -374,8 +374,8 @@ namespace stk
 
         ShockBasedRefinePredicate(stk::mesh::FieldBase* nodal_refine_field, percept::PerceptMesh& eMesh, stk::mesh::Selector* selector, stk::mesh::FieldBase *field, double tolerance,
                                   PlaneShock shock, double shock_displacement=0, double shock_diff_criterion=0.4) :
-          IEdgeBasedAdapterPredicate(selector, field, tolerance),
-          IElementBasedAdapterPredicate(selector, field, tolerance),
+          IEdgeBasedAdapterPredicate(eMesh, selector, field, tolerance),
+          IElementBasedAdapterPredicate(eMesh, selector, field, tolerance),
           m_eMesh(eMesh),m_nodal_refine_field(nodal_refine_field),
           m_shock(shock), m_shock_displacement(shock_displacement),
           m_shock_diff_criterion(shock_diff_criterion) {}
@@ -470,8 +470,8 @@ namespace stk
 
         ShockBasedRefinePredicate1(stk::mesh::FieldBase* nodal_refine_field, percept::PerceptMesh& eMesh, stk::mesh::Selector* selector, stk::mesh::FieldBase *field, double tolerance,
                                   PlaneShock shock, double shock_displacement=0, double shock_diff_criterion=0.4) :
-          IEdgeBasedAdapterPredicate(selector, field, tolerance),
-          IElementBasedAdapterPredicate(selector, field, tolerance),
+          IEdgeBasedAdapterPredicate(eMesh, selector, field, tolerance),
+          IElementBasedAdapterPredicate(eMesh, selector, field, tolerance),
           m_eMesh(eMesh),m_nodal_refine_field(nodal_refine_field),
           m_shock(shock), m_shock_displacement(shock_displacement),
           m_shock_diff_criterion(shock_diff_criterion) {}

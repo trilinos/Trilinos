@@ -251,7 +251,7 @@ namespace stk
                         for (unsigned inode=0; inode < num_node; inode++)
                           {
                             stk::mesh::Entity node = elem_nodes[ inode ].entity();
-                            //stk::mesh::EntityId nid = node.identifier();
+                            //stk::mesh::EntityId nid = m_eMesh.identifier(node);
 
                             double * const coord = stk::mesh::field_data( *coordField , node );
                             // do something with coord's
@@ -434,7 +434,7 @@ namespace stk
                   for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
                     {
                       stk::mesh::Entity node = bucket[iNode];
-                      //stk::mesh::EntityId nid = node.identifier();
+                      //stk::mesh::EntityId nid = m_eMesh.identifier(node);
 
                       double * const coord = stk::mesh::field_data( *coordField , node );
 

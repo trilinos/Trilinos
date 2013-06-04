@@ -1701,7 +1701,7 @@ namespace stk {
 
             stk::mesh::Selector univ_selector(eMesh.get_fem_meta_data()->universal_part());
 
-            ElementRefinePredicate erp(&univ_selector, refine_field, 0.0);
+            ElementRefinePredicate erp(eMesh, &univ_selector, refine_field, 0.0);
             PredicateBasedElementAdapter<ElementRefinePredicate>
               breaker(erp,
                       eMesh, break_tri_to_tri_N, proc_rank_field);

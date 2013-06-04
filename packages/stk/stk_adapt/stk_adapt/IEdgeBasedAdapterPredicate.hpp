@@ -26,12 +26,13 @@ namespace stk {
 
     // Example 
     struct IEdgeBasedAdapterPredicate {
+      PerceptMesh& m_eMesh;
       stk::mesh::Selector * m_selector;
       stk::mesh::FieldBase *m_field;
       double m_tolerance;
     protected:
-      IEdgeBasedAdapterPredicate(stk::mesh::Selector * selector = 0, stk::mesh::FieldBase *field = 0, double tolerance=0.0) :
-        m_selector(selector), m_field(field), m_tolerance(tolerance) {}
+      IEdgeBasedAdapterPredicate(PerceptMesh& eMesh, stk::mesh::Selector * selector = 0, stk::mesh::FieldBase *field = 0, double tolerance=0.0) :
+        m_eMesh(eMesh), m_selector(selector), m_field(field), m_tolerance(tolerance) {}
 
       /// for a Refine predicate, Return true for refine, false for ignore
       /// for an Unrefine predicate, return true for unrefine, false for ignore

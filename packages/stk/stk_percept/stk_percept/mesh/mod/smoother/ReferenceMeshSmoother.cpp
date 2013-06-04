@@ -61,7 +61,7 @@ namespace stk {
 
           print_entity_key( msg , MetaData::get(mesh) , i->key );
 
-          msg << " owner(" << entity.owner_rank() << ")" ;
+          msg << " owner(" << mesh.parallel_owner_rank(entity) << ")" ;
 
           if ( Modified == mesh.state(entity) ) { msg << " mod" ; }
           else if ( Deleted == mesh.state(entity) ) { msg << " del" ; }

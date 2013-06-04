@@ -215,7 +215,7 @@ namespace stk {
             if (proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
-                fdata[0] = double(newElement.owner_rank());
+                fdata[0] = double(eMesh.owner_rank(newElement));
               }
 
             {

@@ -147,9 +147,9 @@ namespace stk {
 
     std::ostream &operator<<(std::ostream& out, const stk::mesh::Entity entity)
     {
-      if (entity.entity_rank() != stk::mesh::MetaData::NODE_RANK)
+      if (m_eMesh.entity_rank(entity) != stk::mesh::MetaData::NODE_RANK)
         {
-          out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: ";
+          out << "Elem: " << m_eMesh.identifier(entity) << " rank= " << m_eMesh.entity_rank(entity) << " nodes: ";
 
           const mesh::PairIterRelation elem_nodes = entity.relations( stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
@@ -157,20 +157,20 @@ namespace stk {
             {
               mesh::Entity node = elem_nodes[ inode ].entity();
 
-              out << node.identifier() << " ";
+              out << m_eMesh.identifier(node) << " ";
             }
           //out << std::endl;
 
         }
 
-      else if (entity.entity_rank() == stk::mesh::MetaData::NODE_RANK)
+      else if (m_eMesh.entity_rank(entity) == stk::mesh::MetaData::NODE_RANK)
         {
-          out << "Node: " << entity.identifier();
+          out << "Node: " << m_eMesh.identifier(entity);
 
         }
       else
         {
-          out << "rank unknown: " << entity.entity_rank();
+          out << "rank unknown: " << m_eMesh.entity_rank(entity);
         }
 
       return out;

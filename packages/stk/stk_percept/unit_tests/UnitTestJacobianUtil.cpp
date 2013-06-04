@@ -104,7 +104,7 @@ namespace stk
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[0], 1.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[1], 1.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[2], 1.0, tol);
-                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier()
+                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << m_eMesh.identifier(element)
                                          << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
                       }
                   }
@@ -164,7 +164,7 @@ namespace stk
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[0], 1.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[1], 2.0/12.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[2], 1.0/12.0, tol);
-                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier()
+                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << m_eMesh.identifier(element)
                                          << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
                       }
                   }
@@ -228,7 +228,7 @@ namespace stk
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[0], 1.0, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[1], sqp, tol);
                         STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(eigens[2], sqm, tol);
-                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << element.identifier()
+                        if (0) std::cout << "P[" << p_rank << ":" << p_size << "] element= " << m_eMesh.identifier(element)
                                          << " eigens = " << eigens[0] << " " << eigens[1] << " " << eigens[2] << std::endl;
                       }
                   }

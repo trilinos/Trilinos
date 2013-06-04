@@ -112,10 +112,10 @@ namespace stk
         FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_basis_values, basis_values);
       }
 
-      void getBases(const stk::mesh::Entity element, const MDArray& parametric_coordinates, MDArray& transformed_basis_values)
+      void getBases(const stk::mesh::BulkData& bulk, const stk::mesh::Entity element, const MDArray& parametric_coordinates, MDArray& transformed_basis_values)
       {
         // FIXME this will need to be changed when the bases have gradients and thus depend on which element they're assoc with
-        const mesh::Bucket & bucket = element.bucket();
+        const mesh::Bucket & bucket = bulk.bucket(element);
         getBases(bucket, parametric_coordinates, transformed_basis_values, 0);
       }
 

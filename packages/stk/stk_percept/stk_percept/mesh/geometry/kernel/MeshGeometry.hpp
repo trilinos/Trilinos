@@ -25,12 +25,14 @@ struct GeometryEvaluator
 
 class MeshGeometry
 {
+
 public:
+  const PerceptMesh& m_eMesh;
   typedef std::pair<int, size_t> CacheBucketClassifyValueType;
   typedef boost::unordered_map<const stk::mesh::Bucket *, CacheBucketClassifyValueType > CacheBucketClassifyType;
   typedef boost::unordered_map<size_t, double> MaxDeltaOnGeometryType;
 
-  MeshGeometry(GeometryKernel* geom, double doCheckMovement=0.0, double doCheckCpuTime=0.0, bool cache_bucket_selectors_is_active=false, bool doPrint=false);
+  MeshGeometry(const PerceptMesh& eMesh, GeometryKernel* geom, double doCheckMovement=0.0, double doCheckCpuTime=0.0, bool cache_bucket_selectors_is_active=false, bool doPrint=false);
     ~MeshGeometry();
 
   void print_node_movement_summary();

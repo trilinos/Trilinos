@@ -97,7 +97,7 @@ namespace stk
           }
 
         AABoundingBox bb;
-        bb.key.ident = element.identifier();
+        bb.key.ident = bulkData.identifier(element);
         bb.set_box(bbox);
 
         return bb;

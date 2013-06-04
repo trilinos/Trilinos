@@ -93,11 +93,11 @@ namespace stk {
                   // mark only the first element
 
 
-                  if ( ((1 << iSubDimOrd) & m_edge_mark_bitcode ) && 1 == element.identifier()  )
+                  if ( ((1 << iSubDimOrd) & m_edge_mark_bitcode ) && 1 == m_eMesh.identifier(element)  )
                     {
                       if (1)
                         {
-                          std::cout << "tmp TestLocalRefinerTet_N_3_1 element.identifier() = " << element.identifier() 
+                          std::cout << "tmp TestLocalRefinerTet_N_3_1 m_eMesh.identifier(element) = " << m_eMesh.identifier(element) 
                                     << " edge_mark_bitcode = " << m_edge_mark_bitcode << "  iSubDimOrd= " << iSubDimOrd << std::endl;
                         }
                       (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);

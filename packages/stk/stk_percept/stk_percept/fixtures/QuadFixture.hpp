@@ -370,7 +370,7 @@ namespace stk {
                         {
                           mesh::Entity element = elem(ix, iy);
 
-                          if (end != std::find(ibegin, end, element.identifier()))
+                          if (end != std::find(ibegin, end, bulk_data.identifier(element)))
                             {
                               ++side_id;
 

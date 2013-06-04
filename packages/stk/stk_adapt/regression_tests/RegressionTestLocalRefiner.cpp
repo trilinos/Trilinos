@@ -138,7 +138,7 @@ namespace stk
 
             eMesh.save_as( output_files_loc+"local_tet_N_5_ElementBased_0_"+post_fix[p_size]+".e");
 
-            ElementRefinePredicate erp(0, refine_field, 0.0);
+            ElementRefinePredicate erp(eMesh, 0, refine_field, 0.0);
 
             PredicateBasedElementAdapter<ElementRefinePredicate>
               breaker(erp,
@@ -209,7 +209,7 @@ namespace stk
 
             eMesh.save_as( output_files_loc+"local_tet_N_5_EdgeBased_0_"+post_fix[p_size]+".e");
 
-            MyEdgeBasedRefinePredicate mrp(0, refine_field, 0.0);
+            MyEdgeBasedRefinePredicate mrp(eMesh, 0, refine_field, 0.0);
 
             PredicateBasedEdgeAdapter<MyEdgeBasedRefinePredicate>
               breaker(mrp,
@@ -983,7 +983,7 @@ namespace stk
 
             stk::mesh::Selector univ_selector(eMesh.get_fem_meta_data()->universal_part());
 
-            ElementRefinePredicate erp(&univ_selector, refine_field, 0.0);
+            ElementRefinePredicate erp(eMesh, &univ_selector, refine_field, 0.0);
             PredicateBasedElementAdapter<ElementRefinePredicate>
               breaker(erp, eMesh, break_quad_to_quad_N, proc_rank_field);
 
@@ -1187,7 +1187,7 @@ namespace stk
           {
             my_markers[i] = *((Int *)stk::mesh::field_data( *my_marker_field, my_entities[i] ));
           }
-          //std::cout << "Storing element marker for element " << elem.identifier() << " = " << my_markers[i] << std::endl;
+          //std::cout << "Storing element marker for element " << m_eMesh.identifier(elem) << " = " << my_markers[i] << std::endl;
         }
       }
 

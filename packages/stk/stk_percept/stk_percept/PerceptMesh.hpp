@@ -530,7 +530,7 @@ namespace stk {
       bool isGhostElement(const stk::mesh::Entity element)
       {
         //throw std::runtime_error("not impl"); // FIXME
-        bool isGhost = element.owner_rank() != get_rank();
+        bool isGhost = owner_rank(element) != get_rank();
         return isGhost;
       }
 

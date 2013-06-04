@@ -424,14 +424,14 @@ namespace stk
 
     void
     IntrepidManager::Bases::
-    operator()(const stk::mesh::Entity element, const MDArray& parametric_coordinates)
+    operator()(const stk::mesh::BulkData& bulk, const stk::mesh::Entity element, const MDArray& parametric_coordinates)
     {
-      m_cb.getBases(element, parametric_coordinates, *this);
+      m_cb.getBases(bulk, element, parametric_coordinates, *this);
     }
 
     void
     IntrepidManager::Bases::
-    operator()(const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates)
+    operator()(const stk::mesh::BulkData& bulk, const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates)
     {
       m_cb.getBases(bucket, parametric_coordinates, *this);
     }
@@ -565,7 +565,7 @@ namespace stk
       const mesh::MetaData& metaData = stk::mesh::MetaData::get(bulkData);
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
-      const mesh::Bucket & bucket = element.bucket();
+      const mesh::Bucket & bucket = bulkData.bucket(element);
       const CellTopologyData * const bucket_cell_topo_data = PerceptMesh::get_cell_topology(bucket);
       if (!bucket_cell_topo_data)
         {

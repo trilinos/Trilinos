@@ -1,8 +1,8 @@
 #include "MeshGeometry.hpp"
 #include <stk_util/environment/CPUTime.hpp>
 
-MeshGeometry::MeshGeometry(GeometryKernel* geom, double doCheckMovement, double doCheckCPUTime, bool cache_classify_bucket_is_active, bool doPrint)
-  : m_doCheckMovement(doCheckMovement), m_checkCPUTime(doCheckCPUTime), m_cache_classify_bucket_is_active(cache_classify_bucket_is_active), m_doPrint(doPrint),
+MeshGeometry::MeshGeometry(const PerceptMesh& eMesh, GeometryKernel* geom, double doCheckMovement, double doCheckCPUTime, bool cache_classify_bucket_is_active, bool doPrint)
+  : m_eMesh(eMesh), m_doCheckMovement(doCheckMovement), m_checkCPUTime(doCheckCPUTime), m_cache_classify_bucket_is_active(cache_classify_bucket_is_active), m_doPrint(doPrint),
     m_type(-1)
 {
   geomKernel = geom;
@@ -53,7 +53,7 @@ const std::vector<GeometryEvaluator*>& MeshGeometry::getGeomEvaluators()
  */
 int MeshGeometry::classify_node(const stk::mesh::Entity node, size_t& curveOrSurfaceEvaluator)
 {
-  const stk::mesh::Bucket& bucket = node.bucket();
+  const stk::mesh::Bucket& bucket = m_eMesh.bucket(node);
   return classify_bucket(bucket, curveOrSurfaceEvaluator);
 }
 
@@ -178,7 +178,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
   for(int i=nodes.size()-1; i>-1; i--)
   {
     Entity cur_node = nodes[i];
-    Bucket &node_bucket = cur_node.bucket();
+    Bucket &node_bucket = m_eMesh.bucket(cur_node);
     std::vector<int> evaluators, curve_evals, surf_evals;
     size_t s;
     for (s=0; s<geomEvaluators.size(); s++)
@@ -280,7 +280,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity node, std::vector<double>& normal)
 {
   {
-    Bucket& bucket = node.bucket();
+    Bucket& bucket = m_eMesh.bucket(node);
 
     // Each bucket contains the set of nodes with unique part intersections.
     // This means that every nodes will be in exactly one bucket.  But, the
@@ -403,7 +403,7 @@ void MeshGeometry::snap_node
     if (doPrint)
     {
       std::string str = geomKernel->get_attribute(evaluator_idx);
-      std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier()
+      std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << eMesh->identifier(node)
                 << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2] << " type= " << m_type << std::endl;
     }
 
@@ -527,7 +527,7 @@ void MeshGeometry::normal_at
     if (doPrint)
     {
       std::string str = geomKernel->get_attribute(evaluator_idx);
-      std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier()
+      std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << eMesh->identifier(node)
                 << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2];
     }
 

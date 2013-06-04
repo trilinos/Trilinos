@@ -242,7 +242,7 @@ namespace stk {
       PerceptMesh *m_eMesh;
       CompareSDSEntityType(PerceptMesh *eMesh=0) : m_eMesh(eMesh) {}
       bool operator() (SDSEntityType i, SDSEntityType j) {
-        //return (i.identifier() < j.identifier());
+        //return (m_eMesh.identifier(i) < m_eMesh.identifier(j));
         MyEntityLess el = MyEntityLess(m_eMesh);
         return el(i,j);
       }
@@ -1264,7 +1264,7 @@ namespace stk {
             {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
               //mesh::Part& frpart = metaData.get_part(fr.ordinal());
-              field_rank = fr.entity_rank();
+              field_rank = fr . entity_rank();
               spatialDim = fr.dimension() ;
             }
         }
@@ -1296,7 +1296,7 @@ namespace stk {
             std::cout << "NodeRegistry::makeCentroidField: no node found, cell_topo = " << cell_topo.getName()
                       << "\n subDimEntity= " << subDimEntity
                       << "\n element= " << element
-                      << "\n element.entity_rank() = " << m_eMesh.entity_rank(element)
+                      << "\n m_eMesh.entity_rank(element) = " << m_eMesh.entity_rank(element)
                       << "\n needed_entity_rank= " << needed_entity_rank
                       << "\n iSubDimOrd= " << iSubDimOrd << std::endl;
             throw std::runtime_error("makeCentroidField: no node found");
@@ -1402,7 +1402,7 @@ namespace stk {
                 std::cout << "tmp NodeRegistry::makeCentroidField cell_topo = " << cell_topo.getName()
                       << "\n subDimEntity= " << subDimEntity
                       << "\n element= " << element
-                      << "\n element.entity_rank() = " << m_eMesh.entity_rank(element)
+                      << "\n m_eMesh.entity_rank(element) = " << m_eMesh.entity_rank(element)
                       << "\n needed_entity_rank= " << needed_entity_rank
                       << "\n iSubDimOrd= " << iSubDimOrd << std::endl;
                 //std::cout << "P[" << m_eMesh.get_rank() << "] needed_entity_rank= " << needed_entity_rank << " coord= " << coord_str << std::endl;

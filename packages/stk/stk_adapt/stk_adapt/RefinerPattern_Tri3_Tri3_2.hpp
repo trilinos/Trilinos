@@ -123,13 +123,13 @@ namespace stk {
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
             stk::mesh::Entity newElement = *element_pool;
-            //std::cout << "tmp newElement id = " << newElement.identifier() << std::endl;
+            //std::cout << "tmp newElement id = " << m_eMesh.identifier(newElement) << std::endl;
 
             if (proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.get_rank());
-                fdata[0] = double(newElement.owner_rank());
+                fdata[0] = double(eMesh.owner_rank(newElement));
               }
 
             eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );

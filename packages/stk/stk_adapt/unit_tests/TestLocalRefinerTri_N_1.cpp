@@ -105,7 +105,7 @@ namespace stk {
                   //double * const coord1 = stk::mesh::field_data( *coordField , node1 );
 
                   // choose to refine or not
-                  if (random_sequence[ node0.identifier() + node1.identifier() ] < node0.identifier() + node1.identifier())
+                  if (random_sequence[ m_eMesh.identifier(node0) + m_eMesh.identifier(node1) ] < m_eMesh.identifier(node0) + m_eMesh.identifier(node1))
                     {
                       (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
                     }
@@ -156,7 +156,7 @@ namespace stk {
                     if (found)
                       {
                         elements_to_unref.insert(element);
-                        //std::cout << "tmp element id= " << element.identifier() << " ";
+                        //std::cout << "tmp element id= " << m_eMesh.identifier(element) << " ";
                         //m_eMesh.print_entity(std::cout, element);
                       }
                   }

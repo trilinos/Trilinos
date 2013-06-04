@@ -111,9 +111,9 @@ namespace stk {
 
                             if (0)
                               std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey()
-                                        << " elementId = " << element.identifier() << " element = " << element << std::endl;
+                                        << " elementId = " << eMesh.identifier(element) << " element = " << element << std::endl;
 
-                            stk::mesh::EntityId elem_id = element.identifier();
+                            stk::mesh::EntityId elem_id = eMesh.identifier(element);
 
                             if (!m_noColoring && contains(all_elements, elem_id))
                               continue;
@@ -130,7 +130,7 @@ namespace stk {
                                 for (unsigned inode=0; inode < num_node; inode++)
                                   {
                                     stk::mesh::Entity node = elem_nodes[ inode ].entity();
-                                    stk::mesh::EntityId nid = node.identifier();
+                                    stk::mesh::EntityId nid = eMesh.identifier(node);
                                     node_ids[inode] = nid;
                                     if (contains(node_colors[icolor], nid))
                                       {

@@ -811,10 +811,10 @@ namespace stk
                   else
                     coords.push_back(0.0);
 
-                  gids.push_back(node.identifier());
-                  pids.push_back(node.owner_rank());
+                  gids.push_back(m_eMesh.identifier(node));
+                  pids.push_back(eMesh.owner_rank(node));
 
-                  local_id[node.identifier()] = num_node++;
+                  local_id[m_eMesh.identifier(node)] = num_node++;
                 }
             }
           }
@@ -834,7 +834,7 @@ namespace stk
                   for (unsigned j = 0; j < elem_nodes.size(); j++)
                     {
                       mesh::Entity node = * elem_nodes[ j ].entity();
-                      connectivity.push_back(local_id[node.identifier()]);
+                      connectivity.push_back(local_id[m_eMesh.identifier(node)]);
                     }
                 }
             }

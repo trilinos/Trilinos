@@ -182,9 +182,9 @@ namespace stk
         // FIXME
         MDArray xi_mda;
         xi.copyTo(xi_mda);
-        Nb(bucket_or_element, xi_mda);
+        Nb(bulkData, bucket_or_element, xi_mda);
 #else
-        Nb(bucket_or_element, xi);
+        Nb(bulkData, bucket_or_element, xi);
 #endif
 
         // apply integrand (right now we have MDArray hard-coded... FIXME - templatize on its type)
@@ -305,7 +305,7 @@ namespace stk
 
         typedef IntrepidManager IM;
         unsigned cubDegree = m_cubDegree;
-        const MyPairIterRelation parent_elements(bulkData, child_element, child_element.entity_rank() + 1 );
+        const MyPairIterRelation parent_elements(bulkData, child_element, bulkData.entity_rank(child_element) + 1 );
         VERIFY_OP_ON(parent_elements.size(), ==, 1, "cant find parent");
         const stk::mesh::Entity element = parent_elements[0].entity();
         unsigned i_face = parent_elements[0].relation_ordinal();
@@ -323,7 +323,7 @@ namespace stk
         if (0)
           {
             std::cout << "numCubPoints_child= " << numCubPoints_child
-                      << " parent rank= " << element.entity_rank()
+                      << " parent rank= " << bulkData.entity_rank(element)
                       << " parent topo= " << cell_topo.getName()
                       << std::endl;
           }
@@ -410,9 +410,9 @@ namespace stk
         // FIXME
         MDArray xi_mda;
         xi.copyTo(xi_mda);
-        Nb(element, xi_mda);
+        Nb(bulkData, element, xi_mda);
 #else
-        Nb(element, xi);
+        Nb(bulkData, element, xi);
 #endif
 
         // apply integrand (right now we have MDArray hard-coded... FIXME - templatize on its type)

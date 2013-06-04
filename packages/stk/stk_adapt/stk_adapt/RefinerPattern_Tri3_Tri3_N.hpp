@@ -195,7 +195,7 @@ namespace stk {
 
                     //bool reverse = false;
                     // ensure edge_len is computed identically, independent of edge orientation
-                    if (node_0.identifier() > node_1.identifier())
+                    if (eMesh.identifier(node_0) > eMesh.identifier(node_1))
                       {
                         //reverse = true;
                         stk::mesh::Entity node_temp = node_0;
@@ -215,16 +215,16 @@ namespace stk {
 
                     if (edge_len_squared > max_edge_length)
                       {
-                        id_diff_0 = node_0.identifier();
-                        id_diff_1 = node_1.identifier();
+                        id_diff_0 = eMesh.identifier(node_0);
+                        id_diff_1 = eMesh.identifier(node_1);
                         max_edge_length = edge_len_squared;
                         jedge_max_edge = iedge;
                       }
                     // intentional floating-point comparison (tie-break)
                     else if (edge_len_squared == max_edge_length)
                       {
-                        unsigned loc_id_diff_0 = node_0.identifier();
-                        unsigned loc_id_diff_1 = node_1.identifier();
+                        unsigned loc_id_diff_0 = eMesh.identifier(node_0);
+                        unsigned loc_id_diff_1 = eMesh.identifier(node_1);
                         bool lexical_less = false;
                         if (loc_id_diff_0 < id_diff_0)
                           {
@@ -379,7 +379,7 @@ namespace stk {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.get_rank());
                 if (fdata)
-                  fdata[0] = double(newElement.owner_rank());
+                  fdata[0] = double(eMesh.owner_rank(newElement));
               }
 
             //eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );

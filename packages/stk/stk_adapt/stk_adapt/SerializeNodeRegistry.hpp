@@ -664,7 +664,7 @@ namespace stk {
               for (unsigned iEntity = 0; iEntity < num_entities_in_bucket; iEntity++)
                 {
                   stk::mesh::Entity entity = bucket[iEntity];
-                  stk::mesh::EntityId id = entity.identifier();
+                  stk::mesh::EntityId id = m_eMesh.identifier(entity);
                   NodeMapValue& procs = (*m_nodeMap)[id];
                   if (procs.size() == 0)
                     {
@@ -1252,7 +1252,7 @@ namespace stk {
                   for (unsigned iEntity = 0; iEntity < num_entities_in_bucket; iEntity++)
                     {
                       stk::mesh::Entity entity = bucket[iEntity];
-                      stk::mesh::EntityId id = entity.identifier();
+                      stk::mesh::EntityId id = m_eMesh.identifier(entity);
                       m_id_max[irank] = std::max(m_id_max[irank], id);
                     }
                 }
@@ -1288,7 +1288,7 @@ namespace stk {
                           stk::mesh::EntityId id = m_id_max[irank] + 1;
                           m_id_max[irank] = id;
 
-                          stk::mesh::EntityId id_old = entity.identifier();
+                          stk::mesh::EntityId id_old = m_eMesh.identifier(entity);
                           id_change.push_back(EntityPair(id_old, id));
                         }
                     }
@@ -1301,7 +1301,7 @@ namespace stk {
               {
                 stk::mesh::Entity entity = eMesh.get_bulk_data()->get_entity(irank, id_change[ii].first);
                 VERIFY_OP_ON(entity, !=, stk::mesh::Entity(), "SerializeNodeRegistry::resetNewElementIds");
-                VERIFY_OP_ON(entity.identifier(), ==, id_change[ii].first, "SerializeNodeRegistry::resetNewElementIds bad00");
+                VERIFY_OP_ON(m_eMesh.identifier(entity), ==, id_change[ii].first, "SerializeNodeRegistry::resetNewElementIds bad00");
                 stk::mesh::EntityId id_new = id_change[ii].second;
                 //stk::mesh::EntityId id_old = entity->identifier();
                 eMesh.get_bulk_data()->change_entity_id(id_new, entity);

@@ -517,8 +517,8 @@ namespace stk
 
         using BaseType::operator();
 
-        void operator()(const stk::mesh::Entity element, const MDArray& parametric_coordinates);
-        void operator()(const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates);
+        void operator()(const stk::mesh::BulkData& bulk, const stk::mesh::Entity element, const MDArray& parametric_coordinates);
+        void operator()(const stk::mesh::BulkData& bulk, const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates);
         
       };
 

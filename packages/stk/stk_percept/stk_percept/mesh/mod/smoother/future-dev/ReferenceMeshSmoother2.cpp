@@ -100,7 +100,7 @@ namespace stk {
                       }
 
                     local_scale = (local_scale < 1.0) ? 1.0 : 1.0/local_scale;
-                    //PRINT("tmp srk node= " << node.identifier() << " iter= " << m_iter << " local_scale= " << local_scale);
+                    //PRINT("tmp srk node= " << m_eMesh.identifier(node) << " iter= " << m_iter << " local_scale= " << local_scale);
 
                     /// line search
 
@@ -131,7 +131,7 @@ namespace stk {
                           double mfac = alpha*armijo_offset_factor;
                           converged = metric == 0.0 || (metric < metric_0 + mfac);
                           if (m_untangled) converged = converged && local_valid;
-                          PRINT(  "tmp srk node= " << node.identifier() << " iter= " << m_iter
+                          PRINT(  "tmp srk node= " << m_eMesh.identifier(node) << " iter= " << m_iter
                                   << " alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac) 
                                   << " m_untangled = " << m_untangled << " norm_gradient2= " << norm_gradient2
                                   << " local_valid= " << local_valid );
@@ -139,7 +139,7 @@ namespace stk {
                             alpha *= tau;
                           if (alpha < std::max(1.e-6*m_scale, 1.e-16))
                             {
-                              PRINT_1(  "tmp srk not conv node= " << node.identifier() << " iter= " << m_iter
+                              PRINT_1(  "tmp srk not conv node= " << m_eMesh.identifier(node) << " iter= " << m_iter
                                       << " alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac) 
                                       << " m_untangled = " << m_untangled << " norm_gradient2= " << norm_gradient2
                                       << " local_valid= " << local_valid    );
@@ -152,7 +152,7 @@ namespace stk {
                         {
                           metric_0 = nodal_metric(node, 0.0, coord_current, cg_d, local_valid_0);
                           double metric_1 = nodal_metric(node, 1.e-6, coord_current, cg_d, local_valid_1);
-                          PRINT_1(  "tmp srk can't reduce metric, node= " << node.identifier() << " iter= " << m_iter
+                          PRINT_1(  "tmp srk can't reduce metric, node= " << m_eMesh.identifier(node) << " iter= " << m_iter
                                   << " alpha= " << alpha << " metric_0= " << metric_0 << " metric[1.e-6]= " << metric_1 << " diff[want neg]= " << metric_1 - metric_0
                                   << "\n m_untangled = " << m_untangled << " norm_gradient2= " << norm_gradient2
                                     << " local_valid= " << local_valid 

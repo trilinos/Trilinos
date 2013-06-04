@@ -26,26 +26,28 @@ namespace stk {
 
     // Example
     struct IElementBasedAdapterPredicate : public std::unary_function<const stk::mesh::Entity , int> {
+      PerceptMesh& m_eMesh;
       stk::mesh::Selector * m_eb_selector;
       stk::mesh::FieldBase *m_field;
       double m_tolerance;
     protected:
-      IElementBasedAdapterPredicate(stk::mesh::Selector * selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
-        m_eb_selector(selector), m_field(field), m_tolerance(tolerance) {}
+      IElementBasedAdapterPredicate(PerceptMesh& eMesh, stk::mesh::Selector * selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
+        m_eMesh(eMesh), m_eb_selector(selector), m_field(field), m_tolerance(tolerance) {}
     };
 
     // Can be instantiated by the user, or used to define your own
     struct ElementRefinePredicate : public IElementBasedAdapterPredicate {
+      //PerceptMesh& m_eMesh;
 
-      ElementRefinePredicate(stk::mesh::Selector* selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
-        IElementBasedAdapterPredicate(selector, field, tolerance) {}
+      ElementRefinePredicate(PerceptMesh& eMesh, stk::mesh::Selector* selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
+        IElementBasedAdapterPredicate(eMesh, selector, field, tolerance) {}
 
       /// Return DO_REFINE, DO_UNREFINE, DO_NOTHING
       int operator()(const stk::mesh::Entity entity) {
         double *fdata = 0;
         if (m_field)
           fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
-        bool selected = (m_eb_selector==0 || (*m_eb_selector)(entity.bucket()));
+        bool selected = (m_eb_selector==0 || (*m_eb_selector)(m_eMesh.bucket(entity)));
         bool ref_field_criterion = (fdata  && fdata[0] > 0);
         bool unref_field_criterion = (fdata && fdata[0] < 0);
         int mark = 0;

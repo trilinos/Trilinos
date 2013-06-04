@@ -99,10 +99,10 @@ namespace stk {
             stk::mesh::Entity newElement = *element_pool;
 
             //std::cout << "P["<< m_eMesh.get_rank() << "] urp tmp 3 "  << proc_rank_field << std::endl;
-            if (proc_rank_field && element.entity_rank() == stk::mesh::MetaData::ELEMENT_RANK)
+            if (proc_rank_field && m_eMesh.entity_rank(element) == stk::mesh::MetaData::ELEMENT_RANK)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
-                fdata[0] = double(newElement.owner_rank());
+                fdata[0] = double(eMesh.owner_rank(newElement));
               }
 
             //std::cout << "P["<< m_eMesh.get_rank() << "] urp tmp 4 "  << std::endl;

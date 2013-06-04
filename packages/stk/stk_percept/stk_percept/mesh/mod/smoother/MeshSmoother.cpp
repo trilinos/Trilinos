@@ -149,7 +149,7 @@ namespace stk {
       int& type = ret.second;
       if (m_boundarySelector)
         {
-          if ((*m_boundarySelector)(node_ptr.bucket()))
+          if ((*m_boundarySelector)(m_eMesh->bucket(node_ptr)))
             {
               fixed=true;
               type=MS_ON_BOUNDARY;
@@ -188,10 +188,10 @@ namespace stk {
                   if (m_eMesh->get_smooth_surfaces())
                     {
                       fixed = false;
-                      //std::cout << "tmp srk found surface node unfixed= " << node_ptr.identifier() << std::endl;
+                      //std::cout << "tmp srk found surface node unfixed= " << m_m_eMesh->identifier(node_ptr) << std::endl;
                     }
                   type=MS_SURFACE;
-                  if (DEBUG_PRINT) std::cout << "tmp srk found surface node unfixed= " << node_ptr.identifier() << std::endl;
+                  if (DEBUG_PRINT) std::cout << "tmp srk found surface node unfixed= " << m_eMesh->identifier(node_ptr) << std::endl;
                 }
               // interior/volume - free to move
               else
@@ -206,7 +206,7 @@ namespace stk {
               type=MS_VOLUME;
             }
         }
-      if (DEBUG_PRINT) std::cout << "tmp srk classify node= " << node_ptr.identifier() << " dof= " << dof << " fixed= " << fixed << " type= " << type << std::endl;
+      if (DEBUG_PRINT) std::cout << "tmp srk classify node= " << m_eMesh->identifier(node_ptr) << " dof= " << dof << " fixed= " << fixed << " type= " << type << std::endl;
 
       return ret;
     }
