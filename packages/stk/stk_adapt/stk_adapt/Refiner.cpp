@@ -551,7 +551,7 @@ namespace stk {
                       unsigned k_element_side = side_to_elem[ie].relation_ordinal();
                       stk::mesh::Entity element = side_to_elem[ie].entity();
 
-                      shards::CellTopology element_topo(m_eMesh.get_cell_topology(element));
+                      shards::CellTopology element_topo(eMesh.get_cell_topology(element));
                       int topoDim = UniformRefinerPatternBase::getTopoDim(element_topo);
 
                       bool isShell = false;
@@ -1323,7 +1323,7 @@ namespace stk {
               const percept::MyPairIterRelation rels (m_eMesh, elem, m_eMesh.node_rank());
               for (unsigned j=0; j < rels.size(); j++)
                 {
-                  if (!rels[j].entity().is_valid()) throw std::runtime_error("bad node in an element");
+                  if (!m_eMesh.is_valid(rels[j].entity())) throw std::runtime_error("bad node in an element");
                 }
             }
         }
@@ -1688,7 +1688,7 @@ namespace stk {
 
           if (m_proc_rank_field && rank == stk::mesh::MetaData::ELEMENT_RANK)
             {
-              double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
+              double *fdata = m_eMesh.field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
               fdata[0] = double(m_eMesh.owner_rank(element));
               //if (1 || eMesh.owner_rank(element) == 3)
               //  std::cout << "tmp eMesh.owner_rank(element) = " << eMesh.owner_rank(element) << std::endl;
@@ -1817,7 +1817,7 @@ namespace stk {
                   continue;
                 }
 
-              if (!nodeIds_onSE[0].is_valid()) {
+              if (!m_eMesh.is_valid(nodeIds_onSE[0])) {
 
                 if (nodeIds_onSE.m_entity_id_vector[0] == 0)
                   {
@@ -1845,7 +1845,7 @@ namespace stk {
                 stk::mesh::Entity node1 = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
                 nodeIds_onSE[0] = node1;
 
-                if (!node1.is_valid())
+                if (!m_eMesh.is_valid(node1))
                   {
                     if (!m_nodeRegistry->getUseCustomGhosting())
                     {
@@ -1853,7 +1853,7 @@ namespace stk {
                       node1 = m_eMesh.get_bulk_data()->declare_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0], empty_parts);
                     }
 
-                    if (!node1.is_valid())
+                    if (!m_eMesh.is_valid(node1))
                     {
                       std::cout << "P[" << m_eMesh.get_rank() << "] nodeId ## = 0 << "
                               << " nodeIds_onSE.m_entity_id_vector[0] = " << nodeIds_onSE.m_entity_id_vector[0] << " node1= " << node1
@@ -1914,7 +1914,7 @@ namespace stk {
 
               for (unsigned i_new_node = 0; i_new_node < num_new_nodes_needed; i_new_node++)
                 {
-                  if (!nodeIds_onSE[i_new_node].is_valid())
+                  if (!m_eMesh.is_valid(nodeIds_onSE[i_new_node]))
                     {
                       if (nodeIds_onSE.m_entity_id_vector[i_new_node] == 0)
                         {
@@ -1938,14 +1938,14 @@ namespace stk {
                         }
                       stk::mesh::Entity node1 = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[i_new_node]);
 
-                      if (!node1.is_valid())
+                      if (!m_eMesh.is_valid(node1))
                         {
                           if (!m_nodeRegistry->getUseCustomGhosting())
                           {
                             static stk::mesh::PartVector empty_parts;
                             node1 = m_eMesh.get_bulk_data()->declare_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[i_new_node], empty_parts);
                           }
-                          if (!node1.is_valid())
+                          if (!m_eMesh.is_valid(node1))
                           {
                             throw std::logic_error("Refiner::createNewNeededNodeIds logic err #4");
                           }
@@ -1957,7 +1957,7 @@ namespace stk {
 
 #ifndef NDEBUG
                   stk::mesh::Entity node2 = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, m_eMesh.identifier(nodeIds_onSE[i_new_node]) );
-                  if (!node2.is_valid())
+                  if (!m_eMesh.is_valid(node2))
                     {
                       std::cout << "P[" << m_eMesh.get_rank() << "] element is ghost = " << m_eMesh.isGhostElement(element)
                                 << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first << " iSubDimOrd= " << iSubDimOrd
@@ -2105,7 +2105,7 @@ namespace stk {
               for (unsigned i_parent_side = 0; i_parent_side < parent_sides.size(); i_parent_side++)
                 {
                   stk::mesh::Entity parent_side = parent_sides[i_parent_side].entity();
-                  //unsigned local_parent_side_id = parent_sides[i_parent_side].identifier();
+                  //unsigned local_parent_side_id = m_eMesh.identifier(parent_sides[i_parent_side]);
 
                   if (!parent_side)
                     {
@@ -4015,11 +4015,11 @@ namespace stk {
                         throw std::logic_error("check_db_ownership_consistency:: error #3, msg= "+msg);
 
                       stk::mesh::Entity node1 = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[inode]);
-                      if (!node1.is_valid())
+                      if (!m_eMesh.is_valid(node1))
                         throw std::logic_error("check_db_ownership_consistency:: error #3a, msg= "+msg);
 
                       stk::mesh::Entity node2 = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, m_eMesh.identifier(node) );
-                      if (!node2.is_valid())
+                      if (!m_eMesh.is_valid(node2))
                         throw std::logic_error("check_db_ownership_consistency:: error #3b, msg= "+msg);
                       if (node != node2)
                         throw std::logic_error("check_db_ownership_consistency:: error #3c, msg= "+msg);

@@ -133,7 +133,7 @@ namespace stk {
 #if 0
             if (proc_rank_field && proc_rank_field->rank() == m_eMesh.edge_rank()) //&& m_eMesh.get_spatial_dim()==1)
               {
-                double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata =m_eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.get_rank());
                 fdata[0] = double(eMesh.owner_rank(newElement));
               }
@@ -148,7 +148,7 @@ namespace stk {
               }
             else if (proc_rank_field_edge && proc_rank_field_edge->rank() == m_eMesh.edge_rank())
               {
-                double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field_edge) , newElement );
+                double *fdata =m_eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field_edge) , newElement );
                 fdata[0] = double(eMesh.owner_rank(newElement));
                 //fdata[0] = 1234.56;
                 if (0)

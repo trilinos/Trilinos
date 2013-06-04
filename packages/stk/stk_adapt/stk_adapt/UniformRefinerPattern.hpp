@@ -91,7 +91,7 @@ namespace stk {
 
     /// 2D array new_sub_entity_nodes[entity_rank][ordinal_of_node_on_sub_dim_entity]
 
-#define VERT_N(i) elem_nodes[i].entity().identifier()
+#define VERT_N(i) m_eMesh.identifier(elem_nodes[i].entity())
 
 // #define VERT_N(i) elem_nodes[i].entity()->identifier()
 // #define EDGE_N(i) new_sub_entity_nodes[m_eMesh.edge_rank()][i][0]
@@ -1144,7 +1144,7 @@ namespace stk {
         stk::mesh::EntityId minNodeId = 0;
         for (int iv = 0; iv < num_subcell_verts; iv++)
           {
-            stk::mesh::EntityId nid = elem_nodes[inodes[iv]].entity().identifier();
+            stk::mesh::EntityId nid = m_eMesh.identifier(elem_nodes[inodes[iv]].entity());
             if (iv == 0)
               minNodeId = nid;
             else

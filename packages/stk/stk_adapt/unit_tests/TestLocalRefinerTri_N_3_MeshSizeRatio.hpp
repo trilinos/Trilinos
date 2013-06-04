@@ -161,7 +161,7 @@ namespace stk {
       int mark=0;
 
       // TEST simplest case: ratio > Rup
-      const double & ratio = *( eMesh.field_data( *m_elem_ratio_field , element) );
+      const double & ratio = *( m_eMesh.field_data( *m_elem_ratio_field , element) );
 
       if (ratio > m_Rup)
 	mark |= DO_REFINE;

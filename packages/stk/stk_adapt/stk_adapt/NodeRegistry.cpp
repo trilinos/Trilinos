@@ -146,7 +146,7 @@ namespace stk {
             {
               std::cout << "tmp srk P[" << m_eMesh.get_rank() << "] s_nsz_parent = " << s_nsz_parent << " s_element_is_ghost = " << s_element_is_ghost
                         << " iv0= " << iv0 << " iv1= " << iv1
-                        << " n0 =  " << nodes[iv0].identifier() << " n1= " << nodes[iv1].identifier()
+                        << " n0 =  " << m_eMesh.identifier(nodes[iv0]) << " n1= " << m_eMesh.identifier(nodes[iv1])
                         << std::endl;
             }
           return 0.5;
@@ -503,7 +503,7 @@ namespace stk {
                 needed_entity_rank = stk::mesh::MetaData::ELEMENT_RANK;
               }
 
-            if (!nodeIds_onSE[0].is_valid())
+            if (!m_eMesh.is_valid(nodeIds_onSE[0]))
               {
                 continue;
               }
@@ -939,13 +939,13 @@ namespace stk {
                     {
                       for (unsigned ii=0; ii < beams.size(); ii++)
                         {
-                          if (selector(beams[ii].entity().bucket()))
+                          if (selector(m_eMesh.bucket(beams[ii].entity())))
                             {
                               percept::MyPairIterRelation beam_nodes (m_eMesh, beams[ii].entity(), m_eMesh.node_rank());
                               VERIFY_OP_ON(beam_nodes.size(), ==, 2, "rbar issue");
-                              std::cout << "node= " << m_eMesh.identifier(node) << " beam_nodes[" << beams[ii].entity().identifier() << "]= { "
-                                        << std::setw(20) << beam_nodes[0].entity().identifier()
-                                        << std::setw(20) << beam_nodes[1].entity().identifier()
+                              std::cout << "node= " << m_eMesh.identifier(node) << " beam_nodes[" << m_eMesh.identifier(beams[ii].entity()) << "]= { "
+                                        << std::setw(20) << m_eMesh.identifier(beam_nodes[0].entity())
+                                        << std::setw(20) << m_eMesh.identifier(beam_nodes[1].entity())
                                         << std::endl;
                             }
                         }
@@ -954,7 +954,7 @@ namespace stk {
                   // Step 3. for all beams attached to this node that belong to the current rbar block...
                   for (unsigned ii=0; ii < beams.size(); ii++)
                     {
-                      if (selector(beams[ii].entity().bucket()))
+                      if (selector(m_eMesh.bucket(beams[ii].entity())))
                         {
                           // Step 3a.  we found a beam in the current rbar block attached to current node
                           found = true;
@@ -971,7 +971,7 @@ namespace stk {
                                 {
                                   if (common_node_is_valid)
                                     {
-                                      VERIFY_OP_ON(m_eMesh.identifier(common_node), ==, beam_nodes[jj].entity().identifier(), "rbar issue2: please rerun and exclude rbar blocks from refinement using --block_name option ");
+                                      VERIFY_OP_ON(m_eMesh.identifier(common_node), ==, m_eMesh.identifier(beam_nodes[jj].entity()), "rbar issue2: please rerun and exclude rbar blocks from refinement using --block_name option ");
                                     }
                                   else
                                     {

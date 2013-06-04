@@ -84,8 +84,8 @@ namespace stk {
                 {
                   stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
                   stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-                  //double * const coord0 = eMesh.field_data( *coordField , node0 );
-                  //double * const coord1 = eMesh.field_data( *coordField , node1 );
+                  //double * const coord0 =m_eMesh.field_data( *coordField , node0 );
+                  //double * const coord1 =m_eMesh.field_data( *coordField , node1 );
 
                   // choose to refine or not
                   //if (0 || (m_eMesh.identifier(node0) < m_eMesh.identifier(node1) || (m_eMesh.identifier(node0) % 2 == 0)))
@@ -136,7 +136,7 @@ namespace stk {
                     for (unsigned inode=0; inode < elem_nodes.size(); inode++)
                       {
                         stk::mesh::Entity node = elem_nodes[inode].entity();
-                        double *coord = eMesh.field_data( *m_eMesh.get_coordinates_field(), node );
+                        double *coord = m_eMesh.field_data( *m_eMesh.get_coordinates_field(), node );
                         if (coord[0] > 2.1 || coord[1] > 2.1)
                           {
                             found = false;

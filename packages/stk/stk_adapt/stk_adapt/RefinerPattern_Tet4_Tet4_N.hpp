@@ -224,10 +224,10 @@ namespace stk {
             bool choose_best_tets = true;
             moab::SimplexTemplateRefiner str(choose_best_tets);
             str.refine_3_simplex(new_tets, edge_marks, 1,
-                                 node_coords[0], 0, tet_elem_nodes[0].identifier(),
-                                 node_coords[1], 0, tet_elem_nodes[1].identifier(),
-                                 node_coords[2], 0, tet_elem_nodes[2].identifier(),
-                                 node_coords[3], 0, tet_elem_nodes[3].identifier() );
+                                 node_coords[0], 0, eMesh.identifier(tet_elem_nodes[0]),
+                                 node_coords[1], 0, eMesh.identifier(tet_elem_nodes[1]),
+                                 node_coords[2], 0, eMesh.identifier(tet_elem_nodes[2]),
+                                 node_coords[3], 0, eMesh.identifier(tet_elem_nodes[3]) );
 
             if (0)
               {
@@ -260,13 +260,13 @@ namespace stk {
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, std::vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
-        const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = eMesh.get_cell_topology(element);
         static std::vector<TetTupleType> elems(8);
         static std::vector<TetTupleTypeLocal> elems_local(8);
         unsigned num_new_elems=0;
 
         shards::CellTopology cell_topo(cell_topo_data);
-        const percept::MyPairIterRelation elem_nodes (m_eMesh, element,stk::mesh::MetaData::NODE_RANK);
+        const percept::MyPairIterRelation elem_nodes (eMesh, element,stk::mesh::MetaData::NODE_RANK);
         //VectorFieldType* coordField = eMesh.get_coordinates_field();
 
         std::vector<stk::mesh::Part*> add_parts;
@@ -277,7 +277,7 @@ namespace stk {
         unsigned num_edges_marked=0;
         for (int iedge = 0; iedge < 6; iedge++)
           {
-            unsigned num_nodes_on_edge = new_sub_entity_nodes[m_eMesh.edge_rank()][iedge].size();
+            unsigned num_nodes_on_edge = new_sub_entity_nodes[eMesh.edge_rank()][iedge].size();
             if (num_nodes_on_edge)
               {
                 edge_marks[iedge] = 1;
@@ -320,7 +320,7 @@ namespace stk {
             if (proc_rank_field)
               {
                 double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
-                //fdata[0] = double(m_eMesh.get_rank());
+                //fdata[0] = double(eMesh.get_rank());
                 fdata[0] = double(eMesh.owner_rank(newElement));
               }
 
@@ -348,8 +348,8 @@ namespace stk {
 
             if (0)
               {
-                std::cout << "tmp RefPatt::createNewElements m_eMesh.identifier(element)= " << m_eMesh.identifier(element)
-                          << " newElement= " << m_eMesh.identifier(newElement) << std::endl;
+                std::cout << "tmp RefPatt::createNewElements eMesh.identifier(element)= " << eMesh.identifier(element)
+                          << " newElement= " << eMesh.identifier(newElement) << std::endl;
 
               }
 

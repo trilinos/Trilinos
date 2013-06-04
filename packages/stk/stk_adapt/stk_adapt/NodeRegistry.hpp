@@ -561,7 +561,7 @@ namespace stk {
                 if (nodes_to_be_deleted && nodes_to_be_deleted->find(nodeIds_onSE[inode]) != nodes_to_be_deleted->end())
                   {
                     //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
-                    //std::cout << " deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << subDimEntity[1].identifier() <<  std::endl;
+                    //std::cout << " deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
                     ++num_delete;
                   }
                 else if (!nodes_to_be_deleted && stk::mesh::Deleted == bulk_data.state(nodeIds_onSE[inode]) )
@@ -899,7 +899,7 @@ namespace stk {
         bool should_put_in = should_put_in_id || should_put_in_rank;
 
 #define DEBUG_NR_UNREF 0
-        if (DEBUG_NR_UNREF) // && (subDimEntity[0].identifier() == 19 && subDimEntity[1].identifier() == 20))
+        if (DEBUG_NR_UNREF) // && (m_eMesh.identifier(subDimEntity[0]) == 19 && m_eMesh.identifier(subDimEntity[1]) == 20))
           {
             std::cout << "registerNeedNewNode:: element= "; m_eMesh.print(element,false,true);
             std::cout << " is_empty= " << is_empty
@@ -1075,7 +1075,7 @@ namespace stk {
                 buffer_entry = CommDataType(
                                             needed_entity_rank.first,
                                             iSubDimOrd,
-                                            element.key()
+                                            m_eMesh.key(element)
                                             );
 
                 if (nodeIds_onSE.m_entity_id_vector.size() != nodeIds_onSE.size())
@@ -1851,7 +1851,7 @@ namespace stk {
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
 
         //CellTopology cell_topo(cell_topo_data);
-        stk::mesh::Entity const * const elem_nodes = stk::mesh::BulkData::get(element).begin_nodes(element);
+        stk::mesh::Entity const * const elem_nodes = m_eMesh.get_bulk_data()->begin_nodes(element);
         // const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::mesh::MetaData::NODE_RANK);
 
         const unsigned *  inodes = 0;

@@ -39,7 +39,7 @@ namespace stk {
              double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
     {
       // Edge length
-      const stk::mesh::MetaData & stk_meta = stk::mesh::BulkData::get(node0).mesh_meta_data();
+      const stk::mesh::MetaData & stk_meta = *m_eMesh.get_fem_meta_data();
       const UInt spatial_dimension = stk_meta.spatial_dimension();
       double length = 0.0;
       for (UInt dim=0; dim<spatial_dimension; ++dim)

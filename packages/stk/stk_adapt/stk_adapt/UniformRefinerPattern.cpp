@@ -243,7 +243,7 @@ namespace stk {
           percept::MyPairIterRelation parent_elem_nodes (eMesh, parent_elem,  stk::mesh::MetaData::NODE_RANK );
           for (unsigned i = 0; i < parent_elem_nodes.size(); i++)
             {
-              if (! eMesh.get_bulk_data()->in_shared(parent_elem_nodes[i].entity().key())) continue;
+              if (! eMesh.get_bulk_data()->in_shared(eMesh.key(parent_elem_nodes[i].entity()))) continue;
 
               bool found = false;
               percept::MyPairIterRelation ft_nodes (eMesh, family_tree,  stk::mesh::MetaData::NODE_RANK );
@@ -270,7 +270,7 @@ namespace stk {
             }
           for (unsigned i = 0; i < child_elem_nodes.size(); i++)
             {
-              if (!eMesh.get_bulk_data()->in_shared(child_elem_nodes[i].entity().key())) continue;
+              if (!eMesh.get_bulk_data()->in_shared(eMesh.key(child_elem_nodes[i].entity()))) continue;
 
               bool found = false;
               percept::MyPairIterRelation ft_nodes (eMesh, family_tree,  stk::mesh::MetaData::NODE_RANK );
@@ -300,7 +300,7 @@ namespace stk {
               percept::MyPairIterRelation ft_level_0_nodes (eMesh, family_tree_level_0,  stk::mesh::MetaData::NODE_RANK );
               for (unsigned i = 0; i < ft_level_0_nodes.size(); i++)
                 {
-                  if (!eMesh.get_bulk_data()->in_shared(ft_level_0_nodes[i].entity().key())) continue;
+                  if (!eMesh.get_bulk_data()->in_shared(eMesh.key(ft_level_0_nodes[i].entity()))) continue;
 
                   bool found = false;
                   percept::MyPairIterRelation ft_nodes (eMesh, family_tree,  stk::mesh::MetaData::NODE_RANK );
@@ -473,7 +473,7 @@ namespace stk {
       //         debug = true;
       //       }
 
-      shards::CellTopology element_topo(m_eMesh.get_cell_topology(element));
+      shards::CellTopology element_topo(eMesh.get_cell_topology(element));
       unsigned element_nsides = (unsigned)element_topo.getSideCount();
 
       if (debug) {

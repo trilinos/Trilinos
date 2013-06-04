@@ -87,7 +87,7 @@ namespace stk {
                     stk::mesh::Bucket & bucket = **k ;
 
                     bool doThisBucket = true;
-                    const CellTopologyData * const bucket_cell_topo_data = m_eMesh.get_cell_topology(bucket);
+                    const CellTopologyData * const bucket_cell_topo_data = eMesh.get_cell_topology(bucket);
                     shards::CellTopology topo(bucket_cell_topo_data);
                     if (elementType && (topo.getKey() != *elementType))
                       {

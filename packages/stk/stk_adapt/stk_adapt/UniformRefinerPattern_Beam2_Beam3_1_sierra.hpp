@@ -89,7 +89,7 @@ namespace stk {
             // FIXME
             if (0 && proc_rank_field)
               {
-                double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata =m_eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(eMesh.owner_rank(newElement));
               }
 

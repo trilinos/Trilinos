@@ -1006,7 +1006,9 @@ public:
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, Entity e) const
   {
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
     ThrowAssert(&f.get_mesh() == &stk::mesh::BulkData::get(e));
+#endif
     const MeshIndex& mi           = mesh_index(e);
     return field_data(f, *mi.bucket, mi.bucket_ordinal);
   }

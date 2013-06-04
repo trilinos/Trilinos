@@ -1141,7 +1141,7 @@ namespace stk
         nodes.push_back(node0);
         nodes.push_back(node1);
         std::vector<stk::mesh::Entity> edge_elems;
-        get_entities_through_relations(stk::mesh::BulkData::get(node0), nodes, stk::mesh::MetaData::ELEMENT_RANK, edge_elems);
+        get_entities_through_relations(*m_eMesh.get_bulk_data(), nodes, stk::mesh::MetaData::ELEMENT_RANK, edge_elems);
         ThrowRequire(!edge_elems.empty());
 
         bool all_marked_for_refinement = true;
@@ -1149,7 +1149,7 @@ namespace stk
         for ( UInt ie = 0 ; ie < edge_elems.size(); ++ie )
         {
           stk::mesh::Entity edge_elem = edge_elems[ie];
-          ThrowRequire(edge_elem.is_valid());
+          ThrowRequire(m_eMesh.is_valid(edge_elem));
 
           Int element_marker = my_element_marker.get_marker(edge_elem);
           if (element_marker <= 0) all_marked_for_refinement = false;
@@ -1185,7 +1185,7 @@ namespace stk
           }
           else
           {
-            my_markers[i] = *((Int *)eMesh.field_data( *my_marker_field, my_entities[i] ));
+            my_markers[i] = *((Int *)my_pMesh.field_data( *my_marker_field, my_entities[i] ));
           }
           //std::cout << "Storing element marker for element " << m_eMesh.identifier(elem) << " = " << my_markers[i] << std::endl;
         }
@@ -1201,7 +1201,7 @@ namespace stk
         }
         else
         {
-          ThrowRequire(it->is_valid());
+          ThrowRequire(my_pMesh.is_valid(*it));
           const UInt index = std::distance(my_entities.begin(), it);
           return my_markers[index];
         }
@@ -1217,8 +1217,8 @@ namespace stk
         for (unsigned i=0; i<entities.size(); ++i)
         {
           mesh::Entity node = entities[i];
-          double *coord_data = m_eMesh.field_data(coordField, node);
-          double *function_data = m_eMesh.field_data(&function_field, node);
+          double *coord_data = pMesh.field_data(coordField, node);
+          double *function_data = pMesh.field_data(&function_field, node);
           *function_data = (2.0*time-10.0-coord_data[0]-coord_data[1])*(2.0*time-10.0-coord_data[0]-coord_data[1]);
         }
 
@@ -1244,7 +1244,7 @@ namespace stk
           for (unsigned inode=0; inode < num_node; inode++)
           {
             mesh::Entity node = elem_nodes[ inode ].entity();
-            double cur_value = *(m_eMesh.field_data(&function_field, node));
+            double cur_value = *(pMesh.field_data(&function_field, node));
 
             //If one of the values is in the refine region, immediately mark and return
             if(refine_upper>=cur_value && cur_value>=refine_lower)
@@ -1257,7 +1257,7 @@ namespace stk
               elem_mark = -1;
             }
           }
-          Int * marker_data = eMesh.field_data( marker_field, elem );
+          Int * marker_data = pMesh.get_bulk_data()->field_data( marker_field, elem );
           *marker_data = elem_mark;
         }
       }

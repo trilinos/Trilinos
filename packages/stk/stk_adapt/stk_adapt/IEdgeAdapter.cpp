@@ -58,8 +58,8 @@ namespace stk {
                 {
                   stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
                   stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-                  double * const coord0 = eMesh.field_data( *coordField , node0 );
-                  double * const coord1 = eMesh.field_data( *coordField , node1 );
+                  double * const coord0 = m_eMesh.field_data( *coordField , node0 );
+                  double * const coord1 = m_eMesh.field_data( *coordField , node1 );
                   double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
                   double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
@@ -92,8 +92,8 @@ namespace stk {
         {
           stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
           stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-          double * const coord0 = eMesh.field_data( *coordField , node0 );
-          double * const coord1 = eMesh.field_data( *coordField , node1 );
+          double * const coord0 = m_eMesh.field_data( *coordField , node0 );
+          double * const coord1 = m_eMesh.field_data( *coordField , node1 );
           double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
           double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
@@ -125,8 +125,8 @@ namespace stk {
         {
           stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
           stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-          double * const coord0 = eMesh.field_data( *coordField , node0 );
-          double * const coord1 = eMesh.field_data( *coordField , node1 );
+          double * const coord0 = m_eMesh.field_data( *coordField , node0 );
+          double * const coord1 = m_eMesh.field_data( *coordField , node1 );
           double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
           double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 

@@ -228,7 +228,7 @@ namespace stk
                        double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
         {
           int mark = 0;
-          if (0 == m_selector || (*m_selector)(element.bucket()))
+          if (0 == m_selector || (*m_selector)(m_eMesh.bucket(element)))
             {
               double plane_point[3] = {2,0,0};
               double plane_normal[3] = {1, 0, 0};
@@ -385,7 +385,7 @@ namespace stk
         /// Element-based: Return DO_NOTHING, DO_REFINE, DO_UNREFINE or sum of these
         int operator()(const stk::mesh::Entity element)
         {
-          if (0 == m_eb_selector || (*m_eb_selector)(element.bucket()))
+          if (0 == m_eb_selector || (*m_eb_selector)(m_eMesh.bucket(element)))
             {
 
               const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
@@ -403,8 +403,8 @@ namespace stk
                 {
                   stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
                   stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-                  double * const coord0 = eMesh.field_data( *coordField , node0 );
-                  double * const coord1 = eMesh.field_data( *coordField , node1 );
+                  double * const coord0 = m_eMesh.field_data( *coordField , node0 );
+                  double * const coord1 = m_eMesh.field_data( *coordField , node1 );
                   double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
                   double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
@@ -434,7 +434,7 @@ namespace stk
                         double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
         {
           int mark=0;
-          if (0 == m_selector || (*m_selector)(element.bucket()))
+          if (0 == m_selector || (*m_selector)(m_eMesh.bucket(element)))
             {
 
               // refine check
@@ -480,7 +480,7 @@ namespace stk
         /// Element-based: Return DO_NOTHING, DO_REFINE, DO_UNREFINE or sum of these
         int operator()(const stk::mesh::Entity element)
         {
-          if (0 == m_eb_selector || (*m_eb_selector)(element.bucket()))
+          if (0 == m_eb_selector || (*m_eb_selector)(m_eMesh.bucket(element)))
             {
 
               const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
@@ -498,8 +498,8 @@ namespace stk
                 {
                   stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
                   stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-                  double * const coord0 = eMesh.field_data( *coordField , node0 );
-                  double * const coord1 = eMesh.field_data( *coordField , node1 );
+                  double * const coord0 = m_eMesh.field_data( *coordField , node0 );
+                  double * const coord1 = m_eMesh.field_data( *coordField , node1 );
                   double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
                   double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
@@ -529,7 +529,7 @@ namespace stk
                         double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
         {
           int mark=0;
-          if (0 == m_selector || (*m_selector)(element.bucket()))
+          if (0 == m_selector || (*m_selector)(m_eMesh.bucket(element)))
             {
 
               // refine check

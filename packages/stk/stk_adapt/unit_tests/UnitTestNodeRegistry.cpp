@@ -342,7 +342,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1)
       iSubDimOrd = 0u;
     }
     NodeIdsOnSubDimEntityType& nodeIds_onSE = *( nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, iSubDimOrd));
-    stk::mesh::Entity node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE[0].identifier());
+    stk::mesh::Entity node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, eMesh.identifier(nodeIds_onSE[0]));
 
     // should be the same node on each proc
     std::cout << "P[" << p_rank << "] nodeId = " << nodeIds_onSE << " node= " << node << std::endl;
@@ -487,7 +487,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
       iSubDimOrd = 0u;
     }
     NodeIdsOnSubDimEntityType& nodeIds_onSE_0 = *( nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, iSubDimOrd));
-    stk::mesh::Entity node_0   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_0[0].identifier());
+    stk::mesh::Entity node_0   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, eMesh.identifier(nodeIds_onSE_0[0]));
 
     // should be the same node on each proc
     std::cout << "P[" << p_rank << "] nodeId_0 = " << nodeIds_onSE_0 << " node_0= " << node_0 << std::endl;
@@ -577,7 +577,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
     eMesh.get_bulk_data()->modification_begin();
 
     //getCellTopologyData< shards::Node  >()
-    const CellTopologyData *const cell_topo_data =m_eMesh.get_cell_topology(block_hex_20);
+    const CellTopologyData *const cell_topo_data = eMesh.get_cell_topology(block_hex_20);
     CellTopology cell_topo(cell_topo_data);
 
     MyPairIterRelation elem_nodes(eMesh, element_local, stk::mesh::MetaData::NODE_RANK);
@@ -593,7 +593,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
       nodeRegistry.makeCentroidCoords(element_local, needed_entity_rank.first, isd);
       NodeIdsOnSubDimEntityType& nodeIds_onSE_0_loc = *( nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, isd));
 
-      stk::mesh::Entity node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_0_loc[0].identifier());
+      stk::mesh::Entity node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, eMesh.identifier(nodeIds_onSE_0_loc[0]));
 
       unsigned edge_ord = 8u + isd;
       //unsigned n_edge_ord = cell_topo_data->edge[isd].topology->node_count;
@@ -728,13 +728,13 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
       iSubDimOrd = 4u;
     }
     NodeIdsOnSubDimEntityType& nodeIds_onSE_0 = *( nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd));
-    stk::mesh::Entity node_0   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_0[0].identifier());
+    stk::mesh::Entity node_0   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, eMesh.identifier(nodeIds_onSE_0[0]));
 
     // should be the same node on each proc
     std::cout << "P[" << p_rank << "] nodeId_0 = " << nodeIds_onSE_0 << " node_0= " << node_0 << std::endl;
     if (p_size == 2)
     {
-      STKUNIT_EXPECT_EQ(nodeIds_onSE_0[0].identifier(), 20u);
+      STKUNIT_EXPECT_EQ(eMesh.identifier(nodeIds_onSE_0[0]), 20u);
     }
 
     // end_demo
@@ -745,11 +745,11 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
     if (p_rank == 0)
     {
       NodeIdsOnSubDimEntityType& nodeIds_onSE_1 = *( nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[1].first, 0u));
-      stk::mesh::Entity node_1   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_1[0].identifier());
+      stk::mesh::Entity node_1   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, eMesh.identifier(nodeIds_onSE_1[0]));
       std::cout << "P[" << p_rank << "] nodeId_1 = " << nodeIds_onSE_1 << " node_1= " << node_1 << std::endl;
       if (p_size == 2)
       {
-        STKUNIT_EXPECT_EQ(nodeIds_onSE_1[0].identifier(), 19u);
+        STKUNIT_EXPECT_EQ(eMesh.identifier(nodeIds_onSE_1[0]), 19u);
       }
     }
     //exit(1);

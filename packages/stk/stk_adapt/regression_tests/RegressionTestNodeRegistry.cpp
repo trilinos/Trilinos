@@ -442,9 +442,9 @@ namespace stk
                           iSubDimOrd = 2u;
                         }
                       NodeIdsOnSubDimEntityType& nodeIds_onSE = *(nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd));
-                      if (!nodeIds_onSE[0].is_valid())
+                      if (!eMesh.is_valid(nodeIds_onSE[0]))
                         throw std::logic_error("nodeRegistry_regr.parallel_2 logic err1");
-                      stk::mesh::Entity node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE[0].identifier());
+                      stk::mesh::Entity node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, eMesh.identifier(nodeIds_onSE[0]));
 
                       //EXPECT_EQ(nodeId, 42u);
                       // should be the same node on each proc
@@ -456,10 +456,10 @@ namespace stk
                       if (p_rank)
                         {
                           NodeIdsOnSubDimEntityType& nodeIds_onSE_1 = *(nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[1].first, 0u));
-                          if (!nodeIds_onSE_1[0].is_valid())
+                          if (!eMesh.is_valid(nodeIds_onSE_1[0]))
                             throw std::logic_error("nodeRegistry_regr.parallel_2 logic err2");
 
-                          stk::mesh::Entity node_1   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_1[0].identifier());
+                          stk::mesh::Entity node_1   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, eMesh.identifier(nodeIds_onSE_1[0]));
 
                           std::cout << "P[" << p_rank << "] nodeId_1 = " << nodeIds_onSE_1 << " node_1= " << node_1 << std::endl;
 
@@ -490,8 +490,8 @@ namespace stk
                           if (p_rank==1) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1.m_entity_id_vector[0] << "should be " << expectedId    << std::endl;
                           if (p_rank==2) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1.m_entity_id_vector[0] << "should be " << expectedId_p2 << std::endl;
 
-                          if (p_rank==1) EXPECT_EQ(nodeIds_onSE_1[0].identifier(), expectedId);
-                          if (p_rank==2) EXPECT_EQ(nodeIds_onSE_1[0].identifier(), expectedId_p2);
+                          if (p_rank==1) EXPECT_EQ(eMesh.identifier(nodeIds_onSE_1[0]), expectedId);
+                          if (p_rank==2) EXPECT_EQ(eMesh.identifier(nodeIds_onSE_1[0]), expectedId_p2);
                         }
 
                     }

@@ -141,7 +141,7 @@ namespace stk {
             stk::mesh::FieldBase * proc_rank_field_edge = m_eMesh.get_field("proc_rank_edge");
             if (proc_rank_field_edge)
               {
-                double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field_edge) , newElement );
+                double *fdata =m_eMesh.field_data( *static_cast<const ScalarFieldType *>(proc_rank_field_edge) , newElement );
                 fdata[0] = double(eMesh.owner_rank(newElement));
                 //fdata[0] = 1234.56;
                 if (0)

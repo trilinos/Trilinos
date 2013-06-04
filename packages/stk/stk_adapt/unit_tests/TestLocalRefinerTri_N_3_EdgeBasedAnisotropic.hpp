@@ -156,8 +156,8 @@ namespace stk {
       std::vector<double> hessian(spatial_dim*spatial_dim, 0.0);
 
       // Hessian from midpoint interp of nodal Hessian field
-      const double *hess0 = eMesh.field_data( *m_nodal_hessian_field , node0);
-      const double *hess1 = eMesh.field_data( *m_nodal_hessian_field , node1);
+      const double *hess0 =m_eMesh.field_data( *m_nodal_hessian_field , node0);
+      const double *hess1 =m_eMesh.field_data( *m_nodal_hessian_field , node1);
       for (int d=0; d<spatial_dim*spatial_dim; d++) {
  	hessian[d] += 0.5*(hess0[d]+hess1[d]);
       }
