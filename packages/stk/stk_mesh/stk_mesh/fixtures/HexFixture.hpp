@@ -43,7 +43,14 @@ class HexFixture
    * Set up meta data to support this fixture. Meta data is left uncommitted
    * to allow additional modifications by the client.
    */
-  HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz);
+  HexFixture(   stk::ParallelMachine pm
+              , unsigned nx
+              , unsigned ny
+              , unsigned nz
+              , unsigned bucket_size = 1000
+              , bool use_memory_pool = true
+              , ConnectivityMap * connectivity_map = NULL
+            );
 
   const int                     m_spatial_dimension;
   const unsigned                m_nx;

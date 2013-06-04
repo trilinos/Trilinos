@@ -81,6 +81,21 @@ struct ConnectivityMap
     return r;
   }
 
+  static ConnectivityMap const& minimal_back_relations_map()
+  {
+    static const map_type map =
+    {{
+      //         TO
+      //FROM       node       edge        face       element
+      /*node*/  {{ invalid(), invalid(),  invalid(), dynamic()}},
+      /*edge*/  {{ fixed()  , invalid(),  invalid(), invalid()}},
+      /*face*/  {{ fixed()  , dynamic(),  invalid(), invalid()}},
+      /*elem*/  {{ fixed()  , dynamic(),  dynamic(), invalid()}}
+    }};
+    static ConnectivityMap r = {map};
+    return r;
+  }
+
   static ConnectivityMap const& default_map_2d()
   {
     static const map_type map =

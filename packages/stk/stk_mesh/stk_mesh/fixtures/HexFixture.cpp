@@ -25,13 +25,28 @@ namespace stk {
 namespace mesh {
 namespace fixtures {
 
-HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz)
+  HexFixture::HexFixture(   stk::ParallelMachine pm
+              , unsigned nx
+              , unsigned ny
+              , unsigned nz
+              , unsigned bucket_size
+              , bool use_memory_pool
+              , ConnectivityMap * connectivity_map
+            )
   : m_spatial_dimension(3),
     m_nx(nx),
     m_ny(ny),
     m_nz(nz),
     m_fem_meta( m_spatial_dimension ),
-    m_bulk_data( m_fem_meta, pm ),
+    m_bulk_data(  m_fem_meta
+                , pm
+                , bucket_size
+                , use_memory_pool
+#ifdef SIERRA_MIGRATION
+                , false
+#endif
+                , connectivity_map
+               ),
     m_hex_part( declare_part<shards::Hexahedron<8> >(m_fem_meta, "hex_part") ),
     m_node_part( m_fem_meta.declare_part("node_part", MetaData::NODE_RANK ) ),
     m_coord_field( m_fem_meta.declare_field<CoordFieldType>("Coordinates") )
