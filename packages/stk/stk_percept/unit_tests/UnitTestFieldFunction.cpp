@@ -655,7 +655,7 @@ static void test_sync(PerceptMesh& eMesh, bool sync_shared, bool sync_aura)
           {
             stk::mesh::Entity entity = bucket[iEntity];
             double * const p = eMesh.field_data_entity( pressure_field , entity );
-            stk::mesh::EntityId id=m_eMesh.identifier(entity);
+            stk::mesh::EntityId id=eMesh.identifier(entity);
 
             int type=Owned;
             if (bucket.owned())
@@ -666,7 +666,7 @@ static void test_sync(PerceptMesh& eMesh, bool sync_shared, bool sync_aura)
             else if (bucket.shared())
               {
                 //p[0] = -(p_rank?double(100+id):double(200+id));
-                p[0] = -double((eMesh.owner_rank(entity)+1)*100+id);
+                p[0] = -double((eMesh.parallel_owner_rank(entity)+1)*100+id);
                 type=Shared;
               }
             else
@@ -676,7 +676,7 @@ static void test_sync(PerceptMesh& eMesh, bool sync_shared, bool sync_aura)
                 type=Ghost;
                 //std::cout << "P["<<p_rank<<"] ghost= " << p[0] << std::endl;
               }
-            out << "P["<<p_rank<<"] id= " << m_eMesh.identifier(entity) << " p= " << p[0] << " type= " << types[type] << std::endl;
+            out << "P["<<p_rank<<"] id= " << eMesh.identifier(entity) << " p= " << p[0] << " type= " << types[type] << std::endl;
 
           }
       }
@@ -707,7 +707,7 @@ static void test_sync(PerceptMesh& eMesh, bool sync_shared, bool sync_aura)
         for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
           {
             stk::mesh::Entity entity = bucket[iEntity];
-            stk::mesh::EntityId id=m_eMesh.identifier(entity);
+            stk::mesh::EntityId id=eMesh.identifier(entity);
             double * const p = eMesh.field_data_entity( pressure_field , entity );
             int type=Owned;
             //double p_e = (p_rank?200+id:100+id);
@@ -719,7 +719,7 @@ static void test_sync(PerceptMesh& eMesh, bool sync_shared, bool sync_aura)
             else if (bucket.shared())
               {
                 //p_e = (p_rank?100+id:200+id);
-                p_e = ((eMesh.owner_rank(entity)+1)*100+id);
+                p_e = ((eMesh.parallel_owner_rank(entity)+1)*100+id);
                 type = Shared;
                 if (sync_shared)
                   {
@@ -733,12 +733,12 @@ static void test_sync(PerceptMesh& eMesh, bool sync_shared, bool sync_aura)
             else
               {
                 //p_e = (p_rank?100+id:200+id);
-                p_e = ((eMesh.owner_rank(entity)+1)*100+id);
+                p_e = ((eMesh.parallel_owner_rank(entity)+1)*100+id);
                 type = Ghost;
                 if (sync_aura)
                   STKUNIT_ASSERT_NEAR(p[0], p_e, 1.e-6);
               }
-            out1 << "P["<<p_rank<<"] after id= " << m_eMesh.identifier(entity) << " p= " << p[0] << " type= " << types[type] << std::endl;
+            out1 << "P["<<p_rank<<"] after id= " << eMesh.identifier(entity) << " p= " << p[0] << " type= " << types[type] << std::endl;
 
           }
       }
@@ -775,7 +775,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
           {
             stk::mesh::Entity entity = bucket[iEntity];
             int * const p = stk::mesh::field_data<PressureFieldType>( pressure_field , entity );
-            stk::mesh::EntityId id=m_eMesh.identifier(entity);
+            stk::mesh::EntityId id=eMesh.identifier(entity);
 
             int type=Owned;
             if (bucket.owned())
@@ -784,7 +784,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
               }
             else if (bucket.shared())
               {
-                p[0] = -((eMesh.owner_rank(entity)+1)*100+id);
+                p[0] = -((eMesh.parallel_owner_rank(entity)+1)*100+id);
                 type=Shared;
               }
             else
@@ -793,7 +793,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
                 type=Ghost;
                 //std::cout << "P["<<p_rank<<"] ghost= " << p[0] << std::endl;
               }
-            out << "P["<<p_rank<<"] id= " << m_eMesh.identifier(entity) << " p= " << p[0] << " type= " << types[type] << std::endl;
+            out << "P["<<p_rank<<"] id= " << eMesh.identifier(entity) << " p= " << p[0] << " type= " << types[type] << std::endl;
 
           }
       }
@@ -823,7 +823,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
         for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
           {
             stk::mesh::Entity entity = bucket[iEntity];
-            stk::mesh::EntityId id=m_eMesh.identifier(entity);
+            stk::mesh::EntityId id=eMesh.identifier(entity);
             int * const p = stk::mesh::field_data<PressureFieldType>( pressure_field , entity );
             int type=Owned;
             double p_e = (p_rank+1)*100+id;
@@ -833,7 +833,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
               }
             else if (bucket.shared())
               {
-                p_e = ((eMesh.owner_rank(entity)+1)*100+id);
+                p_e = ((eMesh.parallel_owner_rank(entity)+1)*100+id);
                 type = Shared;
                 if (sync_shared)
                   {
@@ -846,12 +846,12 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
               }
             else
               {
-                p_e = ((eMesh.owner_rank(entity)+1)*100+id);
+                p_e = ((eMesh.parallel_owner_rank(entity)+1)*100+id);
                 type = Ghost;
                 if (sync_aura)
                   STKUNIT_ASSERT_NEAR(p[0], p_e, 1.e-6);
               }
-            out1 << "P["<<p_rank<<"] after id= " << m_eMesh.identifier(entity) << " p= " << p[0] << " type= " << types[type] << std::endl;
+            out1 << "P["<<p_rank<<"] after id= " << eMesh.identifier(entity) << " p= " << p[0] << " type= " << types[type] << std::endl;
 
           }
       }

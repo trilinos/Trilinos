@@ -1572,7 +1572,7 @@ namespace stk {
       double * fdata = 0;
 
       if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(s_static_singleton_instance->entity_rank(entity), stk::mesh::MetaData::get(*field).universal_part());
+        const stk::mesh::FieldBase::Restriction & r = field->restriction(entity_rank(entity), stk::mesh::MetaData::get(*field).universal_part());
         static const stk::mesh::FieldBase::Restriction empty ;
 
         if (r == empty)
