@@ -218,6 +218,8 @@ union Entity
   const void* get_shared_attr() const;
 
   void set_relation_orientation(RelationIterator rel, unsigned orientation);
+
+  void set_relation_orientation(Entity meshObj, ConnectivityOrdinal ord, unsigned orientation);
 #endif
 
   bool is_handled_generically(const RelationType relation_type) const;
