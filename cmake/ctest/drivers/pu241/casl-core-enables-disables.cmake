@@ -60,8 +60,10 @@ SET(Belos_Tpetra_MVOPTester_complex_test_DISABLE TRUE)
 SET(Anasazi_Tpetra_MVOPTester_MPI_4_DISABLE TRUE)
 SET(Anasazi_Tpetra_MVOPTester_DISABLE TRUE)
 
-# We don't want PETSC support in Trilinos in case of incompatible version
+# We don't want PETSC or HYPRE support in Trilinos in case of incompatible version
+SET(EpetraExt_ENABLE_HYPRE OFF CACHE BOOL "")
 SET(EpetraExt_ENABLE_PETSC OFF CACHE BOOL "")
+SET(Ifpack_ENABLE_HYPRE OFF CACHE BOOL "")
 SET(ML_ENABLE_PETSC OFF CACHE BOOL "")
 SET(NOX_ENABLE_PETSC OFF CACHE BOOL "")
 
