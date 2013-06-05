@@ -199,16 +199,6 @@ int main(int argc, char *argv[]){
 
     string partfile = "";
     string procfile = "";
-    /*
-    char *tmp = argv[1];
-    stringstream stream(stringstream::in | stringstream::out);
-    stream << tmp;
-    stream >> partfile;
-    stream.clear();
-    tmp = argv[2];
-    stream << tmp;
-    stream >> procfile;
-    */
 
     const RCP<Comm<int> > commN;
     RCP<Comm<int> >comm =  Teuchos::rcp_const_cast<Comm<int> >
@@ -269,17 +259,18 @@ int main(int argc, char *argv[]){
                         coordDim, partCenters,
                         numProcs, numParts);
 
+        RCP<const Zoltan2::Environment> env(new Zoltan2::Environment());
         Zoltan2::TaskMapper <Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>, zoltan2_partId_t> *ctm=
-                new Zoltan2::TaskMapper<Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>,zoltan2_partId_t>(cm);
+                new Zoltan2::TaskMapper<Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>,zoltan2_partId_t>(env, cm);
 
 
 
-        //ctm->writeMapping2();
+        ctm->writeMapping2();
         cout << "PASS" << endl;
         delete ctm;
         delete cm;
     }
-    catch(std::string s){
+    catch(std::string &s){
         cerr << s << endl;
     }
 
@@ -290,3 +281,4 @@ int main(int argc, char *argv[]){
         cerr << s << endl;
     }
 }
+

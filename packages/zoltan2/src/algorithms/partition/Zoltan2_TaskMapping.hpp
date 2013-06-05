@@ -6,30 +6,15 @@
 
 namespace Zoltan2{
 
-#define MINOF(a,b) (((a)<(b))?(a):(b))
-/*
-template <typename T>
-T *allocMemory(size_t size){
-    if (size > 0){
-        T * a = new T[size];
-        if (a == NULL) {
-            throw  "cannot allocate memory";
-        }
-        return a;
-    }
-    else {
-        return NULL;
-    }
-}
 
-template <typename T>
-void freeArray(T *&array){
-    if(array != NULL){
-        delete [] array;
-        array = NULL;
-    }
-}
-*/
+#define MINOF(a,b) (((a)<(b))?(a):(b))
+
+/*! \brief fillContinousArray function
+ *
+ *  \param arr   array to be filled in with values.
+ *  \param arrSize the size of the array.
+ *  \param val    the pointer to the value to be filled. if given NULL, the filling performs arr[i] = i.
+ */
 template <typename T>
 void fillContinousArray(T *arr, size_t arrSize, T *val){
     if(val == NULL){
@@ -48,56 +33,75 @@ void fillContinousArray(T *arr, size_t arrSize, T *val){
 #pragma omp parallel for
 #endif
         for(size_t i = 0; i < arrSize; ++i){
+            //cout << "writing to i:" << i << " arr:" << arrSize << endl;
             arr[i] = v;
         }
     }
 }
 
 
-
+/*! \brief CoordinateModelInput Class that performs mapping between the coordinate partitioning result and mpi ranks
+ * base on the coordinate results and mpi physical coordinates.
+ */
 template <typename pcoord_t,  typename tcoord_t, typename procId_t>
 class CoordinateModelInput{
 public:
 //private:
-    int proc_coord_dim;
-    pcoord_t **proc_coords;
-    int task_coord_dim;
-    tcoord_t **task_coords;
-    procId_t no_procs;
-    procId_t no_tasks;
+    int proc_coord_dim; //dimension of the processors
+    pcoord_t **proc_coords; //the processor coordinates. allocated outside of the class.
+    int task_coord_dim; //dimension of the tasks coordinates.
+    tcoord_t **task_coords; //the task coordinates allocated outside of the class.
+    procId_t no_procs; //the number of processors
+    procId_t no_tasks;  //the number of taks.
 //public:
     CoordinateModelInput():proc_coord_dim(0), proc_coords(0),
                            task_coord_dim(0), task_coords(0),
                            no_procs(0), no_tasks(0){}
     ~CoordinateModelInput(){}
+    procId_t getNProcs(){
+        return this->no_procs;
+    }
+    procId_t getNTasks(){
+        return this->no_tasks;
+    }
+    /*! \brief Class Constructor:
+     *  \param pcoord_dim_ the dimension of the processors
+     *  \param pcoords_   the processor coordinates. allocated outside of the class.
+     *  \param tcoord_dim_   dimension of the tasks coordinates.
+     *  \param tcoords_   the task coordinates allocated outside of the class.
+     *  \param no_procs_   the number of processors
+     *  \param no_tasks_   the number of taks.
+     */
     CoordinateModelInput(int pcoord_dim_, pcoord_t **pcoords_,
                          int tcoord_dim_, tcoord_t **tcoords_,
                          procId_t no_procs_, procId_t no_tasks_):
                              proc_coord_dim(pcoord_dim_), proc_coords(pcoords_),
                              task_coord_dim(tcoord_dim_), task_coords(tcoords_),
                              no_procs(no_procs_), no_tasks(no_tasks_){
-/*
-        for(int j = 0; j <  no_tasks; ++j){
-            for(int z = 0; z <  task_coord_dim; ++z){
-                cout << "z:" << z << " j:" <<  j << " " << this->task_coords[z][j] << endl;
-            }
-
-        }
-*/
     }
 
 
-    void getClosestSubset(procId_t *permutation, procId_t nprocs, procId_t ntasks){
+    /*! \brief Function is called whenever nprocs > no_task.
+     * Function returns only the subset of processors that are closest to each other.
+     *  \param proc_permutation holds the indices of the processors that are chosen.
+     *  \param nprocs the number of processors.
+     *  \param ntasks the number of taks.
+     */
+    void getClosestSubset(procId_t *proc_permutation, procId_t nprocs, procId_t ntasks){
+        //currently returns a random subset.
 
-        fillContinousArray<procId_t>(permutation, nprocs, NULL);
+        //fill array.
+        fillContinousArray<procId_t>(proc_permutation, nprocs, NULL);
         int _u_umpa_seed = 847449649;
         srand (time(NULL));
         int a = rand() % 1000 + 1;
         _u_umpa_seed -= a;
-        update_visit_order(permutation, nprocs,_u_umpa_seed, 1);
+        //permute array randomly.
+        update_visit_order(proc_permutation, nprocs,_u_umpa_seed, 1);
 
     }
 
+    //temporary, necessary for random permutation.
     static procId_t umpa_uRandom(procId_t l, int &_u_umpa_seed)
     {
         int   a = 16807;
@@ -119,6 +123,7 @@ public:
     }
 
 
+    //temporary, does random permutation.
     void update_visit_order(procId_t* visitOrder, procId_t n, int &_u_umpa_seed, procId_t rndm) {
         procId_t *a = visitOrder;
 
@@ -157,61 +162,50 @@ public:
     }
 
 
+    /*! \brief Function is called whenever nprocs > no_task.
+     * Function returns only the subset of processors that are closest to each other.
+     *  \param proc_to_task_xadj holds the pointer to the task array
+     *  \param proc_to_task_xadj holds the indices of tasks wrt to proc_to_task_xadj array.
+     *  \param task_to_proc holds the processors mapped to tasks.
+     */
     void getMapping(
                     RCP<const Environment> env,
-                    procId_t *&processor_to_part,
-                    procId_t *&task_to_part,
-                    procId_t *&proc_permutation,
-                    procId_t *&proc_begins,
-                    procId_t *&assigned_task_permutation,
-                    procId_t *&assigned_task_begins,
-                    procId_t &nprocs,
-                    procId_t &ntasks
+                    procId_t *&proc_to_task_xadj, //  = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
+                    procId_t *&proc_to_task_adj, // = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
+                    procId_t *&task_to_proc //allocMemory<procId_t>(this->no_tasks); //holds the processors mapped to tasks.
                     ){
-/*
-        for(int j = 0; j <  no_tasks; ++j){
-            for(int z = 0; z <  task_coord_dim; ++z){
-                cout << "z:" << z << " j:" <<  j << " " << this->task_coords[z][j] << endl;
-            }
 
-        }
-*/
-        nprocs = this->no_procs;
-        ntasks = this->no_tasks;
+
+        proc_to_task_xadj = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
+        proc_to_task_adj = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
+        task_to_proc = allocMemory<procId_t>(this->no_tasks); //holds the processors mapped to tasks.);
+
+        procId_t invalid = 0;
+        fillContinousArray<procId_t> (proc_to_task_xadj, this->no_procs, &invalid);
+
+        //obtain the number of parts that should be divided.
         procId_t num_parts = MINOF(this->no_procs, this->no_tasks);
-
+        //obtain the min coordinate dim.
         procId_t minCoordDim = MINOF(this->task_coord_dim, this->proc_coord_dim);
-        proc_permutation = NULL;
-        proc_begins = allocMemory<procId_t> (num_parts);
-        assigned_task_permutation = NULL;
-        assigned_task_begins = allocMemory<procId_t> (num_parts);
-        /*
-        procId_t *proc_permutation = NULL;
-        procId_t *proc_begins = allocMemory<procId_t> (num_parts);
 
-        procId_t *assigned_task_permutation = NULL;
-        procId_t *assigned_task_begins = allocMemory<procId_t> (num_parts);
-        */
+        //holds the pointers to proc_adjList
+        procId_t *proc_xadj = allocMemory<procId_t> (num_parts);
+        //holds the processors in parts according to the result of partitioning algorithm.
+        //the processors assigned to part x is at proc_adjList[ proc_xadj[x - 1] : proc_xadj[x] ]
+        procId_t *proc_adjList = allocMemory<procId_t>(this->no_procs);
+
+
         procId_t used_num_procs = this->no_procs;
         if(this->no_procs > this->no_tasks){
-            proc_permutation = allocMemory<procId_t>(this->no_procs);
-            assigned_task_permutation = allocMemory<procId_t>(this->no_tasks);
-            this->getClosestSubset(proc_permutation, this->no_procs, this->no_tasks);
-            fillContinousArray<procId_t>(assigned_task_permutation,this->no_tasks, NULL);
+            //obtain the subset of the processors that are closest to each other.
+            this->getClosestSubset(proc_adjList, this->no_procs, this->no_tasks);
             used_num_procs = this->no_tasks;
         }
         else {
-            proc_permutation = allocMemory<procId_t>(this->no_procs);
-            assigned_task_permutation = allocMemory<procId_t>(this->no_tasks);
-
-            fillContinousArray<procId_t>(proc_permutation,this->no_procs, NULL);
-            fillContinousArray<procId_t>(assigned_task_permutation,this->no_tasks, NULL);
+            fillContinousArray<procId_t>(proc_adjList,this->no_procs, NULL);
         }
 
-        for (int i = 0; i < used_num_procs; ++i){
-            cout << "i:" << i << " proc_permutation:" << proc_permutation[i] << endl;
-        }
-        cout << "seq1" << endl;
+        //partitioning of processors
         sequentialTaskPartitioning<pcoord_t, procId_t, procId_t>(
                 env,
                 this->no_procs,
@@ -219,12 +213,17 @@ public:
                 num_parts,
                 minCoordDim,
                 this->proc_coords,
-                proc_permutation,
-                proc_begins,
+                proc_adjList,
+                proc_xadj,
                 "proc_partitioning"
                 );
 
-        cout << "seq2" << endl;
+        procId_t *task_xadj = allocMemory<procId_t> (num_parts);
+        procId_t *task_adjList = allocMemory<procId_t>(this->no_tasks);
+        //fill task_adjList st: task_adjList[i] <- i.
+        fillContinousArray<procId_t>(task_adjList,this->no_tasks, NULL);
+
+        //partitioning of tasks
         sequentialTaskPartitioning<tcoord_t, procId_t, procId_t>(
                         env,
                         this->no_tasks,
@@ -232,52 +231,76 @@ public:
                         num_parts,
                         minCoordDim,
                         this->task_coords,
-                        assigned_task_permutation,
-                        assigned_task_begins,
+                        task_adjList,
+                        task_xadj,
                         "task_partitioning"
                         );
 
-        procId_t invalid = -1;
-        processor_to_part = allocMemory<procId_t> (this->no_procs);
-        fillContinousArray<procId_t> (processor_to_part, this->no_procs, &invalid);
 
+        //filling proc_to_task_xadj, proc_to_task_adj, task_to_proc arrays.
         for(procId_t i = 0; i < num_parts; ++i){
 
             procId_t proc_index_begin = 0;
-            if (i > 0) proc_index_begin = proc_begins[i - 1];
-            procId_t proc_index_end = proc_begins[i];
+            procId_t task_begin_index = 0;
 
-            for (procId_t j = proc_index_begin; j < proc_index_end; ++j){
-
-                procId_t assigned_proc = proc_permutation[j];
-                processor_to_part[assigned_proc] = i;
-
-                //cout << " part:" << i << " proc:" << assigned_proc << endl;
+            if (i > 0) {
+                proc_index_begin = proc_xadj[i - 1];
+                task_begin_index = task_xadj[i - 1];
             }
+            procId_t proc_index_end = proc_xadj[i];
+            procId_t task_end_index = task_xadj[i];
+
+
+            if(proc_index_end - proc_index_begin != 1){
+                cerr << "Error at partitioning of processors" << endl;
+                cerr << "PART:" << i << " is assigned to " << proc_index_end - proc_index_begin << " processors." << endl;
+                exit(1);
+            }
+            procId_t assigned_proc = proc_adjList[proc_index_begin];
+            proc_to_task_xadj[assigned_proc] = task_end_index - task_begin_index;
         }
 
-        task_to_part = allocMemory<procId_t> (this->no_tasks);
-        fillContinousArray<procId_t> (task_to_part, this->no_tasks, &invalid);
+
+        //holds the pointer to the task array
+        procId_t *proc_to_task_xadj_work = allocMemory<procId_t> (this->no_procs);
+        proc_to_task_xadj_work[0] = proc_to_task_xadj[0];
+        for(procId_t i = 1; i < this->no_procs; ++i){
+            proc_to_task_xadj[i] += proc_to_task_xadj[i - 1];
+            proc_to_task_xadj_work[i] = proc_to_task_xadj[i];
+        }
+
+/*
+        for(procId_t i = 0; i < this->no_procs; ++i){
+            cout << " i: " << i << " "<< proc_to_task_xadj[i] << endl;
+        }
+*/
         for(procId_t i = 0; i < num_parts; ++i){
 
+            procId_t proc_index_begin = 0;
             procId_t task_begin_index = 0;
-            if (i > 0) task_begin_index = assigned_task_begins[i - 1];
-            procId_t task_index_end = assigned_task_begins[i];
 
-            for (procId_t j = task_begin_index; j < task_index_end; ++j){
-                procId_t assigned_task = assigned_task_permutation[j];
-                task_to_part[assigned_task] = i;
-                //cout << " part:" << i << " assigned_task:" << assigned_task << endl;
+            if (i > 0) {
+                proc_index_begin = proc_xadj[i - 1];
+                task_begin_index = task_xadj[i - 1];
+            }
+            procId_t task_end_index = task_xadj[i];
+
+            procId_t assigned_proc = proc_adjList[proc_index_begin];
+
+            for (procId_t j = task_begin_index; j < task_end_index; ++j){
+                procId_t taskId = task_adjList[j];
+
+                task_to_proc[taskId] = assigned_proc;
+
+                proc_to_task_adj [ --proc_to_task_xadj_work[assigned_proc] ] = taskId;
             }
         }
-        /*
-        for(int j = 0; j <  no_tasks; ++j){
-            for(int z = 0; z <  task_coord_dim; ++z){
-                cout << "z:" << z << " j:" <<  j << " " << this->task_coords[z][j] << endl;
-            }
 
-        }
-        */
+        freeArray<procId_t>(proc_to_task_xadj_work);
+        freeArray<procId_t>(task_xadj);
+        freeArray<procId_t>(task_adjList);
+        freeArray<procId_t>(proc_xadj);
+        freeArray<procId_t>(proc_adjList);
     }
 
 };
@@ -287,65 +310,57 @@ class TaskMapper{
 protected:
 
     RCP<const Environment> env;
-    procId_t *processor_to_part;
-    procId_t *task_to_part;
-    procId_t *proc_permutation;
-    procId_t *proc_begins;
-    procId_t *assigned_task_permutation;
-    procId_t *assigned_task_begins;
+    procId_t *proc_to_task_xadj; //  = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
+    procId_t *proc_to_task_adj; // = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
+    procId_t *task_to_proc; //allocMemory<procId_t>(this->no_procs); //holds the processors mapped to tasks.
     communicationModel *proc_task_comm;
     procId_t nprocs;
     procId_t ntasks;
 
 public:
+/*
     TaskMapper():
-                env(new Environment()),
-                processor_to_part(0),
-                task_to_part(0),
-                proc_permutation(0),
-                proc_begins(0),
-                assigned_task_permutation(0),
-                assigned_task_begins(0),
+                env(),
+                proc_to_task_xadj(0),
+                proc_to_task_adj(0),
+                task_to_proc(0),
                 proc_task_comm(0),
                 nprocs(0),
                 ntasks(0){}
-
+*/
     ~TaskMapper(){
-        freeArray<procId_t> (processor_to_part);
-        freeArray<procId_t> (task_to_part);
-        freeArray<procId_t> (proc_permutation);
-        freeArray<procId_t> (proc_begins);
-        freeArray<procId_t> (assigned_task_permutation);
-        freeArray<procId_t> (assigned_task_begins);
+        freeArray<procId_t> (proc_to_task_xadj);
+        freeArray<procId_t> (proc_to_task_adj);
+        freeArray<procId_t> (task_to_proc);
     }
-
-    TaskMapper(communicationModel *proc_task_comm_):
-        env(new Environment()),
-        processor_to_part(0),
-        task_to_part(0),
-        proc_permutation(0),
-        proc_begins(0),
-        assigned_task_permutation(0),
-        assigned_task_begins(0),
+    /*! \brief Constructor
+     *  \param env_ Environment object.
+     *  \param proc_task_comm_ is the templated parameter for which the mapping will be obtained with getMapping() function.
+     */
+    TaskMapper(RCP<const Environment> env_, communicationModel *proc_task_comm_):
+        env(env_),
+        proc_to_task_xadj(0),
+        proc_to_task_adj(0),
+        task_to_proc(0),
         proc_task_comm(proc_task_comm_),
-        nprocs(0),
-        ntasks(0){
+        nprocs(proc_task_comm->getNProcs()),
+        ntasks(proc_task_comm->getNTasks()){
+        //calls doMapping function
         this->doMapping();
 
     }
 
+    /*! \brief doMapping function, calls getMapping function of communicationModel object.
+     */
     void doMapping(){
+
         if(this->proc_task_comm){
-        this->proc_task_comm->getMapping(
-                this->env,
-                this->processor_to_part,
-                this->task_to_part,
-                this->proc_permutation,
-                this->proc_begins,
-                this->assigned_task_permutation,
-                this->assigned_task_begins,
-                this->nprocs,
-                this->ntasks);
+            this->proc_task_comm->getMapping(
+                    this->env,
+                    this->proc_to_task_xadj, //  = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
+                    this->proc_to_task_adj, // = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
+                    this->task_to_proc //allocMemory<procId_t>(this->no_procs); //holds the processors mapped to tasks.);
+            );
         }
         else {
             std::cerr << "communicationModel is not specified in the Mapper" << endl;
@@ -353,46 +368,25 @@ public:
         }
     }
 
-    ArrayView<procId_t> getAssignedProcsForTask(procId_t taskId){
-        if(taskId < this->ntasks){
-            //cout << "t:" << taskId << endl;
-            procId_t mapped_part =  this->task_to_part[taskId];
-            //cout << "mapped_part:" << mapped_part << endl;
-
-            procId_t partbegin = 0;
-            if (mapped_part > 0) partbegin = this->proc_begins[mapped_part - 1];
-            procId_t partend = this->proc_begins[mapped_part];
-            //cout << "partbegin:" << partbegin << endl;
-            //cout << "partend:" << partend << endl;
-            //create arrayview here.
-            ArrayView <procId_t> assignedProcs(this->proc_permutation + partbegin, partend - partbegin);
-            return assignedProcs;
-        }
-        else {
-            ArrayView <procId_t> a(NULL, 0);
-            return a;
-        }
+    /*! \brief getAssignedProcForTask function, returns the assigned processor id for the given task
+     *  \param taskId taskId being queried.
+     */
+    inline procId_t getAssignedProcForTask(procId_t taskId){
+        return this->task_to_proc[taskId];
     }
-
+    /*! \brief getAssignedProcForTask function, returns the assigned tasks in ArrayView format for the given processor.
+     *  \param procId procId being queried.
+     */
     ArrayView<procId_t> getAssignedTaksForProc(procId_t procId){
-        //cout << "proc id:" << procId << endl;
-        procId_t mapped_part =  this->processor_to_part[procId];
-        if(mapped_part != -1){
-            procId_t partbegin = 0;
-            if (mapped_part > 0) partbegin = this->assigned_task_begins[mapped_part - 1];
-            procId_t partend = this->assigned_task_begins[mapped_part];
-            //create and return arrayview here.
-            //cout << "task for proc:" << endl;
-            ArrayView <procId_t> assignedParts(this->assigned_task_permutation + partbegin, partend - partbegin);
-            return assignedParts;
-        } else {
-            //cout << "return empty" << endl;
-            ArrayView <procId_t> a(NULL,0);
-            //cout << "return empty done" << endl;
-            return a;
-        }
+        procId_t task_begin = 0;
+        if (procId > 0) task_begin = this->proc_to_task_xadj[procId - 1];
+        procId_t taskend = this->proc_to_task_xadj[procId];
+
+        ArrayView <procId_t> assignedParts(this->proc_to_task_adj + task_begin, taskend - task_begin);
+        return assignedParts;
     }
 
+    //write mapping to gnuPlot code to visualize.
     void writeMapping(){
         std::ofstream gnuPlotCode ("gnuPlot.plot", std::ofstream::out);
 
@@ -456,16 +450,17 @@ public:
     }
 
 
+    //write mapping to gnuPlot code to visualize.
     void writeMapping2(){
-
+/*
         for(procId_t i = 0; i < this->nprocs; ++i){
             cout << "Proc:" << i << " assignedParts:" << this->getAssignedTaksForProc(i) << endl;
         }
         //cout << "parts" << endl;
         for(procId_t i = 0; i < this->ntasks; ++i){
-            cout << "Part:" << i << " assignedProcs:" << this->getAssignedProcsForTask(i) << endl;
+            cout << "Part:" << i << " assignedProcs:" << this->getAssignedProcForTask(i) << endl;
         }
-
+*/
         std::ofstream gnuPlotCode ("gnuPlot2.plot", std::ofstream::out);
 
         int mindim = MINOF(proc_task_comm->proc_coord_dim, proc_task_comm->task_coord_dim);
