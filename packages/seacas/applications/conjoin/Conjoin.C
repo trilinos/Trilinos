@@ -2756,7 +2756,7 @@ namespace {
 	  }
 	  
 	  int output_truth_table_loc = (b   * vars.count(OUT)) + ivar;
-	  int input_truth_table_loc  = (bin * vars.count(IN))  + ivar;
+	  int input_truth_table_loc  = (bin * vars.count(IN))  + i;
 	  if (global.truthTable[vars.objectType][output_truth_table_loc] &&
 	      local_sets[p][bin].entity_count() > 0) {
 	    
