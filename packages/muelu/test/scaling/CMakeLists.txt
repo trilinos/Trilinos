@@ -99,7 +99,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ScalingTestParamList_cp
-    SOURCE_FILES scalingTest.xml coupled.xml uncoupled.xml emin.xml isotropicPoisson.xml conchas_milestone.xml
+    SOURCE_FILES scalingTest.xml coupled.xml uncoupled.xml emin.xml isotropicPoisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml
    )
 
 ENDIF()
@@ -137,7 +137,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
     TRIBITS_ADD_TEST(
       ScalingTestParamList
       NAME "ScalingTestParamListEpetra_Milestone"
-      ARGS "--linAlgebra=Epetra --xml=conchas_milestone.xml"
+      ARGS "--linAlgebra=Epetra --xml=conchas_milestone_zoltan.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )
@@ -177,6 +177,16 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       ScalingTestParamList
       NAME "ScalingTestParamListTpetra"
       ARGS "--linAlgebra=Tpetra"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
+  ENDIF()
+
+  IF (${PACKAGE_NAME}_ENABLE_Zoltan2)
+    TRIBITS_ADD_TEST(
+      ScalingTestParamList
+      NAME "ScalingTestParamListTpetra_Milestone"
+      ARGS "--linAlgebra=Tpetra --xml=conchas_milestone_zoltan2.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )

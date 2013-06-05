@@ -297,7 +297,7 @@ public:
                 const Epetra_Vector& InvPointDiagonal, 
                 const int MaximumIterations, 
                 double& lambda_min, double& lambda_max);
-  
+
 #ifdef HAVE_IFPACK_EPETRAEXT
   //! Uses AztecOO's CG to estimate lambda_min and lambda_max.
   // WARNING: This only works in Block Mode.
@@ -307,6 +307,14 @@ public:
   // WARNING: This only works in Block Mode.
   int PowerMethod(const int MaximumIterations,double& lambda_max);
 #endif
+
+  //! Uses AztecOO's GMRES to estimate the height and width of the spectrum.
+  int GMRES(const Epetra_Operator& Operator,
+	    const Epetra_Vector& InvPointDiagonal,
+	    const int MaximumIterations,
+	    double& lambda_real_min, double& lambda_real_max,
+	    double& lambda_imag_min, double& lambda_imag_max);
+
 private:
   
   // @}
@@ -330,6 +338,10 @@ private:
   bool IsInitialized_;
   //! If \c true, the preconditioner has been computed successfully.
   bool IsComputed_;
+  //! If \c true, have to compute polynomial for a spectrum with negative eigenvalues.
+  bool IsIndefinite_;
+  //! If \c true, have to compute polynomial for a spectrum with nonzero imaginary part.
+  bool IsComplex_;
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;
   //! Contains the number of successful call to Compute().

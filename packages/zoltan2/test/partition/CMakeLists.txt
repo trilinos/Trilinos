@@ -32,7 +32,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     NUM_MPI_PROCS 1
     COMM serial mpi
     ARGS 
-    "PART=../../../../../../zoltan2/test/data/part.txt PROC=../../../../../../zoltan2/test/data/proc.txt"
+    "PART=part.txt PROC=proc.txt"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -66,6 +66,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
     USAir97.mtx
     USAir97_coord.mtx
     GeomGenParam.txt
+    proc.txt
+    part.txt
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
+

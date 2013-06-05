@@ -2243,17 +2243,17 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE )
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-#  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( LO , GO , NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, float, LO, GO, NODE )
+#  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, float, int, int, NODE )
 #else
-#  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( LO , GO , NODE )
+#  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( NODE )
 #endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
-#  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( LO , GO , NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, double, LO, GO, NODE )
+#  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, double, int, int, NODE )
 #else
-#  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( LO , GO , NODE )
+#  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( NODE )
 #endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
 
 #define VIEWMODETEST(NODE) \
@@ -2264,9 +2264,17 @@ namespace {
 
   TPETRA_INSTANTIATE_N_NOGPU(VIEWMODETEST)
 
-  TPETRA_INSTANTIATE_LGN( TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST )
+  // mfh 04 June 2013: To avoid explicit instantiation - related link
+  // errors for LO = int and GO = unsigned (long) int, I've forced
+  // this test to use LO = int and GO = int.  LO and GO should not
+  // matter for this test.
+  TPETRA_INSTANTIATE_N( TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST )
 
-  TPETRA_INSTANTIATE_LGN( TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST )
+  // mfh 04 June 2013: To avoid explicit instantiation - related link
+  // errors for LO = int and GO = unsigned (long) int, I've forced
+  // this test to use LO = int and GO = int.  LO and GO should not
+  // matter for this test.
+  TPETRA_INSTANTIATE_N( TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST )
 
   TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 
