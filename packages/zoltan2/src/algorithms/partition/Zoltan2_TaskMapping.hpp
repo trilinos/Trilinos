@@ -33,6 +33,7 @@ public:
     void addPoint(IT index, WT distance){
         WT maxVal = this->values[0];
         //add only the distance is smaller than the maximum distance.
+        //cout << "indeX:" << index << "distance:" <<distance << " maxVal:" << maxVal << endl;
         if (distance >= maxVal) return;
         else {
             this->values[0] = distance;
@@ -85,9 +86,12 @@ public:
 
     //returns the total distance to center in the cluster.
     WT getTotalDistance(){
+
         WT nc = 0;
         for(IT j = 0; j < this->heapSize; ++j){
             nc += this->values[j];
+
+            //cout << "index:" << this->indices[j] << " distance:" << this->values[j] << endl;
         }
         return nc;
     }
@@ -103,7 +107,7 @@ public:
                 nc += coords[i][k];
             }
             nc /= this->heapSize;
-            moved = (ABS(center[i] - nc) < this->_EPSILON || moved );
+            moved = (ABS(center[i] - nc) > this->_EPSILON || moved );
             center[i] = nc;
 
         }
@@ -218,7 +222,7 @@ public:
                 if(t > this->maxCoordinates[j]){
                     this->maxCoordinates[j] = t;
                 }
-                if (t > minCoordinates[j]){
+                if (t < minCoordinates[j]){
                     this->minCoordinates[j] = t;
                 }
             }
@@ -229,10 +233,10 @@ public:
         for (int j = 0; j < dim; ++j){
             int mod = pow(2,j + 1);
             for (int i = 0; i < numClusters - 1; ++i){
-
                 WT c = 0;
                 if ( (i % mod) < mod / 2){
                     c = this->maxCoordinates[j];
+                    //cout << "i:" << i << " j:" << j << " setting max:" << c << endl;
                 }
                 else {
                     c = this->minCoordinates[j];
@@ -245,11 +249,22 @@ public:
         for (int j = 0; j < dim; ++j){
             this->clusters[numClusters - 1].center[j] = (this->maxCoordinates[j] + this->minCoordinates[j]) / 2;
         }
+
+
+        /*
+        for (int i = 0; i < numClusters; ++i){
+            //cout << endl << "cluster:" << i << endl << "\t";
+            for (int j = 0; j < dim; ++j){
+                cout << this->clusters[i].center[j] << " ";
+            }
+        }
+        */
     }
 
     //performs kmeans clustering of coordinates.
     void kmeans(){
         for(int it = 0; it < 10; ++it){
+            //cout << "it:" << it << endl;
             for (IT j = 0; j < this->numClusters; ++j){
                 this->clusters[j].clearHeap();
             }
@@ -277,13 +292,17 @@ public:
 
         WT minDistance = this->clusters[0].getDistanceToCenter();
         IT minCluster = 0;
+        //cout << "j:" << 0 << " minDistance:" << minDistance << " minTmpDistance:" << minDistance<< " minCluster:" << minCluster << endl;
         for (IT j = 1; j < this->numClusters; ++j){
             WT minTmpDistance = this->clusters[j].getDistanceToCenter();
+            //cout << "j:" << j << " minDistance:" << minDistance << " minTmpDistance:" << minTmpDistance<< " minCluster:" << minCluster << endl;
             if(minTmpDistance < minDistance){
                 minDistance = minTmpDistance;
                 minCluster = j;
             }
         }
+
+        //cout << "minCluster:" << minCluster << endl;
         this->clusters[minCluster].copyCoordinates(procPermutation);
     }
 };
@@ -852,6 +871,17 @@ public:
         partFile << parts<< "\n";
         partFile.close();
 
+        std::ofstream extraProcFile ("allProc.plot", std::ofstream::out);
+
+        for(procId_t j = 0; j < this->nprocs; ++j){
+            for(int i = 0; i <  mindim; ++i){
+                extraProcFile << this->proc_task_comm->proc_coords[i][j] <<  " ";
+            }
+            extraProcFile << endl;
+        }
+
+        extraProcFile.close();
+
         gnuPlotCode << ss;
         if(mindim == 2){
             gnuPlotCode << "plot \"procPlot.plot\" with points pointsize 3\n";
@@ -859,6 +889,7 @@ public:
             gnuPlotCode << "splot \"procPlot.plot\" with points pointsize 3\n";
         }
         gnuPlotCode << "replot \"partPlot.plot\" with points pointsize 3\n";
+        gnuPlotCode << "replot \"allProc.plot\" with points pointsize 0.5\n";
         gnuPlotCode << "\nreplot\n pause -1 \n";
         gnuPlotCode.close();
 
