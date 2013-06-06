@@ -23,6 +23,8 @@
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/BoundingBox.hpp>
 
+#include <boost/smart_ptr/shared_ptr.hpp>
+
 //*********************************************************************
 //
 //  ........................... NOT FOR PUBLIC USE .....................
