@@ -136,8 +136,7 @@ public:
    */
   BulkData( MetaData & mesh_meta_data ,
             ParallelMachine parallel ,
-            unsigned bucket_max_size = 1000 ,
-            bool use_memory_pool = true
+            unsigned bucket_max_size = 1000
 #ifdef SIERRA_MIGRATION
             , bool add_fmwk_data = false
 #endif

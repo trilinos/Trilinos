@@ -132,7 +132,6 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
   //new_id = size * (++id_base) + rank;
   // stk::mesh::Entity elem2  = bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part );
 
-  // bool use_memory_pool = false;
   stk::mesh::impl::EntityRepository &e = bulk.get_entity_repository();
 
   bulk.entity_comm_clear(bulk.entity_key(elem));

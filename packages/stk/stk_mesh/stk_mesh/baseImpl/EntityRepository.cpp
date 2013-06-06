@@ -18,7 +18,7 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-Entity EntityRepository::allocate_entity(bool use_pool)
+Entity EntityRepository::allocate_entity()
 {
     Entity retval;
     retval = Entity::InvalidEntity;

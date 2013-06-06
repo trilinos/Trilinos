@@ -26,8 +26,6 @@
 
 #include <stk_mesh/base/Entity.hpp>
 
-#include <boost/pool/pool_alloc.hpp>
-
 namespace stk {
 namespace mesh {
 namespace impl {
@@ -53,8 +51,8 @@ public:
     typedef EntityMap::const_iterator const_iterator;
     typedef EntityMap::iterator iterator;
 
-    EntityRepository(BulkData &mesh, bool use_pool)
-      : m_mesh(mesh), m_entities(), m_use_pool(use_pool) {}
+    EntityRepository(BulkData &mesh)
+      : m_mesh(mesh), m_entities() {}
 
     ~EntityRepository();
 
@@ -88,11 +86,10 @@ public:
     void internal_expunge_entity( EntityMap::iterator i);
 
     // Entity internal_allocate_entity(EntityKey entity_key);
-    Entity allocate_entity(bool use_pool);
+    Entity allocate_entity();
 
     BulkData &m_mesh;
     EntityMap m_entities;
-    bool m_use_pool;
 
     //disable copy constructor and assignment operator
     EntityRepository(const EntityRepository &);

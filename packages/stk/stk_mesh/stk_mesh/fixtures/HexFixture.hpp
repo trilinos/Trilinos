@@ -48,7 +48,6 @@ class HexFixture
               , unsigned ny
               , unsigned nz
               , unsigned bucket_size = 1000
-              , bool use_memory_pool = true
               , ConnectivityMap * connectivity_map = NULL
             );
 

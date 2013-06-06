@@ -105,15 +105,14 @@ BulkData * BulkData::the_bulk_data_registry[MAX_NUM_BULKDATA] = {};
 
 BulkData::BulkData( MetaData & mesh_meta_data ,
                     ParallelMachine parallel ,
-                    unsigned bucket_max_size ,
-                    bool use_memory_pool
+                    unsigned bucket_max_size
 #ifdef SIERRA_MIGRATION
                     , bool add_fmwk_data
 #endif
                     , ConnectivityMap* connectivity_map
                     )
   : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
-    m_entity_repo(*this, use_memory_pool),
+    m_entity_repo(*this),
     m_entity_comm_list(),
     m_ghosting(),
     m_deleted_entities(),
