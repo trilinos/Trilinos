@@ -106,6 +106,7 @@ void BulkData::declare_relation( Entity e_from ,
   bool caused_change_fwd = internal_declare_relation(e_from, e_to, local_id, m_sync_count,
                                                      is_converse, permut);
 
+  //TODO: check connectivity map
   // Relationships should always be symmetrical
   if ( caused_change_fwd ) {
 
@@ -114,12 +115,7 @@ void BulkData::declare_relation( Entity e_from ,
         m_bucket_repository.connectivity_map()(entity_rank(e_to), entity_rank(e_from)) != stk::mesh::INVALID_CONNECTIVITY_TYPE) {
       // the setup for the converse relationship works slightly differently
       is_converse = true;
-      bool caused_change_inv = internal_declare_relation(e_to, e_from, local_id, m_sync_count,
-                                                         is_converse, permut );
-
-      ThrowErrorMsgIf( !caused_change_inv,
-          " Internal error - could not create inverse relation of " <<
-          identifier(e_from) << " to " << identifier(e_to));
+      internal_declare_relation(e_to, e_from, local_id, m_sync_count, is_converse, permut );
     }
   }
 
@@ -256,13 +252,10 @@ bool BulkData::destroy_relation( Entity e_from ,
   //delete relations from the entities
   bool caused_change_fwd = bucket(e_from).destroy_relation(e_from, e_to, local_id);
 
+  //TODO: check connectivity map
   // Relationships should always be symmetrical
   if ( caused_change_fwd ) {
-    bool caused_change_inv = bucket(e_to).destroy_relation(e_to, e_from, local_id);
-    ThrowErrorMsgIf( !caused_change_inv,
-        " Internal error - could not destroy inverse relation of " <<
-        identifier(e_from) << " to " << identifier(e_to) <<
-        " with local relation id of " << local_id);
+    bucket(e_to).destroy_relation(e_to, e_from, local_id);
   }
 
   // It is critical that the modification be done AFTER the relations are

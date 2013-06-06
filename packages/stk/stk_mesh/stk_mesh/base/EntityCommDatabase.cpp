@@ -21,38 +21,6 @@ namespace mesh {
 
 //----------------------------------------------------------------------------
 
-/** \brief  Is in owned closure of the given process,
- *          typically the local process.
- */
-bool in_owned_closure(const BulkData& mesh, const Entity entity , int proc )
-{
-  // TODO: This function has a potential performance problem if relations
-  // are dense.
-
-  // Does proc own this entity? If so, we're done
-  bool result = mesh.parallel_owner_rank(entity) == proc ;
-
-  if ( ! result ) {
-    const unsigned erank = mesh.entity_rank(entity);
-    const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
-
-    // Does entity have an upward relation to an entity owned by proc
-    for (EntityRank irank = erank + 1; irank < end_rank && !result; ++irank)
-    {
-      Entity const *irels_j = mesh.begin(entity, irank);
-      Entity const *irels_e = mesh.end(entity, irank);
-      for (; !result && (irels_j != irels_e); ++irels_j)
-      {
-        result = in_owned_closure(mesh, *irels_j, proc);
-      }
-    }
-  }
-
-  return result ;
-}
-
-//----------------------------------------------------------------------------
-
 void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity entity )
 {
   const EntityKey & key   = mesh.entity_key(entity);

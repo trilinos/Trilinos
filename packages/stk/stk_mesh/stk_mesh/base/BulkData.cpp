@@ -139,6 +139,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_mesh_indexes(),
     m_entity_keys(),
     m_entity_states(),
+    m_closure_count(),
     m_entity_sync_counts(),
 #ifdef SIERRA_MIGRATION
     m_fmwk_aux_relations(),
@@ -412,8 +413,9 @@ size_t BulkData::generate_next_local_offset()
     m_mesh_indexes.push_back(mesh_index);
     m_entity_keys.push_back(invalid_key);
     m_entity_states.push_back(Created);
+    m_closure_count.push_back(static_cast<uint16_t>(0));
     m_entity_sync_counts.push_back(0);
-  
+
 #ifdef SIERRA_MIGRATION
     if (m_add_fmwk_data) {
       m_fmwk_aux_relations.push_back(NULL);
@@ -430,8 +432,9 @@ size_t BulkData::generate_next_local_offset()
     m_mesh_indexes[new_local_offset] = mesh_index;
     m_entity_keys[new_local_offset] = invalid_key;
     m_entity_states[new_local_offset] = Created;
+    m_closure_count[new_local_offset] = static_cast<uint16_t>(0);
     m_entity_sync_counts[new_local_offset] = 0;
-  
+
 #ifdef SIERRA_MIGRATION
     if (m_add_fmwk_data) {
       //bulk-data allocated aux-relation vector, so delete it here.
@@ -462,6 +465,7 @@ void BulkData::initialize_arrays()
   m_entity_keys.push_back(invalid_key);
 
   m_entity_states.push_back(Deleted);
+  m_closure_count.push_back(static_cast<uint16_t>(0));
   m_entity_sync_counts.push_back(0);
 
 #ifdef SIERRA_MIGRATION
@@ -624,6 +628,7 @@ bool BulkData::destroy_entity( Entity entity )
   bucket(entity).getPartition()->remove(entity);
   m_entity_repo.destroy_entity(entity_key(entity), entity );
   m_entity_states[entity.local_offset()] = Deleted;
+  m_closure_count[entity.local_offset()] = static_cast<uint16_t>(0u);
   m_deleted_entities_current_modification_cycle.push_front(entity.local_offset());
 
   m_check_invalid_rels = true;

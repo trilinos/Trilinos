@@ -713,7 +713,7 @@ public:
   {
     entity_getter_debug_check(entity);
 
-    return m_entity_states[entity.local_offset()];
+    return static_cast<EntityState>(m_entity_states[entity.local_offset()]);
   }
 
   size_t synchronized_count(Entity entity) const
@@ -839,7 +839,7 @@ public:
   {
     entity_setter_debug_check(entity);
 
-    m_entity_states[entity.local_offset()] = entity_state;
+    m_entity_states[entity.local_offset()] = static_cast<uint16_t>(entity_state);
   }
 
   bool set_parallel_owner_rank(Entity entity, int in_owner_rank)
@@ -973,6 +973,9 @@ public:
   unsigned find_ordinal(Entity entity, EntityRank rank, ConnectivityOrdinal ordinal) const;
 
   bool has_permutation(Entity entity, EntityRank rank) const;
+
+  bool owned_closure(Entity entity) const
+  { return m_closure_count[entity.local_offset()] > static_cast<uint16_t>(0); }
 
   unsigned field_data_size(const FieldBase& f, Entity e) const
   {
@@ -1141,7 +1144,8 @@ private:
   std::vector<MeshIndex> m_mesh_indexes;
 
   std::vector<EntityKey>   m_entity_keys;
-  std::vector<EntityState> m_entity_states;
+  std::vector<uint16_t>    m_entity_states;
+  std::vector<uint16_t>    m_closure_count;
   std::vector<size_t>      m_entity_sync_counts;
 
 #ifdef SIERRA_MIGRATION
@@ -1320,6 +1324,17 @@ private:
 
 #endif /* DOXYGEN_COMPILE */
 };
+
+
+/** \brief  Is in owned closure of the given process,
+ *          typically the local process.
+ */
+inline
+bool in_owned_closure(const BulkData& mesh, const Entity entity , int proc )
+{
+  const bool same_proc = mesh.parallel_rank() == proc;
+  return same_proc && mesh.owned_closure(entity);
+}
 
  /** \brief  Comparison operator for entities compares the entities' keys */
 struct EntityLess {

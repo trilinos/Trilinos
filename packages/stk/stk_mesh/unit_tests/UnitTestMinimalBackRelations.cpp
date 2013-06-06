@@ -20,15 +20,12 @@ using namespace stk::mesh;
 STKUNIT_UNIT_TEST( UnitTestMinimalBackRelation, simpleHex )
 {
   // TODO:  Make this test pass in parallel
-#if 0
-
-  // Test 3x1x1 HexFixture structure
-  const unsigned NX = 2;
-  const unsigned NY = 1;
-  const unsigned NZ = 1;
+  const unsigned NX = 9;
+  const unsigned NY = 9;
+  const unsigned NZ = 9;
 
   ConnectivityMap connectivity_map = ConnectivityMap::minimal_back_relations_map();
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD,NX,NY,NZ,100,true,&connectivity_map);
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD,NX,NY,NZ,100,&connectivity_map);
   fixture.m_fem_meta.commit();
   fixture.generate_mesh();
 
@@ -48,8 +45,6 @@ STKUNIT_UNIT_TEST( UnitTestMinimalBackRelation, simpleHex )
       }
     }
   }
-#endif
-
 }
 
 } // namespace

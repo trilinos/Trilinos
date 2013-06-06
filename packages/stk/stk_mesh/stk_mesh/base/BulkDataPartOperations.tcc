@@ -204,11 +204,66 @@ void BulkData::internal_change_entity_parts(
     return ;
   }
 
+  const unsigned locally_owned_ordinal = m_mesh_meta_data.locally_owned_part().mesh_meta_data_ordinal();
+
+  bool add_to_locally_owned = false;
+  for (typename std::vector<PartT>::const_iterator itr = add_parts.begin(), end_itr = add_parts.end(); itr < end_itr; ++itr) {
+    if ( impl::get_ordinal(*itr) == locally_owned_ordinal ) {
+      add_to_locally_owned = true;
+      break;
+    }
+  }
+  add_to_locally_owned = add_to_locally_owned && (!k_old || !k_old->owned());
+
+
+  bool remove_from_locally_owned = false;
+  for (typename std::vector<PartT>::const_iterator itr = remove_parts.begin(), end_itr = remove_parts.end(); itr < end_itr; ++itr) {
+    if ( impl::get_ordinal(*itr) == locally_owned_ordinal ) {
+      remove_from_locally_owned = true;
+      break;
+    }
+  }
+  remove_from_locally_owned = remove_from_locally_owned && (!k_old || k_old->owned());
+
+  if (add_to_locally_owned) {
+
+    ++m_closure_count[entity.local_offset()];
+
+    // update downward connectivity closure count
+    if (k_old) {
+      for (unsigned rank = stk::topology::NODE_RANK, end_rank = k_old->entity_rank(); rank < end_rank; ++rank) {
+        unsigned num = num_connectivity(entity,rank);
+        Entity const * entities = begin(entity,rank);
+        for (unsigned i =0; i<num; ++i) {
+          ++m_closure_count[entities[i].local_offset()];
+        }
+      }
+    }
+
+  }
+  else if (remove_from_locally_owned)
+  {
+    --m_closure_count[entity.local_offset()];
+
+    // update downward connectivity closure count
+    if (k_old) {
+      for (unsigned rank = stk::topology::NODE_RANK, end_rank = k_old->entity_rank(); rank < end_rank; ++rank) {
+        unsigned num = num_connectivity(entity,rank);
+        Entity const * entities = begin(entity,rank);
+        for (unsigned i =0; i<num; ++i) {
+          --m_closure_count[entities[i].local_offset()];
+        }
+      }
+    }
+  }
+
   std::vector<PartT> parts_removed ;
 
   OrdinalVector parts_total ; // The final part list
 
   //--------------------------------
+
+
 
   if ( k_old ) {
     // Keep any of the existing bucket's parts

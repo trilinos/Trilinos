@@ -260,10 +260,6 @@ bool EntityCommDatabase::change_owner_rank(const EntityKey& key, int owner)
   return false;
 }
 
-/** \brief  Is in owned closure of the given process,
- *          typically the local process.
- */
-bool in_owned_closure(const BulkData& mesh, const Entity entity , int proc );
 
 //----------------------------------------------------------------------
 
