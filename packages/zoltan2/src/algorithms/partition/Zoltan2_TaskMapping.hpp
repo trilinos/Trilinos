@@ -6,6 +6,289 @@
 
 namespace Zoltan2{
 
+/*! \brief KmeansHeap Class, max heap, but holds the minimum values.
+ */
+template <class IT, class WT>
+class KmeansHeap{
+    IT heapSize;
+    IT *indices;
+    WT *values;
+    WT _EPSILON;
+
+
+public:
+    void setHeapsize(IT heapsize_){
+        this->heapSize = heapsize_;
+        this->indices = allocMemory<IT>(heapsize_ );
+        this->values = allocMemory<WT>(heapsize_ );
+        this->_EPSILON = numeric_limits<WT>::epsilon();
+    }
+
+    ~KmeansHeap(){
+        freeArray<IT>(this->indices);
+        freeArray<WT>(this->values);
+    }
+
+
+    void addPoint(IT index, WT distance){
+        WT maxVal = this->values[0];
+        //add only the distance is smaller than the maximum distance.
+        if (distance >= maxVal) return;
+        else {
+            this->values[0] = distance;
+            this->indices[0] = index;
+            this->push_down(0);
+        }
+    }
+
+    //heap push down operation
+    void push_down(IT index_on_heap){
+        IT child_index1 = 2 * index_on_heap + 1;
+        IT child_index2 = 2 * index_on_heap + 2;
+
+        IT biggerIndex = -1;
+        if(child_index1 < this->heapSize && child_index2 < this->heapSize){
+
+            if (this->values[child_index1] < this->values[child_index2]){
+                biggerIndex = child_index2;
+            }
+            else {
+                biggerIndex = child_index1;
+            }
+        }
+        else if(child_index1 < this->heapSize){
+            biggerIndex = child_index1;
+
+        }
+        else if(child_index2 < this->heapSize){
+            biggerIndex = child_index2;
+        }
+        if (biggerIndex >= 0 && this->values[biggerIndex] > this->values[index_on_heap]){
+            WT tmpVal = this->values[biggerIndex];
+            this->values[biggerIndex] = this->values[index_on_heap];
+            this->values[index_on_heap] = tmpVal;
+
+            IT tmpIndex = this->indices[biggerIndex];
+            this->indices[biggerIndex] = this->indices[index_on_heap];
+            this->indices[index_on_heap] = tmpIndex;
+            this->push_down(biggerIndex);
+        }
+    }
+
+    void initValues(){
+        WT MAXVAL = numeric_limits<WT>::max();
+        for(IT i = 0; i < this->heapSize; ++i){
+            this->values[i] = MAXVAL;
+            this->indices[i] = -1;
+        }
+    }
+
+    //returns the total distance to center in the cluster.
+    WT getTotalDistance(){
+        WT nc = 0;
+        for(IT j = 0; j < this->heapSize; ++j){
+            nc += this->values[j];
+        }
+        return nc;
+    }
+
+    //returns the new center of the cluster.
+    bool getNewCenters(WT *center, WT **coords, int dimension){
+        bool moved = false;
+        for(int i = 0; i < dimension; ++i){
+            WT nc = 0;
+            for(IT j = 0; j < this->heapSize; ++j){
+                IT k = this->indices[j];
+                //cout << "i:" << i << " dim:" << dimension << " k:" << k << " heapSize:" << heapSize << endl;
+                nc += coords[i][k];
+            }
+            nc /= this->heapSize;
+            moved = (ABS(center[i] - nc) < this->_EPSILON || moved );
+            center[i] = nc;
+
+        }
+        return moved;
+    }
+
+    void copyCoordinates(IT *permutation){
+        for(IT i = 0; i < this->heapSize; ++i){
+            permutation[i] = this->indices[i];
+        }
+    }
+};
+
+/*! \brief KMeansCluster Class
+ */
+template <class IT, class WT>
+class KMeansCluster{
+
+    int dimension;
+    KmeansHeap<IT,WT> closestPoints;
+
+public:
+    WT *center;
+    ~KMeansCluster(){
+        freeArray<WT>(center);
+    }
+
+    void setParams(int dimension_, int heapsize){
+        this->dimension = dimension_;
+        this->center = allocMemory<WT>(dimension_);
+        this->closestPoints.setHeapsize(heapsize);
+    }
+
+    void clearHeap(){
+        this->closestPoints.initValues();
+    }
+
+    bool getNewCenters( WT **coords){
+        return this->closestPoints.getNewCenters(center, coords, dimension);
+    }
+
+    //returns the distance of the coordinate to the center.
+    //also adds it to the heap.
+    WT getDistance(IT index, WT **elementCoords){
+        WT distance = 0;
+        for (int i = 0; i < this->dimension; ++i){
+            WT d = (center[i] - elementCoords[i][index]);
+            distance += d * d;
+        }
+        distance = pow(distance, 1.0f / this->dimension);
+        closestPoints.addPoint(index, distance);
+        return distance;
+    }
+
+    WT getDistanceToCenter(){
+        return closestPoints.getTotalDistance();
+    }
+
+    void copyCoordinates(IT *permutation){
+        closestPoints.copyCoordinates(permutation);
+    }
+};
+
+/*! \brief KMeansAlgorithm Class that performs clustering of the coordinates, and returns the closest set of coordinates.
+ * Useful to filter the processors, when there are more processors than needed.
+ */
+template <class IT, class WT>
+class KMeansAlgorithm{
+
+    int dim;
+    IT numElements;
+    WT **elementCoords;
+    IT numClusters;
+    IT required_elements;
+    KMeansCluster <IT,WT> *clusters;
+    WT *maxCoordinates;
+    WT *minCoordinates;
+public:
+    ~KMeansAlgorithm(){
+        freeArray<KMeansCluster <IT,WT> >(clusters);
+        freeArray<WT>(maxCoordinates);
+        freeArray<WT>(minCoordinates);
+    }
+
+    /*! \brief KMeansAlgorithm Constructor
+     */
+    KMeansAlgorithm(
+            int dim_ ,
+            IT numElements_,
+            WT **elementCoords_,
+            IT required_elements_):
+                dim(dim_),
+                numElements(numElements_),
+                elementCoords(elementCoords_),
+                numClusters (pow(2, dim_) + 1),
+                required_elements(required_elements_)
+    {
+        this->clusters  = allocMemory<KMeansCluster <IT,WT> >(this->numClusters);
+        //set dimension and the number of required elements for all clusters.
+        for (int i = 0; i < numClusters; ++i){
+            this->clusters[i].setParams(this->dim, this->required_elements);
+        }
+
+        this->maxCoordinates = allocMemory <WT> (this->dim);
+        this->minCoordinates = allocMemory <WT> (this->dim);
+
+        //obtain the min and max coordiantes for each dimension.
+        for (int j = 0; j < dim; ++j){
+            this->minCoordinates[j] = this->maxCoordinates[j] = this->elementCoords[j][0];
+            for(IT i = 1; i < numElements; ++i){
+                WT t = this->elementCoords[j][i];
+                if(t > this->maxCoordinates[j]){
+                    this->maxCoordinates[j] = t;
+                }
+                if (t > minCoordinates[j]){
+                    this->minCoordinates[j] = t;
+                }
+            }
+        }
+
+
+        //assign initial cluster centers.
+        for (int j = 0; j < dim; ++j){
+            int mod = pow(2,j + 1);
+            for (int i = 0; i < numClusters - 1; ++i){
+
+                WT c = 0;
+                if ( (i % mod) < mod / 2){
+                    c = this->maxCoordinates[j];
+                }
+                else {
+                    c = this->minCoordinates[j];
+                }
+                this->clusters[i].center[j] = c;
+            }
+        }
+
+        //last cluster center is placed to middle.
+        for (int j = 0; j < dim; ++j){
+            this->clusters[numClusters - 1].center[j] = (this->maxCoordinates[j] + this->minCoordinates[j]) / 2;
+        }
+    }
+
+    //performs kmeans clustering of coordinates.
+    void kmeans(){
+        for(int it = 0; it < 10; ++it){
+            for (IT j = 0; j < this->numClusters; ++j){
+                this->clusters[j].clearHeap();
+            }
+            for (IT i = 0; i < this->numElements; ++i){
+                //cout << "i:" << i << " numEl:" << this->numElements << endl;
+                for (IT j = 0; j < this->numClusters; ++j){
+                    //cout << "j:" << j << " numClusters:" << this->numClusters << endl;
+                    this->clusters[j].getDistance(i,this->elementCoords);
+                }
+            }
+            bool moved = false;
+            for (IT j = 0; j < this->numClusters; ++j){
+                moved =(this->clusters[j].getNewCenters(this->elementCoords) || moved );
+            }
+            if (!moved){
+                break;
+            }
+        }
+
+
+    }
+
+    //finds the cluster in which the coordinates are the closest to each other.
+    void getMinDistanceCluster(IT *procPermutation){
+
+        WT minDistance = this->clusters[0].getDistanceToCenter();
+        IT minCluster = 0;
+        for (IT j = 1; j < this->numClusters; ++j){
+            WT minTmpDistance = this->clusters[j].getDistanceToCenter();
+            if(minTmpDistance < minDistance){
+                minDistance = minTmpDistance;
+                minCluster = j;
+            }
+        }
+        this->clusters[minCluster].copyCoordinates(procPermutation);
+    }
+};
+
+
 
 #define MINOF(a,b) (((a)<(b))?(a):(b))
 
@@ -90,6 +373,18 @@ public:
     void getClosestSubset(procId_t *proc_permutation, procId_t nprocs, procId_t ntasks){
         //currently returns a random subset.
 
+        procId_t minCoordDim = MINOF(this->task_coord_dim, this->proc_coord_dim);
+        KMeansAlgorithm<procId_t, pcoord_t > kma(
+                minCoordDim, nprocs,
+                this->proc_coords, ntasks);
+
+        kma.kmeans();
+        kma.getMinDistanceCluster(proc_permutation);
+
+        for(int i = ntasks; i < nprocs; ++i){
+            proc_permutation[i] = -1;
+        }
+        /*
         //fill array.
         fillContinousArray<procId_t>(proc_permutation, nprocs, NULL);
         int _u_umpa_seed = 847449649;
@@ -98,7 +393,7 @@ public:
         _u_umpa_seed -= a;
         //permute array randomly.
         update_visit_order(proc_permutation, nprocs,_u_umpa_seed, 1);
-
+         */
     }
 
     //temporary, necessary for random permutation.
@@ -205,6 +500,11 @@ public:
             fillContinousArray<procId_t>(proc_adjList,this->no_procs, NULL);
         }
 
+/*
+        for(int i = 0; i < no_procs; ++i){
+            cout << "permute:" << i << " proc:"  << proc_adjList[i] << endl;
+        }
+*/
         //partitioning of processors
         sequentialTaskPartitioning<pcoord_t, procId_t, procId_t>(
                 env,
@@ -382,8 +682,20 @@ public:
         if (procId > 0) task_begin = this->proc_to_task_xadj[procId - 1];
         procId_t taskend = this->proc_to_task_xadj[procId];
 
-        ArrayView <procId_t> assignedParts(this->proc_to_task_adj + task_begin, taskend - task_begin);
-        return assignedParts;
+        /*
+        cout << "procId_t:" << procId << " taskCount:" << taskend - task_begin << endl;
+        for(procId_t i = task_begin; i < taskend; ++i){
+            cout << "procId_t:" << procId << " task:" << proc_to_task_adj[i] << endl;
+        }
+        */
+        if (taskend - task_begin > 0){
+            ArrayView <procId_t> assignedParts(this->proc_to_task_adj + task_begin, taskend - task_begin);
+            return assignedParts;
+        }
+        else {
+            ArrayView <procId_t> assignedParts;
+            return assignedParts;
+        }
     }
 
     //write mapping to gnuPlot code to visualize.
