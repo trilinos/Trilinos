@@ -1,13 +1,13 @@
 # - Try to find PETSc
 # Once done this will define
 #
-#  PETSC_FOUND        - system has PETSc
-#  TPL_PETSC_INCLUDE_DIRS     - the PETSc include directories
-#  TPL_PETSC_LIBRARIES    - Link these to use PETSc
-#  PETSC_COMPILER     - Compiler used by PETSc, helpful to find a compatible MPI
-#  PETSC_DEFINITIONS  - Compiler switches for using PETSc
-#  PETSC_MPIEXEC      - Executable for running MPI programs
-#  PETSC_VERSION      - Version string (MAJOR.MINOR.SUBMINOR)
+#  PETSC_FOUND             - system has PETSc
+#  TPL_PETSC_INCLUDE_DIRS  - the PETSc include directories
+#  TPL_PETSC_LIBRARIES     - Link these to use PETSc
+#  PETSC_COMPILER          - Compiler used by PETSc, helpful to find a compatible MPI
+#  PETSC_DEFINITIONS       - Compiler switches for using PETSc
+#  PETSC_MPIEXEC           - Executable for running MPI programs
+#  PETSC_VERSION           - Version string (MAJOR.MINOR.SUBMINOR)
 #
 #  Usage:
 #  find_package(PETSc COMPONENTS CXX)  - required if build --with-clanguage=C++ --with-c-support=0
@@ -281,7 +281,9 @@ show :
   endif ()
   # Sometimes this can be used to assist FindMPI.cmake
   set (PETSC_MPIEXEC ${petsc_mpiexec} CACHE FILEPATH "Executable for running PETSc MPI programs" FORCE)
-  set (TPL_PETSC_INCLUDE_DIRS ${petsc_include} CACHE STRING "PETSc include path" FORCE)
+  string (REGEX REPLACE " -I" ";" PETSC_INCLUDE_DIRS "${petsc_include}")
+  string (REGEX REPLACE "-I" "" PETSC_INCLUDE_DIRS "${PETSC_INCLUDE_DIRS}")
+  set (TPL_PETSC_INCLUDE_DIRS "${PETSC_INCLUDE_DIRS}" CACHE STRING "PETSc include path" FORCE)
   set (TPL_PETSC_LIBRARIES ${PETSC_LIBRARIES_ALL} CACHE STRING "PETSc libraries" FORCE)
   set (PETSC_COMPILER ${petsc_cc} CACHE FILEPATH "PETSc compiler" FORCE)
   set (TPL_PETSC_LIBRARY_DIRS "${PETSC_DIR}/${PETSC_ARCH}/lib" CACHE STRING "PETSc library paths" FORCE)
