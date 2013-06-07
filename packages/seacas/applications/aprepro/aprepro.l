@@ -86,9 +86,9 @@ extern FILE *check_open_file(char *file, char *mode);
  
 #define MAX_IF_NESTING 64
 
-int if_state[MAX_IF_NESTING];
+int if_state[MAX_IF_NESTING] = {0}; /* INITIAL */
 int if_lvl = 0;
-
+int suppress_nl = 0; /* Used by some constructs to temporarily suppress a newline */
 %}
 
 %option nounput
@@ -111,7 +111,7 @@ integer {D}+({E})?
 <VERBATIM>"{VERBATIM(OFF)}" { BEGIN(INITIAL);   }
 <VERBATIM>[A-Za-z0-9_: ]* |
 <VERBATIM>.                 { if (echo) ECHO; }
-<VERBATIM>"\n"              { if (echo) ECHO; LINENUM_INC;   }
+<VERBATIM>"\n"              { if (echo) ECHO; LINENUM_INC; }
 
 <INITIAL>{WS}"{ECHO}" |
 {WS}"{ECHO(ON)}"	    { echo = True;	}
@@ -202,6 +202,13 @@ integer {D}+({E})?
 			   if (if_lvl >= MAX_IF_NESTING)
 			     yyerror("Too many nested if statements");
 			   if_state[if_lvl] = IF_WHILE_SKIP; }
+<IF_SKIP>{WS}"{if"{WS}*"("  { if_lvl++; 
+    if (ap_options.debugging) 
+	fprintf (stderr, "DEBUG IF: 'if (skipped)'  at level = %d at line %d\n",
+		 if_lvl, ap_file_list[nfile].lineno);
+			   if (if_lvl >= MAX_IF_NESTING)
+			     yyerror("Too many nested if statements");
+			   if_state[if_lvl] = IF_WHILE_SKIP; }
 <IF_SKIP>{WS}"{"[Ii]"fndef(" { if_lvl++; 
     if (ap_options.debugging) 
 	fprintf (stderr, "DEBUG IF: 'ifndef' at level = %d at line %d\n",
@@ -257,15 +264,19 @@ integer {D}+({E})?
     if (ap_options.debugging) 
 	fprintf (stderr, "DEBUG IF: 'else'   at level = %d at line %d\n",
 		 if_lvl, ap_file_list[nfile].lineno);
-			    if (if_state[if_lvl] == IF_SKIP) 
-			      BEGIN(INITIAL);
-			    if (if_state[if_lvl] == INITIAL)
-			      BEGIN(IF_SKIP);
-			    /* If neither is true, this is a nested 
-			       if that should be skipped */
-			  }
+    if (if_state[if_lvl] == IF_SKIP) {
+      BEGIN(INITIAL);
+      if_state[if_lvl] = INITIAL;
+    }
+    else if (if_state[if_lvl] == INITIAL) {
+      BEGIN(IF_SKIP);
+      if_state[if_lvl] = IF_SKIP;
+    }
+    /* If neither is true, this is a nested 
+       if that should be skipped */
+}
 {WS}"{"[Ee]"ndif}".*"\n"     { if (if_state[if_lvl] == IF_SKIP ||
-			       if_state[if_lvl] == INITIAL)
+				   if_state[if_lvl] == INITIAL)
 			     BEGIN(INITIAL);
 			   /* If neither is true, this is a nested 
 			      if that should be skipped */
@@ -410,13 +421,13 @@ integer {D}+({E})?
                              NEWSTR(yytext+1, yylval.string);
 			     return QSTRING; }
 
-<PARSING>"}"               { BEGIN(INITIAL); return('}'); }
+<PARSING>"}"               { BEGIN(if_state[if_lvl]); return('}'); }
 
 \\\{                      { if (echo) fwrite( "{", 1, 1, yyout ); }
 
 \\\}                      { if (echo) fwrite( "}", 1, 1, yyout ); }
 
-"{"                        { BEGIN(PARSING); return('{');  }
+"{"                        { BEGIN(PARSING); return('{'); }
 
 [Ee][Xx][Ii][Tt] |
 [Qq][Uu][Ii][Tt]           { if (ap_options.end_on_exit)
@@ -435,7 +446,7 @@ integer {D}+({E})?
 {id} |
 .                          { if (echo) ECHO; }
 
-"\n"                       { if (echo) ECHO; LINENUM_INC; }
+"\n"                       { if (echo && !suppress_nl) ECHO; suppress_nl = 0; LINENUM_INC; }
 
 %%
 int yywrap(void)
@@ -530,12 +541,13 @@ void immutable_modify(symrec *var)
 	   var->name, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
 }
 
-void redefined_warning (char *var)
+void redefined_warning (symrec *var)
 {
-  if (*var != '_' && ap_options.warning_msg == True)
+  if (*var->name != '_' && ap_options.warning_msg == True)
     fprintf (stderr,
-             "Aprepro: WARN: Variable '%s' redefined (%s, line %d)\n",
-             var, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
+             "Aprepro: WARN: %s Variable '%s' redefined (%s, line %d)\n",
+	     var->isInternal ? "Pre-defined" : "User-defined",
+             var->name, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
 }
 
 void warning (char *string)
@@ -561,7 +573,7 @@ char *do_execute (char string[])
    *       therefore, we read it ourselves using input(), then we push:
    *       '}{' + our string + '}' 
    */
-  while ((i = input ()) != '}' && i != EOF)
+  while ((i = input()) != '}' && i != EOF)
     ;				/* eat up values */
   if (i == EOF) {
     yyerror ("End-of-file in execute() command");
@@ -621,6 +633,23 @@ char *do_rescan (char *string)
     free(new_string);
   }
   return (NULL);
+}
+
+char *do_if(double x)
+{
+  if_lvl++;
+  if (if_lvl >= MAX_IF_NESTING)
+    yyerror("Too many nested if statements");
+
+  if (x == 0) {
+    if_state[if_lvl] = IF_SKIP;
+  } else {
+    suppress_nl = 1;
+    if_state[if_lvl] = INITIAL;
+  }
+  if (ap_options.debugging) 
+    fprintf(stderr, "DEBUG IF: If level %d %d\n", if_lvl, if_state[if_lvl]); 
+  return(NULL);
 }
 
 char *do_error (char *error_string)

@@ -108,7 +108,7 @@
 
 void immutable_modify(symrec* var);
 void undefined_warning(char* var);
-void redefined_warning(char* var);
+void redefined_warning(symrec* var);
 void set_type(symrec *var, int type);
 void yyerror(char* var);
 int  yylex(void);
@@ -1922,7 +1922,7 @@ yyreduce:
 #line 129 "aprepro.y"
     { (yyval.string) = (yyvsp[(3) - (3)].string); 
                                   (yyvsp[(1) - (3)].tptr)->value.svar = (yyvsp[(3) - (3)].string);
-                                  redefined_warning((yyvsp[(1) - (3)].tptr)->name);          }
+                                  redefined_warning((yyvsp[(1) - (3)].tptr));          }
     break;
 
   case 31:
@@ -1931,7 +1931,7 @@ yyreduce:
 #line 132 "aprepro.y"
     { (yyval.string) = (yyvsp[(3) - (3)].string); 
                                   (yyvsp[(1) - (3)].tptr)->value.svar= (yyvsp[(3) - (3)].string);
-                                  redefined_warning((yyvsp[(1) - (3)].tptr)->name);          
+                                  redefined_warning((yyvsp[(1) - (3)].tptr));          
                                   (yyvsp[(1) - (3)].tptr)->type = SVAR;              }
     break;
 
@@ -2077,7 +2077,7 @@ yyreduce:
 /* Line 1464 of yacc.c  */
 #line 163 "aprepro.y"
     { (yyval.val) = (yyvsp[(3) - (3)].val); (yyvsp[(1) - (3)].tptr)->value.var = (yyvsp[(3) - (3)].val);
-				  redefined_warning((yyvsp[(1) - (3)].tptr)->name);          }
+				  redefined_warning((yyvsp[(1) - (3)].tptr));          }
     break;
 
   case 52:
@@ -2085,7 +2085,7 @@ yyreduce:
 /* Line 1464 of yacc.c  */
 #line 165 "aprepro.y"
     { (yyval.val) = (yyvsp[(3) - (3)].val); (yyvsp[(1) - (3)].tptr)->value.var = (yyvsp[(3) - (3)].val);
-				  redefined_warning((yyvsp[(1) - (3)].tptr)->name);          
+				  redefined_warning((yyvsp[(1) - (3)].tptr));          
 				  (yyvsp[(1) - (3)].tptr)->type = VAR;			}
     break;
 
