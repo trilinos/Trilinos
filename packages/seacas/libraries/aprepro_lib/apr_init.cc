@@ -181,6 +181,7 @@ extern const char
   *do_execute(char *string),
   *do_rescan(char *string),
 
+  *do_if(double x),
   *do_intout(double intval),
   *do_tostring(double x),
 
@@ -232,6 +233,7 @@ struct str_d_init string_d_fncts[] =
   {"IO",             do_intout,      "IO(x)","Convert x to an integer and then to a string. "},
   {"to_string",      do_tostring,    "to_string(x)","Returns a string representation of the numerical variable x. The variable x is unchanged."},
   {"tostring",       do_tostring,    "tostring(x)","Returns a string representation of the numerical variable x. The variable x is unchanged."},
+  {"if",             do_if,          "if(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
   {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
   };
 

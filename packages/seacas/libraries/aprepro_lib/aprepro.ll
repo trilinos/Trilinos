@@ -41,9 +41,10 @@ char  *temp_f;
 
 #define MAX_IF_NESTING 64
 
-int if_state[MAX_IF_NESTING];
+ int if_state[MAX_IF_NESTING] = {0}; // INITIAL
 int if_lvl = 0;
-
+bool suppress_nl = false;
+ 
 %}
 /*** Flex Declarations and Options ***/
 
@@ -183,6 +184,13 @@ integer {D}+({E})?
 			   if (if_lvl >= MAX_IF_NESTING)
 			     yyerror("Too many nested if statements");
 			   if_state[if_lvl] = IF_WHILE_SKIP; }
+<IF_SKIP>{WS}"{if"{WS}*"("  { if_lvl++; 
+    if (aprepro.ap_options.debugging) 
+	fprintf (stderr, "DEBUG IF: 'if (skipped)'  at level = %d at line %d\n",
+		 if_lvl, aprepro.ap_file_list.top().lineno);
+			   if (if_lvl >= MAX_IF_NESTING)
+			     yyerror("Too many nested if statements");
+			   if_state[if_lvl] = IF_WHILE_SKIP; }
 <IF_SKIP>{WS}"{"[Ii]"fndef(" { if_lvl++; 
     if (aprepro.ap_options.debugging) 
 	fprintf (stderr, "DEBUG IF: 'ifndef' at level = %d at line %d\n",
@@ -238,13 +246,17 @@ integer {D}+({E})?
     if (aprepro.ap_options.debugging) 
 	fprintf (stderr, "DEBUG IF: 'else'   at level = %d at line %d\n",
 		 if_lvl, aprepro.ap_file_list.top().lineno);
-			    if (if_state[if_lvl] == IF_SKIP) 
-			      BEGIN(INITIAL);
-			    if (if_state[if_lvl] == INITIAL)
-			      BEGIN(IF_SKIP);
-			    /* If neither is true, this is a nested 
-			       if that should be skipped */
-			  }
+    if (if_state[if_lvl] == IF_SKIP) {
+      if_state[if_lvl] = INITIAL;
+      BEGIN(INITIAL);
+    }
+    else if (if_state[if_lvl] == INITIAL) {
+      if_state[if_lvl] = IF_SKIP;
+      BEGIN(IF_SKIP);
+    }
+    /* If neither is true, this is a nested 
+       if that should be skipped */
+}
 "{"[Ee]"ndif}".*"\n"     { if (if_state[if_lvl] == IF_SKIP ||
 			       if_state[if_lvl] == INITIAL)
 			     BEGIN(INITIAL);
@@ -385,7 +397,7 @@ integer {D}+({E})?
                              new_string(yytext+1, &yylval->string);
 			     return token::QSTRING; }
 
-<PARSING>"}"               { BEGIN(INITIAL); return(token::RBRACE); }
+<PARSING>"}"               { BEGIN(if_state[if_lvl]); return(token::RBRACE); }
 
 \\\{                      { if (echo) LexerOutput("{", 1); }
 
@@ -410,7 +422,8 @@ integer {D}+({E})?
 {id} |
 .                          { if (echo) ECHO; }
 
-"\n"                       { if (echo) ECHO; aprepro.ap_file_list.top().lineno++; }
+"\n"                       { if (echo && !suppress_nl) ECHO; suppress_nl = false; 
+                             aprepro.ap_file_list.top().lineno++; }
 
 %%
 
@@ -551,6 +564,24 @@ namespace SEAMS {
     }
     return (NULL);
   }
+
+  char *Scanner::if_handler(double x)
+  {
+    if_lvl++;
+    if (if_lvl >= MAX_IF_NESTING)
+      yyerror("Too many nested if statements");
+
+    if (x == 0) {
+      if_state[if_lvl] = IF_SKIP;
+    } else {
+      suppress_nl = true;
+      if_state[if_lvl] = INITIAL;
+    }
+    if (aprepro.ap_options.debugging) 
+      std::cerr << "DEBUG IF: If level " << if_lvl << " " << if_state[if_lvl] << "\n"; 
+    return(NULL);
+  }
+
 }
 
 /* This implementation of ExampleFlexLexer::yylex() is required to fill the

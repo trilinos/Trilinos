@@ -1011,6 +1011,12 @@ const char *do_rescan(char *string)
   return NULL;
 }
 
+const char *do_if(double x)
+{
+  aprepro->lexer->if_handler(x);
+  return NULL;
+}
+
 const char *do_extract(char *string, char *begin, char *end)
 {
   /* From 'string' return a substring delimited by 'begin' and 'end'.

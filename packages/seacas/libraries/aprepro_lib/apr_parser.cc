@@ -635,7 +635,7 @@ namespace SEAMS {
 #line 140 "aprepro.yy"
     { (yyval.string) = (yysemantic_stack_[(3) - (3)].string); 
 				  (yysemantic_stack_[(3) - (1)].tptr)->value.svar = (yysemantic_stack_[(3) - (3)].string);
-				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          }
+				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr));          }
     break;
 
   case 32:
@@ -644,7 +644,7 @@ namespace SEAMS {
 #line 143 "aprepro.yy"
     { (yyval.string) = (yysemantic_stack_[(3) - (3)].string); 
 				  (yysemantic_stack_[(3) - (1)].tptr)->value.svar= (yysemantic_stack_[(3) - (3)].string);
-				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          
+				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr));          
 		                  set_type(aprepro, (yysemantic_stack_[(3) - (1)].tptr), token::SVAR);		}
     break;
 
@@ -786,7 +786,7 @@ namespace SEAMS {
 /* Line 677 of lalr1.cc  */
 #line 170 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (3)].val); (yysemantic_stack_[(3) - (1)].tptr)->value.var = (yysemantic_stack_[(3) - (3)].val);
-				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          }
+				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr));          }
     break;
 
   case 53:
@@ -794,7 +794,7 @@ namespace SEAMS {
 /* Line 677 of lalr1.cc  */
 #line 172 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(3) - (3)].val); (yysemantic_stack_[(3) - (1)].tptr)->value.var = (yysemantic_stack_[(3) - (3)].val);
-				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr)->name);          
+				  redefined_warning(aprepro, (yysemantic_stack_[(3) - (1)].tptr));          
 		                  set_type(aprepro, (yysemantic_stack_[(3) - (1)].tptr), token::VAR);			}
     break;
 
