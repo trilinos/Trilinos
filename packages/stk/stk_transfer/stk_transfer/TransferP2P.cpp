@@ -21,7 +21,7 @@ namespace {
 
 template <unsigned DIM, typename Scalar>
 Scalar distance_squared (const Scalar x[DIM], const Scalar y[DIM]) {
-  Scalar d = 0;  
+  Scalar d = 0;
   for (unsigned i=0; i<DIM; ++i) d += (x[i]-y[i])*(x[i]-y[i]);
   return d;
 }
@@ -93,17 +93,17 @@ BulkDataPtr &STKMesh::BulkData() {return bulk_data;}
 STKMesh::iterator STKMesh::begin() const {return entities.begin();}
 STKMesh::iterator   STKMesh::end() const {return entities.end();}
 const double *STKMesh::Coord(const STKMesh::iterator i) const {
-  const double *coord = stk::mesh::field_data(coordinates_field, *i);
+  const double *coord = bulk_data->field_data(coordinates_field, *i);
   return coord;
 }
 const double *STKMesh::Coord(const stk::mesh::EntityKey i) const {
   const stk::mesh::Entity  entity = bulk_data->get_entity(i);
-  const double *coord = stk::mesh::field_data(coordinates_field, entity);
+  const double *coord = bulk_data->field_data(coordinates_field, entity);
   return  coord;
 }
 const double *STKMesh::Value(const stk::mesh::EntityKey i) const {
   const stk::mesh::Entity  entity = bulk_data->get_entity(i);
-  const double *value = stk::mesh::field_data(values_field, entity);
+  const double *value = bulk_data->field_data(values_field, entity);
   return  value;
 }
 stk::mesh::EntityKey STKMesh::Key(STKMesh::iterator i) const {
@@ -118,58 +118,58 @@ VectorFieldType &STKMesh::Value(){return values_field;}
  *
  *     Decompose matrix A into the product of a unit lower triangular matrix, L,
  *     and an upper triangular matrix, U, with column pivoting.
- *             
+ *
  *     The matrix A is assumed to be stored in an array like this:
- *                     
+ *
  *                                    A[0]  A[1]  A[2]
  *                                    A[3]  A[4]  A[5]
  *                                    A[6]  A[7]  A[8]
- *     
+ *
  *     Upon completion, the entries A[3], A[6], A[7] of A are overwritten by
  *     the strictly lower portion of L.  And the rest of A is overwritten by
  *     the upper portion of U.  The pivots are stored in piv.  A plus one or
  *     minus one is returned in "sign" to allow computation of the determinant
  *     .. just multiply the trace times this value.
- *    
+ *
  *     A value of 0 (zero) is returned if the matrix is singular (assuming NDEBUG
  *     is not defined.)
- *                                                                                                          
+ *
  *     There are 3 divisions, 5 multiplications, and 5 add/sub
  *     plus pivoting compares and swaps.
- *                                                                                                                      
+ *
  *
  *                                             Drake 9-98
  */
 int LU_decomp(double A[9], int piv[3], int* sign)
 {
   piv[0] = 0; piv[1] = 1; piv[2] = 2;
-  
+
   register double m;
-  
+
 #ifndef NDEBUG
   if ( A[0] == 0.0 && A[3] == 0.0 && A[6] == 0.0 ) return 0;
 #endif
-  
+
   (*sign) = 1;
-  if ( (m = fabs(A[0])) < fabs(A[3]) ) { 
+  if ( (m = fabs(A[0])) < fabs(A[3]) ) {
     if (fabs(A[3]) < fabs(A[6]))
-    {   
+    {
       piv[0] = 2; piv[2] = 0;             // Switch rows 0 and 2.
       m = A[0]; A[0] = A[6]; A[6] = m;
       m = A[1]; A[1] = A[7]; A[7] = m;
       m = A[2]; A[2] = A[8]; A[8] = m;
-    }   
+    }
     else
-    {   
+    {
       piv[0] = 1; piv[1] = 0;             // Switch rows 0 and 1.
       m = A[0]; A[0] = A[3]; A[3] = m;
       m = A[1]; A[1] = A[4]; A[4] = m;
       m = A[2]; A[2] = A[5]; A[5] = m;
-    }   
-    (*sign) = -1; 
+    }
+    (*sign) = -1;
   }
   else if (m < fabs(A[6]))
-    {   
+    {
       piv[0] = 2; piv[2] = 0;             // Switch rows 0 and 2.
       m = A[0]; A[0] = A[6]; A[6] = m;
       m = A[1]; A[1] = A[7]; A[7] = m;
@@ -210,23 +210,23 @@ int LU_decomp(double A[9], int piv[3], int* sign)
 
 /*********************   LU_solve()   *******************************
  *     Uses a precomputed LU decomposition to find the solution to Ax = b for
- *         
+ *
  *     a length 3 vector b.
- *                 
+ *
  *     It solves Ly = b for vector y, then Ux = y for x.
- *                         
+ *
  *     The matrix A is assumed to be of the same form as the output from
  *     LU_decomp().
- *                                     
+ *
  *     The vector b is overwritten with the solution.
- *                                             
+ *
  *     The diagonals are checked for zeros if NDEBUG is not defined.
- *                                                     
+ *
  *     There are 3 div, 6 mult, and 6 add/sub plus compares and swaps to undo
  *     the pivoting.
- *                                                                 
+ *
  *     Drake 9/98
- *     
+ *
  */
 int LU_solve(const double A[9], const int piv[3], double b[3])
 {
@@ -257,14 +257,14 @@ int LU_solve(const double A[9], const int piv[3], double b[3])
 }
 
 
-std::vector<double> solve_3_by_3_with_LU(const MDArray             M, 
+std::vector<double> solve_3_by_3_with_LU(const MDArray             M,
                                          const std::vector<double> x) {
   double A[9];
   double b[3];
   int piv[3];
   int sign;
-  for (unsigned i=0,k=0; i<3; ++i) 
-    for (unsigned j=0; j<3; ++j) 
+  for (unsigned i=0,k=0; i<3; ++i)
+    for (unsigned j=0; j<3; ++j)
       A[k++] = M(i,j);
   for (unsigned i=0; i<3; ++i) b[i] = x[i];
   LU_decomp(A, piv, &sign);
@@ -281,13 +281,13 @@ void boundingbox_vector(std::vector<BoundingBox> &vector,
                         const BoundingBox::Data   radius,
                         const stk::ParallelMachine comm) {
   BoundingBox::Data center[DIM];
-  
+
   for (PointMap::const_iterator i=mesh.begin(); i!=mesh.end(); ++i) {
     for (unsigned j=0; j<DIM; ++j) center[j] = i->second[j];
     const IdentProc::Key Id(0,i->first);
     const BoundingBox::Key key(Id, stk::parallel_machine_rank(comm));
     BoundingBox B(center, radius, key);
-    vector.push_back(B); 
+    vector.push_back(B);
   }
 }
 
@@ -299,13 +299,13 @@ void boundingbox_vector(std::vector<BoundingBox> &vector,
 
   const unsigned NumDomainPts = mesh.dimension(0);
   BoundingBox::Data center[DIM];
-  
+
   for (unsigned i=0; i!=NumDomainPts; ++i) {
     for (unsigned j=0; j<DIM; ++j) center[j] = mesh(i,j);
     const IdentProc::Key Id(0,i);
     const BoundingBox::Key key(Id, stk::parallel_machine_rank(comm));
     BoundingBox B(center, radius, key);
-    vector.push_back(B); 
+    vector.push_back(B);
   }
 }
 
@@ -315,14 +315,14 @@ void boundingbox_vector(std::vector<BoundingBox> &vector,
                         const BoundingBox::Data   radius,
                         const stk::ParallelMachine comm) {
   BoundingBox::Data center[DIM];
-  
+
   for (typename STKMesh::iterator i=mesh.begin(); i!=mesh.end(); ++i) {
     const double *c = mesh.Coord(i);
     for (unsigned j=0; j<DIM; ++j) center[j] = c[j];
     const stk::mesh::EntityKey Id=mesh.Key(i);
     const BoundingBox::Key key(Id, stk::parallel_machine_rank(comm));
     BoundingBox B(center, radius, key);
-    vector.push_back(B); 
+    vector.push_back(B);
   }
 }
 
@@ -333,7 +333,7 @@ void point_to_point_coarse_search(IdentProcRelation &RangeToDomain,
                                   const PointData   &FromPoints,
                                   const BoundingBox::Data radius,
                                   const stk::ParallelMachine comm) {
-  
+
   std::vector<BoundingBox> range_vector;
   std::vector<BoundingBox> domain_vector;
 
@@ -351,15 +351,15 @@ void point_to_point_coarse_search(IdentProcRelation &RangeToDomain,
 }
 
 namespace {
-template <class ArrayOrMesh> 
+template <class ArrayOrMesh>
 const double *entity_coord(const ArrayOrMesh &FromPoints,
                            const stk::mesh::EntityKey &k);
 
-template <class ArrayOrMesh> 
+template <class ArrayOrMesh>
 const double *entity_value(const ArrayOrMesh &FromPoints,
                            const stk::mesh::EntityKey &k);
 
-template<> 
+template<>
   const double *entity_coord<MDArray>(const MDArray &FromPoints,
                                       const stk::mesh::EntityKey &k) {
   const int j = k.id();
@@ -368,14 +368,14 @@ template<>
   return d;
 }
 
-template<>  
+template<>
 const double *entity_coord<STKMesh>(const STKMesh &FromMesh,
                                     const stk::mesh::EntityKey &k) {
   const double * d = FromMesh.Coord(k);
   return d;
 }
 
-template<> 
+template<>
   const double *entity_value<MDArray>(const MDArray &FromPoints,
                                       const stk::mesh::EntityKey &k) {
   const int j = k.id();
@@ -383,7 +383,7 @@ template<>
   const double * d = &FromPoints[i];
   return d;
 }
-template<> 
+template<>
   const double *entity_value<STKMesh>(const STKMesh &FromMesh,
                                       const stk::mesh::EntityKey &k) {
   const double * d = FromMesh.Value(k);
@@ -405,12 +405,12 @@ void linear_interpolation (MDArray          &ToValues,
     MDArray Corners(DIM+1,DIM);
     for (unsigned j=0; j<DIM+1; ++j) {
       const IdentProc::Key key = RangeToDomain[4*i+j].second.ident;
-      const double *c = entity_coord<MeshClass>(FromPoints, key); 
+      const double *c = entity_coord<MeshClass>(FromPoints, key);
       for (unsigned k=0; k<DIM; ++k) Corners(j,k) = c[k];
-    } 
+    }
     MDArray SpanVectors(DIM,DIM);
-    for (unsigned j=1; j<DIM+1; ++j) 
-      for (unsigned k=0; k<DIM; ++k) 
+    for (unsigned j=1; j<DIM+1; ++j)
+      for (unsigned k=0; k<DIM; ++k)
         SpanVectors(k,j-1) = Corners(j,k) - Corners(0,k);
     std::vector<double> point(DIM);
     const unsigned p = RangeToDomain[4*i].first.ident;
@@ -424,7 +424,7 @@ void linear_interpolation (MDArray          &ToValues,
     for (unsigned f=0; f<numFields; ++f)  {
       for (unsigned j=0; j<DIM+1; ++j) {
         const IdentProc::Key k = RangeToDomain[4*i+j].second.ident;
-        const double *c = entity_value(FromValues, k); 
+        const double *c = entity_value(FromValues, k);
         Values[j] = c[f];
       }
       // So, we have choosen corner 0 as the base of the span
@@ -432,20 +432,20 @@ void linear_interpolation (MDArray          &ToValues,
       // coordinates of the target point in the span vector
       // coordinate system.  These are stored in S. S is
       // dimension DIM and there are DIM+1 corner values.
-      // The scalar used to scale the value at corner 0 
+      // The scalar used to scale the value at corner 0
       // is 1-sum(S).
       double T=1;
       for (unsigned j=0; j<DIM; ++j) T -= S[j];
       double interpolated_value = T * Values[0];
       for (unsigned j=0; j<DIM; ++j)
-        interpolated_value += S[j] * Values[j+1]; 
-      ToValues(i,f) = interpolated_value; 
+        interpolated_value += S[j] * Values[j+1];
+      ToValues(i,f) = interpolated_value;
     }
   }
 }
 
-  
-// Want to find the N best elements to keep.  
+
+// Want to find the N best elements to keep.
 template <unsigned DIM, class MeshClass>
 void filter_with_fine_search(IdentProcRelation  &RangeToDomain,
                                 const PointMap  &ToPoints,
@@ -470,11 +470,11 @@ void filter_with_fine_search(IdentProcRelation  &RangeToDomain,
       if (i < range_index) {
         if (DIM+1 == smallest_distances.size()) {
           // Found enough points for linear interpolation.
-          for (DIST_MAP::const_iterator d=smallest_distances.begin(); 
+          for (DIST_MAP::const_iterator d=smallest_distances.begin();
                d != smallest_distances.end(); ++d) {
             new_relations.push_back(RangeToDomain[d->second]);
           }
-        } 
+        }
         smallest_distances.clear();
         ++i;
       } else {
@@ -485,18 +485,18 @@ void filter_with_fine_search(IdentProcRelation  &RangeToDomain,
         const DIST_MAP::value_type val(dist,j);
 
         // Is using a map too much memory allocation/deallocation? Maybe std::vector is better.
-        if (smallest_distances.insert(val).second && DIM+1 < smallest_distances.size()) 
+        if (smallest_distances.insert(val).second && DIM+1 < smallest_distances.size())
           smallest_distances.erase(smallest_distances.begin()); // DIST_MAP: Largest at begin()
         ++j;
       }
     } else ++j;
   }
   if (DIM+1 == smallest_distances.size()) {
-    for (DIST_MAP::const_iterator d=smallest_distances.begin(); 
+    for (DIST_MAP::const_iterator d=smallest_distances.begin();
          d != smallest_distances.end(); ++d) {
       new_relations.push_back(RangeToDomain[d->second]);
     }
-  } 
+  }
   RangeToDomain.swap(new_relations);
 }
 
@@ -514,7 +514,7 @@ void delete_range_points_found(PointMap &ToPoints,
 
 
 template <unsigned DIM>
-void convert_to_map(PointMap      &map_points, 
+void convert_to_map(PointMap      &map_points,
                     const MDArray &Points) {
   const unsigned NumPts = Points.dimension(0);
   PointMap::iterator at=map_points.begin();
@@ -526,7 +526,7 @@ void convert_to_map(PointMap      &map_points,
   }
 }
 
-STKMesh convert_points_to_mesh(const MDArray &Coords, 
+STKMesh convert_points_to_mesh(const MDArray &Coords,
                                const MDArray &Values,
                                const stk::ParallelMachine  comm) {
   const unsigned num_nodes   = Coords.dimension(0);
@@ -540,26 +540,26 @@ STKMesh convert_points_to_mesh(const MDArray &Coords,
   VectorFieldType &values_field =
     meta_data->declare_field<VectorFieldType>("values", num_values);
 
-  
+
   stk::mesh::Part & allParts = meta_data->universal_part();
   stk::mesh::put_field(coordinates_field , stk::mesh::MetaData::NODE_RANK, allParts);
   stk::mesh::put_field(values_field ,      stk::mesh::MetaData::NODE_RANK, allParts);
 
   bulk_data->modification_begin();
-  
+
   const unsigned entity_rank_count = meta_data->entity_rank_count();
   std::vector<size_t> requests(entity_rank_count,0);
   requests[0] = num_nodes;
-  
+
   EntityVec entities;
   bulk_data->generate_new_entities(requests, entities);
-  
+
   bulk_data->modification_end();
 
   for (unsigned i=0; i<num_nodes; ++i) {
     stk::mesh::Entity e = entities[i];
-    double *coord = stk::mesh::field_data(coordinates_field, e);
-    double *value = stk::mesh::field_data(values_field     , e);
+    double *coord = bulk_data->field_data(coordinates_field, e);
+    double *value = bulk_data->field_data(values_field     , e);
     for (unsigned j=0; j<spatial_dim; ++j) coord[j] = Coords(i,j);
     for (unsigned j=0; j<num_values ; ++j) value[j] = Values(i,j);
   }
@@ -576,26 +576,26 @@ void copy_domain_to_range_processors(STKMesh                   &Mesh,
                                      const stk::ParallelMachine comm) {
 
   const unsigned my_rank = stk::parallel_machine_rank(comm);
-  
+
   std::vector<stk::mesh::EntityProc> domain_to_ghost ;
 
   const IdentProcRelation::const_iterator end=RangeToDomain.end();
   for (IdentProcRelation::const_iterator i=RangeToDomain.begin(); i!=end; ++i) {
-    
+
     const stk::mesh::EntityKey domain_entity_key = i->second.ident;
     const unsigned            domain_owning_rank = i->second.proc;
     const unsigned             range_owning_rank = i->first.proc;
     if (domain_owning_rank == my_rank && range_owning_rank != my_rank) {
       const stk::mesh::Entity entity = Mesh.BulkData()->get_entity(domain_entity_key);
-      if (entity.owner_rank() == (int)my_rank) { // should always be true by construction.
+      if (Mesh.BulkData()->parallel_owner_rank(entity) == (int)my_rank) { // should always be true by construction.
         const stk::mesh::EntityProc ep(entity, range_owning_rank);
         domain_to_ghost.push_back(ep);
-      }   
-    }   
+      }
+    }
   }
- 
+
   Mesh.BulkData()->modification_begin();
-  
+
   stk::mesh::Ghosting & transfer_domain_ghosting =
     Mesh.BulkData()->create_ghosting("Transfer "+transfer_name+" Ghosting");
   {
@@ -606,15 +606,15 @@ void copy_domain_to_range_processors(STKMesh                   &Mesh,
                                         receive );
   }
   Mesh.BulkData()->modification_end();
-  
+
   // Copy coordinates to the newly ghosted nodes
   std::vector<const stk::mesh::FieldBase *> fields ;
   fields.push_back(&Mesh.Coord());
   fields.push_back(&Mesh.Value());
-        
+
   stk::mesh::communicate_field_data( transfer_domain_ghosting , fields);
 }
-  
-  
+
+
 
 }

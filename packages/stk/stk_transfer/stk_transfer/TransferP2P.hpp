@@ -31,8 +31,8 @@
 //
 //  NOTE:
 //
-//    These routines are used internally by the Transfer class and are 
-//    not ment to be used outside of the class. Thus there is no 
+//    These routines are used internally by the Transfer class and are
+//    not ment to be used outside of the class. Thus there is no
 //    documentation here on how to call these functions, the
 //    documentation is in the source.
 //
@@ -100,7 +100,7 @@ typedef Intrepid::FieldContainer<double> MDArray;
 
 int LU_decomp(double A[9], int piv[3], int* sign);
 int LU_solve (const double A[9], const int piv[3], double b[3]);
-std::vector<double> solve_3_by_3_with_LU(const MDArray             M, 
+std::vector<double> solve_3_by_3_with_LU(const MDArray             M,
                                          const std::vector<double> x);
 
 template <unsigned DIM, class PointData>
@@ -116,7 +116,7 @@ void linear_interpolation (MDArray          &ToValues,
                     const MDArray           &ToPoints,
                     const MeshClass         &FromPoints,
                     const stk::ParallelMachine  comm);
-  
+
 template <unsigned DIM, class MeshClass>
 void filter_with_fine_search(IdentProcRelation &RangeToDomain,
                                 const PointMap &ToPoints,
@@ -132,7 +132,7 @@ template <unsigned DIM>
 void convert_to_map(PointMap      &map_points,
                     const MDArray &Points) ;
 
-STKMesh convert_points_to_mesh(const MDArray &Coords, 
+STKMesh convert_points_to_mesh(const MDArray &Coords,
                                const MDArray &Values,
                                const stk::ParallelMachine  comm);
 
