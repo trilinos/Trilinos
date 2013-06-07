@@ -1,0 +1,96 @@
+// @HEADER
+// ***********************************************************************
+//
+//            Domi: Multidimensional Datastructures Package
+//                 Copyright (2013) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact William F. Spotz (wfspotz@sandia.gov)
+//
+// ***********************************************************************
+// @HEADER
+
+#include "Domi_Slice.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
+
+namespace Domi
+{
+const Ordinal Slice::Default(Teuchos::OrdinalTraits<Ordinal>::max());
+
+Slice Slice::bounds(Ordinal size) const
+{
+  // If this Slice is already bounded and the size is large enough,
+  // just return a copy of this Slice.  This is done for performance
+  // reasons to avoid, when we can, all of the conditionals below.
+  if (_bounded_pos && size >= stop ) return *this;
+  if (_bounded_neg && size >  start) return *this;
+  // Initialize the lo and hi indexes
+  Ordinal lo = start;
+  Ordinal hi = stop;
+  // Convert Default values to concrete indexes
+  if (lo == Default) lo = (step < 0) ? size-1 :  0;
+  if (hi == Default) hi = (step > 0) ? size   : -1;
+  // Convert negative values to nonnegative indexes
+  while (lo < 0) lo += size;
+  while (hi < 0) hi += size;
+  // Clip too-large values
+  if ((step < 0) && (lo > size)) lo = size;
+  if ((step > 0) && (hi > size)) hi = size;
+  // Fine-tune hi to be a precise stopping index
+  Ordinal numSteps = (hi - lo) / step;
+  if ((hi - lo) % step) numSteps += 1;
+  hi = lo + step * numSteps;
+  // Return the new slice representing the true bounds
+  return Slice(lo, hi, step);
+}
+
+std::string Slice::toString() const
+{
+  std::stringstream ss;
+  ss << "[";
+  if (step > 0 && start != 0      ) ss << start;
+  if (step < 0 && start != Default) ss << start;
+  ss << ":";
+  if (step > 0 && stop != Default) ss << stop;
+  if (step < 0 && stop != 0      ) ss << stop;
+  if (step != 1)                   ss << ":" << step;
+  ss << "]";
+  return ss.str();
+}
+
+std::ostream & operator<<(std::ostream & os,
+                          const Slice & slice)
+{
+  return os << slice.toString();
+}
+
+}  // namespace Domi
