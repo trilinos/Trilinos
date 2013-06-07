@@ -17,7 +17,7 @@
 #include <stk_transfer/Transfer.hpp>
 
 
-int main(int argc, char **argv)
+bool use_case_5_driver(stk::ParallelMachine  comm)
 {
   stk::diag::Timer timer("Transfer Use Case 5", 
                           use_case::TIMER_TRANSFER, 
@@ -33,13 +33,9 @@ int main(int argc, char **argv)
   enum { FROMNUMPOINTS = 100  };
   enum {   TONUMPOINTS = 100  };
 
-  use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
+  typedef stk::transfer::Transfer<>::MDArray MDArray;
 
-  stk::ParallelMachine comm = use_case_environment.m_comm;
- 
-  typedef stk::transfer::Transfer::MDArray MDArray;
-
-  stk::transfer::Transfer transfer("STK Transfer test Use case 5");
+  stk::transfer::Transfer<> transfer("STK Transfer test Use case 5");
 
   MDArray FromPoints (FROMNUMPOINTS,DIM), 
           ToPoints   (  TONUMPOINTS,DIM), 
@@ -112,6 +108,5 @@ int main(int argc, char **argv)
 
 
   const bool collective_result = use_case::print_status(comm, status);
-  const int return_code = collective_result ? 0 : -1;
-  return return_code;
+  return collective_result;
 }
