@@ -202,7 +202,7 @@ public:
                 dim(dim_),
                 numElements(numElements_),
                 elementCoords(elementCoords_),
-                numClusters (pow(2, dim_) + 1),
+                numClusters ((1 << dim_) + 1),
                 required_elements(required_elements_)
     {
         this->clusters  = allocMemory<KMeansCluster <IT,WT> >(this->numClusters);
@@ -231,7 +231,7 @@ public:
 
         //assign initial cluster centers.
         for (int j = 0; j < dim; ++j){
-            int mod = pow(2,j + 1);
+            int mod = (1 << (j+1));
             for (int i = 0; i < numClusters - 1; ++i){
                 WT c = 0;
                 if ( (i % mod) < mod / 2){
