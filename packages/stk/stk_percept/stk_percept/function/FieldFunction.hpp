@@ -203,11 +203,36 @@ namespace stk
 
       unsigned stride = 0;
       bulk.field_data( *m_my_field , bucket_or_element);
-      {
-        unsigned er = mybucket(bulk, bucket_or_element).entity_rank();
-        const stk::mesh::FieldBase::Restriction & r = m_my_field->restriction(er, stk::mesh::MetaData::get(*m_my_field).universal_part());
-        stride = r.dimension() ;
-      }
+      if (0)
+        {
+          unsigned er = mybucket(bulk, bucket_or_element).entity_rank();
+          const stk::mesh::FieldBase::Restriction & r = m_my_field->restriction(er, stk::mesh::MetaData::get(*m_my_field).universal_part());
+          stride = r.dimension() ;
+        }
+      if (1)
+        {
+          unsigned er = mybucket(bulk, bucket_or_element).entity_rank();
+          const stk::mesh::FieldBase::Restriction & r = m_my_field->restriction(er, stk::mesh::MetaData::get(*m_my_field).universal_part());
+          static const stk::mesh::FieldBase::Restriction empty ;
+
+          if (r == empty)
+            {
+              unsigned nfr = m_my_field->restrictions().size();
+              for (unsigned ifr = 0; ifr < nfr; ifr++)
+                {
+                  const stk::mesh::FieldRestriction& fr = m_my_field->restrictions()[ifr];
+                  unsigned field_dimension = fr.dimension() ;
+                  if (field_dimension > 0)
+                    {
+                      stride = field_dimension;
+                    }
+                }
+            }
+          else
+            {
+              stride = r.dimension() ;
+            }
+        }
 
       unsigned nDOF = stride;
 #ifndef NDEBUG

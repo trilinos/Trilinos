@@ -1526,28 +1526,50 @@ namespace stk {
       m_entity_pool.resize(0);
     }
 
-    double * PerceptMesh::
-    field_data(const stk::mesh::FieldBase *field, const stk::mesh::Entity node, unsigned *stride)
+    double * PerceptMesh::field_data(const stk::mesh::FieldBase *field, const stk::mesh::Entity entity, unsigned *stride)
     {
       EXCEPTWATCH;
       unsigned rank = field->rank();
       double * fdata = 0;
 
       if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::MetaData::NODE_RANK, stk::mesh::MetaData::get(*field).universal_part());
-        *stride = r.dimension() ;
+        const stk::mesh::FieldBase::Restriction & r = field->restriction(entity_rank(entity), stk::mesh::MetaData::get(*field).universal_part());
+        static const stk::mesh::FieldBase::Restriction empty ;
+
+        if (r == empty)
+          {
+            unsigned nfr = field->restrictions().size();
+            for (unsigned ifr = 0; ifr < nfr; ifr++)
+              {
+                const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
+                //unsigned field_rank = fr.entity_rank();
+                unsigned field_dimension = fr.dimension() ;
+                if (field_dimension > 0)
+                  {
+                    *stride = field_dimension;
+                  }
+              }
+          }
+        else
+          {
+            *stride = r.dimension() ;
+          }
       }
+//       if(stride) {
+//         const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::MetaData::NODE_RANK, stk::mesh::MetaData::get(*field).universal_part());
+//         *stride = r.dimension() ;
+//       }
 
       switch(rank)
         {
         case 0:
           {
-            fdata = get_bulk_data()->field_data( *static_cast<const ScalarFieldType *>(field) , node );
+            fdata = get_bulk_data()->field_data( *static_cast<const ScalarFieldType *>(field) , entity );
           }
           break;
         case 1:
           {
-            fdata = get_bulk_data()->field_data( *static_cast<const VectorFieldType *>(field) , node );
+            fdata = get_bulk_data()->field_data( *static_cast<const VectorFieldType *>(field) , entity );
           }
           break;
         default:
@@ -1563,8 +1585,7 @@ namespace stk {
 
 
     // static
-    double * PerceptMesh::
-    field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride)
+    double * PerceptMesh::field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride)
     {
       EXCEPTWATCH;
       unsigned rank = field->rank();
@@ -1572,7 +1593,7 @@ namespace stk {
       stk::mesh::BulkData const& bulk = stk::mesh::BulkData::get(bucket);
 
       if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::MetaData::NODE_RANK, stk::mesh::MetaData::get(*field).universal_part());
+        const stk::mesh::FieldBase::Restriction & r = field->restriction(bucket.entity_rank(), stk::mesh::MetaData::get(*field).universal_part());
         *stride = r.dimension() ;
       }
 
