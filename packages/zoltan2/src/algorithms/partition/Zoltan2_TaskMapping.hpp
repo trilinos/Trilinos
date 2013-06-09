@@ -157,7 +157,7 @@ public:
             WT d = (center[i] - elementCoords[i][index]);
             distance += d * d;
         }
-        distance = pow(distance, 1.0f / this->dimension);
+        distance = pow(distance, WT(1.0 / this->dimension));
         closestPoints.addPoint(index, distance);
         return distance;
     }
