@@ -218,7 +218,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
   //now make sure we get a throw if we use the wrong bulk-data (that doesn't have the
   //temperature field defined)
-  STKUNIT_ASSERT_THROW(stk::linsys::copy_vector_to_mesh( *rhsvec, ls.get_DofMapper(), bulk_data2), std::runtime_error);
+  STKUNIT_ASSERT_THROW(stk::linsys::copy_vector_to_mesh( *rhsvec, ls.get_DofMapper(), bulk_data2), std::exception);
 
   //obtain and zero the solution vector
   fei::SharedPtr<fei::Vector> solnvec = ls.get_fei_LinearSystem()->getSolutionVector();
