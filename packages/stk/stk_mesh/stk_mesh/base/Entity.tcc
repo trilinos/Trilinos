@@ -229,6 +229,7 @@ private:
   void erase_and_clear_if_empty(RelationIterator rel_itr);
   void internal_verify_initialization_invariant();
 
+
 #endif
 };
 

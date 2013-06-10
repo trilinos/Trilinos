@@ -895,6 +895,11 @@ public:
   void set_relation_orientation(Entity from, RelationIterator rel, unsigned orientation);
 
   void set_relation_orientation(Entity from, Entity to, ConnectivityOrdinal to_ord, unsigned to_orientation);
+
+  void reserve_relation(Entity entity, const unsigned num);
+  void erase_and_clear_if_empty(Entity entity, RelationIterator rel_itr);
+  void internal_verify_initialization_invariant(Entity entity);
+
 #endif
 
   /**

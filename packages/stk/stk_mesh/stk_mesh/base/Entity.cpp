@@ -167,24 +167,12 @@ void Entity::set_owner_rank(int owner)
 
 void Entity::erase_and_clear_if_empty(RelationIterator rel_itr)
 {
-  ThrowAssert(!impl::internal_is_handled_generically(rel_itr->getRelationType()));
-
-  RelationVector& aux_rels = aux_relations();
-  aux_rels.erase(aux_rels.begin() + (rel_itr - aux_rels.begin())); // Need to convert to non-const iterator
-
-  if (aux_rels.empty()) {
-    reserve_relation(0);
-  }
+  BulkData::get(*this).erase_and_clear_if_empty(*this, rel_itr);
 }
 
 void Entity::internal_verify_initialization_invariant()
 {
-#ifndef NDEBUG
-  int my_global_id = global_id();
-  EntityKey my_key = key();
-#endif
-  ThrowAssert ( !(my_global_id < 0 && my_key.id() == static_cast<EntityId>(my_global_id)) &&
-                !(my_global_id > 0 && my_key.id() != static_cast<EntityId>(my_global_id)) );
+  BulkData::get(*this).internal_verify_initialization_invariant(*this);
 }
 
 unsigned Entity::size_connection() const
@@ -245,21 +233,12 @@ void Entity::set_relation_orientation(RelationIterator rel, unsigned orientation
 
 void Entity::set_relation_orientation(Entity meshObj, ConnectivityOrdinal ord, unsigned orientation)
 {
-
   BulkData::get(*this).set_relation_orientation(*this, meshObj, ord, orientation);
 }
 
-// ---------------------------------------------------------------------
-
 void Entity::reserve_relation(const unsigned num)
 {
-  if (num == 0 && aux_relations().empty()) {
-    RelationVector tmp;
-    aux_relations().swap(tmp); // clear memory of m_relations.
-  }
-  else {
-    aux_relations().reserve(num);
-  }
+  BulkData::get(*this).reserve_relation(*this, num);
 }
 
 #endif // allow deprecated

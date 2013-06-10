@@ -1213,6 +1213,38 @@ size_t get_upward_elements( const BulkData & mesh, Entity entity, EntityVector &
   return 0u;
 }
 
+void BulkData::reserve_relation(Entity entity, const unsigned num)
+{
+  if (num == 0 && aux_relations(entity).empty()) {
+    RelationVector tmp;
+    aux_relations(entity).swap(tmp); // clear memory of m_relations.
+  }
+  else {
+    aux_relations(entity).reserve(num);
+  }
+}
+
+void BulkData::erase_and_clear_if_empty(Entity entity, RelationIterator rel_itr)
+{
+  ThrowAssert(!impl::internal_is_handled_generically(rel_itr->getRelationType()));
+
+  RelationVector& aux_rels = aux_relations(entity);
+  aux_rels.erase(aux_rels.begin() + (rel_itr - aux_rels.begin())); // Need to convert to non-const iterator
+
+  if (aux_rels.empty()) {
+    reserve_relation(entity, 0);
+  }
+}
+
+void BulkData::internal_verify_initialization_invariant(Entity entity)
+{
+#ifndef NDEBUG
+  int my_global_id = global_id(entity);
+  EntityKey my_key = entity_key(entity);
+#endif
+  ThrowAssert ( !(my_global_id < 0 && my_key.id() == static_cast<EntityId>(my_global_id)) &&
+                !(my_global_id > 0 && my_key.id() != static_cast<EntityId>(my_global_id)) );
+}
 
 } // namespace mesh
 } // namespace stk
