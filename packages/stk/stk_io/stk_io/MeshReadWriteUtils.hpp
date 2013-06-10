@@ -29,6 +29,7 @@ namespace stk {
     class Part;
     class BulkData;
     class Selector;
+    struct ConnectivityMap;
   }
   namespace io {
     static std::string CoordinateFieldName("coordinates");
@@ -41,7 +42,7 @@ namespace stk {
          * \param[in] comm  MPI Communicator to be used for all parallel
          * communication needed to generate the mesh.
          */
-        MeshData(MPI_Comm comm);
+        MeshData(MPI_Comm comm, unsigned bucket_size = 1000, stk::mesh::ConnectivityMap * connectivity_map = NULL);
         MeshData();
 
         ~MeshData();
@@ -383,6 +384,8 @@ namespace stk {
          * *anded* with the normal selectors use for output
          */
         Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
+        unsigned m_bucket_size;
+        stk::mesh::ConnectivityMap * m_connectivity_map;
 
         MeshData(const MeshData&); // Do not implement
         MeshData& operator=(const MeshData&); // Do not implement

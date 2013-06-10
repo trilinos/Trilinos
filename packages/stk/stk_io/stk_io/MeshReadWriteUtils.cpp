@@ -237,7 +237,7 @@ void process_nodeblocks(stk::io::MeshData &mesh, INT /*dummy*/)
   if (imp_id_field) {
     stk::io::field_data_from_ioss(bulk, imp_id_field, nodes, nb, "implicit_ids");
   }
-  
+
 
   stk::mesh::FieldBase *coord_field = &mesh.get_coordinate_field();
   stk::io::field_data_from_ioss(bulk, coord_field, nodes, nb, "mesh_model_coordinates");
@@ -524,14 +524,14 @@ namespace stk {
   namespace io {
 
     MeshData::MeshData()
-    : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL),
+    : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), m_bucket_size(1000), m_connectivity_map(NULL),
       useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
 
-    MeshData::MeshData(MPI_Comm comm)
-    : m_communicator_(comm), m_anded_selector(NULL),
+    MeshData::MeshData(MPI_Comm comm, unsigned bucket_size, stk::mesh::ConnectivityMap * connectivity_map)
+    : m_communicator_(comm), m_anded_selector(NULL), m_bucket_size(bucket_size), m_connectivity_map(connectivity_map),
       useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
@@ -777,8 +777,14 @@ namespace stk {
 
       // Check if bulk_data is null; if so, create a new one...
       if (Teuchos::is_null(m_bulk_data)) {
-        set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(meta_data(),
-                                                            region->get_database()->util().communicator())));
+        set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
+                                                             , region->get_database()->util().communicator()
+                                                             , m_bucket_size
+#ifdef SIERRA_MIGRATION
+                                                             , false
+#endif
+                                                             , m_connectivity_map
+                                                           )));
       }
 
       stk::mesh::FieldBase* coord_field = meta_data().get_field(stk::io::CoordinateFieldName);

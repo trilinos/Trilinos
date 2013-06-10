@@ -140,7 +140,7 @@ public:
 #ifdef SIERRA_MIGRATION
             , bool add_fmwk_data = false
 #endif
-            , ConnectivityMap* connectivity_map = NULL
+            , ConnectivityMap* arg_connectivity_map = NULL
             );
 
   FieldBase* coordinate_field() const { return m_coord_field; }
@@ -158,6 +158,8 @@ public:
 
   /** \brief  Rank of the parallel machine's local processor */
   int parallel_rank()   const { return m_parallel_rank ; }
+
+  const ConnectivityMap & connectivity_map() const { return m_bucket_repository.connectivity_map(); }
 
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   int bulk_data_id() const { return m_bulk_data_id; }
@@ -1329,6 +1331,10 @@ private:
 
 #endif /* DOXYGEN_COMPILE */
 };
+
+
+size_t get_upward_elements( const BulkData & mesh, Entity entity, EntityVector & elements );
+size_t get_upward_elements( const BulkData & mesh, Entity entity, EntityVector & elements, OrdinalVector & ordinals );
 
 
 /** \brief  Is in owned closure of the given process,

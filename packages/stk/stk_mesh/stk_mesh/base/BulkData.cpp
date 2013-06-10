@@ -109,7 +109,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 #ifdef SIERRA_MIGRATION
                     , bool add_fmwk_data
 #endif
-                    , ConnectivityMap* connectivity_map
+                    , ConnectivityMap* arg_connectivity_map
                     )
   : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
     m_entity_repo(*this),
@@ -155,7 +155,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
         bucket_max_size,
         mesh_meta_data.entity_rank_count(),
         m_entity_repo,
-        connectivity_map != NULL ? *connectivity_map :
+        arg_connectivity_map != NULL ? *arg_connectivity_map :
            (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::default_map_2d() : ConnectivityMap::default_map())
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
         )
@@ -1097,6 +1097,122 @@ void BulkData::set_relation_orientation(Entity from, Entity to, ConnectivityOrdi
     }
   }
 }
+
+namespace {
+
+inline EntityVector find_common_elements( const BulkData & mesh, Entity const * nodes, unsigned num_nodes)
+{
+  if (num_nodes > 0u) {
+    EntityVector elements(mesh.begin_elements(nodes[0]), mesh.end_elements(nodes[0]));
+    std::sort(elements.begin(), elements.end());
+
+    for (unsigned i=1u; i<num_nodes; ++i) {
+      EntityVector node_elements(mesh.begin_elements(nodes[i]), mesh.end_elements(nodes[i]));
+      std::sort(node_elements.begin(), node_elements.end());
+
+      EntityVector tmp_elements;
+
+      std::set_intersection(   elements.begin(), elements.end()
+          , node_elements.begin(), node_elements.end()
+          , std::back_inserter(tmp_elements)
+          );
+
+      elements.swap(tmp_elements);
+    }
+
+    return elements;
+  }
+
+  return EntityVector();
+}
+
+} // namespace
+
+
+size_t get_upward_elements( const BulkData & mesh, Entity entity, EntityVector & elements)
+{
+  EntityRank source_rank = mesh.entity_rank(entity);
+
+  elements.clear();
+
+  // is the connectivity stored on the mesh
+  if ( mesh.connectivity_map().valid(source_rank, stk::topology::ELEMENT_RANK) ) {
+    unsigned num_elements = mesh.num_elements(entity);
+    Entity const * tmp_elements = mesh.begin_elements(entity);
+    elements.resize( num_elements );
+    for (unsigned i=0u; i<num_elements; ++i) {
+      elements[i] = tmp_elements[i];
+    }
+    return num_elements;
+  }
+  // go through the nodes
+  else if ( mesh.connectivity_map().valid(stk::topology::NODE_RANK, stk::topology::ELEMENT_RANK) ) {
+
+    unsigned num_nodes = mesh.num_nodes(entity);
+    Entity const * nodes = mesh.begin_nodes(entity);
+
+    EntityVector potential_elements = find_common_elements( mesh, nodes, num_nodes);
+
+    for (size_t ie = 0u, eend = elements.size(); ie < eend; ++ie) {
+      Entity const * potential_sources = mesh.begin(elements[ie], source_rank);
+      unsigned num_sources = mesh.num_connectivity(elements[ie], source_rank);
+
+      for (unsigned is=0u; is < num_sources; ++is) {
+        if ( potential_sources[is] == entity) {
+          elements.push_back(elements[ie]);
+        }
+      }
+    }
+    return elements.size();
+  }
+  return 0u;
+}
+
+size_t get_upward_elements( const BulkData & mesh, Entity entity, EntityVector & elements, OrdinalVector & ordinals )
+{
+  EntityRank source_rank = mesh.entity_rank(entity);
+
+  elements.clear();
+  ordinals.clear();
+
+  // is the connectivity stored on the mesh
+  if ( mesh.connectivity_map().valid(source_rank, stk::topology::ELEMENT_RANK) ) {
+    unsigned num_elements = mesh.num_elements(entity);
+    Entity const * tmp_elements = mesh.begin_elements(entity);
+    ConnectivityOrdinal const * tmp_ordinals = mesh.begin_element_ordinals(entity);
+    elements.resize( num_elements );
+    ordinals.resize( num_elements );
+    for (unsigned i=0u; i<num_elements; ++i) {
+      elements[i] = tmp_elements[i];
+      ordinals[i] = tmp_ordinals[i];
+    }
+    return num_elements;
+  }
+  // go through the nodes
+  else if ( mesh.connectivity_map().valid(stk::topology::NODE_RANK, stk::topology::ELEMENT_RANK) ) {
+
+    unsigned num_nodes = mesh.num_nodes(entity);
+    Entity const * nodes = mesh.begin_nodes(entity);
+
+    EntityVector potential_elements = find_common_elements( mesh, nodes, num_nodes);
+
+    for (size_t ie = 0u, eend = elements.size(); ie < eend; ++ie) {
+      Entity const * potential_sources = mesh.begin(elements[ie], source_rank);
+      ConnectivityOrdinal const * tmp_ordinals = mesh.begin_ordinals(entity, source_rank);
+      unsigned num_sources = mesh.num_connectivity(elements[ie], source_rank);
+
+      for (unsigned is=0u; is < num_sources; ++is) {
+        if ( potential_sources[is] == entity) {
+          elements.push_back(elements[ie]);
+          ordinals.push_back(tmp_ordinals[is]);
+        }
+      }
+    }
+    return elements.size();
+  }
+  return 0u;
+}
+
 
 } // namespace mesh
 } // namespace stk

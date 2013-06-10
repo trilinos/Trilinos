@@ -110,9 +110,11 @@ void BulkData::declare_relation( Entity e_from ,
   // Relationships should always be symmetrical
   if ( caused_change_fwd ) {
 
-    if (entity_rank(e_to) >= m_bucket_repository.connectivity_map().m_map.size() ||
-        entity_rank(e_from) >= m_bucket_repository.connectivity_map().m_map.size() ||
-        m_bucket_repository.connectivity_map()(entity_rank(e_to), entity_rank(e_from)) != stk::mesh::INVALID_CONNECTIVITY_TYPE) {
+    const bool higher_order_relation = stk::topology::ELEMENT_RANK < entity_rank(e_from);
+    if (    higher_order_relation
+         || m_bucket_repository.connectivity_map()(entity_rank(e_to), entity_rank(e_from)) != stk::mesh::INVALID_CONNECTIVITY_TYPE
+       )
+    {
       // the setup for the converse relationship works slightly differently
       is_converse = true;
       internal_declare_relation(e_to, e_from, local_id, m_sync_count, is_converse, permut );

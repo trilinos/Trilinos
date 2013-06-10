@@ -181,6 +181,9 @@ struct ConnectivityMap
   ConnectivityType operator()(EntityRank from, EntityRank to) const
   { return m_map[from][to]; }
 
+  bool valid(EntityRank from, EntityRank to) const
+  { return m_map[from][to] != INVALID_CONNECTIVITY_TYPE; }
+
   map_type m_map;
 };
 

@@ -45,8 +45,9 @@ class Part ;      // Defined subset of the mesh
 /** \brief  Collections of \ref stk::mesh::Part "parts" are frequently
  *          maintained as a vector of Part pointers.
  */
-typedef std::vector< Part * > PartVector ;
-typedef std::vector< unsigned > OrdinalVector ;
+typedef std::vector< Part * > PartVector;
+typedef std::vector< unsigned > OrdinalVector;
+typedef std::vector< unsigned > PermutationIndexVector;
 
 class FieldBase;
 
