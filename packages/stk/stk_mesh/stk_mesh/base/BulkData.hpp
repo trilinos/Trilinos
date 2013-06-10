@@ -628,26 +628,15 @@ public:
   // Entity queries
   //
 
-  bool check_bulk_data(Entity entity) const
-  {
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    // if entity is invalid, we can't check bulk data
-    return entity.local_offset() == 0 || this == &BulkData::get(entity);
-#else
-    // remove this function once backwards compat layer is gone
-    return true;
-#endif
-  }
-
   bool in_index_range(Entity entity) const
   {
-    ThrowAssert(check_bulk_data(entity));
+    require_same_bulk_data(entity);
     return entity.local_offset() < m_entity_states.size();
   }
 
   bool is_valid(Entity entity) const
   {
-    ThrowAssert(check_bulk_data(entity));
+    require_same_bulk_data(entity);
     return (entity.local_offset() < m_entity_states.size()) && (m_entity_states[entity.local_offset()] != Deleted);
   }
 
@@ -665,7 +654,7 @@ public:
   void entity_getter_debug_check(Entity entity) const
   {
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    ThrowAssertMsg(check_bulk_data(entity), "Entity with bulk_data: " << BulkData::get(entity).m_bulk_data_id << " was given to bulk_data: " << m_bulk_data_id << "; entity has local_offset: "<< entity.local_offset());
+    require_same_bulk_data(entity);
 #endif
     ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_states.size() - 1);
   }
@@ -1311,6 +1300,16 @@ private:
                                const Entity e_from ,
                                const Entity e_to );
 
+  void require_same_bulk_data(Entity entity) const
+  {
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
+    // if entity is invalid, we can't check bulk data
+    ThrowAssertMsg(entity.local_offset() == 0 || this == &BulkData::get(entity),
+                   "Entity with bulk_data: " << BulkData::get(entity).m_bulk_data_id << " was given to bulk_data: " << m_bulk_data_id <<
+                   "; entity has key: " << entity.key() << " and local_offset: "<< entity.local_offset());
+#endif
+  }
+
   /** \} */
 
   //------------------------------------
@@ -1421,10 +1420,10 @@ return_type const* BulkData::begin_##rank_name##data_type(Entity entity) const \
 {                                                                       \
   ThrowAssert(is_valid(entity));                                        \
   ThrowAssert(bucket_ptr(entity));                                      \
-  ThrowAssert(check_bulk_data(entity));                                 \
+  require_same_bulk_data(entity);                                       \
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
-  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                        \
+  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;               \
   internal_check_unpopulated_relations(entity, RANK_VAL_##rank_name);   \
   return b.begin_##rank_name##data_type(bucket_ord);                    \
 }                                                                       \
@@ -1434,10 +1433,10 @@ return_type const* BulkData::end_##rank_name##data_type(Entity entity) const \
 {                                                                       \
   ThrowAssert(is_valid(entity));                                        \
   ThrowAssert(bucket_ptr(entity));                                      \
-  ThrowAssert(check_bulk_data(entity));                                 \
+  require_same_bulk_data(entity);                                       \
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
-  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                        \
+  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;               \
   return b.end_##rank_name##data_type(bucket_ord);                      \
 }
 
@@ -1457,10 +1456,10 @@ unsigned BulkData::num_##rank_name##s(Entity entity) const             \
 {                                                                      \
   ThrowAssert(is_valid(entity));                                       \
   ThrowAssert(bucket_ptr(entity));                                     \
-  ThrowAssert(check_bulk_data(entity));                                \
+  require_same_bulk_data(entity);                                      \
   const MeshIndex &mesh_idx = mesh_index(entity);                      \
   const Bucket &b = *mesh_idx.bucket;                                  \
-  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                       \
+  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;              \
   return b.num_##rank_name##s(bucket_ord);                             \
 }
 
@@ -1474,10 +1473,10 @@ return_type const* BulkData::begin_str##end_str(Entity entity, EntityRank rank) 
 {                                                                       \
   ThrowAssert(is_valid(entity));                                        \
   ThrowAssert(bucket_ptr(entity));                                      \
-  ThrowAssert(check_bulk_data(entity));                                 \
+  require_same_bulk_data(entity);                                       \
   const MeshIndex &mesh_idx = mesh_index(entity);                       \
   const Bucket &b = *mesh_idx.bucket;                                   \
-  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;                        \
+  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;               \
   internal_check_unpopulated_relations(entity, rank);                   \
   return b.begin_str##end_str(bucket_ord, rank);                        \
 }
