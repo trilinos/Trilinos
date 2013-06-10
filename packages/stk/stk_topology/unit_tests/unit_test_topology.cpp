@@ -163,3 +163,17 @@ STKUNIT_UNIT_TEST( stk_topology, superelement_topology )
 
   STKUNIT_EXPECT_EQ( badT.rank(), topology::INVALID_RANK);
 }
+
+STKUNIT_UNIT_TEST( stk_topology, arrayMesh )
+{
+  using stk::topology;
+
+  const int nodes[] = {0,1,2,3,4,5,6,7};
+  topology t = topology::HEX_8;
+  int side_nodes[4] = {};
+  t.side_nodes( nodes, 0, side_nodes );
+  EXPECT_EQ( 0, side_nodes[0] );
+  EXPECT_EQ( 1, side_nodes[1] );
+  EXPECT_EQ( 5, side_nodes[2] );
+  EXPECT_EQ( 4, side_nodes[3] );
+}

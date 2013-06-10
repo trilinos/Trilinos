@@ -80,7 +80,7 @@ void array_mesh_writer::define_output_db(Ioss::Region& io_region)
     for(array_mesh::BlockIterator block_iterator = blocks.first, block_end = blocks.second; block_iterator != block_end; ++block_iterator)
     {
         int rank = m_mesh.get_rank(*block_iterator);
-        int topology = m_mesh.get_topology(*block_iterator);
+        stk::topology topology = m_mesh.get_topology(*block_iterator);
         size_t block_size = m_mesh.get_num_elems(*block_iterator);
         std::string topology_name = map_array_mesh_topology_to_ioss(topology);
         const std::string& name = m_mesh.get_name(*block_iterator);

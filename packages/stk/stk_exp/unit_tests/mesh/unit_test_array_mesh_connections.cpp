@@ -15,9 +15,10 @@ TEST( array_mesh, connections)
 
   //This test will create a mesh with 2 hex8 elements:
 
+  stk::topology elem_topo = stk::topology::HEX_8;
   const size_t num_elems = 2;
   const size_t num_nodes = 12;
-  const int nodes_per_elem = sierra::mesh::num_nodes<sierra::mesh::Hex8>::value;
+  const int nodes_per_elem = elem_topo.num_nodes();
 
   //create 1-based elem-id list and node-id list.
 
@@ -40,8 +41,7 @@ TEST( array_mesh, connections)
   //create an element-block. this tells the mesh how many elements will be in the
   //block, and what topology they will be, but doesn't create connectivity yet.
   int block_id = 1;
-  array_mesh::BlockIndex blk = amesh.add_block<Hex8>(array_mesh::Element, block_id, num_elems);
-
+  array_mesh::BlockIndex blk = amesh.add_block(array_mesh::Element, block_id, num_elems,elem_topo);
 
   //Now specify the nodal connectivity for the elements in the block:
 

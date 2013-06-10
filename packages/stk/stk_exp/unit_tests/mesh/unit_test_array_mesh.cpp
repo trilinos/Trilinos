@@ -9,11 +9,12 @@ TEST( array_mesh, topologies)
 {
   using namespace sierra;
   using namespace sierra::mesh;
-
-  int tet4_nodes = num_nodes<Tet4>::value;
+  stk::topology elem_topo = stk::topology::TET_4;
+  int tet4_nodes = elem_topo.num_nodes();
   EXPECT_EQ(tet4_nodes, 4);
 
-  int hex8_nodes = num_nodes<Hex8>::value;
+  elem_topo = stk::topology::HEX_8;
+  int hex8_nodes = elem_topo.num_nodes();
   EXPECT_EQ(hex8_nodes, 8);
 }
 
@@ -55,9 +56,10 @@ TEST( array_mesh, basic)
   EXPECT_EQ(node_id, node_ids[5]);
 
   int block_id = 1;
-  array_mesh::BlockIndex blk = amesh.add_block<Hex8>(array_mesh::Element, block_id, num_elems);
+  stk::topology t = stk::topology::HEX_8;
+  array_mesh::BlockIndex blk = amesh.add_block(array_mesh::Element, block_id, num_elems, t);
 
-  const int nodes_per_elem = sierra::mesh::num_nodes<sierra::mesh::Hex8>::value;
+  const int nodes_per_elem = t.num_nodes();
 
   //add node connectivity for the first (and only) element,
   //using the first 'nodes_per_elem' node indices:

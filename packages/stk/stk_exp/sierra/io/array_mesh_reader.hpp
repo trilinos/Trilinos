@@ -128,29 +128,38 @@ namespace io {
         int num_elems = global_ids.size();
         int block_id = block->get_property("id").get_int();
   
-        if (rank == sierra::mesh::array_mesh::Element) m_mesh.add_element_ids(global_ids.begin(), global_ids.end());
-        if (rank == sierra::mesh::array_mesh::Node) m_mesh.add_node_ids(global_ids.begin(), global_ids.end());
+        if (rank == stk::topology::ELEMENT_RANK) m_mesh.add_element_ids(global_ids.begin(), global_ids.end());
+        if (rank == stk::topology::NODE_RANK) m_mesh.add_node_ids(global_ids.begin(), global_ids.end());
 
         const Ioss::ElementTopology *topology = block->topology();
         const std::string& name = block->name();
         std::string topo_name = topology->name();
         int num_nodes = topology->number_nodes();
 
-        int array_mesh_topo = map_ioss_topology_to_array_mesh(topo_name, num_nodes);
-
-        array_mesh::BlockIndex blk;
-        switch(array_mesh_topo) {
-        case sierra::mesh::Hex8::value:
-          blk = m_mesh.add_block<sierra::mesh::Hex8>(rank, block_id, num_elems, name); break;
-        case sierra::mesh::Tet4::value:
-          blk = m_mesh.add_block<sierra::mesh::Tet4>(rank, block_id, num_elems, name); break;
-        case sierra::mesh::Node::value:
-          blk = m_mesh.add_block<sierra::mesh::Node>(rank, block_id, num_elems, name); break;
-        default:
-          throw std::runtime_error("array_mesh_reader ERROR unsupported topology");
-        };
+//        int array_mesh_topo = map_ioss_topology_to_array_mesh(topo_name, num_nodes);
+//
+//        stk::topology t;
+//        switch(array_mesh_topo) {
+//        case sierra::mesh::Tet4::value:
+//          t = stk::topology::TET_4;
+//          break;
+//        case sierra::mesh::Hex8::value:
+//          t = stk::topology::HEX_8;
+//          break;
+//        case sierra::mesh::Node::value:
+//          t = stk::topology::NODE;
+//          break;
+//        default:
+//          std::cout << "Unsupported Topology" << std::endl;
+//          throw std::runtime_error("array_mesh_reader ERROR unsupported topology");
+//        };
+//
+//        array_mesh::BlockIndex blk = m_mesh.add_block(rank, block_id, num_elems,t, name);
 
         int offset = 0;
+
+        stk::topology topo = map_ioss_topology_to_array_mesh(topo_name, num_nodes);
+        array_mesh::BlockIndex blk = m_mesh.add_block(rank, block_id, num_elems, topo, name);
 
 //Exodus provides 1-based connectivities, but we want 0-based so
 //we will now subtract 1 from them.

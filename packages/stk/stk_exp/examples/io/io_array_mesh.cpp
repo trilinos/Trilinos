@@ -84,7 +84,7 @@ void print_mesh_info(sierra::mesh::array_mesh& mesh, const std::vector<double>& 
  std::cout << "Element-node Connectivity:"<<std::endl;
  sierra::mesh::array_mesh::BlockRange blocks = mesh.get_blocks();
  for(sierra::mesh::array_mesh::BlockIterator blk_iter=blocks.first, blk_end=blocks.second; blk_iter != blk_end; ++blk_iter) {
-   if (mesh.get_topology(*blk_iter) == sierra::mesh::Node::value) continue;
+   if (mesh.get_topology(*blk_iter) == stk::topology::NODE) continue;
    size_t num_elems = mesh.get_num_elems(*blk_iter);
    size_t nodes_per_elem = mesh.get_num_nodes_per_elem(*blk_iter);
    std::cout << "Block '"<<mesh.get_name(*blk_iter)<<"', id="<<mesh.get_id(*blk_iter)<<": "<<std::endl;

@@ -9,12 +9,13 @@
 #ifndef STK_SIERRA_MESH_ARRAYMESH_HPP
 #define STK_SIERRA_MESH_ARRAYMESH_HPP
 
-#include <sierra/mesh/array_mesh/topologies.hpp>
+#include <stk_topology/topology.hpp>
 #include <sierra/mesh/array_mesh/array_utils.hpp>
 
 #include <sierra/mesh/array_mesh/array_mesh_detail.hpp>
 
 #include <vector>
+#include <iterator>
 #include <stdexcept>
 
 namespace sierra {
@@ -44,15 +45,12 @@ namespace mesh {
   */
 class array_mesh {
  public:
-  enum {
-    Node = 0,
-    Edge = 1,
-    Face = 2,
-    Element = 3,
-    NumRanks = 4
-  };
 
-  typedef std::vector<int>::const_iterator    ConstIntIterator;
+  static const int Node       = stk::topology::NODE_RANK;
+  static const int Element    = stk::topology::ELEMENT_RANK;
+  static const int Num_ranks  = stk::topology::NUM_RANKS;
+
+  typedef std::vector<int>::const_iterator             ConstIntIterator;
   typedef std::pair<ConstIntIterator,ConstIntIterator> ConstIntRange;
 
   typedef detail::BlockIndex                       BlockIndex;
@@ -78,9 +76,9 @@ class array_mesh {
      m_sideset_indices(),
      m_nodesets(),
      m_nodeset_indices(),
-     m_global_ids(NumRanks),
+     m_global_ids(Num_ranks),
      m_create_upward_connectivities(create_upward_connectivity),
-     m_upward_connectivities(NumRanks),
+     m_upward_connectivities(Num_ranks),
      m_empty()
   {
   }
@@ -109,7 +107,7 @@ class array_mesh {
   /** a ConstIntRange is just a pair of vector<int>::const_iterator
   */
   ConstIntRange get_node_ids() const
-  { return std::make_pair(m_global_ids[Node].begin(),m_global_ids[Node].end()); }
+  { return std::make_pair(m_global_ids[stk::topology::NODE_RANK].begin(),m_global_ids[stk::topology::NODE_RANK].end()); }
 
   ConstIntRange get_element_ids() const
   { return std::make_pair(m_global_ids[Element].begin(),m_global_ids[Element].end()); }
@@ -121,8 +119,11 @@ class array_mesh {
     * could fit into this scheme also.
     * TODO: should we guard against creating blocks with already-existing names/ids?
   */
-  template<typename Topology>
-  BlockIndex add_block(int rank, int ID, int num_elems, const std::string& name = std::string(""));
+  BlockIndex add_block( int rank,
+                        int ID,
+                        int num_elems,
+                        stk::topology T,
+                        const std::string& name = std::string(""));
 
   /** Add connectivity to an already-declared block.
   */
@@ -155,7 +156,7 @@ class array_mesh {
   */
   const std::string& get_name(BlockIndex block_index) const { return m_blocks[block_index].name; }
   int get_id(BlockIndex block_index) const { return m_blocks[block_index].id; }
-  int get_topology(BlockIndex block_index) const { return m_blocks[block_index].topology; }
+  stk::topology get_topology(BlockIndex block_index) const { return m_blocks[block_index].topology; }
   int get_rank(BlockIndex block_index) const { return m_blocks[block_index].rank; }
   int get_num_elems(BlockIndex block_index) const { return m_blocks[block_index].num_elems; }
   int get_num_nodes_per_elem(BlockIndex block_index) const { return m_blocks[block_index].nodes_per_elem; }
@@ -165,7 +166,7 @@ class array_mesh {
   /////////////// end of block methods ////////////////////
 
 
-  /////////////// sideset methods /////////////////////////
+  /////////////// sideset methods //////////////////////////
 
   /** create new sideset.
    * *TODO Should we guard against creating sidesets with already-existing names/ids?
@@ -185,7 +186,7 @@ class array_mesh {
   const std::vector<int>& get_sideset_elem_nums(SidesetIndex sideset_index) const;
   const std::vector<int>& get_sideset_elem_local_sides(SidesetIndex sideset_index) const;
 
-  int get_num_side_nodes(int elem_num, int elem_local_side) const;
+  unsigned get_num_side_nodes(int elem_num, int elem_local_side) const;
   void get_side_nodes(int elem_num, int elem_local_side, std::vector<int>& node_nums) const;
   void get_side_nodes(SidesetIndex sideset_index, int side, std::vector<int>& node_nums) const;
 
@@ -215,7 +216,7 @@ class array_mesh {
   */
   ConstIntRange get_connected_nodes(int elem_num) const;
 
-  int get_element_topology(int elem_num) const;
+  stk::topology get_element_topology(int elem_num) const;
 
   /** Upward connectivity: node-to-element.
     Doesn't exist unless the optional constructor argument was used to enable upward connectivity.
@@ -255,17 +256,21 @@ void array_mesh::reserve(size_t num_elems, size_t  num_nodes)
   }
 }
 
-template<typename Topology>
 inline
-array_mesh::BlockIndex array_mesh::add_block(int rank, int ID, int num_elems, const std::string& name)
+array_mesh::BlockIndex array_mesh::add_block(int rank,
+                                             int ID,
+                                             int num_elems,
+                                             stk::topology T,
+                                             const std::string& name)
 {
+
   detail::Block blk;
   blk.id = ID;
   blk.name = name;
-  blk.topology = Topology::value;
+  blk.topology = T;
   blk.rank = rank;
   blk.num_elems = num_elems;
-  int nodes_per_elem = num_nodes<Topology>::value;
+  int nodes_per_elem = T.num_nodes();
   blk.nodes_per_elem = nodes_per_elem;
 
   BlockIndex block_index;
@@ -290,8 +295,8 @@ void array_mesh::add_connectivity(BlockIndex block_index, int elem_num,
   detail::Locator loc;
   loc.block = block_index;
   loc.offset_into_block = m_blocks[block_index].elem_nums.size();
-  int topology = m_blocks[block_index].topology;
-  if ( topology != Node::value )
+  stk::topology topo = m_blocks[block_index].topology;
+  if ( topo != stk::topology::NODE )
   {
     m_elem_locations.push_back(loc);
   }
@@ -351,7 +356,7 @@ array_mesh::ConstIntRange array_mesh::get_connected_nodes(int elem_num) const
 }
 
 inline
-int array_mesh::get_element_topology(int elem_num) const
+stk::topology array_mesh::get_element_topology(int elem_num) const
 {
   const detail::Locator& loc = m_elem_locations[elem_num];
   return m_blocks[loc.block].topology;
@@ -475,22 +480,19 @@ const std::vector<int>& array_mesh::get_sideset_elem_local_sides(SidesetIndex si
 }
 
 inline
-int array_mesh::get_num_side_nodes(int elem_num, int /*elem_local_side*/) const
+unsigned array_mesh::get_num_side_nodes(int elem_num, int elem_local_side) const
 {
-  int topology = get_element_topology(elem_num);
-  switch(topology) {
-   case Hex8::value:
-    return Hex8::nodes_per_side;
-    break;
-   default:
-    throw std::runtime_error("array_mesh::get_num_side_nodes ERROR: Unsupported topology");
-  }
+  stk::topology topo = get_element_topology(elem_num);
+  stk::topology side_topo = topo.side_topology(elem_local_side);
+
+  return side_topo.num_nodes();
 }
 
 inline
 void array_mesh::get_side_nodes(SidesetIndex sideset_index, int side, std::vector<int>& node_nums) const
 {
   int elem_num = m_sidesets[sideset_index].elem_nums[side];
+  stk::topology elem_topo = get_element_topology(elem_num);
   int elem_local_side = m_sidesets[sideset_index].elem_local_sides[side];
   get_side_nodes(elem_num, elem_local_side, node_nums);
 }
@@ -502,22 +504,11 @@ void array_mesh::get_side_nodes(int elem_num, int elem_local_side, std::vector<i
   ConstIntRange nodes = get_connected_nodes(elem_num);
   ConstIntIterator node_iterator = nodes.first;
 
-  int topology = get_element_topology(elem_num);
-  switch(topology) {
-   case Tet4::value:
-    for(int i=0; i<get_num_side_nodes(elem_num, elem_local_side); ++i) {
-      node_nums.push_back(node_iterator[ Tet4_side_nodes[elem_local_side][i] ]);
-    }
-    break;
-
-   case Hex8::value:
-    for(int i=0; i<get_num_side_nodes(elem_num, elem_local_side); ++i) {
-      node_nums.push_back(node_iterator[ Hex8_side_nodes[elem_local_side][i] ]);
-    }
-    break;
-
-   default:
-    throw std::runtime_error("Unsupported topology");
+  stk::topology elem_topo = get_element_topology(elem_num);
+  std::vector<int> side_node_vector;
+  elem_topo.face_nodes(node_iterator, elem_local_side, std::back_inserter(side_node_vector));
+  for(unsigned i=0; i<get_num_side_nodes(elem_num, elem_local_side); ++i) {
+    node_nums.push_back(side_node_vector[i]);
   }
 }
 

@@ -60,6 +60,7 @@ std::string topology::name() const
   default: break;
   }
 
+// jvo: Superelements require additional calculations? What is value calculated from m_value and SUPERELEMENT_START?
   std::ostringstream oss;
   if ( is_superelement() )
     oss << "SUPERELEMENT_TOPOLOGY_" << (static_cast<unsigned>(m_value) - topology::SUPERELEMENT_START);
@@ -69,6 +70,7 @@ std::string topology::name() const
   return oss.str();
 }
 
+// jvo: Overloading << operator?
 std::ostream & operator<<(std::ostream &out, topology::rank_t r)
 {
   switch (r)
@@ -92,7 +94,7 @@ std::ostream & operator<<(std::ostream &out, topology t)
 void verbose_print_topology(std::ostream &out, topology t)
 {
   unsigned shiftwidth = 34;
-
+  // jvo: Is 27 the max number of nodes for any topology? What about superelements?
   unsigned node_ordinals[27] = {0};
 
   out << std::boolalpha;
@@ -138,6 +140,7 @@ void verbose_print_topology(std::ostream &out, topology t)
     }
   }
 
+  // jvo: is positive permutation according to right-hand-rule?
   out << std::setw(shiftwidth) << "num permutations: " << t.num_permutations() << std::endl;
   out << std::setw(shiftwidth) << "num positive permutations: " << t.num_positive_permutations() << std::endl;
   if (t.num_permutations() > 0) {

@@ -31,7 +31,7 @@ struct Locator {
 struct Block {
   int id;
   std::string name;
-  int topology;
+  stk::topology topology;
   int rank;
   int num_elems;
   int nodes_per_elem;

@@ -59,8 +59,9 @@ void array_mesh_hex_fixture::generate_mesh()
 {
   m_mesh.reserve(m_num_elements, m_num_nodes);
 
+  stk::topology t = stk::topology::HEX_8;
   int block_id = 1;
-  m_block_index = m_mesh.add_block<sierra::mesh::Hex8>(array_mesh::Element, block_id, m_num_elements);
+  m_block_index = m_mesh.add_block(array_mesh::Element, block_id, m_num_elements, t);
 
   std::vector<int> node_ids(m_num_nodes);
   const int nnodes = m_num_nodes;
@@ -70,7 +71,7 @@ void array_mesh_hex_fixture::generate_mesh()
 
   m_mesh.add_node_ids(node_ids.begin(), node_ids.end());
 
-  const int nodes_per_elem = sierra::mesh::num_nodes<sierra::mesh::Hex8>::value;
+  const int nodes_per_elem = t.num_nodes();
   int node_idx[nodes_per_elem];
 
   std::vector<int> elem_ids(m_num_elements);
