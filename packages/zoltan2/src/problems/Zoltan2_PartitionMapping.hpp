@@ -49,11 +49,17 @@
 
 #ifndef _ZOLTAN2_PARTITIONMAPPING_HPP_
 #define _ZOLTAN2_PARTITIONMAPPING_HPP_
+#include "Zoltan2_Model.hpp"
+#include "Zoltan2_Solution.hpp"
+#include "Teuchos_Comm.hpp"
 
 namespace Zoltan2 {
 
 long measure_stays(partId_t *, int *, partId_t *, long *, partId_t, partId_t);
 
+class Zoltan2_MachineRepresentation{
+
+};
 
 /*! \brief PartitionMapping maps a solution or an input distribution to ranks.
 */
@@ -77,16 +83,15 @@ public:
  *  KDDKDD BUT MAY WANT TO SET PART SIZES BASED ON CAPABILITY OF A RANK.
  *  KDDKDD SO WHEN SHOULD THE MAP BE CREATED?
  */
-
   PartitionMapping(
     Teuchos::ParameterList *params,
-    Teuchos::Communicator *comm,
+    Teuchos::Comm<int> *comm,
     const Zoltan2_MachineRepresentation *machine, // If NULL, assume homogeneous
                                                   // Make optional
-    const Zoltan2_Model<Adapter> *model, // Needed to get information about
+    const Zoltan2::Model<Adapter> *model, // Needed to get information about
                                          // the application data (coords, graph)
-    const Zoltan2_Solution<Adapter> *soln, // Needed for mapping a partition
-    const Zoltan2_Environment &envConst  // Perhaps envConst should be optional
+    const Zoltan2::Solution *soln, // Needed for mapping a partition
+    const Environment &envConst  // Perhaps envConst should be optional
                                          // so applications can create a mapping
                                          // directly
   ) {} ;
