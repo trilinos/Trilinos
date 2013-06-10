@@ -1,6 +1,6 @@
 #include "Zoltan2_TaskMapping.hpp"
 #include <Zoltan2_TestHelpers.hpp>
-
+#include "Tpetra_MultiVector_decl.hpp"
 
 #include <GeometricGenerator.hpp>
 #include <string>
@@ -253,22 +253,29 @@ int main(int argc, char *argv[]){
             delete gg;
         }
 
-        Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t> *cm =
-                new Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>(
+        typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
+        typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
+
+        Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,zoltan2_partId_t> *cm =
+                new Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,zoltan2_partId_t>(
                         procDim, procCoordinates,
                         coordDim, partCenters,
                         numProcs, numParts);
 
-        RCP<const Zoltan2::Environment> env(new Zoltan2::Environment());
+        /*
         Zoltan2::TaskMapper <Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>, zoltan2_partId_t> *ctm=
                 new Zoltan2::TaskMapper<Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>,zoltan2_partId_t>(env, cm);
 
-
+         */
+        Zoltan2::Environment *env = new Zoltan2::Environment();
+        Zoltan2::TaskMapper <inputAdapter_t, zoltan2_partId_t> *ctm=
+                new Zoltan2::TaskMapper<inputAdapter_t,zoltan2_partId_t>(env, cm);
 
         ctm->writeMapping2();
         cout << "PASS" << endl;
         delete ctm;
         delete cm;
+        delete env;
     }
     catch(std::string &s){
         cerr << s << endl;
