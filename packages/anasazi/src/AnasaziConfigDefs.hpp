@@ -94,6 +94,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <cmath>
+#include <functional>
 
 #else /*TRILINOS_NO_CONFIG_H is defined*/
 
@@ -116,6 +117,7 @@
 #  include <deque>
 #  include <algorithm>
 #  include <numeric>
+#  include <functional>
 
 #endif /*ndef TRILINOS_NO_CONFIG_H*/
 

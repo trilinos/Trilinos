@@ -448,21 +448,16 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     bks_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(probauxvecs) );
   }
 
-  // Check to see if there is enough of a subspace to use the dynamic boundary for restarting.
-  if ( _dynXtraNev && _blockSize==1 ) {
-    int maxNumVecs = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
-    if ( maxNumVecs < _nevBlocks ) {
-      _dynXtraNev = false;
-      printer->stream(Debug) << " Turning OFF dymamic boundary for restarts because nev = " << nev << ", and ncv = " 
-                             << bks_solver->getMaxSubspaceDim() << std::endl << std::endl;
-    }
-  }
-  
   // Create workspace for the Krylov basis generated during a restart
   // Need at most (_nevBlocks*_blockSize+1) for the updated factorization and another block for the current factorization residual block (F).
   //  ---> (_nevBlocks*_blockSize+1) + _blockSize
   // If Hermitian, this becomes _nevBlocks*_blockSize + _blockSize
   // we only need this if there is the possibility of restarting, ex situ
+
+  // Maximum allowable extra vectors that BKS can keep to accelerate convergence; only works for _blockSize=1
+  int maxXtraVecs = 0;
+  if ( _dynXtraNev && _blockSize==1 ) maxXtraVecs = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
+
   Teuchos::RCP<MV> workMV;
   if (_maxRestarts > 0) {
     if (_inSituRestart==true) {
@@ -470,13 +465,10 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
       workMV = MVT::Clone( *_problem->getInitVec(), 1 );
     }
     else { // inSituRestart == false
-      int maxNumVecs = _nevBlocks*_blockSize;
-      // Additional nev vectors for dynamic restart
-      if ( _dynXtraNev && _blockSize==1 ) maxNumVecs = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
       if (_problem->isHermitian()) {
-        workMV = MVT::Clone( *_problem->getInitVec(), maxNumVecs + _blockSize );
+        workMV = MVT::Clone( *_problem->getInitVec(), (_nevBlocks+maxXtraVecs)*_blockSize + _blockSize );
       } else {
-        workMV = MVT::Clone( *_problem->getInitVec(), maxNumVecs + 1 + _blockSize );
+        workMV = MVT::Clone( *_problem->getInitVec(), (_nevBlocks+maxXtraVecs)*_blockSize + 1 + _blockSize );
       }
     }
   } else {
@@ -549,12 +541,12 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
           int numConv = ordertest->howMany();
           cur_nevBlocks = _nevBlocks*_blockSize;
-          if ( _dynXtraNev && _blockSize==1 ) {
-            int maxDynNev = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
-            if ( cur_nevBlocks + numConv <= maxDynNev )
-              cur_nevBlocks += numConv;
-            else
-              cur_nevBlocks = maxDynNev;
+          if ( _dynXtraNev && _blockSize==1 && numConv > 0 ) {
+            int cur_numConv = numConv;
+            while ( (cur_nevBlocks < (_nevBlocks + maxXtraVecs)) && cur_numConv > 0 ) {
+              cur_nevBlocks++;
+              cur_numConv--;
+            }
           }
   
           printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << std::endl << std::endl;
