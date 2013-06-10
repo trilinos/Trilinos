@@ -223,11 +223,9 @@ union Entity
 #endif
 
   bool is_handled_generically(const RelationType relation_type) const;
-
 private:
 
   void reserve_relation(const unsigned num);
-  RelationIterator find_aux_relation(const Relation& relation) const;
   void erase_and_clear_if_empty(RelationIterator rel_itr);
   void internal_verify_initialization_invariant();
 

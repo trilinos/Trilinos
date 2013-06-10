@@ -640,6 +640,8 @@ public:
     return (entity.local_offset() < m_entity_states.size()) && (m_entity_states[entity.local_offset()] != Deleted);
   }
 
+  RelationIterator find_aux_relation(Entity entity, const Relation& relation) const;
+
   size_t count_relations(Entity entity) const;
 
   bool has_no_relations(Entity entity) const;
@@ -887,6 +889,10 @@ public:
 
     m_fmwk_connect_counts[entity.local_offset()] = count;
   }
+
+  void set_relation_orientation(Entity from, RelationIterator rel, unsigned orientation);
+
+  void set_relation_orientation(Entity from, Entity to, ConnectivityOrdinal to_ord, unsigned to_orientation);
 #endif
 
   /**

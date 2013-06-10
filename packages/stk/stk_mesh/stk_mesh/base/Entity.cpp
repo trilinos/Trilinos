@@ -240,53 +240,13 @@ const void* Entity::get_shared_attr() const
 
 void Entity::set_relation_orientation(RelationIterator rel, unsigned orientation)
 {
-  ThrowAssert(!impl::internal_is_handled_generically(rel->getRelationType()));
-
-  const RelationType backRelType = back_relation_type(rel->getRelationType());
-
-  Entity meshObj = rel->entity();
-  Relation backRel_obj(entity_rank(), *this, backRelType, rel->getOrdinal(), rel->getOrientation());
-  RelationIterator backRel_itr = meshObj.find_aux_relation(backRel_obj);
-
-  ThrowRequire(backRel_itr != sierra::Fmwk::INVALID_RELATION_ITR);
-
-  // Allow clients to make changes to orientation
-  // Orientations do not affect Relation ordering, so this is safe.
-  const_cast<Relation*>(&*rel)->setOrientation(orientation);
-  const_cast<Relation*>(&*backRel_itr)->setOrientation(orientation);
+  BulkData::get(*this).set_relation_orientation(*this, rel, orientation);
 }
 
 void Entity::set_relation_orientation(Entity meshObj, ConnectivityOrdinal ord, unsigned orientation)
 {
-  BulkData& bulk      = BulkData::get(*this);
 
-  Entity const*              fwd_rels  = bulk.begin(*this, meshObj.entity_rank());
-  ConnectivityOrdinal const* fwd_ords  = bulk.begin_ordinals(*this, meshObj.entity_rank());
-  Permutation *              fwd_perms = const_cast<Permutation*>(bulk.begin_permutations(*this, meshObj.entity_rank()));
-  const int                  num_fwd   = bulk.num_connectivity(*this, meshObj.entity_rank());
-
-  Entity const*              back_rels  = bulk.begin(meshObj, entity_rank());
-  ConnectivityOrdinal const* back_ords  = bulk.begin_ordinals(meshObj, entity_rank());
-  Permutation *              back_perms = const_cast<Permutation*>(bulk.begin_permutations(meshObj, entity_rank()));
-  const int                  num_back   = bulk.num_connectivity(meshObj,entity_rank());
-
-  // Find and change fwd connectivity
-  for (int i = 0; i < num_fwd; ++i, ++fwd_rels, ++fwd_ords, ++fwd_perms) {
-    // Allow clients to make changes to orientation
-    // Orientations do not affect Relation ordering, so this is safe.
-    if (*fwd_rels == meshObj && *fwd_ords == ord) {
-      *fwd_perms = static_cast<Permutation>(orientation);
-    }
-  }
-
-  // Find and change back connectivity
-  for (int i = 0; i < num_back; ++i, ++back_rels, ++back_ords, ++back_perms) {
-    // Allow clients to make changes to orientation
-    // Orientations do not affect Relation ordering, so this is safe.
-    if (*back_rels == *this && *back_ords == ord) {
-      *back_perms = static_cast<Permutation>(orientation);
-    }
-  }
+  BulkData::get(*this).set_relation_orientation(*this, meshObj, ord, orientation);
 }
 
 // ---------------------------------------------------------------------
@@ -300,31 +260,6 @@ void Entity::reserve_relation(const unsigned num)
   else {
     aux_relations().reserve(num);
   }
-}
-
-RelationIterator Entity::find_aux_relation(const Relation& relation) const
-{
-  // Extremely hacky: It would be better to set up the < operator for relations so that lower_bound
-  // can return the desired iterator, but any sane definition would probably force a change in
-  // relation ordering and that's more than I'm willing to take on now.
-  //
-  // The current semantics for relation-searching is as follows:
-  // Ordered based on derived_type, relation_type, and ordinal in descending precedence
-  //   If multiple relations have the same derived_type, relation_type, and ordinal, a linear
-  //   scan takes place looking for a matching meshobj. If no such meshobj was found, then
-  //   we are left with an iterator pointing to the first relation with a different derived_type,
-  //   relation_type, or ordinal. To sum up, the result of the search can either be equivalent to
-  //   lower_bound OR upper_bound depending upon the state of the relations... YUCK!
-
-  ThrowAssert(!impl::internal_is_handled_generically(relation.getRelationType()));
-
-  for (RelationIterator rel = aux_relation_begin(); rel != aux_relation_end(); ++rel) {
-    if (same_specification(*rel, relation) && rel->entity() != relation.entity()) {
-      return rel;
-    }
-  }
-
-  return sierra::Fmwk::INVALID_RELATION_ITR;
 }
 
 #endif // allow deprecated

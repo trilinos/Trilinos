@@ -1020,5 +1020,83 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
   }
 }
 
+RelationIterator BulkData::find_aux_relation(Entity entity, const Relation& relation) const
+{
+  // Extremely hacky: It would be better to set up the < operator for relations so that lower_bound
+  // can return the desired iterator, but any sane definition would probably force a change in
+  // relation ordering and that's more than I'm willing to take on now.
+  //
+  // The current semantics for relation-searching is as follows:
+  // Ordered based on derived_type, relation_type, and ordinal in descending precedence
+  //   If multiple relations have the same derived_type, relation_type, and ordinal, a linear
+  //   scan takes place looking for a matching meshobj. If no such meshobj was found, then
+  //   we are left with an iterator pointing to the first relation with a different derived_type,
+  //   relation_type, or ordinal. To sum up, the result of the search can either be equivalent to
+  //   lower_bound OR upper_bound depending upon the state of the relations... YUCK!
+
+  ThrowAssert(!impl::internal_is_handled_generically(relation.getRelationType()));
+  const RelationVector& aux_rels = aux_relations(entity);
+
+  for (RelationIterator rel = aux_rels.begin(); rel != aux_rels.end(); ++rel) {
+    if (same_specification(*rel, relation) && rel->entity() != relation.entity()) {
+      return rel;
+    }
+  }
+
+  return sierra::Fmwk::INVALID_RELATION_ITR;
+}
+
+void BulkData::set_relation_orientation(Entity from, RelationIterator rel, unsigned orientation)
+{
+  ThrowAssert(!impl::internal_is_handled_generically(rel->getRelationType()));
+
+  const RelationType backRelType = back_relation_type(rel->getRelationType());
+
+  Entity meshObj = rel->entity();
+  Relation backRel_obj(entity_rank(from), from, backRelType, rel->getOrdinal(), rel->getOrientation());
+  RelationIterator backRel_itr = find_aux_relation(meshObj, backRel_obj);
+
+  ThrowRequire(backRel_itr != sierra::Fmwk::INVALID_RELATION_ITR);
+
+  // Allow clients to make changes to orientation
+  // Orientations do not affect Relation ordering, so this is safe.
+  const_cast<Relation*>(&*rel)->setOrientation(orientation);
+  const_cast<Relation*>(&*backRel_itr)->setOrientation(orientation);
+}
+
+void BulkData::set_relation_orientation(Entity from, Entity to, ConnectivityOrdinal to_ord, unsigned to_orientation)
+{
+  const EntityRank from_rank = entity_rank(from);
+  const EntityRank to_rank   = entity_rank(to);
+
+  Entity const*              fwd_rels  = begin(from, to_rank);
+  ConnectivityOrdinal const* fwd_ords  = begin_ordinals(from, to_rank);
+  Permutation *              fwd_perms = const_cast<Permutation*>(begin_permutations(from, to_rank));
+  const int                  num_fwd   = num_connectivity(from, to_rank);
+
+  Entity const*              back_rels  = begin(to, from_rank);
+  ConnectivityOrdinal const* back_ords  = begin_ordinals(to, from_rank);
+  Permutation *              back_perms = const_cast<Permutation*>(begin_permutations(to, from_rank));
+  const int                  num_back   = num_connectivity(to,from_rank);
+
+  // Find and change fwd connectivity
+  for (int i = 0; i < num_fwd; ++i, ++fwd_rels, ++fwd_ords, ++fwd_perms) {
+    // Allow clients to make changes to orientation
+    // Orientations do not affect Relation ordering, so this is safe.
+    if (*fwd_rels == to && *fwd_ords == to_ord) {
+      *fwd_perms = static_cast<Permutation>(to_orientation);
+    }
+  }
+
+  // Find and change back connectivity
+  for (int i = 0; i < num_back; ++i, ++back_rels, ++back_ords, ++back_perms) {
+    // Allow clients to make changes to orientation
+    // Orientations do not affect Relation ordering, so this is safe.
+    if (*back_rels == from && *back_ords == to_ord) {
+      *back_perms = static_cast<Permutation>(to_orientation);
+    }
+  }
+}
+
 } // namespace mesh
 } // namespace stk
