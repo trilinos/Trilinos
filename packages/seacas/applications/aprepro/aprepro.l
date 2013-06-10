@@ -121,7 +121,7 @@ integer {D}+({E})?
 <INITIAL>{WS}"{IMMUTABLE(ON)}"	    { state_immutable = True;	}
 <INITIAL>{WS}"{IMMUTABLE(OFF)}"	    { state_immutable = ap_options.immutable; }
 
-<INITIAL>{WS}"{"[Ll]"oop(" { BEGIN(GET_LOOP_VAR); }
+<INITIAL>{WS}"{"[Ll]"oop"{WS}"(" { BEGIN(GET_LOOP_VAR); }
 
 <GET_LOOP_VAR>{number}")".*"\n" |
 <GET_LOOP_VAR>{integer}")}".*"\n" {/* Loop control defined by integer */
@@ -177,7 +177,7 @@ integer {D}+({E})?
 				   else
 				     fprintf(tmp_file, "%s", yytext);
 				 }
-<LOOP>{WS}"{"[Ll]"oop(".*"\n"  { loop_lvl++; /* Nested Loop */
+<LOOP>{WS}"{"[Ll]"oop"{WS}"(".*"\n"  { loop_lvl++; /* Nested Loop */
 			     fprintf(tmp_file, "%s", yytext);
 			     LINENUM_INC;
 			   }
@@ -190,40 +190,40 @@ integer {D}+({E})?
 					if (--loop_lvl == 0)
 					  BEGIN(INITIAL);
 				      }
-<LOOP_SKIP>{WS}"{"[Ll]"oop(".*"\n"        { loop_lvl++; /* Nested Loop */
+<LOOP_SKIP>{WS}"{"[Ll]"oop"{WS}"(".*"\n"        { loop_lvl++; /* Nested Loop */
 					LINENUM_INC;
 				      }
 <LOOP_SKIP>.*"\n"		      { LINENUM_INC; }
 
-<IF_SKIP>{WS}"{"[Ii]"fdef("  { if_lvl++; 
+<IF_SKIP>{WS}"{"[Ii]"fdef"{WS}"("  { if_lvl++; 
     if (ap_options.debugging) 
 	fprintf (stderr, "DEBUG IF: 'ifdef'  at level = %d at line %d\n",
 		 if_lvl, ap_file_list[nfile].lineno);
 			   if (if_lvl >= MAX_IF_NESTING)
 			     yyerror("Too many nested if statements");
 			   if_state[if_lvl] = IF_WHILE_SKIP; }
-<IF_SKIP>{WS}"{if"{WS}*"("  { if_lvl++; 
+<IF_SKIP>{WS}"{if"{WS}"("  { if_lvl++; 
     if (ap_options.debugging) 
 	fprintf (stderr, "DEBUG IF: 'if (skipped)'  at level = %d at line %d\n",
 		 if_lvl, ap_file_list[nfile].lineno);
 			   if (if_lvl >= MAX_IF_NESTING)
 			     yyerror("Too many nested if statements");
 			   if_state[if_lvl] = IF_WHILE_SKIP; }
-<IF_SKIP>{WS}"{"[Ii]"fndef(" { if_lvl++; 
+<IF_SKIP>{WS}"{"[Ii]"fndef"{WS}"(" { if_lvl++; 
     if (ap_options.debugging) 
 	fprintf (stderr, "DEBUG IF: 'ifndef' at level = %d at line %d\n",
 		 if_lvl, ap_file_list[nfile].lineno);
 			   if (if_lvl >= MAX_IF_NESTING)
 			     yyerror("Too many nested if statements");
 			   if_state[if_lvl] = IF_WHILE_SKIP; }
-<INITIAL>{WS}"{"[Ii]"fdef("  { if_lvl++; 
+<INITIAL>{WS}"{"[Ii]"fdef"{WS}"("  { if_lvl++; 
     if (ap_options.debugging) 
 	fprintf (stderr, "DEBUG IF: 'ifdef'  at level = %d at line %d\n",
 		 if_lvl, ap_file_list[nfile].lineno);
 			   if (if_lvl >= MAX_IF_NESTING)
 			     yyerror("Too many nested if statements");
 			   ifdef = 1; BEGIN(GET_VAR); }
-<INITIAL>{WS}"{"[Ii]"fndef(" { if_lvl++; 
+<INITIAL>{WS}"{"[Ii]"fndef"{WS}"(" { if_lvl++; 
     if (ap_options.debugging)
 	fprintf (stderr, "DEBUG IF: 'ifndef' at level = %d at line %d\n",
 		 if_lvl, ap_file_list[nfile].lineno);
@@ -295,9 +295,9 @@ integer {D}+({E})?
 <IF_SKIP>.                 { ; }
 <IF_SKIP>"\n"              { LINENUM_INC; }
 
-<INITIAL>{WS}"{"[Ii]"nclude("           { BEGIN(GET_FILENAME); 
+<INITIAL>{WS}"{"[Ii]"nclude"{WS}"("           { BEGIN(GET_FILENAME); 
                              file_must_exist = True; }
-<INITIAL>{WS}"{"[Cc]"include("          { BEGIN(GET_FILENAME);
+<INITIAL>{WS}"{"[Cc]"include"{WS}"("          { BEGIN(GET_FILENAME);
                              file_must_exist = !True; }
 <GET_FILENAME>.+")"{WS}"}"{NL}* { BEGIN(INITIAL); 
 			     {
