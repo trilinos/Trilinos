@@ -16,14 +16,15 @@ namespace {
 
 const unsigned spatial_dim = 3;
 
-template<typename Topology>
+
 void block_gather(int num_elems,
-            const std::vector<int>& connectivity,
-            const std::vector<double>& coord_field,
-            std::vector<double>& avg_centroid)
+                  const std::vector<int>& connectivity,
+                  const std::vector<double>& coord_field,
+                  std::vector<double>& avg_centroid, 
+                  stk::topology topo)
 {
   double elem_centroid[spatial_dim] = {0, 0, 0};
-  const int num_nodes_per_elem = sierra::mesh::num_nodes<Topology>::value;
+  const int num_nodes_per_elem = topo.num_nodes(); 
   double elem_node_coords[num_nodes_per_elem*spatial_dim];
 
   //gather nodal coordinates for each element, call calculate_centroid.
@@ -56,15 +57,15 @@ void array_mesh_gather( const array_mesh & mesh,
 
   for(array_mesh::BlockIterator b_it=blocks.first, b_end=blocks.second; b_it!=b_end; ++b_it) {
     int num_elems = mesh.get_num_elems(*b_it);
-    int topology = mesh.get_topology(*b_it);
+    stk::topology topo = mesh.get_topology(*b_it);
 
-    switch(topology) {
-     case Hex8::value:
-       block_gather<Hex8>(num_elems, mesh.get_block_connectivity(*b_it),
-                            coord_field, avg_centroid);
+    switch(topo) {
+      case stk::topology::HEX_8:
+       block_gather(num_elems, mesh.get_block_connectivity(*b_it),
+                            coord_field, avg_centroid, topo);
        break;
-     case Node::value: continue; break;
-     case Tet4::value:
+      case stk::topology::NODE: continue; break;
+      case stk::topology::TET_4:
      default:
        std::cout<<"Unsupported topology!"<<std::endl;
     }
