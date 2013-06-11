@@ -191,7 +191,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'TribitsUserQuickstart.tex', u'Tribits User Quickstart Documentation',
+  ('TribitsUserQuickstart', 'TribitsUserQuickstart.tex', u'Tribits User Quickstart Documentation',
    u'Roscoe A. Bartlett', 'manual'),
 ]
 
