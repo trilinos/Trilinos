@@ -34,7 +34,8 @@ Installing CMake from source [Trilinos developers and experienced users]
 
 If you have access to the Trilinos CVS repository, then install CMake with::
 
-  $ $TRILINOS_HOME/cmake/python/install-cmake.py --install-dir=INSTALL_BASE_DIR
+  $ $TRILINOS_HOME/cmake/python/install-cmake.py \
+    --install-dir=INSTALL_BASE_DIR
 
 This will result in cmake and related CMake tools being installed in
 INSTALL_BASE_DIR/bin.
@@ -59,7 +60,7 @@ Building CMake help locally
 ---------------------------
 ::
 
-$ cmake --help-full cmake.help.html
+  $ cmake --help-full cmake.help.html
 
 (Open your web browser to the file cmake.help.html)
 
